@@ -87,13 +87,16 @@ function hero(leagues, members) {
     <section class="hero">
       <img class="hero-crest" src="icons/logo-256.png" alt="DFL league crest"
            width="256" height="256">
-      <h1 class="hero-title">DFL HQ</h1>
-      <p class="hero-tagline">League headquarters</p>
-      <p class="hero-note">
-        ${me ? `Welcome back, <strong>${esc(me.display_name)}</strong>. ` : ""}The home of
-        DFL records, standings, rules, keepers, finances and owner history —
-        every season since ${esc(oldestSeason(leagues))} in one place.
+      <h1 class="hero-title">DFL</h1>
+
+      <p class="hero-creed">
+        Forged by sinners.<br>
+        Fueled by rivalries.<br>
+        Defined by champions.
       </p>
+      <p class="hero-mark">Every season leaves a mark.</p>
+
+      ${me ? `<p class="hero-welcome">Welcome back, <strong>${esc(me.display_name)}</strong>.</p>` : ""}
 
       <div class="hero-stats">
         ${heroStat(seasons || "—", seasons === 1 ? "Season" : "Seasons")}
@@ -103,12 +106,6 @@ function hero(leagues, members) {
           : heroStat("—", "Champion")}
       </div>
     </section>`;
-}
-
-/** The first season we have on record, for the hero line. */
-function oldestSeason(leagues) {
-  if (!leagues.length) return "day one";
-  return Math.min(...leagues.map((l) => l.season));
 }
 
 function heroStat(value, label, sub = "") {

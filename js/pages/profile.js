@@ -284,12 +284,20 @@ function duesCard(rows) {
 
 function themePicker(m) {
   const value = savedTheme() || m.favorite_team || "";
+  const c = teamColors(value);
   return `
     <div class="card">
-      <div class="card-title">App colour</div>
+      <h3 class="card-heading">Team colours</h3>
       <p class="muted tiny" style="margin-top:0">
-        Pick your team and the app takes its colours. This is saved on this device.
+        Pick your team and the app takes both of its colours. Saved on this device.
       </p>
+
+      <div class="swatchbar" id="theme-preview">
+        <span class="bigsw" style="background:${esc(c ? c.primary : "var(--accent)")}"></span>
+        <span class="bigsw" style="background:${esc(c ? c.secondary : "var(--accent-2)")}"></span>
+        <span class="swatch-name">${esc(c ? c.name : "League green")}</span>
+      </div>
+
       <label for="theme-pick">Favourite team</label>
       <select id="theme-pick">
         ${teamOptions().map((o) =>
@@ -305,8 +313,19 @@ function wireThemePicker(view, member) {
   const select = view.querySelector("#theme-pick");
   if (!select) return;
 
-  // Live preview as soon as the choice changes.
-  select.addEventListener("change", () => saveTheme(select.value));
+  // Live preview as soon as the choice changes: the whole app recolours,
+  // and the two swatches update so both colours are visible while choosing.
+  select.addEventListener("change", () => {
+    saveTheme(select.value);
+    const c = teamColors(select.value);
+    const sw = view.querySelectorAll("#theme-preview .bigsw");
+    if (sw.length === 2) {
+      sw[0].style.background = c ? c.primary : "var(--accent)";
+      sw[1].style.background = c ? c.secondary : "var(--accent-2)";
+    }
+    const label = view.querySelector("#theme-preview .swatch-name");
+    if (label) label.textContent = c ? c.name : "League green";
+  });
 
   view.querySelector("#theme-save").addEventListener("click", async () => {
     const { error } = await db().from("members")

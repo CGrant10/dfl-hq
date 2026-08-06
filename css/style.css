@@ -69,6 +69,20 @@ body {
 
 a { color: var(--accent); }
 
+/*
+  Owner and team names inside tables are links to a profile, but they are
+  content first. Styling them like ordinary web links turned every history
+  table into a wall of coloured, underlined text. These read as normal
+  text and only hint at being tappable on hover.
+*/
+.plainlink {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px dotted transparent;
+}
+.plainlink:hover { color: var(--accent); border-bottom-color: var(--accent-dim); }
+
 /* ------------------------------- header ------------------------------ */
 
 .topbar {
@@ -476,26 +490,36 @@ textarea { min-height: 96px; resize: vertical; }
   filter: drop-shadow(0 8px 22px rgba(0, 0, 0, .6));
 }
 .hero-title {
-  margin: 8px 0 0;
-  font-size: 30px;
+  margin: 10px 0 0;
+  font-size: clamp(52px, 17vw, 76px);
   font-weight: 900;
-  letter-spacing: -.02em;
+  line-height: .92;
+  letter-spacing: -.04em;
+  /* the league's two colours, running through the wordmark itself */
+  background: linear-gradient(100deg, var(--accent), var(--accent-2, var(--accent)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.hero-tagline {
-  margin: 2px 0 0;
-  font-size: 11px;
+
+/* the creed */
+.hero-creed {
+  margin: 14px auto 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.75;
+  letter-spacing: .01em;
+  color: var(--text);
+}
+.hero-mark {
+  margin: 12px auto 0;
+  font-size: 11.5px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .22em;
-  color: var(--accent);
-}
-.hero-note {
-  margin: 12px auto 0;
-  max-width: 42ch;
-  font-size: 14px;
-  line-height: 1.5;
+  letter-spacing: .2em;
   color: var(--muted);
 }
+.hero-welcome { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
 
 .hero-stats {
   display: grid;
@@ -756,13 +780,15 @@ textarea { min-height: 96px; resize: vertical; }
   background: var(--bg-3);
   border: 1px solid var(--line);
 }
+/* Initials sit on the team's two colours, so every avatar in the app -
+   the member picker included - shows the pair, not just the primary. */
 .avatar-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   color: var(--on-accent);
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2, var(--accent)));
   border: none;
 }
 .avatar.sm { width: 34px; height: 34px; font-size: 13px; }
@@ -803,6 +829,16 @@ textarea { min-height: 96px; resize: vertical; }
   display: inline-block;
   border: 1px solid rgba(0,0,0,.35);
 }
+/* two-colour preview beside the team picker */
+.swatchbar { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; }
+.bigsw {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.swatch-name { font-size: 13px; font-weight: 600; }
+
 .teampill .sw1 { background: var(--t1); }
 .teampill .sw2 { background: var(--t2); margin: 0 7px 0 -4px; }
 
