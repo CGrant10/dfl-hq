@@ -43,14 +43,22 @@ export async function render(view) {
   const isMe = me && String(me.id) === String(member.id);
 
   // Everything else about this person, in parallel.
-  const [standings, leagues, keepers, payments] = await Promise.all([
+  const [standings, leagues, keepers, payments, sleeperUser] = await Promise.all([
     member.sleeper_user_id
       ? db().from("sleeper_standings").select("*").eq("sleeper_user_id", member.sleeper_user_id)
       : { data: [] },
     db().from("sleeper_leagues").select("season, champion_user_id, runner_up_user_id"),
     db().from("keepers").select("*"),
     db().from("finance_payments").select("*"),
+    member.sleeper_user_id
+      ? db().from("sleeper_users").select("*").eq("sleeper_user_id", member.sleeper_user_id).maybeSingle()
+      : { data: null },
   ]);
+
+  // The name to show at the top is the CURRENT one: whatever the member
+  // profile says, otherwise the latest name Sleeper has. Historic names
+  // live in the season table further down and are never used up here.
+  const currentTeam = member.team_name || sleeperUser?.data?.team_name || "";
 
   const seasons = (standings.data || []).sort((a, b) => b.season - a.season);
   const career  = careerTotals(seasons, leagues.data || [], member.sleeper_user_id);
@@ -65,7 +73,7 @@ export async function render(view) {
   const team = findTeam((isMe && savedTheme()) || member.favorite_team);
 
   view.innerHTML = `
-    ${header(member, team, isMe)}
+    ${header(member, team, isMe, currentTeam, sleeperUser?.data?.current_season)}
     ${careerCard(career, seasons.length)}
     ${awardsCard(member)}
     ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
@@ -85,7 +93,7 @@ export async function render(view) {
 
 // ------------------------------- header -------------------------------
 
-function header(m, team, isMe) {
+function header(m, team, isMe, currentTeam, currentSeason) {
   // Both team colours drive the card: a two-stop stripe across the top and
   // a matching ring around the avatar.
   //
@@ -104,8 +112,12 @@ function header(m, team, isMe) {
           ? `<img class="avatar" src="${esc(m.profile_image)}" alt="">`
           : `<div class="avatar avatar-fallback">${esc(initials(m.display_name))}</div>`}
         <div style="flex:1;min-width:0">
-          <h1 class="profile-name">${esc(m.team_name || m.display_name)}</h1>
-          <div class="muted">${esc(m.display_name)}${isMe ? " · this is you" : ""}</div>
+          <h1 class="profile-name">${esc(currentTeam || m.display_name)}</h1>
+          <div class="muted">
+            ${esc(m.display_name)}${isMe ? " · this is you" : ""}
+            ${currentTeam && currentSeason
+              ? `<span class="muted tiny"> · ${esc(currentSeason)} team</span>` : ""}
+          </div>
           <div class="row" style="margin-top:8px">
             ${m.championships > 0 ? `<span class="pill green">${m.championships}× champion</span>` : ""}
             ${m.joined_year ? `<span class="pill">Since ${esc(m.joined_year)}</span>` : ""}
@@ -195,11 +207,15 @@ function historyCard(seasons, leagues, userId) {
       <div class="card-title">League history</div>
       <div class="tblwrap">
         <table class="tbl">
-          <thead><tr><th>Season</th><th>Record</th><th class="num">Points</th><th>Finish</th></tr></thead>
+          <thead><tr>
+            <th>Season</th><th>Team that year</th><th>Record</th>
+            <th class="num">Points</th><th>Finish</th>
+          </tr></thead>
           <tbody>
             ${seasons.map((s) => `
               <tr>
                 <td>${esc(s.season)}</td>
+                <td class="muted">${esc(s.team_name || "—")}</td>
                 <td>${s.wins}-${s.losses}${s.ties ? "-" + s.ties : ""}</td>
                 <td class="num">${Math.round(s.points_for).toLocaleString()}</td>
                 <td>

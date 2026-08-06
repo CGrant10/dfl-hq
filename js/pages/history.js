@@ -92,19 +92,51 @@ export async function render(view) {
 // --------------------------- naming people ----------------------------
 
 /**
- * Prefer the member profile name, fall back to the Sleeper display name.
- * Returns { label, memberId } so rows can link through to a profile.
+ * Names for history rows.
+ *
+ * Owners are matched on Sleeper user id only - never on a name, because
+ * names are exactly what change from year to year.
+ *
+ * `season` picks the name that was in use THAT year, taken from the
+ * standings snapshot. Without a season it falls back to the person's
+ * current identity. `rosterId` is the last resort: it names a team whose
+ * owner account no longer exists, which is how the 2019 champion is still
+ * identifiable.
  */
 function namer(data) {
-  const byMember = new Map(data.members.map((m) => [m.sleeper_user_id, m]));
+  const byMember  = new Map(data.members.map((m) => [m.sleeper_user_id, m]));
   const bySleeper = new Map(data.users.map((u) => [u.sleeper_user_id, u]));
 
-  return (userId) => {
-    const m = byMember.get(userId);
-    if (m) return { label: m.team_name || m.display_name, sub: m.display_name, memberId: m.id };
-    const u = bySleeper.get(userId);
-    if (u) return { label: u.team_name || u.display_name, sub: u.display_name, memberId: null };
-    return { label: "—", sub: "", memberId: null };
+  const snapshot = new Map();          // "season:userId"   -> team name
+  const byRoster = new Map();          // "season:rosterId" -> team name
+  for (const s of data.standings) {
+    if (s.sleeper_user_id) snapshot.set(`${s.season}:${s.sleeper_user_id}`, s.team_name || "");
+    byRoster.set(`${s.season}:${s.roster_id}`, s.team_name || "");
+  }
+
+  return (userId, season = null, rosterId = null) => {
+    const member = byMember.get(userId);
+    const user   = bySleeper.get(userId);
+    const person = member?.display_name || user?.display_name || null;
+
+    // the name used that season, if we have it
+    const historic = season != null ? snapshot.get(`${season}:${userId}`) : null;
+
+    if (person) {
+      const label = historic || member?.team_name || user?.team_name || person;
+      return { label, sub: person, memberId: member?.id ?? null };
+    }
+
+    // No owner: the Sleeper account was deleted. Use that season's team
+    // name if we captured one, otherwise at least identify the roster, so
+    // the season still appears in the record book instead of vanishing.
+    const orphan = season != null && rosterId != null
+      ? byRoster.get(`${season}:${rosterId}`) : null;
+    if (orphan) return { label: orphan, sub: "account deleted", memberId: null };
+    if (rosterId != null) {
+      return { label: `Roster ${rosterId}`, sub: "account deleted", memberId: null };
+    }
+    return { label: "Unknown", sub: "", memberId: null };
   };
 }
 
@@ -120,7 +152,11 @@ function nameCell(who) {
 
 function fameView(data) {
   const name = namer(data);
-  const titled = data.leagues.filter((l) => l.champion_user_id);
+  // Every completed season, not just those with a known owner. A season
+  // whose winner deleted their account still belongs in the record book.
+  const titled = data.leagues
+    .filter((l) => l.champion_user_id || l.champion_roster_id)
+    .sort((a, b) => b.season - a.season);
 
   const byYear = [...groupBy(data.manual, "year").entries()].sort((a, b) => b[0] - a[0]);
 
@@ -135,8 +171,10 @@ function fameView(data) {
               ${titled.map((l) => `
                 <tr>
                   <td>${esc(l.season)}</td>
-                  <td>${nameCell(name(l.champion_user_id))}</td>
-                  <td class="muted">${l.runner_up_user_id ? nameCell(name(l.runner_up_user_id)) : "—"}</td>
+                  <td>${nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}</td>
+                  <td class="muted">${l.runner_up_user_id || l.runner_up_roster_id
+                    ? nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))
+                    : "—"}</td>
                 </tr>`).join("")}
             </tbody>
           </table>
@@ -190,7 +228,8 @@ function seasonsView(data) {
     .filter((s) => s.season === season)
     .sort((a, b) => played
       ? (a.rank ?? 99) - (b.rank ?? 99)
-      : name(a.sleeper_user_id).label.localeCompare(name(b.sleeper_user_id).label));
+      : name(a.sleeper_user_id, season, a.roster_id).label
+          .localeCompare(name(b.sleeper_user_id, season, b.roster_id).label));
 
   return `
     <div class="tabs">
@@ -201,8 +240,9 @@ function seasonsView(data) {
     <div class="card">
       <div class="card-title">
         ${esc(season)} ${played ? "final standings" : "teams"}
-        ${league?.champion_user_id
-          ? `<span class="pill green">${esc(name(league.champion_user_id).label)}</span>` : ""}
+        ${league?.champion_user_id || league?.champion_roster_id
+          ? `<span class="pill green">${esc(
+              name(league.champion_user_id, season, league.champion_roster_id).label)}</span>` : ""}
         ${played ? "" : `<span class="pill warn">not started</span>`}
       </div>
       <div class="tblwrap">
@@ -217,7 +257,7 @@ function seasonsView(data) {
                   ${played ? (s.rank ?? "—") : "—"}
                   ${played && s.made_playoffs ? `<span class="pill green tiny">P</span>` : ""}
                 </td>
-                <td>${nameCell(name(s.sleeper_user_id))}</td>
+                <td>${nameCell(name(s.sleeper_user_id, season, s.roster_id))}</td>
                 <td>${s.wins}-${s.losses}${s.ties ? "-" + s.ties : ""}</td>
                 <td class="num">${Math.round(s.points_for).toLocaleString()}</td>
                 <td class="num">${Math.round(s.points_against).toLocaleString()}</td>

@@ -90,8 +90,9 @@ function hero(leagues, members) {
       <h1 class="hero-title">DFL HQ</h1>
       <p class="hero-tagline">League headquarters</p>
       <p class="hero-note">
-        ${me ? `Welcome back, <strong>${esc(me.display_name)}</strong>.` : "Rules, keepers, polls, money and history."}
-        Sleeper still runs the scoring.
+        ${me ? `Welcome back, <strong>${esc(me.display_name)}</strong>. ` : ""}The home of
+        DFL records, standings, rules, keepers, finances and owner history —
+        every season since ${esc(oldestSeason(leagues))} in one place.
       </p>
 
       <div class="hero-stats">
@@ -102,6 +103,12 @@ function hero(leagues, members) {
           : heroStat("—", "Champion")}
       </div>
     </section>`;
+}
+
+/** The first season we have on record, for the hero line. */
+function oldestSeason(leagues) {
+  if (!leagues.length) return "day one";
+  return Math.min(...leagues.map((l) => l.season));
 }
 
 function heroStat(value, label, sub = "") {

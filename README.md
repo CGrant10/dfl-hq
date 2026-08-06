@@ -1,8 +1,11 @@
 # DFL HQ
 
-League headquarters for a 12-team fantasy football league. Sleeper still runs
-scoring, rosters and matchups — this app holds the rules, announcements, polls,
-keepers, calendar, history and side events.
+The headquarters and record book for a 12-team fantasy football league: every
+season's standings and results, owner profiles and career records, rules,
+keepers, polls, finances, the calendar and the hall of fame.
+
+Sleeper is used as a data source — the league's seasons are imported from it to
+power the history and analytics.
 
 Plain HTML, CSS and vanilla JavaScript. No build step, no npm, no framework.
 Supabase is the database. It installs to a phone home screen as a PWA.
@@ -244,9 +247,9 @@ the file whose job is to detect a stale cache would defeat the point.
 
 ## 4b. Sleeper integration
 
-DFL HQ does **not** replace Sleeper. Sleeper still runs scoring, rosters and
-matchups. This pulls a read-only copy of the league's numbers so the app can
-show career records, owner profiles and season history.
+Sleeper is the data source behind the record book. This pulls a read-only copy
+of every season the league has played so DFL HQ can show standings, career
+records, owner profiles and season history. Nothing is ever written back.
 
 ### One-time setup
 

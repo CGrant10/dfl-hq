@@ -33,23 +33,40 @@ export async function syncSleeper(leagueId, log = () => {}) {
   if (!leagueId) throw new Error("Enter a Sleeper league ID first.");
 
   const counts = { seasons: 0, users: 0, rosters: 0, matchups: 0, transactions: 0 };
-  const seasons = [];
 
+  // ---- 1. Walk the chain and collect every league first ----
+  const chain = [];
   let currentId = String(leagueId).trim();
   let guard = 0;
 
   while (currentId && guard++ < MAX_SEASONS) {
-    log(`Fetching league ${currentId}…`);
     const league = await sleeper.league(currentId);
-
     if (!league) {
       if (guard === 1) throw new Error(`Sleeper has no league with ID ${currentId}. Double-check the ID.`);
       log(`Chain ended at ${currentId}.`);
       break;
     }
+    chain.push(league);
+    log(`Found ${league.season}: ${league.name}`);
+    currentId = league.previous_league_id || null;
+  }
 
+  if (guard >= MAX_SEASONS) {
+    log(`Stopped after ${MAX_SEASONS} seasons — raise MAX_SEASONS if the league is older.`);
+  }
+
+  // ---- 2. Sync OLDEST FIRST ----
+  // The order matters. sleeper_users holds one row per person with their
+  // CURRENT team name, and each season's sync writes it. Running newest
+  // first meant the oldest season had the last word, so everybody's
+  // "current" team was really their 2019 team. Oldest first means the
+  // newest season wins, which is what "current" should mean.
+  chain.sort((a, b) => Number(a.season) - Number(b.season));
+
+  const seasons = [];
+  for (const league of chain) {
     const season = Number(league.season);
-    log(`— ${season} season: ${league.name}`);
+    log(`— syncing ${season}…`);
 
     const seasonCounts = await syncSeason(league, season, log);
     counts.users        += seasonCounts.users;
@@ -58,9 +75,8 @@ export async function syncSleeper(leagueId, log = () => {}) {
     counts.transactions += seasonCounts.transactions;
     counts.seasons++;
     seasons.push(season);
-
-    currentId = league.previous_league_id || null;
   }
+  seasons.reverse();   // report newest first
 
   await db().from("sleeper_config").update({
     sleeper_league_id: String(leagueId).trim(),
@@ -89,7 +105,17 @@ async function syncSeason(league, season, log) {
   // roster_id -> owner user id, needed all over the place below
   const ownerOf = new Map((rosters || []).map((r) => [r.roster_id, r.owner_id]));
 
+  // What each owner called themselves THIS season. Looked up by Sleeper
+  // user id - never by name, because names are exactly what changes.
+  const seasonNames = new Map((users || []).map((u) => [u.user_id, {
+    team:    u.metadata?.team_name || "",
+    display: u.display_name || u.username || "",
+  }]));
+  const nameFor = (userId) => seasonNames.get(userId) || { team: "", display: "" };
+
   // ---- people ----
+  // One row per person holding their CURRENT identity. Because seasons are
+  // synced oldest first, the newest season is the last to write here.
   if (users?.length) {
     await upsert("sleeper_users", users.map((u) => ({
       sleeper_user_id: u.user_id,
@@ -97,23 +123,30 @@ async function syncSeason(league, season, log) {
       display_name:    u.display_name || u.username || "",
       team_name:       u.metadata?.team_name || "",
       avatar:          u.avatar || null,
+      current_season:  season,
       updated_at:      new Date().toISOString(),
     })), "sleeper_user_id");
     counts.users = users.length;
   }
 
   // ---- rosters + standings ----
+  // Both carry a snapshot of the name used that year, so history keeps
+  // showing "Wolf Hunters" for 2019 even after the owner renames the team.
   if (rosters?.length) {
     await upsert("sleeper_rosters", rosters.map((r) => ({
       season,
+      league_id:       leagueId,
       roster_id:       r.roster_id,
       sleeper_user_id: r.owner_id || null,
+      team_name:       nameFor(r.owner_id).team,
+      display_name:    nameFor(r.owner_id).display,
       players:         r.players  || [],
       starters:        r.starters || [],
       synced_at:       new Date().toISOString(),
     })), "season,roster_id");
 
-    await upsert("sleeper_standings", buildStandings(rosters, season, league), "season,roster_id");
+    await upsert("sleeper_standings",
+      buildStandings(rosters, season, league, leagueId, nameFor), "season,roster_id");
     counts.rosters = rosters.length;
   }
 
@@ -130,6 +163,11 @@ async function syncSeason(league, season, log) {
     previous_league_id: league.previous_league_id || null,
     champion_user_id:   championRoster != null ? ownerOf.get(championRoster) ?? null : null,
     runner_up_user_id:  runnerUpRoster != null ? ownerOf.get(runnerUpRoster) ?? null : null,
+    // Kept as well as the user id: a winner whose Sleeper account was
+    // later deleted has no owner, and without this the season looks like
+    // it has no champion at all. The roster still names the team.
+    champion_roster_id:  championRoster ?? null,
+    runner_up_roster_id: runnerUpRoster ?? null,
     synced_at:          new Date().toISOString(),
   }], "sleeper_league_id");
 
@@ -139,7 +177,7 @@ async function syncSeason(league, season, log) {
   const matchupRows = [];
   await inBatches(weeks, CONCURRENCY, async (week) => {
     const raw = await sleeper.matchups(leagueId, week);
-    const rows = pairMatchups(raw, season, week, ownerOf);
+    const rows = pairMatchups(raw, season, week, ownerOf, leagueId);
     if (rows.length) matchupRows.push(...rows);
   });
   if (matchupRows.length) {
@@ -178,15 +216,17 @@ async function syncSeason(league, season, log) {
 // ---------------------------------------------------------------------
 
 /** Standings rows, ranked, with playoff qualification worked out. */
-function buildStandings(rosters, season, league) {
+function buildStandings(rosters, season, league, leagueId, nameFor) {
   const playoffTeams = league.settings?.playoff_teams ?? 0;
 
   const rows = rosters.map((r) => {
     const s = r.settings || {};
     return {
       season,
+      league_id:       leagueId,
       roster_id:       r.roster_id,
       sleeper_user_id: r.owner_id || null,
+      team_name:       nameFor(r.owner_id).team,
       wins:            s.wins   || 0,
       losses:          s.losses || 0,
       ties:            s.ties   || 0,
@@ -227,7 +267,7 @@ function points(whole, decimal) {
  * Weeks that have not been played yet (everyone on 0) are skipped, so we
  * do not fill the table with empty future weeks.
  */
-function pairMatchups(raw, season, week, ownerOf) {
+function pairMatchups(raw, season, week, ownerOf, leagueId) {
   if (!raw?.length) return [];
   if (!raw.some((m) => Number(m.points) > 0)) return [];   // not played yet
 
@@ -250,7 +290,7 @@ function pairMatchups(raw, season, week, ownerOf) {
     }
 
     rows.push({
-      season, week, matchup_id: matchupId,
+      season, week, matchup_id: matchupId, league_id: leagueId,
       roster1: a?.roster_id ?? null,
       user1:   a ? ownerOf.get(a.roster_id) ?? null : null,
       score1:  scoreA,
