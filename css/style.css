@@ -56,7 +56,9 @@ a { color: var(--accent); }
   height: 56px;
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 var(--pad);
+  /* max() keeps content clear of the notch when a phone is in landscape */
+  padding-left:  max(var(--pad), env(safe-area-inset-left));
+  padding-right: max(var(--pad), env(safe-area-inset-right));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -87,6 +89,8 @@ a { color: var(--accent); }
   max-width: 900px;
   margin: 0 auto;
   padding: var(--pad);
+  padding-left:  max(var(--pad), env(safe-area-inset-left));
+  padding-right: max(var(--pad), env(safe-area-inset-right));
 }
 
 h1 { font-size: 22px; margin: 4px 0 14px; }
@@ -341,8 +345,12 @@ textarea { min-height: 96px; resize: vertical; }
   background: #10161f;
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left:  env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   overflow-x: auto;
+  scrollbar-width: none;              /* the row scrolls on narrow phones */
 }
+.tabbar::-webkit-scrollbar { display: none; }
 .tabbar a {
   flex: 1 0 auto;
   min-width: 56px;
@@ -399,9 +407,76 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .toast.bad { background: #3a1714; border-color: #6b2b23; }
 
+/* ------------------------- install banner ---------------------------- */
+
+.install {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 45;
+  width: min(560px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--accent-dim);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+}
+.install-text { flex: 1; font-size: 13px; line-height: 1.35; }
+.install-x {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
 /* ------------------------- wider screens ----------------------------- */
 
 @media (min-width: 720px) {
-  .quicknav { grid-template-columns: repeat(6, 1fr); }
-  .tabbar a { font-size: 12px; }
+  .quicknav { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Tablets and desktop: move the nav up under the header. A bottom tab bar
+   is a phone pattern and looks wrong on a big screen. */
+@media (min-width: 900px) {
+  body {
+    padding-top: calc(56px + 47px + env(safe-area-inset-top));
+    padding-bottom: 40px;
+  }
+  .tabbar {
+    top: calc(56px + env(safe-area-inset-top));
+    bottom: auto;
+    justify-content: center;
+    border-top: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+    overflow-x: visible;
+  }
+  .tabbar a {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 13px 15px;
+    font-size: 13px;
+  }
+  .tabbar a .ico { width: 17px; height: 17px; margin: 0; }
+  .install { bottom: 24px; }
+  .toast   { bottom: 24px; }
+}
+
+/* Phone held sideways: the two fixed bars would eat most of a 375px-tall
+   screen, so slim them down. */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 899px) {
+  body { padding-top: calc(48px + env(safe-area-inset-top)); padding-bottom: 60px; }
+  .topbar-inner { height: 48px; }
+  .tabbar a { padding: 5px 4px 7px; font-size: 9px; }
+  .tabbar a .ico { width: 18px; height: 18px; }
+  .hero img { width: 110px; }
 }

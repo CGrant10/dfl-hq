@@ -14,7 +14,7 @@ Supabase is the database. It installs to a phone home screen as a PWA.
 ```
 dfl_hq/
 ├── index.html               app shell: header, page container, tab bar
-├── manifest.webmanifest     name, icons, colours for "Add to Home Screen"
+├── manifest.json            name, icons, colours, shortcuts for install
 ├── sw.js                    service worker: offline app shell
 ├── schema.sql               run this once in Supabase
 ├── sleeper_schema.sql       Sleeper tables (additive, run once)
@@ -26,6 +26,7 @@ dfl_hq/
 └── js/
     ├── config.js            ← YOUR SUPABASE URL + ANON KEY GO HERE
     ├── supabase.js          database client + admin client + query helpers
+    ├── install.js           "Add to Home Screen" prompt (Android + iOS help)
     ├── store.js             localStorage: league name, remembered admin password
     ├── ui.js                small helpers (escaping, dates, toasts, grouping)
     ├── crud.js              reusable "manage a table" widget for the Admin page
@@ -155,8 +156,59 @@ Every path in the app is relative, so serving from the `/dfl-hq/` sub-path works
 
 ### Add it to a phone
 
-- **iPhone:** open the site in Safari → Share → *Add to Home Screen*.
-- **Android:** open in Chrome → menu → *Install app* / *Add to Home screen*.
+The app shows its own prompt the first time you visit, but here is the manual
+route on each platform.
+
+**iPhone / iPad — Safari only**
+
+1. Open <https://cgrant10.github.io/dfl-hq/> in **Safari**. Chrome and Firefox on
+   iOS *cannot* install web apps; the option simply isn't there.
+2. Tap the **Share** button (square with an arrow).
+3. Scroll down, tap **Add to Home Screen**, then **Add**.
+
+It opens full screen with no Safari chrome. iOS has no install API, so the app
+can only show instructions — there is no one-tap install button on iPhone.
+
+**Android — Chrome**
+
+1. Open the site in Chrome.
+2. Either tap **Install** on the app's own banner, or use **⋮ → Install app**.
+3. Confirm. It lands in the app drawer like any other app.
+
+Long-pressing the installed icon gives shortcuts straight to Finances, Polls and
+Owners.
+
+**Desktop — Chrome or Edge**
+
+1. Open the site.
+2. Click the **install icon** in the address bar (a monitor with a down arrow),
+   or **⋮ → Cast, save and share → Install page as app**.
+3. It opens in its own window with no tabs or address bar.
+
+### Checking it really installed
+
+- The app opens with **no browser address bar**.
+- The icon is the league crest, not a screenshot of the page.
+- Turn on airplane mode and reopen: the app shell still loads. Pages that need
+  league data will show an error, which is expected — dues and standings live in
+  Supabase and need a connection.
+
+### Screen sizes
+
+Verified with no horizontal page scroll on every page at 320, 390, 430, 673,
+768, 1100 and 1280 px wide — that covers older iPhones through Pro Max, Galaxy
+Ultra, both Z Fold screens, tablets and desktop.
+
+Two layout behaviours worth knowing:
+
+- **Under 900px** the navigation is a bottom tab bar (a phone pattern) and
+  scrolls sideways if the screen is too narrow for all nine items.
+- **900px and up** the navigation moves to a row under the header, because a
+  bottom tab bar looks wrong on a large screen.
+- Wide tables (dues, standings) scroll **inside their own card**. The page
+  itself never scrolls sideways.
+- The manifest deliberately does **not** lock orientation, so tablets, foldables
+  and desktop can use landscape.
 
 ### Publishing an update
 

@@ -6,6 +6,7 @@ import { APP_VERSION } from "./config.js";
 import { getUsername, setUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
 import { startRouter, renderRoute } from "./router.js";
+import { setupInstall } from "./install.js";
 import { toast } from "./ui.js";
 
 const welcome      = document.getElementById("welcome");
@@ -61,9 +62,12 @@ async function boot() {
   else registerUser(getUsername());
 
   // Service worker: offline shell + faster loads. Skipped on file:// URLs.
+  // It is also what makes the app installable.
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("sw.js").catch(console.warn);
   }
+
+  setupInstall();
 }
 
 boot();

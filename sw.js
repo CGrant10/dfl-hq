@@ -12,15 +12,16 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.2.0";
+const CACHE_NAME = "dfl-hq-v1.3.0";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./css/style.css",
-  "./manifest.webmanifest",
+  "./manifest.json",
   "./js/config.js",
   "./js/app.js",
+  "./js/install.js",
   "./js/router.js",
   "./js/store.js",
   "./js/supabase.js",
