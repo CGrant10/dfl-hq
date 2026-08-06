@@ -1,67 +1,56 @@
 // =====================================================================
-// Home dashboard: next events, latest announcements, open polls, quick nav
+// Home - the league's front door.
+//
+// Reads as a landing page: crest, league identity, a few live numbers,
+// then the things that actually need attention (events, news, polls).
 // =====================================================================
 
 import { db, configured } from "../supabase.js";
 import { esc, empty, fmtDate, relDate, fmtShort, errorBox, toast } from "../ui.js";
-import { getUsername } from "../store.js";
 import { APP_VERSION } from "../config.js";
 import { checkForUpdate } from "../update.js";
+import { currentMember } from "../members.js";
 
 export async function render(view) {
-  if (!configured) {
-    view.innerHTML = setupNotice();
-    return;
-  }
+  if (!configured) { view.innerHTML = setupNotice(); return; }
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Fire all three queries at once - faster than one after another.
-  const [events, announcements, polls] = await Promise.all([
+  const [events, announcements, polls, leagues, members] = await Promise.all([
     db().from("events").select("*").gte("event_date", today)
         .order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*")
         .order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true)
         .order("created_at", { ascending: false }).limit(3),
+    db().from("sleeper_leagues").select("season, champion_user_id")
+        .order("season", { ascending: false }),
+    db().from("members").select("id, display_name, team_name, sleeper_user_id"),
   ]);
 
   const firstError = events.error || announcements.error || polls.error;
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
 
-  const name = getUsername();
-
   view.innerHTML = `
-    <div class="hero">
-      <img src="icons/logo-256.png" alt="DFL league crest" width="256" height="256">
-    </div>
-    <h1 class="center">League Headquarters</h1>
-    <p class="muted center" style="margin-top:-8px">
-      ${name ? `Good to see you, <strong>${esc(name)}</strong>.` : "Rules, polls, keepers and league history."}
-      Sleeper still runs the scoring.
-    </p>
+    ${hero(leagues.data || [], members.data || [])}
+    ${quickNav()}
 
-    <nav class="quicknav" style="margin:18px 0 6px">
-      ${[
-        ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"],
-        ["calendar", "Calendar"], ["history", "History"],
-        ["finances", "Finances"], ["profile", "Profile"], ["admin", "Admin"],
-      ].map(([route, label]) => `
-        <a href="#/${route}">
-          <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>${label}
-        </a>`).join("")}
-    </nav>
+    <section class="block">
+      <h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
+      ${eventList(events.data)}
+    </section>
 
-    <div class="section-head"><h2>Upcoming</h2><a href="#/calendar">All events →</a></div>
-    ${eventList(events.data)}
+    <section class="block">
+      <h2 class="section-title">Announcements</h2>
+      ${announcementList(announcements.data)}
+    </section>
 
-    <div class="section-head"><h2>Announcements</h2></div>
-    ${announcementList(announcements.data)}
+    <section class="block">
+      <h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
+      ${pollList(polls.data)}
+    </section>
 
-    <div class="section-head"><h2>Active polls</h2><a href="#/polls">Vote →</a></div>
-    ${pollList(polls.data)}
-
-    <p class="center muted tiny" style="margin:22px 0 4px">
+    <p class="version-line">
       DFL HQ v${esc(APP_VERSION)} ·
       <button class="linkbtn" id="check-update">Check for updates</button>
     </p>
@@ -83,42 +72,113 @@ export async function render(view) {
   });
 }
 
+// -------------------------------- hero --------------------------------
+
+function hero(leagues, members) {
+  const me = currentMember();
+
+  const seasons = leagues.length;
+  const latestChampLeague = leagues.find((l) => l.champion_user_id);
+  const champ = latestChampLeague
+    ? members.find((m) => m.sleeper_user_id === latestChampLeague.champion_user_id)
+    : null;
+
+  return `
+    <section class="hero">
+      <img class="hero-crest" src="icons/logo-256.png" alt="DFL league crest"
+           width="256" height="256">
+      <h1 class="hero-title">DFL HQ</h1>
+      <p class="hero-tagline">League headquarters</p>
+      <p class="hero-note">
+        ${me ? `Welcome back, <strong>${esc(me.display_name)}</strong>.` : "Rules, keepers, polls, money and history."}
+        Sleeper still runs the scoring.
+      </p>
+
+      <div class="hero-stats">
+        ${heroStat(seasons || "—", seasons === 1 ? "Season" : "Seasons")}
+        ${heroStat(members.length || "—", "Owners")}
+        ${champ
+          ? heroStat(latestChampLeague.season, "Champion", champ.team_name || champ.display_name)
+          : heroStat("—", "Champion")}
+      </div>
+    </section>`;
+}
+
+function heroStat(value, label, sub = "") {
+  return `
+    <div class="hero-stat">
+      <span class="hero-stat-v">${esc(value)}</span>
+      <span class="hero-stat-l">${esc(label)}</span>
+      ${sub ? `<span class="hero-stat-s">${esc(sub)}</span>` : ""}
+    </div>`;
+}
+
+// ------------------------------ quick nav ------------------------------
+
+const NAV = [
+  ["rules", "Rules", "League law"],
+  ["keepers", "Keepers", "Who's kept"],
+  ["polls", "Polls", "Have a say"],
+  ["calendar", "Calendar", "Key dates"],
+  ["history", "History", "Hall of fame"],
+  ["finances", "Finances", "Dues & payouts"],
+  ["profile", "Profile", "Your record"],
+  ["admin", "Admin", "Commissioner"],
+];
+
+function quickNav() {
+  return `
+    <nav class="quicknav">
+      ${NAV.map(([route, label, sub]) => `
+        <a href="#/${route}">
+          <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>
+          <span class="qn-label">${esc(label)}</span>
+          <span class="qn-sub">${esc(sub)}</span>
+        </a>`).join("")}
+    </nav>`;
+}
+
+// ------------------------------- lists ---------------------------------
+
 function eventList(rows) {
-  if (!rows?.length) return empty("No events scheduled yet.");
+  if (!rows?.length) return empty("Nothing on the schedule yet.");
   return rows.map((e) => `
-    <div class="card accent">
-      <div class="card-title">${esc(e.title)}</div>
-      <div class="muted">${fmtDate(e.event_date)} · <span class="pill green">${esc(relDate(e.event_date))}</span></div>
-      ${e.description ? `<div class="card-body" style="margin-top:8px">${esc(e.description)}</div>` : ""}
-    </div>`).join("");
+    <article class="card event">
+      <div class="event-when">
+        <span class="event-date">${esc(fmtDate(e.event_date))}</span>
+        <span class="pill green">${esc(relDate(e.event_date))}</span>
+      </div>
+      <h3 class="card-heading">${esc(e.title)}</h3>
+      ${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}
+    </article>`).join("");
 }
 
 function announcementList(rows) {
   if (!rows?.length) return empty("Nothing from the commissioner yet.");
   return rows.map((a) => `
-    <div class="card">
-      <div class="card-title">${esc(a.title)}</div>
+    <article class="card">
+      <div class="card-kicker">${esc(fmtShort(a.created_at))}</div>
+      <h3 class="card-heading">${esc(a.title)}</h3>
       <div class="card-body">${esc(a.content)}</div>
-      <div class="card-meta">${fmtShort(a.created_at)}</div>
-    </div>`).join("");
+    </article>`).join("");
 }
 
 function pollList(rows) {
   if (!rows?.length) return empty("No polls open right now.");
   return rows.map((p) => `
-    <a class="card" href="#/polls" style="display:block;text-decoration:none;color:inherit">
-      <div class="card-title">${esc(p.question)}</div>
-      <div class="card-meta">Tap to vote →</div>
+    <a class="card linkcard" href="#/polls">
+      <h3 class="card-heading">${esc(p.question)}</h3>
+      <span class="card-cta">Cast your vote →</span>
     </a>`).join("");
 }
 
 function setupNotice() {
   return `
-    <h1>Almost there</h1>
-    <div class="card accent">
-      <div class="card-title">Connect Supabase</div>
+    <header class="page-head"><h1>Almost there</h1></header>
+    <div class="card note">
+      <h3 class="card-heading">Connect Supabase</h3>
       <div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.
 
-The README in this folder walks through both steps.</div>
+The README walks through both steps.</div>
     </div>`;
 }

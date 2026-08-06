@@ -13,7 +13,7 @@ import { db } from "../supabase.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers } from "../members.js";
 import { findTeam, teamOptions } from "../teams.js";
-import { saveTheme, savedTheme } from "../theme.js";
+import { saveTheme, savedTheme, teamColors } from "../theme.js";
 import { toast } from "../ui.js";
 
 export async function render(view) {
@@ -62,7 +62,7 @@ export async function render(view) {
     sameName(p.owner_name, member.display_name) || sameName(p.team_name, member.team_name))
     .sort((a, b) => b.season - a.season);
 
-  const team = findTeam(member.favorite_team);
+  const team = findTeam((isMe && savedTheme()) || member.favorite_team);
 
   view.innerHTML = `
     ${header(member, team, isMe)}
@@ -86,28 +86,45 @@ export async function render(view) {
 // ------------------------------- header -------------------------------
 
 function header(m, team, isMe) {
+  // Both team colours drive the card: a two-stop stripe across the top and
+  // a matching ring around the avatar.
+  //
+  // On your own profile the device's saved pick wins, because `members` is
+  // admin-write: a normal member can choose a team but cannot store it, and
+  // their profile should still show it.
+  const c = teamColors((isMe && savedTheme()) || m.favorite_team);
+  const style = c
+    ? `style="--t1:${c.primary};--t2:${c.secondary}"`
+    : "";
+
   return `
-    <div class="card accent profile-head">
-      ${m.profile_image
-        ? `<img class="avatar" src="${esc(m.profile_image)}" alt="">`
-        : `<div class="avatar avatar-fallback">${esc(initials(m.display_name))}</div>`}
-      <div style="flex:1;min-width:0">
-        <h1 style="margin:0 0 2px">${esc(m.team_name || m.display_name)}</h1>
-        <div class="muted">${esc(m.display_name)}${isMe ? " · this is you" : ""}</div>
-        <div class="row" style="margin-top:8px">
-          ${m.championships > 0 ? `<span class="pill green">${m.championships}× champion</span>` : ""}
-          ${m.joined_year ? `<span class="pill">Since ${esc(m.joined_year)}</span>` : ""}
-          ${team ? `<span class="pill">${esc(team.name)}</span>` : ""}
+    <div class="card profile-head ${c ? "has-team" : "accent"}" ${style}>
+      <div class="profile-top">
+        ${m.profile_image
+          ? `<img class="avatar" src="${esc(m.profile_image)}" alt="">`
+          : `<div class="avatar avatar-fallback">${esc(initials(m.display_name))}</div>`}
+        <div style="flex:1;min-width:0">
+          <h1 class="profile-name">${esc(m.team_name || m.display_name)}</h1>
+          <div class="muted">${esc(m.display_name)}${isMe ? " · this is you" : ""}</div>
+          <div class="row" style="margin-top:8px">
+            ${m.championships > 0 ? `<span class="pill green">${m.championships}× champion</span>` : ""}
+            ${m.joined_year ? `<span class="pill">Since ${esc(m.joined_year)}</span>` : ""}
+            ${c ? `<span class="pill teampill">
+                     <i class="sw sw1"></i><i class="sw sw2"></i>${esc(c.name)}
+                   </span>` : ""}
+          </div>
+          <div class="row" style="margin-top:10px">
+            ${isMe
+              ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
+              : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`}
+          </div>
         </div>
-        ${isMe ? `<div class="row" style="margin-top:10px">
-          <button class="btn ghost small" id="switch-member">Not you? Switch</button>
-        </div>` : `<div class="row" style="margin-top:10px">
-          <a class="btn ghost small" href="#/profile">Back to my profile</a>
-        </div>`}
       </div>
     </div>
-    ${m.notes ? `<div class="card"><div class="card-title">About</div>
-                 <div class="card-body">${esc(m.notes)}</div></div>` : ""}`;
+    ${m.notes ? `<div class="card">
+                   <h3 class="card-heading">About</h3>
+                   <div class="card-body">${esc(m.notes)}</div>
+                 </div>` : ""}`;
 }
 
 function initials(name) {

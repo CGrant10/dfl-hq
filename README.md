@@ -21,6 +21,7 @@ dfl_hq/
 ├── sleeper_schema.sql       Sleeper tables (additive, run once)
 ├── finance_schema.sql       League Finances tables (additive, run once)
 ├── members_schema.sql       member profiles + Sleeper hidden flag (run once)
+├── rules_schema.sql         editable rule tabs (additive, run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -57,7 +58,7 @@ dfl_hq/
 | I want to… | Edit |
 |---|---|
 | Change colours | the `:root` block at the top of `css/style.css` |
-| Add a rules category | `CATEGORIES` in `js/pages/rules.js` (the Admin dropdown follows it) |
+| Add a rules category | nothing to edit — **Admin → Rule tabs** |
 | Add a field to an admin form | the section's `fields` array in `js/pages/admin.js` |
 | Add a whole new page | add a file in `js/pages/`, register it in `routes` in `js/router.js`, add a link in `index.html` |
 
@@ -429,6 +430,39 @@ local save is what sticks.
 - Pages fade and slide in, cards stagger slightly behind them, and taps scale
   the thing you pressed.
 - All of it is disabled automatically for anyone with "reduce motion" turned on.
+
+---
+
+## 4e. Rule tabs and polls
+
+### Rule tabs are editable
+
+Run **`rules_schema.sql`** once. The six original tabs are seeded, plus any
+category your rules already use.
+
+Then **Admin → Rule tabs** lets you add, rename and reorder them. Two columns:
+
+- **Tab name** — what people see. Rename it freely.
+- **Permanent id** — stored on every rule row. **Do not change it** once rules
+  are filed under it, or those rules lose their tab.
+
+If a tab is deleted while rules still point at it, the Rules page keeps showing
+that tab anyway, derived from the rules themselves. Deleting a tab must never
+make rules silently disappear. The page also works if `rules_schema.sql` has
+not been run — it falls back to building tabs from the rules.
+
+### Polls: what admins can do
+
+On the Polls page itself, signed in as admin:
+
+- **Who voted for what.** Names appear under each option. Regular members only
+  ever see the tallies.
+- **Edit options after the fact.** Add, rename or remove answers on a live poll.
+- **Close / reopen** without going to the Admin page.
+
+Votes cast for an option that is later renamed or removed are **not** deleted or
+hidden — they keep showing, marked *(removed)*, so a tally can never be quietly
+rewritten by editing the question.
 
 ---
 

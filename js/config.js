@@ -19,4 +19,4 @@ export const SUPABASE_ANON_KEY = "sb_publishable_I14JPQNBW-fhIwZ7WkBlAg_M9zolGNL
 export const LEAGUE_NAME = "DFL HQ";
 
 // Bump this when you change any file, so phones pick up the new version.
-export const APP_VERSION = "1.4.2";
+export const APP_VERSION = "1.5.0";

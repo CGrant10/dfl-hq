@@ -73,6 +73,9 @@ export function errorBox(err) {
 let toastTimer = null;
 export function toast(message, bad = false) {
   const el = document.getElementById("toast");
+  // Never let a missing element break the caller: toast() is routinely the
+  // last line of a save, and throwing here would skip the re-render.
+  if (!el) { console.log(message); return; }
   el.textContent = message;
   el.classList.toggle("bad", !!bad);
   el.classList.remove("hidden");

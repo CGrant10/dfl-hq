@@ -11,7 +11,6 @@ import { renderManager } from "../crud.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { esc, toast } from "../ui.js";
-import { CATEGORIES } from "./rules.js";
 import { teamOptions } from "../teams.js";
 
 const THIS_YEAR = new Date().getFullYear();
@@ -50,10 +49,25 @@ const SECTIONS = [
     sub:   (r) => `${r.category} · #${r.sort_order}`,
     fields: [
       { name: "category",   label: "Section", type: "select", required: true,
-        options: CATEGORIES.map((c) => ({ value: c.key, label: c.label })) },
+        optionsFrom: { table: "rule_categories", value: "key",
+                       label: "label", order: "sort_order" } },
       { name: "title",      label: "Heading", type: "text", placeholder: "Trade deadline" },
       { name: "content",    label: "Text",    type: "textarea", required: true },
       { name: "sort_order", label: "Order within the section", type: "number", default: 1 },
+    ],
+  },
+  {
+    id: "rule_categories", tab: "Rule tabs",
+    table: "rule_categories", singular: "rule tab", plural: "rule tabs",
+    order: "sort_order", asc: true,
+    label: (r) => r.label,
+    sub:   (r) => `id: ${r.key}`,
+    fields: [
+      { name: "label", label: "Tab name (rename this freely)", type: "text",
+        required: true, placeholder: "Draft Rules" },
+      { name: "key",   label: "Permanent id — do not change once rules use it",
+        type: "text", required: true, placeholder: "draft" },
+      { name: "sort_order", label: "Tab order", type: "number", default: 10 },
     ],
   },
   {
@@ -169,20 +183,28 @@ function passwordField(id, placeholder, autocomplete) {
     </div>`;
 }
 
-/** Wire every eye button inside a container. */
+/**
+ * Wire every eye button inside a container.
+ *
+ * Bound to each button rather than delegated from `root`, because `root`
+ * is #view, which survives re-renders - render() runs again on sign-in and
+ * sign-out, so a delegated listener stacked up and fired twice per click,
+ * flipping the field text -> password -> text and appearing to do nothing.
+ * The buttons themselves are rebuilt every render, so they cannot double up.
+ */
 function wireEyes(root) {
-  root.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-eye]");
-    if (!btn) return;
+  root.querySelectorAll("button[data-eye]").forEach((btn) => {
     const input = root.querySelector("#" + btn.dataset.eye);
     if (!input) return;
 
-    const showing = input.type === "text";
-    input.type = showing ? "password" : "text";
-    btn.classList.toggle("on", !showing);
-    btn.querySelector(".eye-slash").classList.toggle("hidden", showing);
-    btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-    input.focus();
+    btn.addEventListener("click", () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.classList.toggle("on", show);
+      btn.querySelector(".eye-slash").classList.toggle("hidden", !show);
+      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+      input.focus();
+    });
   });
 }
 

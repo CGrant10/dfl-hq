@@ -118,14 +118,19 @@ async function fillOptionsFrom(fields) {
   for (const f of fields) {
     if (!f.optionsFrom) continue;
     const { table, value, label, order } = f.optionsFrom;
-    const rows = await selectAll(table, { order: order || label, asc: true });
-    f.options = rows.map((r) => ({
-      value: r[value],
-      label: r[label] || r[value],
-    }));
-    if (!f.options.length) {
-      f.options = [{ value: "", label: "— nothing synced yet —" }];
+
+    let rows = [];
+    try {
+      rows = await selectAll(table, { order: order || label, asc: true });
+    } catch {
+      // A missing table should not take the whole form down - the rest of
+      // the fields still work, and the placeholder says what to do.
+      f.options = [{ value: "", label: `— ${table} not set up yet —` }];
+      continue;
     }
+
+    f.options = rows.map((r) => ({ value: r[value], label: r[label] || r[value] }));
+    if (!f.options.length) f.options = [{ value: "", label: "— nothing to choose yet —" }];
   }
 }
 

@@ -118,12 +118,32 @@ export function applyTheme(teamValue) {
   root.style.setProperty("--accent-dim", dim);
   root.style.setProperty("--on-accent", onAccent);
 
+  // The secondary colour is always defined so components can rely on it.
+  // Without a team it mirrors the accent, which makes every two-colour
+  // gradient collapse gracefully into a single-colour one.
+  let second = accent;
   if (team) {
     const secondRgb = readable(team.secondary);
-    root.style.setProperty("--accent-2", toHex(secondRgb));
-  } else {
-    root.style.removeProperty("--accent-2");
+    // If a team's two colours land on nearly the same shade (plenty of
+    // teams are "navy and slightly different navy"), nudge the second one
+    // so gradients using both still read as two colours.
+    second = Math.abs(luminance(secondRgb) - luminance(accentRgb)) < 0.06
+      ? toHex(mix(secondRgb, [255, 255, 255], 0.35))
+      : toHex(secondRgb);
   }
+  root.style.setProperty("--accent-2", second);
+}
+
+/** The raw pair for a team, corrected for readability. Used by profiles. */
+export function teamColors(teamValue) {
+  const team = findTeam(teamValue);
+  if (!team) return null;
+  return {
+    name: team.name,
+    leagueLabel: team.leagueLabel,
+    primary: toHex(readable(team.primary)),
+    secondary: toHex(readable(team.secondary)),
+  };
 }
 
 /** Remember the choice on this device so there is no flash on next load. */
