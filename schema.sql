@@ -257,9 +257,25 @@ create policy "admin write"   on public.side_event_signups for all using (public
 -- 4. SET YOUR ADMIN PASSWORD  <-- EDIT THIS LINE
 -- =====================================================================
 
-insert into public.app_admin (id, password_hash)
-values (1, extensions.crypt('CHANGE-ME-ADMIN-PASSWORD', extensions.gen_salt('bf')))
-on conflict (id) do nothing;
+-- Put your password on the marked line. Running this file ALWAYS sets the
+-- password to whatever is on that line, so re-running the file with a new
+-- password does change it. If you leave the placeholder in, the script stops
+-- with an error instead of quietly leaving a publicly-known password in place.
+
+do $$
+declare
+  new_password text := 'CHANGE-ME-ADMIN-PASSWORD';   -- <<< EDIT THIS
+begin
+  if new_password = 'CHANGE-ME-ADMIN-PASSWORD' or length(new_password) < 6 then
+    raise exception
+      'Set a real admin password in schema.sql (at least 6 characters) before running it.';
+  end if;
+
+  insert into public.app_admin (id, password_hash)
+  values (1, extensions.crypt(new_password, extensions.gen_salt('bf')))
+  on conflict (id) do update set password_hash = excluded.password_hash;
+end;
+$$;
 
 -- To change it later, either use the Admin page inside the app, or run:
 --   update public.app_admin

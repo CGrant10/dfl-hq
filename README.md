@@ -55,14 +55,20 @@ dfl_hq/
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the dashboard open **SQL Editor → New query**.
 3. Paste in all of `schema.sql`.
-4. Find this line near the bottom and change the password:
+4. Find this line near the bottom and put your real password in it:
 
    ```sql
-   values (1, extensions.crypt('CHANGE-ME-ADMIN-PASSWORD', extensions.gen_salt('bf')))
+   new_password text := 'CHANGE-ME-ADMIN-PASSWORD';   -- <<< EDIT THIS
    ```
+
+   If you leave the placeholder, the script deliberately stops with an error
+   rather than leaving a password that is published in this repo.
 
 5. Press **Run**. It creates all the tables, the security rules, and a few
    starter league rules you can delete later.
+
+Re-running the whole file later is safe, and it **does** reset the admin
+password to whatever is on that line.
 
 ### Where the Supabase keys go
 
