@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>DFL HQ</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DFL HQ">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ Header ============ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">DFL</span>
+      <span class="brand-text">HQ</span>
+    </div>
+    <button id="whoami" class="whoami" type="button" title="Change your league name">
+      <span id="whoami-name">…</span>
+    </button>
+  </div>
+</header>
+
+<!-- ============ Page content ============ -->
+<main id="view" class="view" aria-live="polite"></main>
+
+<!-- ============ Bottom navigation ============ -->
+<nav class="tabbar" id="tabbar">
+  <a href="#/home"     data-route="home">     <span class="ico">🏠</span><span>Home</span></a>
+  <a href="#/rules"    data-route="rules">    <span class="ico">📗</span><span>Rules</span></a>
+  <a href="#/keepers"  data-route="keepers">  <span class="ico">🔒</span><span>Keepers</span></a>
+  <a href="#/polls"    data-route="polls">    <span class="ico">🗳️</span><span>Polls</span></a>
+  <a href="#/calendar" data-route="calendar"> <span class="ico">📅</span><span>Calendar</span></a>
+  <a href="#/history"  data-route="history">  <span class="ico">🏆</span><span>History</span></a>
+  <a href="#/admin"    data-route="admin">    <span class="ico">⚙️</span><span>Admin</span></a>
+</nav>
+
+<!-- ============ Welcome / name prompt ============ -->
+<div id="welcome" class="overlay hidden">
+  <form class="overlay-card" id="welcome-form">
+    <h2>Welcome to DFL HQ</h2>
+    <p class="muted">What is your league name?</p>
+    <input id="welcome-input" type="text" maxlength="30" placeholder="Slaw" autocomplete="off" required>
+    <div class="row-end">
+      <button type="button" class="btn ghost hidden" id="welcome-cancel">Cancel</button>
+      <button type="submit" class="btn">Save</button>
+    </div>
+    <p class="muted tiny">Saved on this device only. No password, no account.</p>
+  </form>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
