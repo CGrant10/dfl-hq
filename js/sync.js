@@ -78,6 +78,8 @@ export async function syncSleeper(leagueId, log = () => {}) {
   }
   seasons.reverse();   // report newest first
 
+  await refreshMemberTeamNames(log);
+
   await db().from("sleeper_config").update({
     sleeper_league_id: String(leagueId).trim(),
     last_synced_at:    new Date().toISOString(),
@@ -86,6 +88,57 @@ export async function syncSleeper(leagueId, log = () => {}) {
 
   log(`Done. ${counts.seasons} season(s) synced.`);
   return { seasons, counts };
+}
+
+/**
+ * Bring member profiles back in step with Sleeper's current team names.
+ *
+ * members.team_name was originally seeded from sleeper_users, which at the
+ * time held the OLDEST season's name. Fixing the sync alone does not undo
+ * that: the profile shows the member row, so it would keep displaying a
+ * 2019 team forever.
+ *
+ * A name is only replaced when it is blank, or when it matches a team name
+ * this owner used in some earlier season - i.e. it is stale imported data.
+ * A name an admin typed by hand matches nothing historical and is left
+ * alone, so custom names are never clobbered by a sync.
+ */
+async function refreshMemberTeamNames(log) {
+  const [membersRes, usersRes, rostersRes] = await Promise.all([
+    db().from("members").select("id, display_name, team_name, sleeper_user_id"),
+    db().from("sleeper_users").select("sleeper_user_id, team_name"),
+    db().from("sleeper_rosters").select("sleeper_user_id, team_name"),
+  ]);
+
+  if (membersRes.error || usersRes.error) return;   // members table is optional
+
+  const currentName = new Map(
+    (usersRes.data || []).map((u) => [u.sleeper_user_id, u.team_name || ""]));
+
+  // every name each owner has ever used, to spot stale imported values
+  const usedBefore = new Map();
+  for (const r of rostersRes.data || []) {
+    if (!r.sleeper_user_id || !r.team_name) continue;
+    if (!usedBefore.has(r.sleeper_user_id)) usedBefore.set(r.sleeper_user_id, new Set());
+    usedBefore.get(r.sleeper_user_id).add(r.team_name);
+  }
+
+  let changed = 0;
+  for (const m of membersRes.data || []) {
+    if (!m.sleeper_user_id) continue;
+
+    const current = currentName.get(m.sleeper_user_id);
+    if (!current || current === m.team_name) continue;
+
+    const stale = !m.team_name || (usedBefore.get(m.sleeper_user_id)?.has(m.team_name) ?? false);
+    if (!stale) continue;                      // admin typed it: leave it
+
+    const { error } = await db().from("members")
+      .update({ team_name: current }).eq("id", m.id);
+    if (!error) changed++;
+  }
+
+  if (changed) log(`Updated ${changed} member team name(s) to the current season.`);
 }
 
 // ---------------------------------------------------------------------
