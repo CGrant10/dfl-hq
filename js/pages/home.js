@@ -30,8 +30,11 @@ export async function render(view) {
   const name = getUsername();
 
   view.innerHTML = `
-    <h1>League Headquarters</h1>
-    <p class="muted" style="margin-top:-8px">
+    <div class="hero">
+      <img src="icons/logo-256.png" alt="DFL league crest" width="256" height="256">
+    </div>
+    <h1 class="center">League Headquarters</h1>
+    <p class="muted center" style="margin-top:-8px">
       ${name ? `Good to see you, <strong>${esc(name)}</strong>.` : "Rules, polls, keepers and league history."}
       Sleeper still runs the scoring.
     </p>

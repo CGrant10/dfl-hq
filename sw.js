@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.1.0";
+const CACHE_NAME = "dfl-hq-v1.1.1";
 
 const APP_SHELL = [
   "./",
@@ -39,6 +39,8 @@ const APP_SHELL = [
   "./js/pages/admin_sleeper.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/logo-64.png",
+  "./icons/logo-256.png",
 ];
 
 self.addEventListener("install", (event) => {
