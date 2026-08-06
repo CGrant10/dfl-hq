@@ -11,8 +11,9 @@
   --line:        #263041;   /* borders                */
   --text:        #e8edf5;
   --muted:       #8b98ab;
-  --accent:      #2fbf5f;   /* field green            */
+  --accent:      #2fbf5f;   /* field green - overridden by the team theme */
   --accent-dim:  #1d7a3d;
+  --on-accent:   #06240f;   /* text drawn on top of the accent            */
   --chalk:       #f5f7fa;   /* yard-line white        */
   --warn:        #f0a742;
   --danger:      #e0574a;
@@ -22,6 +23,32 @@
 }
 
 * { box-sizing: border-box; }
+
+/* ---------------------------------------------------------------------
+   Native app feel
+   * no blue flash when tapping
+   * no long-press "select text" / share callout on chrome and labels
+   * taps register immediately instead of waiting for a double-tap zoom
+   Text you might genuinely want to copy stays selectable further down.
+   ------------------------------------------------------------------- */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
+
+body,
+button, a, label, th, .pill, .stat, .tabs, .tabbar, .card-title, .brand {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ...but real content is still selectable */
+.card-body, .tbl td, p, h1, h2, h3, input, textarea, select, .synclog {
+  -webkit-user-select: text;
+  user-select: text;
+}
 
 html, body {
   margin: 0;
@@ -162,15 +189,18 @@ h3 { font-size: 15px; margin: 0 0 6px; }
 
 .btn {
   background: var(--accent);
-  color: #06240f;
+  color: var(--on-accent);
   border: none;
   border-radius: 10px;
   padding: 11px 16px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  transition: transform .12s ease, filter .12s ease, background .12s ease;
 }
-.btn:hover   { background: #37d06c; }
+.btn:hover   { filter: brightness(1.08); }
+/* the press itself is the feedback, now that the blue flash is gone */
+.btn:active  { transform: scale(.96); filter: brightness(.92); }
 .btn:disabled{ opacity: .5; cursor: default; }
 .btn.ghost   { background: transparent; color: var(--text); border: 1px solid var(--line); }
 .btn.ghost:hover { background: var(--bg-3); }
@@ -231,7 +261,9 @@ textarea { min-height: 96px; resize: vertical; }
   white-space: nowrap;
   cursor: pointer;
 }
-.tabs button.on { background: var(--accent); border-color: var(--accent); color: #06240f; }
+.tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.tabs button { transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.tabs button:active { transform: scale(.96); }
 
 /* second level of tabs, e.g. inside Admin -> Finances */
 .subtabs button { font-size: 12px; padding: 5px 11px; }
@@ -406,6 +438,165 @@ textarea { min-height: 96px; resize: vertical; }
   max-width: 90vw;
 }
 .toast.bad { background: #3a1714; border-color: #6b2b23; }
+
+/* ========================= motion ==================================== */
+
+/* Each page slides up as it appears, the way a native screen does. */
+@keyframes pageIn {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.page-in { animation: pageIn .24s cubic-bezier(.22, .61, .36, 1) both; }
+
+/* Cards stagger in slightly behind the page, so it reads as one motion
+   rather than everything snapping at once. */
+@keyframes cardIn {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.page-in > .card,
+.page-in > div > .card {
+  animation: cardIn .26s cubic-bezier(.22, .61, .36, 1) both;
+}
+.page-in > .card:nth-child(2),  .page-in > div > .card:nth-child(2)  { animation-delay: .03s; }
+.page-in > .card:nth-child(3),  .page-in > div > .card:nth-child(3)  { animation-delay: .06s; }
+.page-in > .card:nth-child(4),  .page-in > div > .card:nth-child(4)  { animation-delay: .09s; }
+.page-in > .card:nth-child(5),  .page-in > div > .card:nth-child(5)  { animation-delay: .12s; }
+.page-in > .card:nth-child(n+6),.page-in > div > .card:nth-child(n+6){ animation-delay: .14s; }
+
+/* Anything tappable gets a small, quick press response. */
+.card, .option, .quicknav a, .memberbtn, .chip, .tabbar a {
+  transition: transform .13s ease, background .15s ease, border-color .15s ease;
+}
+.option:active, .quicknav a:active, .memberbtn:active, .chip:active { transform: scale(.975); }
+.tabbar a:active { transform: scale(.9); }
+
+/* Overlay comes up rather than blinking on. */
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheetIn {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+.overlay:not(.hidden)      { animation: overlayIn .18s ease both; }
+.overlay:not(.hidden) .overlay-card { animation: sheetIn .26s cubic-bezier(.22,.61,.36,1) both; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.toast:not(.hidden) { animation: toastIn .2s ease both; }
+
+/* Anyone who has asked their phone to calm down gets no animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* ====================== members and profile ========================== */
+
+.memberlist {
+  display: grid;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+  margin: 12px 0 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.memberbtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.memberbtn:hover { border-color: var(--accent-dim); }
+.memberbtn.on    { border-color: var(--accent); }
+.memberbtn-text  { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+
+.avatar {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: none;
+}
+.avatar.sm { width: 34px; height: 34px; font-size: 13px; }
+
+.profile-head { display: flex; align-items: flex-start; gap: 14px; }
+
+ul.tidy { margin: 6px 0 0; padding-left: 18px; }
+ul.tidy li { margin-bottom: 4px; }
+
+.chiprow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.chip {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 13px;
+  color: var(--text);
+  text-decoration: none;
+}
+.chip:hover { border-color: var(--accent-dim); }
+
+.checkrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.checkrow:last-child { border-bottom: none; }
+.checkrow input { width: auto; flex: none; }
+
+/* --------------------------- password eye ---------------------------- */
+
+.pwwrap { position: relative; }
+.pwwrap input { padding-right: 46px; }
+.pweye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px; height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.pweye svg { width: 20px; height: 20px; }
+.pweye:hover { color: var(--text); }
+.pweye.on    { color: var(--accent); }
 
 /* ------------------------- install banner ---------------------------- */
 

@@ -43,7 +43,7 @@ export async function render(view) {
       ${[
         ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"],
         ["calendar", "Calendar"], ["history", "History"], ["owners", "Owners"],
-        ["finances", "Finances"], ["admin", "Admin"],
+        ["finances", "Finances"], ["profile", "Profile"], ["admin", "Admin"],
       ].map(([route, label]) => `
         <a href="#/${route}">
           <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>${label}

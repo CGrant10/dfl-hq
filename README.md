@@ -19,6 +19,7 @@ dfl_hq/
 ├── schema.sql               run this once in Supabase
 ├── sleeper_schema.sql       Sleeper tables (additive, run once)
 ├── finance_schema.sql       League Finances tables (additive, run once)
+├── members_schema.sql       member profiles + Sleeper hidden flag (run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -27,6 +28,9 @@ dfl_hq/
     ├── config.js            ← YOUR SUPABASE URL + ANON KEY GO HERE
     ├── supabase.js          database client + admin client + query helpers
     ├── install.js           "Add to Home Screen" prompt (Android + iOS help)
+    ├── members.js           who is using this device
+    ├── teams.js             162 team colours for the personal theme
+    ├── theme.js             applies a team's colours, safely, to the accent
     ├── store.js             localStorage: league name, remembered admin password
     ├── ui.js                small helpers (escaping, dates, toasts, grouping)
     ├── crud.js              reusable "manage a table" widget for the Admin page
@@ -345,6 +349,72 @@ the finance table matches the owner profile.
 table used on the Calendar page. Calendar side events are about **who is
 playing** (sign-ups); finance competitions are about **the money**. If you would
 rather have one combined thing, they can be merged later.
+
+---
+
+## 4d. Member profiles
+
+No accounts, no passwords. Opening the app asks **"Who are you?"** and shows the
+league roster. Tapping a name remembers it on that device.
+
+### Setup
+
+Run **`members_schema.sql`** in the Supabase SQL editor. It:
+
+- adds a `hidden` flag to `sleeper_users`
+- creates the `members` table
+- **seeds the member list from your visible Sleeper roster**, filling in joined
+  year and championship counts from the seasons already synced
+
+So after running it the picker is populated — no typing twelve names in.
+
+If the members table is empty, the app quietly falls back to typing a free-text
+name, so a fresh install is never locked out.
+
+### Hiding people a sync drags in
+
+A synced league usually contains people who are not current members. Deleting
+them is pointless — the next sync brings them back — so every Sleeper account
+carries a `hidden` flag instead.
+
+**Anyone new that a future sync finds starts hidden.** Nothing appears on Owners
+or in the member picker until an admin ticks them at **Admin → Sleeper → Who
+shows up**. Running the schema hides `Eadycloud15` and `braves236` and leaves
+your twelve current members visible.
+
+### The profile page
+
+Reached from the name chip in the header, or `#/profile`. It shows the
+hand-written profile alongside everything else the app knows: career record,
+win %, average finish, playoff appearances, titles, season-by-season history,
+keepers, and dues status. There is a placeholder card for deeper Sleeper stats.
+
+Tap any other member at the bottom to view their profile.
+
+### Team colours
+
+On your own profile, **App colour** lets you pick a team from the NFL, NBA, MLB,
+NHL or college, and the app takes its accent colour. 162 teams are included.
+
+Brand colours are not UI colours, so each one is corrected before use: anything
+too dark to read against the near-black background is lightened **in HSL**, so
+the hue survives. Blending toward white would turn Chiefs red into pink; raising
+lightness keeps it red. Text drawn on the accent flips between dark and light
+depending on brightness. Every one of the 162 teams was checked to clear a
+readable contrast floor.
+
+The choice is saved on the device. "Also save to my profile" stores it on the
+member record too, but that is an admin-write table, so for most people the
+local save is what sticks.
+
+### Feel
+
+- No blue tap-highlight box, no long-press text-selection callout on buttons and
+  chrome; real content stays selectable.
+- Pinch-to-zoom is off, so the layout does not shift under a stray thumb.
+- Pages fade and slide in, cards stagger slightly behind them, and taps scale
+  the thing you pressed.
+- All of it is disabled automatically for anyone with "reduce motion" turned on.
 
 ---
 

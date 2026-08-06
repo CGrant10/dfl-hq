@@ -30,7 +30,10 @@ export async function render(view) {
     return;
   }
 
-  const users = usersRes.data || [];
+  // Filtered here rather than in the query, so this still works if
+  // members_schema.sql (which adds the column) has not been run yet.
+  const users = (usersRes.data || []).filter((u) => u.hidden !== true);
+
   if (!users.length) {
     view.innerHTML = `<h1>Owners</h1>${empty(
       "No Sleeper data yet. An admin can pull it in from Admin → Sleeper.")}`;

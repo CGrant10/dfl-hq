@@ -7,6 +7,36 @@ import { db } from "../supabase.js";
 import { syncSleeper } from "../sync.js";
 import { esc, toast, errorBox, fmtDate } from "../ui.js";
 
+/** The show/hide checklist of everyone a sync has ever found. */
+async function renderPeople(host) {
+  const box = host.querySelector("#sl-people-list");
+  if (!box) return;
+
+  const { data, error } = await db().from("sleeper_users")
+    .select("sleeper_user_id, display_name, team_name, hidden")
+    .order("display_name", { ascending: true });
+
+  if (error) {
+    box.innerHTML = `<span class="warntext">${esc(error.message)}</span>
+      <div class="muted tiny">Run <strong>members_schema.sql</strong> to add the hidden flag.</div>`;
+    return;
+  }
+  if (!data?.length) { box.textContent = "Nobody synced yet."; return; }
+
+  const shown = data.filter((u) => !u.hidden).length;
+  box.innerHTML = `
+    <div class="muted tiny" style="margin-bottom:8px">${shown} of ${data.length} shown</div>
+    ${data.map((u) => `
+      <label class="checkrow">
+        <input type="checkbox" data-user="${esc(u.sleeper_user_id)}" ${u.hidden ? "" : "checked"}>
+        <span>
+          <strong>${esc(u.display_name)}</strong>
+          ${u.team_name ? `<span class="muted tiny"> · ${esc(u.team_name)}</span>` : ""}
+        </span>
+      </label>`).join("")}
+  `;
+}
+
 export async function renderSleeperPanel(host) {
   host.innerHTML = `<div class="empty">Loading…</div>`;
 
@@ -56,7 +86,28 @@ export async function renderSleeperPanel(host) {
       </p>
       <pre id="sl-log" class="synclog hidden"></pre>
     </div>
+
+    <div class="card" id="sl-people">
+      <div class="card-title">Who shows up</div>
+      <p class="muted tiny" style="margin-top:0">
+        Anyone new that a sync finds starts <strong>hidden</strong>. Tick the people who are
+        actually in the league — only they appear on Owners and in the member picker.
+      </p>
+      <div id="sl-people-list" class="muted tiny">Loading…</div>
+    </div>
   `;
+
+  renderPeople(host);
+
+  // ---- show / hide synced people ----
+  host.querySelector("#sl-people-list").addEventListener("change", async (e) => {
+    const box = e.target.closest("input[data-user]");
+    if (!box) return;
+    const { error } = await db().from("sleeper_users")
+      .update({ hidden: !box.checked }).eq("sleeper_user_id", box.dataset.user);
+    if (error) { toast(error.message, true); box.checked = !box.checked; }
+    else       { toast(box.checked ? "Now visible" : "Hidden"); }
+  });
 
   // ---- save the league id ----
   host.querySelector("#sl-form").addEventListener("submit", async (e) => {

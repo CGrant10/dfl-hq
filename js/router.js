@@ -15,6 +15,7 @@ const routes = {
   history:  () => import("./pages/history.js"),
   owners:   () => import("./pages/owners.js"),
   finances: () => import("./pages/finances.js"),
+  profile:  () => import("./pages/profile.js"),
   admin:    () => import("./pages/admin.js"),
 };
 
@@ -43,7 +44,14 @@ export async function renderRoute() {
   } catch (err) {
     view.innerHTML = errorBox(err);
   }
+
   window.scrollTo(0, 0);
+
+  // Fade/slide the new page in. Restarting the animation needs the class
+  // removed, a forced reflow, then the class back on.
+  view.classList.remove("page-in");
+  void view.offsetWidth;
+  view.classList.add("page-in");
 }
 
 export function startRouter() {

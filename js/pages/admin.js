@@ -12,6 +12,7 @@ import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { esc, toast } from "../ui.js";
 import { CATEGORIES } from "./rules.js";
+import { teamOptions } from "../teams.js";
 
 const THIS_YEAR = new Date().getFullYear();
 
@@ -111,6 +112,30 @@ const SECTIONS = [
     ],
   },
   {
+    id: "members", tab: "Members",
+    table: "members", singular: "member", plural: "members",
+    order: "display_name", asc: true,
+    label: (r) => `${r.display_name}${r.team_name ? " — " + r.team_name : ""}`,
+    sub:   (r) => `${r.active ? "active" : "inactive"}${r.championships ? ` · ${r.championships}× champ` : ""}`,
+    fields: [
+      { name: "display_name",  label: "Name shown in the picker", type: "text", required: true },
+      { name: "team_name",     label: "Fantasy team name", type: "text" },
+      { name: "sleeper_user_id", label: "Sleeper account (links career stats)", type: "select",
+        optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
+                       label: "display_name", order: "display_name" } },
+      { name: "joined_year",   label: "Joined the league in", type: "number" },
+      { name: "championships", label: "Championships", type: "number", default: 0 },
+      { name: "awards",        label: "Awards (one per line)", type: "textarea",
+        placeholder: "Highest scorer 2025\nBest trade 2024" },
+      { name: "favorite_team", label: "Favourite team (app colour)", type: "select",
+        options: teamOptions() },
+      { name: "profile_image", label: "Profile image URL (optional)", type: "text" },
+      { name: "notes",         label: "Notes", type: "textarea" },
+      { name: "active",        label: "Show in the member picker", type: "checkbox", default: true },
+      { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
+    ],
+  },
+  {
     id: "owner_profiles", tab: "Owners",
     table: "owner_profiles", singular: "owner profile", plural: "owner profiles",
     label: (r) => r.nickname || r.team_name || r.sleeper_user_id,
@@ -135,6 +160,46 @@ const PANELS = [
 ];
 
 let activeSection = "announcements";
+
+// -------------------------------------------------------- password box
+
+/**
+ * A password input with an eye button that reveals what you typed.
+ * Phone keyboards make blind password entry genuinely annoying.
+ */
+function passwordField(id, placeholder, autocomplete) {
+  return `
+    <div class="pwwrap">
+      <input id="${id}" type="password" autocomplete="${autocomplete}"
+             ${placeholder ? `placeholder="${esc(placeholder)}"` : ""} required>
+      <button type="button" class="pweye" data-eye="${id}" aria-label="Show password">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="eye-open" d="M1.8 12S5.4 5.4 12 5.4 22.2 12 22.2 12 18.6 18.6 12 18.6 1.8 12 1.8 12z"
+                fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="eye-open" cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <path class="eye-slash hidden" d="M3.5 3.5l17 17"
+                fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>`;
+}
+
+/** Wire every eye button inside a container. */
+function wireEyes(root) {
+  root.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-eye]");
+    if (!btn) return;
+    const input = root.querySelector("#" + btn.dataset.eye);
+    if (!input) return;
+
+    const showing = input.type === "text";
+    input.type = showing ? "password" : "text";
+    btn.classList.toggle("on", !showing);
+    btn.querySelector(".eye-slash").classList.toggle("hidden", showing);
+    btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    input.focus();
+  });
+}
 
 // ---------------------------------------------------------------- page
 
@@ -164,7 +229,7 @@ export async function render(view) {
     <div class="section-head"><h2>Password</h2></div>
     <form class="card" id="pw-form">
       <label for="new-pw">New admin password</label>
-      <input id="new-pw" type="password" minlength="6" placeholder="at least 6 characters" required>
+      ${passwordField("new-pw", "at least 6 characters", "new-password")}
       <div class="row-end"><button class="btn ghost" type="submit">Change password</button></div>
       <p class="muted tiny">Everyone signed in as admin on another device will need the new password.</p>
     </form>
@@ -192,6 +257,8 @@ export async function render(view) {
     render(view);
   });
 
+  wireEyes(view);
+
   view.querySelector("#pw-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = view.querySelector("#new-pw");
@@ -213,7 +280,7 @@ function renderLogin(view) {
     <form class="card" id="login-form">
       <div class="card-title">Commissioner sign in</div>
       <label for="pw">Admin password</label>
-      <input id="pw" type="password" autocomplete="current-password" required>
+      ${passwordField("pw", "", "current-password")}
       <div class="row-end"><button class="btn" type="submit">Sign in</button></div>
       <p class="muted tiny">The password is checked by the database, and stays valid on this device until you sign out.</p>
     </form>
@@ -221,6 +288,8 @@ function renderLogin(view) {
       <div class="card-body muted">Everyone can read rules, keepers, history and events. Only an admin can change them.</div>
     </div>
   `;
+
+  wireEyes(view);
 
   view.querySelector("#login-form").addEventListener("submit", async (e) => {
     e.preventDefault();

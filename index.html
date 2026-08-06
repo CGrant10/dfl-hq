@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- user-scalable=no removes pinch to zoom, so the app does not shift around
+     the way a web page does when a thumb brushes the screen -->
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d1117">
 <title>DFL HQ</title>
 
@@ -66,6 +69,12 @@
           fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
   </symbol>
 
+  <symbol id="i-profile" viewBox="0 0 24 24">
+    <circle cx="12" cy="8.3" r="3.9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+    <path d="M4.6 20.4a7.4 7.4 0 0 1 14.8 0"
+          fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+
   <symbol id="i-finances" viewBox="0 0 24 24">
     <rect x="2.8" y="6.2" width="18.4" height="11.6" rx="2.2"
           fill="none" stroke="currentColor" stroke-width="1.7"/>
@@ -108,10 +117,9 @@
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
-      <img class="brand-logo" src="icons/logo-64.png" alt="" width="40" height="40">
       <span class="brand-text">DFL HQ</span>
     </div>
-    <button id="whoami" class="whoami" type="button" title="Change your league name">
+    <button id="whoami" class="whoami" type="button" title="Your profile">
       <span id="whoami-name">…</span>
     </button>
   </div>
@@ -133,18 +141,26 @@
   <a href="#/admin"    data-route="admin">   <svg class="ico" aria-hidden="true"><use href="#i-admin"></use></svg><span>Admin</span></a>
 </nav>
 
-<!-- ============ Welcome / name prompt ============ -->
+<!-- ============ "Who are you?" member picker ============ -->
 <div id="welcome" class="overlay hidden">
-  <form class="overlay-card" id="welcome-form">
-    <h2>Welcome to DFL HQ</h2>
-    <p class="muted">What is your league name?</p>
-    <input id="welcome-input" type="text" maxlength="30" placeholder="Slaw" autocomplete="off" required>
+  <div class="overlay-card">
+    <h2>Who are you?</h2>
+    <p class="muted">Pick your name. No password, nothing to sign up for.</p>
+
+    <div id="member-list" class="memberlist"></div>
+
+    <!-- Only used when the members table is empty -->
+    <form id="welcome-form" class="hidden">
+      <label for="welcome-input">Your league name</label>
+      <input id="welcome-input" type="text" maxlength="30" placeholder="Slaw" autocomplete="off">
+      <div class="row-end"><button type="submit" class="btn">Save</button></div>
+    </form>
+
     <div class="row-end">
       <button type="button" class="btn ghost hidden" id="welcome-cancel">Cancel</button>
-      <button type="submit" class="btn">Save</button>
     </div>
-    <p class="muted tiny">Saved on this device only. No password, no account.</p>
-  </form>
+    <p class="muted tiny">Remembered on this device. You can switch any time.</p>
+  </div>
 </div>
 
 <!-- ============ Add to home screen prompt ============ -->
