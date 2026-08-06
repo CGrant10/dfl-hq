@@ -106,7 +106,9 @@ function hero(leagues, members) {
     <section class="hero">
       <img class="hero-crest" src="icons/logo-256.png" alt="DFL league crest"
            width="256" height="256">
-      <h1 class="hero-title">DFL</h1>
+      <!-- The crest already reads "DFL", so the wordmark would just repeat
+           it. Kept as a heading for screen readers and page structure. -->
+      <h1 class="sr-only">DFL HQ</h1>
 
       <p class="hero-creed">
         Forged by sinners.<br>
