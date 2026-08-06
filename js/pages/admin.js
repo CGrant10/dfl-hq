@@ -9,6 +9,7 @@
 import { adminLogin, adminLogout, isAdmin, changeAdminPassword, configured } from "../supabase.js";
 import { renderManager } from "../crud.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
+import { renderFinancePanel } from "./admin_finance.js";
 import { esc, toast } from "../ui.js";
 import { CATEGORIES } from "./rules.js";
 
@@ -126,8 +127,12 @@ const SECTIONS = [
   },
 ];
 
-// Not a table editor, so it lives outside SECTIONS.
-const SLEEPER_TAB = { id: "sleeper", tab: "Sleeper" };
+// Custom panels rather than single-table editors, so they live outside
+// SECTIONS and get their own render function.
+const PANELS = [
+  { id: "finances", tab: "Finances", render: renderFinancePanel },
+  { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
+];
 
 let activeSection = "announcements";
 
@@ -149,7 +154,7 @@ export async function render(view) {
     </div>
 
     <div class="tabs" id="admin-tabs">
-      ${[...SECTIONS, SLEEPER_TAB].map((s) => `
+      ${[...SECTIONS, ...PANELS].map((s) => `
         <button data-section="${s.id}" class="${s.id === activeSection ? "on" : ""}">${esc(s.tab)}</button>
       `).join("")}
     </div>
@@ -167,7 +172,8 @@ export async function render(view) {
 
   const body = view.querySelector("#admin-body");
   const paint = () => {
-    if (activeSection === SLEEPER_TAB.id) return renderSleeperPanel(body);
+    const panel = PANELS.find((p) => p.id === activeSection);
+    if (panel) return panel.render(body);
     return renderManager(body, SECTIONS.find((s) => s.id === activeSection));
   };
 

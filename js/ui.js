@@ -40,6 +40,17 @@ export function fmtShort(value) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+/** "$1,200" - drops the cents unless there are any. */
+export function money(value) {
+  const n = Number(value || 0);
+  return n.toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** A grey box for "nothing here yet". */
 export function empty(message) {
   return `<div class="empty">${esc(message)}</div>`;

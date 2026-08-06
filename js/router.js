@@ -14,6 +14,7 @@ const routes = {
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
   owners:   () => import("./pages/owners.js"),
+  finances: () => import("./pages/finances.js"),
   admin:    () => import("./pages/admin.js"),
 };
 

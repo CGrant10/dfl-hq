@@ -18,6 +18,7 @@ dfl_hq/
 ├── sw.js                    service worker: offline app shell
 ├── schema.sql               run this once in Supabase
 ├── sleeper_schema.sql       Sleeper tables (additive, run once)
+├── finance_schema.sql       League Finances tables (additive, run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -40,8 +41,10 @@ dfl_hq/
         ├── calendar.js      events + side events
         ├── history.js       hall of fame
         ├── owners.js        career profiles (Sleeper + hand written)
+        ├── finances.js      dues, payouts, expenses, summary
         ├── admin.js         password gate + all the editors
-        └── admin_sleeper.js league ID, sync button, sync log
+        ├── admin_sleeper.js league ID, sync button, sync log
+        └── admin_finance.js the five finance editors
 ```
 
 **Where to make changes**
@@ -231,6 +234,65 @@ fills itself from whoever has been synced, so run a sync first.
 - **Player names** aren't in the roster data — Sleeper keeps them in a separate
   ~5MB file. The app stores player IDs and only downloads that name list if a
   screen actually needs it, then caches it for a week.
+
+---
+
+## 4c. League Finances
+
+Dues, payouts, expenses and side-competition money, one season at a time.
+Members can see everything; only an admin can change anything.
+
+### Setup
+
+Run **`finance_schema.sql`** in the Supabase SQL editor. Additive, safe to
+re-run, does not touch the admin password.
+
+### Everything is calculated, nothing is stored twice
+
+The only numbers in the database are the raw ones you type: the buy-in, each
+person's amount due and amount paid, each payout, each expense. Everything else
+is worked out when the page is drawn:
+
+| Shown | How it's worked out |
+|---|---|
+| Total prize pool | buy-in × number of teams in the dues table |
+| Remaining balance (per team) | amount due − amount paid |
+| Payment status | Paid if paid ≥ due · Partial if part-paid · Unpaid if zero |
+| Outstanding | total due − total paid |
+| Side competition pool | buy-in × players, unless you set an override |
+| **League balance** | **collected − expenses − payouts** |
+
+That means a stored total can never quietly disagree with the rows it came
+from. Mark a payment received and every figure on the page moves with it.
+
+The page also warns you when payouts exceed the prize pool, or when more money
+has been committed than collected.
+
+### Editing
+
+**Admin → Finances**, then the sub-tabs:
+
+| Sub-tab | What it edits |
+|---|---|
+| Buy-in | the per-team buy-in for a season, plus season notes |
+| Dues | one row per team: owner, team, due, paid, date, notes |
+| Payouts | any number of prize categories, with optional winner |
+| Expenses | trophy, draft food, domain, whatever |
+| Competitions | March Madness, survivor, golf pool — buy-in, players, pool, winner |
+
+Every row carries a **season**, which defaults to the current year. That is what
+keeps years apart — editing 2026 cannot touch 2025. To record an old year, just
+type the older season number.
+
+Dues rows can optionally be linked to a synced Sleeper account, so the name in
+the finance table matches the owner profile.
+
+### Note on side competitions
+
+`finance_competitions` is deliberately separate from the older `side_events`
+table used on the Calendar page. Calendar side events are about **who is
+playing** (sign-ups); finance competitions are about **the money**. If you would
+rather have one combined thing, they can be merged later.
 
 ---
 
