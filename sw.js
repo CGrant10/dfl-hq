@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.0.0";
+const CACHE_NAME = "dfl-hq-v1.0.1";
 
 const APP_SHELL = [
   "./",

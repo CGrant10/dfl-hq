@@ -12,11 +12,11 @@
 // Never put the "service_role" key in here.
 // =====================================================================
 
-export const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-export const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+export const SUPABASE_URL = "https://rqavvpdbfdrwzalikkjg.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_I14JPQNBW-fhIwZ7WkBlAg_M9zolGNL";
 
 // Shown in the header and the install prompt.
 export const LEAGUE_NAME = "DFL HQ";
 
 // Bump this when you change any file, so phones pick up the new version.
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.0.1";
