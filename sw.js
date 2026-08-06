@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.0.3";
+const CACHE_NAME = "dfl-hq-v1.1.0";
 
 const APP_SHELL = [
   "./",
@@ -26,13 +26,17 @@ const APP_SHELL = [
   "./js/supabase.js",
   "./js/ui.js",
   "./js/crud.js",
+  "./js/sleeper.js",
+  "./js/sync.js",
   "./js/pages/home.js",
   "./js/pages/rules.js",
   "./js/pages/keepers.js",
   "./js/pages/polls.js",
   "./js/pages/calendar.js",
   "./js/pages/history.js",
+  "./js/pages/owners.js",
   "./js/pages/admin.js",
+  "./js/pages/admin_sleeper.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
 ];
@@ -63,6 +67,10 @@ self.addEventListener("fetch", (event) => {
 
   // Never cache league data - always talk to Supabase directly.
   if (url.hostname.endsWith("supabase.co")) return;
+
+  // Sleeper is handled by the app itself (sleeper.js caches the big player
+  // list on its own terms), so let those requests go straight through.
+  if (url.hostname.endsWith("sleeper.app")) return;
 
   event.respondWith(
     fetch(request)

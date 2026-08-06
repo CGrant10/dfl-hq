@@ -39,7 +39,7 @@ export async function render(view) {
     <nav class="quicknav" style="margin:18px 0 6px">
       ${[
         ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"],
-        ["calendar", "Calendar"], ["history", "History"], ["admin", "Admin"],
+        ["calendar", "Calendar"], ["history", "History"], ["owners", "Owners"],
       ].map(([route, label]) => `
         <a href="#/${route}">
           <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>${label}

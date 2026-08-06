@@ -17,6 +17,7 @@ dfl_hq/
 ├── manifest.webmanifest     name, icons, colours for "Add to Home Screen"
 ├── sw.js                    service worker: offline app shell
 ├── schema.sql               run this once in Supabase
+├── sleeper_schema.sql       Sleeper tables (additive, run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -27,6 +28,8 @@ dfl_hq/
     ├── store.js             localStorage: league name, remembered admin password
     ├── ui.js                small helpers (escaping, dates, toasts, grouping)
     ├── crud.js              reusable "manage a table" widget for the Admin page
+    ├── sleeper.js           read-only Sleeper API wrapper + player name cache
+    ├── sync.js              pulls Sleeper data into Supabase (admin only)
     ├── router.js            hash router (#/home, #/rules, …)
     ├── app.js               start-up: name prompt, admin restore, service worker
     └── pages/
@@ -36,7 +39,9 @@ dfl_hq/
         ├── polls.js         voting + results
         ├── calendar.js      events + side events
         ├── history.js       hall of fame
-        └── admin.js         password gate + all the editors
+        ├── owners.js        career profiles (Sleeper + hand written)
+        ├── admin.js         password gate + all the editors
+        └── admin_sleeper.js league ID, sync button, sync log
 ```
 
 **Where to make changes**
@@ -160,6 +165,72 @@ it up instead of serving the cached copy:
 
 Then commit and push. The new service worker installs on next open, clears the
 old cache, and the app refreshes with the new files.
+
+---
+
+## 4b. Sleeper integration
+
+DFL HQ does **not** replace Sleeper. Sleeper still runs scoring, rosters and
+matchups. This pulls a read-only copy of the league's numbers so the app can
+show career records, owner profiles and season history.
+
+### One-time setup
+
+1. Run **`sleeper_schema.sql`** in the Supabase SQL editor. It is additive — it
+   only adds new tables and will *not* reset your admin password.
+2. Find your Sleeper league ID. Open the league on sleeper.app in a browser; the
+   long number in the address bar is it:
+   `sleeper.app/leagues/`**`1048291837465738240`**`/team`
+3. In the app: **Admin → Sleeper**, paste the ID, **Save league ID**, then press
+   **Sync Sleeper Data**.
+
+Use the ID for the **current** season. Sleeper makes a new league every year and
+links back to the previous one, so the sync walks that chain automatically and
+picks up every past season in one go.
+
+### What gets pulled
+
+| Table | Contents |
+|---|---|
+| `sleeper_leagues` | one row per season: name, scoring settings, playoff spots, champion, runner up |
+| `sleeper_users` | Sleeper user ID, username, display name, team name |
+| `sleeper_rosters` | players and starting lineup, per season |
+| `sleeper_standings` | wins, losses, ties, points for/against, final rank, made playoffs |
+| `sleeper_matchups` | week by week: both teams, both scores, winner |
+| `sleeper_transactions` | trades, waivers and free agent pickups |
+| `owner_profiles` | **hand written**: nickname, team name, league notes |
+
+### History is never overwritten
+
+Every table is keyed by season (and week where it matters) and written with an
+upsert. Re-syncing the current season updates this year's rows and physically
+cannot touch a previous year. Run the sync as often as you like.
+
+### Owner profiles
+
+The **Owners** page merges the two halves:
+
+- from Sleeper — career record, win %, total points, average finish, playoff
+  appearances, championships
+- from `owner_profiles` — nickname, team name, and whatever notes you write
+
+Edit the hand-written half at **Admin → Owners**. The Sleeper account dropdown
+fills itself from whoever has been synced, so run a sync first.
+
+### Notes and limits
+
+- **Only an admin can sync.** The sync runs in your browser and writes with the
+  admin client, so the same RLS rules apply — a normal visitor calling the API
+  directly is refused.
+- **Average finish** uses the regular-season standings order (record, then points
+  for), which is Sleeper's own tiebreaker. Championships come from the actual
+  playoff bracket, not from the standings.
+- **Unplayed weeks are skipped**, so future weeks don't get stored as 0–0.
+- **Failed waiver claims are ignored**; everything else is kept with the full
+  Sleeper payload in `details`.
+- **Player names** aren't in the roster data — Sleeper keeps them in a separate
+  ~5MB file. The app stores player IDs and only downloads that name list if a
+  screen actually needs it, then caches it for a week.
 
 ---
 

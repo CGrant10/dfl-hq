@@ -8,6 +8,7 @@
 
 import { adminLogin, adminLogout, isAdmin, changeAdminPassword, configured } from "../supabase.js";
 import { renderManager } from "../crud.js";
+import { renderSleeperPanel } from "./admin_sleeper.js";
 import { esc, toast } from "../ui.js";
 import { CATEGORIES } from "./rules.js";
 
@@ -108,7 +109,25 @@ const SECTIONS = [
       { name: "link",        label: "Link (optional)", type: "text", placeholder: "https://…" },
     ],
   },
+  {
+    id: "owner_profiles", tab: "Owners",
+    table: "owner_profiles", singular: "owner profile", plural: "owner profiles",
+    label: (r) => r.nickname || r.team_name || r.sleeper_user_id,
+    sub:   (r) => (r.notes || "").slice(0, 90),
+    fields: [
+      { name: "sleeper_user_id", label: "Sleeper account", type: "select", required: true,
+        optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
+                       label: "display_name", order: "display_name" } },
+      { name: "nickname",  label: "Nickname",  type: "text", placeholder: "Slaw" },
+      { name: "team_name", label: "Team name", type: "text", placeholder: "Slaw Squad" },
+      { name: "notes",     label: "League notes / awards", type: "textarea",
+        placeholder: "Two-time champ. Still hasn't paid for 2024." },
+    ],
+  },
 ];
+
+// Not a table editor, so it lives outside SECTIONS.
+const SLEEPER_TAB = { id: "sleeper", tab: "Sleeper" };
 
 let activeSection = "announcements";
 
@@ -130,7 +149,7 @@ export async function render(view) {
     </div>
 
     <div class="tabs" id="admin-tabs">
-      ${SECTIONS.map((s) => `
+      ${[...SECTIONS, SLEEPER_TAB].map((s) => `
         <button data-section="${s.id}" class="${s.id === activeSection ? "on" : ""}">${esc(s.tab)}</button>
       `).join("")}
     </div>
@@ -147,7 +166,10 @@ export async function render(view) {
   `;
 
   const body = view.querySelector("#admin-body");
-  const paint = () => renderManager(body, SECTIONS.find((s) => s.id === activeSection));
+  const paint = () => {
+    if (activeSection === SLEEPER_TAB.id) return renderSleeperPanel(body);
+    return renderManager(body, SECTIONS.find((s) => s.id === activeSection));
+  };
 
   view.querySelector("#admin-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-section]");

@@ -6,9 +6,14 @@
 // shows up in the form, the list, and the save automatically.
 //
 // Field shape:
-//   { name, label, type, options?, required?, placeholder?, default? }
+//   { name, label, type, options?, optionsFrom?, required?, placeholder?, default? }
 // Types: text | textarea | number | date | select | checkbox | list
 //   list  -> one item per line in a textarea, saved as a JSON array
+//
+// A select can take its choices from another table instead of a fixed
+// list, which is how owner profiles pick a synced Sleeper user:
+//   optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
+//                  label: "display_name", order: "display_name" }
 // =====================================================================
 
 import { selectAll, insertRow, updateRow, deleteRow } from "./supabase.js";
@@ -20,6 +25,7 @@ export async function renderManager(host, spec) {
   let rows;
   try {
     rows = await selectAll(spec.table, { order: spec.order || "created_at", asc: !!spec.asc });
+    await fillOptionsFrom(spec.fields);
   } catch (err) {
     host.innerHTML = errorBox(err);
     return;
@@ -106,6 +112,22 @@ export async function renderManager(host, spec) {
 }
 
 // ---------------------------------------------------------------- form
+
+/** Turn any optionsFrom fields into a plain options list before drawing. */
+async function fillOptionsFrom(fields) {
+  for (const f of fields) {
+    if (!f.optionsFrom) continue;
+    const { table, value, label, order } = f.optionsFrom;
+    const rows = await selectAll(table, { order: order || label, asc: true });
+    f.options = rows.map((r) => ({
+      value: r[value],
+      label: r[label] || r[value],
+    }));
+    if (!f.options.length) {
+      f.options = [{ value: "", label: "— nothing synced yet —" }];
+    }
+  }
+}
 
 function field(f) {
   const id  = `f_${f.name}`;
