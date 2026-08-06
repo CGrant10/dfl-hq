@@ -9,7 +9,16 @@ import { db, configured } from "../supabase.js";
 import { esc, empty, fmtDate, relDate, fmtShort, errorBox, toast } from "../ui.js";
 import { APP_VERSION } from "../config.js";
 import { checkForUpdate } from "../update.js";
+import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
+
+/** Where the install option lives when we cannot trigger it ourselves. */
+function installHelp() {
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return "In Safari: Share, then Add to Home Screen";
+  if (/android/i.test(ua))          return "Chrome menu (⋮), then Install app";
+  return "Chrome menu (⋮) → Cast, save and share → Install page as app";
+}
 
 export async function render(view) {
   if (!configured) { view.innerHTML = setupNotice(); return; }
@@ -53,8 +62,18 @@ export async function render(view) {
     <p class="version-line">
       DFL HQ v${esc(APP_VERSION)} ·
       <button class="linkbtn" id="check-update">Check for updates</button>
+      ${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}
     </p>
   `;
+
+  view.querySelector("#install-app")?.addEventListener("click", async () => {
+    const outcome = await promptInstall();
+    if (outcome === "unavailable") {
+      // Chrome only offers its dialog once per page load, and iOS has no
+      // API at all, so fall back to telling people where the option lives.
+      toast(installHelp(), true);
+    }
+  });
 
   view.querySelector("#check-update").addEventListener("click", async (e) => {
     const btn = e.target;

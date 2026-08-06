@@ -16,7 +16,14 @@
 // or once the user dismisses it.
 // =====================================================================
 
-const DISMISSED = "dfl.installDismissed";
+// Only a MANUAL dismissal is remembered, and only for a while.
+//
+// This used to be a permanent flag that was also set when the app was
+// installed. Uninstalling does not clear localStorage, so anyone who
+// installed once and later removed the app could never get the button
+// back. Installing is now tracked by isInstalled() alone.
+const SNOOZED_UNTIL = "dfl.installSnoozedUntil";
+const SNOOZE_DAYS = 14;
 
 /** True when the app is already running from the home screen. */
 export function isInstalled() {
@@ -35,13 +42,36 @@ function isSafari() {
   return /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(navigator.userAgent);
 }
 
-export function setupInstall() {
-  if (isInstalled() || localStorage.getItem(DISMISSED)) return;
+/** True while a manual "not now" is still in effect. */
+function snoozed() {
+  const until = Number(localStorage.getItem(SNOOZED_UNTIL) || 0);
+  return Date.now() < until;
+}
 
+// Chrome hands us the install prompt once. Keep it so a manual
+// "Install app" tap can use it later, not just the banner.
+let deferred = null;
+
+/** Can we trigger Chrome's install dialog right now? */
+export function canPrompt() {
+  return !!deferred;
+}
+
+/**
+ * Fire the browser's install dialog.
+ * @returns {Promise<"accepted"|"dismissed"|"unavailable">}
+ */
+export async function promptInstall() {
+  if (!deferred) return "unavailable";
+  deferred.prompt();
+  const { outcome } = await deferred.userChoice;
+  deferred = null;
+  return outcome;
+}
+
+export function setupInstall() {
   const bar = document.getElementById("install");
   if (!bar) return;
-
-  let deferred = null;
 
   const show = (html) => {
     bar.innerHTML = html;
@@ -50,43 +80,43 @@ export function setupInstall() {
 
   const hide = (remember) => {
     bar.classList.add("hidden");
-    if (remember) localStorage.setItem(DISMISSED, "1");
+    if (remember) {
+      localStorage.setItem(SNOOZED_UNTIL, String(Date.now() + SNOOZE_DAYS * 864e5));
+    }
   };
 
   // ---- Android / Chrome / Edge -------------------------------------
+  // This fires whenever the app is installable, which also means it is
+  // NOT currently installed. So it is the right moment to offer the
+  // button again, even to someone who installed and later removed it.
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();                 // suppress the browser's own bar
     deferred = e;
+    if (isInstalled() || snoozed()) return;
     show(`
       <span class="install-text">Install DFL HQ for full screen and faster loading.</span>
       <button class="btn small" id="install-go">Install</button>
-      <button class="install-x" id="install-no" aria-label="Dismiss">&times;</button>
+      <button class="install-x" id="install-no" aria-label="Not now">&times;</button>
     `);
   });
 
   // ---- iPhone / iPad Safari ----------------------------------------
-  if (isIos() && isSafari()) {
+  if (isIos() && isSafari() && !isInstalled() && !snoozed()) {
     show(`
       <span class="install-text">
         Add to your home screen: tap <strong>Share</strong>, then
         <strong>Add to Home Screen</strong>.
       </span>
-      <button class="install-x" id="install-no" aria-label="Dismiss">&times;</button>
+      <button class="install-x" id="install-no" aria-label="Not now">&times;</button>
     `);
   }
 
   bar.addEventListener("click", async (e) => {
     if (e.target.closest("#install-no")) { hide(true); return; }
-
-    if (e.target.closest("#install-go") && deferred) {
-      hide(false);
-      deferred.prompt();
-      const { outcome } = await deferred.userChoice;
-      if (outcome === "accepted") localStorage.setItem(DISMISSED, "1");
-      deferred = null;
-    }
+    if (e.target.closest("#install-go")) { hide(false); await promptInstall(); }
   });
 
-  // Installed while the page was open - never nag again.
-  window.addEventListener("appinstalled", () => hide(true));
+  // Installed while the page was open: just hide it. Nothing is stored,
+  // so removing the app later brings the offer straight back.
+  window.addEventListener("appinstalled", () => hide(false));
 }
