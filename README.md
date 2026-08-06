@@ -16,6 +16,7 @@ dfl_hq/
 ├── index.html               app shell: header, page container, tab bar
 ├── manifest.json            name, icons, colours, shortcuts for install
 ├── sw.js                    service worker: offline app shell
+├── version.txt              current version; drives the update button
 ├── schema.sql               run this once in Supabase
 ├── sleeper_schema.sql       Sleeper tables (additive, run once)
 ├── finance_schema.sql       League Finances tables (additive, run once)
@@ -215,14 +216,28 @@ Two layout behaviours worth knowing:
 
 ### Publishing an update
 
-Whenever you change a file, bump the version in **two** places so phones pick
-it up instead of serving the cached copy:
+Whenever you change a file, bump the version in **all three** places. They must
+match exactly or the in-app update button misfires:
 
 1. `APP_VERSION` in `js/config.js`
 2. `CACHE_NAME` in `sw.js`
+3. `version.txt` at the project root
 
-Then commit and push. The new service worker installs on next open, clears the
-old cache, and the app refreshes with the new files.
+Then commit and push.
+
+### The update button
+
+The app compares its own `APP_VERSION` against `version.txt` on the server:
+
+- on start-up, and again every time the app is brought back to the foreground
+- when anyone taps **Check for updates** at the bottom of the dashboard
+
+If the server is ahead, a bar appears with an **Update** button. Pressing it
+unregisters the service worker, deletes every cache, and reloads with a
+cache-buster — while keeping you on the page you were looking at.
+
+`version.txt` is deliberately excluded from the service worker cache. Caching
+the file whose job is to detect a stale cache would defeat the point.
 
 ---
 

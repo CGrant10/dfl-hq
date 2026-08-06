@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.4.1";
+const CACHE_NAME = "dfl-hq-v1.4.2";
 
 const APP_SHELL = [
   "./",
@@ -22,6 +22,7 @@ const APP_SHELL = [
   "./js/config.js",
   "./js/app.js",
   "./js/install.js",
+  "./js/update.js",
   "./js/members.js",
   "./js/teams.js",
   "./js/theme.js",
@@ -79,6 +80,10 @@ self.addEventListener("fetch", (event) => {
   // Sleeper is handled by the app itself (sleeper.js caches the big player
   // list on its own terms), so let those requests go straight through.
   if (url.hostname.endsWith("sleeper.app")) return;
+
+  // version.txt is how the app spots a stale cache. Caching it here would
+  // be self-defeating, so it always goes to the network.
+  if (url.pathname.endsWith("/version.txt")) return;
 
   event.respondWith(
     fetch(request)

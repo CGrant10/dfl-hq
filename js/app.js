@@ -9,6 +9,7 @@ import { loadMembers, restoreMember, selectMember, currentMember, getMemberId } 
 import { initTheme, saveTheme, savedTheme } from "./theme.js";
 import { startRouter, renderRoute, go } from "./router.js";
 import { setupInstall } from "./install.js";
+import { setupUpdates } from "./update.js";
 import { esc, toast } from "./ui.js";
 
 const welcome     = document.getElementById("welcome");
@@ -131,6 +132,7 @@ async function boot() {
   }
 
   setupInstall();
+  setupUpdates();
 }
 
 boot();

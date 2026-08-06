@@ -3,8 +3,10 @@
 // =====================================================================
 
 import { db, configured } from "../supabase.js";
-import { esc, empty, fmtDate, relDate, fmtShort, errorBox } from "../ui.js";
+import { esc, empty, fmtDate, relDate, fmtShort, errorBox, toast } from "../ui.js";
 import { getUsername } from "../store.js";
+import { APP_VERSION } from "../config.js";
+import { checkForUpdate } from "../update.js";
 
 export async function render(view) {
   if (!configured) {
@@ -58,7 +60,27 @@ export async function render(view) {
 
     <div class="section-head"><h2>Active polls</h2><a href="#/polls">Vote →</a></div>
     ${pollList(polls.data)}
+
+    <p class="center muted tiny" style="margin:22px 0 4px">
+      DFL HQ v${esc(APP_VERSION)} ·
+      <button class="linkbtn" id="check-update">Check for updates</button>
+    </p>
   `;
+
+  view.querySelector("#check-update").addEventListener("click", async (e) => {
+    const btn = e.target;
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+    try {
+      const { stale, latest } = await checkForUpdate(true);
+      if (!stale) toast(`Up to date (v${latest})`);
+    } catch (err) {
+      toast("Could not check for updates", true);
+      console.warn(err);
+    }
+    btn.disabled = false;
+    btn.textContent = "Check for updates";
+  });
 }
 
 function eventList(rows) {

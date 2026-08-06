@@ -617,6 +617,20 @@ ul.tidy li { margin-bottom: 4px; }
   box-shadow: var(--shadow);
 }
 .install-text { flex: 1; font-size: 13px; line-height: 1.35; }
+
+/* the update bar sits above the install bar if both ever show at once */
+.install.update { bottom: calc(146px + env(safe-area-inset-bottom)); border-color: var(--accent); }
+
+/* a button that reads as a link, for the version line */
+.linkbtn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
 .install-x {
   background: none;
   border: none;
