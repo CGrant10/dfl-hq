@@ -31,9 +31,9 @@
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Owners",
-      "short_name": "Owners",
-      "url": "./#/owners",
+      "name": "History",
+      "short_name": "History",
+      "url": "./#/history",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

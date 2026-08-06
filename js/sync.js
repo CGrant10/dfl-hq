@@ -195,6 +195,15 @@ function buildStandings(rosters, season, league) {
     };
   });
 
+  // A season nobody has played yet has no standings. Ranking twelve 0-0
+  // teams by nothing, and flagging half of them as playoff bound, would be
+  // pure fiction - so leave rank empty until games have happened.
+  const played = rows.some((r) => r.wins + r.losses + r.ties > 0);
+  if (!played) {
+    rows.forEach((row) => { row.rank = null; row.made_playoffs = false; });
+    return rows;
+  }
+
   // Sleeper's own tiebreaker: record first, then points for.
   rows.sort((a, b) =>
     (b.wins - a.wins) || (a.losses - b.losses) || (b.points_for - a.points_for));

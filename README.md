@@ -45,7 +45,6 @@ dfl_hq/
         ├── polls.js         voting + results
         ├── calendar.js      events + side events
         ├── history.js       hall of fame
-        ├── owners.js        career profiles (Sleeper + hand written)
         ├── finances.js      dues, payouts, expenses, summary
         ├── admin.js         password gate + all the editors
         ├── admin_sleeper.js league ID, sync button, sync log
@@ -180,7 +179,7 @@ can only show instructions — there is no one-tap install button on iPhone.
 3. Confirm. It lands in the app drawer like any other app.
 
 Long-pressing the installed icon gives shortcuts straight to Finances, Polls and
-Owners.
+History.
 
 **Desktop — Chrome or Edge**
 
@@ -257,7 +256,7 @@ picks up every past season in one go.
 | `sleeper_standings` | wins, losses, ties, points for/against, final rank, made playoffs |
 | `sleeper_matchups` | week by week: both teams, both scores, winner |
 | `sleeper_transactions` | trades, waivers and free agent pickups |
-| `owner_profiles` | **hand written**: nickname, team name, league notes |
+| `members` | **hand written**: nickname, team name, awards, notes (see below) |
 
 ### History is never overwritten
 
@@ -265,16 +264,16 @@ Every table is keyed by season (and week where it matters) and written with an
 upsert. Re-syncing the current season updates this year's rows and physically
 cannot touch a previous year. Run the sync as often as you like.
 
-### Owner profiles
+### Where the synced data shows up
 
-The **Owners** page merges the two halves:
+- **History → Hall of Fame** — champions and runners up per season, straight
+  from the playoff brackets, plus your hand-written awards and moments.
+- **History → Seasons** — final standings for any season.
+- **History → All-time** — career records for every owner.
+- **Profile** — one person's full record, keepers and dues.
 
-- from Sleeper — career record, win %, total points, average finish, playoff
-  appearances, championships
-- from `owner_profiles` — nickname, team name, and whatever notes you write
-
-Edit the hand-written half at **Admin → Owners**. The Sleeper account dropdown
-fills itself from whoever has been synced, so run a sync first.
+There is no separate Owners page: per-person detail lives on profiles, and the
+league-wide view lives in History.
 
 ### Notes and limits
 
@@ -377,9 +376,9 @@ A synced league usually contains people who are not current members. Deleting
 them is pointless — the next sync brings them back — so every Sleeper account
 carries a `hidden` flag instead.
 
-**Anyone new that a future sync finds starts hidden.** Nothing appears on Owners
-or in the member picker until an admin ticks them at **Admin → Sleeper → Who
-shows up**. Running the schema hides `Eadycloud15` and `braves236` and leaves
+**Anyone new that a future sync finds starts hidden.** Nothing appears in
+History or in the member picker until an admin ticks them at **Admin → Sleeper →
+Who shows up**. Running the schema hides `Eadycloud15` and `braves236` and leaves
 your twelve current members visible.
 
 ### The profile page

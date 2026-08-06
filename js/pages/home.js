@@ -42,7 +42,7 @@ export async function render(view) {
     <nav class="quicknav" style="margin:18px 0 6px">
       ${[
         ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"],
-        ["calendar", "Calendar"], ["history", "History"], ["owners", "Owners"],
+        ["calendar", "Calendar"], ["history", "History"],
         ["finances", "Finances"], ["profile", "Profile"], ["admin", "Admin"],
       ].map(([route, label]) => `
         <a href="#/${route}">

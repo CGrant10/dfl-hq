@@ -135,21 +135,6 @@ const SECTIONS = [
       { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
     ],
   },
-  {
-    id: "owner_profiles", tab: "Owners",
-    table: "owner_profiles", singular: "owner profile", plural: "owner profiles",
-    label: (r) => r.nickname || r.team_name || r.sleeper_user_id,
-    sub:   (r) => (r.notes || "").slice(0, 90),
-    fields: [
-      { name: "sleeper_user_id", label: "Sleeper account", type: "select", required: true,
-        optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
-                       label: "display_name", order: "display_name" } },
-      { name: "nickname",  label: "Nickname",  type: "text", placeholder: "Slaw" },
-      { name: "team_name", label: "Team name", type: "text", placeholder: "Slaw Squad" },
-      { name: "notes",     label: "League notes / awards", type: "textarea",
-        placeholder: "Two-time champ. Still hasn't paid for 2024." },
-    ],
-  },
 ];
 
 // Custom panels rather than single-table editors, so they live outside

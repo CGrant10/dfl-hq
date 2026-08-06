@@ -91,7 +91,7 @@ export async function renderSleeperPanel(host) {
       <div class="card-title">Who shows up</div>
       <p class="muted tiny" style="margin-top:0">
         Anyone new that a sync finds starts <strong>hidden</strong>. Tick the people who are
-        actually in the league — only they appear on Owners and in the member picker.
+        actually in the league — only they appear in History and the member picker.
       </p>
       <div id="sl-people-list" class="muted tiny">Loading…</div>
     </div>

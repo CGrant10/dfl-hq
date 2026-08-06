@@ -13,7 +13,6 @@ const routes = {
   polls:    () => import("./pages/polls.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
-  owners:   () => import("./pages/owners.js"),
   finances: () => import("./pages/finances.js"),
   profile:  () => import("./pages/profile.js"),
   admin:    () => import("./pages/admin.js"),
