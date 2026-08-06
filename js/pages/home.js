@@ -37,12 +37,13 @@ export async function render(view) {
     </p>
 
     <nav class="quicknav" style="margin:18px 0 6px">
-      <a href="#/rules"><span class="ico">📗</span>Rules</a>
-      <a href="#/keepers"><span class="ico">🔒</span>Keepers</a>
-      <a href="#/polls"><span class="ico">🗳️</span>Polls</a>
-      <a href="#/calendar"><span class="ico">📅</span>Calendar</a>
-      <a href="#/history"><span class="ico">🏆</span>History</a>
-      <a href="#/admin"><span class="ico">⚙️</span>Admin</a>
+      ${[
+        ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"],
+        ["calendar", "Calendar"], ["history", "History"], ["admin", "Admin"],
+      ].map(([route, label]) => `
+        <a href="#/${route}">
+          <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>${label}
+        </a>`).join("")}
     </nav>
 
     <div class="section-head"><h2>Upcoming</h2><a href="#/calendar">All events →</a></div>

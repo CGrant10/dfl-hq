@@ -9,13 +9,19 @@ import { esc, empty, groupBy } from "../ui.js";
 // Anything not in this list still shows, just at the bottom of the year.
 const ORDER = ["Champion", "Runner Up", "Award", "Record", "Moment"];
 
+// Maps a category to an icon in the sprite at the top of index.html.
 const ICON = {
-  "Champion":  "🏆",
-  "Runner Up": "🥈",
-  "Award":     "🎖️",
-  "Record":    "📈",
-  "Moment":    "😂",
+  "Champion":  "i-history",
+  "Runner Up": "i-medal",
+  "Award":     "i-award",
+  "Record":    "i-record",
+  "Moment":    "i-moment",
 };
+
+function icon(category) {
+  const id = ICON[category] || "i-award";
+  return `<svg class="ico-sm" aria-hidden="true"><use href="#${id}"></use></svg>`;
+}
 
 export async function render(view) {
   const rows = await selectAll("history", { order: "year", asc: false });
@@ -33,7 +39,7 @@ export async function render(view) {
 
     ${champs.length ? `
       <div class="card accent">
-        <div class="card-title">🏆 Champions</div>
+        <div class="card-title">${icon("Champion")} Champions</div>
         <table class="tbl">
           <tbody>
             ${champs.map((c) => `<tr><td style="width:70px">${esc(c.year)}</td><td>${esc(c.winner)}</td></tr>`).join("")}
@@ -56,7 +62,7 @@ function sortRows(list) {
 function entry(r) {
   return `
     <div class="card">
-      <div class="card-title">${ICON[r.category] || "•"} ${esc(r.winner || r.category)}</div>
+      <div class="card-title">${icon(r.category)} ${esc(r.winner || r.category)}</div>
       <div class="card-meta" style="margin:0">
         <span class="pill">${esc(r.category)}</span>
       </div>

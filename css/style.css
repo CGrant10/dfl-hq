@@ -125,6 +125,14 @@ h3 { font-size: 15px; margin: 0 0 6px; }
   box-shadow: var(--shadow);
 }
 .card.accent { border-left: 4px solid var(--accent); }
+
+/* Small inline icon used next to a card title. */
+.ico-sm {
+  width: 18px; height: 18px;
+  vertical-align: -3px;
+  margin-right: 4px;
+  color: var(--accent);
+}
 .card-title  { font-weight: 700; margin-bottom: 4px; }
 .card-body   { white-space: pre-wrap; word-break: break-word; }
 .card-meta   { color: var(--muted); font-size: 12px; margin-top: 8px; }
@@ -188,7 +196,7 @@ h3 { font-size: 15px; margin: 0 0 6px; }
   font-weight: 600;
 }
 .quicknav a:hover { background: var(--bg-3); }
-.quicknav .ico { display: block; font-size: 22px; margin-bottom: 6px; }
+.quicknav .ico { display: block; margin: 0 auto 8px; width: 24px; height: 24px; color: var(--accent); }
 
 /* -------------------------------- forms ------------------------------ */
 
@@ -278,8 +286,9 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 10px;
   font-weight: 600;
 }
-.tabbar a .ico { display: block; font-size: 19px; line-height: 1.2; }
+.tabbar a .ico { display: block; margin: 0 auto 3px; width: 22px; height: 22px; }
 .tabbar a.on { color: var(--accent); }
+/* Icons inherit the link colour, so the active tab turns green automatically. */
 
 /* ------------------------------ overlay ------------------------------ */
 
