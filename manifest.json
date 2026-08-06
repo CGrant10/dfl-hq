@@ -1,5 +1,6 @@
 {
-  "id": "dfl-hq",
+  "_comment_id": "id must resolve to exactly the same URL as start_url. 'dfl-hq' resolved to /dfl-hq (no trailing slash) while start_url is /dfl-hq/, and a mismatch can stop Chrome offering a real install.",
+  "id": "./",
   "name": "DFL HQ",
   "short_name": "DFL",
   "description": "League headquarters for the DFL: rules, keepers, polls, finances, owner history and league events.",
@@ -8,7 +9,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "_comment_display": "'browser' is deliberately NOT listed here. It is not an app display mode, and listing it gains nothing while risking the app being treated as a plain tab.",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0d1117",
   "theme_color": "#0d1117",
   "categories": ["sports", "utilities"],
