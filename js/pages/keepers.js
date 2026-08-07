@@ -1,12 +1,13 @@
 // =====================================================================
 // Keepers - who is keeping whom, and what round it costs.
 //
-// Built for a glance, not for study. This is the page somebody opens to
-// settle an argument in a group chat, so every team fits in one block and
-// every keeper is one line: name on the left, cost on the right.
+// Three columns, one row per keeper, one card for the whole league. The
+// team name is printed once and left blank on a team's later rows, the way
+// a printed table of contents does it - so the eye runs straight down the
+// player column without a header or a box interrupting it every line.
 //
-// It used to be a table per team, which repeated a Player/Cost header
-// twelve times and pushed the last few teams well below the fold.
+// This replaced a block per team, which spent a header and a border on
+// teams that mostly have a single keeper.
 // =====================================================================
 
 import { selectAll } from "../supabase.js";
@@ -74,9 +75,12 @@ export async function render(view) {
 }
 
 /**
- * One block per team. The team name and its keeper count sit on a single
- * header line, then one line per player - no column headings, because
- * "a name and a round" needs no explaining twelve times over.
+ * The whole year as one three-column list, sorted by team.
+ *
+ * A row only draws its top hairline when it starts a new team, so the
+ * grouping is legible without a header per team. The cost column is fixed
+ * width with tabular digits, so the rounds line up as a column you can
+ * scan on its own.
  */
 function teamList(rows) {
   if (!rows.length) return empty("No keepers for this year.");
@@ -84,23 +88,21 @@ function teamList(rows) {
   const byTeam = [...groupBy(rows, "team").entries()]
     .sort((a, b) => a[0].localeCompare(b[0]));
 
-  return `<div class="keeplist">
-    ${byTeam.map(([team, list]) => `
-      <section class="keepteam">
-        <h2 class="keepteam-name">
-          ${esc(team)}<span class="keepteam-n">${list.length}</span>
-        </h2>
-        ${list.map((k) => `
-          <div class="keeper">
-            <div class="keeper-who">
-              <span class="keeper-player">${esc(k.player)}</span>
-              ${k.notes ? `<span class="keeper-note">${esc(k.notes)}</span>` : ""}
-            </div>
-            <span class="keeper-cost ${k.round_cost == null ? "none" : ""}">
-              ${k.round_cost != null ? `Rd ${esc(k.round_cost)}` : "—"}
-            </span>
-            ${editControls("keepers", k, { compact: true })}
-          </div>`).join("")}
-      </section>`).join("")}
-  </div>`;
+  return `
+    <div class="card keepcard">
+      <div class="kp-head" aria-hidden="true">
+        <span>Team</span><span>Keeper</span><span class="kp-r">Round</span>
+      </div>
+      ${byTeam.map(([team, list]) => list.map((k, i) => `
+        <div class="kp-row ${i === 0 ? "kp-new" : ""}">
+          <span class="kp-team">${i === 0 ? esc(team) : ""}</span>
+          <span class="kp-player">
+            ${esc(k.player)}
+            ${k.notes ? `<span class="kp-note">${esc(k.notes)}</span>` : ""}
+          </span>
+          <span class="kp-cost ${k.round_cost == null ? "none" : ""}">${
+            k.round_cost != null ? `${esc(k.round_cost)}` : "—"}</span>
+          ${editControls("keepers", k, { compact: true })}
+        </div>`).join("")).join("")}
+    </div>`;
 }

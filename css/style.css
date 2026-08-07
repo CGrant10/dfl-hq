@@ -4,11 +4,22 @@
    All colours live in the :root block below - change them in one place.
    ===================================================================== */
 
+/*
+  Two weights of line, which is most of what makes the app feel calm:
+
+    --line       the edge of a thing - card borders, inputs, the tab bar
+    --line-soft  a division INSIDE a thing - between rows of a list
+
+  Using the same border for both made every list read as a stack of boxes.
+  The soft one is barely there, which is the point: it separates rows
+  without drawing a grid around them.
+*/
 :root {
   --bg:          #0d1117;   /* page background        */
   --bg-2:        #131a24;   /* card background        */
   --bg-3:        #1b2432;   /* input / hover          */
-  --line:        #263041;   /* borders                */
+  --line:        #222b3a;   /* borders                */
+  --line-soft:   #1a222e;   /* dividers within a card */
   --text:        #e8edf5;
   --muted:       #8b98ab;
   --accent:      #2fbf5f;   /* field green - overridden by the team theme */
@@ -19,7 +30,7 @@
   --danger:      #e0574a;
   --radius:      14px;
   --pad:         16px;
-  --shadow:      0 2px 10px rgba(0,0,0,.35);
+  --shadow:      0 1px 3px rgba(0,0,0,.28);
 }
 
 * { box-sizing: border-box; }
@@ -221,8 +232,9 @@ h3 { font-size: 15px; margin: 0 0 6px; font-weight: 700; }
   margin-bottom: 10px;
   box-shadow: var(--shadow);
 }
-.card.accent { border-left: 3px solid var(--accent); }
-.card.note   { border-left: 3px solid var(--warn); }
+/* 2px, not 3: enough to mark the card, not enough to be a stripe */
+.card.accent { border-left: 2px solid var(--accent); }
+.card.note   { border-left: 2px solid var(--warn); }
 
 /* one card, one heading */
 .card-heading { font-size: 16px; font-weight: 700; margin: 0 0 6px; line-height: 1.3; }
@@ -264,20 +276,27 @@ a.linkcard:hover { border-color: var(--accent-dim); background: #161e2a; }
   color: var(--muted);
 }
 
+/*
+  Flat by default: a pill is a label, not a button, so the neutral one is
+  just text at a smaller size. Only the ones carrying a status - open,
+  closed, paid, unpaid - spend a colour on it.
+*/
 .pill {
   display: inline-block;
-  background: var(--bg-3);
-  border: 1px solid var(--line);
   color: var(--muted);
   border-radius: 999px;
-  padding: 2px 10px;
+  padding: 1px 0;
   font-size: 12px;
   font-weight: 600;
 }
-.pill.green { background: rgba(47,191,95,.14); border-color: var(--accent-dim); color: #86e6a8; }
-.pill.warn  { background: rgba(240,167,66,.14); border-color: #7a5a1d; color: #f3c887; }
-.pill.grey  { opacity: .8; }
-.pill.red   { background: rgba(224,87,74,.14); border-color: #7a2f27; color: #f0a79b; }
+.pill.green, .pill.warn, .pill.red, .pill.grey {
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+}
+.pill.green { background: rgba(47,191,95,.12); border-color: var(--accent-dim); color: #86e6a8; }
+.pill.warn  { background: rgba(240,167,66,.12); border-color: #7a5a1d; color: #f3c887; }
+.pill.grey  { background: var(--bg-3); }
+.pill.red   { background: rgba(224,87,74,.12); border-color: #7a2f27; color: #f0a79b; }
 
 /* -------------------------------- buttons ---------------------------- */
 
@@ -388,7 +407,7 @@ textarea { min-height: 96px; resize: vertical; }
 .rulecard { padding: 0; }
 .rulecard .rule {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
 }
 .rulecard .rule:last-child { border-bottom: none; }
 .rule-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
@@ -407,10 +426,10 @@ textarea { min-height: 96px; resize: vertical; }
   gap: 13px;
   align-items: flex-start;
   padding: 13px 15px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
 }
 .evrow:last-child { border-bottom: none; }
-.evrow.next { border-left: 3px solid var(--accent); padding-left: 12px; }
+.evrow.next { border-left: 2px solid var(--accent); padding-left: 13px; }
 .schedule.is-past { opacity: .78; }
 
 /* the stacked MON / 29 block */
@@ -453,72 +472,62 @@ textarea { min-height: 96px; resize: vertical; }
   white-space: pre-wrap;
 }
 
-/* ---- keepers: a team block, one line per player ---- */
+/* ---- keepers: three columns, one row per keeper ---- */
 
-.keeplist { display: grid; gap: 10px; }
-.keepteam {
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.keepteam-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 10px 14px;
-  font-size: 14px;
-  font-weight: 700;
-  background: var(--bg-3);
-  border-bottom: 1px solid var(--line);
-}
-.keepteam-n {
-  margin-left: auto;
-  flex: none;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--muted);
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 1px 8px;
-}
+.keepcard { padding: 0; overflow: hidden; }
 
-.keeper {
-  display: flex;
+/* Column widths are declared once and inherited by both the heading and
+   every row, so the three columns cannot drift apart. */
+.kp-head, .kp-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) 3.4rem;
+  gap: 12px;
   align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--line);
+  padding: 10px 16px;
 }
-.keeper:last-child { border-bottom: none; }
-.keeper-who { flex: 1; min-width: 0; }
-.keeper-player { font-size: 14.5px; font-weight: 600; }
-.keeper-note {
+.kp-head {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+.kp-r { text-align: right; }
+
+/* Only a row that starts a new team draws a line, which is what makes the
+   grouping readable without a header for every team. */
+.kp-row.kp-new { border-top: 1px solid var(--line-soft); }
+.kp-team {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kp-player { font-size: 15px; font-weight: 600; min-width: 0; }
+.kp-note {
   display: block;
   font-size: 12px;
+  font-weight: 400;
   color: var(--muted);
   margin-top: 1px;
 }
-/* The cost is the second thing anybody looks for, so it gets a fixed
-   column on the right and tabular digits, making the rounds line up. */
-.keeper-cost {
-  flex: none;
-  font-size: 13px;
+.kp-cost {
+  text-align: right;
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-.keeper-cost.none { color: var(--muted); font-weight: 600; }
+.kp-cost.none { color: var(--muted); font-weight: 500; }
 
-/* an inline admin strip inside one of these rows must not add a rule of
-   its own - the row already has one */
-.keeper .inline-admin,
+/* an inline admin strip inside one of these rows spans the full width
+   rather than squeezing into a column */
+.kp-row .inline-admin,
 .evrow .inline-admin,
-.rulecard .inline-admin { width: 100%; }
+.rulecard .inline-admin { grid-column: 1 / -1; width: 100%; }
 
 .tabs button { transition: background .15s ease, color .15s ease, border-color .15s ease; }
 .tabs button:active { transform: scale(.96); }
@@ -629,7 +638,7 @@ textarea { min-height: 96px; resize: vertical; }
   flex-wrap: wrap;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px dashed var(--line);
+  border-top: 1px solid var(--line-soft);
 }
 /* Inside the admin footer the buttons are already in a row, so the
    inline group must not start a second one. */
@@ -662,7 +671,7 @@ textarea { min-height: 96px; resize: vertical; }
   justify-content: flex-end;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px dashed var(--line);
+  border-top: 1px solid var(--line-soft);
 }
 /* compact: no rule, no top padding - for tight spots like a table cell or
    a row that already has its own separator */
@@ -846,7 +855,7 @@ textarea { min-height: 96px; resize: vertical; }
 .tbl .num { text-align: right; white-space: nowrap; }
 
 .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
-.tbl th, .tbl td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+.tbl th, .tbl td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line-soft); }
 .tbl th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
 .tbl tr:last-child td { border-bottom: none; }
 
