@@ -443,145 +443,104 @@ ${total || "-"}
 function scoringControls(outing, parts, teams, scores, byId) {
 
 return `
-<section class="card">
+<div class="card">
 
-<header class="card-head">
-<h2>Add Score</h2>
-</header>
-
-
-<label>
-Player
-</label>
+<h2 class="section-title">Enter Score</h2>
 
 <select id="score-player">
-
-<option value="">
-Choose player
-</option>
+<option value="">Select player</option>
 
 ${parts.map(p => {
-
-const m = byId.get(String(p.member_id));
-
-return `
-<option value="${p.member_id}">
-${esc(m?.display_name || "Unknown")}
-</option>
-`;
-
+  const m = byId.get(String(p.member_id));
+  return `
+  <option value="${p.member_id}">
+    ${esc(m?.display_name || "Unknown")}
+  </option>`;
 }).join("")}
 
 </select>
 
 
-
-<label>
-Hole
-</label>
-
 <select id="score-hole">
 
-<option value="">
-Choose hole
-</option>
+<option value="">Select hole</option>
 
-${Array.from(
-{length: outing.holes},
-(_,i)=>`
+${Array.from({length: outing.holes}, (_,i)=>`
 
 <option value="${i+1}">
 Hole ${i+1}
 </option>
 
-`
-).join("")}
+`).join("")}
 
 </select>
 
-
-
-<label>
-Strokes
-</label>
 
 <input 
 id="score-strokes"
 type="number"
 min="1"
-max="20"
-placeholder="5">
+max="15"
+placeholder="Strokes"
+/>
 
 
-<button 
-class="btn"
-id="save-score">
-
+<button class="btn" id="save-score">
 Save Score
-
 </button>
 
 
-</section>
+</div>
 `;
-}
 
+}
 // ------------------ wire scores ------------------------------
 function wireScores(view, outing) {
 
-const root = view.querySelector("#golf-outing");
+  const root = view.querySelector("#golf-outing");
 
-root.addEventListener("click", async (e)=>{
+  root.addEventListener("click", async (e) => {
 
-const save = e.target.closest("#save-score");
+    const save = e.target.closest("#save-score");
 
-if (!save) return;
+    if (!save) return;
 
+    const player = root.querySelector("#score-player")?.value;
+    const hole = root.querySelector("#score-hole")?.value;
+    const strokes = root.querySelector("#score-strokes")?.value;
 
-const player = root.querySelector("#score-player").value;
-const hole = root.querySelector("#score-hole").value;
-const strokes = root.querySelector("#score-strokes").value;
+    if (!player || !hole || !strokes) {
+      toast("Pick player, hole, and strokes", true);
+      return;
+    }
 
+    try {
 
-if (!player || !hole || !strokes) {
-toast("Pick player, hole, and strokes", true);
-return;
-}
+      const { error } = await db()
+        .from("golf_scores")
+        .upsert(
+          {
+            outing_id: outing.id,
+            member_id: Number(player),
+            hole: Number(hole),
+            strokes: Number(strokes)
+          },
+          {
+            onConflict: "outing_id,member_id,hole"
+          }
+        );
 
+      if (error) throw error;
 
-try {
+      toast("Score saved");
 
-const { error } = await db()
-.from("golf_scores")
-.upsert({
-  outing_id: outing.id,
-  member_id: Number(player),
-  hole: Number(hole),
-  strokes: Number(strokes)
-},
-{
-  onConflict:"outing_id,member_id,hole"
-});
+    } catch (err) {
 
+      toast(err.message || "Could not save score", true);
 
-if(error) throw error;
+    }
 
-});
-
-
-toast("Score saved");
-
-location.reload();
-
-
-} catch(err){
-
-toast(err.message || "Could not save score", true);
-
-}
-
-
-});
+  });
 
 }
 // ---------------------------- the generator ---------------------------
