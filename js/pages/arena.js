@@ -143,6 +143,8 @@ async function renderEvent(view, id) {
 
       <div id="arena-stage"></div>
 
+      ${broadcastCard(event, parts)}
+
       ${lineupCard(event, parts, byId, members)}
     </div>
   `;
@@ -163,7 +165,10 @@ async function renderEvent(view, id) {
     await runRace(view, stage, event, parts, byId, seed, { save: !replay });
   });
 
-  if (canEdit()) wireLineup(view, event, parts, members, () => render(view));
+  if (canEdit()) {
+    wireLineup(view, event, parts, members, () => render(view));
+    wireBroadcast(view, event, parts, byId, () => render(view));
+  }
 
   if (!results.length) {
     stage.innerHTML = `
@@ -302,6 +307,159 @@ function wireLineup(view, event, parts, members, refresh) {
         refresh();
       } catch (err) { toast(err.message || "Could not roll sprites", true); roll.disabled = false; }
     }
+  });
+}
+
+// ============================ broadcast mode ==========================
+
+/*
+  The commissioner's control panel for the OBS view.
+
+  Nothing here draws a race - it only writes state to the event row, and the
+  broadcast page (and any phone watching) derives everything from that. So
+  the panel works from anywhere with signal, including a phone in a bar, and
+  the machine running OBS never needs to be touched once the scene is set.
+
+  The Broadcast link is deliberately a plain URL: that string is what gets
+  pasted into an OBS Browser Source.
+*/
+function broadcastCard(event, parts) {
+  if (!canEdit()) return "";
+
+  const url = `${location.origin}${location.pathname}#/broadcast?id=${event.id}`;
+  const running = event.bc_state === "running";
+  const paused  = event.bc_state === "paused";
+
+  return `
+    <div class="card bc-panel">
+      <div class="card-title">Broadcast</div>
+
+      <div class="bc-url">
+        <input id="bc-url" type="text" readonly value="${esc(url)}">
+        <button class="btn ghost small" id="bc-copy">Copy</button>
+      </div>
+
+      <div class="bc-controls">
+        <a class="btn small" href="#/broadcast?id=${event.id}">Open broadcast</a>
+        <button class="btn small" id="bc-start" ${parts.length < 2 ? "disabled" : ""}>
+          ${running || paused ? "Restart" : "Start race"}
+        </button>
+        <button class="btn ghost small" id="bc-pause" ${running || paused ? "" : "disabled"}>
+          ${paused ? "Resume" : "Pause"}
+        </button>
+        <button class="btn ghost small" id="bc-skip" ${running || paused ? "" : "disabled"}>Skip to finish</button>
+        <button class="btn ghost small" id="bc-reset">Reset</button>
+        <button class="btn ghost small" id="bc-save" ${parts.length < 2 ? "disabled" : ""}>Save result</button>
+      </div>
+
+      <div class="bc-toggles">
+        <label><input type="checkbox" id="bc-board-t" ${event.bc_show_board === false ? "" : "checked"}> Leaderboard</label>
+        <label><input type="checkbox" id="bc-timer-t" ${event.bc_show_timer === false ? "" : "checked"}> Timer</label>
+        <span class="pill ${running ? "green" : paused ? "warn" : "grey"}">${esc(event.bc_state || "idle")}</span>
+      </div>
+    </div>`;
+}
+
+/** Seconds of countdown before the racers move. */
+const COUNTDOWN_MS = 3400;
+
+function wireBroadcast(view, event, parts, byId, refresh) {
+  const panel = view.querySelector(".bc-panel");
+  if (!panel) return;
+
+  const ticks = ticksFor(event.race_length, event.length_ticks);
+
+  /* Elapsed race time right now, from the row - the same formula the
+     broadcast uses, so pausing lands on the identical frame everywhere. */
+  const elapsedNow = () => {
+    if (!event.bc_started_at || event.bc_state === "idle") return 0;
+    if (event.bc_state === "paused") return event.bc_offset_ms || 0;
+    return Date.now() - Date.parse(event.bc_started_at) + (event.bc_offset_ms || 0);
+  };
+
+  const write = async (patch, note) => {
+    try {
+      await updateRow("arena_events", event.id, patch);
+      if (note) toast(note);
+      refresh();
+    } catch (err) {
+      toast(/bc_state|column/.test(err.message || "")
+        ? "Run arena_broadcast_schema.sql in Supabase"
+        : (err.message || "Could not update the broadcast"), true);
+    }
+  };
+
+  panel.addEventListener("click", async (e) => {
+    const t = e.target;
+
+    if (t.closest("#bc-copy")) {
+      const input = panel.querySelector("#bc-url");
+      try {
+        await navigator.clipboard.writeText(input.value);
+        toast("Broadcast URL copied");
+      } catch {
+        // Clipboard needs a secure context; selecting it is the fallback.
+        input.removeAttribute("readonly");
+        input.select();
+        toast("Copy the highlighted URL");
+      }
+      return;
+    }
+
+    if (t.closest("#bc-start")) {
+      // A fresh seed only when there is not one yet, so Restart replays the
+      // same race rather than quietly rolling a different winner.
+      const seed = event.seed || newSeed();
+      return write({
+        seed,
+        bc_state: "running",
+        bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
+        bc_offset_ms: 0,
+      }, "Countdown running");
+    }
+
+    if (t.closest("#bc-pause")) {
+      if (event.bc_state === "paused") {
+        return write({
+          bc_state: "running",
+          bc_started_at: new Date().toISOString(),
+          bc_offset_ms: event.bc_offset_ms || 0,
+        }, "Resumed");
+      }
+      return write({ bc_state: "paused", bc_offset_ms: Math.max(0, Math.round(elapsedNow())) }, "Paused");
+    }
+
+    if (t.closest("#bc-skip")) {
+      // Jump the clock past the last finish, which puts every lane on the
+      // line and triggers the winner card on every viewer at once.
+      const racers = parts.map((p) => ({ id: p.member_id }));
+      const sim = simulate(racers, ticks, Number(event.seed) || 1);
+      const end = (sim.order.at(-1)?.finishMs ?? 0) + 400;
+      return write({
+        bc_state: "finished",
+        bc_started_at: new Date().toISOString(),
+        bc_offset_ms: end,
+      }, "Skipped to the finish");
+    }
+
+    if (t.closest("#bc-reset")) {
+      return write({ bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 }, "Broadcast reset");
+    }
+
+    if (t.closest("#bc-save")) {
+      const racers = parts.map((p, i) => ({
+        id: p.member_id,
+        name: byId.get(String(p.member_id))?.display_name || "Unknown",
+      }));
+      const sim = simulate(racers, ticks, Number(event.seed) || 1);
+      await saveResults(event, sim, Number(event.seed) || 1);
+      refresh();
+    }
+  });
+
+  panel.addEventListener("change", (e) => {
+    if (e.target.id === "bc-board-t") write({ bc_show_board: e.target.checked });
+    if (e.target.id === "bc-timer-t") write({ bc_show_timer: e.target.checked });
   });
 }
 

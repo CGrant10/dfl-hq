@@ -12,6 +12,7 @@ const routes = {
   keepers:  () => import("./pages/keepers.js"),
   polls:    () => import("./pages/polls.js"),
   arena:    () => import("./pages/arena.js"),
+  broadcast:() => import("./pages/broadcast.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
   finances: () => import("./pages/finances.js"),
@@ -34,9 +35,17 @@ export function go(name) {
 }
 
 /** Draw the current route into #view and light up the matching tab. */
+// The page we are on, so it can be told when it is being left. Only the
+// broadcast view needs this - it owns a rAF loop and a realtime channel, and
+// leaving those running behind the next page would keep drawing over it.
+let leaving = null;
+
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
+
+  try { leaving?.(); } catch (err) { console.warn(err); }
+  leaving = null;
 
   document.querySelectorAll("#tabbar a").forEach((a) => {
     a.classList.toggle("on", a.dataset.route === name);
@@ -45,6 +54,7 @@ export async function renderRoute() {
   view.innerHTML = loading();
   try {
     const mod = await routes[name]();
+    if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);
   } catch (err) {
     view.innerHTML = errorBox(err);

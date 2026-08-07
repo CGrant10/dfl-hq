@@ -1,0 +1,350 @@
+/* =====================================================================
+   DFL HQ - Broadcast Mode
+   ---------------------------------------------------------------------
+   The one part of the app that is NOT mobile-first. This is a 16:9 stage
+   for an OBS Browser Source at 1920x1080, read from across a room on
+   somebody else's Twitch stream, so the type is enormous by app standards.
+
+   Kept in its own file because it shares almost nothing with the phone UI
+   and style.css is long enough already.
+
+   `body.broadcasting` strips the app chrome - header, tab bar, page padding
+   - so the stage is the entire frame with no browser furniture for OBS to
+   capture. Nothing here leaks into the phone: every rule is scoped either
+   to that body class or to a bc- prefix.
+
+   Sizes are in vw deliberately. OBS captures at a fixed canvas size, so
+   scaling with the viewport means one layout holds at 1280x720 and
+   1920x1080 alike without a media query per resolution.
+   ===================================================================== */
+
+body.broadcasting {
+  padding: 0;
+  overflow: hidden;
+  background: #06090d;
+}
+body.broadcasting .topbar,
+body.broadcasting .tabbar,
+body.broadcasting .install,
+body.broadcasting #update { display: none !important; }
+body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
+
+.bc-stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(47,191,95,.10), transparent 60%),
+    linear-gradient(180deg, #0b1017, #06090d);
+  color: var(--text);
+}
+
+/* -------------------------------- header ------------------------------ */
+
+.bc-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2vw;
+  padding: 1.6vw 2.4vw 1.2vw;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: rgba(6,9,13,.55);
+}
+.bc-brand { display: grid; }
+.bc-brand-mark {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 2.5vw;
+  font-weight: 700;
+  letter-spacing: .1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.bc-brand-mark span { color: var(--accent); text-shadow: 0 0 1.4vw rgba(47,191,95,.5); }
+.bc-brand-sub {
+  font-size: .82vw;
+  font-weight: 800;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bc-title { text-align: center; min-width: 0; }
+.bc-event {
+  margin: 0;
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 2.9vw;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+.bc-sub {
+  margin: .2vw 0 0;
+  font-size: 1vw;
+  color: var(--muted);
+  letter-spacing: .05em;
+}
+
+.bc-clock {
+  min-width: 7vw;
+  text-align: right;
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 3.4vw;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------- track + board --------------------------- */
+
+.bc-body {
+  display: grid;
+  grid-template-columns: 1fr 20vw;
+  gap: 1.6vw;
+  padding: 1.4vw 2.4vw;
+  min-height: 0;
+}
+/* Hiding the leaderboard hands its space to the track. */
+.bc-body.no-board { grid-template-columns: 1fr; }
+
+.bc-track {
+  position: relative;
+  display: grid;
+  align-content: stretch;
+  min-height: 0;
+  border-radius: 1vw;
+  border: 1px solid rgba(255,255,255,.07);
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.022) 0 6vh, transparent 6vh 12vh),
+    linear-gradient(180deg, #0d141d, #0a0f16);
+  overflow: hidden;
+}
+.bc-finish {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: .5vw;
+  background: repeating-linear-gradient(180deg, #f5f7fa 0 1.1vh, #11161f 1.1vh 2.2vh);
+  box-shadow: -1vw 0 2.4vw rgba(0,0,0,.5);
+  z-index: 1;
+}
+
+.bc-lane {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px dashed rgba(255,255,255,.05);
+  padding: 0 .6vw;
+  min-height: 0;
+}
+.bc-lane:last-child { border-bottom: 0; }
+
+.bc-lane-name {
+  position: absolute;
+  left: 1vw;
+  display: flex;
+  align-items: center;
+  gap: .7vw;
+  font-size: 1.15vw;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: rgba(232,237,245,.34);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.bc-lane-name b {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9vw; height: 1.9vw;
+  border-radius: 50%;
+  background: var(--racer);
+  color: #06240f;
+  font-size: 1vw;
+  font-weight: 800;
+}
+
+.bc-runner {
+  position: relative;
+  z-index: 2;
+  width: 5vw;
+  height: 3.4vw;
+  will-change: transform;
+  filter: drop-shadow(0 .3vw .5vw rgba(0,0,0,.6));
+}
+.bc-runner .racer-art, .bc-runner .racer-img {
+  display: block; width: 100%; height: 100%; object-fit: contain;
+}
+
+/* ------------------------------ standings ---------------------------- */
+
+.bc-board {
+  border-radius: 1vw;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(11,16,23,.8);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.bc-board-head {
+  padding: .9vw 1.1vw;
+  font-size: .85vw;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.bc-board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: stretch;
+}
+.bc-board-list li {
+  display: grid;
+  grid-template-columns: 2.4vw 1fr;
+  align-items: center;
+  gap: .6vw;
+  padding: 0 1.1vw;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: 1.25vw;
+  font-weight: 600;
+  min-width: 0;
+}
+.bc-board-list li:last-child { border-bottom: 0; }
+.bc-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-pos {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 1.5vw;
+  font-weight: 700;
+  color: var(--racer, var(--muted));
+  font-variant-numeric: tabular-nums;
+}
+.bc-board-list li.leader { background: rgba(47,191,95,.09); }
+.bc-board-list li.leader .bc-who { color: var(--accent); font-weight: 700; }
+
+/* A position change flashes once: noticeable at a glance on stream, over in
+   a third of a second, never distracting. */
+.bc-move { animation: bcMove .34s ease both; }
+@keyframes bcMove {
+  from { background: rgba(255,255,255,.10); }
+  to   { background: transparent; }
+}
+
+/* ------------------------- countdown + winner ------------------------ */
+
+.bc-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(5,8,12,.62);
+  z-index: 10;
+}
+.bc-count {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 18vw;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 0 0 4vw rgba(0,0,0,.7);
+  animation: bcCount .7s cubic-bezier(.2,.7,.3,1) both;
+}
+.bc-count.go { color: var(--accent); font-size: 14vw; letter-spacing: .05em; }
+@keyframes bcCount {
+  from { opacity: 0; transform: scale(1.45); }
+  55%  { opacity: 1; transform: scale(1); }
+  to   { opacity: .95; transform: scale(1); }
+}
+
+.bc-winner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 12;
+  background:
+    radial-gradient(60% 60% at 50% 45%, rgba(47,191,95,.20), transparent 70%),
+    rgba(5,8,12,.80);
+  animation: bcFade .45s ease both;
+}
+@keyframes bcFade { from { opacity: 0; } to { opacity: 1; } }
+
+.bc-winner-inner { display: grid; justify-items: center; gap: .4vw; }
+.bc-winner-kicker {
+  font-size: 1.1vw;
+  font-weight: 800;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.bc-winner-name {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 9vw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  animation: bcWin .6s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes bcWin {
+  from { opacity: 0; transform: translate3d(0, 2vw, 0) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+.bc-winner-event {
+  font-size: 1.2vw;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* -------------------------------- footer ----------------------------- */
+
+.bc-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .9vw 2.4vw 1.1vw;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: .95vw;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bc-foot-right { color: var(--accent); }
+
+/* ---------------------- the commissioner panel ----------------------- */
+/* This part IS in the phone app, so it uses ordinary app sizing. */
+
+.bc-url { display: flex; gap: 8px; align-items: center; }
+.bc-url input { font-size: 12px; font-family: ui-monospace, monospace; }
+.bc-controls, .bc-toggles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+}
+.bc-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.bc-toggles input { width: auto; }
+.bc-toggles .pill { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-count, .bc-winner, .bc-winner-name, .bc-move { animation: none; }
+  .bc-runner { will-change: auto; }
+}

@@ -33,4 +33,4 @@ export const FIRST_SYNCED_SEASON = 2019;
 // Bump this when you change any file, so phones pick up the new version.
 // MUST match CACHE_NAME in sw.js and version.txt - all three or none, or
 // the in-app update button misfires.
-export const APP_VERSION = "1.12.0";
+export const APP_VERSION = "1.13.0";
