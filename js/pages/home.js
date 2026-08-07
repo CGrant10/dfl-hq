@@ -262,6 +262,7 @@ function heroStat(value, label, sub = "") {
 // "Who's kept"), which explained nothing a returning owner did not already
 // know and made the grid twice as tall.
 const NAV = [
+  ["arena", "Arena"],
   ["rules", "Rules"],
   ["keepers", "Keepers"],
   ["polls", "Polls"],

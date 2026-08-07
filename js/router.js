@@ -11,6 +11,7 @@ const routes = {
   rules:    () => import("./pages/rules.js"),
   keepers:  () => import("./pages/keepers.js"),
   polls:    () => import("./pages/polls.js"),
+  arena:    () => import("./pages/arena.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
   finances: () => import("./pages/finances.js"),

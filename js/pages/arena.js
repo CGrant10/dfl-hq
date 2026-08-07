@@ -1,0 +1,518 @@
+// =====================================================================
+// DFL Arena - the league's general purpose settling-of-arguments machine.
+//
+// An Arena event is "a set of members and an ordered result". Draft order,
+// golf teams, playoff seeding, who buys the beer, awards, a week 8
+// punishment - the engine does not know which, and deliberately so.
+//
+//   #/arena          the events list and the history
+//   #/arena?id=12    one event: line-up, the race, the result
+//
+// Members watch and read. The commissioner creates, sets the line-up,
+// starts the race and saves the result. The database enforces that; the
+// buttons are hidden as a convenience.
+// =====================================================================
+
+import { db, insertRow, updateRow } from "../supabase.js";
+import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
+import { loadMembers } from "../members.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
+import { THEMES, themeKeys, themeLabel, slotsFor, assignSprites, spriteMarkup } from "../arena/sprites.js";
+import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS, LENGTHS } from "../arena/race.js";
+
+const reduceMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+
+export async function render(view) {
+  const id = new URLSearchParams(location.hash.split("?")[1] || "").get("id");
+  if (id) return renderEvent(view, id);
+  return renderList(view);
+}
+
+// ============================== the list ==============================
+
+async function renderList(view) {
+  view.innerHTML = loading();
+
+  const [eventsRes, resultsRes, members] = await Promise.all([
+    db().from("arena_events").select("*").order("created_at", { ascending: false }),
+    db().from("arena_results").select("event_id, member_id, place").eq("place", 1),
+    loadMembers().catch(() => []),
+  ]);
+
+  if (eventsRes.error) {
+    view.innerHTML = `<h1>DFL Arena</h1>` + errorBox(eventsRes.error) +
+      `<div class="card"><div class="card-body muted">If the tables are missing, run
+       <strong>arena_schema.sql</strong> in the Supabase SQL editor.</div></div>`;
+    return;
+  }
+
+  const events  = visible("arena_events", eventsRes.data || []);
+  const winners = new Map((resultsRes.data || []).map((r) => [r.event_id, r.member_id]));
+  const byId    = new Map(members.map((m) => [String(m.id), m]));
+
+  const open = events.filter((e) => e.status !== "complete");
+  const done = events.filter((e) => e.status === "complete");
+
+  view.innerHTML = `
+    <header class="page-head">
+      <h1>DFL Arena</h1>
+      ${addControl("arena_events", "New event")}
+    </header>
+
+    <div id="arena-wrap">
+      ${events.length ? "" : empty(canEdit()
+        ? "No Arena events yet. Create one above — draft order, golf teams, punishments, anything."
+        : "No Arena events yet.")}
+
+      ${open.length ? `
+        <h2 class="section-title">Ready to run<span class="count">${open.length}</span></h2>
+        ${open.map((e) => eventCard(e, null, byId)).join("")}` : ""}
+
+      ${done.length ? `
+        <h2 class="section-title">Arena history<span class="count">${done.length}</span></h2>
+        ${done.map((e) => eventCard(e, winners.get(e.id), byId)).join("")}` : ""}
+    </div>
+  `;
+
+  wireInline(view.querySelector("#arena-wrap"), () => render(view));
+}
+
+function eventCard(e, winnerId, byId) {
+  const winner = winnerId != null ? byId.get(String(winnerId)) : null;
+  return `
+    <article class="card arena-card ${hiddenClass("arena_events", e)}">
+      <a class="arena-link" href="#/arena?id=${e.id}">
+        <div class="arena-top">
+          <h3 class="card-heading">${esc(e.name)}</h3>
+          <span class="pill ${e.status === "complete" ? "grey" : "green"}">
+            ${e.status === "complete" ? "Final" : "Ready"}
+          </span>
+        </div>
+        <div class="arena-meta">
+          <span>${esc(themeLabel(e.theme))}</span>
+          ${e.event_date ? `<span>· ${esc(fmtDate(e.event_date))}</span>` : ""}
+          ${winner ? `<span class="arena-winner">· 🏆 ${esc(winner.display_name)}</span>` : ""}
+        </div>
+        ${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}
+      </a>
+      ${editControls("arena_events", e, { compact: true })}
+    </article>`;
+}
+
+// ============================== one event =============================
+
+async function renderEvent(view, id) {
+  view.innerHTML = loading();
+
+  const [eventRes, partsRes, resultsRes, members] = await Promise.all([
+    db().from("arena_events").select("*").eq("id", id).maybeSingle(),
+    db().from("arena_participants").select("*").eq("event_id", id).order("sort_order"),
+    db().from("arena_results").select("*").eq("event_id", id).order("place"),
+    loadMembers().catch(() => []),
+  ]);
+
+  if (eventRes.error || !eventRes.data) {
+    view.innerHTML = `<h1>DFL Arena</h1>` + errorBox(eventRes.error || new Error("Event not found"));
+    return;
+  }
+
+  const event   = eventRes.data;
+  const parts   = partsRes.data || [];
+  const results = resultsRes.data || [];
+  const byId    = new Map(members.map((m) => [String(m.id), m]));
+
+  view.innerHTML = `
+    <header class="page-head">
+      <a class="backlink" href="#/arena">← Arena</a>
+      <h1>${esc(event.name)}</h1>
+      ${event.description ? `<p class="page-sub">${esc(event.description)}</p>` : ""}
+    </header>
+
+    <div id="arena-event">
+      <div class="card arena-setup">
+        <div class="arena-figures">
+          ${figure(parts.length, parts.length === 1 ? "racer" : "racers")}
+          ${figure(themeLabel(event.theme), "theme")}
+          ${figure(raceSeconds(event.race_length, event.length_ticks) + "s", "length")}
+        </div>
+        ${event.notes ? `<div class="card-body">${esc(event.notes)}</div>` : ""}
+      </div>
+
+      ${results.length ? resultsCard(results, byId, event) : ""}
+
+      <div id="arena-stage"></div>
+
+      ${lineupCard(event, parts, byId, members)}
+    </div>
+  `;
+
+  const stage = view.querySelector("#arena-stage");
+
+  // Start / replay
+  view.querySelector("#arena-event").addEventListener("click", async (e) => {
+    const start  = e.target.closest("#arena-start");
+    const replay = e.target.closest("#arena-replay");
+    if (!start && !replay) return;
+
+    if (parts.length < 2) { toast("An Arena race needs at least two racers", true); return; }
+
+    // A replay reuses the stored seed so it is the same race; a fresh run
+    // draws a new one.
+    const seed = replay && event.seed ? Number(event.seed) : newSeed();
+    await runRace(view, stage, event, parts, byId, seed, { save: !replay });
+  });
+
+  if (canEdit()) wireLineup(view, event, parts, members, () => render(view));
+
+  if (!results.length) {
+    stage.innerHTML = `
+      <div class="row-end">
+        <button class="btn" id="arena-start" ${parts.length < 2 ? "disabled" : ""}>
+          ${parts.length < 2 ? "Add racers to start" : "Start the race"}
+        </button>
+      </div>`;
+  }
+}
+
+function figure(value, label) {
+  return `<div class="setup-figure">
+            <span class="sf-v">${esc(value)}</span><span class="sf-l">${esc(label)}</span>
+          </div>`;
+}
+
+// ------------------------------- line-up ------------------------------
+
+function lineupCard(event, parts, byId, members) {
+  const admin = canEdit();
+  const inRace = new Set(parts.map((p) => String(p.member_id)));
+  const spare  = members.filter((m) => !inRace.has(String(m.id)));
+
+  return `
+    <div class="card">
+      <div class="card-title">Line-up</div>
+
+      ${parts.length ? `<div class="lanes-list">${parts.map((p, i) => {
+        const m = byId.get(String(p.member_id));
+        return `
+          <div class="lane-row">
+            <span class="lane-no">${p.number ?? i + 1}</span>
+            <span class="lane-sprite" style="--racer:${esc(p.color || laneColor(i))}">
+              ${spriteMarkup(event.theme, p.sprite, p.color || laneColor(i))}
+            </span>
+            <span class="lane-name">${esc(m?.display_name || "Unknown")}</span>
+            ${admin ? `
+              <select class="lane-pick" data-sprite-for="${p.id}">
+                <option value="">— sprite —</option>
+                ${slotsFor(event.theme).map((s) =>
+                  `<option value="${esc(s.key)}" ${s.key === p.sprite ? "selected" : ""}>${esc(s.label)}</option>`).join("")}
+              </select>
+              <button class="btn ghost small" data-drop-racer="${p.id}" aria-label="Remove">&times;</button>
+            ` : ""}
+          </div>`;
+      }).join("")}</div>` : `<p class="muted tiny">No racers yet.</p>`}
+
+      ${admin ? `
+        <div class="arena-admin">
+          ${spare.length ? `
+            <select id="arena-add-member">
+              <option value="">— add a racer —</option>
+              ${spare.map((m) => `<option value="${m.id}">${esc(m.display_name)}</option>`).join("")}
+            </select>` : `<span class="muted tiny">Every member is in this race.</span>`}
+          <button class="btn ghost small" id="arena-add-all" ${spare.length ? "" : "disabled"}>Add everyone</button>
+          <button class="btn ghost small" id="arena-roll-sprites" ${parts.length ? "" : "disabled"}>Random sprites</button>
+        </div>` : ""}
+    </div>`;
+}
+
+const LANE_COLORS = [
+  "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
+  "#f2e05a", "#ff7fb0", "#8fd14f", "#ff9a4a", "#7f8cff", "#d6b254",
+];
+const laneColor = (i) => LANE_COLORS[i % LANE_COLORS.length];
+
+function wireLineup(view, event, parts, members, refresh) {
+  const root = view.querySelector("#arena-event");
+
+  root.addEventListener("change", async (e) => {
+    const add = e.target.closest("#arena-add-member");
+    const sprite = e.target.closest("[data-sprite-for]");
+
+    if (add && add.value) {
+      try {
+        await insertRow("arena_participants", {
+          event_id: event.id,
+          member_id: Number(add.value),
+          sort_order: parts.length,
+          color: laneColor(parts.length),
+          number: parts.length + 1,
+        });
+        refresh();
+      } catch (err) { toast(err.message || "Could not add that racer", true); }
+    }
+
+    if (sprite) {
+      try {
+        await updateRow("arena_participants", sprite.dataset.spriteFor, { sprite: sprite.value });
+        toast("Sprite set");
+        refresh();
+      } catch (err) { toast(err.message || "Could not set the sprite", true); }
+    }
+  });
+
+  root.addEventListener("click", async (e) => {
+    const drop = e.target.closest("[data-drop-racer]");
+    const all  = e.target.closest("#arena-add-all");
+    const roll = e.target.closest("#arena-roll-sprites");
+
+    if (drop) {
+      try {
+        const { error } = await db().from("arena_participants").delete().eq("id", drop.dataset.dropRacer);
+        if (error) throw error;
+        refresh();
+      } catch (err) { toast(err.message || "Could not remove that racer", true); }
+    }
+
+    if (all) {
+      all.disabled = true;
+      const have = new Set(parts.map((p) => String(p.member_id)));
+      try {
+        let n = parts.length;
+        for (const m of members) {
+          if (have.has(String(m.id))) continue;
+          await insertRow("arena_participants", {
+            event_id: event.id, member_id: m.id, sort_order: n,
+            color: laneColor(n), number: n + 1,
+          });
+          n++;
+        }
+        toast("Line-up filled");
+        refresh();
+      } catch (err) { toast(err.message || "Could not fill the line-up", true); all.disabled = false; }
+    }
+
+    if (roll) {
+      roll.disabled = true;
+      try {
+        const keys = assignSprites(event.theme, parts.length);
+        for (let i = 0; i < parts.length; i++) {
+          await updateRow("arena_participants", parts[i].id, { sprite: keys[i] });
+        }
+        toast("Sprites rolled");
+        refresh();
+      } catch (err) { toast(err.message || "Could not roll sprites", true); roll.disabled = false; }
+    }
+  });
+}
+
+// =============================== the race =============================
+
+/**
+ * Countdown, run, reveal.
+ *
+ * Exported so the race can be driven without a database behind it - the
+ * animation is the headline feature and needs to be verifiable on its own.
+ *
+ * The whole race is simulated first (see race.js), so what happens here is
+ * playback: one requestAnimationFrame loop that maps elapsed time to a tick
+ * and writes a transform per racer. No layout is read inside the loop and
+ * nothing is re-created, which is what keeps it smooth on a phone.
+ */
+export async function runRace(view, stage, event, parts, byId, seed, { save }) {
+  const ticks = ticksFor(event.race_length, event.length_ticks);
+  const racers = parts.map((p, i) => ({
+    id: p.member_id,
+    name: byId.get(String(p.member_id))?.display_name || "Unknown",
+    sprite: p.sprite,
+    color: p.color || laneColor(i),
+    number: p.number ?? i + 1,
+  }));
+
+  const sim = simulate(racers, ticks, seed);
+
+  stage.innerHTML = `
+    <div class="arena-track-wrap">
+      <div class="scoreboard">
+        <span class="sb-brand">DFL ARENA</span>
+        <span class="sb-status" id="sb-status">On the line</span>
+        <span class="sb-clock" id="sb-clock">0.0s</span>
+      </div>
+
+      <div class="track" id="track">
+        <div class="track-start"></div>
+        <div class="track-finish"></div>
+        ${racers.map((r, i) => `
+          <div class="lane">
+            <span class="lane-tag" style="--racer:${esc(r.color)}">
+              <b>${r.number}</b>${esc(r.name)}
+            </span>
+            <div class="runner" id="runner-${i}" style="--racer:${esc(r.color)}">
+              ${spriteMarkup(event.theme, r.sprite, r.color)}
+            </div>
+          </div>`).join("")}
+      </div>
+
+      <div class="countdown hidden" id="countdown"><span id="countdown-n">3</span></div>
+    </div>
+    <div id="arena-result-slot"></div>
+  `;
+
+  const runners = racers.map((_, i) => stage.querySelector(`#runner-${i}`));
+  const status  = stage.querySelector("#sb-status");
+  const clock   = stage.querySelector("#sb-clock");
+  const slot    = stage.querySelector("#arena-result-slot");
+
+  const finish = async () => {
+    status.textContent = "Final";
+    slot.innerHTML = resultsCard(
+      sim.order.map((o) => ({ member_id: o.racer.id, place: o.place, finish_ms: o.finishMs })),
+      byId, event, { fresh: true });
+    if (save) await saveResults(event, sim, seed);
+  };
+
+  // Reduced motion: no countdown, no movement - place everyone and reveal.
+  if (reduceMotion()) {
+    runners.forEach((el, i) => { el.style.transform = `translate3d(${trackX(1)},0,0)`; });
+    clock.textContent = (sim.order.at(-1).finishMs / 1000).toFixed(1) + "s";
+    await finish();
+    return;
+  }
+
+  await countdown(stage);
+
+  status.textContent = "Racing";
+  const started = performance.now();
+
+  await new Promise((resolve) => {
+    const total = sim.order.at(-1).finishMs + 250;
+
+    function frame(now) {
+      const elapsed = now - started;
+      const t = Math.min(sim.frames, elapsed / TICK_MS);
+      const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
+
+      for (let i = 0; i < runners.length; i++) {
+        const s = sim.samples[i];
+        const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
+        runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+      }
+
+      clock.textContent = (elapsed / 1000).toFixed(1) + "s";
+      if (elapsed > total * 0.82) status.textContent = "Final stretch";
+
+      if (elapsed >= total) resolve();
+      else requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+
+  await finish();
+  slot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/*
+  Progress to a CSS translate.
+
+  The lane is the full width and the sprite is 44px, so travelling to
+  "100%" would put it a sprite-width past the finish line. calc keeps the
+  sprite inside its lane at both ends without measuring anything, which
+  means no layout read inside the animation loop.
+*/
+const trackX = (p) => `calc(${(p * 100).toFixed(3)}% - ${(p * 46).toFixed(1)}px)`;
+
+function countdown(stage) {
+  const box = stage.querySelector("#countdown");
+  const num = stage.querySelector("#countdown-n");
+  const status = stage.querySelector("#sb-status");
+  box.classList.remove("hidden");
+
+  return new Promise((resolve) => {
+    const steps = ["3", "2", "1", "GO!"];
+    let i = 0;
+    const tick = () => {
+      num.textContent = steps[i];
+      num.classList.toggle("go", steps[i] === "GO!");
+      // restart the pop animation
+      num.style.animation = "none";
+      void num.offsetWidth;
+      num.style.animation = "";
+      status.textContent = steps[i] === "GO!" ? "Away!" : "Set";
+      i++;
+      if (i < steps.length) setTimeout(tick, 700);
+      else setTimeout(() => { box.classList.add("hidden"); resolve(); }, 420);
+    };
+    tick();
+  });
+}
+
+// ------------------------------- results ------------------------------
+
+function resultsCard(results, byId, event, { fresh = false } = {}) {
+  const rows = [...results].sort((a, b) => a.place - b.place);
+  const win  = rows[0];
+  const winner = win ? byId.get(String(win.member_id)) : null;
+
+  return `
+    <div class="card results-card ${fresh ? "reveal" : ""}">
+      <div class="card-title">Result</div>
+
+      ${winner ? `
+        <div class="winner-block">
+          <span class="winner-trophy" aria-hidden="true">🏆</span>
+          <span class="winner-name">${esc(winner.display_name)}</span>
+          <span class="winner-label">Winner${event?.name ? " · " + esc(event.name) : ""}</span>
+        </div>` : ""}
+
+      <div class="order-list">
+        ${rows.map((r, i) => {
+          const m = byId.get(String(r.member_id));
+          return `
+            <div class="order-row ${r.place === 1 ? "first" : ""}" style="--i:${i}">
+              <span class="order-place">${r.place === 1 ? "1st" : ordinal(r.place)}</span>
+              <span class="order-name">${esc(m?.display_name || "Unknown")}</span>
+              <span class="order-time">${r.finish_ms != null ? (r.finish_ms / 1000).toFixed(2) + "s" : ""}</span>
+            </div>`;
+        }).join("")}
+      </div>
+
+      <div class="row-end">
+        <a class="btn ghost small" href="#/arena">Back to Arena</a>
+        ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay</button>` : ""}
+        ${canEdit() ? `<button class="btn small" id="arena-start">Run again</button>` : ""}
+      </div>
+    </div>`;
+}
+
+function ordinal(n) {
+  const r = n % 100;
+  if (r >= 11 && r <= 13) return `${n}th`;
+  return n + (["th", "st", "nd", "rd"][n % 10] || "th");
+}
+
+/** Replace the stored result, and mark the event final. */
+async function saveResults(event, sim, seed) {
+  try {
+    const { error: wipe } = await db().from("arena_results").delete().eq("event_id", event.id);
+    if (wipe) throw wipe;
+
+    const rows = sim.order.map((o) => ({
+      event_id: event.id,
+      member_id: o.racer.id,
+      place: o.place,
+      finish_ms: o.finishMs,
+    }));
+    const { error } = await db().from("arena_results").insert(rows);
+    if (error) throw error;
+
+    await updateRow("arena_events", event.id, {
+      status: "complete",
+      seed,
+      completed_at: new Date().toISOString(),
+    });
+    toast("Result saved");
+  } catch (err) {
+    // A member watching a race must not see a scary failure: the race still
+    // happened and the order is on screen, it just is not theirs to store.
+    if (canEdit()) toast(err.message || "Could not save the result", true);
+  }
+}

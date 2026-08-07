@@ -1483,3 +1483,287 @@ input.masked {
   .tabbar a .ico { width: 18px; height: 18px; }
   .hero img { width: 110px; }
 }
+
+/* =========================== DFL ARENA =============================== */
+
+/*
+  The track is the one place in the app allowed to be theatrical, but it
+  still has to be the same app: stadium-at-night surfaces, the team accent,
+  no rainbow gradients, no bouncing cartoon chrome.
+
+  Every racer is positioned with a transform only. Nothing in the animation
+  loop touches width, left or layout, which is what keeps twelve lanes
+  smooth on a phone.
+*/
+
+.backlink { font-size: 13px; font-weight: 600; text-decoration: none; }
+
+.arena-card { padding: 0; overflow: hidden; }
+.arena-link {
+  display: block;
+  padding: 14px 16px 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.arena-link:hover { background: var(--bg-3); }
+.arena-top { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.arena-top .card-heading { margin: 0; }
+.arena-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.arena-winner { color: var(--accent); font-weight: 700; }
+.arena-card .inline-admin { padding: 0 16px 12px; }
+
+.arena-figures { display: flex; gap: 22px; flex-wrap: wrap; }
+
+/* ------------------------------ line-up ------------------------------- */
+
+.lanes-list { display: grid; gap: 2px; }
+.lane-row {
+  display: grid;
+  grid-template-columns: 1.6rem 46px 1fr auto auto;
+  gap: 9px;
+  align-items: center;
+  padding: 7px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.lane-row:first-child { border-top: 0; }
+.lane-no {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.lane-name { font-size: 14.5px; font-weight: 600; min-width: 0; }
+.lane-pick { width: auto; font-size: 13px; padding: 6px 8px; }
+
+.lane-sprite { display: block; width: 46px; height: 30px; }
+.racer-art, .racer-img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+.arena-admin {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.arena-admin select { width: auto; flex: 1 1 12rem; }
+
+/* ---------------------------- the scoreboard -------------------------- */
+
+.arena-track-wrap {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: linear-gradient(180deg, #101823, var(--bg-2));
+  margin-bottom: 10px;
+}
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: #0b1017;
+  border-bottom: 1px solid var(--line);
+}
+.sb-brand {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--accent);
+}
+.sb-status {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sb-clock {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.6rem;
+  text-align: right;
+}
+
+/* ------------------------------- the track ---------------------------- */
+
+.track { position: relative; padding: 10px 0; }
+
+/* start and finish lines, drawn once and never touched again */
+.track-start, .track-finish {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  z-index: 1;
+}
+.track-start  { left: 0;  background: rgba(255,255,255,.14); }
+.track-finish {
+  right: 0;
+  background:
+    repeating-linear-gradient(180deg, #e8edf5 0 7px, #11161f 7px 14px);
+  box-shadow: -6px 0 14px rgba(0,0,0,.35);
+}
+
+.lane {
+  position: relative;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px dashed rgba(255,255,255,.055);
+}
+.lane:last-child { border-bottom: 0; }
+
+/* the owner's name, sitting behind the racer rather than taking a column */
+.lane-tag {
+  position: absolute;
+  left: 8px;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(232,237,245,.28);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.lane-tag b {
+  display: inline-grid;
+  place-items: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--racer);
+  color: #06240f;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.runner {
+  position: relative;
+  z-index: 2;
+  width: 46px;
+  height: 30px;
+  /* transform only: no layout, no repaint of the lane */
+  will-change: transform;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.5));
+}
+
+/* ------------------------------ countdown ----------------------------- */
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8,11,16,.72);
+  z-index: 5;
+}
+#countdown-n {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 84px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  animation: countPop .62s cubic-bezier(.2,.7,.3,1) both;
+}
+#countdown-n.go { color: var(--accent); font-size: 66px; letter-spacing: .06em; }
+
+@keyframes countPop {
+  from { opacity: 0; transform: scale(1.5); }
+  60%  { opacity: 1; transform: scale(1); }
+  to   { opacity: .92; transform: scale(1); }
+}
+
+/* ------------------------------- results ----------------------------- */
+
+.results-card { padding: 0; overflow: hidden; }
+.results-card .card-title { padding: 14px 16px 0; margin: 0; }
+
+.winner-block {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.winner-trophy { font-size: 30px; line-height: 1; }
+.winner-name {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: center;
+}
+.winner-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.order-list { padding: 4px 0; }
+.order-row {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.order-row:first-child { border-top: 0; }
+.order-place {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.order-row.first .order-place, .order-row.first .order-name { color: var(--accent); }
+.order-name { font-size: 15px; font-weight: 600; }
+.order-time {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.results-card .row-end { padding: 0 16px 14px; }
+
+/* The order reveals a line at a time, but only when it is a live finish. */
+.results-card.reveal .order-row {
+  animation: orderIn .34s ease both;
+  animation-delay: calc(var(--i) * 90ms);
+}
+@keyframes orderIn {
+  from { opacity: 0; transform: translate3d(-8px, 0, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Landscape and tall phones: keep twelve lanes on one screen. */
+@media (max-height: 620px) {
+  .lane { height: 30px; }
+  .runner, .lane-sprite { width: 38px; height: 25px; }
+  #countdown-n { font-size: 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-card.reveal .order-row { animation: none; }
+  #countdown-n { animation: none; }
+  .runner { will-change: auto; }
+}
