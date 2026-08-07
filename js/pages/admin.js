@@ -41,15 +41,44 @@ let activeSection = "members";
 
 // -------------------------------------------------------- password box
 
+/*
+  WHY THIS IS NOT AN <input type="password">
+
+  There is one shared commissioner password for the whole league. A browser
+  password manager treats any type="password" field as a personal login: it
+  offers to save it, offers to fill it, and puts a "this password is weak"
+  warning on it. None of that applies here, and all of it gets in the way.
+
+  So the field is a normal text input that CSS masks instead. Chrome sees
+  no credential, so it has nothing to save, fill or grade - while the
+  characters are still hidden on screen. The data-*-ignore attributes cover
+  the third-party managers, which go by their own markers rather than by the
+  input type.
+
+  Firefox has only supported -webkit-text-security recently, so when it is
+  missing we fall back to a real password field. Masking the value matters
+  more than silencing the prompt.
+*/
+const CAN_MASK = typeof CSS !== "undefined"
+  && typeof CSS.supports === "function"
+  && CSS.supports("-webkit-text-security", "disc");
+
 /**
- * A password input with an eye button that reveals what you typed.
+ * The admin password input, with an eye button that reveals what you typed.
  * Phone keyboards make blind password entry genuinely annoying.
  */
-function passwordField(id, placeholder, autocomplete) {
+function passwordField(id, placeholder) {
+  const shared = `id="${id}" required
+    ${placeholder ? `placeholder="${esc(placeholder)}"` : ""}
+    autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+    data-form-type="other" data-lpignore="true" data-1p-ignore data-bwignore
+    data-protonpass-ignore="true"`;
+
   return `
     <div class="pwwrap">
-      <input id="${id}" type="password" autocomplete="${autocomplete}"
-             ${placeholder ? `placeholder="${esc(placeholder)}"` : ""} required>
+      ${CAN_MASK
+        ? `<input type="text" class="masked" name="dfl-admin-key" ${shared}>`
+        : `<input type="password" name="dfl-admin-key" ${shared}>`}
       <button type="button" class="pweye" data-eye="${id}" aria-label="Show password">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path class="eye-open" d="M1.8 12S5.4 5.4 12 5.4 22.2 12 22.2 12 18.6 18.6 12 18.6 1.8 12 1.8 12z"
@@ -68,7 +97,7 @@ function passwordField(id, placeholder, autocomplete) {
  * Bound to each button rather than delegated from `root`, because `root`
  * is #view, which survives re-renders - render() runs again on sign-in and
  * sign-out, so a delegated listener stacked up and fired twice per click,
- * flipping the field text -> password -> text and appearing to do nothing.
+ * flipping the field hidden -> shown -> hidden and appearing to do nothing.
  * The buttons themselves are rebuilt every render, so they cannot double up.
  */
 function wireEyes(root) {
@@ -77,8 +106,12 @@ function wireEyes(root) {
     if (!input) return;
 
     btn.addEventListener("click", () => {
-      const show = input.type === "password";
-      input.type = show ? "text" : "password";
+      // Masked fields drop a class; the fallback still swaps the type.
+      const show = CAN_MASK ? input.classList.contains("masked")
+                            : input.type === "password";
+      if (CAN_MASK) input.classList.toggle("masked", !show);
+      else          input.type = show ? "text" : "password";
+
       btn.classList.toggle("on", show);
       btn.querySelector(".eye-slash").classList.toggle("hidden", !show);
       btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
@@ -124,7 +157,7 @@ export async function render(view) {
     <div class="section-head"><h2>Password</h2></div>
     <form class="card" id="pw-form">
       <label for="new-pw">New admin password</label>
-      ${passwordField("new-pw", "at least 6 characters", "new-password")}
+      ${passwordField("new-pw", "at least 6 characters")}
       <div class="row-end"><button class="btn ghost" type="submit">Change password</button></div>
       <p class="muted tiny">Everyone signed in as admin on another device will need the new password.</p>
     </form>
@@ -179,7 +212,7 @@ function renderLogin(view) {
     <form class="card" id="login-form">
       <div class="card-title">Commissioner sign in</div>
       <label for="pw">Admin password</label>
-      ${passwordField("pw", "", "current-password")}
+      ${passwordField("pw", "")}
       <div class="row-end"><button class="btn" type="submit">Sign in</button></div>
       <p class="muted tiny">The password is checked by the database, and stays valid on this device until you sign out.</p>
     </form>

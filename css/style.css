@@ -972,6 +972,18 @@ ul.tidy li { margin-bottom: 4px; }
 
 .pwwrap { position: relative; }
 .pwwrap input { padding-right: 46px; }
+
+/*
+  Hides what you type without being an <input type="password">, which is
+  what makes browser password managers offer to save the commissioner
+  password and then grade it. See the comment in js/pages/admin.js.
+
+  Dropping this class is what the eye button does to reveal the text.
+*/
+input.masked {
+  -webkit-text-security: disc;
+  text-security: disc;            /* the unprefixed property, for later */
+}
 .pweye {
   position: absolute;
   right: 6px;
