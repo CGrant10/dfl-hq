@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.16.7";
+const CACHE_NAME = "dfl-hq-v1.16.8";
 
 const CDN_HOSTS = new Set([
   "cdn.jsdelivr.net",
@@ -30,7 +30,7 @@ const APP_SHELL = [
   "./js/pages/arena.js", "./js/pages/golf.js", "./js/pages/broadcast.js", "./js/arena/race.js",
   "./js/arena/sprites.js", "./js/pages/calendar.js", "./js/pages/history.js", "./js/pages/finances.js",
   "./js/pages/profile.js", "./js/pages/admin.js", "./js/pages/admin_sleeper.js",
-  "./js/pages/admin_finance.js", "./js/pages/admin_finance_setup.js",
+  "./js/pages/admin_finance.js", "./js/pages/admin_finance_setup.js", "./js/golf_scorecard.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/logo-64.png", "./icons/logo-256.png",
 ];
 
