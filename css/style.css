@@ -127,9 +127,42 @@ a { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
 }
-.brand { display: flex; align-items: center; gap: 9px; font-weight: 800; letter-spacing: .5px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
 .brand-logo { width: 40px; height: 40px; display: block; flex: none; }
-.brand-text { font-size: 18px; }
+.brand-text {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.brand-text span {
+  color: var(--accent);
+  text-shadow:
+    0 0 12px rgba(47,191,95,.45);
+}
+
+.brand-text small {
+  display: block;
+  margin-top: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.brand-text span {
+  color: var(--accent);
+  text-shadow:
+    0 0 12px rgba(47,191,95,.45);
+}
 
 .whoami {
   background: var(--bg-3);
