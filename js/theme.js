@@ -3,8 +3,6 @@
 // ---------------------------------------------------------------------
 // Each member chooses a favourite team on their profile. The choice is
 // saved locally immediately and can also be saved to members.favorite_team.
-// The selected team's brand colours become the visual identity of the
-// entire app, while contrast-safe derived colours keep the UI readable.
 // =====================================================================
 
 import { findTeam } from "./teams.js";
@@ -12,55 +10,18 @@ import { findTeam } from "./teams.js";
 const KEY = "dfl.theme";
 const DEFAULT_ACCENT = "#2fbf5f";
 
-function toRgb(hex) {
-  const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
-}
-function toHex([r, g, b]) {
-  return "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
-}
-function luminance(rgb) {
-  const [r, g, b] = rgb.map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
+function toRgb(hex) { const h = hex.replace("#", ""); const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h; return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)); }
+function toHex([r, g, b]) { return "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join(""); }
+function luminance(rgb) { const [r, g, b] = rgb.map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
-function rgbToHsl([r, g, b]) {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
-  if (max === min) return [0, 0, l];
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return [h, s, l];
-}
-function hslToRgb([h, s, l]) {
-  if (s === 0) return [l * 255, l * 255, l * 255];
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
-  const hue = (t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; };
-  return [hue(h + 1 / 3), hue(h), hue(h - 1 / 3)].map((v) => v * 255);
-}
+function rgbToHsl([r, g, b]) { r /= 255; g /= 255; b /= 255; const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2; if (max === min) return [0, 0, l]; const d = max - min, s = l > 0.5 ? d / (2 - max - min) : d / (max + min); let h; if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6; else if (max === g) h = ((b - r) / d + 2) / 6; else h = ((r - g) / d + 4) / 6; return [h, s, l]; }
+function hslToRgb([h, s, l]) { if (s === 0) return [l * 255, l * 255, l * 255]; const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; const hue = (t) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; }; return [hue(h + 1 / 3), hue(h), hue(h - 1 / 3)].map((v) => v * 255); }
 const MIN_LUMINANCE = 0.20;
-function readable(hex) {
-  const rgb = toRgb(hex);
-  if (luminance(rgb) >= MIN_LUMINANCE) return rgb;
-  const [h, s, l] = rgbToHsl(rgb);
-  const sat = Math.min(1, s < 0.15 ? s : s + 0.08);
-  let lightness = l, out = rgb, guard = 0;
-  while (luminance(out) < MIN_LUMINANCE && lightness < 0.92 && guard++ < 40) {
-    lightness += 0.02;
-    out = hslToRgb([h, sat, lightness]);
-  }
-  return out;
-}
+function readable(hex) { const rgb = toRgb(hex); if (luminance(rgb) >= MIN_LUMINANCE) return rgb; const [h, s, l] = rgbToHsl(rgb); const sat = Math.min(1, s < 0.15 ? s : s + 0.08); let lightness = l, out = rgb, guard = 0; while (luminance(out) < MIN_LUMINANCE && lightness < 0.92 && guard++ < 40) { lightness += 0.02; out = hslToRgb([h, sat, lightness]); } return out; }
 
 function injectThemeStyles() {
   if (document.getElementById("dfl-global-theme-style")) return;
-  const style = document.createElement("style");
-  style.id = "dfl-global-theme-style";
+  const style = document.createElement("style"); style.id = "dfl-global-theme-style";
   style.textContent = `
     :root{--theme-primary:var(--accent);--theme-secondary:var(--accent-2);--theme-soft:color-mix(in srgb,var(--accent) 14%,transparent);--theme-soft-2:color-mix(in srgb,var(--accent-2) 10%,transparent);--theme-border:color-mix(in srgb,var(--accent) 38%,var(--line));--theme-glow:color-mix(in srgb,var(--accent) 24%,transparent)}
     body{background:radial-gradient(circle at 50% -12%,var(--theme-soft),transparent 38%),var(--bg)}
@@ -73,7 +34,7 @@ function injectThemeStyles() {
     .btn.ghost:hover,.btn:hover{border-color:var(--accent);color:var(--accent)}
     input:focus,select:focus,textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--theme-soft)}
     .card{border-color:var(--theme-border)}
-    .card-title,.card-heading{border-left:3px solid var(--accent);padding-left:10px}
+    .card-title,.card-heading{border-left:2px solid var(--accent);padding-left:9px}
     .pill.green,.pill.accent{background:var(--theme-soft);border-color:var(--theme-border);color:var(--accent)}
     .whoami{border-color:var(--theme-border)}
     .whoami:hover{border-color:var(--accent);color:var(--accent)}
@@ -81,43 +42,26 @@ function injectThemeStyles() {
     .profile-head.has-team:before{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
     .swatchbar{border-color:var(--theme-border)}
     .dfl-team-card{border-color:var(--theme-border)}
+    .dash-pulse{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.85fr);gap:8px;margin:0 0 14px}
+    .dash-primary,.dash-secondary{position:relative;min-width:0;padding:15px;border:1px solid var(--theme-border);border-radius:14px;background:linear-gradient(145deg,var(--theme-soft),var(--bg-2) 62%);overflow:hidden}
+    .dash-primary:before,.dash-secondary:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--accent),var(--accent-2))}
+    .dash-primary{box-shadow:0 5px 24px var(--theme-glow)}
+    .dash-kicker{display:block;color:var(--accent);font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+    .dash-primary strong,.dash-secondary strong{display:block;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .dash-primary span:not(.dash-kicker),.dash-secondary span:not(.dash-kicker){display:block;color:var(--muted);font-size:11px;margin-top:4px}
+    .dash-primary a,.dash-secondary a{display:inline-block;margin-top:10px;color:var(--accent);font-size:11px;font-weight:800;text-decoration:none}
+    @media(max-width:600px){.dash-pulse{grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}.dash-primary,.dash-secondary{padding:13px 12px}.dash-primary strong,.dash-secondary strong{font-size:14px}.dash-primary a,.dash-secondary a{margin-top:8px}}
+    @media(max-width:390px){.dash-pulse{grid-template-columns:1fr}.dash-secondary{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px}.dash-secondary .dash-kicker{grid-column:1/-1}.dash-secondary span:not(.dash-kicker){margin-top:0}.dash-secondary a{margin-top:0}}
   `;
   document.head.appendChild(style);
 }
 
 export function applyTheme(teamValue) {
-  injectThemeStyles();
-  const root = document.documentElement;
-  const team = findTeam(teamValue);
-  const accentRgb = team ? readable(team.primary) : toRgb(DEFAULT_ACCENT);
-  const accent = toHex(accentRgb);
-  const dim = toHex(mix(accentRgb, [0, 0, 0], 0.45));
-  const onAccent = luminance(accentRgb) > 0.45 ? "#0b1016" : "#ffffff";
-  let second = accent;
-  if (team) {
-    const secondRgb = readable(team.secondary);
-    second = Math.abs(luminance(secondRgb) - luminance(accentRgb)) < 0.06
-      ? toHex(mix(secondRgb, [255, 255, 255], 0.35)) : toHex(secondRgb);
-  }
-  root.style.setProperty("--accent", accent);
-  root.style.setProperty("--accent-dim", dim);
-  root.style.setProperty("--on-accent", onAccent);
-  root.style.setProperty("--accent-2", second);
-  root.style.setProperty("--theme-primary", accent);
-  root.style.setProperty("--theme-secondary", second);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", accent);
-  document.body?.setAttribute("data-team-theme", teamValue || "default");
+  injectThemeStyles(); const root = document.documentElement; const team = findTeam(teamValue); const accentRgb = team ? readable(team.primary) : toRgb(DEFAULT_ACCENT); const accent = toHex(accentRgb); const dim = toHex(mix(accentRgb, [0, 0, 0], 0.45)); const onAccent = luminance(accentRgb) > 0.45 ? "#0b1016" : "#ffffff"; let second = accent;
+  if (team) { const secondRgb = readable(team.secondary); second = Math.abs(luminance(secondRgb) - luminance(accentRgb)) < 0.06 ? toHex(mix(secondRgb, [255, 255, 255], 0.35)) : toHex(secondRgb); }
+  root.style.setProperty("--accent", accent); root.style.setProperty("--accent-dim", dim); root.style.setProperty("--on-accent", onAccent); root.style.setProperty("--accent-2", second); root.style.setProperty("--theme-primary", accent); root.style.setProperty("--theme-secondary", second); document.querySelector('meta[name="theme-color"]')?.setAttribute("content", accent); document.body?.setAttribute("data-team-theme", teamValue || "default");
 }
-
-export function teamColors(teamValue) {
-  const team = findTeam(teamValue);
-  if (!team) return null;
-  return { name: team.name, leagueLabel: team.leagueLabel, primary: toHex(readable(team.primary)), secondary: toHex(readable(team.secondary)) };
-}
-
-export function saveTheme(teamValue) {
-  if (teamValue) localStorage.setItem(KEY, teamValue); else localStorage.removeItem(KEY);
-  applyTheme(teamValue);
-}
+export function teamColors(teamValue) { const team = findTeam(teamValue); if (!team) return null; return { name: team.name, leagueLabel: team.leagueLabel, primary: toHex(readable(team.primary)), secondary: toHex(readable(team.secondary)) }; }
+export function saveTheme(teamValue) { if (teamValue) localStorage.setItem(KEY, teamValue); else localStorage.removeItem(KEY); applyTheme(teamValue); }
 export function savedTheme() { return localStorage.getItem(KEY) || ""; }
 export function initTheme() { applyTheme(savedTheme()); }
