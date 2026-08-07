@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.16.5";
+const CACHE_NAME = "dfl-hq-v1.16.6";
 
 // Third party hosts worth keeping for offline use: the Supabase client, and
 // the Google font the wordmark is set in (css2 serves the stylesheet,
@@ -89,24 +89,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-/*
-  "Network first" was only half true.
-
-  fetch(request) uses the request's default cache mode, which consults the
-  BROWSER's HTTP cache before the network. GitHub Pages serves assets with
-  max-age=600, so for ten minutes after a release this handler happily
-  returned ten-minute-old JavaScript and never touched the network - which
-  is what made the Update button appear to do nothing: it cleared this
-  worker and Cache Storage, reloaded, and landed straight back on the stale
-  copy still sitting in the HTTP cache.
-
-  "no-cache" means always ask the server, but send the validators, so an
-  unchanged file comes back as an empty 304 rather than a fresh download.
-  Freshness costs a round trip, not the bytes.
-
-  Navigation requests are passed through untouched: mode "navigate" cannot
-  be reconstructed, and the version check covers a stale document anyway.
-*/
 function revalidating(request) {
   if (request.mode === "navigate") return request;
   try {
@@ -125,8 +107,7 @@ self.addEventListener("fetch", (event) => {
   // Never cache league data - always talk to Supabase directly.
   if (url.hostname.endsWith("supabase.co")) return;
 
-  // Sleeper is handled by the app itself (sleeper.js caches the big player
-  // list on its own terms), so let those requests go straight through.
+  // Sleeper is handled by the app itself.
   if (url.hostname.endsWith("sleeper.app")) return;
 
   // version.txt is how the app spots a stale cache. Caching it here would
@@ -136,11 +117,6 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(revalidating(request))
       .then((response) => {
-        // Stash a fresh copy of anything from our own origin, plus the
-        // third parties the app genuinely depends on: the supabase-js
-        // library and the brand font. Without the font hosts here the
-        // wordmark silently falls back to the system face offline, which is
-        // the one bit of the header anybody would notice.
         if (response.ok && (url.origin === location.origin || CDN_HOSTS.has(url.hostname))) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
@@ -150,7 +126,6 @@ self.addEventListener("fetch", (event) => {
       .catch(async () => {
         const cached = await caches.match(request);
         if (cached) return cached;
-        // Deep link opened while offline -> serve the app shell.
         if (request.mode === "navigate") return caches.match("./index.html");
         return Response.error();
       })
