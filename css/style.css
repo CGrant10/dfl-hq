@@ -630,6 +630,15 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 12px;
 }
 
+/* Admin-only crest controls, centred under it like the rest of the hero. */
+.crest-tools {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 4px 0 2px;
+}
+
 /* ---- the anniversary season ---- */
 
 /*

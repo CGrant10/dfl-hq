@@ -11,7 +11,8 @@ import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
-import { addControl, editControls, wireInline } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
 
 /** Where the install option lives when we cannot trigger it ourselves. */
 function installHelp() {
@@ -41,9 +42,11 @@ export async function render(view) {
   const firstError = events.error || announcements.error || polls.error;
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
 
+  const settings = await loadSettings();
+
   view.innerHTML = `
     <div id="home-wrap">
-      ${hero(leagues.data || [], members.data || [])}
+      ${hero(leagues.data || [], members.data || [], settings.get(KEY_LOGO))}
       ${quickNav()}
 
       <section class="block">
@@ -74,6 +77,7 @@ export async function render(view) {
 
   // #home-wrap is new on every render, so the listener never stacks up.
   wireInline(view.querySelector("#home-wrap"), () => render(view));
+  wireCrest(view);
 
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
@@ -102,7 +106,7 @@ export async function render(view) {
 
 // -------------------------------- hero --------------------------------
 
-function hero(leagues, members) {
+function hero(leagues, members, logo) {
   const me = currentMember();
 
   const latestChampLeague = leagues.find((l) => l.champion_user_id);
@@ -125,11 +129,18 @@ function hero(leagues, members) {
     <section class="hero ${milestone ? "milestone" : ""}">
       ${milestone ? `<p class="hero-anniversary">${esc(ordinal(number))} Anniversary Season</p>` : ""}
 
-      <img class="hero-crest" src="icons/logo-256.png" alt="DFL league crest"
-           width="256" height="256">
+      <img class="hero-crest" src="${esc(logo || "icons/logo-256.png")}"
+           alt="DFL league crest" width="256" height="256">
       <!-- The crest already reads "DFL", so the wordmark would just repeat
            it. Kept as a heading for screen readers and page structure. -->
       <h1 class="sr-only">DFL HQ</h1>
+
+      ${canEdit() ? `
+        <div class="crest-tools">
+          <input type="file" id="logo-file" accept="image/*" class="hidden">
+          <button class="btn ghost small" id="logo-pick">Change crest</button>
+          ${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}
+        </div>` : ""}
 
       <p class="hero-creed">
         Forged by sinners.<br>
@@ -148,6 +159,85 @@ function hero(leagues, members) {
           : heroStat("—", "Champion")}
       </div>
     </section>`;
+}
+
+// ------------------------------- the crest -----------------------------
+
+/*
+  Uploading a crest.
+
+  The picked file is redrawn to a 256x256 PNG in a canvas before it goes
+  anywhere. That matters for three reasons: a phone photo is several
+  megabytes and would be absurd in a text column, the crest is displayed at
+  256 so anything larger is wasted bytes on every page load, and a
+  centre-crop to square means a rectangular image cannot stretch the hero.
+
+  The result is a data: URI, so it needs no Storage bucket and no bucket
+  policies, and it is read as part of the same settings row as everything
+  else.
+*/
+const CREST_SIZE = 256;
+const MAX_UPLOAD = 12 * 1024 * 1024;   // sanity guard before decoding
+
+function wireCrest(view) {
+  const pick  = view.querySelector("#logo-pick");
+  const file  = view.querySelector("#logo-file");
+  const reset = view.querySelector("#logo-reset");
+  if (!pick || !file) return;
+
+  pick.addEventListener("click", () => file.click());
+
+  reset?.addEventListener("click", async () => {
+    if (!confirm("Go back to the built-in crest?")) return;
+    try {
+      await saveSetting(KEY_LOGO, "");
+      toast("Crest reset");
+      render(view);
+    } catch (err) {
+      toast(err.message || "Could not reset the crest", true);
+    }
+  });
+
+  file.addEventListener("change", async () => {
+    const chosen = file.files?.[0];
+    if (!chosen) return;
+
+    if (!chosen.type.startsWith("image/")) { toast("That is not an image", true); return; }
+    if (chosen.size > MAX_UPLOAD)          { toast("That image is too large", true); return; }
+
+    pick.disabled = true;
+    pick.textContent = "Working…";
+    try {
+      const dataUrl = await toSquarePng(chosen, CREST_SIZE);
+      await saveSetting(KEY_LOGO, dataUrl);
+      toast("Crest updated");
+      render(view);
+    } catch (err) {
+      toast(err.message || "Could not read that image", true);
+      pick.disabled = false;
+      pick.textContent = "Change crest";
+    }
+  });
+}
+
+/** Centre-crop to a square and redraw at `size`, returned as a data: URI. */
+async function toSquarePng(fileObj, size) {
+  const bitmap = await createImageBitmap(fileObj);
+  try {
+    const side = Math.min(bitmap.width, bitmap.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(
+      bitmap,
+      (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side,
+      0, 0, size, size);
+
+    return canvas.toDataURL("image/png");
+  } finally {
+    bitmap.close?.();
+  }
 }
 
 /** 1st, 2nd, 3rd, 4th… 11th, 12th, 13th. */
