@@ -105,11 +105,12 @@ function outingCard(o) {
 async function renderOuting(view, id) {
   view.innerHTML = loading();
 
-  const [outRes, partsRes, teamsRes, ranksRes, members] = await Promise.all([
+  const [outRes, partsRes, teamsRes, ranksRes, scoresRes, members] = await Promise.all([
     db().from("golf_outings").select("*").eq("id", id).maybeSingle(),
     db().from("golf_participants").select("*").eq("outing_id", id).order("sort_order"),
     db().from("golf_teams").select("*").eq("outing_id", id).order("sort_order"),
     db().from("golf_rankings").select("member_id, rating"),
+    db().from("golf_scores").select("*").eq("outing_id", id),
     loadMembers().catch(() => []),
   ]);
 
@@ -121,8 +122,8 @@ async function renderOuting(view, id) {
   const outing = outRes.data;
   const parts  = partsRes.data || [];
   const teams  = teamsRes.data || [];
+  const scores = scoresRes.data || [];
   const byId   = new Map(members.map((m) => [String(m.id), m]));
-  const rating = new Map((ranksRes.data || []).map((r) => [String(r.member_id), r.rating]));
 
   const rate = (memberId) => rating.get(String(memberId)) ?? DEFAULT_RATING;
 
@@ -147,6 +148,7 @@ async function renderOuting(view, id) {
       </div>
 
       ${teamsCard(outing, parts, teams, byId, rate)}
+      ${scoreCard(outing, parts, scores, byId)}
       ${lineupCard(outing, parts, members, byId, rate)}
     </div>
   `;
@@ -378,6 +380,50 @@ function wireTeams(view, outing, parts, teams, rate, refresh) {
   });
 }
 
+// ============================ scoring ============================
+
+function scoreCard(outing, parts, scores, byId) {
+return `
+<section class="card golf-scorecard">
+
+<header class="card-head">
+<h2>Live Scorecard</h2>
+</header>
+
+<div class="glist">
+
+${parts.map((p) => {
+
+const player = byId.get(String(p.member_id));
+
+const holes = scores.filter(
+(s) => String(s.member_id) === String(p.member_id)
+);
+
+const total = holes.reduce(
+(sum, s) => sum + Number(s.strokes || 0),
+0
+);
+
+return `
+<div class="grow">
+<span class="gname">
+${esc(player?.display_name || "Unknown")}
+</span>
+
+<span class="grate">
+${total || "-"}
+</span>
+</div>
+`;
+
+}).join("")}
+
+</div>
+
+</section>
+`;
+}
 // ---------------------------- the generator ---------------------------
 
 /**
