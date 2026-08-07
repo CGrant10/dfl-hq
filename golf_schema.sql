@@ -1,5 +1,5 @@
 -- DFL Golf: one scorecard per team, one score per team/hole.
--- This migration is safe to run after the existing golf tables exist.
+-- Run this in Supabase SQL Editor after the existing golf tables exist.
 
 alter table public.golf_scores
   add column if not exists team_id bigint references public.golf_teams(id) on delete cascade;
@@ -28,8 +28,6 @@ create index if not exists idx_golf_scores_team
 create index if not exists idx_golf_scores_outing
   on public.golf_scores (outing_id);
 
--- Scores are readable by the league. Writes are limited to admins and
--- members of the team whose scorecard is being edited.
 alter table public.golf_scores enable row level security;
 
 drop policy if exists "public read" on public.golf_scores;
@@ -45,7 +43,35 @@ for all
 using (public.is_admin())
 with check (public.is_admin());
 
--- Keep this policy compatible with the app's current member-selection model.
--- If your existing schema already has a golf_scores write policy, the admin
--- policy above is sufficient for admins; the app also prevents non-team edits.
+-- The app sends the selected member id as x-member-id. This allows a real
+-- team member to write only that team's scorecard. Other teams remain read-only.
 drop policy if exists "team member write scores" on public.golf_scores;
+create policy "team member write scores"
+on public.golf_scores
+for all
+using (
+  team_id is not null
+  and exists (
+    select 1
+    from public.golf_participants p
+    where p.outing_id = golf_scores.outing_id
+      and p.team_id = golf_scores.team_id
+      and p.member_id = nullif(
+        current_setting('request.headers', true)::jsonb ->> 'x-member-id',
+        ''
+      )::bigint
+  )
+)
+with check (
+  team_id is not null
+  and exists (
+    select 1
+    from public.golf_participants p
+    where p.outing_id = golf_scores.outing_id
+      and p.team_id = golf_scores.team_id
+      and p.member_id = nullif(
+        current_setting('request.headers', true)::jsonb ->> 'x-member-id',
+        ''
+      )::bigint
+  )
+);
