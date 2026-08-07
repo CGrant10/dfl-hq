@@ -1620,7 +1620,7 @@ input.masked {
 }
 
 .lane {
-  position: relative;
+  position: relative;   /* the rail positions against this */
   height: 38px;
   display: flex;
   align-items: center;
@@ -1653,13 +1653,27 @@ input.masked {
   font-weight: 800;
 }
 
+/*
+  The RAIL, not the sprite.
+
+  A percentage in translateX is a percentage of the element being
+  translated. So the thing that moves has to span the whole lane, with the
+  sprite parked at its left edge - otherwise "100%" is one sprite width and
+  the racers never leave the start line.
+*/
 .runner {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
   z-index: 2;
-  width: 46px;
   height: 30px;
+  pointer-events: none;
   /* transform only: no layout, no repaint of the lane */
   will-change: transform;
+}
+.runner-art {
+  width: 46px;
+  height: 30px;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,.5));
 }
 

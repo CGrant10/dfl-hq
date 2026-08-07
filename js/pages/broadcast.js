@@ -114,8 +114,10 @@ function paint(view, event, racers) {
               <span class="bc-lane-name" style="--racer:${esc(r.color)}">
                 <b>${r.number}</b>${esc(r.name)}
               </span>
-              <div class="bc-runner" id="bc-runner-${i}" style="--racer:${esc(r.color)}">
-                ${spriteMarkup(event.theme, r.sprite, r.color)}
+              <div class="bc-runner" id="bc-runner-${i}">
+                <div class="bc-runner-art" style="--racer:${esc(r.color)}">
+                  ${spriteMarkup(event.theme, r.sprite, r.color)}
+                </div>
               </div>
             </div>`).join("")}
         </div>
@@ -303,7 +305,14 @@ function elapsedMs(row) {
   return Date.now() - started - 0 + (row.bc_offset_ms || 0);
 }
 
-const trackX = (p) => `calc(${(p * 100).toFixed(3)}% - ${(p * 92).toFixed(1)}px)`;
+/*
+  Same rule as the app track: the percentage is of the RAIL, which spans the
+  lane, and the sprite width is subtracted so it stops on the line. The
+  sprite is sized in vw here, so the offset has to be too.
+*/
+const SPRITE_VW = 5;
+const trackX = (p) =>
+  `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_VW).toFixed(3)}vw)`;
 
 /** Live standings, ordered by distance covered. */
 function drawBoard(list, racers, sim, t) {

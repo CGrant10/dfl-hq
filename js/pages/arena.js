@@ -503,8 +503,10 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
             <span class="lane-tag" style="--racer:${esc(r.color)}">
               <b>${r.number}</b>${esc(r.name)}
             </span>
-            <div class="runner" id="runner-${i}" style="--racer:${esc(r.color)}">
-              ${spriteMarkup(event.theme, r.sprite, r.color)}
+            <div class="runner" id="runner-${i}">
+              <div class="runner-art" style="--racer:${esc(r.color)}">
+                ${spriteMarkup(event.theme, r.sprite, r.color)}
+              </div>
             </div>
           </div>`).join("")}
       </div>
@@ -570,12 +572,18 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 /*
   Progress to a CSS translate.
 
-  The lane is the full width and the sprite is 44px, so travelling to
-  "100%" would put it a sprite-width past the finish line. calc keeps the
-  sprite inside its lane at both ends without measuring anything, which
-  means no layout read inside the animation loop.
+  CAREFUL: a percentage in translateX resolves against the ELEMENT'S OWN
+  width, not the parent's. That is why .runner is a full-width rail that
+  spans the lane and the sprite sits at its left edge - translating the rail
+  by 50% moves the sprite half a lane, which is what you want. When the
+  transform was on the 46px sprite itself, "100%" was 46 pixels and the
+  racers looked frozen on the start line.
+
+  Subtracting the sprite width keeps it inside the lane at the finish, so
+  nothing has to be measured inside the animation loop.
 */
-const trackX = (p) => `calc(${(p * 100).toFixed(3)}% - ${(p * 46).toFixed(1)}px)`;
+const SPRITE_W = 46;
+const trackX = (p) => `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_W).toFixed(1)}px)`;
 
 function countdown(stage) {
   const box = stage.querySelector("#countdown");

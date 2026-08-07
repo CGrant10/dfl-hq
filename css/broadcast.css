@@ -166,12 +166,21 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   font-weight: 800;
 }
 
+/* The rail spans the lane; the sprite sits at its left edge. See the note
+   on .runner in style.css - translateX percentages are of the element being
+   translated, so the mover has to be lane-width. */
 .bc-runner {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
   z-index: 2;
+  height: 3.4vw;
+  pointer-events: none;
+  will-change: transform;
+}
+.bc-runner-art {
   width: 5vw;
   height: 3.4vw;
-  will-change: transform;
   filter: drop-shadow(0 .3vw .5vw rgba(0,0,0,.6));
 }
 .bc-runner .racer-art, .bc-runner .racer-img {
