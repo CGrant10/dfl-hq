@@ -95,6 +95,13 @@ export async function selectAll(table, { order = "created_at", asc = false, limi
   return data || [];
 }
 
+/** One row by id. Used by the inline editor to fill its form. */
+export async function selectOne(table, id) {
+  const { data, error } = await db().from(table).select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
+}
+
 export async function insertRow(table, row) {
   const { data, error } = await db().from(table).insert(row).select().single();
   if (error) throw error;

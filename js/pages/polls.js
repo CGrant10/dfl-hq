@@ -1,32 +1,53 @@
 // =====================================================================
-// Polls - one vote per league name per poll.
+// Polls - one changeable vote per league member.
 //
-// Everyone: vote once, then see the tallies. Closed polls always show
-// results.
+// Everyone sees the whole picture: the tallies, and who picked what. There
+// is nothing to unlock by voting first, because in a twelve-person league
+// everybody knows how everybody voted anyway.
 //
-// Admins additionally get, inline on this page:
-//   * who voted for each option
-//   * an editor for the options themselves, after the poll is live
-//   * open / close without leaving the page
+// Your own vote is yours to change. Tapping a different option moves you,
+// it does not add a second vote - the database does the swap in one step
+// (see cast_vote() in polls_schema.sql).
 //
-// Permissions are unchanged for everyone else: the extras are hidden in
-// the UI, and the database refuses the writes anyway.
+// Admins get, inline on this page: add, edit, delete, close/reopen and
+// reset votes. Those buttons are hidden for everybody else, and the
+// database refuses the writes regardless.
 // =====================================================================
 
-import { db, insertRow, isAdmin } from "../supabase.js";
+import { db, isAdmin } from "../supabase.js";
 import { esc, empty, toArray, toast, errorBox } from "../ui.js";
-import { getUsername } from "../store.js";
+import { currentMember } from "../members.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
-// Poll ids whose option editor is currently open.
-const editing = new Set();
+// Set when the database still predates polls_schema.sql. Voting cannot work
+// in that state, so the page says so instead of failing to load.
+let needsMigration = false;
+
+/**
+ * Votes, with member_id when the column is there.
+ *
+ * The page has to open on a database that has not had polls_schema.sql run
+ * against it yet - that is exactly the state somebody is in when they pull
+ * this version - so a missing column falls back to the old shape rather
+ * than taking the whole page down.
+ */
+async function loadVotes() {
+  const withMember = await db().from("votes").select("poll_id, member_id, username, answer");
+  if (!withMember.error) { needsMigration = false; return withMember; }
+  if (!/member_id/.test(withMember.error.message || "")) return withMember;
+
+  needsMigration = true;
+  return db().from("votes").select("poll_id, username, answer");
+}
 
 export async function render(view) {
-  const username = getUsername();
+  const me    = currentMember();
   const admin = isAdmin();
 
-  const [pollsRes, votesRes] = await Promise.all([
+  const [pollsRes, votesRes, membersRes] = await Promise.all([
     db().from("polls").select("*").order("created_at", { ascending: false }),
-    db().from("votes").select("poll_id, username, answer"),
+    loadVotes(),
+    db().from("members").select("id, display_name, team_name"),
   ]);
 
   if (pollsRes.error || votesRes.error) {
@@ -34,113 +55,140 @@ export async function render(view) {
     return;
   }
 
-  const polls = pollsRes.data || [];
-  const votes = votesRes.data || [];
-
-  const head = `
-    <header class="page-head">
-      <h1>Polls</h1>
-      <p class="page-sub">League votes. One vote each, and you can see where everyone landed.</p>
-    </header>`;
-
-  if (!polls.length) {
-    view.innerHTML = head + empty("No polls yet. An admin can create one at Admin → Polls.");
-    return;
-  }
+  const polls   = pollsRes.data || [];
+  const votes   = votesRes.data || [];
+  const members = new Map((membersRes.data || []).map((m) => [String(m.id), m]));
 
   const open   = polls.filter((p) => p.active);
   const closed = polls.filter((p) => !p.active);
 
   view.innerHTML = `
-    ${head}
-    ${username ? "" : `<div class="card note">
-        <div class="card-body">Pick your name in the top right before voting.</div>
-      </div>`}
+    <header class="page-head">
+      <h1>Polls</h1>
+      <p class="page-sub">League votes. One vote each, changeable any time a poll is open.</p>
+      ${addControl("polls", "Add poll")}
+    </header>
+
     <div id="poll-list">
+      ${needsMigration ? `<div class="card note">
+          <div class="card-body">Voting is not switched on yet. Run
+          <strong>polls_schema.sql</strong> in the Supabase SQL editor, then reload.</div>
+        </div>` : ""}
+
+      ${me ? "" : `<div class="card note">
+          <div class="card-body">Pick your name in the top right to vote.</div>
+        </div>`}
+
+      ${polls.length ? "" : empty(
+        canEdit() ? "No polls yet. Add one above."
+                  : "No polls yet. An admin can add one.")}
+
       ${open.length ? `
         <h2 class="section-title">Open<span class="count">${open.length}</span></h2>
-        ${open.map((p) => pollCard(p, votes, username, admin)).join("")}` : ""}
+        ${open.map((p) => pollCard(p, votes, members, me, admin)).join("")}` : ""}
       ${closed.length ? `
         <h2 class="section-title">Closed<span class="count">${closed.length}</span></h2>
-        ${closed.map((p) => pollCard(p, votes, username, admin)).join("")}` : ""}
+        ${closed.map((p) => pollCard(p, votes, members, me, admin)).join("")}` : ""}
     </div>
   `;
 
-  // #poll-list is rebuilt on every render, so this never doubles up.
-  view.querySelector("#poll-list").addEventListener("click", (e) => {
-    const voteBtn   = e.target.closest("button[data-poll]");
-    const editBtn   = e.target.closest("button[data-edit-poll]");
-    const cancelBtn = e.target.closest("button[data-cancel-poll]");
-    const saveBtn   = e.target.closest("button[data-save-poll]");
-    const toggleBtn = e.target.closest("button[data-toggle-poll]");
+  const list = view.querySelector("#poll-list");
+  const refresh = () => render(view);
 
-    if (voteBtn)   return castVote(view, voteBtn, username);
-    if (editBtn)   { editing.add(editBtn.dataset.editPoll); return render(view); }
-    if (cancelBtn) { editing.delete(cancelBtn.dataset.cancelPoll); return render(view); }
-    if (saveBtn)   return saveOptions(view, saveBtn);
+  // #poll-list is rebuilt on every render, so these never double up.
+  wireInline(list, refresh);
+
+  list.addEventListener("click", (e) => {
+    const voteBtn   = e.target.closest("button[data-answer]");
+    const clearBtn  = e.target.closest("button[data-clear-poll]");
+    const toggleBtn = e.target.closest("button[data-toggle-poll]");
+    const resetBtn  = e.target.closest("button[data-reset-poll]");
+
+    if (voteBtn)   return castVote(view, voteBtn, me);
+    if (clearBtn)  return clearVote(view, clearBtn, me);
     if (toggleBtn) return togglePoll(view, toggleBtn);
+    if (resetBtn)  return resetVotes(view, resetBtn);
   });
 }
 
 // ------------------------------- voting -------------------------------
 
-async function castVote(view, btn, username) {
-  if (!username) { toast("Pick your name first", true); return; }
+async function castVote(view, btn, me) {
+  if (!me) { toast("Pick your name in the top right first", true); return; }
+  if (btn.dataset.mine === "true") return;   // already your answer
 
   btn.disabled = true;
-  try {
-    await insertRow("votes", {
-      poll_id: Number(btn.dataset.poll),
-      username,
-      answer: btn.dataset.answer,
-    });
-    toast("Vote counted");
-    render(view);
-  } catch (err) {
+  const { error } = await db().rpc("cast_vote", {
+    p_poll_id:   Number(btn.dataset.poll),
+    p_member_id: Number(me.id),
+    p_answer:    btn.dataset.answer,
+  });
+
+  if (error) {
     btn.disabled = false;
-    // 23505 = unique violation: this name already voted on this poll.
-    toast(err.code === "23505" ? "You already voted on this poll" : err.message, true);
+    toast(voteError(error), true);
+    return;
   }
+  toast(btn.dataset.had === "true" ? "Vote changed" : "Vote counted");
+  render(view);
+}
+
+async function clearVote(view, btn, me) {
+  if (!me) return;
+  btn.disabled = true;
+  const { error } = await db().rpc("clear_vote", {
+    p_poll_id:   Number(btn.dataset.clearPoll),
+    p_member_id: Number(me.id),
+  });
+
+  if (error) { btn.disabled = false; toast(voteError(error), true); return; }
+  toast("Vote removed");
+  render(view);
+}
+
+/**
+ * The two functions are missing until polls_schema.sql has been run, and
+ * "function does not exist" would not tell anybody what to do about it.
+ */
+function voteError(error) {
+  const msg = error.message || "Could not save your vote";
+  if (/could not find the function|does not exist|schema cache/i.test(msg)) {
+    return "Run polls_schema.sql in Supabase to enable voting";
+  }
+  return msg;
 }
 
 // --------------------------- admin actions ----------------------------
 
-async function saveOptions(view, btn) {
-  const id = btn.dataset.savePoll;
-  const box = view.querySelector(`#opts-${id}`);
-  const options = box.value.split("\n").map((s) => s.trim()).filter(Boolean);
-
-  if (!options.length) { toast("A poll needs at least one option", true); return; }
-
-  btn.disabled = true;
-  const { error } = await db().from("polls").update({ options }).eq("id", id);
-  if (error) { toast(error.message, true); btn.disabled = false; return; }
-
-  editing.delete(id);
-  toast("Options updated");
-  render(view);
-}
-
 async function togglePoll(view, btn) {
-  const id = btn.dataset.togglePoll;
   const active = btn.dataset.active === "true";
   btn.disabled = true;
 
-  const { error } = await db().from("polls").update({ active: !active }).eq("id", id);
+  const { error } = await db().from("polls")
+    .update({ active: !active }).eq("id", btn.dataset.togglePoll);
   if (error) { toast(error.message, true); btn.disabled = false; return; }
 
   toast(active ? "Poll closed" : "Poll reopened");
   render(view);
 }
 
+async function resetVotes(view, btn) {
+  if (!confirm("Delete every vote on this poll? This cannot be undone.")) return;
+  btn.disabled = true;
+
+  const { error } = await db().from("votes").delete().eq("poll_id", btn.dataset.resetPoll);
+  if (error) { toast(error.message, true); btn.disabled = false; return; }
+
+  toast("Votes reset");
+  render(view);
+}
+
 // ------------------------------ drawing -------------------------------
 
-function pollCard(poll, allVotes, username, admin) {
+function pollCard(poll, allVotes, members, me, admin) {
   const options = toArray(poll.options);
   const votes   = allVotes.filter((v) => v.poll_id === poll.id);
-  const myVote  = votes.find((v) => v.username === username);
-  const showResults = !poll.active || !!myVote;
-  const isEditing = editing.has(String(poll.id));
+  const myVote  = me ? votes.find((v) => sameMember(v, me)) : null;
 
   return `
     <article class="card poll ${poll.active ? "is-open" : ""}">
@@ -149,79 +197,95 @@ function pollCard(poll, allVotes, username, admin) {
         <div class="meta-row">
           <span class="pill ${poll.active ? "green" : "grey"}">${poll.active ? "Open" : "Closed"}</span>
           <span class="muted tiny">${votes.length} vote${votes.length === 1 ? "" : "s"}</span>
+          ${myVote ? `<span class="pill">You picked ${esc(myVote.answer)}</span>` : ""}
         </div>
       </header>
 
-      ${isEditing
-        ? optionEditor(poll, options)
-        : showResults
-          ? results(options, votes, myVote, admin)
-          : ballot(poll, options)}
+      ${board(poll, options, votes, members, myVote, !!me)}
 
-      ${myVote && !isEditing
-        ? `<p class="poll-you">You voted <strong>${esc(myVote.answer)}</strong></p>` : ""}
+      ${poll.active
+        ? `<p class="poll-you">
+             ${myVote
+               ? `Tap another option to change your vote.
+                  <button class="linkbtn" data-clear-poll="${poll.id}">Remove my vote</button>`
+               : me ? "Tap an option to vote." : "Pick your name in the top right to vote."}
+           </p>`
+        : `<p class="poll-you">This poll is closed. Results are final.</p>`}
 
-      ${admin && !isEditing ? `
+      ${admin ? `
         <footer class="poll-admin">
           <span class="admin-tag">Admin</span>
-          <button class="btn ghost small" data-edit-poll="${poll.id}">Edit options</button>
+          ${editControls("polls", poll, { compact: true })}
           <button class="btn ghost small" data-toggle-poll="${poll.id}" data-active="${poll.active}">
             ${poll.active ? "Close poll" : "Reopen"}
           </button>
+          ${votes.length
+            ? `<button class="btn ghost small" data-reset-poll="${poll.id}">Reset votes</button>` : ""}
         </footer>` : ""}
     </article>`;
 }
 
-function ballot(poll, options) {
-  if (!options.length) return `<p class="muted tiny">This poll has no options yet.</p>`;
-  return `<div class="ballot">${options.map((opt) => `
-    <button class="option" data-poll="${poll.id}" data-answer="${esc(opt)}">
-      <span>${esc(opt)}</span>
-    </button>`).join("")}</div>`;
-}
-
 /**
- * Tallies. Admins also get the list of names under each option.
- * Answers that are no longer in the option list still appear, so votes
- * are never hidden just because an option was renamed or removed.
+ * Every option, its share, and the people under it.
+ *
+ * Answers that are no longer on the ballot still appear, marked as
+ * removed, so no vote is ever hidden just because an option was reworded.
+ * Those are never votable - the database would refuse them anyway.
  */
-function results(options, votes, myVote, admin) {
-  const total = votes.length || 1;
+function board(poll, options, votes, members, myVote, canVote) {
+  const total  = votes.length || 1;
   const labels = [...new Set([...options, ...votes.map((v) => v.answer)])];
+
+  if (!labels.length) {
+    return `<p class="muted tiny">This poll has no options yet.</p>`;
+  }
 
   return `<div class="results">${labels.map((label) => {
     const forThis = votes.filter((v) => v.answer === label);
-    const pct  = Math.round((forThis.length / total) * 100);
-    const mine = myVote?.answer === label;
-    const gone = !options.includes(label);
+    const pct     = Math.round((forThis.length / total) * 100);
+    const mine    = myVote?.answer === label;
+    const gone    = !options.includes(label);
+    const votable = poll.active && !gone;
+
+    // An option is a button while it can be chosen, and plain text once it
+    // cannot, rather than a disabled button that still invites a tap.
+    const head = `
+      <div class="result-top">
+        <span>${mine ? `<span class="you-dot" aria-hidden="true"></span>` : ""}${esc(label)}${
+          gone ? ` <span class="muted tiny">(removed)</span>` : ""}</span>
+        <span class="result-n">${forThis.length} · ${pct}%</span>
+      </div>`;
 
     return `
       <div class="result ${mine ? "mine" : ""}">
-        <div class="result-top">
-          <span>${esc(label)}${gone ? ` <span class="muted tiny">(removed)</span>` : ""}</span>
-          <span class="result-n">${forThis.length} · ${pct}%</span>
-        </div>
+        ${votable
+          ? `<button class="result-pick" data-poll="${poll.id}" data-answer="${esc(label)}"
+                     data-mine="${mine}" data-had="${!!myVote}"
+                     ${canVote ? "" : "disabled"}
+                     aria-pressed="${mine}">${head}</button>`
+          : head}
         <div class="bar"><span style="width:${pct}%"></span></div>
-        ${admin && forThis.length
-          ? `<div class="voters">${forThis.map((v) =>
-              `<span class="voter">${esc(v.username)}</span>`).join("")}</div>`
-          : ""}
+        ${forThis.length
+          ? `<div class="voters">${forThis
+               .map((v) => `<span class="voter ${myVote && v === myVote ? "is-you" : ""}">${
+                 esc(voterName(v, members))}</span>`).join("")}</div>`
+          : `<div class="voters"><span class="muted tiny">nobody yet</span></div>`}
       </div>`;
   }).join("")}</div>`;
 }
 
-function optionEditor(poll, options) {
-  return `
-    <div class="poll-editor">
-      <label for="opts-${poll.id}">Options, one per line</label>
-      <textarea id="opts-${poll.id}" rows="${Math.max(3, options.length + 1)}">${esc(options.join("\n"))}</textarea>
-      <p class="muted tiny">
-        Renaming an option does not move the votes already cast under the old
-        wording — those keep showing, marked as removed.
-      </p>
-      <div class="row-end">
-        <button class="btn ghost small" data-cancel-poll="${poll.id}">Cancel</button>
-        <button class="btn small" data-save-poll="${poll.id}">Save options</button>
-      </div>
-    </div>`;
+/** A vote's display name: the member profile first, the stored name after. */
+function voterName(vote, members) {
+  const m = vote.member_id != null ? members.get(String(vote.member_id)) : null;
+  return m?.display_name || vote.username || "Someone";
+}
+
+/**
+ * Whether a vote row belongs to `me`. Rows cast before polls_schema.sql was
+ * run have no member_id, so those still match on the stored name.
+ */
+function sameMember(vote, me) {
+  if (vote.member_id != null) return String(vote.member_id) === String(me.id);
+  return String(vote.username || "").trim().toLowerCase()
+      === String(me.display_name || "").trim().toLowerCase();
 }

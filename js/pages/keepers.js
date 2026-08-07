@@ -5,6 +5,7 @@
 
 import { selectAll } from "../supabase.js";
 import { esc, empty, groupBy } from "../ui.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
 let year = null;   // remembered while the app stays open
 
@@ -12,7 +13,12 @@ export async function render(view) {
   const rows = await selectAll("keepers", { order: "team", asc: true });
 
   if (!rows.length) {
-    view.innerHTML = `<h1>Keepers</h1>${empty("No keepers recorded yet.")}`;
+    view.innerHTML = `<h1>Keepers</h1>
+      <div id="keeper-body">
+        ${empty("No keepers recorded yet.")}
+        ${canEdit() ? `<div class="row-end">${addControl("keepers", "Add keeper")}</div>` : ""}
+      </div>`;
+    wireInline(view.querySelector("#keeper-body"), () => render(view));
     return;
   }
 
@@ -28,7 +34,14 @@ export async function render(view) {
   `;
 
   const body = view.querySelector("#keeper-body");
-  const paint = () => { body.innerHTML = teams(rows.filter((r) => r.year === year)); };
+
+  // New keepers default to the season being viewed.
+  const paint = () => {
+    body.innerHTML = teams(rows.filter((r) => r.year === year))
+      + (canEdit() ? `<div class="row-end">${addControl("keepers", "Add keeper", { year })}</div>` : "");
+  };
+
+  wireInline(body, () => render(view));
 
   view.querySelector("#year-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-year]");
@@ -59,6 +72,7 @@ function teams(rows) {
               <td>
                 ${esc(k.player)}
                 ${k.notes ? `<div class="muted tiny">${esc(k.notes)}</div>` : ""}
+                ${editControls("keepers", k, { compact: true })}
               </td>
               <td>${k.round_cost != null ? `Rd ${esc(k.round_cost)}` : "—"}</td>
             </tr>`).join("")}

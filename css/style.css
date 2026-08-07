@@ -415,6 +415,38 @@ textarea { min-height: 96px; resize: vertical; }
   margin-bottom: 6px;
 }
 .result-n { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* An option you can still pick. Looks like the row it replaces, so the
+   board does not reshuffle when a poll closes - it just stops responding. */
+.result-pick {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.result-pick:disabled { cursor: default; opacity: .75; }
+.result-pick:hover:not(:disabled) .result-top { color: var(--accent); }
+.result-pick:focus-visible {
+  outline: 2px solid var(--accent-dim);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* the marker on the answer you personally chose */
+.you-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 7px;
+  vertical-align: 1px;
+}
 .bar { background: var(--bg-3); border-radius: 999px; height: 8px; overflow: hidden; }
 /* Solid primary. A split inside a variable-width bar would move as the
    percentage changed, which reads as a glitch rather than a design. */
@@ -427,7 +459,7 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .result.mine .result-top { font-weight: 700; color: var(--accent); }
 
-/* admin-only: who voted for what */
+/* who voted for what - everybody sees this, not just admins */
 .voters { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .voter {
   background: var(--bg-3);
@@ -437,8 +469,14 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 11.5px;
   color: var(--muted);
 }
+.voter.is-you {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 700;
+}
 
 .poll-you { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.poll-you .linkbtn { margin-left: 4px; }
 
 .poll-admin {
   display: flex;
@@ -449,6 +487,9 @@ textarea { min-height: 96px; resize: vertical; }
   padding-top: 12px;
   border-top: 1px dashed var(--line);
 }
+/* Inside the admin footer the buttons are already in a row, so the
+   inline group must not start a second one. */
+.poll-admin .inline-admin { margin: 0; padding: 0; border: 0; }
 .admin-tag {
   font-size: 10px;
   font-weight: 800;
@@ -460,7 +501,50 @@ textarea { min-height: 96px; resize: vertical; }
   border-radius: 999px;
   padding: 2px 8px;
 }
-.poll-editor label { margin-top: 0; }
+/* ========================= inline admin editing ====================== */
+
+/*
+  The buttons an admin sees beside editable content. They sit under the
+  thing they edit, separated by a dashed hairline so it reads as a control
+  strip belonging to that card rather than as part of the content.
+
+  Nothing here renders at all for a normal member - inline.js returns an
+  empty string - so a member's page keeps its original spacing exactly.
+*/
+.inline-admin {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+/* compact: no rule, no top padding - for tight spots like a table cell or
+   a row that already has its own separator */
+.inline-admin.compact {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
+  justify-content: flex-start;
+}
+
+.inline-add {
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed var(--accent-dim);
+}
+.inline-add:hover { background: var(--bg-3); filter: none; }
+
+/* The inline editor sheet: taller and wider than the member picker,
+   because it holds a whole form. */
+.overlay-card.wide {
+  max-width: 480px;
+  max-height: 86vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.overlay-card.wide label:first-of-type { margin-top: 4px; }
 
 /* ============================ splash / hero ========================== */
 
@@ -477,17 +561,22 @@ textarea { min-height: 96px; resize: vertical; }
     linear-gradient(180deg, #141c27, var(--bg-2));
 }
 /*
-  Team colours are used as two solid blocks, never blended. The hard stops
-  (0 50%, 50% 100%) make this a split, not a gradient: each colour keeps
-  its exact brand value instead of washing into a muddy middle.
+  HOW THE TWO TEAM COLOURS ARE USED
+  Never both on one object - no blends, no splits. Each element gets one
+  solid colour, and the two are spread across different kinds of element:
+
+    primary   (--accent)    structure and anything interactive:
+                            buttons, active tab, links, bars, avatars,
+                            card edges, the hero rule
+    secondary (--accent-2)  accolades and flourish: trophies and medals,
+                            champion callouts, the creed sign-off
 */
 .hero::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: linear-gradient(90deg,
-    var(--accent) 0 50%, var(--accent-2, var(--accent)) 50% 100%);
+  background: var(--accent);
 }
 
 .hero-crest {

@@ -7,6 +7,7 @@
 import { db, insertRow } from "../supabase.js";
 import { esc, empty, fmtDate, relDate, toast, errorBox } from "../ui.js";
 import { getUsername } from "../store.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
 let tab = "events";
 
@@ -21,6 +22,10 @@ export async function render(view) {
   `;
 
   const body = view.querySelector("#cal-body");
+
+  // #cal-body is new on every render and survives paint(), which only
+  // replaces what is inside it - so one listener, never doubled.
+  wireInline(body, () => paint(body, view));
 
   view.querySelector("#cal-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-tab]");
@@ -58,7 +63,9 @@ async function paintEvents(body) {
   body.innerHTML = `
     ${upcoming.length
       ? upcoming.map((e) => eventCard(e, true)).join("")
-      : empty("Nothing on the schedule. An admin can add events.")}
+      : empty(canEdit() ? "Nothing on the schedule. Add the first event below."
+                        : "Nothing on the schedule. An admin can add events.")}
+    ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
     ${past.length ? `<div class="section-head"><h2>Past</h2></div>${past.map((e) => eventCard(e, false)).join("")}` : ""}
   `;
 }
@@ -72,6 +79,7 @@ function eventCard(e, upcoming) {
         · <span class="pill ${upcoming ? "green" : "grey"}">${esc(relDate(e.event_date))}</span>
       </div>
       ${e.description ? `<div class="card-body" style="margin-top:8px">${esc(e.description)}</div>` : ""}
+      ${editControls("events", e)}
     </div>`;
 }
 
@@ -89,8 +97,12 @@ async function paintSide(body, view) {
   const events  = eventsRes.data || [];
   const signups = signupsRes.data || [];
 
+  const addRow = canEdit()
+    ? `<div class="row-end">${addControl("side_events", "Add side event")}</div>` : "";
+
   if (!events.length) {
-    body.innerHTML = empty("No side events yet. Brackets, pick'em pools and survivor contests go here.");
+    body.innerHTML =
+      empty("No side events yet. Brackets, pick'em pools and survivor contests go here.") + addRow;
     return;
   }
 
@@ -115,11 +127,12 @@ async function paintSide(body, view) {
             ${joined ? "You're in" : "Count me in"}
           </button>
         </div>` : ""}
+        ${editControls("side_events", ev)}
       </div>`;
   }).join("");
 
   // Wrapped in a fresh element so the click listener is never doubled up.
-  body.innerHTML = `<div id="side-list">${cards}</div>`;
+  body.innerHTML = `<div id="side-list">${cards}${addRow}</div>`;
 
   body.querySelector("#side-list").addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-join]");

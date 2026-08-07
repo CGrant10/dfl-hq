@@ -1,6 +1,7 @@
 // =====================================================================
-// Rules - read only for everyone. Admins edit at Admin -> Rules,
-// and the tabs themselves at Admin -> Rule tabs.
+// Rules - read only for everyone. An admin sees Edit and Delete on each
+// rule and an Add button under the section they are looking at; the tabs
+// themselves are still managed at Admin -> Rule tabs.
 //
 // Categories come from the rule_categories table rather than being
 // hardcoded. If that table is missing or empty, the tabs are worked out
@@ -9,6 +10,7 @@
 
 import { db } from "../supabase.js";
 import { esc, empty, groupBy, errorBox } from "../ui.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
 // Only used as a fallback and for prettifying unknown keys.
 export const DEFAULT_LABELS = {
@@ -33,7 +35,9 @@ export async function render(view) {
   if (!categories.length) {
     view.innerHTML = `
       <header class="page-head"><h1>League Rules</h1></header>
-      ${empty("No rules yet. An admin can add them at Admin → Rules.")}`;
+      ${empty(canEdit()
+        ? "No rule sections yet. Add one at Admin → Rule tabs, then add rules here."
+        : "No rules yet. An admin can add them.")}`;
     return;
   }
 
@@ -45,19 +49,31 @@ export async function render(view) {
       <p class="page-sub">The official rules of the DFL, as agreed by the league.</p>
     </header>
 
-    <div class="tabs" id="rule-tabs">
-      ${categories.map((c) => `
-        <button data-cat="${esc(c.key)}" class="${c.key === activeTab ? "on" : ""}">
-          ${esc(c.label)}
-          ${byCat.get(c.key)?.length ? `<span class="tabcount">${byCat.get(c.key).length}</span>` : ""}
-        </button>`).join("")}
-    </div>
+    <div id="rules-wrap">
+      <div class="tabs" id="rule-tabs">
+        ${categories.map((c) => `
+          <button data-cat="${esc(c.key)}" class="${c.key === activeTab ? "on" : ""}">
+            ${esc(c.label)}
+            ${byCat.get(c.key)?.length ? `<span class="tabcount">${byCat.get(c.key).length}</span>` : ""}
+          </button>`).join("")}
+      </div>
 
-    <div id="rule-body"></div>
+      <div id="rule-body"></div>
+    </div>
   `;
 
   const body = view.querySelector("#rule-body");
-  const paint = () => { body.innerHTML = section(byCat.get(activeTab) || []); };
+
+  // The Add button carries the tab being viewed, so a new rule lands in the
+  // section the admin is already looking at, ordered after what is there.
+  const paint = () => {
+    const rows = byCat.get(activeTab) || [];
+    const nextOrder = rows.reduce((n, r) => Math.max(n, Number(r.sort_order) || 0), 0) + 1;
+    body.innerHTML = section(rows) + (canEdit()
+      ? `<div class="row-end">${addControl("rules", "Add rule",
+           { category: activeTab, sort_order: nextOrder })}</div>`
+      : "");
+  };
 
   view.querySelector("#rule-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-cat]");
@@ -67,6 +83,10 @@ export async function render(view) {
         .forEach((b) => b.classList.toggle("on", b.dataset.cat === activeTab));
     paint();
   });
+
+  // Bound to the wrapper, which is rebuilt on every render, so paint()
+  // replacing #rule-body cannot lose it and revisits cannot stack it.
+  wireInline(view.querySelector("#rules-wrap"), () => render(view));
 
   paint();
 }
@@ -97,5 +117,6 @@ function section(rows) {
     <article class="card rule">
       ${r.title ? `<h3 class="rule-title">${esc(r.title)}</h3>` : ""}
       <div class="card-body">${esc(r.content)}</div>
+      ${editControls("rules", r)}
     </article>`).join("");
 }

@@ -234,13 +234,17 @@ create policy "public read"   on public.users for select using (true);
 create policy "anyone insert" on public.users for insert with check (true);
 create policy "admin write"   on public.users for all using (public.is_admin()) with check (public.is_admin());
 
--- votes: anyone can read and cast; only admin can change/remove.
+-- votes: anyone can read; only admin can write directly.
+--
+-- Members do not insert vote rows themselves - they call cast_vote() and
+-- clear_vote(), which enforce one changeable vote per member per poll. Both
+-- are created by polls_schema.sql; run that file after this one. Until it
+-- has been run, voting from the app will fail with a permissions error.
 alter table public.votes enable row level security;
 drop policy if exists "public read"   on public.votes;
 drop policy if exists "anyone insert" on public.votes;
 drop policy if exists "admin write"   on public.votes;
 create policy "public read"   on public.votes for select using (true);
-create policy "anyone insert" on public.votes for insert with check (true);
 create policy "admin write"   on public.votes for all using (public.is_admin()) with check (public.is_admin());
 
 -- side event signups: anyone can read and join; only admin can remove.

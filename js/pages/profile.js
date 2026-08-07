@@ -2,8 +2,8 @@
 // Profile - one member, everything the app knows about them.
 //
 // Pulls together the hand-written profile, league history, keepers,
-// finances and Sleeper career numbers. Read only; admins edit members
-// from Admin -> Members.
+// finances and Sleeper career numbers. Read only for members; an admin
+// gets an Edit button on the profile card itself.
 //
 // #/profile          -> the member using this device
 // #/profile?id=12    -> anybody else
@@ -11,7 +11,8 @@
 
 import { db } from "../supabase.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
-import { currentMember, loadMembers } from "../members.js";
+import { currentMember, loadMembers, refreshMember } from "../members.js";
+import { editControls, wireInline } from "../inline.js";
 import { findTeam, teamOptions } from "../teams.js";
 import { saveTheme, savedTheme, teamColors } from "../theme.js";
 import { toast } from "../ui.js";
@@ -73,18 +74,27 @@ export async function render(view) {
   const team = findTeam((isMe && savedTheme()) || member.favorite_team);
 
   view.innerHTML = `
-    ${header(member, team, isMe, currentTeam, sleeperUser?.data?.current_season)}
-    ${careerCard(career, seasons.length)}
-    ${awardsCard(member)}
-    ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
-    ${keepersCard(myKeepers)}
-    ${duesCard(myDues)}
-    ${isMe ? themePicker(member) : ""}
-    ${sleeperPlaceholder(member)}
-    ${othersCard(members, member)}
+    <div id="profile-wrap">
+      ${header(member, team, isMe, currentTeam, sleeperUser?.data?.current_season)}
+      ${careerCard(career, seasons.length)}
+      ${awardsCard(member)}
+      ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
+      ${keepersCard(myKeepers)}
+      ${duesCard(myDues)}
+      ${isMe ? themePicker(member) : ""}
+      ${sleeperPlaceholder(member)}
+      ${othersCard(members, member)}
+    </div>
   `;
 
   if (isMe) wireThemePicker(view, member);
+
+  // An edit changes the member row the picker and the header chip read from,
+  // so the cache has to go before the page is drawn again.
+  wireInline(view.querySelector("#profile-wrap"), async () => {
+    await refreshMember();
+    render(view);
+  });
 
   view.querySelector("#switch-member")?.addEventListener("click", () => {
     window.dispatchEvent(new CustomEvent("dfl:pick-member"));
@@ -129,6 +139,7 @@ function header(m, team, isMe, currentTeam, currentSeason) {
             ${isMe
               ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
               : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`}
+            ${editControls("members", m, { compact: true, del: false })}
           </div>
         </div>
       </div>

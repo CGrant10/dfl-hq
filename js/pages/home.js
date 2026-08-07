@@ -11,6 +11,7 @@ import { APP_VERSION } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
+import { addControl, editControls, wireInline } from "../inline.js";
 
 /** Where the install option lives when we cannot trigger it ourselves. */
 function installHelp() {
@@ -41,30 +42,38 @@ export async function render(view) {
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
 
   view.innerHTML = `
-    ${hero(leagues.data || [], members.data || [])}
-    ${quickNav()}
+    <div id="home-wrap">
+      ${hero(leagues.data || [], members.data || [])}
+      ${quickNav()}
 
-    <section class="block">
-      <h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
-      ${eventList(events.data)}
-    </section>
+      <section class="block">
+        <h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
+        ${eventList(events.data)}
+        ${adminRow(addControl("events", "Add event"))}
+      </section>
 
-    <section class="block">
-      <h2 class="section-title">Announcements</h2>
-      ${announcementList(announcements.data)}
-    </section>
+      <section class="block">
+        <h2 class="section-title">Announcements</h2>
+        ${announcementList(announcements.data)}
+        ${adminRow(addControl("announcements", "Add announcement"))}
+      </section>
 
-    <section class="block">
-      <h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
-      ${pollList(polls.data)}
-    </section>
+      <section class="block">
+        <h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
+        ${pollList(polls.data)}
+        ${adminRow(addControl("polls", "Add poll"))}
+      </section>
 
-    <p class="version-line">
-      DFL HQ v${esc(APP_VERSION)} ·
-      <button class="linkbtn" id="check-update">Check for updates</button>
-      ${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}
-    </p>
+      <p class="version-line">
+        DFL HQ v${esc(APP_VERSION)} ·
+        <button class="linkbtn" id="check-update">Check for updates</button>
+        ${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}
+      </p>
+    </div>
   `;
+
+  // #home-wrap is new on every render, so the listener never stacks up.
+  wireInline(view.querySelector("#home-wrap"), () => render(view));
 
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
@@ -165,6 +174,11 @@ function quickNav() {
 
 // ------------------------------- lists ---------------------------------
 
+/** Wraps an admin control so the row disappears entirely for members. */
+function adminRow(control) {
+  return control ? `<div class="row-end">${control}</div>` : "";
+}
+
 function eventList(rows) {
   if (!rows?.length) return empty("Nothing on the schedule yet.");
   return rows.map((e) => `
@@ -175,6 +189,7 @@ function eventList(rows) {
       </div>
       <h3 class="card-heading">${esc(e.title)}</h3>
       ${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}
+      ${editControls("events", e)}
     </article>`).join("");
 }
 
@@ -185,16 +200,22 @@ function announcementList(rows) {
       <div class="card-kicker">${esc(fmtShort(a.created_at))}</div>
       <h3 class="card-heading">${esc(a.title)}</h3>
       <div class="card-body">${esc(a.content)}</div>
+      ${editControls("announcements", a)}
     </article>`).join("");
 }
 
+/**
+ * A poll preview is a link to the polls page, so the admin buttons sit
+ * outside it - a button nested in an <a> would swallow the tap.
+ */
 function pollList(rows) {
   if (!rows?.length) return empty("No polls open right now.");
   return rows.map((p) => `
     <a class="card linkcard" href="#/polls">
       <h3 class="card-heading">${esc(p.question)}</h3>
       <span class="card-cta">Cast your vote →</span>
-    </a>`).join("");
+    </a>
+    ${editControls("polls", p, { compact: true })}`).join("");
 }
 
 function setupNotice() {

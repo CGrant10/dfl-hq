@@ -11,6 +11,7 @@
 
 import { db } from "../supabase.js";
 import { esc, empty, errorBox, groupBy } from "../ui.js";
+import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
 const ICON = {
   "Champion":  "i-history",
@@ -49,7 +50,12 @@ export async function render(view) {
   };
 
   if (!data.manual.length && !data.leagues.length) {
-    view.innerHTML = `<h1>History</h1>${empty("No league history yet.")}`;
+    view.innerHTML = `<h1>History</h1>
+      <div id="hist-body">
+        ${empty("No league history yet.")}
+        ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
+      </div>`;
+    wireInline(view.querySelector("#hist-body"), () => render(view));
     return;
   }
 
@@ -85,6 +91,9 @@ export async function render(view) {
     season = Number(btn.dataset.season);
     paint();
   });
+
+  // #hist-body is new on every render, so this cannot stack up.
+  wireInline(body, () => render(view));
 
   paint();
 }
@@ -184,11 +193,16 @@ function fameView(data) {
 
     ${byYear.length
       ? byYear.map(([year, list]) => `
-          <div class="section-head"><h2>${esc(year)}</h2></div>
+          <div class="section-head">
+            <h2>${esc(year)}</h2>
+            ${addControl("history", "Add entry", { year })}
+          </div>
           ${sortRows(list).map(entry).join("")}`).join("")
       : `<div class="card"><div class="card-body muted">
-           Awards, records and the moments nobody is allowed to forget can be added
-           at Admin → History.</div></div>`}
+           Awards, records and the moments nobody is allowed to forget go here.
+           ${canEdit() ? "" : "An admin can add them."}</div>
+           ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
+         </div>`}
   `;
 }
 
@@ -205,6 +219,7 @@ function entry(r) {
       <div class="card-title">${icon(r.category)} ${esc(r.winner || r.category)}</div>
       <div class="card-meta" style="margin:0"><span class="pill">${esc(r.category)}</span></div>
       ${r.notes ? `<div class="card-body" style="margin-top:8px">${esc(r.notes)}</div>` : ""}
+      ${editControls("history", r)}
     </div>`;
 }
 

@@ -1,164 +1,43 @@
 // =====================================================================
-// Admin - password gate, then a manager for every table.
+// Admin - password gate, then only the things that genuinely need a
+// central screen.
+//
+// Routine content editing does NOT live here any more. Announcements,
+// polls, rules, keepers, events, history and side events are edited where
+// they appear, with the buttons in inline.js. What is left is the work
+// that has no natural home on a page:
+//
+//   Members     adding a person to the league, ordering the picker
+//   Rule tabs   the sections rules are filed under
+//   Finances    dues and payouts across every owner at once
+//   Sleeper     syncing league history
+//   Password    the admin password itself
 //
 // The password is checked by Postgres (see is_admin() in schema.sql), not
-// by this file. Hiding these buttons is only a convenience; the database
+// by this file. Hiding these controls is only a convenience; the database
 // is what actually refuses writes from non-admins.
 // =====================================================================
 
 import { adminLogin, adminLogout, isAdmin, changeAdminPassword, configured } from "../supabase.js";
 import { renderManager } from "../crud.js";
+import { specFor } from "../sections.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { esc, toast } from "../ui.js";
-import { teamOptions } from "../teams.js";
 
-const THIS_YEAR = new Date().getFullYear();
-
-// ------------------------------------------------- section definitions
-
-const SECTIONS = [
-  {
-    id: "announcements", tab: "News",
-    table: "announcements", singular: "announcement", plural: "announcements",
-    label: (r) => r.title,
-    sub:   (r) => (r.content || "").slice(0, 90),
-    fields: [
-      { name: "title",   label: "Title",   type: "text",     required: true, placeholder: "Draft is set" },
-      { name: "content", label: "Message", type: "textarea", placeholder: "Details for the league…" },
-    ],
-  },
-  {
-    id: "polls", tab: "Polls",
-    table: "polls", singular: "poll", plural: "polls",
-    label: (r) => r.question,
-    sub:   (r) => (r.active ? "Open" : "Closed"),
-    fields: [
-      { name: "question", label: "Question", type: "text", required: true,
-        placeholder: "Should we run a March Madness bracket?" },
-      { name: "options",  label: "Options (one per line)", type: "list", required: true,
-        placeholder: "Yes\nNo\nMaybe" },
-      { name: "active",   label: "Poll is open for voting", type: "checkbox", default: true },
-    ],
-  },
-  {
-    id: "rules", tab: "Rules",
-    table: "rules", singular: "rule", plural: "rules",
-    order: "sort_order", asc: true,
-    label: (r) => `${r.title || "(untitled)"}`,
-    sub:   (r) => `${r.category} · #${r.sort_order}`,
-    fields: [
-      { name: "category",   label: "Section", type: "select", required: true,
-        optionsFrom: { table: "rule_categories", value: "key",
-                       label: "label", order: "sort_order" } },
-      { name: "title",      label: "Heading", type: "text", placeholder: "Trade deadline" },
-      { name: "content",    label: "Text",    type: "textarea", required: true },
-      { name: "sort_order", label: "Order within the section", type: "number", default: 1 },
-    ],
-  },
-  {
-    id: "rule_categories", tab: "Rule tabs",
-    table: "rule_categories", singular: "rule tab", plural: "rule tabs",
-    order: "sort_order", asc: true,
-    label: (r) => r.label,
-    sub:   (r) => `id: ${r.key}`,
-    fields: [
-      { name: "label", label: "Tab name (rename this freely)", type: "text",
-        required: true, placeholder: "Draft Rules" },
-      { name: "key",   label: "Permanent id — do not change once rules use it",
-        type: "text", required: true, placeholder: "draft" },
-      { name: "sort_order", label: "Tab order", type: "number", default: 10 },
-    ],
-  },
-  {
-    id: "keepers", tab: "Keepers",
-    table: "keepers", singular: "keeper", plural: "keepers",
-    order: "year", asc: false,
-    label: (r) => `${r.player} — ${r.team}`,
-    sub:   (r) => `${r.year} · ${r.round_cost != null ? "Round " + r.round_cost : "no cost set"}`,
-    fields: [
-      { name: "team",       label: "Team",        type: "text",   required: true, placeholder: "Slaw Squad" },
-      { name: "player",     label: "Player",      type: "text",   required: true, placeholder: "Christian McCaffrey" },
-      { name: "round_cost", label: "Round cost",  type: "number", placeholder: "2" },
-      { name: "year",       label: "Season",      type: "number", required: true, default: THIS_YEAR },
-      { name: "notes",      label: "Notes",       type: "textarea" },
-    ],
-  },
-  {
-    id: "events", tab: "Events",
-    table: "events", singular: "event", plural: "events",
-    order: "event_date", asc: true,
-    label: (r) => r.title,
-    sub:   (r) => r.event_date,
-    fields: [
-      { name: "title",       label: "Title", type: "text", required: true, placeholder: "Draft night" },
-      { name: "event_date",  label: "Date",  type: "date", required: true },
-      { name: "description", label: "Details", type: "textarea" },
-    ],
-  },
-  {
-    id: "history", tab: "History",
-    table: "history", singular: "history entry", plural: "history entries",
-    order: "year", asc: false,
-    label: (r) => `${r.year} ${r.category}: ${r.winner}`,
-    sub:   (r) => (r.notes || "").slice(0, 90),
-    fields: [
-      { name: "year",     label: "Year",     type: "number", required: true, default: THIS_YEAR - 1 },
-      { name: "category", label: "Category", type: "select", required: true,
-        options: ["Champion", "Runner Up", "Award", "Record", "Moment"] },
-      { name: "winner",   label: "Who / what", type: "text", required: true, placeholder: "Slaw Squad" },
-      { name: "notes",    label: "Notes",      type: "textarea" },
-    ],
-  },
-  {
-    id: "side_events", tab: "Side Events",
-    table: "side_events", singular: "side event", plural: "side events",
-    label: (r) => r.title,
-    sub:   (r) => `${r.kind} · ${r.status}`,
-    fields: [
-      { name: "title",       label: "Title", type: "text", required: true, placeholder: "March Madness bracket" },
-      { name: "kind",        label: "Type",  type: "select",
-        options: ["Bracket", "Pick'em", "Survivor", "Other"] },
-      { name: "status",      label: "Status", type: "select",
-        options: ["Open", "Closed", "Finished"] },
-      { name: "description", label: "Details", type: "textarea" },
-      { name: "link",        label: "Link (optional)", type: "text", placeholder: "https://…" },
-    ],
-  },
-  {
-    id: "members", tab: "Members",
-    table: "members", singular: "member", plural: "members",
-    order: "display_name", asc: true,
-    label: (r) => `${r.display_name}${r.team_name ? " — " + r.team_name : ""}`,
-    sub:   (r) => `${r.active ? "active" : "inactive"}${r.championships ? ` · ${r.championships}× champ` : ""}`,
-    fields: [
-      { name: "display_name",  label: "Name shown in the picker", type: "text", required: true },
-      { name: "team_name",     label: "Fantasy team name", type: "text" },
-      { name: "sleeper_user_id", label: "Sleeper account (links career stats)", type: "select",
-        optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
-                       label: "display_name", order: "display_name" } },
-      { name: "joined_year",   label: "Joined the league in", type: "number" },
-      { name: "championships", label: "Championships", type: "number", default: 0 },
-      { name: "awards",        label: "Awards (one per line)", type: "textarea",
-        placeholder: "Highest scorer 2025\nBest trade 2024" },
-      { name: "favorite_team", label: "Favourite team (app colour)", type: "select",
-        options: teamOptions() },
-      { name: "profile_image", label: "Profile image URL (optional)", type: "text" },
-      { name: "notes",         label: "Notes", type: "textarea" },
-      { name: "active",        label: "Show in the member picker", type: "checkbox", default: true },
-      { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
-    ],
-  },
+// The two structural lists that are still easier to manage as a table.
+const TABLES = [
+  { id: "members",         tab: "Members",   table: "members" },
+  { id: "rule_categories", tab: "Rule tabs", table: "rule_categories" },
 ];
 
-// Custom panels rather than single-table editors, so they live outside
-// SECTIONS and get their own render function.
+// Custom panels rather than single-table editors.
 const PANELS = [
   { id: "finances", tab: "Finances", render: renderFinancePanel },
   { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
 ];
 
-let activeSection = "announcements";
+let activeSection = "members";
 
 // -------------------------------------------------------- password box
 
@@ -225,8 +104,17 @@ export async function render(view) {
       <button class="btn ghost small" id="logout">Sign out</button>
     </div>
 
+    <div class="card note">
+      <div class="card-body">
+        You are signed in as commissioner, so Add, Edit and Delete buttons now
+        appear beside content on the normal pages — announcements and events on
+        Home, rules on Rules, polls on Polls, keepers, history, and each
+        member's own profile. This screen is only for the league-wide jobs.
+      </div>
+    </div>
+
     <div class="tabs" id="admin-tabs">
-      ${[...SECTIONS, ...PANELS].map((s) => `
+      ${[...TABLES, ...PANELS].map((s) => `
         <button data-section="${s.id}" class="${s.id === activeSection ? "on" : ""}">${esc(s.tab)}</button>
       `).join("")}
     </div>
@@ -246,7 +134,11 @@ export async function render(view) {
   const paint = () => {
     const panel = PANELS.find((p) => p.id === activeSection);
     if (panel) return panel.render(body);
-    return renderManager(body, SECTIONS.find((s) => s.id === activeSection));
+
+    const entry = TABLES.find((t) => t.id === activeSection);
+    const spec  = entry && specFor(entry.table);
+    if (!spec) { body.innerHTML = ""; return; }
+    return renderManager(body, spec);
   };
 
   view.querySelector("#admin-tabs").addEventListener("click", (e) => {
@@ -292,7 +184,8 @@ function renderLogin(view) {
       <p class="muted tiny">The password is checked by the database, and stays valid on this device until you sign out.</p>
     </form>
     <div class="card">
-      <div class="card-body muted">Everyone can read rules, keepers, history and events. Only an admin can change them.</div>
+      <div class="card-body muted">Everyone can read rules, keepers, history and events, and vote in polls.
+      Signing in adds Edit buttons throughout the app.</div>
     </div>
   `;
 

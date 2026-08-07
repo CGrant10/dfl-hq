@@ -25,6 +25,7 @@ dfl_hq/
 ├── finance_schema.sql       League Finances tables (additive, run once)
 ├── members_schema.sql       member profiles + Sleeper hidden flag (run once)
 ├── rules_schema.sql         editable rule tabs (additive, run once)
+├── polls_schema.sql         member-owned changeable votes (additive, run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -38,7 +39,10 @@ dfl_hq/
     ├── theme.js             applies a team's colours, safely, to the accent
     ├── store.js             localStorage: league name, remembered admin password
     ├── ui.js                small helpers (escaping, dates, toasts, grouping)
-    ├── crud.js              reusable "manage a table" widget for the Admin page
+    ├── sections.js          field definitions for every editable table
+    ├── form.js              builds a form from those fields, and reads it back
+    ├── inline.js            the Add/Edit/Delete buttons admins see on the pages
+    ├── crud.js              whole-table manager, used by Admin → Members / Rule tabs
     ├── sleeper.js           read-only Sleeper API wrapper + player name cache
     ├── sync.js              pulls Sleeper data into Supabase (admin only)
     ├── router.js            hash router (#/home, #/rules, …)
@@ -51,7 +55,7 @@ dfl_hq/
         ├── calendar.js      events + side events
         ├── history.js       hall of fame
         ├── finances.js      dues, payouts, expenses, summary
-        ├── admin.js         password gate + all the editors
+        ├── admin.js         password gate + the league-wide jobs only
         ├── admin_sleeper.js league ID, sync button, sync log
         └── admin_finance.js the five finance editors
 ```
@@ -62,7 +66,8 @@ dfl_hq/
 |---|---|
 | Change colours | the `:root` block at the top of `css/style.css` |
 | Add a rules category | nothing to edit — **Admin → Rule tabs** |
-| Add a field to an admin form | the section's `fields` array in `js/pages/admin.js` |
+| Add a field to an edit form | the table's `fields` array in `js/sections.js` — it appears in the inline dialog and the admin manager both |
+| Put Edit buttons on new content | `editControls()` + `addControl()` + `wireInline()` from `js/inline.js` |
 | Add a whole new page | add a file in `js/pages/`, register it in `routes` in `js/router.js`, add a link in `index.html` |
 
 ---
@@ -83,6 +88,10 @@ dfl_hq/
 
 5. Press **Run**. It creates all the tables, the security rules, and a few
    starter league rules you can delete later.
+6. Then run the additive files, each in its own new query:
+   `sleeper_schema.sql`, `finance_schema.sql`, `members_schema.sql`,
+   `rules_schema.sql`, `polls_schema.sql`. `polls_schema.sql` needs `members`
+   to exist, so run it after `members_schema.sql`.
 
 Re-running the whole file later is safe, and it **does** reset the admin
 password to whatever is on that line.
@@ -454,18 +463,36 @@ that tab anyway, derived from the rules themselves. Deleting a tab must never
 make rules silently disappear. The page also works if `rules_schema.sql` has
 not been run — it falls back to building tabs from the rules.
 
-### Polls: what admins can do
+### Polls
 
-On the Polls page itself, signed in as admin:
+Run **`polls_schema.sql`** once, after `schema.sql` and `members_schema.sql`.
+Until you do, the Polls page opens but says voting is not switched on yet.
 
-- **Who voted for what.** Names appear under each option. Regular members only
-  ever see the tallies.
-- **Edit options after the fact.** Add, rename or remove answers on a live poll.
-- **Close / reopen** without going to the Admin page.
+**Everyone** sees the whole board: the tallies, and the names under each answer.
+Nothing is gated behind voting first.
+
+**Your vote is yours.** Tapping a different answer moves you — it never adds a
+second vote. `cast_vote()` deletes your old row and writes the new one in one
+step. "Remove my vote" takes it back entirely. Both only work while the poll is
+open.
+
+**Admins** additionally get Add, Edit, Delete, Close/Reopen and Reset votes,
+inline on the Polls page.
+
+A vote belongs to a **member profile**, not to a typed name — whoever is picked
+in "Who are you?" is who the vote is filed under.
 
 Votes cast for an option that is later renamed or removed are **not** deleted or
 hidden — they keep showing, marked *(removed)*, so a tally can never be quietly
-rewritten by editing the question.
+rewritten by editing the question. Those answers are never selectable again.
+
+**What the database enforces:** one vote per member per poll, no voting on a
+closed poll, no answers that aren't on the ballot, and no writing to the votes
+table except through the two functions (or as admin). What it *cannot* enforce:
+that a caller really is the member they claim to be — there are no member
+passwords, so identity is asserted, not proven, exactly as it already is in the
+"Who are you?" picker. If that ever matters, give members a short PIN and check
+it in a header the way `is_admin()` checks the admin password.
 
 ---
 
@@ -473,16 +500,20 @@ rewritten by editing the question.
 
 **Everyone**
 
-- First open asks for a league name; it's saved on that device. Tap the name in
-  the header to change it.
-- Vote in polls (one vote per name per poll), join side events, read everything.
+- First open asks who you are; the choice is saved on that device. Tap the name
+  in the header to change it.
+- Vote in polls and change your answer whenever you like, join side events, read
+  everything.
 
 **Commissioner**
 
-- Go to **Admin**, enter the password, and use the tabs to add or edit
-  announcements, polls, rules, keepers, events, history and side events.
-- Close a poll by unticking "Poll is open for voting" — everyone can then see
-  the results.
+- Go to **Admin**, enter the password. From then on, **Add / Edit / Delete
+  buttons appear beside the content itself** — announcements and events on Home,
+  rules on Rules, polls on Polls, keepers, history entries, side events, and each
+  member's own profile. There is no separate screen to walk to for routine edits.
+- The **Admin** page keeps only the league-wide jobs: Members (adding people,
+  ordering the picker), Rule tabs, Finances, Sleeper syncing, and the password.
+- Close a poll from the poll itself — everyone can already see the results.
 - Sign out from the Admin page when you're done on a shared device.
 
 ---
@@ -494,7 +525,7 @@ rewritten by editing the question.
 | `users` | league names people have used | anyone can add themselves |
 | `announcements` | commissioner posts | admin |
 | `polls` | question, options (JSON array), active flag | admin |
-| `votes` | poll_id, username, answer — one row per person per poll | anyone can vote once |
+| `votes` | poll_id, member_id, username, answer — one row per member per poll | members via `cast_vote()` / `clear_vote()`; admin directly |
 | `rules` | category, title, content, sort order | admin |
 | `keepers` | team, player, round cost, notes, year | admin |
 | `events` | title, date, description | admin |

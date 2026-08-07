@@ -1,23 +1,18 @@
 // =====================================================================
-// crud.js - one reusable "manage a table" widget for the Admin page.
+// crud.js - one reusable "manage a whole table" screen.
 //
-// Every admin section (announcements, polls, rules, ...) is just a list of
-// field definitions handed to renderManager(). Add a field here and it
-// shows up in the form, the list, and the save automatically.
+// Routine content editing now happens inline on the pages themselves (see
+// inline.js). This is what remains for the two structural lists that are
+// genuinely easier to work with as a table: members and rule tabs. Both
+// are about adding people and ordering things, not about writing content.
 //
-// Field shape:
-//   { name, label, type, options?, optionsFrom?, required?, placeholder?, default? }
-// Types: text | textarea | number | date | select | checkbox | list
-//   list  -> one item per line in a textarea, saved as a JSON array
-//
-// A select can take its choices from another table instead of a fixed
-// list, which is how owner profiles pick a synced Sleeper user:
-//   optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",
-//                  label: "display_name", order: "display_name" }
+// The field definitions live in sections.js and are shared with the
+// inline editor, so a field added there appears in both.
 // =====================================================================
 
-import { selectAll, insertRow, updateRow, deleteRow } from "./supabase.js";
-import { esc, empty, toArray, toast, errorBox, loading } from "./ui.js";
+import { insertRow, updateRow, deleteRow, selectAll } from "./supabase.js";
+import { field, setValue, readForm, fillOptionsFrom } from "./form.js";
+import { esc, empty, toast, errorBox, loading } from "./ui.js";
 
 export async function renderManager(host, spec) {
   host.innerHTML = loading();
@@ -36,7 +31,7 @@ export async function renderManager(host, spec) {
   host.innerHTML = `
     <form class="card" id="crud-form">
       <div class="card-title" id="crud-heading">Add ${esc(spec.singular)}</div>
-      ${spec.fields.map(field).join("")}
+      ${spec.fields.map((f) => field(f, "f_")).join("")}
       <div class="row-end">
         <button type="button" class="btn ghost hidden" id="crud-cancel">Cancel</button>
         <button type="submit" class="btn" id="crud-save">Save</button>
@@ -109,93 +104,6 @@ export async function renderManager(host, spec) {
       }
     }
   });
-}
-
-// ---------------------------------------------------------------- form
-
-/** Turn any optionsFrom fields into a plain options list before drawing. */
-async function fillOptionsFrom(fields) {
-  for (const f of fields) {
-    if (!f.optionsFrom) continue;
-    const { table, value, label, order } = f.optionsFrom;
-
-    let rows = [];
-    try {
-      rows = await selectAll(table, { order: order || label, asc: true });
-    } catch {
-      // A missing table should not take the whole form down - the rest of
-      // the fields still work, and the placeholder says what to do.
-      f.options = [{ value: "", label: `— ${table} not set up yet —` }];
-      continue;
-    }
-
-    f.options = rows.map((r) => ({ value: r[value], label: r[label] || r[value] }));
-    if (!f.options.length) f.options = [{ value: "", label: "— nothing to choose yet —" }];
-  }
-}
-
-function field(f) {
-  const id  = `f_${f.name}`;
-  const req = f.required ? "required" : "";
-  const ph  = f.placeholder ? `placeholder="${esc(f.placeholder)}"` : "";
-  let input;
-
-  switch (f.type) {
-    case "textarea":
-      input = `<textarea id="${id}" name="${f.name}" ${ph} ${req}></textarea>`;
-      break;
-    case "list":
-      input = `<textarea id="${id}" name="${f.name}" ${ph} ${req}></textarea>`;
-      break;
-    case "number":
-      input = `<input id="${id}" name="${f.name}" type="number" ${ph} ${req}>`;
-      break;
-    case "date":
-      input = `<input id="${id}" name="${f.name}" type="date" ${req}>`;
-      break;
-    case "checkbox":
-      return `<label style="display:flex;align-items:center;gap:8px;margin-top:12px">
-                <input id="${id}" name="${f.name}" type="checkbox" style="width:auto">
-                <span>${esc(f.label)}</span>
-              </label>`;
-    case "select":
-      input = `<select id="${id}" name="${f.name}" ${req}>
-                 ${f.options.map((o) => `<option value="${esc(o.value ?? o)}">${esc(o.label ?? o)}</option>`).join("")}
-               </select>`;
-      break;
-    default:
-      input = `<input id="${id}" name="${f.name}" type="text" ${ph} ${req}>`;
-  }
-
-  return `<label for="${id}">${esc(f.label)}</label>${input}`;
-}
-
-function setValue(form, f, value) {
-  const el = form.elements[f.name];
-  if (!el) return;
-  if (f.type === "checkbox")   el.checked = value === undefined ? true : !!value;
-  else if (f.type === "list")  el.value = toArray(value).join("\n");
-  else if (f.type === "date")  el.value = value ? String(value).slice(0, 10) : "";
-  else                         el.value = value ?? "";
-}
-
-function readForm(form, fields) {
-  const out = {};
-  for (const f of fields) {
-    const el = form.elements[f.name];
-    if (!el) continue;
-
-    if (f.type === "checkbox") {
-      out[f.name] = el.checked;
-    } else if (f.type === "list") {
-      out[f.name] = el.value.split("\n").map((s) => s.trim()).filter(Boolean);
-    } else if (f.type === "number") {
-      out[f.name] = el.value === "" ? null : Number(el.value);
-    } else {
-      out[f.name] = el.value.trim();
-    }
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------- list
