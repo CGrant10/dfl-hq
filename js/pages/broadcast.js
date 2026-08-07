@@ -18,11 +18,11 @@
 // See the comment at the top of arena_broadcast_schema.sql.
 // =====================================================================
 
-import { db } from "../supabase.js";
-import { esc, errorBox } from "../ui.js";
+import { db, updateRow, isAdmin } from "../supabase.js";
+import { esc, errorBox, toast } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
-import { simulate, ticksFor, TICK_MS } from "../arena/race.js";
+import { simulate, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -73,12 +73,121 @@ export async function render(view) {
   document.body.classList.add("broadcasting");
   paint(view, eventRes.data, racers);
   watch(view, id, racers);
+  wireBar(view, id, racers);
+}
+
+/*
+  The control bar.
+
+  The broadcast was built as a pure viewer on the assumption the
+  commissioner would drive it from their phone. That was wrong in the one
+  case that matters: somebody opens this on the machine running OBS, in
+  fullscreen, and there is then no way to start the race and no way back
+  out of a page that has deliberately hidden the header and the tab bar.
+
+  It behaves like a video player - visible on pointer movement, gone after a
+  few idle seconds. OBS never moves a pointer, so the capture never sees it.
+  It writes the same state the Arena panel writes, so either can drive.
+*/
+const COUNTDOWN_MS = 3400;
+const BAR_IDLE_MS = 2600;
+
+function wireBar(view, id, racers) {
+  const bar = view.querySelector("#bc-bar");
+  if (!bar) return;
+
+  /*
+    Members lose the RACE controls, not the bar.
+
+    Removing the whole thing would take Exit with it, and this page hides the
+    header and the tab bar - so a member who opened the broadcast would have
+    no way back into the app at all. Getting out is not an admin privilege.
+  */
+  const memberSafe = !isAdmin();
+  if (memberSafe) {
+    bar.querySelectorAll("#bc-go, #bc-hold, #bc-end, #bc-zero, .bc-bar-hint")
+       .forEach((el) => el.remove());
+  }
+
+  const stage = view.querySelector("#bc-stage");
+  let hideTimer = 0;
+  const show = () => {
+    bar.classList.add("on");
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => bar.classList.remove("on"), BAR_IDLE_MS);
+  };
+  stage.addEventListener("pointermove", show);
+  stage.addEventListener("pointerdown", show);
+  show();
+
+  const row = () => live?.state;
+
+  const write = async (patch, note) => {
+    try {
+      await updateRow("arena_events", id, patch);
+      if (note) toast(note);
+    } catch (err) {
+      toast(/bc_state|column/.test(err.message || "")
+        ? "Run arena_broadcast_schema.sql in Supabase"
+        : (err.message || "Could not change the broadcast"), true);
+    }
+  };
+
+  bar.addEventListener("click", async (e) => {
+    const r = row();
+    show();
+
+    if (e.target.closest("#bc-go")) {
+      const seed = r?.seed || newSeed();
+      return write({
+        seed,
+        bc_state: "running",
+        bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
+        bc_offset_ms: 0,
+      }, "Countdown");
+    }
+
+    if (e.target.closest("#bc-hold")) {
+      if (r?.bc_state === "paused") {
+        return write({
+          bc_state: "running",
+          bc_started_at: new Date().toISOString(),
+          bc_offset_ms: r.bc_offset_ms || 0,
+        }, "Resumed");
+      }
+      const now = r?.bc_started_at
+        ? Date.now() - Date.parse(r.bc_started_at) + (r.bc_offset_ms || 0) : 0;
+      return write({ bc_state: "paused", bc_offset_ms: Math.max(0, Math.round(now)) }, "Paused");
+    }
+
+    if (e.target.closest("#bc-end")) {
+      const sim = simulate(racers, ticksFor(r?.race_length, r?.length_ticks), Number(r?.seed) || 1);
+      return write({
+        bc_state: "finished",
+        bc_started_at: new Date().toISOString(),
+        bc_offset_ms: (sim.order.at(-1)?.finishMs ?? 0) + 400,
+      }, "Skipped to the finish");
+    }
+
+    if (e.target.closest("#bc-zero")) {
+      return write({ bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 }, "Reset");
+    }
+
+    if (e.target.closest("#bc-full")) {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch { toast("Fullscreen was refused by the browser", true); }
+    }
+  });
 }
 
 /** Called by the router when leaving the page. */
 export function leave() {
   teardown();
   document.body.classList.remove("broadcasting");
+  // Never strand somebody in fullscreen on a page they have navigated away from.
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
 function teardown() {
@@ -141,6 +250,16 @@ function paint(view, event, racers) {
           <span class="bc-winner-name" id="bc-winner-name"></span>
           <span class="bc-winner-event">${esc(event.name)}</span>
         </div>
+      </div>
+
+      <div class="bc-bar" id="bc-bar">
+        <a class="bc-btn" href="#/arena?id=${event.id}" title="Leave broadcast">Exit</a>
+        <button class="bc-btn" id="bc-go" title="Start / restart">Start</button>
+        <button class="bc-btn" id="bc-hold" title="Pause / resume">Pause</button>
+        <button class="bc-btn" id="bc-end" title="Skip to finish">Skip</button>
+        <button class="bc-btn" id="bc-zero" title="Reset to the start line">Reset</button>
+        <button class="bc-btn" id="bc-full" title="Fullscreen">Fullscreen</button>
+        <span class="bc-bar-hint">Admin only · hides itself while streaming</span>
       </div>
 
       <footer class="bc-foot">
@@ -317,9 +436,17 @@ const trackX = (p) =>
 /** Live standings, ordered by distance covered. */
 function drawBoard(list, racers, sim, t) {
   const idx = Math.max(0, Math.min(sim.frames, Math.round(t)));
+  /*
+    Tie-break on lane order, ALWAYS.
+
+    Before the start every racer is at exactly 0, and a sort with no
+    tie-break let the browser return them in a different order each frame -
+    so the board flickered through names at 6Hz while the track sat still.
+    A stable secondary key makes a standing start read as a standing start.
+  */
   const rows = racers
-    .map((r, i) => ({ r, p: sim.samples[i][idx] }))
-    .sort((a, b) => b.p - a.p);
+    .map((r, i) => ({ r, i, p: sim.samples[i][idx] }))
+    .sort((a, b) => (b.p - a.p) || (a.i - b.i));
 
   const items = list.children;
   for (let i = 0; i < items.length; i++) {

@@ -357,3 +357,88 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-count, .bc-winner, .bc-winner-name, .bc-move { animation: none; }
   .bc-runner { will-change: auto; }
 }
+
+/* ------------------------- the control bar --------------------------- */
+
+/*
+  Behaves like a video player's chrome: it appears on pointer movement and
+  disappears after a few idle seconds. OBS never moves a pointer, so the
+  capture never sees it - which is why the broadcast can carry controls at
+  all without them ending up on the stream.
+
+  Fixed to the viewport rather than the stage so it stays reachable in
+  fullscreen, and it is the only thing on this page with a pointer cursor.
+*/
+.bc-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 2.2vh;
+  transform: translate(-50%, 130%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: .6vw;
+  padding: .7vw .9vw;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(9,13,19,.92);
+  box-shadow: 0 1vw 3vw rgba(0,0,0,.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .22s ease, opacity .22s ease;
+}
+.bc-bar.on {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bc-btn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border-radius: 999px;
+  padding: .5vw 1.1vw;
+  font-family: inherit;
+  font-size: 1vw;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bc-btn:hover { background: rgba(47,191,95,.18); border-color: var(--accent-dim); }
+.bc-bar-hint {
+  font-size: .8vw;
+  color: var(--muted);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding-left: .4vw;
+}
+
+/*
+  On a phone the broadcast is not the point, but somebody WILL open it there
+  and must be able to get out. Below tablet width the bar uses real pixels so
+  the buttons stay tappable, and it stays put instead of hiding.
+*/
+@media (max-width: 900px) {
+  .bc-bar {
+    bottom: 12px;
+    gap: 6px;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 24px);
+    justify-content: center;
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .bc-btn { font-size: 12px; padding: 7px 11px; }
+  .bc-bar-hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-bar { transition: none; }
+}
