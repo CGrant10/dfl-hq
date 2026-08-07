@@ -1,25 +1,8 @@
 ﻿/* =====================================================================
    DFL HQ - service worker
-   ---------------------------------------------------------------------
-   Strategy:
-     * App files (HTML/CSS/JS/icons) -> network first, fall back to cache.
-       You always get the newest code when online, and the app still opens
-       on a plane.
-     * Supabase API calls -> never cached. League data must be live.
-
-   IMPORTANT: bump CACHE_NAME whenever you change any file, otherwise
-   phones may keep showing the old version. Keep it in step with
-   APP_VERSION in js/config.js.
    ===================================================================== */
-
-const CACHE_NAME = "dfl-hq-v1.16.8";
-
-const CDN_HOSTS = new Set([
-  "cdn.jsdelivr.net",
-  "fonts.googleapis.com",
-  "fonts.gstatic.com",
-]);
-
+const CACHE_NAME = "dfl-hq-v1.16.9";
+const CDN_HOSTS = new Set(["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"]);
 const APP_SHELL = [
   "./", "./index.html", "./css/style.css", "./css/broadcast.css", "./css/golf.css",
   "./manifest.json", "./js/config.js", "./js/app.js", "./js/install.js", "./js/update.js",
@@ -30,46 +13,27 @@ const APP_SHELL = [
   "./js/pages/arena.js", "./js/pages/golf.js", "./js/pages/broadcast.js", "./js/arena/race.js",
   "./js/arena/sprites.js", "./js/pages/calendar.js", "./js/pages/history.js", "./js/pages/finances.js",
   "./js/pages/profile.js", "./js/pages/admin.js", "./js/pages/admin_sleeper.js",
-  "./js/pages/admin_finance.js", "./js/pages/admin_finance_setup.js", "./js/golf_scorecard.js",
+  "./js/pages/admin_finance.js", "./js/pages/admin_finance_setup.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/logo-64.png", "./icons/logo-256.png",
 ];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
-  )).then(() => self.clients.claim()));
-});
-
-function revalidating(request) {
-  if (request.mode === "navigate") return request;
-  try { return new Request(request, { cache: "no-cache" }); }
-  catch { return request; }
-}
-
-self.addEventListener("fetch", (event) => {
+self.addEventListener("install", event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
+self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+function revalidating(request) { if (request.mode === "navigate") return request; try { return new Request(request, { cache: "no-cache" }); } catch { return request; } }
+self.addEventListener("fetch", event => {
   const { request } = event;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (url.hostname.endsWith("supabase.co")) return;
-  if (url.hostname.endsWith("sleeper.app")) return;
-  if (url.pathname.endsWith("/version.txt")) return;
-
-  event.respondWith(
-    fetch(revalidating(request)).then((response) => {
-      if (response.ok && (url.origin === location.origin || CDN_HOSTS.has(url.hostname))) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-      }
-      return response;
-    }).catch(async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      if (request.mode === "navigate") return caches.match("./index.html");
-      return Response.error();
-    })
-  );
+  if (url.hostname.endsWith("supabase.co") || url.hostname.endsWith("sleeper.app") || url.pathname.endsWith("/version.txt")) return;
+  event.respondWith(fetch(revalidating(request)).then(response => {
+    if (response.ok && (url.origin === location.origin || CDN_HOSTS.has(url.hostname))) {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+    }
+    return response;
+  }).catch(async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") return caches.match("./index.html");
+    return Response.error();
+  }));
 });
