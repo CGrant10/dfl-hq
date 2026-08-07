@@ -1,107 +1,162 @@
 /* =====================================================================
-   DFL HQ - Golf scorecard presentation
+   DFL Golf - ONE scorecard per team
    ---------------------------------------------------------------------
-   The golf page stores one score per player/hole in golf_scores, but the
-   UI presents those scores as ONE team scorecard. This keeps the database
-   normalized while keeping the user experience clean.
+   golf.js still owns the event/team routing and admin/team generation.
+   This module replaces the old player-by-player score UI with exactly one
+   score entry per team per hole.
    ===================================================================== */
 
-const SCORECARD_STYLE = `
-.single-team-scorecard{padding:0;overflow:hidden}
-.single-team-scorecard .scorecard-title{display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--bg-3);border-bottom:1px solid var(--line)}
-.single-team-scorecard .scorecard-team-heading{min-width:0}
-.single-team-scorecard .scorecard-team-heading h2{margin:2px 0 2px;font-size:19px}
-.single-team-scorecard .scorecard-kicker{display:block;font-size:10px;letter-spacing:.12em;font-weight:800;color:var(--accent)}
+import { db, isAdmin } from "./supabase.js";
+import { currentMember, loadMembers } from "./members.js";
+
+const STYLE = `
+.single-team-scorecard{overflow:hidden}
+.single-team-scorecard .scorecard-title{display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg-3);border-bottom:1px solid var(--line)}
+.single-team-scorecard .scorecard-team-heading{min-width:0;flex:1}
+.single-team-scorecard .scorecard-team-heading h2{margin:2px 0 3px;font-size:20px}
+.single-team-scorecard .scorecard-kicker{display:block;font-size:10px;letter-spacing:.13em;font-weight:800;color:var(--accent)}
+.single-team-scorecard .scorecard-roster{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.single-team-scorecard .scorecard-roster span{padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2);font-size:11px}
 .single-team-scorecard .scorecard-table-wrap{padding:12px 14px 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .single-team-scorecard .scorecard-nine{margin:0 0 14px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--bg-2)}
 .single-team-scorecard .scorecard-nine-title{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-3);border-bottom:1px solid var(--line)}
 .single-team-scorecard .scorecard-nine-title strong{font-size:14px}
 .single-team-scorecard .scorecard-nine-title span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.single-team-scorecard .score-grid{display:grid;grid-template-columns:minmax(110px,1.5fr) repeat(9,minmax(42px,1fr)) minmax(58px,.8fr) minmax(48px,.7fr);min-width:690px}
-.single-team-scorecard .score-grid-row{display:contents}
-.single-team-scorecard .score-cell{min-height:42px;padding:6px 4px;display:grid;place-items:center;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);font-size:12px;font-variant-numeric:tabular-nums}
+.single-team-scorecard .score-grid{display:grid;min-width:690px}
+.single-team-scorecard .score-cell{min-height:43px;padding:6px 4px;display:grid;place-items:center;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);font-size:12px;font-variant-numeric:tabular-nums}
 .single-team-scorecard .score-cell:last-child{border-right:0}
-.single-team-scorecard .score-grid .head{background:var(--bg-3);font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.single-team-scorecard .score-grid .player-name{justify-items:start;padding-left:10px;font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.single-team-scorecard .score-grid .par{font-weight:700;color:var(--muted)}
-.single-team-scorecard .score-cell input{width:34px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--bg-2);color:var(--text);text-align:center;font:inherit;font-weight:700;touch-action:manipulation}
+.single-team-scorecard .head{background:var(--bg-3);font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.single-team-scorecard .score-label{justify-items:start;padding-left:10px;font-weight:800}
+.single-team-scorecard .par{font-weight:800;color:var(--muted)}
+.single-team-scorecard .score-cell input{width:36px;height:33px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--bg-2);color:var(--text);text-align:center;font:inherit;font-weight:800;touch-action:manipulation}
 .single-team-scorecard .score-cell input:focus{outline:2px solid var(--accent);outline-offset:-1px}
-.single-team-scorecard .score-cell .dash{color:var(--muted)}
-.single-team-scorecard .score-cell.tally{font-weight:800;background:rgba(127,127,127,.035)}
-.single-team-scorecard .score-cell.to-par{font-weight:800}
-.single-team-scorecard .score-summary{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;margin:0 14px 14px;padding:12px;border:2px solid var(--line);border-radius:11px;background:var(--bg-3);font-variant-numeric:tabular-nums}
+.single-team-scorecard .score-cell input[disabled]{opacity:.8;background:var(--bg-3)}
+.single-team-scorecard .tally{font-weight:900;background:rgba(127,127,127,.035)}
+.single-team-scorecard .to-par{font-weight:900}
+.single-team-scorecard .dash{color:var(--muted)}
+.single-team-scorecard .score-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 14px 14px;padding:12px;border:2px solid var(--line);border-radius:11px;background:var(--bg-3);font-variant-numeric:tabular-nums}
+.single-team-scorecard .score-summary span{display:block;text-align:center}
 .single-team-scorecard .score-summary small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
-.single-team-scorecard .score-summary b{font-size:16px}
+.single-team-scorecard .score-summary b{display:block;margin-top:2px;font-size:17px}
 .single-team-scorecard .score-note{padding:0 14px 14px;color:var(--muted);font-size:11px}
-@media(max-width:600px){.single-team-scorecard .scorecard-table-wrap{padding-left:10px;padding-right:10px}.single-team-scorecard .score-summary{grid-template-columns:1fr 1fr}.single-team-scorecard .score-summary>span:first-child{grid-column:1/-1}}
+.single-team-scorecard .score-status{padding:10px 14px;color:var(--muted);font-size:11px}
+@media(max-width:600px){.single-team-scorecard .score-summary{grid-template-columns:1fr 1fr}.single-team-scorecard .score-summary span:last-child{grid-column:1/-1}}
 `;
 
 function esc(value){
   return String(value ?? "").replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 }
-function num(value){ const n = Number(value); return Number.isFinite(n) ? n : 0; }
+function n(value){ const x=Number(value); return Number.isFinite(x) ? x : 0; }
 function signed(score, par){ if(!score) return "—"; const d=score-par; return d===0 ? "E" : d>0 ? `+${d}` : `${d}`; }
+function parsFor(outing, rows){
+  const count=Math.max(1,Math.min(Number(outing.holes||18),18));
+  const map=new Map((rows||[]).map(r=>[Number(r.hole),Number(r.par)||4]));
+  return Array.from({length:count},(_,i)=>map.get(i+1)||4);
+}
 
-function readPlayer(block){
-  const name = block.querySelector("header h3")?.textContent?.trim() || "Player";
-  const scores = {};
-  block.querySelectorAll(".score-hole").forEach(cell=>{
-    const input=cell.querySelector("input[data-score]");
-    const hole=Number(input?.dataset.hole || cell.querySelector("span")?.textContent || 0);
-    if(hole) scores[hole]=input ? input.value : (cell.querySelector("b")?.textContent?.trim() || "");
-  });
-  return {name,memberId:block.querySelector("input[data-score]")?.dataset.member||"",editable:!!block.querySelector("input[data-score]"),scores};
+async function loadCard(outingId, teamId){
+  const [teamRes, partRes, holeRes, scoreRes, memberList] = await Promise.all([
+    db().from("golf_teams").select("*").eq("id",teamId).eq("outing_id",outingId).maybeSingle(),
+    db().from("golf_participants").select("id,member_id,team_id").eq("outing_id",outingId).eq("team_id",teamId).order("sort_order"),
+    db().from("golf_holes").select("hole,par").eq("outing_id",outingId).order("hole"),
+    db().from("golf_scores").select("id,outing_id,team_id,hole,strokes").eq("outing_id",outingId).eq("team_id",teamId),
+    loadMembers().catch(()=>[])
+  ]);
+  const error=teamRes.error||partRes.error||holeRes.error||scoreRes.error;
+  if(error) throw error;
+  return {team:teamRes.data,parts:partRes.data||[],pars:parsFor({holes:18},holeRes.data||[]),scores:scoreRes.data||[],members:memberList||[]};
 }
-function total(scores,start,end){ let n=0; for(let h=start;h<=end;h++) n+=num(scores[h]); return n; }
-function holeCell(player,hole){
-  const value=player.scores[hole]||"";
-  if(player.editable) return `<div class="score-cell"><input data-score member="${esc(player.memberId)}" hole="${hole}" type="number" min="1" max="15" inputmode="numeric" value="${esc(value)}" aria-label="${esc(player.name)}, hole ${hole}"></div>`;
-  return `<div class="score-cell">${value?`<b>${esc(value)}</b>`:`<span class="dash">—</span>`}</div>`;
-}
-function renderNine(players,start,label,pars){
-  const holes=Array.from({length:9},(_,i)=>start+i).filter(h=>h<=18);
-  const par=holes.reduce((n,h)=>n+num(pars[h]||4),0);
-  const cols=`grid-template-columns:minmax(110px,1.5fr) repeat(${holes.length},minmax(42px,1fr)) minmax(58px,.8fr) minmax(48px,.7fr)`;
+
+function scoreMap(scores){ return new Map((scores||[]).map(s=>[Number(s.hole),s])); }
+function total(map,start,end){ let sum=0; for(let h=start;h<=end;h++) sum+=n(map.get(h)?.strokes); return sum; }
+function count(map,start,end){ let c=0; for(let h=start;h<=end;h++) if(n(map.get(h)?.strokes)>0)c++; return c; }
+
+function nine(label,start,pars,map,editable){
+  const holes=Array.from({length:9},(_,i)=>start+i).filter(h=>h<=18 && h<=pars.length);
+  const par=holes.reduce((x,h)=>x+n(pars[h-1]),0);
+  const score=total(map,start,start+8);
+  const entered=count(map,start,start+8);
+  const cols=`grid-template-columns:minmax(105px,1.6fr) repeat(${holes.length},minmax(42px,1fr)) minmax(58px,.8fr) minmax(52px,.75fr)`;
   const headers=holes.map(h=>`<div class="score-cell head">${h}</div>`).join("");
-  const parRow=`<div class="score-cell player-name head">Par</div>${holes.map(h=>`<div class="score-cell par head">${num(pars[h]||4)}</div>`).join("")}<div class="score-cell tally head">${par}</div><div class="score-cell to-par head">E</div>`;
-  const rows=players.map(player=>{const score=total(player.scores,start,start+8);return `<div class="score-grid-row"><div class="score-cell player-name">${esc(player.name)}</div>${holes.map(h=>holeCell(player,h)).join("")}<div class="score-cell tally">${score||"—"}</div><div class="score-cell to-par">${signed(score,par)}</div></div>`;}).join("");
-  return `<section class="scorecard-nine"><header class="scorecard-nine-title"><strong>${label}</strong><span>Par ${par}</span></header><div class="score-grid" style="${cols}"><div class="score-cell head">Player</div>${headers}<div class="score-cell head">Score</div><div class="score-cell head">To Par</div>${parRow}${rows}</div></section>`;
+  const parRow=`<div class="score-cell score-label head">Par</div>${holes.map(h=>`<div class="score-cell par head">${n(pars[h-1])}</div>`).join("")}<div class="score-cell tally head">${par}</div><div class="score-cell to-par head">E</div>`;
+  const scoreRow=`<div class="score-cell score-label">Team strokes</div>${holes.map(h=>{
+    const value=map.get(h)?.strokes ?? "";
+    return `<div class="score-cell"><input data-team-score data-hole="${h}" type="number" min="1" max="15" inputmode="numeric" value="${esc(value)}" ${editable?"":"disabled"} aria-label="Team score, hole ${h}"></div>`;
+  }).join("")}<div class="score-cell tally">${score||"—"}</div><div class="score-cell to-par">${signed(score,par)}</div>`;
+  return `<section class="scorecard-nine"><header class="scorecard-nine-title"><strong>${label}</strong><span>${entered}/${holes.length} entered · Par ${par}</span></header><div class="score-grid" style="${cols}"><div class="score-cell head">Team</div>${headers}<div class="score-cell head">Score</div><div class="score-cell head">To Par</div>${parRow}${scoreRow}</div></section>`;
 }
 
-function normalize(root){
-  if(!root||root.dataset.singleScorecard==="true") return;
-  const card=root.querySelector(".golf-scorecard-page");
-  if(!card) return;
-  const blocks=[...card.querySelectorAll(":scope > .score-player")];
-  if(!blocks.length) return;
-  const players=blocks.map(readPlayer);
-  const pars={};
-  const firstBlock=blocks[0];
-  firstBlock.querySelectorAll(".score-nine").forEach((nine,index)=>{
-    const start=index===0?1:10;
-    const count=nine.querySelectorAll(".score-hole").length;
-    const headerPar=num(nine.querySelector(".score-nine-head div:nth-child(2) b")?.textContent||0);
-    const perHole=headerPar ? Math.round(headerPar/count) : 4;
-    for(let i=0;i<count;i++) pars[start+i]=perHole;
+async function renderTeamCard(root, outingId, teamId){
+  const card=await loadCard(outingId,teamId);
+  if(!card.team) throw new Error("Team not found");
+  const current=String(currentMember()?.id||"");
+  const memberOfTeam=card.parts.some(p=>String(p.member_id)===current);
+  const editable=isAdmin()||memberOfTeam;
+  const pars=card.pars;
+  const map=scoreMap(card.scores);
+  const frontPar=pars.slice(0,9).reduce((a,b)=>a+n(b),0);
+  const backPar=pars.slice(9,18).reduce((a,b)=>a+n(b),0);
+  const totalPar=frontPar+backPar;
+  const front=total(map,1,9);
+  const back=total(map,10,18);
+  const complete=front+back;
+  const names=card.parts.map(p=>card.members.find(m=>String(m.id)===String(p.member_id))?.display_name||"Unknown");
+  root.innerHTML=`<section class="card single-team-scorecard">
+    <div class="scorecard-title">
+      <a class="backlink" href="#/golf?id=${outingId}">← Teams</a>
+      <div class="scorecard-team-heading">
+        <span class="scorecard-kicker">TEAM SCORECARD</span>
+        <h2>${esc(card.team.name||"Team")}</h2>
+        <div class="scorecard-roster">${names.map(name=>`<span>${esc(name)}</span>`).join("")}</div>
+      </div>
+    </div>
+    <div class="score-status">${editable?"You can edit this team's single scorecard.":"Read-only — you are not on this team."} · ${card.scores.length} hole${card.scores.length===1?"":"s"} entered</div>
+    <div class="scorecard-table-wrap">${nine("Front 9",1,pars,map,editable)}${pars.length>9?nine("Back 9",10,pars,map,editable):""}</div>
+    <div class="score-summary">
+      <span><small>Complete score</small><b>${complete||"—"}</b></span>
+      <span><small>Par</small><b>${totalPar}</b></span>
+      <span><small>Complete to par</small><b>${signed(complete,totalPar)}</b></span>
+    </div>
+  </section>`;
+  wireScores(root,outingId,teamId,editable);
+}
+
+function wireScores(root,outingId,teamId,editable){
+  if(!editable) return;
+  root.addEventListener("change",async e=>{
+    const input=e.target.closest("input[data-team-score]");
+    if(!input) return;
+    const hole=Number(input.dataset.hole);
+    if(!hole) return;
+    try{
+      if(!input.value.trim()){
+        const {error}=await db().from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole);
+        if(error) throw error;
+      }else{
+        const strokes=Number(input.value);
+        if(!Number.isInteger(strokes)||strokes<1||strokes>15) throw new Error("Enter strokes from 1 to 15");
+        const {error}=await db().from("golf_scores").upsert({outing_id:outingId,team_id:teamId,member_id:null,hole,strokes},{onConflict:"outing_id,team_id,hole"});
+        if(error) throw error;
+      }
+      await renderTeamCard(root,outingId,teamId);
+    }catch(err){ input.focus(); alert(err.message||"Could not save team score"); }
   });
-  for(let h=1;h<=18;h++) if(!pars[h]) pars[h]=4;
-  const title=card.querySelector(".scorecard-team-heading")?.innerHTML||"";
-  const back=card.querySelector(".scorecard-title .backlink")?.outerHTML||"";
-  const totalPar=Object.values(pars).reduce((a,b)=>a+num(b),0);
-  const completeScore=players.reduce((n,p)=>n+total(p.scores,1,18),0);
-  const completeToPar=completeScore?signed(completeScore,totalPar):"—";
-  const front=renderNine(players,1,"Front 9",pars);
-  const back9=Object.keys(pars).some(h=>Number(h)>9)?renderNine(players,10,"Back 9",pars):"";
-  card.className="card single-team-scorecard";
-  card.innerHTML=`<div class="scorecard-title">${back}<div class="scorecard-team-heading">${title}</div></div><div class="scorecard-table-wrap">${front}${back9}</div><div class="score-summary"><span><small>Complete team score</small><b>${completeScore||"—"}</b></span><span><small>Team par</small><b>${totalPar}</b></span><span><small>Team to par</small><b>${completeToPar}</b></span></div><div class="score-note">One scorecard for the entire team. Each player's scores are recorded on the same card. Team members can edit; everyone else can view. Admin can edit any team.</div>`;
-  root.dataset.singleScorecard="true";
 }
 
 function boot(){
   if(document.getElementById("dfl-golf-scorecard-style")) return;
-  const style=document.createElement("style"); style.id="dfl-golf-scorecard-style"; style.textContent=SCORECARD_STYLE; document.head.appendChild(style);
-  const observer=new MutationObserver(()=>{const root=document.querySelector("#golf-outing");if(root) normalize(root);});
-  observer.observe(document.body,{childList:true,subtree:true});
-  const root=document.querySelector("#golf-outing"); if(root) normalize(root);
+  const style=document.createElement("style"); style.id="dfl-golf-scorecard-style"; style.textContent=STYLE; document.head.appendChild(style);
+  const refresh=()=>{
+    const root=document.querySelector("#golf-outing");
+    const params=new URLSearchParams(location.hash.split("?")[1]||"");
+    const outingId=params.get("id"),teamId=params.get("team");
+    if(!root||!outingId||!teamId||root.dataset.teamCardLoaded===`${outingId}:${teamId}`) return;
+    if(!root.querySelector(".golf-scorecard-page")) return;
+    root.dataset.teamCardLoaded=`${outingId}:${teamId}`;
+    renderTeamCard(root,outingId,teamId).catch(err=>{root.innerHTML=`<div class="card"><div class="card-body"><strong>Could not load team scorecard.</strong><p class="muted">${esc(err.message||"Database error")}</p></div></div>`;});
+  };
+  new MutationObserver(refresh).observe(document.body,{childList:true,subtree:true});
+  refresh();
 }
+
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
