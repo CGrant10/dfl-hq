@@ -49,16 +49,28 @@ html {
   overscroll-behavior-y: none;
 }
 
-body,
-button, a, label, th, .pill, .stat, .tabs, .tabbar, .card-title, .brand {
+/*
+  Nothing is selectable. A long press anywhere used to raise the iOS
+  "Copy / Look Up / Share" sheet, which is what makes a web page feel like
+  a web page instead of an app. The old rule listed the chrome to exclude
+  and then handed selection back to h1/h2/h3/p, so every page heading and
+  every body paragraph still popped the sheet.
+*/
+* {
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/* ...but real content is still selectable */
-.card-body, .tbl td, p, h1, h2, h3, input, textarea, select, .synclog {
+/*
+  The exception, and it is not optional: you cannot type into a field you
+  cannot put a cursor in. Form controls keep selection, everything else
+  loses it.
+*/
+input, textarea, select {
   -webkit-user-select: text;
   user-select: text;
+  -webkit-touch-callout: default;
 }
 
 html, body {

@@ -66,10 +66,6 @@ export async function renderFinanceSetup(host) {
       <div class="row-end">
         <button class="btn" id="su-save-season">Save season</button>
       </div>
-      <p class="muted tiny">
-        Saving is also how you move between years — put in a different season
-        and this screen switches to setting that one up.
-      </p>
     </div>
 
     <div class="card">
@@ -113,10 +109,6 @@ export async function renderFinanceSetup(host) {
       <div class="row-end">
         <button class="btn" id="su-save-payouts">Save payouts</button>
       </div>
-      <p class="muted tiny">
-        Deleting a row here removes that payout when you save. Winners are set
-        on the Payouts tab.
-      </p>
     </div>
   `;
 

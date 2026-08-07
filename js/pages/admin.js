@@ -137,15 +137,6 @@ export async function render(view) {
       <button class="btn ghost small" id="logout">Sign out</button>
     </div>
 
-    <div class="card note">
-      <div class="card-body">
-        You are signed in as commissioner, so Add, Edit and Delete buttons now
-        appear beside content on the normal pages — announcements and events on
-        Home, rules on Rules, polls on Polls, keepers, history, and each
-        member's own profile. This screen is only for the league-wide jobs.
-      </div>
-    </div>
-
     <div class="tabs" id="admin-tabs">
       ${[...TABLES, ...PANELS].map((s) => `
         <button data-section="${s.id}" class="${s.id === activeSection ? "on" : ""}">${esc(s.tab)}</button>
@@ -159,7 +150,6 @@ export async function render(view) {
       <label for="new-pw">New admin password</label>
       ${passwordField("new-pw", "at least 6 characters")}
       <div class="row-end"><button class="btn ghost" type="submit">Change password</button></div>
-      <p class="muted tiny">Everyone signed in as admin on another device will need the new password.</p>
     </form>
   `;
 
@@ -214,12 +204,7 @@ function renderLogin(view) {
       <label for="pw">Admin password</label>
       ${passwordField("pw", "")}
       <div class="row-end"><button class="btn" type="submit">Sign in</button></div>
-      <p class="muted tiny">The password is checked by the database, and stays valid on this device until you sign out.</p>
     </form>
-    <div class="card">
-      <div class="card-body muted">Everyone can read rules, keepers, history and events, and vote in polls.
-      Signing in adds Edit buttons throughout the app.</div>
-    </div>
   `;
 
   wireEyes(view);

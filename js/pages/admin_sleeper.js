@@ -63,11 +63,6 @@ export async function renderSleeperPanel(host) {
       <label for="sl-id">Sleeper League ID</label>
       <input id="sl-id" type="text" inputmode="numeric" placeholder="1048291837465738240"
              value="${esc(config.sleeper_league_id || "")}">
-      <p class="muted tiny">
-        Open your league on sleeper.app in a browser. The long number in the address bar
-        is the ID: <code>sleeper.app/leagues/<strong>1048291837465738240</strong>/team</code>.
-        Enter the ID for the <em>current</em> season — earlier seasons are found automatically.
-      </p>
       <div class="row-end"><button class="btn ghost" type="submit">Save league ID</button></div>
     </form>
 
@@ -80,19 +75,11 @@ export async function renderSleeperPanel(host) {
         <br>Stored now: ${seasonCount || 0} season(s), ${matchupCount || 0} matchups.
       </div>
       <button class="btn block" id="sl-sync">Sync Sleeper Data</button>
-      <p class="muted tiny">
-        Pulls the current season and walks back through every previous season.
-        Existing seasons are updated in place — nothing is ever deleted.
-      </p>
       <pre id="sl-log" class="synclog hidden"></pre>
     </div>
 
     <div class="card" id="sl-people">
       <div class="card-title">Who shows up</div>
-      <p class="muted tiny" style="margin-top:0">
-        Anyone new that a sync finds starts <strong>hidden</strong>. Tick the people who are
-        actually in the league — only they appear in History and the member picker.
-      </p>
       <div id="sl-people-list" class="muted tiny">Loading…</div>
     </div>
   `;
