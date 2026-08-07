@@ -1,8 +1,6 @@
 // =====================================================================
 // Home - the league's front door.
-//
-// Reads as a landing page: crest, league identity, a few live numbers,
-// then the things that actually need attention (events, news, polls).
+// Mobile-first dashboard: what matters now, then the rest of the league.
 // =====================================================================
 
 import { db, configured } from "../supabase.js";
@@ -14,80 +12,63 @@ import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
 
-/** Where the install option lives when we cannot trigger it ourselves. */
 function installHelp() {
   const ua = navigator.userAgent;
   if (/iphone|ipad|ipod/i.test(ua)) return "In Safari: Share, then Add to Home Screen";
-  if (/android/i.test(ua))          return "Chrome menu (⋮), then Install app";
+  if (/android/i.test(ua)) return "Chrome menu (⋮), then Install app";
   return "Chrome menu (⋮) → Cast, save and share → Install page as app";
 }
 
 export async function render(view) {
   if (!configured) { view.innerHTML = setupNotice(); return; }
-
   const today = new Date().toISOString().slice(0, 10);
-
   const [events, announcements, polls, leagues, members] = await Promise.all([
-    db().from("events").select("*").gte("event_date", today)
-        .order("event_date", { ascending: true }).limit(3),
-    db().from("announcements").select("*")
-        .order("created_at", { ascending: false }).limit(3),
-    db().from("polls").select("*").eq("active", true)
-        .order("created_at", { ascending: false }).limit(3),
-    db().from("sleeper_leagues").select("season, champion_user_id")
-        .order("season", { ascending: false }),
+    db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
+    db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
+    db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
+    db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
     db().from("members").select("id, display_name, team_name, sleeper_user_id"),
   ]);
-
   const firstError = events.error || announcements.error || polls.error;
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
-
   const settings = await loadSettings();
+  const eventRows = events.data || [];
+  const memberRows = members.data || [];
+  const me = currentMember();
 
   view.innerHTML = `
     <div id="home-wrap">
-      ${hero(leagues.data || [], members.data || [], settings.get(KEY_LOGO))}
+      ${hero(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
+      ${dashboardPulse(eventRows, memberRows, me)}
       ${quickNav()}
-
       <section class="block">
         <h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
-        ${eventList(events.data)}
+        ${eventList(eventRows)}
         ${adminRow(addControl("events", "Add event"))}
       </section>
-
       <section class="block">
         <h2 class="section-title">Announcements</h2>
         ${announcementList(announcements.data)}
         ${adminRow(addControl("announcements", "Add announcement"))}
       </section>
-
       <section class="block">
         <h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
         ${pollList(polls.data)}
         ${adminRow(addControl("polls", "Add poll"))}
       </section>
-
       <p class="version-line">
         DFL HQ v${esc(APP_VERSION)} ·
         <button class="linkbtn" id="check-update">Check for updates</button>
         ${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}
       </p>
-    </div>
-  `;
+    </div>`;
 
-  // #home-wrap is new on every render, so the listener never stacks up.
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireCrest(view);
-
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
-    if (outcome === "unavailable") {
-      // Chrome only offers its dialog once per page load, and iOS has no
-      // API at all, so fall back to telling people where the option lives.
-      toast(installHelp(), true);
-    }
+    if (outcome === "unavailable") toast(installHelp(), true);
   });
-
   view.querySelector("#check-update").addEventListener("click", async (e) => {
     const btn = e.target;
     btn.disabled = true;
@@ -104,243 +85,98 @@ export async function render(view) {
   });
 }
 
-// -------------------------------- hero --------------------------------
-
 function hero(leagues, members, logo) {
   const me = currentMember();
-
   const latestChampLeague = leagues.find((l) => l.champion_user_id);
-  const champ = latestChampLeague
-    ? members.find((m) => m.sleeper_user_id === latestChampLeague.champion_user_id)
-    : null;
-
-  /*
-    The season count used to be leagues.length - how many seasons Sleeper
-    has, which is not how old the league is. The first two years were played
-    elsewhere and left no data, so counting rows understated the DFL by two
-    whole seasons. Age comes from the founding year; the stats keep coming
-    from the data.
-  */
-  const year   = new Date().getFullYear();
+  const champ = latestChampLeague ? members.find((m) => m.sleeper_user_id === latestChampLeague.champion_user_id) : null;
+  const year = new Date().getFullYear();
   const number = year - LEAGUE_FOUNDED + 1;
   const milestone = number > 1 && number % 10 === 0;
-
   return `
     <section class="hero ${milestone ? "milestone" : ""}">
       ${milestone ? `<p class="hero-anniversary">${esc(ordinal(number))} Anniversary Season</p>` : ""}
-
-      <img class="hero-crest" src="${esc(logo || "icons/logo-256.png")}"
-           alt="DFL league crest" width="256" height="256">
-      <!-- The crest already reads "DFL", so the wordmark would just repeat
-           it. Kept as a heading for screen readers and page structure. -->
+      <img class="hero-crest" src="${esc(logo || "icons/logo-256.png")}" alt="DFL league crest" width="256" height="256">
       <h1 class="sr-only">DFL HQ</h1>
-
-      ${canEdit() ? `
-        <div class="crest-tools">
-          <input type="file" id="logo-file" accept="image/*" class="hidden">
-          <button class="btn ghost small" id="logo-pick">Change crest</button>
-          ${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}
-        </div>` : ""}
-
-      <p class="hero-creed">
-        Forged by sinners.<br>
-        Fueled by rivalries.<br>
-        Defined by champions.
-      </p>
+      ${canEdit() ? `<div class="crest-tools"><input type="file" id="logo-file" accept="image/*" class="hidden"><button class="btn ghost small" id="logo-pick">Change crest</button>${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}</div>` : ""}
+      <p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p>
       <p class="hero-mark">Every season leaves a mark.</p>
-
       ${me ? `<p class="hero-welcome">Welcome back, <strong>${esc(me.display_name)}</strong>.</p>` : ""}
-
       <div class="hero-stats">
         ${heroStat(ordinal(number), "Season", `Est. ${LEAGUE_FOUNDED}`)}
         ${heroStat(members.length || "—", "Owners")}
-        ${champ
-          ? heroStat(latestChampLeague.season, "Champion", champ.team_name || champ.display_name)
-          : heroStat("—", "Champion")}
+        ${champ ? heroStat(latestChampLeague.season, "Champion", champ.team_name || champ.display_name) : heroStat("—", "Champion")}
       </div>
     </section>`;
 }
 
-// ------------------------------- the crest -----------------------------
+function dashboardPulse(events, members, me) {
+  const next = events?.[0];
+  const owner = me ? members.find((m) => String(m.id) === String(me.id)) : null;
+  const team = owner?.team_name || me?.team_name || "No team set";
+  return `
+    <section class="dash-pulse">
+      <div class="dash-primary">
+        <span class="dash-kicker">NEXT UP</span>
+        ${next ? `<strong>${esc(next.title || "League event")}</strong><span>${esc(fmtDate(next.event_date))} · ${esc(relDate(next.event_date))}</span><a href="#/calendar">View event →</a>` : `<strong>No upcoming event</strong><span>The league calendar is clear.</span><a href="#/calendar">Open calendar →</a>`}
+      </div>
+      <div class="dash-secondary">
+        <span class="dash-kicker">YOUR TEAM</span>
+        <strong>${esc(team)}</strong>
+        <span>${me ? "Your league profile" : "Choose your profile"}</span>
+        <a href="#/profile">Profile →</a>
+      </div>
+    </section>`;
+}
 
-/*
-  Uploading a crest.
-
-  The picked file is redrawn to a 256x256 PNG in a canvas before it goes
-  anywhere. That matters for three reasons: a phone photo is several
-  megabytes and would be absurd in a text column, the crest is displayed at
-  256 so anything larger is wasted bytes on every page load, and a
-  centre-crop to square means a rectangular image cannot stretch the hero.
-
-  The result is a data: URI, so it needs no Storage bucket and no bucket
-  policies, and it is read as part of the same settings row as everything
-  else.
-*/
 const CREST_SIZE = 256;
-const MAX_UPLOAD = 12 * 1024 * 1024;   // sanity guard before decoding
-
+const MAX_UPLOAD = 12 * 1024 * 1024;
 function wireCrest(view) {
-  const pick  = view.querySelector("#logo-pick");
-  const file  = view.querySelector("#logo-file");
-  const reset = view.querySelector("#logo-reset");
+  const pick = view.querySelector("#logo-pick"), file = view.querySelector("#logo-file"), reset = view.querySelector("#logo-reset");
   if (!pick || !file) return;
-
   pick.addEventListener("click", () => file.click());
-
   reset?.addEventListener("click", async () => {
     if (!confirm("Go back to the built-in crest?")) return;
-    try {
-      await saveSetting(KEY_LOGO, "");
-      toast("Crest reset");
-      render(view);
-    } catch (err) {
-      toast(err.message || "Could not reset the crest", true);
-    }
+    try { await saveSetting(KEY_LOGO, ""); toast("Crest reset"); render(view); } catch (err) { toast(err.message || "Could not reset the crest", true); }
   });
-
   file.addEventListener("change", async () => {
     const chosen = file.files?.[0];
     if (!chosen) return;
-
     if (!chosen.type.startsWith("image/")) { toast("That is not an image", true); return; }
-    if (chosen.size > MAX_UPLOAD)          { toast("That image is too large", true); return; }
-
-    pick.disabled = true;
-    pick.textContent = "Working…";
-    try {
-      const dataUrl = await toSquarePng(chosen, CREST_SIZE);
-      await saveSetting(KEY_LOGO, dataUrl);
-      toast("Crest updated");
-      render(view);
-    } catch (err) {
-      toast(err.message || "Could not read that image", true);
-      pick.disabled = false;
-      pick.textContent = "Change crest";
-    }
+    if (chosen.size > MAX_UPLOAD) { toast("That image is too large", true); return; }
+    pick.disabled = true; pick.textContent = "Working…";
+    try { await saveSetting(KEY_LOGO, await toSquarePng(chosen, CREST_SIZE)); toast("Crest updated"); render(view); }
+    catch (err) { toast(err.message || "Could not read that image", true); pick.disabled = false; pick.textContent = "Change crest"; }
   });
 }
-
-/** Centre-crop to a square and redraw at `size`, returned as a data: URI. */
 async function toSquarePng(fileObj, size) {
   const bitmap = await createImageBitmap(fileObj);
   try {
-    const side = Math.min(bitmap.width, bitmap.height);
-    const canvas = document.createElement("canvas");
+    const side = Math.min(bitmap.width, bitmap.height), canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
-
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(
-      bitmap,
-      (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side,
-      0, 0, size, size);
-
+    ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
     return canvas.toDataURL("image/png");
-  } finally {
-    bitmap.close?.();
-  }
+  } finally { bitmap.close?.(); }
 }
+function ordinal(n) { const rem100 = n % 100; if (rem100 >= 11 && rem100 <= 13) return `${n}th`; return n + (["th", "st", "nd", "rd"][n % 10] || "th"); }
+function heroStat(value, label, sub = "") { return `<div class="hero-stat"><span class="hero-stat-v">${esc(value)}</span><span class="hero-stat-l">${esc(label)}</span>${sub ? `<span class="hero-stat-s">${esc(sub)}</span>` : ""}</div>`; }
 
-/** 1st, 2nd, 3rd, 4th… 11th, 12th, 13th. */
-function ordinal(n) {
-  const rem100 = n % 100;
-  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
-  return n + (["th", "st", "nd", "rd"][n % 10] || "th");
-}
-
-function heroStat(value, label, sub = "") {
-  return `
-    <div class="hero-stat">
-      <span class="hero-stat-v">${esc(value)}</span>
-      <span class="hero-stat-l">${esc(label)}</span>
-      ${sub ? `<span class="hero-stat-s">${esc(sub)}</span>` : ""}
-    </div>`;
-}
-
-// ------------------------------ quick nav ------------------------------
-
-// An icon and a word. The tiles used to carry a tagline each ("League law",
-// "Who's kept"), which explained nothing a returning owner did not already
-// know and made the grid twice as tall.
-const NAV = [
-  ["arena", "Arena"],
-  ["golf", "Golf"],
-  ["rules", "Rules"],
-  ["keepers", "Keepers"],
-  ["polls", "Polls"],
-  ["calendar", "Calendar"],
-  ["history", "History"],
-  ["finances", "Finances"],
-  ["profile", "Profile"],
-  ["admin", "Admin"],
-];
-
-function quickNav() {
-  return `
-    <nav class="quicknav">
-      ${NAV.map(([route, label]) => `
-        <a href="#/${route}">
-          <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>
-          <span class="qn-label">${esc(label)}</span>
-        </a>`).join("")}
-    </nav>`;
-}
-
-// ------------------------------- lists ---------------------------------
-
-/** Wraps an admin control so the row disappears entirely for members. */
-function adminRow(control) {
-  return control ? `<div class="row-end">${control}</div>` : "";
-}
-
+const NAV = [["arena", "Arena"], ["golf", "Golf"], ["rules", "Rules"], ["keepers", "Keepers"], ["polls", "Polls"], ["calendar", "Calendar"], ["history", "History"], ["finances", "Finances"], ["profile", "Profile"], ["admin", "Admin"]];
+function quickNav() { return `<nav class="quicknav">${NAV.map(([route, label]) => `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg><span class="qn-label">${esc(label)}</span></a>`).join("")}</nav>`; }
+function adminRow(control) { return control ? `<div class="row-end">${control}</div>` : ""; }
 function eventList(allRows) {
   const rows = visible("events", allRows);
   if (!rows.length) return empty("Nothing on the schedule yet.");
-  return rows.map((e) => `
-    <article class="card event ${hiddenClass("events", e)}">
-      <div class="event-when">
-        <span class="event-date">${esc(fmtDate(e.event_date))}</span>
-        <span class="pill green">${esc(relDate(e.event_date))}</span>
-      </div>
-      <h3 class="card-heading">${esc(e.title)}</h3>
-      ${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}
-      ${editControls("events", e)}
-    </article>`).join("");
+  return rows.map((e) => `<article class="card event ${hiddenClass("events", e)}"><div class="event-when"><span class="event-date">${esc(fmtDate(e.event_date))}</span><span class="pill green">${esc(relDate(e.event_date))}</span></div><h3 class="card-heading">${esc(e.title)}</h3>${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}${editControls("events", e)}</article>`).join("");
 }
-
 function announcementList(allRows) {
   const rows = visible("announcements", allRows);
   if (!rows.length) return empty("Nothing from the commissioner yet.");
-  return rows.map((a) => `
-    <article class="card ${hiddenClass("announcements", a)}">
-      <div class="card-kicker">${esc(fmtShort(a.created_at))}</div>
-      <h3 class="card-heading">${esc(a.title)}</h3>
-      <div class="card-body">${esc(a.content)}</div>
-      ${editControls("announcements", a)}
-    </article>`).join("");
+  return rows.map((a) => `<article class="card ${hiddenClass("announcements", a)}"><div class="card-kicker">${esc(fmtShort(a.created_at))}</div><h3 class="card-heading">${esc(a.title)}</h3><div class="card-body">${esc(a.content)}</div>${editControls("announcements", a)}</article>`).join("");
 }
-
-/**
- * A poll preview is a link to the polls page, so the admin buttons sit
- * outside it - a button nested in an <a> would swallow the tap.
- */
 function pollList(allRows) {
   const rows = visible("polls", allRows);
   if (!rows.length) return empty("No polls open right now.");
-  return rows.map((p) => `
-    <a class="card linkcard ${hiddenClass("polls", p)}" href="#/polls">
-      <h3 class="card-heading">${esc(p.question)}</h3>
-      <span class="card-cta">Cast your vote →</span>
-    </a>
-    ${editControls("polls", p, { compact: true })}`).join("");
+  return rows.map((p) => `<a class="card linkcard ${hiddenClass("polls", p)}" href="#/polls"><h3 class="card-heading">${esc(p.question)}</h3><span class="card-cta">Cast your vote →</span></a>${editControls("polls", p, { compact: true })}`).join("");
 }
-
-function setupNotice() {
-  return `
-    <header class="page-head"><h1>Almost there</h1></header>
-    <div class="card note">
-      <h3 class="card-heading">Connect Supabase</h3>
-      <div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.
-
-The README walks through both steps.</div>
-    </div>`;
-}
+function setupNotice() { return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`; }
