@@ -1,39 +1,8 @@
-﻿/* =====================================================================
-   DFL HQ - service worker
-   ===================================================================== */
-const CACHE_NAME = "dfl-hq-v1.16.9";
+﻿/* DFL HQ service worker */
+const CACHE_NAME = "dfl-hq-v1.16.10";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"]);
-const APP_SHELL = [
-  "./", "./index.html", "./css/style.css", "./css/broadcast.css", "./css/golf.css",
-  "./manifest.json", "./js/config.js", "./js/app.js", "./js/install.js", "./js/update.js",
-  "./js/members.js", "./js/teams.js", "./js/theme.js", "./js/router.js", "./js/store.js",
-  "./js/supabase.js", "./js/ui.js", "./js/crud.js", "./js/form.js", "./js/inline.js",
-  "./js/sections.js", "./js/settings.js", "./js/sleeper.js", "./js/sync.js",
-  "./js/pages/home.js", "./js/pages/rules.js", "./js/pages/keepers.js", "./js/pages/polls.js",
-  "./js/pages/arena.js", "./js/pages/golf.js", "./js/pages/broadcast.js", "./js/arena/race.js",
-  "./js/arena/sprites.js", "./js/pages/calendar.js", "./js/pages/history.js", "./js/pages/finances.js",
-  "./js/pages/profile.js", "./js/pages/admin.js", "./js/pages/admin_sleeper.js",
-  "./js/pages/admin_finance.js", "./js/pages/admin_finance_setup.js",
-  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/logo-64.png", "./icons/logo-256.png",
-];
-self.addEventListener("install", event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())));
-self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())));
-function revalidating(request) { if (request.mode === "navigate") return request; try { return new Request(request, { cache: "no-cache" }); } catch { return request; } }
-self.addEventListener("fetch", event => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-  const url = new URL(request.url);
-  if (url.hostname.endsWith("supabase.co") || url.hostname.endsWith("sleeper.app") || url.pathname.endsWith("/version.txt")) return;
-  event.respondWith(fetch(revalidating(request)).then(response => {
-    if (response.ok && (url.origin === location.origin || CDN_HOSTS.has(url.hostname))) {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-    }
-    return response;
-  }).catch(async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    if (request.mode === "navigate") return caches.match("./index.html");
-    return Response.error();
-  }));
-});
+const APP_SHELL = ["./","./index.html","./css/style.css","./css/broadcast.css","./css/golf.css","./manifest.json","./js/config.js","./js/app.js","./js/install.js","./js/update.js","./js/members.js","./js/teams.js","./js/theme.js","./js/router.js","./js/store.js","./js/supabase.js","./js/ui.js","./js/crud.js","./js/form.js","./js/inline.js","./js/sections.js","./js/settings.js","./js/sleeper.js","./js/sync.js","./js/pages/home.js","./js/pages/rules.js","./js/pages/keepers.js","./js/pages/polls.js","./js/pages/arena.js","./js/pages/golf.js","./js/pages/broadcast.js","./js/arena/race.js","./js/arena/sprites.js","./js/pages/calendar.js","./js/pages/history.js","./js/pages/finances.js","./js/pages/profile.js","./js/pages/admin.js","./js/pages/admin_sleeper.js","./js/pages/admin_finance.js","./js/pages/admin_finance_setup.js","./icons/icon-192.png","./icons/icon-512.png","./icons/logo-64.png","./icons/logo-256.png"];
+self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+function revalidating(request){if(request.mode==="navigate")return request;try{return new Request(request,{cache:"no-cache"});}catch{return request;}}
+self.addEventListener("fetch",event=>{const{request}=event;if(request.method!=="GET")return;const url=new URL(request.url);if(url.hostname.endsWith("supabase.co")||url.hostname.endsWith("sleeper.app")||url.pathname.endsWith("/version.txt"))return;event.respondWith(fetch(revalidating(request)).then(response=>{if(response.ok&&(url.origin===location.origin||CDN_HOSTS.has(url.hostname))){const copy=response.clone();caches.open(CACHE_NAME).then(c=>c.put(request,copy));}return response;}).catch(async()=>{const cached=await caches.match(request);if(cached)return cached;if(request.mode==="navigate")return caches.match("./index.html");return Response.error();}));});
