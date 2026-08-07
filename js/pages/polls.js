@@ -64,12 +64,11 @@ export async function render(view) {
   const closed = shown.filter((p) => !p.active);
 
   view.innerHTML = `
-    <header class="page-head">
-      <h1>Polls</h1>
-      ${addControl("polls", "Add poll")}
-    </header>
-
     <div id="poll-list">
+      <header class="page-head">
+        <h1>Polls</h1>
+        ${addControl("polls", "Add poll")}
+      </header>
       ${needsMigration ? `<div class="card note">
           <div class="card-body">Voting is not switched on yet. Run
           <strong>polls_schema.sql</strong> in the Supabase SQL editor, then reload.</div>

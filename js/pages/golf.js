@@ -57,12 +57,11 @@ async function renderList(view) {
   const past = outings.filter((o) => o.status === "final");
 
   view.innerHTML = `
-    <header class="page-head">
-      <h1>DFL Golf</h1>
-      ${addControl("golf_outings", "New outing")}
-    </header>
-
     <div id="golf-wrap">
+      <header class="page-head">
+        <h1>DFL Golf</h1>
+        ${addControl("golf_outings", "New outing")}
+      </header>
       ${outings.length ? "" : empty(canEdit()
         ? "No outings yet. Create one above — the draft party is the usual excuse."
         : "No golf outings yet.")}

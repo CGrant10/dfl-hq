@@ -55,12 +55,11 @@ async function renderList(view) {
   const done = events.filter((e) => e.status === "complete");
 
   view.innerHTML = `
-    <header class="page-head">
-      <h1>DFL Arena</h1>
-      ${addControl("arena_events", "New event")}
-    </header>
-
     <div id="arena-wrap">
+      <header class="page-head">
+        <h1>DFL Arena</h1>
+        ${addControl("arena_events", "New event")}
+      </header>
       ${events.length ? "" : empty(canEdit()
         ? "No Arena events yet. Create one above — draft order, golf teams, punishments, anything."
         : "No Arena events yet.")}
