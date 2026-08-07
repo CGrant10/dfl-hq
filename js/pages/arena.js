@@ -17,7 +17,8 @@ import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
-import { THEMES, themeKeys, themeLabel, slotsFor, assignSprites, spriteMarkup } from "../arena/sprites.js";
+import { THEMES, themeKeys, themeLabel, slotsFor, assignSprites, spriteMarkup,
+         toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
 import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS, LENGTHS } from "../arena/race.js";
 
 const reduceMotion = () =>
@@ -202,7 +203,7 @@ function lineupCard(event, parts, byId, members) {
           <div class="lane-row">
             <span class="lane-no">${p.number ?? i + 1}</span>
             <span class="lane-sprite" style="--racer:${esc(p.color || laneColor(i))}">
-              ${spriteMarkup(event.theme, p.sprite, p.color || laneColor(i))}
+              ${spriteMarkup(event.theme, p.sprite, p.color || laneColor(i), p.sprite_image)}
             </span>
             <span class="lane-name">${esc(m?.display_name || "Unknown")}</span>
             ${admin ? `
@@ -211,6 +212,14 @@ function lineupCard(event, parts, byId, members) {
                 ${slotsFor(event.theme).map((s) =>
                   `<option value="${esc(s.key)}" ${s.key === p.sprite ? "selected" : ""}>${esc(s.label)}</option>`).join("")}
               </select>
+              <input type="file" accept="image/*" class="hidden" data-pngfile="${p.id}">
+              <button class="btn ghost small" data-png="${p.id}"
+                      title="${p.sprite_image ? "Replace this racer's picture" : "Upload a PNG for this racer"}">
+                ${p.sprite_image ? "PNG ✓" : "PNG"}
+              </button>
+              ${p.sprite_image
+                ? `<button class="btn ghost small" data-pngclear="${p.id}" title="Back to the drawn sprite">↺</button>`
+                : ""}
               <button class="btn ghost small" data-drop-racer="${p.id}" aria-label="Remove">&times;</button>
             ` : ""}
           </div>`;
@@ -264,10 +273,49 @@ function wireLineup(view, event, parts, members, refresh) {
     }
   });
 
+  // A picked file never touches the network as-is: it is redrawn to a small
+  // PNG first, so what reaches the database is a few kilobytes.
+  root.addEventListener("change", async (e) => {
+    const picker = e.target.closest("[data-pngfile]");
+    if (!picker) return;
+    const file = picker.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) { toast("That is not an image", true); return; }
+    if (file.size > MAX_SPRITE_UPLOAD)   { toast("That image is too large", true); return; }
+
+    try {
+      const dataUrl = await toSpritePng(file);
+      await updateRow("arena_participants", picker.dataset.pngfile, { sprite_image: dataUrl });
+      toast("Racer picture set");
+      refresh();
+    } catch (err) {
+      toast(/sprite_image|column/.test(err.message || "")
+        ? "Run arena_sprites_schema.sql in Supabase"
+        : (err.message || "Could not read that image"), true);
+    }
+  });
+
   root.addEventListener("click", async (e) => {
     const drop = e.target.closest("[data-drop-racer]");
     const all  = e.target.closest("#arena-add-all");
     const roll = e.target.closest("#arena-roll-sprites");
+    const png  = e.target.closest("[data-png]");
+    const wipe = e.target.closest("[data-pngclear]");
+
+    if (png) {
+      root.querySelector(`[data-pngfile="${png.dataset.png}"]`)?.click();
+      return;
+    }
+
+    if (wipe) {
+      try {
+        await updateRow("arena_participants", wipe.dataset.pngclear, { sprite_image: null });
+        toast("Back to the drawn sprite");
+        refresh();
+      } catch (err) { toast(err.message || "Could not clear the picture", true); }
+      return;
+    }
 
     if (drop) {
       try {
@@ -481,6 +529,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     id: p.member_id,
     name: byId.get(String(p.member_id))?.display_name || "Unknown",
     sprite: p.sprite,
+    image: p.sprite_image,
     color: p.color || laneColor(i),
     number: p.number ?? i + 1,
   }));
@@ -505,7 +554,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
             </span>
             <div class="runner" id="runner-${i}">
               <div class="runner-art" style="--racer:${esc(r.color)}">
-                ${spriteMarkup(event.theme, r.sprite, r.color)}
+                ${spriteMarkup(event.theme, r.sprite, r.color, r.image)}
               </div>
             </div>
           </div>`).join("")}

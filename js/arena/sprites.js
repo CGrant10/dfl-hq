@@ -285,19 +285,74 @@ function artFor(theme, key) {
 }
 
 /**
- * The markup for one racer: inline SVG, always.
+ * The markup for one racer.
  *
- * An <img> is used ONLY for a theme/key registered in SPRITE_FILES, so the
- * common case makes no network request and can never end up blank.
+ * Order of preference:
+ *   1. `image` - a PNG the commissioner uploaded for this racer, held on the
+ *      participant row as a data: URI
+ *   2. a file registered in SPRITE_FILES for this theme/key
+ *   3. the built-in drawing for the slot
+ *
+ * There is no onerror fallback and deliberately so: the previous version
+ * relied on one, got the order of operations wrong, and blanked every racer.
+ * A data: URI cannot 404, and (2) is opt-in, so nothing here can silently
+ * render nothing.
  */
-export function spriteMarkup(theme, key, color) {
+export function spriteMarkup(theme, key, color, image) {
   const c = color || "#2fbf5f";
-  const style = artFor(theme, key);
-  const draw = ART[style] || ART.duck;
-  const svg = `<svg class="racer-art" viewBox="0 0 64 40" aria-hidden="true">${draw(c, darken(c))}</svg>`;
+
+  if (image) {
+    // Escape only what would break out of the attribute. A data: URI is
+    // base64 so it contains none of it, but the value comes from the
+    // database and is treated as untrusted all the same.
+    const safe = String(image).replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return `<img class="racer-img" src="${safe}" alt="">`;
+  }
 
   if (key && SPRITE_FILES.has(`${theme}/${key}`)) {
     return `<img class="racer-img" src="${spriteUrl(theme, key)}" alt="">`;
   }
-  return svg;
+
+  const draw = ART[artFor(theme, key)] || ART.duck;
+  return `<svg class="racer-art" viewBox="0 0 64 40" aria-hidden="true">${draw(c, darken(c))}</svg>`;
+}
+
+// --------------------------- uploaded images --------------------------
+
+/** The box an uploaded racer is redrawn into: the same 8:5 as the drawings. */
+export const SPRITE_PX = { w: 128, h: 80 };
+
+/** How large an uploaded file may be before it is even decoded. */
+export const MAX_SPRITE_UPLOAD = 12 * 1024 * 1024;
+
+/**
+ * Redraw a picked file as a small transparent PNG, returned as a data: URI.
+ *
+ * CONTAIN, not crop: a duck photographed wide should end up a small wide
+ * duck, not a duck with its head cut off. The spare space stays transparent,
+ * so the sprite still sits on the track properly whatever shape it came in.
+ *
+ * 128x80 is twice the size it is drawn at in the app and a little over what
+ * the broadcast uses, so it stays sharp on a stream without carrying a phone
+ * photo's worth of bytes in every page load.
+ */
+export async function toSpritePng(file, { w = SPRITE_PX.w, h = SPRITE_PX.h } = {}) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+
+    const scale = Math.min(w / bitmap.width, h / bitmap.height);
+    const dw = Math.round(bitmap.width * scale);
+    const dh = Math.round(bitmap.height * scale);
+
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+
+    return canvas.toDataURL("image/png");
+  } finally {
+    bitmap.close?.();
+  }
 }

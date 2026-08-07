@@ -66,6 +66,7 @@ export async function render(view) {
     id: p.member_id,
     name: byId.get(String(p.member_id))?.display_name || "Unknown",
     sprite: p.sprite,
+    image: p.sprite_image,
     color: p.color || LANE_COLORS[i % LANE_COLORS.length],
     number: p.number ?? i + 1,
   }));
@@ -225,7 +226,7 @@ function paint(view, event, racers) {
               </span>
               <div class="bc-runner" id="bc-runner-${i}">
                 <div class="bc-runner-art" style="--racer:${esc(r.color)}">
-                  ${spriteMarkup(event.theme, r.sprite, r.color)}
+                  ${spriteMarkup(event.theme, r.sprite, r.color, r.image)}
                 </div>
               </div>
             </div>`).join("")}
