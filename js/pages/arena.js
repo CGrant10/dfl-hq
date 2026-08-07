@@ -155,6 +155,9 @@ async function renderEvent(view, id) {
   view.querySelector("#arena-event").addEventListener("click", async (e) => {
     const start  = e.target.closest("#arena-start");
     const replay = e.target.closest("#arena-replay");
+    const clear  = e.target.closest("#arena-clear");
+
+    if (clear) return clearResult(view, event);
     if (!start && !replay) return;
 
     if (parts.length < 2) { toast("An Arena race needs at least two racers", true); return; }
@@ -680,6 +683,9 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
           <span class="winner-label">Winner${event?.name ? " · " + esc(event.name) : ""}</span>
         </div>` : ""}
 
+      <div class="order-head" aria-hidden="true">
+        <span>Pos</span><span>Racer</span><span class="oh-r">Time</span>
+      </div>
       <div class="order-list">
         ${rows.map((r, i) => {
           const m = byId.get(String(r.member_id));
@@ -696,6 +702,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
         <a class="btn ghost small" href="#/arena">Back to Arena</a>
         ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay</button>` : ""}
         ${canEdit() ? `<button class="btn small" id="arena-start">Run again</button>` : ""}
+        ${canEdit() ? `<button class="btn danger small" id="arena-clear">Clear result</button>` : ""}
       </div>
     </div>`;
 }
@@ -704,6 +711,41 @@ function ordinal(n) {
   const r = n % 100;
   if (r >= 11 && r <= 13) return `${n}th`;
   return n + (["th", "st", "nd", "rd"][n % 10] || "th");
+}
+
+/**
+ * Throw away a result and put the event back on the start line.
+ *
+ * For the case this exists for - "that run was a test" - the seed goes too,
+ * so the next race is a genuinely new one rather than a replay of the test.
+ * The broadcast is reset in the same breath, otherwise a winner card would
+ * still be sitting on the OBS scene for an event that no longer has a result.
+ *
+ * The participants and their sprites are untouched: clearing a result must
+ * not cost you the line-up you spent ten minutes setting up.
+ */
+async function clearResult(view, event) {
+  if (!confirm("Delete this race result? The line-up and sprites are kept.")) return;
+
+  try {
+    const { error } = await db().from("arena_results").delete().eq("event_id", event.id);
+    if (error) throw error;
+
+    const back = { status: "setup", seed: null, completed_at: null };
+    try {
+      // Reset the broadcast too, where those columns exist.
+      await updateRow("arena_events", event.id,
+        { ...back, bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 });
+    } catch {
+      // No broadcast columns yet - the result still clears.
+      await updateRow("arena_events", event.id, back);
+    }
+
+    toast("Result cleared");
+    render(view);
+  } catch (err) {
+    toast(err.message || "Could not clear the result", true);
+  }
 }
 
 /** Replace the stored result, and mark the event final. */

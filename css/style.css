@@ -1755,10 +1755,28 @@ input.masked {
   text-align: center;
 }
 
-.order-list { padding: 4px 0; }
+/* A column header, so "12.74" is obviously a time and not a score. Matches
+   the keeper and dues tables: same three-column shape, same tabular digits. */
+.order-head {
+  display: grid;
+  /* Fixed last column, NOT auto: an auto track sizes to its own content, so
+     "TIME" and "9.76s" measured differently and the header sat half a pixel
+     off the numbers underneath it. */
+  grid-template-columns: 2.6rem 1fr 4.2rem;
+  gap: 10px;
+  padding: 10px 16px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.oh-r { text-align: right; }
+
+.order-list { padding: 0 0 4px; }
 .order-row {
   display: grid;
-  grid-template-columns: 2.6rem 1fr auto;
+  grid-template-columns: 2.6rem 1fr 4.2rem;
   gap: 10px;
   align-items: baseline;
   padding: 9px 16px;
@@ -1777,6 +1795,9 @@ input.masked {
   font-size: 12.5px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  /* Right-aligned under the TIME header, so the decimal points line up and
+     the column can be read on its own. */
+  text-align: right;
 }
 .results-card .row-end { padding: 0 16px 14px; }
 
