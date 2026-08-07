@@ -11,7 +11,7 @@ import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
 
 /** Where the install option lives when we cannot trigger it ourselves. */
@@ -290,10 +290,11 @@ function adminRow(control) {
   return control ? `<div class="row-end">${control}</div>` : "";
 }
 
-function eventList(rows) {
-  if (!rows?.length) return empty("Nothing on the schedule yet.");
+function eventList(allRows) {
+  const rows = visible("events", allRows);
+  if (!rows.length) return empty("Nothing on the schedule yet.");
   return rows.map((e) => `
-    <article class="card event">
+    <article class="card event ${hiddenClass("events", e)}">
       <div class="event-when">
         <span class="event-date">${esc(fmtDate(e.event_date))}</span>
         <span class="pill green">${esc(relDate(e.event_date))}</span>
@@ -304,10 +305,11 @@ function eventList(rows) {
     </article>`).join("");
 }
 
-function announcementList(rows) {
-  if (!rows?.length) return empty("Nothing from the commissioner yet.");
+function announcementList(allRows) {
+  const rows = visible("announcements", allRows);
+  if (!rows.length) return empty("Nothing from the commissioner yet.");
   return rows.map((a) => `
-    <article class="card">
+    <article class="card ${hiddenClass("announcements", a)}">
       <div class="card-kicker">${esc(fmtShort(a.created_at))}</div>
       <h3 class="card-heading">${esc(a.title)}</h3>
       <div class="card-body">${esc(a.content)}</div>
@@ -319,10 +321,11 @@ function announcementList(rows) {
  * A poll preview is a link to the polls page, so the admin buttons sit
  * outside it - a button nested in an <a> would swallow the tap.
  */
-function pollList(rows) {
-  if (!rows?.length) return empty("No polls open right now.");
+function pollList(allRows) {
+  const rows = visible("polls", allRows);
+  if (!rows.length) return empty("No polls open right now.");
   return rows.map((p) => `
-    <a class="card linkcard" href="#/polls">
+    <a class="card linkcard ${hiddenClass("polls", p)}" href="#/polls">
       <h3 class="card-heading">${esc(p.question)}</h3>
       <span class="card-cta">Cast your vote →</span>
     </a>

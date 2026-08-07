@@ -7,7 +7,7 @@
 import { db, insertRow } from "../supabase.js";
 import { esc, empty, fmtDate, relDate, toast, errorBox } from "../ui.js";
 import { getUsername } from "../store.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 let tab = "events";
 
@@ -57,8 +57,9 @@ async function paintEvents(body) {
   if (error) throw error;
 
   const today    = new Date().toISOString().slice(0, 10);
-  const upcoming = (data || []).filter((e) => e.event_date >= today);
-  const past     = (data || []).filter((e) => e.event_date < today).reverse();
+  const shown    = visible("events", data);
+  const upcoming = shown.filter((e) => e.event_date >= today);
+  const past     = shown.filter((e) => e.event_date < today).reverse();
 
   body.innerHTML = `
     ${upcoming.length
@@ -84,7 +85,7 @@ function eventRow(e, upcoming) {
   const day   = isNaN(d) ? "?" : d.getDate();
 
   return `
-    <div class="evrow ${upcoming ? "next" : ""}">
+    <div class="evrow ${upcoming ? "next" : ""} ${hiddenClass("events", e)}">
       <div class="evdate" aria-hidden="true">
         <span class="evmon">${esc(month)}</span>
         <span class="evday">${esc(day)}</span>
@@ -112,7 +113,7 @@ async function paintSide(body, view) {
   ]);
   if (eventsRes.error || signupsRes.error) throw eventsRes.error || signupsRes.error;
 
-  const events  = eventsRes.data || [];
+  const events  = visible("side_events", eventsRes.data || []);
   const signups = signupsRes.data || [];
 
   const addRow = canEdit()
@@ -130,7 +131,7 @@ async function paintSide(body, view) {
     const open   = ev.status === "Open";
 
     return `
-      <div class="card ${open ? "accent" : ""}">
+      <div class="card ${open ? "accent" : ""} ${hiddenClass("side_events", ev)}">
         <div class="card-title">${esc(ev.title)}</div>
         <div class="card-meta" style="margin:0 0 8px">
           <span class="pill">${esc(ev.kind)}</span>

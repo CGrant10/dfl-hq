@@ -17,7 +17,7 @@
 import { db, isAdmin } from "../supabase.js";
 import { esc, empty, toArray, toast, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 // Set when the database still predates polls_schema.sql. Voting cannot work
 // in that state, so the page says so instead of failing to load.
@@ -59,8 +59,9 @@ export async function render(view) {
   const votes   = votesRes.data || [];
   const members = new Map((membersRes.data || []).map((m) => [String(m.id), m]));
 
-  const open   = polls.filter((p) => p.active);
-  const closed = polls.filter((p) => !p.active);
+  const shown  = visible("polls", polls);
+  const open   = shown.filter((p) => p.active);
+  const closed = shown.filter((p) => !p.active);
 
   view.innerHTML = `
     <header class="page-head">
@@ -190,7 +191,7 @@ function pollCard(poll, allVotes, members, me, admin) {
   const myVote  = me ? votes.find((v) => sameMember(v, me)) : null;
 
   return `
-    <article class="card poll ${poll.active ? "is-open" : ""}">
+    <article class="card poll ${poll.active ? "is-open" : ""} ${hiddenClass("polls", poll)}">
       <header class="poll-head">
         <h3 class="poll-q">${esc(poll.question)}</h3>
         <div class="meta-row">

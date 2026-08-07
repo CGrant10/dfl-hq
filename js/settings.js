@@ -39,4 +39,36 @@ export async function saveSetting(key, value) {
   cache = null;                       // next read comes from the database
 }
 
-export const KEY_LOGO = "dashboard_logo";
+export const KEY_LOGO   = "dashboard_logo";
+export const KEY_HIDDEN = "hidden_cards";
+
+/*
+  Hidden cards.
+
+  One setting holds a JSON array of "table:id" keys - announcements:4,
+  rules:12 - rather than a `hidden` column on nine different tables. It
+  needs no migration when the next kind of card becomes hideable, and a card
+  that gets deleted just leaves a stale key that matches nothing.
+
+  Read synchronously from the warm cache, because it is needed in the middle
+  of building markup. app.js loads settings during start-up so the cache is
+  populated before any page draws; if that has not happened yet this returns
+  empty, which shows everything - the safe way to be wrong.
+*/
+export function hiddenCards() {
+  try {
+    const parsed = JSON.parse(cache?.get(KEY_HIDDEN) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export async function setCardHidden(key, hide) {
+  const set = hiddenCards();
+  if (hide) set.add(key);
+  else      set.delete(key);
+
+  await saveSetting(KEY_HIDDEN, JSON.stringify([...set]));
+  await loadSettings({ force: true });   // refill the cache we just cleared
+}

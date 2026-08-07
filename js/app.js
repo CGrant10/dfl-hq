@@ -7,6 +7,7 @@ import { getUsername, setUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
 import { loadMembers, restoreMember, selectMember, currentMember, getMemberId } from "./members.js";
 import { initTheme, saveTheme, savedTheme } from "./theme.js";
+import { loadSettings } from "./settings.js";
 import { startRouter, renderRoute, go } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
@@ -120,7 +121,9 @@ async function boot() {
 
   if (!configured) toast("Add your Supabase keys in js/config.js", true);
 
-  await Promise.all([restoreAdmin(), restoreMember()]);
+  // Settings are loaded here, before the first page draws, because the
+  // hidden-card list has to be readable synchronously while building markup.
+  await Promise.all([restoreAdmin(), restoreMember(), loadSettings()]);
   paintName();
   startRouter();
 

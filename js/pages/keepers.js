@@ -12,7 +12,7 @@
 
 import { selectAll } from "../supabase.js";
 import { esc, empty, groupBy } from "../ui.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 let year = null;   // remembered while the app stays open
 
@@ -82,7 +82,8 @@ export async function render(view) {
  * width with tabular digits, so the rounds line up as a column you can
  * scan on its own.
  */
-function teamList(rows) {
+function teamList(allRows) {
+  const rows = visible("keepers", allRows);
   if (!rows.length) return empty("No keepers for this year.");
 
   const byTeam = [...groupBy(rows, "team").entries()]
@@ -94,7 +95,7 @@ function teamList(rows) {
         <span>Team</span><span>Keeper</span><span class="kp-r">Round</span>
       </div>
       ${byTeam.map(([team, list]) => list.map((k, i) => `
-        <div class="kp-row ${i === 0 ? "kp-new" : ""}">
+        <div class="kp-row ${i === 0 ? "kp-new" : ""} ${hiddenClass("keepers", k)}">
           <span class="kp-team">${i === 0 ? esc(team) : ""}</span>
           <span class="kp-player">
             ${esc(k.player)}

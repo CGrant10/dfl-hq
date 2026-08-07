@@ -19,11 +19,46 @@
 import { isAdmin, insertRow, updateRow, deleteRow, selectOne } from "./supabase.js";
 import { specFor } from "./sections.js";
 import { field, setValue, readForm, fillOptionsFrom } from "./form.js";
+import { hiddenCards, setCardHidden } from "./settings.js";
 import { esc, toast } from "./ui.js";
 
 /** True when this device may edit league content. */
 export function canEdit() {
   return isAdmin();
+}
+
+// ------------------------------ hiding --------------------------------
+
+/*
+  Hiding a card takes it off the page for members without deleting anything.
+  It is the answer to "this rule is out of date but I am not ready to lose
+  it" and to tidying a page down to what matters this week.
+
+  An admin still sees hidden cards, dimmed and labelled, because a hidden
+  card you cannot see is a card you can never bring back.
+*/
+
+const cardKey = (table, id) => `${table}:${id}`;
+
+export function isHidden(table, id) {
+  return hiddenCards().has(cardKey(table, id));
+}
+
+/**
+ * The rows a page should draw. Admins get everything, so they can unhide;
+ * members get only what is not hidden.
+ *
+ * Rows without an id are passed through untouched - nothing can be hidden
+ * that cannot be identified.
+ */
+export function visible(table, rows) {
+  if (canEdit()) return rows || [];
+  return (rows || []).filter((r) => r?.id == null || !isHidden(table, r.id));
+}
+
+/** "is-hidden" when this row is hidden, for dimming it in the admin view. */
+export function hiddenClass(table, row) {
+  return row && isHidden(table, row.id) ? "is-hidden" : "";
 }
 
 /**
@@ -40,10 +75,17 @@ export function editControls(table, row, { compact = false, del = true } = {}) {
   const spec = specFor(table);
   const name = spec?.label ? spec.label(row) : "";
 
+  const hidden = isHidden(table, row.id);
+
   return `
     <div class="inline-admin ${compact ? "compact" : ""}">
+      ${hidden ? `<span class="hidden-tag">Hidden</span>` : ""}
       <button class="btn ghost small" data-inline-edit="${esc(table)}"
               data-id="${esc(row.id)}">Edit</button>
+      <button class="btn ghost small" data-inline-hide="${esc(table)}"
+              data-id="${esc(row.id)}" data-hide="${hidden ? "0" : "1"}">
+        ${hidden ? "Show" : "Hide"}
+      </button>
       ${del ? `<button class="btn danger small" data-inline-del="${esc(table)}"
               data-id="${esc(row.id)}" data-label="${esc(name)}">Delete</button>` : ""}
     </div>`;
@@ -76,9 +118,10 @@ export function wireInline(root, refresh) {
   if (!root || !canEdit()) return;
 
   root.addEventListener("click", (e) => {
-    const add = e.target.closest("[data-inline-add]");
-    const ed  = e.target.closest("[data-inline-edit]");
-    const del = e.target.closest("[data-inline-del]");
+    const add  = e.target.closest("[data-inline-add]");
+    const ed   = e.target.closest("[data-inline-edit]");
+    const del  = e.target.closest("[data-inline-del]");
+    const hide = e.target.closest("[data-inline-hide]");
 
     if (add) {
       e.preventDefault();
@@ -86,6 +129,9 @@ export function wireInline(root, refresh) {
     } else if (ed) {
       e.preventDefault();
       openEditor(ed.dataset.inlineEdit, ed.dataset.id, null, refresh);
+    } else if (hide) {
+      e.preventDefault();
+      toggleHidden(hide.dataset.inlineHide, hide.dataset.id, hide.dataset.hide === "1", refresh);
     } else if (del) {
       e.preventDefault();
       removeRow(del.dataset.inlineDel, del.dataset.id, del.dataset.label, refresh);
@@ -96,6 +142,19 @@ export function wireInline(root, refresh) {
 function parsePreset(raw) {
   if (!raw) return null;
   try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function toggleHidden(table, id, hide, refresh) {
+  try {
+    await setCardHidden(cardKey(table, id), hide);
+    toast(hide ? "Hidden from members" : "Visible again");
+    refresh?.();
+  } catch (err) {
+    // The likeliest cause by far is settings_schema.sql not having been run.
+    toast(/app_settings/.test(err.message || "")
+      ? "Run settings_schema.sql in Supabase to hide cards"
+      : (err.message || "Could not change that"), true);
+  }
 }
 
 // ------------------------------- delete -------------------------------

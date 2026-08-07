@@ -13,7 +13,7 @@
 import { db } from "../supabase.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
 import { esc, empty, errorBox, groupBy } from "../ui.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 const ICON = {
   "Champion":  "i-history",
@@ -171,7 +171,8 @@ function fameView(data) {
     .filter((l) => l.champion_user_id || l.champion_roster_id)
     .sort((a, b) => b.season - a.season);
 
-  const byYear = [...groupBy(data.manual, "year").entries()].sort((a, b) => b[0] - a[0]);
+  const byYear = [...groupBy(visible("history", data.manual), "year").entries()]
+    .sort((a, b) => b[0] - a[0]);
 
   return `
     ${titled.length ? `
@@ -223,7 +224,7 @@ function sortRows(list) {
  */
 function entry(r) {
   return `
-    <div class="evrow">
+    <div class="evrow ${hiddenClass("history", r)}">
       <div class="evicon" aria-hidden="true">${icon(r.category)}</div>
       <div class="evbody">
         <div class="evtop">

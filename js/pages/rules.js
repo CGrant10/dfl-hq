@@ -10,7 +10,7 @@
 
 import { db } from "../supabase.js";
 import { esc, empty, groupBy, errorBox } from "../ui.js";
-import { addControl, editControls, wireInline, canEdit } from "../inline.js";
+import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 // Only used as a fallback and for prettifying unknown keys.
 export const DEFAULT_LABELS = {
@@ -117,11 +117,12 @@ function prettify(key) {
  * text, so a seven-rule section scrolled for pages. Grouped like this the
  * section reads as one document, which is what it is.
  */
-function section(rows) {
+function section(allRows) {
+  const rows = visible("rules", allRows);
   if (!rows.length) return empty("Nothing written for this section yet.");
   return `<div class="card rulecard">
     ${rows.map((r) => `
-      <article class="rule">
+      <article class="rule ${hiddenClass("rules", r)}">
         ${r.title ? `<h3 class="rule-title">${esc(r.title)}</h3>` : ""}
         <div class="rule-text">${esc(r.content)}</div>
         ${editControls("rules", r, { compact: true })}

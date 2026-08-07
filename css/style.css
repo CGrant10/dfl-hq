@@ -630,6 +630,28 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 12px;
 }
 
+/*
+  A card an admin has hidden. Members never see these at all - the row is
+  filtered out in JS - so this styling only ever shows to an admin, and its
+  whole job is to say "this is not on the page for anybody else" without
+  making it unreadable.
+*/
+.is-hidden {
+  opacity: .5;
+  border-style: dashed;
+}
+.hidden-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: auto;    /* pushes the buttons to the right edge */
+}
+
 /* Admin-only crest controls, centred under it like the rest of the hero. */
 .crest-tools {
   display: flex;
