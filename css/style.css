@@ -474,6 +474,13 @@ textarea { min-height: 96px; resize: vertical; }
 
 /* ---- keepers: three columns, one row per keeper ---- */
 
+/*
+  Resolved against "Upgrade keeper styles and layout adjustments", which
+  styled the previous block-per-team markup (.keepteam / .keeper). That
+  markup is gone, so those rules went with it - but its two interaction
+  ideas, a hover tint and a tap-scale, were good and are kept below.
+*/
+
 .keepcard { padding: 0; overflow: hidden; }
 
 /* Column widths are declared once and inherited by both the heading and
@@ -499,6 +506,10 @@ textarea { min-height: 96px; resize: vertical; }
 /* Only a row that starts a new team draws a line, which is what makes the
    grouping readable without a header for every team. */
 .kp-row.kp-new { border-top: 1px solid var(--line-soft); }
+.kp-row { transition: background .15s ease, transform .12s ease; }
+.kp-row:hover  { background: rgba(255,255,255,.025); }
+.kp-row:active { transform: scale(.985); }
+
 .kp-team {
   font-size: 13px;
   color: var(--muted);
@@ -512,7 +523,7 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 12px;
   font-weight: 400;
   color: var(--muted);
-  margin-top: 1px;
+  margin-top: 3px;
 }
 .kp-cost {
   text-align: right;
