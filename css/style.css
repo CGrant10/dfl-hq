@@ -38,9 +38,8 @@
 /* ---------------------------------------------------------------------
    Native app feel
    * no blue flash when tapping
-   * no long-press "select text" / share callout on chrome and labels
+   * no long-press "select text" / share callout anywhere
    * taps register immediately instead of waiting for a double-tap zoom
-   Text you might genuinely want to copy stays selectable further down.
    ------------------------------------------------------------------- */
 html {
   -webkit-tap-highlight-color: transparent;
