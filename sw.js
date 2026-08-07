@@ -14,6 +14,15 @@
 
 const CACHE_NAME = "dfl-hq-v1.9.0";
 
+// Third party hosts worth keeping for offline use: the Supabase client, and
+// the Google font the wordmark is set in (css2 serves the stylesheet,
+// gstatic the font file itself - both are needed).
+const CDN_HOSTS = new Set([
+  "cdn.jsdelivr.net",
+  "fonts.googleapis.com",
+  "fonts.gstatic.com",
+]);
+
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -119,9 +128,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(revalidating(request))
       .then((response) => {
-        // Stash a fresh copy of anything from our own origin (plus the
-        // supabase-js library from the CDN) for offline use.
-        if (response.ok && (url.origin === location.origin || url.hostname === "cdn.jsdelivr.net")) {
+        // Stash a fresh copy of anything from our own origin, plus the
+        // third parties the app genuinely depends on: the supabase-js
+        // library and the brand font. Without the font hosts here the
+        // wordmark silently falls back to the system face offline, which is
+        // the one bit of the header anybody would notice.
+        if (response.ok && (url.origin === location.origin || CDN_HOSTS.has(url.hostname))) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }

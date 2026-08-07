@@ -14,6 +14,7 @@
   The soft one is barely there, which is the point: it separates rows
   without drawing a grid around them.
 */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap');
 :root {
   --bg:          #0d1117;   /* page background        */
   --bg-2:        #131a24;   /* card background        */
@@ -134,11 +135,12 @@ a { color: var(--accent); }
 }
 .brand-logo { width: 40px; height: 40px; display: block; flex: none; }
 .brand-text {
-  font-size: 21px;
-  font-weight: 900;
-  letter-spacing: .08em;
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: .85;
 }
 
 .brand-text span {
@@ -149,18 +151,13 @@ a { color: var(--accent); }
 
 .brand-text small {
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
+  font-family: system-ui, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .18em;
+  letter-spacing: .22em;
   color: var(--muted);
   text-transform: uppercase;
-}
-
-.brand-text span {
-  color: var(--accent);
-  text-shadow:
-    0 0 12px rgba(47,191,95,.45);
 }
 
 .whoami {

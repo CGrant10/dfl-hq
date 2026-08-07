@@ -31,4 +31,6 @@ export const LEAGUE_FOUNDED = 2017;
 export const FIRST_SYNCED_SEASON = 2019;
 
 // Bump this when you change any file, so phones pick up the new version.
+// MUST match CACHE_NAME in sw.js and version.txt - all three or none, or
+// the in-app update button misfires.
 export const APP_VERSION = "1.9.0";
