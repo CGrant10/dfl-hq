@@ -80,6 +80,26 @@ export const SECTIONS = [
     ],
   },
   {
+    id: "golf_outings", tab: "Golf",
+    table: "golf_outings", singular: "outing", plural: "outings",
+    label: (r) => r.name,
+    sub:   (r) => `${r.course || "course TBD"} · ${r.status}`,
+    fields: [
+      { name: "name",   label: "Outing name", type: "text", required: true,
+        placeholder: "DFL Draft Party Golf 2026" },
+      { name: "course", label: "Course", type: "text", placeholder: "Hawktree" },
+      { name: "event_date", label: "Date", type: "date" },
+      { name: "holes",  label: "Holes", type: "number", default: 18 },
+      { name: "status", label: "Status", type: "select",
+        options: [
+          { value: "setup",  label: "Setup" },
+          { value: "active", label: "Live" },
+          { value: "final",  label: "Final" },
+        ], default: "setup" },
+      { name: "notes",  label: "Notes", type: "textarea" },
+    ],
+  },
+  {
     id: "rules", tab: "Rules",
     table: "rules", singular: "rule", plural: "rules",
     order: "sort_order", asc: true,

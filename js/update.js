@@ -112,17 +112,31 @@ async function serverVersion() {
  */
 export async function forceUpdate() {
   try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister()));
-    }
     if (window.caches) {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     }
-    // Order matters: the worker is gone by now, so these go to the network
-    // rather than through its fetch handler.
+
+    // Pull every file straight from the server, bypassing the HTTP cache.
     await refetchAll();
+
+    /*
+      The worker is UPDATED, not unregistered.
+
+      Unregistering was the mistake: the worker is the one component that
+      revalidates every request (see revalidating() in sw.js), so throwing it
+      away left the reload depending on the browser HTTP cache - and a module
+      already in the page's module map is not re-fetched at all. That is how
+      an update could appear to succeed while the app carried on running the
+      previous version's JavaScript.
+
+      Keeping it registered and calling update() means the reload is served by
+      a worker that always asks the server.
+    */
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.update().catch(() => {})));
+    }
   } catch (err) {
     console.warn("Update cleanup failed, reloading anyway", err);
   }

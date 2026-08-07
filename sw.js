@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.13.1";
+const CACHE_NAME = "dfl-hq-v1.14.0";
 
 // Third party hosts worth keeping for offline use: the Supabase client, and
 // the Google font the wordmark is set in (css2 serves the stylesheet,
@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./index.html",
   "./css/style.css",
   "./css/broadcast.css",
+  "./css/golf.css",
   "./manifest.json",
   "./js/config.js",
   "./js/app.js",
@@ -52,6 +53,7 @@ const APP_SHELL = [
   "./js/pages/keepers.js",
   "./js/pages/polls.js",
   "./js/pages/arena.js",
+  "./js/pages/golf.js",
   "./js/pages/broadcast.js",
   "./js/arena/race.js",
   "./js/arena/sprites.js",

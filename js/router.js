@@ -12,6 +12,7 @@ const routes = {
   keepers:  () => import("./pages/keepers.js"),
   polls:    () => import("./pages/polls.js"),
   arena:    () => import("./pages/arena.js"),
+  golf:     () => import("./pages/golf.js"),
   broadcast:() => import("./pages/broadcast.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),

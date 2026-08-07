@@ -139,6 +139,30 @@ export function wireInline(root, refresh) {
   });
 }
 
+/*
+  Postgres error codes are not a message for a human standing in a bar.
+
+  42501 is the one that actually happens: the commissioner is signed out on
+  this device, or the admin password was changed elsewhere, and "new row
+  violates row-level security policy" tells them nothing about either.
+*/
+function saveError(err) {
+  const code = err?.code || "";
+  const msg = err?.message || "Save failed";
+
+  if (code === "42501" || /row-level security/i.test(msg)) {
+    return "Not signed in as commissioner on this device — sign in on Admin";
+  }
+  if (code === "22007" || /invalid input syntax for type date/i.test(msg)) {
+    return "That date is not valid";
+  }
+  if (code === "23505") return "That already exists";
+  if (/schema cache|does not exist/i.test(msg)) {
+    return "That table is missing — run its schema SQL in Supabase";
+  }
+  return msg;
+}
+
 function parsePreset(raw) {
   if (!raw) return null;
   try { return JSON.parse(raw); } catch { return null; }
@@ -237,7 +261,7 @@ export async function openEditor(table, id, preset, refresh) {
       close();
       refresh?.();
     } catch (err) {
-      toast(err.message || "Save failed", true);
+      toast(saveError(err), true);
       btn.disabled = false;
     }
   });

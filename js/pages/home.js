@@ -263,6 +263,7 @@ function heroStat(value, label, sub = "") {
 // know and made the grid twice as tall.
 const NAV = [
   ["arena", "Arena"],
+  ["golf", "Golf"],
   ["rules", "Rules"],
   ["keepers", "Keepers"],
   ["polls", "Polls"],
