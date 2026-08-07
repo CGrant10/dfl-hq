@@ -119,13 +119,24 @@ async function renderOuting(view, id) {
     return;
   }
 
-  const outing = outRes.data;
-  const parts  = partsRes.data || [];
-  const teams  = teamsRes.data || [];
-  const scores = scoresRes.data || [];
-  const byId   = new Map(members.map((m) => [String(m.id), m]));
+const outing = outRes.data;
+const parts  = partsRes.data || [];
+const teams  = teamsRes.data || [];
+const scores = scoresRes.data || [];
 
-  const rate = (memberId) => rating.get(String(memberId)) ?? DEFAULT_RATING;
+const byId = new Map(
+  members.map((m) => [String(m.id), m])
+);
+
+const rating = new Map(
+  (ranksRes.data || []).map((r) => [
+    String(r.member_id),
+    Number(r.rating)
+  ])
+);
+
+const rate = (memberId) =>
+  rating.get(String(memberId)) ?? DEFAULT_RATING;
 
   view.innerHTML = `
     <header class="page-head">
