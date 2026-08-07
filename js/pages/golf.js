@@ -160,14 +160,17 @@ const rate = (memberId) =>
 
       ${teamsCard(outing, parts, teams, byId, rate)}
       ${scoreCard(outing, parts, scores, byId)}
+      ${scoringControls(outing, parts, teams, scores, byId)}
       ${lineupCard(outing, parts, members, byId, rate)}
     </div>
   `;
 
-  if (canEdit()) {
-    wireLineup(view, outing, parts, members, () => render(view));
-    wireTeams(view, outing, parts, teams, rate, () => render(view));
-  }
+if (canEdit()) {
+  wireLineup(view, outing, parts, members, () => render(view));
+  wireTeams(view, outing, parts, teams, rate, () => render(view));
+}
+
+wireScores(view, outing);
 }
 
 function figure(value, label) {
@@ -434,6 +437,152 @@ ${total || "-"}
 
 </section>
 `;
+}
+
+// ============================ scoring controls ============================
+function scoringControls(outing, parts, teams, scores, byId) {
+
+return `
+<section class="card">
+
+<header class="card-head">
+<h2>Add Score</h2>
+</header>
+
+
+<label>
+Player
+</label>
+
+<select id="score-player">
+
+<option value="">
+Choose player
+</option>
+
+${parts.map(p => {
+
+const m = byId.get(String(p.member_id));
+
+return `
+<option value="${p.member_id}">
+${esc(m?.display_name || "Unknown")}
+</option>
+`;
+
+}).join("")}
+
+</select>
+
+
+
+<label>
+Hole
+</label>
+
+<select id="score-hole">
+
+<option value="">
+Choose hole
+</option>
+
+${Array.from(
+{length: outing.holes},
+(_,i)=>`
+
+<option value="${i+1}">
+Hole ${i+1}
+</option>
+
+`
+).join("")}
+
+</select>
+
+
+
+<label>
+Strokes
+</label>
+
+<input 
+id="score-strokes"
+type="number"
+min="1"
+max="20"
+placeholder="5">
+
+
+<button 
+class="btn"
+id="save-score">
+
+Save Score
+
+</button>
+
+
+</section>
+`;
+}
+
+// ------------------ wire scores ------------------------------
+function wireScores(view, outing) {
+
+const root = view.querySelector("#golf-outing");
+
+root.addEventListener("click", async (e)=>{
+
+const save = e.target.closest("#save-score");
+
+if (!save) return;
+
+
+const player = root.querySelector("#score-player").value;
+const hole = root.querySelector("#score-hole").value;
+const strokes = root.querySelector("#score-strokes").value;
+
+
+if (!player || !hole || !strokes) {
+toast("Pick player, hole, and strokes", true);
+return;
+}
+
+
+try {
+
+const { error } = await db()
+.from("golf_scores")
+.upsert({
+  outing_id: outing.id,
+  member_id: Number(player),
+  hole: Number(hole),
+  strokes: Number(strokes)
+},
+{
+  onConflict:"outing_id,member_id,hole"
+});
+
+
+if(error) throw error;
+
+});
+
+
+toast("Score saved");
+
+location.reload();
+
+
+} catch(err){
+
+toast(err.message || "Could not save score", true);
+
+}
+
+
+});
+
 }
 // ---------------------------- the generator ---------------------------
 
