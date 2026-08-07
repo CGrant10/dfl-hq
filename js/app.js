@@ -12,7 +12,6 @@ import { startRouter, renderRoute, go } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { esc, toast } from "./ui.js";
-import "./golf_scorecard.js";
 
 const welcome     = document.getElementById("welcome");
 const welcomeForm = document.getElementById("welcome-form");
