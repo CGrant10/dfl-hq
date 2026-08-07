@@ -2,6 +2,10 @@
 -- DFL Golf schema / permissions
 -- =====================================================================
 -- Safe to re-run. Run this in Supabase SQL Editor after updating DFL HQ.
+--
+-- Golf scores are ONE score per TEAM per HOLE. golf_scores.member_id is
+-- retained nullable for legacy player-score rows, but all new team cards
+-- use team_id and one row per outing/team/hole.
 
 create table if not exists public.golf_outings (
   id bigint generated always as identity primary key,
@@ -30,11 +34,19 @@ create table if not exists public.golf_holes (
 create table if not exists public.golf_scores (
   id bigint generated always as identity primary key,
   outing_id bigint not null references public.golf_outings(id) on delete cascade,
-  member_id bigint not null references public.members(id) on delete cascade,
+  member_id bigint references public.members(id) on delete cascade,
+  team_id bigint references public.golf_teams(id) on delete cascade,
   hole int not null, strokes int not null,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
   unique (outing_id, member_id, hole)
 );
+
+-- Upgrade existing installations from player-only scores to team scores.
+alter table public.golf_scores add column if not exists team_id bigint references public.golf_teams(id) on delete cascade;
+alter table public.golf_scores alter column member_id drop not null;
+create unique index if not exists uq_golf_scores_team_hole on public.golf_scores(outing_id, team_id, hole) where team_id is not null;
+create index if not exists idx_golf_scores_team on public.golf_scores(outing_id, team_id, hole);
+
 create table if not exists public.golf_rankings (
   member_id bigint primary key references public.members(id) on delete cascade,
   rating int not null default 75, handicap int, driving int, putting int, short_game int,
@@ -58,9 +70,8 @@ create index if not exists idx_golf_scores_outing on public.golf_scores(outing_i
 create index if not exists idx_golf_scores_lookup on public.golf_scores(outing_id, hole);
 
 -- Everyone can read golf data. Admin can manage all golf data.
--- A non-admin can write a score only when the selected member is on the
--- SAME TEAM as the score's player. This lets a team maintain one card while
--- other teams remain read-only.
+-- A non-admin can write ONLY the single scorecard belonging to a team they
+-- are a member of. Other teams remain read-only.
 do $$
 begin
   alter table public.golf_outings enable row level security;
@@ -105,26 +116,20 @@ begin
   drop policy if exists "team member write scores" on public.golf_scores;
   create policy "team member write scores" on public.golf_scores for all
     using (
-      exists (
-        select 1 from public.golf_participants target
-        join public.golf_participants editor
-          on editor.outing_id = target.outing_id
-         and editor.team_id = target.team_id
-        where target.outing_id = golf_scores.outing_id
-          and target.member_id = golf_scores.member_id
-          and target.team_id is not null
+      golf_scores.team_id is not null
+      and exists (
+        select 1 from public.golf_participants editor
+        where editor.outing_id = golf_scores.outing_id
+          and editor.team_id = golf_scores.team_id
           and editor.member_id = nullif(current_setting('request.headers', true)::json->>'x-member-id', '')::bigint
       )
     )
     with check (
-      exists (
-        select 1 from public.golf_participants target
-        join public.golf_participants editor
-          on editor.outing_id = target.outing_id
-         and editor.team_id = target.team_id
-        where target.outing_id = golf_scores.outing_id
-          and target.member_id = golf_scores.member_id
-          and target.team_id is not null
+      golf_scores.team_id is not null
+      and exists (
+        select 1 from public.golf_participants editor
+        where editor.outing_id = golf_scores.outing_id
+          and editor.team_id = golf_scores.team_id
           and editor.member_id = nullif(current_setting('request.headers', true)::json->>'x-member-id', '')::bigint
       )
     );
