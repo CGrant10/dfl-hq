@@ -115,7 +115,12 @@ a { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
 }
-.brand { display: flex; align-items: center; gap: 9px; font-weight: 800; letter-spacing: .5px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
 .brand-logo { width: 40px; height: 40px; display: block; flex: none; }
 .brand-text {
   font-size: 21px;
