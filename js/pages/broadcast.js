@@ -303,6 +303,17 @@ function watch(view, id, racers) {
     if (key !== live.simKey) {
       live.sim = simulate(racers, ticks, Number(row.seed) || 1);
       live.simKey = key;
+
+      /*
+        Finish time per LANE, and the last one of all.
+
+        sim.order is sorted by finish, so it has to be turned back into
+        lane order to be useful while drawing. Both are needed to stop the
+        board and the clock at the right moment.
+      */
+      live.finishAt = new Array(racers.length).fill(Infinity);
+      for (const o of live.sim.order) live.finishAt[o.index] = o.finishMs;
+      live.lastFinish = live.sim.order.at(-1)?.finishMs ?? 0;
     }
 
     const hideBoard = row.bc_show_board === false;
@@ -373,7 +384,10 @@ function watch(view, id, racers) {
       }
 
       if (row.bc_show_timer !== false) {
-        els.clock.textContent = (Math.max(0, elapsed) / 1000).toFixed(1);
+        // Frozen at the last finish: a race clock that carries on counting
+        // after everybody is home is just a stopwatch nobody stopped.
+        const shown = Math.min(Math.max(0, elapsed), live.lastFinish);
+        els.clock.textContent = (shown / 1000).toFixed(1);
       }
 
       // The board is text: 6 updates a second is plenty and keeps the main
@@ -381,7 +395,7 @@ function watch(view, id, racers) {
       const now = performance.now();
       if (now - lastBoard > 160) {
         lastBoard = now;
-        drawBoard(els.list, racers, sim, t);
+        drawBoard(els.list, racers, sim, t, elapsed, live.finishAt);
       }
 
       const finishMs = sim.order.at(-1)?.finishMs ?? 0;
@@ -433,20 +447,32 @@ const SPRITE_VW = 5;
 const trackX = (p) =>
   `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_VW).toFixed(3)}vw)`;
 
-/** Live standings, ordered by distance covered. */
-function drawBoard(list, racers, sim, t) {
+/**
+ * Live standings.
+ *
+ * A placing is SET when it is earned. Ordering purely by distance looked
+ * right until somebody crossed: a finished racer sits at exactly 1.0, so
+ * every finisher tied with every other finisher and the tie-break reshuffled
+ * them - 1st and 2nd could swap after both were home, and once the whole
+ * field was in, the board showed lane order instead of the result.
+ *
+ * So: anybody home is ranked by WHEN they got home, always ahead of anybody
+ * still running, and the still-running are ranked by distance with lane
+ * order as the tie-break (which is what stops a standing start flickering).
+ */
+function drawBoard(list, racers, sim, t, elapsed, finishAt) {
   const idx = Math.max(0, Math.min(sim.frames, Math.round(t)));
-  /*
-    Tie-break on lane order, ALWAYS.
+  const done = (i) => (finishAt?.[i] ?? Infinity) <= elapsed;
 
-    Before the start every racer is at exactly 0, and a sort with no
-    tie-break let the browser return them in a different order each frame -
-    so the board flickered through names at 6Hz while the track sat still.
-    A stable secondary key makes a standing start read as a standing start.
-  */
   const rows = racers
-    .map((r, i) => ({ r, i, p: sim.samples[i][idx] }))
-    .sort((a, b) => (b.p - a.p) || (a.i - b.i));
+    .map((r, i) => ({ r, i, p: sim.samples[i][idx], f: finishAt?.[i] ?? Infinity }))
+    .sort((a, b) => {
+      const ad = done(a.i), bd = done(b.i);
+      if (ad && bd) return a.f - b.f;          // both home: by finish time
+      if (ad) return -1;                        // home beats still running
+      if (bd) return 1;
+      return (b.p - a.p) || (a.i - b.i);        // both running: by distance
+    });
 
   const items = list.children;
   for (let i = 0; i < items.length; i++) {

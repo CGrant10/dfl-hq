@@ -543,7 +543,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const started = performance.now();
 
   await new Promise((resolve) => {
-    const total = sim.order.at(-1).finishMs + 250;
+    const lastFinish = sim.order.at(-1).finishMs;
+    const total = lastFinish + 250;
 
     function frame(now) {
       const elapsed = now - started;
@@ -556,7 +557,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
       }
 
-      clock.textContent = (elapsed / 1000).toFixed(1) + "s";
+      // Stops on the last finish rather than running on to the extra beat
+      // the animation holds for before the result appears.
+      clock.textContent = (Math.min(elapsed, lastFinish) / 1000).toFixed(1) + "s";
       if (elapsed > total * 0.82) status.textContent = "Final stretch";
 
       if (elapsed >= total) resolve();
