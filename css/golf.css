@@ -1,104 +1,58 @@
 /* =====================================================================
    DFL HQ - Golf
-   ---------------------------------------------------------------------
-   Same stadium-at-night surfaces as the rest of the app, same compact-row
-   pattern as keepers and dues: one card per group, hairlines inside it,
-   numbers in a fixed right-hand column with tabular digits.
-
-   Its own file because Golf is a whole section and style.css is long.
    ===================================================================== */
-
 .golf-card { padding: 0; overflow: hidden; }
-.golf-link {
-  display: block;
-  padding: 14px 16px 12px;
-  text-decoration: none;
-  color: inherit;
-}
+.golf-link { display: block; padding: 14px 16px 12px; text-decoration: none; color: inherit; }
 .golf-link:hover { background: var(--bg-3); }
 .golf-top { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
 .golf-top .card-heading { margin: 0; }
-.golf-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 3px;
-  font-size: 12px;
-  color: var(--muted);
-}
+.golf-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; font-size: 12px; color: var(--muted); }
 .golf-card .inline-admin { padding: 0 16px 12px; }
-
-/* ------------------------- a player, in a list ------------------------ */
-
 .glist { display: grid; }
-.grow {
-  display: grid;
-  grid-template-columns: 1fr 2.6rem auto auto;
-  gap: 9px;
-  align-items: center;
-  padding: 8px 0;
-  border-top: 1px solid var(--line-soft);
-}
+.grow { display: grid; grid-template-columns: 1fr 2.6rem auto auto; gap: 9px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line-soft); }
 .grow:first-child { border-top: 0; }
 .gname { font-size: 14.5px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-
-/* The rating is a balancing tool, not a verdict, so it is quiet - muted and
-   small, sitting in its own column rather than shouting next to the name. */
-.grate {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
+.grate { font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
 .gmove { width: auto; font-size: 13px; padding: 5px 7px; }
 .glock { padding: 5px 8px; font-size: 13px; line-height: 1; }
-
-/* A locked player is pinned to their team through a regenerate, so it needs
-   to be obvious at a glance which ones the generator will not touch. */
 .grow.is-locked { background: rgba(47,191,95,.06); }
 .grow.is-locked .gname { color: var(--accent); }
-
-/* -------------------------------- teams ------------------------------- */
-
 .gteams { display: grid; gap: 12px; }
-
-.gteam {
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--racer, var(--accent));
-  border-radius: 11px;
-  overflow: hidden;
-  background: var(--bg-2);
-}
-.gteam.is-spare {
-  border-left-color: var(--line);
-  border-style: dashed;
-  margin-top: 12px;
-}
-.gteam-head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  justify-content: space-between;
-  padding: 9px 12px;
-  background: var(--bg-3);
-  border-bottom: 1px solid var(--line-soft);
-}
+.gteam { border: 1px solid var(--line); border-left: 2px solid var(--racer, var(--accent)); border-radius: 11px; overflow: hidden; background: var(--bg-2); }
+.gteam.is-spare { border-left-color: var(--line); border-style: dashed; margin-top: 12px; }
+.gteam-head { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; padding: 9px 12px; background: var(--bg-3); border-bottom: 1px solid var(--line-soft); }
 .gteam-name { font-size: 14px; font-weight: 700; }
-.gteam-nums {
-  font-size: 12px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
+.gteam-nums { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .gteam-nums b { color: var(--text); font-weight: 700; }
 .gteam .grow { padding: 8px 12px; }
-
 .gcount { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; }
 .gcount input { width: 4rem; padding: 7px 8px; text-align: center; }
 
-/* Phones are the point: at narrow widths the move-select drops under the
-   name rather than squeezing the name to nothing. */
+/* ------------------------- team scorecards -------------------------- */
+.golf-score-intro { margin-top: 12px; }
+.golf-score-team { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg-2); }
+.golf-sc-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 11px 12px; background: var(--bg-3); border-bottom: 1px solid var(--line-soft); }
+.golf-sc-title h3 { margin: 0; font-size: 15px; }
+.golf-sc-title span { color: var(--muted); font-size: 12px; }
+.golf-sc-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.golf-sc-table { min-width: 980px; font-variant-numeric: tabular-nums; }
+.golf-sc-row { display: grid; grid-template-columns: 150px repeat(18, 42px) 62px 62px 62px; align-items: center; min-height: 44px; border-top: 1px solid var(--line-soft); }
+.golf-sc-row > div, .golf-sc-row > input, .golf-sc-row > output { box-sizing: border-box; min-width: 0; border-right: 1px solid var(--line-soft); }
+.golf-sc-row > div:not(.golf-sc-player), .golf-sc-row > output { text-align: center; }
+.golf-sc-head { border-top: 0; min-height: 38px; background: var(--bg-3); color: var(--muted); font-size: 11px; font-weight: 700; }
+.golf-sc-player { padding: 0 10px; text-align: left !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.golf-sc-score { width: 100%; height: 42px; border: 0; border-radius: 0; background: transparent; color: var(--text); text-align: center; font: inherit; font-weight: 600; padding: 0 4px; }
+.golf-sc-score:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--bg-3); }
+.golf-sc-score:disabled { opacity: .7; }
+.golf-sc-row output { display: flex; align-items: center; justify-content: center; height: 42px; font-weight: 700; color: var(--text); }
+.golf-sc-front, .golf-sc-back { color: var(--muted) !important; }
+.golf-sc-total { background: var(--bg-3); }
+.golf-sc-team-total { display: grid; grid-template-columns: 150px repeat(18, 42px) 62px 62px 62px; min-height: 42px; align-items: center; border-top: 2px solid var(--line); background: var(--bg-3); font-weight: 800; }
+.golf-sc-team-total > output { text-align: center; }
+.golf-sc-team-total [data-team-total] { font-size: 15px; }
+.golf-sc-empty { grid-column: 1 / -1; padding: 14px; color: var(--muted); font-size: 12px; }
+.golf-score-error { margin-top: 12px; }
+
 @media (max-width: 420px) {
   .grow { grid-template-columns: 1fr 2.4rem auto; }
   .gmove { grid-column: 1 / -1; width: 100%; }
