@@ -534,6 +534,42 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .kp-cost.none { color: var(--muted); font-weight: 500; }
 
+/* ---- the record book: what / who / number ---- */
+
+.recbook { padding: 0; overflow: hidden; }
+.rec {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 16px;
+}
+.rec + .rec { border-top: 1px solid var(--line-soft); }
+.rec-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rec-who { font-size: 14.5px; font-weight: 600; min-width: 0; }
+.rec-when {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 1px;
+}
+/* The number is the point of the row, so it is the only coloured thing
+   in it and the digits are tabular so the column reads straight down. */
+.rec-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* an inline admin strip inside one of these rows spans the full width
    rather than squeezing into a column */
 .kp-row .inline-admin,

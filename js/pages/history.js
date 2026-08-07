@@ -4,6 +4,7 @@
 //   Hall of Fame  champions, runners up, and the hand-written entries
 //   Seasons       final standings for any season
 //   All-time      career records for every owner
+//   Records       the record book, computed from every week ever played
 //
 // This absorbed what used to be a separate Owners page. Per-person detail
 // lives on the profile pages; this is the league-wide view.
@@ -65,12 +66,14 @@ export async function render(view) {
       <button data-tab="fame"    class="${tab === "fame" ? "on" : ""}">Hall of Fame</button>
       <button data-tab="seasons" class="${tab === "seasons" ? "on" : ""}">Seasons</button>
       <button data-tab="alltime" class="${tab === "alltime" ? "on" : ""}">All-time</button>
+      <button data-tab="records" class="${tab === "records" ? "on" : ""}">Records</button>
     </div>
     <div id="hist-body"></div>
   `;
 
   const body = view.querySelector("#hist-body");
   const paint = () => {
+    if (tab === "records") return recordsView(body, data);
     body.innerHTML = tab === "fame"    ? fameView(data)
                    : tab === "seasons" ? seasonsView(data)
                    : allTimeView(data);
@@ -357,6 +360,271 @@ function allTimeView(data) {
       <div class="card-meta">
         ${seasonCount} season${seasonCount === 1 ? "" : "s"} of history. Tap an owner for their profile.
       </div>
+    </div>`;
+}
+
+// ============================ record book =============================
+//
+// Everything here is computed from data that is already synced: every week
+// ever played (sleeper_matchups), the season totals (sleeper_standings) and
+// the trades (sleeper_transactions). No new API, no new tables.
+//
+// Loaded only when the tab is opened, and then kept for the rest of the
+// session - it is a few hundred rows, but there is no reason to fetch them
+// for somebody who only wanted the champions list.
+
+let recordData = null;
+
+async function loadRecordData() {
+  if (recordData) return recordData;
+
+  const [matchups, trades] = await Promise.all([
+    db().from("sleeper_matchups")
+        .select("season, week, roster1, user1, score1, roster2, user2, score2, winner_roster_id")
+        .order("season", { ascending: true }).order("week", { ascending: true }),
+    // Only trades: the free agent rows are the bulk of the table and are not
+    // needed here, and pulling all 4,000+ payloads onto a phone would be rude.
+    db().from("sleeper_transactions")
+        .select("season, week, type, status, details").eq("type", "trade"),
+  ]);
+
+  recordData = {
+    matchups: matchups.data || [],
+    trades:   trades.data || [],
+    error:    matchups.error || trades.error || null,
+  };
+  return recordData;
+}
+
+async function recordsView(body, data) {
+  body.innerHTML = `<div class="empty">Reading every week ever played…</div>`;
+
+  const rec = await loadRecordData();
+  if (rec.error) { body.innerHTML = errorBox(rec.error); return; }
+
+  const name = namer(data);
+  const sides = toSides(rec.matchups);
+
+  if (!sides.length) {
+    body.innerHTML = empty("No weekly scores synced yet. Run a Sleeper sync from the Admin page.");
+    return;
+  }
+
+  const played  = sides.filter((s) => s.score > 0);
+  const games   = rec.matchups.filter((m) => Number(m.score1) > 0 || Number(m.score2) > 0);
+  const streaks = streakRecords(sides);
+  const seasons = seasonRecords(data.standings);
+
+  const high = best(played, (s) => s.score);
+  const low  = best(played, (s) => -s.score);
+  const blow = best(games, (m) => margin(m));
+  const near = best(games.filter((m) => margin(m) > 0), (m) => -margin(m));
+  const shoot = best(games, (m) => Number(m.score1) + Number(m.score2));
+
+  const who = (s) => name(s.user, s.season, s.roster);
+
+  body.innerHTML = `
+    <p class="page-sub" style="margin-bottom:14px">
+      Every week the league has ever played — ${games.length} games across
+      ${new Set(sides.map((s) => s.season)).size} seasons.
+    </p>
+
+    <h2 class="section-title">Single week</h2>
+    <div class="card recbook">
+      ${recRow("Highest score", high && high.score.toFixed(2),
+               high && who(high).label, high && `${high.season} · Week ${high.week}`)}
+      ${recRow("Lowest score", low && low.score.toFixed(2),
+               low && who(low).label, low && `${low.season} · Week ${low.week}`)}
+      ${recRow("Biggest blowout", blow && margin(blow).toFixed(2) + " pts",
+               blow && winnerName(blow, name).label,
+               blow && `beat ${loserName(blow, name).label} · ${blow.season} Wk ${blow.week}`)}
+      ${recRow("Closest finish", near && margin(near).toFixed(2) + " pts",
+               near && winnerName(near, name).label,
+               near && `over ${loserName(near, name).label} · ${near.season} Wk ${near.week}`)}
+      ${recRow("Highest combined", shoot && (Number(shoot.score1) + Number(shoot.score2)).toFixed(2),
+               shoot && `${winnerName(shoot, name).label} v ${loserName(shoot, name).label}`,
+               shoot && `${shoot.season} · Week ${shoot.week}`)}
+    </div>
+
+    <h2 class="section-title">Seasons and streaks</h2>
+    <div class="card recbook">
+      ${recRow("Most points, season", seasons.points && seasons.points.points_for.toFixed(2),
+               seasons.points && name(seasons.points.sleeper_user_id, seasons.points.season,
+                                      seasons.points.roster_id).label,
+               seasons.points && String(seasons.points.season))}
+      ${recRow("Best record, season", seasons.record &&
+                 `${seasons.record.wins}-${seasons.record.losses}${seasons.record.ties ? "-" + seasons.record.ties : ""}`,
+               seasons.record && name(seasons.record.sleeper_user_id, seasons.record.season,
+                                      seasons.record.roster_id).label,
+               seasons.record && String(seasons.record.season))}
+      ${recRow("Longest win streak", streaks.win && streaks.win.run + " weeks",
+               streaks.win && name(streaks.win.user).label,
+               streaks.win && streaks.win.span)}
+      ${recRow("Longest losing streak", streaks.loss && streaks.loss.run + " weeks",
+               streaks.loss && name(streaks.loss.user).label,
+               streaks.loss && streaks.loss.span)}
+    </div>
+
+    ${tradeBoard(rec.trades, data)}
+  `;
+}
+
+/** One record: what it is, the number, who holds it, and when. */
+function recRow(label, value, holder, when) {
+  if (!value) return "";
+  return `
+    <div class="rec">
+      <span class="rec-label">${esc(label)}</span>
+      <span class="rec-who">
+        ${esc(holder || "—")}
+        ${when ? `<span class="rec-when">${esc(when)}</span>` : ""}
+      </span>
+      <span class="rec-val">${esc(value)}</span>
+    </div>`;
+}
+
+/**
+ * A matchup row holds two teams. Most records are about ONE team's week, so
+ * flatten every game into two one-sided entries first.
+ */
+function toSides(matchups) {
+  const out = [];
+  for (const m of matchups) {
+    // winner_roster_id is null on a tie, which is neither a win nor a loss.
+    const tie = m.winner_roster_id == null;
+    if (m.user1 || m.roster1 != null) {
+      out.push({ season: m.season, week: m.week, user: m.user1, roster: m.roster1,
+                 score: Number(m.score1) || 0, tie, won: m.winner_roster_id === m.roster1 });
+    }
+    if (m.user2 || m.roster2 != null) {
+      out.push({ season: m.season, week: m.week, user: m.user2, roster: m.roster2,
+                 score: Number(m.score2) || 0, tie, won: m.winner_roster_id === m.roster2 });
+    }
+  }
+  return out;
+}
+
+const margin = (m) => Math.abs(Number(m.score1) - Number(m.score2));
+
+/** The row scoring highest on `score`. One pass, no sorting a big array. */
+function best(rows, score) {
+  let top = null, topScore = -Infinity;
+  for (const r of rows) {
+    const s = score(r);
+    if (s > topScore) { topScore = s; top = r; }
+  }
+  return top;
+}
+
+function winnerName(m, name) {
+  const winnerIsOne = m.winner_roster_id === m.roster1;
+  return winnerIsOne ? name(m.user1, m.season, m.roster1) : name(m.user2, m.season, m.roster2);
+}
+function loserName(m, name) {
+  const winnerIsOne = m.winner_roster_id === m.roster1;
+  return winnerIsOne ? name(m.user2, m.season, m.roster2) : name(m.user1, m.season, m.roster1);
+}
+
+function seasonRecords(standings) {
+  const played = (standings || []).filter((s) => s.wins + s.losses + s.ties > 0);
+  return {
+    points: best(played, (s) => Number(s.points_for) || 0),
+    record: best(played, (s) => {
+      const games = s.wins + s.losses + s.ties;
+      // Win rate, with games played as the tie-break, so a 3-0 partial season
+      // does not outrank a 13-1 full one.
+      return games ? (s.wins + s.ties / 2) / games + games / 1000 : 0;
+    }),
+  };
+}
+
+/**
+ * Longest run of wins and of losses, per owner, across every season in
+ * order. Streaks deliberately carry across a season boundary - the league
+ * remembers, and "he lost eleven straight" is a better story for it.
+ * A tie has no winner, so it ends both runs.
+ */
+function streakRecords(sides) {
+  const byUser = new Map();
+  for (const s of sides) {
+    if (!s.user || s.score <= 0) continue;
+    if (!byUser.has(s.user)) byUser.set(s.user, []);
+    byUser.get(s.user).push(s);
+  }
+
+  let win = null, loss = null;
+  for (const [user, weeks] of byUser) {
+    weeks.sort((a, b) => a.season - b.season || a.week - b.week);
+
+    let runW = 0, runL = 0, startW = null, startL = null;
+    for (const w of weeks) {
+      if (w.tie) { runW = 0; runL = 0; startW = null; startL = null; continue; }
+
+      if (w.won) {
+        runL = 0; startL = null;
+        if (!runW) startW = w;
+        runW++;
+        if (!win || runW > win.run) win = { user, run: runW, span: span(startW, w) };
+      } else {
+        runW = 0; startW = null;
+        if (!runL) startL = w;
+        runL++;
+        if (!loss || runL > loss.run) loss = { user, run: runL, span: span(startL, w) };
+      }
+    }
+  }
+  return { win, loss };
+}
+
+function span(from, to) {
+  if (!from) return "";
+  return from.season === to.season
+    ? `${from.season} · Wk ${from.week}–${to.week}`
+    : `${from.season} Wk ${from.week} – ${to.season} Wk ${to.week}`;
+}
+
+/** Who trades. Counted per roster, since a trade names rosters, not users. */
+function tradeBoard(allTrades, data) {
+  // Every trade currently synced is "complete", but a vetoed or failed one
+  // must never pad somebody's count. An empty status is treated as complete,
+  // since that is what older synced rows look like.
+  const trades = allTrades.filter((t) => !t.status || t.status === "complete");
+  if (!trades.length) return "";
+
+  const perRoster = new Map();      // "season:rosterId" -> count
+  for (const t of trades) {
+    for (const rid of t.details?.roster_ids || []) {
+      const key = `${t.season}:${rid}`;
+      perRoster.set(key, (perRoster.get(key) || 0) + 1);
+    }
+  }
+
+  // Roll the season-and-roster counts up to the owner behind them.
+  const owner = new Map(data.standings.map((s) => [`${s.season}:${s.roster_id}`, s.sleeper_user_id]));
+  const perUser = new Map();
+  for (const [key, n] of perRoster) {
+    const uid = owner.get(key);
+    if (!uid) continue;
+    perUser.set(uid, (perUser.get(uid) || 0) + n);
+  }
+
+  const name = namer(data);
+  const rows = [...perUser.entries()]
+    .map(([uid, n]) => ({ who: name(uid), n }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 5);
+
+  if (!rows.length) return "";
+
+  return `
+    <h2 class="section-title">Trades<span class="count">${trades.length}</span></h2>
+    <div class="card recbook">
+      ${rows.map((r, i) => `
+        <div class="rec">
+          <span class="rec-label">${i === 0 ? "Most trades" : ""}</span>
+          <span class="rec-who">${esc(r.who.label)}</span>
+          <span class="rec-val">${r.n}</span>
+        </div>`).join("")}
     </div>`;
 }
 
