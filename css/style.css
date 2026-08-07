@@ -331,22 +331,22 @@ a.linkcard:hover { border-color: var(--accent-dim); background: #161e2a; }
   gap: 8px;
   margin: 16px 0 4px;
 }
+/* One row: icon, then the word. No tagline, so the tile is only as tall as
+   it needs to be and four fit where two did. */
 .quicknav a {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  align-items: center;
+  gap: 10px;
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 13px;
-  padding: 13px 14px;
+  padding: 12px 14px;
   text-decoration: none;
   color: var(--text);
 }
 .quicknav a:hover { background: var(--bg-3); border-color: var(--accent-dim); }
-.quicknav .ico { width: 21px; height: 21px; color: var(--accent); margin-bottom: 7px; }
-.qn-label { font-size: 14px; font-weight: 700; }
-.qn-sub   { font-size: 11.5px; color: var(--muted); }
+.quicknav .ico { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.qn-label { font-size: 14.5px; font-weight: 600; }
 
 /* -------------------------------- forms ------------------------------ */
 
@@ -533,6 +533,61 @@ textarea { min-height: 96px; resize: vertical; }
   font-variant-numeric: tabular-nums;
 }
 .kp-cost.none { color: var(--muted); font-weight: 500; }
+
+/* ==================== finance season setup =========================== */
+
+/* Season and buy-in side by side, labels above their own field. */
+.setup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+.setup-grid label { margin: 8px 0 0; }
+
+/* the three read-only numbers: teams, each, pot */
+.setup-figures {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.setup-figure { display: flex; flex-direction: column; }
+.sf-v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sf-l {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* one payout: title, amount, remove */
+.po-row {
+  display: grid;
+  grid-template-columns: 1fr 6.5rem auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.po-row input { margin: 0; }
+.po-amount { text-align: right; font-variant-numeric: tabular-nums; }
+
+/*
+  The running total against the pot. Green when the payouts spend the pot
+  exactly, amber when there is money left, red when they overspend - the
+  one number that says whether the season adds up.
+*/
+.setup-tally { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.setup-tally .ok    { color: var(--accent); font-weight: 700; }
+.setup-tally .under { color: var(--warn);   font-weight: 700; }
+.setup-tally .over  { color: var(--danger); font-weight: 700; }
+
+/* a chip that is a label rather than a link */
+.chip.flat {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
 
 /* ---- the record book: what / who / number ---- */
 

@@ -1,14 +1,20 @@
 // =====================================================================
 // Admin -> Finances
 //
-// Five editors behind one tab, so the admin tab bar does not sprawl.
-// Each one is just a field spec handed to the shared crud manager.
+// Setup comes first: it stands a whole season up on one screen - buy-in,
+// every team, and the payout structure - which is the job people actually
+// come here to do. See admin_finance_setup.js.
+//
+// The rest are per-row editors behind subtabs, for the detail work: who
+// has paid what, expenses as they happen, side pots. Each one is just a
+// field spec handed to the shared crud manager.
 //
 // Season is a plain number field defaulting to this year. That is what
 // keeps each season's money separate - change it to edit an old year.
 // =====================================================================
 
 import { renderManager } from "../crud.js";
+import { renderFinanceSetup } from "./admin_finance_setup.js";
 import { esc, money } from "../ui.js";
 
 const YEAR = new Date().getFullYear();
@@ -93,12 +99,16 @@ const SECTIONS = [
   },
 ];
 
-let active = "buyin";
+// "setup" is not a table editor, so it is listed here rather than in
+// SECTIONS and gets its own render call.
+const SETUP = { id: "setup", tab: "Setup" };
+
+let active = "setup";
 
 export function renderFinancePanel(host) {
   host.innerHTML = `
     <div class="tabs subtabs" id="fin-admin-tabs">
-      ${SECTIONS.map((s) => `
+      ${[SETUP, ...SECTIONS].map((s) => `
         <button data-fin="${s.id}" class="${s.id === active ? "on" : ""}">${esc(s.tab)}</button>
       `).join("")}
     </div>
@@ -106,7 +116,10 @@ export function renderFinancePanel(host) {
   `;
 
   const body = host.querySelector("#fin-admin-body");
-  const paint = () => renderManager(body, SECTIONS.find((s) => s.id === active));
+  const paint = () => {
+    if (active === SETUP.id) return renderFinanceSetup(body);
+    return renderManager(body, SECTIONS.find((s) => s.id === active));
+  };
 
   host.querySelector("#fin-admin-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-fin]");

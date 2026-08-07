@@ -149,25 +149,27 @@ function heroStat(value, label, sub = "") {
 
 // ------------------------------ quick nav ------------------------------
 
+// An icon and a word. The tiles used to carry a tagline each ("League law",
+// "Who's kept"), which explained nothing a returning owner did not already
+// know and made the grid twice as tall.
 const NAV = [
-  ["rules", "Rules", "League law"],
-  ["keepers", "Keepers", "Who's kept"],
-  ["polls", "Polls", "Have a say"],
-  ["calendar", "Calendar", "Key dates"],
-  ["history", "History", "Hall of fame"],
-  ["finances", "Finances", "Dues & payouts"],
-  ["profile", "Profile", "Your record"],
-  ["admin", "Admin", "Commissioner"],
+  ["rules", "Rules"],
+  ["keepers", "Keepers"],
+  ["polls", "Polls"],
+  ["calendar", "Calendar"],
+  ["history", "History"],
+  ["finances", "Finances"],
+  ["profile", "Profile"],
+  ["admin", "Admin"],
 ];
 
 function quickNav() {
   return `
     <nav class="quicknav">
-      ${NAV.map(([route, label, sub]) => `
+      ${NAV.map(([route, label]) => `
         <a href="#/${route}">
           <svg class="ico" aria-hidden="true"><use href="#i-${route}"></use></svg>
           <span class="qn-label">${esc(label)}</span>
-          <span class="qn-sub">${esc(sub)}</span>
         </a>`).join("")}
     </nav>`;
 }
