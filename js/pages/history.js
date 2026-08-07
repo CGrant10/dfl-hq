@@ -197,7 +197,7 @@ function fameView(data) {
             <h2>${esc(year)}</h2>
             ${addControl("history", "Add entry", { year })}
           </div>
-          ${sortRows(list).map(entry).join("")}`).join("")
+          <div class="card schedule">${sortRows(list).map(entry).join("")}</div>`).join("")
       : `<div class="card"><div class="card-body muted">
            Awards, records and the moments nobody is allowed to forget go here.
            ${canEdit() ? "" : "An admin can add them."}</div>
@@ -213,13 +213,22 @@ function sortRows(list) {
   return [...list].sort((a, b) => rank(a.category) - rank(b.category));
 }
 
+/**
+ * One line per entry inside the year's card, rather than a card each. A
+ * season with four awards used to be four bordered boxes saying two words.
+ */
 function entry(r) {
   return `
-    <div class="card">
-      <div class="card-title">${icon(r.category)} ${esc(r.winner || r.category)}</div>
-      <div class="card-meta" style="margin:0"><span class="pill">${esc(r.category)}</span></div>
-      ${r.notes ? `<div class="card-body" style="margin-top:8px">${esc(r.notes)}</div>` : ""}
-      ${editControls("history", r)}
+    <div class="evrow">
+      <div class="evicon" aria-hidden="true">${icon(r.category)}</div>
+      <div class="evbody">
+        <div class="evtop">
+          <span class="evtitle">${esc(r.winner || r.category)}</span>
+          <span class="pill">${esc(r.category)}</span>
+        </div>
+        ${r.notes ? `<div class="evnote">${esc(r.notes)}</div>` : ""}
+        ${editControls("history", r, { compact: true })}
+      </div>
     </div>`;
 }
 

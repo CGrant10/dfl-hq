@@ -111,12 +111,21 @@ function prettify(key) {
   return String(key).replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/**
+ * The whole section as one card, rules separated by hairlines.
+ *
+ * A card per rule meant a lot of border and padding between two lines of
+ * text, so a seven-rule section scrolled for pages. Grouped like this the
+ * section reads as one document, which is what it is.
+ */
 function section(rows) {
   if (!rows.length) return empty("Nothing written for this section yet.");
-  return rows.map((r) => `
-    <article class="card rule">
-      ${r.title ? `<h3 class="rule-title">${esc(r.title)}</h3>` : ""}
-      <div class="card-body">${esc(r.content)}</div>
-      ${editControls("rules", r)}
-    </article>`).join("");
+  return `<div class="card rulecard">
+    ${rows.map((r) => `
+      <article class="rule">
+        ${r.title ? `<h3 class="rule-title">${esc(r.title)}</h3>` : ""}
+        <div class="rule-text">${esc(r.content)}</div>
+        ${editControls("rules", r, { compact: true })}
+      </article>`).join("")}
+  </div>`;
 }

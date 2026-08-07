@@ -16,6 +16,72 @@ import { APP_VERSION } from "./config.js";
 
 const bar = () => document.getElementById("update");
 
+/**
+ * The page module names, so the updater can refresh pages nobody has opened.
+ *
+ * Deliberately NOT a static `import { routeNames } from "./router.js"`. This
+ * file's whole job is coping with a device holding a mismatched set of files,
+ * and a static import of a symbol that an older router.js does not export is
+ * a hard module-link failure - the app would not boot at all, which is a far
+ * worse bug than the one being fixed. A dynamic read degrades instead: an
+ * older router just means falling back to the routes the tab bar advertises.
+ */
+async function routeList() {
+  try {
+    const router = await import("./router.js");
+    if (typeof router.routeNames === "function") return router.routeNames();
+  } catch {
+    /* fall through */
+  }
+  return [...document.querySelectorAll("#tabbar a[data-route]")]
+    .map((a) => a.dataset.route)
+    .filter(Boolean);
+}
+
+/**
+ * Every app file this device could be holding a stale copy of.
+ *
+ * Worked out at runtime rather than hand-listed: whatever the page actually
+ * loaded (from the Performance timeline) plus the page modules the router
+ * can lazily import, which may not have been visited yet. A hardcoded list
+ * would rot the first time somebody adds a file and forgets this one.
+ *
+ * Cross-origin files are left out. The only one is the Supabase library,
+ * which is pinned to a version in its URL and so can never go stale.
+ */
+async function appFiles() {
+  const base = new URL(".", location.href).href;   // the folder the app sits in
+
+  const loaded = performance.getEntriesByType("resource")
+    .map((e) => e.name.split("?")[0])
+    .filter((n) => n.startsWith(location.origin) && /\.(js|css|json|html)$/.test(n));
+
+  const pages = (await routeList()).map((n) => `${base}js/pages/${n}.js`);
+  const shell = ["", "index.html", "css/style.css", "manifest.json", "sw.js"]
+    .map((p) => base + p);
+
+  return [...new Set([...shell, ...loaded, ...pages])];
+}
+
+/**
+ * Pull every app file straight from the server, bypassing the HTTP cache.
+ *
+ * This is the part the Update button was missing. Clearing Cache Storage and
+ * the service worker still left the browser's own HTTP cache holding the old
+ * files, so the reload came back on the same version it started on. The
+ * "reload" cache mode skips that cache on the way out AND replaces what is
+ * in it, so the reload that follows gets the new code.
+ */
+async function refetchAll() {
+  const files = await appFiles();
+  const results = await Promise.allSettled(
+    files.map((url) => fetch(url, { cache: "reload" }))
+  );
+
+  const failed = results.filter((r) => r.status === "rejected").length;
+  if (failed) console.warn(`Update: ${failed} of ${files.length} files could not be refreshed`);
+}
+
 /** "1.4.10" > "1.4.9" - compared piece by piece, not as text. */
 function isNewer(remote, local) {
   const a = String(remote).trim().split(".").map(Number);
@@ -54,6 +120,9 @@ export async function forceUpdate() {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     }
+    // Order matters: the worker is gone by now, so these go to the network
+    // rather than through its fetch handler.
+    await refetchAll();
   } catch (err) {
     console.warn("Update cleanup failed, reloading anyway", err);
   }

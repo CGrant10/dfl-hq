@@ -12,7 +12,7 @@
    APP_VERSION in js/config.js.
    ===================================================================== */
 
-const CACHE_NAME = "dfl-hq-v1.7.1";
+const CACHE_NAME = "dfl-hq-v1.7.3";
 
 const APP_SHELL = [
   "./",
@@ -71,6 +71,33 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/*
+  "Network first" was only half true.
+
+  fetch(request) uses the request's default cache mode, which consults the
+  BROWSER's HTTP cache before the network. GitHub Pages serves assets with
+  max-age=600, so for ten minutes after a release this handler happily
+  returned ten-minute-old JavaScript and never touched the network - which
+  is what made the Update button appear to do nothing: it cleared this
+  worker and Cache Storage, reloaded, and landed straight back on the stale
+  copy still sitting in the HTTP cache.
+
+  "no-cache" means always ask the server, but send the validators, so an
+  unchanged file comes back as an empty 304 rather than a fresh download.
+  Freshness costs a round trip, not the bytes.
+
+  Navigation requests are passed through untouched: mode "navigate" cannot
+  be reconstructed, and the version check covers a stale document anyway.
+*/
+function revalidating(request) {
+  if (request.mode === "navigate") return request;
+  try {
+    return new Request(request, { cache: "no-cache" });
+  } catch {
+    return request;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -89,7 +116,7 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.endsWith("/version.txt")) return;
 
   event.respondWith(
-    fetch(request)
+    fetch(revalidating(request))
       .then((response) => {
         // Stash a fresh copy of anything from our own origin (plus the
         // supabase-js library from the CDN) for offline use.

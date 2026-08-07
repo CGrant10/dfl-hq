@@ -128,7 +128,10 @@ async function boot() {
   else if (getUsername()) registerUser(getUsername());
 
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    navigator.serviceWorker.register("sw.js").catch(console.warn);
+    // updateViaCache:"none" keeps sw.js itself out of the HTTP cache. Without
+    // it the browser can check for a new worker against a cached copy of the
+    // old one and conclude nothing changed.
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(console.warn);
   }
 
   setupInstall();

@@ -374,7 +374,151 @@ textarea { min-height: 96px; resize: vertical; }
 
 /* rules ---------------------------------------------------------------- */
 .rule-title { font-size: 15.5px; margin: 0 0 5px; }
-.rule .card-body { color: #cfd8e4; }
+/* ===================== compact reading lists ========================= */
+
+/*
+  These four pages exist to be skimmed, usually to settle something in a
+  group chat. The pattern throughout: ONE card per group, rows inside it
+  divided by a hairline. A card per item spent most of its height on border
+  and padding and pushed everything else below the fold.
+*/
+
+/* ---- rules: the section as one document ---- */
+
+.rulecard { padding: 0; }
+.rulecard .rule {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.rulecard .rule:last-child { border-bottom: none; }
+.rule-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+.rule-text {
+  color: #cfd8e4;
+  font-size: 14.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;      /* keeps typed line breaks */
+}
+
+/* ---- events and history: date or icon on the left, detail on the right ---- */
+
+.schedule { padding: 0; }
+.evrow {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--line);
+}
+.evrow:last-child { border-bottom: none; }
+.evrow.next { border-left: 3px solid var(--accent); padding-left: 12px; }
+.schedule.is-past { opacity: .78; }
+
+/* the stacked MON / 29 block */
+.evdate {
+  flex: none;
+  width: 44px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px 0 6px;
+  background: var(--bg-3);
+}
+.evmon {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.evday { display: block; font-size: 18px; font-weight: 700; line-height: 1.1; }
+
+.evicon { flex: none; width: 24px; color: var(--accent); padding-top: 2px; }
+.evicon .ico-sm { width: 20px; height: 20px; }
+
+.evbody { flex: 1; min-width: 0; }
+.evtop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.evtitle { font-size: 15px; font-weight: 700; }
+.evwhen  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.evnote {
+  font-size: 13.5px;
+  color: #cfd8e4;
+  line-height: 1.45;
+  margin-top: 5px;
+  white-space: pre-wrap;
+}
+
+/* ---- keepers: a team block, one line per player ---- */
+
+.keeplist { display: grid; gap: 10px; }
+.keepteam {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.keepteam-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--line);
+}
+.keepteam-n {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.keeper {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.keeper:last-child { border-bottom: none; }
+.keeper-who { flex: 1; min-width: 0; }
+.keeper-player { font-size: 14.5px; font-weight: 600; }
+.keeper-note {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+/* The cost is the second thing anybody looks for, so it gets a fixed
+   column on the right and tabular digits, making the rounds line up. */
+.keeper-cost {
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.keeper-cost.none { color: var(--muted); font-weight: 600; }
+
+/* an inline admin strip inside one of these rows must not add a rule of
+   its own - the row already has one */
+.keeper .inline-admin,
+.evrow .inline-admin,
+.rulecard .inline-admin { width: 100%; }
 
 .tabs button { transition: background .15s ease, color .15s ease, border-color .15s ease; }
 .tabs button:active { transform: scale(.96); }

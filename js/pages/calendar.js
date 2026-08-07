@@ -62,24 +62,42 @@ async function paintEvents(body) {
 
   body.innerHTML = `
     ${upcoming.length
-      ? upcoming.map((e) => eventCard(e, true)).join("")
+      ? `<div class="card schedule">${upcoming.map((e) => eventRow(e, true)).join("")}</div>`
       : empty(canEdit() ? "Nothing on the schedule. Add the first event below."
                         : "Nothing on the schedule. An admin can add events.")}
     ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
-    ${past.length ? `<div class="section-head"><h2>Past</h2></div>${past.map((e) => eventCard(e, false)).join("")}` : ""}
+    ${past.length ? `
+      <h2 class="section-title">Past<span class="count">${past.length}</span></h2>
+      <div class="card schedule is-past">${past.map((e) => eventRow(e, false)).join("")}</div>` : ""}
   `;
 }
 
-function eventCard(e, upcoming) {
+/**
+ * One line per event: the date as a stacked block on the left, the title and
+ * details on the right. Scans like a schedule, which is how anybody actually
+ * reads this page - "when is the draft" should not need a card each.
+ */
+function eventRow(e, upcoming) {
+  const d = new Date(String(e.event_date).length === 10
+    ? e.event_date + "T12:00:00" : e.event_date);
+  const month = isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short" });
+  const day   = isNaN(d) ? "?" : d.getDate();
+
   return `
-    <div class="card ${upcoming ? "accent" : ""}">
-      <div class="card-title">${esc(e.title)}</div>
-      <div class="muted">
-        ${fmtDate(e.event_date)}
-        · <span class="pill ${upcoming ? "green" : "grey"}">${esc(relDate(e.event_date))}</span>
+    <div class="evrow ${upcoming ? "next" : ""}">
+      <div class="evdate" aria-hidden="true">
+        <span class="evmon">${esc(month)}</span>
+        <span class="evday">${esc(day)}</span>
       </div>
-      ${e.description ? `<div class="card-body" style="margin-top:8px">${esc(e.description)}</div>` : ""}
-      ${editControls("events", e)}
+      <div class="evbody">
+        <div class="evtop">
+          <span class="evtitle">${esc(e.title)}</span>
+          <span class="pill ${upcoming ? "green" : "grey"}">${esc(relDate(e.event_date))}</span>
+        </div>
+        <div class="evwhen">${esc(fmtDate(e.event_date))}</div>
+        ${e.description ? `<div class="evnote">${esc(e.description)}</div>` : ""}
+        ${editControls("events", e, { compact: true })}
+      </div>
     </div>`;
 }
 

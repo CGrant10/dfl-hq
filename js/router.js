@@ -18,6 +18,11 @@ const routes = {
   admin:    () => import("./pages/admin.js"),
 };
 
+/** Every page module name. Used by the updater to refresh unvisited pages. */
+export function routeNames() {
+  return Object.keys(routes);
+}
+
 export function currentRoute() {
   const name = (location.hash || "#/home").replace("#/", "").split("?")[0];
   return routes[name] ? name : "home";
