@@ -11,6 +11,7 @@
 // =====================================================================
 
 import { db } from "../supabase.js";
+import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
 import { esc, empty, errorBox, groupBy } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit } from "../inline.js";
 
@@ -424,9 +425,13 @@ async function recordsView(body, data) {
   const who = (s) => name(s.user, s.season, s.roster);
 
   body.innerHTML = `
+    ${/* The season count here is how many seasons of DATA exist, not how old
+          the league is. Saying "7 seasons" unqualified next to a 10th
+          anniversary badge on the home page would read as a contradiction,
+          so the gap is stated rather than glossed over. */ ""}
     <p class="page-sub" style="margin-bottom:14px">
-      Every week the league has ever played — ${games.length} games across
-      ${new Set(sides.map((s) => s.season)).size} seasons.
+      ${games.length} games · ${esc(FIRST_SYNCED_SEASON)} onward
+      <span class="muted">· ${esc(FIRST_SYNCED_SEASON - LEAGUE_FOUNDED)} earlier seasons predate the records</span>
     </p>
 
     <h2 class="section-title">Single week</h2>

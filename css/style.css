@@ -633,6 +633,72 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 12px;
 }
 
+/* ---- the anniversary season ---- */
+
+/*
+  Only drawn on a milestone year, so it has to earn the space: a thin gold
+  rule above the crest and the words in gold small caps. Gold rather than
+  the team accent, because a tenth season is not a team colour - and it is
+  scoped to this one element so it never leaks into the theme.
+*/
+.hero.milestone {
+  border-color: #6a5320;
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(214,178,84,.16), transparent 62%),
+    linear-gradient(180deg, #171d26, var(--bg-2));
+}
+.hero-anniversary {
+  margin: 0 auto 14px;
+  padding-bottom: 12px;
+  max-width: 22ch;
+  border-bottom: 1px solid rgba(214,178,84,.35);
+  color: #d6b254;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+/* ---- dues: a status dot, a name, a figure ---- */
+
+.duecard { padding: 0; overflow: hidden; }
+.due-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 11px;
+  align-items: center;
+  padding: 11px 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/*
+  The dot carries the whole status, which is why it is first: the answer to
+  "who still owes" is a single glance down the left edge, with no sideways
+  scrolling to reach a Status column. Colours match the pills used
+  elsewhere - green paid, amber part paid, red nothing yet - and the name
+  also carries a screen-reader-only word, because colour alone is not a
+  label.
+*/
+.due-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.due-dot.green { background: var(--accent); }
+.due-dot.warn  { background: var(--warn); }
+.due-dot.red   { background: var(--danger); }
+
+.due-who { font-size: 15px; font-weight: 600; min-width: 0; }
+.due-figure {
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.due-figure.owing { color: var(--warn); font-weight: 600; }
+/* .sr-only, used above for the status word, is defined with the hero. */
+
 /* ---- the record book: what / who / number ---- */
 
 .recbook { padding: 0; overflow: hidden; }

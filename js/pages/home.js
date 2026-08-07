@@ -7,7 +7,7 @@
 
 import { db, configured } from "../supabase.js";
 import { esc, empty, fmtDate, relDate, fmtShort, errorBox, toast } from "../ui.js";
-import { APP_VERSION } from "../config.js";
+import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
@@ -105,14 +105,26 @@ export async function render(view) {
 function hero(leagues, members) {
   const me = currentMember();
 
-  const seasons = leagues.length;
   const latestChampLeague = leagues.find((l) => l.champion_user_id);
   const champ = latestChampLeague
     ? members.find((m) => m.sleeper_user_id === latestChampLeague.champion_user_id)
     : null;
 
+  /*
+    The season count used to be leagues.length - how many seasons Sleeper
+    has, which is not how old the league is. The first two years were played
+    elsewhere and left no data, so counting rows understated the DFL by two
+    whole seasons. Age comes from the founding year; the stats keep coming
+    from the data.
+  */
+  const year   = new Date().getFullYear();
+  const number = year - LEAGUE_FOUNDED + 1;
+  const milestone = number > 1 && number % 10 === 0;
+
   return `
-    <section class="hero">
+    <section class="hero ${milestone ? "milestone" : ""}">
+      ${milestone ? `<p class="hero-anniversary">${esc(ordinal(number))} Anniversary Season</p>` : ""}
+
       <img class="hero-crest" src="icons/logo-256.png" alt="DFL league crest"
            width="256" height="256">
       <!-- The crest already reads "DFL", so the wordmark would just repeat
@@ -129,13 +141,20 @@ function hero(leagues, members) {
       ${me ? `<p class="hero-welcome">Welcome back, <strong>${esc(me.display_name)}</strong>.</p>` : ""}
 
       <div class="hero-stats">
-        ${heroStat(seasons || "—", seasons === 1 ? "Season" : "Seasons")}
+        ${heroStat(ordinal(number), "Season", `Est. ${LEAGUE_FOUNDED}`)}
         ${heroStat(members.length || "—", "Owners")}
         ${champ
           ? heroStat(latestChampLeague.season, "Champion", champ.team_name || champ.display_name)
           : heroStat("—", "Champion")}
       </div>
     </section>`;
+}
+
+/** 1st, 2nd, 3rd, 4th… 11th, 12th, 13th. */
+function ordinal(n) {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return n + (["th", "st", "nd", "rd"][n % 10] || "th");
 }
 
 function heroStat(value, label, sub = "") {

@@ -65,7 +65,6 @@ export async function render(view) {
   view.innerHTML = `
     <header class="page-head">
       <h1>Polls</h1>
-      <p class="page-sub">League votes. One vote each, changeable any time a poll is open.</p>
       ${addControl("polls", "Add poll")}
     </header>
 

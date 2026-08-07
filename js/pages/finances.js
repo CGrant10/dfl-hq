@@ -125,7 +125,6 @@ function buyInCard(buyIn, teams, prizePool) {
         ${stat("Teams", teams)}
         ${stat("Prize pool", money(prizePool))}
       </div>
-      <div class="card-meta">Prize pool is buy-in × teams, calculated automatically.</div>
     </div>`;
 }
 
@@ -142,15 +141,29 @@ function summaryCard(t) {
         ${stat("Payouts", money(t.paidOut))}
         ${stat("Balance", money(t.remaining), negative ? "bad" : "good")}
       </div>
-      <div class="card-meta">
-        Balance = collected − expenses − payouts.
-        ${negative ? `<strong class="warntext">More has been committed than collected.</strong>` : ""}
-      </div>
+      ${/* The formula note is gone; the warning stays, because an
+            overcommitted league is news rather than an explanation. */ ""}
+      ${negative ? `<div class="card-meta">
+        <strong class="warntext">More has been committed than collected.</strong>
+      </div>` : ""}
     </div>`;
 }
 
 // ------------------------------- dues --------------------------------
 
+/**
+ * Who has paid.
+ *
+ * This was an eight column table - owner, team, due, paid, left, status,
+ * date, notes - which on a phone meant scrolling sideways past the money to
+ * reach the one column anybody opens this page for. The status is now a
+ * coloured dot to the LEFT of the name, so "who still owes" is answered by
+ * running your eye down the left edge without scrolling anywhere.
+ *
+ * The team name is gone: this list is about people, the name is right there
+ * on their profile, and it was making every row twice as wide as it needed
+ * to be. Date paid and notes are still on Admin -> Finances -> Dues.
+ */
 function paymentsCard(rows) {
   if (!rows.length) {
     return `<div class="card"><div class="card-title">Dues</div>${empty("Nobody added yet.")}</div>`;
@@ -159,41 +172,35 @@ function paymentsCard(rows) {
   const paidCount = rows.filter((r) => statusOf(r).key === "paid").length;
 
   return `
-    <div class="card">
-      <div class="card-title">
+    <div class="card duecard">
+      <div class="card-title" style="padding:15px 16px 10px;margin:0">
         Dues <span class="pill ${paidCount === rows.length ? "green" : "grey"}">${paidCount}/${rows.length} paid</span>
       </div>
-      <div class="tblwrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Owner</th><th>Team</th>
-              <th class="num">Due</th><th class="num">Paid</th><th class="num">Left</th>
-              <th>Status</th><th>Date</th><th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(paymentRow).join("")}
-          </tbody>
-        </table>
-      </div>
+      ${rows.map(paymentRow).join("")}
     </div>`;
 }
 
 function paymentRow(r) {
   const s    = statusOf(r);
-  const left = Number(r.amount_due || 0) - Number(r.amount_paid || 0);
+  const due  = Number(r.amount_due || 0);
+  const paid = Number(r.amount_paid || 0);
+  const left = due - paid;
+
+  // The right hand figure says the useful thing for that state rather than
+  // three columns of numbers: what is owed, how far in, or just the total.
+  const figure = s.key === "paid"    ? money(paid)
+               : s.key === "partial" ? `${money(paid)} of ${money(due)}`
+               : `${money(due)} due`;
+
   return `
-    <tr>
-      <td>${esc(r.owner_name)}</td>
-      <td class="muted">${esc(r.team_name || "—")}</td>
-      <td class="num">${money(r.amount_due)}</td>
-      <td class="num">${money(r.amount_paid)}</td>
-      <td class="num ${left > 0 ? "warntext" : ""}">${money(left)}</td>
-      <td><span class="pill ${s.cls}">${s.label}</span></td>
-      <td class="muted">${r.date_paid ? esc(fmtDate(r.date_paid)) : "—"}</td>
-      <td class="muted">${esc(r.notes || "")}</td>
-    </tr>`;
+    <div class="due-row">
+      <span class="due-dot ${s.cls}" title="${s.label}" aria-hidden="true"></span>
+      <span class="due-who">
+        ${esc(r.owner_name)}
+        <span class="sr-only"> — ${s.label}</span>
+      </span>
+      <span class="due-figure ${left > 0 ? "owing" : ""}">${figure}</span>
+    </div>`;
 }
 
 /** Paid / Partial / Unpaid, worked out from the two amounts. */
@@ -238,10 +245,11 @@ function payoutsCard(rows, prizePool) {
           </tbody>
         </table>
       </div>
-      ${prizePool > 0 ? `<div class="card-meta">
-        ${left === 0 ? "Payouts match the prize pool exactly."
-          : left > 0 ? `${money(left)} of the prize pool is unallocated.`
-          : `<span class="warntext">Payouts exceed the prize pool by ${money(-left)}.</span>`}
+      ${/* Only the two states that are a problem get a line. "Matches the
+            prize pool exactly" is the expected case and needs no comment. */ ""}
+      ${prizePool > 0 && left !== 0 ? `<div class="card-meta">
+        ${left > 0 ? `${money(left)} unallocated`
+                   : `<span class="warntext">${money(-left)} over the prize pool</span>`}
       </div>` : ""}
     </div>`;
 }

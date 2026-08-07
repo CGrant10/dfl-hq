@@ -18,5 +18,17 @@ export const SUPABASE_ANON_KEY = "sb_publishable_I14JPQNBW-fhIwZ7WkBlAg_M9zolGNL
 // Shown in the header and the install prompt.
 export const LEAGUE_NAME = "DFL HQ";
 
+/*
+  The league's first season.
+
+  This matters because it is NOT where the data starts. The first two years
+  were played on another app and nothing of them survives, so every figure
+  computed from Sleeper - standings, records, champions - begins at
+  FIRST_SYNCED_SEASON. The league's own age is counted from FOUNDED, so the
+  app can say "10th season" without pretending it has ten seasons of stats.
+*/
+export const LEAGUE_FOUNDED = 2017;
+export const FIRST_SYNCED_SEASON = 2019;
+
 // Bump this when you change any file, so phones pick up the new version.
-export const APP_VERSION = "1.8.2";
+export const APP_VERSION = "1.9.0";

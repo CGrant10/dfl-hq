@@ -82,7 +82,6 @@ export async function render(view) {
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
       ${isMe ? themePicker(member) : ""}
-      ${sleeperPlaceholder(member)}
       ${othersCard(members, member)}
     </div>
   `;
@@ -299,10 +298,6 @@ function themePicker(m) {
   return `
     <div class="card">
       <h3 class="card-heading">Team colours</h3>
-      <p class="muted tiny" style="margin-top:0">
-        Pick your team and the app takes both of its colours. Saved on this device.
-      </p>
-
       <div class="swatchbar" id="theme-preview">
         <span class="bigsw" style="background:${esc(c ? c.primary : "var(--accent)")}"></span>
         <span class="bigsw" style="background:${esc(c ? c.secondary : "var(--accent-2)")}"></span>
@@ -344,20 +339,6 @@ function wireThemePicker(view, member) {
     // Members are admin-write, so a normal member just keeps the local choice.
     toast(error ? "Saved on this device only" : "Saved to your profile");
   });
-}
-
-// --------------------------- sleeper future ---------------------------
-
-function sleeperPlaceholder(m) {
-  return `
-    <div class="card">
-      <div class="card-title">Sleeper stats</div>
-      <div class="card-body muted">
-        ${m.sleeper_user_id
-          ? "Linked to Sleeper. Career totals above come from synced league history. Weekly and player-level stats will appear here as they are added."
-          : "Not linked to a Sleeper account yet. An admin can connect this profile from Admin → Members."}
-      </div>
-    </div>`;
 }
 
 // ------------------------------ others --------------------------------

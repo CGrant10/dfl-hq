@@ -46,7 +46,6 @@ export async function render(view) {
   view.innerHTML = `
     <header class="page-head">
       <h1>League Rules</h1>
-      <p class="page-sub">The official rules of the DFL, as agreed by the league.</p>
     </header>
 
     <div id="rules-wrap">
