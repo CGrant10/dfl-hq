@@ -105,6 +105,17 @@ export function readForm(form, fields) {
       out[f.name] = el.value.split("\n").map((s) => s.trim()).filter(Boolean);
     } else if (f.type === "number") {
       out[f.name] = el.value === "" ? null : Number(el.value);
+    } else if (f.type === "date") {
+      /*
+        An empty date is null, NOT "".
+
+        Postgres rejects an empty string for a date column outright
+        (22007 invalid input syntax), so leaving an optional date blank
+        failed the whole insert - which is what stopped Arena events being
+        created at all, and would equally have hit "date paid" on a dues row
+        and the date on an expense.
+      */
+      out[f.name] = el.value || null;
     } else {
       out[f.name] = el.value.trim();
     }
