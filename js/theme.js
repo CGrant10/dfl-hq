@@ -26,10 +26,6 @@ function injectThemeStyles() {
     .swatchbar{border-color:var(--theme-border)}
     .dfl-team-card{border-color:var(--theme-border)}
     .medicine-accent{border-left:3px solid var(--accent);border-right:3px solid var(--accent-2)}
-    .theme-medicine .card:nth-child(4n+1){border-top-color:#D4A72C}
-    .theme-medicine .card:nth-child(4n+2){border-top-color:#B23A2B}
-    .theme-medicine .card:nth-child(4n+3){border-top-color:#F7F4EA}
-    .theme-medicine .card:nth-child(4n+4){border-top-color:#151515}
     .theme-medicine .pill.green,.theme-medicine .pill.accent{color:#D9B744;border-color:rgba(212,167,44,.35);background:rgba(212,167,44,.10)}
     .theme-medicine .pill.red{color:#F07868;border-color:rgba(178,58,43,.35);background:rgba(178,58,43,.10)}
     .theme-medicine .pill.blue{color:#E8E3D7;border-color:rgba(247,244,234,.28);background:rgba(247,244,234,.08)}
@@ -54,34 +50,9 @@ function setVars(theme, name) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", name === "medicine" ? "#0A0A0A" : theme.primary);
 }
 
-export function applyTheme(value) {
-  injectThemeStyles();
-  const name = THEMES[value] ? value : "medicine";
-  setVars(THEMES[name], name);
-}
-
-export function saveTheme(value) {
-  const name = THEMES[value] ? value : "medicine";
-  localStorage.setItem(KEY, name);
-  applyTheme(name);
-}
-
-export function savedTheme() {
-  const value = localStorage.getItem(KEY);
-  return THEMES[value] ? value : "medicine";
-}
-
+export function applyTheme(value) { injectThemeStyles(); const name = THEMES[value] ? value : "medicine"; setVars(THEMES[name], name); }
+export function saveTheme(value) { const name = THEMES[value] ? value : "medicine"; localStorage.setItem(KEY, name); applyTheme(name); }
+export function savedTheme() { const value = localStorage.getItem(KEY); return THEMES[value] ? value : "medicine"; }
 export function initTheme() { applyTheme(savedTheme()); }
-
-export function themeOptions() {
-  return [
-    { id: "medicine", name: "Medicine Wheel", primary: THEMES.medicine.primary, secondary: THEMES.medicine.secondary },
-    { id: "bluegreen", name: "Blue / Green", primary: THEMES.bluegreen.primary, secondary: THEMES.bluegreen.secondary }
-  ];
-}
-
-export function teamColors(value) {
-  const name = THEMES[value] ? value : "medicine";
-  const theme = THEMES[name];
-  return { name: themeOptions().find(x => x.id === name).name, primary: theme.primary, secondary: theme.secondary };
-}
+export function themeOptions() { return [{ id:"medicine",name:"Medicine Wheel",primary:THEMES.medicine.primary,secondary:THEMES.medicine.secondary },{ id:"bluegreen",name:"Blue / Green",primary:THEMES.bluegreen.primary,secondary:THEMES.bluegreen.secondary }]; }
+export function teamColors(value) { const name=THEMES[value]?value:"medicine"; const theme=THEMES[name]; return {name:themeOptions().find(x=>x.id===name).name,primary:theme.primary,secondary:theme.secondary}; }
