@@ -36,7 +36,7 @@ function currentOutingId() {
 
 async function load(outingId) {
   const [outing, teams, parts, members] = await Promise.all([
-    db().from("golf_outings").select("id,name,status").eq("id", outingId).maybeSingle(),
+    db().from("golf_outings").select("*").eq("id", outingId).maybeSingle(),
     /* Ordered by sort_order, NOT draft_order. Sorting on a column added by a
        migration makes this whole query 400 until that migration is run, and
        order() below sorts by draft_order in JS anyway. */
@@ -122,6 +122,11 @@ async function draw() {
       run <strong>golf_draft_schema.sql</strong> in the Supabase SQL editor.</div></div>`);
     return;
   }
+
+  /* This outing is generating its teams instead. The board would be a second,
+     contradictory answer to "who is on whose team", so it stays away entirely
+     - for the commissioner too, who has the generator on screen already. */
+  if (d.outing.team_mode === "random") { host.innerHTML = ""; return; }
   host.innerHTML = captainsSet(d) ? board(d, admin) : setup(d, admin);
 }
 

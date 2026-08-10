@@ -20,6 +20,21 @@
 
 
 -- ---------------------------------------------------------------------
+-- 0. How this outing decides its teams
+--
+--    'draft'  captains pick, one at a time, on the board. THE DEFAULT.
+--    'random' the old generator deals the teams out at random or by rating.
+--
+--    Defaulting to 'draft' is deliberate: a draft is the thing you meant to
+--    do, and a generator that runs by accident silently overwrites it. The
+--    two modes are mutually exclusive on purpose - the app shows the controls
+--    for the chosen one and hides the other.
+-- ---------------------------------------------------------------------
+alter table public.golf_outings
+  add column if not exists team_mode text not null default 'draft';
+
+
+-- ---------------------------------------------------------------------
 -- 1. A team gets a captain and a place in the order
 --
 --    captain_member_id is a members.id and not a golf_participants.id: a
