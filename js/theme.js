@@ -12,15 +12,17 @@ const THEMES = {
   /*
     Two reds and two blues, and the pairs are not interchangeable.
 
-    primary/secondary are the logo's own ink - deep enough to read as the
-    crest's red and royal blue when they fill something or draw a border. Put
-    either of them on #0d1117 as TEXT and they come in around 2.9:1, which is
-    below anything readable, so the text-facing pair lives in the
-    .theme-dfl block below at ~7:1. Same trick the Medicine Wheel theme
-    already uses for its gold.
+    primary/secondary are the crest's own ink, sampled from the artwork rather
+    than matched by eye: #E5011B is the modal red across 15,950 opaque pixels
+    of it, #003396 the modal blue. They are right for FILLS and BORDERS.
+
+    They are wrong for text. On #0d1117 the red measures 3.9:1 and the blue
+    1.7:1, so ink/ink2 below are those same two hues lightened until they clear
+    6.5:1. Same split the Medicine Wheel theme was already hand-coding for its
+    gold.
   */
-  dfl: { primary: "#D0202B", secondary: "#1E43A0", dark: "#0A0A0A", light: "#FFFFFF", accent3: "#FFFFFF",
-         ink: "#FF6B60", ink2: "#7FA6F5" },
+  dfl: { primary: "#E5011B", secondary: "#003396", dark: "#0A0A0A", light: "#FFFFFF", accent3: "#FFFFFF",
+         ink: "#E67582", ink2: "#7098E6" },
   medicine: { primary: "#D4A72C", secondary: "#B23A2B", dark: "#0A0A0A", light: "#F7F4EA", accent3: "#FFFFFF",
          ink: "#D9B744", ink2: "#F07868" },
   bluegreen: { primary: "#2563EB", secondary: "#16A34A", dark: "#0D1117", light: "#F3F7FB", accent3: "#60A5FA",
@@ -28,13 +30,12 @@ const THEMES = {
 };
 
 /*
-  ink / ink2 are the same two colours turned up until they are legible AS TEXT
-  on the dark page, and they are exposed as --accent-ink / --accent-2-ink.
+  ink / ink2 are exposed as --accent-ink / --accent-2-ink.
 
-  Measured, not guessed: the crest's own #1E43A0 on #0d1117 is 2.1:1, so a
-  7px star drawn in it is a dark smudge. #7FA6F5 is the same blue at 6.7:1.
-  Fills and borders keep the true crest colours; anything that has to be READ
-  uses the ink.
+  Measured, not guessed: the crest's own #003396 on #0d1117 is 1.7:1, so a 7px
+  star drawn in it is not a dark star, it is nothing. #7098E6 is the same blue
+  at 6.6:1. Fills and borders keep the true crest colours; anything that has to
+  be READ uses the ink.
 */
 const DFL_INK = { red: THEMES.dfl.ink, blue: THEMES.dfl.ink2 };
 
@@ -46,7 +47,7 @@ function injectThemeStyles() {
     :root{--theme-primary:var(--accent);--theme-secondary:var(--accent-2);--theme-soft:color-mix(in srgb,var(--accent) 12%,transparent);--theme-soft-2:color-mix(in srgb,var(--accent-2) 10%,transparent);--theme-border:color-mix(in srgb,var(--accent) 34%,var(--line));}
     body{background:var(--bg);}
     /* --accent fills and draws borders; --accent-ink is what TEXT uses.
-       Measured on #0d1117: the crest red reads 3.5:1, its ink 6.8:1 - and the
+       Measured on #0d1117: the crest red reads 3.9:1, its ink 6.5:1 - and the
        tab bar label is the app's main "you are here", at 10px. Every theme
        supplies its own ink, so this is not one palette imposed on another. */
     .brand-text span{color:var(--accent-ink,var(--accent))}
@@ -67,16 +68,16 @@ function injectThemeStyles() {
     .theme-medicine .section-link,.theme-medicine .card-cta{color:#D9B744}
     .theme-medicine .hero-mark{color:#D9B744}
     .theme-medicine .hero-creed strong{color:#F07868}
-    .theme-dfl .pill.green,.theme-dfl .pill.accent{color:${DFL_INK.red};border-color:rgba(208,32,43,.38);background:rgba(208,32,43,.10)}
-    .theme-dfl .pill.blue{color:${DFL_INK.blue};border-color:rgba(30,67,160,.45);background:rgba(30,67,160,.14)}
-    .theme-dfl .pill.red{color:${DFL_INK.red};border-color:rgba(208,32,43,.38);background:rgba(208,32,43,.10)}
+    .theme-dfl .pill.green,.theme-dfl .pill.accent{color:${DFL_INK.red};border-color:rgba(229,1,27,.38);background:rgba(229,1,27,.10)}
+    .theme-dfl .pill.blue{color:${DFL_INK.blue};border-color:rgba(0,51,150,.45);background:rgba(0,51,150,.14)}
+    .theme-dfl .pill.red{color:${DFL_INK.red};border-color:rgba(229,1,27,.38);background:rgba(229,1,27,.10)}
     .theme-dfl .section-link,.theme-dfl .card-cta,.theme-dfl .hero-mark{color:${DFL_INK.red}}
     .theme-dfl .hero-creed strong{color:${DFL_INK.blue}}
     /* Anything that says a number or a word in the accent colour has to use
        the readable red, not the crest red - see the note on THEMES.dfl. */
     .theme-dfl .gc-topar.under,.theme-dfl .golf-leader-score,.theme-dfl .gd-clock-lbl,
     .theme-dfl .gm-opt.is-on,.theme-dfl .gd-pick.is-cap,.theme-dfl .admin-badge{color:${DFL_INK.red}}
-    .theme-dfl .brand-text span{text-shadow:0 0 12px rgba(208,32,43,.5)}
+    .theme-dfl .brand-text span{text-shadow:0 0 12px rgba(229,1,27,.5)}
   `;
   document.head.appendChild(style);
 }

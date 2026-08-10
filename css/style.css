@@ -1012,6 +1012,25 @@ textarea { min-height: 96px; resize: vertical; }
   max-width: 42vw;
   filter: drop-shadow(0 8px 22px rgba(0, 0, 0, .6));
 }
+
+/*
+  THE PLATE.
+
+  The crest is line art: heavy black outlines, a black cap, black shorts, a
+  black banner - drawn for paper. Dropped straight onto #0d1117 half of it
+  stops existing. So the default crest sits on the white it was drawn for and
+  reads as a sticker on the dark card, which is also just what it is.
+
+  Only the DEFAULT crest gets this. A member who uploads their own logo is
+  probably uploading something opaque and rectangular, and a white frame
+  around it would look like a mistake rather than a plate.
+*/
+.hero-crest.is-crest {
+  background: #fff;
+  border-radius: 16px;
+  padding: 7px 9px;
+  box-sizing: border-box;
+}
 /* Visible to screen readers, not on screen. */
 .sr-only {
   position: absolute;
