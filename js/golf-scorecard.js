@@ -77,10 +77,21 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 
 /* ---- one hole, one row ---- */
 .dfl-nine{margin:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg-2)}.dfl-nine-title{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-3);border-bottom:1px solid var(--line)}
-.dfl-hole-grid{display:grid;grid-template-columns:38px 1fr 52px 132px 78px;align-items:center}
-.dfl-hole-grid>div{min-height:44px;padding:5px 6px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft)}.dfl-hole-grid>div:not(.score):not(.result){display:flex;align-items:center}.dfl-hole-grid .hdr{min-height:30px;background:var(--bg-3);font-size:9px;text-transform:uppercase;font-weight:900;color:var(--muted)}.dfl-hole-grid .hole{justify-content:center;font-weight:900}.dfl-hole-grid .yards{justify-content:flex-start;font-variant-numeric:tabular-nums}.dfl-hole-grid .par{justify-content:center;color:var(--muted);font-weight:800}
+/* minmax(0,1fr) on the result column, never a bare 1fr. A bare 1fr keeps its
+   min-content floor - the width of the word DOUBLE - so on a 320px phone the
+   row over-commits and .dfl-nine's overflow:hidden quietly shears the column
+   off instead of letting it shrink. */
+.dfl-hole-grid{display:grid;grid-template-columns:62px 34px 132px minmax(0,1fr);align-items:center}
+.dfl-hole-grid>div{min-height:44px;padding:5px 6px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft)}.dfl-hole-grid>div:not(.score):not(.result){display:flex;align-items:center}.dfl-hole-grid .hdr{min-height:30px;background:var(--bg-3);font-size:9px;text-transform:uppercase;font-weight:900;color:var(--muted)}
+/* The hole cell is the one stacked cell on the card, so it opts out of the
+   centred flex row above rather than the other way round. */
+.dfl-hole-grid .hole{flex-direction:column;align-items:flex-start;justify-content:center;gap:0}
+.hole-n{font-size:16px;font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums}
+.hole-again{font-size:12px;font-weight:800;color:var(--muted);margin-left:2px}
+.hole .yards{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
+.dfl-hole-grid .par{justify-content:center;color:var(--muted);font-weight:800}
 .dfl-hole-grid .score{display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(255,255,255,.025)}
-.dfl-hole-grid .result{display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;letter-spacing:.03em}
+.dfl-hole-grid .result{display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;letter-spacing:.02em}
 .result-eagle{color:#35d06f}.result-birdie{color:#8ee6ad}.result-par{color:var(--text)}.result-bogey{color:#ff766d}.result-double{color:#e33d35}.result-empty{color:var(--muted);font-weight:700}
 .dfl-hole-grid .is-now{background:rgba(47,191,95,.07)}
 
@@ -110,17 +121,25 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .ovm.m-dbl{border:1.5px solid #e33d35;border-radius:3px;color:#f0a79b;box-shadow:0 0 0 1.5px var(--bg-2),0 0 0 3px #e33d35}
 .ovm.m-none{color:var(--line)}
 
-.dfl-nine-tally{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line)}.dfl-nine-tally div{padding:9px 7px;text-align:center;background:var(--bg-3)}.dfl-nine-tally small,.dfl-final small{display:block;font-size:8px;text-transform:uppercase;color:var(--muted);font-weight:900}.dfl-nine-tally b{font-size:15px}.dfl-final{margin:10px;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg-3);display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px}.dfl-final b{display:block;font-size:18px;margin-top:2px}.dfl-score-help{padding:0 12px 10px;font-size:10px;color:var(--muted)}
-@media(min-width:700px){.dfl-hole-grid{grid-template-columns:42px 1fr 56px 140px 96px}.dfl-nine,.dfl-final,.dfl-strip{margin:12px 14px}.ovm{width:26px;height:26px;font-size:13px}}
+.dfl-final small{display:block;font-size:8px;text-transform:uppercase;color:var(--muted);font-weight:900}.dfl-final{margin:10px;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg-3);display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px}.dfl-final b{display:block;font-size:18px;margin-top:2px}.dfl-score-help{padding:0 12px 10px;font-size:10px;color:var(--muted)}
+/* On a wide screen the slack goes to the hole column, not the label - one
+   centred word floating in 400px of empty column looks like a mistake. */
+@media(min-width:700px){.dfl-hole-grid{grid-template-columns:minmax(76px,1fr) 44px 148px 100px}.dfl-nine,.dfl-final,.dfl-strip{margin:12px 14px}.ovm{width:26px;height:26px;font-size:13px}.dfl-hole-grid .result{font-size:14px}}
 @media(max-width:600px){.dfl-team-head{padding:12px}
-.dfl-hole-grid{grid-template-columns:28px minmax(40px,1fr) 30px 124px 58px}
-.dfl-hole-grid>div{min-height:48px;padding:5px 2px}.dfl-hole-grid .yards{font-size:10.5px;white-space:nowrap}
+.dfl-hole-grid{grid-template-columns:58px 28px 124px minmax(0,1fr)}
+.dfl-hole-grid>div{min-height:48px;padding:5px 4px}
 .sbtn{width:34px;flex:0 0 34px;height:40px;font-size:19px}
 .dfl-hole-grid .score{gap:3px}
 .dfl-hole-grid input,.mark input{width:40px;height:40px;font-size:18px}
-.dfl-hole-grid .result{font-size:9.5px;letter-spacing:0}
+.dfl-hole-grid .result{font-size:12.5px;letter-spacing:0}
 .dfl-strip-tbl th.lbl{width:34px;padding-left:8px}.dfl-strip-tbl .sub{width:30px}.ovm{width:22px;height:22px;font-size:11px}
-.dfl-score-help{font-size:9px;padding-bottom:12px}}`;
+.dfl-score-help{font-size:9px;padding-bottom:12px}}
+/* An SE-sized phone: 232px of grid to divide. Everything gives up a few px so
+   the label still gets ~60 and DOUBLE fits without shearing. */
+@media(max-width:359px){.dfl-hole-grid{grid-template-columns:44px 20px 106px minmax(0,1fr)}
+.sbtn{width:30px;flex:0 0 30px;height:38px;font-size:18px}
+.dfl-hole-grid input,.mark input{width:36px;height:38px;font-size:17px}
+.dfl-hole-grid .result{font-size:11.5px}.hole .yards{font-size:11px}.hole-n{font-size:15px}}`;
 document.head.appendChild(s);}
 async function loadCard(outingId,teamId){const [team,parts,holes,scores,outing,members]=await Promise.all([db().from("golf_teams").select("*").eq("id",teamId).eq("outing_id",outingId).maybeSingle(),db().from("golf_participants").select("id,member_id,team_id").eq("outing_id",outingId).eq("team_id",teamId).order("sort_order"),db().from("golf_holes").select("hole,par").eq("outing_id",outingId).order("hole"),db().from("golf_scores").select("id,outing_id,team_id,hole,strokes").eq("outing_id",outingId).eq("team_id",teamId),db().from("golf_outings").select("id,course_id,course,holes").eq("id",outingId).maybeSingle(),loadMembers().catch(()=>[])]);const error=team.error||parts.error||holes.error||scores.error||outing.error;if(error)throw error;let courseHoles=[];const courseId=outing.data?.course_id;if(courseId){const ch=await db().from("golf_course_holes").select("hole,yardage_men,yardage_women,par,handicap").eq("course_id",courseId).order("hole");if(!ch.error)courseHoles=ch.data||[];}return{team:team.data,parts:parts.data||[],holes:holes.data||[],scores:scores.data||[],outing:outing.data,members:members||[],courseHoles};}
 function scoreMap(scores){return new Map(scores.map(s=>[Number(s.hole),s]));}
@@ -156,7 +175,25 @@ return `<table class="dfl-strip-tbl"><tr class="row-h"><th class="lbl">Hole</th>
 
 function strip(holes,map){return `<section class="dfl-strip"><header class="dfl-strip-title"><span>Scorecard</span><span>Tap a hole to jump to it</span></header><div class="dfl-strip-scroll">${stripNine("OUT",1,holes,map)}${stripNine("IN",10,holes,map)}</div></section>`}
 
-function nine(title,start,holes,courseHoles,map,editable){const holeNums=Array.from({length:9},(_,i)=>start+i),par=holeNums.reduce((a,h)=>a+holePar(holes,h),0),score=total(map,start,start+8),pPlayed=playedPar(map,holes,start,start+8),rows=holeNums.map(h=>{const p=holePar(holes,h),yards=holeYards(courseHoles,h),v=map.get(h)?.strokes??"",r=holeResult(v,p);return `<div class="hole" id="hole-${h}">${h}</div><div class="yards">${yards?`${yards} yd`:"—"}</div><div class="par">${p}</div><div class="score">${editable?`<button type="button" class="sbtn" data-step="-1" data-hole="${h}" aria-label="One fewer on hole ${h}">−</button>`:""}<span class="mark ${r.mark}" data-mark="${h}"><input data-team-score data-hole="${h}" data-par="${p}" type="text" pattern="[0-9]*" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="${esc(v)}" maxlength="2" ${editable?"":"disabled"} aria-label="Team strokes hole ${h}"></span>${editable?`<button type="button" class="sbtn" data-step="1" data-hole="${h}" aria-label="One more on hole ${h}">+</button>`:""}</div><div class="result ${r.cls}" data-result="${h}">${r.label}</div>`}).join("");return `<section class="dfl-nine"><header class="dfl-nine-title"><strong>${title}</strong><span>Par ${par}</span></header><div class="dfl-hole-grid"><div class="hdr">#</div><div class="hdr">Yardage</div><div class="hdr">Par</div><div class="hdr">Strokes</div><div class="hdr">Result</div>${rows}</div><div class="dfl-nine-tally"><div><small>9-hole score</small><b data-nine-score="${start}">${score||"—"}</b></div><div><small>+/−</small><b data-nine-topar="${start}">${fmtToPar(score,pPlayed)}</b></div></div></section>`}
+/*
+  One hole, one row: hole and its yardage in one column, par, the strokes,
+  the result.
+
+  Yardage rides UNDER the hole number as its caption rather than in a column
+  of its own - you read "hole 3, 413 yards" as one fact, and the ~46px that
+  buys hands the result label a readable size. It was 9.5px, the smallest
+  type on a card that gets read outdoors in the sun.
+
+  No per-nine tally and no "Par 36" in the header: the strip at the top of
+  the card carries OUT, IN and the pars, and the sticky bar carries the
+  running total. Printing them a third time only made the card longer.
+*/
+function nine(title,start,holes,courseHoles,map,editable){const holeNums=Array.from({length:9},(_,i)=>start+i),
+/* A 9-hole course played twice stores the second lap as holes 10-18, so the
+   card says 12 while you are standing on the 3rd tee looking at the 3rd
+   tee's yardage. Name the hole you are actually playing. */
+repeats=holes.length>0&&holes.length<=9,
+rows=holeNums.map(h=>{const p=holePar(holes,h),yards=holeYards(courseHoles,h),v=map.get(h)?.strokes??"",r=holeResult(v,p),again=repeats&&h>9?`<span class="hole-again">(${courseHole(holes,h)})</span>`:"";return `<div class="hole" id="hole-${h}"><span class="hole-n">${h}${again}</span><span class="yards">${yards?`${yards} yd`:"—"}</span></div><div class="par">${p}</div><div class="score">${editable?`<button type="button" class="sbtn" data-step="-1" data-hole="${h}" aria-label="One fewer on hole ${h}">−</button>`:""}<span class="mark ${r.mark}" data-mark="${h}"><input data-team-score data-hole="${h}" data-par="${p}" type="text" pattern="[0-9]*" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="${esc(v)}" maxlength="2" ${editable?"":"disabled"} aria-label="Team strokes hole ${h}"></span>${editable?`<button type="button" class="sbtn" data-step="1" data-hole="${h}" aria-label="One more on hole ${h}">+</button>`:""}</div><div class="result ${r.cls}" data-result="${h}">${r.label}</div>`}).join("");return `<section class="dfl-nine"><header class="dfl-nine-title"><strong>${title}</strong></header><div class="dfl-hole-grid"><div class="hdr">Hole</div><div class="hdr">Par</div><div class="hdr">Strokes</div><div class="hdr">Result</div>${rows}</div></section>`}
 
 /*
   Every number on the card recomputed from the inputs, in the DOM, without a
@@ -171,9 +208,8 @@ const mark=root.querySelector(`[data-mark="${h}"]`);if(mark)mark.className="mark
 const res=root.querySelector(`[data-result="${h}"]`);if(res){res.textContent=r.label;res.className="result "+r.cls}
 const ov=root.querySelector(`[data-ov-mark="${h}"]`);if(ov){ov.textContent=val.get(h)||"·";ov.className="ovm "+r.mark}}
 const range=(a,b)=>{let s=0,p=0,n=0;for(let h=a;h<=b;h++){const v=val.get(h)||0;if(!v)continue;s+=v;p+=par.get(h)||0;n++}return{s,p,n}};
-for(const start of [1,10]){const {s,p}=range(start,start+8);
-const sc=root.querySelector(`[data-nine-score="${start}"]`);if(sc)sc.textContent=s||"—";
-const tp=root.querySelector(`[data-nine-topar="${start}"]`);if(tp)tp.textContent=fmtToPar(s,p);
+// OUT and IN live in the strip now - the per-nine tally blocks are gone.
+for(const start of [1,10]){const {s}=range(start,start+8);
 const sub=root.querySelector(`[data-ov-sub="${start}"]`);if(sub)sub.textContent=s||"—"}
 const all=range(1,18);
 const fs=root.querySelector("[data-final-score]");if(fs)fs.textContent=all.s||"—";
