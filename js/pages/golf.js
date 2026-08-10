@@ -7,7 +7,7 @@ const DEFAULT_RATING=75;
 const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team Sandbagger","Team Whiff","Team Duff","Team Yips"];
 const TEAM_COLORS=["#2fbf5f","#4aa3ff","#f0a742","#e0574a","#b07cf0","#3ecfcf"];
 export async function render(view){const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"));return renderList(view);}
-async function renderList(view){view.innerHTML=loading();const res=await db().from("golf_outings").select("*").order("event_date",{ascending:false});if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}const outings=visible("golf_outings",res.data||[]),live=outings.filter(o=>o.status!=="final"),past=outings.filter(o=>o.status==="final");view.innerHTML=`<div id="golf-wrap"><header class="page-head"><h1>DFL Golf</h1>${addControl("golf_outings","New event")}</header>${outings.length?"":empty(canEdit()?"No golf events yet. Create one above.":"No golf events yet.")}${live.length?`<h2 class="section-title">Upcoming<span class="count">${live.length}</span></h2>${live.map(outingCard).join("")}`:""}${past.length?`<h2 class="section-title">Golf history<span class="count">${past.length}</span></h2>${past.map(outingCard).join("")}`:""}</div>`;wireInline(view.querySelector("#golf-wrap"),()=>render(view));}
+async function renderList(view){view.innerHTML=loading();const res=await db().from("golf_outings").select("*").order("event_date",{ascending:false});if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}const outings=visible("golf_outings",res.data||[]),live=outings.filter(o=>o.status!=="final"),past=outings.filter(o=>o.status==="final");view.innerHTML=`<div id="golf-wrap"><header class="page-head"><h1>DFL Golf</h1>${addControl("golf_outings","New event")}</header>${outings.length?"":empty(canEdit()?"No golf events yet. Create one above.":"No golf events yet.")}${live.length?`<h2 class="section-title">Upcoming<span class="count">${live.length}</span></h2>${live.map(outingCard).join("")}`:""}${past.length?`<h2 class="section-title">Golf history<span class="count">${past.length}</span></h2>${past.map(outingCard).join("")}`:""}<div class="golf-bag-page"></div></div>`;wireInline(view.querySelector("#golf-wrap"),()=>render(view));}
 function outingCard(o){const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live","green"]:["Setup","warn"];return `<article class="card golf-card ${hiddenClass("golf_outings",o)}"><a class="golf-link" href="#/golf?id=${o.id}"><div class="golf-top"><h3 class="card-heading">${esc(o.name)}</h3><span class="pill ${state[1]}">${state[0]}</span></div><div class="golf-meta">${o.course?`<span>${esc(o.course)}</span>`:""}${o.event_date?`<span>· ${esc(fmtDate(o.event_date))}</span>`:""}<span>· ${o.holes||18} holes</span></div></a>${editControls("golf_outings",o,{compact:true})}</article>`;}
 function scoreToPar(scores,pars){let total=0,par=0,holes=0;for(const s of scores){const h=Number(s.hole),st=Number(s.strokes),p=Number(pars.get(h));if(Number.isFinite(st)&&Number.isFinite(p)){total+=st;par+=p;holes++;}}return{diff:total-par,holes,total};}
 function scoreLabel(diff,holes){if(!holes)return"Not started";if(diff===0)return"E";return diff>0?`+${diff}`:`${diff}`;}
@@ -41,8 +41,8 @@ function lineupCard(outing,parts,byId){const names=[...byId.values()],spare=name
 function teamMode(outing){return outing.team_mode==null?"legacy":outing.team_mode==="random"?"random":"draft";}
 function teamAdminControls(outing,parts,teams,scoreCount,pickCount){const mode=teamMode(outing);
 const modeSwitch=mode==="legacy"?"":`<div class="golf-mode" role="group" aria-label="How teams are decided">
-  <button type="button" class="gm-opt ${mode==="draft"?"is-on":""}" data-mode="draft" aria-pressed="${mode==="draft"}">Captains draft<small>pick one at a time</small></button>
-  <button type="button" class="gm-opt ${mode==="random"?"is-on":""}" data-mode="random" aria-pressed="${mode==="random"}">Random<small>deal them out</small></button>
+  <button type="button" class="gm-opt ${mode==="draft"?"is-on":""}" data-team-mode="draft" aria-pressed="${mode==="draft"}">Captains draft<small>pick one at a time</small></button>
+  <button type="button" class="gm-opt ${mode==="random"?"is-on":""}" data-team-mode="random" aria-pressed="${mode==="random"}">Random<small>deal them out</small></button>
 </div>`;
 const generator=`<div class="golf-generator"><label class="gcount">Teams <input type="number" id="golf-team-count" min="2" max="6" value="${teams.length||2}"></label><button class="btn small" id="golf-random" ${parts.length<2?"disabled":""}>Random teams</button><button class="btn small" id="golf-balanced" ${parts.length<2?"disabled":""}>Balanced teams</button><button class="btn ghost small" id="golf-clear" ${teams.length?"":"disabled"}>Clear teams</button></div>`;
 // In draft mode the empty teams still have to come from somewhere, so making
@@ -88,9 +88,13 @@ e.target.disabled=true;try{await generateTeams(outing,parts,teams,rate,want,bal?
   the generator would then destroy.
 */
 function wireTeamMode(view,outing,parts,teams,refresh){const root=view.querySelector("#golf-outing");
-root.addEventListener("click",async e=>{const opt=e.target.closest("[data-mode]"),make=e.target.closest("#golf-make-teams");
+root.addEventListener("click",async e=>{const opt=e.target.closest("[data-team-mode]"),make=e.target.closest("#golf-make-teams");
 
-if(opt){const want=opt.dataset.mode;if(want===teamMode(outing))return;
+if(opt){const want=opt.dataset.teamMode;
+/* Only ever the two real values, and compared against the RAW stored value so
+   a bad one that got in previously is corrected rather than read as a match. */
+if(want!=="draft"&&want!=="random")return;
+if(want===outing.team_mode)return;
 const picked=parts.filter(p=>p.pick_number!=null).length;
 if(want==="random"&&picked&&!confirm(`Switch to Random? The ${picked} pick${picked===1?"":"s"} already made stay${picked===1?"s":""} for now, but generating teams will replace ${picked===1?"it":"them"}.`))return;
 try{await updateRow("golf_outings",outing.id,{team_mode:want});refresh();}
