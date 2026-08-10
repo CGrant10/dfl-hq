@@ -15,6 +15,21 @@
   without drawing a grid around them.
 */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap');
+/*
+  THE COLOUR RULE - the one thing to know before editing anything below.
+
+    --accent / --accent-2            TEXT. Legible in whichever mode is on.
+    --accent-fill / --accent-2-fill  The crest's true #E5011B and #003396,
+                                     for fills, borders and gradients.
+
+  The crest red is a good fill and a poor letter - 3.9:1 on the dark page,
+  4.4:1 on the light one. So --accent is a lightened red in dark mode and a
+  darkened one in light mode, and NOTHING that has to be read uses the fill
+  pair. js/theme.js owns the switch and sets every variable below at runtime.
+
+  The values here are the dark-mode defaults, which is what paints for the
+  few milliseconds before that runs.
+*/
 :root {
   --bg:          #0d1117;   /* page background        */
   --bg-2:        #131a24;   /* card background        */
@@ -23,12 +38,50 @@
   --line-soft:   #1a222e;   /* dividers within a card */
   --text:        #e8edf5;
   --muted:       #8b98ab;
-  --accent:      #2fbf5f;   /* field green - overridden by the team theme */
-  --accent-dim:  #1d7a3d;
-  --on-accent:   #06240f;   /* text drawn on top of the accent            */
+  --body-text:   #cdd6e2;   /* card copy, a shade below --text */
+  --hover:       #1b2432;
+  --hover-soft:  rgba(255,255,255,.025);
+  --control-line: #616F80;  /* the edge of a tappable control */
+
+  --accent:        #E67582; /* crest red, made readable  - TEXT   */
+  --accent-2:      #7098E6; /* crest blue, made readable - TEXT   */
+  --accent-fill:   #E5011B; /* the crest's own red       - FILLS  */
+  --accent-2-fill: #003396; /* the crest's own blue      - FILLS  */
+  --accent-dim:    #003396;
+  --on-accent:     #FFFFFF; /* text drawn on top of a fill        */
+
   --chalk:       #f5f7fa;   /* yard-line white        */
   --warn:        #f0a742;
   --danger:      #e0574a;
+  --ok:          #86e6a8;
+  --ok-bg:       rgba(47,191,95,.12);
+  --ok-line:     #1d7a3d;
+  --warn-ink:    #f3c887;
+  --warn-bg:     rgba(240,167,66,.12);
+  --warn-line:   #7a5a1d;
+  --danger-ink:  #f0a79b;
+  --danger-bg:   rgba(224,87,74,.12);
+  --danger-line: #7a2f27;
+  --sc-under:    #35d06f;
+  --sc-over:     #ff766d;
+  --sc-bad:      #e33d35;
+
+  --topbar-a:    #101823;
+  --topbar-b:    #0d1117;
+  --hero-a:      #141c27;
+  --hero-wash:   rgba(255,255,255,.05);
+  --toast-bg:    #1f2937;
+  --on-toast:    #e8edf5;
+  --milestone:   #d6b254;
+
+  /* Older names, kept because the profile header and the scorecard card still
+     ask for them. They are the crest, softened. */
+  --theme-primary:   #E5011B;
+  --theme-secondary: #003396;
+  --theme-soft:      color-mix(in srgb, #E5011B 12%, transparent);
+  --theme-soft-2:    color-mix(in srgb, #003396 10%, transparent);
+  --theme-border:    color-mix(in srgb, #E5011B 34%, var(--line));
+
   --radius:      14px;
   --pad:         16px;
   --shadow:      0 1px 3px rgba(0,0,0,.28);
@@ -112,7 +165,7 @@ a { color: var(--accent); }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 20;
-  background: linear-gradient(180deg, #101823, #0d1117);
+  background: linear-gradient(180deg, var(--topbar-a), var(--topbar-b));
   border-bottom: 1px solid var(--line);
   padding-top: env(safe-area-inset-top);
 }
@@ -145,8 +198,7 @@ a { color: var(--accent); }
 
 .brand-text span {
   color: var(--accent);
-  text-shadow:
-    0 0 12px rgba(47,191,95,.45);
+  text-shadow: 0 0 12px rgba(229,1,27,.45);
 }
 
 .brand-text small {
@@ -163,30 +215,28 @@ a { color: var(--accent); }
 /*
   The logo's banner, at wordmark scale: DRAFT * GOLF * SIN * FOLD.
 
-  The words are chalk-white rather than muted grey because on the crest they
-  are the loud part, and the three stars take the ACTIVE THEME's colours
-  instead of the logo's literal red/white/blue - so the header still looks
-  deliberate under Medicine Wheel or Blue / Green rather than flying colours
-  that belong to a different palette.
+  The bar keeps the crest's black background in both modes, so the words are
+  pinned to white here rather than following --chalk (which goes near-black in
+  light mode and would disappear into it).
 */
 .brand-text .creed {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--chalk);
+  color: #f5f7fa;
   letter-spacing: .14em;
   font-size: 8.5px;
 }
-/* The ink pair, not the fill pair: at this size the crest's own royal blue
-   measures 2.1:1 against the page and simply is not there. */
+/* Text colours, not the fill pair: at 8px the crest's own royal blue measures
+   1.7:1 on the bar and is simply not there. */
 .brand-text .creed i {
   font-style: normal;
   font-size: 8px;
   line-height: 1;
-  color: var(--accent-ink, var(--accent));
+  color: #E67582;
 }
-.brand-text .creed i:nth-of-type(2) { color: var(--chalk); }
-.brand-text .creed i:nth-of-type(3) { color: var(--accent-2-ink, var(--accent-2)); }
+.brand-text .creed i:nth-of-type(2) { color: #f5f7fa; }
+.brand-text .creed i:nth-of-type(3) { color: #7098E6; }
 
 /* On a narrow phone the stars give up their breathing room before the words
    give up a letter. */
@@ -208,7 +258,7 @@ a { color: var(--accent); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.whoami:hover { background: #222d3d; }
+.whoami:hover { background: var(--hover); }
 
 /* ------------------------------ content ------------------------------ */
 
@@ -324,7 +374,7 @@ h3 { font-size: 15px; margin: 0 0 6px; font-weight: 700; }
 .card-cta { color: var(--accent); font-size: 13px; font-weight: 700; }
 
 a.linkcard { display: block; text-decoration: none; color: inherit; }
-a.linkcard:hover { border-color: var(--accent-dim); background: #161e2a; }
+a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
 
 /* Small inline icon used next to a card title. */
 .ico-sm {
@@ -337,7 +387,7 @@ a.linkcard:hover { border-color: var(--accent-dim); background: #161e2a; }
 .card-body   {
   white-space: pre-wrap;
   word-break: break-word;
-  color: #cdd6e2;
+  color: var(--body-text);
   font-size: 14.5px;
   line-height: 1.55;
 }
@@ -368,15 +418,15 @@ a.linkcard:hover { border-color: var(--accent-dim); background: #161e2a; }
   padding: 2px 9px;
   border: 1px solid var(--line);
 }
-.pill.green { background: rgba(47,191,95,.12); border-color: var(--accent-dim); color: #86e6a8; }
-.pill.warn  { background: rgba(240,167,66,.12); border-color: #7a5a1d; color: #f3c887; }
+.pill.green { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
+.pill.warn  { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-ink); }
 .pill.grey  { background: var(--bg-3); }
-.pill.red   { background: rgba(224,87,74,.12); border-color: #7a2f27; color: #f0a79b; }
+.pill.red   { background: var(--danger-bg); border-color: var(--danger-line); color: var(--danger-ink); }
 
 /* -------------------------------- buttons ---------------------------- */
 
 .btn {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
   border: none;
   border-radius: 10px;
@@ -457,7 +507,7 @@ textarea { min-height: 96px; resize: vertical; }
   white-space: nowrap;
   cursor: pointer;
 }
-.tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.tabs button.on { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent); }
 .tabs button .tabcount {
   display: inline-block;
   margin-left: 5px;
@@ -487,7 +537,7 @@ textarea { min-height: 96px; resize: vertical; }
 .rulecard .rule:last-child { border-bottom: none; }
 .rule-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
 .rule-text {
-  color: #cfd8e4;
+  color: var(--body-text);
   font-size: 14.5px;
   line-height: 1.5;
   white-space: pre-wrap;      /* keeps typed line breaks */
@@ -541,7 +591,7 @@ textarea { min-height: 96px; resize: vertical; }
 .evwhen  { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .evnote {
   font-size: 13.5px;
-  color: #cfd8e4;
+  color: var(--body-text);
   line-height: 1.45;
   margin-top: 5px;
   white-space: pre-wrap;
@@ -582,7 +632,7 @@ textarea { min-height: 96px; resize: vertical; }
    grouping readable without a header for every team. */
 .kp-row.kp-new { border-top: 1px solid var(--line-soft); }
 .kp-row { transition: background .15s ease, transform .12s ease; }
-.kp-row:hover  { background: rgba(255,255,255,.025); }
+.kp-row:hover  { background: var(--hover-soft); }
 .kp-row:active { transform: scale(.985); }
 
 .kp-team {
@@ -653,8 +703,8 @@ textarea { min-height: 96px; resize: vertical; }
 */
 .setup-tally { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .setup-tally .ok    { color: var(--accent); font-weight: 700; }
-.setup-tally .under { color: var(--warn);   font-weight: 700; }
-.setup-tally .over  { color: var(--danger); font-weight: 700; }
+.setup-tally .under { color: var(--warn-ink);   font-weight: 700; }
+.setup-tally .over  { color: var(--danger-ink); font-weight: 700; }
 
 /* a chip that is a label rather than a link */
 .chip.flat {
@@ -714,7 +764,7 @@ textarea { min-height: 96px; resize: vertical; }
   padding-bottom: 12px;
   max-width: 22ch;
   border-bottom: 1px solid rgba(214,178,84,.35);
-  color: #d6b254;
+  color: var(--milestone);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .18em;
@@ -747,7 +797,7 @@ textarea { min-height: 96px; resize: vertical; }
   border-radius: 50%;
   background: var(--muted);
 }
-.due-dot.green { background: var(--accent); }
+.due-dot.green { background: var(--ok); }
 .due-dot.warn  { background: var(--warn); }
 .due-dot.red   { background: var(--danger); }
 
@@ -758,7 +808,7 @@ textarea { min-height: 96px; resize: vertical; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.due-figure.owing { color: var(--warn); font-weight: 600; }
+.due-figure.owing { color: var(--warn-ink); font-weight: 600; }
 /* .sr-only, used above for the status word, is defined with the hero. */
 
 /* ---- the record book: what / who / number ---- */
@@ -831,7 +881,7 @@ textarea { min-height: 96px; resize: vertical; }
   font-weight: 600;
   cursor: pointer;
 }
-.option:hover { border-color: var(--accent); background: #202b3a; }
+.option:hover { border-color: var(--accent); background: var(--hover); }
 
 .results { display: grid; gap: 13px; }
 .result-top {
@@ -870,7 +920,7 @@ textarea { min-height: 96px; resize: vertical; }
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-fill);
   margin-right: 7px;
   vertical-align: 1px;
 }
@@ -881,7 +931,7 @@ textarea { min-height: 96px; resize: vertical; }
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--accent-fill);
   transition: width .35s cubic-bezier(.22,.61,.36,1);
 }
 .result.mine .result-top { font-weight: 700; color: var(--accent); }
@@ -922,9 +972,9 @@ textarea { min-height: 96px; resize: vertical; }
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .09em;
-  color: var(--warn);
-  border: 1px solid #7a5a1d;
-  background: rgba(240,167,66,.12);
+  color: var(--warn-ink);
+  border: 1px solid var(--warn-line);
+  background: var(--warn-bg);
   border-radius: 999px;
   padding: 2px 8px;
 }
@@ -984,8 +1034,8 @@ textarea { min-height: 96px; resize: vertical; }
   border-radius: 18px;
   overflow: hidden;
   background:
-    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.05), transparent 60%),
-    linear-gradient(180deg, #141c27, var(--bg-2));
+    radial-gradient(120% 90% at 50% -20%, var(--hero-wash), transparent 60%),
+    linear-gradient(180deg, var(--hero-a), var(--bg-2));
 }
 /*
   HOW THE TWO TEAM COLOURS ARE USED
@@ -1003,7 +1053,7 @@ textarea { min-height: 96px; resize: vertical; }
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: var(--accent);
+  background: var(--accent-fill);
 }
 
 .hero-crest {
@@ -1106,8 +1156,8 @@ textarea { min-height: 96px; resize: vertical; }
 .stat-v { display: block; font-size: 17px; font-weight: 700; }
 .stat-l { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .stat-v.good { color: var(--accent); }
-.stat-v.bad  { color: var(--danger); }
-.stat-v.warn { color: var(--warn); }
+.stat-v.bad  { color: var(--danger-ink); }
+.stat-v.warn { color: var(--warn-ink); }
 
 @media (min-width: 720px) {
   .statgrid { grid-template-columns: repeat(6, 1fr); }
@@ -1121,7 +1171,7 @@ textarea { min-height: 96px; resize: vertical; }
   margin-top: 10px;
 }
 
-.warntext { color: var(--warn); }
+.warntext { color: var(--warn-ink); }
 
 /* ---------------------------- sync log ------------------------------- */
 
@@ -1213,7 +1263,8 @@ textarea { min-height: 96px; resize: vertical; }
   bottom: calc(88px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 50;
-  background: #1f2937;
+  background: var(--toast-bg);
+  color: var(--on-toast);
   border: 1px solid var(--line);
   color: var(--text);
   padding: 10px 16px;
@@ -1259,6 +1310,95 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .option:active, .quicknav a:active, .memberbtn:active, .chip:active { transform: scale(.975); }
 .tabbar a:active { transform: scale(.9); }
+
+/* ---------------------------------------------------------------------
+   CHROME IS ALWAYS DARK
+
+   The bar at the top and the bar at the bottom keep the crest's black
+   banner in light mode as well as dark. It is the one piece of the app the
+   logo genuinely dictates, and it means the wordmark reads the same
+   everywhere instead of being restyled twice.
+
+   The consequence has to be handled explicitly: everything inside those
+   bars is pinned light-on-dark rather than following --text and --muted,
+   which invert. Without this the header goes near-black on near-black the
+   moment a phone is in light mode.
+   ------------------------------------------------------------------- */
+.topbar { color: #f5f7fa; border-bottom-color: #222b3a; }
+.topbar .whoami {
+  background: rgba(255,255,255,.09);
+  color: #f5f7fa;
+  border-color: rgba(255,255,255,.2);
+}
+.topbar .whoami:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.32); }
+.brand-text span { color: #E67582; }
+.tabbar { border-top-color: #222b3a; }
+.tabbar a { color: #8b98ab; }
+.tabbar a.on, .tabbar a:hover { color: #E67582; }
+
+/* ---------------------------------------------------------------------
+   Rules that used to be injected by theme.js at runtime. There is one
+   theme now, so they belong in the stylesheet like everything else.
+   Fills and gradients take the crest pair; text takes the readable pair.
+   ------------------------------------------------------------------- */
+.btn.primary, .btn.accent {
+  background: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
+  color: var(--on-accent);
+  border-color: var(--accent-fill);
+}
+.tabbar a.on:after { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
+.btn:hover, .btn.ghost:hover { border-color: var(--accent-fill); color: var(--accent); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !important; box-shadow: none; }
+.profile-head.has-team {
+  border-color: var(--theme-border);
+  background: linear-gradient(135deg, var(--theme-soft), var(--theme-soft-2) 48%, var(--bg-2));
+}
+.profile-head.has-team:before { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
+.swatchbar { border-color: var(--theme-border); }
+.dfl-team-card { border-color: var(--theme-border); }
+
+/* ------------------------- appearance picker ------------------------- */
+
+.modebar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 4px 0 9px;
+}
+.mode-opt {
+  min-height: 44px;
+  padding: 9px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg-3);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* The live one is filled, not just outlined - on a three-way switch an
+   outline alone reads as "hovered" rather than "chosen". */
+.mode-opt.is-on {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
+}
+@media (max-width: 380px) {
+  .modebar { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------------
+   Light mode, the handful of places where flipping a variable is not
+   enough.
+   ------------------------------------------------------------------- */
+/* The crest was drawn for white, so on a light card it needs no plate. */
+:root[data-mode="light"] .hero-crest.is-crest { background: transparent; padding: 0; }
+/* The hero's dark wash reads as a smudge on white; flatten it. */
+:root[data-mode="light"] .hero { background: var(--bg-2); }
+:root[data-mode="light"] .hero-crest { filter: none; }
+/* A hairline is enough on white - the dark theme's shadow turns into a bruise. */
+:root[data-mode="light"] .card { box-shadow: none; }
+:root[data-mode="light"] a.linkcard:hover { background: var(--hover); }
 
 /* Overlay comes up rather than blinking on. */
 @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1594,7 +1734,7 @@ input.masked {
    as a racer rather than a floating smudge. */
 .lane-sprite .racer-img {
   border-radius: 6px;
-  background: rgba(255,255,255,.04);
+  background: var(--hover-soft);
 }
 
 @media (max-width: 560px) {

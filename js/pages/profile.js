@@ -14,7 +14,7 @@ import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
 import { editControls, wireInline } from "../inline.js";
 import { findTeam, teamOptions } from "../teams.js";
-import { saveTheme, savedTheme, teamColors } from "../theme.js";
+import { saveMode, savedMode, activeMode, modeOptions } from "../theme.js";
 import { toast } from "../ui.js";
 
 export async function render(view) {
@@ -71,7 +71,10 @@ export async function render(view) {
     sameName(p.owner_name, member.display_name) || sameName(p.team_name, member.team_name))
     .sort((a, b) => b.season - a.season);
 
-  const team = findTeam((isMe && savedTheme()) || member.favorite_team);
+  /* Their actual favourite team. It used to be read through savedTheme() so
+     the app could recolour itself around it; that is gone - there is one
+     palette now - so this is simply the profile field it always was. */
+  const team = findTeam(member.favorite_team);
 
   view.innerHTML = `
     <div id="profile-wrap">
@@ -81,7 +84,7 @@ export async function render(view) {
       ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
-      ${isMe ? themePicker(member) : ""}
+      ${isMe ? appearanceCard() + favouriteTeamCard(member) : ""}
       ${othersCard(members, member)}
     </div>
   `;
@@ -106,10 +109,11 @@ function header(m, team, isMe, currentTeam, currentSeason) {
   // Both team colours drive the card: a two-stop stripe across the top and
   // a matching ring around the avatar.
   //
-  // On your own profile the device's saved pick wins, because `members` is
-  // admin-write: a normal member can choose a team but cannot store it, and
-  // their profile should still show it.
-  const c = teamColors((isMe && savedTheme()) || m.favorite_team);
+  // Their team's REAL colours, straight from teams.js. This used to go through
+  // the theme map, which only held theme ids - so an NFL team fell through to
+  // the default and every profile header wore the same ring. findTeam has
+  // carried primary/secondary all along.
+  const c = findTeam(m.favorite_team);
   const style = c
     ? `style="--t1:${c.primary};--t2:${c.secondary}"`
     : "";
@@ -290,54 +294,80 @@ function duesCard(rows) {
     </div>`;
 }
 
-// ---------------------------- theme picker ----------------------------
+// ---------------------------- appearance -----------------------------
 
-function themePicker(m) {
-  const value = savedTheme() || m.favorite_team || "";
-  const c = teamColors(value);
+/*
+  Light or dark, and by default neither - it follows the phone.
+
+  This replaced a "Team colours" card that could not work: it fed NFL team ids
+  into a map that only ever held theme ids, so every pick collapsed to the
+  default theme and the swatch lied about it. There is one palette now, the
+  crest, so the only thing left worth choosing is the mode.
+
+  "Match my phone" is a real option rather than a starting value: pick it and
+  the app keeps following the OS, including when it flips at sunset.
+*/
+function appearanceCard() {
+  const want = savedMode();
+  const now = activeMode();
   return `
     <div class="card">
-      <h3 class="card-heading">Team colours</h3>
-      <div class="swatchbar" id="theme-preview">
-        <span class="bigsw" style="background:${esc(c ? c.primary : "var(--accent)")}"></span>
-        <span class="bigsw" style="background:${esc(c ? c.secondary : "var(--accent-2)")}"></span>
-        <span class="swatch-name">${esc(c ? c.name : "League green")}</span>
+      <h3 class="card-heading">Appearance</h3>
+      <div class="modebar" id="mode-pick">
+        ${modeOptions().map((o) => `
+          <button type="button" class="mode-opt ${o.id === want ? "is-on" : ""}"
+                  data-mode-pick="${o.id}" aria-pressed="${o.id === want}">${esc(o.name)}</button>`).join("")}
       </div>
+      <p class="muted tiny" id="mode-note">${want === "system"
+        ? `Following your phone, which is ${now} right now.`
+        : `Always ${want} on this device.`}</p>
+    </div>`;
+}
 
-      <label for="theme-pick">Favourite team</label>
-      <select id="theme-pick">
+/* The favourite team is a profile field and nothing more now - it names the
+   team on your profile header. It no longer recolours the app. */
+function favouriteTeamCard(m) {
+  const value = m.favorite_team || "";
+  return `
+    <div class="card">
+      <h3 class="card-heading">Favourite team</h3>
+      <label for="team-pick" class="muted tiny">Shown on your profile.</label>
+      <select id="team-pick">
         ${teamOptions().map((o) =>
           `<option value="${esc(o.value)}" ${o.value === value ? "selected" : ""}>${esc(o.label)}</option>`).join("")}
       </select>
       <div class="row-end">
-        <button class="btn ghost small" id="theme-save">Also save to my profile</button>
+        <button class="btn ghost small" id="team-save">Save to my profile</button>
       </div>
     </div>`;
 }
 
 function wireThemePicker(view, member) {
-  const select = view.querySelector("#theme-pick");
-  if (!select) return;
-
-  // Live preview as soon as the choice changes: the whole app recolours,
-  // and the two swatches update so both colours are visible while choosing.
-  select.addEventListener("change", () => {
-    saveTheme(select.value);
-    const c = teamColors(select.value);
-    const sw = view.querySelectorAll("#theme-preview .bigsw");
-    if (sw.length === 2) {
-      sw[0].style.background = c ? c.primary : "var(--accent)";
-      sw[1].style.background = c ? c.secondary : "var(--accent-2)";
-    }
-    const label = view.querySelector("#theme-preview .swatch-name");
-    if (label) label.textContent = c ? c.name : "League green";
+  const bar = view.querySelector("#mode-pick");
+  if (bar) bar.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode-pick]");
+    if (!btn) return;
+    saveMode(btn.dataset.modePick);
+    // Repaint the bar and its note in place - re-rendering the whole profile
+    // to move one highlight would throw the page back to the top.
+    bar.querySelectorAll("[data-mode-pick]").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    const note = view.querySelector("#mode-note");
+    if (note) note.textContent = savedMode() === "system"
+      ? `Following your phone, which is ${activeMode()} right now.`
+      : `Always ${savedMode()} on this device.`;
   });
 
-  view.querySelector("#theme-save").addEventListener("click", async () => {
+  const select = view.querySelector("#team-pick");
+  if (!select) return;
+  view.querySelector("#team-save")?.addEventListener("click", async () => {
     const { error } = await db().from("members")
       .update({ favorite_team: select.value || null }).eq("id", member.id);
     // Members are admin-write, so a normal member just keeps the local choice.
-    toast(error ? "Saved on this device only" : "Saved to your profile");
+    toast(error ? "Could not save to your profile" : "Saved to your profile", !!error);
   });
 }
 

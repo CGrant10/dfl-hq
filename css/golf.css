@@ -6,7 +6,7 @@
 .gm-opt small{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 /* The chosen mode is filled, not merely outlined - which one is live has to
    be readable at a glance before anybody presses a generator. */
-.gm-opt.is-on{background:rgba(47,191,95,.12);border-color:var(--accent-dim);color:var(--accent)}
+.gm-opt.is-on{background:var(--ok-bg);border-color:var(--accent-dim);color:var(--accent)}
 .gm-opt.is-on small{color:var(--accent)}
 
 /* captains + the draft board */
@@ -36,7 +36,7 @@
 .gd-rosters{display:grid;gap:9px;margin-top:14px}
 .gd-roster{border:1px solid var(--line);border-left:3px solid var(--racer,var(--accent));border-radius:9px;background:var(--bg-2);overflow:hidden}
 /* The team on the clock is lit, so the board answers "who is up" twice. */
-.gd-roster.is-up{background:rgba(47,191,95,.07);border-color:var(--accent-dim)}
+.gd-roster.is-up{background:var(--ok-bg);border-color:var(--accent-dim)}
 .gd-roster-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--bg-3);border-bottom:1px solid var(--line-soft)}
 .gd-count{font-size:11px;font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums}
 .gd-picks{display:flex;flex-wrap:wrap;gap:6px;padding:9px 10px}
@@ -68,7 +68,7 @@
 .glock{padding:6px 9px;font-size:15px;line-height:1;min-height:38px}
 /* A locked player is the one the generator will not touch, so it has to be
    obvious at a glance which rows are pinned. */
-.gedit-row.is-locked{background:rgba(47,191,95,.06)}.gedit-row.is-locked .gname{color:var(--accent)}
+.gedit-row.is-locked{background:var(--ok-bg)}.gedit-row.is-locked .gname{color:var(--accent)}
 .golf-danger{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .golf-danger-text{min-width:0}.golf-danger-text strong{font-size:13.5px}.golf-danger-text p{margin:2px 0 0}
 .golf-danger .btn{white-space:nowrap}

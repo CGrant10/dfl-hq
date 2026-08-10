@@ -58,7 +58,7 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .dfl-live-cell b{font-size:17px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1}
 .dfl-live-topar{color:var(--accent)}
 @media (max-height:480px) and (orientation:landscape) and (max-width:899px){.dfl-live{top:calc(49px + env(safe-area-inset-top))}.dfl-live-cell{padding:5px 6px}.dfl-live-cell b{font-size:15px}}
-.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid #a33;border-radius:8px;padding:7px 10px;background:transparent;color:#e88;font-weight:900;font-size:11px}
+.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
 
 /* ---- the strip: the whole round at a glance ---- */
 .dfl-strip{margin:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);overflow:hidden}
@@ -70,7 +70,7 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .dfl-strip-tbl .row-h td{background:var(--bg-3);color:var(--muted);font-size:10px}
 .dfl-strip-tbl .row-p td{color:var(--muted);font-size:10px;height:24px}
 .dfl-strip-tbl .row-s td{height:34px}
-.dfl-strip-tbl .sub{border-left:1px solid var(--line);background:rgba(255,255,255,.03);width:34px}
+.dfl-strip-tbl .sub{border-left:1px solid var(--line);background:var(--hover-soft);width:34px}
 .dfl-strip-tbl tr:last-child td,.dfl-strip-tbl tr:last-child th{border-bottom:0}
 .dfl-strip-tbl td[data-ov-hole]{cursor:pointer}
 .ovm{display:inline-grid;place-items:center;width:24px;height:24px;font-size:12px;font-weight:900;line-height:1}
@@ -90,9 +90,9 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .hole-again{font-size:12px;font-weight:800;color:var(--muted);margin-left:2px}
 .hole .yards{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
 .dfl-hole-grid .par{justify-content:center;color:var(--muted);font-weight:800}
-.dfl-hole-grid .score{display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(255,255,255,.025)}
+.dfl-hole-grid .score{display:flex;align-items:center;justify-content:center;gap:5px;background:var(--hover-soft)}
 .dfl-hole-grid .result{display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;font-weight:900;letter-spacing:.02em}
-.result-eagle{color:#35d06f}.result-birdie{color:#8ee6ad}.result-par{color:var(--text)}.result-bogey{color:#ff766d}.result-double{color:#e33d35}.result-empty{color:var(--muted);font-weight:700}
+.result-eagle{color:var(--sc-under)}.result-birdie{color:var(--sc-under)}.result-par{color:var(--text)}.result-bogey{color:var(--sc-over)}.result-double{color:var(--sc-bad)}.result-empty{color:var(--muted);font-weight:700}
 .dfl-hole-grid .is-now{background:rgba(47,191,95,.07)}
 
 /* A thumb in a golf glove needs 40px+, and the two buttons must not be so
@@ -105,20 +105,20 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 /* The input IS the shape - a round field for a birdie, a square one for a
    bogey - so typing and the paper shorthand are the same object. */
 .mark{display:inline-grid;place-items:center;flex:0 0 auto}
-.dfl-hole-grid input,.mark input{box-sizing:border-box;width:42px;height:42px;padding:0;border:2px solid var(--line);border-radius:9px;background:var(--bg-2);color:var(--text);text-align:center;font-size:19px;font-weight:950;line-height:1}
+.dfl-hole-grid input,.mark input{box-sizing:border-box;width:42px;height:42px;padding:0;border:2px solid var(--control-line);border-radius:9px;background:var(--bg-2);color:var(--text);text-align:center;font-size:19px;font-weight:950;line-height:1}
 .dfl-hole-grid input:focus{outline:3px solid var(--accent);outline-offset:2px;background:var(--bg-3)}
 .dfl-hole-grid input[type=number]::-webkit-inner-spin-button,.dfl-hole-grid input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .m-none input{border-style:dashed;color:var(--muted)}
-.m-par input{border-color:#4a5568}
-.m-birdie input,.m-eagle input{border-radius:50%;border-color:#35d06f;color:#8ee6ad}
-.m-eagle input{box-shadow:0 0 0 2px var(--bg-2),0 0 0 4px #35d06f}
-.m-bogey input,.m-dbl input{border-radius:7px;border-color:#ff766d}
-.m-dbl input{border-color:#e33d35;box-shadow:0 0 0 2px var(--bg-2),0 0 0 4px #e33d35}
+.m-par input{border-color:var(--control-line)}
+.m-birdie input,.m-eagle input{border-radius:50%;border-color:var(--sc-under);color:var(--sc-under)}
+.m-eagle input{box-shadow:0 0 0 2px var(--bg-2),0 0 0 4px var(--sc-under)}
+.m-bogey input,.m-dbl input{border-radius:7px;border-color:var(--sc-over)}
+.m-dbl input{border-color:var(--sc-bad);box-shadow:0 0 0 2px var(--bg-2),0 0 0 4px var(--sc-bad)}
 .m-eagle,.m-dbl{margin:0 3px}
-.ovm.m-birdie,.ovm.m-eagle{border:1.5px solid #35d06f;border-radius:50%;color:#8ee6ad}
-.ovm.m-eagle{box-shadow:0 0 0 1.5px var(--bg-2),0 0 0 3px #35d06f}
-.ovm.m-bogey{border:1.5px solid #ff766d;border-radius:3px}
-.ovm.m-dbl{border:1.5px solid #e33d35;border-radius:3px;color:#f0a79b;box-shadow:0 0 0 1.5px var(--bg-2),0 0 0 3px #e33d35}
+.ovm.m-birdie,.ovm.m-eagle{border:1.5px solid var(--sc-under);border-radius:50%;color:var(--sc-under)}
+.ovm.m-eagle{box-shadow:0 0 0 1.5px var(--bg-2),0 0 0 3px var(--sc-under)}
+.ovm.m-bogey{border:1.5px solid var(--sc-over);border-radius:3px}
+.ovm.m-dbl{border:1.5px solid var(--sc-bad);border-radius:3px;color:var(--sc-bad);box-shadow:0 0 0 1.5px var(--bg-2),0 0 0 3px var(--sc-bad)}
 .ovm.m-none{color:var(--line)}
 
 .dfl-final small{display:block;font-size:8px;text-transform:uppercase;color:var(--muted);font-weight:900}.dfl-final{margin:10px;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg-3);display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:8px}.dfl-final b{display:block;font-size:18px;margin-top:2px}.dfl-score-help{padding:0 12px 10px;font-size:10px;color:var(--muted)}
