@@ -42,7 +42,23 @@ const fmtToPar=(score,par)=>{if(!score)return"—";const d=score-par;return d===
   colour it is, so the strip, the row and the label can never disagree.
 */
 function holeResult(score,par){const s=Number(score);if(!s)return{mark:"m-none",cls:"result-empty",label:"—"};const d=s-Number(par);if(d<=-2)return{mark:"m-eagle",cls:"result-eagle",label:"EAGLE"};if(d===-1)return{mark:"m-birdie",cls:"result-birdie",label:"BIRDIE"};if(d===0)return{mark:"m-par",cls:"result-par",label:"PAR"};if(d===1)return{mark:"m-bogey",cls:"result-bogey",label:"BOGEY"};if(d===2)return{mark:"m-dbl",cls:"result-double",label:"DOUBLE"};return{mark:"m-dbl",cls:"result-double",label:`+${d}`};}
-function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;const s=document.createElement("style");s.id="dfl-team-scorecard-style";s.textContent=`.dfl-team-card{overflow:hidden}.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid #a33;border-radius:8px;padding:7px 10px;background:transparent;color:#e88;font-weight:900;font-size:11px}
+function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;const s=document.createElement("style");s.id="dfl-team-scorecard-style";s.textContent=`
+/* overflow:clip, NOT hidden. Both clip the head's square corners, but
+   'hidden' makes this card a scroll container and silently kills the sticky
+   bar inside it. The pair is deliberate: a browser without clip support
+   keeps hidden and simply gets a bar that scrolls away - the numbers are
+   still there, they just do not follow you. */
+.dfl-team-card{overflow:hidden;overflow:clip}
+.dfl-team-head{border-radius:13px 13px 0 0}
+
+/* Sits under the fixed 56px topbar (+1px border), and under the notch. */
+.dfl-live{position:sticky;top:calc(57px + env(safe-area-inset-top));z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);box-shadow:0 6px 14px rgba(0,0,0,.28)}
+.dfl-live-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 6px;background:var(--bg-3)}
+.dfl-live-cell small{font-size:8.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:var(--muted)}
+.dfl-live-cell b{font-size:17px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1}
+.dfl-live-topar{color:var(--accent)}
+@media (max-height:480px) and (orientation:landscape) and (max-width:899px){.dfl-live{top:calc(49px + env(safe-area-inset-top))}.dfl-live-cell{padding:5px 6px}.dfl-live-cell b{font-size:15px}}
+.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid #a33;border-radius:8px;padding:7px 10px;background:transparent;color:#e88;font-weight:900;font-size:11px}
 
 /* ---- the strip: the whole round at a glance ---- */
 .dfl-strip{margin:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);overflow:hidden}
@@ -113,6 +129,19 @@ function courseHole(holes,h){return h>9?h-9:h}
 function holePar(holes,h){const n=courseHole(holes,h);return Number(holes.find(x=>Number(x.hole)===n)?.par)||4}
 function holeYards(courseHoles,h){const n=courseHole(courseHoles,h);return Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_men)||Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_women)||0}
 function playedPar(map,holes,start,end){let p=0;for(let h=start;h<=end;h++)if(map.has(h))p+=holePar(holes,h);return p}
+function thruCount(map,start,end){let n=0;for(let h=start;h<=end;h++)if(num(map.get(h)?.strokes))n++;return n}
+
+/*
+  Where you stand, pinned under the header while you scroll.
+
+  Standing on hole 7 you want to know you are +3 through 6 - and until this
+  bar existed that number lived at the very bottom of a card 2.2 screens
+  tall, so the one figure the round is about was the one figure never on
+  screen while scoring. It sticks below the fixed topbar and costs no
+  layout: it replaces nothing and pushes nothing aside.
+*/
+function liveBar(map,holes,holeCount){const thru=thruCount(map,1,holeCount),strokes=total(map,1,holeCount),par=playedPar(map,holes,1,holeCount);
+return `<div class="dfl-live"><span class="dfl-live-cell"><small>Thru</small><b data-live-thru>${thru||"—"}</b></span><span class="dfl-live-cell"><small>+/−</small><b class="dfl-live-topar" data-live-topar>${fmtToPar(strokes,par)}</b></span><span class="dfl-live-cell"><small>Strokes</small><b data-live-strokes>${strokes||"—"}</b></span></div>`}
 
 /*
   The strip. Nine columns of a nine, so it never needs to scroll on a phone,
@@ -141,17 +170,20 @@ const r=holeResult(val.get(h),p);
 const mark=root.querySelector(`[data-mark="${h}"]`);if(mark)mark.className="mark "+r.mark;
 const res=root.querySelector(`[data-result="${h}"]`);if(res){res.textContent=r.label;res.className="result "+r.cls}
 const ov=root.querySelector(`[data-ov-mark="${h}"]`);if(ov){ov.textContent=val.get(h)||"·";ov.className="ovm "+r.mark}}
-const range=(a,b)=>{let s=0,p=0;for(let h=a;h<=b;h++){const v=val.get(h)||0;if(!v)continue;s+=v;p+=par.get(h)||0}return{s,p}};
+const range=(a,b)=>{let s=0,p=0,n=0;for(let h=a;h<=b;h++){const v=val.get(h)||0;if(!v)continue;s+=v;p+=par.get(h)||0;n++}return{s,p,n}};
 for(const start of [1,10]){const {s,p}=range(start,start+8);
 const sc=root.querySelector(`[data-nine-score="${start}"]`);if(sc)sc.textContent=s||"—";
 const tp=root.querySelector(`[data-nine-topar="${start}"]`);if(tp)tp.textContent=fmtToPar(s,p);
 const sub=root.querySelector(`[data-ov-sub="${start}"]`);if(sub)sub.textContent=s||"—"}
 const all=range(1,18);
 const fs=root.querySelector("[data-final-score]");if(fs)fs.textContent=all.s||"—";
-const ft=root.querySelector("[data-final-topar]");if(ft)ft.textContent=fmtToPar(all.s,all.p)}
+const ft=root.querySelector("[data-final-topar]");if(ft)ft.textContent=fmtToPar(all.s,all.p);
+const lt=root.querySelector("[data-live-thru]");if(lt)lt.textContent=all.n||"—";
+const lp=root.querySelector("[data-live-topar]");if(lp)lp.textContent=fmtToPar(all.s,all.p);
+const ls=root.querySelector("[data-live-strokes]");if(ls)ls.textContent=all.s||"—"}
 
 async function clearScorecard(outingId,teamId){if(!isAdmin())throw Error("Admin access required");const {error}=await db().from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId);if(error)throw error}
-async function render(root,outingId,teamId){styles();const c=await loadCard(outingId,teamId);if(!c.team)throw Error("Team not found");const me=String(currentMember()?.id||"");const admin=isAdmin(),editable=admin||c.parts.some(p=>String(p.member_id)===me),map=scoreMap(c.scores),front=total(map,1,9),back=total(map,10,18),played=playedPar(map,c.holes,1,18),complete=front+back,names=c.parts.map(p=>c.members.find(m=>String(m.id)===String(p.member_id))?.display_name||"Unknown");root.innerHTML=`<section class="card dfl-team-card"><header class="dfl-team-head"><div class="dfl-team-head-top"><a class="backlink" href="#/golf?id=${outingId}">← Teams</a><div><span class="dfl-team-kicker">TEAM SCORECARD</span><h2>${esc(c.team.name||"Team")}</h2></div></div><div class="dfl-team-roster">${names.map(n=>`<span>${esc(n)}</span>`).join("")}</div></header><div class="dfl-score-status">${editable?"Tap − and + to add strokes, or type the number. Saves on its own.":"Read-only — only members of this team and admins can edit."}</div>${admin?`<div class="dfl-admin-actions"><button type="button" class="dfl-clear-scorecard" data-clear-scorecard>Clear Scorecard</button></div>`:""}${strip(c.holes,map)}${nine("Front 9",1,c.holes,c.courseHoles,map,editable)}${nine("Back 9 · second time around",10,c.holes,c.courseHoles,map,editable)}<div class="dfl-final"><div><small>Final Score</small><b data-final-score>${complete||"—"}</b></div><div><small>+/−</small><b data-final-topar>${fmtToPar(complete,played)}</b></div></div><div class="dfl-score-help">Circles are under par, squares are over — a double ring means by two or more. Course yardage comes from the selected course; Rolla is a 9-hole course, so the Back 9 repeats holes 1–9.</div></section>`;wire(root,outingId,teamId,editable);if(admin){const clear=root.querySelector("[data-clear-scorecard]");clear?.addEventListener("click",async()=>{if(!confirm(`Clear every stroke for ${c.team.name||"this team"}? This cannot be undone.`))return;clear.disabled=true;try{await clearScorecard(outingId,teamId);await render(root,outingId,teamId)}catch(err){clear.disabled=false;alert(err.message||"Could not clear scorecard")}})}}
+async function render(root,outingId,teamId){styles();const c=await loadCard(outingId,teamId);if(!c.team)throw Error("Team not found");const me=String(currentMember()?.id||"");const admin=isAdmin(),editable=admin||c.parts.some(p=>String(p.member_id)===me),map=scoreMap(c.scores),front=total(map,1,9),back=total(map,10,18),played=playedPar(map,c.holes,1,18),complete=front+back,names=c.parts.map(p=>c.members.find(m=>String(m.id)===String(p.member_id))?.display_name||"Unknown");root.innerHTML=`<section class="card dfl-team-card"><header class="dfl-team-head"><div class="dfl-team-head-top"><a class="backlink" href="#/golf?id=${outingId}">← Teams</a><div><span class="dfl-team-kicker">TEAM SCORECARD</span><h2>${esc(c.team.name||"Team")}</h2></div></div><div class="dfl-team-roster">${names.map(n=>`<span>${esc(n)}</span>`).join("")}</div></header>${liveBar(map,c.holes,18)}<div class="dfl-score-status">${editable?"Tap − and + to add strokes, or type the number. Saves on its own.":"Read-only — only members of this team and admins can edit."}</div>${admin?`<div class="dfl-admin-actions"><button type="button" class="dfl-clear-scorecard" data-clear-scorecard>Clear Scorecard</button></div>`:""}${strip(c.holes,map)}${nine("Front 9",1,c.holes,c.courseHoles,map,editable)}${nine("Back 9 · second time around",10,c.holes,c.courseHoles,map,editable)}<div class="dfl-final"><div><small>Final Score</small><b data-final-score>${complete||"—"}</b></div><div><small>+/−</small><b data-final-topar>${fmtToPar(complete,played)}</b></div></div><div class="dfl-score-help">Circles are under par, squares are over — a double ring means by two or more. Course yardage comes from the selected course; Rolla is a 9-hole course, so the Back 9 repeats holes 1–9.</div></section>`;wire(root,outingId,teamId,editable);if(admin){const clear=root.querySelector("[data-clear-scorecard]");clear?.addEventListener("click",async()=>{if(!confirm(`Clear every stroke for ${c.team.name||"this team"}? This cannot be undone.`))return;clear.disabled=true;try{await clearScorecard(outingId,teamId);await render(root,outingId,teamId)}catch(err){clear.disabled=false;alert(err.message||"Could not clear scorecard")}})}}
 async function saveScore(outingId,teamId,hole,value){const client=db();if(!value){const {error}=await client.from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole);if(error)throw error;return}const strokes=Number(value);if(!Number.isInteger(strokes)||strokes<MIN_STROKES||strokes>MAX_STROKES)throw Error(`Enter strokes from ${MIN_STROKES} to ${MAX_STROKES}`);const existing=await client.from("golf_scores").select("id").eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole).maybeSingle();if(existing.error)throw existing.error;if(existing.data?.id){const {error}=await client.from("golf_scores").update({strokes,member_id:null}).eq("id",existing.data.id);if(error)throw error;return}const inserted=await client.from("golf_scores").insert({outing_id:outingId,team_id:teamId,member_id:null,hole,strokes});if(inserted.error){if(String(inserted.error.code)==="23505"){const retry=await client.from("golf_scores").update({strokes,member_id:null}).eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole);if(retry.error)throw retry.error;return}throw inserted.error}}
 
 /*
