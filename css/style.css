@@ -1218,7 +1218,7 @@ textarea { min-height: 96px; resize: vertical; }
   scrollbar-width: none;              /* the row scrolls on narrow phones */
 }
 .tabbar::-webkit-scrollbar { display: none; }
-.tabbar a {
+.tabbar :is(a, .tabmore) {
   flex: 1 0 auto;
   min-width: 56px;
   padding: 8px 4px 10px;
@@ -1228,8 +1228,8 @@ textarea { min-height: 96px; resize: vertical; }
   font-size: 10px;
   font-weight: 600;
 }
-.tabbar a .ico { display: block; margin: 0 auto 3px; width: 22px; height: 22px; }
-.tabbar a.on { color: var(--accent); }
+.tabbar :is(a, .tabmore) .ico { display: block; margin: 0 auto 3px; width: 22px; height: 22px; }
+.tabbar :is(a, .tabmore).on { color: var(--accent); }
 /* Icons inherit the link colour, so the active tab turns green automatically. */
 
 /* ------------------------------ overlay ------------------------------ */
@@ -1305,11 +1305,11 @@ textarea { min-height: 96px; resize: vertical; }
 .event-date { font-size: 12.5px; color: var(--muted); font-weight: 600; }
 
 /* Anything tappable gets a small, quick press response. */
-.card, .option, .quicknav a, .memberbtn, .chip, .tabbar a {
+.card, .option, .quicknav a, .memberbtn, .chip, .tabbar :is(a, .tabmore) {
   transition: transform .13s ease, background .15s ease, border-color .15s ease;
 }
 .option:active, .quicknav a:active, .memberbtn:active, .chip:active { transform: scale(.975); }
-.tabbar a:active { transform: scale(.9); }
+.tabbar :is(a, .tabmore):active { transform: scale(.9); }
 
 /* ---------------------------------------------------------------------
    CHROME IS ALWAYS DARK
@@ -1333,8 +1333,8 @@ textarea { min-height: 96px; resize: vertical; }
 .topbar .whoami:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.32); }
 .brand-text span { color: #E67582; }
 .tabbar { border-top-color: #222b3a; }
-.tabbar a { color: #8b98ab; }
-.tabbar a.on, .tabbar a:hover { color: #E67582; }
+.tabbar :is(a, .tabmore) { color: #8b98ab; }
+.tabbar :is(a, .tabmore).on, .tabbar :is(a, .tabmore):hover { color: #E67582; }
 
 /* ---------------------------------------------------------------------
    Rules that used to be injected by theme.js at runtime. There is one
@@ -1346,7 +1346,7 @@ textarea { min-height: 96px; resize: vertical; }
   color: var(--on-accent);
   border-color: var(--accent-fill);
 }
-.tabbar a.on:after { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
+.tabbar :is(a, .tabmore).on:after { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
 .btn:hover, .btn.ghost:hover { border-color: var(--accent-fill); color: var(--accent); }
 input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !important; box-shadow: none; }
 .profile-head.has-team {
@@ -1356,6 +1356,106 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
 .profile-head.has-team:before { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
 .swatchbar { border-color: var(--theme-border); }
 .dfl-team-card { border-color: var(--theme-border); }
+
+/* ---------------------------------------------------------------------
+   THE CREED DOORS
+
+   The four words off the crest's banner, doing the job a ten-icon grid used
+   to do. They are set in the wordmark face at wordmark scale, because they
+   ARE the wordmark - the point is that the logo and the navigation are the
+   same object.
+
+   Each door owns one of the crest's colours as a top rule. No icons: the
+   words are the icons.
+   ------------------------------------------------------------------- */
+.creed-doors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 0 14px;
+}
+.cdoor {
+  display: block;
+  padding: 12px 4px 11px;
+  background: var(--bg-2);
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+  border-top: 2px solid var(--accent-fill);
+}
+.cdoor:nth-child(2) { border-top-color: var(--chalk); }
+.cdoor:nth-child(3) { border-top-color: var(--accent-2-fill); }
+.cdoor:nth-child(4) { border-top-color: var(--line); }
+.cdoor:active { background: var(--hover); }
+.cd-word {
+  display: block;
+  font-family: "Rajdhani", system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1;
+}
+/* The number is the reason to tap, so it gets the accent; the word is
+   identity and stays in text colour. */
+.cd-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* One quiet line where three stat blocks and a second tagline used to be. */
+.hero-line { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 340px) {
+  .cd-word { font-size: 15px; }
+  .cd-sub { font-size: 9px; }
+}
+
+/* ------------------------------ the More sheet ----------------------- */
+
+.tabmore {
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(5,8,12,.6);
+}
+.sheet.hidden { display: none; }
+.sheet-card {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+  border-radius: 16px 16px 0 0;
+  /* Clears the fixed tab bar, and scrolls rather than hiding its last row
+     behind it if the list ever outgrows a short screen. */
+  padding: 12px 14px calc(84px + env(safe-area-inset-bottom));
+  max-height: 86vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
 
 /* ------------------------- appearance picker ------------------------- */
 
@@ -1654,7 +1754,7 @@ input.masked {
     padding-bottom: 0;
     overflow-x: visible;
   }
-  .tabbar a {
+  .tabbar :is(a, .tabmore) {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
@@ -1662,7 +1762,7 @@ input.masked {
     padding: 13px 15px;
     font-size: 13px;
   }
-  .tabbar a .ico { width: 17px; height: 17px; margin: 0; }
+  .tabbar :is(a, .tabmore) .ico { width: 17px; height: 17px; margin: 0; }
   .install { bottom: 24px; }
   .toast   { bottom: 24px; }
 }
@@ -1672,8 +1772,8 @@ input.masked {
 @media (max-height: 480px) and (orientation: landscape) and (max-width: 899px) {
   body { padding-top: calc(48px + env(safe-area-inset-top)); padding-bottom: 60px; }
   .topbar-inner { height: 48px; }
-  .tabbar a { padding: 5px 4px 7px; font-size: 9px; }
-  .tabbar a .ico { width: 18px; height: 18px; }
+  .tabbar :is(a, .tabmore) { padding: 5px 4px 7px; font-size: 9px; }
+  .tabbar :is(a, .tabmore) .ico { width: 18px; height: 18px; }
   .hero img { width: 110px; }
 }
 

@@ -48,9 +48,16 @@ export async function renderRoute() {
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
 
+  let matched = false;
   document.querySelectorAll("#tabbar a").forEach((a) => {
-    a.classList.toggle("on", a.dataset.route === name);
+    const on = a.dataset.route === name;
+    if (on) matched = true;
+    a.classList.toggle("on", on);
   });
+  /* Only four routes have a tab now. Everything else came in through More, so
+     More is what should look active - otherwise the bar shows nothing selected
+     and you cannot tell where you are. */
+  document.getElementById("more-btn")?.classList.toggle("on", !matched);
 
   view.innerHTML = loading();
   try {
