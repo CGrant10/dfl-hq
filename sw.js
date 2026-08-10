@@ -1,5 +1,5 @@
 ﻿// DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.16.46";
+const CACHE_NAME = "dfl-hq-v1.16.47";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com"]);
 const APP_SHELL = ["./","./index.html","./css/style.css","./css/broadcast.css","./css/golf.css","./manifest.json","./js/config.js","./js/app.js","./js/install.js","./js/update.js","./js/members.js","./js/teams.js","./js/theme.js","./js/router.js","./js/store.js","./js/supabase.js","./js/ui.js","./js/crud.js","./js/form.js","./js/inline.js","./js/sections.js","./js/settings.js","./js/sleeper.js","./js/sync.js","./js/pages/home.js","./js/pages/rules.js","./js/pages/keepers.js","./js/pages/polls.js","./js/pages/arena.js","./js/pages/golf.js","./js/golf-scorecard.js","./js/golf-courses.js","./js/golf-draft.js","./js/pages/broadcast.js","./js/arena/race.js","./js/arena/sprites.js","./js/pages/calendar.js","./js/pages/history.js","./js/pages/finances.js","./js/pages/profile.js","./js/pages/admin.js","./js/pages/admin_sleeper.js","./js/pages/admin_finance.js","./js/pages/admin_finance_setup.js","./icons/icon-192.png","./icons/icon-512.png","./icons/logo-64.png","./icons/logo-256.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(APP_SHELL)).then(()=>self.skipWaiting())));

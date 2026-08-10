@@ -160,6 +160,40 @@ a { color: var(--accent); }
   text-transform: uppercase;
 }
 
+/*
+  The logo's banner, at wordmark scale: DRAFT * GOLF * SIN * FOLD.
+
+  The words are chalk-white rather than muted grey because on the crest they
+  are the loud part, and the three stars take the ACTIVE THEME's colours
+  instead of the logo's literal red/white/blue - so the header still looks
+  deliberate under Medicine Wheel or Blue / Green rather than flying colours
+  that belong to a different palette.
+*/
+.brand-text .creed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--chalk);
+  letter-spacing: .14em;
+  font-size: 8.5px;
+}
+/* The ink pair, not the fill pair: at this size the crest's own royal blue
+   measures 2.1:1 against the page and simply is not there. */
+.brand-text .creed i {
+  font-style: normal;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--accent-ink, var(--accent));
+}
+.brand-text .creed i:nth-of-type(2) { color: var(--chalk); }
+.brand-text .creed i:nth-of-type(3) { color: var(--accent-2-ink, var(--accent-2)); }
+
+/* On a narrow phone the stars give up their breathing room before the words
+   give up a letter. */
+@media (max-width: 380px) {
+  .brand-text .creed { gap: 3px; letter-spacing: .1em; font-size: 8px; }
+}
+
 .whoami {
   background: var(--bg-3);
   color: var(--text);
