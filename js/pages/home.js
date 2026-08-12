@@ -59,6 +59,7 @@ export async function render(view) {
   const hero = await heroBlock({ golfRow, leagues: leagues.data || [], members: memberRows, myMember, events: events.data || [], settings });
 
   view.innerHTML = `<div id="home-wrap">
+    ${anniversary()}
     ${hero}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
@@ -107,6 +108,26 @@ function matchupMood(a, b, played) {
   if (gap >= 40) return "ABSOLUTE BEATDOWN";
   if (gap <= 3) return "COMING DOWN TO THE WIRE";
   return "";
+}
+
+/*
+  THE ANNIVERSARY BANNER.
+
+  2026 is the tenth season, and a tenth season is the one thing on this page
+  that outranks whatever is happening today - so it sits above the hero rather
+  than in the sign-off at the foot, where it used to be a single grey line.
+
+  It only exists on a decade year. Every other season this returns nothing at
+  all, which is the point: a banner that is always there is furniture.
+*/
+function anniversary() {
+  const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
+  if (number < 2 || number % 10 !== 0) return "";
+  return `<aside class="dfl-anniv" role="note">
+    <span class="dfl-anniv-star" aria-hidden="true">&#9733;</span>
+    <span class="dfl-anniv-text">${esc(ordinal(number))} Anniversary Season</span>
+    <span class="dfl-anniv-star" aria-hidden="true">&#9733;</span>
+  </aside>`;
 }
 
 // ------------------------------------------------------------- the hero
@@ -314,9 +335,7 @@ function newsList(allRows) {
    commissioner changes it, which is why it stays on the page at all. */
 function identity(leagues, members, logo) {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
-  const milestone = number > 1 && number % 10 === 0;
-  return `<section class="hero ${milestone ? "milestone" : ""}">
-    ${milestone ? `<p class="hero-anniversary">${esc(ordinal(number))} Anniversary Season</p>` : ""}
+  return `<section class="hero">
     <img class="hero-crest ${logo ? "" : "is-crest"}" src="${esc(logo || "icons/crest-512.png")}" alt="DFL league crest" ${logo ? "" : `width="512" height="341"`}>
     ${canEdit() ? `<div class="crest-tools"><input type="file" id="logo-file" accept="image/*" class="hidden"><button class="btn ghost small" id="logo-pick">Change crest</button>${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}</div>` : ""}
     <p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p>

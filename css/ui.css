@@ -572,3 +572,50 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .state, .empty { gap: var(--s-1); }
 .state-title, .empty { letter-spacing: var(--ls-wide); }
 .state.is-offline { border-color: var(--warn-line); color: var(--warn-ink); }
+
+/* ---------------------------------------------------------------------
+   THE ANNIVERSARY BANNER
+
+   Full-bleed, gold, and the first thing on the page in a decade season.
+   The sheen is one slow pass - enough to catch the eye once as the page
+   settles, not a marquee. It is also the only gold in the app, which is
+   what makes it read as an occasion rather than as another accent.
+   --------------------------------------------------------------------- */
+.dfl-anniv {
+  position: relative;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center; gap: var(--s-3);
+  margin: 0 calc(var(--s-4) * -1) var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid color-mix(in srgb, var(--milestone) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--milestone) 55%, transparent);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--milestone) 16%, transparent),
+      color-mix(in srgb, var(--milestone) 6%, transparent));
+}
+.dfl-anniv-text {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--milestone);
+  text-align: center;
+}
+.dfl-anniv-star { color: var(--milestone); font-size: var(--fs-label); opacity: .8; }
+/* The shine: a single pass of light across the band, then still. */
+.dfl-anniv::after {
+  content: "";
+  position: absolute; inset: 0 auto 0 0; width: 45%;
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--milestone) 26%, transparent), transparent);
+  transform: translateX(-120%);
+  animation: dfl-shine 2.4s var(--ease) .5s 1 forwards;
+}
+@keyframes dfl-shine { to { transform: translateX(320%) } }
+@media (prefers-reduced-motion: reduce) { .dfl-anniv::after { display: none } }
+
+/* The crest at the foot of home was shrunk too far in the polish pass - it
+   is the identity block, so it should be legible artwork, not a favicon. */
+#home-wrap .hero-crest { width: 232px; max-width: 64vw; }
