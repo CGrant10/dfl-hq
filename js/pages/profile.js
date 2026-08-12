@@ -159,6 +159,22 @@ function initials(name) {
 
 // ------------------------------- career -------------------------------
 
+/*
+  Seasons this member actually won.
+
+  The guard on userId is the whole point. A member with no Sleeper account
+  linked has sleeper_user_id null, and a season nobody has won yet - 2019 was
+  never recorded, and the current season is not over - has champion_user_id
+  null. `null === null` is true, so the plain comparison this replaced handed
+  every unlinked member a championship for every unwon season. It is exactly
+  how a name typed in to get somebody onto a golf card ended up holding the
+  2019 title.
+*/
+function seasonsWon(leagues, field, userId) {
+  if (userId == null) return [];
+  return leagues.filter((l) => l[field] != null && l[field] === userId);
+}
+
 function careerTotals(seasons, leagues, userId) {
   const wins   = sum(seasons, "wins");
   const losses = sum(seasons, "losses");
@@ -172,8 +188,8 @@ function careerTotals(seasons, leagues, userId) {
     pointsFor: sum(seasons, "points_for"),
     avgFinish: ranked.length ? ranked.reduce((t, s) => t + s.rank, 0) / ranked.length : null,
     playoffs:  seasons.filter((s) => s.made_playoffs).length,
-    titles:    leagues.filter((l) => l.champion_user_id === userId).length,
-    runnerUps: leagues.filter((l) => l.runner_up_user_id === userId).length,
+    titles:    seasonsWon(leagues, "champion_user_id", userId).length,
+    runnerUps: seasonsWon(leagues, "runner_up_user_id", userId).length,
   };
 }
 
@@ -213,8 +229,8 @@ function awardsCard(m) {
 
 function historyCard(seasons, leagues, userId) {
   if (!seasons.length) return "";
-  const champYears  = new Set(leagues.filter((l) => l.champion_user_id === userId).map((l) => l.season));
-  const runnerYears = new Set(leagues.filter((l) => l.runner_up_user_id === userId).map((l) => l.season));
+  const champYears  = new Set(seasonsWon(leagues, "champion_user_id", userId).map((l) => l.season));
+  const runnerYears = new Set(seasonsWon(leagues, "runner_up_user_id", userId).map((l) => l.season));
 
   return `
     <div class="card">

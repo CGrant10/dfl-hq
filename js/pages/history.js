@@ -310,6 +310,13 @@ function allTimeView(data) {
   const byUser = groupBy(data.standings, "sleeper_user_id");
 
   const careers = [...byUser.entries()]
+    /* An owner-less standings row is not a career. There is one in the data,
+       and `titles` above has a null key holding every unwon season (2019 was
+       never recorded, the current one is not over) - so if a Sleeper user row
+       ever turned up with no id, this would pair the two and invent an owner
+       called nobody with a fistful of championships. Same null-equality trap
+       that used to hand unlinked members the 2019 title. */
+    .filter(([userId]) => userId != null)
     // hidden Sleeper accounts are excluded from the league record books
     .filter(([userId]) => data.users.some((u) => u.sleeper_user_id === userId))
     .map(([userId, seasons]) => {
