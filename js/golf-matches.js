@@ -32,6 +32,7 @@ import { loadMembers } from "./members.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
          dayPoints, pointsFootnote, pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
+import { shareBoard } from "./golf-share.js";
 
 const POLL_MS = 15000;
 let host = null, timer = 0, outingId = null;
@@ -53,6 +54,7 @@ function styles() {
 .gpr.is-open{border-style:dashed;color:var(--muted)}
 .golf-points-foot{padding:0 13px 12px;text-align:center;font-size:10.5px;color:var(--muted)}
 .golf-points-lead{padding:9px 13px;border-top:1px solid var(--line-soft);text-align:center;font-size:11.5px;font-weight:900;background:var(--bg-3)}
+.gp-share{padding:10px 13px;border-top:1px solid var(--line-soft);display:flex;justify-content:center}
 
 .golf-round{padding:0;overflow:hidden}
 .gr-head{display:flex;align-items:center;gap:9px;padding:12px 13px;border-bottom:1px solid var(--line);background:var(--bg-3)}
@@ -110,12 +112,14 @@ const scoringOf = (round) => (round?.scoring === "match" ? "match" : "strokes");
 
 async function load(id) {
   const none = { data: [], error: null };
-  const [roundsRes, matchesRes, teamsRes, partsRes, members] = await Promise.all([
+  const [roundsRes, matchesRes, teamsRes, partsRes, members, outingRes] = await Promise.all([
     db().from("golf_rounds").select("id,round_number,name,format,holes,scoring").eq("outing_id", id).order("round_number"),
     db().from("golf_matches").select("id,match_number,round_id").eq("outing_id", id).order("match_number"),
     db().from("golf_teams").select("id,name,color,sort_order").eq("outing_id", id).order("sort_order"),
     db().from("golf_participants").select("id,member_id,guest_name,team_id,pick_number,sort_order").eq("outing_id", id),
     loadMembers().catch(() => []),
+    /* Only for the shared image's headline - the page has its own header. */
+    db().from("golf_outings").select("id,name,course,event_date").eq("id", id).maybeSingle(),
   ]);
   if (roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error) {
     throw roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error;
@@ -193,6 +197,7 @@ async function load(id) {
     parts: partsRes.data || [],
     names,
     takenByRound,
+    outing: outingRes?.data || null,
   };
 }
 
@@ -225,6 +230,7 @@ function board(data) {
     ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}
     ${foot ? `<div class="golf-points-foot">${esc(foot)}</div>` : ""}
     ${lead ? `<div class="golf-points-lead">${lead}</div>` : ""}
+    <div class="gp-share"><button class="btn ghost small" id="gb-share">Share the board</button></div>
   </section>`;
 }
 
@@ -426,6 +432,18 @@ async function draw() {
 
 /* Every admin button on the card, and a redraw after each one. */
 function wire() {
+  /*
+    Its own listener, and deliberately NOT async. navigator.share has to be
+    called in the same task as the tap that asked for it, and an async handler
+    that awaits anything on the way there spends the gesture - on iOS that is
+    the difference between the share sheet opening and a NotAllowedError. See
+    the note at the top of share.js.
+  */
+  host.addEventListener("click", (e) => {
+    if (!e.target.closest("#gb-share") || !data) return;
+    toast(shareBoard(data, data.outing));
+  });
+
   host.addEventListener("change", async (e) => {
     const select = e.target.closest("[data-seat]");
     if (!select) return;
