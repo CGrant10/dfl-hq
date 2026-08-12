@@ -177,7 +177,19 @@ function scoreMap(scores,pending){const map=new Map(scores.map(s=>[Number(s.hole
 if(pending)for(const [hole,strokes] of pending){if(strokes==null)map.delete(hole);else map.set(hole,{...(map.get(hole)||{}),hole,strokes});}
 return map;}
 function total(map,start,end){let t=0;for(let h=start;h<=end;h++)t+=num(map.get(h)?.strokes);return t;}
-export function courseHole(holes,h){return h>9?h-9:h}
+/*
+  Which hole of the COURSE hole h is.
+
+  A 9-hole course played twice stores the second lap as 10-18, so hole 12 is
+  the 3rd tee and takes its par and yardage. This used to wrap unconditionally,
+  which was harmless while every round was a nine played twice - and became a
+  real bug the moment rounds could be 18, because on an actual 18-hole course
+  it would have given hole 12 the 3rd's par. Only wrap when the course really
+  is nine holes.
+*/
+export function courseHole(holes,h){return (holes?.length&&holes.length<=9&&h>9)?h-9:h}
+/** True when this course is being played round twice. */
+export function wrapsAround(holes){return !!(holes?.length&&holes.length<=9)}
 export function holePar(holes,h){const n=courseHole(holes,h);return Number(holes.find(x=>Number(x.hole)===n)?.par)||4}
 export function holeYards(courseHoles,h){const n=courseHole(courseHoles,h);return Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_men)||Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_women)||0}
 function playedPar(map,holes,start,end){let p=0;for(let h=start;h<=end;h++)if(map.has(h))p+=holePar(holes,h);return p}

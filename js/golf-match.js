@@ -38,7 +38,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
-import { holeResult, fmtToPar, holePar, holeYards } from "./golf-scorecard.js";
+import { holeResult, fmtToPar, holePar, holeYards, courseHole, wrapsAround } from "./golf-scorecard.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginLabel,
          pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
@@ -121,6 +121,7 @@ function styles() {
 .bh+.bh{border-top:1px solid var(--line)}
 .bh-head{display:flex;align-items:baseline;gap:8px;padding:5px 10px;background:var(--bg-3);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
 .bh-head b{font-size:15px;color:var(--text);font-variant-numeric:tabular-nums}
+.bh-head .again{font-weight:800;color:var(--muted);font-size:11px}
 .bh-head .par{margin-left:auto}
 /* minmax(0,1fr) on the name, never a bare 1fr: a long pair of names must be
    allowed to ellipsis rather than shove the input off the card. */
@@ -261,30 +262,50 @@ function statusLine(sides, editable, stale) {
 
 /* The paper card: a row per side, tap a hole to jump to it. The lower score
    of the two is tinted so the round reads off it at a glance. */
-function strip(card, maps, names) {
-  const nums = Array.from({ length: holeCount(card) }, (_, i) => i + 1);
+function stripTable(card, maps, names, start, end, label) {
+  const nums = [];
+  for (let h = start; h <= end; h++) nums.push(h);
   const par = nums.reduce((a, h) => a + holePar(card.holes, h), 0);
+  const state = running(maps, holeCount(card));
+
   const row = (map, other, i) => {
     const sum = nums.reduce((a, h) => a + num(map.get(h)), 0);
     return `<tr class="row-s"><th class="lbl" title="${esc(names[i])}">${esc(names[i])}</th>${nums.map((h) => {
       const v = num(map.get(h)), o = num(other.get(h));
       return `<td data-jump="${h}" class="${v && o && v < o ? "won" : ""}">${v || "·"}</td>`;
-    }).join("")}<td class="sub" data-sub="${i}">${sum || "—"}</td></tr>`;
+    }).join("")}<td class="sub" data-sub="${i}:${start}">${sum || "—"}</td></tr>`;
   };
   /* Match play gets the row a paper card would have: where the match stood
-     after each hole. Without it the card shows nine numbers and no way to see
-     that somebody went three up at the 5th. */
-  const state = running(maps, holeCount(card));
+     after each hole. Without it the card is a wall of numbers with no way to
+     see that somebody went three up at the 5th. */
   const matchRow = scoringOf(card) !== "match" ? "" : `<tr class="row-m"><th class="lbl">Match</th>${nums.map((h) => {
     const v = state.get(h);
     return `<td data-mp="${h}">${v == null ? "·" : upLabel(v)}</td>`;
   }).join("")}<td class="sub"></td></tr>`;
 
   return `<table class="dfl-battle-tbl">
-    <tr class="row-h"><th class="lbl">Hole</th>${nums.map((h) => `<td>${h}</td>`).join("")}<td class="sub">TOT</td></tr>
+    <tr class="row-h"><th class="lbl">Hole</th>${nums.map((h) => `<td>${h}</td>`).join("")}<td class="sub">${label}</td></tr>
     <tr class="row-p"><th class="lbl">Par</th>${nums.map((h) => `<td>${holePar(card.holes, h)}</td>`).join("")}<td class="sub">${par}</td></tr>
     ${row(maps[0], maps[1], 0)}${row(maps[1], maps[0], 1)}${matchRow}</table>`;
 }
+
+/*
+  Nine columns at a time, never eighteen.
+
+  Eighteen columns on a phone is either unreadable or a sideways scroll, and
+  a scorecard has had two halves with their own totals since long before
+  anybody put one on a screen. So a full round is drawn as OUT and IN, the
+  same as the team card.
+*/
+function strip(card, maps, names) {
+  const holes = holeCount(card);
+  if (holes <= 9) return stripTable(card, maps, names, 1, holes, "TOT");
+  return stripTable(card, maps, names, 1, 9, "OUT")
+       + stripTable(card, maps, names, 10, holes, "IN");
+}
+
+/** The halves the strip is split into - also what recalc has to keep in step. */
+const nineStarts = (holes) => (holes <= 9 ? [1] : [1, 10]);
 
 function holeBlock(h, card, maps, names, editable) {
   const par = holePar(card.holes, h);
@@ -302,7 +323,10 @@ function holeBlock(h, card, maps, names, editable) {
       <span class="bh-res ${r.cls}" data-res="${i}:${h}">${r.label}</span>
     </div>`;
   }).join("");
-  return `<div class="bh" id="bhole-${h}"><div class="bh-head"><b>${h}</b><span>${yards ? `${yards} yd` : ""}</span><span class="par">Par ${par}</span></div>${rows}</div>`;
+  /* On a nine played twice, say which tee you are actually standing on: the
+     card reads 12 while the sign on the tee says 3. */
+  const again = h > 9 && wrapsAround(card.holes) ? `<span class="again">(${courseHole(card.holes, h)})</span>` : "";
+  return `<div class="bh" id="bhole-${h}"><div class="bh-head"><b>${h}</b>${again}<span>${yards ? `${yards} yd` : ""}</span><span class="par">Par ${par}</span></div>${rows}</div>`;
 }
 
 function finalBlock(maps, names, card, r) {
@@ -367,10 +391,15 @@ function recalc(root, card) {
     if (cell) { cell.textContent = v || "·"; cell.className = v && other && v < other ? "won" : ""; }
   }
   for (let i = 0; i < 2; i++) {
+    // Each half of the card carries its own total, so each is recomputed.
+    for (const start of nineStarts(holes)) {
+      let nine = 0;
+      for (let h = start; h <= Math.min(start + 8, holes); h++) nine += num(maps[i].get(h));
+      const sub = root.querySelector(`[data-sub="${i}:${start}"]`);
+      if (sub) sub.textContent = nine || "—";
+    }
     let s = 0, p = 0;
     for (let h = 1; h <= holes; h++) if (num(maps[i].get(h))) { s += num(maps[i].get(h)); p += holePar(card.holes, h); }
-    const sub = root.querySelector(`[data-sub="${i}"]`);
-    if (sub) sub.textContent = s || "—";
     const tot = root.querySelector(`[data-total="${i}"]`);
     if (tot) tot.textContent = s || "—";
     const tp = root.querySelector(`[data-topar="${i}"]`);

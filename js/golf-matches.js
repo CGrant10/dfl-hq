@@ -318,7 +318,19 @@ function roundCard(data, entry) {
         <small>${key === "match" ? "hole by hole" : "fewest strokes"}</small></button>`).join("")}
   </div>`;
 
+  /*
+    Nine or eighteen, per round. A scramble tends to be a full round while
+    the singles are a nine, and either way it is the round that decides -
+    every card and every result reads its hole count from here.
+  */
+  const holesSwitch = `<div class="gr-scoring" role="group" aria-label="How many holes ${esc(label)} is">
+    ${[9, 18].map((n) => `
+      <button type="button" class="gs-opt ${holesOf(round) === n ? "is-on" : ""}" data-holes="${round.id}:${n}" aria-pressed="${holesOf(round) === n}">${n} holes
+        <small>${n === 9 ? "a nine" : "the full round"}</small></button>`).join("")}
+  </div>`;
+
   const adminBlock = !admin ? "" : `<div class="gb-admin">
+    ${holesSwitch}
     ${scoringSwitch}
     <div class="arena-admin">
       ${singles ? "" : `<button class="btn small" data-build-pairs="${round.id}">${battles.length ? "Rebuild the pairs" : "Build the pairs"}</button>`}
@@ -460,13 +472,14 @@ function wire() {
   host.addEventListener("click", async (e) => {
     const el = (attr) => e.target.closest(`[${attr}]`);
     const scoring = el("data-scoring");
+    const holes = el("data-holes");
     const addRound = el("data-add-round");
     const build = el("data-build-pairs");
     const addMatch = el("data-add-match");
     const clearRound = el("data-clear-round");
     const dropRound = el("data-drop-round");
     const dropMatch = el("data-drop-match");
-    const button = scoring || addRound || build || addMatch || clearRound || dropRound || dropMatch;
+    const button = scoring || holes || addRound || build || addMatch || clearRound || dropRound || dropMatch;
     if (!button) return;
 
     const run = async (fn) => {
@@ -474,6 +487,29 @@ function wire() {
       try { await fn(); } catch (err) { toast(err.message || "That did not work", true); }
       await draw();
     };
+
+    if (holes) {
+      const [roundId, want] = holes.dataset.holes.split(":");
+      const entry = data.rounds.find((r) => String(r.round.id) === String(roundId));
+      if (holesOf(entry?.round) === Number(want)) return;         // already that long
+      /*
+        Strokes are never touched by this, but what they ADD UP TO changes, so
+        say so rather than silently moving the goalposts: stretching a finished
+        nine to 18 takes its point back until the second nine is in, and
+        shortening a round leaves holes 10-18 in the database, ignored.
+      */
+      const scored = entry?.battles.some((b) => b.sides.some((s) => s.strokes.size));
+      if (scored && !confirm(Number(want) === 18
+        ? `Make ${entry?.round.name || "this round"} 18 holes? The strokes already entered stay, but nothing is decided until both sides have all 18 — so any point already awarded goes back on the table.`
+        : `Make ${entry?.round.name || "this round"} 9 holes? Anything entered for holes 10–18 stays in the database but stops counting.`)) return;
+      return run(async () => {
+        const { data: rows, error } = await db().from("golf_rounds")
+          .update({ holes: Number(want) }).eq("id", roundId).select("id");
+        if (error) throw error;
+        if (!rows?.length) throw new Error("The database refused that. Sign in as admin and try again.");
+        toast(`${entry?.round.name || "Round"} is now ${want} holes`);
+      });
+    }
 
     if (scoring) {
       const [roundId, want] = scoring.dataset.scoring.split(":");

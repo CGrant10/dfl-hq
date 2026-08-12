@@ -100,18 +100,32 @@ function shared(a, b, holes) {
 
   Level after nine is still level, and still worth nothing to either side.
 */
-function matchPlay(a, b, holes, rows, thru, postedA, postedB) {
+function matchPlay(a, b, holes, rows, allThru, postedA, postedB) {
   let wonA = 0, wonB = 0, halvedHoles = 0;
   const running = [];
-  for (const r of rows) {
+  let thru = 0, closedOut = false;
+
+  /*
+    Walk the holes IN ORDER and stop where the match was decided.
+
+    Counting the whole card instead reported a match won on the 10th as "18
+    up" if the pair played the last eight out anyway - and a golfer will tell
+    you it was 10&8. The margin is a fact about where the match ENDED, not
+    about how many holes got written down afterwards, so the loop stops the
+    moment one side is up by more holes than are left.
+  */
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
     if (r.x < r.y) wonA++;
     else if (r.y < r.x) wonB++;
     else halvedHoles++;
     running.push({ hole: r.hole, up: wonA - wonB });
+    thru = i + 1;
+    if (Math.abs(wonA - wonB) > holes - thru) { closedOut = true; break; }
   }
+
   const up = Math.abs(wonA - wonB);
   const remaining = Math.max(0, holes - thru);
-  const closedOut = thru > 0 && up > remaining;
   const complete = closedOut || thru >= holes;
   return {
     scoring: "match", holes, thru, postedA, postedB,
