@@ -29,8 +29,8 @@
 import { db, isAdmin } from "./supabase.js";
 import { esc, empty, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
-import { DEFAULT_ROUND_HOLES, battleResult, standingLine, teamPoints, dayPoints,
-         pointsFootnote, pairName } from "./golf-battle.js";
+import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
+         dayPoints, pointsFootnote, pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 
 const POLL_MS = 15000;
@@ -75,6 +75,13 @@ function styles() {
 .gb-stand.is-done{color:var(--accent)}
 .gb-arrow{font-size:20px;color:var(--muted);text-align:right}
 .gb-admin{padding:12px 13px;border-top:1px solid var(--line)}
+.gr-scoring{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:11px}
+.gs-opt{display:grid;gap:2px;padding:9px 8px;border:1px solid var(--line);border-radius:9px;background:var(--bg-2);color:var(--text);font:inherit;font-size:12px;font-weight:900;text-align:center;min-height:46px}
+.gs-opt small{font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+/* The chosen one is filled, not merely outlined: two outlined buttons side by
+   side never say which is the state and which is the offer. */
+.gs-opt.is-on{border-color:var(--accent);background:var(--hover-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.gs-opt.is-on small{color:var(--accent)}
 .gb-seats{display:grid;gap:9px;margin-top:9px}
 .gb-seat-group{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--bg-2)}
 .gb-seat-head{display:flex;align-items:center;gap:8px}
@@ -91,11 +98,14 @@ function styles() {
 
 const holesOf = (round) => Number(round?.holes) || DEFAULT_ROUND_HOLES;
 const seatsOf = (round) => (round?.format === "singles" ? 1 : 2);
+/* Rounds created before scoring was a choice read as stroke play, which is
+   what they were. */
+const scoringOf = (round) => (round?.scoring === "match" ? "match" : "strokes");
 
 async function load(id) {
   const none = { data: [], error: null };
   const [roundsRes, matchesRes, teamsRes, partsRes, members] = await Promise.all([
-    db().from("golf_rounds").select("id,round_number,name,format,holes").eq("outing_id", id).order("round_number"),
+    db().from("golf_rounds").select("id,round_number,name,format,holes,scoring").eq("outing_id", id).order("round_number"),
     db().from("golf_matches").select("id,match_number,round_id").eq("outing_id", id).order("match_number"),
     db().from("golf_teams").select("id,name,color,sort_order").eq("outing_id", id).order("sort_order"),
     db().from("golf_participants").select("id,member_id,guest_name,team_id,pick_number,sort_order").eq("outing_id", id),
@@ -150,7 +160,9 @@ async function load(id) {
     return {
       ...m,
       sides: built,
-      result: built.length === 2 ? battleResult(built[0].strokes, built[1].strokes, holesOf(round)) : null,
+      result: built.length === 2
+        ? battleResult(built[0].strokes, built[1].strokes, holesOf(round), scoringOf(round))
+        : null,
     };
   };
 
@@ -268,12 +280,25 @@ function roundCard(data, entry) {
   const { round, battles } = entry;
   const admin = isAdmin();
   const singles = round.format === "singles";
+  const scoring = scoringOf(round);
   const pts = teamPoints(battles.filter((b) => b.sides.length === 2));
   const teams = data.teams.length === 2 ? data.teams : [];
   const scored = battles.some((b) => b.sides.some((s) => s.strokes.size));
   const label = round.name || `Round ${round.round_number}`;
 
+  /*
+    Stroke play or match play, switchable at any time - including mid-round.
+    Both are read off the same strokes, so flipping it re-reads the nine
+    rather than editing anything, and switching back is free.
+  */
+  const scoringSwitch = `<div class="gr-scoring" role="group" aria-label="How ${esc(label)} is won">
+    ${Object.entries(SCORING_NAMES).map(([key, name]) => `
+      <button type="button" class="gs-opt ${scoring === key ? "is-on" : ""}" data-scoring="${round.id}:${key}" aria-pressed="${scoring === key}">${name}
+        <small>${key === "match" ? "hole by hole" : "fewest strokes"}</small></button>`).join("")}
+  </div>`;
+
   const adminBlock = !admin ? "" : `<div class="gb-admin">
+    ${scoringSwitch}
     <div class="arena-admin">
       ${singles ? "" : `<button class="btn small" data-build-pairs="${round.id}">${battles.length ? "Rebuild the pairs" : "Build the pairs"}</button>`}
       <button class="btn ghost small" data-add-match="${round.id}">Add a match</button>
@@ -293,7 +318,7 @@ function roundCard(data, entry) {
   return `<section class="card golf-round" data-collapse="golf-round-${round.round_number}" data-collapse-title="${esc(label)}" data-collapse-badge="${esc(badge)}">
     <div class="gr-head">
       <div class="gr-head-main"><strong>${esc(label)}</strong>
-        <small>${singles ? "Singles" : "2v2"} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>
+        <small>${singles ? "Singles" : "2v2"} · ${esc(SCORING_NAMES[scoring])} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>
     </div>
     <div class="gb-list">${battles.length ? battles.map((b) => matchRow(b, round)).join("") : empty(admin ? "No matches in this round yet." : "Not set up yet.")}</div>
     ${adminBlock}
@@ -401,13 +426,14 @@ function wire() {
 
   host.addEventListener("click", async (e) => {
     const el = (attr) => e.target.closest(`[${attr}]`);
+    const scoring = el("data-scoring");
     const addRound = el("data-add-round");
     const build = el("data-build-pairs");
     const addMatch = el("data-add-match");
     const clearRound = el("data-clear-round");
     const dropRound = el("data-drop-round");
     const dropMatch = el("data-drop-match");
-    const button = addRound || build || addMatch || clearRound || dropRound || dropMatch;
+    const button = scoring || addRound || build || addMatch || clearRound || dropRound || dropMatch;
     if (!button) return;
 
     const run = async (fn) => {
@@ -415,6 +441,22 @@ function wire() {
       try { await fn(); } catch (err) { toast(err.message || "That did not work", true); }
       await draw();
     };
+
+    if (scoring) {
+      const [roundId, want] = scoring.dataset.scoring.split(":");
+      const entry = data.rounds.find((r) => String(r.round.id) === String(roundId));
+      if (scoringOf(entry?.round) === want) return;      // already how it is read
+      return run(async () => {
+        /* select("id") back, because row level security turns a refused write
+           into zero rows and a cheerful 204 - without asking for the row we
+           would report a change that never happened. */
+        const { data: rows, error } = await db().from("golf_rounds")
+          .update({ scoring: want }).eq("id", roundId).select("id");
+        if (error) throw error;
+        if (!rows?.length) throw new Error("The database refused that. Sign in as admin and try again.");
+        toast(`${entry?.round.name || "Round"} is now ${SCORING_NAMES[want].toLowerCase()}`);
+      });
+    }
 
     if (addRound) {
       return run(async () => {

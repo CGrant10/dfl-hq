@@ -12,19 +12,26 @@
    Rounds 1 and 2 are 2v2s - and the pairs can be completely different
    between them - and round 3 is singles.
 
-   Every match, whatever its format, is won by the side with the FEWEST
-   STROKES over that round's nine, and the winner puts one point on their
-   team's board. Level is level: a halved match is worth nothing to either
-   side, so a nine can finish 2-0-with-one-halved, or 1-1, or 0-0. Points
-   from all three rounds pile onto the same two teams, and every round keeps
-   its own, so the nine just played is still readable after the next starts.
+   Each round is won under one of two scorings, chosen per round:
+
+     STROKE PLAY   fewest strokes over the nine
+     MATCH PLAY    hole by hole, most holes won - and a match three up with
+                   two to play is over where it stands
+
+   Either way the winning side puts one point on their team's board, and
+   level is level: a halved match is worth nothing to either side, so a nine
+   can finish 2-0-with-one-halved, or 1-1, or 0-0. Points from all three
+   rounds pile onto the same two teams, and every round keeps its own, so
+   the nine just played is still readable after the next starts.
 
    TWO RULES WORTH BEING EXPLICIT ABOUT
-   1. Only holes BOTH sides have posted are compared. Otherwise a pair who
-      had written down five holes would show as losing by 20 to a pair who
+   1. Only holes BOTH sides have posted are compared. Otherwise a side who
+      had written down five holes would show as losing by 20 to a side who
       had written down one.
-   2. The point is not awarded until both cards are full. "Ahead with two
-      to play" is not a win, and a card with a hole missing is not a round.
+   2. A point is not awarded until the match is DECIDED. Under stroke play
+      that means both cards are full - "ahead with two to play" is not a win
+      and a card with a hole missing is not a round. Under match play it can
+      come earlier, because 3&2 genuinely is the end of the match.
    ===================================================================== */
 
 /*
@@ -65,21 +72,96 @@ export function total(strokes, holes = DEFAULT_ROUND_HOLES) {
  *          diff is a minus b, so negative means slot 1 is ahead. lead is
  *          how many strokes the leader is up by, always positive.
  */
-export function battleResult(a, b, holes = DEFAULT_ROUND_HOLES) {
-  let sa = 0, sb = 0, thru = 0;
+export const SCORING_NAMES = { strokes: "Stroke play", match: "Match play" };
+
+/** The holes both sides have written down, which are the only comparable ones. */
+function shared(a, b, holes) {
+  const rows = [];
   for (let h = 1; h <= holes; h++) {
     const x = num(a.get(h)), y = num(b.get(h));
-    if (!x || !y) continue;          // rule 1: comparable holes only
-    sa += x; sb += y; thru++;
+    if (!x || !y) continue;          // rule 1
+    rows.push({ hole: h, x, y });
   }
-  const postedA = posted(a, holes), postedB = posted(b, holes);
+  return rows;
+}
+
+/*
+  MATCH PLAY
+
+  Holes, not strokes: take a hole and go one up, and a 9 on one hole costs
+  exactly as much as a 5. Two things fall out of that and both matter.
+
+  1. A match can END EARLY. Three up with two to play is over - nobody can
+     catch up - so "complete" here means DECIDED, not "all nine written
+     down". Requiring nine would refuse to award a point for a match that
+     everybody walked in from on the 7th.
+  2. The margin is quoted the golf way: 3&2 for three up with two to play,
+     or "2 up" if it went the distance.
+
+  Level after nine is still level, and still worth nothing to either side.
+*/
+function matchPlay(a, b, holes, rows, thru, postedA, postedB) {
+  let wonA = 0, wonB = 0, halvedHoles = 0;
+  const running = [];
+  for (const r of rows) {
+    if (r.x < r.y) wonA++;
+    else if (r.y < r.x) wonB++;
+    else halvedHoles++;
+    running.push({ hole: r.hole, up: wonA - wonB });
+  }
+  const up = Math.abs(wonA - wonB);
+  const remaining = Math.max(0, holes - thru);
+  const closedOut = thru > 0 && up > remaining;
+  const complete = closedOut || thru >= holes;
+  return {
+    scoring: "match", holes, thru, postedA, postedB,
+    wonA, wonB, halvedHoles, running, up, remaining, closedOut,
+    /* Negative means slot 1 is ahead, the same convention stroke play uses,
+       so every caller can pick the leader the same way for both. */
+    diff: wonB - wonA,
+    lead: up,
+    a: total(a, holes), b: total(b, holes),
+    complete,
+    winner: complete && up > 0 ? (wonA > wonB ? 1 : 2) : null,
+    halved: complete && up === 0,
+  };
+}
+
+function strokePlay(a, b, holes, rows, thru, postedA, postedB) {
+  let sa = 0, sb = 0;
+  for (const r of rows) { sa += r.x; sb += r.y; }
   const complete = postedA >= holes && postedB >= holes;
   const diff = sa - sb;
   return {
-    holes, thru, a: sa, b: sb, diff, lead: Math.abs(diff), postedA, postedB, complete,
+    scoring: "strokes", holes, thru, postedA, postedB,
+    a: sa, b: sb, diff, lead: Math.abs(diff),
+    complete,
     winner: complete && diff !== 0 ? (diff < 0 ? 1 : 2) : null,   // rule 2
     halved: complete && diff === 0,
   };
+}
+
+/**
+ * Where a match stands, under whichever scoring its round uses.
+ * @param {Map<number,number>} a  slot 1's strokes by hole
+ * @param {Map<number,number>} b  slot 2's strokes by hole
+ * @param {number} holes          the round's hole count
+ * @param {"strokes"|"match"} scoring
+ */
+export function battleResult(a, b, holes = DEFAULT_ROUND_HOLES, scoring = "strokes") {
+  const rows = shared(a, b, holes);
+  const thru = rows.length;
+  const postedA = posted(a, holes), postedB = posted(b, holes);
+  return scoring === "match"
+    ? matchPlay(a, b, holes, rows, thru, postedA, postedB)
+    : strokePlay(a, b, holes, rows, thru, postedA, postedB);
+}
+
+/** "3&2", "2 up", or "by 4" for stroke play. */
+export function marginLabel(r) {
+  if (r.scoring !== "match") return `by ${r.lead}`;
+  if (r.closedOut && r.remaining > 0) return `${r.up}&${r.remaining}`;
+  return `${r.up} up`;
 }
 
 /**
@@ -92,15 +174,19 @@ export function standingLine(r, nameA, nameB) {
   const leader = r.diff < 0 ? nameA : nameB;
   if (r.complete) {
     if (r.halved) return "Halved — no point";
-    return `${leader} won by ${r.lead}`;
+    return `${leader} won ${marginLabel(r)}`;
   }
   if (!r.thru) {
-    /* Somebody has started but the other pair has posted nothing, so there
+    /* Somebody has started but the other side has posted nothing, so there
        is still nothing to compare - say which, or it reads as a dead card. */
     if (r.postedA || r.postedB) {
       return `Waiting on ${r.postedA ? nameB : nameA}`;
     }
     return "Not started";
+  }
+  if (r.scoring === "match") {
+    if (!r.up) return `All square thru ${r.thru}`;
+    return `${leader} ${r.up} up thru ${r.thru}`;
   }
   if (!r.diff) return `All square thru ${r.thru}`;
   return `${leader} by ${r.lead} thru ${r.thru}`;

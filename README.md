@@ -518,9 +518,27 @@ rounds of nine holes on the same nine:
 | 2 | 2v2 — pairs can be anybody | one per match |
 | 3 | Singles, built by hand | one per match |
 
-Every match, whatever its format, is won by the side with the **fewest strokes
-over that round's nine**. Level is level: a halved match is worth nothing to
-either side, so a nine can finish 2–0 with one halved, or 1–1, or 0–0.
+Level is level under either scoring: a halved match is worth nothing to either
+side, so a nine can finish 2–0 with one halved, or 1–1, or 0–0.
+
+### Stroke play or match play
+
+Each round card carries a **Stroke play / Match play** switch, independent of
+the format — a 2v2 nine can be match play and a singles nine can be stroke play.
+
+| | How a match is won | When it ends |
+|---|---|---|
+| **Stroke play** | fewest strokes over the nine | when both cards are full |
+| **Match play** | most holes won; a big number on one hole costs no more than a small one | as soon as somebody is up by more holes than are left — **3&2** is three up with two to play |
+
+Both are computed from the **same strokes**, so the switch can be flipped
+mid-round — even after a card is finished — and nothing is edited. It re-reads
+the nine. That difference is not academic: a card where somebody takes a 12 on
+the first and then wins five holes is a **1 up win** under match play and a
+**6-stroke loss** under stroke play.
+
+A match-play card gains the running row a paper card has — `1UP 2UP 2UP 3UP` —
+shown from the top side's point of view, with the strip header naming whose.
 
 **The board** shows the running team total with each round's own tally beneath
 it, so the nine just played stays readable after the next one starts. That is
@@ -553,9 +571,11 @@ when the course has signal — see `js/golf-offline.js`.
 
 **Two rules worth knowing.**
 
-- The point is not awarded until **both** cards are full. "One up with one to
-  play" is not a win, and a card with a hole missing is not a round — the match
-  reads "Dave & Matt: 1 to go" instead of declaring a winner.
+- The point is not awarded until the match is **decided**. Under stroke play
+  that means both cards are full — "one up with one to play" is not a win, and a
+  card with a hole missing is not a round, so it reads "Dave & Matt: 1 to go"
+  instead of declaring a winner. Under match play it can come earlier, because
+  3&2 genuinely is the end of the match.
 - Only holes **both** sides have posted are compared while a round is live, so a
   pair five holes in never appear to be losing by twenty to a pair one hole in.
 

@@ -18,6 +18,11 @@
    rather than assuming it. Measuring a nine against 18 would never award
    its point; measuring 18 against 9 would award it at the turn.
 
+   THE SCORING COMES FROM THE ROUND TOO - stroke play or match play. Same
+   strokes either way; the difference is what they add up to, so match play
+   gains the running UP/DN row a paper card carries and an outcome that can
+   arrive on the 7th hole (3&2) instead of the 9th.
+
    ONE HOLE, ONE BLOCK
      head       the hole, its yardage, its par
      two rows   each side, its strokes, what the hole was worth to them
@@ -34,7 +39,8 @@ import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { holeResult, fmtToPar, holePar, holeYards } from "./golf-scorecard.js";
-import { DEFAULT_ROUND_HOLES, battleResult, standingLine, pairName } from "./golf-battle.js";
+import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginLabel,
+         pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
          onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush,
@@ -43,6 +49,26 @@ import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
 const SAVE_DELAY = 600;
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const holeCount = (card) => Number(card.round?.holes) || DEFAULT_ROUND_HOLES;
+const scoringOf = (card) => (card.round?.scoring === "match" ? "match" : "strokes");
+
+/*
+  Match play, hole by hole, from side 1's point of view - the running state a
+  paper match-play card carries down its middle. Only holes both sides have
+  posted move it, so a card being caught up at the turn does not read as a
+  collapse.
+*/
+function running(maps, holes) {
+  const state = new Map();
+  let up = 0;
+  for (let h = 1; h <= holes; h++) {
+    const x = num(maps[0].get(h)), y = num(maps[1].get(h));
+    if (!x || !y) continue;
+    if (x < y) up++; else if (y < x) up--;
+    state.set(h, up);
+  }
+  return state;
+}
+const upLabel = (v) => (v === 0 ? "AS" : `${Math.abs(v)}${v > 0 ? "UP" : "DN"}`);
 
 function styles() {
   if (document.getElementById("dfl-battle-style")) return;
@@ -81,6 +107,10 @@ function styles() {
 .dfl-battle-tbl th.lbl{width:56px;text-align:left;padding-left:10px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em;border-right:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dfl-battle-tbl .row-h td{background:var(--bg-3);color:var(--muted);font-size:10px}
 .dfl-battle-tbl .row-p td{color:var(--muted);font-size:10px;height:23px}
+/* "2UP" has to fit a ~29px column on a 375px phone, so it runs smaller than
+   the strokes above it - and reads as a state rather than a score. */
+.dfl-battle-tbl .row-m td{font-size:9.5px;font-weight:900;color:var(--accent);height:24px}
+.dfl-battle-tbl .row-m th.lbl{color:var(--accent)}
 .dfl-battle-tbl .sub{border-left:1px solid var(--line);background:var(--hover-soft);width:34px}
 .dfl-battle-tbl tr:last-child td,.dfl-battle-tbl tr:last-child th{border-bottom:0}
 .dfl-battle-tbl td[data-jump]{cursor:pointer}
@@ -123,7 +153,7 @@ async function fetchMatch(matchId) {
   const [sidesRes, roundRes] = await Promise.all([
     db().from("golf_match_sides").select("id,team_id,slot").eq("match_id", matchId).order("slot"),
     m.data.round_id
-      ? db().from("golf_rounds").select("id,round_number,name,format,holes").eq("id", m.data.round_id).maybeSingle()
+      ? db().from("golf_rounds").select("id,round_number,name,format,holes,scoring").eq("id", m.data.round_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   if (sidesRes.error) throw sidesRes.error;
@@ -241,10 +271,19 @@ function strip(card, maps, names) {
       return `<td data-jump="${h}" class="${v && o && v < o ? "won" : ""}">${v || "·"}</td>`;
     }).join("")}<td class="sub" data-sub="${i}">${sum || "—"}</td></tr>`;
   };
+  /* Match play gets the row a paper card would have: where the match stood
+     after each hole. Without it the card shows nine numbers and no way to see
+     that somebody went three up at the 5th. */
+  const state = running(maps, holeCount(card));
+  const matchRow = scoringOf(card) !== "match" ? "" : `<tr class="row-m"><th class="lbl">Match</th>${nums.map((h) => {
+    const v = state.get(h);
+    return `<td data-mp="${h}">${v == null ? "·" : upLabel(v)}</td>`;
+  }).join("")}<td class="sub"></td></tr>`;
+
   return `<table class="dfl-battle-tbl">
     <tr class="row-h"><th class="lbl">Hole</th>${nums.map((h) => `<td>${h}</td>`).join("")}<td class="sub">TOT</td></tr>
     <tr class="row-p"><th class="lbl">Par</th>${nums.map((h) => `<td>${holePar(card.holes, h)}</td>`).join("")}<td class="sub">${par}</td></tr>
-    ${row(maps[0], maps[1], 0)}${row(maps[1], maps[0], 1)}</table>`;
+    ${row(maps[0], maps[1], 0)}${row(maps[1], maps[0], 1)}${matchRow}</table>`;
 }
 
 function holeBlock(h, card, maps, names, editable) {
@@ -284,9 +323,17 @@ function finalBlock(maps, names, card, r) {
    cards are full, so an unfinished match says what is missing instead of
    implying somebody has won. */
 function outcomeText(r, names) {
+  const leader = r.diff < 0 ? names[0] : names[1];
   if (r.complete) {
-    if (r.halved) return `Level after ${r.holes} — no point to either team`;
-    return `${r.diff < 0 ? names[0] : names[1]} win by ${r.lead} — 1 point`;
+    if (r.halved) return `All square after ${r.holes} — no point to either team`;
+    return `${leader} win ${marginLabel(r)} — 1 point`;
+  }
+  /* Match play can be over before the card is full, so it counts down what is
+     left to play rather than what is left to write down. */
+  if (r.scoring === "match") {
+    if (!r.thru) return "No point until both sides start scoring";
+    if (!r.up) return `All square with ${r.remaining} to play`;
+    return `${leader} ${r.up} up with ${r.remaining} to play`;
   }
   const left = [r.holes - r.postedA, r.holes - r.postedB];
   if (left[0] === r.holes && left[1] === r.holes) return "No point until both cards are filled in";
@@ -329,8 +376,15 @@ function recalc(root, card) {
     const tp = root.querySelector(`[data-topar="${i}"]`);
     if (tp) tp.textContent = fmtToPar(s, p);
   }
+  if (scoringOf(card) === "match") {
+    const state = running(maps, holes);
+    for (let h = 1; h <= holes; h++) {
+      const cell = root.querySelector(`[data-mp="${h}"]`);
+      if (cell) cell.textContent = state.has(h) ? upLabel(state.get(h)) : "·";
+    }
+  }
   const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
-  const r = battleResult(maps[0], maps[1], holes);
+  const r = battleResult(maps[0], maps[1], holes, scoringOf(card));
   const thru = root.querySelector("[data-live-thru]");
   if (thru) thru.textContent = r.thru || "—";
   const standing = root.querySelector("[data-live-standing]");
@@ -371,10 +425,13 @@ async function render(root, matchId) {
      shortcut, and a guest has no member id to check against at all. */
   const editable = admin || (!!me && card.sides.some((s) =>
     s.players.some((p) => p.member_id != null && String(p.member_id) === me)));
-  const r = battleResult(maps[0], maps[1], holes);
+  const scoring = scoringOf(card);
+  const r = battleResult(maps[0], maps[1], holes, scoring);
   const singles = card.round?.format === "singles";
+  /* The scoring is in the kicker because it changes what the numbers on this
+     card mean, and it can be switched between rounds. */
   const roundLabel = card.round
-    ? `${(card.round.name || `ROUND ${card.round.round_number}`).toUpperCase()} · ${singles ? "SINGLES" : "2V2"} · MATCH ${card.match.match_number}`
+    ? `${(card.round.name || `ROUND ${card.round.round_number}`).toUpperCase()} · ${singles ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoring].toUpperCase()} · MATCH ${card.match.match_number}`
     : `MATCH ${card.match.match_number}`;
 
   root.innerHTML = `<section class="card dfl-battle-card">
@@ -387,11 +444,13 @@ async function render(root, matchId) {
     ${liveBar(names, r)}
     <div class="dfl-battle-status" data-battle-status>${statusLine(card.sides, editable, card.stale)}</div>
     ${admin ? `<div class="dfl-battle-admin"><button type="button" class="dfl-battle-clear" data-clear-battle>Clear this match</button></div>` : ""}
-    <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>Tap a hole to jump to it</span></header>
+    <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>${scoring === "match" ? `UP/DN is ${esc(names[0])}` : "Tap a hole to jump to it"}</span></header>
       <div style="overflow-x:auto">${strip(card, maps, names)}</div></section>
     <div class="dfl-holes">${Array.from({ length: holes }, (_, i) => holeBlock(i + 1, card, maps, names, editable)).join("")}</div>
     ${finalBlock(maps, names, card, r)}
-    <div class="dfl-battle-help">Fewest strokes over these ${holes} holes wins the match and puts one point on that team's board. Level is worth nothing to either side.</div>
+    <div class="dfl-battle-help">${scoring === "match"
+      ? `Match play: whoever takes a hole goes one up, and a big number on one hole costs no more than a small one. The match is over as soon as somebody is up by more holes than are left — 3&amp;2 means three up with two to play. All square after ${holes} is worth nothing to either side.`
+      : `Stroke play: fewest strokes over these ${holes} holes wins the match and puts one point on that team's board. Level is worth nothing to either side.`}</div>
   </section>`;
 
   wire(root, card, editable);

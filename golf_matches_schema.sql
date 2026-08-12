@@ -69,6 +69,23 @@ create table if not exists public.golf_rounds (
   unique (outing_id, round_number)
 );
 
+/*
+  How a round is won, chosen per round and changeable whenever.
+
+    strokes   fewest strokes over the nine takes the point
+    match     hole by hole; whoever takes more holes takes the point, and a
+              match closed out early (3 up with 2 to play) is over
+
+  It is deliberately NOT tied to the format - a 2v2 nine can be match play
+  and a singles nine can be stroke play. And because both readings are
+  computed from the same strokes, it can be switched after a round is under
+  way without touching a single score.
+*/
+alter table public.golf_rounds add column if not exists scoring text not null default 'strokes';
+alter table public.golf_rounds drop constraint if exists golf_rounds_scoring_check;
+alter table public.golf_rounds add constraint golf_rounds_scoring_check
+  check (scoring in ('strokes', 'match'));
+
 create table if not exists public.golf_matches (
   id           bigint generated always as identity primary key,
   outing_id    bigint not null references public.golf_outings(id) on delete cascade,
@@ -267,8 +284,15 @@ create policy "player write golf match scores" on public.golf_match_scores for a
 -- The pre-tournament builder took an outing. Rounds made it wrong.
 drop function if exists public.golf_build_matches(bigint);
 
-/* Add the next round. Returns its id. */
-create or replace function public.golf_add_round(p_outing_id bigint, p_format text default 'pairs')
+/* Add the next round. Returns its id.
+   Dropped first rather than replaced: adding an argument makes an OVERLOAD in
+   Postgres, not a new version, and two golf_add_round functions with defaults
+   are an ambiguous call rather than an upgrade. */
+drop function if exists public.golf_add_round(bigint, text);
+create or replace function public.golf_add_round(
+  p_outing_id bigint,
+  p_format    text default 'pairs',
+  p_scoring   text default 'strokes')
 returns bigint
 language plpgsql
 security definer
@@ -277,12 +301,13 @@ declare v_n int; v_id bigint;
 begin
   if not public.is_admin() then raise exception 'Admin only'; end if;
   if p_format not in ('pairs', 'singles') then raise exception 'Unknown format %', p_format; end if;
+  if p_scoring not in ('strokes', 'match') then raise exception 'Unknown scoring %', p_scoring; end if;
 
   select coalesce(max(round_number), 0) + 1 into v_n
   from public.golf_rounds where outing_id = p_outing_id;
 
-  insert into public.golf_rounds (outing_id, round_number, name, format)
-  values (p_outing_id, v_n, 'Round ' || v_n, p_format)
+  insert into public.golf_rounds (outing_id, round_number, name, format, scoring)
+  values (p_outing_id, v_n, 'Round ' || v_n, p_format, p_scoring)
   returning id into v_id;
   return v_id;
 end;
