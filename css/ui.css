@@ -451,3 +451,124 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 select, input[type="text"], input[type="number"], input[type="date"], textarea {
   min-height: 42px; border-radius: var(--r-sm);
 }
+
+/* =====================================================================
+   POLISH PASS - less card, more editorial
+   ---------------------------------------------------------------------
+   The app had reached the point where everything lived in a rounded box,
+   including single rows of text, so the boxes stopped meaning anything. A
+   card should mean "these things belong together and are separate from
+   what is around them". Where a list is just a list, it gets dividers.
+   ===================================================================== */
+
+/* Stacked cards lose their shadow: twelve floating panels down a phone
+   screen reads as clutter, not depth. Depth is for things that genuinely
+   sit above the page - the sheet, the toast, the hero. */
+.card { box-shadow: none; }
+.fp-hero { box-shadow: none; }
+.sheet-card, .overlay-card, .toast { box-shadow: var(--e-3); }
+
+/* An event or a poll in a list is a ROW, not a panel. Hairline between,
+   nothing around. */
+.block .card.event, .block .card.linkcard {
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: var(--s-4) 0;
+}
+.block .card.event:first-of-type, .block .card.linkcard:first-of-type { border-top: 0; }
+.block .card.linkcard { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.event-when { display: flex; align-items: center; gap: var(--s-2); margin-bottom: 2px; }
+.event-date { font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--muted); }
+
+/* News, editorially: a rule on the left of the LATEST item only, so the eye
+   knows where to start, and dividers after that. */
+.fp-news { gap: 0; }
+.fp-news article {
+  border: 0; border-radius: 0; background: transparent;
+  border-top: 1px solid var(--line-soft);
+  padding: var(--s-4) 0 var(--s-4) var(--s-3);
+}
+.fp-news article:first-child { border-top: 0; border-left: 2px solid var(--accent-fill); }
+.fp-news h4 { font-size: var(--fs-h2); }
+
+/* ---------------------------------------------------------------------
+   HOME - one story, told loudly
+   --------------------------------------------------------------------- */
+.fp-hero { padding: var(--s-6) var(--s-4) var(--s-5); border-width: 0 0 1px 0; border-radius: 0; margin: 0 calc(var(--s-4) * -1) var(--s-5); }
+.fp-title { font-size: var(--fs-display); }
+/* The hero score is the single biggest thing in the app, on purpose. */
+.fp-side b { font-size: var(--fs-stat-xl); }
+.fp-side span { font-size: var(--fs-h3); }
+.fp-state { font-size: var(--fs-h3); letter-spacing: var(--ls-wide); }
+.fp-kicker { font-size: var(--fs-label); }
+
+/* The snapshot is a strip of figures, not four more boxes. */
+.fp-snap { border-left: 0; border-right: 0; border-radius: 0; margin: 0 calc(var(--s-4) * -1) var(--s-5); }
+.fp-snap b { font-size: var(--fs-h2); }
+
+/* Everything below the hero is deliberately quieter. */
+.creed-doors { margin-bottom: var(--s-6); }
+.block { margin-bottom: var(--s-7); }
+.version-line { margin-top: var(--s-7); font-size: var(--fs-micro); color: var(--muted); }
+
+/* The identity block at the foot of home stops being a hero and becomes a
+   sign-off. */
+#home-wrap .hero { border: 0; background: none; padding: var(--s-6) 0 0; border-top: 1px solid var(--line-soft); }
+#home-wrap .hero-crest { width: 96px; }
+#home-wrap .hero-creed { font-size: var(--fs-label); }
+
+/* ---------------------------------------------------------------------
+   STANDINGS + TABLES - scannable in one pass
+   --------------------------------------------------------------------- */
+.tbl tbody tr:first-child td { background: var(--hover-soft); }
+.tbl td:first-child { font-family: var(--font-display); font-weight: var(--fw-bold); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tbl tbody tr:first-child td:first-child { color: var(--accent); }
+
+/* ---------------------------------------------------------------------
+   RECORDS - a championship is not an ordinary row
+   --------------------------------------------------------------------- */
+.rec-val { font-size: var(--fs-stat-lg); }
+.card.accent { border-left-width: 3px; }
+/* The title row in the record book, given the weight a title deserves. */
+.recbook .rec:first-child .rec-val { color: var(--milestone); }
+.badge.champion, .pill.green.champion { border-color: var(--milestone); color: var(--milestone); background: rgba(214,178,84,.12); }
+
+/* ---------------------------------------------------------------------
+   GOLF - a live tournament board
+   --------------------------------------------------------------------- */
+.golf-points-grid { padding: var(--s-5) var(--s-4); }
+.gp-team span { font-size: var(--fs-stat-lg); }
+.golf-leader-row:first-child { background: var(--hover-soft); }
+.golf-leader-row:first-child .golf-leader-pos { color: var(--accent); }
+.golf-leader-score { font-size: var(--fs-stat); }
+.gb-row:hover { background: var(--hover-soft); }
+/* The round card header carries the state, so it reads as a board rather
+   than a list of links. */
+.gr-head { padding: var(--s-3) var(--s-4); }
+.golf-round, .golf-points { box-shadow: none; }
+
+/* ---------------------------------------------------------------------
+   BUTTONS - one primary per row
+
+   A row of four filled red buttons has no hierarchy at all. Inside an
+   admin control row only the FIRST filled button keeps the fill; the rest
+   fall back to the hairline treatment.
+   --------------------------------------------------------------------- */
+.arena-admin .btn:not(.ghost):not(.danger) ~ .btn:not(.ghost):not(.danger),
+.golf-generator .btn:not(.ghost):not(.danger) ~ .btn:not(.ghost):not(.danger),
+.gt-add .btn:not(.ghost):not(.danger) ~ .btn:not(.ghost):not(.danger) {
+  background: transparent;
+  border: 1px solid var(--control-line);
+  color: var(--text);
+}
+.arena-admin, .golf-generator { gap: var(--s-2); }
+
+/* ---------------------------------------------------------------------
+   STATES - one language everywhere, including offline
+   --------------------------------------------------------------------- */
+.state, .empty { gap: var(--s-1); }
+.state-title, .empty { letter-spacing: var(--ls-wide); }
+.state.is-offline { border-color: var(--warn-line); color: var(--warn-ink); }

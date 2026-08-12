@@ -86,6 +86,29 @@ export async function render(view) {
   });
 }
 
+
+/*
+  DFL LANGUAGE.
+
+  Only ever derived from a real number, never decoration - a beatdown has to
+  actually be a beatdown. Kept out of finances and admin entirely.
+*/
+function golfMood(values, done, total) {
+  const gap = Math.abs(values[0] - values[1]);
+  if (!done) return "";
+  if (done === total) return gap >= 4 ? "ABSOLUTE BEATDOWN" : gap === 0 ? "SPLIT DOWN THE MIDDLE" : "";
+  if (gap >= 3) return "RUNNING AWAY WITH IT";
+  if (gap === 0) return "DEAD EVEN";
+  return "";
+}
+function matchupMood(a, b, played) {
+  if (!played) return "";
+  const gap = Math.abs(a - b);
+  if (gap >= 40) return "ABSOLUTE BEATDOWN";
+  if (gap <= 3) return "COMING DOWN TO THE WIRE";
+  return "";
+}
+
 // ------------------------------------------------------------- the hero
 
 async function heroBlock(ctx) {
@@ -148,10 +171,11 @@ async function golfHero(outing) {
     }
     const { total } = dayPoints(rounds);
     const values = teams.map((t) => total.get(String(t.id)) || 0);
+    const mood = golfMood(values, done, all.length);
     const state = !all.length ? "Not started yet"
-      : done === all.length ? "Final"
+      : done === all.length ? (mood || "Final")
       : values[0] === values[1] ? `All square · ${done} of ${all.length} in`
-      : `${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} in`;
+      : `${mood ? mood + " · " : ""}${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} in`;
     return heroShell({
       kicker: "DFL GOLF", live, title: outing.name,
       sub: [outing.course, outing.event_date ? fmtDate(outing.event_date) : ""].filter(Boolean).join(" · "),
@@ -189,7 +213,8 @@ async function matchupHero(ctx) {
       kicker: `WEEK ${m.week}`, live: false, title: "Your matchup",
       sub: `${season} season`,
       body: scoreBand([a, b], 1),
-      state: !played ? "Yet to play" : a.value === b.value ? "Tied" : `${a.value > b.value ? a.name : b.name} by ${Math.abs(a.value - b.value).toFixed(1)}`,
+      state: !played ? "Yet to play" : a.value === b.value ? "Tied"
+        : `${matchupMood(a.value, b.value, played) ? matchupMood(a.value, b.value, played) + " · " : ""}${a.value > b.value ? a.name : b.name} by ${Math.abs(a.value - b.value).toFixed(1)}`,
       href: "#/history", cta: "League history",
     });
   } catch { return ""; }
@@ -234,6 +259,18 @@ function scoreBand(sides, decimals = 0) {
 
 // --------------------------------------------------------- the snapshot
 
+/* A record, characterised. Win percentage only - there is no per-week data
+   loaded here, so anything about "streaks" would be invented. */
+function form(row) {
+  const games = (row.wins || 0) + (row.losses || 0) + (row.ties || 0);
+  if (!games) return "Your record";
+  const pct = ((row.wins || 0) + (row.ties || 0) / 2) / games;
+  if (pct >= 0.7) return "Rolling";
+  if (pct >= 0.55) return "Playoff bound";
+  if (pct >= 0.45) return "On the bubble";
+  return "Your record";
+}
+
 function snapshot({ leagues, members, myMember, standings, dues, polls }) {
   const season = standings.reduce((a, r) => Math.max(a, Number(r.season) || 0), 0);
   const rows = standings.filter((r) => Number(r.season) === season);
@@ -250,7 +287,7 @@ function snapshot({ leagues, members, myMember, standings, dues, polls }) {
     .reduce((t, r) => t + Math.max(0, (Number(r.amount_due) || 0) - (Number(r.amount_paid) || 0)), 0);
 
   const cells = [
-    meRow ? { label: "Your record", value: `${meRow.wins}-${meRow.losses}${meRow.ties ? `-${meRow.ties}` : ""}`, href: "#/profile" }
+    meRow ? { label: form(meRow), value: `${meRow.wins}-${meRow.losses}${meRow.ties ? `-${meRow.ties}` : ""}`, href: "#/profile" }
           : { label: "Owners", value: String(members.length), href: "#/profile" },
     leader ? { label: `${season} leader`, value: nameOf(leader.sleeper_user_id), href: "#/history" }
            : { label: "Titles on record", value: String(leagues.filter((l) => l.champion_user_id).length), href: "#/history" },

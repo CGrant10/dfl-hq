@@ -43,6 +43,7 @@ function styles() {
   s.id = "dfl-battles-style";
   s.textContent = `
 .golf-points{padding:0;overflow:hidden}
+.gp-live{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line-soft);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .golf-points-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:15px 13px}
 .gp-team{min-width:0;display:grid;gap:4px;justify-items:center;text-align:center}
 .gp-team b{font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
@@ -222,7 +223,9 @@ function board(data) {
     return `<span class="gpr ${open ? "is-open" : ""}"><small>R${round.round_number}</small>${teams.map((t) => points.get(String(t.id)) || 0).join("–")}</span>`;
   }).join("");
 
+  const anyLive = data.rounds.some((r) => r.battles.some((b) => b.result && b.result.thru > 0 && !b.result.complete));
   return `<section class="card golf-points" data-collapse="golf-points" data-collapse-title="Tournament" data-collapse-badge="${values.join(" — ")}">
+    ${anyLive ? `<div class="gp-live"><span class="badge live">Live</span><span>A round is under way</span></div>` : ""}
     <div class="golf-points-grid">
       ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(t.color || "")}"><span>${values[i]}</span><b>${esc(t.name)}</b></div>`)
         .join('<div class="gp-dash">—</div>')}
@@ -250,7 +253,7 @@ function matchRow(b, round) {
     <span class="gb-n">${b.match_number}</span>
     <div class="gb-mid">
       ${b.sides.map((s, i) => `<div class="gb-pair ${low === i ? "is-low" : ""}" style="--racer:${esc(s.color || "")}"><i></i><span>${esc(names[i])}</span><em>${totals[i] || "—"}</em></div>`).join("")}
-      <div class="gb-stand ${r.complete ? "is-done" : ""}">${esc(standingLine(r, names[0], names[1]))}</div>
+      <div class="gb-stand ${r.complete ? "is-done" : ""}">${esc(standingLine(r, names[0], names[1]))}${r.complete && !r.halved && r.lead >= (r.scoring === "match" ? 5 : 8) ? " · BEATDOWN" : ""}</div>
     </div>
     <span class="gb-arrow">›</span></a>`;
 }
