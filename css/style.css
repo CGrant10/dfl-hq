@@ -1071,22 +1071,24 @@ textarea { min-height: 96px; resize: vertical; }
 }
 
 /*
-  THE PLATE.
+  NO PLATE.
 
-  The crest is line art: heavy black outlines, a black cap, black shorts, a
-  black banner - drawn for paper. Dropped straight onto #0d1117 half of it
-  stops existing. So the default crest sits on the white it was drawn for and
-  reads as a sticker on the dark card, which is also just what it is.
+  The crest used to sit on a white rounded rectangle here. The reasoning was
+  that it is line art with heavy black outlines drawn for paper, so half of it
+  would vanish on #0d1117 - and that was true of the OLD crest.
 
-  Only the DEFAULT crest gets this. A member who uploads their own logo is
-  probably uploading something opaque and rectangular, and a white frame
-  around it would look like a mistake rather than a plate.
+  The current artwork is mostly white fill, red and blue: the mascot's shirt,
+  the DFL letters, the feathers. It reads perfectly well on a dark ground, and
+  the plate was the only thing making a transparent PNG look like it had a
+  white background. The asset itself is and always was true alpha - 67% of it
+  is zero-alpha and the ink is inset well inside the canvas.
+
+  The class is kept because home.js uses it to tell the DEFAULT crest from a
+  logo somebody has uploaded, which may well be opaque and rectangular.
 */
 .hero-crest.is-crest {
-  background: #fff;
-  border-radius: 16px;
-  padding: 7px 9px;
-  box-sizing: border-box;
+  background: transparent;
+  padding: 0;
 }
 /* Visible to screen readers, not on screen. */
 .sr-only {
@@ -1499,7 +1501,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
    enough.
    ------------------------------------------------------------------- */
 /* The crest was drawn for white, so on a light card it needs no plate. */
-:root[data-mode="light"] .hero-crest.is-crest { background: transparent; padding: 0; }
 /* The hero's dark wash reads as a smudge on white; flatten it. */
 :root[data-mode="light"] .hero { background: var(--bg-2); }
 :root[data-mode="light"] .hero-crest { filter: none; }

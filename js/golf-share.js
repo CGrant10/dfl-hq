@@ -74,13 +74,11 @@ function drawCrest(ctx) {
   const img = crestImage();
   if (!img) return 150;                 // not loaded: the headline moves up
   const w = 340, h = w * (img.naturalHeight / img.naturalWidth || 0.666);
-  /* The crest is line art drawn for paper - black outlines that vanish on a
-     dark ground - so it gets the same white plate the app gives it. */
-  ctx.fillStyle = "#fff";
-  roundRect(ctx, (W - w) / 2 - 16, 54, w + 32, h + 26, 22);
-  ctx.fill();
-  ctx.drawImage(img, (W - w) / 2, 66, w, h);
-  return 54 + h + 26;
+  /* No plate. The artwork is mostly white fill, red and blue and reads fine on
+     the card's dark ground - and a white rectangle in a chat thumbnail is
+     exactly what it looks like: a bug. */
+  ctx.drawImage(img, (W - w) / 2, 60, w, h);
+  return 60 + h + 20;
 }
 
 function drawScore(ctx, s, top) {
