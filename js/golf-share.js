@@ -21,9 +21,47 @@
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SCORING_NAMES, dayPoints, pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
+import { LEAGUE_FOUNDED } from "./config.js";
 
 const W = 1080, H = 1080;
 const INK = "#f2f5f8", MUTED = "#8b98a5", BG = "#0d1117", CARD = "#161b22", LINE = "#2b313a";
+const GOLD = "#d6b254";
+
+/*
+  THE ANNIVERSARY BAND.
+
+  The same rule as the front page: only on a decade season, nothing at all on
+  any other. It goes at the very top of a shared card because the card ends up
+  in a group chat where it is the whole message - if the tenth season is worth
+  a banner in the app, it is worth one on the thing people actually look at.
+
+  Returns the height it used, so every card below it shifts down rather than
+  being drawn through.
+*/
+function ordinalOf(n) {
+  const r = n % 100;
+  if (r >= 11 && r <= 13) return n + "th";
+  return n + (["th", "st", "nd", "rd"][n % 10] || "th");
+}
+function annivText() {
+  const n = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
+  return n > 1 && n % 10 === 0 ? `${ordinalOf(n)} ANNIVERSARY SEASON` : "";
+}
+function drawAnniv(ctx, width) {
+  const text = annivText();
+  if (!text) return 0;
+  const h = 68;
+  ctx.fillStyle = "rgba(214,178,84,.13)";
+  ctx.fillRect(0, 0, width, h);
+  ctx.strokeStyle = "rgba(214,178,84,.55)";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(width, h - 1); ctx.stroke();
+  ctx.fillStyle = GOLD;
+  ctx.textAlign = "center";
+  ctx.font = `700 30px ${FONT}`;
+  ctx.fillText(`★   ${text}   ★`, width / 2, 45);
+  return h;
+}
 
 const holesOf = (round) => Number(round?.holes) || 9;
 const scoringOf = (round) => (round?.scoring === "match" ? "match" : "strokes");
@@ -70,15 +108,15 @@ export function summaryText(s) {
 
 // ------------------------------------------------------------- the drawing
 
-function drawCrest(ctx) {
+function drawCrest(ctx, top) {
   const img = crestImage();
-  if (!img) return 150;                 // not loaded: the headline moves up
+  if (!img) return top + 96;            // not loaded: the headline moves up
   const w = 340, h = w * (img.naturalHeight / img.naturalWidth || 0.666);
   /* No plate. The artwork is mostly white fill, red and blue and reads fine on
      the card's dark ground - and a white rectangle in a chat thumbnail is
      exactly what it looks like: a bug. */
-  ctx.drawImage(img, (W - w) / 2, 60, w, h);
-  return 60 + h + 20;
+  ctx.drawImage(img, (W - w) / 2, top + 6, w, h);
+  return top + 6 + h + 20;
 }
 
 function drawScore(ctx, s, top) {
@@ -161,7 +199,7 @@ export function boardCanvas(data, outing) {
 
   /* One vertical budget for the whole card, so nothing can grow into
      anything else: crest, headline, the score band, the rounds, the footer. */
-  const titleY = drawCrest(ctx) + 46;
+  const titleY = drawCrest(ctx, drawAnniv(ctx, W) + 48) + 46;
   ctx.fillStyle = INK;
   fitText(ctx, s.title, W / 2, titleY, W - 140, 52, 900);
   if (s.meta) {
@@ -276,12 +314,13 @@ export function teamSheetCanvas(data, outing) {
   ctx.strokeStyle = LINE; ctx.lineWidth = 6; ctx.strokeRect(3, 3, TW - 6, TH - 6);
   ctx.textBaseline = "alphabetic";
 
+  const bandH = drawAnniv(ctx, TW);
   ctx.fillStyle = INK;
-  fitText(ctx, sheet.title, TW / 2, 84, TW - 120, 54, 900);
+  fitText(ctx, sheet.title, TW / 2, bandH + 84, TW - 120, 54, 900);
   ctx.fillStyle = MUTED;
   ctx.font = `800 26px ${FONT}`;
   ctx.textAlign = "center";
-  ctx.fillText((sheet.meta ? sheet.meta + " · " : "") + "TEAMS & MATCHUPS", TW / 2, 126);
+  ctx.fillText((sheet.meta ? sheet.meta + " · " : "") + "TEAMS & MATCHUPS", TW / 2, bandH + 126);
 
   if (!sheet.teams.length) {
     ctx.fillStyle = MUTED; ctx.font = `800 32px ${FONT}`;
@@ -290,7 +329,7 @@ export function teamSheetCanvas(data, outing) {
   }
 
   /* Two rosters side by side, each under its own colour. */
-  const colW = (TW - 150) / 2, top = 176;
+  const colW = (TW - 150) / 2, top = bandH + 176;
   let rosterBottom = top;
   sheet.rosters.forEach((r, i) => {
     const x = 60 + i * (colW + 30);
