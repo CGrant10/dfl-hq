@@ -1,26 +1,37 @@
 /* =====================================================================
-   golf-matches.js - the team points board and the three battles
+   golf-matches.js - the tournament: the board, the rounds, the matches
    ---------------------------------------------------------------------
-   Sits on the outing page under the leaderboard and answers the only
-   question the format actually asks: WHO IS WINNING THE OUTING.
+   Sits on the outing page and answers the only question the format asks:
+   WHO IS WINNING THE DAY.
 
-     THE BOARD    team points, big. One point per battle won, nothing for a
-                  halved one, so three battles can end 2-0, 1-1 or 0-0.
-     THE BATTLES  one row each: the two pairs, where they stand, and a tap
-                  through to the card.
-     ADMIN        build the pairs, or move somebody between them.
+     THE BOARD    team points, big, added up across every round, with each
+                  round's own tally under it so the nine just played is
+                  still readable after the next one starts.
+     A ROUND      one card per nine: its matches, where each stands, and a
+                  tap through to the card. Fold it away when it is done.
+     ADMIN        add a round, build its pairs in draft order or add
+                  matches by hand, and move anybody between seats.
+
+   WHY ROUNDS ARE ROWS AND NOT A COUNTER
+   Round 2's pairs are frequently nothing like round 1's, and round 3 is
+   singles. If a round were rebuilt in place, the previous nine's strokes
+   would either be deleted or silently re-read as the new pairing's - so
+   each nine gets its own matches, its own sides and its own strokes, and
+   the board adds them up. Nothing is overwritten.
 
    Boots off the .golf-matches-page placeholder the way the draft board and
-   the scorecards do, so pages/golf.js does not have to know how any of this
-   works - it just leaves a hole in the page.
+   the scorecards do, so pages/golf.js does not have to know how any of
+   this works - it just leaves a hole in the page.
 
-   The arithmetic all lives in golf-battle.js. Nothing here decides what a
+   Every point is decided in golf-battle.js. Nothing here decides what a
    point is worth.
    ===================================================================== */
 import { db, isAdmin } from "./supabase.js";
 import { esc, empty, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
-import { battleResult, standingLine, teamPoints, pointsFootnote, pairName } from "./golf-battle.js";
+import { DEFAULT_ROUND_HOLES, battleResult, standingLine, teamPoints, dayPoints,
+         pointsFootnote, pairName } from "./golf-battle.js";
+import { memberNames, playerName } from "./golf-people.js";
 
 const POLL_MS = 15000;
 let host = null, timer = 0, outingId = null;
@@ -36,13 +47,22 @@ function styles() {
 .gp-team b{font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .gp-team span{font-size:34px;font-weight:950;line-height:1;font-variant-numeric:tabular-nums;color:var(--racer,var(--accent))}
 .gp-dash{font-size:15px;font-weight:900;color:var(--muted)}
+.golf-points-rounds{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:0 13px 12px}
+.gpr{display:flex;align-items:baseline;gap:5px;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2);font-size:10.5px;font-weight:900}
+.gpr small{color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-size:9px}
+.gpr.is-open{border-style:dashed;color:var(--muted)}
 .golf-points-foot{padding:0 13px 12px;text-align:center;font-size:10.5px;color:var(--muted)}
 .golf-points-lead{padding:9px 13px;border-top:1px solid var(--line-soft);text-align:center;font-size:11.5px;font-weight:900;background:var(--bg-3)}
 
-.golf-battles{padding:0;overflow:hidden}
-.golf-battles .card-title-row{padding:14px 14px 0}
+.golf-round{padding:0;overflow:hidden}
+.gr-head{display:flex;align-items:center;gap:9px;padding:12px 13px;border-bottom:1px solid var(--line);background:var(--bg-3)}
+.gr-head-main{min-width:0;flex:1}
+.gr-head-main strong{display:block;font-size:14px}
+.gr-head-main small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:900}
+.gr-score{font-size:15px;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap}
 .gb-list{display:grid}
 .gb-row{display:grid;grid-template-columns:26px 1fr 16px;align-items:center;gap:9px;padding:11px 13px;border-top:1px solid var(--line-soft);text-decoration:none;color:inherit;min-height:52px}
+.gb-row:first-child{border-top:0}
 .gb-row:hover{background:var(--bg-3)}
 .gb-n{font-weight:900;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
 .gb-mid{min-width:0;display:grid;gap:3px}
@@ -57,40 +77,50 @@ function styles() {
 .gb-admin{padding:12px 13px;border-top:1px solid var(--line)}
 .gb-seats{display:grid;gap:9px;margin-top:9px}
 .gb-seat-group{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--bg-2)}
-.gb-seat-group>strong{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.gb-seat-head{display:flex;align-items:center;gap:8px}
+.gb-seat-head strong{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.gb-drop{border:1px solid var(--danger-line);border-radius:7px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:10px;padding:4px 8px}
 .gb-seat{display:grid;grid-template-columns:1fr;gap:6px;margin-top:7px}
 .gb-seat select{height:38px;padding:0 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg-3);color:var(--text);font:inherit;min-width:0}
-@media(min-width:560px){.gb-seat{grid-template-columns:1fr 1fr}}`;
+@media(min-width:560px){.gb-seat.is-pairs{grid-template-columns:1fr 1fr}}
+.gt-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}`;
   document.head.appendChild(s);
 }
 
 // ------------------------------------------------------------------- data
 
-async function load(id) {
-  const matchesRes = await db().from("golf_matches").select("id,match_number")
-    .eq("outing_id", id).order("match_number");
-  if (matchesRes.error) throw matchesRes.error;
-  const matches = matchesRes.data || [];
-  const matchIds = matches.map((m) => m.id);
-  const none = { data: [], error: null };
+const holesOf = (round) => Number(round?.holes) || DEFAULT_ROUND_HOLES;
+const seatsOf = (round) => (round?.format === "singles" ? 1 : 2);
 
-  const [teamsRes, partsRes, sidesRes, members] = await Promise.all([
+async function load(id) {
+  const none = { data: [], error: null };
+  const [roundsRes, matchesRes, teamsRes, partsRes, members] = await Promise.all([
+    db().from("golf_rounds").select("id,round_number,name,format,holes").eq("outing_id", id).order("round_number"),
+    db().from("golf_matches").select("id,match_number,round_id").eq("outing_id", id).order("match_number"),
     db().from("golf_teams").select("id,name,color,sort_order").eq("outing_id", id).order("sort_order"),
-    db().from("golf_participants").select("id,member_id,team_id,pick_number,sort_order").eq("outing_id", id),
-    matchIds.length ? db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds).order("slot") : none,
+    db().from("golf_participants").select("id,member_id,guest_name,team_id,pick_number,sort_order").eq("outing_id", id),
     loadMembers().catch(() => []),
   ]);
-  if (teamsRes.error || partsRes.error || sidesRes.error) throw teamsRes.error || partsRes.error || sidesRes.error;
+  if (roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error) {
+    throw roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error;
+  }
+
+  const matches = matchesRes.data || [];
+  const matchIds = matches.map((m) => m.id);
+  const sidesRes = matchIds.length
+    ? await db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds).order("slot")
+    : none;
+  if (sidesRes.error) throw sidesRes.error;
 
   const sides = sidesRes.data || [];
   const sideIds = sides.map((s) => s.id);
   const [playersRes, scoresRes] = await Promise.all([
-    sideIds.length ? db().from("golf_match_players").select("id,side_id,participant_id").in("side_id", sideIds) : none,
+    sideIds.length ? db().from("golf_match_players").select("id,side_id,participant_id,round_id").in("side_id", sideIds) : none,
     sideIds.length ? db().from("golf_match_scores").select("side_id,hole,strokes").in("side_id", sideIds) : none,
   ]);
   if (playersRes.error || scoresRes.error) throw playersRes.error || scoresRes.error;
 
-  const byMember = new Map((members || []).map((m) => [String(m.id), m.display_name]));
+  const names = memberNames(members);
   const byPart = new Map((partsRes.data || []).map((p) => [String(p.id), p]));
   const strokes = new Map();
   for (const row of scoresRes.data || []) {
@@ -99,7 +129,7 @@ async function load(id) {
     strokes.get(key).set(Number(row.hole), Number(row.strokes));
   }
 
-  const battles = matches.map((m) => {
+  const buildMatch = (m, round) => {
     const mine = sides.filter((s) => String(s.match_id) === String(m.id))
       .sort((a, b) => Number(a.slot) - Number(b.slot));
     const built = mine.map((s) => {
@@ -107,60 +137,90 @@ async function load(id) {
       const team = (teamsRes.data || []).find((t) => String(t.id) === String(s.team_id));
       return {
         ...s,
-        rows,
         teamName: team?.name || "Team",
         color: team?.color || "",
-        players: rows.map((r) => {
-          const part = byPart.get(String(r.participant_id));
-          return { row_id: r.id, participant_id: r.participant_id, name: byMember.get(String(part?.member_id)) || "Unknown" };
-        }),
+        players: rows.map((r) => ({
+          row_id: r.id,
+          participant_id: r.participant_id,
+          name: playerName(byPart.get(String(r.participant_id)), names),
+        })),
         strokes: strokes.get(String(s.id)) || new Map(),
       };
     });
-    const result = built.length === 2 ? battleResult(built[0].strokes, built[1].strokes) : null;
-    return { ...m, sides: built, result };
-  });
+    return {
+      ...m,
+      sides: built,
+      result: built.length === 2 ? battleResult(built[0].strokes, built[1].strokes, holesOf(round)) : null,
+    };
+  };
+
+  const rounds = (roundsRes.data || []).map((round) => ({
+    round,
+    battles: matches.filter((m) => String(m.round_id) === String(round.id)).map((m) => buildMatch(m, round)),
+  }));
+
+  /* Which participants are spoken for, PER ROUND. One seat per round is the
+     rule - a player is in all three rounds, just not twice in one - so a
+     single flat set would have made round 2 unfillable. */
+  const takenByRound = new Map();
+  for (const row of playersRes.data || []) {
+    const key = String(row.round_id);
+    if (!takenByRound.has(key)) takenByRound.set(key, new Map());
+    takenByRound.get(key).set(String(row.participant_id), row);
+  }
 
   return {
-    battles,
+    rounds,
     teams: teamsRes.data || [],
     parts: partsRes.data || [],
-    byMember,
-    /* Every player already in a pair, so the seat pickers can say so rather
-       than offering a swap that looks like a fresh assignment. */
-    taken: new Map((playersRes.data || []).map((r) => [String(r.participant_id), r])),
-    scored: (scoresRes.data || []).length,
+    names,
+    takenByRound,
   };
 }
 
 // ------------------------------------------------------------------ views
 
 function board(data) {
-  const pts = teamPoints(data.battles.filter((b) => b.sides.length === 2));
   const teams = data.teams.length === 2 ? data.teams : [];
-  if (!teams.length) return "";
-  const values = teams.map((t) => pts.get(String(t.id)) || 0);
-  const foot = pointsFootnote(data.battles.filter((b) => b.sides.length === 2));
+  if (!teams.length || !data.rounds.length) return "";
+  const { total, per } = dayPoints(data.rounds);
+  const values = teams.map((t) => total.get(String(t.id)) || 0);
+  const allBattles = data.rounds.flatMap((r) => r.battles.filter((b) => b.sides.length === 2));
+  const foot = pointsFootnote(allBattles);
   const lead = values[0] === values[1]
-    ? (values[0] === 0 && data.battles.every((b) => !b.result?.complete) ? "" : "All square")
+    ? (allBattles.some((b) => b.result?.complete) ? "All square" : "")
     : `${esc(teams[values[0] > values[1] ? 0 : 1].name)} lead`;
-  return `<section class="card golf-points">
+
+  /* Each round's own tally, which is the history the day is played for -
+     "we lost the first nine 2-1" survives the next two nines. */
+  const chips = per.map(({ round, points }) => {
+    const open = data.rounds.find((r) => String(r.round.id) === String(round.id))
+      ?.battles.some((b) => !b.result?.complete);
+    return `<span class="gpr ${open ? "is-open" : ""}"><small>R${round.round_number}</small>${teams.map((t) => points.get(String(t.id)) || 0).join("–")}</span>`;
+  }).join("");
+
+  return `<section class="card golf-points" data-collapse="golf-points" data-collapse-title="Tournament" data-collapse-badge="${values.join(" — ")}">
     <div class="golf-points-grid">
       ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(t.color || "")}"><span>${values[i]}</span><b>${esc(t.name)}</b></div>`)
         .join('<div class="gp-dash">—</div>')}
     </div>
+    ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}
     ${foot ? `<div class="golf-points-foot">${esc(foot)}</div>` : ""}
     ${lead ? `<div class="golf-points-lead">${lead}</div>` : ""}
   </section>`;
 }
 
-function battleRow(b) {
+function matchRow(b, round) {
   const names = b.sides.map((s) => pairName(s.players.map((p) => p.name)));
   if (b.sides.length !== 2) {
     return `<div class="gb-row"><span class="gb-n">${b.match_number}</span><div class="gb-mid"><div class="gb-stand">Sides not built yet</div></div><span class="gb-arrow"></span></div>`;
   }
   const r = b.result;
-  const totals = b.sides.map((s) => { let t = 0; for (const v of s.strokes.values()) t += Number(v) || 0; return t; });
+  const totals = b.sides.map((s) => {
+    let t = 0;
+    for (let h = 1; h <= holesOf(round); h++) t += Number(s.strokes.get(h)) || 0;
+    return t;
+  });
   const low = r.thru && r.diff !== 0 ? (r.diff < 0 ? 0 : 1) : -1;
   return `<a class="gb-row" href="#/golf?id=${outingId}&match=${b.id}">
     <span class="gb-n">${b.match_number}</span>
@@ -171,49 +231,89 @@ function battleRow(b) {
     <span class="gb-arrow">›</span></a>`;
 }
 
-/* The seat pickers. One select per seat, listing that team's players - so a
-   captain's pairs can be shuffled without anybody touching SQL. */
-function seats(data) {
-  return data.battles.filter((b) => b.sides.length === 2).map((b) => `
-    <div class="gb-seat-group"><strong>Battle ${b.match_number}</strong>
+/*
+  The seat pickers: one select per seat, listing that team's players.
+
+  This is what "change the pairs on the fly" means in practice - no
+  regenerating, no SQL, and round 2's pairs can bear no resemblance to
+  round 1's. Two seats per side for a 2v2, one for singles.
+*/
+function seats(data, entry) {
+  const { round, battles } = entry;
+  const taken = data.takenByRound.get(String(round.id)) || new Map();
+  const perSide = seatsOf(round);
+
+  return battles.filter((b) => b.sides.length === 2).map((b) => `
+    <div class="gb-seat-group">
+      <div class="gb-seat-head"><strong>Match ${b.match_number}</strong>
+        <button type="button" class="gb-drop" data-drop-match="${b.id}">Delete</button></div>
       ${b.sides.map((s) => {
         const pool = data.parts.filter((p) => String(p.team_id) === String(s.team_id))
           .sort((a, b2) => (a.pick_number ?? 9999) - (b2.pick_number ?? 9999) || (a.sort_order ?? 0) - (b2.sort_order ?? 0));
         const seat = (player, index) => `
-          <select data-seat="${s.id}:${index}" data-row="${player?.row_id ?? ""}" aria-label="Player ${index + 1} for ${esc(s.teamName)} in battle ${b.match_number}">
+          <select data-seat="${round.id}:${s.id}" data-row="${player?.row_id ?? ""}" aria-label="Player ${index + 1} for ${esc(s.teamName)} in match ${b.match_number}">
             <option value="">— empty —</option>
             ${pool.map((p) => {
-              const held = data.taken.get(String(p.id));
+              const held = taken.get(String(p.id));
               const elsewhere = held && String(held.side_id) !== String(s.id);
-              const name = data.byMember.get(String(p.member_id)) || "Unknown";
-              return `<option value="${p.id}" ${String(p.id) === String(player?.participant_id) ? "selected" : ""}>${esc(name)}${elsewhere ? " (in another battle)" : ""}</option>`;
+              return `<option value="${p.id}" ${String(p.id) === String(player?.participant_id) ? "selected" : ""}>${esc(playerName(p, data.names))}${elsewhere ? " (already in this round)" : ""}</option>`;
             }).join("")}
           </select>`;
-        return `<div class="gb-seat">${seat(s.players[0], 0)}${seat(s.players[1], 1)}</div>`;
+        return `<div class="gb-seat ${perSide > 1 ? "is-pairs" : ""}">${Array.from({ length: perSide }, (_, i) => seat(s.players[i], i)).join("")}</div>`;
       }).join("")}
     </div>`).join("");
 }
 
-function view(data) {
+function roundCard(data, entry) {
+  const { round, battles } = entry;
   const admin = isAdmin();
-  const built = data.battles.length > 0;
+  const singles = round.format === "singles";
+  const pts = teamPoints(battles.filter((b) => b.sides.length === 2));
+  const teams = data.teams.length === 2 ? data.teams : [];
+  const scored = battles.some((b) => b.sides.some((s) => s.strokes.size));
+  const label = round.name || `Round ${round.round_number}`;
+
   const adminBlock = !admin ? "" : `<div class="gb-admin">
     <div class="arena-admin">
-      <button class="btn small" id="gb-build">${built ? "Rebuild the pairs" : "Build the 2v2s"}</button>
-      ${data.scored ? `<button class="btn ghost small danger" id="gb-clear">Clear all 2v2 strokes (${data.scored})</button>` : ""}
+      ${singles ? "" : `<button class="btn small" data-build-pairs="${round.id}">${battles.length ? "Rebuild the pairs" : "Build the pairs"}</button>`}
+      <button class="btn ghost small" data-add-match="${round.id}">Add a match</button>
+      ${scored ? `<button class="btn ghost small danger" data-clear-round="${round.id}">Clear this round's strokes</button>` : ""}
+      <button class="btn ghost small danger" data-drop-round="${round.id}">Delete round</button>
     </div>
-    <p class="muted tiny">Pairs are made in draft order — first two picked together — and pair 1 plays pair 1. Move anybody with the pickers below; picking a player who is already in another battle swaps the two.${data.scored ? " Rebuilding is blocked until the strokes are cleared." : ""}</p>
-    ${built ? `<div class="gb-seats">${seats(data)}</div>` : ""}
+    <p class="muted tiny">${singles
+      ? "Add a match for each 1v1 you want, then pick the two players. Nobody is paired for you."
+      : "“Build the pairs” pairs each team in draft order and puts pair 1 against pair 1. Or add matches and fill them in yourself — picking somebody already in this round swaps the two."}${scored ? " Rebuilding is blocked until this round's strokes are cleared." : ""}</p>
+    ${battles.length ? `<div class="gb-seats">${seats(data, entry)}</div>` : ""}
   </div>`;
 
-  return `${board(data)}
-    <section class="card golf-battles">
-      <div class="card-title-row"><div><div class="card-title">The 2v2s</div>
-        <p class="muted tiny">Fewest strokes wins the battle and one point for the team. Level is worth nothing.</p></div>
-        ${admin ? `<span class="admin-badge">Admin</span>` : ""}</div>
-      <div class="gb-list">${data.battles.length ? data.battles.map(battleRow).join("") : empty(admin ? "No battles yet. Build them below." : "The 2v2s have not been set up yet.")}</div>
-      ${adminBlock}
-    </section>`;
+  /* The badge rides on the fold bar, so a round folded away still shows what
+     it finished - which is the whole point of folding a finished nine. */
+  const badge = teams.length ? teams.map((t) => pts.get(String(t.id)) || 0).join(" – ") : "";
+
+  return `<section class="card golf-round" data-collapse="golf-round-${round.round_number}" data-collapse-title="${esc(label)}" data-collapse-badge="${esc(badge)}">
+    <div class="gr-head">
+      <div class="gr-head-main"><strong>${esc(label)}</strong>
+        <small>${singles ? "Singles" : "2v2"} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>
+    </div>
+    <div class="gb-list">${battles.length ? battles.map((b) => matchRow(b, round)).join("") : empty(admin ? "No matches in this round yet." : "Not set up yet.")}</div>
+    ${adminBlock}
+  </section>`;
+}
+
+function view(data) {
+  const admin = isAdmin();
+  const addRound = !admin ? "" : `<section class="card"><div class="card-body">
+    <div class="card-title">Add a round</div>
+    <p class="muted tiny">The day is three nines: two rounds of 2v2s and a nine of singles. Each round keeps its own matches and strokes, so adding one never disturbs the last.</p>
+    <div class="gt-add"><button class="btn small" data-add-round="pairs">Add a 2v2 round</button>
+      <button class="btn small" data-add-round="singles">Add a singles round</button></div>
+  </div></section>`;
+
+  if (!data.rounds.length) {
+    return `${admin ? addRound : ""}${admin ? "" : `<section class="card"><div class="card-body muted tiny">The tournament has not been set up yet.</div></section>`}`;
+  }
+
+  return `${board(data)}${data.rounds.map((entry) => roundCard(data, entry)).join("")}${addRound}`;
 }
 
 // ----------------------------------------------------------------- actions
@@ -221,16 +321,16 @@ function view(data) {
 /*
   Move a player into a seat.
 
-  golf_match_players has one row per participant, so a player cannot be in
-  two pairs - which means "put Dave here" where Dave is already paired is a
-  SWAP, not an assignment. Doing it as two updates would break the unique
-  constraint halfway through (both rows holding the same participant for an
-  instant), so the pair of rows is deleted and re-inserted the other way
-  round instead.
+  One seat per player per round, so "put Dave here" where Dave is already
+  in this round is a SWAP, not an assignment. Doing it as two updates would
+  break the unique index halfway through - both rows holding the same
+  participant for an instant - so the pair of rows is deleted and
+  re-inserted the other way round instead.
 */
-async function assignSeat(data, sideId, rowId, participantId) {
+async function assignSeat(data, roundId, sideId, rowId, participantId) {
   const client = db();
-  const held = participantId ? data.taken.get(String(participantId)) : null;
+  const taken = data.takenByRound.get(String(roundId)) || new Map();
+  const held = participantId ? taken.get(String(participantId)) : null;
 
   if (!participantId) {
     if (!rowId) return;
@@ -240,11 +340,9 @@ async function assignSeat(data, sideId, rowId, participantId) {
   }
 
   if (held && String(held.id) !== String(rowId)) {
-    /* Who currently sits in the seat we are filling - they go where the
-       incoming player came from. If the seat was empty, nobody swaps back. */
-    const outgoing = rowId
-      ? [...data.taken.values()].find((r) => String(r.id) === String(rowId))
-      : null;
+    /* Whoever is in the seat being filled goes where the incoming player
+       came from. If the seat was empty, nobody swaps back. */
+    const outgoing = rowId ? [...taken.values()].find((r) => String(r.id) === String(rowId)) : null;
     const del = await client.from("golf_match_players").delete()
       .in("id", [held.id, ...(rowId ? [rowId] : [])]);
     if (del.error) throw del.error;
@@ -278,7 +376,7 @@ async function draw() {
     /* Before the migration is run these tables do not exist. Only the person
        who can actually run it is given the homework. */
     host.innerHTML = isAdmin()
-      ? `<section class="card"><div class="card-body muted tiny">The 2v2s need one migration: run <strong>golf_matches_schema.sql</strong> in Supabase.<br>${esc(err.message || String(err))}</div></section>`
+      ? `<section class="card"><div class="card-body muted tiny">The tournament needs one migration: run <strong>golf_matches_schema.sql</strong> in Supabase.<br>${esc(err.message || String(err))}</div></section>`
       : "";
     return;
   }
@@ -286,48 +384,93 @@ async function draw() {
   host.innerHTML = view(data);
 }
 
+/* Every admin button on the card, and a redraw after each one. */
 function wire() {
   host.addEventListener("change", async (e) => {
     const select = e.target.closest("[data-seat]");
     if (!select) return;
-    const [sideId] = select.dataset.seat.split(":");
+    const [roundId, sideId] = select.dataset.seat.split(":");
     select.disabled = true;
     try {
-      await assignSeat(data, sideId, select.dataset.row || "", select.value);
-      await draw();
+      await assignSeat(data, roundId, sideId, select.dataset.row || "", select.value);
     } catch (err) {
       toast(err.message || "Could not move that player", true);
-      select.disabled = false;
-      await draw();
     }
+    await draw();
   });
 
   host.addEventListener("click", async (e) => {
-    const build = e.target.closest("#gb-build");
-    const clear = e.target.closest("#gb-clear");
+    const el = (attr) => e.target.closest(`[${attr}]`);
+    const addRound = el("data-add-round");
+    const build = el("data-build-pairs");
+    const addMatch = el("data-add-match");
+    const clearRound = el("data-clear-round");
+    const dropRound = el("data-drop-round");
+    const dropMatch = el("data-drop-match");
+    const button = addRound || build || addMatch || clearRound || dropRound || dropMatch;
+    if (!button) return;
 
-    if (build) {
-      if (data.battles.length && !confirm("Rebuild the pairs from scratch? Any pairing you have adjusted by hand will be replaced."))return;
-      build.disabled = true;
-      try {
-        const { data: made, error } = await db().rpc("golf_build_matches", { p_outing_id: Number(outingId) });
+    const run = async (fn) => {
+      button.disabled = true;
+      try { await fn(); } catch (err) { toast(err.message || "That did not work", true); }
+      await draw();
+    };
+
+    if (addRound) {
+      return run(async () => {
+        const { error } = await db().rpc("golf_add_round", {
+          p_outing_id: Number(outingId), p_format: addRound.dataset.addRound,
+        });
         if (error) throw error;
-        toast(`${made} battle${made === 1 ? "" : "s"} built`);
-        await draw();
-      } catch (err) { toast(err.message || "Could not build the 2v2s", true); build.disabled = false; }
-      return;
+        toast(addRound.dataset.addRound === "singles" ? "Singles round added" : "2v2 round added");
+      });
     }
 
-    if (clear) {
-      if (!confirm(`Delete all ${data.scored} stroke${data.scored === 1 ? "" : "s"} entered in the 2v2s? This cannot be undone.`)) return;
-      clear.disabled = true;
-      try {
-        const sideIds = data.battles.flatMap((b) => b.sides.map((s) => s.id));
+    if (build) {
+      const entry = data.rounds.find((r) => String(r.round.id) === String(build.dataset.buildPairs));
+      if (entry?.battles.length && !confirm("Rebuild this round's pairs from scratch? Any pairing you set by hand will be replaced.")) return;
+      return run(async () => {
+        const { data: made, error } = await db().rpc("golf_build_pairs", { p_round_id: Number(build.dataset.buildPairs) });
+        if (error) throw error;
+        toast(`${made} match${made === 1 ? "" : "es"} built`);
+      });
+    }
+
+    if (addMatch) {
+      return run(async () => {
+        const { error } = await db().rpc("golf_add_match", { p_round_id: Number(addMatch.dataset.addMatch) });
+        if (error) throw error;
+      });
+    }
+
+    if (clearRound) {
+      const entry = data.rounds.find((r) => String(r.round.id) === String(clearRound.dataset.clearRound));
+      if (!confirm(`Delete every stroke entered in ${entry?.round.name || "this round"}? This cannot be undone.`)) return;
+      return run(async () => {
+        const sideIds = (entry?.battles || []).flatMap((b) => b.sides.map((s) => s.id));
+        if (!sideIds.length) return;
         const { error } = await db().from("golf_match_scores").delete().in("side_id", sideIds);
         if (error) throw error;
-        toast("2v2 strokes cleared");
-        await draw();
-      } catch (err) { toast(err.message || "Could not clear the strokes", true); clear.disabled = false; }
+        toast("Round cleared");
+      });
+    }
+
+    if (dropRound) {
+      const entry = data.rounds.find((r) => String(r.round.id) === String(dropRound.dataset.dropRound));
+      if (!confirm(`Delete ${entry?.round.name || "this round"} entirely — its matches, its pairs and its strokes? This cannot be undone.`)) return;
+      return run(async () => {
+        const { error } = await db().from("golf_rounds").delete().eq("id", dropRound.dataset.dropRound);
+        if (error) throw error;
+        toast("Round deleted");
+      });
+    }
+
+    if (dropMatch) {
+      if (!confirm("Delete this match, along with any strokes in it?")) return;
+      return run(async () => {
+        const { error } = await db().from("golf_matches").delete().eq("id", dropMatch.dataset.dropMatch);
+        if (error) throw error;
+      });
     }
   });
 }

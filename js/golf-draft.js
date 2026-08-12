@@ -20,6 +20,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
+import { memberNames, playerName } from "./golf-people.js";
 
 /* Watchers are a few seconds behind the taps, which is fine for a draft -
    the pick is announced out loud before it is entered. */
@@ -51,10 +52,18 @@ async function load(outingId) {
     teams: teams.data || [],
     parts: parts.data || [],
     byId: new Map((members || []).map((m) => [String(m.id), m])),
+    names: memberNames(members),
   };
 }
 
+/* A captain is always a league member, so captains are still looked up by
+   member id. */
 const nameOf = (d, memberId) => d.byId.get(String(memberId))?.display_name || "Unknown";
+
+/* A PLAYER may be a guest with no member id at all, so anybody drafted is
+   named from their participant row instead. Passing a guest through nameOf
+   would draft "Unknown". */
+const partName = (d, part) => playerName(part, d.names);
 
 /**
  * The snake.
@@ -152,10 +161,14 @@ function setup(d, admin) {
 
   const row = (t, i) => {
     const cap = t.captain_member_id;
+    /* Guests are filtered out here and only here: a captain is stored as
+       golf_teams.captain_member_id, a members.id, so somebody with no member
+       row cannot be one. They can be drafted like anybody else. */
     const choices = d.parts
+      .filter((p) => p.member_id != null)
       .filter((p) => !taken.has(String(p.member_id)) || String(p.member_id) === String(cap))
       .map((p) => `<option value="${p.member_id}" ${String(p.member_id) === String(cap) ? "selected" : ""}>
-                     ${esc(nameOf(d, p.member_id))}</option>`).join("");
+                     ${esc(partName(d, p))}</option>`).join("");
     return `
       <div class="gd-seat" style="--racer:${esc(t.color || "var(--accent)")}">
         <span class="gd-pos">${i + 1}</span>
@@ -212,7 +225,7 @@ function board(d, admin) {
         </div>
         <div class="gd-picks">
           <span class="gd-pick is-cap">${esc(nameOf(d, t.captain_member_id))}<small>C</small></span>
-          ${drafted.map((p) => `<span class="gd-pick">${esc(nameOf(d, p.member_id))}<small>${p.pick_number}</small></span>`).join("")}
+          ${drafted.map((p) => `<span class="gd-pick">${esc(partName(d, p))}<small>${p.pick_number}</small></span>`).join("")}
         </div>
       </div>`;
   };
@@ -242,12 +255,12 @@ function board(d, admin) {
           <div class="gd-pool">
             ${left.map((p) => `
               <button type="button" class="gd-take" data-take="${p.id}">
-                ${esc(nameOf(d, p.member_id))}
+                ${esc(partName(d, p))}
               </button>`).join("")}
           </div>
           <p class="muted tiny">Tap the player ${esc(nameOf(d, clock.captain_member_id))} calls.</p>`
         : `<div class="gd-pool is-watching">
-            ${left.map((p) => `<span class="gd-take is-flat">${esc(nameOf(d, p.member_id))}</span>`).join("")}
+            ${left.map((p) => `<span class="gd-take is-flat">${esc(partName(d, p))}</span>`).join("")}
           </div>`}
       `}
 
@@ -256,7 +269,7 @@ function board(d, admin) {
       ${admin && made.length ? `
         <div class="arena-admin">
           <button type="button" class="btn ghost small" id="gd-undo">Undo pick ${made.length}
-            (${esc(nameOf(d, made[made.length - 1].member_id))})</button>
+            (${esc(partName(d, made[made.length - 1]))})</button>
         </div>` : ""}
     </section>`;
 }

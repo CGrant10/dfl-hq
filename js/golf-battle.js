@@ -1,43 +1,57 @@
 /* =====================================================================
-   golf-battle.js - who is winning a 2v2, and what it is worth
+   golf-battle.js - who is winning a match, and what it is worth
    ---------------------------------------------------------------------
-   Pure arithmetic: no DOM, no database. The pair card, the battle list and
+   Pure arithmetic: no DOM, no database. The match card, the round list and
    the team points board all read the result from here, so they cannot
    disagree about the same round - which is the bug this file exists to
    prevent, given three places display it.
 
-   THE GAME
-   Two teams of six split into pairs. A pair plays 2v2 against a pair from
-   the other team, one ball each, and the pair with the FEWEST STROKES over
-   the round takes one point for their team. Level is level: a halved
-   battle is worth nothing to either side, so three battles can finish
-   2-0-with-one-halved, or 1-1, or 0-0.
+   THE DAY
+   Two captains draft twelve players into two teams of six. Those two teams
+   stay put all day; the day is three rounds of nine holes on the same nine.
+   Rounds 1 and 2 are 2v2s - and the pairs can be completely different
+   between them - and round 3 is singles.
+
+   Every match, whatever its format, is won by the side with the FEWEST
+   STROKES over that round's nine, and the winner puts one point on their
+   team's board. Level is level: a halved match is worth nothing to either
+   side, so a nine can finish 2-0-with-one-halved, or 1-1, or 0-0. Points
+   from all three rounds pile onto the same two teams, and every round keeps
+   its own, so the nine just played is still readable after the next starts.
 
    TWO RULES WORTH BEING EXPLICIT ABOUT
-   1. Only holes BOTH pairs have posted are compared. Otherwise a pair who
+   1. Only holes BOTH sides have posted are compared. Otherwise a pair who
       had written down five holes would show as losing by 20 to a pair who
       had written down one.
    2. The point is not awarded until both cards are full. "Ahead with two
       to play" is not a win, and a card with a hole missing is not a round.
    ===================================================================== */
 
-/* A 9-hole course is played twice, so a round is always 18 numbers - the
-   same count the scorecards offer. Not outing.holes, which is 9 for Rolla. */
-export const ROUND_HOLES = 18;
+/*
+  A round is nine holes, played on the same nine each time.
+
+  This was 18 when the day was one 2v2 over a nine played twice, and it is a
+  PARAMETER now rather than a constant, because getting it wrong in either
+  direction breaks the same thing: a nine-hole round measured against 18
+  never awards its point, and an 18-hole round measured against 9 awards it
+  at the turn. Every function below takes the round's own hole count and
+  only falls back to this when a caller has none.
+*/
+export const DEFAULT_ROUND_HOLES = 9;
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 /** How many of the round's holes this side has actually written down. */
-export function posted(strokes) {
+export function posted(strokes, holes = DEFAULT_ROUND_HOLES) {
   let n = 0;
-  for (let h = 1; h <= ROUND_HOLES; h++) if (num(strokes.get(h)) > 0) n++;
+  for (let h = 1; h <= holes; h++) if (num(strokes.get(h)) > 0) n++;
   return n;
 }
 
-/** Every stroke this side has posted, whether or not the other pair has. */
-export function total(strokes) {
+/** Every stroke this side has posted, whether or not the other side has. */
+export function total(strokes, holes = DEFAULT_ROUND_HOLES) {
   let t = 0;
-  for (let h = 1; h <= ROUND_HOLES; h++) t += num(strokes.get(h));
+  for (let h = 1; h <= holes; h++) t += num(strokes.get(h));
   return t;
 }
 
@@ -51,18 +65,18 @@ export function total(strokes) {
  *          diff is a minus b, so negative means slot 1 is ahead. lead is
  *          how many strokes the leader is up by, always positive.
  */
-export function battleResult(a, b) {
+export function battleResult(a, b, holes = DEFAULT_ROUND_HOLES) {
   let sa = 0, sb = 0, thru = 0;
-  for (let h = 1; h <= ROUND_HOLES; h++) {
+  for (let h = 1; h <= holes; h++) {
     const x = num(a.get(h)), y = num(b.get(h));
     if (!x || !y) continue;          // rule 1: comparable holes only
     sa += x; sb += y; thru++;
   }
-  const postedA = posted(a), postedB = posted(b);
-  const complete = postedA >= ROUND_HOLES && postedB >= ROUND_HOLES;
+  const postedA = posted(a, holes), postedB = posted(b, holes);
+  const complete = postedA >= holes && postedB >= holes;
   const diff = sa - sb;
   return {
-    thru, a: sa, b: sb, diff, lead: Math.abs(diff), postedA, postedB, complete,
+    holes, thru, a: sa, b: sb, diff, lead: Math.abs(diff), postedA, postedB, complete,
     winner: complete && diff !== 0 ? (diff < 0 ? 1 : 2) : null,   // rule 2
     halved: complete && diff === 0,
   };
@@ -124,7 +138,29 @@ export function pointsFootnote(battles) {
   return bits.join(" · ");
 }
 
-/** "Cole & Ryan", "Cole", or "Nobody yet". */
+/**
+ * The whole day: a running team total, plus what each round did on its own.
+ *
+ * The running total is the score of the tournament and the per-round tallies
+ * are its history - the nine just played stays readable after the next one
+ * starts, which is the entire reason rounds are their own rows rather than
+ * the matches being rebuilt in place.
+ *
+ * @param {Array<{round:object, battles:Array}>} rounds  in round order
+ * @returns {{total:Map<string,number>, per:Array<{round:object, points:Map<string,number>}>}}
+ */
+export function dayPoints(rounds) {
+  const total = new Map();
+  const per = [];
+  for (const entry of rounds || []) {
+    const points = teamPoints(entry.battles || []);
+    per.push({ round: entry.round, points });
+    for (const [team, n] of points) total.set(team, (total.get(team) || 0) + n);
+  }
+  return { total, per };
+}
+
+/** "Cole & Ryan", "Cole" for a singles match, or "Nobody yet". */
 export function pairName(names) {
   const clean = (names || []).filter(Boolean);
   if (!clean.length) return "Nobody yet";

@@ -30,7 +30,7 @@ dfl_hq/
 ├── golf_courses_schema.sql  course library: pars, yardage, stroke index (run once)
 ├── golf_draft_schema.sql    captains drafting players into teams (run once)
 ├── golf_bag_schema.sql      private club distances (run once)
-├── golf_matches_schema.sql  the 2v2s: pairs, battles, team points (run once)
+├── golf_matches_schema.sql  the tournament: rounds, 2v2s, singles, guests (run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -501,49 +501,100 @@ it in a header the way `is_admin()` checks the admin password.
 
 ---
 
-## 4f. Golf: the 2v2s
+## 4f. Golf: the tournament
 
 Run **`golf_matches_schema.sql`** once, after `golf_schema.sql` and
-`golf_draft_schema.sql`. Until it is run, the 2v2 board simply does not appear
-(and an admin sees a one-line note naming the file).
+`golf_draft_schema.sql`. Until it is run the tournament board does not appear
+(and an admin sees a one-line note naming the file). It is safe to re-run, and
+safe to run over an earlier version of itself.
 
-**The format.** Two captains draft twelve players into two teams of six. Each
-team splits into pairs, and a pair plays 2v2 against a pair from the other team
-— three battles. One ball per pair, so one number per pair per hole. The pair
-with the **fewest strokes over the round** wins the battle and puts **one point**
-on their team's board. Level after 18 is worth nothing to either side, so an
-outing can finish 2–0 with one halved, or 1–1, or 0–0.
+**The day.** Two captains draft twelve players into two teams of six. Those two
+teams stay put all day and every point lands on one of them. The day is three
+rounds of nine holes on the same nine:
 
-**Setting one up.**
+| Round | Format | Points on offer |
+|---|---|---|
+| 1 | 2v2 — pairs in draft order | one per match |
+| 2 | 2v2 — pairs can be anybody | one per match |
+| 3 | Singles, built by hand | one per match |
 
-1. Add the players to the event and get them onto two teams — the captains
-   draft, or the random/balanced generator.
-2. On the event page, under **The 2v2s**, press **Build the 2v2s**. Pairs are
-   made in draft order (the first two a captain picked go together) and pair 1
-   plays pair 1. It builds as many battles as the smaller team can field, so
-   6 v 6 gives three; an odd man out is simply not in one.
-3. Adjust anybody with the seat pickers. Choosing a player who is already in
-   another battle **swaps** the two, because a player can only be in one pair —
-   the database enforces that, not just the screen.
+Every match, whatever its format, is won by the side with the **fewest strokes
+over that round's nine**. Level is level: a halved match is worth nothing to
+either side, so a nine can finish 2–0 with one halved, or 1–1, or 0–0.
 
-**Scoring one.** Open a battle and both pairs are on the one card: whoever is
-holding the phone writes down both numbers, which is why any of the four players
-(and any admin) can score either side. Strokes are queued on the device first
-and sent when the course has signal — see the offline note in the golf section
-of `js/golf-offline.js`.
+**The board** shows the running team total with each round's own tally beneath
+it, so the nine just played stays readable after the next one starts. That is
+why rounds are their own rows and matches are never rebuilt in place — round 2's
+pairs are usually nothing like round 1's, and rebuilding would either delete the
+previous nine's strokes or silently re-read them as the new pairing's.
 
-**Two things worth knowing.**
+**Setting the day up.**
 
-- The point is not awarded until **both** cards are full. "Two up with one to
-  play" is not a win, and a card with a hole missing is not a round — the battle
+1. Add the players and get them onto two teams — the captains draft, or the
+   random/balanced generator.
+2. **Add a 2v2 round**, then **Build the pairs**: each team is paired in draft
+   order (the first two a captain picked go together) and pair 1 plays pair 1.
+   As many matches as the smaller team can field, so 6 v 6 gives three.
+3. For round 2, add another 2v2 round. Build the pairs again, or press **Add a
+   match** and fill the seats in yourself — no generating required.
+4. For round 3, **Add a singles round**, then **Add a match** for each 1v1 you
+   want and pick the two players. Nobody is paired for you, so a round with
+   fewer players in it than the others is fine.
+
+**Moving people about.** Every seat is a picker. Choosing somebody already in
+that round **swaps** the two, because a player gets one seat per round — the
+database enforces it (`uq_golf_match_players_round`), not just the screen. A
+player is in all three rounds, just never twice in one.
+
+**Scoring.** Open a match and both sides are on the one card: whoever is holding
+the phone writes down both numbers, which is why anyone in the match (and any
+admin) can score either side. Strokes are queued on the device first and sent
+when the course has signal — see `js/golf-offline.js`.
+
+**Two rules worth knowing.**
+
+- The point is not awarded until **both** cards are full. "One up with one to
+  play" is not a win, and a card with a hole missing is not a round — the match
   reads "Dave & Matt: 1 to go" instead of declaring a winner.
-- Only holes **both** pairs have posted are compared while a round is in
-  progress, so a pair who have written down five holes never appear to be
-  losing by twenty to a pair who have written down one.
+- Only holes **both** sides have posted are compared while a round is live, so a
+  pair five holes in never appear to be losing by twenty to a pair one hole in.
 
-**Rebuilding.** Once strokes exist, `golf_build_matches` refuses to run — it
-would orphan scores entered against the old pairs. Clear the 2v2 strokes first
-(the button appears next to **Rebuild the pairs**).
+**Rebuilding and deleting.** `golf_build_pairs` refuses to run over a round that
+already has strokes rather than orphaning them — clear that round's strokes
+first. **Delete round** removes a nine entirely, its matches, pairs and strokes.
+Both only ever touch the round you press them on.
+
+---
+
+## 4g. Golf: guests, and folding cards away
+
+**Guests.** Half a golf field is usually not in the fantasy league. In the
+**Players** card, type a name and press **Add a guest**: that writes a
+`golf_participants` row with `guest_name` set and no `member_id`, so the guest
+exists in this event only. They never appear in the "Who are you?" picker, the
+keeper tables or any member dropdown — but they can be drafted, paired, put in a
+singles match and scored like anybody else.
+
+Two consequences, both deliberate:
+
+- A guest cannot be a **captain**, because a captain is stored as
+  `golf_teams.captain_member_id`, a `members.id`.
+- A guest cannot **enter their own strokes** — they have no member to select on a
+  device. Anyone else in their match writes their numbers down, which is how the
+  card works anyway.
+
+`js/golf-people.js` decides what to call a player, in one place, because a guest
+reading as "Unknown" on one card and by name on another is exactly the bug that
+splitting the name across seven screens would produce.
+
+**Folding cards away.** The event page is long, and most of it is setup that
+becomes screen filler once the day is under way. Any card marked
+`data-collapse="some-key"` grows a **Hide/Show** bar — the draft board, the
+leaderboard, Teams, the team editor, Players, the generator, and each round.
+The state is remembered per key per device, so a card you folded stays folded
+next week, and it survives the page's own redraws. A folded card keeps its score
+on the fold bar (`data-collapse-badge`), so folding a finished nine does not hide
+the number you folded it to stop scrolling past. See `js/collapse.js`.
 
 ---
 
