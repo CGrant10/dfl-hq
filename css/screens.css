@@ -1,0 +1,258 @@
+/* =====================================================================
+   screens.css - the data screens, on the same system
+   ---------------------------------------------------------------------
+   Same approach as ui.css: the pages keep their markup and all of their
+   logic, and this restates the surface of the classes they already emit.
+   Nothing here changes a layout structure that did not already exist - it
+   changes size, weight, alignment and colour, which is exactly where the
+   hierarchy was missing.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   OWNER PROFILES - a career page
+
+   The career figures were body text in a grid. A career page's whole job
+   is that the numbers land first, so they take the stat ramp and the
+   labels get out of the way.
+   --------------------------------------------------------------------- */
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.statgrid > * {
+  background: var(--bg-2);
+  padding: var(--s-3);
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  text-align: center;
+}
+.stat-v {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat-sm);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  font-variant-numeric: tabular-nums;
+}
+.stat-l {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.profile-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+}
+.chip, .teampill {
+  border-radius: var(--r-sm);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+}
+.chiprow { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* ---------------------------------------------------------------------
+   FINANCES - readable and trustworthy
+   --------------------------------------------------------------------- */
+.due-row { min-height: 44px; }
+.due-who { font-size: var(--fs-body); font-weight: var(--fw-med); }
+.warntext { color: var(--warn-ink); font-weight: var(--fw-bold); }
+
+/* A segmented control rather than a row of links: the live one is filled,
+   so which view you are looking at is never in question. Used by finances
+   and history both. */
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs > * {
+  flex: 1 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.tabs > .on,
+.tabs > .active,
+.tabs > [aria-selected="true"] {
+  background: var(--bg-2);
+  color: var(--text);
+  box-shadow: var(--e-1);
+}
+
+/* ---------------------------------------------------------------------
+   HISTORY - the record book
+
+   The most archival screen in the app, and it was rendering as a list of
+   rows. A record reads as a record: the figure large and condensed, who
+   and when quiet underneath.
+   --------------------------------------------------------------------- */
+.recbook {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-3);
+}
+.rec {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent-fill);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  padding: var(--s-4);
+  display: grid;
+  gap: 2px;
+}
+.rec-label {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rec-val {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  font-variant-numeric: tabular-nums;
+}
+.rec-who { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+.rec-when {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+}
+.evtitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+.evnote { font-size: var(--fs-micro); color: var(--muted); }
+.section-head { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
+
+/* ---------------------------------------------------------------------
+   POLLS - the question, then the result
+
+   The question used to be the same size as everything around it. It is the
+   point of the screen, so it leads, and the bar carries the outcome.
+   --------------------------------------------------------------------- */
+.poll-q {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-snug);
+}
+.results { display: grid; gap: var(--s-3); }
+.result-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+.result-pick { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+.result-n {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+/* A meter: a filled proportion on a track, the fill in the brand gradient,
+   so the leading answer is obvious before any number is read. */
+.bar {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.bar > * {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  transition: width var(--t-slow) var(--ease);
+}
+.voters { font-size: var(--fs-micro); color: var(--muted); }
+.poll-you {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------
+   GOLF - a live tournament interface
+
+   Golf keeps every bit of its own layout and the whole offline scoring
+   path untouched. This is hierarchy only: the score is what people are
+   actually looking at, so it takes the stat ramp.
+   --------------------------------------------------------------------- */
+.golf-leader-score {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  font-variant-numeric: tabular-nums;
+}
+.golf-leader-pos { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold); }
+.golf-leader-team strong { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+.gp-team span { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
+.gp-team b { font-family: var(--font-display); font-size: var(--fs-label); letter-spacing: var(--ls-wide); }
+.gr-head-main strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-tight);
+  text-transform: uppercase;
+}
+.gb-pair em, .gb-n { font-family: var(--font-display); font-weight: var(--fw-bold); }
+.gpr { border-radius: var(--r-sm); font-variant-numeric: tabular-nums; }
+.dfl-battle-live b, .dfl-live-cell b { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
+
+/* ---------------------------------------------------------------------
+   ADMIN - the control room, deliberately quieter than the league app
+   --------------------------------------------------------------------- */
+.modebar { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.row-end { display: flex; justify-content: flex-end; gap: var(--s-2); margin-top: var(--s-3); }
+.admin-tag {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--accent);
+}
