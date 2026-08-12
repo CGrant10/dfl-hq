@@ -413,7 +413,7 @@ async function render(root, matchId) {
   const card = await loadMatch(matchId);
   const back = `#/golf?id=${card.match.outing_id}`;
   if (card.sides.length < 2) {
-    root.innerHTML = `<div class="card"><div class="card-body"><a class="backlink" href="${back}">← Golf</a><p><strong>This match has no sides yet.</strong></p><p class="muted tiny">An admin needs to finish setting up this round.</p></div></div>`;
+    root.innerHTML = `<div class="card"><div class="card-body"><a class="backlink" href="${back}">← Rounds</a><p><strong>This match has no sides yet.</strong></p><p class="muted tiny">An admin needs to finish setting up this round.</p></div></div>`;
     return;
   }
   const holes = holeCount(card);
@@ -436,7 +436,7 @@ async function render(root, matchId) {
 
   root.innerHTML = `<section class="card dfl-battle-card">
     <header class="dfl-battle-head">
-      <div class="dfl-battle-head-top"><a class="backlink" href="${back}">← Golf</a>
+      <div class="dfl-battle-head-top"><a class="backlink" href="${back}">← Rounds</a>
         <div><span class="dfl-battle-kicker">${esc(roundLabel)}</span><h2>${esc(names[0])} vs ${esc(names[1])}</h2></div></div>
       <div class="dfl-battle-vs">${card.sides.map((s, i) => `
         <div class="dfl-battle-vs-row" style="--racer:${esc(s.color || "")}"><span class="dfl-battle-vs-dot"></span><b>${esc(names[i])}</b><small>${esc(s.teamName)}</small></div>`).join("")}</div>
