@@ -88,15 +88,18 @@ const entryKey = (outingId, teamId, hole) => `${outingId}:${teamId}:${hole}`;
  * @throws if the strokes are not a legal score - a bad value never enters
  *         the queue, so a flush can never be stuck behind one
  */
-export function queueScore(outingId, teamId, hole, value) {
+function legal(value) {
   const raw = String(value ?? "").trim();
-  let strokes = null;
-  if (raw !== "") {
-    strokes = Number(raw);
-    if (!Number.isInteger(strokes) || strokes < MIN_STROKES || strokes > MAX_STROKES) {
-      throw new Error(`Enter strokes from ${MIN_STROKES} to ${MAX_STROKES}`);
-    }
+  if (raw === "") return null;              // clearing the hole
+  const strokes = Number(raw);
+  if (!Number.isInteger(strokes) || strokes < MIN_STROKES || strokes > MAX_STROKES) {
+    throw new Error(`Enter strokes from ${MIN_STROKES} to ${MAX_STROKES}`);
   }
+  return strokes;
+}
+
+export function queueScore(outingId, teamId, hole, value) {
+  const strokes = legal(value);
   const map = pendingMap();
   map[entryKey(outingId, teamId, hole)] = {
     outingId: String(outingId), teamId: String(teamId), hole: Number(hole),
@@ -104,6 +107,55 @@ export function queueScore(outingId, teamId, hole, value) {
   };
   savePending(map);
   flush();
+}
+
+/**
+ * The same thing for one side of a 2v2.
+ *
+ * A pair's card is a different table (golf_match_scores, keyed by side) but
+ * exactly the same problem - it is played on the same course, in the same
+ * dead zones - so it goes through the same queue rather than growing a
+ * second one that would have to be drained separately.
+ *
+ * The outing rides along on the entry so that resetting an event can drop
+ * its queued strokes without having to look anything up.
+ */
+export function queueSideScore(outingId, sideId, hole, value) {
+  const strokes = legal(value);
+  const map = pendingMap();
+  map[`side:${sideId}:${hole}`] = {
+    outingId: String(outingId), sideId: String(sideId), hole: Number(hole),
+    strokes, tries: 0,
+  };
+  savePending(map);
+  flush();
+}
+
+/** Hole -> strokes for one side of a 2v2. */
+export function pendingForSide(sideId) {
+  const out = new Map();
+  for (const entry of Object.values(pendingMap())) {
+    if (entry.sideId === String(sideId)) out.set(Number(entry.hole), entry.strokes);
+  }
+  return out;
+}
+
+/** How many holes are waiting for one side, or for every side in a match. */
+export function pendingCountSides(sideIds) {
+  const want = new Set((sideIds || []).map(String));
+  return Object.values(pendingMap()).filter((e) => e.sideId && want.has(e.sideId)).length;
+}
+
+export function dropPendingSides(sideIds) {
+  const want = new Set((sideIds || []).map(String));
+  const map = pendingMap();
+  let changed = false;
+  for (const [key, entry] of Object.entries(map)) {
+    if (!entry.sideId || !want.has(entry.sideId)) continue;
+    delete map[key];
+    changed = true;
+  }
+  if (changed) savePending(map);
 }
 
 /** Hole -> strokes (null means "clear this hole") for one team's card. */
@@ -164,6 +216,15 @@ export function dropCachedCard(outingId, teamId) {
   try { localStorage.removeItem(cardKey(outingId, teamId)); } catch {}
 }
 
+/* The same for a 2v2 card. Same reason: a pair standing on the 5th tee with
+   no bars needs the card, not an error. */
+const matchKey = (matchId) => `dfl.golf.match.${matchId}`;
+export function cacheMatch(matchId, payload) { writeJSON(matchKey(matchId), payload); }
+export function cachedMatch(matchId) { return readJSON(matchKey(matchId), null); }
+export function dropCachedMatch(matchId) {
+  try { localStorage.removeItem(matchKey(matchId)); } catch {}
+}
+
 // ------------------------------------------------------------------ flush
 
 /*
@@ -178,7 +239,25 @@ function retryable(err) {
   return !err?.code && !err?.status;
 }
 
+/* A 2v2 side's card: same queue, different table, keyed by side and hole. */
+async function sendSide(entry) {
+  const { sideId, hole, strokes } = entry;
+  const client = db();
+
+  if (strokes == null) {
+    const { error } = await client.from("golf_match_scores").delete()
+      .eq("side_id", sideId).eq("hole", hole);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await client.from("golf_match_scores")
+    .upsert({ side_id: sideId, hole, strokes, updated_at: new Date().toISOString() },
+            { onConflict: "side_id,hole" });
+  if (error) throw error;
+}
+
 async function sendOne(entry) {
+  if (entry.sideId != null) return sendSide(entry);
   const { outingId, teamId, hole, strokes } = entry;
   const client = db();
 

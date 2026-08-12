@@ -1,0 +1,472 @@
+/* =====================================================================
+   golf-match.js - one 2v2, both pairs on one card
+   ---------------------------------------------------------------------
+   The pair is the thing that gets scored here, not the team of six: one
+   ball per pair, so one number per pair per hole, and the pair with fewer
+   strokes at the end takes a point for their team.
+
+   Both pairs share the card on purpose. Four people walking the same hole
+   are not going to open two apps, and whoever is holding the phone on the
+   green writes down both numbers - so the database lets any of the four
+   write either side (golf_matches_schema.sql) and the card puts them one
+   under the other.
+
+   ONE HOLE, ONE BLOCK
+     head       the hole, its yardage, its par
+     two rows   each pair, its strokes, what the hole was worth to them
+
+   The number IS the mark, exactly as on the team card - a round field for a
+   birdie, a square one for a bogey - and the vocabulary is imported from
+   golf-scorecard.js rather than copied, so the two cards can never end up
+   calling the same score different things.
+
+   Strokes go through the same offline queue as everything else: typed
+   first, sent when the course has signal. See golf-offline.js.
+   ===================================================================== */
+import { db, isAdmin } from "./supabase.js";
+import { currentMember, loadMembers } from "./members.js";
+import { esc, toast } from "./ui.js";
+import { holeResult, fmtToPar, holePar, holeYards, courseHole } from "./golf-scorecard.js";
+import { ROUND_HOLES, battleResult, standingLine, pairName } from "./golf-battle.js";
+import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
+         onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush,
+         MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
+
+const SAVE_DELAY = 600;
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+function styles() {
+  if (document.getElementById("dfl-battle-style")) return;
+  const s = document.createElement("style");
+  s.id = "dfl-battle-style";
+  s.textContent = `
+.dfl-battle-card{overflow:hidden;overflow:clip}
+.dfl-battle-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3);border-radius:13px 13px 0 0}
+.dfl-battle-head-top{display:flex;align-items:center;gap:10px}
+.dfl-battle-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}
+.dfl-battle-head h2{margin:0;font-size:19px}
+.dfl-battle-vs{display:grid;gap:7px;margin-top:11px}
+.dfl-battle-vs-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px;font-size:13px}
+.dfl-battle-vs-dot{width:10px;height:10px;border-radius:50%;background:var(--racer,var(--accent))}
+.dfl-battle-vs-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfl-battle-vs-row small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:900}
+
+/* Same perch as the team card's bar: under the fixed 56px topbar. */
+.dfl-battle-live{position:sticky;top:calc(57px + env(safe-area-inset-top));z-index:5;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);box-shadow:0 6px 14px rgba(0,0,0,.28)}
+.dfl-battle-live span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 6px;background:var(--bg-3);min-width:0}
+.dfl-battle-live small{font-size:8.5px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:var(--muted)}
+.dfl-battle-live b{font-size:15px;font-weight:950;line-height:1.15;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfl-battle-standing{color:var(--accent)}
+@media (max-height:480px) and (orientation:landscape) and (max-width:899px){.dfl-battle-live{top:calc(49px + env(safe-area-inset-top))}}
+
+.dfl-battle-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
+.dfl-battle-wait{color:var(--sc-over);font-weight:900}
+.dfl-battle-admin{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}
+.dfl-battle-clear{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
+
+/* ---- the paper card: hole, par, a row per pair ---- */
+.dfl-battle-strip{margin:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);overflow:hidden}
+.dfl-battle-strip-title{display:flex;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--bg-3);border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:var(--muted)}
+.dfl-battle-tbl{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-variant-numeric:tabular-nums}
+.dfl-battle-tbl th,.dfl-battle-tbl td{padding:0;height:27px;text-align:center;border-bottom:1px solid var(--line-soft);font-size:11px;font-weight:800}
+.dfl-battle-tbl th.lbl{width:52px;text-align:left;padding-left:10px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em;border-right:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfl-battle-tbl .row-h td{background:var(--bg-3);color:var(--muted);font-size:10px}
+.dfl-battle-tbl .row-p td{color:var(--muted);font-size:10px;height:23px}
+.dfl-battle-tbl .sub{border-left:1px solid var(--line);background:var(--hover-soft);width:32px}
+.dfl-battle-tbl tr:last-child td,.dfl-battle-tbl tr:last-child th{border-bottom:0}
+.dfl-battle-tbl td[data-jump]{cursor:pointer}
+.dfl-battle-tbl .won{color:var(--sc-under)}
+
+/* ---- one hole, one block, a row per pair ---- */
+.dfl-holes{margin:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg-2)}
+.bh+.bh{border-top:1px solid var(--line)}
+.bh-head{display:flex;align-items:baseline;gap:8px;padding:5px 10px;background:var(--bg-3);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
+.bh-head b{font-size:15px;color:var(--text);font-variant-numeric:tabular-nums}
+.bh-head .again{font-weight:800;color:var(--muted)}
+.bh-head .par{margin-left:auto}
+/* minmax(0,1fr) on the name, never a bare 1fr: a long pair of names must be
+   allowed to ellipsis rather than shove the input off the card. */
+.bh-row{display:grid;grid-template-columns:minmax(0,1fr) auto 60px;align-items:center;gap:6px;padding:6px 10px;min-height:52px}
+.bh-row+.bh-row{border-top:1px solid var(--line-soft)}
+.bh-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:800}
+.bh-name i{display:block;font-style:normal;font-size:9px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.bh-entry{display:flex;align-items:center;gap:5px}
+.bh-res{font-size:10.5px;font-weight:900;text-align:center;letter-spacing:.02em}
+.bh-row.is-low{background:rgba(47,191,95,.07)}
+.dfl-battle-final{margin:10px;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg-3);display:grid;gap:8px}
+.dfl-battle-final-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:baseline}
+.dfl-battle-final-row b{font-size:18px;font-variant-numeric:tabular-nums}
+.dfl-battle-final-row small{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}
+.dfl-battle-outcome{margin:0 10px 10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);font-size:12.5px;font-weight:900;text-align:center}
+.dfl-battle-help{padding:0 12px 12px;font-size:10px;color:var(--muted)}
+@media(max-width:359px){.bh-row{grid-template-columns:minmax(0,1fr) auto 52px;padding:6px 7px}.bh-res{font-size:9.5px}.dfl-battle-tbl th.lbl{width:44px;padding-left:7px}}`;
+  document.head.appendChild(s);
+}
+
+// ------------------------------------------------------------------- data
+
+async function fetchMatch(matchId) {
+  const m = await db().from("golf_matches").select("id,outing_id,match_number")
+    .eq("id", matchId).maybeSingle();
+  if (m.error) throw m.error;
+  if (!m.data) throw new Error("Battle not found");
+  const outingId = m.data.outing_id;
+
+  const sidesRes = await db().from("golf_match_sides").select("id,team_id,slot")
+    .eq("match_id", matchId).order("slot");
+  if (sidesRes.error) throw sidesRes.error;
+  const sides = sidesRes.data || [];
+  const sideIds = sides.map((s) => s.id);
+  const none = { data: [], error: null };
+
+  const [playersRes, scoresRes, teamsRes, holesRes, partsRes, outingRes, members] = await Promise.all([
+    sideIds.length ? db().from("golf_match_players").select("id,side_id,participant_id").in("side_id", sideIds) : none,
+    sideIds.length ? db().from("golf_match_scores").select("side_id,hole,strokes").in("side_id", sideIds) : none,
+    db().from("golf_teams").select("id,name,color").eq("outing_id", outingId),
+    db().from("golf_holes").select("hole,par").eq("outing_id", outingId).order("hole"),
+    db().from("golf_participants").select("id,member_id,team_id").eq("outing_id", outingId),
+    db().from("golf_outings").select("id,name,course_id").eq("id", outingId).maybeSingle(),
+    loadMembers().catch(() => []),
+  ]);
+  const err = playersRes.error || scoresRes.error || teamsRes.error || holesRes.error
+           || partsRes.error || outingRes.error;
+  if (err) throw err;
+
+  let courseHoles = [];
+  const courseId = outingRes.data?.course_id;
+  if (courseId) {
+    const ch = await db().from("golf_course_holes")
+      .select("hole,par,yardage_men,yardage_women").eq("course_id", courseId).order("hole");
+    if (!ch.error) courseHoles = ch.data || [];
+  }
+
+  const byMember = new Map((members || []).map((x) => [String(x.id), x.display_name]));
+  const byPart = new Map((partsRes.data || []).map((p) => [String(p.id), p]));
+  const teamById = new Map((teamsRes.data || []).map((t) => [String(t.id), t]));
+
+  /* Scores as a plain object, not a Map: this payload gets cached as JSON so
+     the card still opens out of signal, and a Map serialises to {}. */
+  const scores = {};
+  for (const row of scoresRes.data || []) {
+    (scores[String(row.side_id)] ||= {})[Number(row.hole)] = Number(row.strokes);
+  }
+
+  return {
+    match: m.data,
+    outing: outingRes.data,
+    holes: holesRes.data || [],
+    courseHoles,
+    scores,
+    sides: sides.map((s) => {
+      const mine = (playersRes.data || []).filter((p) => String(p.side_id) === String(s.id));
+      const team = teamById.get(String(s.team_id));
+      return {
+        id: s.id, team_id: s.team_id, slot: Number(s.slot),
+        teamName: team?.name || "Team", color: team?.color || "",
+        players: mine.map((p) => {
+          const part = byPart.get(String(p.participant_id));
+          return {
+            participant_id: p.participant_id,
+            member_id: part?.member_id ?? null,
+            name: byMember.get(String(part?.member_id)) || "Unknown",
+          };
+        }),
+      };
+    }),
+  };
+}
+
+async function loadMatch(matchId) {
+  try {
+    const card = await fetchMatch(matchId);
+    cacheMatch(matchId, card);
+    return { ...card, stale: false };
+  } catch (err) {
+    const cached = cachedMatch(matchId);
+    if (!cached) throw err;
+    return { ...cached, stale: true };
+  }
+}
+
+/* Server rows with this device's queue over the top, same rule as the team
+   card: anything still waiting to be sent is newer than what came back. */
+function strokeMap(card, sideId) {
+  const map = new Map(Object.entries(card.scores?.[String(sideId)] || {})
+    .map(([hole, strokes]) => [Number(hole), Number(strokes)]));
+  for (const [hole, strokes] of pendingForSide(sideId)) {
+    if (strokes == null) map.delete(hole); else map.set(hole, strokes);
+  }
+  return map;
+}
+
+// ------------------------------------------------------------------ views
+
+function liveBar(names, r) {
+  return `<div class="dfl-battle-live">
+    <span><small>Thru</small><b data-live-thru>${r.thru || "—"}</b></span>
+    <span><small>Standing</small><b class="dfl-battle-standing" data-live-standing>${esc(standingLine(r, names[0], names[1]))}</b></span>
+  </div>`;
+}
+
+function statusLine(sides, editable, stale) {
+  if (!editable) return "Read-only — the four players in this battle and admins can score it.";
+  const waiting = pendingCountSides(sides.map((s) => s.id));
+  if (waiting) return `<b class="dfl-battle-wait">${waiting} hole${waiting === 1 ? "" : "s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
+  if (stale) return "Showing the last copy saved on this phone — it will refresh when you have signal.";
+  return "Both pairs share this card. Tap − and + or type the number; it saves on its own.";
+}
+
+/* The paper card. A row per pair, nine at a time, and the lower score of the
+   two is tinted so you can read the round off it at a glance. */
+function stripNine(label, start, card, maps, names) {
+  const nums = Array.from({ length: 9 }, (_, i) => start + i);
+  const par = nums.reduce((a, h) => a + holePar(card.holes, h), 0);
+  const row = (map, other, i) => {
+    const sum = nums.reduce((a, h) => a + num(map.get(h)), 0);
+    return `<tr class="row-s"><th class="lbl" title="${esc(names[i])}">${esc(names[i])}</th>${nums.map((h) => {
+      const v = num(map.get(h)), o = num(other.get(h));
+      return `<td data-jump="${h}" class="${v && o && v < o ? "won" : ""}">${v || "·"}</td>`;
+    }).join("")}<td class="sub" data-sub="${i}:${start}">${sum || "—"}</td></tr>`;
+  };
+  return `<table class="dfl-battle-tbl">
+    <tr class="row-h"><th class="lbl">Hole</th>${nums.map((h) => `<td>${h}</td>`).join("")}<td class="sub">${label}</td></tr>
+    <tr class="row-p"><th class="lbl">Par</th>${nums.map((h) => `<td>${holePar(card.holes, h)}</td>`).join("")}<td class="sub">${par}</td></tr>
+    ${row(maps[0], maps[1], 0)}${row(maps[1], maps[0], 1)}</table>`;
+}
+
+function holeBlock(h, card, maps, names, editable) {
+  const par = holePar(card.holes, h);
+  const yards = holeYards(card.courseHoles, h);
+  const repeats = card.holes.length > 0 && card.holes.length <= 9;
+  const again = repeats && h > 9 ? `<span class="again">(${courseHole(card.holes, h)})</span>` : "";
+  const rows = maps.map((map, i) => {
+    const v = map.get(h) ?? "";
+    const other = num(maps[1 - i].get(h));
+    const r = holeResult(v, par);
+    const low = num(v) && other && num(v) < other;
+    return `<div class="bh-row ${low ? "is-low" : ""}" data-row="${i}:${h}">
+      <span class="bh-name">${esc(names[i])}<i>${esc(card.sides[i].teamName)}</i></span>
+      <span class="bh-entry">${editable ? `<button type="button" class="sbtn" data-step="-1" data-side="${i}" data-hole="${h}" aria-label="One fewer for ${esc(names[i])} on hole ${h}">−</button>` : ""}
+        <span class="mark ${r.mark}" data-mark="${i}:${h}"><input data-battle-score data-side="${i}" data-hole="${h}" data-par="${par}" type="text" pattern="[0-9]*" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="${esc(v)}" maxlength="2" ${editable ? "" : "disabled"} aria-label="${esc(names[i])} strokes hole ${h}"></span>
+        ${editable ? `<button type="button" class="sbtn" data-step="1" data-side="${i}" data-hole="${h}" aria-label="One more for ${esc(names[i])} on hole ${h}">+</button>` : ""}</span>
+      <span class="bh-res ${r.cls}" data-res="${i}:${h}">${r.label}</span>
+    </div>`;
+  }).join("");
+  return `<div class="bh" id="bhole-${h}"><div class="bh-head"><b>${h}</b>${again}<span>${yards ? `${yards} yd` : ""}</span><span class="par">Par ${par}</span></div>${rows}</div>`;
+}
+
+function finalBlock(maps, names, card, r) {
+  const totals = maps.map((m) => {
+    let s = 0, p = 0;
+    for (let h = 1; h <= ROUND_HOLES; h++) if (num(m.get(h))) { s += num(m.get(h)); p += holePar(card.holes, h); }
+    return { s, p };
+  });
+  return `<div class="dfl-battle-final">${totals.map((t, i) => `
+    <div class="dfl-battle-final-row"><span class="bh-name">${esc(names[i])}</span>
+      <span><small>Strokes</small> <b data-total="${i}">${t.s || "—"}</b></span>
+      <span><small>+/−</small> <b data-topar="${i}">${fmtToPar(t.s, t.p)}</b></span></div>`).join("")}
+  </div>
+  <div class="dfl-battle-outcome" data-outcome>${esc(outcomeText(r, names))}</div>`;
+}
+
+/* What the battle is worth, said plainly. The point only exists once both
+   cards are full, so an unfinished battle says what is missing instead of
+   implying somebody has won. */
+function outcomeText(r, names) {
+  if (r.complete) {
+    if (r.halved) return "Level after 18 — no point to either team";
+    return `${r.diff < 0 ? names[0] : names[1]} win by ${r.lead} — 1 point`;
+  }
+  const left = [ROUND_HOLES - r.postedA, ROUND_HOLES - r.postedB];
+  if (left[0] === ROUND_HOLES && left[1] === ROUND_HOLES) return "No point until both cards are filled in";
+  return `${left[0] ? `${names[0]}: ${left[0]} to go. ` : ""}${left[1] ? `${names[1]}: ${left[1]} to go.` : ""}`.trim();
+}
+
+// ----------------------------------------------------------------- render
+
+function recalc(root, card) {
+  const inputs = [...root.querySelectorAll("input[data-battle-score]")];
+  const maps = [new Map(), new Map()];
+  for (const input of inputs) {
+    const i = Number(input.dataset.side), h = Number(input.dataset.hole), v = num(input.value);
+    if (v > 0) maps[i].set(h, v);
+  }
+  for (const input of inputs) {
+    const i = Number(input.dataset.side), h = Number(input.dataset.hole);
+    const par = Number(input.dataset.par) || 4;
+    const v = num(input.value), other = num(maps[1 - i].get(h));
+    const r = holeResult(v, par);
+    const mark = root.querySelector(`[data-mark="${i}:${h}"]`);
+    if (mark) mark.className = "mark " + r.mark;
+    const res = root.querySelector(`[data-res="${i}:${h}"]`);
+    if (res) { res.textContent = r.label; res.className = "bh-res " + r.cls; }
+    const row = root.querySelector(`[data-row="${i}:${h}"]`);
+    if (row) row.classList.toggle("is-low", !!(v && other && v < other));
+    /* Hole h appears in exactly one of the two nines, once per pair, in row
+       order - so the ith cell for that hole is this pair's. */
+    const cell = root.querySelectorAll(`[data-jump="${h}"]`)[i];
+    if (cell) { cell.textContent = v || "·"; cell.className = v && other && v < other ? "won" : ""; }
+  }
+  for (let i = 0; i < 2; i++) {
+    for (const start of [1, 10]) {
+      let s = 0;
+      for (let h = start; h <= start + 8; h++) s += num(maps[i].get(h));
+      const sub = root.querySelector(`[data-sub="${i}:${start}"]`);
+      if (sub) sub.textContent = s || "—";
+    }
+    let s = 0, p = 0;
+    for (let h = 1; h <= ROUND_HOLES; h++) if (num(maps[i].get(h))) { s += num(maps[i].get(h)); p += holePar(card.holes, h); }
+    const tot = root.querySelector(`[data-total="${i}"]`);
+    if (tot) tot.textContent = s || "—";
+    const tp = root.querySelector(`[data-topar="${i}"]`);
+    if (tp) tp.textContent = fmtToPar(s, p);
+  }
+  const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
+  const r = battleResult(maps[0], maps[1]);
+  const thru = root.querySelector("[data-live-thru]");
+  if (thru) thru.textContent = r.thru || "—";
+  const standing = root.querySelector("[data-live-standing]");
+  if (standing) standing.textContent = standingLine(r, names[0], names[1]);
+  const outcome = root.querySelector("[data-outcome]");
+  if (outcome) outcome.textContent = outcomeText(r, names);
+}
+
+let stopWatch = null;
+function watchSync(root, card, editable) {
+  stopWatch?.();
+  const paint = () => {
+    const node = root.querySelector("[data-battle-status]");
+    if (!node) { stopWatch?.(); return; }
+    node.innerHTML = statusLine(card.sides, editable, card.stale);
+  };
+  const off = onQueueChange(paint);
+  addEventListener("online", paint); addEventListener("offline", paint);
+  stopWatch = () => { off(); removeEventListener("online", paint); removeEventListener("offline", paint); stopWatch = null; };
+  paint();
+  flush();
+}
+
+async function render(root, matchId) {
+  styles();
+  const card = await loadMatch(matchId);
+  if (card.sides.length < 2) {
+    root.innerHTML = `<div class="card"><div class="card-body"><a class="backlink" href="#/golf?id=${card.match.outing_id}">← Golf</a><p><strong>This battle has no sides yet.</strong></p><p class="muted tiny">An admin needs to build the 2v2s for this event.</p></div></div>`;
+    return;
+  }
+  const maps = card.sides.map((s) => strokeMap(card, s.id));
+  const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
+  const me = String(currentMember()?.id || "");
+  const admin = isAdmin();
+  /* Any of the four may write either side - that is the format, not a
+     shortcut. The database enforces the same rule. */
+  const editable = admin || card.sides.some((s) => s.players.some((p) => String(p.member_id) === me));
+  const r = battleResult(maps[0], maps[1]);
+
+  root.innerHTML = `<section class="card dfl-battle-card">
+    <header class="dfl-battle-head">
+      <div class="dfl-battle-head-top"><a class="backlink" href="#/golf?id=${card.match.outing_id}">← Golf</a>
+        <div><span class="dfl-battle-kicker">2V2 · BATTLE ${card.match.match_number}</span><h2>${esc(names[0])} vs ${esc(names[1])}</h2></div></div>
+      <div class="dfl-battle-vs">${card.sides.map((s, i) => `
+        <div class="dfl-battle-vs-row" style="--racer:${esc(s.color || "")}"><span class="dfl-battle-vs-dot"></span><b>${esc(names[i])}</b><small>${esc(s.teamName)}</small></div>`).join("")}</div>
+    </header>
+    ${liveBar(names, r)}
+    <div class="dfl-battle-status" data-battle-status>${statusLine(card.sides, editable, card.stale)}</div>
+    ${admin ? `<div class="dfl-battle-admin"><button type="button" class="dfl-battle-clear" data-clear-battle>Clear this battle</button></div>` : ""}
+    <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>Tap a hole to jump to it</span></header>
+      <div style="overflow-x:auto">${stripNine("OUT", 1, card, maps, names)}${stripNine("IN", 10, card, maps, names)}</div></section>
+    <div class="dfl-holes">${Array.from({ length: ROUND_HOLES }, (_, i) => holeBlock(i + 1, card, maps, names, editable)).join("")}</div>
+    ${finalBlock(maps, names, card, r)}
+    <div class="dfl-battle-help">Fewest strokes over the round wins the battle and puts one point on that team's board. Level after 18 is worth nothing to either side. Rolla is a 9-hole course, so holes 10–18 are the second time around.</div>
+  </section>`;
+
+  wire(root, card, editable);
+  watchSync(root, card, editable);
+
+  if (admin) {
+    const clear = root.querySelector("[data-clear-battle]");
+    clear?.addEventListener("click", async () => {
+      if (!confirm(`Clear every stroke in ${names[0]} vs ${names[1]}? This cannot be undone.`)) return;
+      clear.disabled = true;
+      try {
+        dropPendingSides(card.sides.map((s) => s.id));
+        const { error } = await db().from("golf_match_scores").delete()
+          .in("side_id", card.sides.map((s) => s.id));
+        if (error) throw error;
+        dropCachedMatch(matchId);
+        await render(root, matchId);
+      } catch (err) { clear.disabled = false; toast(err.message || "Could not clear the battle", true); }
+    });
+  }
+}
+
+// ------------------------------------------------------------------- wire
+
+const timers = new Map();
+function queueSave(card, input) {
+  const i = Number(input.dataset.side), hole = Number(input.dataset.hole);
+  const sideId = card.sides[i].id, key = `${sideId}:${hole}`;
+  clearTimeout(timers.get(key));
+  timers.set(key, setTimeout(() => {
+    timers.delete(key);
+    try { queueSideScore(card.match.outing_id, sideId, hole, input.value.trim()); }
+    catch (err) { toast(err.message || "Could not save that score", true); }
+  }, SAVE_DELAY));
+}
+
+function wire(root, card, editable) {
+  /* The strip is a jump list, not a second place to score. */
+  root.addEventListener("click", (e) => {
+    const jump = e.target.closest("[data-jump]");
+    if (!jump) return;
+    root.querySelector(`#bhole-${jump.dataset.jump}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+  if (!editable || root.dataset.battleWire === "1") return;
+  root.dataset.battleWire = "1";
+
+  /* First tap on an empty hole lands on par - the most common score, one tap
+     instead of four. Same behaviour as the team card. */
+  root.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-step]");
+    if (!btn) return;
+    const input = root.querySelector(`input[data-battle-score][data-side="${btn.dataset.side}"][data-hole="${btn.dataset.hole}"]`);
+    if (!input) return;
+    const par = Number(input.dataset.par) || 4, now = num(input.value);
+    input.value = String(now < 1 ? par : Math.max(MIN_STROKES, Math.min(MAX_STROKES, now + Number(btn.dataset.step))));
+    recalc(root, card);
+    queueSave(card, input);
+  });
+
+  root.addEventListener("input", (e) => {
+    const input = e.target.closest("input[data-battle-score]");
+    if (!input) return;
+    const clean = input.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 2);
+    if (clean !== input.value) input.value = clean;
+    if (Number(clean) > MAX_STROKES) input.value = String(MAX_STROKES);
+    recalc(root, card);
+    queueSave(card, input);
+  });
+
+  root.addEventListener("keydown", (e) => {
+    const input = e.target.closest("input[data-battle-score]");
+    if (input && e.key === "Enter") { e.preventDefault(); input.blur(); }
+  });
+}
+
+// -------------------------------------------------------------------- boot
+
+function boot() {
+  const run = () => {
+    const root = document.querySelector("#golf-outing");
+    const q = new URLSearchParams(location.hash.split("?")[1] || "");
+    const matchId = q.get("match");
+    if (!root || !matchId || !root.querySelector(".golf-match-page")) return;
+    render(root, matchId).catch((err) => {
+      root.innerHTML = `<div class="card"><div class="card-body"><strong>Could not load this battle.</strong><p class="muted">${esc(err.message)}</p></div></div>`;
+    });
+  };
+  new MutationObserver(run).observe(document.body, { childList: true, subtree: true });
+  run();
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();

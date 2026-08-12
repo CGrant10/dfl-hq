@@ -38,12 +38,15 @@ const num=v=>Number.isFinite(Number(v))?Number(v):0;
 /* Long enough that + + + is one write, short enough that a save always
    beats the walk to the next tee. */
 const SAVE_DELAY=600;
-const fmtToPar=(score,par)=>{if(!score)return"—";const d=score-par;return d===0?"E":d>0?`+${d}`:`${d}`;};
+/* Exported from here rather than copied into the 2v2 card: one place decides
+   what a birdie is called and what shape it wears, so the team card, the
+   pair card and the boards can never disagree about the same round. */
+export const fmtToPar=(score,par)=>{if(!score)return"—";const d=score-par;return d===0?"E":d>0?`+${d}`:`${d}`;};
 /*
   One place decides what a score is called, what shape it wears and what
   colour it is, so the strip, the row and the label can never disagree.
 */
-function holeResult(score,par){const s=Number(score);if(!s)return{mark:"m-none",cls:"result-empty",label:"—"};const d=s-Number(par);if(d<=-2)return{mark:"m-eagle",cls:"result-eagle",label:"EAGLE"};if(d===-1)return{mark:"m-birdie",cls:"result-birdie",label:"BIRDIE"};if(d===0)return{mark:"m-par",cls:"result-par",label:"PAR"};if(d===1)return{mark:"m-bogey",cls:"result-bogey",label:"BOGEY"};if(d===2)return{mark:"m-dbl",cls:"result-double",label:"DOUBLE"};return{mark:"m-dbl",cls:"result-double",label:`+${d}`};}
+export function holeResult(score,par){const s=Number(score);if(!s)return{mark:"m-none",cls:"result-empty",label:"—"};const d=s-Number(par);if(d<=-2)return{mark:"m-eagle",cls:"result-eagle",label:"EAGLE"};if(d===-1)return{mark:"m-birdie",cls:"result-birdie",label:"BIRDIE"};if(d===0)return{mark:"m-par",cls:"result-par",label:"PAR"};if(d===1)return{mark:"m-bogey",cls:"result-bogey",label:"BOGEY"};if(d===2)return{mark:"m-dbl",cls:"result-double",label:"DOUBLE"};return{mark:"m-dbl",cls:"result-double",label:`+${d}`};}
 function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;const s=document.createElement("style");s.id="dfl-team-scorecard-style";s.textContent=`
 /* overflow:clip, NOT hidden. Both clip the head's square corners, but
    'hidden' makes this card a scroll container and silently kills the sticky
@@ -174,9 +177,9 @@ function scoreMap(scores,pending){const map=new Map(scores.map(s=>[Number(s.hole
 if(pending)for(const [hole,strokes] of pending){if(strokes==null)map.delete(hole);else map.set(hole,{...(map.get(hole)||{}),hole,strokes});}
 return map;}
 function total(map,start,end){let t=0;for(let h=start;h<=end;h++)t+=num(map.get(h)?.strokes);return t;}
-function courseHole(holes,h){return h>9?h-9:h}
-function holePar(holes,h){const n=courseHole(holes,h);return Number(holes.find(x=>Number(x.hole)===n)?.par)||4}
-function holeYards(courseHoles,h){const n=courseHole(courseHoles,h);return Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_men)||Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_women)||0}
+export function courseHole(holes,h){return h>9?h-9:h}
+export function holePar(holes,h){const n=courseHole(holes,h);return Number(holes.find(x=>Number(x.hole)===n)?.par)||4}
+export function holeYards(courseHoles,h){const n=courseHole(courseHoles,h);return Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_men)||Number(courseHoles.find(x=>Number(x.hole)===n)?.yardage_women)||0}
 function playedPar(map,holes,start,end){let p=0;for(let h=start;h<=end;h++)if(map.has(h))p+=holePar(holes,h);return p}
 function thruCount(map,start,end){let n=0;for(let h=start;h<=end;h++)if(num(map.get(h)?.strokes))n++;return n}
 

@@ -26,6 +26,11 @@ dfl_hq/
 ├── members_schema.sql       member profiles + Sleeper hidden flag (run once)
 ├── rules_schema.sql         editable rule tabs (additive, run once)
 ├── polls_schema.sql         member-owned changeable votes (additive, run once)
+├── golf_schema.sql          golf outings + one shared card per team (run once)
+├── golf_courses_schema.sql  course library: pars, yardage, stroke index (run once)
+├── golf_draft_schema.sql    captains drafting players into teams (run once)
+├── golf_bag_schema.sql      private club distances (run once)
+├── golf_matches_schema.sql  the 2v2s: pairs, battles, team points (run once)
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -493,6 +498,52 @@ that a caller really is the member they claim to be — there are no member
 passwords, so identity is asserted, not proven, exactly as it already is in the
 "Who are you?" picker. If that ever matters, give members a short PIN and check
 it in a header the way `is_admin()` checks the admin password.
+
+---
+
+## 4f. Golf: the 2v2s
+
+Run **`golf_matches_schema.sql`** once, after `golf_schema.sql` and
+`golf_draft_schema.sql`. Until it is run, the 2v2 board simply does not appear
+(and an admin sees a one-line note naming the file).
+
+**The format.** Two captains draft twelve players into two teams of six. Each
+team splits into pairs, and a pair plays 2v2 against a pair from the other team
+— three battles. One ball per pair, so one number per pair per hole. The pair
+with the **fewest strokes over the round** wins the battle and puts **one point**
+on their team's board. Level after 18 is worth nothing to either side, so an
+outing can finish 2–0 with one halved, or 1–1, or 0–0.
+
+**Setting one up.**
+
+1. Add the players to the event and get them onto two teams — the captains
+   draft, or the random/balanced generator.
+2. On the event page, under **The 2v2s**, press **Build the 2v2s**. Pairs are
+   made in draft order (the first two a captain picked go together) and pair 1
+   plays pair 1. It builds as many battles as the smaller team can field, so
+   6 v 6 gives three; an odd man out is simply not in one.
+3. Adjust anybody with the seat pickers. Choosing a player who is already in
+   another battle **swaps** the two, because a player can only be in one pair —
+   the database enforces that, not just the screen.
+
+**Scoring one.** Open a battle and both pairs are on the one card: whoever is
+holding the phone writes down both numbers, which is why any of the four players
+(and any admin) can score either side. Strokes are queued on the device first
+and sent when the course has signal — see the offline note in the golf section
+of `js/golf-offline.js`.
+
+**Two things worth knowing.**
+
+- The point is not awarded until **both** cards are full. "Two up with one to
+  play" is not a win, and a card with a hole missing is not a round — the battle
+  reads "Dave & Matt: 1 to go" instead of declaring a winner.
+- Only holes **both** pairs have posted are compared while a round is in
+  progress, so a pair who have written down five holes never appear to be
+  losing by twenty to a pair who have written down one.
+
+**Rebuilding.** Once strokes exist, `golf_build_matches` refuses to run — it
+would orphan scores entered against the old pairs. Clear the 2v2 strokes first
+(the button appears next to **Rebuild the pairs**).
 
 ---
 
