@@ -3,16 +3,95 @@ import { db, insertRow, updateRow, isAdmin } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
+import { pendingFor, dropPending } from "../golf-offline.js";
 const DEFAULT_RATING=75;
 const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team Sandbagger","Team Whiff","Team Duff","Team Yips"];
 const TEAM_COLORS=["#2fbf5f","#4aa3ff","#f0a742","#e0574a","#b07cf0","#3ecfcf"];
-export async function render(view){const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"));return renderList(view);}
+export async function render(view){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"));return renderList(view);}
 async function renderList(view){view.innerHTML=loading();const res=await db().from("golf_outings").select("*").order("event_date",{ascending:false});if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}const outings=visible("golf_outings",res.data||[]),live=outings.filter(o=>o.status!=="final"),past=outings.filter(o=>o.status==="final");view.innerHTML=`<div id="golf-wrap"><header class="page-head"><h1>DFL Golf</h1>${addControl("golf_outings","New event")}</header>${outings.length?"":empty(canEdit()?"No golf events yet. Create one above.":"No golf events yet.")}${live.length?`<h2 class="section-title">Upcoming<span class="count">${live.length}</span></h2>${live.map(outingCard).join("")}`:""}${past.length?`<h2 class="section-title">Golf history<span class="count">${past.length}</span></h2>${past.map(outingCard).join("")}`:""}<div class="golf-bag-page"></div></div>`;wireInline(view.querySelector("#golf-wrap"),()=>render(view));}
 function outingCard(o){const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live","green"]:["Setup","warn"];return `<article class="card golf-card ${hiddenClass("golf_outings",o)}"><a class="golf-link" href="#/golf?id=${o.id}"><div class="golf-top"><h3 class="card-heading">${esc(o.name)}</h3><span class="pill ${state[1]}">${state[0]}</span></div><div class="golf-meta">${o.course?`<span>${esc(o.course)}</span>`:""}${o.event_date?`<span>· ${esc(fmtDate(o.event_date))}</span>`:""}<span>· ${o.holes||18} holes</span></div></a>${editControls("golf_outings",o,{compact:true})}</article>`;}
-function scoreToPar(scores,pars){let total=0,par=0,holes=0;for(const s of scores){const h=Number(s.hole),st=Number(s.strokes),p=Number(pars.get(h));if(Number.isFinite(st)&&Number.isFinite(p)){total+=st;par+=p;holes++;}}return{diff:total-par,holes,total};}
-function scoreLabel(diff,holes){if(!holes)return"Not started";if(diff===0)return"E";return diff>0?`+${diff}`:`${diff}`;}
-function leaderboard(teams,parts,scores,holes){const pars=new Map((holes||[]).map(h=>[Number(h.hole),Number(h.par)]));const cards=teams.map(t=>{const ss=scores.filter(s=>String(s.team_id)===String(t.id));const x=scoreToPar(ss,pars);return{team:t,...x,label:scoreLabel(x.diff,x.holes)};}).sort((a,b)=>{if(!a.holes&&!b.holes)return a.team.sort_order-b.team.sort_order;if(!a.holes)return 1;if(!b.holes)return-1;return a.diff-b.diff||b.holes-a.holes||a.team.sort_order-b.team.sort_order;});return `<section class="card golf-leaderboard"><div class="card-title-row"><div><div class="card-title">Live leaderboard</div><p class="muted tiny">Updates as teams enter strokes.</p></div><span class="admin-badge">LIVE</span></div><div class="golf-leader-list">${cards.length?cards.map((x,i)=>`<a class="golf-leader-row" href="#/golf?id=${x.team.outing_id}&team=${x.team.id}"><span class="golf-leader-pos">${i+1}</span><span class="golf-leader-team"><strong>${esc(x.team.name||"Team")}</strong><small>${x.holes?`${x.holes} hole${x.holes===1?"":"s"}`:"Not started"}</small></span><strong class="golf-leader-score">${x.label}</strong><span class="golf-leader-arrow">›</span></a>`).join(""):empty("No teams yet.")}</div></section>`;}
-async function renderOuting(view,id,teamId){view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));if(teamId&&!selected){location.hash=`#/golf?id=${id}`;return;}const title=`<header class="page-head golf-event-head"><a class="backlink" href="#/golf">← Golf</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtDate(outing.event_date))}</span>`:""}<span>· ${outing.holes||18} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}view.innerHTML=`${title}<div id="golf-outing"><div class="golf-draft-page"></div>${leaderboard(teams,parts,scoresRes.data||[],holesRes.data||[])}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+/*
+  A 9-hole course is stored as 9 pars and played twice, so hole 12 takes hole
+  3's par - the same wrap the scorecard has always applied.
+
+  Without it the pars map had no key for 10-18, every back-nine stroke failed
+  the isFinite check below, and the board quietly threw half the round away: a
+  team that had finished read "Thru 9" at their front-nine score.
+*/
+function parFor(pars,hole){const h=Number(hole);if(pars.has(h))return pars.get(h);if(pars.size&&pars.size<=9&&h>9)return pars.get(h-9);return undefined;}
+function scoreToPar(scores,pars){let total=0,par=0,holes=0;for(const s of scores){const h=Number(s.hole),st=Number(s.strokes),p=Number(parFor(pars,h));if(Number.isFinite(st)&&Number.isFinite(p)){total+=st;par+=p;holes++;}}return{diff:total-par,holes,total};}
+/* A dash, not "Not started" - the line under the team name already says that,
+   and the score column is 44px of tabular numerals. */
+function scoreLabel(diff,holes){if(!holes)return"—";if(diff===0)return"E";return diff>0?`+${diff}`:`${diff}`;}
+/* Strokes this device has entered but not yet managed to send count on the
+   board too - the alternative is your own team reading a hole behind while
+   you stand there looking at the number you just typed. */
+function withPending(outingId,teamId,rows){const pend=pendingFor(outingId,teamId);if(!pend.size)return rows;
+const map=new Map(rows.map(r=>[Number(r.hole),r]));
+for(const [hole,strokes] of pend){if(strokes==null)map.delete(hole);else map.set(hole,{hole,strokes});}
+return [...map.values()];}
+
+/*
+  The rows on their own, so the poll can replace them without rebuilding the
+  card around them.
+
+  Sorted by to-par, which ranks a team at −1 thru 6 above one at +2 thru 18 -
+  that is how a live golf leaderboard works, so THRU is printed next to every
+  score. A team yet to start sits at the bottom rather than at even par.
+*/
+/* 18, NOT outing.holes. A 9-hole course is stored as holes=9 and played twice,
+   and the scorecard always offers holes 1-18 - so reading outing.holes here
+   would call a team finished when they were standing on the 10th tee. */
+const ROUND_HOLES=18;
+function leaderRows(teams,scores,holes,outing){const pars=new Map((holes||[]).map(h=>[Number(h.hole),Number(h.par)]));
+const cards=teams.map(t=>{const ss=withPending(outing.id,t.id,scores.filter(s=>String(s.team_id)===String(t.id)));const x=scoreToPar(ss,pars);return{team:t,...x,label:scoreLabel(x.diff,x.holes)};}).sort((a,b)=>{if(!a.holes&&!b.holes)return a.team.sort_order-b.team.sort_order;if(!a.holes)return 1;if(!b.holes)return-1;return a.diff-b.diff||b.holes-a.holes||a.team.sort_order-b.team.sort_order;});
+if(!cards.length)return empty("No teams yet.");
+const thru=x=>!x.holes?"Not started":`${x.holes>=ROUND_HOLES?"F":`Thru ${x.holes}`} · ${x.total} stroke${x.total===1?"":"s"}`;
+return cards.map((x,i)=>`<a class="golf-leader-row" href="#/golf?id=${x.team.outing_id}&team=${x.team.id}"><span class="golf-leader-pos">${i+1}</span><span class="golf-leader-team"><strong>${esc(x.team.name||"Team")}</strong><small>${thru(x)}</small></span><strong class="golf-leader-score">${x.label}</strong><span class="golf-leader-arrow">›</span></a>`).join("");}
+
+function leaderboard(teams,scores,holes,outing){return `<section class="card golf-leaderboard"><div class="card-title-row"><div><div class="card-title">Live leaderboard</div><p class="muted tiny">Updates as teams enter strokes.</p></div><span class="admin-badge">LIVE</span></div><div class="golf-leader-list" data-leader-list>${leaderRows(teams,scores,holes,outing)}</div></section>`;}
+
+const LEADER_POLL_MS=15000;
+let leaderTimer=0,onLeaderVisible=null;
+function stopLeaderPoll(){clearInterval(leaderTimer);leaderTimer=0;
+if(onLeaderVisible){document.removeEventListener("visibilitychange",onLeaderVisible);onLeaderVisible=null;}}
+
+/*
+  "Updates as teams enter strokes" was only true if you reloaded the page:
+  nothing re-read the scores. Now it polls, the same way the draft board
+  does, and stops as soon as the list it paints leaves the DOM.
+
+  ONLY the list is replaced. A full page re-render every 15 seconds would
+  close the admin cards mid-edit and reset a select somebody was using.
+
+  A failed read is ignored on purpose - out of signal the right thing to show
+  is the last board we had, not an error where the standings were.
+*/
+function startLeaderPoll(view,outing){stopLeaderPoll();
+if(!view.querySelector("[data-leader-list]"))return;
+
+const tick=async()=>{
+  const node=view.querySelector("[data-leader-list]");
+  if(!node||!document.body.contains(node))return stopLeaderPoll();
+  /* A backgrounded tab is a phone in a pocket. Don't spend its battery or
+     its data on standings nobody is looking at. */
+  if(document.hidden)return;
+  const [teamsRes,scoresRes,holesRes]=await Promise.all([
+    db().from("golf_teams").select("*").eq("outing_id",outing.id).order("sort_order"),
+    db().from("golf_scores").select("*").eq("outing_id",outing.id),
+    db().from("golf_holes").select("hole,par").eq("outing_id",outing.id).order("hole")]);
+  if(teamsRes.error||scoresRes.error||holesRes.error)return;
+  const fresh=view.querySelector("[data-leader-list]");
+  if(fresh)fresh.innerHTML=leaderRows(teamsRes.data||[],scoresRes.data||[],holesRes.data||[],outing);
+};
+
+leaderTimer=setInterval(tick,LEADER_POLL_MS);
+/* Coming back to the app is the moment you most want the truth, and it is
+   also the moment the numbers are most likely to be stale - the pocket
+   skipped every tick. Refresh now rather than up to 15 seconds from now. */
+onLeaderVisible=()=>{if(!document.hidden)tick();};
+document.addEventListener("visibilitychange",onLeaderVisible);}
+async function renderOuting(view,id,teamId){view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));if(teamId&&!selected){location.hash=`#/golf?id=${id}`;return;}const title=`<header class="page-head golf-event-head"><a class="backlink" href="#/golf">← Golf</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtDate(outing.event_date))}</span>`:""}<span>· ${outing.holes||18} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}view.innerHTML=`${title}<div id="golf-outing"><div class="golf-draft-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
 function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(byId.get(String(p.member_id))?.display_name||"Unknown")}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(byId.get(String(p.member_id))?.display_name||"Unknown")}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,byId)}`:""}</section>`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
@@ -73,7 +152,11 @@ function wireTeams(view,outing,parts,teams,rate,refresh){const root=view.querySe
 if(lock){try{await mustWrite(db().from("golf_participants").update({locked:lock.dataset.on!=="1"}).eq("id",lock.dataset.lock),"lock that player");refresh();}catch(err){toast(err.message||"Could not lock that player",true);}return;}
 /* Two gates on the same button, and the count is in the sentence: this
    deletes the whole event's strokes and there is no undo. */
-if(reset){if(!confirm(`Reset every scorecard in this event?\n\nThis deletes all strokes for all teams. Teams, players and pars stay. This cannot be undone.`))return;if(!confirm("Last check - the strokes are gone for good. Reset all scorecards?"))return;reset.disabled=true;try{const gone=await mustWrite(db().from("golf_scores").delete().eq("outing_id",outing.id),"reset the scorecards");toast(`All scorecards reset — ${gone.length} stroke${gone.length===1?"":"s"} cleared`);refresh();}catch(err){toast(err.message||"Could not reset the scorecards",true);reset.disabled=false;}return;}if(clr){if(!confirm("Clear the teams? Players stay in the outing."))return;try{const a=await db().from("golf_participants").update({team_id:null}).eq("outing_id",outing.id);if(a.error)throw a.error;const b=await db().from("golf_teams").delete().eq("outing_id",outing.id);if(b.error)throw b.error;refresh();}catch(err){toast(err.message||"Could not clear the teams",true);}return;}if(rnd||bal){const want=Math.max(2,Math.min(6,Number(view.querySelector("#golf-team-count")?.value)||2));
+if(reset){if(!confirm(`Reset every scorecard in this event?\n\nThis deletes all strokes for all teams. Teams, players and pars stay. This cannot be undone.`))return;if(!confirm("Last check - the strokes are gone for good. Reset all scorecards?"))return;reset.disabled=true;
+/* Queued strokes on THIS device go too, or the first flush after the reset
+   would put some of them straight back. */
+dropPending(outing.id);
+try{const gone=await mustWrite(db().from("golf_scores").delete().eq("outing_id",outing.id),"reset the scorecards");toast(`All scorecards reset — ${gone.length} stroke${gone.length===1?"":"s"} cleared`);refresh();}catch(err){toast(err.message||"Could not reset the scorecards",true);reset.disabled=false;}return;}if(clr){if(!confirm("Clear the teams? Players stay in the outing."))return;try{const a=await db().from("golf_participants").update({team_id:null}).eq("outing_id",outing.id);if(a.error)throw a.error;const b=await db().from("golf_teams").delete().eq("outing_id",outing.id);if(b.error)throw b.error;refresh();}catch(err){toast(err.message||"Could not clear the teams",true);}return;}if(rnd||bal){const want=Math.max(2,Math.min(6,Number(view.querySelector("#golf-team-count")?.value)||2));
 /* Dealing the players out discards every pick that has been made. Say so with
    the number in it rather than quietly reassigning a half-finished draft. */
 const picked=parts.filter(p=>p.pick_number!=null).length;

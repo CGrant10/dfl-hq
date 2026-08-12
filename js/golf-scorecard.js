@@ -30,9 +30,11 @@
    ===================================================================== */
 import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
+import { queueScore, pendingFor, pendingCount, dropPending, onQueueChange,
+         cacheCard, cachedCard, dropCachedCard, flush,
+         MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
 const esc=v=>String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;","\>":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
-const MIN_STROKES=1,MAX_STROKES=15;
 /* Long enough that + + + is one write, short enough that a save always
    beats the walk to the next tee. */
 const SAVE_DELAY=600;
@@ -58,7 +60,7 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .dfl-live-cell b{font-size:17px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1}
 .dfl-live-topar{color:var(--accent)}
 @media (max-height:480px) and (orientation:landscape) and (max-width:899px){.dfl-live{top:calc(49px + env(safe-area-inset-top))}.dfl-live-cell{padding:5px 6px}.dfl-live-cell b{font-size:15px}}
-.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
+.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-sync-wait{color:var(--sc-over);font-weight:900}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
 
 /* ---- the strip: the whole round at a glance ---- */
 .dfl-strip{margin:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);overflow:hidden}
@@ -141,8 +143,36 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .dfl-hole-grid input,.mark input{width:36px;height:38px;font-size:17px}
 .dfl-hole-grid .result{font-size:11.5px}.hole .yards{font-size:11px}.hole-n{font-size:15px}}`;
 document.head.appendChild(s);}
-async function loadCard(outingId,teamId){const [team,parts,holes,scores,outing,members]=await Promise.all([db().from("golf_teams").select("*").eq("id",teamId).eq("outing_id",outingId).maybeSingle(),db().from("golf_participants").select("id,member_id,team_id").eq("outing_id",outingId).eq("team_id",teamId).order("sort_order"),db().from("golf_holes").select("hole,par").eq("outing_id",outingId).order("hole"),db().from("golf_scores").select("id,outing_id,team_id,hole,strokes").eq("outing_id",outingId).eq("team_id",teamId),db().from("golf_outings").select("id,course_id,course,holes").eq("id",outingId).maybeSingle(),loadMembers().catch(()=>[])]);const error=team.error||parts.error||holes.error||scores.error||outing.error;if(error)throw error;let courseHoles=[];const courseId=outing.data?.course_id;if(courseId){const ch=await db().from("golf_course_holes").select("hole,yardage_men,yardage_women,par,handicap").eq("course_id",courseId).order("hole");if(!ch.error)courseHoles=ch.data||[];}return{team:team.data,parts:parts.data||[],holes:holes.data||[],scores:scores.data||[],outing:outing.data,members:members||[],courseHoles};}
-function scoreMap(scores){return new Map(scores.map(s=>[Number(s.hole),s]));}
+async function fetchCard(outingId,teamId){const [team,parts,holes,scores,outing,members]=await Promise.all([db().from("golf_teams").select("*").eq("id",teamId).eq("outing_id",outingId).maybeSingle(),db().from("golf_participants").select("id,member_id,team_id").eq("outing_id",outingId).eq("team_id",teamId).order("sort_order"),db().from("golf_holes").select("hole,par").eq("outing_id",outingId).order("hole"),db().from("golf_scores").select("id,outing_id,team_id,hole,strokes").eq("outing_id",outingId).eq("team_id",teamId),db().from("golf_outings").select("id,course_id,course,holes").eq("id",outingId).maybeSingle(),loadMembers().catch(()=>[])]);const error=team.error||parts.error||holes.error||scores.error||outing.error;if(error)throw error;let courseHoles=[];const courseId=outing.data?.course_id;if(courseId){const ch=await db().from("golf_course_holes").select("hole,yardage_men,yardage_women,par,handicap").eq("course_id",courseId).order("hole");if(!ch.error)courseHoles=ch.data||[];}return{team:team.data,parts:parts.data||[],holes:holes.data||[],scores:scores.data||[],outing:outing.data,members:members||[],courseHoles};}
+
+/*
+  The card from the network if it can be had, and from this device if not.
+
+  A scorecard opened in a dead zone used to be an error page, which is the
+  worst possible moment for one - you are standing on a tee with a score to
+  write down. The last good copy is kept on the device, so out of signal you
+  get the round as you last saw it and can carry on scoring into the queue.
+*/
+async function loadCard(outingId,teamId){
+  try{
+    const card=await fetchCard(outingId,teamId);
+    cacheCard(outingId,teamId,card);
+    return {...card,stale:false};
+  }catch(err){
+    const cached=cachedCard(outingId,teamId);
+    if(!cached)throw err;
+    return {...cached,stale:true};
+  }
+}
+
+/*
+  Server rows with the queue laid over the top. Anything waiting to be sent
+  is newer than what came back from Supabase by definition, so it wins - and
+  a queued clear (null) removes the hole rather than reading as a zero.
+*/
+function scoreMap(scores,pending){const map=new Map(scores.map(s=>[Number(s.hole),s]));
+if(pending)for(const [hole,strokes] of pending){if(strokes==null)map.delete(hole);else map.set(hole,{...(map.get(hole)||{}),hole,strokes});}
+return map;}
 function total(map,start,end){let t=0;for(let h=start;h<=end;h++)t+=num(map.get(h)?.strokes);return t;}
 function courseHole(holes,h){return h>9?h-9:h}
 function holePar(holes,h){const n=courseHole(holes,h);return Number(holes.find(x=>Number(x.hole)===n)?.par)||4}
@@ -218,16 +248,55 @@ const lt=root.querySelector("[data-live-thru]");if(lt)lt.textContent=all.n||"—
 const lp=root.querySelector("[data-live-topar]");if(lp)lp.textContent=fmtToPar(all.s,all.p);
 const ls=root.querySelector("[data-live-strokes]");if(ls)ls.textContent=all.s||"—"}
 
-async function clearScorecard(outingId,teamId){if(!isAdmin())throw Error("Admin access required");const {error}=await db().from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId);if(error)throw error}
-async function render(root,outingId,teamId){styles();const c=await loadCard(outingId,teamId);if(!c.team)throw Error("Team not found");const me=String(currentMember()?.id||"");const admin=isAdmin(),editable=admin||c.parts.some(p=>String(p.member_id)===me),map=scoreMap(c.scores),front=total(map,1,9),back=total(map,10,18),played=playedPar(map,c.holes,1,18),complete=front+back,names=c.parts.map(p=>c.members.find(m=>String(m.id)===String(p.member_id))?.display_name||"Unknown");root.innerHTML=`<section class="card dfl-team-card"><header class="dfl-team-head"><div class="dfl-team-head-top"><a class="backlink" href="#/golf?id=${outingId}">← Teams</a><div><span class="dfl-team-kicker">TEAM SCORECARD</span><h2>${esc(c.team.name||"Team")}</h2></div></div><div class="dfl-team-roster">${names.map(n=>`<span>${esc(n)}</span>`).join("")}</div></header>${liveBar(map,c.holes,18)}<div class="dfl-score-status">${editable?"Tap − and + to add strokes, or type the number. Saves on its own.":"Read-only — only members of this team and admins can edit."}</div>${admin?`<div class="dfl-admin-actions"><button type="button" class="dfl-clear-scorecard" data-clear-scorecard>Clear Scorecard</button></div>`:""}${strip(c.holes,map)}${nine("Front 9",1,c.holes,c.courseHoles,map,editable)}${nine("Back 9 · second time around",10,c.holes,c.courseHoles,map,editable)}<div class="dfl-final"><div><small>Final Score</small><b data-final-score>${complete||"—"}</b></div><div><small>+/−</small><b data-final-topar>${fmtToPar(complete,played)}</b></div></div><div class="dfl-score-help">Circles are under par, squares are over — a double ring means by two or more. Course yardage comes from the selected course; Rolla is a 9-hole course, so the Back 9 repeats holes 1–9.</div></section>`;wire(root,outingId,teamId,editable);if(admin){const clear=root.querySelector("[data-clear-scorecard]");clear?.addEventListener("click",async()=>{if(!confirm(`Clear every stroke for ${c.team.name||"this team"}? This cannot be undone.`))return;clear.disabled=true;try{await clearScorecard(outingId,teamId);await render(root,outingId,teamId)}catch(err){clear.disabled=false;alert(err.message||"Could not clear scorecard")}})}}
-async function saveScore(outingId,teamId,hole,value){const client=db();if(!value){const {error}=await client.from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole);if(error)throw error;return}const strokes=Number(value);if(!Number.isInteger(strokes)||strokes<MIN_STROKES||strokes>MAX_STROKES)throw Error(`Enter strokes from ${MIN_STROKES} to ${MAX_STROKES}`);const existing=await client.from("golf_scores").select("id").eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole).maybeSingle();if(existing.error)throw existing.error;if(existing.data?.id){const {error}=await client.from("golf_scores").update({strokes,member_id:null}).eq("id",existing.data.id);if(error)throw error;return}const inserted=await client.from("golf_scores").insert({outing_id:outingId,team_id:teamId,member_id:null,hole,strokes});if(inserted.error){if(String(inserted.error.code)==="23505"){const retry=await client.from("golf_scores").update({strokes,member_id:null}).eq("outing_id",outingId).eq("team_id",teamId).eq("hole",hole);if(retry.error)throw retry.error;return}throw inserted.error}}
-
 /*
-  One timer per hole. Tapping + four times sends 4, not 1,2,3,4 - and the
-  value is read at flush time so the last tap always wins.
+  What the server has, said in the line that promises the card saves itself -
+  because that promise is exactly what a dead zone breaks, and a silent
+  failure is what used to cost holes.
+*/
+function syncLine(outingId,teamId,editable,stale){
+  if(!editable)return "Read-only — only members of this team and admins can edit.";
+  const waiting=pendingCount(outingId,teamId);
+  if(waiting)return `<b class="dfl-sync-wait">${waiting} hole${waiting===1?"":"s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
+  if(stale)return "Showing the last copy saved on this phone — it will refresh when you have signal.";
+  return "Tap − and + to add strokes, or type the number. Saves on its own.";
+}
+
+/* One watcher at a time: a re-render replaces the line it was painting. */
+let stopWatch=null;
+function watchSync(root,outingId,teamId,editable,stale){
+  stopWatch?.();
+  const paint=()=>{const node=root.querySelector("[data-sync-status]");if(!node){stopWatch?.();return}node.innerHTML=syncLine(outingId,teamId,editable,stale)};
+  const off=onQueueChange(paint);
+  addEventListener("online",paint);addEventListener("offline",paint);
+  stopWatch=()=>{off();removeEventListener("online",paint);removeEventListener("offline",paint);stopWatch=null};
+  paint();
+  /* Opening the card is as good a moment as any to try the backlog again. */
+  flush();
+}
+
+async function clearScorecard(outingId,teamId){if(!isAdmin())throw Error("Admin access required");
+/* The queue goes first. A stroke still waiting to be sent would otherwise go
+   out after the delete and refill the card a moment after it was wiped. */
+dropPending(outingId,teamId);
+const {error}=await db().from("golf_scores").delete().eq("outing_id",outingId).eq("team_id",teamId);if(error)throw error;
+dropCachedCard(outingId,teamId)}
+async function render(root,outingId,teamId){styles();const c=await loadCard(outingId,teamId);if(!c.team)throw Error("Team not found");const me=String(currentMember()?.id||"");const admin=isAdmin(),editable=admin||c.parts.some(p=>String(p.member_id)===me),map=scoreMap(c.scores,pendingFor(outingId,teamId)),front=total(map,1,9),back=total(map,10,18),played=playedPar(map,c.holes,1,18),complete=front+back,names=c.parts.map(p=>c.members.find(m=>String(m.id)===String(p.member_id))?.display_name||"Unknown");root.innerHTML=`<section class="card dfl-team-card"><header class="dfl-team-head"><div class="dfl-team-head-top"><a class="backlink" href="#/golf?id=${outingId}">← Teams</a><div><span class="dfl-team-kicker">TEAM SCORECARD</span><h2>${esc(c.team.name||"Team")}</h2></div></div><div class="dfl-team-roster">${names.map(n=>`<span>${esc(n)}</span>`).join("")}</div></header>${liveBar(map,c.holes,18)}<div class="dfl-score-status" data-sync-status>${syncLine(outingId,teamId,editable,c.stale)}</div>${admin?`<div class="dfl-admin-actions"><button type="button" class="dfl-clear-scorecard" data-clear-scorecard>Clear Scorecard</button></div>`:""}${strip(c.holes,map)}${nine("Front 9",1,c.holes,c.courseHoles,map,editable)}${nine("Back 9 · second time around",10,c.holes,c.courseHoles,map,editable)}<div class="dfl-final"><div><small>Final Score</small><b data-final-score>${complete||"—"}</b></div><div><small>+/−</small><b data-final-topar>${fmtToPar(complete,played)}</b></div></div><div class="dfl-score-help">Circles are under par, squares are over — a double ring means by two or more. Course yardage comes from the selected course; Rolla is a 9-hole course, so the Back 9 repeats holes 1–9.</div></section>`;wire(root,outingId,teamId,editable);watchSync(root,outingId,teamId,editable,c.stale);if(admin){const clear=root.querySelector("[data-clear-scorecard]");clear?.addEventListener("click",async()=>{if(!confirm(`Clear every stroke for ${c.team.name||"this team"}? This cannot be undone.`))return;clear.disabled=true;try{await clearScorecard(outingId,teamId);await render(root,outingId,teamId)}catch(err){clear.disabled=false;alert(err.message||"Could not clear scorecard")}})}}
+/*
+  One timer per hole. Tapping + four times queues 4, not 1,2,3,4 - and the
+  value is read when the timer fires so the last tap always wins.
+
+  The stroke goes into the queue on this device and the network is somebody
+  else's problem (golf-offline.js). Nothing here re-renders the card on a
+  failure: re-rendering is what used to wipe out the number you had just
+  typed the moment a save failed, which on a course with no bars is every
+  save. A queued stroke shows in the status line until it lands.
 */
 const timers=new Map();
-function queueSave(root,outingId,teamId,input){const hole=Number(input.dataset.hole),key=`${teamId}:${hole}`;clearTimeout(timers.get(key));timers.set(key,setTimeout(async()=>{timers.delete(key);try{await saveScore(outingId,teamId,hole,input.value.trim())}catch(err){alert(err.message||"Could not save team score");await render(root,outingId,teamId)}},SAVE_DELAY))}
+function queueSave(root,outingId,teamId,input){const hole=Number(input.dataset.hole),key=`${teamId}:${hole}`;clearTimeout(timers.get(key));timers.set(key,setTimeout(()=>{timers.delete(key);
+try{queueScore(outingId,teamId,hole,input.value.trim())}
+/* Only a value the field itself should have prevented gets here. Say so and
+   leave what was typed alone - it is still on screen to be corrected. */
+catch(err){alert(err.message||"Could not save team score")}},SAVE_DELAY))}
 
 function wire(root,outingId,teamId,editable){if(!editable||root.dataset.scoreWire==="1")return;root.dataset.scoreWire="1";
 // The strip is a jump list, not a second place to score.
@@ -238,8 +307,11 @@ root.addEventListener("click",e=>{const jump=e.target.closest("[data-ov-hole]");
   buttons do exactly what they look like.
 */
 root.addEventListener("click",e=>{const btn=e.target.closest("[data-step]");if(!btn)return;const input=root.querySelector(`input[data-team-score][data-hole="${btn.dataset.hole}"]`);if(!input)return;const par=Number(input.dataset.par)||4,now=Number(input.value);input.value=String(!Number.isFinite(now)||now<1?par:Math.max(MIN_STROKES,Math.min(MAX_STROKES,now+Number(btn.dataset.step))));recalc(root);queueSave(root,outingId,teamId,input)});
-// Typing: digits only, so a stray letter can never become a save that fails.
-root.addEventListener("input",e=>{const input=e.target.closest("input[data-team-score]");if(!input)return;const clean=input.value.replace(/\D/g,"").slice(0,2);if(clean!==input.value)input.value=clean;if(Number(clean)>MAX_STROKES)input.value=String(MAX_STROKES);recalc(root);queueSave(root,outingId,teamId,input)});
+/* Typing: digits only, so a stray letter can never become a save that fails.
+   Leading zeros go too - "0" is not a score, and stripping it here means a
+   half-typed field clears the hole instead of becoming a value the queue has
+   to reject. */
+root.addEventListener("input",e=>{const input=e.target.closest("input[data-team-score]");if(!input)return;const clean=input.value.replace(/\D/g,"").replace(/^0+/,"").slice(0,2);if(clean!==input.value)input.value=clean;if(Number(clean)>MAX_STROKES)input.value=String(MAX_STROKES);recalc(root);queueSave(root,outingId,teamId,input)});
 root.addEventListener("keydown",e=>{const input=e.target.closest("input[data-team-score]");if(!input||e.key!=="Enter")return;e.preventDefault();input.blur()})}
 function boot(){styles();const run=()=>{const root=document.querySelector("#golf-outing"),q=new URLSearchParams(location.hash.split("?")[1]||""),outingId=q.get("id"),teamId=q.get("team");if(!root||!outingId||!teamId||!root.querySelector(".golf-scorecard-page"))return;render(root,outingId,teamId).catch(err=>{root.innerHTML=`<div class="card"><div class="card-body"><strong>Could not load team scorecard.</strong><p class="muted">${esc(err.message)}</p></div></div>`})};new MutationObserver(run).observe(document.body,{childList:true,subtree:true});run()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
