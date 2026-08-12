@@ -88,8 +88,14 @@ function styles() {
 .gb-seat-head strong{flex:1;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .gb-drop{border:1px solid var(--danger-line);border-radius:7px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:10px;padding:4px 8px}
 .gb-seat{display:grid;grid-template-columns:1fr;gap:6px;margin-top:7px}
-.gb-seat select{height:38px;padding:0 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg-3);color:var(--text);font:inherit;min-width:0}
+.gb-seat select{height:38px;padding:0 9px;border:1px solid var(--line);border-left:3px solid var(--racer,var(--line));border-radius:7px;background:var(--bg-2);color:var(--text);font:inherit;min-width:0}
 @media(min-width:560px){.gb-seat.is-pairs{grid-template-columns:1fr 1fr}}
+/* One team, one block: its colour down the edge, its name over the top. */
+.gb-side{border-left:3px solid var(--racer,var(--accent));border-radius:0 8px 8px 0;padding:7px 9px;background:var(--bg-3)}
+.gb-side-head{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.gb-side-head i{flex:0 0 9px;width:9px;height:9px;border-radius:50%;background:var(--racer,var(--accent))}
+.gb-side-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gb-vs{padding:5px 0;text-align:center;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .gt-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}`;
   document.head.appendChild(s);
 }
@@ -271,8 +277,17 @@ function seats(data, entry) {
               return `<option value="${p.id}" ${String(p.id) === String(player?.participant_id) ? "selected" : ""}>${esc(playerName(p, data.names))}${elsewhere ? " (already in this round)" : ""}</option>`;
             }).join("")}
           </select>`;
-        return `<div class="gb-seat ${perSide > 1 ? "is-pairs" : ""}">${Array.from({ length: perSide }, (_, i) => seat(s.players[i], i)).join("")}</div>`;
-      }).join("")}
+        /* The team's colour down the side and its name over the top. Two rows
+           of bare dropdowns gave no clue which was which, so pairing people up
+           meant remembering who was on whose team - and the pool of each
+           dropdown is already that team's players only, which is impossible to
+           see until you open it. The name carries the same information as the
+           colour, for anybody the colours do not work for. */
+        return `<div class="gb-side" style="--racer:${esc(s.color || "var(--accent)")}">
+          <div class="gb-side-head"><i></i><span>${esc(s.teamName)}</span></div>
+          <div class="gb-seat ${perSide > 1 ? "is-pairs" : ""}">${Array.from({ length: perSide }, (_, i) => seat(s.players[i], i)).join("")}</div>
+        </div>`;
+      }).join(`<div class="gb-vs">versus</div>`)}
     </div>`).join("");
 }
 
