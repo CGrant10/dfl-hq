@@ -19,7 +19,8 @@
    Everything here is synchronous - see the gesture rule in share.js.
    ===================================================================== */
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
-import { SCORING_NAMES, dayPoints } from "./golf-battle.js";
+import { SCORING_NAMES, dayPoints, pairName } from "./golf-battle.js";
+import { memberNames, playerName } from "./golf-people.js";
 
 const W = 1080, H = 1080;
 const INK = "#f2f5f8", MUTED = "#8b98a5", BG = "#0d1117", CARD = "#161b22", LINE = "#2b313a";
@@ -219,5 +220,149 @@ export function shareBoard(data, outing) {
 
   const name = `${(s.title || "dfl-golf").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.png`;
   const how = shareCanvas(boardCanvas(data, outing), name, { title: s.title, text });
+  return how === "saved" ? "Image saved to your downloads" : "Sharing…";
+}
+
+/* =====================================================================
+   THE TEAM SHEET - who is on whose team, and who plays whom
+   ---------------------------------------------------------------------
+   The board answers "who is winning". This answers the question that comes
+   before it and gets asked far more often in a group chat: who am I with,
+   and who am I against. Both rosters and every round's pairings on one
+   image, so nobody has to open the app to find out where they are.
+
+   Taller than the board (4:5) because it is a list, and a list wants
+   vertical room in a chat thumbnail rather than a square.
+   ===================================================================== */
+const TW = 1080, TH = 1350;
+
+/** Rosters and pairings, pulled out of the same data the page already has. */
+export function teamSheet(data, outing) {
+  const names = data.names || memberNames([]);
+  const teams = data.teams.length === 2 ? data.teams : [];
+  const rosters = teams.map((t) => ({
+    team: t,
+    players: (data.parts || [])
+      .filter((p) => String(p.team_id) === String(t.id))
+      .sort((a, b) => (a.pick_number ?? 9999) - (b.pick_number ?? 9999) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((p) => playerName(p, names)),
+  }));
+  const rounds = (data.rounds || []).map((entry) => ({
+    round: entry.round,
+    pairs: entry.battles.filter((b) => b.sides.length === 2).map((b) => ({
+      a: pairName(b.sides[0].players.map((p) => p.name)),
+      b: pairName(b.sides[1].players.map((p) => p.name)),
+    })),
+  })).filter((r) => r.pairs.length);
+  return { teams, rosters, rounds,
+    title: outing?.name || "DFL Golf",
+    meta: [outing?.course, shortDate(outing?.event_date)].filter(Boolean).join(" · ") };
+}
+
+export function teamSheetText(sheet) {
+  const lines = [sheet.title + (sheet.meta ? ` — ${sheet.meta}` : "")];
+  for (const r of sheet.rosters) lines.push("", r.team.name.toUpperCase(), r.players.join(", ") || "nobody yet");
+  for (const r of sheet.rounds) {
+    lines.push("", `${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "singles" : "2v2"}`);
+    for (const p of r.pairs) lines.push(`${p.a} v ${p.b}`);
+  }
+  return lines.join("\n");
+}
+
+export function teamSheetCanvas(data, outing) {
+  const sheet = teamSheet(data, outing);
+  const canvas = document.createElement("canvas");
+  canvas.width = TW; canvas.height = TH;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, TW, TH);
+  ctx.strokeStyle = LINE; ctx.lineWidth = 6; ctx.strokeRect(3, 3, TW - 6, TH - 6);
+  ctx.textBaseline = "alphabetic";
+
+  ctx.fillStyle = INK;
+  fitText(ctx, sheet.title, TW / 2, 84, TW - 120, 54, 900);
+  ctx.fillStyle = MUTED;
+  ctx.font = `800 26px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText((sheet.meta ? sheet.meta + " · " : "") + "TEAMS & MATCHUPS", TW / 2, 126);
+
+  if (!sheet.teams.length) {
+    ctx.fillStyle = MUTED; ctx.font = `800 32px ${FONT}`;
+    ctx.fillText("Teams have not been set yet.", TW / 2, 320);
+    return canvas;
+  }
+
+  /* Two rosters side by side, each under its own colour. */
+  const colW = (TW - 150) / 2, top = 176;
+  let rosterBottom = top;
+  sheet.rosters.forEach((r, i) => {
+    const x = 60 + i * (colW + 30);
+    const colour = r.team.color || (i === 0 ? "#2fbf5f" : "#4aa3ff");
+    const rows = Math.max(r.players.length, 1);
+    const h = 76 + rows * 44 + 14;
+    ctx.fillStyle = CARD; roundRect(ctx, x, top, colW, h, 18); ctx.fill();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+    // the colour bar: the same signal the app uses for a team
+    ctx.fillStyle = colour; roundRect(ctx, x, top, 7, h, 4); ctx.fill();
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = colour;
+    fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 900, "left");
+    ctx.fillStyle = MUTED; ctx.font = `800 20px ${FONT}`;
+    ctx.fillText(`${r.players.length} player${r.players.length === 1 ? "" : "s"}`, x + 26, top + 78);
+    ctx.fillStyle = INK;
+    (r.players.length ? r.players : ["Nobody yet"]).forEach((n, j) => {
+      ctx.font = `700 28px ${FONT}`;
+      fitText(ctx, n, x + 26, top + 118 + j * 44, colW - 52, 28, 700, "left");
+    });
+    rosterBottom = Math.max(rosterBottom, top + h);
+  });
+
+  /* Then every round's pairings, fitted to whatever is left above the footer. */
+  let y = rosterBottom + 40;
+  const bottom = TH - 120;
+  const lines = sheet.rounds.reduce((n, r) => n + 1 + r.pairs.length, 0);
+  const rowH = lines ? Math.min(52, Math.max(26, (bottom - y - sheet.rounds.length * 18) / lines)) : 0;
+
+  for (const r of sheet.rounds) {
+    ctx.textAlign = "left";
+    ctx.fillStyle = MUTED;
+    ctx.font = `800 ${Math.round(rowH * 0.44)}px ${FONT}`;
+    ctx.fillText(`${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoringOf(r.round)].toUpperCase()}`, 62, y + rowH * 0.7);
+    y += rowH;
+    for (const p of r.pairs) {
+      ctx.fillStyle = INK;
+      ctx.font = `700 ${Math.round(rowH * 0.58)}px ${FONT}`;
+      ctx.textAlign = "left";
+      fitText(ctx, p.a, 62, y + rowH * 0.72, TW * 0.40, Math.round(rowH * 0.58), 700, "left");
+      ctx.fillStyle = MUTED;
+      ctx.font = `800 ${Math.round(rowH * 0.4)}px ${FONT}`;
+      ctx.textAlign = "center";
+      ctx.fillText("v", TW / 2, y + rowH * 0.72);
+      ctx.fillStyle = INK;
+      ctx.font = `700 ${Math.round(rowH * 0.58)}px ${FONT}`;
+      ctx.textAlign = "right";
+      fitText(ctx, p.b, TW - 62, y + rowH * 0.72, TW * 0.40, Math.round(rowH * 0.58), 700, "right");
+      y += rowH;
+    }
+    y += 18;
+  }
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = MUTED;
+  ctx.font = `700 24px ${FONT}`;
+  ctx.fillText("cgrant10.github.io/dfl-hq", TW / 2, TH - 44);
+  return canvas;
+}
+
+/** Share the team sheet. MUST be called straight from the click handler. */
+export function shareTeamSheet(data, outing) {
+  const sheet = teamSheet(data, outing);
+  const text = teamSheetText(sheet);
+  if (!sheet.teams.length) {
+    return shareText({ title: sheet.title, text, url: location.href }) === "copied"
+      ? "Copied to the clipboard" : "Sharing…";
+  }
+  const name = `${(sheet.title || "dfl-golf").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-teams.png`;
+  const how = shareCanvas(teamSheetCanvas(data, outing), name, { title: sheet.title, text });
   return how === "saved" ? "Image saved to your downloads" : "Sharing…";
 }

@@ -32,7 +32,7 @@ import { loadMembers } from "./members.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
          dayPoints, pointsFootnote, pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
-import { shareBoard } from "./golf-share.js";
+import { shareBoard, shareTeamSheet } from "./golf-share.js";
 
 const POLL_MS = 15000;
 let host = null, timer = 0, outingId = null;
@@ -54,7 +54,7 @@ function styles() {
 .gpr.is-open{border-style:dashed;color:var(--muted)}
 .golf-points-foot{padding:0 13px 12px;text-align:center;font-size:10.5px;color:var(--muted)}
 .golf-points-lead{padding:9px 13px;border-top:1px solid var(--line-soft);text-align:center;font-size:11.5px;font-weight:900;background:var(--bg-3)}
-.gp-share{padding:10px 13px;border-top:1px solid var(--line-soft);display:flex;justify-content:center}
+.gp-share{padding:10px 13px;border-top:1px solid var(--line-soft);display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 
 .golf-round{padding:0;overflow:hidden}
 .gr-head{display:flex;align-items:center;gap:9px;padding:12px 13px;border-bottom:1px solid var(--line);background:var(--bg-3)}
@@ -230,7 +230,7 @@ function board(data) {
     ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}
     ${foot ? `<div class="golf-points-foot">${esc(foot)}</div>` : ""}
     ${lead ? `<div class="golf-points-lead">${lead}</div>` : ""}
-    <div class="gp-share"><button class="btn ghost small" id="gb-share">Share the board</button></div>
+    <div class="gp-share"><button class="btn ghost small" id="gb-share">Share the board</button><button class="btn ghost small" id="gb-share-teams">Share the teams</button></div>
   </section>`;
 }
 
@@ -452,8 +452,9 @@ function wire() {
     the note at the top of share.js.
   */
   host.addEventListener("click", (e) => {
-    if (!e.target.closest("#gb-share") || !data) return;
-    toast(shareBoard(data, data.outing));
+    if (!data) return;
+    if (e.target.closest("#gb-share")) return void toast(shareBoard(data, data.outing));
+    if (e.target.closest("#gb-share-teams")) return void toast(shareTeamSheet(data, data.outing));
   });
 
   host.addEventListener("change", async (e) => {
