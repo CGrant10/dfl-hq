@@ -573,6 +573,21 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .state-title, .empty { letter-spacing: var(--ls-wide); }
 .state.is-offline { border-color: var(--warn-line); color: var(--warn-ink); }
 
+/*
+  A FAILURE IS A STATE TOO, and it was the one still being drawn with a
+  style="" attribute full of hex codes in ui.js - two colours that existed
+  nowhere else in the app and so drifted from the danger tokens the badges
+  and buttons use. Same shape as the others, solid rather than dashed
+  because something has actually gone wrong.
+*/
+.state.is-error {
+  border-style: solid;
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}
+.state.is-error .state-title { color: var(--danger-ink); }
+
 /* ---------------------------------------------------------------------
    THE ANNIVERSARY BANNER
 

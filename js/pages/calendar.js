@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { db, insertRow } from "../supabase.js";
-import { esc, empty, fmtDate, relDate, toast, errorBox } from "../ui.js";
+import { esc, empty, fmtDate, relDate, toast, errorBox, loading } from "../ui.js";
 import { getUsername } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
@@ -40,7 +40,7 @@ export async function render(view) {
 }
 
 async function paint(body, view) {
-  body.innerHTML = `<div class="empty">Loading…</div>`;
+  body.innerHTML = loading();
   try {
     if (tab === "events") await paintEvents(body);
     else                  await paintSide(body, view);

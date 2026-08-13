@@ -1,5 +1,5 @@
 // DFL Golf - mobile-first event/team view with live leaderboard.
-import { db, insertRow, updateRow, isAdmin } from "../supabase.js";
+import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";

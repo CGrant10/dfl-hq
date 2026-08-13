@@ -2,6 +2,26 @@
    DFL HQ - stylesheet
    Dark "stadium at night" theme. Mobile first; widens on desktop.
    All colours live in the :root block below - change them in one place.
+   ---------------------------------------------------------------------
+   WHO OWNS WHAT. Six files, loaded in this order, and each one has a job:
+
+     tokens.css     the measuring system - type scale, space, radii,
+                    motion, and the @font-face for Rajdhani. Colour is NOT
+                    here; the palette below is the palette.
+     style.css      THIS FILE. The palette, the page reset, the shell's
+                    layout, and the structural rules for screens that have
+                    no equivalent in the newer files. It loads early on
+                    purpose, so anything below can be overridden.
+     broadcast.css  the Arena broadcast view, and nothing else.
+     golf.css       golf-specific screens, and nothing else.
+     ui.css         the shared primitives - card, button, badge, stat,
+                    table, state, the shell's surface, the front page.
+     screens.css    the data screens and their presentation.
+
+   The migration rule: if a primitive's SURFACE is restated in ui.css or
+   screens.css, the copy in this file is dead and should go rather than sit
+   there looking authoritative. Several blocks have been removed on exactly
+   that basis; each one is marked with a pointer to its new home.
    ===================================================================== */
 
 /*
@@ -107,13 +127,44 @@ html {
 }
 
 /*
-  Nothing is selectable. A long press anywhere used to raise the iOS
-  "Copy / Look Up / Share" sheet, which is what makes a web page feel like
-  a web page instead of an app. The old rule listed the chrome to exclude
-  and then handed selection back to h1/h2/h3/p, so every page heading and
-  every body paragraph still popped the sheet.
+  SELECTION POLICY. Two rules, and the order matters.
+
+  The chrome is furniture: the top bar, the tab bar, a button, a badge. A
+  long press on furniture should do nothing, because raising the iOS
+  "Copy / Look Up / Share" sheet on the Golf tab is what makes an app feel
+  like a web page.
+
+  CONTENT IS NOT FURNITURE. A rule, an announcement, a player's name, a
+  score, an owner's address in the calendar - somebody will want to copy
+  that, and the blanket `*` rule that used to be here meant nobody could
+  copy anything anywhere. Making the app feel native is not worth taking
+  copy and paste away from the people using it.
+
+  So: nothing selects by default, and then the READING SURFACES hand it
+  back - the page itself, the More sheet, a dialog - while the controls
+  sitting inside those surfaces keep it switched off.
 */
-* {
+/* On `html`, NOT on `*`. user-select inherits, and a `*` rule sets it
+   directly on every element in the document - which beats inheritance, so a
+   later rule handing selection back to a container had no effect on anything
+   inside it. One declaration at the root and the cascade does the rest. */
+html {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.view, .sheet-card, .overlay-card, .toast {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* A control inside a reading surface is still a control. */
+.view :is(a, button, .btn, .linkbtn, .badge, .pill, .tabs, .quicknav, .creed-doors,
+          .fp-snap, .fp-cta, .ico, .memberbtn, summary),
+.sheet-card :is(a, button, .btn),
+.overlay-card :is(a, button, .btn, .memberbtn) {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -121,8 +172,8 @@ html {
 
 /*
   The exception, and it is not optional: you cannot type into a field you
-  cannot put a cursor in. Form controls keep selection, everything else
-  loses it.
+  cannot put a cursor in. This sits last so it beats the control rule above
+  for a field inside a dialog.
 */
 input, textarea, select {
   -webkit-user-select: text;
@@ -400,13 +451,8 @@ a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
 }
 .card-meta   { color: var(--muted); font-size: 12px; margin-top: 10px; }
 
-.empty {
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
-  padding: 26px 14px;
-  text-align: center;
-  color: var(--muted);
-}
+/* .empty lives in ui.css now, with .state - see the STATES block there. Every
+   declaration this file used to make was already overridden by it. */
 
 /*
   Flat by default: a pill is a label, not a button, so the neutral one is
@@ -443,18 +489,16 @@ a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
   cursor: pointer;
   transition: transform .12s ease, filter .12s ease, background .12s ease;
 }
-.btn:hover   { filter: brightness(1.08); }
 /* the press itself is the feedback, now that the blue flash is gone */
 .btn:active  { transform: scale(.96); filter: brightness(.92); }
 .btn:disabled{ opacity: .5; cursor: default; }
-.btn.ghost   { background: transparent; color: var(--text); border: 1px solid var(--line); }
-.btn.ghost:hover { background: var(--bg-3); }
 .btn.danger  { background: var(--danger); color: #2a0a06; }
+/* :hover, .ghost and .ghost:hover are ui.css's now - see BUTTONS there. */
 .btn.small   { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
 .btn.block   { display: block; width: 100%; }
 
 .row      { display: flex; gap: 10px; flex-wrap: wrap; }
-.row-end  { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+/* .row-end is screens.css's - same four declarations, restated on tokens. */
 
 /* quick nav grid on the home page */
 .quicknav {
@@ -494,8 +538,13 @@ input, textarea, select {
   font-size: 16px;              /* 16px stops iOS zooming on focus */
   font-family: inherit;
 }
+/* --accent-dim is the crest's true navy (#003396). On the near-black page
+   that is a 1.3:1 outline - a focus ring nobody can see, and it beat the
+   :focus-visible ring in tokens.css on specificity, so every field outside a
+   dialog had no visible focus at all. The readable pair, like everything
+   else that has to be seen. */
 input:focus, textarea:focus, select:focus {
-  outline: 2px solid var(--accent-dim);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 textarea { min-height: 96px; resize: vertical; }
@@ -594,7 +643,6 @@ textarea { min-height: 96px; resize: vertical; }
   gap: 8px;
   flex-wrap: wrap;
 }
-.evtitle { font-size: 15px; font-weight: 700; }
 .evwhen  { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .evnote {
   font-size: 13.5px;
@@ -684,7 +732,6 @@ textarea { min-height: 96px; resize: vertical; }
   margin-bottom: 12px;
 }
 .setup-figure { display: flex; flex-direction: column; }
-.sf-v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sf-l {
   font-size: 11px;
   font-weight: 700;
@@ -829,13 +876,6 @@ textarea { min-height: 96px; resize: vertical; }
   padding: 11px 16px;
 }
 .rec + .rec { border-top: 1px solid var(--line-soft); }
-.rec-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 .rec-who { font-size: 14.5px; font-weight: 600; min-width: 0; }
 .rec-when {
   display: block;
@@ -890,7 +930,6 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .option:hover { border-color: var(--accent); background: var(--hover); }
 
-.results { display: grid; gap: 13px; }
 .result-top {
   display: flex;
   justify-content: space-between;
@@ -931,7 +970,6 @@ textarea { min-height: 96px; resize: vertical; }
   margin-right: 7px;
   vertical-align: 1px;
 }
-.bar { background: var(--bg-3); border-radius: 999px; height: 8px; overflow: hidden; }
 /* Solid primary. A split inside a variable-width bar would move as the
    percentage changed, which reads as a glitch rather than a design. */
 .bar > span {
@@ -1180,8 +1218,6 @@ textarea { min-height: 96px; resize: vertical; }
   margin-top: 10px;
 }
 
-.warntext { color: var(--warn-ink); }
-
 /* ---------------------------- sync log ------------------------------- */
 
 .synclog {
@@ -1262,7 +1298,6 @@ textarea { min-height: 96px; resize: vertical; }
   max-width: 380px;
   box-shadow: var(--shadow);
 }
-.overlay-card h2 { margin: 0 0 6px; }
 
 /* ------------------------------- toast ------------------------------- */
 
@@ -1664,8 +1699,6 @@ ul.tidy li { margin-bottom: 4px; }
 
 /* --------------------------- password eye ---------------------------- */
 
-.pwwrap { position: relative; }
-.pwwrap input { padding-right: 46px; }
 
 /*
   Hides what you type without being an <input type="password">, which is
@@ -1694,7 +1727,6 @@ input.masked {
   border-radius: 8px;
 }
 .pweye svg { width: 20px; height: 20px; }
-.pweye:hover { color: var(--text); }
 .pweye.on    { color: var(--accent); }
 
 /* ------------------------- install banner ---------------------------- */

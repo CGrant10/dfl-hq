@@ -17,9 +17,9 @@ import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
-import { THEMES, themeKeys, themeLabel, slotsFor, assignSprites, spriteMarkup,
+import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS, LENGTHS } from "../arena/race.js";
+import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
 
 const reduceMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;

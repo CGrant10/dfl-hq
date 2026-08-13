@@ -12,7 +12,7 @@
 
 import { db } from "../supabase.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
-import { esc, empty, errorBox, groupBy } from "../ui.js";
+import { esc, empty, errorBox, groupBy, loading } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 const ICON = {
@@ -406,7 +406,7 @@ async function loadRecordData() {
 }
 
 async function recordsView(body, data) {
-  body.innerHTML = `<div class="empty">Reading every week ever played…</div>`;
+  body.innerHTML = loading("Reading every week ever played…");
 
   const rec = await loadRecordData();
   if (rec.error) { body.innerHTML = errorBox(rec.error); return; }

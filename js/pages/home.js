@@ -20,7 +20,7 @@
 // the fold made the page an About screen.
 // =====================================================================
 import { db, configured } from "../supabase.js";
-import { esc, empty, fmtDate, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
+import { esc, fmtDate, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";

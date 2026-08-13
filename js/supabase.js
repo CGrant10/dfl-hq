@@ -11,14 +11,34 @@ export const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.i
 let adminClient = null;
 let adminOn = false;
 
+/*
+  ONE CLIENT PER IDENTITY, not one per query.
+
+  db() is called once for every table a page reads, and it used to hand back
+  a freshly built client each time - Home alone opens eight in parallel, and
+  each one constructs an auth client, a realtime client and a storage client
+  it will never use, and each auth client reads and writes localStorage on
+  the way up. That is pure waste on the slowest device somebody opens this on.
+
+  The header is the only thing that varies, and it varies only when a
+  different member is picked on this device, so the cache is keyed on it. A
+  member switch still gets a client carrying the right x-member-id - which
+  matters, because the golf write policies are decided by that header.
+*/
+let publicClient = null;
+let publicClientKey = null;
+
 function makePublicClient() {
   // Golf score permissions use the member selected on this device. The SQL
   // policy checks this header against golf_participants. Admin uses a separate
   // client and is still governed by is_admin().
   const memberId = localStorage.getItem("dfl.memberId") || "";
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  if (publicClient && publicClientKey === memberId) return publicClient;
+  publicClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: memberId ? { "x-member-id": memberId } : {} },
   });
+  publicClientKey = memberId;
+  return publicClient;
 }
 
 function makeAdminClient(token) {

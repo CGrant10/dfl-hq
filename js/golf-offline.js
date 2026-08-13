@@ -51,6 +51,50 @@ const listeners = new Set();
 let flushing = false;
 let retryTimer = 0;
 
+/*
+  A REFUSED STROKE HAS TO BE SAID OUT LOUD.
+
+  flush() has always separated a dead zone from a refusal, and it drops a
+  refusal out of the queue rather than retrying it forever - which is right.
+  What it did with the news was return it in `refused` to a caller that has
+  never existed: both status lines only ever asked "how many are waiting?".
+  So a stroke the server threw out took the count to zero and the card went
+  back to saying "Saves on its own", which is the app telling somebody their
+  score is safe on a hole where it was actually thrown away.
+
+  These are the failures since the app opened. They are deliberately NOT
+  persisted: the point is to tell whoever is holding the phone right now, and
+  a refusal nagging from a round three weeks ago is noise.
+
+  A failure is forgotten the moment the SAME hole goes through, so the warning
+  clears itself by the only thing that actually fixes it - entering the score
+  again and having it land. Nothing has to be dismissed.
+*/
+const failures = [];
+
+/** Strokes the server refused, newest last. */
+export function refusals(outingId) {
+  if (outingId == null) return failures.slice();
+  return failures.filter((f) => f.outingId === String(outingId));
+}
+
+/* Same hole, same card: one supersedes the other. */
+const sameTarget = (a, b) =>
+  Number(a.hole) === Number(b.hole) &&
+  (a.sideId != null || b.sideId != null
+    ? String(a.sideId) === String(b.sideId)
+    : String(a.teamId) === String(b.teamId) && String(a.outingId) === String(b.outingId));
+
+function forgetFailure(entry) {
+  for (let i = failures.length - 1; i >= 0; i--) {
+    if (sameTarget(failures[i], entry)) failures.splice(i, 1);
+  }
+}
+
+function notify() {
+  for (const fn of listeners) { try { fn(); } catch {} }
+}
+
 // ---------------------------------------------------------------- storage
 
 function readJSON(key, fallback) {
@@ -72,7 +116,7 @@ function pendingMap() {
 
 function savePending(map) {
   writeJSON(PENDING_KEY, map);
-  for (const fn of listeners) { try { fn(); } catch {} }
+  notify();
 }
 
 const entryKey = (outingId, teamId, hole) => `${outingId}:${teamId}:${hole}`;
@@ -315,11 +359,15 @@ export async function flush() {
     for (const [key, entry] of Object.entries(pendingMap())) {
       try {
         await sendOne(entry);
+        /* This hole is on the server now, so any earlier refusal of it is
+           history and must stop being reported. */
+        forgetFailure(entry);
         const map = pendingMap();
         /* Re-read before deleting: the hole may have been typed again while
            this write was in flight, and that newer value must not be
            dropped on the floor. */
         if (map[key] && map[key].strokes === entry.strokes) { delete map[key]; savePending(map); }
+        else notify();
         sent++;
       } catch (err) {
         const map = pendingMap();
@@ -329,8 +377,13 @@ export async function flush() {
           if (map[key].tries < MAX_TRIES) { savePending(map); break; }  // stop: the network is down
         }
         delete map[key];
-        savePending(map);
-        refused.push(err?.message || "That stroke could not be saved");
+        const message = err?.message || "That stroke could not be saved";
+        failures.push({
+          outingId: entry.outingId, teamId: entry.teamId, sideId: entry.sideId,
+          hole: entry.hole, strokes: entry.strokes, message,
+        });
+        savePending(map);       // notifies, so the card repaints with the failure
+        refused.push(message);
       }
     }
   } finally {

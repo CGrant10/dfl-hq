@@ -5,7 +5,7 @@
 
 import { db } from "../supabase.js";
 import { syncSleeper } from "../sync.js";
-import { esc, toast, errorBox, fmtDate } from "../ui.js";
+import { esc, toast, errorBox, fmtDate, loading } from "../ui.js";
 
 /** The show/hide checklist of everyone a sync has ever found. */
 async function renderPeople(host) {
@@ -38,7 +38,7 @@ async function renderPeople(host) {
 }
 
 export async function renderSleeperPanel(host) {
-  host.innerHTML = `<div class="empty">Loading…</div>`;
+  host.innerHTML = loading();
 
   let config;
   try {

@@ -31,7 +31,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { queueScore, pendingFor, pendingCount, dropPending, onQueueChange,
-         cacheCard, cachedCard, dropCachedCard, flush,
+         cacheCard, cachedCard, dropCachedCard, flush, refusals,
          MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
 const esc=v=>String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;","\>":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -63,7 +63,7 @@ function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;
 .dfl-live-cell b{font-size:17px;font-weight:950;font-variant-numeric:tabular-nums;line-height:1.1}
 .dfl-live-topar{color:var(--accent)}
 @media (max-height:480px) and (orientation:landscape) and (max-width:899px){.dfl-live{top:calc(49px + env(safe-area-inset-top))}.dfl-live-cell{padding:5px 6px}.dfl-live-cell b{font-size:15px}}
-.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-sync-wait{color:var(--sc-over);font-weight:900}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
+.dfl-team-head{padding:14px;border-bottom:1px solid var(--line);background:var(--bg-3)}.dfl-team-head-top{display:flex;align-items:center;gap:10px}.dfl-team-head h2{margin:0;font-size:20px}.dfl-team-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}.dfl-team-roster{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.dfl-team-roster span{font-size:10px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2)}.dfl-score-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}.dfl-sync-wait{color:var(--sc-over);font-weight:900}.dfl-score-status:has(.dfl-sync-fail){background:var(--danger-bg)}.dfl-sync-fail{color:var(--danger-ink);font-weight:900}.dfl-sync-why{display:block;color:var(--muted)}.dfl-admin-actions{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}.dfl-clear-scorecard{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
 
 /* ---- the strip: the whole round at a glance ---- */
 .dfl-strip{margin:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-2);overflow:hidden}
@@ -270,6 +270,14 @@ const ls=root.querySelector("[data-live-strokes]");if(ls)ls.textContent=all.s||"
 */
 function syncLine(outingId,teamId,editable,stale){
   if(!editable)return "Read-only — only members of this team and admins can edit.";
+  /* A REFUSAL OUTRANKS EVERYTHING. It is the only one of these states where
+     a stroke is gone rather than on its way, so it is said first and it names
+     the hole - somebody has to walk back and re-enter it. */
+  const bad=refusals(outingId).filter(f=>f.teamId===String(teamId));
+  if(bad.length){
+    const holes=[...new Set(bad.map(f=>f.hole))].sort((a,b)=>a-b);
+    return `<b class="dfl-sync-fail">Hole${holes.length===1?"":"s"} ${holes.join(", ")} ${holes.length===1?"was":"were"} not saved</b> — the database refused ${holes.length===1?"it":"them"}. Enter ${holes.length===1?"it":"them"} again. <span class="dfl-sync-why">${esc(bad[bad.length-1].message)}</span>`;
+  }
   const waiting=pendingCount(outingId,teamId);
   if(waiting)return `<b class="dfl-sync-wait">${waiting} hole${waiting===1?"":"s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
   if(stale)return "Showing the last copy saved on this phone — it will refresh when you have signal.";

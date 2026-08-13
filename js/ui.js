@@ -51,22 +51,38 @@ export function money(value) {
   });
 }
 
-/** A grey box for "nothing here yet". */
+/*
+  THE THREE SHARED STATES - loading, empty, error.
+
+  All three draw from the one block in ui.css (".state"), so a page that is
+  loading, a page with nothing on it and a page that failed look like three
+  states of the same app rather than three different accidents. Nothing here
+  carries a style="" attribute: if a state needs a colour it needs a class,
+  because a hex code in a template is a colour that can never follow the
+  rest of the palette.
+*/
+
+/** "Nothing here yet". `.empty` is this state's name in that block. */
 export function empty(message) {
   return `<div class="empty">${esc(message)}</div>`;
 }
 
-/** Standard loading placeholder. */
-export function loading() {
-  return `<div class="empty">Loading…</div>`;
+/**
+ * Standard loading placeholder. `is-loading` is what puts the moving
+ * hairline on it - the app's one designed loading treatment, which until now
+ * nothing actually asked for.
+ */
+export function loading(message = "Loading…") {
+  return `<div class="state is-loading">${esc(message)}</div>`;
 }
 
 /** Friendly error box; logs the real error for you. */
 export function errorBox(err) {
   console.error(err);
   const msg = err?.message || String(err);
-  return `<div class="empty" style="border-color:#6b2b23;color:#f0a79b">
-    Could not load data.<br><span class="tiny">${esc(msg)}</span>
+  return `<div class="state is-error" role="alert">
+    <span class="state-title">Could not load</span>
+    <span class="tiny">${esc(msg)}</span>
   </div>`;
 }
 

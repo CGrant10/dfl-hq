@@ -21,8 +21,11 @@ function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()
   a link inside it just changes the hash and the sheet closes itself.
 */
 const moreSheet=document.getElementById("more"),moreBtn=document.getElementById("more-btn");
-const closeMore=()=>moreSheet?.classList.add("hidden");
-moreBtn?.addEventListener("click",()=>moreSheet?.classList.toggle("hidden"));
+/* The button says whether the sheet is open, because "More" on its own tells
+   a screen reader nothing about what tapping it just did. */
+const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
+const closeMore=()=>{moreSheet?.classList.add("hidden");syncMore()};
+moreBtn?.addEventListener("click",()=>{moreSheet?.classList.toggle("hidden");syncMore()});
 document.getElementById("more-close")?.addEventListener("click",closeMore);
 // Tapping the backdrop closes it; tapping the card must not.
 moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});

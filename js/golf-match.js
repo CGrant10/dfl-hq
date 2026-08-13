@@ -43,7 +43,7 @@ import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginL
          pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
-         onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush,
+         onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush, refusals,
          MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
 
 const SAVE_DELAY = 600;
@@ -96,6 +96,9 @@ function styles() {
 
 .dfl-battle-status{padding:8px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
 .dfl-battle-wait{color:var(--sc-over);font-weight:900}
+.dfl-battle-status:has(.dfl-battle-fail){background:var(--danger-bg)}
+.dfl-battle-fail{color:var(--danger-ink);font-weight:900}
+.dfl-battle-why{display:block;color:var(--muted)}
 .dfl-battle-admin{display:flex;justify-content:flex-end;padding:8px 10px;border-bottom:1px solid var(--line)}
 .dfl-battle-clear{border:1px solid var(--danger-line);border-radius:8px;padding:7px 10px;background:var(--danger-bg);color:var(--danger-ink);font-weight:900;font-size:11px}
 
@@ -254,6 +257,15 @@ function liveBar(names, r) {
 
 function statusLine(sides, editable, stale) {
   if (!editable) return "Read-only — the players in this match and admins can score it.";
+  /* Said first, and it names the hole: a refused stroke is gone rather than on
+     its way, so somebody has to enter it again. */
+  const want = new Set(sides.map((s) => String(s.id)));
+  const bad = refusals().filter((f) => f.sideId && want.has(f.sideId));
+  if (bad.length) {
+    const holes = [...new Set(bad.map((f) => f.hole))].sort((a, b) => a - b);
+    const one = holes.length === 1;
+    return `<b class="dfl-battle-fail">Hole${one ? "" : "s"} ${holes.join(", ")} ${one ? "was" : "were"} not saved</b> — the database refused ${one ? "it" : "them"}. Enter ${one ? "it" : "them"} again. <span class="dfl-battle-why">${esc(bad[bad.length - 1].message)}</span>`;
+  }
   const waiting = pendingCountSides(sides.map((s) => s.id));
   if (waiting) return `<b class="dfl-battle-wait">${waiting} hole${waiting === 1 ? "" : "s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
   if (stale) return "Showing the last copy saved on this phone — it will refresh when you have signal.";
