@@ -279,3 +279,18 @@
 }
 #welcome-golf { width: 100%; }
 #welcome-golf .ico { width: 18px; height: 18px; }
+
+/* ---------------------------------------------------------------------
+   GOLF NAME - the member's own control on their profile, and the
+   commissioner's row on the event. Plain tokens; a name field is not an
+   occasion.
+   --------------------------------------------------------------------- */
+.golfname-form { display: grid; gap: var(--s-2); margin-top: var(--s-3); }
+.golfname-row { display: flex; gap: var(--s-2); align-items: center; }
+.golfname-row input { flex: 1 1 auto; min-width: 0; }
+.golfname-row .btn { flex: 0 0 auto; }
+.golfname-form p { margin: 0; }
+/* The name, then its buttons, and the name is allowed to shrink. */
+.gname-row { display: flex; align-items: center; gap: var(--s-2); }
+.gname-row .gname { flex: 1 1 auto; min-width: 0; }
+.gname-row .btn { flex: 0 0 auto; }

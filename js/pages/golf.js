@@ -1,12 +1,12 @@
 // DFL Golf - mobile-first event/team view with live leaderboard.
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
-import { loadMembers } from "../members.js";
+import { loadMembers, refreshMember } from "../members.js";
 import { passFor, clearGolfPass, eventHasCode } from "../golf-guest.js";
 import { mountJoin } from "../golf-join.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { pendingFor, dropPending } from "../golf-offline.js";
-import { memberNames, playerName, isGuest } from "../golf-people.js";
+import { memberNames, playerName, isGuest, realName } from "../golf-people.js";
 const DEFAULT_RATING=75;
 /* Set once per render of an event, and read by every card that prints a
    player's name. A participant is either a league member or a guest with a
@@ -115,7 +115,7 @@ const title=`<header class="page-head golf-event-head"><a class="backlink" href=
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
-view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
 function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card" data-collapse="golf-teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}`:""}</section>`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
@@ -131,7 +131,17 @@ function teamDot(p,teams){const team=teamOf(p,teams);
 return team?`<i class="tdot" style="--racer:${esc(team.color||TEAM_COLORS[0])}"></i>`:`<i class="tdot is-none" title="No team yet"></i>`;}
 function teamLabel(p,teams){const team=teamOf(p,teams);
 return `<small class="tteam${team?"":" muted"}">${esc(team?.name||"no team")}</small>`;}
-function lineupCard(outing,parts,teams,byId){const names=[...byId.values()],spare=names.filter(m=>!parts.some(p=>String(p.member_id)===String(m.id)));return `<section class="card golf-lineup-card" data-collapse="golf-players"><div class="card-title-row"><div><div class="card-title">Players</div><p class="muted tiny">Add or remove players from this event. The colour is their team.</p></div></div>${parts.length?`<div class="glist">${parts.map(p=>`<div class="grow"><span class="gname">${teamDot(p,teams)}${esc(playerName(p,nameMap))}${isGuest(p)?`<small class="muted"> · guest</small>`:""}${teamLabel(p,teams)}</span><button class="btn ghost small" data-drop-player="${p.id}" aria-label="Remove player">×</button></div>`).join("")}`:`<p class="muted tiny">Nobody is signed up yet.</p>`}<div class="arena-admin">${spare.length?`<select id="golf-add-member"><option value="">— add a member —</option>${spare.map(m=>`<option value="${m.id}">${esc(m.display_name)}</option>`).join("")}`:`<span class="muted tiny">Every member is playing.</span>`}<button class="btn ghost small" id="golf-add-all" ${spare.length?"":"disabled"}>Add everyone</button></div><div class="arena-admin"><input id="golf-new-guest" type="text" maxlength="80" placeholder="Guest name" inputmode="text"><button class="btn small" id="golf-add-guest">Add a guest</button></div><p class="muted tiny">A guest plays this event only. They are <strong>not</strong> added to the league, so they never turn up in the “Who are you?” picker, the keepers or any member list — but they can be drafted, paired and scored like anybody else. Somebody else enters their strokes, since a guest has no device of their own in the app.</p></section>`;}
+function lineupCard(outing,parts,teams,byId){const names=[...byId.values()],spare=names.filter(m=>!parts.some(p=>String(p.member_id)===String(m.id)));return `<section class="card golf-lineup-card" data-collapse="golf-players"><div class="card-title-row"><div><div class="card-title">Players</div><p class="muted tiny">Add or remove players from this event. The colour is their team.</p></div></div>${parts.length?`<div class="glist">${parts.map(p=>{
+        /* The DFL name in brackets when the golf name hides it. Two people
+           called "Nick" on a tee sheet is the duplicate-name problem this
+           screen exists to settle, so the commissioner can always see who a
+           golf name actually belongs to. */
+        const behind=realName(p,nameMap);
+        return `<div class="grow gname-row">
+        <span class="gname">${teamDot(p,teams)}${esc(playerName(p,nameMap))}${isGuest(p)?`<small class="muted"> · guest</small>`:behind?`<small class="muted"> · ${esc(behind)}</small>`:""}${teamLabel(p,teams)}</span>
+        <button class="btn ghost small" data-rename-player="${p.id}" data-member="${p.member_id??""}" aria-label="Edit golf name for ${esc(playerName(p,nameMap))}">Name</button>
+        <button class="btn ghost small" data-drop-player="${p.id}" aria-label="Remove player">×</button>
+      </div>`}).join("")}`:`<p class="muted tiny">Nobody is signed up yet.</p>`}<div class="arena-admin">${spare.length?`<select id="golf-add-member"><option value="">— add a member —</option>${spare.map(m=>`<option value="${m.id}">${esc(m.display_name)}</option>`).join("")}`:`<span class="muted tiny">Every member is playing.</span>`}<button class="btn ghost small" id="golf-add-all" ${spare.length?"":"disabled"}>Add everyone</button></div><div class="arena-admin"><input id="golf-new-guest" type="text" maxlength="80" placeholder="Guest name" inputmode="text"><button class="btn small" id="golf-add-guest">Add a guest</button></div><p class="muted tiny">A guest plays this event only. They are <strong>not</strong> added to the league, so they never turn up in the “Who are you?” picker, the keepers or any member list — but they can be drafted, paired and scored like anybody else. Somebody else enters their strokes, since a guest has no device of their own in the app.</p></section>`;}
 /* The generator, then the one control that throws scores away. It is kept
    below a rule and labelled with the exact number of strokes it deletes,
    because "Reset" next to "Random teams" is how a round gets wiped at the
@@ -179,6 +189,55 @@ if(create){const input=root.querySelector("#golf-new-guest"),name=input?.value?.
 /* Names are typed in the field that already shows the current one, so you
    can see what you are changing - a prompt() box shows you nothing else on
    the card. Enter saves, because that is what Enter does in a text field. */
+/*
+  GOLF NAMES, from the commissioner's side.
+
+  A member's golf name lives on their member row and is theirs; an admin can
+  set it for them, which is what "resolve duplicate or mistyped names" needs.
+  A guest has no member row, so their name IS golf_participants.guest_name
+  and that is what gets corrected.
+
+  Two different columns, one button, because from this screen they are the
+  same job: fix what this person is called at golf. Neither write can reach
+  display_name, team_name or anything Sleeper - see golf_identity_schema.sql.
+*/
+function wireGolfNames(view,outing,parts,nameMap,refresh){
+  const root=view.querySelector("#golf-outing");
+  root?.addEventListener("click",async e=>{
+    const btn=e.target.closest("[data-rename-player]");
+    if(!btn)return;
+    const part=parts.find(p=>String(p.id)===String(btn.dataset.renamePlayer));
+    if(!part)return;
+    const current=playerName(part,nameMap);
+    const next=prompt(part.member_id!=null
+      ? `Golf name for ${current}.
+
+This is the name golf uses. Their DFL and Sleeper names are not touched.
+Leave blank to go back to their DFL name.`
+      : `Name for this guest.`, current);
+    if(next===null)return;                       // cancelled
+    const clean=String(next).trim();
+    if(part.member_id==null&&!clean)return toast("A guest needs a name",true);
+    if(clean.length>40)return toast("That name is too long",true);
+    try{
+      if(part.member_id!=null){
+        await mustWrite(db().from("members").update({golf_name:clean}).eq("id",part.member_id),"set that golf name");
+        /* The member cache holds the old golf name, and every golf screen
+           reads names out of it. */
+        await refreshMember().catch(()=>{});
+      }else{
+        await mustWrite(db().from("golf_participants").update({guest_name:clean}).eq("id",part.id),"rename that guest");
+      }
+      toast(clean?`Now “${clean}” at golf`:"Back to their DFL name");
+      refresh();
+    }catch(err){
+      toast(/golf_name|column/.test(err.message||"")
+        ? "Run golf_identity_schema.sql in Supabase"
+        : (err.message||"Could not set that name"),true);
+    }
+  });
+}
+
 function wireTeamNames(view,outing,teams,refresh){const root=view.querySelector("#golf-outing");
 const save=async(id,value)=>{const clean=String(value||"").trim();if(!clean)return toast("Team name cannot be blank",true);const team=teams.find(t=>String(t.id)===String(id));if(team&&team.name===clean)return;try{await mustWrite(db().from("golf_teams").update({name:clean}).eq("id",id),"rename that team");toast("Team renamed");refresh();}catch(err){toast(err.message||"Could not rename team",true);}};
 root.addEventListener("click",e=>{const btn=e.target.closest("[data-save-name]");if(!btn)return;const input=root.querySelector(`[data-team-name="${btn.dataset.saveName}"]`);if(input)save(btn.dataset.saveName,input.value);});

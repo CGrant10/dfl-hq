@@ -193,6 +193,10 @@ export const SECTIONS = [
     sub:   (r) => `${r.active ? "active" : "inactive"}${r.championships ? ` · ${r.championships}× champ` : ""}`,
     fields: [
       { name: "display_name",  label: "Name shown in the picker", type: "text", required: true },
+      /* Golf only. Nothing on the fantasy side reads this column - see
+         golf_identity_schema.sql - so it can be whatever they answer to on
+         a tee box without disturbing ten years of history. */
+      { name: "golf_name",     label: "Golf name (blank = use the name above)", type: "text" },
       { name: "team_name",     label: "Fantasy team name", type: "text" },
       { name: "sleeper_user_id", label: "Sleeper account (links career stats)", type: "select",
         optionsFrom: { table: "sleeper_users", value: "sleeper_user_id",

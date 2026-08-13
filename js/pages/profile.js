@@ -100,12 +100,12 @@ export async function render(view) {
       ${loreName ? rivalryCard(foes, loreName, members) : ""}
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
-      ${isMe ? appearanceCard() + favouriteTeamCard(member) : ""}
+      ${isMe ? golfNameCard(member) + appearanceCard() + favouriteTeamCard(member) : ""}
       ${othersCard(members, member)}
     </div>
   `;
 
-  if (isMe) wireThemePicker(view, member);
+  if (isMe) { wireThemePicker(view, member); wireGolfName(view, member); }
 
   // An edit changes the member row the picker and the header chip read from,
   // so the cache has to go before the page is drawn again.
@@ -339,6 +339,67 @@ function duesCard(rows) {
   "Match my phone" is a real option rather than a starting value: pick it and
   the app keeps following the OS, including when it flips at sunset.
 */
+/*
+  YOUR GOLF NAME.
+
+  Half the league is in here under a Sleeper username from 2019 - azhee28,
+  Martin77 - because that is what they signed up as. That name is load
+  bearing on the fantasy side: the keepers, the record book and ten years of
+  history key off it, so it cannot be "fixed". Golf is a different room and
+  the people on the tee know each other by their actual names.
+
+  So this sets ONE column that only the golf screens read. It cannot reach
+  display_name, team_name, Sleeper, or any fantasy data - the write is an
+  RPC that can touch nothing else. The card says so, because somebody
+  editing a name wants to know what else they are about to change.
+*/
+function golfNameCard(m) {
+  const current = String(m.golf_name || "").trim();
+  return `
+    <div class="card">
+      <div class="card-title">Your golf name</div>
+      <p class="muted tiny">What the scorecards, the leaderboard and the shared
+        cards call you. Your DFL name, your Sleeper account and all of your
+        fantasy history are untouched.</p>
+      <form class="golfname-form" data-golfname>
+        <label for="golf-name-input">Golf name</label>
+        <div class="golfname-row">
+          <input id="golf-name-input" name="golfname" type="text" maxlength="40"
+                 autocomplete="off" placeholder="${esc(m.display_name)}" value="${esc(current)}">
+          <button class="btn small" type="submit">Save</button>
+        </div>
+        <p class="muted tiny">Leave it blank to go back to <strong>${esc(m.display_name)}</strong>.</p>
+      </form>
+    </div>`;
+}
+
+function wireGolfName(view, member) {
+  const form = view.querySelector("[data-golfname]");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const value = form.golfname.value.trim();
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true;
+    try {
+      const { data, error } = await db().rpc("dfl_set_golf_name", { p_name: value });
+      if (error) throw error;
+      /* 0 rows is the honest failure. The RPC returns a count rather than
+         throwing, so without this the form would claim a save that the
+         database declined to make. */
+      if (!data) throw new Error("Pick your name in the top right first.");
+      await refreshMember().catch(() => {});
+      toast(value ? `Golf calls you ${value}` : "Back to your DFL name");
+      render(view);
+    } catch (err) {
+      toast(/function|does not exist/i.test(err.message || "")
+        ? "Run golf_identity_schema.sql in Supabase"
+        : (err.message || "Could not save that name"), true);
+      btn.disabled = false;
+    }
+  });
+}
+
 function appearanceCard() {
   const want = savedMode();
   const now = activeMode();
