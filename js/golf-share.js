@@ -403,3 +403,162 @@ export function shareTeamSheet(data, outing) {
   const how = shareCanvas(teamSheetCanvas(data, outing), name, { title: sheet.title, text });
   return how === "saved" ? "Image saved to your downloads" : "Sharing…";
 }
+
+/* =====================================================================
+   THE MATCH POSTER - one battle, billed like a fight
+   ---------------------------------------------------------------------
+   The board card is the whole day. This is ONE match, in the shape a fight
+   poster is: portrait, the two sides stacked with a VS between them, the
+   margin enormous, and a status across the bottom in words.
+
+   It is the DFL's own identity turned up - Rajdhani is not available on a
+   canvas without loading it, so the same system stack the other cards use,
+   at weight 900, with the crest red and blue doing the work. Nothing is
+   borrowed from anybody else's wrestling promotion: the drama is scale and
+   contrast, which cost nothing and belong to nobody.
+
+   1080x1350 because that is the portrait ratio every chat app and story
+   will show without cropping the margin out of the middle.
+   ===================================================================== */
+const PW = 1080, PH = 1350;
+const RED = "#E5011B", BLUE = "#003396";
+
+/** The numbers the poster is about. Handed in, never derived here. */
+export function posterData({ names, sides, result, scoring, round, matchNumber, outing, standing }) {
+  const lead = scoring === "match" ? (result.up || 0) : (result.lead || 0);
+  const leader = !lead ? -1 : (result.diff < 0 ? 0 : 1);
+  const started = !!(result.thru || result.postedA || result.postedB);
+  return {
+    names, sides, result, scoring, leader, lead, started,
+    matchNumber,
+    /* standingLine() from golf-battle.js, passed in rather than rebuilt -
+       the poster and the screen must not word the same match differently. */
+    standing: standing || "",
+    event: outing?.name || "DFL GOLF",
+    when: shortDate(outing?.event_date),
+    round: round ? (round.name || `ROUND ${round.round_number}`) : "",
+    figures: [0, 1].map((i) => {
+      if (scoring !== "match") return String((i === 0 ? result.postedA : result.postedB) || "—");
+      if (!lead) return "AS";
+      return i === leader
+        ? `${lead}${result.complete && result.closedOut && result.remaining > 0 ? `&${result.remaining}` : " UP"}`
+        : "—";
+    }),
+  };
+}
+
+function drawPosterBand(ctx, y, h, colour) {
+  const g = ctx.createLinearGradient(0, y, PW, y + h);
+  g.addColorStop(0, colour);
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, y, PW, h);
+}
+
+/**
+ * One match as a poster.
+ * @param {object} p        from posterData()
+ * @param {string} moodText the status headline, chosen by marquee.js
+ */
+export function matchPosterCanvas(p, moodText) {
+  const canvas = document.createElement("canvas");
+  canvas.width = PW; canvas.height = PH;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, PW, PH);
+
+  /* The two team colours as bands top and bottom, so the poster is that
+     match's colours before a word is read. Falls back to the crest pair. */
+  drawPosterBand(ctx, 0, 260, hexA(p.sides[0]?.color || RED, 0.30));
+  ctx.save();
+  ctx.translate(PW, PH); ctx.rotate(Math.PI);
+  drawPosterBand(ctx, 0, 260, hexA(p.sides[1]?.color || BLUE, 0.30));
+  ctx.restore();
+
+  ctx.strokeStyle = LINE; ctx.lineWidth = 6;
+  ctx.strokeRect(3, 3, PW - 6, PH - 6);
+
+  let y = drawAnniv(ctx, PW) + 40;
+  y = drawCrest(ctx, y) + 34;
+
+  // ---- the billing -------------------------------------------------------
+  ctx.textAlign = "center";
+  const billing = [p.matchNumber === 1 ? "MAIN EVENT" : `MATCH ${p.matchNumber}`, p.round]
+    .filter(Boolean).join("   ·   ").toUpperCase();
+  ctx.fillStyle = RED;
+  ctx.font = `900 30px ${FONT}`;
+  ctx.fillText(billing, PW / 2, y);
+  y += 30;
+  ctx.fillStyle = MUTED;
+  ctx.font = `800 24px ${FONT}`;
+  ctx.fillText([p.event, p.when].filter(Boolean).join("  ·  ").toUpperCase(), PW / 2, y + 8);
+
+  // ---- the tale of the tape ---------------------------------------------
+  const tapeTop = y + 90;
+  const side = (i, top) => {
+    ctx.fillStyle = INK;
+    fitText(ctx, p.names[i].toUpperCase(), PW / 2, top, PW - 160, 58, 900);
+    ctx.fillStyle = i === p.leader ? "#ffffff" : MUTED;
+    ctx.font = `900 132px ${FONT}`;
+    ctx.fillText(p.figures[i], PW / 2, top + 148);
+    const c = p.sides[i]?.color || (i === 0 ? RED : BLUE);
+    ctx.fillStyle = c;
+    ctx.fillRect(PW / 2 - 70, top + 178, 140, 8);
+  };
+  side(0, tapeTop);
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `900 44px ${FONT}`;
+  ctx.fillText("VS", PW / 2, tapeTop + 268);
+
+  side(1, tapeTop + 350);
+
+  // ---- the status --------------------------------------------------------
+  const statusY = PH - 210;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(70, statusY - 60); ctx.lineTo(PW - 70, statusY - 60); ctx.stroke();
+
+  if (moodText) {
+    ctx.fillStyle = p.result.complete ? "#f2f5f8" : RED;
+    fitText(ctx, moodText, PW / 2, statusY, PW - 120, 56, 900);
+  }
+  ctx.fillStyle = MUTED;
+  ctx.font = `800 28px ${FONT}`;
+  ctx.fillText(p.standing.toUpperCase(), PW / 2, statusY + 52);
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `700 24px ${FONT}`;
+  ctx.fillText("cgrant10.github.io/dfl-hq", PW / 2, PH - 46);
+
+  return canvas;
+}
+
+/* #rrggbb -> rgba(). Team colours come out of the database as hex, and a
+   band needs them transparent. Anything unparseable falls back rather than
+   painting the poster with the string "undefined". */
+function hexA(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!m) return `rgba(229,1,27,${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+/** One line of text for the share sheet, for anybody without image support. */
+export function matchPosterText(p, moodText) {
+  const head = `${p.names[0]} vs ${p.names[1]}`;
+  return [head, p.standing, moodText, p.event].filter(Boolean).join(" · ");
+}
+
+/**
+ * Share it. MUST be called straight from the click handler - see share.js.
+ * @returns {string} a message worth putting in a toast
+ */
+export function shareMatchPoster(p, moodText) {
+  const canvas = matchPosterCanvas(p, moodText);
+  const name = `dfl-${String(p.names[0]).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-v-${String(p.names[1]).toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
+  return shareCanvas(canvas, name, {
+    title: `${p.names[0]} vs ${p.names[1]}`,
+    text: matchPosterText(p, moodText),
+  });
+}

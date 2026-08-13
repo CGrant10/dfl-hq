@@ -2,6 +2,7 @@
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
+import { passFor, saveGolfPass, clearGolfPass, verifyCode } from "../golf-guest.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest } from "../golf-people.js";
@@ -113,7 +114,7 @@ const title=`<header class="page-head golf-event-head"><a class="backlink" href=
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
-view.innerHTML=`${title}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
 function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card" data-collapse="golf-teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}`:""}</section>`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
@@ -226,3 +227,137 @@ async function generateTeams(outing,parts,existingTeams,rate,want,mode){const te
    a pick, and leaving an old pick_number behind would have the draft board
    reporting picks that nobody ever made. */
 await updateRow("golf_participants",p.id,{team_id:best.id,pick_number:null,picked_at:null}).catch(()=>updateRow("golf_participants",p.id,{team_id:best.id}));}}
+
+/* =====================================================================
+   GUEST ACCESS
+   ---------------------------------------------------------------------
+   Half the field is not in the league. Those people are already on the
+   event as golf_participants rows with a guest_name and no member_id -
+   they simply had no way to prove it, so every score policy said no and a
+   member had to keep their card.
+
+   A guest types the event code once, picks their own name off the roster,
+   and can then score their own team. The pass is kept on the phone so
+   nobody types it again on the 14th tee, and it is worth nothing on its
+   own: every write carries it to Postgres, which re-checks it against a
+   hash the API cannot read.
+
+   The whole thing is one strip at the top of the event, and it is not
+   drawn at all for a signed-in league member - they already have a
+   member id and this would be a second sign-in for nothing.
+   ===================================================================== */
+
+function guestStrip(outing) {
+  const pass = passFor(outing.id);
+  if (pass) {
+    return `<div class="card guest-strip is-on">
+      <div>
+        <span class="card-title">Scoring as</span>
+        <strong class="guest-who">${esc(pass.name)}</strong>
+        ${pass.teamName ? `<span class="muted tiny">${esc(pass.teamName)}</span>` : ""}
+      </div>
+      <button type="button" class="btn ghost small" data-guest-out>Sign out</button>
+    </div>`;
+  }
+  return `<div class="card guest-strip" data-guest-prompt>
+    <div>
+      <span class="card-title">Playing today?</span>
+      <p class="muted tiny">Not in the league? Enter the event code to score your own team.</p>
+    </div>
+    <button type="button" class="btn small" data-guest-in>Enter code</button>
+  </div>`;
+}
+
+/*
+  Sign-in, in two steps and one card: the code, then which of these people
+  you are. The roster comes back from the same RPC that checks the code, so
+  a correct code costs one round trip rather than two.
+*/
+function wireGuest(view, outing, refresh) {
+  const strip = view.querySelector(".guest-strip");
+  if (!strip) return;
+
+  strip.querySelector("[data-guest-out]")?.addEventListener("click", () => {
+    clearGolfPass();
+    toast("Signed out of this event");
+    refresh();
+  });
+
+  strip.querySelector("[data-guest-in]")?.addEventListener("click", () => {
+    strip.innerHTML = `
+      <form class="guest-form" data-guest-form>
+        <label for="guest-code">Event code</label>
+        <div class="guest-row">
+          <input id="guest-code" name="code" type="text" autocomplete="off"
+                 autocapitalize="characters" spellcheck="false" placeholder="e.g. ROLLA26" required>
+          <button class="btn small" type="submit">Continue</button>
+        </div>
+        <p class="muted tiny" data-guest-msg>The commissioner has the code.</p>
+      </form>`;
+    const form = strip.querySelector("[data-guest-form]");
+    const msg = strip.querySelector("[data-guest-msg]");
+    strip.querySelector("#guest-code")?.focus();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const code = form.code.value.trim();
+      if (!code) return;
+      const btn = form.querySelector("button");
+      btn.disabled = true; btn.textContent = "Checking…";
+      let roster = [];
+      try {
+        roster = await verifyCode(db(), outing.id, code);
+      } catch (err) {
+        /* The RPC is missing until golf_guest_schema.sql has been run. Say
+           that plainly rather than showing a Postgres error to somebody
+           standing on a tee box. */
+        msg.textContent = "Guest access is not set up for this event yet.";
+        msg.className = "warntext tiny";
+        btn.disabled = false; btn.textContent = "Continue";
+        console.warn(err);
+        return;
+      }
+      if (!roster.length) {
+        msg.textContent = "That code is not right for this event.";
+        msg.className = "warntext tiny";
+        btn.disabled = false; btn.textContent = "Continue";
+        return;
+      }
+
+      /* Which one are you. Everybody on the event is listed, members
+         included - a member who has not picked themselves on this device is
+         still a person standing on the tee, and the policy will give them
+         the same team-scoped access as anybody else. */
+      strip.innerHTML = `
+        <div class="guest-pick">
+          <span class="card-title">Which one are you?</span>
+          <div class="guest-list">
+            ${roster.map((r) => `
+              <button type="button" class="memberbtn" data-pick="${esc(r.participant_id)}"
+                      data-name="${esc(r.display_name)}" data-team="${esc(r.team_id ?? "")}"
+                      data-team-name="${esc(r.team_name || "")}">
+                <span class="memberbtn-text">
+                  <strong>${esc(r.display_name)}</strong>
+                  ${r.team_name ? `<span class="muted tiny">${esc(r.team_name)}</span>` : ""}
+                </span>
+              </button>`).join("")}
+          </div>
+        </div>`;
+
+      strip.querySelector(".guest-list").addEventListener("click", (ev) => {
+        const btn2 = ev.target.closest("button[data-pick]");
+        if (!btn2) return;
+        saveGolfPass({
+          outing: String(outing.id),
+          participant: btn2.dataset.pick,
+          code,
+          name: btn2.dataset.name,
+          teamId: btn2.dataset.team || null,
+          teamName: btn2.dataset.teamName || "",
+        });
+        toast(`Scoring as ${btn2.dataset.name}`);
+        refresh();
+      });
+    });
+  });
+}

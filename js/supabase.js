@@ -5,6 +5,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 import { getAdminToken, setAdminToken } from "./store.js";
+import { golfHeaders, golfHeaderKey } from "./golf-guest.js";
 
 export const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR-PROJECT-REF") && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
 
@@ -33,11 +34,22 @@ function makePublicClient() {
   // policy checks this header against golf_participants. Admin uses a separate
   // client and is still governed by is_admin().
   const memberId = localStorage.getItem("dfl.memberId") || "";
-  if (publicClient && publicClientKey === memberId) return publicClient;
+  /* A golf guest has no member id at all - their pass is the outing, the
+     participant they signed in as, and the event code, and Postgres re-checks
+     all three on every write. The pass is part of the cache key because a
+     guest who signs in mid-round would otherwise keep sending the old headers
+     until the page was reloaded. */
+  const key = `${memberId}|${golfHeaderKey()}`;
+  if (publicClient && publicClientKey === key) return publicClient;
   publicClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: memberId ? { "x-member-id": memberId } : {} },
+    global: {
+      headers: {
+        ...(memberId ? { "x-member-id": memberId } : {}),
+        ...golfHeaders(),
+      },
+    },
   });
-  publicClientKey = memberId;
+  publicClientKey = key;
   return publicClient;
 }
 

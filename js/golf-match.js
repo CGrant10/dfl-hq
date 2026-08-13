@@ -38,6 +38,9 @@
 import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
+import { marquee, mood } from "./marquee.js";
+import { passFor } from "./golf-guest.js";
+import { posterData, shareMatchPoster } from "./golf-share.js";
 import { holeResult, fmtToPar, holePar, holeYards, courseHole, wrapsAround } from "./golf-scorecard.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginLabel,
          pairName } from "./golf-battle.js";
@@ -248,11 +251,61 @@ function strokeMap(card, sideId) {
 
 // ------------------------------------------------------------------ views
 
-function liveBar(names, r) {
-  return `<div class="dfl-battle-live">
-    <span><small>Thru</small><b data-live-thru>${r.thru || "—"}</b></span>
-    <span><small>Standing</small><b class="dfl-battle-standing" data-live-standing>${esc(standingLine(r, names[0], names[1]))}</b></span>
-  </div>`;
+/*
+  THE MARQUEE.
+
+  This screen is the one somebody holds up on the tee to settle an argument,
+  so it leads like a broadcast: who against who, the figures at size, and a
+  line that says what is happening in words.
+
+  It replaces the old two-row "vs" list AND the thru/standing bar, which
+  between them said the same thing three times. The mood is the drama and
+  standingLine() is the fact underneath it - "TAKING CONTROL" over
+  "Cole & Ryan 2 up thru 7". Nothing here computes a score: r is the
+  battleResult the card was already drawn from.
+*/
+function matchMarquee(card, names, r, scoring, roundLabel) {
+  const started = !!(r.thru || r.postedA || r.postedB);
+  const lead = scoring === "match" ? (r.up || 0) : (r.lead || 0);
+  const m = mood(lead, scoring, r.complete, started);
+  // r.diff < 0 means slot 1 is ahead - the same test standingLine() uses.
+  const leader = !lead ? -1 : (r.diff < 0 ? 0 : 1);
+
+  /* The round label is already "ROUND 1 · 2V2 · MATCH PLAY · MATCH 1" for the
+     page header. Split on its own separator rather than printing all of it
+     inside one very wide pill. */
+  const billing = String(roundLabel).split("·").map((b) => b.trim()).filter(Boolean);
+
+  return marquee({
+    billing,
+    main: card.match.match_number === 1,
+    live: started && !r.complete,
+    final: !!r.complete,
+    mood: m.text, tone: m.tone,
+    where: standingLine(r, names[0], names[1]),
+    sides: card.sides.map((side, i) => ({
+      name: names[i],
+      score: sideFigure(r, i, scoring),
+      colour: side.color || "",
+      up: leader === i,
+      down: leader > -1 && leader !== i,
+    })),
+  });
+}
+
+/*
+  WHAT NUMBER GOES ON EACH SIDE OF THE POSTER.
+
+  Stroke play has two totals, so it shows them. Match play does not - a
+  match is 2 up, not 2-1 - so the leader carries the margin and the other
+  side carries a dash. Reading r, never recomputing it.
+*/
+function sideFigure(r, i, scoring) {
+  if (scoring !== "match") return (i === 0 ? r.postedA : r.postedB) || "—";
+  const up = r.up || 0;
+  if (!up) return "AS";
+  const leader = r.diff < 0 ? 0 : 1;
+  return i === leader ? `${up}${r.complete && r.closedOut && r.remaining > 0 ? `&${r.remaining}` : "UP"}` : "—";
 }
 
 function statusLine(sides, editable, stale) {
@@ -319,7 +372,7 @@ function strip(card, maps, names) {
 /** The halves the strip is split into - also what recalc has to keep in step. */
 const nineStarts = (holes) => (holes <= 9 ? [1] : [1, 10]);
 
-function holeBlock(h, card, maps, names, editable) {
+function holeBlock(h, card, maps, names, canEditSide) {
   const par = holePar(card.holes, h);
   const yards = holeYards(card.courseHoles, h);
   const rows = maps.map((map, i) => {
@@ -327,6 +380,7 @@ function holeBlock(h, card, maps, names, editable) {
     const other = num(maps[1 - i].get(h));
     const r = holeResult(v, par);
     const low = num(v) && other && num(v) < other;
+    const editable = canEditSide(i);
     return `<div class="bh-row ${low ? "is-low" : ""}" data-row="${i}:${h}">
       <span class="bh-name">${esc(names[i])}<i>${esc(card.sides[i].teamName)}</i></span>
       <span class="bh-entry">${editable ? `<button type="button" class="sbtn" data-step="-1" data-side="${i}" data-hole="${h}" aria-label="One fewer for ${esc(names[i])} on hole ${h}">−</button>` : ""}
@@ -426,10 +480,11 @@ function recalc(root, card) {
   }
   const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
   const r = battleResult(maps[0], maps[1], holes, scoringOf(card));
-  const thru = root.querySelector("[data-live-thru]");
-  if (thru) thru.textContent = r.thru || "—";
-  const standing = root.querySelector("[data-live-standing]");
-  if (standing) standing.textContent = standingLine(r, names[0], names[1]);
+  /* The marquee is repainted whole rather than field by field: the mood, the
+     billing, which side is dimmed and both figures all move together, and
+     three separate textContent writes is how they get out of step. */
+  const mq = root.querySelector("[data-marquee]");
+  if (mq) mq.innerHTML = matchMarquee(card, names, r, scoringOf(card), mq.dataset.round || "");
   const outcome = root.querySelector("[data-outcome]");
   if (outcome) outcome.textContent = outcomeText(r, names);
 }
@@ -464,8 +519,28 @@ async function render(root, matchId) {
   const admin = isAdmin();
   /* Anyone in the match may write either side - that is the format, not a
      shortcut, and a guest has no member id to check against at all. */
-  const editable = admin || (!!me && card.sides.some((s) =>
-    s.players.some((p) => p.member_id != null && String(p.member_id) === me)));
+  /*
+    WHO MAY WRITE WHICH SIDE.
+
+    A member in the match writes EITHER side - that is the format, not a
+    shortcut: one person keeps the card for the foursome, and it is how this
+    has always worked.
+
+    A GUEST WRITES THEIR OWN SIDE ONLY, which is tighter, and matches what
+    the database will actually allow - the guest policy is scoped to their
+    team. Disabling the other side's inputs is not the security (Postgres is)
+    but typing into a box that is going to be refused is a worse experience
+    than not having the box.
+  */
+  const pass = passFor(card.match.outing_id);
+  const memberIn = !!me && card.sides.some((s) =>
+    s.players.some((p) => p.member_id != null && String(p.member_id) === me));
+  const guestSide = pass?.teamId
+    ? card.sides.findIndex((s) => String(s.team_id) === String(pass.teamId))
+    : -1;
+  const editable = admin || memberIn || guestSide > -1;
+  // A predicate rather than a boolean, so one side can be open and the other shut.
+  const canEditSide = (i) => admin || memberIn || guestSide === i;
   const scoring = scoringOf(card);
   const r = battleResult(maps[0], maps[1], holes, scoring);
   const singles = card.round?.format === "singles";
@@ -479,15 +554,14 @@ async function render(root, matchId) {
     <header class="dfl-battle-head">
       <div class="dfl-battle-head-top"><a class="backlink" href="${back}">← Rounds</a>
         <div><span class="dfl-battle-kicker">${esc(roundLabel)}</span><h2>${esc(names[0])} vs ${esc(names[1])}</h2></div></div>
-      <div class="dfl-battle-vs">${card.sides.map((s, i) => `
-        <div class="dfl-battle-vs-row" style="--racer:${esc(s.color || "")}"><span class="dfl-battle-vs-dot"></span><b>${esc(names[i])}</b><small>${esc(s.teamName)}</small></div>`).join("")}</div>
     </header>
-    ${liveBar(names, r)}
+    <div data-marquee data-round="${esc(roundLabel)}">${matchMarquee(card, names, r, scoring, roundLabel)}</div>
     <div class="dfl-battle-status" data-battle-status>${statusLine(card.sides, editable, card.stale)}</div>
+    <div class="dfl-battle-share"><button type="button" class="btn ghost small" data-share-match>Share the match card</button></div>
     ${admin ? `<div class="dfl-battle-admin"><button type="button" class="dfl-battle-clear" data-clear-battle>Clear this match</button></div>` : ""}
     <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>${scoring === "match" ? `UP/DN is ${esc(names[0])}` : "Tap a hole to jump to it"}</span></header>
       <div style="overflow-x:auto">${strip(card, maps, names)}</div></section>
-    <div class="dfl-holes">${Array.from({ length: holes }, (_, i) => holeBlock(i + 1, card, maps, names, editable)).join("")}</div>
+    <div class="dfl-holes">${Array.from({ length: holes }, (_, i) => holeBlock(i + 1, card, maps, names, canEditSide)).join("")}</div>
     ${finalBlock(maps, names, card, r)}
     <div class="dfl-battle-help">${scoring === "match"
       ? `Match play: whoever takes a hole goes one up, and a big number on one hole costs no more than a small one. The match is over as soon as somebody is up by more holes than are left — 3&amp;2 means three up with two to play. All square after ${holes} is worth nothing to either side.`
@@ -496,6 +570,26 @@ async function render(root, matchId) {
 
   wire(root, card, editable);
   watchSync(root, card, editable);
+
+  /* The poster is built and shared INSIDE the click handler, synchronously -
+     see the gesture rule at the top of share.js. Anything awaited first and
+     iOS has already decided the share sheet was not user-initiated. */
+  root.querySelector("[data-share-match]")?.addEventListener("click", () => {
+    try {
+      const maps2 = card.sides.map((s2) => strokeMap(card, s2.id));
+      const r2 = battleResult(maps2[0], maps2[1], holes, scoring);
+      const lead2 = scoring === "match" ? (r2.up || 0) : (r2.lead || 0);
+      const started2 = !!(r2.thru || r2.postedA || r2.postedB);
+      const p = posterData({
+        names, sides: card.sides, result: r2, scoring, round: card.round,
+        matchNumber: card.match.match_number, outing: card.outing,
+        standing: standingLine(r2, names[0], names[1]),
+      });
+      toast(shareMatchPoster(p, mood(lead2, scoring, r2.complete, started2).text));
+    } catch (err) {
+      toast(err?.message || "Could not build the match card", true);
+    }
+  });
 
   if (admin) {
     const clear = root.querySelector("[data-clear-battle]");
