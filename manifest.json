@@ -14,29 +14,30 @@
   "background_color": "#0d1117",
   "theme_color": "#0d1117",
   "categories": ["sports", "utilities"],
+  "_comment_icons": "app-* is the full crest artwork - the icon somebody taps on a home screen. mark-* is the same art cropped to the head, and exists ONLY for the 30px brand mark in the top bar, where the whole scene would be a smudge. The maskable one is inset to 80% so a circular launcher mask crops the frame rather than the DRAFT/GOLF/SIN/FOLD line.",
   "icons": [
-    { "src": "icons/mark-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/mark-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/mark-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/app-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
       "name": "League Finances",
       "short_name": "Finances",
       "url": "./#/finances",
-      "icons": [{ "src": "icons/mark-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/app-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Polls",
       "short_name": "Polls",
       "url": "./#/polls",
-      "icons": [{ "src": "icons/mark-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/app-192.png", "sizes": "192x192" }]
     },
     {
       "name": "History",
       "short_name": "History",
       "url": "./#/history",
-      "icons": [{ "src": "icons/mark-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/app-192.png", "sizes": "192x192" }]
     }
   ]
 }

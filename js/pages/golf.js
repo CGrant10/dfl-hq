@@ -2,7 +2,7 @@
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
-import { passFor, saveGolfPass, clearGolfPass, verifyCode } from "../golf-guest.js";
+import { passFor, saveGolfPass, clearGolfPass, verifyCode, eventHasCode } from "../golf-guest.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest } from "../golf-people.js";
@@ -114,8 +114,8 @@ const title=`<header class="page-head golf-event-head"><a class="backlink" href=
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
-view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
-function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card" data-collapse="golf-teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}`:""}</section>`;}
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card" data-collapse="golf-teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}`:""}</section>`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
    a cheerful 204. Without asking for the changed rows back, a member with no
@@ -359,5 +359,91 @@ function wireGuest(view, outing, refresh) {
         refresh();
       });
     });
+  });
+}
+
+/* =====================================================================
+   GUEST ACCESS, from the commissioner's side
+   ---------------------------------------------------------------------
+   The code has to be settable from the app. Without this the only way to
+   let a guest score was to run SQL, which is not a thing anybody is doing
+   on a golf course - and a feature that needs a laptop to switch on is a
+   feature nobody uses.
+
+   The code itself is NEVER read back. It cannot be: the hash lives in a
+   table with no policies and the app has no way to reach it. So this shows
+   whether a code exists and lets an admin set or clear one, and that is
+   deliberately all it can do. If the commissioner forgets it, they set a
+   new one - which is the right trade for a code that unlocks nothing but
+   one afternoon's scorecards.
+   ===================================================================== */
+function guestCodeCard(outing) {
+  return `<section class="card golf-guest-admin" data-collapse="golf-guestcode">
+    <div class="card-title-row">
+      <div>
+        <div class="card-title">Guest access</div>
+        <p class="muted tiny">A code for people who are not in the league. They pick their
+          own name and can score their own team — nothing else.</p>
+      </div>
+      <span class="admin-badge">Admin only</span>
+    </div>
+    <div class="guest-code-state muted tiny" data-code-state>Checking…</div>
+    <form class="guest-code-form" data-code-form>
+      <label for="gc-code">Event code</label>
+      <div class="guest-row">
+        <input id="gc-code" name="code" type="text" autocomplete="off" autocapitalize="characters"
+               spellcheck="false" placeholder="e.g. ROLLA26" minlength="4">
+        <button class="btn small" type="submit">Set code</button>
+      </div>
+      <p class="muted tiny">Four characters or more. Setting a new one replaces the old
+        immediately; clearing it locks every guest out.</p>
+      <div class="row-end"><button type="button" class="btn ghost small danger" data-code-clear>Clear code</button></div>
+    </form>
+  </section>`;
+}
+
+function wireGuestCode(view, outing) {
+  const card = view.querySelector(".golf-guest-admin");
+  if (!card) return;
+  const state = card.querySelector("[data-code-state]");
+  const form = card.querySelector("[data-code-form]");
+
+  const paint = async () => {
+    const has = await eventHasCode(db(), outing.id);
+    state.textContent = has
+      ? "A code is set for this event. Guests can sign in now."
+      : "No code set — guests cannot score this event yet.";
+    state.className = has ? "guest-code-state tiny" : "guest-code-state muted tiny";
+  };
+  paint();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = form.code.value.trim();
+    if (code.length < 4) { toast("Four characters or more", true); return; }
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true;
+    try {
+      const { error } = await db().rpc("golf_set_event_code", { p_outing_id: Number(outing.id), p_code: code });
+      if (error) throw error;
+      form.code.value = "";
+      toast(`Code set — tell the field: ${code}`);
+      paint();
+    } catch (err) {
+      toast(err.message || "Could not set the code", true);
+    }
+    btn.disabled = false;
+  });
+
+  card.querySelector("[data-code-clear]").addEventListener("click", async () => {
+    if (!confirm("Clear the code? Every guest loses access to this event straight away.")) return;
+    try {
+      const { error } = await db().rpc("golf_set_event_code", { p_outing_id: Number(outing.id), p_code: "" });
+      if (error) throw error;
+      toast("Code cleared");
+      paint();
+    } catch (err) {
+      toast(err.message || "Could not clear the code", true);
+    }
   });
 }

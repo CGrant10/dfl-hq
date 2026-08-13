@@ -213,3 +213,6 @@
 .guest-pick { width: 100%; display: grid; gap: var(--s-2); }
 .guest-list { display: grid; gap: var(--s-2); max-height: 46vh; overflow-y: auto; }
 .dfl-battle-share { display: flex; justify-content: flex-end; padding: var(--s-2) var(--s-3) 0; }
+.golf-guest-admin .guest-code-form { display: grid; gap: var(--s-2); }
+.golf-guest-admin .guest-code-state { margin-bottom: var(--s-2); }
+.golf-guest-admin .guest-code-state.tiny:not(.muted) { color: var(--ok); }
