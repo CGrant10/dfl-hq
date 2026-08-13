@@ -236,7 +236,9 @@ async function matchupHero(ctx) {
       body: scoreBand([a, b], 1),
       state: !played ? "Yet to play" : a.value === b.value ? "Tied"
         : `${matchupMood(a.value, b.value, played) ? matchupMood(a.value, b.value, played) + " · " : ""}${a.value > b.value ? a.name : b.name} by ${Math.abs(a.value - b.value).toFixed(1)}`,
-      href: "#/history", cta: "League history",
+      /* Not League history: a matchup CTA should land where that matchup
+         lives on, which is the owner's own season page. */
+      href: "#/profile", cta: "Your season",
     });
   } catch { return ""; }
 }
