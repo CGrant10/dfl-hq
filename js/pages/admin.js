@@ -33,7 +33,7 @@ const TABLES = [
 
 // Custom panels rather than single-table editors.
 const PANELS = [
-  { id: "finances", tab: "Finances", render: renderFinancePanel },
+  { id: "finances", tab: "Fees", render: renderFinancePanel },
   { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
 ];
 

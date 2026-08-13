@@ -28,7 +28,7 @@ export async function render(view) {
   const err = seasonsRes.error || paymentsRes.error || payoutsRes.error ||
               expensesRes.error || compsRes.error;
   if (err) {
-    view.innerHTML = `<h1>League Finances</h1>` + errorBox(err) +
+    view.innerHTML = `<h1>League Fees</h1>` + errorBox(err) +
       `<div class="card"><div class="card-body muted">If a table is missing, run
        <strong>finance_schema.sql</strong> in the Supabase SQL editor.</div></div>`;
     return;
@@ -52,15 +52,15 @@ export async function render(view) {
   ])].sort((a, b) => b - a);
 
   if (!years.length) {
-    view.innerHTML = `<h1>League Finances</h1>${empty(
-      "No financial records yet. An admin can set the buy-in from Admin → Finances.")}`;
+    view.innerHTML = `<h1>League Fees</h1>${empty(
+      "No fees on record yet. An admin can set the buy-in from Admin → Fees.")}`;
     return;
   }
 
   if (!years.includes(season)) season = years[0];
 
   view.innerHTML = `
-    <h1>League Finances</h1>
+    <h1>League Fees</h1>
     <div class="tabs" id="fin-years">
       ${years.map((y) => `<button data-year="${y}" class="${y === season ? "on" : ""}">${y}</button>`).join("")}
     </div>
@@ -132,11 +132,11 @@ function summaryCard(t) {
   const negative = t.remaining < 0;
   return `
     <div class="card">
-      <div class="card-title">Financial summary</div>
+      <div class="card-title">Fees summary</div>
       <div class="statgrid">
         ${stat("Dues expected", money(t.expected))}
         ${stat("Collected", money(t.collected))}
-        ${stat("Outstanding", money(t.owed), t.owed > 0 ? "warn" : "")}
+        ${stat("Owed", money(t.owed), t.owed > 0 ? "warn" : "")}
         ${stat("Expenses", money(t.spent))}
         ${stat("Payouts", money(t.paidOut))}
         ${stat("Balance", money(t.remaining), negative ? "bad" : "good")}

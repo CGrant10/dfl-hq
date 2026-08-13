@@ -193,9 +193,12 @@ async function golfHero(outing) {
     const { total } = dayPoints(rounds);
     const values = teams.map((t) => total.get(String(t.id)) || 0);
     const mood = golfMood(values, done, all.length);
+    /* Level scores get NO state line. "All square · 0 of 9 decided" is a
+       sentence about nothing having happened yet, and the two zeroes above it
+       already say that louder. Nobody is told a tie is news. */
     const state = !all.length ? "Not started yet"
       : done === all.length ? (mood || "Final")
-      : values[0] === values[1] ? `All square · ${done} of ${all.length} decided`
+      : values[0] === values[1] ? ""
       : `${mood ? mood + " · " : ""}${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} decided`;
     return heroShell({
       kicker: "DFL GOLF", live, title: outing.name,
@@ -314,7 +317,7 @@ function snapshot({ leagues, members, myMember, standings, dues, polls }) {
           : { label: "Owners", value: String(members.length), href: "#/profile" },
     leader ? { label: `${season} leader`, value: nameOf(leader.sleeper_user_id), href: "#/history" }
            : { label: "Titles on record", value: String(leagues.filter((l) => l.champion_user_id).length), href: "#/history" },
-    { label: "Outstanding", value: owed ? money(owed) : "Settled", href: "#/finances" },
+    { label: "Owed", value: owed ? money(owed) : "Settled", href: "#/finances" },
     { label: "Polls open", value: String((polls || []).length), href: "#/polls" },
   ];
   return `<div class="fp-snap">${cells.map((c) =>
