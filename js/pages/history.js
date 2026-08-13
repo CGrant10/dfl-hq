@@ -14,9 +14,19 @@ import { db } from "../supabase.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
 import { esc, empty, errorBox, groupBy, loading } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
+/*
+  The record book, the moments and the yearbook are three views of ONE
+  derivation, and it lives in lore.js. This page used to own namer(),
+  toSides(), best() and the streak walk outright, which is why a profile
+  could never show a head-to-head: the arithmetic was trapped in here.
+*/
+import {
+  loadLore, clearLore, namer, toSides, margin, best, played,
+  winnerSide, loserSide, streaks, spanLabel, moments, yearbook,
+} from "../lore.js";
 
 const ICON = {
-  "Champion":  "i-history",
+  "Champion":  "i-trophy",
   "Runner Up": "i-medal",
   "Award":     "i-award",
   "Record":    "i-record",
@@ -31,25 +41,14 @@ let tab = "fame";
 let season = null;
 
 export async function render(view) {
-  const [manualRes, leaguesRes, standingsRes, usersRes, membersRes] = await Promise.all([
-    db().from("history").select("*").order("year", { ascending: false }),
-    db().from("sleeper_leagues").select("*").order("season", { ascending: false }),
-    db().from("sleeper_standings").select("*"),
-    db().from("sleeper_users").select("*"),
-    db().from("members").select("*"),
-  ]);
+  view.innerHTML = `<h1>History</h1>` + loading("Reading the record book…");
 
-  const err = manualRes.error || leaguesRes.error || standingsRes.error;
-  if (err) { view.innerHTML = `<h1>History</h1>` + errorBox(err); return; }
-
-  const data = {
-    manual:    manualRes.data || [],
-    leagues:   leaguesRes.data || [],
-    standings: standingsRes.data || [],
-    // people who a sync found but an admin has hidden never show up here
-    users:     (usersRes.data || []).filter((u) => u.hidden !== true),
-    members:   membersRes.data || [],
-  };
+  /* ONE LOAD for every tab on this page, and the same one a profile reads.
+     The record book used to fetch the matchup table separately the first
+     time somebody opened its tab; it is all one fetch now, cached in
+     lore.js for the rest of the visit. */
+  const data = await loadLore();
+  if (data.error) { view.innerHTML = `<h1>History</h1>` + errorBox(data.error); return; }
 
   if (!data.manual.length && !data.leagues.length) {
     view.innerHTML = `<h1>History</h1>
@@ -57,7 +56,7 @@ export async function render(view) {
         ${empty("No league history yet.")}
         ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
       </div>`;
-    wireInline(view.querySelector("#hist-body"), () => render(view));
+    wireInline(view.querySelector("#hist-body"), () => { clearLore(); render(view); });
     return;
   }
 
@@ -65,7 +64,8 @@ export async function render(view) {
     <h1>History</h1>
     <div class="tabs" id="hist-tabs">
       <button data-tab="fame"    class="${tab === "fame" ? "on" : ""}">Hall of Fame</button>
-      <button data-tab="seasons" class="${tab === "seasons" ? "on" : ""}">Seasons</button>
+      <button data-tab="moments" class="${tab === "moments" ? "on" : ""}">Moments</button>
+      <button data-tab="seasons" class="${tab === "seasons" ? "on" : ""}">Yearbook</button>
       <button data-tab="alltime" class="${tab === "alltime" ? "on" : ""}">All-time</button>
       <button data-tab="records" class="${tab === "records" ? "on" : ""}">Records</button>
     </div>
@@ -76,7 +76,8 @@ export async function render(view) {
   const paint = () => {
     if (tab === "records") return recordsView(body, data);
     body.innerHTML = tab === "fame"    ? fameView(data)
-                   : tab === "seasons" ? seasonsView(data)
+                   : tab === "moments" ? momentsView(data)
+                   : tab === "seasons" ? yearbookView(data)
                    : allTimeView(data);
   };
 
@@ -94,63 +95,17 @@ export async function render(view) {
     if (!btn) return;
     season = Number(btn.dataset.season);
     paint();
+    /* The yearbook is long and the picker is at the top of it - jumping
+       back up is the difference between reading a season and hunting for
+       where it started. */
+    view.querySelector("#hist-tabs")?.scrollIntoView({ block: "start" });
   });
 
   // #hist-body is new on every render, so this cannot stack up.
-  wireInline(body, () => render(view));
+  // An edited moment changes the derivation, so the cache goes with it.
+  wireInline(body, () => { clearLore(); render(view); });
 
   paint();
-}
-
-// --------------------------- naming people ----------------------------
-
-/**
- * Names for history rows.
- *
- * Owners are matched on Sleeper user id only - never on a name, because
- * names are exactly what change from year to year.
- *
- * `season` picks the name that was in use THAT year, taken from the
- * standings snapshot. Without a season it falls back to the person's
- * current identity. `rosterId` is the last resort: it names a team whose
- * owner account no longer exists, which is how the 2019 champion is still
- * identifiable.
- */
-function namer(data) {
-  const byMember  = new Map(data.members.map((m) => [m.sleeper_user_id, m]));
-  const bySleeper = new Map(data.users.map((u) => [u.sleeper_user_id, u]));
-
-  const snapshot = new Map();          // "season:userId"   -> team name
-  const byRoster = new Map();          // "season:rosterId" -> team name
-  for (const s of data.standings) {
-    if (s.sleeper_user_id) snapshot.set(`${s.season}:${s.sleeper_user_id}`, s.team_name || "");
-    byRoster.set(`${s.season}:${s.roster_id}`, s.team_name || "");
-  }
-
-  return (userId, season = null, rosterId = null) => {
-    const member = byMember.get(userId);
-    const user   = bySleeper.get(userId);
-    const person = member?.display_name || user?.display_name || null;
-
-    // the name used that season, if we have it
-    const historic = season != null ? snapshot.get(`${season}:${userId}`) : null;
-
-    if (person) {
-      const label = historic || member?.team_name || user?.team_name || person;
-      return { label, sub: person, memberId: member?.id ?? null };
-    }
-
-    // No owner: the Sleeper account was deleted. Use that season's team
-    // name if we captured one, otherwise at least identify the roster, so
-    // the season still appears in the record book instead of vanishing.
-    const orphan = season != null && rosterId != null
-      ? byRoster.get(`${season}:${rosterId}`) : null;
-    if (orphan) return { label: orphan, sub: "account deleted", memberId: null };
-    if (rosterId != null) {
-      return { label: `Roster ${rosterId}`, sub: "account deleted", memberId: null };
-    }
-    return { label: "Unknown", sub: "", memberId: null };
-  };
 }
 
 function nameCell(who) {
@@ -237,56 +192,184 @@ function entry(r) {
     </div>`;
 }
 
-// ------------------------------- seasons ------------------------------
+// ------------------------------- MOMENTS ------------------------------
+//
+// The league's memory, newest first. NOT a feed: nothing here is posted,
+// liked or followed - every row is a fact derived in lore.js from a game
+// that was actually played, or a line the commissioner wrote down. It is a
+// record, and it reads the way a record reads: by year.
 
-function seasonsView(data) {
+const KIND_ICON = {
+  championship: "i-trophy", title: "i-trophy", commissioner: "i-moment",
+  golf: "i-golf", arena: "i-arena", streak: "i-record", heartbreak: "i-medal",
+  blowout: "i-record", nailbiter: "i-record", high: "i-record", low: "i-record",
+  rivalry: "i-versus",
+};
+
+/* What the row IS, so a moment says what kind of thing it is before you
+   have read the figure. */
+const KIND_LABEL = {
+  championship: "Champion", title: "The final", commissioner: "From the commissioner",
+  golf: "Golf", arena: "Arena", streak: "Streak", heartbreak: "Hard luck",
+  blowout: "Blowout", nailbiter: "Nail-biter", high: "Highest week", low: "Lowest week",
+  rivalry: "Rivalry",
+};
+
+function momentsView(data) {
+  const list = moments(data);
+  if (!list.length) {
+    return `<div class="state">
+      <span class="state-title">Nothing to remember yet</span>
+      <span>Sync Sleeper from the Admin page, or write the first one down.</span>
+    </div>${canEdit() ? `<div class="row-end">${addControl("history", "Add a moment")}</div>` : ""}`;
+  }
+
+  const byYear = groupBy(list, (m) => m.season ?? "—");
+  const years = [...byYear.keys()].sort((x, y) => (Number(y) || 0) - (Number(x) || 0));
+
+  return `
+    <p class="page-sub" style="margin-bottom:14px">
+      ${list.length} moments · read off every game on record
+      <span class="muted">· nothing here is invented</span>
+    </p>
+    ${years.map((y) => `
+      <h2 class="section-title">${esc(y)}</h2>
+      <div class="card momentlist">${byYear.get(y).map(momentRow).join("")}</div>`).join("")}
+    ${canEdit() ? `<div class="row-end">${addControl("history", "Add a moment")}</div>` : ""}
+  `;
+}
+
+/*
+  ONE MOMENT. Deliberately a ROW, not a card - a hundred of these as cards
+  is exactly the card wall the redesign spent its time removing. The kind is
+  the quiet part, the headline is the loud part, and the detail explains it
+  in one line.
+*/
+function momentRow(m) {
+  const kind = m.kind === "commissioner" && m.category ? m.category : (KIND_LABEL[m.kind] || "Moment");
+  const inner = `
+    <svg class="ico-sm moment-ico" aria-hidden="true"><use href="#${KIND_ICON[m.kind] || "i-moment"}"></use></svg>
+    <span class="moment-body">
+      <span class="moment-kind">${esc(kind)}</span>
+      <strong class="moment-head">${esc(m.headline)}</strong>
+      ${m.detail ? `<span class="moment-detail">${esc(m.detail)}</span>` : ""}
+    </span>`;
+  return m.href
+    ? `<a class="moment is-${esc(m.kind)}" href="${esc(m.href)}">${inner}</a>`
+    : `<div class="moment is-${esc(m.kind)}">${inner}</div>`;
+}
+
+// ------------------------------ YEARBOOK ------------------------------
+//
+// A season told as what happened, rather than as a table of rows. The
+// standings are still here - they are the last word on a season - but they
+// come after the story instead of being the whole of it.
+//
+// Everything reads through lore.js, so the champion named here is named the
+// same way on the moments tab and on that owner's career page.
+
+function yearbookView(data) {
   const years = [...new Set(data.standings.map((s) => s.season))].sort((a, b) => b - a);
   if (!years.length) return empty("No season standings yet. Sync Sleeper from the Admin page.");
 
-  const hasGames = (y) => data.standings
-    .some((s) => s.season === y && (s.wins + s.losses + s.ties) > 0);
-
-  // Open on the newest season that has actually been played, not on a
-  // pre-draft season where every row is 0-0.
+  const hasGames = (y) => data.standings.some((s) => s.season === y && (s.wins + s.losses + s.ties) > 0);
+  // Open on the newest season actually played, not a pre-draft season of 0-0.
   if (!years.includes(season)) season = years.find(hasGames) ?? years[0];
 
-  const name = namer(data);
-  const league = data.leagues.find((l) => l.season === season);
-  const played = hasGames(season);
-  const rows = data.standings
-    .filter((s) => s.season === season)
-    .sort((a, b) => played
-      ? (a.rank ?? 99) - (b.rank ?? 99)
-      : name(a.sleeper_user_id, season, a.roster_id).label
-          .localeCompare(name(b.sleeper_user_id, season, b.roster_id).label));
+  const y = yearbook(data, season);
+  const picker = `<div class="tabs">${years.map((n) =>
+    `<button data-season="${n}" class="${n === season ? "on" : ""}">${n}</button>`).join("")}</div>`;
+
+  if (!y.played) {
+    return `${picker}
+      <div class="state">
+        <span class="state-title">${esc(season)} has not been played</span>
+        <span>The teams are set. The yearbook writes itself once the games start.</span>
+      </div>
+      ${standingsCard(y, false)}`;
+  }
 
   return `
-    <div class="tabs">
-      ${years.map((y) =>
-        `<button data-season="${y}" class="${y === season ? "on" : ""}">${y}</button>`).join("")}
-    </div>
+    ${picker}
+    ${champBand(y)}
+    ${titleGameCard(y)}
+    ${seasonMomentsCard(y)}
+    ${standingsCard(y, true)}
+  `;
+}
 
+/*
+  THE CHAMPION, once, at the top and at size. A season has exactly one
+  headline and this is it - which is why the runner-up is a line underneath
+  rather than a second band competing with it.
+*/
+function champBand(y) {
+  if (!y.champion) {
+    return `<div class="card"><div class="card-title">${esc(y.season)}</div>
+      <div class="card-body muted">No champion recorded for this season.</div></div>`;
+  }
+  return `
+    <section class="yb-champ">
+      <span class="yb-kicker">
+        <svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>
+        ${esc(y.season)} champion
+      </span>
+      <strong class="yb-name">${esc(y.champion.label)}</strong>
+      ${y.champion.sub && y.champion.sub !== y.champion.label
+        ? `<span class="yb-sub">${esc(y.champion.sub)}</span>` : ""}
+      ${y.runnerUp ? `<span class="yb-runner">Runner-up · ${esc(y.runnerUp.label)}</span>` : ""}
+    </section>`;
+}
+
+/* The game that decided it, on the seasons where the data can prove which
+   game that was. lore.js returns nothing rather than a guess. */
+function titleGameCard(y) {
+  if (!y.title) return "";
+  const t = y.title;
+  return `
     <div class="card">
-      <div class="card-title">
-        ${esc(season)} ${played ? "final standings" : "teams"}
-        ${league?.champion_user_id || league?.champion_roster_id
-          ? `<span class="pill green">${esc(
-              name(league.champion_user_id, season, league.champion_roster_id).label)}</span>` : ""}
-        ${played ? "" : `<span class="pill warn">not started</span>`}
+      <div class="card-title">The final · Week ${esc(t.week)}</div>
+      <div class="yb-final">
+        <div class="yb-side">
+          <b>${t.champScore.toFixed(2)}</b>
+          <span>${esc(y.name(t.champUser, t.season, t.champRoster).label)}</span>
+        </div>
+        <div class="yb-by">by ${t.margin.toFixed(2)}</div>
+        <div class="yb-side is-down">
+          <b>${t.runnerScore.toFixed(2)}</b>
+          <span>${esc(y.name(t.runnerUser, t.season, t.runnerRoster).label)}</span>
+        </div>
       </div>
+    </div>`;
+}
+
+/* The season's own moments, minus the two the band above already carries -
+   printing the championship twice on one screen is noise. */
+function seasonMomentsCard(y) {
+  const rows = y.moments.filter((m) => m.kind !== "championship" && m.kind !== "title");
+  if (!rows.length) return "";
+  return `
+    <h2 class="section-title">${esc(y.season)} in moments</h2>
+    <div class="card momentlist">${rows.map(momentRow).join("")}</div>`;
+}
+
+function standingsCard(y, played) {
+  return `
+    <h2 class="section-title">${played ? "Final standings" : "Teams"}</h2>
+    <div class="card">
       <div class="tblwrap">
         <table class="tbl">
           <thead>
             <tr><th>#</th><th>Team</th><th>Record</th><th class="num">PF</th><th class="num">PA</th></tr>
           </thead>
           <tbody>
-            ${rows.map((s) => `
+            ${y.standings.map((s) => `
               <tr>
                 <td>
                   ${played ? (s.rank ?? "—") : "—"}
                   ${played && s.made_playoffs ? `<span class="pill green tiny">P</span>` : ""}
                 </td>
-                <td>${nameCell(name(s.sleeper_user_id, season, s.roster_id))}</td>
+                <td>${nameCell(y.name(s.sleeper_user_id, y.season, s.roster_id))}</td>
                 <td>${s.wins}-${s.losses}${s.ties ? "-" + s.ties : ""}</td>
                 <td class="num">${Math.round(s.points_for).toLocaleString()}</td>
                 <td class="num">${Math.round(s.points_against).toLocaleString()}</td>
@@ -295,7 +378,9 @@ function seasonsView(data) {
         </table>
       </div>
       <div class="card-meta">
-        ${played ? "P marks a playoff berth." : "This season has not been played yet."}
+        ${played
+          ? `P marks a playoff berth · ${y.games} games over ${y.weeks} weeks.`
+          : "This season has not been played yet."}
       </div>
     </div>`;
 }
@@ -382,55 +467,56 @@ function allTimeView(data) {
 // session - it is a few hundred rows, but there is no reason to fetch them
 // for somebody who only wanted the champions list.
 
-let recordData = null;
+/*
+  The trades are the only thing the record book still fetches for itself:
+  they are a big table, nothing else on the page wants them, and somebody
+  who only came for the champions list should not pay for them.
+*/
+let tradeCache = null;
 
-async function loadRecordData() {
-  if (recordData) return recordData;
-
-  const [matchups, trades] = await Promise.all([
-    db().from("sleeper_matchups")
-        .select("season, week, roster1, user1, score1, roster2, user2, score2, winner_roster_id")
-        .order("season", { ascending: true }).order("week", { ascending: true }),
-    // Only trades: the free agent rows are the bulk of the table and are not
-    // needed here, and pulling all 4,000+ payloads onto a phone would be rude.
-    db().from("sleeper_transactions")
-        .select("season, week, type, status, details").eq("type", "trade"),
-  ]);
-
-  recordData = {
-    matchups: matchups.data || [],
-    trades:   trades.data || [],
-    error:    matchups.error || trades.error || null,
-  };
-  return recordData;
+async function loadTrades() {
+  if (tradeCache) return tradeCache;
+  const { data, error } = await db()
+    .from("sleeper_transactions")
+    .select("season, week, type, status, details").eq("type", "trade");
+  tradeCache = { trades: data || [], error: error || null };
+  return tradeCache;
 }
 
 async function recordsView(body, data) {
   body.innerHTML = loading("Reading every week ever played…");
 
-  const rec = await loadRecordData();
-  if (rec.error) { body.innerHTML = errorBox(rec.error); return; }
-
+  const rec = await loadTrades();
   const name = namer(data);
-  const sides = toSides(rec.matchups);
+  const sides = toSides(data.matchups);
 
   if (!sides.length) {
     body.innerHTML = empty("No weekly scores synced yet. Run a Sleeper sync from the Admin page.");
     return;
   }
 
-  const played  = sides.filter((s) => s.score > 0);
-  const games   = rec.matchups.filter((m) => Number(m.score1) > 0 || Number(m.score2) > 0);
-  const streaks = streakRecords(sides);
+  const scored  = sides.filter((s) => s.score > 0);
+  const games   = data.matchups.filter(played);
+  const runs    = streaks(sides);
   const seasons = seasonRecords(data.standings);
 
-  const high = best(played, (s) => s.score);
-  const low  = best(played, (s) => -s.score);
+  const longestWin  = best(runs.map((r) => r.win).filter(Boolean),  (r) => r.run);
+  const longestLoss = best(runs.map((r) => r.loss).filter(Boolean), (r) => r.run);
+
+  const high = best(scored, (s) => s.score);
+  const low  = best(scored, (s) => -s.score);
   const blow = best(games, (m) => margin(m));
   const near = best(games.filter((m) => margin(m) > 0), (m) => -margin(m));
   const shoot = best(games, (m) => Number(m.score1) + Number(m.score2));
+  /* The best loss in the league. It is the row every owner remembers and
+     the only one the record book was missing. */
+  const hardLuck = best(scored.filter((s) => !s.won && !s.tie), (s) => s.score);
 
   const who = (s) => name(s.user, s.season, s.roster);
+  const sideName = (m, pick) => {
+    const p = pick(m);
+    return name(p.user, m.season, p.roster).label;
+  };
 
   body.innerHTML = `
     ${/* The season count here is how many seasons of DATA exist, not how old
@@ -449,14 +535,17 @@ async function recordsView(body, data) {
       ${recRow("Lowest score", low && low.score.toFixed(2),
                low && who(low).label, low && `${low.season} · Week ${low.week}`)}
       ${recRow("Biggest blowout", blow && margin(blow).toFixed(2) + " pts",
-               blow && winnerName(blow, name).label,
-               blow && `beat ${loserName(blow, name).label} · ${blow.season} Wk ${blow.week}`)}
+               blow && sideName(blow, winnerSide),
+               blow && `beat ${sideName(blow, loserSide)} · ${blow.season} Wk ${blow.week}`)}
       ${recRow("Closest finish", near && margin(near).toFixed(2) + " pts",
-               near && winnerName(near, name).label,
-               near && `over ${loserName(near, name).label} · ${near.season} Wk ${near.week}`)}
+               near && sideName(near, winnerSide),
+               near && `over ${sideName(near, loserSide)} · ${near.season} Wk ${near.week}`)}
       ${recRow("Highest combined", shoot && (Number(shoot.score1) + Number(shoot.score2)).toFixed(2),
-               shoot && `${winnerName(shoot, name).label} v ${loserName(shoot, name).label}`,
+               shoot && `${sideName(shoot, winnerSide)} v ${sideName(shoot, loserSide)}`,
                shoot && `${shoot.season} · Week ${shoot.week}`)}
+      ${recRow("Best losing score", hardLuck && hardLuck.score.toFixed(2),
+               hardLuck && who(hardLuck).label,
+               hardLuck && `lost ${hardLuck.against.toFixed(2)} · ${hardLuck.season} Wk ${hardLuck.week}`)}
     </div>
 
     <h2 class="section-title">Seasons and streaks</h2>
@@ -470,15 +559,15 @@ async function recordsView(body, data) {
                seasons.record && name(seasons.record.sleeper_user_id, seasons.record.season,
                                       seasons.record.roster_id).label,
                seasons.record && String(seasons.record.season))}
-      ${recRow("Longest win streak", streaks.win && streaks.win.run + " weeks",
-               streaks.win && name(streaks.win.user).label,
-               streaks.win && streaks.win.span)}
-      ${recRow("Longest losing streak", streaks.loss && streaks.loss.run + " weeks",
-               streaks.loss && name(streaks.loss.user).label,
-               streaks.loss && streaks.loss.span)}
+      ${recRow("Longest win streak", longestWin && longestWin.run + " weeks",
+               longestWin && name(longestWin.user).label,
+               longestWin && spanLabel(longestWin.from, longestWin.to))}
+      ${recRow("Longest losing streak", longestLoss && longestLoss.run + " weeks",
+               longestLoss && name(longestLoss.user).label,
+               longestLoss && spanLabel(longestLoss.from, longestLoss.to))}
     </div>
 
-    ${tradeBoard(rec.trades, data)}
+    ${rec.error ? "" : tradeBoard(rec.trades, data)}
   `;
 }
 
@@ -496,48 +585,6 @@ function recRow(label, value, holder, when) {
     </div>`;
 }
 
-/**
- * A matchup row holds two teams. Most records are about ONE team's week, so
- * flatten every game into two one-sided entries first.
- */
-function toSides(matchups) {
-  const out = [];
-  for (const m of matchups) {
-    // winner_roster_id is null on a tie, which is neither a win nor a loss.
-    const tie = m.winner_roster_id == null;
-    if (m.user1 || m.roster1 != null) {
-      out.push({ season: m.season, week: m.week, user: m.user1, roster: m.roster1,
-                 score: Number(m.score1) || 0, tie, won: m.winner_roster_id === m.roster1 });
-    }
-    if (m.user2 || m.roster2 != null) {
-      out.push({ season: m.season, week: m.week, user: m.user2, roster: m.roster2,
-                 score: Number(m.score2) || 0, tie, won: m.winner_roster_id === m.roster2 });
-    }
-  }
-  return out;
-}
-
-const margin = (m) => Math.abs(Number(m.score1) - Number(m.score2));
-
-/** The row scoring highest on `score`. One pass, no sorting a big array. */
-function best(rows, score) {
-  let top = null, topScore = -Infinity;
-  for (const r of rows) {
-    const s = score(r);
-    if (s > topScore) { topScore = s; top = r; }
-  }
-  return top;
-}
-
-function winnerName(m, name) {
-  const winnerIsOne = m.winner_roster_id === m.roster1;
-  return winnerIsOne ? name(m.user1, m.season, m.roster1) : name(m.user2, m.season, m.roster2);
-}
-function loserName(m, name) {
-  const winnerIsOne = m.winner_roster_id === m.roster1;
-  return winnerIsOne ? name(m.user2, m.season, m.roster2) : name(m.user1, m.season, m.roster1);
-}
-
 function seasonRecords(standings) {
   const played = (standings || []).filter((s) => s.wins + s.losses + s.ties > 0);
   return {
@@ -549,51 +596,6 @@ function seasonRecords(standings) {
       return games ? (s.wins + s.ties / 2) / games + games / 1000 : 0;
     }),
   };
-}
-
-/**
- * Longest run of wins and of losses, per owner, across every season in
- * order. Streaks deliberately carry across a season boundary - the league
- * remembers, and "he lost eleven straight" is a better story for it.
- * A tie has no winner, so it ends both runs.
- */
-function streakRecords(sides) {
-  const byUser = new Map();
-  for (const s of sides) {
-    if (!s.user || s.score <= 0) continue;
-    if (!byUser.has(s.user)) byUser.set(s.user, []);
-    byUser.get(s.user).push(s);
-  }
-
-  let win = null, loss = null;
-  for (const [user, weeks] of byUser) {
-    weeks.sort((a, b) => a.season - b.season || a.week - b.week);
-
-    let runW = 0, runL = 0, startW = null, startL = null;
-    for (const w of weeks) {
-      if (w.tie) { runW = 0; runL = 0; startW = null; startL = null; continue; }
-
-      if (w.won) {
-        runL = 0; startL = null;
-        if (!runW) startW = w;
-        runW++;
-        if (!win || runW > win.run) win = { user, run: runW, span: span(startW, w) };
-      } else {
-        runW = 0; startW = null;
-        if (!runL) startL = w;
-        runL++;
-        if (!loss || runL > loss.run) loss = { user, run: runL, span: span(startL, w) };
-      }
-    }
-  }
-  return { win, loss };
-}
-
-function span(from, to) {
-  if (!from) return "";
-  return from.season === to.season
-    ? `${from.season} · Wk ${from.week}–${to.week}`
-    : `${from.season} Wk ${from.week} – ${to.season} Wk ${to.week}`;
 }
 
 /** Who trades. Counted per roster, since a trade names rosters, not users. */

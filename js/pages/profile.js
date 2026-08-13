@@ -16,6 +16,10 @@ import { editControls, wireInline } from "../inline.js";
 import { findTeam, teamOptions } from "../teams.js";
 import { saveMode, savedMode, activeMode, modeOptions } from "../theme.js";
 import { toast } from "../ui.js";
+import { FIRST_SYNCED_SEASON } from "../config.js";
+/* The same derivation the history page reads, so a career and the record
+   book can never disagree about the same game. */
+import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
 
 export async function render(view) {
   const wanted = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
@@ -56,13 +60,22 @@ export async function render(view) {
       : { data: null },
   ]);
 
+  /* The career, the cabinet and the head-to-head all come from one shared
+     load that the history page has usually already paid for. An unlinked
+     member has no Sleeper history to derive anything from, so nothing is
+     fetched and none of those cards are drawn. */
+  const lore = member.sleeper_user_id ? await loadLore().catch(() => null) : null;
+  const dfl  = lore && !lore.error ? career(lore, member.sleeper_user_id) : null;
+  const foes = lore && !lore.error ? headToHead(lore, member.sleeper_user_id) : [];
+  const loreName = lore && !lore.error ? namer(lore) : null;
+
   // The name to show at the top is the CURRENT one: whatever the member
   // profile says, otherwise the latest name Sleeper has. Historic names
   // live in the season table further down and are never used up here.
   const currentTeam = member.team_name || sleeperUser?.data?.team_name || "";
 
   const seasons = (standings.data || []).sort((a, b) => b.season - a.season);
-  const career  = careerTotals(seasons, leagues.data || [], member.sleeper_user_id);
+  const careerStats = careerTotals(seasons, leagues.data || [], member.sleeper_user_id);
 
   const myKeepers = (keepers.data || []).filter((k) =>
     sameName(k.team, member.team_name) || sameName(k.team, member.display_name));
@@ -79,9 +92,12 @@ export async function render(view) {
   view.innerHTML = `
     <div id="profile-wrap">
       ${header(member, team, isMe, currentTeam, sleeperUser?.data?.current_season)}
-      ${careerCard(career, seasons.length)}
+      ${dfl ? cabinetCard(dfl) : ""}
+      ${careerCard(careerStats, seasons.length)}
+      ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
       ${awardsCard(member)}
       ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
+      ${loreName ? rivalryCard(foes, loreName, members) : ""}
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
       ${isMe ? appearanceCard() + favouriteTeamCard(member) : ""}
@@ -414,4 +430,174 @@ function sum(rows, key) {
 
 function sameName(a, b) {
   return !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+// ========================== THE DFL CAREER ============================
+//
+// Sleeper tells somebody what happened this season. These three cards are
+// what they have DONE in this league, and every figure comes out of lore.js
+// so a rivalry printed here matches the moment printed on the history page.
+//
+// Only drawn for a profile linked to a Sleeper account. An unlinked member
+// gets nothing rather than a set of zeroes pretending to be a career.
+
+/*
+  THE TROPHY CABINET.
+
+  Titles first, at size, because that is the one line of a DFL career that
+  settles an argument. It is not drawn at all for somebody who has not won
+  anything - an empty cabinet with "0" in it is a worse thing to show a
+  person than no cabinet, and it is the sort of pointless scoreboard the
+  brief specifically rules out.
+*/
+function cabinetCard(c) {
+  if (!c.titles.length && !c.seconds.length) return "";
+  return `
+    <section class="cabinet">
+      ${c.titles.length ? `
+        <div class="cab-row">
+          <svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>
+          <b class="cab-n">${c.titles.length}</b>
+          <span class="cab-l">${c.titles.length === 1 ? "Championship" : "Championships"}</span>
+          <span class="cab-years">${c.titles.map((y) => `<span class="cab-year">${esc(y)}</span>`).join("")}</span>
+        </div>` : ""}
+      ${c.seconds.length ? `
+        <div class="cab-row is-second">
+          <svg class="ico-sm" aria-hidden="true"><use href="#i-medal"></use></svg>
+          <b class="cab-n">${c.seconds.length}</b>
+          <span class="cab-l">Runner-up</span>
+          <span class="cab-years">${c.seconds.map((y) => `<span class="cab-year">${esc(y)}</span>`).join("")}</span>
+        </div>` : ""}
+    </section>`;
+}
+
+/*
+  THE CAREER EXTREMES. Best and worst season by FINISH, not by points -
+  finishing position is what an owner actually argues about, and a team that
+  scored the most points and missed the playoffs is a different story that
+  the season table below already tells.
+*/
+function extremesCard(c, name) {
+  const rows = [];
+  /*
+    ONLY THE NAME USED THAT YEAR, or none.
+
+    The first cut of this fell back to the owner's CURRENT team name when a
+    season had no snapshot, which put "🏆DaGrapeApes🏆" against a 2020 row -
+    a name that did not exist in 2020. A season either kept its name or it
+    did not; where it did not, the year and the record say enough. Reaching
+    for today's value because it is easier to get is how a record book stops
+    being one.
+  */
+  const seasonLabel = (s) => String(s.team_name || "").trim();
+
+  if (c.bestSeason) {
+    rows.push(recLine("Best season", ordinalPlace(c.bestSeason.rank),
+      seasonLabel(c.bestSeason),
+      `${c.bestSeason.season} · ${c.bestSeason.wins}-${c.bestSeason.losses}${c.bestSeason.ties ? "-" + c.bestSeason.ties : ""}`));
+  }
+  // Only worth printing when it is a DIFFERENT season from the best one.
+  if (c.worstSeason && c.bestSeason && c.worstSeason.season !== c.bestSeason.season) {
+    rows.push(recLine("Worst season", ordinalPlace(c.worstSeason.rank),
+      seasonLabel(c.worstSeason),
+      `${c.worstSeason.season} · ${c.worstSeason.wins}-${c.worstSeason.losses}${c.worstSeason.ties ? "-" + c.worstSeason.ties : ""}`));
+  }
+  if (c.highWeek) {
+    rows.push(recLine("Highest week", c.highWeek.score.toFixed(2), "",
+      `${c.highWeek.season} · Week ${c.highWeek.week}`));
+  }
+  if (c.lowWeek && c.lowWeek !== c.highWeek) {
+    rows.push(recLine("Lowest week", c.lowWeek.score.toFixed(2), "",
+      `${c.lowWeek.season} · Week ${c.lowWeek.week}`));
+  }
+  if (c.streak.win && c.streak.win.run >= 3) {
+    rows.push(recLine("Longest win streak", `${c.streak.win.run} weeks`, "",
+      spanLabel(c.streak.win.from, c.streak.win.to)));
+  }
+  if (c.streak.loss && c.streak.loss.run >= 3) {
+    rows.push(recLine("Longest slide", `${c.streak.loss.run} weeks`, "",
+      spanLabel(c.streak.loss.from, c.streak.loss.to)));
+  }
+
+  if (!rows.length) return "";
+  return `
+    <h2 class="section-title">The career</h2>
+    <div class="card recbook">${rows.join("")}</div>`;
+}
+
+/* Same shape as the record book's row, so a career reads like the league's
+   record book rather than like a different app. */
+function recLine(label, value, holder, when) {
+  /* No "—" placeholder for the holder. On the league record book that column
+     answers "who?", which is a real question; on somebody's own page the
+     answer is the person whose page it is, so an em-dash there is a blank
+     where no question was asked. */
+  return `
+    <div class="rec">
+      <span class="rec-label">${esc(label)}</span>
+      ${holder || when ? `<span class="rec-who">
+        ${esc(holder || "")}
+        ${when ? `<span class="rec-when">${esc(when)}</span>` : ""}
+      </span>` : ""}
+      <span class="rec-val">${esc(value)}</span>
+    </div>`;
+}
+
+function ordinalPlace(n) {
+  if (n == null) return "—";
+  const r = n % 100;
+  if (r >= 11 && r <= 13) return `${n}th`;
+  return n + (["th", "st", "nd", "rd"][n % 10] || "th");
+}
+
+/*
+  RIVALRIES.
+
+  Every owner this person has ever played, most-played first, with the
+  series record. This is the thing Sleeper genuinely cannot tell you: it
+  knows this season's matchups, not that you are 3-9 against one man across
+  seven years.
+
+  A "rivalry" is not declared by the app. The table shows the record and
+  lets the league decide what to call it - the only editorial line is the
+  tag on a series that is DEAD LEVEL after enough meetings to mean it, and
+  that is a threshold, not an opinion.
+*/
+function rivalryCard(rows, name, members) {
+  if (!rows.length) return "";
+  const memberByUser = new Map(members.map((m) => [m.sleeper_user_id, m]));
+
+  return `
+    <h2 class="section-title">Head to head</h2>
+    <div class="card">
+      <div class="tblwrap">
+        <table class="tbl">
+          <thead><tr>
+            <th>Opponent</th><th>Record</th><th class="num">Met</th><th>Last</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map((r) => {
+              const who = name(r.user);
+              const mem = memberByUser.get(r.user);
+              const level = r.meetings >= 8 && r.wins === r.losses;
+              const owned = r.meetings >= 5 && r.wins === 0;
+              return `
+                <tr>
+                  <td>
+                    ${mem ? `<a href="#/profile?id=${mem.id}">${esc(who.label)}</a>` : esc(who.label)}
+                    ${level ? `<span class="pill warn tiny">dead level</span>` : ""}
+                    ${owned ? `<span class="pill red tiny">never beaten them</span>` : ""}
+                  </td>
+                  <td>${r.wins}-${r.losses}${r.ties ? "-" + r.ties : ""}</td>
+                  <td class="num">${r.meetings}</td>
+                  <td class="muted tiny">${r.last
+                    ? `${r.last.season} Wk ${r.last.week} · ${r.last.won ? "won" : "lost"} ${r.last.mine.toFixed(1)}–${r.last.theirs.toFixed(1)}`
+                    : "—"}</td>
+                </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-meta">Every meeting on record, ${esc(FIRST_SYNCED_SEASON)} onward.</div>
+    </div>`;
 }
