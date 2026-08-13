@@ -134,7 +134,10 @@ function summaryCard(t) {
     <div class="card">
       <div class="card-title">Fees summary</div>
       <div class="statgrid">
-        ${stat("Dues expected", money(t.expected))}
+        ${/* "Dues expected" needed 99px on one line in a 76px cell - no legible
+             type size fits that. It sits beside Collected, Owed and Balance,
+             all one word, so it is one word too. */""}
+        ${stat("Expected", money(t.expected))}
         ${stat("Collected", money(t.collected))}
         ${stat("Owed", money(t.owed), t.owed > 0 ? "warn" : "")}
         ${stat("Expenses", money(t.spent))}

@@ -41,18 +41,26 @@
   font-variant-numeric: tabular-nums;
 }
 .stat-l {
-  font-size: var(--fs-micro);
+  /* ONE STEP BELOW MICRO, and only here. A .statgrid cell is 76px of content
+     on a 375px phone, and these are tracked caps - at 11px the longest labels
+     sat within a pixel or two of that, so any of them could tip onto a second
+     line and drop a letter or two on its own, which looks like a mistake
+     rather than a label. At 10px the widest is 66px and every label in the app
+     reads on one line with room to spare.
+
+     The rest of the app keeps --fs-micro. This is not a new scale step, it is
+     this grid's cell being narrower than the type it was given.
+
+     Do NOT reintroduce overflow-wrap: anywhere here. It was added as a safety
+     net and did the exact damage it was meant to prevent - given permission to
+     break anywhere, the browser split words mid-letter. A label that outgrows
+     its cell should be shortened, not hyphenated by accident. */
+  font-size: 0.625rem;
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--muted);
-  /* A .statgrid cell is 76px of content on a 375px phone, and these labels are
-     tracked caps - so one long word ("OUTSTANDING" was 91px) does not wrap
-     like a two-word label does, it walks straight out of the box. A label may
-     break rather than escape. It only ever bites on a word that genuinely
-     cannot fit, which is the moment the label is too long anyway. */
   min-width: 0;
-  overflow-wrap: anywhere;
 }
 .profile-name {
   font-family: var(--font-display);
