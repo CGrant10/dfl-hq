@@ -38,19 +38,30 @@ const BEATDOWN = { match: 5, strokes: 8 };
  * @param {"match"|"strokes"} scoring
  * @param {boolean} complete  is it over
  * @param {boolean} started   has anybody posted anything
+ * @param {object}  [where]   {thru, holes} - only needed for the wire
  * @returns {{text:string, tone:"hot"|"level"|"done"|""}}
  */
-export function mood(lead, scoring = "strokes", complete = false, started = true) {
+export function mood(lead, scoring = "strokes", complete = false, started = true, { thru = 0, holes = 0 } = {}) {
   if (!started) return { text: "", tone: "" };
   const big = BEATDOWN[scoring === "match" ? "match" : "strokes"];
 
   if (complete) {
     if (!lead) return { text: "DEAD EVEN", tone: "level" };
     if (lead >= big) return { text: "ABSOLUTE BEATDOWN", tone: "done" };
-    return { text: "FINAL", tone: "done" };
+    /* WINNER rather than FINAL. FINAL is a state and the billing bar already
+       carries it; this line is the one that says something happened. The
+       margin is not repeated here because the line underneath is
+       standingLine() and already reads "won 4&3" / "won by 6". */
+    return { text: "WINNER", tone: "done" };
   }
 
   if (!lead) return { text: "DEAD EVEN", tone: "level" };
+  /*
+    DOWN TO THE WIRE, and it needs BOTH halves to be true: close, and nearly
+    over. A one-shot lead on the 2nd is not the wire, it is the 2nd - which
+    is why this takes the hole count rather than guessing from the margin.
+  */
+  if (holes && thru >= holes - 2 && lead <= 1) return { text: "DOWN TO THE WIRE", tone: "hot" };
   if (lead >= big) return { text: "ABSOLUTE BEATDOWN", tone: "hot" };
   /* The three live steps are proportions of the same threshold rather than
      four more magic numbers, so changing what a beatdown is moves the whole

@@ -23,7 +23,17 @@ import { SCORING_NAMES, dayPoints, pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { LEAGUE_FOUNDED } from "./config.js";
 
-const W = 1080, H = 1080;
+/*
+  ONE RATIO FOR EVERY DFL CARD: 1080x1350, 4:5.
+
+  The board used to be square while the team sheet and the match poster were
+  4:5, so three images of the same event arrived in the same group chat in
+  two different shapes. 4:5 is the one to standardise on - it is what a phone
+  and a story both show without cropping, and it was already what two of the
+  three used. The board gains 270px of height, which all goes to the rounds
+  list; the footer is pinned to the bottom edge, so nothing else moves.
+*/
+const W = 1080, H = 1350;
 const INK = "#f2f5f8", MUTED = "#8b98a5", BG = "#0d1117", CARD = "#161b22", LINE = "#2b313a";
 const GOLD = "#d6b254";
 
@@ -108,10 +118,16 @@ export function summaryText(s) {
 
 // ------------------------------------------------------------- the drawing
 
+/* The crest is fetched when share.js loads, which is long before anybody
+   taps share - but if it somehow has not arrived, the card must still be the
+   same card. Reserving the SAME height it would have taken means the
+   fallback is a missing picture rather than a different layout. */
+const CREST_W = 340, CREST_H = 226;     // 340 wide at the artwork's 3:2
+
 function drawCrest(ctx, top) {
   const img = crestImage();
-  if (!img) return top + 96;            // not loaded: the headline moves up
-  const w = 340, h = w * (img.naturalHeight / img.naturalWidth || 0.666);
+  if (!img) return top + 6 + CREST_H + 20;
+  const w = CREST_W, h = w * (img.naturalHeight / img.naturalWidth || CREST_H / CREST_W);
   /* No plate. The artwork is mostly white fill, red and blue and reads fine on
      the card's dark ground - and a white rectangle in a chat thumbnail is
      exactly what it looks like: a bug. */

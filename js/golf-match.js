@@ -267,7 +267,7 @@ function strokeMap(card, sideId) {
 function matchMarquee(card, names, r, scoring, roundLabel) {
   const started = !!(r.thru || r.postedA || r.postedB);
   const lead = scoring === "match" ? (r.up || 0) : (r.lead || 0);
-  const m = mood(lead, scoring, r.complete, started);
+  const m = mood(lead, scoring, r.complete, started, { thru: r.thru || 0, holes: holeCount(card) });
   // r.diff < 0 means slot 1 is ahead - the same test standingLine() uses.
   const leader = !lead ? -1 : (r.diff < 0 ? 0 : 1);
 
@@ -585,7 +585,7 @@ async function render(root, matchId) {
         matchNumber: card.match.match_number, outing: card.outing,
         standing: standingLine(r2, names[0], names[1]),
       });
-      toast(shareMatchPoster(p, mood(lead2, scoring, r2.complete, started2).text));
+      toast(shareMatchPoster(p, mood(lead2, scoring, r2.complete, started2, { thru: r2.thru || 0, holes }).text));
     } catch (err) {
       toast(err?.message || "Could not build the match card", true);
     }
