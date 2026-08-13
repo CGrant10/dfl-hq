@@ -23,6 +23,10 @@
 // =====================================================================
 
 import { teamOptions } from "./teams.js";
+import { themeKeys, themeLabel } from "./arena/sprites.js";
+
+/** Every Arena theme, for the event editor. */
+const themeOptions = () => themeKeys().map((k) => ({ value: k, label: themeLabel(k) }));
 
 const THIS_YEAR = new Date().getFullYear();
 
@@ -60,13 +64,11 @@ export const SECTIONS = [
         placeholder: "2026 Draft Order" },
       { name: "description", label: "What is this for", type: "textarea",
         placeholder: "Winner picks first. Loser brings the beer." },
+      /* Read off the themes themselves rather than typed out again. This
+         list had already drifted from arena/sprites.js - a theme added
+         there was invisible here, so nobody could choose it. */
       { name: "theme",       label: "Racer theme", type: "select",
-        options: [
-          { value: "ducks",     label: "Ducks" },
-          { value: "pokemon",   label: "Pokémon" },
-          { value: "dinosaurs", label: "Dinosaurs" },
-          { value: "cars",      label: "Cars" },
-        ] },
+        options: themeOptions() },
       { name: "race_length", label: "Race length", type: "select",
         options: [
           { value: "short",  label: "Short (~12s)" },

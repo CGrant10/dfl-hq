@@ -30,13 +30,46 @@ export const SPRITE_ROOT = "assets/arena/sprites";
  * so the two can be mixed while a set is half finished.
  */
 export const SPRITE_FILES = new Set([
+  // "gen3/treecko",
+  // "gen3/mudkip",
   // "dinosaurs/trex",
-  // "cars/f1",
 ]);
 
 export const THEMES = {
+  /*
+    HOENN. The third generation, as twelve racers.
+
+    THE ART IS OURS AND THE NAMES ARE NOT, and that split is deliberate.
+    Every silhouette below is the app's own drawing - the same inline SVG
+    set every other theme uses - picked so the field reads as twelve
+    different shapes from across the track. Nothing from anybody's game
+    ships in this repo, which is a public one.
+
+    If you want the real sprites, they are yours to supply: drop them in
+    assets/arena/sprites/gen3/<key>.png and add "gen3/<key>" to SPRITE_FILES
+    at the top of this file. spriteMarkup() prefers a registered file over
+    the drawing, so a half-finished set mixes cleanly and each racer
+    upgrades the moment its file lands.
+  */
+  gen3: {
+    label: "Hoenn (Gen 3)",
+    slots: [
+      { key: "treecko",  label: "Treecko",   art: "leafy"    },
+      { key: "torchic",  label: "Torchic",   art: "biped"    },
+      { key: "mudkip",   label: "Mudkip",    art: "finned"   },
+      { key: "sceptile", label: "Sceptile",  art: "leafy"    },
+      { key: "blaziken", label: "Blaziken",  art: "biped"    },
+      { key: "swampert", label: "Swampert",  art: "theropod" },
+      { key: "rayquaza", label: "Rayquaza",  art: "longneck" },
+      { key: "groudon",  label: "Groudon",   art: "theropod" },
+      { key: "kyogre",   label: "Kyogre",    art: "finned"   },
+      { key: "metagross",label: "Metagross", art: "plated"   },
+      { key: "salamence",label: "Salamence", art: "raptor"   },
+      { key: "absol",    label: "Absol",     art: "horned"   },
+    ],
+  },
   pokemon: {
-    label: "Pokémon",
+    label: "Types",
     slots: [
       { key: "fire",     label: "Fire",     art: "biped"  },
       { key: "water",    label: "Water",    art: "finned" },

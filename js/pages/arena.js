@@ -17,6 +17,7 @@ import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
+import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
 import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
@@ -168,8 +169,14 @@ async function renderEvent(view, id) {
     await runRace(view, stage, event, parts, byId, seed, { save: !replay });
   });
 
+  /* The line-up wiring is no longer admin-only, because a member now has one
+     control in it: the picker on their own lane. Everything else inside
+     wireLineup is still guarded - the add, remove, colour, PNG and re-roll
+     controls are not RENDERED for a non-admin, and the database refuses them
+     regardless. Gating the listener as well meant the member's own picker
+     silently did nothing. */
+  wireLineup(view, event, parts, members, () => render(view));
   if (canEdit()) {
-    wireLineup(view, event, parts, members, () => render(view));
     wireBroadcast(view, event, parts, byId, () => render(view));
   }
 
@@ -193,6 +200,12 @@ function figure(value, label) {
 
 function lineupCard(event, parts, byId, members) {
   const admin = canEdit();
+  /* YOUR OWN LANE. Choosing what you look like is the fun of the Arena and
+     it used to be one person's job for twelve people. A member gets the
+     picker on their own row only - and the database agrees, because the
+     write goes through arena_pick_racer() which will only ever touch the
+     calling member's row. The UI is the convenience; the RPC is the rule. */
+  const meId = String(currentMember()?.id || "");
   const inRace = new Set(parts.map((p) => String(p.member_id)));
   const spare  = members.filter((m) => !inRace.has(String(m.id)));
 
@@ -209,6 +222,13 @@ function lineupCard(event, parts, byId, members) {
               ${spriteMarkup(event.theme, p.sprite, p.color || laneColor(i), p.sprite_image)}
             </span>
             <span class="lane-name">${esc(m?.display_name || "Unknown")}</span>
+            ${!admin && meId && String(p.member_id) === meId ? `
+              <select class="lane-pick" data-my-sprite="${p.id}" data-event="${event.id}"
+                      aria-label="Pick your racer">
+                <option value="">— pick your racer —</option>
+                ${slotsFor(event.theme).map((sl) =>
+                  `<option value="${esc(sl.key)}" ${sl.key === p.sprite ? "selected" : ""}>${esc(sl.label)}</option>`).join("")}
+              </select>` : ""}
             ${admin ? `
               <select class="lane-pick" data-sprite-for="${p.id}">
                 <option value="">— sprite —</option>
@@ -253,6 +273,36 @@ function wireLineup(view, event, parts, members, refresh) {
   root.addEventListener("change", async (e) => {
     const add = e.target.closest("#arena-add-member");
     const sprite = e.target.closest("[data-sprite-for]");
+    const mine = e.target.closest("[data-my-sprite]");
+
+    /*
+      A member picking their own racer. Not updateRow(): that writes to
+      arena_participants, which is admin-write, so it would be refused - and
+      row level security refuses by matching zero rows rather than by
+      erroring, so it would have been refused SILENTLY and the picker would
+      have looked like it worked. The RPC returns how many rows it changed
+      and 0 is reported as the failure it is.
+    */
+    if (mine) {
+      const select = mine;
+      select.disabled = true;
+      try {
+        const { data, error } = await db().rpc("arena_pick_racer", {
+          p_event_id: Number(select.dataset.event),
+          p_sprite: select.value || null,
+        });
+        if (error) throw error;
+        if (!data) throw new Error("You are not in this race.");
+        toast(select.value ? "Racer picked" : "Back to the default racer");
+        refresh();
+      } catch (err) {
+        toast(/function|does not exist/i.test(err.message || "")
+          ? "Run arena_pick_racer_schema.sql in Supabase"
+          : (err.message || "Could not pick that racer"), true);
+        select.disabled = false;
+      }
+      return;
+    }
 
     if (add && add.value) {
       try {
