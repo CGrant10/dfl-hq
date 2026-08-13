@@ -318,7 +318,8 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
      keeps this feeling like a title card rather than a transition. */
 }
 #splash.is-gone { display: none; }
-#splash.is-running { animation: dfl-splash-out var(--t-slow) var(--ease) 1.6s forwards; }
+#splash.is-full.is-running  { animation: dfl-splash-out var(--t-slow) var(--ease) 1.6s forwards; }
+#splash.is-short.is-running { animation: dfl-splash-out 200ms var(--ease) .55s forwards; }
 
 .sp-inner {
   display: grid; justify-items: center; gap: var(--s-4);
@@ -327,13 +328,27 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 }
 /* Reserved before anything animates, so no stage can shift the one after it. */
 .sp-mark { width: min(66vw, 380px); height: auto; opacity: 0; }
+/*
+  FIXED INKS, NOT THE THEME'S - the same rule the shared cards already
+  follow, and for the same reason.
+
+  This plate is #07090d whatever mode the app is in, but --chalk, --muted
+  and --accent all flip with the theme. In light mode --chalk is #11161d,
+  so the wordmark was near-black on near-black: the opening's headline was
+  INVISIBLE for anybody running light mode. --accent went to #B8001B on the
+  same ground, about 2.2:1, which is not much better.
+
+  A surface that does not follow the theme must not use the theme's inks.
+  These are the dark-mode values, stated once, so the opening looks the same
+  for everybody - which is what a title card is for.
+*/
 .sp-word {
   font-family: var(--font-display);
   font-size: var(--fs-h1);
   font-weight: var(--fw-bold);
   letter-spacing: .34em;
   text-transform: uppercase;
-  color: var(--chalk);
+  color: #f5f7fa;
   opacity: 0;
 }
 .sp-tag {
@@ -341,7 +356,7 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   font-weight: var(--fw-bold);
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: #8b98ab;
   max-width: 22ch;
   opacity: 0;
 }
@@ -352,15 +367,40 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
   transform: translateX(-120%);
 }
-#splash.is-running .sp-mark  { animation: dfl-sp-rise 620ms var(--ease) .2s both; }
-#splash.is-running .sp-word  { animation: dfl-sp-rise 520ms var(--ease) .5s both; }
-#splash.is-running .sp-tag   { animation: dfl-sp-rise 520ms var(--ease) 1s both; }
-#splash.is-running .sp-sweep { animation: dfl-sp-sweep 900ms var(--ease) .8s 1 forwards; }
+#splash.is-full.is-running .sp-mark  { animation: dfl-sp-rise 620ms var(--ease) .2s both; }
+#splash.is-full.is-running .sp-word  { animation: dfl-sp-rise 520ms var(--ease) .5s both; }
+#splash.is-full.is-running .sp-tag   { animation: dfl-sp-rise 520ms var(--ease) 1s both; }
+#splash.is-full.is-running .sp-sweep { animation: dfl-sp-sweep 900ms var(--ease) .8s 1 forwards; }
 
-/* Golf gets the crest red under the wordmark. That is the entire variant -
-   same timing, same shapes, one accent. */
-#splash.is-golf .sp-word { color: var(--chalk); }
-#splash.is-golf .sp-tag  { color: var(--accent); }
+/*
+  THE SHORT ONE. Same elements, same keyframes, one stage instead of four:
+  crest and wordmark together, no sweep, no tagline, gone by ~0.75s. A
+  second visit in a day should feel like the app opening, not like being
+  introduced to it again.
+*/
+#splash.is-short .sp-tag,
+#splash.is-short .sp-sweep { display: none; }
+#splash.is-short.is-running .sp-mark { animation: dfl-sp-rise 300ms var(--ease) .05s both; }
+#splash.is-short.is-running .sp-word { animation: dfl-sp-rise 300ms var(--ease) .15s both; }
+#splash.is-short .sp-mark { width: min(46vw, 260px); }
+
+/*
+  THE THREE OPENINGS ARE ONE ANIMATION AND THREE ACCENTS.
+
+  Nothing about the timeline changes between them - same keyframes, same
+  delays, same elements. What changes is a colour and two strings, which is
+  the whole point of doing it this way rather than writing three of these.
+*/
+#splash.is-golf .sp-tag { color: #E67582; }
+/* Broadcast is the loud one: the tagline takes the crest red at size and
+   the plate carries a faint red wash, because MAIN EVENT should not look
+   like a subtitle. */
+#splash.is-broadcast { background: radial-gradient(90% 60% at 50% 45%, rgba(229,1,27,.13), transparent 70%), #07090d; }
+#splash.is-broadcast .sp-tag {
+  color: #E67582;
+  font-size: var(--fs-h3);
+  letter-spacing: .28em;
+}
 
 @keyframes dfl-sp-rise {
   from { opacity: 0; transform: translateY(8px) scale(.985) }
@@ -374,10 +414,13 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   somebody who has asked for less motion has not asked for a slower app.
 */
 @media (prefers-reduced-motion: reduce) {
-  #splash.is-running { animation-delay: .5s; }
+  /* No movement and no staging: the whole plate, complete, then it leaves.
+     Somebody who asked for less motion did not ask for a slower app, so the
+     full opening collapses to roughly the length of the short one. */
+  #splash.is-running { animation: dfl-splash-out 160ms linear .55s forwards !important; }
   #splash.is-running .sp-mark,
   #splash.is-running .sp-word,
-  #splash.is-running .sp-tag { animation: none; opacity: 1; }
+  #splash.is-running .sp-tag { animation: none !important; opacity: 1; }
   #splash .sp-sweep { display: none; }
 }
 
