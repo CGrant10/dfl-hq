@@ -102,7 +102,7 @@ export function summaryText(s) {
   const rounds = s.per.map(({ round, points }) =>
     `R${round.round_number} ${s.teams.map((t) => points.get(String(t.id)) || 0).join("–")}`).join(" · ");
   if (rounds) lines.push(rounds);
-  lines.push(s.done ? `Final · ${s.lead === "All square" ? "All square" : s.lead}` : `${s.played} of ${s.matches} matches in · ${s.lead}`);
+  lines.push(s.done ? `Final · ${s.lead === "All square" ? "All square" : s.lead}` : `${s.played} of ${s.matches} matches decided · ${s.lead}`);
   return lines.join("\n");
 }
 
@@ -230,7 +230,7 @@ export function boardCanvas(data, outing) {
   ctx.fillStyle = MUTED;
   ctx.font = `800 26px ${FONT}`;
   ctx.fillText(s.done ? `${s.matches} matches · ${s.holes} holes`
-                      : `${s.played} of ${s.matches} matches in · ${s.holes} holes`, W / 2, H - 76);
+                      : `${s.played} of ${s.matches} matches decided · ${s.holes} holes`, W / 2, H - 76);
   ctx.font = `700 24px ${FONT}`;
   ctx.fillText("cgrant10.github.io/dfl-hq", W / 2, H - 36);
 

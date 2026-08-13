@@ -195,8 +195,8 @@ async function golfHero(outing) {
     const mood = golfMood(values, done, all.length);
     const state = !all.length ? "Not started yet"
       : done === all.length ? (mood || "Final")
-      : values[0] === values[1] ? `All square · ${done} of ${all.length} in`
-      : `${mood ? mood + " · " : ""}${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} in`;
+      : values[0] === values[1] ? `All square · ${done} of ${all.length} decided`
+      : `${mood ? mood + " · " : ""}${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} decided`;
     return heroShell({
       kicker: "DFL GOLF", live, title: outing.name,
       sub: [outing.course, outing.event_date ? fmtDate(outing.event_date) : ""].filter(Boolean).join(" · "),
