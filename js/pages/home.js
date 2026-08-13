@@ -341,7 +341,7 @@ function newsList(allRows) {
 function identity(leagues, members, logo) {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   return `<section class="hero">
-    <img class="hero-crest ${logo ? "" : "is-crest"}" src="${esc(logo || "icons/crest-512.png")}" alt="DFL league crest" ${logo ? "" : `width="512" height="341"`}>
+    <img class="hero-crest ${logo ? "" : "is-crest"}" src="${esc(logo || "icons/crest-512.png")}" alt="DFL league crest" ${logo ? "" : `width="512" height="512"`}>
     ${canEdit() ? `<div class="crest-tools"><input type="file" id="logo-file" accept="image/*" class="hidden"><button class="btn ghost small" id="logo-pick">Change crest</button>${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}</div>` : ""}
     <p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p>
     <p class="hero-line">${esc(ordinal(number))} season${members.length ? ` · ${members.length} owners` : ""}</p>

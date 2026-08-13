@@ -122,7 +122,10 @@ export function summaryText(s) {
    taps share - but if it somehow has not arrived, the card must still be the
    same card. Reserving the SAME height it would have taken means the
    fallback is a missing picture rather than a different layout. */
-const CREST_W = 340, CREST_H = 226;     // 340 wide at the artwork's 3:2
+/* The crest is a round seal and therefore SQUARE. It used to be a 3:2
+   landscape lockup, and these two numbers are what every card reserves for
+   it - so they move with the artwork or the fallback layout goes wrong. */
+const CREST_W = 300, CREST_H = 300;
 
 function drawCrest(ctx, top) {
   const img = crestImage();
