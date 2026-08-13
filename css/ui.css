@@ -289,46 +289,96 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 .quicknav a:active { transform: scale(.97); }
 
 /* ---------------------------------------------------------------------
-   THE SPLASH
+   THE OPENING
 
-   Near-black, the full crest, a fade and a very slight settle. It covers
-   the app rather than delaying it - the app boots underneath and the splash
-   removes itself, so nothing is waiting on an animation.
+   Not a loading screen, and the distinction is the whole point: the app is
+   already booting underneath this, every module is already being fetched,
+   and nothing here waits on a request. It COVERS the app for about a second
+   and a half and then removes itself. If it were a loading screen it would
+   have a spinner, and it does not.
+
+   The sequence, and the delays are the design:
+
+     0.00  black
+     0.20  the crest fades up
+     0.50  DFL HQ
+     0.80  one pass of light across the plate
+     1.00  the tagline
+     1.60  the whole thing fades out, gone by ~1.85
+
+   Every stage is one CSS animation with a delay. No library, no JS timeline,
+   nothing to keep in step with anything else. `is-running` is added by the
+   inline script so a skipped launch never animates at all.
    --------------------------------------------------------------------- */
 #splash {
   position: fixed; inset: 0; z-index: 100;
-  display: grid; place-items: center; gap: var(--s-4);
+  display: grid; place-items: center;
   background: #07090d;
-  animation: dfl-splash-out var(--t-slow) var(--ease) forwards;
-  animation-delay: 820ms;
+  /* The plate itself does not move. Only its contents arrive, which is what
+     keeps this feeling like a title card rather than a transition. */
 }
 #splash.is-gone { display: none; }
-#splash img {
-  width: min(72vw, 420px); height: auto;
-  animation: dfl-splash-in 620ms var(--ease) both;
+#splash.is-running { animation: dfl-splash-out var(--t-slow) var(--ease) 1.6s forwards; }
+
+.sp-inner {
+  display: grid; justify-items: center; gap: var(--s-4);
+  padding: var(--s-6);
+  text-align: center;
 }
-#splash .splash-word {
+/* Reserved before anything animates, so no stage can shift the one after it. */
+.sp-mark { width: min(66vw, 380px); height: auto; opacity: 0; }
+.sp-word {
   font-family: var(--font-display);
-  font-size: var(--fs-label);
+  font-size: var(--fs-h1);
   font-weight: var(--fw-bold);
   letter-spacing: .34em;
   text-transform: uppercase;
+  color: var(--chalk);
+  opacity: 0;
+}
+.sp-tag {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
   color: var(--muted);
-  animation: dfl-splash-in 620ms var(--ease) both;
-  animation-delay: 160ms;
+  max-width: 22ch;
+  opacity: 0;
 }
-@keyframes dfl-splash-in {
-  from { opacity: 0; transform: scale(.965) }
-  to   { opacity: 1; transform: scale(1) }
+/* One pass of light, once. A sweep that repeats is a loading bar. */
+.sp-sweep {
+  position: absolute; inset: 0 auto 0 0; width: 42%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  transform: translateX(-120%);
 }
-@keyframes dfl-splash-out {
-  to { opacity: 0; visibility: hidden }
+#splash.is-running .sp-mark  { animation: dfl-sp-rise 620ms var(--ease) .2s both; }
+#splash.is-running .sp-word  { animation: dfl-sp-rise 520ms var(--ease) .5s both; }
+#splash.is-running .sp-tag   { animation: dfl-sp-rise 520ms var(--ease) 1s both; }
+#splash.is-running .sp-sweep { animation: dfl-sp-sweep 900ms var(--ease) .8s 1 forwards; }
+
+/* Golf gets the crest red under the wordmark. That is the entire variant -
+   same timing, same shapes, one accent. */
+#splash.is-golf .sp-word { color: var(--chalk); }
+#splash.is-golf .sp-tag  { color: var(--accent); }
+
+@keyframes dfl-sp-rise {
+  from { opacity: 0; transform: translateY(8px) scale(.985) }
+  to   { opacity: 1; transform: none }
 }
-/* Somebody who has asked for less motion gets the plate and no movement,
-   and it leaves immediately. */
+@keyframes dfl-sp-sweep { to { transform: translateX(320%) } }
+@keyframes dfl-splash-out { to { opacity: 0; visibility: hidden } }
+
+/*
+  REDUCED MOTION. The plate, the words, no movement, and it leaves quickly -
+  somebody who has asked for less motion has not asked for a slower app.
+*/
 @media (prefers-reduced-motion: reduce) {
-  #splash { animation-delay: 220ms; }
-  #splash img, #splash .splash-word { animation: none; }
+  #splash.is-running { animation-delay: .5s; }
+  #splash.is-running .sp-mark,
+  #splash.is-running .sp-word,
+  #splash.is-running .sp-tag { animation: none; opacity: 1; }
+  #splash .sp-sweep { display: none; }
 }
 
 /* ---------------------------------------------------------------------
@@ -395,9 +445,15 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   font-size: var(--fs-label); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-wide); text-transform: uppercase;
 }
+/* THE HERO'S CTA IS A BUTTON WEARING A LINK'S CLOTHES. It was 17px tall -
+   the height of its own text - which is the primary action on the front page
+   sitting at a third of the minimum tap target. The padding grows the target
+   to ~45px and the margin gives back exactly what the padding adds, so the
+   text does not move a pixel. */
 .fp-cta {
   display: inline-flex; align-items: center; gap: var(--s-1);
-  margin-top: var(--s-4);
+  padding: 14px 0;
+  margin-top: 2px;
   font-size: var(--fs-label); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-wide); text-transform: uppercase;
   color: var(--accent); text-decoration: none;

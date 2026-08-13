@@ -216,3 +216,66 @@
 .golf-guest-admin .guest-code-form { display: grid; gap: var(--s-2); }
 .golf-guest-admin .guest-code-state { margin-bottom: var(--s-2); }
 .golf-guest-admin .guest-code-state.tiny:not(.muted) { color: var(--ok); }
+
+/* ---------------------------------------------------------------------
+   THE GUEST JOIN FLOW  (golf-join.js)
+
+   Four steps, one at a time, each one a question with an obvious answer.
+   Plain tokens - a sign-in is not an occasion, so nothing in here borrows
+   the marquee treatment above.
+   --------------------------------------------------------------------- */
+.gj { display: grid; gap: var(--s-4); }
+.gj-head { display: grid; gap: var(--s-1); }
+.gj-kicker {
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--accent);
+}
+.gj-title {
+  font-family: var(--font-display); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); letter-spacing: var(--ls-tight);
+  line-height: var(--lh-tight); text-transform: uppercase;
+}
+.gj-sub { margin: 0; font-size: var(--fs-label); color: var(--muted); }
+.gj-form { display: grid; gap: var(--s-2); }
+/* The code is short and shouty; the field should look like it expects that. */
+.gj-form input {
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  text-align: center;
+}
+.gj-msg { margin: 0; }
+/* Capped and scrolled: a twenty-player field must not push the buttons off
+   the bottom of a phone. */
+.gj-list { display: grid; gap: var(--s-2); max-height: 48vh; overflow-y: auto; }
+.gj-note { margin: 0; }
+.gj-back { display: flex; justify-content: center; }
+.gj-confirm {
+  display: grid; gap: var(--s-1); justify-items: center; text-align: center;
+  padding: var(--s-5) var(--s-4);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--bg-2);
+}
+.gj-confirm-label {
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--muted);
+}
+.gj-confirm-team {
+  font-family: var(--font-display); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); text-transform: uppercase;
+}
+.gj-confirm p { margin: var(--s-2) 0 0; }
+
+/* The golf door on the "Who are you?" card. */
+.welcome-alt {
+  margin-top: var(--s-4); padding-top: var(--s-4);
+  border-top: 1px solid var(--line-soft);
+  display: grid; gap: var(--s-2); justify-items: center;
+}
+.welcome-or {
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--muted);
+}
+#welcome-golf { width: 100%; }
+#welcome-golf .ico { width: 18px; height: 18px; }

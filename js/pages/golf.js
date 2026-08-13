@@ -2,7 +2,8 @@
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
-import { passFor, saveGolfPass, clearGolfPass, verifyCode, eventHasCode } from "../golf-guest.js";
+import { passFor, clearGolfPass, eventHasCode } from "../golf-guest.js";
+import { mountJoin } from "../golf-join.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest } from "../golf-people.js";
@@ -283,81 +284,14 @@ function wireGuest(view, outing, refresh) {
     refresh();
   });
 
+  /* One join flow, shared with the door on the welcome overlay - see
+     golf-join.js. This used to be a second hand-rolled code form here, which
+     is two places to get the same four steps wrong. */
   strip.querySelector("[data-guest-in]")?.addEventListener("click", () => {
-    strip.innerHTML = `
-      <form class="guest-form" data-guest-form>
-        <label for="guest-code">Event code</label>
-        <div class="guest-row">
-          <input id="guest-code" name="code" type="text" autocomplete="off"
-                 autocapitalize="characters" spellcheck="false" placeholder="e.g. ROLLA26" required>
-          <button class="btn small" type="submit">Continue</button>
-        </div>
-        <p class="muted tiny" data-guest-msg>The commissioner has the code.</p>
-      </form>`;
-    const form = strip.querySelector("[data-guest-form]");
-    const msg = strip.querySelector("[data-guest-msg]");
-    strip.querySelector("#guest-code")?.focus();
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const code = form.code.value.trim();
-      if (!code) return;
-      const btn = form.querySelector("button");
-      btn.disabled = true; btn.textContent = "Checking…";
-      let roster = [];
-      try {
-        roster = await verifyCode(db(), outing.id, code);
-      } catch (err) {
-        /* The RPC is missing until golf_guest_schema.sql has been run. Say
-           that plainly rather than showing a Postgres error to somebody
-           standing on a tee box. */
-        msg.textContent = "Guest access is not set up for this event yet.";
-        msg.className = "warntext tiny";
-        btn.disabled = false; btn.textContent = "Continue";
-        console.warn(err);
-        return;
-      }
-      if (!roster.length) {
-        msg.textContent = "That code is not right for this event.";
-        msg.className = "warntext tiny";
-        btn.disabled = false; btn.textContent = "Continue";
-        return;
-      }
-
-      /* Which one are you. Everybody on the event is listed, members
-         included - a member who has not picked themselves on this device is
-         still a person standing on the tee, and the policy will give them
-         the same team-scoped access as anybody else. */
-      strip.innerHTML = `
-        <div class="guest-pick">
-          <span class="card-title">Which one are you?</span>
-          <div class="guest-list">
-            ${roster.map((r) => `
-              <button type="button" class="memberbtn" data-pick="${esc(r.participant_id)}"
-                      data-name="${esc(r.display_name)}" data-team="${esc(r.team_id ?? "")}"
-                      data-team-name="${esc(r.team_name || "")}">
-                <span class="memberbtn-text">
-                  <strong>${esc(r.display_name)}</strong>
-                  ${r.team_name ? `<span class="muted tiny">${esc(r.team_name)}</span>` : ""}
-                </span>
-              </button>`).join("")}
-          </div>
-        </div>`;
-
-      strip.querySelector(".guest-list").addEventListener("click", (ev) => {
-        const btn2 = ev.target.closest("button[data-pick]");
-        if (!btn2) return;
-        saveGolfPass({
-          outing: String(outing.id),
-          participant: btn2.dataset.pick,
-          code,
-          name: btn2.dataset.name,
-          teamId: btn2.dataset.team || null,
-          teamName: btn2.dataset.teamName || "",
-        });
-        toast(`Scoring as ${btn2.dataset.name}`);
-        refresh();
-      });
+    mountJoin(strip, {
+      outingId: outing.id,
+      onDone: refresh,
+      onCancel: refresh,
     });
   });
 }
