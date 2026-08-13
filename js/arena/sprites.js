@@ -20,6 +20,8 @@
 // register it and that one racer starts using it.
 // =====================================================================
 
+import { CHARACTERS, dflSpriteMarkup } from "./dfl-sprites.js";
+
 export const SPRITE_ROOT = "assets/arena/sprites";
 
 /**
@@ -37,53 +39,21 @@ export const SPRITE_FILES = new Set([
 
 export const THEMES = {
   /*
-    HOENN. The third generation, as twelve racers.
+    THE DFL. Twelve original characters, drawn as pixels and defined in
+    dfl-sprites.js - which is also where a thirteenth would go.
 
-    THE ART IS OURS AND THE NAMES ARE NOT, and that split is deliberate.
-    Every silhouette below is the app's own drawing - the same inline SVG
-    set every other theme uses - picked so the field reads as twelve
-    different shapes from across the track. Nothing from anybody's game
-    ships in this repo, which is a public one.
+    THIS REPLACED TWO THEMES. There was a "pokemon" one whose slots were
+    elemental types, and a "gen3" one that used real Hoenn names. The art was
+    always this app's own, but a theme named after somebody else's game is a
+    theme that invites their sprite sheets into the repo. Nothing in here
+    belongs to anybody but the league now.
 
-    If you want the real sprites, they are yours to supply: drop them in
-    assets/arena/sprites/gen3/<key>.png and add "gen3/<key>" to SPRITE_FILES
-    at the top of this file. spriteMarkup() prefers a registered file over
-    the drawing, so a half-finished set mixes cleanly and each racer
-    upgrades the moment its file lands.
+    The slots are READ from the roster rather than typed out a second time,
+    so adding a character is one edit in one file.
   */
-  gen3: {
-    label: "Hoenn (Gen 3)",
-    slots: [
-      { key: "treecko",  label: "Treecko",   art: "leafy"    },
-      { key: "torchic",  label: "Torchic",   art: "biped"    },
-      { key: "mudkip",   label: "Mudkip",    art: "finned"   },
-      { key: "sceptile", label: "Sceptile",  art: "leafy"    },
-      { key: "blaziken", label: "Blaziken",  art: "biped"    },
-      { key: "swampert", label: "Swampert",  art: "theropod" },
-      { key: "rayquaza", label: "Rayquaza",  art: "longneck" },
-      { key: "groudon",  label: "Groudon",   art: "theropod" },
-      { key: "kyogre",   label: "Kyogre",    art: "finned"   },
-      { key: "metagross",label: "Metagross", art: "plated"   },
-      { key: "salamence",label: "Salamence", art: "raptor"   },
-      { key: "absol",    label: "Absol",     art: "horned"   },
-    ],
-  },
-  pokemon: {
-    label: "Types",
-    slots: [
-      { key: "fire",     label: "Fire",     art: "biped"  },
-      { key: "water",    label: "Water",    art: "finned" },
-      { key: "grass",    label: "Grass",    art: "leafy"  },
-      { key: "electric", label: "Electric", art: "spiky"  },
-      { key: "psychic",  label: "Psychic",  art: "leafy"  },
-      { key: "rock",     label: "Rock",     art: "biped"  },
-      { key: "flying",   label: "Flying",   art: "finned" },
-      { key: "dark",     label: "Dark",     art: "spiky"  },
-      { key: "ice",      label: "Ice",      art: "finned" },
-      { key: "dragon",   label: "Dragon",   art: "biped"  },
-      { key: "ghost",    label: "Ghost",    art: "leafy"  },
-      { key: "steel",    label: "Steel",    art: "spiky"  },
-    ],
+  dfl: {
+    label: "DFL Originals",
+    slots: CHARACTERS.map((c) => ({ key: c.id, label: c.label, art: "pixel", blurb: c.blurb })),
   },
   dinosaurs: {
     label: "Dinosaurs",
@@ -138,9 +108,15 @@ export const THEMES = {
   },
 };
 
+/* Events created before the rename still hold these in arena_events.theme,
+   and participants still hold their old slot keys. Mapping the theme keeps
+   those rows drawing something deliberate instead of falling back to a duck. */
+const LEGACY_THEMES = { pokemon: "dfl", gen3: "dfl" };
+export const resolveTheme = (t) => (THEMES[t] ? t : (LEGACY_THEMES[t] || t));
+
 export function themeKeys() { return Object.keys(THEMES); }
-export function themeLabel(key) { return THEMES[key]?.label || key; }
-export function slotsFor(theme) { return THEMES[theme]?.slots || []; }
+export function themeLabel(key) { return THEMES[resolveTheme(key)]?.label || key; }
+export function slotsFor(theme) { return THEMES[resolveTheme(theme)]?.slots || []; }
 
 /** Where a real image for this slot would live, if you add one. */
 export function spriteUrl(theme, key) {
@@ -346,7 +322,13 @@ export function spriteMarkup(theme, key, color, image) {
     return `<img class="racer-img" src="${spriteUrl(theme, key)}" alt="">`;
   }
 
-  const draw = ART[artFor(theme, key)] || ART.duck;
+  /* The DFL characters are pixel grids, not curve functions, so they have
+     their own renderer. Same contract - a string of SVG at the lane's 8:5 -
+     so race.js, the lane list and the broadcast stage need no changes. */
+  const resolved = resolveTheme(theme);
+  if (resolved === "dfl") return dflSpriteMarkup(key || CHARACTERS[0].id, c);
+
+  const draw = ART[artFor(resolved, key)] || ART.duck;
   return `<svg class="racer-art" viewBox="0 0 64 40" aria-hidden="true">${draw(c, darken(c))}</svg>`;
 }
 
