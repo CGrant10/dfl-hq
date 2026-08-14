@@ -329,11 +329,16 @@ export function startStage(root, deck, { refresh } = {}) {
     /* The light plate needs light-plate controls, and the controls are not
        inside the slide, so the stage carries the flag. */
     root.classList.toggle("bx-on-light", (items[i]?.background || "") === "light");
+    /* The progress fill is CSS, but only this side knows how long the
+       current slide gets - dwell is per treatment and per slide. Handing
+       it over as a custom property keeps the animation declarative while
+       the clock stays here, which is the same split as everywhere else. */
+    const ms = items[i]?.dwell || 6000;
     root.querySelectorAll("[data-bx-go]").forEach((d) => {
       const on = Number(d.dataset.bxGo) === i;
       d.classList.toggle("on", on);
-      if (on) d.setAttribute("aria-current", "true");
-      else d.removeAttribute("aria-current");
+      if (on) { d.style.setProperty("--bx-dwell", `${ms}ms`); d.setAttribute("aria-current", "true"); }
+      else { d.style.removeProperty("--bx-dwell"); d.removeAttribute("aria-current"); }
     });
   }
 
@@ -355,15 +360,24 @@ export function startStage(root, deck, { refresh } = {}) {
     btn.classList.toggle("is-paused", userPaused);
   }
 
+  /* The progress fill reads this class. It has to reflect BOTH kinds of
+     pause: a bar that keeps crawling while the stage is held still under
+     the cursor is a progress bar that lies about when the next slide is
+     coming. */
+  function markStill() {
+    root.classList.toggle("is-paused", userPaused || soft.size > 0);
+  }
+
   function setPaused(on) {
     userPaused = on;
     paintButton();
-    root.classList.toggle("is-paused", on);
+    markStill();
     if (on) clear(); else arm();
   }
 
   function softPause(reason, on) {
     if (on) soft.add(reason); else soft.delete(reason);
+    markStill();
     if (soft.size) clear(); else arm();
   }
 

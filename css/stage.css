@@ -100,8 +100,10 @@
    look and is what every automatic slide gets.
    ===================================================================== */
 
-/* The house look: a wash from the top, the league's own colour. */
-.bx-bg-default {
+/* The house look: a wash from the top, the league's own colour.
+   bx-bg-logo shares it - the crest is a LAYER on this plate, not a
+   plate of its own, and without this it had no background whatsoever. */
+.bx-bg-default, .bx-bg-logo {
   background:
     radial-gradient(120% 90% at 50% -20%, var(--hero-wash), transparent 60%),
     linear-gradient(180deg, var(--hero-a), var(--bg-2));
@@ -513,14 +515,41 @@
   padding: 0; border: 0; background: none; cursor: pointer;
   display: grid; align-items: center;
 }
+.bx-dot { position: relative; }
+/* The track. */
 .bx-dot::after {
   content: "";
   height: 3px; width: 100%;
   border-radius: 2px;
   background: var(--control-line);
-  transition: background var(--t-fast) var(--ease), height var(--t-fast) var(--ease);
+  transition: height var(--t-fast) var(--ease);
 }
-.bx-dot.on::after { background: var(--accent-fill); height: 5px; }
+.bx-dot.on::after { height: 5px; }
+/*
+  THE FILL, and this is the progress indicator doing an honest job: it
+  ticks across the current segment over exactly that slide's dwell, so the
+  bar answers "how long until the next one" instead of only "which one is
+  this". The duration comes from the engine as --bx-dwell, because dwell
+  is per treatment and per slide - CSS cannot know it.
+
+  It pauses with the broadcast rather than running on behind a paused
+  stage, which would be a progress bar that lies.
+*/
+.bx-dot::before {
+  content: "";
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 5px; width: 0;
+  border-radius: 2px;
+  background: var(--accent-fill);
+}
+.bx-dot.on::before { animation: bx-fill var(--bx-dwell, 6000ms) linear both; }
+.bx-stage.is-paused .bx-dot.on::before { animation-play-state: paused; }
+@keyframes bx-fill { from { width: 0; } to { width: 100%; } }
+/* Reduced motion: no crawling bar. The active segment is simply filled. */
+@media (prefers-reduced-motion: reduce) {
+  .bx-dot.on::before { animation: none; width: 100%; }
+}
 .bx-on-light .bx-dot::after { background: rgba(0,0,0,.25); }
 .bx-on-light .bx-dot.on::after { background: var(--accent-fill); }
 
@@ -591,3 +620,31 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+
+/* =====================================================================
+   THE LIGHT THEME, as opposed to the light SLIDE BACKGROUND.
+
+   These are different things and the first cut only handled the second.
+   .bx-bg-light is a plate a commissioner chooses for one slide; the app
+   also has a light MODE, in which the house plate itself is white - and
+   the house plate was still wearing the dark theme's decorations. A
+   rgba(0,0,0,.42) vignette on a white stage is a black frame, and a white
+   weave on white is nothing at all.
+   ===================================================================== */
+:root[data-mode="light"] .bx-bg-default .bx-vignette,
+:root[data-mode="light"] .bx-bg-logo .bx-vignette {
+  background: radial-gradient(115% 85% at 50% 45%, transparent 50%, rgba(16,24,40,.14) 100%);
+}
+:root[data-mode="light"] .bx-bg-default .bx-weave,
+:root[data-mode="light"] .bx-bg-logo .bx-weave {
+  background-image:
+    linear-gradient(rgba(16,24,40,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,24,40,.05) 1px, transparent 1px);
+}
+/* The mark is a light-on-dark asset, so on a white plate it needs to be
+   darkened rather than merely faded or it disappears. */
+:root[data-mode="light"] .bx-bg-default .bx-crest,
+:root[data-mode="light"] .bx-bg-logo .bx-crest,
+.bx-bg-light .bx-crest { filter: invert(1) brightness(.35); opacity: .13; }
+:root[data-mode="light"] .bx-sweep { background: linear-gradient(90deg, transparent, rgba(16,24,40,.05), transparent); }

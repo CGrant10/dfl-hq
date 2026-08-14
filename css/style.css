@@ -66,6 +66,15 @@
   --hover:       #1b2432;
   --hover-soft:  rgba(255,255,255,.025);
   --control-line: #616F80;  /* the edge of a tappable control */
+  /* The plate behind a floating control (broadcast pause/arrows). Defined
+     here as well as in theme.js so the very first paint - before the theme
+     is applied - is not a bare ring with nothing behind it. */
+  --control-bg:  rgba(20,27,38,.72);
+
+  /* Tells the browser what to make of the UI IT draws: select popups, date
+     and time pickers, scrollbars, autofill. theme.js overrides this per
+     mode; without it they follow the OS and go black in light mode. */
+  color-scheme: dark;
 
   --accent:        #E67582; /* crest red, made readable  - TEXT   */
   --accent-2:      #7098E6; /* crest blue, made readable - TEXT   */
@@ -122,63 +131,70 @@
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
-  touch-action: manipulation;
+  /*
+    pan-x pan-y allows scrolling in both directions and refuses pinch and
+    double-tap zoom. `manipulation` (what was here) only killed the
+    double-tap; a two-finger pinch still zoomed the app, which is the
+    behaviour Grant reported on the pages away from Home.
+
+    THIS IS AN ACCESSIBILITY TRADE and it is deliberate: browser and OS
+    level zoom (Ctrl +, the system magnifier, the reader's default font
+    size) all still work, and the type scale is in rem so they scale the
+    app properly. What is gone is the accidental pinch.
+  */
+  touch-action: pan-x pan-y;
   overscroll-behavior-y: none;
 }
 
 /*
-  SELECTION POLICY. Two rules, and the order matters.
+  SELECTION POLICY - ONE RULE AND ITS EXCEPTIONS, and this reverses an
+  earlier decision on purpose.
 
-  The chrome is furniture: the top bar, the tab bar, a button, a badge. A
-  long press on furniture should do nothing, because raising the iOS
-  "Copy / Look Up / Share" sheet on the Golf tab is what makes an app feel
-  like a web page.
+  It used to hand selection BACK to the reading surfaces (.view, the More
+  sheet, dialogs) on the argument that somebody would want to copy a rule
+  or a score. Grant's call is the other way: DFL HQ is an installed app,
+  and long-pressing a score to get "Copy / Look Up / Share" is the single
+  thing that most makes it feel like a web page instead. So the whole
+  document is now non-selectable and the exceptions are the places where
+  selection is not decoration but function.
 
-  CONTENT IS NOT FURNITURE. A rule, an announcement, a player's name, a
-  score, an owner's address in the calendar - somebody will want to copy
-  that, and the blanket `*` rule that used to be here meant nobody could
-  copy anything anywhere. Making the app feel native is not worth taking
-  copy and paste away from the people using it.
+  WHAT THIS COSTS, stated plainly: a member can no longer long-press to
+  copy an announcement or an address out of the calendar. If that turns
+  out to matter for one specific surface, hand it back for THAT surface
+  here - do not reintroduce the blanket .view grant.
 
-  So: nothing selects by default, and then the READING SURFACES hand it
-  back - the page itself, the More sheet, a dialog - while the controls
-  sitting inside those surfaces keep it switched off.
+  On `html`, NOT on `*`. user-select inherits, and a `*` rule sets it
+  directly on every element - which beats inheritance, so any later rule
+  handing selection back would silently do nothing.
 */
-/* On `html`, NOT on `*`. user-select inherits, and a `*` rule sets it
-   directly on every element in the document - which beats inheritance, so a
-   later rule handing selection back to a container had no effect on anything
-   inside it. One declaration at the root and the cascade does the rest. */
 html {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
 
-.view, .sheet-card, .overlay-card, .toast {
+/*
+  THE EXCEPTIONS. You cannot type into a field you cannot put a cursor in,
+  and this is the whole list: inputs, textareas, selects, and anything
+  explicitly marked selectable. Admin forms, the golf scorecard and the
+  member picker all reach the app through these.
+*/
+input, textarea, select, [contenteditable], .u-selectable {
   -webkit-user-select: text;
   user-select: text;
   -webkit-touch-callout: default;
-}
-
-/* A control inside a reading surface is still a control. */
-.view :is(a, button, .btn, .linkbtn, .badge, .pill, .tabs, .quicknav, .creed-doors,
-          .fp-snap, .fp-cta, .ico, .memberbtn, summary),
-.sheet-card :is(a, button, .btn),
-.overlay-card :is(a, button, .btn, .memberbtn) {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
 }
 
 /*
-  The exception, and it is not optional: you cannot type into a field you
-  cannot put a cursor in. This sits last so it beats the control rule above
-  for a field inside a dialog.
+  IMAGES DO NOT DRAG. A crest that peels off under a finger, or follows
+  the cursor as a ghost on a drag, reads as a document rather than an app.
+  Applied globally rather than per component, because the failure is the
+  same everywhere and there is no image in this app that benefits from
+  being dragged out.
 */
-input, textarea, select {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
+img, svg, .bx-art, .bx-crest {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 html, body {

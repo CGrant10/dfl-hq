@@ -69,7 +69,7 @@ const MODES = {
     text: "#e8edf5", muted: "#8b98ab", chalk: "#f5f7fa",
     bodyText: "#cdd6e2",
     hover: "#1b2432", hoverSoft: "rgba(255,255,255,.025)",
-    controlLine: "#616F80",
+    controlLine: "#616F80", controlBg: "rgba(20,27,38,.72)",
     accent: "#E67582", accent2: "#7098E6",
     onAccent: "#FFFFFF",
     // Marks and statuses. Light on dark.
@@ -91,7 +91,7 @@ const MODES = {
     text: "#11161d", muted: "#5a6575", chalk: "#11161d",
     bodyText: "#2a323d",
     hover: "#e0e6ef", hoverSoft: "rgba(16,24,40,.035)",
-    controlLine: "#7C8695",
+    controlLine: "#7C8695", controlBg: "rgba(255,255,255,.82)",
     /* The crest red is 4.4:1 on white - the colour Grant called hard to read.
        #B8001B is the same hue at 6.4:1. The blue needs no help: 11.6:1. */
     accent: "#B8001B", accent2: "#003396",
@@ -135,7 +135,7 @@ const MODES = {
     text: "#f4f2ee", muted: "#a8a096", chalk: "#ffffff",
     bodyText: "#ddd8d0",
     hover: "#1d1d20", hoverSoft: "rgba(255,255,255,.03)",
-    controlLine: "#736b60",
+    controlLine: "#736b60", controlBg: "rgba(24,24,27,.74)",
     /* text pair: the red lifted to clear 6:1, the yellow already there */
     accent: "#F08279", accent2: "#EFC94C",
     /* fill pair: the wheel's own red and yellow */
@@ -193,6 +193,25 @@ function apply() {
   const m = MODES[name];
   const s = document.documentElement.style;
 
+  /*
+    COLOR-SCHEME, AND THIS IS THE ONE THAT WAS ACTUALLY BROKEN.
+
+    Everything else in this function paints things WE draw. color-scheme
+    is the only way to tell the browser about the things IT draws: the
+    popup list of a <select>, the calendar of an <input type="date">, the
+    clock of a <input type="time">, scrollbars, autofill.
+
+    It was never declared, so those followed the OPERATING SYSTEM instead
+    of the app. A member with a dark phone running DFL HQ in light mode
+    got a white page with black dropdowns and a black date picker - which
+    is exactly the "popups become completely black" report, and it got
+    worse when the event and tee time fields added native pickers.
+
+    medicine is a dark palette, so it declares dark. This is a hint, not a
+    repaint: it costs nothing and no other rule can achieve it.
+  */
+  s.setProperty("color-scheme", name === "light" ? "light" : "dark");
+
   s.setProperty("--bg", m.bg);
   s.setProperty("--bg-2", m.bg2);
   s.setProperty("--bg-3", m.bg3);
@@ -229,6 +248,11 @@ function apply() {
   /* A control you have to find and tap needs a visible edge: --line is a
      divider (~1.5:1) and too quiet for that job in either mode. */
   s.setProperty("--control-line", m.controlLine);
+  /* The plate behind a floating control - the broadcast's pause and
+     arrows, the admin running-order row. It was referenced by four rules
+     and defined by none, so those buttons were drawing as a bare ring with
+     nothing behind them and whatever was underneath showing through. */
+  s.setProperty("--control-bg", m.controlBg);
   s.setProperty("--ok", m.ok);
   s.setProperty("--ok-bg", m.okBg);
   s.setProperty("--ok-line", m.okLine);
