@@ -241,10 +241,11 @@
     the stage's own plate show through, which is what keeps a member's
     photo and a golf scoreboard looking like the same package.
 
-    The scrim below still does the readability work; this is about
-    hierarchy, not contrast.
+    Taken down twice now - 1.0 to .58 to .42 - because .58 was still
+    carrying the slide rather than sitting behind it. The scrim below does
+    the readability work; this is about hierarchy, not contrast.
   */
-  opacity: .58;
+  opacity: .42;
   /* A dragged image inside a swipe surface is the classic mobile bug. */
   -webkit-user-drag: none;
   user-drag: none;

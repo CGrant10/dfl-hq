@@ -86,6 +86,7 @@ function shortDate(value) {
 /** The numbers the card is about, worked out once and shared by both forms. */
 export function summary(data, outing) {
   const teams = data.teams.length === 2 ? data.teams : [];
+  const names = data.names || memberNames([]);
   const { total, per } = dayPoints(data.rounds);
   const values = teams.map((t) => total.get(String(t.id)) || 0);
   const played = data.rounds.flatMap((r) => r.battles).filter((b) => b.result?.complete).length;
@@ -95,6 +96,7 @@ export function summary(data, outing) {
     : `${teams[values[0] > values[1] ? 0 : 1].name} lead`;
   return {
     teams, values, per, lead, played, matches,
+    captains: teams.map((t) => captainOf(t, names)),
     holes: data.rounds.reduce((n, r) => n + holesOf(r.round), 0),
     title: outing?.name || "DFL Golf",
     meta: [outing?.course, shortDate(outing?.event_date)].filter(Boolean).join(" · "),
@@ -156,6 +158,13 @@ function drawScore(ctx, s, top) {
     ctx.fillText(String(s.values[i]), cx, top + 120);
     ctx.fillStyle = INK;
     fitText(ctx, team.name.toUpperCase(), cx, top + 176, W * 0.42, 40, 900);
+    /* Who leads this team, under its name. Nothing is drawn when the team
+       has no captain set. */
+    const cap = s.captains?.[i];
+    if (cap) {
+      ctx.fillStyle = MUTED;
+      fitText(ctx, `CAPTAIN ${cap.toUpperCase()}`, cx, top + 210, W * 0.40, 22, 800);
+    }
   });
 }
 
@@ -291,11 +300,27 @@ export function shareBoard(data, outing) {
 const TW = 1080, TH = 1350;
 
 /** Rosters and pairings, pulled out of the same data the page already has. */
+/*
+  THE CAPTAIN'S NAME, from the id the team row already carries.
+
+  golf_teams.captain_member_id is a real column behind a migration, so a
+  team without one resolves to nothing and the card simply does not print
+  a captain line - it never guesses at a leader. memberNames() is the same
+  map the app uses for every other golf name, so the shared picture calls
+  somebody exactly what the scorecard does.
+*/
+function captainOf(team, names) {
+  if (!team?.captain_member_id) return "";
+  const n = names?.get?.(String(team.captain_member_id));
+  return n?.golf || n?.display || "";
+}
+
 export function teamSheet(data, outing) {
   const names = data.names || memberNames([]);
   const teams = data.teams.length === 2 ? data.teams : [];
   const rosters = teams.map((t) => ({
     team: t,
+    captain: captainOf(t, names),
     players: (data.parts || [])
       .filter((p) => String(p.team_id) === String(t.id))
       .sort((a, b) => (a.pick_number ?? 9999) - (b.pick_number ?? 9999) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -315,7 +340,10 @@ export function teamSheet(data, outing) {
 
 export function teamSheetText(sheet) {
   const lines = [sheet.title + (sheet.meta ? ` — ${sheet.meta}` : "")];
-  for (const r of sheet.rosters) lines.push("", r.team.name.toUpperCase(), r.players.join(", ") || "nobody yet");
+  for (const r of sheet.rosters) {
+    lines.push("", r.team.name.toUpperCase() + (r.captain ? ` — captain ${r.captain}` : ""),
+               r.players.join(", ") || "nobody yet");
+  }
   for (const r of sheet.rounds) {
     lines.push("", `${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "singles" : "2v2"}`);
     for (const p of r.pairs) lines.push(`${p.a} v ${p.b}`);
@@ -363,7 +391,12 @@ export function teamSheetCanvas(data, outing) {
     ctx.fillStyle = colour;
     fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 900, "left");
     ctx.fillStyle = MUTED; ctx.font = `800 20px ${FONT}`;
-    ctx.fillText(`${r.players.length} player${r.players.length === 1 ? "" : "s"}`, x + 26, top + 78);
+    /* The captain shares the line with the player count rather than taking
+       one of its own - the card is already tight, and "6 PLAYERS ·
+       CAPTAIN SLAW" reads as one fact about the team. */
+    const capLine = `${r.players.length} PLAYER${r.players.length === 1 ? "" : "S"}`
+      + (r.captain ? ` · CAPTAIN ${r.captain.toUpperCase()}` : "");
+    fitText(ctx, capLine, x + 26, top + 78, colW - 52, 20, 800, "left");
     ctx.fillStyle = INK;
     (r.players.length ? r.players : ["Nobody yet"]).forEach((n, j) => {
       ctx.font = `700 28px ${FONT}`;

@@ -10,8 +10,8 @@
 // =====================================================================
 import { esc, errorBox, loading, toast } from "../ui.js";
 import { loadLore } from "../lore.js";
-import { funFacts, factOfTheDay, factLine } from "../funfacts.js";
-import { shareText } from "../share.js";
+import { funFacts, factOfTheDay } from "../funfacts.js";
+import { shareFact } from "../fact-share.js";
 
 const ICON = {
   nailbiter: "i-versus", blowout: "i-versus", high: "i-record", low: "i-record",
@@ -74,10 +74,11 @@ export async function render(view) {
   `;
 
   view.querySelector("[data-share]")?.addEventListener("click", () => {
-    /* shareText() uses the Web Share sheet where there is one - which is
-       how this reaches Messenger on a phone - and falls back to the
-       clipboard on a desktop browser that has no sheet. */
-    const how = shareText({ title: "DFL HQ — Did you know?", text: factLine(today) });
+    /* A PICTURE, not a paragraph. shareCanvas() underneath falls back the
+       right way on its own: the share sheet on a phone (which is how this
+       reaches Messenger), then saving the PNG, then the clipboard. */
+    const how = shareFact(today);
+    if (how === "saved")  toast("Image saved to your downloads");
     if (how === "copied") toast("Copied — paste it in the group chat");
     if (how === "failed") toast("Could not share on this device", true);
   });
