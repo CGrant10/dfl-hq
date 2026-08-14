@@ -536,3 +536,21 @@ a.moment:hover { background: var(--hover-soft); }
 /* A runner-up is not a title, so it is the same shape without the gold. */
 .cab-row.is-second .ico-sm, .cab-row.is-second .cab-n { color: var(--muted); }
 .cab-row.is-second .cab-year { color: var(--muted); border-color: var(--line); }
+
+/* ---------------------------------------------------------------------
+   A list of on/off switches with a label and an explanation.
+   Used by Admin -> Broadcast for the generator sources.
+   --------------------------------------------------------------------- */
+.switchlist { display: grid; gap: var(--s-1); margin-top: var(--s-3); }
+.switchrow {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  /* 44px minimum row height comes from the padding plus the text, so the
+     whole row is the target rather than the 16px box inside it. */
+  padding: var(--s-3) var(--s-2);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.switchrow:hover { background: var(--control-bg); }
+.switchrow input { width: 18px; height: 18px; margin-top: 2px; flex: none; }
+.switch-text { display: grid; gap: 2px; }
+.switch-text .muted { font-size: var(--fs-label); }

@@ -26,7 +26,7 @@ import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
-import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
+import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
@@ -103,7 +103,7 @@ export async function render(view) {
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual });
+  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff() });
 
   view.innerHTML = `<div id="home-wrap">
     ${anniversary()}
@@ -134,7 +134,9 @@ export async function render(view) {
   */
   let lore = null;
   let custom = manual;
-  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom });
+  /* Read once per render off the warm settings cache, not per slide. */
+  const off = broadcastOff();
+  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off });
   /* The live poll re-reads the hand-written slides too, so a slide that was
      scheduled to start - or that an admin just published - arrives during a
      golf day without anybody reloading the page. */

@@ -72,3 +72,35 @@ export async function setCardHidden(key, hide) {
   await saveSetting(KEY_HIDDEN, JSON.stringify([...set]));
   await loadSettings({ force: true });   // refill the cache we just cleared
 }
+
+/*
+  Broadcast generators that are switched off.
+
+  ONE SETTING HOLDING A LIST OF IDS, for the same reason hidden cards work
+  that way: the alternative is a column, or a row, per generator, and there
+  are fourteen of them with more to come. A generator that gets renamed or
+  deleted leaves a stale id here that matches nothing, which is harmless.
+
+  STORED AS THE EXCEPTIONS, NOT THE SETTINGS. The list is what is OFF, so a
+  generator added next month is on by default and needs no migration - and
+  an empty or unreadable setting means "everything on", which is the safe
+  way to be wrong for a front page.
+*/
+export const KEY_BROADCAST_OFF = "broadcast_off";
+
+export function broadcastOff() {
+  try {
+    const parsed = JSON.parse(cache?.get(KEY_BROADCAST_OFF) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export async function setGeneratorOff(id, off) {
+  const set = broadcastOff();
+  if (off) set.add(id);
+  else     set.delete(id);
+  await saveSetting(KEY_BROADCAST_OFF, JSON.stringify([...set]));
+  await loadSettings({ force: true });
+}

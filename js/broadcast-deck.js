@@ -548,6 +548,32 @@ export const GENERATORS = [
   ["identity", identityItem],
 ];
 
+/*
+  What each generator is called in the admin panel, and what turning it off
+  actually costs. Written here, next to the generators themselves, so a new
+  generator cannot be added without a name - the panel lists these, not the
+  raw ids.
+
+  identity is deliberately absent. It is the floor buildDeck() falls back to
+  when everything else is empty, so offering a switch for it would offer a
+  blank front page.
+*/
+export const GENERATOR_LABELS = new Map([
+  ["golf",          ["Golf day", "Live and upcoming golf outings"]],
+  ["fantasy",       ["Fantasy matchups", "Scores from the Sleeper league"]],
+  ["myMatchup",     ["Your matchup", "The signed-in member's own game"]],
+  ["events",        ["Calendar events", "Draft night and anything else scheduled"]],
+  ["poll",          ["Open polls", "Whatever the league is voting on"]],
+  ["news",          ["Announcements", "Recent posts from the commissioner"]],
+  ["champion",      ["Current champion", "The reigning title holder"]],
+  ["pastChampions", ["Past champions", "Earlier title winners"]],
+  ["records",       ["Record book", "All-time highs and lows"]],
+  ["seasonStat",    ["Season stats", "Figures from the current season"]],
+  ["dues",          ["Dues", "What the league is owed"]],
+  ["lore",          ["Moments", "Rivalries and league history"]],
+  ["arena",         ["Arena", "Racer events"]],
+]);
+
 // ------------------------------------------------------------------- deck
 
 /**

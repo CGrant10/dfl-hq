@@ -20,6 +20,7 @@
 
 import { adminLogin, adminLogout, isAdmin, changeAdminPassword, configured } from "../supabase.js";
 import { renderManager } from "../crud.js";
+import { renderBroadcastPanel } from "./admin_broadcast.js";
 import { specFor } from "../sections.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
@@ -29,16 +30,17 @@ import { esc, toast } from "../ui.js";
 const TABLES = [
   { id: "members",         tab: "Members",   table: "members" },
   { id: "rule_categories", tab: "Rule tabs", table: "rule_categories" },
-  /* Broadcast slides live here rather than getting inline Edit buttons on
-     the front page: the stage rotates, so an inline control would move out
-     from under the cursor. The manager is a still list. */
-  { id: "broadcast_items", tab: "Broadcast", table: "broadcast_items" },
 ];
 
 // Custom panels rather than single-table editors.
 const PANELS = [
   { id: "finances", tab: "Fees", render: renderFinancePanel },
   { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
+  /* Broadcast slides get a panel rather than a bare manager because the
+     generator switches belong on the same screen. They are not inline
+     controls on the front page for a simple reason: the stage rotates, so
+     an Edit button there would move out from under the cursor. */
+  { id: "broadcast", tab: "Broadcast", render: renderBroadcastPanel },
 ];
 
 let activeSection = "members";
