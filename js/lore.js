@@ -122,7 +122,7 @@ export async function loadLore({ force = false } = {}) {
       db().from("history").select("id,year,category,winner,notes").order("year", { ascending: false }),
       db().from("arena_events").select("id,name,theme,status,event_date"),
       db().from("arena_results").select("event_id,member_id,place,finish_ms").order("place"),
-      db().from("golf_outings").select("id,name,course,event_date,status"),
+      db().from("golf_outings").select("id,name,course,event_date,event_time,status"),
       /* WHEN THE FANTASY DATA WAS LAST PULLED. One row, one column, and it
          is the difference between "live" and "we have not looked since
          Tuesday" - see fantasyState() below. A missing config row is not an

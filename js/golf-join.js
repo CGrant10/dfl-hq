@@ -39,7 +39,7 @@
    end up pulling a wizard in with it.
    ===================================================================== */
 
-import { esc, toast } from "./ui.js";
+import { esc, toast, fmtWhen } from "./ui.js";
 import { db } from "./supabase.js";
 import { verifyCode, saveGolfPass } from "./golf-guest.js";
 
@@ -47,7 +47,7 @@ import { verifyCode, saveGolfPass } from "./golf-guest.js";
 export async function joinableEvents() {
   const { data, error } = await db()
     .from("golf_outings")
-    .select("id,name,course,event_date,status")
+    .select("id,name,course,event_date,event_time,status")
     .neq("status", "final")
     .order("event_date", { ascending: false });
   if (error) throw error;
@@ -111,7 +111,7 @@ export function mountJoin(host, { outingId = null, onDone, onCancel } = {}) {
       <button type="button" class="memberbtn" data-gj-event="${esc(e.id)}">
         <span class="memberbtn-text">
           <strong>${esc(e.name)}</strong>
-          ${e.course || e.event_date ? `<span class="muted tiny">${esc([e.course, e.event_date].filter(Boolean).join(" · "))}</span>` : ""}
+          ${e.course || e.event_date ? `<span class="muted tiny">${esc([e.course, e.event_date ? fmtWhen(e.event_date, e.event_time) : null].filter(Boolean).join(" · "))}</span>` : ""}
         </span>
       </button>`).join("");
     host.querySelector("[data-gj-events]").addEventListener("click", (ev) => {

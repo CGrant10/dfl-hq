@@ -66,7 +66,7 @@ export async function render(view) {
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
     db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
     db().from("members").select("id, display_name, team_name, sleeper_user_id"),
-    db().from("golf_outings").select("id,name,course,event_date,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
+    db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
     /* Recently finalised outings, for What's New only - the stage reads the

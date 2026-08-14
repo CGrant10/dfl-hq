@@ -361,7 +361,10 @@ function golfItems(ctx) {
   if (!o) return [];
   const day = ctx.golfDay;
   const st = outingState(o, day?.rounds || []);
-  const when = o.event_date ? fmtDate(o.event_date) : "";
+  /* The tee time belongs on the stage as much as on the golf page -
+     "Hawktree · Sat, Aug 29 · 8:30 AM" is the whole answer to "when is
+     golf", which is what somebody opening the front page is asking. */
+  const when = o.event_date ? fmtWhen(o.event_date, o.event_time) : "";
   const sub = [o.course, when].filter(Boolean).join(" · ");
   const href = `#/golf?id=${o.id}`;
 

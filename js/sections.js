@@ -84,12 +84,17 @@ export const SECTIONS = [
     id: "golf_outings", tab: "Golf",
     table: "golf_outings", singular: "outing", plural: "outings",
     label: (r) => r.name,
-    sub:   (r) => `${r.course || "course TBD"} · ${r.status}`,
+    sub:   (r) => [r.course || "course TBD",
+                   r.event_time ? String(r.event_time).slice(0, 5) : null,
+                   r.status].filter(Boolean).join(" · "),
     fields: [
       { name: "name",   label: "Outing name", type: "text", required: true,
         placeholder: "DFL Draft Party Golf 2026" },
       { name: "course", label: "Course", type: "text", placeholder: "Hawktree" },
       { name: "event_date", label: "Date", type: "date" },
+      /* Optional: an outing still being planned should not be forced to
+         claim midnight. Blank means "no tee time yet". */
+      { name: "event_time", label: "Tee time (optional)", type: "time" },
       { name: "holes",  label: "Holes", type: "number", default: 18 },
       { name: "status", label: "Status", type: "select",
         options: [

@@ -1,6 +1,6 @@
 // DFL Golf - mobile-first event/team view with live leaderboard.
 import { db, insertRow, updateRow } from "../supabase.js";
-import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
+import { esc, empty, errorBox, toast, fmtDate, fmtWhen, loading } from "../ui.js";
 import { loadMembers, refreshMember } from "../members.js";
 import { passFor, clearGolfPass, eventHasCode } from "../golf-guest.js";
 import { mountJoin } from "../golf-join.js";
@@ -16,7 +16,7 @@ const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team S
 const TEAM_COLORS=["#2fbf5f","#4aa3ff","#f0a742","#e0574a","#b07cf0","#3ecfcf"];
 export async function render(view){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"),qs.get("match"));return renderList(view);}
 async function renderList(view){view.innerHTML=loading();const res=await db().from("golf_outings").select("*").order("event_date",{ascending:false});if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}const outings=visible("golf_outings",res.data||[]),live=outings.filter(o=>o.status!=="final"),past=outings.filter(o=>o.status==="final");view.innerHTML=`<div id="golf-wrap"><header class="page-head"><h1>DFL Golf</h1>${addControl("golf_outings","New event")}</header>${outings.length?"":empty(canEdit()?"No golf events yet. Create one above.":"No golf events yet.")}${live.length?`<h2 class="section-title">Upcoming<span class="count">${live.length}</span></h2>${live.map(outingCard).join("")}`:""}${past.length?`<h2 class="section-title">Golf history<span class="count">${past.length}</span></h2>${past.map(outingCard).join("")}`:""}<div class="golf-bag-page"></div></div>`;wireInline(view.querySelector("#golf-wrap"),()=>render(view));}
-function outingCard(o){const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live","green"]:["Setup","warn"];return `<article class="card golf-card ${hiddenClass("golf_outings",o)}"><a class="golf-link" href="#/golf?id=${o.id}"><div class="golf-top"><h3 class="card-heading">${esc(o.name)}</h3><span class="pill ${state[1]}">${state[0]}</span></div><div class="golf-meta">${o.course?`<span>${esc(o.course)}</span>`:""}${o.event_date?`<span>· ${esc(fmtDate(o.event_date))}</span>`:""}<span>· ${o.holes||18} holes</span></div></a>${editControls("golf_outings",o,{compact:true})}</article>`;}
+function outingCard(o){const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live","green"]:["Setup","warn"];return `<article class="card golf-card ${hiddenClass("golf_outings",o)}"><a class="golf-link" href="#/golf?id=${o.id}"><div class="golf-top"><h3 class="card-heading">${esc(o.name)}</h3><span class="pill ${state[1]}">${state[0]}</span></div><div class="golf-meta">${o.course?`<span>${esc(o.course)}</span>`:""}${o.event_date?`<span>· ${esc(fmtWhen(o.event_date,o.event_time))}</span>`:""}<span>· ${o.holes||18} holes</span></div></a>${editControls("golf_outings",o,{compact:true})}</article>`;}
 /*
   A 9-hole course is stored as 9 pars and played twice, so hole 12 takes hole
   3's par - the same wrap the scorecard has always applied.
@@ -111,7 +111,7 @@ async function renderOuting(view,id,teamId,matchId){view.innerHTML=loading();con
   to the list.
 */
 const deep=!!(selected||matchId),backHref=deep?`#/golf?id=${id}`:"#/golf",backText=deep?"← Back":"← Golf";
-const title=`<header class="page-head golf-event-head"><a class="backlink" href="${backHref}">${backText}</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtDate(outing.event_date))}</span>`:""}<span>· ${outing.holes||18} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}
+const title=`<header class="page-head golf-event-head"><a class="backlink" href="${backHref}">${backText}</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtWhen(outing.event_date,outing.event_time))}</span>`:""}<span>· ${outing.holes||18} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
