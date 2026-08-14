@@ -25,10 +25,14 @@ import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { esc, toast } from "../ui.js";
 
-// The two structural lists that are still easier to manage as a table.
+// The structural lists that are easier to manage as a table.
 const TABLES = [
   { id: "members",         tab: "Members",   table: "members" },
   { id: "rule_categories", tab: "Rule tabs", table: "rule_categories" },
+  /* Broadcast slides live here rather than getting inline Edit buttons on
+     the front page: the stage rotates, so an inline control would move out
+     from under the cursor. The manager is a still list. */
+  { id: "broadcast_items", tab: "Broadcast", table: "broadcast_items" },
 ];
 
 // Custom panels rather than single-table editors.

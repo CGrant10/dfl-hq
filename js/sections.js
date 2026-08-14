@@ -210,6 +210,67 @@ export const SECTIONS = [
       { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
     ],
   },
+  {
+    id: "broadcast_items", tab: "Broadcast",
+    table: "broadcast_items", singular: "broadcast slide", plural: "broadcast slides",
+    order: "weight", asc: false,
+    label: (r) => r.headline || r.kicker || "Untitled slide",
+    sub:   (r) => {
+      const bits = [r.treatment];
+      if (r.featured) bits.push("featured");
+      if (!r.active) bits.push("off");
+      if (r.starts_at || r.ends_at) bits.push("scheduled");
+      if (r.weight) bits.push(`weight ${r.weight}`);
+      return bits.join(" · ");
+    },
+    fields: [
+      /* The treatment list is the one broadcast-stage.js actually
+         implements, and the database CHECK enforces the same six. An
+         unknown one degrades to an announcement rather than blanking the
+         stage, but there is no reason to offer a seventh here. */
+      { name: "treatment", label: "How it looks", type: "select", default: "announcement",
+        options: [
+          { value: "announcement", label: "Announcement — headline and copy" },
+          { value: "hero",         label: "Hero — a statement" },
+          { value: "stat",         label: "Stat — one big figure" },
+          { value: "event",        label: "Event — a date and how far off it is" },
+          { value: "champion",     label: "Champion — one name, at size" },
+          { value: "scoreboard",   label: "Scoreboard — two sides (needs scores; usually automatic)" },
+        ] },
+      { name: "kicker",   label: "Kicker (small line above)", type: "text", placeholder: "From the commissioner" },
+      { name: "headline", label: "Headline", type: "text", required: true, placeholder: "Draft night is set" },
+      { name: "subtitle", label: "Subtitle", type: "text", placeholder: "Saturday, 7pm" },
+      { name: "body",     label: "Body copy", type: "textarea", placeholder: "Bring your own excuses." },
+      { name: "figure",   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
+      { name: "image",    label: "Image URL (optional)", type: "text" },
+      { name: "href",     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
+      /*
+        TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.
+
+        Every automatic slide says whether it is live, coming, recent or
+        history. A hand-written one that skipped that would be the one
+        place on this screen where a date could be implied and never
+        stated - so it is asked here too, and "makes no claim" is a real
+        answer rather than a blank.
+      */
+      { name: "temporal", label: "When is this?", type: "select", default: "none",
+        options: [
+          { value: "none",       label: "Makes no claim about time" },
+          { value: "upcoming",   label: "Upcoming" },
+          { value: "live",       label: "Live right now" },
+          { value: "recent",     label: "Recent" },
+          { value: "final",      label: "Final" },
+          { value: "historical", label: "From the archive" },
+        ] },
+      { name: "featured", label: "Feature it (pins it to the front of the deck)", type: "checkbox", default: false },
+      { name: "weight",   label: "Weight (higher shows sooner; 0 is normal)", type: "number", default: 0 },
+      /* datetime, not date: a slide that starts "on the 29th" would appear
+         at midnight, which is not what anyone means by draft night. */
+      { name: "starts_at", label: "Show from (optional)", type: "datetime" },
+      { name: "ends_at",   label: "Stop showing at (optional)", type: "datetime" },
+      { name: "active",    label: "Slide is on", type: "checkbox", default: true },
+    ],
+  },
 ];
 
 /** The spec for a table, or null if that table is not editable this way. */

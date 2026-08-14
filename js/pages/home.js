@@ -28,7 +28,7 @@ import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
 import { loadLore } from "../lore.js";
-import { broadcastContext, buildDeck, loadGolfDay } from "../broadcast-deck.js";
+import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 
 /*
@@ -91,13 +91,19 @@ export async function render(view) {
     make the front page slower than it is today, which is a bad trade for
     slides that are about things that happened years ago.
   */
-  const golfDay = golfRow ? await loadGolfDay(golfRow.id) : null;
+  /* Both in one round trip. The hand-written slides are part of phase 1
+     because a commissioner who posts one expects to see it on the first
+     paint, not after lore has finished loading. */
+  const [golfDay, manual] = await Promise.all([
+    golfRow ? loadGolfDay(golfRow.id) : null,
+    loadBroadcastItems(),
+  ]);
   const homeData = {
     events: events.data || [], announcements: announcements.data || [],
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }));
+  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual });
 
   view.innerHTML = `<div id="home-wrap">
     ${anniversary()}
@@ -127,8 +133,19 @@ export async function render(view) {
     thing on this screen that changes minute to minute.
   */
   let lore = null;
-  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }));
-  const refresh = async () => build(golfRow ? await loadGolfDay(golfRow.id) : null);
+  let custom = manual;
+  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom });
+  /* The live poll re-reads the hand-written slides too, so a slide that was
+     scheduled to start - or that an admin just published - arrives during a
+     golf day without anybody reloading the page. */
+  const refresh = async () => {
+    const [day, fresh] = await Promise.all([
+      golfRow ? loadGolfDay(golfRow.id) : null,
+      loadBroadcastItems(),
+    ]);
+    custom = fresh;
+    return build(day);
+  };
 
   const root = view.querySelector("[data-bx-stage]");
   if (root) stage = startStage(root, deck1, { refresh });

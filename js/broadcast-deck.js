@@ -53,6 +53,7 @@ import { dayMood } from "./marquee.js";
 export const P = {
   FEATURED: 1000,
   LIVE:      900,
+  MANUAL:    800,   // a human wrote it. Beats everything except a live game.
   RECENT:    700,
   MINE:      650,
   UPCOMING:  600,
@@ -135,6 +136,57 @@ export function broadcastContext({ home, lore = null, golfDay = null, member = n
  * only one - the duplication is deliberate and temporary so that step 2
  * changes nothing on screen.
  */
+/*
+  THE HAND-WRITTEN SLIDES.
+
+  Everything else in this file is derived from league data. These are the
+  ones a commissioner typed, and they are the only rows on the front page
+  that no generator can produce.
+
+  It returns [] rather than throwing when anything at all goes wrong -
+  including the table not existing yet, which is the state every install is
+  in until broadcast_items_schema.sql has been run. A front page that breaks
+  because an optional feature has no table is a worse front page than one
+  with no hand-written slides on it.
+
+  THE WINDOW IS APPLIED HERE, IN THE BROWSER, against the reader's own
+  clock, so a slide scheduled for 7pm appears at 7pm where the reader is.
+  The database is only asked for the active rows.
+*/
+export async function loadBroadcastItems(now = new Date()) {
+  try {
+    const { data, error } = await db()
+      .from("broadcast_items")
+      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at")
+      .eq("active", true)
+      .order("featured", { ascending: false })
+      .order("weight", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) return [];
+    const t = now.getTime();
+    return (data || [])
+      .filter((r) => !r.starts_at || new Date(r.starts_at).getTime() <= t)
+      .filter((r) => !r.ends_at   || new Date(r.ends_at).getTime()   >  t)
+      .map((r) => item({
+        source: "manual",
+        id: `manual:${r.id}`,
+        treatment: r.treatment || "announcement",
+        temporal: r.temporal || "none",
+        kicker: r.kicker || "", headline: r.headline || "",
+        subtitle: r.subtitle || "", body: r.body || "",
+        figure: r.figure || null, image: r.image || null, href: r.href || null,
+        /* weight is a nudge inside the band, not a replacement for it, so a
+           manual slide cannot accidentally outrank a live game unless an
+           admin deliberately weights it past 100. */
+        priority: (r.featured ? P.FEATURED : P.MANUAL) + (Number(r.weight) || 0),
+      }));
+  } catch (err) {
+    console.warn("broadcast: manual items unavailable", err);
+    return [];
+  }
+}
+
 export async function loadGolfDay(outingId) {
   const [roundsRes, matchesRes, teamsRes] = await Promise.all([
     db().from("golf_rounds").select("id,round_number,name,format,holes,scoring")

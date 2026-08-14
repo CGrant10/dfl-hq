@@ -67,6 +67,9 @@ export function field(f, prefix = "f_") {
     case "date":
       input = `<input id="${id}" name="${f.name}" type="date" ${req}>`;
       break;
+    case "datetime":
+      input = `<input id="${id}" name="${f.name}" type="datetime-local" ${req}>`;
+      break;
     case "checkbox":
       return `<label style="display:flex;align-items:center;gap:8px;margin-top:12px">
                 <input id="${id}" name="${f.name}" type="checkbox" style="width:auto">
@@ -90,7 +93,37 @@ export function setValue(form, f, value) {
   if (f.type === "checkbox")   el.checked = value === undefined ? true : !!value;
   else if (f.type === "list")  el.value = toArray(value).join("\n");
   else if (f.type === "date")  el.value = value ? String(value).slice(0, 10) : "";
+  else if (f.type === "datetime") el.value = toLocalInput(value);
   else                         el.value = value ?? "";
+}
+
+/*
+  TIMEZONES, AND WHY THIS IS NOT A slice(0, 16).
+
+  <input type="datetime-local"> has no timezone. Its value is whatever the
+  clock on the wall says. The columns behind it are timestamptz, which the
+  API hands back as UTC.
+
+  So slicing the ISO string into the box would show a Central user 01:00 for
+  something scheduled at 19:00 the evening before, and typing 19:00 would
+  store 19:00 UTC - a broadcast item that appears six hours early and
+  disappears six hours early. Both directions are converted explicitly.
+*/
+const pad = (n) => String(n).padStart(2, "0");
+
+/** UTC out of the database -> what this device's clock calls that moment. */
+export function toLocalInput(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** What the user typed on their clock -> the UTC instant it names. */
+export function fromLocalInput(value) {
+  if (!value) return null;
+  const d = new Date(value);            // no Z: parsed as local, which is right
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 export function readForm(form, fields) {
@@ -116,9 +149,26 @@ export function readForm(form, fields) {
         and the date on an expense.
       */
       out[f.name] = el.value || null;
+    } else if (f.type === "datetime") {
+      // Same empty-string-is-not-null rule as date, plus the UTC conversion.
+      out[f.name] = fromLocalInput(el.value);
     } else {
       out[f.name] = el.value.trim();
     }
+
+    /*
+      A CLEARED NUMBER IS THE DEFAULT, NOT NULL.
+
+      Both editors prefill f.default when adding, so this only bites when
+      somebody selects a number and deletes it - but the columns it lands in
+      (weight, sort_order, championships) are NOT NULL with a default, and
+      Postgres rejects an explicit null against those. The user sees a
+      constraint violation for having emptied a box.
+
+      Only applies where the spec actually declares a default: an optional
+      date with no default stays null, which is what null means there.
+    */
+    if (out[f.name] === null && f.default !== undefined) out[f.name] = f.default;
   }
   return out;
 }
