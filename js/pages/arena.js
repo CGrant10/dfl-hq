@@ -459,6 +459,30 @@ function broadcastCard(event, parts) {
     </section>`;
 }
 
+/*
+  FOLD THE CONTROLS WITHOUT REMEMBERING IT.
+
+  collapse.js persists every fold to localStorage, which is right when a
+  person presses the button and wrong here: an automatic hide is not a
+  preference, and clicking the button on their behalf meant the controls
+  stayed folded for good after the first race.
+
+  So this sets the same `is-folded` class the system uses and syncs the
+  injected button's label and aria-expanded by hand - the visible result is
+  identical, the button still works, and nothing is written to storage.
+  The Show/Hide button collapse.js already injected is the affordance for
+  bringing them back mid-race.
+*/
+function foldControls(card, folded) {
+  if (!card) return;
+  card.classList.toggle("is-folded", folded);
+  const btn = card.querySelector(":scope > .dfl-fold");
+  if (!btn) return;
+  btn.setAttribute("aria-expanded", String(!folded));
+  const hint = btn.querySelector("[data-fold-hint]");
+  if (hint) hint.textContent = folded ? "Show" : "Hide";
+}
+
 /** Seconds of countdown before the racers move. */
 const COUNTDOWN_MS = 3400;
 
@@ -647,6 +671,21 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   `;
 
   const runners = racers.map((_, i) => stage.querySelector(`#runner-${i}`));
+
+  /*
+    ARENA DEBUG, behind ?debug=arena. Off by default and shipped that way
+    on purpose: proving the pipeline fires is exactly the thing that was
+    hard to do from the outside, and deleting the tool after one use means
+    doing it again from scratch next time.
+  */
+  const debugOn = /[?&]debug=arena/.test(location.search) || /[?&]debug=arena/.test(location.hash);
+  let dbg = null;
+  if (debugOn) {
+    dbg = document.createElement("pre");
+    dbg.className = "arena-debug";
+    stage.appendChild(dbg);
+  }
+  const counts = { surge: 0, stumble: 0, jump: 0, swap: 0, near: 0 };
   const status  = stage.querySelector("#sb-status");
   const clock   = stage.querySelector("#sb-clock");
   const slot    = stage.querySelector("#arena-result-slot");
@@ -660,9 +699,10 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const finish = async () => {
     status.textContent = "Final";
     stage.querySelector("#track")?.classList.remove("is-running");
-    /* Hand the controls back exactly as they were found. */
+    /* Hand the controls back exactly as they were found, through the same
+       button - so the label and the caret agree with the state again. */
     const p = document.querySelector('[data-collapse="arena-broadcast"]');
-    if (p && controlsWereOpen) p.open = true;
+    if (controlsWereOpen) foldControls(p, false);
     /* The winner's celebration is added by the cascade the moment they
        actually cross, not here - by the time this runs the last racer is
        home and the moment has passed. */
@@ -694,9 +734,25 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     after the last racer is home, because that is when an admin wants
     Save result and Replay again.
   */
+  /*
+    THE CONTROLS FOLD THROUGH collapse.js, NOT THROUGH .open.
+
+    THE BUG: this card is a <section class="card" data-collapse="...">, and
+    the first version set panel.open = false on it. `open` is a property of
+    <details>. Setting it on a section silently does nothing at all - no
+    error, no effect - so the controls simply stayed on screen for the whole
+    race.
+
+    collapse.js has no exported API: it injects a .dfl-fold button into each
+    marked card and toggles an `is-folded` class from that button's own
+    handler. Clicking that button IS the public interface, and using it
+    keeps the caret, aria-expanded and the Show/Hide label in step - which
+    also gives the "small unobtrusive control to bring them back" for free,
+    because that button stays visible while the card is folded.
+  */
   const panel = document.querySelector('[data-collapse="arena-broadcast"]');
-  controlsWereOpen = !!panel?.open;
-  if (panel) panel.open = false;
+  controlsWereOpen = !!panel && !panel.classList.contains("is-folded");
+  if (controlsWereOpen) foldControls(panel, true);
 
   await countdown(stage);
 
@@ -743,6 +799,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       */
       while (nextEvent < events.length && elapsed >= events[nextEvent].ms) {
         const ev = events[nextEvent++];
+        counts[ev.kind] = (counts[ev.kind] || 0) + 1;
         const el = runners[ev.racer];
         if (el) {
           el.classList.remove("is-surge", "is-stumble");
@@ -763,7 +820,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       */
       while (nextVisual < visuals.length && elapsed >= visuals[nextVisual].ms) {
         const ev = visuals[nextVisual++];
-        const hot = ev.intensity >= 0.6 ? " is-hot" : "";
+        counts[ev.kind] = (counts[ev.kind] || 0) + 1;
+        const hot = ev.intensity >= 0.6;
         if (ev.kind === "jump") {
           const el = runners[ev.racer];
           if (el) { el.classList.add("is-jump"); expiry.push([el, "is-jump", elapsed + ev.durMs]); }
@@ -775,7 +833,21 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         } else if (ev.kind === "swap") {
           for (const i of [ev.racer, ev.other]) {
             const el = runners[i];
-            if (el) { el.classList.add("is-duel" + (hot ? " is-hot" : "")); expiry.push([el, "is-duel", elapsed + ev.durMs]); }
+            /*
+              TWO CALLS, NOT ONE STRING. classList.add("is-duel is-hot")
+              throws InvalidCharacterError - DOMTokenList rejects spaces -
+              and because this runs inside the rAF callback, that exception
+              killed the whole animation loop the first time two racers
+              traded places. Everything after it stopped: positions, the
+              board, the cascading finishes, the callouts. The race simply
+              froze, which is exactly what "the animations do not show"
+              looked like from the outside.
+            */
+            if (el) {
+              el.classList.add("is-duel");
+              if (hot) el.classList.add("is-hot");
+              expiry.push([el, "is-duel", elapsed + ev.durMs]);
+            }
           }
         } else if (ev.kind === "near") {
           for (const i of [ev.racer, ev.other]) {
@@ -882,6 +954,32 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
          line - a call that is two seconds old is still the more
          interesting thing to be saying. */
       if (elapsed > total * 0.82 && elapsed - calledAt > 2200) status.textContent = "Final stretch";
+
+      if (dbg) {
+        const live = {};
+        for (const el of runners) for (const c of el?.classList || [])
+          if (c.startsWith("is-")) live[c] = (live[c] || 0) + 1;
+        dbg.textContent =
+          `ARENA DEBUG
+` +
+          `state    ${homed.size === racers.length ? "FINISHED" : "RACING"}
+` +
+          `progress ${Math.round(Math.min(1, elapsed / lastFinish) * 100)}%
+` +
+          `heat     ${track?.dataset.heat ?? "0"}
+` +
+          `finished ${homed.size}/${racers.length}
+
+` +
+          `surges ${counts.surge}  stumbles ${counts.stumble}
+` +
+          `jumps ${counts.jump}  swaps ${counts.swap}  near ${counts.near}
+
+` +
+          `active   ${Object.entries(live).map(([k, v]) => `${k}x${v}`).join(" ") || "none"}
+` +
+          `controls ${document.querySelector('[data-collapse="arena-broadcast"]')?.classList.contains("is-folded") ? "HIDDEN" : "visible"}`;
+      }
 
       if (elapsed >= total) resolve();
       else requestAnimationFrame(frame);

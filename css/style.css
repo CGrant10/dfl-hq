@@ -2380,3 +2380,105 @@ input.masked {
   .runner.is-jump .runner-art, .runner.is-duel .runner-art,
   .runner.is-near .runner-art::before, .ar-row.ar-jump { animation: none !important; }
 }
+
+/* =====================================================================
+   THE RACERS, LOUDER.
+
+   The animations were all present and firing - proven by instrumenting a
+   live race - but the amplitudes were chosen by eye in a code editor
+   rather than against a 30px sprite on a phone. A 2px bob on a 30px
+   character is about half a pixel of apparent motion at arm's length,
+   which is why nothing looked alive. Every figure below is roughly
+   doubled, and the pixel-art scale is preserved by keeping the movement
+   in whole-ish pixels and short, snappy timings rather than by easing
+   smoothly like a vector character.
+   ===================================================================== */
+
+@keyframes dfl-idle {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-3px) }
+}
+@keyframes dfl-run {
+  0%, 100% { transform: translateY(0) rotate(0deg) }
+  25%      { transform: translateY(-5px) rotate(-4deg) }
+  50%      { transform: translateY(0) rotate(0deg) }
+  75%      { transform: translateY(-3px) rotate(4deg) }
+}
+@keyframes dfl-surge {
+  0%, 100% { transform: translateY(-2px) scale(1.14) rotate(-5deg) }
+  50%      { transform: translateY(-7px) scale(1.18) rotate(5deg) }
+}
+@keyframes dfl-stumble {
+  0%, 100% { transform: translateX(0) rotate(0deg) }
+  25%      { transform: translateX(-5px) rotate(-16deg) }
+  60%      { transform: translateX(3px) rotate(11deg) }
+  80%      { transform: translateX(-2px) rotate(-5deg) }
+}
+@keyframes ar-jump {
+  0%, 100% { transform: translateY(-2px) scale(1.12) }
+  50%      { transform: translateY(-9px) scale(1.22) rotate(-7deg) }
+}
+@keyframes dfl-win {
+  0%, 100% { transform: translateY(0) scale(1) }
+  40%      { transform: translateY(-14px) scale(1.2) }
+  60%      { transform: translateY(-4px) scale(1.06) }
+}
+
+/* The streaks were 16px hairlines at 85% opacity behind a 46px sprite.
+   Longer, thicker and brighter, and they now sit on the duel and jump
+   states too - those are exactly the moments somebody is moving. */
+.runner.is-surge .runner-art::before,
+.runner.is-surge .runner-art::after,
+.runner.is-jump .runner-art::before,
+.runner.is-jump .runner-art::after,
+.runner.is-duel .runner-art::before,
+.runner.is-duel .runner-art::after {
+  content: "";
+  position: absolute;
+  right: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(270deg, var(--racer, var(--accent-fill)), transparent);
+  pointer-events: none;
+}
+.runner.is-surge .runner-art::before,
+.runner.is-jump .runner-art::before,
+.runner.is-duel .runner-art::before { top: 30%; width: 30px; margin-right: 3px; animation: ar-streak .26s linear infinite; }
+.runner.is-surge .runner-art::after,
+.runner.is-jump .runner-art::after,
+.runner.is-duel .runner-art::after  { top: 62%; width: 20px; margin-right: 6px; animation: ar-streak .32s linear infinite .06s; }
+
+/* The near-miss spark was a single 3px dot at the edge of a 46px sprite.
+   Three times the size, brighter, and it travels further. */
+.runner.is-near .runner-art::before {
+  content: "";
+  position: absolute; right: -6px; top: 25%;
+  width: 6px; height: 6px; border-radius: 1px;
+  background: var(--chalk);
+  box-shadow: 0 0 6px var(--chalk);
+  animation: ar-spark .34s linear 3;
+}
+@keyframes ar-spark {
+  0%   { opacity: 0; transform: translate(0,0) scale(.6) }
+  35%  { opacity: 1; transform: translate(4px,-4px) scale(1) }
+  100% { opacity: 0; transform: translate(11px,-9px) scale(.5) }
+}
+
+/* The leader now reads at a glance rather than needing to be looked for. */
+.runner.is-leading .runner-art {
+  filter: drop-shadow(0 0 10px var(--racer, var(--accent-fill)))
+          drop-shadow(0 2px 3px rgba(0,0,0,.5));
+}
+
+/* The debug overlay: off unless ?debug=arena. */
+.arena-debug {
+  position: absolute; top: 8px; left: 8px; z-index: 6;
+  margin: 0; padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: rgba(6,9,13,.86);
+  color: var(--chalk);
+  font: 600 10px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  white-space: pre;
+  pointer-events: none;
+}
