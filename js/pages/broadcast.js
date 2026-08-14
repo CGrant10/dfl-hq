@@ -20,6 +20,7 @@
 
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
+import { petOf } from "./profile-dfl.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { simulate, dramatize, visualEvents, intensityAt, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
@@ -62,14 +63,23 @@ export async function render(view) {
   const byId  = new Map(members.map((m) => [String(m.id), m]));
   const parts = partsRes.data || [];
 
-  const racers = parts.map((p, i) => ({
-    id: p.member_id,
-    name: byId.get(String(p.member_id))?.display_name || "Unknown",
-    sprite: p.sprite,
-    image: p.sprite_image,
-    color: p.color || LANE_COLORS[i % LANE_COLORS.length],
-    number: p.number ?? i + 1,
-  }));
+  const racers = parts.map((p, i) => {
+    /*
+      THE DFL PET IS THE RACER, when the member has made one. Presentation
+      only: the sprite key and the lane colour are all that change, and
+      simulate() never sees either - so the winner, the finish times and
+      the order are byte for byte what they were.
+    */
+    const pet = petOf(byId.get(String(p.member_id)));
+    return {
+      id: p.member_id,
+      name: byId.get(String(p.member_id))?.display_name || "Unknown",
+      sprite: pet?.species || p.sprite,
+      image: pet ? null : p.sprite_image,
+      color: pet?.color || p.color || LANE_COLORS[i % LANE_COLORS.length],
+      number: p.number ?? i + 1,
+    };
+  });
 
   document.body.classList.add("broadcasting");
   paint(view, eventRes.data, racers);

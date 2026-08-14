@@ -601,14 +601,26 @@ function wireBroadcast(view, event, parts, byId, refresh) {
  */
 export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const ticks = ticksFor(event.race_length, event.length_ticks);
-  const racers = parts.map((p, i) => ({
-    id: p.member_id,
-    name: byId.get(String(p.member_id))?.display_name || "Unknown",
-    sprite: p.sprite,
-    image: p.sprite_image,
-    color: p.color || laneColor(i),
-    number: p.number ?? i + 1,
-  }));
+  const racers = parts.map((p, i) => {
+    /*
+      THE DFL PET IS THE RACER, when the member has made one.
+
+      Presentation only: the sprite key and the lane colour are the only
+      things that change. simulate() never sees any of this - it is handed
+      an array of ids and lengths, so the winner, the finish times and the
+      order are byte for byte what they were. A member with no pet falls
+      back to whatever the participant row already said.
+    */
+    const pet = petOf(byId.get(String(p.member_id)));
+    return {
+      id: p.member_id,
+      name: byId.get(String(p.member_id))?.display_name || "Unknown",
+      sprite: pet?.species || p.sprite,
+      image: pet ? null : p.sprite_image,
+      color: pet?.color || p.color || laneColor(i),
+      number: p.number ?? i + 1,
+    };
+  });
 
   const sim = simulate(racers, ticks, seed);
   /*

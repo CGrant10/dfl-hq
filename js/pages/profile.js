@@ -16,6 +16,7 @@ import { editControls, wireInline } from "../inline.js";
 import { saveMode, savedMode, activeMode, modeOptions } from "../theme.js";
 import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
+import { wireDflPage } from "./profile-dfl.js";
 /* The same derivation the history page reads, so a career and the record
    book can never disagree about the same game. */
 import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
@@ -94,11 +95,13 @@ export async function render(view) {
       ${loreName ? rivalryCard(foes, loreName, members) : ""}
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
+      <div data-dfl-host></div>
       ${isMe ? golfNameCard(member) + appearanceCard() : ""}
       ${othersCard(members, member)}
     </div>
   `;
 
+  wireDflPage(view, member, isMe, () => render(view));
   if (isMe) { wireThemePicker(view); wireGolfName(view, member); }
 
   // An edit changes the member row the picker and the header chip read from,
