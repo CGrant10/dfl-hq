@@ -29,11 +29,34 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay } from "../broadcast-deck.js";
-import { renderStage } from "../broadcast-stage.js";
+import { renderStage, startStage } from "../broadcast-stage.js";
+
+/*
+  THE RUNNING STAGE.
+
+  Module-level because there must only ever be one. render() is called again
+  by the inline editors and the crest picker, and the router calls leave() on
+  the way out - both have to be able to stop the timer that the previous
+  render started, or the front page ends up with two clocks advancing the
+  same element and a setTimeout still firing on the calendar screen.
+*/
+let stage = null;
+/* Bumped by every render. loadLore() can take a second, so a phase 2 that
+   resolves after the page was re-rendered (inline edit, crest change) would
+   otherwise hand a stale deck to the new stage. */
+let generation = 0;
+
+/** Called by the router when this page is left. */
+export function leave() {
+  try { stage?.stop(); } catch (err) { console.warn(err); }
+  stage = null;
+}
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
 
 export async function render(view) {
+  leave();                                   // a re-render replaces the stage
+  const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
   const [events, announcements, polls, leagues, members, golf, dues, standings] = await Promise.all([
@@ -94,13 +117,31 @@ export async function render(view) {
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireCrest(view);
 
-  /* Phase 2. Nothing above waited for this. */
-  loadLore().then((lore) => {
-    if (lore?.error) return;
-    const stage = view.querySelector("[data-bx-stage]");
-    if (!stage) return;                       // navigated away mid-flight
-    const deck2 = buildDeck(broadcastContext({ home: homeData, lore, golfDay, member: me }));
-    stage.outerHTML = renderStage(deck2);
+  /*
+    START THE CLOCK.
+
+    Everything the stage needs to rebuild itself is closed over here, so the
+    refresh callback is the ONLY thing that knows how to get fresh golf
+    scores - the engine just calls it and takes a deck back. It re-reads the
+    outing rather than the whole page, because a live scorecard is the only
+    thing on this screen that changes minute to minute.
+  */
+  let lore = null;
+  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }));
+  const refresh = async () => build(golfRow ? await loadGolfDay(golfRow.id) : null);
+
+  const root = view.querySelector("[data-bx-stage]");
+  if (root) stage = startStage(root, deck1, { refresh });
+
+  /* Phase 2. Nothing above waited for this. It hands the richer deck to the
+     running engine instead of replacing the element, so a slide you are
+     reading is not ripped out from under you when lore lands. */
+  loadLore().then((got) => {
+    if (got?.error || !got) return;
+    lore = got;
+    if (mine !== generation) return;          // a newer render owns the stage now
+    if (!view.querySelector("[data-bx-stage]")) return;   // navigated away mid-flight
+    stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();

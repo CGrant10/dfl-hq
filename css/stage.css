@@ -195,6 +195,77 @@
 }
 .bx-slide .mq-card::before { display: none; }
 
+/* =====================================================================
+   ROTATION AND CONTROLS
+
+   The crossfade is a TRANSITION, not an animation, and the movement itself
+   is timed in JS. Under prefers-reduced-motion --t-mid is 0ms, so this
+   becomes an instant cut and the engine additionally starts paused - the
+   slide still changes if you ask it to, it just never moves on its own.
+   ===================================================================== */
+
+.bx-slide {
+  opacity: 1;
+  transition: opacity var(--t-mid) var(--ease);
+}
+.bx-slide.bx-enter { opacity: 0; }
+
+.bx-controls {
+  position: absolute;
+  z-index: 3;
+  right: var(--s-4);
+  bottom: var(--s-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* 44px of hit area for a 22px glyph, per the touch-target rule the rest of
+   the app follows. */
+.bx-pause {
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  padding: 0;
+  border: 1px solid var(--control-line);
+  border-radius: 50%;
+  background: var(--control-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.bx-pause .ico-sm { width: 18px; height: 18px; }
+/* One button, two glyphs, and the state decides which is real. */
+.bx-pause .bx-i-play { display: none; }
+.bx-pause.is-paused .bx-i-pause { display: none; }
+.bx-pause.is-paused .bx-i-play { display: block; }
+
+/* Eight dots plus a 44px button has to fit inside 375px, so the gap is tight
+   and the targets do the work. 24px is the floor, not a preference: WCAG
+   2.5.8 (AA) fails below it, and the first cut of this was 22. */
+.bx-dots { display: flex; align-items: center; gap: var(--s-1); }
+.bx-dot {
+  width: 24px; height: 24px;      /* hit area - see above, do not shrink */
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+/* The visible dot is smaller than the target it sits inside. */
+.bx-dot::after {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--control-line);
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.bx-dot.on::after { background: var(--accent-fill); transform: scale(1.35); }
+
+@media (min-width: 640px) {
+  .bx-controls { right: var(--s-6); bottom: var(--s-5); }
+}
+
 /* ----------------------------------------------------------- wider screens */
 
 @media (min-width: 640px) {
