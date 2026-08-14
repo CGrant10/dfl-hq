@@ -20,7 +20,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-import { simulate, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, callouts, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
 
 const reduceMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -588,6 +588,16 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   }));
 
   const sim = simulate(racers, ticks, seed);
+  /*
+    THE RESULT COMES FROM sim.order; THE PICTURE COMES FROM shown.
+
+    dramatize() adds overtakes, surges and stalls to the DRAWING only, and
+    its wobble is zero by the finish line - so the race is livelier and the
+    winner is still exactly who simulate() decided, which is what is
+    already saved in arena_results for completed events.
+  */
+  const shown = dramatize(sim, seed);
+  const calls = callouts(sim, shown, racers);
 
   stage.innerHTML = `
     <div class="arena-track-wrap">
@@ -633,7 +643,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   // Reduced motion: no countdown, no movement - place everyone and reveal.
   if (reduceMotion()) {
-    runners.forEach((el, i) => { el.style.transform = `translate3d(${trackX(1)},0,0)`; });
+    runners.forEach((el) => { el.style.transform = `translate3d(${trackX(1)},0,0)`; });
     clock.textContent = (sim.order.at(-1).finishMs / 1000).toFixed(1) + "s";
     await finish();
     return;
@@ -647,6 +657,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
     const total = lastFinish + 250;
+    let nextCall = 0, calledAt = -9999;
 
     function frame(now) {
       const elapsed = now - started;
@@ -654,15 +665,27 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
       for (let i = 0; i < runners.length; i++) {
-        const s = sim.samples[i];
+        const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
         runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+      }
+
+      /* Callouts replace the status word as they come due, and the last
+         one stays up rather than flicking back - the scoreboard has one
+         line and a race has a handful of moments. */
+      while (nextCall < calls.length && elapsed >= calls[nextCall].ms) {
+        status.textContent = calls[nextCall].text;
+        calledAt = elapsed;
+        nextCall++;
       }
 
       // Stops on the last finish rather than running on to the extra beat
       // the animation holds for before the result appears.
       clock.textContent = (Math.min(elapsed, lastFinish) / 1000).toFixed(1) + "s";
-      if (elapsed > total * 0.82) status.textContent = "Final stretch";
+      /* "Final stretch" only if a callout is not currently holding the
+         line - a call that is two seconds old is still the more
+         interesting thing to be saying. */
+      if (elapsed > total * 0.82 && elapsed - calledAt > 2200) status.textContent = "Final stretch";
 
       if (elapsed >= total) resolve();
       else requestAnimationFrame(frame);

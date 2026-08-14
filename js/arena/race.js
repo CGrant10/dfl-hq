@@ -190,3 +190,152 @@ export function simulate(racers, ticks, seed) {
   // the race can legitimately have run past that.
   return { samples, order, ticks, frames: maxTicks, finishTick: Math.max(...finishTick) };
 }
+
+/* =====================================================================
+   THE THEATRE LAYER
+   ---------------------------------------------------------------------
+   simulate() decides the race. This does not, and must not.
+
+   WHY IT IS A SEPARATE PASS. The Arena is a decider - a race settles the
+   draft order, and saveResults() stores the finishing order together with
+   its seed so a completed event can be replayed and watched again. That
+   makes the physics in simulate() effectively historical data: change a
+   constant up there and every event ever run replays with a different
+   winner than the one recorded in arena_results. So the drama is added
+   AFTERWARDS, to the drawing only.
+
+   WHAT IT GUARANTEES, and these are the whole contract:
+
+     1. sim.order is untouched. Who wins, and by how much, is exactly what
+        simulate() decided.
+     2. The wobble is scaled by (1 - progress), so it is at its largest at
+        the start and mathematically zero at the line. The last stretch is
+        the true race, which is why the finish still matches the result.
+     3. A racer never moves backwards. Being passed is somebody else
+        moving faster, never you sliding back - that reads as a glitch.
+        The shown position is monotonic, so a wobble that wants to pull a
+        racer back becomes a STALL instead, which is what a real one looks
+        like anyway.
+     4. Nobody visually crosses the line before they actually finish.
+
+   Seeded from the race's own seed, so a replay is the same performance as
+   well as the same result.
+   ===================================================================== */
+
+/** How far ahead of or behind the truth a racer may be drawn, at the start. */
+const THEATRE = 0.085;
+
+/**
+ * Visual positions for playback.
+ *
+ * @param {object} sim  the return value of simulate()
+ * @param {number} seed the same seed the race was run with
+ * @returns {Float32Array[]} shown[i][t], safe to draw instead of samples
+ */
+export function dramatize(sim, seed) {
+  const n = sim.samples.length;
+  if (!n) return sim.samples;
+  const rand = rng(((seed >>> 0) ^ 0x9e3779b9) >>> 0);
+  const frames = sim.frames;
+
+  /* Each racer gets a character: two slow waves at different rates, so the
+     combined motion never looks like a metronome, plus a personal share of
+     the amplitude. Drawn once, from the seed. */
+  const wave = [];
+  for (let i = 0; i < n; i++) {
+    wave.push({
+      a1: 0.55 + rand() * 0.75, f1: 0.9 + rand() * 1.8, p1: rand() * Math.PI * 2,
+      a2: 0.30 + rand() * 0.55, f2: 2.3 + rand() * 3.4, p2: rand() * Math.PI * 2,
+      amp: 0.65 + rand() * 0.7,
+      /* One scripted late push each, somewhere in the middle third - the
+         "here he comes" beat. It is theatre: it cannot change the result,
+         because the wobble is zero by the time it matters. */
+      pushAt: 0.34 + rand() * 0.3,
+      pushAmp: rand() < 0.6 ? 0.5 + rand() * 0.9 : 0,
+    });
+  }
+
+  const shown = Array.from({ length: n }, () => new Float32Array(frames + 1));
+
+  for (let i = 0; i < n; i++) {
+    const w = wave[i];
+    const src = sim.samples[i];
+    let prev = 0;
+    for (let t = 0; t <= frames; t++) {
+      const truth = src[t];
+
+      /* Zero at the line. (1-p)^1.35 keeps the wobble alive through the
+         middle of the race and then folds it away quickly over the last
+         quarter, so the run-in is real racing rather than a sudden snap. */
+      const fade = truth >= 1 ? 0 : Math.pow(1 - truth, 1.35);
+
+      const phase = truth * Math.PI * 2;
+      let wob = Math.sin(phase * w.f1 + w.p1) * w.a1
+              + Math.sin(phase * w.f2 + w.p2) * w.a2;
+
+      // The late push: a bump centred on this racer's own moment.
+      if (w.pushAmp) {
+        const d = (truth - w.pushAt) / 0.16;
+        wob += w.pushAmp * Math.exp(-d * d);
+      }
+
+      let p = truth + wob * w.amp * THEATRE * fade;
+
+      // Never backwards, never early over the line.
+      if (p < prev) p = prev;
+      if (truth < 1 && p > 0.985) p = 0.985;
+      if (p < 0) p = 0;
+      if (truth >= 1) p = 1;
+
+      shown[i][t] = p;
+      prev = p;
+    }
+  }
+  return shown;
+}
+
+/**
+ * Moments worth calling out, read off the DRAWN race.
+ *
+ * Only three kinds, and every one is a fact about this race rather than a
+ * generated phrase: a change of leader, and how close the finish was.
+ * There is no points data in an Arena event - it is a race, not a
+ * scoreboard - so there is nothing here about swings or margins in points,
+ * because inventing those would be inventing statistics.
+ *
+ * @returns {Array<{ms:number,text:string}>} sorted, sparse
+ */
+export function callouts(sim, shown, racers) {
+  const n = shown.length;
+  if (n < 2) return [];
+  const out = [];
+  const nameOf = (i) => racers[i]?.name || `Racer ${i + 1}`;
+
+  let leader = -1;
+  let lastCallMs = -4000;
+  for (let t = 0; t <= sim.frames; t++) {
+    let top = 0;
+    for (let i = 1; i < n; i++) if (shown[i][t] > shown[top][t]) top = i;
+    if (top !== leader) {
+      const ms = t * TICK_MS;
+      /* The opening leader is not a lead CHANGE, and two calls on top of
+         each other is noise rather than commentary - four seconds apart at
+         the least, and never in the last beat where the finish speaks for
+         itself. */
+      if (leader >= 0 && ms - lastCallMs > 4000 && shown[top][t] < 0.94) {
+        out.push({ ms, text: `${nameOf(top)} takes the lead` });
+        lastCallMs = ms;
+      }
+      leader = top;
+    }
+  }
+
+  /* The finish, from the REAL result rather than from the drawing. */
+  const first = sim.order[0], second = sim.order[1];
+  if (first && second) {
+    const gap = (second.finishMs - first.finishMs) / 1000;
+    if (gap <= 0.25) out.push({ ms: first.finishMs, text: `Photo finish — ${gap.toFixed(2)}s` });
+    else if (gap <= 1) out.push({ ms: first.finishMs, text: `${gap.toFixed(2)}s in it` });
+  }
+  return out.sort((a, b) => a.ms - b.ms);
+}

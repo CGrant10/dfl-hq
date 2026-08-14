@@ -94,6 +94,35 @@ export function namer(data) {
   };
 }
 
+/*
+  "THE FIGHTING MONGOOSES — SLAW"
+
+  namer() has always returned both halves: `label` is the team name in use
+  that season, `sub` is the person. Callers were taking .label and throwing
+  the person away, which is fine on the History page where the owner is in
+  the next column and useless everywhere else - a fun fact about "Irked by
+  Kirk" tells a member who joined in 2024 nothing at all.
+
+  THE HISTORICAL NAME IS NEVER REPLACED. It is the true name of that team
+  in that year and renaming it to somebody's current team would be a lie
+  about the record. The owner is appended, not substituted.
+
+  Three cases where appending would be noise, and all three return the
+  label alone:
+    the team name IS the person ("Slaw" — "Slaw")
+    the owner is unknown, so there is nothing to add
+    the Sleeper account was deleted, which moments() already explains in
+      its own words rather than in a dash-suffix
+*/
+export function withOwner(named) {
+  if (!named) return "";
+  const label = named.label || "";
+  const sub = named.sub || "";
+  if (!sub || sub === "account deleted") return label;
+  if (sub.toLowerCase() === label.toLowerCase()) return label;
+  return `${label} — ${sub}`;
+}
+
 // ------------------------------------------------------------- the data
 
 /*
@@ -503,7 +532,9 @@ function moment(kind, season, headline, detail, extra = {}) {
  */
 export function moments(lore, { season = null } = {}) {
   const name = namer(lore);
-  const who = (u, s, r) => name(u, s, r).label;
+  /* Historical team name plus the person behind it - these lines are read
+     by people who were not in the league in 2019. */
+  const who = (u, s, r) => withOwner(name(u, s, r));
   const out = [];
 
   const games = lore.matchups.filter(played);

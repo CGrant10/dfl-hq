@@ -27,6 +27,7 @@
 
 import {
   namer, toSides, played, margin, best, winnerSide, loserSide, streaks, titleGame, spanLabel,
+  withOwner,
 } from "./lore.js";
 
 const DAY = 86400000;
@@ -55,7 +56,14 @@ export function funFacts(lore) {
   if (cached && cachedFor === lore) return cached;
 
   const name = namer(lore);
-  const who = (u, s, r) => name(u, s, r).label;
+  /*
+    "The Fighting Mongooses — Slaw", not "The Fighting Mongooses".
+
+    These facts are mostly about seasons a newer member never saw, and the
+    team name alone identifies nobody. The historical name is kept exactly
+    as it was; the owner is appended. See withOwner() in lore.js.
+  */
+  const who = (u, s, r) => withOwner(name(u, s, r));
   const games = lore.matchups.filter(played);
   const out = [];
   const add = (id, kind, headline, detail, season, figure) => {
