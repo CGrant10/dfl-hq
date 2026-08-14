@@ -176,9 +176,29 @@ const WATCH = window.matchMedia("(prefers-color-scheme: dark)");
 const media = () => WATCH;
 
 /** "system" or one of PICKABLE - what the member asked for. */
+/*
+  MEDICINE WHEEL IS THE DEFAULT, AND "DEFAULT" IS NOT "FORCED".
+
+  Three states, and telling the last two apart is the whole job:
+
+    a picked theme     dark / light / medicine  -> honoured, always
+    "Match my phone"   an explicit choice       -> follow the OS
+    nothing at all     never touched the picker -> Medicine Wheel
+
+  The second and third used to be the SAME state, because choosing "Match
+  my phone" deleted the key. That made an explicit preference
+  indistinguishable from never having expressed one - so making Medicine
+  Wheel the default would have quietly overridden the people who had
+  deliberately asked to follow their phone. "system" is now stored as
+  itself, and only a genuinely empty slot falls through to the default.
+*/
+const DEFAULT_MODE = "medicine";
+
 export function savedMode() {
   const v = localStorage.getItem(MODE_KEY);
-  return PICKABLE.includes(v) ? v : "system";
+  if (PICKABLE.includes(v)) return v;
+  if (v === "system") return "system";
+  return DEFAULT_MODE;                 // no preference recorded at all
 }
 
 /** The mode that is actually painting right now - never "system". */
@@ -298,8 +318,11 @@ export function initTheme() {
 
 /** Set and remember the member's choice. */
 export function saveMode(value) {
-  if (PICKABLE.includes(value)) localStorage.setItem(MODE_KEY, value);
-  else localStorage.removeItem(MODE_KEY);          // anything else means system
+  /* "system" is WRITTEN rather than cleared - see savedMode(). Removing the
+     key would make an explicit "follow my phone" look like no preference,
+     and the next person to change the default would silently overrule it. */
+  if (PICKABLE.includes(value) || value === "system") localStorage.setItem(MODE_KEY, value);
+  else localStorage.removeItem(MODE_KEY);
   apply();
 }
 
