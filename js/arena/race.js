@@ -606,3 +606,65 @@ export function intensityAt(shown, t) {
   const x = Math.min(1, (lead - 0.7) / 0.3);
   return x * x;                     // slow start, strong finish
 }
+
+
+/* =====================================================================
+   THE LEADERBOARD, WORKED OUT IN ONE PLACE.
+   ---------------------------------------------------------------------
+   Both views used to sort their own board inline, with the same rules
+   written twice - which is exactly how two screens end up disagreeing
+   about who is third. There is one implementation now and both call it.
+
+   THE RULE, and the second half is the part that matters:
+
+     still running   ranked by the DRAWN position, so the board agrees
+                     with what is on screen
+     finished        pinned by OFFICIAL finishMs, because once a pack is
+                     all sitting at 1.0 the drawn positions are level and
+                     would sort arbitrarily - the board could contradict
+                     the result in its final seconds
+
+   Nothing here computes a time. finishMs comes from simulate(); this only
+   decides the order to show them in and does the subtraction for the gap.
+   ===================================================================== */
+export function boardState(sim, shown, elapsedMs) {
+  const src = shown || sim.samples;
+  const n = src.length;
+  const tick = Math.max(0, Math.min(sim.frames, Math.round(elapsedMs / TICK_MS)));
+  const finish = new Array(n);
+  for (const o of sim.order) finish[o.index] = o.finishMs;
+  const winnerMs = sim.order[0]?.finishMs ?? 0;
+
+  const rows = Array.from({ length: n }, (_, i) => ({
+    index: i,
+    finishMs: finish[i],
+    done: elapsedMs >= finish[i],
+    progress: src[i][tick],
+  }));
+
+  rows.sort((a, b) => {
+    if (a.done && b.done) return a.finishMs - b.finishMs;
+    if (a.done) return -1;
+    if (b.done) return 1;
+    return (b.progress - a.progress) || (a.index - b.index);
+  });
+
+  return rows.map((r, place) => {
+    /*
+      gap is a LOCAL, not a sibling property. Reading r.gapMs inside the
+      same object literal that defines gapMs reads the ORIGINAL row, which
+      has no such field - so every label came out "+NaN" while the numbers
+      beside it were perfectly correct.
+    */
+    const gap = r.finishMs - winnerMs;
+    return {
+      ...r,
+      place,
+      gapMs: gap,
+      /* The winner shows a time, everybody else the gap to them. */
+      label: !r.done ? ""
+        : gap === 0 ? `${(r.finishMs / 1000).toFixed(2)}s`
+        : `+${(gap / 1000).toFixed(2)}`,
+    };
+  });
+}

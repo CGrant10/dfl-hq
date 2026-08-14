@@ -23,7 +23,7 @@ import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
-import { simulate, dramatize, visualEvents, intensityAt, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -563,19 +563,12 @@ const trackX = (p) =>
  * order as the tie-break (which is what stops a standing start flickering).
  */
 function drawBoard(list, racers, sim, t, elapsed, finishAt, shown, winnerMs = 0) {
-  const idx = Math.max(0, Math.min(sim.frames, Math.round(t)));
-  const done = (i) => (finishAt?.[i] ?? Infinity) <= elapsed;
-  const src = shown || sim.samples;
-
-  const rows = racers
-    .map((r, i) => ({ r, i, p: src[i][idx], f: finishAt?.[i] ?? Infinity }))
-    .sort((a, b) => {
-      const ad = done(a.i), bd = done(b.i);
-      if (ad && bd) return a.f - b.f;          // both home: by finish time
-      if (ad) return -1;                        // home beats still running
-      if (bd) return 1;
-      return (b.p - a.p) || (a.i - b.i);        // both running: by distance
-    });
+  /* ONE authority - the same boardState() the Arena page calls, with the
+     same arguments. The two boards cannot disagree about order, gaps or
+     who is home, because there is only one implementation of the rule. */
+  const state = boardState(sim, shown, elapsed);
+  const done = (i) => state.find((x) => x.index === i)?.done;
+  const rows = state.map((x) => ({ r: racers[x.index], i: x.index, label: x.label }));
 
   const items = list.children;
   for (let i = 0; i < items.length; i++) {
@@ -601,12 +594,7 @@ function drawBoard(list, racers, sim, t, elapsed, finishAt, shown, winnerMs = 0)
       the authoritative finishMs, never measured from the animation.
     */
     const time = li.querySelector(".bc-time");
-    if (time) {
-      const want = !done(row.i) ? ""
-        : row.f === winnerMs ? `${(row.f / 1000).toFixed(2)}s`
-        : `+${((row.f - winnerMs) / 1000).toFixed(2)}`;
-      if (time.textContent !== want) time.textContent = want;
-    }
+    if (time && time.textContent !== row.label) time.textContent = row.label;
     li.classList.toggle("is-home", done(row.i));
   }
 }

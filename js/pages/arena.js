@@ -20,7 +20,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-import { simulate, dramatize, callouts, visualEvents, intensityAt, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
 
 const reduceMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -166,6 +166,18 @@ async function renderEvent(view, id) {
     // A replay reuses the stored seed so it is the same race; a fresh run
     // draws a new one.
     const seed = replay && event.seed ? Number(event.seed) : newSeed();
+    /* Tell the broadcast which race this is, so a stream that is already
+       open follows the same recording instead of inventing its own. It is
+       admin-only at the database, so a member's press simply races here. */
+    try {
+      await updateRow("arena_events", event.id, {
+        seed,
+        bc_state: "running",
+        bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
+        bc_offset_ms: 0,
+      });
+      event.seed = seed;
+    } catch { /* not an admin: local race only */ }
     await runRace(view, stage, event, parts, byId, seed, { save: !replay });
   });
 
@@ -530,15 +542,39 @@ function wireBroadcast(view, event, parts, byId, refresh) {
     }
 
     if (t.closest("#bc-start")) {
-      // A fresh seed only when there is not one yet, so Restart replays the
-      // same race rather than quietly rolling a different winner.
-      const seed = event.seed || newSeed();
-      return write({
-        seed,
-        bc_state: "running",
-        bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
-        bc_offset_ms: 0,
-      }, "Countdown running");
+      /*
+        THIS BUTTON USED TO ONLY TELL THE OTHER SCREEN TO RACE.
+
+        It wrote bc_state to the database, which the /broadcast page picks
+        up - and then refresh() re-rendered this page. So on the Arena the
+        operator pressed "Start race", saw a toast, and watched nothing
+        happen. The race was real, it was just somewhere else.
+
+        Now one press starts BOTH: the broadcast row is written so the OBS
+        page follows, and the same seed is played here immediately. Same
+        seed means simulate() returns the same recording, so the two views
+        are two cameras on one race rather than two races.
+
+        The write is deliberately NOT the `write()` helper: that calls
+        refresh(), which would rebuild the page and throw away the stage
+        this race is about to be drawn into.
+      */
+      const seed = Number(event.seed) || newSeed();
+      try {
+        await updateRow("arena_events", event.id, {
+          seed,
+          bc_state: "running",
+          bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
+          bc_offset_ms: 0,
+        });
+        event.seed = seed;
+      } catch (err) {
+        /* A member with no admin token cannot drive the broadcast, but they
+           can still watch the race here. */
+        console.warn("arena: broadcast not updated", err);
+      }
+      await runRace(view, stage, event, parts, byId, seed, { save: true });
+      return;
     }
 
     if (t.closest("#bc-pause")) {
@@ -889,14 +925,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         pack all sitting at 1.0 would sort arbitrarily and the final order
         could contradict the result.
       */
-      const order = racers.map((_, i) => i).sort((a, b) => {
-        const fa = official.get(a), fb = official.get(b);
-        const aDone = elapsed >= fa, bDone = elapsed >= fb;
-        if (aDone && bDone) return fa - fb;         // both home: the real result
-        if (aDone) return -1;
-        if (bDone) return 1;
-        return shown[b][lo] - shown[a][lo];         // still running: what you see
-      });
+      /* ONE authority - see boardState() in race.js. The broadcast asks
+         the same function with the same arguments, so the two boards
+         cannot disagree about the order, the gaps or who is home. */
+      const board = boardState(sim, shown, elapsed);
+      const order = board.map((r) => r.index);
 
       const key = order.join(",");
       if (key !== lastOrderKey) {
@@ -933,9 +966,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         const row = rows[i];
         if (row) {
           row.classList.add("is-home");
-          const gap = ms - winnerMs;
           row.querySelector(".ar-time").textContent =
-            gap === 0 ? `${(ms / 1000).toFixed(2)}s` : `+${(gap / 1000).toFixed(2)}`;
+            board.find((b) => b.index === i)?.label || "";
         }
         runners[i]?.classList.remove("is-surge", "is-stumble");
         runners[i]?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
