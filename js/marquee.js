@@ -71,6 +71,28 @@ export function mood(lead, scoring = "strokes", complete = false, started = true
   return { text: "WITHIN STRIKING DISTANCE", tone: "level" };
 }
 
+/*
+  THE DAY'S MOOD, as opposed to a single battle's.
+
+  Moved here from pages/home.js golfMood(), unchanged, because that file's
+  hero is being replaced by the stage and this vocabulary should not go with
+  it. It belongs beside mood() anyway: same job, different scope - mood()
+  reads one match, this reads a whole day's team points.
+
+  Still only ever derived from a real number. A beatdown has to actually be
+  a beatdown, and a day nobody has finished a match in says nothing at all.
+*/
+export function dayMood(values, done, total) {
+  const gap = Math.abs((values?.[0] ?? 0) - (values?.[1] ?? 0));
+  if (!done) return "";
+  if (done === total) {
+    return gap >= 4 ? "ABSOLUTE BEATDOWN" : gap === 0 ? "SPLIT DOWN THE MIDDLE" : "";
+  }
+  if (gap >= 3) return "RUNNING AWAY WITH IT";
+  if (gap === 0) return "DEAD EVEN";
+  return "";
+}
+
 /**
  * The block.
  *

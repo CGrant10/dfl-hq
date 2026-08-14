@@ -41,6 +41,7 @@ import { LEAGUE_FOUNDED } from "./config.js";
 import { db } from "./supabase.js";
 import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle.js";
 import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lore.js";
+import { dayMood } from "./marquee.js";
 
 // --------------------------------------------------------------- priority
 
@@ -211,14 +212,17 @@ function golfItems(ctx) {
       kind: "golf", treatment: "scoreboard",
       temporal: st.state === "live" ? "live" : st.state === "final" ? "final" : "recent",
       priority: st.state === "live" ? P.LIVE : P.RECENT,
-      kicker: "DFL Golf", headline: o.name, subtitle: sub, href,
+      kicker: o.name, headline: "DFL Golf", subtitle: sub, href,
       sides: teams.map((t, i) => ({
         name: t.name || "Team", score: values[i], colour: t.color || "",
         up: leaderIdx === i, down: leaderIdx > -1 && leaderIdx !== i,
       })),
-      body: st.state === "live"
-        ? `${st.decided} of ${st.total} decided`
-        : `Final · ${st.decided} of ${st.total} decided`,
+      /* The day's mood when the numbers have earned one, the count when they
+         have not. dayMood() only speaks if a real gap justifies it. */
+      /* moodText is the drama slot and dayMood() only speaks when a real gap
+         justifies it; whereText is the fact underneath. */
+      moodText: dayMood(values, st.decided, st.total),
+      whereText: `${st.decided} of ${st.total} decided`,
     })];
   }
 
@@ -262,14 +266,13 @@ function fantasyItems(ctx) {
       priority: f.state === "live" ? P.LIVE : P.RECENT * decay(
         daysBetween(ctx.now, Date.parse(ctx.lore.syncedAt || 0) || ctx.now), 120),
       kicker: `${t.season} · Week ${t.week}`,
-      headline: f.state === "live" ? "Live" : "Final",
-      subtitle: "The final",
+      headline: "The final",
+      moodText: "", whereText: `${champ.label} by ${t.margin.toFixed(2)}`,
       href: "#/history",
       sides: [
         { name: champ.label, score: t.champScore.toFixed(2), up: true },
         { name: runner.label, score: t.runnerScore.toFixed(2), down: true },
       ],
-      body: `${champ.label} by ${t.margin.toFixed(2)}`,
     })];
   }
   return [];
@@ -315,7 +318,10 @@ function myMatchupItem(ctx) {
     kind: "mine", treatment: "scoreboard", temporal: state,
     priority: P.MINE,
     kicker: `${season} · Week ${week}`,
-    headline: "Your matchup", subtitle: state === "live" ? "Live" : "Final",
+    headline: "Your matchup",
+    moodText: "",
+    whereText: mine.s === theirs.s ? "Tied"
+      : `${mine.s > theirs.s ? "You" : ctx.name(theirs.u, season, theirs.r).label} by ${Math.abs(mine.s - theirs.s).toFixed(2)}`,
     href: "#/profile",
     sides: [
       { name: ctx.name(mine.u, season, mine.r).label, score: mine.s.toFixed(2), up: mine.s > theirs.s, down: mine.s < theirs.s },

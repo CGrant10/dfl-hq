@@ -5,19 +5,19 @@
 // leads with whatever is actually happening, because that is the only
 // question a front page has to answer:
 //
-//   THE HERO      context-aware. A golf event that is not final wins,
-//                 because during golf week golf IS the league. Otherwise
-//                 the member's own matchup, with the score big. Out of
-//                 season and with nothing live, the crest and the record.
+//   THE STAGE     the DFL Broadcast billboard. What it shows is ranked by
+//                 broadcast-deck.js, drawn by broadcast-stage.js, and every
+//                 item carries an explicit temporal state so nothing on this
+//                 screen can imply that a finished season is happening now.
 //   THE SNAPSHOT  four figures - your rank, the leader, what is owed,
 //                 what is open - each a link to where it came from.
 //   THE CREED     DRAFT * GOLF * SIN * FOLD, still the navigation.
 //   NEWS          announcements as news cards rather than table rows.
 //
-// The hero is deliberately the only place on this page allowed a big
-// number, and the crest has moved to an identity block at the bottom: the
-// splash carries the brand on launch, so repeating it at full size above
-// the fold made the page an About screen.
+// The stage is deliberately the only place on this page allowed a big
+// number, and the crest sits in an identity block at the bottom: the splash
+// carries the brand on launch, so repeating it at full size above the fold
+// made the page an About screen.
 // =====================================================================
 import { db, configured } from "../supabase.js";
 import { esc, fmtDate, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
@@ -27,7 +27,9 @@ import { promptInstall, isInstalled } from "../install.js";
 import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO } from "../settings.js";
-import { battleResult, dayPoints } from "../golf-battle.js";
+import { loadLore } from "../lore.js";
+import { broadcastContext, buildDeck, loadGolfDay } from "../broadcast-deck.js";
+import { renderStage } from "../broadcast-stage.js";
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
 
@@ -53,14 +55,30 @@ export async function render(view) {
   const me = currentMember();
   const myMember = me ? memberRows.find((m) => String(m.id) === String(me.id)) : null;
 
-  /* The hero's data is fetched AFTER the page's, and only the kind the hero
-     is actually going to use - there is no sense reading a season of matchups
-     during golf week, or a tournament in November. */
-  const hero = await heroBlock({ golfRow, leagues: leagues.data || [], members: memberRows, myMember, events: events.data || [], settings });
+  /*
+    THE STAGE, IN TWO PHASES, and the order matters.
+
+    Phase 1 builds a deck from the rows THIS PAGE has already fetched. It
+    paints immediately - no extra request stands between opening the app and
+    seeing something.
+
+    Phase 2 loads lore.js (688 matchup rows) and rebuilds, which is what
+    brings your matchup, the record book and past champions in. It is awaited
+    AFTER the first paint on purpose: putting it on the critical path would
+    make the front page slower than it is today, which is a bad trade for
+    slides that are about things that happened years ago.
+  */
+  const golfDay = golfRow ? await loadGolfDay(golfRow.id) : null;
+  const homeData = {
+    events: events.data || [], announcements: announcements.data || [],
+    polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
+    dues: dues.data || [], standings: standings.data || [], golfRow,
+  };
+  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }));
 
   view.innerHTML = `<div id="home-wrap">
     ${anniversary()}
-    ${hero}
+    ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
     <section class="block"><h2 class="section-title">Latest<a class="section-link" href="#/calendar">Calendar →</a></h2>
@@ -75,6 +93,15 @@ export async function render(view) {
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireCrest(view);
+
+  /* Phase 2. Nothing above waited for this. */
+  loadLore().then((lore) => {
+    if (lore?.error) return;
+    const stage = view.querySelector("[data-bx-stage]");
+    if (!stage) return;                       // navigated away mid-flight
+    const deck2 = buildDeck(broadcastContext({ home: homeData, lore, golfDay, member: me }));
+    stage.outerHTML = renderStage(deck2);
+  }).catch((err) => console.warn("broadcast: lore unavailable", err));
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
     if (outcome === "unavailable") toast(installHelp(), true);
@@ -89,33 +116,31 @@ export async function render(view) {
 
 
 /*
-  DFL LANGUAGE.
+  THE HERO IS THE STAGE NOW.
 
-  Only ever derived from a real number, never decoration - a beatdown has to
-  actually be a beatdown. Kept out of finances and admin entirely.
+  Everything that used to live here - heroBlock, golfHero, matchupHero,
+  quietHero, heroShell, scoreBand, golfMood, matchupMood - has moved rather
+  than been deleted. The three hero functions were a priority list wearing an
+  || chain:
+
+    golfHero(...) || matchupHero(...) || quietHero(...)
+
+  which is exactly what broadcast-deck.js does with fourteen generators
+  instead of three. golfMood became dayMood() in marquee.js, beside the
+  match-level mood it always belonged next to. The scoreboard is marquee().
+
+  Nothing was reimplemented on the way across. The golf scores still come
+  from dayPoints(), the names from namer(), the temporal state from
+  outingState() and fantasyState().
 */
-function golfMood(values, done, total) {
-  const gap = Math.abs(values[0] - values[1]);
-  if (!done) return "";
-  if (done === total) return gap >= 4 ? "ABSOLUTE BEATDOWN" : gap === 0 ? "SPLIT DOWN THE MIDDLE" : "";
-  if (gap >= 3) return "RUNNING AWAY WITH IT";
-  if (gap === 0) return "DEAD EVEN";
-  return "";
-}
-function matchupMood(a, b, played) {
-  if (!played) return "";
-  const gap = Math.abs(a - b);
-  if (gap >= 40) return "ABSOLUTE BEATDOWN";
-  if (gap <= 3) return "COMING DOWN TO THE WIRE";
-  return "";
-}
 
 /*
   THE ANNIVERSARY BANNER.
 
   2026 is the tenth season, and a tenth season is the one thing on this page
-  that outranks whatever is happening today - so it sits above the hero rather
-  than in the sign-off at the foot, where it used to be a single grey line.
+  that outranks whatever is happening today - so it sits above the stage
+  rather than in the sign-off at the foot, where it used to be a single grey
+  line.
 
   It only exists on a decade year. Every other season this returns nothing at
   all, which is the point: a banner that is always there is furniture.
@@ -128,159 +153,6 @@ function anniversary() {
     <span class="dfl-anniv-text">${esc(ordinal(number))} Anniversary Season</span>
     <span class="dfl-anniv-star" aria-hidden="true">&#9733;</span>
   </aside>`;
-}
-
-// ------------------------------------------------------------- the hero
-
-async function heroBlock(ctx) {
-  return (ctx.golfRow ? await golfHero(ctx.golfRow) : "")
-      || (ctx.myMember?.sleeper_user_id ? await matchupHero(ctx) : "")
-      || quietHero(ctx);
-}
-
-/*
-  A live golf event. Same points as the tournament board, read from the same
-  arithmetic in golf-battle.js so the front page can never disagree with the
-  board it links to.
-*/
-async function golfHero(outing) {
-  try {
-    const [roundsRes, matchesRes, teamsRes] = await Promise.all([
-      db().from("golf_rounds").select("id,round_number,name,format,holes,scoring").eq("outing_id", outing.id).order("round_number"),
-      db().from("golf_matches").select("id,round_id").eq("outing_id", outing.id),
-      db().from("golf_teams").select("id,name,color,sort_order").eq("outing_id", outing.id).order("sort_order"),
-    ]);
-    if (roundsRes.error || matchesRes.error || teamsRes.error) return "";
-    const teams = teamsRes.data || [];
-    const matchIds = (matchesRes.data || []).map((m) => m.id);
-    let sides = [], scores = [];
-    if (matchIds.length) {
-      const sidesRes = await db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds);
-      if (sidesRes.error) return "";
-      sides = sidesRes.data || [];
-      if (sides.length) {
-        const sc = await db().from("golf_match_scores").select("side_id,hole,strokes").in("side_id", sides.map((s) => s.id));
-        scores = sc.error ? [] : (sc.data || []);
-      }
-    }
-    const byHole = new Map();
-    for (const row of scores) {
-      const k = String(row.side_id);
-      if (!byHole.has(k)) byHole.set(k, new Map());
-      byHole.get(k).set(Number(row.hole), Number(row.strokes));
-    }
-    const rounds = (roundsRes.data || []).map((round) => ({
-      round,
-      battles: (matchesRes.data || []).filter((m) => String(m.round_id) === String(round.id)).map((m) => {
-        const mine = sides.filter((s) => String(s.match_id) === String(m.id)).sort((a, b) => a.slot - b.slot);
-        return {
-          sides: mine,
-          result: mine.length === 2
-            ? battleResult(byHole.get(String(mine[0].id)) || new Map(), byHole.get(String(mine[1].id)) || new Map(),
-                Number(round.holes) || 9, round.scoring === "match" ? "match" : "strokes")
-            : null,
-        };
-      }),
-    }));
-    const all = rounds.flatMap((r) => r.battles).filter((b) => b.sides.length === 2);
-    const done = all.filter((b) => b.result?.complete).length;
-    const live = done > 0 && done < all.length;
-    if (teams.length !== 2) {
-      return heroShell({ kicker: "DFL GOLF", live: false, title: outing.name,
-        sub: [outing.course, outing.event_date ? fmtDate(outing.event_date) : ""].filter(Boolean).join(" · "),
-        body: `<p class="fp-sub">Teams have not been set yet.</p>`, href: `#/golf?id=${outing.id}`, cta: "Set up the event" });
-    }
-    const { total } = dayPoints(rounds);
-    const values = teams.map((t) => total.get(String(t.id)) || 0);
-    const mood = golfMood(values, done, all.length);
-    /* Level scores get NO state line. "All square · 0 of 9 decided" is a
-       sentence about nothing having happened yet, and the two zeroes above it
-       already say that louder. Nobody is told a tie is news. */
-    const state = !all.length ? "Not started yet"
-      : done === all.length ? (mood || "Final")
-      : values[0] === values[1] ? ""
-      : `${mood ? mood + " · " : ""}${teams[values[0] > values[1] ? 0 : 1].name} lead · ${done} of ${all.length} decided`;
-    return heroShell({
-      kicker: "DFL GOLF", live, title: outing.name,
-      sub: [outing.course, outing.event_date ? fmtDate(outing.event_date) : ""].filter(Boolean).join(" · "),
-      body: scoreBand(teams.map((t, i) => ({
-        name: t.name, value: values[i], colour: t.color,
-        down: values[i] < values[1 - i],
-      }))),
-      state, href: `#/golf?id=${outing.id}`, cta: "Open the board",
-    });
-  } catch { return ""; }
-}
-
-/* The member's own matchup, latest week of the latest season that has one. */
-async function matchupHero(ctx) {
-  try {
-    const season = ctx.leagues.reduce((a, l) => Math.max(a, Number(l.season) || 0), 0);
-    if (!season) return "";
-    const mine = ctx.myMember.sleeper_user_id;
-    const res = await db().from("sleeper_matchups")
-      .select("season,week,user1,score1,user2,score2,winner_roster_id,roster1,roster2")
-      .eq("season", season).or(`user1.eq.${mine},user2.eq.${mine}`)
-      .order("week", { ascending: false }).limit(1).maybeSingle();
-    if (res.error || !res.data) return "";
-    const m = res.data;
-    const iAmOne = String(m.user1) === String(mine);
-    const nameOf = (uid) => {
-      const row = ctx.members.find((x) => String(x.sleeper_user_id) === String(uid));
-      return row?.team_name || row?.display_name || "TBD";
-    };
-    const a = { name: nameOf(iAmOne ? m.user1 : m.user2), value: Number(iAmOne ? m.score1 : m.score2) || 0 };
-    const b = { name: nameOf(iAmOne ? m.user2 : m.user1), value: Number(iAmOne ? m.score2 : m.score1) || 0 };
-    const played = a.value > 0 || b.value > 0;
-    a.down = a.value < b.value; b.down = b.value < a.value;
-    return heroShell({
-      kicker: `WEEK ${m.week}`, live: false, title: "Your matchup",
-      sub: `${season} season`,
-      body: scoreBand([a, b], 1),
-      state: !played ? "Yet to play" : a.value === b.value ? "Tied"
-        : `${matchupMood(a.value, b.value, played) ? matchupMood(a.value, b.value, played) + " · " : ""}${a.value > b.value ? a.name : b.name} by ${Math.abs(a.value - b.value).toFixed(1)}`,
-      /* Not League history: a matchup CTA should land where that matchup
-         lives on, which is the owner's own season page. */
-      href: "#/profile", cta: "Your season",
-    });
-  } catch { return ""; }
-}
-
-/* Nothing live: the crest, the season number and who holds the title. */
-function quietHero(ctx) {
-  const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
-  const latest = ctx.leagues.find((l) => l.champion_user_id);
-  const champ = latest ? ctx.members.find((m) => String(m.sleeper_user_id) === String(latest.champion_user_id)) : null;
-  const next = (ctx.events || [])[0];
-  return heroShell({
-    kicker: `${ordinal(number)} SEASON`, live: false,
-    title: champ ? `${champ.team_name || champ.display_name} hold the title` : "DFL HQ",
-    sub: champ && latest ? `Champions, ${latest.season}` : "Forged by sinners. Fueled by rivalries.",
-    body: next ? `<div class="fp-state"><span>Next up</span><span class="badge closed">${esc(next.title)} · ${esc(relDate(next.event_date))}</span></div>` : "",
-    href: "#/history", cta: "The record book",
-  });
-}
-
-function heroShell({ kicker, live, title, sub, body, state, href, cta }) {
-  return `<section class="fp-hero">
-    <div class="fp-kicker">${live ? `<span class="badge live">Live</span>` : ""}<span>${esc(kicker)}</span></div>
-    <h1 class="fp-title">${esc(title)}</h1>
-    ${sub ? `<p class="fp-sub">${esc(sub)}</p>` : ""}
-    ${body || ""}
-    ${state ? `<div class="fp-state">${esc(state)}</div>` : ""}
-    <a class="fp-cta" href="${href}">${esc(cta)} <span aria-hidden="true">→</span></a>
-  </section>`;
-}
-
-/* Two sides, the figures big, the trailing side dimmed rather than crossed
-   out - the winner should be obvious without the loser being decorated. */
-function scoreBand(sides, decimals = 0) {
-  return `<div class="fp-score">
-    ${sides.map((s, i) => `<div class="fp-side ${s.down ? "is-down" : ""}" style="--racer:${esc(s.colour || "")}">
-      <b>${decimals ? Number(s.value).toFixed(decimals) : s.value}</b>
-      <span>${esc(s.name)}</span></div>`)
-      .join(`<div class="fp-vs">vs</div>`)}
-  </div>`;
 }
 
 // --------------------------------------------------------- the snapshot

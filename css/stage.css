@@ -1,0 +1,203 @@
+/* =====================================================================
+   stage.css - the DFL Broadcast stage on the front page
+   ---------------------------------------------------------------------
+   Prefix bx-. There are now three things in this app that could be called
+   "broadcast" and they are deliberately kept apart:
+
+     broadcast.css   the 1920x1080 OBS stage for Arena races
+     marquee.css     the fight-card accent layer (mq-)
+     stage.css       THIS - the front page's rotating billboard (bx-)
+
+   FIXED HEIGHT, AND THAT IS THE POINT. Slides carry wildly different amounts
+   of text - a two-word stat next to a three-line announcement - and letting
+   the stage size to its content means the whole page jumps every time it
+   changes. The height is reserved once and every slide lives inside it, so
+   the rotation causes ZERO layout shift.
+
+   62svh on a phone is chosen so the snapshot strip peeks above the fold: the
+   page still reads as a homepage you scroll rather than as a splash screen
+   you have to get past. svh not vh, because vh on iOS Safari is the height
+   with the toolbar hidden and produces a stage taller than the window.
+
+   Everything below is built from the existing tokens. No new colours.
+   ===================================================================== */
+
+.bx-stage {
+  position: relative;
+  overflow: hidden;
+  /* Full-bleed, like the hero it replaces. */
+  margin: 0 calc(var(--s-4) * -1) var(--s-5);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(120% 90% at 50% -20%, var(--hero-wash), transparent 60%),
+    linear-gradient(180deg, var(--hero-a), var(--bg-2));
+
+  height: 62svh;
+  min-height: 340px;
+  max-height: 520px;
+}
+/* A brand rule across the top: the block reads as a broadcast lower-third
+   rather than as another card. Same device as the marquee. */
+.bx-stage::before {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 3px; z-index: 2;
+  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+}
+
+@supports not (height: 62svh) { .bx-stage { height: 62vh; } }
+
+.bx-layer { position: absolute; inset: 0; }
+
+/* Every slide fills the stage and centres itself, so a two-word stat and a
+   three-line announcement occupy the same box. */
+.bx-slide {
+  position: absolute; inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--s-2);
+  padding: var(--s-6) var(--s-4);
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------- shared parts */
+
+.bx-kicker {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.bx-kicker .ico-sm { width: 18px; height: 18px; }
+
+.bx-head, .bx-name {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+  max-width: 22ch;
+}
+.bx-name { font-size: var(--fs-display); }
+.bx-head { font-size: var(--fs-h1); }
+
+.bx-sub {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bx-body {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--body-text);
+  max-width: 42ch;
+  /* Long copy is clamped rather than allowed to overflow a fixed stage. */
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bx-image {
+  max-width: min(100%, 260px);
+  max-height: 34%;
+  object-fit: contain;
+  border-radius: var(--r-md);
+}
+
+/*
+  THE TEMPORAL CHIP - the thing that stops this screen lying.
+
+  Every item making a claim about time carries one. LIVE is the only one
+  that gets the danger colour and the pulse, because it is the only one that
+  means "this number is changing while you look at it".
+*/
+.bx-when {
+  margin-top: var(--s-3);
+  padding: 3px var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.bx-when.is-live {
+  color: var(--danger-ink);
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  display: inline-flex; align-items: center; gap: var(--s-1);
+}
+.bx-when.is-live::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-fill);
+  animation: dfl-pulse 1.8s var(--ease) infinite;
+}
+.bx-when.is-upcoming { color: var(--warn-ink); border-color: var(--warn-line); }
+.bx-when.is-final    { color: var(--text); border-color: var(--control-line); }
+
+/* ------------------------------------------------------------- champion */
+
+.bx-champ { display: grid; justify-items: center; gap: var(--s-2); }
+.bx-champ .bx-kicker { color: var(--milestone); }
+.bx-champ .bx-name { color: var(--chalk); }
+
+/* ----------------------------------------------------------------- stat */
+
+.bx-stat { display: grid; justify-items: center; gap: var(--s-1); }
+.bx-figure {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat-xl);
+  font-weight: var(--fw-bold);
+  line-height: .92;
+  letter-spacing: var(--ls-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk);
+}
+.bx-statword {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* -------------------------------------------------------------- the rest */
+
+.bx-note, .bx-event, .bx-hero { display: grid; justify-items: center; gap: var(--s-2); }
+.bx-when-text {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* The scoreboard is marquee()'s markup, and it arrives already full-bleed
+   for a card - inside the stage it should sit in the middle instead. */
+.bx-slide .mq-card {
+  margin: 0;
+  border: 0;
+  background: none;
+  width: 100%;
+  padding: 0;
+}
+.bx-slide .mq-card::before { display: none; }
+
+/* ----------------------------------------------------------- wider screens */
+
+@media (min-width: 640px) {
+  .bx-name { font-size: calc(var(--fs-display) * 1.35); }
+  .bx-slide { padding: var(--s-7) var(--s-6); }
+}
