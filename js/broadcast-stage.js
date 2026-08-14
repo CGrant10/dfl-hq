@@ -106,7 +106,11 @@ function announcement(item) {
       <strong class="bx-head">${esc(item.headline)}</strong>
       ${item.subtitle ? `<span class="bx-sub">${esc(item.subtitle)}</span>` : ""}
       ${item.body ? `<p class="bx-body">${esc(item.body)}</p>` : ""}
-      ${item.image ? `<img class="bx-image" src="${esc(item.image)}" alt="">` : ""}
+      ${/* NO <img> HERE. There is exactly one image system and it is
+            backdrop(): an image is composed as the background of the slide,
+            with a scrim, not stacked under the text at natural size. The
+            tag that used to be here rendered a 512px-wide crest inside a
+            420px stage the moment the old .bx-image rule was dropped. */""}
       ${chip(item)}
     </div>`;
 }
@@ -133,17 +137,45 @@ function hero(item) {
 
 const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero };
 
+/*
+  THE PLATE A SLIDE SITS ON.
+
+  Five backgrounds, and which decorations each one gets is decided HERE,
+  once, rather than by five nearly-identical CSS blocks. The rule the
+  visual language depends on: no slide gets every layer. The weave and the
+  vignette are on everything because they are texture; the crest and the
+  artwork are exclusive, because two focal images is a collage.
+*/
+function backdrop(item) {
+  const bg = item.background || "default";
+  const art = bg === "image" && item.image;
+  /* The crest earns its place on a logo slide and on a champion - a title
+     belongs to the league - and nowhere else. */
+  const crest = bg === "logo" || item.treatment === "champion";
+  return `
+    ${art ? `<img class="bx-art" src="${esc(item.image)}" alt="" draggable="false" decoding="async">
+             <span class="bx-scrim"></span>` : ""}
+    <span class="bx-fx bx-corners" aria-hidden="true">
+      <span class="bx-weave"></span>
+      ${crest ? `<span class="bx-crest"></span>` : ""}
+      <span class="bx-vignette"></span>
+      <span class="bx-sweep"></span>
+    </span>`;
+}
+
 /** One item as markup. An unknown treatment degrades to an announcement. */
 export function renderItem(item) {
   if (!item) return "";
   const draw = TREATMENTS[item.treatment] || announcement;
-  const inner = draw(item);
+  const inner = backdrop(item) + draw(item);
+  const cls = `bx-slide is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
      works on a tap, a click, a keyboard and a screen reader without any
-     gesture handling. */
+     gesture handling. The swipe handler cancels the click when the tap
+     turned out to be a drag - see startStage(). */
   return item.href
-    ? `<a class="bx-slide is-${esc(item.treatment)}" href="${esc(item.href)}">${inner}</a>`
-    : `<div class="bx-slide is-${esc(item.treatment)}">${inner}</div>`;
+    ? `<a class="${cls}" href="${esc(item.href)}">${inner}</a>`
+    : `<div class="${cls}">${inner}</div>`;
 }
 
 /**
@@ -165,13 +197,30 @@ export function renderStage(deck) {
   return `
     <section class="bx-stage" data-bx-stage>
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first)}</div>
-      ${items.length > 1 ? controls(items) : ""}
+      ${items.length > 1 ? arrows() + controls(items) : ""}
     </section>`;
 }
 
+/*
+  PREVIOUS AND NEXT. Always present and always focusable, because swipe
+  must never be the only way to move - a desktop user with no touchscreen
+  and a keyboard user both need a control they can actually reach. CSS
+  fades them up on hover where hover exists; on touch they simply stay.
+*/
+function arrows() {
+  return `
+    <button type="button" class="bx-arrow bx-prev" data-bx-step="-1" aria-label="Previous slide">
+      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-left"></use></svg>
+    </button>
+    <button type="button" class="bx-arrow bx-next" data-bx-step="1" aria-label="Next slide">
+      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+    </button>`;
+}
+
 function controls(items) {
-  /* One pause button and one dot per slide. The dots are real buttons, so
-     the whole thing is reachable with a keyboard and needs no gestures. */
+  /* One pause button and one segment per slide. The segments are real
+     buttons, so the whole thing is reachable with a keyboard and needs no
+     gestures. */
   const dots = items.map((it, i) => `
     <button type="button" class="bx-dot${i === 0 ? " on" : ""}" data-bx-go="${i}"
       aria-label="Show item ${i + 1} of ${items.length}"${i === 0 ? ' aria-current="true"' : ""}></button>`).join("");
@@ -268,8 +317,18 @@ export function startStage(root, deck, { refresh } = {}) {
     const slide = layer.firstElementChild;
     if (slide) {
       slide.classList.add("bx-enter");
-      setTimeout(() => slide.classList.remove("bx-enter"), 20);
+      setTimeout(() => {
+        slide.classList.remove("bx-enter");
+        /* bx-in drives the staggered entrance - kicker, then headline,
+           then detail. Added AFTER the element is in the document so the
+           animations actually run; added as a class rather than left on
+           the markup so a repaint of the same slide replays it. */
+        slide.classList.add("bx-in");
+      }, 20);
     }
+    /* The light plate needs light-plate controls, and the controls are not
+       inside the slide, so the stage carries the flag. */
+    root.classList.toggle("bx-on-light", (items[i]?.background || "") === "light");
     root.querySelectorAll("[data-bx-go]").forEach((d) => {
       const on = Number(d.dataset.bxGo) === i;
       d.classList.toggle("on", on);
@@ -310,14 +369,37 @@ export function startStage(root, deck, { refresh } = {}) {
 
   // ------------------------------------------------------------- listeners
 
+  /*
+    MANUAL NAVIGATION DOES NOT STOP THE BROADCAST.
+
+    The first cut latched pause whenever you chose a slide, on the theory
+    that the thing you asked for should not slide away. In practice that
+    meant one arrow press killed the rotation for the rest of the visit
+    and the front page went still without ever saying why. Choosing a
+    slide now RESETS the dwell - you get the full 5-7 seconds from the
+    moment you arrive - and then the deck carries on. The pause button is
+    the thing that stops it, and it is still one tap away.
+  */
+  const step = (delta) => { go(i + delta); };          // go() re-arms
+
   const onClick = (e) => {
     if (e.target.closest("[data-bx-pause]")) { setPaused(!userPaused); return; }
+    const arrow = e.target.closest("[data-bx-step]");
+    if (arrow) { step(Number(arrow.dataset.bxStep)); return; }
     const dot = e.target.closest("[data-bx-go]");
     if (!dot) return;
-    /* Choosing a slide by hand is a deliberate act, so it latches too -
-       otherwise the thing you just asked to see slides away in 6 seconds. */
-    setPaused(true);
     go(Number(dot.dataset.bxGo));
+  };
+
+  /*
+    KEYBOARD. Bound to the stage, not the document, so the arrow keys only
+    mean "change slide" while focus is actually inside the broadcast -
+    hijacking them page-wide would break scrolling with the keyboard.
+  */
+  const onKey = (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowLeft")  { e.preventDefault(); step(-1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
   const onVis = () => softPause("hidden", document.hidden);
   const onEnter = () => softPause("hover", true);
@@ -326,6 +408,76 @@ export function startStage(root, deck, { refresh } = {}) {
   const onFocusOut = (e) => {
     if (!root.contains(e.relatedTarget)) softPause("focus", false);
   };
+
+  /* =====================================================================
+     SWIPE. Pointer events, no library, about thirty lines.
+
+     THE TRAP THIS AVOIDS: the slide is an <a>. A horizontal drag that
+     ends on a link fires a click, so without the guard below every swipe
+     would also navigate to whatever the slide pointed at. `swiped` is set
+     the moment the gesture passes the threshold and is consumed by a
+     capture-phase click listener, which is the only place that can stop
+     the click before the anchor sees it.
+
+     THE OTHER TRAP: deciding too early. The direction is not judged until
+     the finger has moved 12px, because the first few pixels of a vertical
+     scroll are frequently a pixel or two sideways. Below that, nothing
+     happens and the page scrolls normally - which is the behaviour that
+     matters most, since scrolling past the stage is the common gesture
+     and changing slides is the rare one.
+
+     CSS does the rest: touch-action:pan-y on the stage means the browser
+     keeps vertical scrolling and hands us horizontal movement, so there
+     is no preventDefault() on touchmove and no scroll jank.
+  ===================================================================== */
+  const SWIPE_MIN = 44;        // px of travel before it counts
+  const SWIPE_SLOPE = 1.4;     // how much more horizontal than vertical
+  let sx = 0, sy = 0, tracking = false, decided = "", swiped = false;
+
+  const onDown = (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (e.target.closest("button")) return;      // a control is not a swipe
+    sx = e.clientX; sy = e.clientY;
+    tracking = true; decided = ""; swiped = false;
+  };
+  const onMove = (e) => {
+    if (!tracking) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!decided && Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+    if (!decided) decided = Math.abs(dx) > Math.abs(dy) * SWIPE_SLOPE ? "x" : "y";
+    if (decided === "y") tracking = false;       // it is a scroll; let go
+  };
+  const onUp = (e) => {
+    if (!tracking) return;
+    tracking = false;
+    if (decided !== "x") return;
+    const dx = e.clientX - sx;
+    if (Math.abs(dx) < SWIPE_MIN) return;
+    swiped = true;                                // swallow the click
+    step(dx < 0 ? 1 : -1);                        // drag left = next
+  };
+  const onCancel = () => { tracking = false; };
+  /* Capture, so it runs before the anchor's own default action. */
+  const onClickCapture = (e) => {
+    if (!swiped) return;
+    swiped = false;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  root.addEventListener("pointerdown", onDown);
+  root.addEventListener("pointermove", onMove);
+  root.addEventListener("pointerup", onUp);
+  root.addEventListener("pointercancel", onCancel);
+  root.addEventListener("click", onClickCapture, true);
+  root.addEventListener("keydown", onKey);
+  /* Long-press on the stage should not raise the iOS selection sheet or a
+     desktop context menu. This is an accident guard, not a security one -
+     the page is still copyable everywhere it should be. */
+  const onMenu = (e) => e.preventDefault();
+  root.addEventListener("contextmenu", onMenu);
+  const onDragStart = (e) => e.preventDefault();
+  root.addEventListener("dragstart", onDragStart);
 
   root.addEventListener("click", onClick);
   root.addEventListener("pointerenter", onEnter);
@@ -359,12 +511,19 @@ export function startStage(root, deck, { refresh } = {}) {
 
   function rebuildDots() {
     const wrap = root.querySelector("[data-bx-controls]");
-    if (items.length < 2) { wrap?.remove(); clear(); return; }
+    if (items.length < 2) {
+      wrap?.remove();
+      root.querySelectorAll("[data-bx-step]").forEach((a) => a.remove());
+      clear();
+      return;
+    }
     /* A one-item deck renders no controls, and phase 2 usually turns it into
        an eight-item one, so this has to be able to create them as well as
-       replace them. */
+       replace them - arrows included, or a deck that grew would rotate with
+       no way to step through it. */
     if (wrap) wrap.outerHTML = controls(items);
     else root.insertAdjacentHTML("beforeend", controls(items));
+    if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows());
     paintButton();
   }
 
@@ -392,6 +551,14 @@ export function startStage(root, deck, { refresh } = {}) {
       clear();
       if (poll) { clearInterval(poll); poll = null; }
       root.removeEventListener("click", onClick);
+      root.removeEventListener("pointerdown", onDown);
+      root.removeEventListener("pointermove", onMove);
+      root.removeEventListener("pointerup", onUp);
+      root.removeEventListener("pointercancel", onCancel);
+      root.removeEventListener("click", onClickCapture, true);
+      root.removeEventListener("keydown", onKey);
+      root.removeEventListener("contextmenu", onMenu);
+      root.removeEventListener("dragstart", onDragStart);
       root.removeEventListener("pointerenter", onEnter);
       root.removeEventListener("pointerleave", onLeave);
       root.removeEventListener("focusin", onFocusIn);

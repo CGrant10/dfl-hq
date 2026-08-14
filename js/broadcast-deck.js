@@ -50,6 +50,36 @@ import { dayMood } from "./marquee.js";
   a live event outranks a champion because the league cares more about what
   is happening than about what happened, not because 900 is bigger than 400.
 */
+/*
+  ===================================================================
+  THE ORDERING RULE. Four knobs, one job each. If you are about to add
+  a fifth, change one of these instead.
+
+    automatic priority   WHAT SHOULD BE SHOWN. The context engine ranks
+                         league data by how much it matters right now. No
+                         human input, no stored order. Untouched by 1.5.
+
+    sort_order           The commissioner's running order, and it is only
+                         ever compared MANUAL against MANUAL. It does not
+                         reach automatic content and cannot promote a
+                         slide past a live game.
+
+    weight               Where the manual BLOCK sits relative to automatic
+                         content. Default 0 puts hand-written slides just
+                         below anything live and above everything else.
+                         This is the only knob that crosses the streams.
+
+    featured             Pin to the very front of the deck, ahead of
+                         everything including live. For the one slide that
+                         must be seen first; not a sorting mechanism.
+
+  So: automatic content is ranked, manual content is ordered, weight
+  decides where the two meet, and featured is an override. The order a
+  commissioner sets survives ranking because equal weights preserve the
+  query order (sort is stable) and diversify() refuses to swap manual
+  items past each other.
+  ===================================================================
+*/
 export const P = {
   FEATURED: 1000,
   LIVE:      900,
@@ -64,15 +94,38 @@ export const P = {
   IDENTITY:  100,   // the floor. Always present, so a deck is never empty.
 };
 
-/** How long each treatment sits on screen. Tunable; not adaptive in v1. */
+/*
+  How long each treatment sits on screen.
+
+  These came down in 1.5. The first cut ran 5-9s and the deck took nearly a
+  minute to come round; a broadcast that makes you wait to see the next
+  thing reads as slow rather than as calm. The floor is 5s because that is
+  roughly the shortest a person can read a headline and a figure without
+  feeling hurried, and announcement keeps the longest slot because it is
+  the only treatment with a paragraph in it.
+
+  A manual slide may override this - see dwellMs(). Automatic slides do
+  not, because there is nobody to ask.
+*/
 export const DWELL = {
-  scoreboard: 8000,
-  champion:   7000,
-  announcement: 9000,
-  event:      6000,
+  scoreboard: 6000,
+  champion:   6000,
+  announcement: 7000,
+  event:      5000,
   stat:       5000,
-  hero:       7000,
+  hero:       6000,
 };
+
+/** Seconds a commissioner may choose, matching the CHECK in the migration. */
+export const DWELL_MIN = 3;
+export const DWELL_MAX = 15;
+
+/** A stored per-slide dwell, clamped, or the treatment default. */
+export function dwellMs(seconds, treatment) {
+  const n = Number(seconds);
+  if (!Number.isFinite(n) || n <= 0) return DWELL[treatment] || 6000;
+  return Math.min(DWELL_MAX, Math.max(DWELL_MIN, Math.round(n))) * 1000;
+}
 
 const DAY = 86400000;
 
@@ -88,6 +141,9 @@ function item(o) {
     source: "auto",
     temporal: "none",
     dwell: DWELL[o.treatment] || 6000,
+    /* Automatic slides use the house look. Only a hand-written slide can
+       choose, because only a hand-written slide has somebody to choose. */
+    background: "default",
     kicker: "", headline: "", subtitle: "", body: "",
     image: null, href: null, sides: null, figure: null,
     ...o,
@@ -157,35 +213,80 @@ export async function loadBroadcastItems(now = new Date()) {
   try {
     const { data, error } = await db()
       .from("broadcast_items")
-      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at")
+      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background")
       .eq("active", true)
+      /* THE RUNNING ORDER, and it is this query that decides it - the
+         ranking below only decides where the manual BLOCK sits against
+         automatic content, never how manual slides sit against each
+         other. See ORDERING RULE above. */
       .order("featured", { ascending: false })
-      .order("weight", { ascending: false })
-      .order("created_at", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
       .limit(20);
-    if (error) return [];
+    if (error) {
+      /* 42703 is "column does not exist" - this install has the table but
+         not the 1.5 migration. Fall back to the columns that shipped with
+         the table rather than showing nothing. */
+      if (error.code === "42703") return loadBroadcastItemsLegacy(now);
+      return [];
+    }
     const t = now.getTime();
     return (data || [])
       .filter((r) => !r.starts_at || new Date(r.starts_at).getTime() <= t)
       .filter((r) => !r.ends_at   || new Date(r.ends_at).getTime()   >  t)
-      .map((r) => item({
-        source: "manual",
-        id: `manual:${r.id}`,
-        treatment: r.treatment || "announcement",
-        temporal: r.temporal || "none",
-        kicker: r.kicker || "", headline: r.headline || "",
-        subtitle: r.subtitle || "", body: r.body || "",
-        figure: r.figure || null, image: r.image || null, href: r.href || null,
-        /* weight is a nudge inside the band, not a replacement for it, so a
-           manual slide cannot accidentally outrank a live game unless an
-           admin deliberately weights it past 100. */
-        priority: (r.featured ? P.FEATURED : P.MANUAL) + (Number(r.weight) || 0),
-      }));
+      .map(manualItem);
   } catch (err) {
     console.warn("broadcast: manual items unavailable", err);
     return [];
   }
 }
+
+/** The pre-1.5 column set, for an install that has not run the migration. */
+async function loadBroadcastItemsLegacy(now) {
+  const { data, error } = await db()
+    .from("broadcast_items")
+    .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at")
+    .eq("active", true)
+    .order("featured", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(20);
+  if (error) return [];
+  const t = now.getTime();
+  return (data || [])
+    .filter((r) => !r.starts_at || new Date(r.starts_at).getTime() <= t)
+    .filter((r) => !r.ends_at   || new Date(r.ends_at).getTime()   >  t)
+    .map(manualItem);
+}
+
+function manualItem(r) {
+  const treatment = r.treatment || "announcement";
+  return item({
+    source: "manual",
+    id: `manual:${r.id}`,
+    rowId: r.id,
+    treatment,
+    temporal: r.temporal || "none",
+    kicker: r.kicker || "", headline: r.headline || "",
+    subtitle: r.subtitle || "", body: r.body || "",
+    figure: r.figure || null, image: r.image || null, href: r.href || null,
+    /* Presentation, carried through to the stage untouched. An unknown
+       value degrades to the house look rather than to a blank slide. */
+    background: BACKGROUNDS.has(r.background) ? r.background : "default",
+    dwell: dwellMs(r.dwell_seconds, treatment),
+    /*
+      weight is a nudge inside the band, not a replacement for it, so a
+      manual slide cannot accidentally outrank a live game unless an admin
+      deliberately weights it past 100. It deliberately does NOT encode
+      sort_order: two slides at the same weight keep the order the query
+      returned them in, because Array.prototype.sort is stable - which is
+      exactly how the commissioner's running order survives ranking.
+    */
+    priority: (r.featured ? P.FEATURED : P.MANUAL) + (Number(r.weight) || 0),
+  });
+}
+
+/** The background modes the stage knows how to draw. */
+export const BACKGROUNDS = new Set(["default", "light", "dark", "image", "logo"]);
 
 export async function loadGolfDay(outingId) {
   const [roundsRes, matchesRes, teamsRes] = await Promise.all([
@@ -631,7 +732,19 @@ function diversify(ranked, max) {
   while (pool.length && out.length < max) {
     const recent = out.slice(-2).map((x) => x.treatment);
     const sameRun = recent.length === 2 && recent[0] === recent[1];
-    const i = sameRun ? pool.findIndex((x) => x.treatment !== recent[0]) : 0;
+    /*
+      MANUAL SLIDES ARE NEVER SWAPPED PAST EACH OTHER.
+
+      This used to search the whole pool for a different treatment, which
+      quietly reordered hand-written slides - so the running order a
+      commissioner set in Admin was not the order that played, and the
+      setting looked broken rather than overruled. Diversity is a
+      tie-break for AUTOMATIC content, where nobody chose the sequence.
+      Where somebody did choose, their choice wins.
+    */
+    const i = sameRun
+      ? pool.findIndex((x) => x.treatment !== recent[0] && x.source !== "manual")
+      : 0;
     out.push(pool.splice(i > -1 ? i : 0, 1)[0]);
   }
   return out;
