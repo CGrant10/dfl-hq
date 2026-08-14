@@ -123,6 +123,15 @@ export async function render(view) {
   const strip = whatsNewStrip(changes, wn.since);
 
   view.innerHTML = `<div id="home-wrap">
+    <!--
+      Every other route has a visible <h1>. This one leads with the stage,
+      whose headline changes every few seconds - making THAT the h1 would
+      give the page a heading that rotates, which is worse than none for
+      anyone navigating by headings. So the page gets a real h1 that simply
+      does not need to be drawn: the crest, the banner and the stage
+      already say what this is to anybody who can see it.
+    -->
+    <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
     ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
