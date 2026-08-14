@@ -94,3 +94,34 @@ create policy "overrides delete" on public.broadcast_overrides for delete using 
 --   select count(*) from public.broadcast_overrides;   -- allowed
 --   reset role;
 -- ---------------------------------------------------------------------
+
+
+-- ---------------------------------------------------------------------
+-- 3. PER-SLIDE WATERMARK STRENGTH  (added in the Arena/Dashboard pass)
+--
+-- The crest behind a slide is right at 7% on a plain plate and too loud
+-- on top of a photograph, where it competes with the artwork. Rather than
+-- pick one global number that is wrong for half the slides, each slide
+-- says how strong its own watermark should be.
+--
+-- Four words, not a number: an admin choosing "faint" is making a design
+-- decision, and 0.043 is not a design decision. NULL means "default",
+-- which is what every existing row already is.
+--
+-- SECURITY: no new table, so no new policy surface - the broadcast_items
+-- policies already cover this column, because RLS is per row.
+-- ---------------------------------------------------------------------
+
+alter table public.broadcast_items
+  add column if not exists logo_opacity text;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'broadcast_items_logo_opacity'
+  ) then
+    alter table public.broadcast_items
+      add constraint broadcast_items_logo_opacity
+      check (logo_opacity is null or logo_opacity in ('default','subtle','faint','hidden'));
+  end if;
+end $$;

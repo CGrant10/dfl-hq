@@ -2126,3 +2126,76 @@ input.masked {
   #countdown-n { animation: none; }
   .runner { will-change: auto; }
 }
+
+/* =====================================================================
+   THE RACERS, ALIVE
+   ---------------------------------------------------------------------
+   State classes are put on .runner by the playback loop; every animation
+   below is on the ART inside it, never on .runner itself - that element
+   carries the translate3d that IS the race, and animating transform in
+   two places at once would fight the position.
+
+   Cheap on purpose: transform and opacity only, no layout, no filters.
+   A phone drawing eight lanes at 60fps should not notice these.
+   ===================================================================== */
+
+/* Waiting on the line - a slow idle so the grid is not a still photograph. */
+.runner .runner-art { animation: dfl-idle 2.4s var(--ease) infinite; transform-origin: 50% 90%; }
+@keyframes dfl-idle {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-1.5px) }
+}
+
+/* Running: a quicker bob, the default while the race is on. */
+.track.is-running .runner .runner-art { animation: dfl-run .42s linear infinite; }
+@keyframes dfl-run {
+  0%, 100% { transform: translateY(0) rotate(0deg) }
+  25%      { transform: translateY(-2px) rotate(-1.5deg) }
+  75%      { transform: translateY(-1px) rotate(1.5deg) }
+}
+
+/* A surge, a breakaway, a comeback: leaning in and moving hard. */
+.runner.is-surge .runner-art { animation: dfl-surge .22s linear infinite; }
+@keyframes dfl-surge {
+  0%, 100% { transform: translateY(-1px) scale(1.06) rotate(-2deg) }
+  50%      { transform: translateY(-3px) scale(1.08) rotate(2deg) }
+}
+
+/* A stall: a stagger, then back to it. */
+.runner.is-stumble .runner-art { animation: dfl-stumble .3s ease-in-out 4; }
+@keyframes dfl-stumble {
+  0%, 100% { transform: translateX(0) rotate(0deg) }
+  30%      { transform: translateX(-2px) rotate(-7deg) }
+  70%      { transform: translateX(1px) rotate(5deg) }
+}
+
+/* Out in front - a glow rather than a movement, so it reads without
+   competing with the surge animation. */
+.runner.is-leading .runner-art { filter: drop-shadow(0 0 6px var(--racer, var(--accent-fill))); }
+
+/* Home. Stop the legs. */
+.runner.is-home .runner-art { animation: none; }
+
+/* The winner, once the result is in. */
+.runner.is-winner .runner-art { animation: dfl-win .5s var(--ease) 3; }
+@keyframes dfl-win {
+  0%, 100% { transform: translateY(0) scale(1) }
+  40%      { transform: translateY(-7px) scale(1.12) }
+  60%      { transform: translateY(-2px) scale(1.04) }
+}
+
+/*
+  REDUCED MOTION: the characters hold still. The race still runs - the
+  position is information - but nothing bounces, shakes or celebrates.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .runner .runner-art,
+  .track.is-running .runner .runner-art,
+  .runner.is-surge .runner-art,
+  .runner.is-stumble .runner-art,
+  .runner.is-winner .runner-art { animation: none !important; }
+}
+
+/* The scoreboard line carries commentary now, so it needs room and must
+   not push the clock off a narrow phone. */
+.sb-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

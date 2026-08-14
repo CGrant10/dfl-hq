@@ -770,3 +770,25 @@
   stage's own crest wins inside the stage.
 */
 .bx-slide .mq-card.dfl-mark::after { display: none; }
+
+/* =====================================================================
+   PER-SLIDE WATERMARK STRENGTH
+
+   The crest is right at 7% on a plain plate and too loud over a
+   photograph, where it fights the artwork. Each slide now says how strong
+   its own should be, and an image background quietly drops a step on its
+   own so the common case needs no thought from the admin.
+   ===================================================================== */
+.bx-logo-subtle .bx-crest { opacity: .045; }
+.bx-logo-faint  .bx-crest { opacity: .028; }
+.bx-logo-hidden .bx-crest { display: none; }
+
+/* Over artwork, even "default" is a step quieter - unless the slide has
+   explicitly asked for something else. */
+.bx-bg-image.bx-logo-default .bx-crest { opacity: .04; }
+
+/* Light mode inverts the mark, and an inverted mark at the same number
+   reads heavier on white than white-on-dark does. Each step is nudged
+   down to match what the eye actually sees. */
+:root[data-mode="light"] .bx-logo-subtle .bx-crest { opacity: .07; }
+:root[data-mode="light"] .bx-logo-faint  .bx-crest { opacity: .045; }

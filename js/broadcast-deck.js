@@ -146,6 +146,7 @@ function item(o) {
     /* Automatic slides use the house look. Only a hand-written slide can
        choose, because only a hand-written slide has somebody to choose. */
     background: "default",
+    logo: "default",
     kicker: "", headline: "", subtitle: "", body: "",
     image: null, href: null, sides: null, figure: null,
     ...o,
@@ -215,7 +216,7 @@ export async function loadBroadcastItems(now = new Date()) {
   try {
     const { data, error } = await db()
       .from("broadcast_items")
-      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at")
+      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at,logo_opacity")
       .eq("active", true)
       /* THE RUNNING ORDER, and it is this query that decides it - the
          ranking below only decides where the manual BLOCK sits against
@@ -285,6 +286,10 @@ function manualItem(r) {
     /* Presentation, carried through to the stage untouched. An unknown
        value degrades to the house look rather than to a blank slide. */
     background: BACKGROUNDS.has(r.background) ? r.background : "default",
+    /* How strong the crest behind this slide should be. Unknown or absent
+       means "default", so an install without the column behaves exactly as
+       it did before. */
+    logo: LOGO_STEPS.has(r.logo_opacity) ? r.logo_opacity : "default",
     dwell: dwellMs(r.dwell_seconds, treatment),
     /*
       weight is a nudge inside the band, not a replacement for it, so a
@@ -363,6 +368,9 @@ function applyOverride(it, ov) {
   else if (ov.weight) out.priority = (Number(it.priority) || 0) + Number(ov.weight);
   return out;
 }
+
+/** Watermark strengths a slide may choose. Words, not numbers - see the SQL. */
+export const LOGO_STEPS = new Set(["default", "subtle", "faint", "hidden"]);
 
 /** The background modes the stage knows how to draw. */
 export const BACKGROUNDS = new Set(["default", "light", "dark", "image", "logo"]);

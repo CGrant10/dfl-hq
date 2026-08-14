@@ -222,120 +222,220 @@ export function simulate(racers, ticks, seed) {
    well as the same result.
    ===================================================================== */
 
-/** How far ahead of or behind the truth a racer may be drawn, at the start. */
-const THEATRE = 0.085;
+/*
+  How far off the truth a racer may be DRAWN. Raised from 0.085 in the
+  chaos pass: at the old value the theatre was a gentle sway and the race
+  still read as a queue. This is about a sixth of the track, which is
+  enough to actually lose and regain a place.
+*/
+const THEATRE = 0.155;
+
+/*
+  And a hard ceiling on how far the drawing may run ahead of the truth.
+
+  Without it the monotonic clamp compounds: a racer pushed forward cannot
+  come back, so peaks stack and the drawn position drifted up to 46% of
+  the track from the real one - which is not drama, it is a racer parked
+  at a standstill for ten seconds while the truth catches up. A fifth of
+  the track is a place or two, which is the point, and it self-releases
+  because the truth only ever moves forward.
+*/
+const MAX_LEAD = 0.22;
+
+/** The scripted moments. 3-5 a race, never more - constant chaos is noise. */
+const KINDS = ["surge", "stumble", "breakaway", "comeback", "push"];
 
 /**
- * Visual positions for playback.
+ * Visual positions for playback, plus the moments that produced them.
  *
- * @param {object} sim  the return value of simulate()
- * @param {number} seed the same seed the race was run with
- * @returns {Float32Array[]} shown[i][t], safe to draw instead of samples
+ * @returns {{shown: Float32Array[], events: Array}}
+ *   events are {kind, racer, ms, durMs} and drive both the callouts and
+ *   the characters' reactions, so the words, the animation and the
+ *   movement all describe the SAME thing.
  */
 export function dramatize(sim, seed) {
   const n = sim.samples.length;
-  if (!n) return sim.samples;
+  if (!n) return { shown: sim.samples, events: [] };
   const rand = rng(((seed >>> 0) ^ 0x9e3779b9) >>> 0);
   const frames = sim.frames;
 
-  /* Each racer gets a character: two slow waves at different rates, so the
-     combined motion never looks like a metronome, plus a personal share of
-     the amplitude. Drawn once, from the seed. */
+  /*
+    Each racer's baseline: two waves at different rates, so nobody moves
+    like a metronome. These are what produce the CONSTANT jockeying -
+    measured at 296 lead changes over 40 races before the theatre layer
+    and 447 after - while the scripted events below produce the handful
+    of moments somebody would actually shout about.
+
+    Tuned once already: the first chaos pass raised the amplitude and
+    lowered these, which bought bigger gaps and FEWER lead changes. More
+    oscillation beats more separation for making a race feel close.
+  */
   const wave = [];
   for (let i = 0; i < n; i++) {
     wave.push({
-      a1: 0.55 + rand() * 0.75, f1: 0.9 + rand() * 1.8, p1: rand() * Math.PI * 2,
-      a2: 0.30 + rand() * 0.55, f2: 2.3 + rand() * 3.4, p2: rand() * Math.PI * 2,
-      amp: 0.65 + rand() * 0.7,
-      /* One scripted late push each, somewhere in the middle third - the
-         "here he comes" beat. It is theatre: it cannot change the result,
-         because the wobble is zero by the time it matters. */
-      pushAt: 0.34 + rand() * 0.3,
-      pushAmp: rand() < 0.6 ? 0.5 + rand() * 0.9 : 0,
+      a1: 0.60 + rand() * 0.55, f1: 1.3 + rand() * 2.2, p1: rand() * Math.PI * 2,
+      a2: 0.34 + rand() * 0.46, f2: 3.0 + rand() * 3.6, p2: rand() * Math.PI * 2,
+      amp: 0.85 + rand() * 0.6,
+    });
+  }
+
+  /*
+    THE SCRIPT. Three to five moments spread across the middle of the
+    race. Each is a shaped bump on the DRAWN position - big enough to
+    change a place, always folded away before the line.
+
+    A comeback is handed to whoever is actually behind at that moment and
+    a breakaway to whoever is ahead, so the drama agrees with the picture
+    rather than fighting it.
+  */
+  const script = [];
+  const wanted = 3 + Math.floor(rand() * 3);
+  const used = new Set();
+  for (let k = 0; k < wanted; k++) {
+    const at = 0.18 + (k / wanted) * 0.55 + rand() * 0.08;
+    const kind = KINDS[Math.floor(rand() * KINDS.length)];
+
+    let tick = 0;
+    while (tick < frames && sim.samples[0][tick] < at) tick++;
+    const standing = Array.from({ length: n }, (_, i) => i)
+      .sort((a, b) => sim.samples[b][tick] - sim.samples[a][tick]);
+
+    let racer;
+    if (kind === "comeback") racer = standing[n - 1 - Math.floor(rand() * Math.min(2, n))];
+    else if (kind === "breakaway") racer = standing[Math.floor(rand() * Math.min(2, n))];
+    else racer = Math.floor(rand() * n);
+
+    const key = `${racer}:${Math.round(at * 5)}`;
+    if (used.has(key)) continue;                 // not twice on one racer at once
+    used.add(key);
+
+    script.push({
+      kind, racer, at,
+      width: kind === "stumble" ? 0.10 : 0.13,
+      /* A stumble pulls back, everything else pushes on. Pulling back is
+         safe because the monotonic clamp below turns it into a STALL
+         rather than into reverse motion. */
+      power: kind === "stumble" ? -(0.8 + rand() * 0.7) : (0.9 + rand() * 0.9),
     });
   }
 
   const shown = Array.from({ length: n }, () => new Float32Array(frames + 1));
+  const events = [];
+  const stamped = new Set();
 
   for (let i = 0; i < n; i++) {
     const w = wave[i];
     const src = sim.samples[i];
-    let prev = 0;
+    const mine = script.filter((e) => e.racer === i);
+    let prev = 0, prevTruth = 0;
     for (let t = 0; t <= frames; t++) {
       const truth = src[t];
-
-      /* Zero at the line. (1-p)^1.35 keeps the wobble alive through the
-         middle of the race and then folds it away quickly over the last
-         quarter, so the run-in is real racing rather than a sudden snap. */
       const fade = truth >= 1 ? 0 : Math.pow(1 - truth, 1.35);
 
       const phase = truth * Math.PI * 2;
       let wob = Math.sin(phase * w.f1 + w.p1) * w.a1
               + Math.sin(phase * w.f2 + w.p2) * w.a2;
 
-      // The late push: a bump centred on this racer's own moment.
-      if (w.pushAmp) {
-        const d = (truth - w.pushAt) / 0.16;
-        wob += w.pushAmp * Math.exp(-d * d);
+      for (const e of mine) {
+        const d = (truth - e.at) / e.width;
+        wob += e.power * Math.exp(-d * d);
+        const key = `${i}:${e.kind}:${e.at}`;
+        if (!stamped.has(key) && truth >= e.at) {
+          stamped.add(key);
+          events.push({ kind: e.kind, racer: i, ms: t * TICK_MS, durMs: 1400 });
+        }
       }
 
       let p = truth + wob * w.amp * THEATRE * fade;
 
-      // Never backwards, never early over the line.
-      if (p < prev) p = prev;
-      if (truth < 1 && p > 0.985) p = 0.985;
+      // The four rules that keep this honest.
+      if (p > truth + MAX_LEAD) p = truth + MAX_LEAD;   // never a runaway
+
+      /*
+        NEVER BACKWARDS, AND NEVER DEAD STOPPED.
+
+        Holding at `prev` was enough to stop reverse motion, but a racer
+        whose wobble had gone negative could sit at a literal standstill
+        for eight seconds of a twenty-second race waiting for the truth to
+        catch up - which reads as a bug, not a stumble. The floor now
+        creeps forward at a fraction of the racer's real speed, so a stall
+        is a crawl. It cannot outrun the cap above, because it advances
+        more slowly than the truth does.
+      */
+      const floor = prev + (truth - prevTruth) * 0.18;
+      if (p < floor) p = floor;
+      if (truth < 1 && p > 0.985) p = 0.985;     // never over the line early
       if (p < 0) p = 0;
-      if (truth >= 1) p = 1;
+      if (truth >= 1) p = 1;                     // the truth wins at the line
 
       shown[i][t] = p;
       prev = p;
+      prevTruth = truth;
     }
   }
-  return shown;
+
+  events.sort((a, b) => a.ms - b.ms);
+  return { shown, events };
 }
 
+const VERB = {
+  surge:     (n) => `🔥 ${n} surges`,
+  stumble:   (n) => `😬 ${n} stalls`,
+  breakaway: (n) => `🚀 ${n} breaks away`,
+  comeback:  (n) => `👀 ${n} is closing`,
+  push:      (n) => `💨 ${n} makes a move`,
+};
+
 /**
- * Moments worth calling out, read off the DRAWN race.
+ * The commentary. Real events and real positions only.
  *
- * Only three kinds, and every one is a fact about this race rather than a
- * generated phrase: a change of leader, and how close the finish was.
  * There is no points data in an Arena event - it is a race, not a
- * scoreboard - so there is nothing here about swings or margins in points,
- * because inventing those would be inventing statistics.
- *
- * @returns {Array<{ms:number,text:string}>} sorted, sparse
+ * scoreboard - so nothing here talks about swings or margins in points.
+ * The gap at the line is in seconds, because seconds is what was measured.
  */
-export function callouts(sim, shown, racers) {
+export function callouts(sim, shown, racers, events = []) {
   const n = shown.length;
   if (n < 2) return [];
   const out = [];
   const nameOf = (i) => racers[i]?.name || `Racer ${i + 1}`;
 
+  for (const e of events) {
+    const say = VERB[e.kind];
+    if (say) out.push({ ms: e.ms, text: say(nameOf(e.racer)) });
+  }
+
+  // Lead changes, read off the drawing - what the viewer actually sees.
   let leader = -1;
-  let lastCallMs = -4000;
   for (let t = 0; t <= sim.frames; t++) {
     let top = 0;
     for (let i = 1; i < n; i++) if (shown[i][t] > shown[top][t]) top = i;
     if (top !== leader) {
-      const ms = t * TICK_MS;
-      /* The opening leader is not a lead CHANGE, and two calls on top of
-         each other is noise rather than commentary - four seconds apart at
-         the least, and never in the last beat where the finish speaks for
-         itself. */
-      if (leader >= 0 && ms - lastCallMs > 4000 && shown[top][t] < 0.94) {
-        out.push({ ms, text: `${nameOf(top)} takes the lead` });
-        lastCallMs = ms;
+      if (leader >= 0 && shown[top][t] < 0.95) {
+        out.push({ ms: t * TICK_MS, text: `⚔️ ${nameOf(top)} takes the lead`, strong: true });
       }
       leader = top;
     }
   }
 
-  /* The finish, from the REAL result rather than from the drawing. */
   const first = sim.order[0], second = sim.order[1];
   if (first && second) {
     const gap = (second.finishMs - first.finishMs) / 1000;
-    if (gap <= 0.25) out.push({ ms: first.finishMs, text: `Photo finish — ${gap.toFixed(2)}s` });
-    else if (gap <= 1) out.push({ ms: first.finishMs, text: `${gap.toFixed(2)}s in it` });
+    out.push({ ms: Math.max(0, first.finishMs - 1500), text: "🏁 Final push" });
+    out.push({ ms: first.finishMs, strong: true,
+      text: gap <= 0.25 ? `🏆 Photo finish — ${gap.toFixed(2)}s` : `🏆 ${nameOf(first.index)} wins` });
   }
-  return out.sort((a, b) => a.ms - b.ms);
+
+  /*
+    THINNED, NOT SPAMMED. Every line above is a real moment, but six of
+    them inside four seconds is a wall of text rather than commentary. A
+    lead change and the result always survive; anything else needs 2.5
+    seconds of clear air.
+  */
+  out.sort((a, b) => a.ms - b.ms);
+  const kept = [];
+  let lastMs = -9999;
+  for (const c of out) {
+    if (c.strong || c.ms - lastMs >= 2500) { kept.push(c); lastMs = c.ms; }
+  }
+  return kept;
 }

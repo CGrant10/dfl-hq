@@ -431,8 +431,7 @@ function broadcastCard(event, parts) {
   const paused  = event.bc_state === "paused";
 
   return `
-    <div class="card bc-panel">
-      <div class="card-title">Broadcast</div>
+    <section class="card bc-panel" data-collapse="arena-broadcast" data-collapse-title="Broadcast controls">
 
       <div class="bc-url">
         <input id="bc-url" type="text" readonly value="${esc(url)}">
@@ -457,7 +456,7 @@ function broadcastCard(event, parts) {
         <label><input type="checkbox" id="bc-timer-t" ${event.bc_show_timer === false ? "" : "checked"}> Timer</label>
         <span class="pill ${running ? "green" : paused ? "warn" : "grey"}">${esc(event.bc_state || "idle")}</span>
       </div>
-    </div>`;
+    </section>`;
 }
 
 /** Seconds of countdown before the racers move. */
@@ -596,8 +595,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     winner is still exactly who simulate() decided, which is what is
     already saved in arena_results for completed events.
   */
-  const shown = dramatize(sim, seed);
-  const calls = callouts(sim, shown, racers);
+  const { shown, events } = dramatize(sim, seed);
+  const calls = callouts(sim, shown, racers, events);
 
   stage.innerHTML = `
     <div class="arena-track-wrap">
@@ -635,6 +634,10 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   const finish = async () => {
     status.textContent = "Final";
+    stage.querySelector("#track")?.classList.remove("is-running");
+    /* The winner celebrates. One class, one keyframe, and it is the racer
+       the SIMULATION picked - never the one the animation flattered. */
+    runners[sim.order[0].index]?.classList.add("is-winner");
     slot.innerHTML = resultsCard(
       sim.order.map((o) => ({ member_id: o.racer.id, place: o.place, finish_ms: o.finishMs })),
       byId, event, { fresh: true });
@@ -649,15 +652,25 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     return;
   }
 
+  /* THE RACE GETS THE SCREEN. The control panel sits below the stage, so
+     an admin who just pressed Start is looking at buttons while the race
+     runs above them. Scroll the track into view first. */
+  stage.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+
   await countdown(stage);
 
   status.textContent = "Racing";
+  stage.querySelector("#track")?.classList.add("is-running");
   const started = performance.now();
 
   await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
     const total = lastFinish + 250;
-    let nextCall = 0, calledAt = -9999;
+    let nextCall = 0, calledAt = -9999, nextEvent = 0;
+    /* A racer wearing a reaction, and when it expires. The class drives a
+       CSS keyframe on the character; nothing here moves anything. */
+    const reacting = new Map();
+    let leader = -1;
 
     function frame(now) {
       const elapsed = now - started;
@@ -668,6 +681,39 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
         runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+        if (p >= 1) runners[i].classList.add("is-home");
+      }
+
+      /*
+        THE CHARACTERS REACT TO THE SAME EVENTS THE COMMENTARY DOES.
+        dramatize() stamped each moment with the tick the racer reached it,
+        so the word, the animation and the movement land together instead
+        of three systems each having their own opinion.
+      */
+      while (nextEvent < events.length && elapsed >= events[nextEvent].ms) {
+        const ev = events[nextEvent++];
+        const el = runners[ev.racer];
+        if (el) {
+          el.classList.remove("is-surge", "is-stumble");
+          el.classList.add(ev.kind === "stumble" ? "is-stumble" : "is-surge");
+          reacting.set(ev.racer, elapsed + ev.durMs);
+        }
+      }
+      for (const [i, until] of reacting) {
+        if (elapsed > until) {
+          runners[i]?.classList.remove("is-surge", "is-stumble");
+          reacting.delete(i);
+        }
+      }
+
+      /* Whoever is visually in front wears it, so the leader is readable
+         at a glance even on a phone-sized track. */
+      let top = 0;
+      for (let i = 1; i < shown.length; i++) if (shown[i][lo] > shown[top][lo]) top = i;
+      if (top !== leader) {
+        if (leader >= 0) runners[leader]?.classList.remove("is-leading");
+        runners[top]?.classList.add("is-leading");
+        leader = top;
       }
 
       /* Callouts replace the status word as they come due, and the last

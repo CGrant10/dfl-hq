@@ -295,6 +295,18 @@ export const SECTIONS = [
           { value: "image",   label: "Image — use the image above as artwork" },
           { value: "logo",    label: "Crest — the DFL mark, oversized" },
         ] },
+      /*
+        How loud the DFL crest sits behind this slide. Words rather than a
+        number, because picking "faint" is a design decision and 0.043 is
+        not. An image-heavy slide wants faint; a plain one can carry more.
+      */
+      { name: "logo_opacity", label: "DFL crest behind the slide", type: "select", default: "default",
+        options: [
+          { value: "default", label: "Default" },
+          { value: "subtle",  label: "Subtle" },
+          { value: "faint",   label: "Very faint — best over photos" },
+          { value: "hidden",  label: "Hidden" },
+        ] },
       /* Blank means "use the treatment default", which is the normal case.
          The range matches the CHECK on the column. */
       { name: "dwell_seconds", label: "Seconds on screen (blank = automatic)", type: "number",

@@ -168,7 +168,7 @@ export function renderItem(item) {
   if (!item) return "";
   const draw = TREATMENTS[item.treatment] || announcement;
   const inner = backdrop(item) + draw(item);
-  const cls = `bx-slide is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")}`;
+  const cls = `bx-slide is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
      works on a tap, a click, a keyboard and a screen reader without any
      gesture handling. The swipe handler cancels the click when the tap
