@@ -20,7 +20,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-import { simulate, dramatize, callouts, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, callouts, visualEvents, intensityAt, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
 
 const reduceMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -597,6 +597,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   */
   const { shown, events } = dramatize(sim, seed);
   const calls = callouts(sim, shown, racers, events);
+  /* Scanned once, before a frame is drawn - see visualEvents(). The loop
+     below only walks this queue, so nothing is compared per frame. */
+  const visuals = visualEvents(sim, shown, racers);
 
   stage.innerHTML = `
     <div class="arena-track-wrap">
@@ -704,12 +707,17 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
     const total = lastFinish + 250;
-    let nextCall = 0, calledAt = -9999, nextEvent = 0;
+    let nextCall = 0, calledAt = -9999, nextEvent = 0, nextVisual = 0;
+    /* One timer-free expiry list. Effects are removed by the frame loop
+       that added them, so nothing can outlive the race or stack up: at
+       most one entry per racer per effect class. */
+    const expiry = [];
     const rows    = racers.map((_, i) => stage.querySelector(`#ar-row-${i}`));
     const official = new Map(sim.order.map((o) => [o.index, o.finishMs]));
     const winnerMs = sim.order[0].finishMs;
     let lastOrderKey = "";
     const homed = new Set();
+    const track = stage.querySelector("#track");
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
@@ -748,6 +756,48 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           reacting.delete(i);
         }
       }
+
+      /*
+        THE VISUAL QUEUE. Precomputed, so this is a walk rather than a
+        search: while the next event is due, apply it and move on.
+      */
+      while (nextVisual < visuals.length && elapsed >= visuals[nextVisual].ms) {
+        const ev = visuals[nextVisual++];
+        const hot = ev.intensity >= 0.6 ? " is-hot" : "";
+        if (ev.kind === "jump") {
+          const el = runners[ev.racer];
+          if (el) { el.classList.add("is-jump"); expiry.push([el, "is-jump", elapsed + ev.durMs]); }
+          const row = rows[ev.racer];
+          if (row) { row.classList.add("ar-jump"); expiry.push([row, "ar-jump", elapsed + ev.durMs]); }
+          /* The callout line is shared with the commentary, and a jump is
+             the more interesting thing to be saying. */
+          if (ev.text && elapsed - calledAt > 1800) { status.textContent = ev.text; calledAt = elapsed; }
+        } else if (ev.kind === "swap") {
+          for (const i of [ev.racer, ev.other]) {
+            const el = runners[i];
+            if (el) { el.classList.add("is-duel" + (hot ? " is-hot" : "")); expiry.push([el, "is-duel", elapsed + ev.durMs]); }
+          }
+        } else if (ev.kind === "near") {
+          for (const i of [ev.racer, ev.other]) {
+            const el = runners[i];
+            if (el) { el.classList.add("is-near"); expiry.push([el, "is-near", elapsed + ev.durMs]); }
+          }
+        }
+      }
+      /* Expire in place. No setTimeout per effect, so a chaotic pack
+         cannot leave a hundred timers running after the race. */
+      for (let k = expiry.length - 1; k >= 0; k--) {
+        if (elapsed >= expiry[k][2]) {
+          expiry[k][0].classList.remove(expiry[k][1], "is-hot");
+          expiry.splice(k, 1);
+        }
+      }
+
+      /* FINAL STRETCH. A curve on the track element, read by CSS - one
+         write when it changes band, not sixty a second. */
+      const heat = intensityAt(shown, lo);
+      const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
+      if (track && track.dataset.heat !== band) track.dataset.heat = band;
 
       /*
         THE BOARD. Ranked by drawn position while running, but a racer who

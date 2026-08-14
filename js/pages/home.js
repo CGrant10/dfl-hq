@@ -31,6 +31,7 @@ import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
+import { presenceLine, presenceNow, onPresence } from "../presence.js";
 
 /*
   THE RUNNING STAGE.
@@ -46,11 +47,15 @@ let stage = null;
    resolves after the page was re-rendered (inline edit, crest change) would
    otherwise hand a stale deck to the new stage. */
 let generation = 0;
+/* The presence watcher's unsubscribe, so leaving home stops listening. */
+let dropPresence = null;
 
 /** Called by the router when this page is left. */
 export function leave() {
   try { stage?.stop(); } catch (err) { console.warn(err); }
   stage = null;
+  try { dropPresence?.(); } catch { /* nothing to drop */ }
+  dropPresence = null;
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
@@ -159,11 +164,21 @@ export async function render(view) {
     <section class="block"><h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
       ${pollList(polls.data)}${adminRow(addControl("polls", "Add poll"))}</section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
+    <p class="dfl-alive" data-alive>${esc(presenceLine(presenceNow()))}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
+
+  /* The counter updates itself when the next heartbeat lands, and the
+     unsubscribe is held so leave() can drop it - a home page left behind
+     must not keep a watcher alive. */
+  const alive = view.querySelector("[data-alive]");
+  if (alive) {
+    dropPresence?.();
+    dropPresence = onPresence((p) => { alive.textContent = presenceLine(p); });
+  }
   wireCrest(view);
 
   /*
