@@ -249,6 +249,57 @@ export function pointsFootnote(battles) {
  * @param {Array<{round:object, battles:Array}>} rounds  in round order
  * @returns {{total:Map<string,number>, per:Array<{round:object, points:Map<string,number>}>}}
  */
+/* =====================================================================
+   WHAT STATE IS THIS OUTING IN
+   ---------------------------------------------------------------------
+   One answer, owned here, because the app currently has TWO and they can
+   disagree:
+
+     pages/golf.js   status === "active"                 -> "Live" pill
+     pages/home.js   decided > 0 && decided < total      -> LIVE badge
+
+   They happen to agree today, and they come apart the moment somebody
+   enters a score before flipping the status, or flips the status on a
+   Tuesday before anybody has teed off.
+
+   THE RULE, and it is deliberate rather than inferred: an outing is LIVE
+   when the commissioner has said it is active AND at least one battle has
+   been decided AND they are not all decided. Scores alone never promote an
+   event to live - a stroke typed in on a practice round is not a
+   tournament - and "active" alone never does either, because a status
+   flipped early would have the front page claiming a live event over an
+   empty course.
+
+   FOUR STATES, and "complete" is the one worth naming: every battle is
+   decided but the commissioner has not marked the outing final. The day is
+   over; the paperwork is not. Calling that "live" would be a lie and
+   calling it "final" would pre-empt a decision that is theirs.
+
+   Takes the SAME rounds shape dayPoints() takes - [{round, battles}] -
+   so no caller has to assemble anything new to ask.
+   ===================================================================== */
+export function outingState(outing, rounds = []) {
+  const battles = (rounds || [])
+    .flatMap((r) => r?.battles || [])
+    .filter((b) => (b?.sides || []).length === 2);
+
+  const total = battles.length;
+  const decided = battles.filter((b) => b?.result?.complete).length;
+  const status = String(outing?.status || "").trim().toLowerCase();
+  const base = { status, total, decided, live: false };
+
+  if (status === "final") return { ...base, state: "final" };
+
+  if (status === "active") {
+    if (total > 0 && decided >= total) return { ...base, state: "complete" };
+    if (decided > 0) return { ...base, state: "live", live: true };
+    return { ...base, state: "upcoming" };      // active, but nothing played
+  }
+
+  // "setup", empty, or anything unrecognised: it has not started.
+  return { ...base, state: "upcoming" };
+}
+
 export function dayPoints(rounds) {
   const total = new Map();
   const per = [];

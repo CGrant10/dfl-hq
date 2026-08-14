@@ -107,10 +107,10 @@ let cache = null;
 export async function loadLore({ force = false } = {}) {
   if (cache && !force) return cache;
 
-  const [leagues, standings, users, members, matchups, manual, arenaEvents, arenaResults, golf] =
+  const [leagues, standings, users, members, matchups, manual, arenaEvents, arenaResults, golf, config] =
     await Promise.all([
       db().from("sleeper_leagues")
-          .select("season,champion_user_id,runner_up_user_id,champion_roster_id,runner_up_roster_id,playoff_teams")
+          .select("season,status,champion_user_id,runner_up_user_id,champion_roster_id,runner_up_roster_id,playoff_teams")
           .order("season", { ascending: false }),
       db().from("sleeper_standings")
           .select("season,roster_id,sleeper_user_id,team_name,wins,losses,ties,points_for,points_against,rank,made_playoffs"),
@@ -123,6 +123,11 @@ export async function loadLore({ force = false } = {}) {
       db().from("arena_events").select("id,name,theme,status,event_date"),
       db().from("arena_results").select("event_id,member_id,place,finish_ms").order("place"),
       db().from("golf_outings").select("id,name,course,event_date,status"),
+      /* WHEN THE FANTASY DATA WAS LAST PULLED. One row, one column, and it
+         is the difference between "live" and "we have not looked since
+         Tuesday" - see fantasyState() below. A missing config row is not an
+         error; it just means nothing can be called live. */
+      db().from("sleeper_config").select("last_synced_at").eq("id", 1).maybeSingle(),
     ]);
 
   const err = leagues.error || standings.error || matchups.error;
@@ -139,8 +144,110 @@ export async function loadLore({ force = false } = {}) {
     arenaEvents:  arenaEvents.data  || [],
     arenaResults: arenaResults.data || [],
     golf:      golf.data || [],
+    syncedAt:  config?.data?.last_synced_at || null,
   };
   return cache;
+}
+
+/* =====================================================================
+   IS FANTASY ACTUALLY HAPPENING RIGHT NOW
+   ---------------------------------------------------------------------
+   The reason this exists: sleeper_matchups holds only FINAL weekly scores,
+   so "the latest week we have data for" is not "the week being played". In
+   February the latest row is Week 17 of a season that ended in January.
+   Anything that prints a bare "WEEK 17" is claiming something false.
+
+   TWO SIGNALS, and it takes BOTH to say live:
+
+     sleeper_leagues.status   Sleeper's own lifecycle value - pre_draft,
+                              drafting, in_season, complete. Authoritative
+                              about the SEASON.
+     last_synced_at           when we last looked. Authoritative about the
+                              DATA.
+
+   A season can be in_season while the numbers on screen are five days old,
+   because syncing here is a button somebody presses rather than a cron. So
+   in_season with a stale sync is NOT live - it degrades to "recent", which
+   is the honest description of numbers that were true when we fetched them
+   and may have moved since.
+
+   STATES
+
+     live        in_season AND synced within FRESH_MS
+     recent      in_season but the sync is stale
+     upcoming    pre_draft or drafting - a season that has not started
+     final       complete, and it is the newest season we hold
+     historical  complete, and something newer exists
+     none        no league rows at all
+
+   `label` is the thing a caller should print, and it always carries the
+   season. There is no code path here that returns a week without the year
+   attached to it.
+   ===================================================================== */
+
+/** How old a sync may be before "in season" stops meaning "live". */
+export const FRESH_MS = 24 * 60 * 60 * 1000;
+
+/** The highest week we hold a played score for in a season, or 0. */
+export function latestPlayedWeek(lore, season) {
+  let top = 0;
+  for (const m of lore?.matchups || []) {
+    if (Number(m.season) !== Number(season)) continue;
+    if (!played(m)) continue;
+    if (Number(m.week) > top) top = Number(m.week);
+  }
+  return top;
+}
+
+export function fantasyState(lore, now = Date.now()) {
+  const leagues = [...(lore?.leagues || [])]
+    .sort((a, b) => (Number(b.season) || 0) - (Number(a.season) || 0));
+  if (!leagues.length) {
+    return { state: "none", season: null, status: "", week: 0, label: "",
+             fresh: false, syncedAt: null, staleHours: null };
+  }
+
+  const league = leagues[0];
+  const season = Number(league.season);
+  const status = String(league.status || "").trim().toLowerCase();
+
+  const syncedAt = lore.syncedAt ? Date.parse(lore.syncedAt) : NaN;
+  const age = Number.isFinite(syncedAt) ? now - syncedAt : Infinity;
+  const fresh = age <= FRESH_MS;
+  const staleHours = Number.isFinite(age) ? Math.floor(age / 3600000) : null;
+
+  const week = latestPlayedWeek(lore, season);
+  const base = { season, status, week, fresh, syncedAt: lore.syncedAt || null, staleHours };
+
+  if (status === "in_season") {
+    /* A week number is only worth printing once somebody has played one. An
+       in_season league on the Tuesday before week 1 has no scores yet. */
+    const label = week ? `${season} · Week ${week}` : String(season);
+    return { ...base, state: fresh ? "live" : "recent", label };
+  }
+
+  if (status === "pre_draft" || status === "drafting") {
+    return { ...base, state: "upcoming", label: `${season} season` };
+  }
+
+  // complete, or a status Sleeper has that we do not recognise
+  return {
+    ...base,
+    state: "final",
+    label: week ? `${season} · Week ${week}` : String(season),
+  };
+}
+
+/**
+ * The state of a season that is NOT the newest one we hold.
+ *
+ * Split out because "final" and "historical" differ only by whether
+ * anything newer exists, and callers asking about 2021 want the second.
+ */
+export function seasonState(lore, season) {
+  const newest = Math.max(...(lore?.leagues || []).map((l) => Number(l.season) || 0), 0);
+  if (Number(season) === newest) return fantasyState(lore).state;
+  return "historical";
 }
 
 /** Drop the cache after an admin edits a moment, so the page redraws truth. */
