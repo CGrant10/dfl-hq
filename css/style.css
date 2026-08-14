@@ -2508,3 +2508,63 @@ input.masked {
   white-space: pre;
   pointer-events: none;
 }
+
+/* =====================================================================
+   THE OPERATOR DRAWER
+   ---------------------------------------------------------------------
+   Two audiences share this page and they want opposite things:
+
+     the stream viewer   the race, big, with nothing else on it
+     the person running  a start button they can reach
+
+   On a phone the answer is not to shrink the control card - it is to get
+   it out of the way and leave a handle. The panel is already a
+   collapsible card (collapse.js), so this only changes WHERE the folded
+   version sits: pinned above the tab bar as a bar you can tap, rather
+   than a card somewhere below the race that you have to scroll to find.
+
+   Folded, it is the .dfl-fold button and nothing else - about 44px. Open,
+   it grows upward over the page, which is what a drawer should do. The
+   race itself is never covered while it is folded, and folding is exactly
+   what runRace() does the moment the countdown ends.
+
+   Desktop is untouched: there is room for the card to simply sit there.
+   ===================================================================== */
+@media (max-width: 720px) {
+  .bc-panel {
+    position: sticky;
+    /* Clear of the tab bar, and of the home indicator on an iPhone. */
+    bottom: calc(58px + env(safe-area-inset-bottom));
+    z-index: 20;
+    margin-bottom: var(--s-3);
+    box-shadow: var(--e-3);
+    /* Open, it must not grow taller than the screen it is drawn on. */
+    max-height: 62svh;
+    overflow-y: auto;
+  }
+  /* Folded it is a bar, so it reads as a handle rather than an empty card. */
+  .bc-panel.is-folded {
+    max-height: none;
+    overflow: visible;
+    border-color: var(--accent);
+  }
+  .bc-panel.is-folded > .dfl-fold { min-height: 46px; }
+
+  /* The primary action is the one the operator is reaching for. */
+  .bc-panel .bc-controls { display: grid; gap: var(--s-2); }
+  /*
+    .btn.small sets min-height: 38px, which is under the 44px touch target
+    the rest of the app holds itself to - and it was winning here because
+    my first selector was no more specific than it. Naming the class as
+    well as the container settles it without !important.
+  */
+  .bc-panel .bc-controls > .btn,
+  .bc-panel .bc-controls > .btn.small,
+  .bc-panel .bc-controls > a.btn { width: 100%; min-height: 46px; }
+  .bc-panel .bc-controls > #bc-start { order: -1; }
+  /* The handle is the thing a thumb goes for; 39px was not enough. */
+  .bc-panel > .dfl-fold { min-height: 48px; }
+
+  /* Nothing on this page should end up underneath the drawer. */
+  #arena-wrap, .arena-page { padding-bottom: var(--s-8); }
+}
