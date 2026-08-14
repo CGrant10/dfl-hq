@@ -124,7 +124,7 @@ export function marquee({ billing = [], main = false, live = false, final = fals
     </div>`).join(`<div class="mq-vs">vs</div>`);
 
   return `
-    <section class="mq-card">
+    <section class="mq-card dfl-mark">
       ${tags ? `<div class="mq-billing">${tags}</div>` : ""}
       <div class="mq-tape">${tape}</div>
       ${moodText || where ? `

@@ -104,3 +104,50 @@
 /* live leaderboard */
 .golf-leaderboard{padding:0;overflow:hidden}.golf-leaderboard .card-title-row{padding:14px 14px 0}.golf-leader-list{display:grid}.golf-leader-row{display:grid;grid-template-columns:30px 1fr auto 18px;align-items:center;gap:9px;padding:11px 13px;border-top:1px solid var(--line-soft);text-decoration:none;color:inherit;min-height:48px}.golf-leader-row:hover{background:var(--bg-3)}.golf-leader-pos{font-weight:900;color:var(--muted);text-align:center}.golf-leader-team{min-width:0;display:grid;gap:2px}.golf-leader-team strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.golf-leader-team small{font-size:10px;color:var(--muted)}.golf-leader-score{font-size:19px;font-variant-numeric:tabular-nums;color:var(--accent);min-width:44px;text-align:right}.golf-leader-arrow{font-size:22px;color:var(--muted);text-align:right}
 @media(max-width:600px){.golf-event-head{display:grid;grid-template-columns:auto 1fr;gap:9px}.setup-figures{gap:6px}.golf-generator{display:grid;grid-template-columns:1fr 1fr}.gcount{grid-column:1/-1}.golf-generator button{width:100%}.grow{grid-template-columns:1fr 2.5rem auto}.golf-leader-row{grid-template-columns:27px 1fr auto 12px;padding:11px 10px}.golf-leader-score{font-size:18px}.gteam-head{padding:11px 10px}.gteam-members{padding:9px 10px}.golf-event-summary,.golf-teams-card,.golf-admin-card,.golf-lineup-card{padding:11px}}
+
+/* =====================================================================
+   THE TOURNAMENT POSTER
+   A card you want to tap, rather than a row you have to read.
+   ===================================================================== */
+.gposter { display: grid; gap: var(--s-2); padding: var(--s-5); text-decoration: none; color: inherit; }
+.gposter-kicker {
+  font-size: var(--fs-label); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase;
+  color: var(--accent);
+}
+/* The name is the poster. Everything else on this card is caption. */
+.gposter-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 7vw, 2.1rem);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--text);
+}
+.gposter-when {
+  font-size: var(--fs-label); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide); text-transform: uppercase;
+  color: var(--muted);
+}
+.gposter-status { justify-self: start; margin-top: var(--s-1); }
+.gposter-facts {
+  display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3);
+  margin-top: var(--s-1);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide); text-transform: uppercase;
+  color: var(--muted);
+}
+.gposter-facts span { white-space: nowrap; }
+
+/* The captain, named on the team card. Real column, real person. */
+.gteam-captain {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase;
+  color: var(--milestone);
+}

@@ -761,3 +761,12 @@
 }
 .bx-slide .mq-side-name { font-size: clamp(.72rem, 3.4vw, var(--fs-h3)); }
 .bx-slide .mq-side { min-width: 0; }
+
+/*
+  ONE CREST PER SLIDE. marquee() now carries the dfl-mark watermark, which
+  is right on the golf match page - but on the broadcast stage the slide
+  already draws its own crest for the champion and logo treatments, and two
+  overlapping marks at different sizes reads as a printing error. The
+  stage's own crest wins inside the stage.
+*/
+.bx-slide .mq-card.dfl-mark::after { display: none; }

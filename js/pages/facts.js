@@ -28,7 +28,7 @@ export async function render(view) {
   const all = funFacts(lore);
 
   if (!today) {
-    view.innerHTML = `<header class="page-head"><h1>Did you know?</h1></header>
+    view.innerHTML = `<header class="page-head"><h1>DFL Lore</h1></header>
       <div class="state"><span class="state-title">Not enough history yet</span>
       <span>Once a few seasons have been synced from Sleeper, the league's records show up here.</span></div>`;
     return;
@@ -39,15 +39,17 @@ export async function render(view) {
   const rest = all.filter((f) => f.id !== today.id);
 
   view.innerHTML = `
-    <header class="page-head"><h1>Did you know?</h1></header>
+    <header class="page-head"><h1>DFL Lore</h1></header>
 
-    <section class="factcard" data-fact>
+    <section class="factcard dfl-mark" data-fact>
       <span class="fact-kicker">
         <svg class="ico-sm" aria-hidden="true"><use href="#${esc(ICON[today.kind] || "i-record")}"></use></svg>
-        Today's DFL fact
+        DFL Lore
       </span>
+      <p class="fact-ask">Did you know?</p>
       <p class="fact-head">${esc(today.headline)}</p>
       <p class="fact-detail">${esc(today.detail)}</p>
+      ${today.season ? `<span class="fact-when">${esc(today.season)} season</span>` : ""}
       <div class="row-end">
         <button type="button" class="btn ghost small" data-share>
           <svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg>
@@ -56,9 +58,9 @@ export async function render(view) {
       </div>
     </section>
 
-    <p class="muted tiny fact-note">A new one every day, the same one for everybody.</p>
+    <p class="muted tiny fact-note">A new piece of league history every day — the same one for everybody.</p>
 
-    ${rest.length ? `<h2 class="section-title">The rest of the record book<span class="count">${rest.length}</span></h2>
+    ${rest.length ? `<h2 class="section-title">The rest of the lore<span class="count">${rest.length}</span></h2>
       <div class="factlist">
         ${rest.map((f) => `
           <article class="card fact-row">

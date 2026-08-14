@@ -733,3 +733,52 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 /* The crest at the foot of home was shrunk too far in the polish pass - it
    is the identity block, so it should be legible artwork, not a favicon. */
 #home-wrap .hero-crest { width: 232px; max-width: 64vw; }
+
+/* =====================================================================
+   THE DFL WATERMARK - one utility, used everywhere.
+   ---------------------------------------------------------------------
+   Add `dfl-mark` to any positioned container and the crest sits behind
+   its content, oversized and bled off the right edge. That is the whole
+   feature: a logo centred and small is a watermark on a document, a logo
+   cropped by the frame is a broadcast.
+
+   WHY A UTILITY AND NOT A COPY PER CARD. It is on the golf tournament
+   card, the match card, the scorecard, the fun fact and the Arena track.
+   Five hand-rolled copies would drift in opacity and position the first
+   time one of them was adjusted, and the brief asked for exactly one
+   asset reused rather than an upload per card.
+
+   IT USES ::after, NOT ::before. Several of these cards already spend
+   ::before on an accent rule, and quietly stealing it would delete their
+   existing top edge.
+
+   LIGHT MODE IS NOT AN AFTERTHOUGHT. mark-512.png is a light-on-dark
+   asset, so on a light card it is inverted rather than merely faded -
+   fading a white mark on white paper just deletes it.
+   ===================================================================== */
+.dfl-mark { position: relative; isolation: isolate; overflow: hidden; }
+.dfl-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%; right: -14%;
+  width: 62%; aspect-ratio: 1 / 1;
+  transform: translateY(-50%);
+  background: url("../icons/mark-512.png") center / contain no-repeat;
+  opacity: .07;
+  pointer-events: none;                 /* never interactive, ever */
+  z-index: 0;
+}
+/* Content sits above the mark without every card needing its own rule. */
+.dfl-mark > * { position: relative; z-index: 1; }
+
+/* Inverted and slightly stronger on a light ground, where a faint white
+   mark would be invisible. */
+:root[data-mode="light"] .dfl-mark::after { filter: invert(1) brightness(.4); opacity: .10; }
+
+/* Over artwork or a photograph there is already plenty going on. */
+.dfl-mark.on-image::after { opacity: .05; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Nothing moves. Stated so nobody adds a drift later and calls it a
+     brand animation - this is furniture. */
+}
