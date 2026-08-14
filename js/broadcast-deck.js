@@ -36,7 +36,7 @@
    printed beside the season it belongs to.
    ===================================================================== */
 
-import { esc, fmtDate, relDate, money } from "./ui.js";
+import { esc, fmtDate, fmtWhen, relDate, money } from "./ui.js";
 import { LEAGUE_FOUNDED } from "./config.js";
 import { db } from "./supabase.js";
 import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle.js";
@@ -507,7 +507,9 @@ function eventItems(ctx) {
       temporal: isToday ? "live" : "upcoming",
       priority: isToday ? P.LIVE : (days <= 7 ? P.UPCOMING + 50 : P.UPCOMING) * decay(0, 1),
       kicker: isToday ? "Today" : "Next up",
-      headline: e.title, subtitle: fmtDate(e.event_date),
+      /* The time, when there is one, belongs on the broadcast too -
+         "Sat, Aug 29 · 7:00 PM" is the whole point of storing it. */
+      headline: e.title, subtitle: fmtWhen(e.event_date, e.event_time),
       body: e.description || relDate(e.event_date),
       href: "#/calendar",
     }));

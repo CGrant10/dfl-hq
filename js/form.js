@@ -70,6 +70,9 @@ export function field(f, prefix = "f_") {
     case "datetime":
       input = `<input id="${id}" name="${f.name}" type="datetime-local" ${req}>`;
       break;
+    case "time":
+      input = `<input id="${id}" name="${f.name}" type="time" ${req}>`;
+      break;
     case "checkbox":
       return `<label style="display:flex;align-items:center;gap:8px;margin-top:12px">
                 <input id="${id}" name="${f.name}" type="checkbox" style="width:auto">
@@ -94,6 +97,10 @@ export function setValue(form, f, value) {
   else if (f.type === "list")  el.value = toArray(value).join("\n");
   else if (f.type === "date")  el.value = value ? String(value).slice(0, 10) : "";
   else if (f.type === "datetime") el.value = toLocalInput(value);
+  /* Postgres hands back "19:00:00"; <input type="time"> wants "19:00".
+     NO timezone conversion here, deliberately - a `time` column is wall
+     clock, so 7pm is 7pm for everybody reading it. */
+  else if (f.type === "time")  el.value = value ? String(value).slice(0, 5) : "";
   else                         el.value = value ?? "";
 }
 
@@ -152,6 +159,10 @@ export function readForm(form, fields) {
     } else if (f.type === "datetime") {
       // Same empty-string-is-not-null rule as date, plus the UTC conversion.
       out[f.name] = fromLocalInput(el.value);
+    } else if (f.type === "time") {
+      // Same rule again: a blank time is null, not "", which Postgres
+      // rejects outright for a time column.
+      out[f.name] = el.value || null;
     } else {
       out[f.name] = el.value.trim();
     }

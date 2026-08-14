@@ -148,10 +148,13 @@ export const SECTIONS = [
     table: "events", singular: "event", plural: "events",
     order: "event_date", asc: true,
     label: (r) => r.title,
-    sub:   (r) => r.event_date,
+    sub:   (r) => (r.event_time ? `${r.event_date} · ${String(r.event_time).slice(0, 5)}` : r.event_date),
     fields: [
       { name: "title",       label: "Title", type: "text", required: true, placeholder: "Draft night" },
       { name: "event_date",  label: "Date",  type: "date", required: true },
+      /* Optional on purpose: an all-day entry should not be forced to
+         claim midnight. Blank means "no time set". */
+      { name: "event_time",  label: "Start time (optional)", type: "time" },
       { name: "description", label: "Details", type: "textarea" },
     ],
   },

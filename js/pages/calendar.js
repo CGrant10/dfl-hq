@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { db, insertRow } from "../supabase.js";
-import { esc, empty, fmtDate, relDate, toast, errorBox, loading } from "../ui.js";
+import { esc, empty, fmtDate, fmtWhen, relDate, toast, errorBox, loading } from "../ui.js";
 import { getUsername } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
@@ -95,7 +95,7 @@ function eventRow(e, upcoming) {
           <span class="evtitle">${esc(e.title)}</span>
           <span class="pill ${upcoming ? "green" : "grey"}">${esc(relDate(e.event_date))}</span>
         </div>
-        <div class="evwhen">${esc(fmtDate(e.event_date))}</div>
+        <div class="evwhen">${esc(fmtWhen(e.event_date, e.event_time))}</div>
         ${e.description ? `<div class="evnote">${esc(e.description)}</div>` : ""}
         ${editControls("events", e, { compact: true })}
       </div>

@@ -20,7 +20,7 @@
 // made the page an About screen.
 // =====================================================================
 import { db, configured } from "../supabase.js";
-import { esc, fmtDate, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
+import { esc, fmtDate, fmtWhen, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
@@ -351,6 +351,6 @@ function creedDoors(events,golfRow,polls,dues){
   ).join("")}</nav>`;
 }
 function adminRow(control){return control?`<div class="row-end">${control}</div>`:""}
-function eventList(allRows){const rows=visible("events",allRows);if(!rows.length)return `<div class="state"><span class="state-title">Nothing scheduled</span><span>No events on the calendar yet.</span></div>`;return rows.map(e=>`<article class="card event ${hiddenClass("events",e)}"><div class="event-when"><span class="event-date">${esc(fmtDate(e.event_date))}</span><span class="badge open">${esc(relDate(e.event_date))}</span></div><h3 class="card-heading">${esc(e.title)}</h3>${e.description?`<div class="card-body">${esc(e.description)}</div>`:""}${editControls("events",e)}</article>`).join("")}
+function eventList(allRows){const rows=visible("events",allRows);if(!rows.length)return `<div class="state"><span class="state-title">Nothing scheduled</span><span>No events on the calendar yet.</span></div>`;return rows.map(e=>`<article class="card event ${hiddenClass("events",e)}"><div class="event-when"><span class="event-date">${esc(fmtWhen(e.event_date, e.event_time))}</span><span class="badge open">${esc(relDate(e.event_date))}</span></div><h3 class="card-heading">${esc(e.title)}</h3>${e.description?`<div class="card-body">${esc(e.description)}</div>`:""}${editControls("events",e)}</article>`).join("")}
 function pollList(allRows){const rows=visible("polls",allRows);if(!rows.length)return `<div class="state"><span class="state-title">No polls open</span><span>Nothing to vote on right now.</span></div>`;return rows.map(p=>`<a class="card linkcard ${hiddenClass("polls",p)}" href="#/polls"><h3 class="card-heading">${esc(p.question)}</h3><span class="card-cta">Cast your vote →</span></a>${editControls("polls",p,{compact:true})}`).join("")}
 function setupNotice(){return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`}

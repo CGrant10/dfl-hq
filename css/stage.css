@@ -184,8 +184,13 @@
   opacity: .07;
 }
 .bx-bg-light .bx-crest { opacity: .10; }
-/* Off to the side for the champion, so the name owns the middle. */
-.is-champion .bx-crest { left: 78%; top: 58%; width: 110%; opacity: .09; }
+/* The champion's crest is CENTRED, like every other one. It used to be
+   pushed off to the right on the theory that the name should own the
+   middle - in practice it just read as a misaligned logo, because the
+   name is centred and the mark behind it was not. It sits a little
+   larger and a little stronger instead, which is the ceremony without
+   the crookedness. */
+.is-champion .bx-crest { width: 118%; opacity: .09; }
 
 /*
   THE CORNER BRACKETS. Four hairline Ls, drawn with one element and two

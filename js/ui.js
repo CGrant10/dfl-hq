@@ -10,6 +10,32 @@ export function esc(value) {
 }
 
 /** "Sat, Aug 30, 2026" */
+/**
+ * "19:00:00" -> "7:00 PM", in the reader's own locale.
+ *
+ * NO TIMEZONE MATHS. The column behind this is a Postgres `time`, which
+ * is wall clock and carries no zone - "the draft is at 7pm" means 7pm,
+ * and converting it would show a member in another state the wrong hour
+ * for an event they are driving to. Contrast toLocalInput() in form.js,
+ * which DOES convert, because that one is backed by timestamptz.
+ */
+export function fmtTime(value) {
+  if (!value) return "";
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(value));
+  if (!m) return "";
+  const d = new Date();
+  d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  if (isNaN(d)) return "";
+  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+/** "Sat, Aug 29, 2026" or "Sat, Aug 29, 2026 · 7:00 PM" when a time is set. */
+export function fmtWhen(date, time) {
+  const day = fmtDate(date);
+  const at = fmtTime(time);
+  return at ? `${day} · ${at}` : day;
+}
+
 export function fmtDate(value) {
   if (!value) return "";
   const d = new Date(String(value).length === 10 ? value + "T12:00:00" : value);
