@@ -2140,14 +2140,40 @@ input.masked {
    ===================================================================== */
 
 /* Waiting on the line - a slow idle so the grid is not a still photograph. */
-.runner .runner-art { animation: dfl-idle 2.4s var(--ease) infinite; transform-origin: 50% 90%; }
+
+/*
+  SPECIFICITY, AND THIS IS WHY NOTHING APPEARED TO WORK.
+
+  The base and run-cycle rules used to be written as
+
+    .runner .runner-art                   (2 classes)
+    .track.is-running .runner .runner-art (4 classes)
+
+  and every state rule as
+
+    .runner.is-surge .runner-art          (3 classes)
+
+  Four beats three, so the run cycle WON over surge, stumble, jump, duel
+  and the winner's hop - permanently. The classes were being applied
+  correctly the whole time; their animations simply never got to play,
+  which is indistinguishable from "the feature does not work".
+
+  The fix is to stop over-qualifying the base rules rather than to pile
+  more classes onto the state rules: the art element only ever lives
+  inside a runner, so naming the runner in those selectors bought nothing
+  and cost the cascade. Base is now 1 class, running is 3, and each state
+  is 3 and declared later - so a state wins on source order.
+
+  If you add a state, keep it at three classes or fewer.
+*/
+.runner-art { animation: dfl-idle 2.4s var(--ease) infinite; transform-origin: 50% 90%; }
 @keyframes dfl-idle {
   0%, 100% { transform: translateY(0) }
   50%      { transform: translateY(-1.5px) }
 }
 
 /* Running: a quicker bob, the default while the race is on. */
-.track.is-running .runner .runner-art { animation: dfl-run .42s linear infinite; }
+.track.is-running .runner-art { animation: dfl-run .42s linear infinite; }
 @keyframes dfl-run {
   0%, 100% { transform: translateY(0) rotate(0deg) }
   25%      { transform: translateY(-2px) rotate(-1.5deg) }
@@ -2189,8 +2215,8 @@ input.masked {
   position is information - but nothing bounces, shakes or celebrates.
 */
 @media (prefers-reduced-motion: reduce) {
-  .runner .runner-art,
-  .track.is-running .runner .runner-art,
+  .runner-art,
+  .track.is-running .runner-art,
   .runner.is-surge .runner-art,
   .runner.is-stumble .runner-art,
   .runner.is-winner .runner-art { animation: none !important; }
@@ -2370,9 +2396,9 @@ input.masked {
   together as the leader closes in - and it is one attribute write when
   the band changes, not sixty a second.
 */
-.track[data-heat="1"] .runner .runner-art { animation-duration: .38s; }
-.track[data-heat="2"] .runner .runner-art { animation-duration: .3s; }
-.track[data-heat="3"] .runner .runner-art { animation-duration: .24s; }
+.track[data-heat="1"] .runner-art { animation-duration: .38s; }
+.track[data-heat="2"] .runner-art { animation-duration: .3s; }
+.track[data-heat="3"] .runner-art { animation-duration: .24s; }
 .track[data-heat="2"] .ar-row, .track[data-heat="3"] .ar-row { transition-duration: 260ms; }
 .track[data-heat="3"] { box-shadow: inset 0 0 40px rgba(229,1,27,.10); }
 

@@ -22,7 +22,7 @@ import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
-import { simulate, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, visualEvents, intensityAt, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -236,7 +236,7 @@ function paint(view, event, racers) {
           <div class="bc-board-head">Standings</div>
           <ol class="bc-board-list" id="bc-board-list">
             ${racers.map((r) => `
-              <li><span class="bc-pos"></span><span class="bc-who">${esc(r.name)}</span></li>`).join("")}
+              <li><span class="bc-pos"></span><span class="bc-who">${esc(r.name)}</span><span class="bc-time"></span></li>`).join("")}
           </ol>
         </aside>
       </div>
@@ -289,6 +289,7 @@ function watch(view, id, racers) {
     board:   view.querySelector("#bc-board"),
     body:    view.querySelector(".bc-body"),
     list:    view.querySelector("#bc-board-list"),
+    track:   view.querySelector("#bc-track"),
     overlay: view.querySelector("#bc-overlay"),
     count:   view.querySelector("#bc-count"),
     winner:  view.querySelector("#bc-winner"),
@@ -303,6 +304,24 @@ function watch(view, id, racers) {
     const key = `${row.seed}:${ticks}:${racers.length}`;
     if (key !== live.simKey) {
       live.sim = simulate(racers, ticks, Number(row.seed) || 1);
+      /*
+        THE SAME THEATRE THE EVENT PAGE USES. This screen was still drawing
+        raw sim.samples, which is why the OBS broadcast had none of the
+        movement, none of the events and no split times - all of that lived
+        in pages/arena.js and stopped at its own door. Same functions, same
+        seed, so the two screens show the same race.
+      */
+      const drama = dramatize(live.sim, Number(row.seed) || 1);
+      live.shown = drama.shown;
+      live.events = drama.events;
+      live.visuals = visualEvents(live.sim, live.shown, racers);
+      live.nextVisual = 0;
+      live.nextEvent = 0;
+      live.expiry = [];
+      live.lastElapsed = -1;
+      live.official = new Map(live.sim.order.map((o) => [o.index, o.finishMs]));
+      live.winnerMs = live.sim.order[0]?.finishMs ?? 0;
+      live.homed = new Set();
       live.simKey = key;
 
       /*
@@ -378,11 +397,83 @@ function watch(view, id, racers) {
       const t = Math.max(0, Math.min(sim.frames, elapsed / TICK_MS));
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
+      const src = live.shown || sim.samples;
       for (let i = 0; i < els.runners.length; i++) {
-        const s = sim.samples[i];
+        const s = src[i];
         const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
         els.runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
       }
+
+      /*
+        EVENTS AND REACTIONS.
+
+        The clock here is shared and seekable - a commissioner can restart
+        or the page can be opened mid-race - so the queue index is reset
+        whenever the clock goes backwards rather than assuming it only ever
+        moves forward like the event page's does.
+      */
+      if (elapsed < live.lastElapsed) {
+        live.nextVisual = 0; live.nextEvent = 0; live.homed.clear();
+        for (const [el, cls] of live.expiry) el.classList.remove(cls, "is-hot");
+        live.expiry.length = 0;
+        for (const el of els.runners) el.classList.remove("is-surge","is-stumble","is-jump","is-duel","is-near","is-hot","is-home","is-finished","is-winner","is-leading");
+      }
+      live.lastElapsed = elapsed;
+
+      const track = els.track;
+      if (state === "running" || state === "paused") {
+        track?.classList.add("is-running");
+      } else {
+        track?.classList.remove("is-running");
+      }
+
+      while (live.nextEvent < (live.events?.length || 0) && elapsed >= live.events[live.nextEvent].ms) {
+        const ev = live.events[live.nextEvent++];
+        const el = els.runners[ev.racer];
+        if (el) {
+          el.classList.remove("is-surge", "is-stumble");
+          el.classList.add(ev.kind === "stumble" ? "is-stumble" : "is-surge");
+          live.expiry.push([el, ev.kind === "stumble" ? "is-stumble" : "is-surge", elapsed + ev.durMs]);
+        }
+      }
+
+      while (live.nextVisual < (live.visuals?.length || 0) && elapsed >= live.visuals[live.nextVisual].ms) {
+        const ev = live.visuals[live.nextVisual++];
+        const hot = ev.intensity >= 0.6;
+        const touch = (i, cls) => {
+          const el = els.runners[i];
+          if (!el) return;
+          el.classList.add(cls);
+          if (hot) el.classList.add("is-hot");
+          live.expiry.push([el, cls, elapsed + ev.durMs]);
+        };
+        if (ev.kind === "jump") touch(ev.racer, "is-jump");
+        else if (ev.kind === "swap") { touch(ev.racer, "is-duel"); touch(ev.other, "is-duel"); }
+        else if (ev.kind === "near") { touch(ev.racer, "is-near"); touch(ev.other, "is-near"); }
+      }
+
+      for (let k = live.expiry.length - 1; k >= 0; k--) {
+        if (elapsed >= live.expiry[k][2]) {
+          live.expiry[k][0].classList.remove(live.expiry[k][1], "is-hot");
+          live.expiry.splice(k, 1);
+        }
+      }
+
+      /* Individual finishes, so the stream shows people arriving one by
+         one rather than the field simply stopping. */
+      for (let i = 0; i < els.runners.length; i++) {
+        const ms = live.official?.get(i);
+        if (ms == null || live.homed.has(i) || elapsed < ms) continue;
+        live.homed.add(i);
+        const el = els.runners[i];
+        el?.classList.remove("is-surge", "is-stumble", "is-duel");
+        el?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
+      }
+
+      /* Final stretch, as a band the CSS reads - one write per change. */
+      const band = (() => { const h = intensityAt(src, lo);
+        return h > .66 ? "3" : h > .33 ? "2" : h > 0 ? "1" : "0"; })();
+      if (track && track.dataset.heat !== band) track.dataset.heat = band;
 
       if (row.bc_show_timer !== false) {
         // Frozen at the last finish: a race clock that carries on counting
@@ -396,7 +487,7 @@ function watch(view, id, racers) {
       const now = performance.now();
       if (now - lastBoard > 160) {
         lastBoard = now;
-        drawBoard(els.list, racers, sim, t, elapsed, live.finishAt);
+        drawBoard(els.list, racers, sim, t, elapsed, live.finishAt, live.shown, live.winnerMs);
       }
 
       const finishMs = sim.order.at(-1)?.finishMs ?? 0;
@@ -461,12 +552,13 @@ const trackX = (p) =>
  * still running, and the still-running are ranked by distance with lane
  * order as the tie-break (which is what stops a standing start flickering).
  */
-function drawBoard(list, racers, sim, t, elapsed, finishAt) {
+function drawBoard(list, racers, sim, t, elapsed, finishAt, shown, winnerMs = 0) {
   const idx = Math.max(0, Math.min(sim.frames, Math.round(t)));
   const done = (i) => (finishAt?.[i] ?? Infinity) <= elapsed;
+  const src = shown || sim.samples;
 
   const rows = racers
-    .map((r, i) => ({ r, i, p: sim.samples[i][idx], f: finishAt?.[i] ?? Infinity }))
+    .map((r, i) => ({ r, i, p: src[i][idx], f: finishAt?.[i] ?? Infinity }))
     .sort((a, b) => {
       const ad = done(a.i), bd = done(b.i);
       if (ad && bd) return a.f - b.f;          // both home: by finish time
@@ -493,5 +585,18 @@ function drawBoard(list, racers, sim, t, elapsed, finishAt) {
     }
     li.style.setProperty("--racer", row.r.color);
     li.classList.toggle("leader", i === 0);
+
+    /*
+      THE SPLIT. The winner's own time, then the gap to them - straight off
+      the authoritative finishMs, never measured from the animation.
+    */
+    const time = li.querySelector(".bc-time");
+    if (time) {
+      const want = !done(row.i) ? ""
+        : row.f === winnerMs ? `${(row.f / 1000).toFixed(2)}s`
+        : `+${((row.f - winnerMs) / 1000).toFixed(2)}`;
+      if (time.textContent !== want) time.textContent = want;
+    }
+    li.classList.toggle("is-home", done(row.i));
   }
 }

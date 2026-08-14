@@ -442,3 +442,158 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) {
   .bc-bar { transition: none; }
 }
+
+/* =====================================================================
+   THE RACERS, ALIVE - ON THE BROADCAST STAGE TOO.
+
+   The event page got all of this and the OBS stage got none of it, which
+   is the screen people actually watch. Same class names as the event
+   page so the two cannot drift, but every amplitude is in vw because
+   this stage scales to 1920x1080 rather than to a phone - a 5px hop that
+   reads correctly in the app is invisible here.
+
+   Animations sit on the ART, never on .bc-runner: that element carries
+   the translate3d that IS the race.
+   ===================================================================== */
+
+.bc-runner-art { position: relative; transform-origin: 50% 90%; }
+
+
+/*
+  SPECIFICITY, AND THIS IS WHY NOTHING APPEARED TO WORK.
+
+  The base and run-cycle rules used to be written as
+
+    .runner .runner-art                   (2 classes)
+    .track.is-running .runner .runner-art (4 classes)
+
+  and every state rule as
+
+    .runner.is-surge .runner-art          (3 classes)
+
+  Four beats three, so the run cycle WON over surge, stumble, jump, duel
+  and the winner's hop - permanently. The classes were being applied
+  correctly the whole time; their animations simply never got to play,
+  which is indistinguishable from "the feature does not work".
+
+  The fix is to stop over-qualifying the base rules rather than to pile
+  more classes onto the state rules: the art element only ever lives
+  inside a runner, so naming the runner in those selectors bought nothing
+  and cost the cascade. Base is now 1 class, running is 3, and each state
+  is 3 and declared later - so a state wins on source order.
+
+  If you add a state, keep it at three classes or fewer.
+*/
+.bc-runner-art { animation: bcIdle 2.4s ease-in-out infinite; }
+@keyframes bcIdle {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-.25vw) }
+}
+
+.bc-track.is-running .bc-runner-art { animation: bcRun .42s linear infinite; }
+@keyframes bcRun {
+  0%, 100% { transform: translateY(0) rotate(0deg) }
+  25%      { transform: translateY(-.42vw) rotate(-4deg) }
+  50%      { transform: translateY(0) rotate(0deg) }
+  75%      { transform: translateY(-.26vw) rotate(4deg) }
+}
+
+.bc-runner.is-surge .bc-runner-art,
+.bc-runner.is-duel  .bc-runner-art { animation: bcSurge .22s linear infinite; }
+.bc-runner.is-duel.is-hot .bc-runner-art { animation-duration: .15s; }
+@keyframes bcSurge {
+  0%, 100% { transform: translateY(-.17vw) scale(1.14) rotate(-5deg) }
+  50%      { transform: translateY(-.6vw) scale(1.18) rotate(5deg) }
+}
+
+.bc-runner.is-stumble .bc-runner-art { animation: bcStumble .3s ease-in-out 4; }
+@keyframes bcStumble {
+  0%, 100% { transform: translateX(0) rotate(0deg) }
+  25%      { transform: translateX(-.42vw) rotate(-16deg) }
+  60%      { transform: translateX(.26vw) rotate(11deg) }
+}
+
+.bc-runner.is-jump .bc-runner-art { animation: bcJump .34s ease-out 3; }
+@keyframes bcJump {
+  0%, 100% { transform: translateY(-.17vw) scale(1.12) }
+  50%      { transform: translateY(-.78vw) scale(1.22) rotate(-7deg) }
+}
+
+.bc-runner.is-leading .bc-runner-art {
+  filter: drop-shadow(0 0 .8vw var(--racer, var(--accent)))
+          drop-shadow(0 .3vw .5vw rgba(0,0,0,.6));
+}
+
+/* Streaks, scaled to the stage. */
+.bc-runner.is-surge .bc-runner-art::before,
+.bc-runner.is-surge .bc-runner-art::after,
+.bc-runner.is-jump  .bc-runner-art::before,
+.bc-runner.is-duel  .bc-runner-art::before {
+  content: "";
+  position: absolute; right: 100%;
+  height: .26vw; border-radius: .13vw;
+  background: linear-gradient(270deg, var(--racer, var(--accent)), transparent);
+  pointer-events: none;
+}
+.bc-runner.is-surge .bc-runner-art::before,
+.bc-runner.is-jump  .bc-runner-art::before,
+.bc-runner.is-duel  .bc-runner-art::before { top: 30%; width: 3.2vw; margin-right: .26vw; animation: bcStreak .26s linear infinite; }
+.bc-runner.is-surge .bc-runner-art::after  { top: 62%; width: 2.1vw; margin-right: .5vw; animation: bcStreak .32s linear infinite .06s; }
+@keyframes bcStreak {
+  0%   { opacity: 0; transform: translateX(.35vw) }
+  40%  { opacity: .9 }
+  100% { opacity: 0; transform: translateX(-.5vw) }
+}
+
+/* Near miss. */
+.bc-runner.is-near .bc-runner-art::after {
+  content: "";
+  position: absolute; right: -.5vw; top: 25%;
+  width: .5vw; height: .5vw; border-radius: .1vw;
+  background: #fff; box-shadow: 0 0 .5vw #fff;
+  animation: bcSpark .34s linear 3;
+}
+@keyframes bcSpark {
+  0%   { opacity: 0; transform: translate(0,0) scale(.6) }
+  35%  { opacity: 1; transform: translate(.35vw,-.35vw) scale(1) }
+  100% { opacity: 0; transform: translate(.9vw,-.8vw) scale(.5) }
+}
+
+/* Home: stop the legs. The winner gets the hop. */
+.bc-runner.is-home .bc-runner-art,
+.bc-runner.is-finished .bc-runner-art { animation: bcSettle .5s ease-out both; }
+@keyframes bcSettle {
+  0%   { transform: translateY(-.26vw) scale(1.05) }
+  60%  { transform: translateY(.08vw) scale(.98) }
+  100% { transform: none }
+}
+.bc-runner.is-winner .bc-runner-art { animation: bcWin .5s ease-out 3; }
+@keyframes bcWin {
+  0%, 100% { transform: translateY(0) scale(1) }
+  40%      { transform: translateY(-1.2vw) scale(1.2) }
+  60%      { transform: translateY(-.35vw) scale(1.06) }
+}
+
+/* The split time on the board. */
+.bc-board-list li { grid-template-columns: 2.4vw 1fr auto; }
+.bc-time {
+  font-size: 1.05vw; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.bc-board-list li.is-home .bc-time { color: var(--chalk); }
+.bc-board-list li.is-home { background: rgba(255,255,255,.03); }
+
+/* Final stretch: the whole field gets busier together. */
+.bc-track[data-heat="1"] .bc-runner-art { animation-duration: .38s }
+.bc-track[data-heat="2"] .bc-runner-art { animation-duration: .3s }
+.bc-track[data-heat="3"] .bc-runner-art { animation-duration: .24s }
+.bc-track[data-heat="3"] { box-shadow: inset 0 0 3vw rgba(229,1,27,.10); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-runner-art, .bc-runner.is-surge .bc-runner-art,
+  .bc-runner.is-duel .bc-runner-art, .bc-runner.is-stumble .bc-runner-art,
+  .bc-runner.is-jump .bc-runner-art, .bc-runner.is-winner .bc-runner-art,
+  .bc-runner.is-near .bc-runner-art::after { animation: none !important; }
+}
