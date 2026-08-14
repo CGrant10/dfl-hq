@@ -27,7 +27,7 @@
 
 import {
   namer, toSides, played, margin, best, winnerSide, loserSide, streaks, titleGame, spanLabel,
-  withOwner,
+  withOwner, headToHead, career,
 } from "./lore.js";
 
 const DAY = 86400000;
@@ -188,6 +188,100 @@ export function funFacts(lore) {
         ? `More than anybody else in the league's history.`
         : `They are tied at the top — nobody in the DFL has more.`,
       null, topCount);
+  }
+
+  /*
+    ============================================================
+    RIVALRIES AND CAREERS
+
+    A ten-fact book cycles in ten days, which starts repeating
+    before a season is out. These use headToHead() and career() -
+    both already in lore.js - rather than counting anything here,
+    which is the same rule the rest of this file follows.
+
+    Everyone who has ever played, from the standings, because a
+    member row can be missing for somebody whose account is gone.
+    ============================================================
+  */
+  const users = [...new Set((lore.standings || []).map((r) => r.sleeper_user_id).filter(Boolean))];
+
+  // ---- the most one-sided rivalry ---------------------------------------
+  let lopsided = null, played_most = null;
+  for (const u of users) {
+    for (const r of headToHead(lore, u)) {
+      if (r.meetings >= 5 && (!lopsided || (r.wins - r.losses) > (lopsided.r.wins - lopsided.r.losses))) {
+        lopsided = { u, r };
+      }
+      /* Each meeting is counted from both sides, so the pair is seen
+         twice - taking the max is the same answer either way. */
+      if (!played_most || r.meetings > played_most.r.meetings) played_most = { u, r };
+    }
+  }
+  if (lopsided && lopsided.r.wins > lopsided.r.losses) {
+    add("rivalry", "streak",
+      `${who(lopsided.u)} owns ${who(lopsided.r.user)} ${lopsided.r.wins}-${lopsided.r.losses}.`,
+      `${lopsided.r.meetings} meetings and it has never really been close.`,
+      null, lopsided.r.wins);
+  }
+  if (played_most && played_most.r.meetings >= 4) {
+    const h = played_most.r;
+    add("mostplayed", "volume",
+      `${who(played_most.u)} and ${who(h.user)} have met ${h.meetings} times.`,
+      `More than any other pair in the league. It stands ${h.wins}-${h.losses}${h.ties ? `-${h.ties}` : ""}.`,
+      null, h.meetings);
+  }
+
+  // ---- careers -----------------------------------------------------------
+  const careers = users.map((u) => ({ u, c: career(lore, u) })).filter((x) => x.c.games >= 20);
+  const bestPct = best(careers, (x) => x.c.winPct);
+  if (bestPct) {
+    add("winpct", "high",
+      `${who(bestPct.u)} has the best all-time record in the DFL.`,
+      `${bestPct.c.total.wins}-${bestPct.c.total.losses}${bestPct.c.total.ties ? `-${bestPct.c.total.ties}` : ""} across ${bestPct.c.games} games — ${(bestPct.c.winPct * 100).toFixed(1)}%.`,
+      null, (bestPct.c.winPct * 100).toFixed(1));
+  }
+  const mostPo = best(careers, (x) => x.c.total.playoffs);
+  if (mostPo && mostPo.c.total.playoffs > 1) {
+    add("playoffs", "streak",
+      `${who(mostPo.u)} has made the playoffs ${mostPo.c.total.playoffs} times.`,
+      `More than anybody else in the league.`, null, mostPo.c.total.playoffs);
+  }
+  /* The nearly man: finals lost, no title. Only worth saying if it is a
+     real streak of bad luck rather than one unlucky year. */
+  const cursed = best(careers.filter((x) => !x.c.titles.length && x.c.seconds.length),
+                      (x) => x.c.seconds.length);
+  if (cursed && cursed.c.seconds.length >= 1) {
+    add("cursed", "title",
+      `${who(cursed.u)} has reached ${cursed.c.seconds.length === 1 ? "a final" : `${cursed.c.seconds.length} finals`} and never won one.`,
+      `Runner-up in ${cursed.c.seconds.join(", ")}. Still waiting.`,
+      cursed.c.seconds[cursed.c.seconds.length - 1], cursed.c.seconds.length);
+  }
+  const mostPoints = best(careers, (x) => x.c.total.pf);
+  if (mostPoints) {
+    add("careerpoints", "volume",
+      `${who(mostPoints.u)} has scored more points than anyone in DFL history.`,
+      `${Math.round(mostPoints.c.total.pf).toLocaleString()} across ${mostPoints.c.seasons.length} seasons.`,
+      null, Math.round(mostPoints.c.total.pf));
+  }
+
+  // ---- the best and worst single seasons ---------------------------------
+  const seasonRows = (lore.standings || []).filter((r) => (r.wins + r.losses + r.ties) > 0);
+  const bigSeason = best(seasonRows, (r) => Number(r.points_for) || 0);
+  if (bigSeason) {
+    add("bigseason", "high",
+      `The most points scored in one DFL season is ${Math.round(Number(bigSeason.points_for)).toLocaleString()}.`,
+      `${who(bigSeason.sleeper_user_id, bigSeason.season, bigSeason.roster_id)}, ${bigSeason.season}.`,
+      bigSeason.season, Math.round(Number(bigSeason.points_for)));
+  }
+  /* Scored the most and still lost: the standings know both numbers, so
+     this is a real thing that happened rather than a feeling. */
+  const unlucky = best(seasonRows.filter((r) => r.losses > r.wins),
+                       (r) => Number(r.points_for) || 0);
+  if (unlucky) {
+    add("unlucky", "low",
+      `${who(unlucky.sleeper_user_id, unlucky.season, unlucky.roster_id)} scored ${Math.round(Number(unlucky.points_for)).toLocaleString()} in ${unlucky.season} and still finished under .500.`,
+      `${unlucky.wins}-${unlucky.losses}${unlucky.ties ? `-${unlucky.ties}` : ""}. The schedule decides more than anybody admits.`,
+      unlucky.season, Math.round(Number(unlucky.points_for)));
   }
 
   cached = out;
