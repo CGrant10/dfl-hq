@@ -579,9 +579,18 @@ function drawBoard(list, racers, sim, t, elapsed, finishAt, shown, winnerMs = 0)
     // second and the DOM should not be touched for nothing.
     const pos = String(i + 1);
     if (li.firstElementChild.textContent !== pos) li.firstElementChild.textContent = pos;
+    /*
+      .bc-who BY NAME, NOT lastElementChild.
+
+      The row gained a third span for the split time, which made the TIME
+      cell the last child - so this wrote every racer's name into the time
+      column and never updated the name column at all. That is the broken
+      broadcast leaderboard. Ask for the element that is meant.
+    */
+    const who = li.querySelector(".bc-who");
     const name = row.r.name;
-    if (li.lastElementChild.textContent !== name) {
-      li.lastElementChild.textContent = name;
+    if (who && who.textContent !== name) {
+      who.textContent = name;
       li.classList.remove("bc-move");
       void li.offsetWidth;
       li.classList.add("bc-move");

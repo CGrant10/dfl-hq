@@ -16,6 +16,10 @@
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
+/* The DFL Pet is a member's racer sprite. This import was missed when the
+   pet landed, so runRace() threw ReferenceError on its first statement -
+   which is why Start did nothing at all from v1.69.0 onward. */
+import { petOf } from "./profile-dfl.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
@@ -189,7 +193,7 @@ async function renderEvent(view, id) {
      silently did nothing. */
   wireLineup(view, event, parts, members, () => render(view));
   if (canEdit()) {
-    wireBroadcast(view, event, parts, byId, () => render(view));
+    wireBroadcast(view, stage, event, parts, byId, () => render(view));
   }
 
   if (!results.length) {
@@ -498,7 +502,15 @@ function foldControls(card, folded) {
 /** Seconds of countdown before the racers move. */
 const COUNTDOWN_MS = 3400;
 
-function wireBroadcast(view, event, parts, byId, refresh) {
+/*
+   IS A PARAMETER, and it has to be.
+
+  This is a top-level function; the stage element is a const inside
+  render(). Reaching for it here threw ReferenceError the moment #bc-start
+  was clicked - AFTER the database write had already gone through - so the
+  broadcast started, the Arena did nothing, and the button looked dead.
+*/
+function wireBroadcast(view, stage, event, parts, byId, refresh) {
   const panel = view.querySelector(".bc-panel");
   if (!panel) return;
 
