@@ -85,8 +85,16 @@
   align-content: center;
   justify-items: center;
   gap: var(--s-2);
-  /* Right padding clears the arrow; bottom clears the control bar. */
-  padding: var(--s-5) var(--s-7) calc(var(--s-6) + var(--s-5));
+  /*
+    THE SIDE PADDING IS THE ARROW'S CLEARANCE, and it has to be measured
+    rather than eyeballed: a 44px arrow tucked 4px from the edge occupies
+    the first 48px, so anything less than that puts the previous/next
+    buttons on top of the headline. It did - at 430px the arrows sat over
+    the scoreboard's team names and over the champion's name.
+
+    Bottom padding clears the control bar the same way.
+  */
+  padding: var(--s-5) 54px calc(var(--s-6) + var(--s-5));
   text-align: center;
   text-decoration: none;
   color: inherit;
@@ -578,17 +586,18 @@
   transition: opacity var(--t-fast) var(--ease);
 }
 .bx-arrow .ico-sm { width: 18px; height: 18px; }
-.bx-prev { left: 6px; }
-.bx-next { right: 6px; }
+.bx-prev { left: 4px; }
+.bx-next { right: 4px; }
 .bx-stage:hover .bx-arrow, .bx-arrow:focus-visible { opacity: 1; }
 @media (hover: hover) { .bx-arrow { opacity: 0; } .bx-stage:hover .bx-arrow { opacity: .85; } }
 
 /* ----------------------------------------------------------- wider screens */
 
 @media (min-width: 640px) {
-  .bx-slide { padding: var(--s-6) var(--s-8) calc(var(--s-7) + var(--s-4)); }
+  /* Same measurement, one step further out. */
+  .bx-slide { padding: var(--s-6) 64px calc(var(--s-7) + var(--s-4)); }
   .bx-controls { left: var(--s-6); right: var(--s-6); bottom: var(--s-4); }
-  .bx-prev { left: 12px; } .bx-next { right: 12px; }
+  .bx-prev { left: 10px; } .bx-next { right: 10px; }
   .bx-corners::before, .bx-corners::after { width: 34px; height: 34px; }
 }
 
@@ -648,3 +657,96 @@
 :root[data-mode="light"] .bx-bg-logo .bx-crest,
 .bx-bg-light .bx-crest { filter: invert(1) brightness(.35); opacity: .13; }
 :root[data-mode="light"] .bx-sweep { background: linear-gradient(90deg, transparent, rgba(16,24,40,.05), transparent); }
+
+/* =====================================================================
+   TREATMENT SIGNATURES
+
+   Six treatments that were distinguished mostly by which fields they
+   happened to fill. Each now has ONE structural idea, and one only -
+   the restraint is the point, because six competing layouts is a
+   template gallery rather than a package.
+
+     scoreboard    two sides and a tale of the tape   (marquee, unchanged)
+     champion      a name under gold                  (rule + centred crest)
+     stat          a figure standing on a baseline
+     announcement  editorial - a column with a margin rule
+     event         a date in a frame
+     hero          the creed, spaced out
+   ===================================================================== */
+
+/* THE STATION IDENT. Top right, opposite the corner bracket, quiet enough
+   to be furniture. */
+.bx-ident {
+  position: absolute; top: 12px; right: 14px; z-index: 5;
+  display: inline-flex; align-items: baseline; gap: 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: .75;
+  pointer-events: none;
+}
+.bx-ident i { font-style: normal; color: var(--accent); }
+
+/* STAT - the figure stands on a line, the way a scoreboard number does. */
+.bx-stat .bx-figure { position: relative; padding-bottom: var(--s-2); }
+.bx-stat .bx-figure::after {
+  content: "";
+  position: absolute; left: 50%; bottom: 0;
+  width: 2.2em; height: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--accent-fill), transparent);
+}
+
+/* EVENT - the countdown sits in a frame, like a fixture card. */
+.bx-when-text {
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-sm);
+  background: var(--control-bg);
+}
+
+/* HERO - the creed is the one place letterspacing carries the identity. */
+.bx-hero .bx-name { letter-spacing: .04em; }
+
+/*
+  ANNOUNCEMENT - the only treatment that is prose, so on a screen wide
+  enough it stops pretending to be a title card and becomes a column with
+  a margin rule. Phones keep the centred layout: a 375px column with a
+  rule down the side is just a narrower column.
+*/
+@media (min-width: 720px) {
+  .bx-slide.is-announcement:not(.bx-bg-image) { justify-items: start; text-align: left; }
+  .bx-slide.is-announcement .bx-note { justify-items: start; padding-left: var(--s-5); position: relative; }
+  .bx-slide.is-announcement .bx-note::before {
+    content: "";
+    position: absolute; left: 0; top: 4px; bottom: 4px;
+    width: 2px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent-fill), transparent);
+  }
+}
+
+/*
+  THE SCOREBOARD'S FIGURES INSIDE THE STAGE.
+
+  marquee() sizes its scores for the golf match card, which is a full-width
+  page component. The stage is narrower - 375px minus 108px of arrow
+  clearance leaves a 110px column per side - and "125.12" at the card's
+  size is 133px wide, so it burst out of its column and slid under the
+  next-slide arrow.
+
+  Scaled to the viewport here rather than changed in marquee.css, because
+  the card itself is fine at its own size and this is the stage's
+  constraint, not the component's. min-width: 0 is the other half: a grid
+  item's automatic minimum size beats max-width, so without it the figure
+  simply refuses to be narrower than its content.
+*/
+.bx-slide .mq-side-score {
+  font-size: clamp(1.5rem, 8.5vw, 2.6rem);
+  min-width: 0;
+  max-width: 100%;
+}
+.bx-slide .mq-side-name { font-size: clamp(.72rem, 3.4vw, var(--fs-h3)); }
+.bx-slide .mq-side { min-width: 0; }

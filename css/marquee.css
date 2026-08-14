@@ -121,6 +121,21 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 100%;
+  /*
+    min-width: 0 IS LOAD-BEARING, and max-width: 100% above does nothing
+    without it. This is a grid item, so its default min-width is `auto` =
+    its min-content width - and an automatic minimum size WINS over
+    max-width. A team called "Team LaFountain" has a 128px min-content
+    width, so it rendered 128px wide inside a 110px column and spilled 18px
+    past the card, straight under the broadcast stage's next-slide arrow at
+    375px. Capping it here fixes the golf match card at narrow widths too.
+
+    break-word rather than anywhere: it wraps between words first and only
+    breaks inside one when a single word genuinely cannot fit. `anywhere`
+    was tried once before and split short words mid-letter.
+  */
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 .mq-side-score {
   font-family: var(--font-display);

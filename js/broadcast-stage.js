@@ -194,8 +194,13 @@ export function renderItem(item) {
 export function renderStage(deck) {
   const items = deck || [];
   const first = items[0];
+  /* The station ident. OUTSIDE the layer on purpose: it belongs to the
+     stage rather than to a slide, so it does not re-animate on every
+     rotation - a logo that flickers back in every six seconds is the
+     thing that makes a broadcast package look cheap. */
   return `
     <section class="bx-stage" data-bx-stage>
+      <span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first)}</div>
       ${items.length > 1 ? arrows() + controls(items) : ""}
     </section>`;
