@@ -52,10 +52,21 @@ function write(key, value) {
   try { localStorage.setItem(key, value); } catch { /* private mode; strip just reappears */ }
 }
 
-/** Mark everything up to now as seen. Called when the strip is dismissed. */
-export function markSeen(now = new Date()) {
+/**
+ * Mark everything up to now as seen. Called when the strip is dismissed,
+ * and once on a first run so a new device starts quiet.
+ *
+ * `leagues` is optional and only used to stamp the champion watermark -
+ * pass it wherever it is to hand, because a device that never stamps one
+ * simply never announces a champion, which is the safe way to be wrong.
+ */
+export function markSeen(now = new Date(), leagues = null) {
   write(KEY_AT, now.toISOString());
   write(KEY_VER, APP_VERSION);
+  if (leagues) {
+    const champ = championSeason(leagues);
+    if (champ) write(KEY_CHAMP, String(champ));
+  }
 }
 
 /**
@@ -84,8 +95,29 @@ const after = (ts, since) => {
   get you to the page where the actual things are - so listing them here
   would be the page, twice.
 */
-function kind(id, count, one, many, href) {
-  return { id, count, href, label: count === 1 ? one : many.replace("{n}", count) };
+function kind(id, count, one, many, href, icon) {
+  return { id, count, href, icon, label: count === 1 ? one : many.replace("{n}", count) };
+}
+
+/*
+  THE CHAMPION WATERMARK, and why it is a second value.
+
+  Everything else here is dated by a timestamp the app already writes. A
+  champion is not: sleeper_leagues has no created_at, only synced_at,
+  which changes on every sync - so dating the champion by it would
+  re-announce the same champion after every single sync, forever.
+
+  So this one remembers WHAT was seen rather than WHEN: the newest season
+  that had a champion last time. It fires once, when a new title is
+  recorded, and then never again. Two values is the honest cost of not
+  fabricating a timestamp that does not exist.
+*/
+const KEY_CHAMP = "dfl.seenChampion";
+
+/** The newest season with a champion recorded, or 0. */
+function championSeason(leagues) {
+  return (leagues || []).reduce(
+    (best, l) => (l?.champion_user_id ? Math.max(best, Number(l.season) || 0) : best), 0);
 }
 
 /**
@@ -97,23 +129,54 @@ function kind(id, count, one, many, href) {
  */
 export function changesSince(data, since) {
   const out = [];
-  const { announcements = [], events = [], polls = [], syncedAt = null } = data || {};
+  const {
+    announcements = [], events = [], polls = [], syncedAt = null,
+    golf = [], leagues = [], broadcast = [],
+  } = data || {};
+
+  /*
+    CHAMPIONS FIRST. A title is the biggest thing that can change in this
+    league, so it leads - everything below is ordered by how much a member
+    would care, not by table name.
+  */
+  const champ = championSeason(leagues);
+  const seenChamp = Number(read(KEY_CHAMP)) || 0;
+  if (champ && seenChamp && champ > seenChamp) {
+    out.push({ id: "champion", count: 1, href: "#/history", icon: "i-trophy",
+               label: `${champ} champion added to History` });
+  }
+
+  /* A finalised outing is a real, dated event: somebody pressed finalise. */
+  const golfDone = golf.filter((r) => after(r.finalized_at, since)).length;
+  if (golfDone) out.push(kind("golf", golfDone, "Golf results are in",
+    "Results are in for {n} golf outings", "#/golf", "i-golf"));
 
   const news = announcements.filter((r) => after(r.created_at, since)).length;
-  if (news) out.push(kind("news", news, "A new announcement", "{n} new announcements", "#/calendar"));
-
-  const ev = events.filter((r) => after(r.created_at, since)).length;
-  if (ev) out.push(kind("events", ev, "A new event on the calendar", "{n} new events on the calendar", "#/calendar"));
+  if (news) out.push(kind("news", news, "A new announcement", "{n} new announcements", "#/calendar", "i-moment"));
 
   const pl = polls.filter((r) => after(r.created_at, since)).length;
-  if (pl) out.push(kind("polls", pl, "A new poll to vote on", "{n} new polls to vote on", "#/polls"));
+  if (pl) out.push(kind("polls", pl, "A new poll to vote on", "{n} new polls to vote on", "#/polls", "i-polls"));
+
+  const ev = events.filter((r) => after(r.created_at, since)).length;
+  if (ev) out.push(kind("events", ev, "A new event on the calendar", "{n} new events on the calendar", "#/calendar", "i-calendar"));
 
   /* A sync is not content, but it IS the answer to "why did the standings
      change" - and it is the only line here that can be a single event
      rather than a count. */
   if (after(syncedAt, since)) {
-    out.push({ id: "sync", count: 1, href: "#/history", label: "Fantasy results were updated" });
+    out.push({ id: "sync", count: 1, href: "#/history", icon: "i-history",
+               label: "Fantasy results were updated" });
   }
+
+  /*
+    A hand-written broadcast slide is a thing the commissioner published
+    FOR members, so it belongs here. Only the ones that are switched on and
+    inside their window ever reach this function - loadBroadcastItems()
+    filtered them - so a scheduled slide cannot leak before it airs.
+  */
+  const bx = broadcast.filter((r) => after(r.createdAt, since)).length;
+  if (bx) out.push(kind("broadcast", bx, "Something new on the broadcast",
+    "{n} new broadcast slides", null, "i-record"));
 
   /*
     THE APP ITSELF. Compared against the version this device last saw,
@@ -123,7 +186,8 @@ export function changesSince(data, since) {
   */
   const seenVer = read(KEY_VER);
   if (seenVer && seenVer !== APP_VERSION) {
-    out.push({ id: "app", count: 1, href: null, label: `DFL HQ updated to v${APP_VERSION}` });
+    out.push({ id: "app", count: 1, href: null, icon: "i-award",
+               label: `DFL HQ updated to v${APP_VERSION}` });
   }
 
   return out;
@@ -158,9 +222,16 @@ export function whatsNewStrip(changes, since) {
         </button>
       </div>
       <ul class="wn-list">
-        ${changes.map((c) => `<li>${c.href
-          ? `<a href="${esc(c.href)}">${esc(c.label)}</a>`
-          : `<span>${esc(c.label)}</span>`}</li>`).join("")}
+        ${changes.map((c) => {
+          /* The icon is decoration - the label already says what changed -
+             so it is aria-hidden and the row reads the same without it. */
+          const ico = c.icon
+            ? `<svg class="ico-sm" aria-hidden="true"><use href="#${esc(c.icon)}"></use></svg>`
+            : "";
+          return `<li>${c.href
+            ? `<a href="${esc(c.href)}">${ico}<span>${esc(c.label)}</span></a>`
+            : `<span class="wn-flat">${ico}<span>${esc(c.label)}</span></span>`}</li>`;
+        }).join("")}
       </ul>
     </section>`;
 }
@@ -172,11 +243,11 @@ export function whatsNewStrip(changes, since) {
  * otherwise something posted between the page loading and the button being
  * pressed would be marked seen without ever having been on screen.
  */
-export function wireWhatsNew(root) {
+export function wireWhatsNew(root, leagues = null) {
   const strip = root?.querySelector("[data-wn]");
   if (!strip) return;
   strip.querySelector("[data-wn-dismiss]")?.addEventListener("click", () => {
-    markSeen();
+    markSeen(new Date(), leagues);
     strip.remove();
   });
 }

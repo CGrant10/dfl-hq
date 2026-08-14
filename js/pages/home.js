@@ -30,7 +30,7 @@ import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.j
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
-import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew } from "../whatsnew.js";
+import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 
 /*
   THE RUNNING STAGE.
@@ -60,7 +60,7 @@ export async function render(view) {
   const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
-  const [events, announcements, polls, leagues, members, golf, dues, standings] = await Promise.all([
+  const [events, announcements, polls, leagues, members, golf, dues, standings, golfDone] = await Promise.all([
     db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
@@ -69,6 +69,11 @@ export async function render(view) {
     db().from("golf_outings").select("id,name,course,event_date,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
+    /* Recently finalised outings, for What's New only - the stage reads the
+       live outing separately. finalized_at is a real dated event: somebody
+       pressed finalise. */
+    db().from("golf_outings").select("id,name,finalized_at").not("finalized_at", "is", null)
+        .order("finalized_at", { ascending: false }).limit(5),
   ]);
   const firstError = events.error || announcements.error || polls.error;
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
@@ -119,7 +124,13 @@ export async function render(view) {
   const changes = wn.firstRun ? [] : changesSince({
     announcements: announcements.data || [], events: events.data || [],
     polls: polls.data || [], syncedAt: null,
+    golf: golfDone.data || [], leagues: leagues.data || [], broadcast: manual,
   }, wn.since);
+  /* A first run stamps the champion watermark too, so the NEXT title the
+     league wins is announced - without this, a device that has never
+     dismissed the strip would never learn what "the champion I already
+     knew about" was, and could never report a new one. */
+  if (wn.firstRun) markSeen(new Date(), leagues.data || []);
   const strip = whatsNewStrip(changes, wn.since);
 
   view.innerHTML = `<div id="home-wrap">
@@ -148,7 +159,7 @@ export async function render(view) {
   </div>`;
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
-  wireWhatsNew(view);
+  wireWhatsNew(view, leagues.data || []);
   wireCrest(view);
 
   /*

@@ -262,8 +262,27 @@ export const SECTIONS = [
           { value: "final",      label: "Final" },
           { value: "historical", label: "From the archive" },
         ] },
+      /*
+        THE PLATE. One field, five looks - see broadcast_items_polish.sql.
+        'image' composes the image above as artwork behind the words; there
+        is deliberately no second image field.
+      */
+      { name: "background", label: "Background", type: "select", default: "default",
+        options: [
+          { value: "default", label: "DFL house — the usual broadcast look" },
+          { value: "dark",    label: "Dark — dramatic title card" },
+          { value: "light",   label: "Light — light plate, dark type" },
+          { value: "image",   label: "Image — use the image above as artwork" },
+          { value: "logo",    label: "Crest — the DFL mark, oversized" },
+        ] },
+      /* Blank means "use the treatment default", which is the normal case.
+         The range matches the CHECK on the column. */
+      { name: "dwell_seconds", label: "Seconds on screen (blank = automatic)", type: "number",
+        placeholder: "5" },
       { name: "featured", label: "Feature it (pins it to the front of the deck)", type: "checkbox", default: false },
-      { name: "weight",   label: "Weight (higher shows sooner; 0 is normal)", type: "number", default: 0 },
+      /* Order is set with the arrows on the Broadcast panel, not typed
+         here - two ways to set one thing is how they end up disagreeing. */
+      { name: "weight",   label: "Weight (moves it against automatic slides; 0 is normal)", type: "number", default: 0 },
       /* datetime, not date: a slide that starts "on the 29th" would appear
          at midnight, which is not what anyone means by draft night. */
       { name: "starts_at", label: "Show from (optional)", type: "datetime" },

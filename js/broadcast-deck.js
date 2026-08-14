@@ -213,7 +213,7 @@ export async function loadBroadcastItems(now = new Date()) {
   try {
     const { data, error } = await db()
       .from("broadcast_items")
-      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background")
+      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at")
       .eq("active", true)
       /* THE RUNNING ORDER, and it is this query that decides it - the
          ranking below only decides where the manual BLOCK sits against
@@ -258,12 +258,23 @@ async function loadBroadcastItemsLegacy(now) {
     .map(manualItem);
 }
 
+/*
+  Exported so the Admin preview draws a row through the SAME mapping the
+  front page uses. If the preview built its own item shape it would drift
+  the first time a field was added, and the whole point of the preview is
+  that it is not a separate opinion about what a slide looks like.
+*/
+export const renderItemFromRow = (r) => manualItem(r);
+
 function manualItem(r) {
   const treatment = r.treatment || "announcement";
   return item({
     source: "manual",
     id: `manual:${r.id}`,
     rowId: r.id,
+    /* Carried for What's New, which asks "what changed since I last
+       looked" - it is not used by the stage. */
+    createdAt: r.created_at || null,
     treatment,
     temporal: r.temporal || "none",
     kicker: r.kicker || "", headline: r.headline || "",

@@ -590,3 +590,38 @@ a.moment:hover { background: var(--hover-soft); }
 .wn-list a { color: var(--text); text-decoration: none; }
 .wn-list a:hover { text-decoration: underline; }
 .wn-list span { color: var(--muted); }
+
+/* ---------------------------------------------------------------------
+   Admin -> Broadcast: the running order and its preview.
+   --------------------------------------------------------------------- */
+.bxorder { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: grid; gap: var(--s-1); }
+.bxrow {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+}
+.bxrow.on { border-color: var(--accent); background: var(--control-bg); }
+.bxrow.is-off { opacity: .55; }
+/* The row itself selects it for preview, so the target is the whole row
+   rather than a separate "preview" button competing with the arrows. */
+.bxrow-main {
+  flex: 1 1 auto; min-width: 0;
+  display: grid; gap: 1px;
+  padding: var(--s-2) 0;
+  border: 0; background: none; color: inherit; text-align: left; cursor: pointer;
+}
+.bxrow-main strong { font-size: var(--fs-h3); }
+.bxrow-main .muted { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--ls-wide); }
+.bxrow-moves { display: flex; gap: var(--s-1); flex: none; }
+.bxrow-moves .btn { width: 40px; min-height: 40px; padding: 0; font-size: var(--fs-h3); }
+
+.bxpreview-wrap { margin-top: var(--s-4); display: grid; gap: var(--s-2); }
+/* Same class as the real thing, so it inherits the real look; only the
+   height and the full-bleed margin are overridden. */
+.bxpreview {
+  position: relative;
+  margin: 0;
+  height: 260px; min-height: 0; max-height: none;
+  border-radius: var(--r-md);
+}
