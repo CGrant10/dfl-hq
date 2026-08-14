@@ -554,3 +554,39 @@ a.moment:hover { background: var(--hover-soft); }
 .switchrow input { width: 18px; height: 18px; margin-top: 2px; flex: none; }
 .switch-text { display: grid; gap: 2px; }
 .switch-text .muted { font-size: var(--fs-label); }
+
+/* ---------------------------------------------------------------------
+   What's New - the strip under the snapshot.
+   Deliberately quiet: it is a footnote, not a banner. No accent fill, no
+   card shadow, nothing that competes with the stage above it.
+   --------------------------------------------------------------------- */
+.wn {
+  margin: 0 0 var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-fill);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+}
+.wn-head { display: flex; align-items: center; gap: var(--s-2); }
+.wn-head .ico-sm { width: 16px; height: 16px; color: var(--accent); flex: none; }
+.wn-title {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* Pushed to the end, and 44px of target on a 16px glyph. */
+.wn-x {
+  margin-left: auto; margin-right: calc(var(--s-3) * -1);
+  display: grid; place-items: center;
+  width: 44px; height: 44px;
+  padding: 0; border: 0; background: none;
+  color: var(--muted); cursor: pointer;
+}
+.wn-x:hover { color: var(--text); }
+.wn-list { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: var(--s-1); }
+.wn-list a { color: var(--text); text-decoration: none; }
+.wn-list a:hover { text-decoration: underline; }
+.wn-list span { color: var(--muted); }

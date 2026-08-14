@@ -30,6 +30,7 @@ import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.j
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
+import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew } from "../whatsnew.js";
 
 /*
   THE RUNNING STAGE.
@@ -105,10 +106,27 @@ export async function render(view) {
   };
   const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff() });
 
+  /*
+    WHAT'S NEW sits under the snapshot rather than above the stage: it is a
+    footnote about the last few days, and putting it first would push the
+    thing that is actually happening below the fold. It is usually "".
+
+    syncedAt comes from lore, which has not loaded yet at this point - so
+    the sync line is the one change this strip reports a beat later. It is
+    not worth blocking the first paint on.
+  */
+  const wn = newsWindow();
+  const changes = wn.firstRun ? [] : changesSince({
+    announcements: announcements.data || [], events: events.data || [],
+    polls: polls.data || [], syncedAt: null,
+  }, wn.since);
+  const strip = whatsNewStrip(changes, wn.since);
+
   view.innerHTML = `<div id="home-wrap">
     ${anniversary()}
     ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
+    ${strip}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
     <section class="block"><h2 class="section-title">Latest<a class="section-link" href="#/calendar">Calendar →</a></h2>
       ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
@@ -121,6 +139,7 @@ export async function render(view) {
   </div>`;
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
+  wireWhatsNew(view);
   wireCrest(view);
 
   /*
