@@ -2199,3 +2199,116 @@ input.masked {
 /* The scoreboard line carries commentary now, so it needs room and must
    not push the clock off a narrow phone. */
 .sb-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* =====================================================================
+   THE LIVE BOARD
+   ---------------------------------------------------------------------
+   Rows are absolutely positioned and moved with translateY, so a change
+   of position is a TRANSITION rather than a re-render. The DOM is built
+   once and never rebuilt, which is what keeps twelve racers swapping
+   places cheap on a phone: on a change it is twelve transform writes, and
+   between changes it is nothing at all.
+   ===================================================================== */
+.ar-board {
+  --row-h: 34px;
+  position: relative;
+  list-style: none;
+  margin: 0 0 var(--s-3);
+  padding: 0;
+  height: calc(var(--row-h) * var(--rows, 8));
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.ar-row {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: var(--row-h);
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-3);
+  border-bottom: 1px solid var(--line-soft);
+  transition: transform 380ms var(--ease), background 240ms var(--ease);
+  will-change: transform;
+}
+.ar-pos {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ar-who {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semi);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The racer's own colour as a left edge - the same signal the lanes use. */
+.ar-row::before {
+  content: "";
+  position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; border-radius: 2px;
+  background: var(--racer, transparent);
+}
+.ar-time {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ar-row.is-first .ar-pos { color: var(--accent); }
+.ar-row.is-home { background: var(--hover-soft); }
+.ar-row.is-home .ar-time { color: var(--text); }
+
+/* A move up flashes green-ish, a move down dims. Short, because the row
+   is also physically sliding and two loud signals at once is a mess. */
+@keyframes ar-up   { from { background: var(--ok-bg); } to { background: transparent; } }
+@keyframes ar-down { from { background: var(--danger-bg); } to { background: transparent; } }
+.ar-row.ar-up   { animation: ar-up 700ms var(--ease) 1; }
+.ar-row.ar-down { animation: ar-down 700ms var(--ease) 1; }
+
+/* =====================================================================
+   SPEED STREAKS AND FINISHES
+   Pseudo-elements on the art, so nothing new is added to the DOM while
+   the race runs - twelve racers cannot leak twelve hundred particles.
+   ===================================================================== */
+.runner-art { position: relative; }
+
+/* Two short lines behind a racer who is moving hard. Only while surging. */
+.runner.is-surge .runner-art::before,
+.runner.is-surge .runner-art::after {
+  content: "";
+  position: absolute;
+  right: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(270deg, var(--racer, var(--accent-fill)), transparent);
+  pointer-events: none;
+}
+.runner.is-surge .runner-art::before { top: 34%; width: 16px; margin-right: 3px; animation: ar-streak .28s linear infinite; }
+.runner.is-surge .runner-art::after  { top: 62%; width: 10px; margin-right: 6px; animation: ar-streak .34s linear infinite .06s; }
+@keyframes ar-streak {
+  0%   { opacity: 0; transform: translateX(4px); }
+  40%  { opacity: .85; }
+  100% { opacity: 0; transform: translateX(-6px); }
+}
+
+/* Home, and not the winner: settle rather than stop dead. */
+.runner.is-finished .runner-art { animation: ar-settle .5s var(--ease) 1 both; }
+@keyframes ar-settle {
+  0%   { transform: translateY(-3px) scale(1.05); }
+  60%  { transform: translateY(1px) scale(.98); }
+  100% { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-row { transition: none; }
+  .ar-row.ar-up, .ar-row.ar-down,
+  .runner.is-surge .runner-art::before,
+  .runner.is-surge .runner-art::after,
+  .runner.is-finished .runner-art { animation: none !important; }
+}

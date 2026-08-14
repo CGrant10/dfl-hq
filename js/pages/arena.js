@@ -624,6 +624,22 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
       <div class="countdown hidden" id="countdown"><span id="countdown-n">3</span></div>
     </div>
+
+    <!--
+      THE LIVE BOARD. Order comes from the DRAWN race so it matches what is
+      on screen; the times come from sim.order, which is the truth. Rows are
+      absolutely positioned and moved with a transform, so a change of
+      position is a transition rather than a re-render - and the DOM is
+      built once, never rebuilt per frame.
+    -->
+    <ol class="ar-board" id="ar-board" style="--rows:${racers.length}">
+      ${racers.map((r, i) => `
+        <li class="ar-row" id="ar-row-${i}" style="--racer:${esc(r.color)}">
+          <span class="ar-pos"></span>
+          <span class="ar-who">${esc(r.name)}</span>
+          <span class="ar-time"></span>
+        </li>`).join("")}
+    </ol>
     <div id="arena-result-slot"></div>
   `;
 
@@ -632,12 +648,21 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const clock   = stage.querySelector("#sb-clock");
   const slot    = stage.querySelector("#arena-result-slot");
 
+  /* Declared up here, not beside the code that sets it: the reduced-motion
+     path calls finish() before the racing path runs at all, and a `const`
+     declared later would be in its temporal dead zone - a ReferenceError
+     for exactly the users who asked for less motion. */
+  let controlsWereOpen = false;
+
   const finish = async () => {
     status.textContent = "Final";
     stage.querySelector("#track")?.classList.remove("is-running");
-    /* The winner celebrates. One class, one keyframe, and it is the racer
-       the SIMULATION picked - never the one the animation flattered. */
-    runners[sim.order[0].index]?.classList.add("is-winner");
+    /* Hand the controls back exactly as they were found. */
+    const p = document.querySelector('[data-collapse="arena-broadcast"]');
+    if (p && controlsWereOpen) p.open = true;
+    /* The winner's celebration is added by the cascade the moment they
+       actually cross, not here - by the time this runs the last racer is
+       home and the moment has passed. */
     slot.innerHTML = resultsCard(
       sim.order.map((o) => ({ member_id: o.racer.id, place: o.place, finish_ms: o.finishMs })),
       byId, event, { fresh: true });
@@ -657,6 +682,19 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
      runs above them. Scroll the track into view first. */
   stage.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
 
+  /*
+    THE CONTROLS GET OUT OF THE WAY once the race is actually going.
+
+    They are a <details> already (collapse.js), so hiding them is setting
+    .open = false - no second control system, and the existing summary is
+    the "show them again" affordance the brief asked for. It is restored
+    after the last racer is home, because that is when an admin wants
+    Save result and Replay again.
+  */
+  const panel = document.querySelector('[data-collapse="arena-broadcast"]');
+  controlsWereOpen = !!panel?.open;
+  if (panel) panel.open = false;
+
   await countdown(stage);
 
   status.textContent = "Racing";
@@ -667,6 +705,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const lastFinish = sim.order.at(-1).finishMs;
     const total = lastFinish + 250;
     let nextCall = 0, calledAt = -9999, nextEvent = 0;
+    const rows    = racers.map((_, i) => stage.querySelector(`#ar-row-${i}`));
+    const official = new Map(sim.order.map((o) => [o.index, o.finishMs]));
+    const winnerMs = sim.order[0].finishMs;
+    let lastOrderKey = "";
+    const homed = new Set();
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
@@ -706,10 +749,67 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         }
       }
 
+      /*
+        THE BOARD. Ranked by drawn position while running, but a racer who
+        has FINISHED is pinned by their official finish time - otherwise a
+        pack all sitting at 1.0 would sort arbitrarily and the final order
+        could contradict the result.
+      */
+      const order = racers.map((_, i) => i).sort((a, b) => {
+        const fa = official.get(a), fb = official.get(b);
+        const aDone = elapsed >= fa, bDone = elapsed >= fb;
+        if (aDone && bDone) return fa - fb;         // both home: the real result
+        if (aDone) return -1;
+        if (bDone) return 1;
+        return shown[b][lo] - shown[a][lo];         // still running: what you see
+      });
+
+      const key = order.join(",");
+      if (key !== lastOrderKey) {
+        /* Only when it actually changes - twelve transform writes on a
+           change, not on every one of sixty frames a second. */
+        order.forEach((racerIdx, place) => {
+          const row = rows[racerIdx];
+          if (!row) return;
+          const wasPlace = Number(row.dataset.place ?? place);
+          row.style.transform = `translateY(calc(var(--row-h) * ${place}))`;
+          row.querySelector(".ar-pos").textContent = place + 1;
+          row.dataset.place = place;
+          if (place !== wasPlace) {
+            row.classList.remove("ar-up", "ar-down");
+            /* Force the class to re-apply so a racer moving twice in quick
+               succession flashes twice rather than once. */
+            void row.offsetWidth;
+            row.classList.add(place < wasPlace ? "ar-up" : "ar-down");
+          }
+          row.classList.toggle("is-first", place === 0);
+        });
+        lastOrderKey = key;
+      }
+
+      /*
+        CASCADING FINISHES. Each racer crosses on their OWN official time,
+        gets their moment, and the rest keep racing - the loop already ran
+        to the last finisher, but nothing marked the individual arrivals.
+      */
+      for (let i = 0; i < racers.length; i++) {
+        const ms = official.get(i);
+        if (homed.has(i) || elapsed < ms) continue;
+        homed.add(i);
+        const row = rows[i];
+        if (row) {
+          row.classList.add("is-home");
+          const gap = ms - winnerMs;
+          row.querySelector(".ar-time").textContent =
+            gap === 0 ? `${(ms / 1000).toFixed(2)}s` : `+${(gap / 1000).toFixed(2)}`;
+        }
+        runners[i]?.classList.remove("is-surge", "is-stumble");
+        runners[i]?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
+      }
+
       /* Whoever is visually in front wears it, so the leader is readable
          at a glance even on a phone-sized track. */
-      let top = 0;
-      for (let i = 1; i < shown.length; i++) if (shown[i][lo] > shown[top][lo]) top = i;
+      const top = order[0];
       if (top !== leader) {
         if (leader >= 0) runners[leader]?.classList.remove("is-leading");
         runners[top]?.classList.add("is-leading");
