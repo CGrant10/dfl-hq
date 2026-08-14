@@ -42,6 +42,7 @@ import { db } from "./supabase.js";
 import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle.js";
 import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lore.js";
 import { dayMood } from "./marquee.js";
+import { factOfTheDay } from "./funfacts.js";
 
 // --------------------------------------------------------------- priority
 
@@ -633,6 +634,32 @@ function arenaItem(ctx) {
   return [];
 }
 
+/*
+  TODAY'S FUN FACT.
+
+  The same fact the Fun Facts page is showing, because it comes from the
+  same function - factOfTheDay() is deterministic from the date, so the
+  stage and the page cannot disagree about what today's fact is.
+
+  temporal is "historical" and that is not a formality: every one of these
+  is a record from a finished season, and a bare "0.04 points" with no year
+  on it reads as something that happened this week.
+*/
+function funFactItem(ctx) {
+  if (!ctx.lore) return [];
+  const f = factOfTheDay(ctx.lore, new Date(ctx.now));
+  if (!f) return [];
+  return [item({
+    kind: "fact", treatment: "announcement", temporal: "historical",
+    priority: P.HISTORY + 20,
+    kicker: "Did you know?",
+    headline: f.headline,
+    body: f.detail,
+    subtitle: f.season ? String(f.season) : "",
+    href: "#/facts",
+  })];
+}
+
 /* THE FLOOR. Returns an item unconditionally, which is what makes an empty
    deck impossible and the "sparse database" case a shorter show rather than
    a broken screen. */
@@ -662,6 +689,7 @@ export const GENERATORS = [
   ["dues", duesItem],
   ["lore", loreItems],
   ["arena", arenaItem],
+  ["funfact", funFactItem],
   ["identity", identityItem],
 ];
 
@@ -689,6 +717,7 @@ export const GENERATOR_LABELS = new Map([
   ["dues",          ["Dues", "What the league is owed"]],
   ["lore",          ["Moments", "Rivalries and league history"]],
   ["arena",         ["Arena", "Racer events"]],
+  ["funfact",       ["Did you know?", "The day's fantasy fun fact"]],
 ]);
 
 // ------------------------------------------------------------------- deck

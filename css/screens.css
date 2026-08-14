@@ -625,3 +625,39 @@ a.moment:hover { background: var(--hover-soft); }
   height: 260px; min-height: 0; max-height: none;
   border-radius: var(--r-md);
 }
+
+/* ---------------------------------------------------------------------
+   Fun Facts. One card that is allowed to be loud, then a quiet list.
+   --------------------------------------------------------------------- */
+.factcard {
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-fill);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--hero-wash), transparent 60%),
+    var(--bg-2);
+}
+.fact-kicker {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-label); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase;
+  color: var(--accent);
+}
+.fact-head {
+  margin: var(--s-3) 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 5.6vw, 1.75rem);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  color: var(--text);
+  text-wrap: balance;
+}
+.fact-detail { margin: var(--s-3) 0 0; color: var(--body-text); line-height: var(--lh-body); }
+.fact-note { margin: var(--s-2) 0 var(--s-6); }
+
+.factlist { display: grid; gap: var(--s-2); }
+.fact-row { display: flex; align-items: flex-start; gap: var(--s-3); }
+.fact-row .ico-sm { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 3px; }
+.fact-row .card-heading { margin: 0; }

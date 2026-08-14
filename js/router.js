@@ -16,6 +16,7 @@ const routes = {
   broadcast:() => import("./pages/broadcast.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
+  facts:    () => import("./pages/facts.js"),
   finances: () => import("./pages/finances.js"),
   profile:  () => import("./pages/profile.js"),
   admin:    () => import("./pages/admin.js"),
