@@ -41,6 +41,19 @@ const LEGACY_THEME_KEY = "dfl.theme";  // removed; cleared on sight
 export const CREST = { red: "#E5011B", blue: "#003396", black: "#0A0A0A", white: "#FFFFFF" };
 
 /*
+  WHERE A NEW PALETTE GOES.
+
+  The favourite-NFL-team colouring is gone - one league, one palette - but
+  the mechanism that made it possible is still here and is the right place
+  for a DFL palette of our own. A third entry in MODES, listed in
+  modeOptions(), and every surface in the app follows it: style.css expresses
+  everything below in these variables and apply() sets them at runtime.
+
+  A Medicine Wheel palette would be exactly that shape - one more entry, no
+  new plumbing. The only rule the app enforces is the contrast one stated
+  above: a colour used for TEXT has to clear 6:1 on the background it sits
+  on, or it goes in the fill pair instead.
+
   Per-mode values. Only two things actually differ: the surfaces, and which
   end of each hue is readable against them.
 

@@ -1393,12 +1393,8 @@ textarea { min-height: 96px; resize: vertical; }
 .tabbar :is(a, .tabmore).on:after { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
 .btn:hover, .btn.ghost:hover { border-color: var(--accent-fill); color: var(--accent); }
 input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !important; box-shadow: none; }
-.profile-head.has-team {
-  border-color: var(--theme-border);
-  background: linear-gradient(135deg, var(--theme-soft), var(--theme-soft-2) 48%, var(--bg-2));
-}
-.profile-head.has-team:before { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
-.swatchbar { border-color: var(--theme-border); }
+/* The favourite-NFL-team colouring is gone - see the header comment in
+   pages/profile.js. One palette, and it is the crest. */
 .dfl-team-card { border-color: var(--theme-border); }
 
 /* ---------------------------------------------------------------------
@@ -1623,48 +1619,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
 .profile-top  { display: flex; align-items: flex-start; gap: 14px; }
 .profile-name { font-size: 21px; margin: 0 0 2px; line-height: 1.2; }
 
-/* half primary, half secondary - a clean split, no blend */
-.profile-head.has-team::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--t1) 0 50%, var(--t2) 50% 100%);
-}
-/* and a matching split ring around the avatar */
-.profile-head.has-team .avatar {
-  border: 2px solid transparent;
-  background:
-    linear-gradient(var(--bg-2), var(--bg-2)) padding-box,
-    linear-gradient(135deg, var(--t1) 0 50%, var(--t2) 50% 100%) border-box;
-}
-.profile-head.has-team .avatar-fallback {
-  color: #fff;
-  background:
-    linear-gradient(135deg, var(--t1) 0 50%, var(--t2) 50% 100%) padding-box,
-    linear-gradient(135deg, var(--t1) 0 50%, var(--t2) 50% 100%) border-box;
-}
-
-/* the team pill shows both colours as little swatches */
-.teampill { display: inline-flex; align-items: center; gap: 0; padding-left: 6px; }
-.teampill .sw {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  border: 1px solid rgba(0,0,0,.35);
-}
-/* two-colour preview beside the team picker */
-.swatchbar { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; }
-.bigsw {
-  width: 34px; height: 34px;
-  border-radius: 9px;
-  border: 1px solid var(--line);
-  flex: none;
-}
-.swatch-name { font-size: 13px; font-weight: 600; }
-
-.teampill .sw1 { background: var(--t1); }
-.teampill .sw2 { background: var(--t2); margin: 0 7px 0 -4px; }
 
 ul.tidy { margin: 6px 0 0; padding-left: 18px; }
 ul.tidy li { margin-bottom: 4px; }

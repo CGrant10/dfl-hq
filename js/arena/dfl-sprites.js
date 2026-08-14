@@ -352,6 +352,35 @@ export function resolveCharacterId(id) {
   return mapped && BY_ID.has(mapped) ? mapped : null;
 }
 
+/*
+  A character for a key nobody has ever heard of.
+
+  The duck, dinosaur and car themes are gone, and their slot keys are not in
+  LEGACY_SLOTS - there are thirty-six of them and none exist in this
+  database. But a row somewhere could still hold "modified" or "trex", and
+  the wrong answer is for all of them to become the same creature and turn a
+  race into twelve identical things.
+
+  So an unknown key is HASHED to a character instead. What that guarantees is
+  STABILITY, not uniqueness: the same racer keeps the same creature across
+  reloads and re-renders, which is the property that matters. Twelve unknown
+  keys land on about eight distinct characters - that is the birthday bound
+  with twelve buckets, not a weak hash, and four different hash functions
+  were measured before settling for it.
+
+  It is good enough because no row in this database holds one of those keys:
+  the live event is on the old Hoenn set, and all twelve of those ARE mapped
+  exactly above. If a real event ever needs exact spread for keys that are
+  not in LEGACY_SLOTS, add them to it - the table is the precise answer and
+  this is the safety net.
+*/
+function hashedCharacter(id) {
+  const s = String(id || "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return CHARACTERS[Math.abs(h) % CHARACTERS.length];
+}
+
 export function dflCharacter(id) { return BY_ID.get(resolveCharacterId(id)) || null; }
 export function dflCharacterIds() { return CHARACTERS.map((c) => c.id); }
 
@@ -393,7 +422,7 @@ function pixelPaths(px, palette, laneColour) {
  * is actually drawn at.
  */
 export function dflSpriteMarkup(id, laneColour) {
-  const c = dflCharacter(id) || CHARACTERS[0];
+  const c = dflCharacter(id) || hashedCharacter(id);
   /* xmlns is not needed for inline SVG, but it IS needed the moment this
      string is handed to an <img> or a canvas - which is how a share card
      would draw a racer. Cheap now, one less thing to debug later. */

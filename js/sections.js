@@ -22,7 +22,6 @@
 //   fields    see form.js
 // =====================================================================
 
-import { teamOptions } from "./teams.js";
 import { themeKeys, themeLabel } from "./arena/sprites.js";
 
 /** Every Arena theme, for the event editor. */
@@ -205,8 +204,6 @@ export const SECTIONS = [
       { name: "championships", label: "Championships", type: "number", default: 0 },
       { name: "awards",        label: "Awards (one per line)", type: "textarea",
         placeholder: "Highest scorer 2025\nBest trade 2024" },
-      { name: "favorite_team", label: "Favourite team (app colour)", type: "select",
-        options: teamOptions() },
       { name: "profile_image", label: "Profile image URL (optional)", type: "text" },
       { name: "notes",         label: "Notes", type: "textarea" },
       { name: "active",        label: "Show in the member picker", type: "checkbox", default: true },

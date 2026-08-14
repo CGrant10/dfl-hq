@@ -13,7 +13,6 @@ import { db } from "../supabase.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
 import { editControls, wireInline } from "../inline.js";
-import { findTeam, teamOptions } from "../teams.js";
 import { saveMode, savedMode, activeMode, modeOptions } from "../theme.js";
 import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
@@ -84,14 +83,9 @@ export async function render(view) {
     sameName(p.owner_name, member.display_name) || sameName(p.team_name, member.team_name))
     .sort((a, b) => b.season - a.season);
 
-  /* Their actual favourite team. It used to be read through savedTheme() so
-     the app could recolour itself around it; that is gone - there is one
-     palette now - so this is simply the profile field it always was. */
-  const team = findTeam(member.favorite_team);
-
   view.innerHTML = `
     <div id="profile-wrap">
-      ${header(member, team, isMe, currentTeam, sleeperUser?.data?.current_season)}
+      ${header(member, isMe, currentTeam, sleeperUser?.data?.current_season)}
       ${dfl ? cabinetCard(dfl) : ""}
       ${careerCard(careerStats, seasons.length)}
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
@@ -100,12 +94,12 @@ export async function render(view) {
       ${loreName ? rivalryCard(foes, loreName, members) : ""}
       ${keepersCard(myKeepers)}
       ${duesCard(myDues)}
-      ${isMe ? golfNameCard(member) + appearanceCard() + favouriteTeamCard(member) : ""}
+      ${isMe ? golfNameCard(member) + appearanceCard() : ""}
       ${othersCard(members, member)}
     </div>
   `;
 
-  if (isMe) { wireThemePicker(view, member); wireGolfName(view, member); }
+  if (isMe) { wireThemePicker(view); wireGolfName(view, member); }
 
   // An edit changes the member row the picker and the header chip read from,
   // so the cache has to go before the page is drawn again.
@@ -121,21 +115,15 @@ export async function render(view) {
 
 // ------------------------------- header -------------------------------
 
-function header(m, team, isMe, currentTeam, currentSeason) {
-  // Both team colours drive the card: a two-stop stripe across the top and
-  // a matching ring around the avatar.
-  //
-  // Their team's REAL colours, straight from teams.js. This used to go through
-  // the theme map, which only held theme ids - so an NFL team fell through to
-  // the default and every profile header wore the same ring. findTeam has
-  // carried primary/secondary all along.
-  const c = findTeam(m.favorite_team);
-  const style = c
-    ? `style="--t1:${c.primary};--t2:${c.secondary}"`
-    : "";
-
+function header(m, isMe, currentTeam, currentSeason) {
+  /* ONE PALETTE. The header used to wear a member's favourite NFL team as a
+     two-stop stripe and a ring on the avatar, from a 32-team colour table.
+     That table is gone: the league has its own colours and borrowing
+     somebody else's for a profile card was the only place in the app still
+     doing it. The crest pair does the job now, which is what .accent
+     already meant. */
   return `
-    <div class="card profile-head ${c ? "has-team" : "accent"}" ${style}>
+    <div class="card profile-head accent">
       <div class="profile-top">
         ${m.profile_image
           ? `<img class="avatar" src="${esc(m.profile_image)}" alt="">`
@@ -150,9 +138,6 @@ function header(m, team, isMe, currentTeam, currentSeason) {
           <div class="row" style="margin-top:8px">
             ${m.championships > 0 ? `<span class="pill green">${m.championships}× champion</span>` : ""}
             ${m.joined_year ? `<span class="pill">Since ${esc(m.joined_year)}</span>` : ""}
-            ${c ? `<span class="pill teampill">
-                     <i class="sw sw1"></i><i class="sw sw2"></i>${esc(c.name)}
-                   </span>` : ""}
           </div>
           <div class="row" style="margin-top:10px">
             ${isMe
@@ -417,25 +402,7 @@ function appearanceCard() {
     </div>`;
 }
 
-/* The favourite team is a profile field and nothing more now - it names the
-   team on your profile header. It no longer recolours the app. */
-function favouriteTeamCard(m) {
-  const value = m.favorite_team || "";
-  return `
-    <div class="card">
-      <h3 class="card-heading">Favourite team</h3>
-      <label for="team-pick" class="muted tiny">Shown on your profile.</label>
-      <select id="team-pick">
-        ${teamOptions().map((o) =>
-          `<option value="${esc(o.value)}" ${o.value === value ? "selected" : ""}>${esc(o.label)}</option>`).join("")}
-      </select>
-      <div class="row-end">
-        <button class="btn ghost small" id="team-save">Save to my profile</button>
-      </div>
-    </div>`;
-}
-
-function wireThemePicker(view, member) {
+function wireThemePicker(view) {
   const bar = view.querySelector("#mode-pick");
   if (bar) bar.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-mode-pick]");
@@ -454,14 +421,6 @@ function wireThemePicker(view, member) {
       : `Always ${savedMode()} on this device.`;
   });
 
-  const select = view.querySelector("#team-pick");
-  if (!select) return;
-  view.querySelector("#team-save")?.addEventListener("click", async () => {
-    const { error } = await db().from("members")
-      .update({ favorite_team: select.value || null }).eq("id", member.id);
-    // Members are admin-write, so a normal member just keeps the local choice.
-    toast(error ? "Could not save to your profile" : "Saved to your profile", !!error);
-  });
 }
 
 // ------------------------------ others --------------------------------

@@ -70,7 +70,7 @@
   line-height: var(--lh-tight);
   text-transform: uppercase;
 }
-.chip, .teampill {
+.chip {
   border-radius: var(--r-sm);
   font-size: var(--fs-micro);
   font-weight: var(--fw-bold);
