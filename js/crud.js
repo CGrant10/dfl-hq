@@ -28,21 +28,37 @@ export async function renderManager(host, spec) {
 
   let editingId = null;
 
+  /*
+    THE FORM IS COLLAPSED UNTIL IT IS WANTED.
+
+    It used to sit open above the list, which was tolerable when a spec had
+    four fields and is not now that a broadcast slide has sixteen: an admin
+    arriving to reorder two slides had to scroll past a full-page form to
+    reach the list they came for.
+
+    <details> rather than a button and a class, because the browser gives
+    the open/closed state, the keyboard behaviour and the summary role for
+    free. The EDIT path opens it - see below - so "Edit" still works, and
+    that is the one thing collapsing this could plausibly have broken.
+  */
   host.innerHTML = `
-    <form class="card" id="crud-form">
-      <div class="card-title" id="crud-heading">Add ${esc(spec.singular)}</div>
-      ${spec.fields.map((f) => field(f, "f_")).join("")}
-      <div class="row-end">
-        <button type="button" class="btn ghost hidden" id="crud-cancel">Cancel</button>
-        <button type="submit" class="btn" id="crud-save">Save</button>
-      </div>
-    </form>
+    <details class="crud-add" id="crud-box">
+      <summary id="crud-heading">Add ${esc(spec.singular)}</summary>
+      <form class="card" id="crud-form">
+        ${spec.fields.map((f) => field(f, "f_")).join("")}
+        <div class="row-end">
+          <button type="button" class="btn ghost hidden" id="crud-cancel">Cancel</button>
+          <button type="submit" class="btn" id="crud-save">Save</button>
+        </div>
+      </form>
+    </details>
     <div id="crud-list">${list(rows, spec)}</div>
   `;
 
   const form    = host.querySelector("#crud-form");
   const heading = host.querySelector("#crud-heading");
   const cancel  = host.querySelector("#crud-cancel");
+  const box     = host.querySelector("#crud-box");
 
   function resetForm() {
     editingId = null;
@@ -52,6 +68,9 @@ export async function renderManager(host, spec) {
     });
     heading.textContent = `Add ${spec.singular}`;
     cancel.classList.add("hidden");
+    /* Back to the list after a save or a cancel, which is where the next
+       thing an admin wants to do almost always is. */
+    if (box) box.open = false;
   }
 
   resetForm();
@@ -87,6 +106,9 @@ export async function renderManager(host, spec) {
       spec.fields.forEach((f) => setValue(form, f, row[f.name]));
       heading.textContent = `Edit ${spec.singular}`;
       cancel.classList.remove("hidden");
+      /* Editing has to open it, or pressing Edit would silently fill a form
+         nobody can see. */
+      if (box) box.open = true;
       form.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }

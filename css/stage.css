@@ -234,6 +234,17 @@
   width: 100%; height: 100%;
   object-fit: cover;
   object-position: center;
+  /*
+    The picture sits UNDER the broadcast rather than being the broadcast.
+    At full strength a photograph competes with the headline for the eye
+    and the slide stops reading as a lower-third. Dropping it back lets
+    the stage's own plate show through, which is what keeps a member's
+    photo and a golf scoreboard looking like the same package.
+
+    The scrim below still does the readability work; this is about
+    hierarchy, not contrast.
+  */
+  opacity: .58;
   /* A dragged image inside a swipe surface is the classic mobile bug. */
   -webkit-user-drag: none;
   user-drag: none;

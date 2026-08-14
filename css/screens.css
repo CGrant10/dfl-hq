@@ -682,3 +682,30 @@ a.moment:hover { background: var(--hover-soft); }
 .ov-field > span { font-size: var(--fs-label); color: var(--muted); }
 .ov-check { display: flex; align-items: center; gap: var(--s-2); }
 .ov-check input { width: 18px; height: 18px; }
+
+/* --------------------------------------------------------------------
+   The admin manager's add/edit form, collapsed until wanted.
+   Styled as a control rather than a heading, because that is what it is
+   now - you press it to get a form.
+   -------------------------------------------------------------------- */
+.crud-add { margin-bottom: var(--s-4); }
+.crud-add > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex; align-items: center; gap: var(--s-2);
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-md);
+  background: var(--control-bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+}
+.crud-add > summary::-webkit-details-marker { display: none; }
+.crud-add > summary::before { content: "+"; color: var(--accent); font-size: 1.25em; line-height: 1; }
+.crud-add[open] > summary::before { content: "−"; }
+.crud-add[open] > summary { border-radius: var(--r-md) var(--r-md) 0 0; border-bottom: 0; }
+.crud-add > form { margin-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); }

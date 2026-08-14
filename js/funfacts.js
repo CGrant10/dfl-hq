@@ -31,6 +31,13 @@ import {
 
 const DAY = 86400000;
 
+/** "A and B", "A, B and C" - a list a person would read out loud. */
+function listOf(names) {
+  if (names.length <= 1) return names[0] || "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 /** Facts are cheap to build but not free; one build per lore load. */
 let cached = null;
 let cachedFor = null;
@@ -153,12 +160,26 @@ export function funFacts(lore) {
     if (!l.champion_user_id) continue;
     titles.set(l.champion_user_id, (titles.get(l.champion_user_id) || 0) + 1);
   }
-  const most = [...titles.entries()].sort((a, b) => b[1] - a[1])[0];
-  if (most && most[1] > 1) {
+  /*
+    TIES ARE THE NORMAL CASE IN A SMALL LEAGUE, and the first cut of this
+    ignored them: it sorted, took the top row and said "more than anybody
+    else in the league's history". Klutch Sports Group and DaGrapeApes
+    both have two, so that fact was simply false - and a fun fact that is
+    wrong about who is winning is worse than no fun fact.
+
+    So the count is what gets ranked, and EVERYBODY holding it is named.
+  */
+  const topCount = Math.max(0, ...titles.values());
+  if (topCount > 1) {
+    const holders = [...titles.entries()].filter(([, n]) => n === topCount).map(([u]) => who(u));
     add("dynasty", "title",
-      `${who(most[0])} has won the DFL ${most[1]} times.`,
-      `More than anybody else in the league's history.`,
-      null, most[1]);
+      holders.length === 1
+        ? `${holders[0]} has won the DFL ${topCount} times.`
+        : `${listOf(holders)} have each won the DFL ${topCount} times.`,
+      holders.length === 1
+        ? `More than anybody else in the league's history.`
+        : `They are tied at the top — nobody in the DFL has more.`,
+      null, topCount);
   }
 
   cached = out;
