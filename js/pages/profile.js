@@ -385,9 +385,20 @@ function wireGolfName(view, member) {
   });
 }
 
+/* The note names the mode the way the BUTTON does. Printing the raw id gave
+   "Always medicine on this device." the moment a mode arrived whose id was
+   not already an English word. */
+const modeName = (id) => modeOptions().find((o) => o.id === id)?.name || id;
+
+function modeNote() {
+  const want = savedMode();
+  return want === "system"
+    ? `Following your phone, which is ${modeName(activeMode())} right now.`
+    : `Always ${modeName(want)} on this device.`;
+}
+
 function appearanceCard() {
   const want = savedMode();
-  const now = activeMode();
   return `
     <div class="card">
       <h3 class="card-heading">Appearance</h3>
@@ -396,9 +407,7 @@ function appearanceCard() {
           <button type="button" class="mode-opt ${o.id === want ? "is-on" : ""}"
                   data-mode-pick="${o.id}" aria-pressed="${o.id === want}">${esc(o.name)}</button>`).join("")}
       </div>
-      <p class="muted tiny" id="mode-note">${want === "system"
-        ? `Following your phone, which is ${now} right now.`
-        : `Always ${want} on this device.`}</p>
+      <p class="muted tiny" id="mode-note">${esc(modeNote())}</p>
     </div>`;
 }
 
@@ -416,9 +425,7 @@ function wireThemePicker(view) {
       b.setAttribute("aria-pressed", String(on));
     });
     const note = view.querySelector("#mode-note");
-    if (note) note.textContent = savedMode() === "system"
-      ? `Following your phone, which is ${activeMode()} right now.`
-      : `Always ${savedMode()} on this device.`;
+    if (note) note.textContent = modeNote();
   });
 
 }

@@ -109,7 +109,59 @@ const MODES = {
     milestone: "#8a6410",
     shadow: "0 1px 3px rgba(16,24,40,.10)",
   },
+
+  /*
+    MEDICINE WHEEL.
+
+    Built on the four directional colours - black, red, yellow, white - with
+    black as the ground, which is also what makes it hold together as an app:
+    this is a dark palette, so every surface, divider and status below is the
+    same shape as the dark one and only the hues move.
+
+    The fills and the text colours are SEPARATE here, same as the crest pair
+    everywhere else in this file. A saturated red is a good fill and a poor
+    letter: #C8102E is 4.4:1 on this ground, under the 6:1 this file holds
+    itself to, so the text red is the same hue lifted until it clears. Yellow
+    needs no help at all - it is 11:1 on black - so the text yellow and the
+    fill yellow are nearly the same colour.
+
+    Statuses stay semantic. There is no green in the four, but "paid" and
+    "unpaid" have to be told apart at a glance on the fees screen, so ok/warn/
+    danger keep their jobs and are only warmed to sit with the rest.
+  */
+  medicine: {
+    bg: "#0b0b0c", bg2: "#141416", bg3: "#1d1d20",
+    line: "#2f2f34", lineSoft: "#212125",
+    text: "#f4f2ee", muted: "#a8a096", chalk: "#ffffff",
+    bodyText: "#ddd8d0",
+    hover: "#1d1d20", hoverSoft: "rgba(255,255,255,.03)",
+    controlLine: "#736b60",
+    /* text pair: the red lifted to clear 6:1, the yellow already there */
+    accent: "#F08279", accent2: "#EFC94C",
+    /* fill pair: the wheel's own red and yellow */
+    fill: "#C8102E", fill2: "#EFC94C",
+    onAccent: "#FFFFFF",
+    ok: "#8fd6a4", okBg: "rgba(96,176,123,.13)", okLine: "#3f7a52",
+    /* An amber, NOT the wheel's yellow. The first cut used #EFC94C for both
+       this and milestone, which made an OPEN badge and a CHAMPION badge the
+       same colour - and gold is the occasion colour, so warn is the one that
+       had to move. */
+    warnInk: "#E8A33D", warnBg: "rgba(232,163,61,.12)", warnLine: "#7a5a20",
+    /* Lighter and pinker than `accent` for the same reason: UNPAID and a
+       plain accent link were coming out identical. */
+    dangerInk: "#F5A39B", dangerBg: "rgba(200,16,46,.14)", dangerLine: "#7d2029",
+    scUnder: "#7fd39a", scOver: "#f0897e", scBad: "#d93b3b",
+    topbarA: "#101012", topbarB: "#0b0b0c",
+    heroA: "#17171a", heroWash: "rgba(255,255,255,.05)",
+    toastBg: "#232327", onToast: "#f4f2ee",
+    milestone: "#EFC94C",
+    shadow: "0 1px 3px rgba(0,0,0,.42)",
+  },
 };
+
+/* The modes somebody can actually choose. "system" is not one of them - it
+   is the absence of a choice - and anything else in storage is ignored. */
+const PICKABLE = ["dark", "light", "medicine"];
 
 /*
   ONE MediaQueryList, held at module scope for the life of the page.
@@ -123,13 +175,13 @@ const MODES = {
 const WATCH = window.matchMedia("(prefers-color-scheme: dark)");
 const media = () => WATCH;
 
-/** "system" | "dark" | "light" - what the member asked for. */
+/** "system" or one of PICKABLE - what the member asked for. */
 export function savedMode() {
   const v = localStorage.getItem(MODE_KEY);
-  return v === "dark" || v === "light" ? v : "system";
+  return PICKABLE.includes(v) ? v : "system";
 }
 
-/** "dark" | "light" - what that actually resolves to right now. */
+/** The mode that is actually painting right now - never "system". */
 export function activeMode() {
   const want = savedMode();
   if (want !== "system") return want;
@@ -154,12 +206,16 @@ function apply() {
   // Text pair, then the crest pair for everything that is not text.
   s.setProperty("--accent", m.accent);
   s.setProperty("--accent-2", m.accent2);
-  s.setProperty("--accent-fill", CREST.red);
-  s.setProperty("--accent-2-fill", CREST.blue);
+  /* A mode may bring its own fill pair. Without this the crest red and blue
+     were set unconditionally, so a themed palette would have had its buttons,
+     bars and gradients still painted in the crest's colours. */
+  const fill = m.fill || CREST.red, fill2 = m.fill2 || CREST.blue;
+  s.setProperty("--accent-fill", fill);
+  s.setProperty("--accent-2-fill", fill2);
   s.setProperty("--on-accent", m.onAccent);
   /* --accent-dim was the darker partner of the old green and is still used
      for a few borders; the crest blue is the right thing there now. */
-  s.setProperty("--accent-dim", CREST.blue);
+  s.setProperty("--accent-dim", fill2);
 
   // Scorecard marks: under par, over par, and well over.
   s.setProperty("--sc-under", m.scUnder);
@@ -192,8 +248,8 @@ function apply() {
   /* The old --theme-* names are still referenced by the profile header, the
      swatch bar and the scorecard card. Point them at the crest so those rules
      keep working instead of silently dropping. */
-  s.setProperty("--theme-primary", CREST.red);
-  s.setProperty("--theme-secondary", CREST.blue);
+  s.setProperty("--theme-primary", fill);
+  s.setProperty("--theme-secondary", fill2);
 
   document.documentElement.setAttribute("data-mode", name);
   document.body?.setAttribute("data-mode", name);
@@ -218,8 +274,8 @@ export function initTheme() {
 
 /** Set and remember the member's choice. */
 export function saveMode(value) {
-  if (value === "system") localStorage.removeItem(MODE_KEY);
-  else localStorage.setItem(MODE_KEY, value === "light" ? "light" : "dark");
+  if (PICKABLE.includes(value)) localStorage.setItem(MODE_KEY, value);
+  else localStorage.removeItem(MODE_KEY);          // anything else means system
   apply();
 }
 
@@ -228,6 +284,7 @@ export function modeOptions() {
     { id: "system", name: "Match my phone" },
     { id: "dark", name: "Dark" },
     { id: "light", name: "Light" },
+    { id: "medicine", name: "Medicine Wheel" },
   ];
 }
 
