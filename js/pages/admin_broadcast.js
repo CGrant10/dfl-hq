@@ -23,7 +23,7 @@ import { esc, toast, errorBox } from "../ui.js";
 import { db } from "../supabase.js";
 import { renderManager } from "../crud.js";
 import { specFor } from "../sections.js";
-import { GENERATOR_LABELS, renderItemFromRow } from "../broadcast-deck.js";
+import { GENERATOR_LABELS, renderItemFromRow, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderItem } from "../broadcast-stage.js";
 import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
 
@@ -160,14 +160,107 @@ async function renderSources(list) {
   if (!list) return;
   await loadSettings();
   const off = broadcastOff();
-  list.innerHTML = [...GENERATOR_LABELS].map(([id, [name, what]]) => `
-    <label class="switchrow">
-      <input type="checkbox" data-gen="${esc(id)}" ${off.has(id) ? "" : "checked"}>
-      <span class="switch-text">
-        <strong>${esc(name)}</strong>
-        <span class="muted">${esc(what)}</span>
-      </span>
-    </label>`).join("");
+  const overrides = await loadBroadcastOverrides();
+
+  /*
+    Each source is a switch plus a collapsed "Look" panel. It is <details>
+    rather than a dialog because an admin adjusting several sources wants
+    to see them next to each other, and because it costs no JavaScript.
+
+    The fields here are PRESENTATION ONLY - there is deliberately no
+    headline or body box. The golf score has to stay the golf score.
+  */
+  const sel = (name, id, value, options) => `
+    <label class="ov-field"><span>${esc(name)}</span>
+      <select data-ov="${esc(id)}" data-field="${esc(name.toLowerCase())}">
+        ${options.map((o) => `<option value="${esc(o.v)}"${String(value || "") === o.v ? " selected" : ""}>${esc(o.l)}</option>`).join("")}
+      </select></label>`;
+
+  list.innerHTML = [...GENERATOR_LABELS].map(([id, [name, what]]) => {
+    const ov = overrides.get(id) || {};
+    const tweaked = ov.treatment || ov.background || ov.image || ov.dwell_seconds || ov.featured || ov.weight;
+    return `
+    <div class="srcrow">
+      <label class="switchrow">
+        <input type="checkbox" data-gen="${esc(id)}" ${off.has(id) ? "" : "checked"}>
+        <span class="switch-text">
+          <strong>${esc(name)}</strong>
+          <span class="muted">${esc(what)}</span>
+        </span>
+      </label>
+      <details class="ovbox"${tweaked ? " open" : ""}>
+        <summary>Look${tweaked ? " · customised" : ""}</summary>
+        <div class="ovgrid" data-ov-form="${esc(id)}">
+          ${sel("Treatment", id, ov.treatment, [
+            { v: "", l: "Automatic (whatever suits the data)" },
+            { v: "scoreboard", l: "Scoreboard (needs two sides)" },
+            { v: "champion", l: "Champion" }, { v: "stat", l: "Stat" },
+            { v: "announcement", l: "Announcement" }, { v: "event", l: "Event" },
+            { v: "hero", l: "Hero" },
+          ])}
+          ${sel("Background", id, ov.background, [
+            { v: "", l: "Automatic (house look)" },
+            { v: "default", l: "DFL house" }, { v: "dark", l: "Dark" },
+            { v: "light", l: "Light" }, { v: "image", l: "Image" }, { v: "logo", l: "Crest" },
+          ])}
+          <label class="ov-field"><span>Image URL</span>
+            <input type="text" data-ov="${esc(id)}" data-field="image" value="${esc(ov.image || "")}" placeholder="https://…"></label>
+          <label class="ov-field"><span>Seconds</span>
+            <input type="number" min="3" max="15" data-ov="${esc(id)}" data-field="dwell_seconds" value="${esc(ov.dwell_seconds ?? "")}" placeholder="auto"></label>
+          <label class="ov-field ov-check">
+            <input type="checkbox" data-ov="${esc(id)}" data-field="featured" ${ov.featured ? "checked" : ""}>
+            <span>Feature it</span></label>
+          <div class="row-end">
+            <button type="button" class="btn ghost small" data-ov-save="${esc(id)}">Save look</button>
+            <button type="button" class="btn ghost small" data-ov-clear="${esc(id)}">Reset</button>
+          </div>
+        </div>
+      </details>
+    </div>`;
+  }).join("");
+
+  /*
+    BIND ONCE. renderSources() re-renders itself after every save, so
+    attaching listeners at the end of it would stack a new pair on the
+    same element each time - two saves after the second edit, three after
+    the third. The markup inside is replaced wholesale; the element is
+    not, so one delegated listener on it survives every re-render.
+  */
+  if (list.dataset.wired === "1") return;
+  list.dataset.wired = "1";
+
+  list.addEventListener("click", async (e) => {
+    const save = e.target.closest("[data-ov-save]");
+    const clear = e.target.closest("[data-ov-clear]");
+    if (!save && !clear) return;
+    const id = (save || clear).dataset.ovSave || (save || clear).dataset.ovClear;
+    const box = list.querySelector(`[data-ov-form="${CSS.escape(id)}"]`);
+    try {
+      if (clear) {
+        const { error } = await db().from("broadcast_overrides").delete().eq("generator", id);
+        if (error) throw error;
+        toast("Back to automatic");
+      } else {
+        const val = (f) => box.querySelector(`[data-field="${f}"]`);
+        const num = Number(val("dwell_seconds").value);
+        const row = {
+          generator: id,
+          treatment: val("treatment").value || null,
+          background: val("background").value || null,
+          image: val("image").value.trim() || null,
+          dwell_seconds: Number.isFinite(num) && num > 0 ? Math.min(15, Math.max(3, Math.round(num))) : null,
+          featured: val("featured").checked,
+          updated_at: new Date().toISOString(),
+        };
+        const { error } = await db().from("broadcast_overrides").upsert(row, { onConflict: "generator" });
+        if (error) throw error;
+        toast("Look saved");
+      }
+      await renderSources(list);
+    } catch (err) {
+      toast(err.message || "Could not save that look", true);
+    }
+  });
 
   list.addEventListener("change", async (e) => {
     const box = e.target.closest("[data-gen]");

@@ -28,7 +28,7 @@ import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
-import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems } from "../broadcast-deck.js";
+import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 
@@ -65,7 +65,10 @@ export async function render(view) {
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
     db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
-    db().from("members").select("id, display_name, team_name, sleeper_user_id"),
+    /* select("*") rather than a column list: the broadcast images are an
+       optional migration, and naming a column that does not exist yet is a
+       42703 that would take the whole front page down. Twelve rows. */
+    db().from("members").select("*"),
     db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
@@ -100,16 +103,17 @@ export async function render(view) {
   /* Both in one round trip. The hand-written slides are part of phase 1
      because a commissioner who posts one expects to see it on the first
      paint, not after lore has finished loading. */
-  const [golfDay, manual] = await Promise.all([
+  const [golfDay, manual, overrides] = await Promise.all([
     golfRow ? loadGolfDay(golfRow.id) : null,
     loadBroadcastItems(),
+    loadBroadcastOverrides(),
   ]);
   const homeData = {
     events: events.data || [], announcements: announcements.data || [],
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff() });
+  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff(), overrides });
 
   /*
     WHAT'S NEW sits under the snapshot rather than above the stage: it is a
@@ -175,7 +179,7 @@ export async function render(view) {
   let custom = manual;
   /* Read once per render off the warm settings cache, not per slide. */
   const off = broadcastOff();
-  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off });
+  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off, overrides });
   /* The live poll re-reads the hand-written slides too, so a slide that was
      scheduled to start - or that an admin just published - arrives during a
      golf day without anybody reloading the page. */

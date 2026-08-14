@@ -43,6 +43,7 @@ import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle
 import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lore.js";
 import { dayMood } from "./marquee.js";
 import { factOfTheDay } from "./funfacts.js";
+import { memberImage } from "./members.js";
 
 // --------------------------------------------------------------- priority
 
@@ -297,6 +298,72 @@ function manualItem(r) {
   });
 }
 
+/*
+  PRESENTATION OVERRIDES FOR AUTOMATIC SLIDES.
+
+  A commissioner can already write a slide by hand and can already switch
+  a source off. This is the middle: leave the golf slide on, generated
+  from live data, but give it a picture and a different plate.
+
+  KEYED BY GENERATOR ID - the same key the on/off switches use. One row
+  per source at most. Deliberately coarse: a per-item override would need
+  a stable id for something regenerated from live data on every load, and
+  there is no such id.
+
+  PRESENTATION ONLY, ENFORCED HERE AS WELL AS IN THE SCHEMA. Nothing in
+  this path can touch headline, subtitle, body, sides or temporal. If an
+  admin could retype the headline, the stage could say something the data
+  does not - and temporal honesty would become a suggestion.
+
+  Returns an empty Map on any failure, including the table not existing,
+  which is every install until broadcast_v2_schema.sql is run.
+*/
+export async function loadBroadcastOverrides() {
+  try {
+    const { data, error } = await db()
+      .from("broadcast_overrides")
+      .select("generator,treatment,background,image,dwell_seconds,featured,weight");
+    if (error) return new Map();
+    return new Map((data || []).map((r) => [r.generator, r]));
+  } catch (err) {
+    console.warn("broadcast: overrides unavailable", err);
+    return new Map();
+  }
+}
+
+/*
+  Apply one override to one generated item.
+
+  THE TREATMENT GUARD IS THE INTERESTING PART. A treatment is not just a
+  look - scoreboard needs `sides` and stat reads better with a `figure`.
+  Forcing "scoreboard" onto a slide that has no sides would render an
+  empty tale of the tape, so a treatment that the item cannot support is
+  ignored rather than obeyed. The admin sees no change, which is the
+  correct outcome: the alternative is a blank scoreboard on the front page.
+*/
+function applyOverride(it, ov) {
+  if (!ov) return it;
+  const out = { ...it };
+
+  if (ov.treatment && ov.treatment !== it.treatment) {
+    const wants = ov.treatment;
+    const canScore = Array.isArray(it.sides) && it.sides.length === 2;
+    if (wants !== "scoreboard" || canScore) {
+      out.treatment = wants;
+      /* Dwell follows the treatment unless the override sets one, or a
+         6-second announcement keeps a 5-second stat's clock. */
+      out.dwell = DWELL[wants] || out.dwell;
+    }
+  }
+  if (ov.image) { out.image = ov.image; out.background = ov.background || "image"; }
+  else if (ov.background && BACKGROUNDS.has(ov.background)) out.background = ov.background;
+
+  if (ov.dwell_seconds) out.dwell = dwellMs(ov.dwell_seconds, out.treatment);
+  if (ov.featured) out.priority = P.FEATURED + (Number(ov.weight) || 0);
+  else if (ov.weight) out.priority = (Number(it.priority) || 0) + Number(ov.weight);
+  return out;
+}
+
 /** The background modes the stage knows how to draw. */
 export const BACKGROUNDS = new Set(["default", "light", "dark", "image", "logo"]);
 
@@ -547,17 +614,31 @@ function newsItem(ctx) {
 
 /* The current champion. Always eligible - league identity does not expire
    because something else is happening today. */
+/* A member's broadcast picture, or nothing. namer() hands back the member
+   id it resolved, which is the only reliable link from a Sleeper user to a
+   DFL member - team names change and accounts get deleted. */
+function pictureOf(ctx, memberId) {
+  if (!memberId) return null;
+  const m = (ctx.members || []).find((x) => String(x.id) === String(memberId));
+  return memberImage(m, "broadcast");
+}
+
 function championItem(ctx) {
   if (!ctx.name) return [];
   const l = ctx.leagues.find((x) => x.champion_user_id || x.champion_roster_id);
   if (!l) return [];
   const who = ctx.name(l.champion_user_id, l.season, l.champion_roster_id);
   const orphan = !who.memberId && who.sub === "account deleted" && /^Roster \d+$/.test(who.label);
+  /* A champion with a broadcast picture gets it behind them. Falls all the
+     way back to no image, in which case the champion treatment draws the
+     crest as it always has. */
+  const art = pictureOf(ctx, who.memberId);
   return [item({
     kind: "champion", treatment: "champion", temporal: "final", priority: P.CHAMPION,
     kicker: `${l.season} DFL Champion`,
     headline: orphan ? `The ${l.season} champion` : who.label,
     subtitle: orphan ? `${who.label} — the Sleeper account was deleted` : (who.sub || ""),
+    ...(art ? { image: art, background: "image" } : {}),
     href: "#/history",
   })];
 }
@@ -567,9 +648,11 @@ function pastChampionItems(ctx) {
   const withChamps = ctx.leagues.filter((l) => l.champion_user_id || l.champion_roster_id);
   return withChamps.slice(1, 4).map((l) => {
     const who = ctx.name(l.champion_user_id, l.season, l.champion_roster_id);
+    const art = pictureOf(ctx, who.memberId);
     return item({
       kind: "past", treatment: "champion", temporal: "historical", priority: P.HISTORY,
       kicker: `${l.season} Champion`, headline: who.label, subtitle: who.sub || "",
+      ...(art ? { image: art, background: "image" } : {}),
       href: "#/history",
     });
   });
@@ -730,7 +813,7 @@ export const GENERATOR_LABELS = new Map([
  * @param {Set}    [opts.off] generator ids the commissioner has switched off
  * @param {number} [opts.max] deck size
  */
-export function buildDeck(ctx, { off = new Set(), max = 8, custom = [] } = {}) {
+export function buildDeck(ctx, { off = new Set(), max = 8, custom = [], overrides = new Map() } = {}) {
   const out = [];
   for (const [id, gen] of GENERATORS) {
     if (off.has(id)) continue;
@@ -738,7 +821,8 @@ export function buildDeck(ctx, { off = new Set(), max = 8, custom = [] } = {}) {
        blank the stage - the floor generator is the last line of defence and
        it cannot do its job if an earlier throw takes the whole build out. */
     try {
-      for (const it of gen(ctx) || []) out.push({ ...it, generator: id });
+      const ov = overrides.get(id);
+      for (const it of gen(ctx) || []) out.push({ ...applyOverride(it, ov), generator: id });
     } catch (err) {
       console.warn(`broadcast: ${id} failed`, err);
     }

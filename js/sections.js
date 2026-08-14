@@ -213,6 +213,18 @@ export const SECTIONS = [
       { name: "awards",        label: "Awards (one per line)", type: "textarea",
         placeholder: "Highest scorer 2025\nBest trade 2024" },
       { name: "profile_image", label: "Profile image URL (optional)", type: "text" },
+      /*
+        THE BROADCAST PICTURES. profile_image stays what it is - the
+        picture of the person. These are for the stage, which wants more
+        personality than a headshot.
+
+        chaos_image is opt-in ONLY and no generator reaches for it: a
+        slide has to ask for it by name, because "chaos" turning up on a
+        championship card is not a nice surprise.
+      */
+      { name: "broadcast_image", label: "Broadcast image (used on stage slides)", type: "text" },
+      { name: "lookalike_image", label: "Look-alike image (the celebrity double)", type: "text" },
+      { name: "chaos_image",     label: "Chaos image (never chosen automatically)", type: "text" },
       { name: "notes",         label: "Notes", type: "textarea" },
       { name: "active",        label: "Show in the member picker", type: "checkbox", default: true },
       { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },

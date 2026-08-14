@@ -661,3 +661,24 @@ a.moment:hover { background: var(--hover-soft); }
 .fact-row { display: flex; align-items: flex-start; gap: var(--s-3); }
 .fact-row .ico-sm { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 3px; }
 .fact-row .card-heading { margin: 0; }
+
+/* --------------------------------------------------------------------
+   Admin -> Broadcast: per-source presentation overrides.
+   -------------------------------------------------------------------- */
+.srcrow { border-bottom: 1px solid var(--line-soft); padding-bottom: var(--s-1); }
+.srcrow:last-child { border-bottom: 0; }
+.ovbox { margin: 0 0 var(--s-2) 34px; }
+.ovbox summary {
+  cursor: pointer; list-style: none;
+  font-size: var(--fs-label); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps); text-transform: uppercase;
+  color: var(--muted); padding: var(--s-2) 0;
+}
+.ovbox summary::-webkit-details-marker { display: none; }
+.ovbox summary::before { content: "▸ "; color: var(--accent); }
+.ovbox[open] summary::before { content: "▾ "; }
+.ovgrid { display: grid; gap: var(--s-2); padding: var(--s-2) 0 var(--s-3); }
+.ov-field { display: grid; gap: 2px; }
+.ov-field > span { font-size: var(--fs-label); color: var(--muted); }
+.ov-check { display: flex; align-items: center; gap: var(--s-2); }
+.ov-check input { width: 18px; height: 18px; }
