@@ -589,9 +589,18 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
     return Date.now() - Date.parse(event.bc_started_at) + (event.bc_offset_ms || 0);
   };
 
+  const updateSharedEvent = async (patch) => {
+    const { data, error } = await db().from("arena_events")
+      .update(patch).eq("id", event.id).select("*").maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Shared race update was rejected. Re-run arena_schema.sql and sign in as commissioner.");
+    Object.assign(event, data);
+    return data;
+  };
+
   const write = async (patch, note) => {
     try {
-      await updateRow("arena_events", event.id, patch);
+      await updateSharedEvent(patch);
       if (note) toast(note);
       refresh();
     } catch (err) {
@@ -638,17 +647,16 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
       */
       const seed = newSeed();
       try {
-        await updateRow("arena_events", event.id, {
+        await updateSharedEvent({
           seed,
           bc_state: "running",
           bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
           bc_offset_ms: 0,
         });
-        event.seed = seed;
       } catch (err) {
-        /* A member with no admin token cannot drive the broadcast, but they
-           can still watch the race here. */
-        console.warn("arena: broadcast not updated", err);
+        console.warn("arena: shared race not updated", err);
+        toast(err.message || "The shared race could not start", true);
+        return;
       }
       await runRace(view, stage, event, parts, byId, seed, { save: true });
       return;
@@ -767,7 +775,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         <div class="track-start"></div>
         <div class="track-finish"></div>
         ${racers.map((r, i) => `
-          <div class="lane">
+          <div class="lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(((i + .5) / racers.length) * 100).toFixed(2)}%">
             <span class="lane-tag" style="--racer:${esc(r.color)}">
               <b>${r.number}</b>${esc(r.name)}
             </span>
