@@ -112,9 +112,10 @@ document.getElementById("whoami")?.addEventListener("click",()=>{
   openPicker({cancellable:!!getUsername()});
 });
 window.addEventListener("dfl:pick-member",()=>openPicker({cancellable:true}));
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();startRouter();/* A guest holding an event pass has already said who they are. Raising the
-   member picker over them was the whole bug. */
-if(!currentMember()&&!getUsername()&&!golfPass())openPicker();
+const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();startRouter();/* A broadcast/OBS URL is a public spectator surface. It must render without
+   asking the viewer to identify themselves, including in a fresh browser. */
+if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicker();
 else if(getUsername())registerUser(getUsername());if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);setupInstall();setupUpdates()}
 onGolfPassChange(paintName);
 boot();
