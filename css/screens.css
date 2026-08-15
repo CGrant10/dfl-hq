@@ -868,3 +868,26 @@ a.moment:hover { background: var(--hover-soft); }
   .pet-species-select select{display:block;width:100%;min-height:44px}
   .pet-roster{display:none}
 }
+
+
+/* Pet animation phase: every DFL character now has two discrete pixel poses. */
+.racer-px.has-frames .px-frame-a{opacity:1}
+.racer-px.has-frames .px-frame-b{opacity:0}
+.pet-art .px-frame-a,.runner .px-frame-a,.bc-runner .px-frame-a{animation:pxFrameA .62s steps(1,end) infinite}
+.pet-art .px-frame-b,.runner .px-frame-b,.bc-runner .px-frame-b{animation:pxFrameB .62s steps(1,end) infinite}
+.pet-art.preview-run .px-frame-a,.pet-art.preview-run .px-frame-b,
+.pet-art.preview-surge .px-frame-a,.pet-art.preview-surge .px-frame-b,
+.runner.is-surge .px-frame-a,.runner.is-surge .px-frame-b,
+.bc-runner.is-surge .px-frame-a,.bc-runner.is-surge .px-frame-b{animation-duration:.26s}
+.runner.is-stumble .px-frame-a,.runner.is-stumble .px-frame-b,
+.bc-runner.is-stumble .px-frame-a,.bc-runner.is-stumble .px-frame-b{animation-duration:.9s}
+.pet-art.preview-win .px-frame-a,.pet-art.preview-win .px-frame-b,
+.runner.is-winner .px-frame-a,.runner.is-winner .px-frame-b,
+.bc-runner.is-winner .px-frame-a,.bc-runner.is-winner .px-frame-b{animation-duration:.38s}
+@keyframes pxFrameA{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes pxFrameB{0%,49%{opacity:0}50%,100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .racer-px.has-frames .px-frame{animation:none!important}
+  .racer-px.has-frames .px-frame-a{opacity:1}
+  .racer-px.has-frames .px-frame-b{opacity:0}
+}
