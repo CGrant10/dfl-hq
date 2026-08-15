@@ -41,8 +41,9 @@ export async function render(view) {
   if (!id) {
     view.innerHTML = `<h1>DFL Broadcast</h1>
       <div class="card"><div class="card-body">
-        Open this from an Arena event's <strong>Broadcast</strong> button, or add
-        an event id to the address: <code>#/broadcast?id=12</code>
+        This is the clean OBS and shared-viewer route. Copy its URL from an
+        Arena event's <strong>OBS setup</strong>, or add an event id to the
+        address: <code>#/broadcast?id=12</code>
       </div></div>`;
     return;
   }
