@@ -909,6 +909,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     let lastOrderKey = "";
     const homed = new Set();
     const track = stage.querySelector("#track");
+    const scenery = stage.querySelector(".race-scenery");
+    const raceWrap = stage.querySelector(".arena-track-wrap");
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
@@ -919,12 +921,15 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const t = Math.min(sim.frames, elapsed / TICK_MS);
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
+      let cameraLead = 0;
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
         runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+        cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
       }
+      if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
         THE CHARACTERS REACT TO THE SAME EVENTS THE COMMENTARY DOES.
@@ -1057,7 +1062,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
             board.find((b) => b.index === i)?.label || "";
         }
         runners[i]?.classList.remove("is-surge", "is-stumble");
-        runners[i]?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
+        const isWinner = i === sim.order[0].index;
+        runners[i]?.classList.add(isWinner ? "is-winner" : "is-finished");
+        if (isWinner) raceWrap?.classList.add("has-winner");
       }
 
       /* Whoever is visually in front wears it, so the leader is readable
@@ -1169,6 +1176,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
   const rows = [...results].sort((a, b) => a.place - b.place);
   const win  = rows[0];
   const winner = win ? byId.get(String(win.member_id)) : null;
+  const winnerPet = petOf(winner);
 
   return `
     <div class="card results-card ${fresh ? "reveal" : ""}">
@@ -1177,6 +1185,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
       ${winner ? `
         <div class="winner-block">
           <span class="winner-trophy" aria-hidden="true">🏆</span>
+          ${winnerPet ? `<span class="winner-pet" style="--racer:${esc(winnerPet.color || "#2fbf5f")}">${spriteMarkup(event?.theme, winnerPet.species, winnerPet.color, null, winnerPet)}</span>` : ""}
           <span class="winner-name">${esc(winner.display_name)}</span>
           <span class="winner-label">Winner${event?.name ? " · " + esc(event.name) : ""}</span>
         </div>` : ""}
