@@ -828,6 +828,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   stage.innerHTML = `
     <div class="arena-track-wrap cinematic-race" data-theme="${esc(event.theme || "stadium")}">
       <div class="race-scenery" aria-hidden="true">
+        <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
+          <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
+            <feGaussianBlur data-arena-motion-blur stdDeviation="0 0" edgeMode="duplicate"></feGaussianBlur>
+          </filter>
+        </svg>
         <div class="race-sky"></div><div class="race-hills far"></div>
         <div class="race-hills near"></div><div class="race-crowd"></div>
       </div>
@@ -959,6 +964,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const homed = new Set();
     const track = stage.querySelector("#track");
     const scenery = stage.querySelector(".race-scenery");
+    const sceneryBlur = stage.querySelector("[data-arena-motion-blur]");
     const raceWrap = stage.querySelector(".arena-track-wrap");
     /*
       Composite racer travel instead of changing `left` every frame.
@@ -978,6 +984,12 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
+    /* Pixi gets deterministic event timestamps as presentation metadata.
+       These never feed back into progress, order, timing, or results. */
+    const pixiReactions = racers.map(() => new Map());
+    const setPixiReaction = (index, kind, at, duration) => {
+      pixiReactions[index]?.set(kind, { kind, startedMs: at, untilMs: at + duration });
+    };
     let leader = -1;
 
     function frame(now) {
@@ -1028,6 +1040,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           el.classList.remove("is-surge", "is-stumble");
           el.classList.add(ev.kind === "stumble" ? "is-stumble" : "is-surge");
           reacting.set(ev.racer, elapsed + ev.durMs);
+          setPixiReaction(ev.racer, ev.kind === "stumble" ? "stumble" : "surge", ev.ms, ev.durMs);
         }
       }
       for (const [i, until] of reacting) {
@@ -1046,6 +1059,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         counts[ev.kind] = (counts[ev.kind] || 0) + 1;
         const hot = ev.intensity >= 0.6;
         if (ev.kind === "jump") {
+          setPixiReaction(ev.racer, "jump", ev.ms, ev.durMs);
           const el = runners[ev.racer];
           if (el) { el.classList.add("is-jump"); expiry.push([el, "is-jump", elapsed + ev.durMs]); }
           const row = rows[ev.racer];
@@ -1055,6 +1069,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           if (ev.text && elapsed - calledAt > 1800) { status.textContent = ev.text; calledAt = elapsed; }
         } else if (ev.kind === "swap") {
           for (const i of [ev.racer, ev.other]) {
+            setPixiReaction(i, "duel", ev.ms, ev.durMs);
             const el = runners[i];
             /*
               TWO CALLS, NOT ONE STRING. classList.add("is-duel is-hot")
@@ -1074,6 +1089,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           }
         } else if (ev.kind === "near") {
           for (const i of [ev.racer, ev.other]) {
+            setPixiReaction(i, "near", ev.ms, ev.durMs);
             const el = runners[i];
             if (el) { el.classList.add("is-near"); expiry.push([el, "is-near", elapsed + ev.durMs]); }
           }
@@ -1087,24 +1103,31 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           expiry.splice(k, 1);
         }
       }
+      for (const active of pixiReactions) {
+        for (const [kind, reaction] of active) {
+          if (elapsed >= reaction.untilMs) active.delete(kind);
+        }
+      }
 
       /* FINAL STRETCH. A curve on the track element, read by CSS - one
          write when it changes band, not sixty a second. */
       const heat = intensityAt(shown, lo);
       const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
       if (track && track.dataset.heat !== band) track.dataset.heat = band;
+      /* Genuine X-axis-only background blur. It is applied to the existing
+         scenery layer, never the track, racers, labels, board, or finish. */
+      sceneryBlur?.setAttribute("stdDeviation", `${(.3 + Math.min(1, heat) * 2.5).toFixed(2)} .12`);
       /* Pixi consumes the same precomputed reaction classes as the legacy
          renderer. This keeps visual events synchronized without giving the
          presentation layer any influence over race outcomes. */
       for (let i = 0; i < pixiRacers.length; i++) {
-        const el = runners[i];
-        if (!el) continue;
-        pixiRacers[i].reaction = el.classList.contains("is-stumble") ? "stumble"
-          : el.classList.contains("is-jump") ? "jump"
-          : el.classList.contains("is-duel") ? "duel"
-          : el.classList.contains("is-near") ? "near"
-          : el.classList.contains("is-surge") ? "surge"
-          : undefined;
+        const active = pixiReactions[i];
+        const reaction = ["stumble", "jump", "duel", "near", "surge"]
+          .map((kind) => active?.get(kind)).find(Boolean);
+        if (reaction) {
+          pixiRacers[i].reaction = reaction.kind;
+          pixiRacers[i].reactionStartedMs = reaction.startedMs;
+        }
       }
       pixi?.render({
         elapsedMs: elapsed,

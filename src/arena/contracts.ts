@@ -38,6 +38,8 @@ export interface RacerFrame {
   leading: boolean;
   finished: boolean;
   reaction?: "surge" | "stumble" | "jump" | "duel" | "near";
+  /** Presentation timestamp only; race progress remains authoritative. */
+  reactionStartedMs?: number;
 }
 
 export interface RaceFrame {
