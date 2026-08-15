@@ -531,6 +531,14 @@ function broadcastCard(event, parts) {
         </div>
       </header>
 
+      <div class="bc-launch">
+        <div>
+          <strong>1. Put the race on screen</strong>
+          <span class="muted tiny">Opens the public starting grid without beginning the race.</span>
+        </div>
+        <button class="btn ghost" id="bc-open" data-viewer-url="${esc(url)}">Open race view</button>
+      </div>
+
       <div class="bc-command">
         <button class="btn bc-primary" id="bc-start" ${ready ? "" : "disabled"}>
           <span>${running || paused || finished ? "Run race again" : "Start race"}</span>
@@ -613,6 +621,32 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
 
   panel.addEventListener("click", async (e) => {
     const t = e.target;
+
+    if (t.closest("#bc-open")) {
+      /*
+        Opening the screen and starting the clock are deliberately separate.
+        Create the window during the click so popup blockers allow it, reset
+        the shared viewer to the starting grid, then navigate it only after
+        the reset has been confirmed by Supabase.
+      */
+      const url = t.closest("#bc-open").dataset.viewerUrl;
+      const raceWindow = window.open("about:blank", "dfl-race-view");
+      if (!raceWindow) {
+        toast("Allow pop-ups to open the race view", true);
+        return;
+      }
+      raceWindow.document.title = "Preparing race…";
+      try {
+        await updateSharedEvent({ bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 });
+        raceWindow.location.replace(url);
+        toast("Race view opened at the starting line");
+        refresh();
+      } catch (err) {
+        raceWindow.close();
+        toast(err.message || "Could not prepare the race view", true);
+      }
+      return;
+    }
 
     if (t.closest("#bc-copy")) {
       const input = panel.querySelector("#bc-url");
