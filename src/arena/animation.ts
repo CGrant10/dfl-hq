@@ -72,7 +72,7 @@ export function motionPose(input: MotionInput): MotionPose {
       scaleY: 1 - Math.sin(stride) * 0.015 - contact * 0.045,
       rotation: -speed * 0.045 + acceleration * -0.03 + Math.sin(stride) * 0.016,
       frame: cyclePose(input.elapsedMs + input.lane * 31, strideMs),
-      dust: 0.14 + heat * 0.1,
+      dust: 0.2 + heat * 0.13 + Math.max(0, acceleration) * 0.18,
       energy: Math.max(0, acceleration) * 0.28,
     };
   }
@@ -84,12 +84,12 @@ export function motionPose(input: MotionInput): MotionPose {
     const recover = easeOut((p - 0.6) / 0.4);
     return {
       ...base(190),
-      x: -2.2 * (1 - anticipation) + launch * 3.5 * (1 - recover),
-      y: p < 0.12 ? 1.4 * anticipation : -2.2 - Math.abs(wave) * 1.5,
-      scaleX: 1 + launch * 0.15 * (1 - recover),
-      scaleY: 1 - launch * 0.08 * (1 - recover),
-      rotation: -0.08 * launch * (1 - recover),
-      afterimage: launch * (0.45 + heat * 0.1),
+      x: -3.4 * (1 - anticipation) + launch * 6.2 * (1 - recover),
+      y: p < 0.12 ? 2.2 * anticipation : -3.4 - Math.abs(wave) * 2.1,
+      scaleX: 1 + launch * 0.22 * (1 - recover),
+      scaleY: 1 - launch * 0.13 * (1 - recover),
+      rotation: -0.13 * launch * (1 - recover),
+      afterimage: launch * (0.7 + heat * 0.1),
       dust: 0.65 + launch * 0.35,
       energy: launch,
       frame: cyclePose(age, 190),
@@ -106,11 +106,11 @@ export function motionPose(input: MotionInput): MotionPose {
     const tumble = wipeoutVariant ? skid : 0;
     return {
       ...base(480),
-      x: -catchFoot * 2.5 + (slipVariant ? skid * 3.8 : -skid * 3.2) + recover * 1.2,
-      y: catchFoot * 1.2 + skid * (wipeoutVariant ? 6.2 : 2.4) - recover * 1.1,
-      scaleX: 1 + skid * 0.1,
-      scaleY: 1 - skid * 0.15,
-      rotation: catchFoot * 0.16 + skid * (slipVariant ? -0.32 : 0.24 + tumble * 0.58) - recover * 0.18,
+      x: -catchFoot * 3.6 + (slipVariant ? skid * 5.2 : -skid * 5.8) + recover * 1.8,
+      y: catchFoot * 1.8 + skid * (wipeoutVariant ? 9.2 : 3.8) - recover * 1.5,
+      scaleX: 1 + skid * 0.16,
+      scaleY: 1 - skid * 0.23,
+      rotation: catchFoot * 0.24 + skid * (slipVariant ? -0.48 : 0.34 + tumble * 0.86) - recover * 0.28,
       impact: pulse((p - 0.12) / 0.22),
       dust: Math.max(catchFoot, skid) * 0.9,
       skid,
@@ -126,7 +126,7 @@ export function motionPose(input: MotionInput): MotionPose {
     return {
       ...base(285),
       x: flight ? easeOut(flight) * 2.3 : 0,
-      y: crouch * 1.7 - Math.sin(flight * Math.PI) * (6.5 + heat * 0.8) + land * 1.7,
+      y: crouch * 2.4 - Math.sin(flight * Math.PI) * (9.5 + heat * 1.05) + land * 2.8,
       scaleX: 1 + crouch * 0.08 - flight * 0.04 + land * 0.12,
       scaleY: 1 - crouch * 0.12 + flight * 0.08 - land * 0.16,
       rotation: flight ? -0.07 + flight * 0.12 : 0,
@@ -173,15 +173,16 @@ export function motionPose(input: MotionInput): MotionPose {
 
   if (input.motion === "lose") {
     const reaction = winnerPhase(age).loserReaction;
+    const settle = age > 920 ? 0.34 + Math.sin(age * 0.008 + input.variant * 9) * 0.08 : 0;
     return {
       ...base(520),
-      x: -reaction * 2,
-      y: reaction * 1.8,
-      scaleX: 1 + reaction * 0.04,
-      scaleY: 1 - reaction * 0.1,
-      rotation: reaction * (input.variant > 0.5 ? 0.09 : -0.09),
-      frame: reaction > 0.4 ? 2 : 0,
-      dust: reaction * 0.22,
+      x: -reaction * 3.5 - settle * 1.5,
+      y: reaction * 3.2 + settle * 2.2,
+      scaleX: 1 + reaction * 0.08,
+      scaleY: 1 - reaction * 0.17 - settle * 0.06,
+      rotation: (reaction * 0.17 + settle * 0.08) * (input.variant > 0.5 ? 1 : -1),
+      frame: reaction > 0.4 || settle > 0 ? 2 : 0,
+      dust: reaction * 0.44,
     };
   }
 
@@ -192,7 +193,7 @@ export function motionPose(input: MotionInput): MotionPose {
     scaleX: 1 + win.launch * 0.18 + win.celebrate * 0.08,
     scaleY: 1 - win.launch * 0.08 + win.celebrate * 0.08,
     rotation: Math.sin(age * 0.012) * win.launch * 0.08,
-    afterimage: win.launch * 0.48,
+    afterimage: win.launch * 0.72,
     impact: Math.max(win.freeze, win.converge * 0.55),
     dust: win.launch * 0.8,
     energy: win.converge,

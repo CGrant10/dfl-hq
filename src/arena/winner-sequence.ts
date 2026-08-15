@@ -14,7 +14,7 @@ export function winnerPhase(ageMs: number): WinnerPhase {
   const age = Math.max(0, ageMs);
   return {
     freeze: age < 115 ? 1 : 0,
-    converge: pulse((age - 80) / 520),
+    converge: age < 760 ? pulse((age - 80) / 680) : 0.72 + Math.sin(age * 0.006) * 0.08,
     launch: pulse((age - 190) / 620),
     celebrate: age < 720 ? 0 : Math.abs(Math.sin((age - 720) * 0.014)) * clamp01((age - 720) / 280),
     loserReaction: pulse((age - 120) / 760),

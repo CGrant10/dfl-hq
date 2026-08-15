@@ -9,10 +9,13 @@ export interface BackgroundMotion {
 export function backgroundMotion(state: RaceState, heat: number, finishing = false): BackgroundMotion {
   if (state !== "running") return { blurX: 0, blurY: 0, intensity: 0 };
   const safeHeat = Math.max(0, Math.min(1, heat));
-  const finishEase = finishing ? 0.45 : 1;
+  const finishEase = finishing ? 0.62 : 1;
+  const easedHeat = 1 - (1 - safeHeat) ** 2;
   return {
-    blurX: (0.35 + safeHeat * 3.2) * finishEase,
-    blurY: 0.08,
-    intensity: safeHeat * finishEase,
+    // Keep the subject plane sharp while the scenery receives a genuinely
+    // directional smear. The SVG filter consumes these as X/Y deviations.
+    blurX: (1.6 + easedHeat * 14.2) * finishEase,
+    blurY: 0.12,
+    intensity: easedHeat * finishEase,
   };
 }

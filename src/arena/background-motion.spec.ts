@@ -8,7 +8,9 @@ describe("isolated Arena background motion", () => {
 
   it("grows horizontally with heat and eases near finish", () => {
     expect(backgroundMotion("running", 1).blurX).toBeGreaterThan(backgroundMotion("running", 0.2).blurX);
+    expect(backgroundMotion("running", 1).blurX).toBeGreaterThanOrEqual(15);
     expect(backgroundMotion("running", 1, true).blurX).toBeLessThan(backgroundMotion("running", 1).blurX);
     expect(backgroundMotion("running", 1).blurY).toBeLessThan(backgroundMotion("running", 1).blurX / 20);
+    expect(backgroundMotion("running", 1).intensity).toBe(1);
   });
 });

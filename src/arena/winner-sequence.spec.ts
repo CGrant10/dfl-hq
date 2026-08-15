@@ -14,4 +14,8 @@ describe("winner sequence", () => {
     expect(winnerPhase(500).loserReaction).toBeGreaterThan(0);
     expect(winnerPhase(1200).loserReaction).toBe(0);
   });
+
+  it("holds cinematic focus after the initial winner burst", () => {
+    expect(winnerPhase(1_600).converge).toBeGreaterThan(0.6);
+  });
 });

@@ -960,12 +960,12 @@ a.moment:hover { background: var(--hover-soft); }
     inset:0;
     z-index:1;
     pointer-events:none;
-    opacity:.72;
+    opacity:.88;
     mix-blend-mode:screen;
     background:
       repeating-linear-gradient(101deg,
         transparent 0 5.5%,
-        rgba(255,255,255,.08) 5.7% 5.9%,
+        rgba(255,255,255,.16) 5.7% 5.9%,
         transparent 6.1% 11%),
       linear-gradient(90deg,rgba(255,255,255,.03),transparent 32%,rgba(255,255,255,.08));
     background-size:190% 100%,100% 100%;
@@ -979,7 +979,7 @@ a.moment:hover { background: var(--hover-soft); }
     inset:-12% -8%;
     z-index:3;
     pointer-events:none;
-    opacity:.58;
+    opacity:.74;
     background:
       linear-gradient(102deg,transparent 0 12%,rgba(255,255,255,.8) 12.25% 12.45%,transparent 12.8%),
       linear-gradient(98deg,transparent 0 42%,rgba(185,231,255,.65) 42.15% 42.35%,transparent 42.8%),
@@ -993,7 +993,7 @@ a.moment:hover { background: var(--hover-soft); }
 
   .arena-track-wrap:has(.track.is-running) .race-scenery,
   .bc-stage.is-racing .race-scenery {
-    filter:saturate(1.28) contrast(1.08) blur(1.2px);
+    filter:saturate(1.46) contrast(1.18) brightness(.84) blur(2.8px);
   }
 
   .arena-track-wrap:has(.track.is-running) .race-sky::after,
@@ -1014,7 +1014,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-crowd,
   .bc-stage.is-racing .race-crowd {
     animation:animeCrowdRush calc(.16s / var(--anime-speed)) linear infinite;
-    filter:blur(1.4px) saturate(1.2);
+    filter:blur(2.4px) saturate(1.3) contrast(1.08);
   }
 
   .track.is-running[data-heat="1"],
@@ -1168,9 +1168,9 @@ a.moment:hover { background: var(--hover-soft); }
     inset:0;
     z-index:1;
     pointer-events:none;
-    opacity:.58;
+    opacity:.76;
     mix-blend-mode:screen;
-    background:repeating-linear-gradient(101deg,transparent 0 7%,rgba(255,255,255,.16) 7.25% 7.55%,transparent 7.8% 14%);
+    background:repeating-linear-gradient(101deg,transparent 0 7%,rgba(255,255,255,.24) 7.25% 7.55%,transparent 7.8% 14%);
     background-size:190% 100%;
     animation:portraitSpeedField .42s linear infinite;
   }
@@ -1181,7 +1181,7 @@ a.moment:hover { background: var(--hover-soft); }
     inset:-8%;
     z-index:3;
     pointer-events:none;
-    opacity:.48;
+    opacity:.65;
     background:
       linear-gradient(102deg,transparent 0 18%,rgba(255,255,255,.72) 18.3% 18.55%,transparent 19%),
       linear-gradient(98deg,transparent 0 58%,rgba(190,235,255,.62) 58.2% 58.45%,transparent 59%);
@@ -1191,7 +1191,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-scenery,
   .bc-stage.is-racing .race-scenery {
     transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)!important;
-    filter:saturate(1.22) contrast(1.06) blur(.8px);
+    filter:saturate(1.4) contrast(1.16) brightness(.88) blur(2.2px);
   }
   .arena-track-wrap:has(.track.is-running) .race-sky::after,
   .bc-stage.is-racing .race-sky::after { animation:portraitCloudRush .8s linear infinite; }
@@ -1202,7 +1202,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-crowd,
   .bc-stage.is-racing .race-crowd {
     animation:portraitCrowdRush .18s linear infinite;
-    filter:blur(1px) saturate(1.18);
+    filter:blur(2px) saturate(1.26) contrast(1.06);
   }
 }
 @keyframes portraitSpeedField {
@@ -1249,6 +1249,15 @@ a.moment:hover { background: var(--hover-soft); }
      labels, the scoreboard, track markings, or finish line. */
   .arena-track-wrap:has(.track.is-running) .race-scenery,
   .bc-stage.is-racing .race-scenery {
-    filter:url("#arena-motion-blur") saturate(1.28) contrast(1.08);
+    filter:url("#arena-motion-blur") saturate(1.46) contrast(1.18) brightness(.84);
+  }
+}
+
+/* Final-stretch lighting is deliberately more dramatic than ordinary running:
+   the scenery drops back while the Pixi subject plane stays fully sharp. */
+@media (prefers-reduced-motion:no-preference) {
+  .arena-track-wrap:has(.track.is-running[data-heat="3"]) .race-scenery,
+  .bc-stage.is-racing:has(.bc-track[data-heat="3"]) .race-scenery {
+    filter:url("#arena-motion-blur") saturate(1.34) contrast(1.2) brightness(.68);
   }
 }

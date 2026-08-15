@@ -30,4 +30,19 @@ describe("Arena presentation choreography", () => {
     expect(motionPose({ motion: "surge", elapsedMs: 900, lane: 2, heat: 3, variant: 0.5, reducedMotion: true }))
       .toMatchObject({ x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, afterimage: 0, impact: 0, dust: 0 });
   });
+
+  it("makes a surge visually distinct from ordinary running", () => {
+    const surge = motionPose({ motion: "surge", elapsedMs: 410, motionStartedMs: 0, lane: 3, heat: 3, variant: 0.4 });
+    const run = motionPose({ motion: "run", elapsedMs: 410, lane: 3, heat: 3, variant: 0.4, speed: 1 });
+    expect(surge.afterimage).toBeGreaterThan(0.55);
+    expect(Math.abs(surge.x)).toBeGreaterThan(Math.abs(run.x));
+    expect(surge.dust).toBeGreaterThan(run.dust);
+  });
+
+  it("gives wipeouts a multi-phase physical pose", () => {
+    const fall = motionPose({ motion: "stumble", elapsedMs: 560, motionStartedMs: 0, lane: 5, heat: 2, variant: 0.9 });
+    expect(Math.abs(fall.rotation)).toBeGreaterThan(0.35);
+    expect(fall.skid).toBeGreaterThan(0.4);
+    expect(fall.dust).toBeGreaterThan(0.4);
+  });
 });

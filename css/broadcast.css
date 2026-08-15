@@ -616,8 +616,8 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
 .bc-stage .bc-finish{filter:drop-shadow(0 0 10px #fff)}
 .bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
-.bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,207,54,.28),rgba(2,7,14,.92) 58%)}
-.bc-stage .bc-winner-inner::before{content:"";position:absolute;inset:-18%;z-index:-1;background:repeating-conic-gradient(from 0deg,#ffd84a 0 4deg,transparent 4deg 12deg);opacity:.16;animation:bc-rays 14s linear infinite}
+.bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,220,92,.42),rgba(255,157,28,.12) 26%,rgba(2,7,14,.95) 62%)}
+.bc-stage .bc-winner-inner::before{content:"";position:absolute;inset:-28%;z-index:-1;background:repeating-conic-gradient(from 0deg,#fff8ca 0 2deg,#ffd84a 2deg 5deg,transparent 5deg 11deg);filter:drop-shadow(0 0 1.2vw #ffbd25);opacity:.42;animation:bc-rays 11s linear infinite}
 @keyframes bc-rays{to{transform:rotate(1turn)}}
 .bc-runner.trail-dust::before,.bc-runner.trail-spark::before,.bc-runner.trail-rainbow::before{content:"";position:absolute;right:68%;top:50%;width:66%;pointer-events:none;opacity:.9}
 .bc-runner.trail-dust::before{height:1.1vw;background:radial-gradient(circle,#dec6a0 0 20%,transparent 23%) 0 50%/1vw 1vw repeat-x}
@@ -638,7 +638,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-winner-art{display:block;width:min(22vw,280px);height:min(16vw,200px);margin:0 auto .8vw;animation:bcChampion .9s steps(4,end) infinite}
 .bc-winner-art svg,.bc-winner-art img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 1.2vw 1vw #0009) drop-shadow(0 0 1.2vw #ffd84a)}
 .bc-stage.is-finished .bc-winner-inner{animation:bcWinnerEnter .72s cubic-bezier(.2,.9,.2,1) both}
-.bc-stage.is-finished .bc-winner::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,#fff 0 2px,transparent 3px) 0 0/7vw 7vw;animation:bcConfetti 2.2s linear infinite;opacity:.58}
+.bc-stage.is-finished .bc-winner::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,#fff 0 2px,transparent 3px) 0 0/5.5vw 5.5vw,radial-gradient(circle,#ffd84a 0 2px,transparent 3px) 2vw 3vw/7vw 7vw;filter:drop-shadow(0 0 .35vw #ffd84a);animation:bcConfetti 1.45s linear infinite;opacity:.82}
 @keyframes bcWinnerEnter{from{opacity:0;transform:translateY(8vh) scale(.72)}to{opacity:1;transform:none}}
 @keyframes bcChampion{50%{transform:translateY(-1.2vw) rotate(-2deg) scale(1.06)}}
 @keyframes bcConfetti{to{background-position:4vw 12vw}}
