@@ -944,3 +944,144 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap.cinematic-race .runner{width:68px;height:46px}
   .arena-track-wrap.cinematic-race .runner-art{width:68px;height:46px}
 }
+
+
+/* Desktop anime race pass: the course moves around crisp, readable racers. */
+@media (min-width: 801px) and (prefers-reduced-motion: no-preference) {
+  .arena-track-wrap.cinematic-race,
+  .bc-stage.cinematic-race {
+    --anime-speed: 1;
+  }
+
+  .arena-track-wrap .track.is-running::before,
+  .bc-stage.is-racing .bc-track::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    opacity:.72;
+    mix-blend-mode:screen;
+    background:
+      repeating-linear-gradient(101deg,
+        transparent 0 5.5%,
+        rgba(255,255,255,.08) 5.7% 5.9%,
+        transparent 6.1% 11%),
+      linear-gradient(90deg,rgba(255,255,255,.03),transparent 32%,rgba(255,255,255,.08));
+    background-size:190% 100%,100% 100%;
+    animation:animeSpeedField calc(.48s / var(--anime-speed)) linear infinite;
+  }
+
+  .arena-track-wrap .track.is-running::after,
+  .bc-stage.is-racing .bc-track::after {
+    content:"";
+    position:absolute;
+    inset:-12% -8%;
+    z-index:3;
+    pointer-events:none;
+    opacity:.58;
+    background:
+      linear-gradient(102deg,transparent 0 12%,rgba(255,255,255,.8) 12.25% 12.45%,transparent 12.8%),
+      linear-gradient(98deg,transparent 0 42%,rgba(185,231,255,.65) 42.15% 42.35%,transparent 42.8%),
+      linear-gradient(105deg,transparent 0 72%,rgba(255,255,255,.72) 72.2% 72.35%,transparent 72.7%);
+    background-size:170% 33%,210% 29%,145% 38%;
+    animation:animeForegroundStreaks calc(.34s / var(--anime-speed)) linear infinite;
+  }
+
+  .arena-track-wrap .track.is-running ~ *,
+  .bc-stage.is-racing .bc-track ~ * { --anime-live:1; }
+
+  .arena-track-wrap:has(.track.is-running) .race-scenery,
+  .bc-stage.is-racing .race-scenery {
+    filter:saturate(1.28) contrast(1.08) blur(1.2px);
+  }
+
+  .arena-track-wrap:has(.track.is-running) .race-sky::after,
+  .bc-stage.is-racing .race-sky::after {
+    animation:animeCloudRush calc(1.15s / var(--anime-speed)) linear infinite;
+  }
+
+  .arena-track-wrap:has(.track.is-running) .race-hills.near,
+  .bc-stage.is-racing .race-hills.near {
+    animation:animeNearRush calc(.62s / var(--anime-speed)) linear infinite;
+  }
+
+  .arena-track-wrap:has(.track.is-running) .race-hills.far,
+  .bc-stage.is-racing .race-hills.far {
+    animation:animeFarRush calc(1.5s / var(--anime-speed)) linear infinite;
+  }
+
+  .arena-track-wrap:has(.track.is-running) .race-crowd,
+  .bc-stage.is-racing .race-crowd {
+    animation:animeCrowdRush calc(.28s / var(--anime-speed)) linear infinite;
+    filter:blur(1.4px) saturate(1.2);
+  }
+
+  .track.is-running[data-heat="1"],
+  .bc-track[data-heat="1"] { --anime-speed:1.35; }
+  .track.is-running[data-heat="2"],
+  .bc-track[data-heat="2"] { --anime-speed:1.7; }
+  .track.is-running[data-heat="3"],
+  .bc-track[data-heat="3"] {
+    --anime-speed:2.15;
+    animation:animeFinalShake .12s steps(2,end) infinite;
+    box-shadow:inset 0 0 90px rgba(255,222,92,.22),inset 0 0 22px rgba(255,255,255,.18);
+  }
+
+  .arena-track-wrap .runner.is-surge .runner-art::before,
+  .arena-track-wrap .runner.is-jump .runner-art::before,
+  .arena-track-wrap .runner.is-duel .runner-art::before {
+    width:clamp(70px,9vw,150px);
+    height:5px;
+    box-shadow:0 -10px 0 -1px color-mix(in srgb,var(--racer) 65%,transparent),
+               0 11px 0 -2px rgba(255,255,255,.68);
+    filter:blur(.4px) drop-shadow(0 0 7px var(--racer));
+  }
+
+  .bc-stage .bc-runner.is-surge .bc-runner-art::before,
+  .bc-stage .bc-runner.is-jump .bc-runner-art::before,
+  .bc-stage .bc-runner.is-duel .bc-runner-art::before {
+    width:clamp(110px,13vw,250px);
+    height:.34vw;
+    box-shadow:0 -.8vw 0 -.08vw color-mix(in srgb,var(--racer) 65%,transparent),
+               0 .85vw 0 -.12vw rgba(255,255,255,.72);
+    filter:blur(.05vw) drop-shadow(0 0 .55vw var(--racer));
+  }
+
+  .runner.is-leading .runner-art,
+  .bc-runner.is-leading .bc-runner-art {
+    filter:drop-shadow(-12px 0 12px color-mix(in srgb,var(--racer) 70%,transparent))
+           drop-shadow(0 7px 7px rgba(0,0,0,.72));
+  }
+
+  @keyframes animeSpeedField {
+    from { background-position:0 0,0 0; }
+    to { background-position:-95% 0,0 0; }
+  }
+  @keyframes animeForegroundStreaks {
+    from { background-position:90% 0,120% 45%,75% 90%; }
+    to { background-position:-80% 0,-90% 45%,-100% 90%; }
+  }
+  @keyframes animeCloudRush {
+    from { transform:translateX(18%); }
+    to { transform:translateX(-115%); }
+  }
+  @keyframes animeNearRush {
+    from { transform:translateX(0) scaleX(1.08); }
+    to { transform:translateX(-24%) scaleX(1.08); }
+  }
+  @keyframes animeFarRush {
+    from { transform:translateX(0) scaleX(1.18); }
+    to { transform:translateX(-11%) scaleX(1.18); }
+  }
+  @keyframes animeCrowdRush {
+    from { background-position:0 0,9px 9px,0 0; }
+    to { background-position:-72px 0,-63px 9px,0 0; }
+  }
+  @keyframes animeFinalShake {
+    0%,100% { transform:translate3d(0,0,0); }
+    25% { transform:translate3d(-2px,1px,0); }
+    50% { transform:translate3d(2px,-1px,0); }
+    75% { transform:translate3d(-1px,-1px,0); }
+  }
+}
