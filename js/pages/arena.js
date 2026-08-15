@@ -810,7 +810,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         <div class="track-start"></div>
         <div class="track-finish"></div>
         ${racers.map((r, i) => `
-          <div class="lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(((i + .5) / racers.length) * 100).toFixed(2)}%">
+          <div class="lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
             <span class="lane-tag" style="--racer:${esc(r.color)}">
               <b>${r.number}</b>${esc(r.name)}
             </span>
