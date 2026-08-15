@@ -37,5 +37,3 @@ export function screenX(viewport: ArenaViewport, progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
   return viewport.trackLeft + viewport.trackWidth * p;
 }
-
-
