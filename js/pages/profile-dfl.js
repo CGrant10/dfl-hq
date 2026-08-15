@@ -49,10 +49,10 @@ export function petOf(member) {
 const initials = (name) =>
   String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
-function petArt(pet, size = "big") {
+function petArt(pet, size = "big", preview = "idle") {
   const species = pet?.species || dflCharacterIds()[0];
   const colour = pet?.color || PET_COLOURS[0];
-  return `<div class="pet-art is-${esc(size)}" style="--racer:${esc(colour)}">${dflSpriteMarkup(species, colour)}</div>`;
+  return `<div class="pet-art is-${esc(size)} preview-${esc(preview)}" style="--racer:${esc(colour)}">${dflSpriteMarkup(species, colour)}</div>`;
 }
 
 // ------------------------------------------------------------- markup
@@ -125,13 +125,24 @@ function editCard(m, draft) {
       <div class="dfl-field">
         <span class="u-label">Your DFL Pet</span>
         <div class="dfl-pet-edit">
-          ${petArt(pet)}
+          ${petArt(pet, "big", draft.preview)}
           <div class="dfl-pet-fields">
             <input type="text" data-pet-name maxlength="24" placeholder="Pet name" value="${esc(pet.name)}">
-            <select data-pet-species aria-label="Pet species">
-              ${dflCharacterIds().map((id) => `
-                <option value="${esc(id)}"${pet.species === id ? " selected" : ""}>${esc(dflCharacter(id)?.label || id)}</option>`).join("")}
-            </select>
+            <div class="pet-preview-modes" aria-label="Preview animation">
+              ${["idle", "run", "surge", "win"].map((mode) => `
+                <button type="button" class="btn ghost small${draft.preview === mode ? " on" : ""}"
+                        data-pet-preview="${mode}">${mode[0].toUpperCase() + mode.slice(1)}</button>`).join("")}
+            </div>
+            <div class="pet-roster" role="radiogroup" aria-label="Pet character">
+              ${dflCharacterIds().map((id) => {
+                const c = dflCharacter(id);
+                return `<button type="button" class="pet-choice${pet.species === id ? " on" : ""}"
+                  data-pet-species="${esc(id)}" role="radio" aria-checked="${pet.species === id}"
+                  title="${esc(c?.blurb || "")}">
+                  <span>${dflSpriteMarkup(id, pet.color)}</span><b>${esc(c?.label || id)}</b>
+                </button>`;
+              }).join("")}
+            </div>
             <div class="pet-swatches">
               ${PET_COLOURS.map((c) => `
                 <button type="button" class="pet-swatch${pet.color === c ? " on" : ""}"
@@ -175,6 +186,7 @@ export function wireDflPage(view, member, isMe, refresh) {
       species: stored.species || dflCharacterIds()[0],
       color: stored.color || PET_COLOURS[0],
     },
+    preview: "run",
   });
 
   const paint = () => {
@@ -194,7 +206,6 @@ export function wireDflPage(view, member, isMe, refresh) {
 
   host.addEventListener("change", async (e) => {
     if (!draft) return;
-    if (e.target.matches("[data-pet-species]")) { draft.pet.species = e.target.value; paint(); return; }
     if (e.target.matches("[data-photo-file]")) {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -213,6 +224,10 @@ export function wireDflPage(view, member, isMe, refresh) {
     if (e.target.closest("[data-dfl-cancel]")) { editing = false; draft = null; paint(); return; }
     if (!draft) return;
 
+    const species = e.target.closest("[data-pet-species]");
+    if (species) { draft.pet.species = species.dataset.petSpecies; paint(); return; }
+    const preview = e.target.closest("[data-pet-preview]");
+    if (preview) { draft.preview = preview.dataset.petPreview; paint(); return; }
     const sw = e.target.closest("[data-pet-color]");
     if (sw) { draft.pet.color = sw.dataset.petColor; paint(); return; }
     if (e.target.closest("[data-photo-pick]")) { host.querySelector("[data-photo-file]")?.click(); return; }
