@@ -45,6 +45,8 @@ export interface RaceFrame {
   state: RaceState;
   heat: 0 | 1 | 2 | 3;
   racers: readonly RacerFrame[];
+  countdownMs?: number;
+  winnerId?: RaceRacer["id"];
 }
 
 export interface RaceRenderer {
