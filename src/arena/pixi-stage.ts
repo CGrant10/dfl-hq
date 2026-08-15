@@ -1,6 +1,6 @@
-import { Application, Assets, Container, Graphics, Sprite, Text } from "pixi.js";
+import { Application, Container, Graphics, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
-import { normalizePet, petMotion, petTextureUri } from "./pet-texture";
+import { normalizePet, petMotion, type ArenaPet } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 
 const SKY = 0x09142f;
@@ -10,7 +10,7 @@ const SPEED = 0xb8e8ff;
 
 interface PetActor {
   root: Container;
-  sprite: Sprite;
+  sprite: Graphics;
   trail: Graphics;
   trailKind: string;
   accent: number;
@@ -59,23 +59,18 @@ export class PixiRaceStage implements RaceRenderer {
     this.#racers = racers;
     this.#actorById.clear();
     this.actors.removeChildren();
-    await Promise.all(racers.map(async (racer) => {
+    for (const racer of racers) {
       const root = new Container({ label: `racer-${racer.id}` });
       root.eventMode = "none";
       const pet = normalizePet(racer.pet, racer.color);
       const trail = new Graphics({ label: `trail-${pet.trail}` });
       const shadow = new Graphics().ellipse(0, 13, 22, 7).fill({ color: 0x000000, alpha: 0.34 });
-      const texture = await Assets.load(petTextureUri(pet, racer.color));
-      texture.source.scaleMode = "nearest";
-      const sprite = new Sprite(texture);
+      const sprite = this.#petGraphic(pet);
       sprite.label = `pet-${pet.species}`;
-      sprite.anchor.set(0.5, 0.72);
-      sprite.width = 58;
-      sprite.height = 58;
       root.addChild(trail, shadow, sprite);
       this.#actorById.set(racer.id, { root, sprite, trail, trailKind: pet.trail, accent: this.#color(pet.accent) });
       this.actors.addChild(root);
-    }));
+    }
     this.#drawCourse();
   }
 
@@ -204,8 +199,33 @@ export class PixiRaceStage implements RaceRenderer {
     }
   }
 
+  #petGraphic(pet: ArenaPet): Graphics {
+    const body = this.#color(pet.color);
+    const accent = this.#color(pet.accent);
+    let hash = 0;
+    for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
+    const shape = hash % 4;
+    const g = new Graphics({ label: `pet-body-${pet.species}` });
+    if (shape === 0) g.rect(-23, -35, 10, 15).rect(13, -35, 10, 15);
+    else if (shape === 1) g.poly([-25, -18, -17, -40, -7, -18]).poly([7, -18, 17, -40, 25, -18]);
+    else if (shape === 2) g.circle(-20, -22, 10).circle(20, -22, 10);
+    else g.rect(-27, -26, 12, 10).rect(15, -26, 12, 10);
+    g.fill(body).roundRect(-24, -24, 48, 38, 6).fill(body)
+      .rect(-18, 10, 12, 17).rect(6, 10, 12, 17).fill(body);
+    if (pet.expression === "sleepy") g.moveTo(-14, -10).lineTo(-5, -10).moveTo(5, -10).lineTo(14, -10).stroke({ color: accent, width: 3 });
+    else if (pet.expression === "happy") g.circle(-10, -10, 3).circle(10, -10, 3).fill(accent).moveTo(-7, 1).quadraticCurveTo(0, 8, 7, 1).stroke({ color: accent, width: 3 });
+    else g.rect(-14, -13, 7, 7).rect(7, -13, 7, 7).fill(accent).rect(-6, 1, 12, 3).fill(accent);
+    if (pet.accessory === "crown") g.poly([-17, -24, -17, -38, -7, -29, 0, -42, 8, -29, 18, -38, 18, -24]).fill(accent);
+    else if (pet.accessory === "visor") g.rect(-19, -16, 38, 10).fill({ color: accent, alpha: 0.9 });
+    else if (pet.accessory === "bandana") g.rect(-24, 3, 48, 7).poly([13, 10, 24, 22, 7, 15]).fill(accent);
+    else if (pet.accessory === "cape") g.poly([-20, 0, -36, 28, 0, 25, 10, 2]).fill({ color: accent, alpha: 0.9 });
+    else if (pet.accessory === "headphones") g.moveTo(-25, -8).arc(0, -8, 25, Math.PI, 0).stroke({ color: accent, width: 5 }).rect(-29, -10, 7, 17).rect(22, -10, 7, 17).fill(accent);
+    return g;
+  }
+
   #color(value: string): number {
     const parsed = Number.parseInt(value.replace("#", ""), 16);
     return Number.isFinite(parsed) ? parsed : 0x38bdf8;
   }
 }
+
