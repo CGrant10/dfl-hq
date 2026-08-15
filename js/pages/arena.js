@@ -631,7 +631,7 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
         the reset has been confirmed by Supabase.
       */
       const url = t.closest("#bc-open").dataset.viewerUrl;
-      const raceWindow = window.open("about:blank", "dfl-race-view");
+      const raceWindow = window.open("about:blank", "dfl-race-view", `popup=yes,width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`);
       if (!raceWindow) {
         toast("Allow pop-ups to open the race view", true);
         return;
@@ -710,14 +710,28 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
     }
 
     if (t.closest("#bc-pause")) {
-      if (event.bc_state === "paused") {
-        return write({
+      try {
+        const resuming = event.bc_state === "paused";
+        await updateSharedEvent(resuming ? {
           bc_state: "running",
           bc_started_at: new Date().toISOString(),
           bc_offset_ms: event.bc_offset_ms || 0,
-        }, "Resumed");
+        } : {
+          bc_state: "paused",
+          bc_offset_ms: Math.max(0, Math.round(elapsedNow())),
+        });
+        const button = panel.querySelector("#bc-pause");
+        if (button) button.textContent = resuming ? "Pause race" : "Resume race";
+        const state = panel.querySelector(".bc-state");
+        if (state) {
+          state.className = `bc-state bc-state--${event.bc_state}`;
+          state.querySelector("span:last-child").textContent = resuming ? "Race live" : "Race paused";
+        }
+        toast(resuming ? "Resumed" : "Paused");
+      } catch (err) {
+        toast(err.message || "Could not update the race", true);
       }
-      return write({ bc_state: "paused", bc_offset_ms: Math.max(0, Math.round(elapsedNow())) }, "Paused");
+      return;
     }
 
     if (t.closest("#bc-skip")) {
@@ -916,6 +930,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   status.textContent = "Racing";
   stage.querySelector("#track")?.classList.add("is-running");
   const started = performance.now();
+  let pausedFor = 0;
+  let pausedAt = null;
 
   const completed = await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
@@ -957,7 +973,19 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       /* A Pause, Reset, route change, or re-render detaches this stage.
          Stop the old loop before it can write classes or save a ghost result. */
       if (!stage.isConnected) { stopPlayback(false); return; }
-      const elapsed = now - started;
+      if (event.bc_state === "paused") {
+        if (pausedAt == null) pausedAt = now;
+        track?.classList.remove("is-running");
+        status.textContent = "Paused";
+        requestAnimationFrame(frame);
+        return;
+      }
+      if (pausedAt != null) {
+        pausedFor += now - pausedAt;
+        pausedAt = null;
+        track?.classList.add("is-running");
+      }
+      const elapsed = now - started - pausedFor;
       const t = Math.min(sim.frames, elapsed / TICK_MS);
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
