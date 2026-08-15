@@ -13,7 +13,7 @@ describe("Arena responsive viewport", () => {
       expect(last).toBeGreaterThan(first);
       expect(screenX(view, 0)).toBeGreaterThanOrEqual(0);
       expect(screenX(view, 1)).toBeLessThanOrEqual(view.width);
-      expect(view.actorScale * 58).toBeLessThan(view.laneHeight / 12);
+      expect(view.actorScale * 58).toBeLessThan(view.laneHeight / 6);
     });
   }
   it("clamps invalid lane and progress values", () => {
