@@ -645,3 +645,27 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 @media(prefers-reduced-motion:reduce){
   .bc-winner-art,.bc-stage.is-finished .bc-winner-inner,.bc-stage.is-finished .bc-winner::after{animation:none!important}
 }
+
+
+/* Open-field race view: one cinematic course, not twelve progress bars. */
+.bc-stage .bc-body{display:block;padding:.8vw 1.4vw 1.2vw}
+.bc-stage .bc-track{display:block;position:relative;width:100%;height:100%;min-height:0;border-radius:1.2vw;overflow:hidden;background:linear-gradient(180deg,rgba(82,183,235,.08) 0 42%,rgba(47,126,53,.14) 43% 100%)}
+.bc-stage .bc-lane{position:absolute;left:0;right:0;top:var(--lane-y);height:5.4vw;min-height:38px;padding:0;transform:translateY(-50%);border:0!important;background:transparent!important}
+.bc-stage .bc-lane-name{display:none}
+.bc-stage .bc-runner{height:5.2vw;min-height:36px}
+.bc-stage .bc-runner-art{width:7.5vw;height:5.2vw;filter:drop-shadow(0 .5vw .55vw rgba(0,0,0,.65))}
+.bc-stage .bc-runner-name{top:82%;font-size:clamp(8px,.78vw,15px);padding:.1vw .38vw}
+.bc-stage .bc-board{position:absolute;z-index:5;right:2vw;top:1vw;width:17vw;height:auto;max-height:none;margin:0;background:rgba(5,12,22,.76)}
+.bc-stage .bc-board-list{display:block}
+.bc-stage .bc-board-list li{height:2.45vw;min-height:27px;grid-template-columns:2vw 1fr;font-size:1vw;padding:0 .8vw}
+.bc-stage .bc-board-list li:nth-child(n+4){display:none}
+.bc-stage .bc-finish{right:3%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8}
+.bc-stage .race-crowd{bottom:0;height:11%;opacity:.5}
+.bc-stage .race-hills{bottom:12%;height:42%}
+.bc-stage .race-hills.far{bottom:24%}
+@media(max-width:800px){
+  .bc-stage .bc-board{width:min(42vw,190px);right:.5rem;top:.5rem}
+  .bc-stage .bc-board-list li{height:1.7rem;font-size:.72rem}
+  .bc-stage .bc-runner-art{width:12vw;height:8vw}
+  .bc-stage .bc-runner{height:8vw}
+}
