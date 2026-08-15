@@ -548,13 +548,31 @@ function pixelPaths(px, palette, laneColour) {
  * antialiases the pixel edges and the sprite turns to mush at the sizes it
  * is actually drawn at.
  */
-export function dflSpriteMarkup(id, laneColour) {
+function cosmeticPaths(pet = {}) {
+  const accent = String(pet.accent || "#ffffff").replace(/["<>]/g, "");
+  const accessory = {
+    bandana: `<path fill="${accent}" d="M6 8h12v2H6zM17 10h3v2h-3z"/>`,
+    visor: `<path fill="${accent}" d="M7 4h11v2H7zM17 6h3v1h-3z"/>`,
+    crown: `<path fill="${accent}" d="M8 1h2v2h2V1h2v2h2V1h2v5H8z"/>`,
+    headphones: `<path fill="${accent}" d="M6 4h2V2h10v2h2v5h-2V5h-2V4h-6v1H8v4H6z"/>`,
+    cape: `<path fill="${accent}" d="M4 7h3v6H2v-2h2z"/>`,
+  }[pet.accessory] || "";
+  const expression = {
+    happy: `<path fill="#17191f" d="M10 6h1v1h-1zM15 6h1v1h-1zM12 9h3v1h-3z"/>`,
+    fierce: `<path fill="#17191f" d="M9 6h3v1h-2zM14 6h3v1h-2zM12 9h3v1h-3z"/>`,
+    sleepy: `<path fill="#17191f" d="M9 7h3v1H9zM14 7h3v1h-3z"/>`,
+    focused: "",
+  }[pet.expression] || "";
+  return accessory + expression;
+}
+
+export function dflSpriteMarkup(id, laneColour, pet = null) {
   const c = dflCharacter(id) || hashedCharacter(id);
-  /* xmlns is not needed for inline SVG, but it IS needed the moment this
-     string is handed to an <img> or a canvas - which is how a share card
-     would draw a racer. Cheap now, one less thing to debug later. */
+  /* Cosmetics are an SVG overlay, so every surface still uses one compact
+     renderer and old two-argument calls remain valid. */
   return `<svg class="racer-art racer-px" xmlns="http://www.w3.org/2000/svg" ` +
          `viewBox="0 0 ${GRID_W} ${GRID_H}" shape-rendering="crispEdges" aria-hidden="true">` +
          pixelPaths(c.px, c.palette, laneColour || "#2fbf5f") +
+         cosmeticPaths(pet || {}) +
          `</svg>`;
 }

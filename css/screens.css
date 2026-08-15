@@ -835,3 +835,27 @@ a.moment:hover { background: var(--hover-soft); }
   45% { transform: translateY(-14px) rotate(-6deg) scale(1.08); }
   70% { transform: translateY(-5px) rotate(5deg); }
 }
+
+
+/* Arena phase two: layered stadium, attached racer IDs and pet cosmetics. */
+.pet-option-label{display:block;margin-top:.55rem;font:700 .68rem/1 var(--font-condensed);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pet-option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin-top:.25rem}
+.pet-option-grid label{min-width:0}.pet-option-grid select{width:100%}
+.pet-art,.runner,.bc-runner{position:relative}
+.pet-art[class*="trail-"]::before,.runner[class*="trail-"]::before{content:"";position:absolute;right:72%;top:48%;width:52%;height:18%;pointer-events:none;opacity:.9}
+.trail-dust::before{background:radial-gradient(circle,#d9c4a1 0 18%,transparent 20%) 0 50%/12px 12px repeat-x;filter:blur(.4px)}
+.trail-spark::before{background:radial-gradient(circle,#ffe45c 0 15%,transparent 18%) 0 50%/14px 14px repeat-x;filter:drop-shadow(0 0 4px #ffb800)}
+.trail-rainbow::before{height:8px!important;background:linear-gradient(#ff4d5d 0 20%,#ffd84a 20% 40%,#5ee87b 40% 60%,#56b7ff 60% 80%,#b56cff 80%);border-radius:99px;filter:blur(1px)}
+.cinematic-race{position:relative;overflow:hidden;isolation:isolate;background:#75c9f1}
+.cinematic-race .race-scenery{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.race-sky{position:absolute;inset:0;background:linear-gradient(#55b9ec 0 48%,#b9e7f6 66%,#76bd54 67% 100%)}
+.race-sky::after{content:"";position:absolute;left:12%;top:10%;width:72px;height:24px;border-radius:99px;background:#fff;box-shadow:210px 45px 0 8px #fff,520px -2px 0 2px #fff;opacity:.8}
+.race-hills{position:absolute;left:-10%;width:120%;height:30%;bottom:30%;background:#5aa64d;clip-path:polygon(0 100%,0 55%,9% 15%,17% 62%,28% 9%,38% 62%,49% 20%,62% 65%,73% 8%,85% 55%,94% 18%,100% 58%,100% 100%)}
+.race-hills.far{bottom:39%;background:#8cc66d;opacity:.85;transform:scaleX(1.1)}
+.race-crowd{position:absolute;left:0;right:0;bottom:26%;height:14%;background:radial-gradient(circle,#f7cf57 0 24%,transparent 27%) 0 0/18px 18px,radial-gradient(circle,#e45b6c 0 24%,transparent 27%) 9px 9px/18px 18px,#304756;border-top:5px solid #f5f2db}
+.runner-nameplate{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;padding:2px 6px;border-radius:99px;background:rgba(8,13,20,.85);color:#fff;font:700 9px/1.4 var(--font-condensed);box-shadow:0 2px 8px #0006}
+.runner-nameplate b{color:var(--racer)}
+@media(max-width:640px){.pet-option-grid{grid-template-columns:1fr}.race-crowd{opacity:.75}.runner-nameplate{font-size:8px}}
+
+.arena-track-wrap.cinematic-race .race-scenery{z-index:0}
+.arena-track-wrap.cinematic-race .scoreboard,.arena-track-wrap.cinematic-race .track,.arena-track-wrap.cinematic-race .countdown{position:relative;z-index:2}

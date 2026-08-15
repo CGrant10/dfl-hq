@@ -597,3 +597,37 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-runner.is-jump .bc-runner-art, .bc-runner.is-winner .bc-runner-art,
   .bc-runner.is-near .bc-runner-art::after { animation: none !important; }
 }
+
+
+/* Cinematic shared viewer: the race occupies the scene; chrome stays secondary. */
+.bc-stage.cinematic-race{background:#65bcec;color:#fff}
+.bc-stage .race-scenery{z-index:0}
+.bc-stage .bc-head,.bc-stage .bc-body,.bc-stage .bc-foot,.bc-stage .bc-overlay,.bc-stage .bc-winner,.bc-stage .bc-bar{position:relative;z-index:2}
+.bc-stage .bc-head{background:linear-gradient(180deg,rgba(5,13,25,.86),rgba(5,13,25,.35) 78%,transparent);border-bottom:0}
+.bc-stage .bc-body{background:transparent}
+.bc-stage .bc-track{background:linear-gradient(180deg,transparent 0 19%,rgba(42,94,44,.28) 19% 100%);border:0;box-shadow:none}
+.bc-stage .bc-lane{border-color:rgba(255,255,255,.26);background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.05))}
+.bc-stage .bc-lane:nth-child(even){background:linear-gradient(90deg,rgba(0,0,0,.08),rgba(255,255,255,.04))}
+.bc-stage .bc-lane-name{opacity:.22;transition:opacity .2s}
+.bc-stage .bc-lane:hover .bc-lane-name{opacity:1}
+.bc-runner-name{position:absolute;left:50%;top:90%;transform:translateX(-50%);white-space:nowrap;padding:.18vw .5vw;border-radius:99px;background:rgba(5,10,18,.86);color:#fff;font:700 clamp(9px,1vw,18px)/1.25 var(--font-condensed);text-shadow:none;box-shadow:0 .2vw .7vw #0007}
+.bc-runner-name b{color:var(--racer)}
+.bc-stage .bc-board{align-self:start;margin:1vw;border:1px solid #ffffff30;border-radius:1vw;background:rgba(5,12,22,.7);backdrop-filter:blur(10px);box-shadow:0 .8vw 2vw #0005;overflow:hidden}
+.bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
+.bc-stage .bc-finish{filter:drop-shadow(0 0 10px #fff)}
+.bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
+.bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,207,54,.28),rgba(2,7,14,.92) 58%)}
+.bc-stage .bc-winner-inner::before{content:"";position:absolute;inset:-18%;z-index:-1;background:repeating-conic-gradient(from 0deg,#ffd84a 0 4deg,transparent 4deg 12deg);opacity:.16;animation:bc-rays 14s linear infinite}
+@keyframes bc-rays{to{transform:rotate(1turn)}}
+.bc-runner.trail-dust::before,.bc-runner.trail-spark::before,.bc-runner.trail-rainbow::before{content:"";position:absolute;right:68%;top:50%;width:66%;pointer-events:none;opacity:.9}
+.bc-runner.trail-dust::before{height:1.1vw;background:radial-gradient(circle,#dec6a0 0 20%,transparent 23%) 0 50%/1vw 1vw repeat-x}
+.bc-runner.trail-spark::before{height:1.2vw;background:radial-gradient(circle,#ffe45c 0 16%,transparent 20%) 0 50%/1.2vw 1.2vw repeat-x;filter:drop-shadow(0 0 .35vw #ffb800)}
+.bc-runner.trail-rainbow::before{height:.48vw;background:linear-gradient(#ff4d5d 0 20%,#ffd84a 20% 40%,#5ee87b 40% 60%,#56b7ff 60% 80%,#b56cff 80%);border-radius:99px;filter:blur(.08vw)}
+@media(max-width:800px){
+  .bc-stage .bc-body{grid-template-columns:1fr}
+  .bc-stage .bc-board{position:absolute;right:.5rem;top:.5rem;width:min(38vw,190px);max-height:42%;font-size:.72rem}
+  .bc-stage .bc-board-head{padding:.35rem .55rem}
+  .bc-stage .bc-board-list li{min-height:1.65rem;padding:.2rem .4rem}
+  .bc-runner-name{font-size:9px;padding:1px 4px}
+}
+@media(prefers-reduced-motion:reduce){.bc-stage .bc-winner-inner::before{animation:none}}

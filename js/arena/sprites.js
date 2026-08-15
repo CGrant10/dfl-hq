@@ -114,7 +114,7 @@ export function assignSprites(theme, count) {
  * A data: URI cannot 404, and (2) is opt-in, so nothing here can silently
  * render nothing.
  */
-export function spriteMarkup(theme, key, color, image) {
+export function spriteMarkup(theme, key, color, image, pet = null) {
   const c = color || "#2fbf5f";
 
   if (image) {
@@ -131,7 +131,7 @@ export function spriteMarkup(theme, key, color, image) {
 
   /* One theme, one renderer. Every racer is a DFL character now, so an
      unrecognised theme key still lands here rather than on a duck. */
-  return dflSpriteMarkup(key, c);
+  return dflSpriteMarkup(key, c, pet);
 }
 
 // --------------------------- uploaded images --------------------------
