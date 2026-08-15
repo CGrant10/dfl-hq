@@ -891,3 +891,28 @@ a.moment:hover { background: var(--hover-soft); }
   .racer-px.has-frames .px-frame-a{opacity:1}
   .racer-px.has-frames .px-frame-b{opacity:0}
 }
+
+
+/* Cinematic camera phase: scenery pans from the shared race progress. */
+.cinematic-race .race-scenery{
+  width:116%;right:auto;
+  transform:translate3d(calc(var(--race-pan,0) * -13.8%),0,0);
+  will-change:transform;
+}
+.cinematic-race .race-sky::before{
+  content:"";position:absolute;inset:0;opacity:calc(var(--race-pan,0) * .42);
+  background:repeating-linear-gradient(100deg,transparent 0 8%,rgba(255,255,255,.28) 8.3% 8.7%,transparent 9% 15%);
+}
+.arena-track-wrap.has-winner::after{
+  content:"FINISH!";position:absolute;inset:0;z-index:4;display:grid;place-items:center;
+  color:#fff;font:900 clamp(2.5rem,9vw,7rem)/1 var(--font-display);
+  letter-spacing:.08em;text-shadow:0 4px 0 #111,0 0 35px #ffd84a;
+  pointer-events:none;animation:arenaFinishFlash 1.15s both;
+}
+.winner-pet{display:block;width:112px;height:76px;margin:.25rem auto}
+.winner-pet svg{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 10px 10px #0006)}
+@keyframes arenaFinishFlash{0%{opacity:0;transform:scale(1.8)}20%,55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.9)}}
+@media(prefers-reduced-motion:reduce){
+  .cinematic-race .race-scenery{transform:none!important}
+  .arena-track-wrap.has-winner::after{animation:none;opacity:1}
+}
