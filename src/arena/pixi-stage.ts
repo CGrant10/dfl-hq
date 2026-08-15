@@ -1,60 +1,60 @@
 import { Application, Container, Graphics, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
-import { normalizePet, petMotion, type ArenaPet } from "./pet-texture";
+import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
-import { CHARACTERS } from "../../js/arena/dfl-sprites.js";
+import { CHARACTERS, GRID_H, GRID_W } from "../../js/arena/dfl-sprites.js";
 
-const SKY = 0x65bcec;
-const TRACK = 0x2f7e35;
-const LANE = 0xffffff;
-const SPEED = 0xb8e8ff;
+const PIXEL_SIZE = 3;
 
 interface PetActor {
   root: Container;
-  sprite: Graphics;
-  trail: Graphics;
-  trailKind: string;
-  accent: number;
+  art: Container;
+  frames: readonly [Graphics, Graphics];
 }
 
-/** GPU presentation only; the deterministic engine remains authoritative. */
+/**
+ * GPU racer presentation only. The pre-migration DOM remains responsible for
+ * the Arena composition and the deterministic engine remains authoritative.
+ */
 export class PixiRaceStage implements RaceRenderer {
   readonly app = new Application();
+  // Retain the established Pixi feature set so the existing split runtime
+  // chunks remain cache-compatible; these layers stay empty for DOM parity.
   readonly scenery = new Container({ label: "scenery" });
   readonly course = new Container({ label: "course" });
   readonly actors = new Container({ label: "racers" });
   readonly effects = new Container({ label: "effects" });
   readonly overlay = new Container({ label: "overlay" });
-  readonly #sky = new Graphics({ label: "sky" });
-  readonly #parallax = new Graphics({ label: "parallax" });
-  readonly #track = new Graphics({ label: "track" });
-  readonly #laneLines = new Graphics({ label: "lane-lines" });
-  readonly #finish = new Graphics({ label: "finish-line" });
-  readonly #speedLines = new Graphics({ label: "speed-lines" });
-  readonly #boardPanel = new Graphics({ label: "leaderboard-panel" });
-  readonly #boardText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12, lineHeight: 16 } });
-  readonly #statusText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "sans-serif", fontSize: 56, fontWeight: "900", align: "center", stroke: { color: 0x071126, width: 7 } } });
+  readonly #compatGraphics = new Graphics({ label: "legacy-feature-set" });
+  readonly #compatText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12 } });
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
   #actorById = new Map<RaceRacer["id"], PetActor>();
   #lastFrame: RaceFrame | null = null;
+  #resizeObserver: ResizeObserver | null = null;
 
   async mount(host: HTMLElement): Promise<void> {
     this.#host = host;
     await this.app.init({
-      resizeTo: host, backgroundAlpha: 0, antialias: true, autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio || 1, 2), preference: "webgl",
+      resizeTo: host,
+      backgroundAlpha: 0,
+      antialias: false,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio || 1, 2),
+      preference: "webgl",
     });
     this.app.canvas.className = "arena-pixi-canvas";
     this.app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(this.app.canvas);
-    this.scenery.addChild(this.#sky, this.#parallax);
-    this.course.addChild(this.#track, this.#laneLines, this.#finish);
-    this.effects.addChild(this.#speedLines);
-    this.overlay.addChild(this.#boardPanel, this.#boardText, this.#statusText);
+    this.scenery.addChild(this.#compatGraphics);
+    this.overlay.addChild(this.#compatText);
     this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay);
     this.resize();
+    if (typeof ResizeObserver === "function") {
+      this.#resizeObserver = new ResizeObserver(() => this.resize());
+      this.#resizeObserver.observe(host);
+    }
   }
 
   async setRacers(racers: readonly RaceRacer[]): Promise<void> {
@@ -65,54 +65,56 @@ export class PixiRaceStage implements RaceRenderer {
       const root = new Container({ label: `racer-${racer.id}` });
       root.eventMode = "none";
       const pet = normalizePet(racer.pet, racer.color);
-      const trail = new Graphics({ label: `trail-${pet.trail}` });
-      const shadow = new Graphics().ellipse(0, 13, 22, 7).fill({ color: 0x000000, alpha: 0.34 });
-      const sprite = this.#petGraphic(pet);
-      sprite.label = `pet-${pet.species}`;
-      root.addChild(trail, shadow, sprite);
-      this.#actorById.set(racer.id, { root, sprite, trail, trailKind: pet.trail, accent: this.#color(pet.accent) });
+      const frames = this.#petFrames(pet);
+      const art = new Container({ label: `pet-${pet.species}` });
+      art.addChild(...frames);
+      root.addChild(art);
+      this.#actorById.set(racer.id, { root, art, frames });
       this.actors.addChild(root);
     }
-    this.#drawCourse();
   }
 
   render(frame: RaceFrame): void {
     this.#lastFrame = frame;
-    const intensity = frame.state === "running" ? Math.min(1, frame.heat / 3) : 0;
-    this.#drawSpeedField(frame.elapsedMs, intensity);
-    this.#drawOverlay(frame);
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     for (const racer of frame.racers) {
       const actor = this.#actorById.get(racer.id);
       if (!actor) continue;
-      const motion = petMotion(racer.reaction, racer.finished, frame.state);
-      const stride = Math.sin(frame.elapsedMs * (motion === "surge" ? 0.035 : 0.022) + racer.lane);
-      actor.root.x = screenX(this.#viewport, racer.progress);
-      actor.root.y = laneY(this.#viewport, racer.lane, this.#racers.length);
-      const depth = this.#racers.length > 1 ? racer.lane / (this.#racers.length - 1) : 0.5;
-      const depthScale = 0.82 + depth * 0.28;
-      actor.root.scale.set(this.#viewport.actorScale * depthScale * (racer.leading ? 1.1 : 1));
-      actor.root.rotation = motion === "stumble" ? -0.18 : motion === "jump" ? stride * 0.1 : stride * 0.035;
-      actor.root.alpha = frame.state === "idle" ? 0.9 : 1;
-      const chaos = Math.sin(frame.elapsedMs * 0.006 + racer.lane * 2.7);
-      actor.sprite.y = motion === "run" || motion === "surge" ? -Math.abs(stride) * (motion === "surge" ? 11 : 6) - Math.max(0, chaos - 0.82) * 22
-        : motion === "jump" ? -14 : motion === "win" ? -Math.abs(stride) * 10 : 0;
-      actor.sprite.scale.x = motion === "stumble" ? 1.22 : motion === "surge" ? 1.18 : 1 + Math.abs(stride) * 0.08;
-      actor.sprite.scale.y = motion === "stumble" ? 0.68 : motion === "jump" ? 1.18 : 1 - Math.abs(stride) * 0.06;
-      this.#drawTrail(actor, frame.elapsedMs, motion !== "idle");
+      const winner = racer.finished && racer.id === frame.winnerId;
+      const motion = winner ? "win" : racer.finished ? "idle" : petMotion(racer.reaction, false, frame.state);
+      const phase = this.#motionPhase(frame.elapsedMs, racer.lane, frame.heat, motion);
+
+      actor.root.position.set(
+        screenX(this.#viewport, racer.progress),
+        laneY(this.#viewport, racer.lane, this.#racers.length),
+      );
+      actor.root.scale.set(this.#viewport.actorScale);
+      actor.root.rotation = 0;
+      actor.root.alpha = 1;
+      actor.art.position.set(phase.x, reducedMotion ? 0 : phase.y);
+      actor.art.scale.set(reducedMotion ? 1 : phase.scale);
+      actor.art.rotation = reducedMotion ? 0 : phase.rotation;
+
+      const frameDuration = motion === "surge" || motion === "duel" ? 260
+        : motion === "stumble" ? 900
+        : motion === "win" ? 380
+        : this.#viewport.width >= 801 ? 380 : 620;
+      const strideFrame = !reducedMotion && Math.floor(frame.elapsedMs / frameDuration) % 2 === 1;
+      actor.frames[0].visible = !strideFrame;
+      actor.frames[1].visible = strideFrame;
     }
-    const shake = frame.state === "running" ? intensity * Math.sin(frame.elapsedMs * 0.055) * 2.2 : 0;
-    this.course.y = shake;
-    this.actors.y = -shake * 0.35;
   }
 
   resize(): void {
+    if (!this.#host) return;
     this.app.resize();
     this.#viewport = arenaViewport(this.app.screen.width, this.app.screen.height);
-    this.#drawCourse();
     if (this.#lastFrame) this.render(this.#lastFrame);
   }
 
   destroy(): void {
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
     this.#actorById.clear();
     this.#racers = [];
     this.#lastFrame = null;
@@ -120,123 +122,91 @@ export class PixiRaceStage implements RaceRenderer {
     this.#host = null;
   }
 
-  #drawCourse(): void {
-    const v = this.#viewport;
-    this.#sky.clear().rect(0, 0, v.width, v.height).fill(SKY);
-    this.#parallax.clear();
-    for (let i = -1; i < 8; i++) {
-      const x = i * v.width / 6;
-      this.#parallax.poly([x, v.laneTop, x + v.width / 12, v.laneTop - v.height * 0.16, x + v.width / 6, v.laneTop]).fill({ color: 0x4d9650, alpha: 0.82 });
+  #motionPhase(elapsedMs: number, lane: number, heat: number, motion: PetMotion): { x: number; y: number; scale: number; rotation: number } {
+    const heatRate = 1 + Math.max(0, Math.min(3, heat)) * 0.16;
+    const wave = Math.sin(elapsedMs * 0.015 * heatRate + lane * 0.7);
+    if (motion === "surge" || motion === "duel") {
+      return { x: 0, y: -2 - wave, scale: 1.07 + wave * 0.01, rotation: wave * Math.PI / 90 };
     }
-    this.#parallax.rect(0, v.laneTop - v.height * 0.025, v.width, v.height * 0.025).fill({ color: 0xcff4ff, alpha: 0.55 });
-    this.#parallax.rect(0, v.laneBottom, v.width, v.height - v.laneBottom).fill({ color: 0x18391f, alpha: 0.9 });
-    this.#track.clear().rect(0, v.laneTop, v.width, v.laneHeight).fill(TRACK);
-    this.#laneLines.clear();
-    const count = Math.max(1, this.#racers.length);
-    for (let lane = 1; lane < count; lane++) {
-      const y = v.laneTop + v.laneHeight * (lane / count);
-      this.#laneLines.moveTo(0, y).lineTo(v.width, y).stroke({ color: LANE, alpha: 0.035, width: 1 });
+    if (motion === "stumble") {
+      return { x: wave < 0 ? -2 : 1, y: 0, scale: 1, rotation: wave * Math.PI / 30 };
     }
-    this.#finish.clear();
-    const size = Math.max(7, Math.min(16, v.width / 72));
-    for (let row = 0; row < Math.ceil(v.laneHeight / size); row++) {
-      for (let col = 0; col < 2; col++) {
-        this.#finish.rect(v.trackRight - size + col * size, v.laneTop + row * size, size, size)
-          .fill({ color: (row + col) % 2 ? 0xffffff : 0x111827, alpha: 0.95 });
-      }
+    if (motion === "jump") {
+      return { x: 0, y: -1 - Math.abs(wave) * 3, scale: 1.06 + Math.abs(wave) * 0.06, rotation: -Math.abs(wave) * Math.PI / 60 };
     }
+    if (motion === "win") {
+      return { x: 0, y: -Math.abs(wave) * 7, scale: 1 + Math.abs(wave) * 0.12, rotation: 0 };
+    }
+    if (motion === "run") {
+      return { x: 0, y: -Math.abs(wave) * 2, scale: 1, rotation: wave * Math.PI / 120 };
+    }
+    return { x: 0, y: -0.75 - wave * 0.75, scale: 1, rotation: 0 };
   }
 
-  #drawSpeedField(elapsedMs: number, intensity: number): void {
-    const v = this.#viewport;
-    this.#parallax.x = -((elapsedMs * (0.018 + intensity * 0.035)) % (v.width / 6));
-    const travel = (elapsedMs * (0.28 + intensity * 0.72)) % Math.max(1, v.width);
-    this.#speedLines.clear();
-    const count = Math.round(10 + intensity * 22);
-    for (let i = 0; i < count; i++) {
-      const x = ((i * 97.3) % v.width - travel + v.width) % v.width;
-      const y = v.laneTop + ((i * 53) % Math.max(1, v.laneHeight));
-      const length = 22 + (i % 5) * 18 + intensity * 90;
-      this.#speedLines.moveTo(x, y).lineTo(x - length, y)
-        .stroke({ color: SPEED, alpha: 0.08 + intensity * 0.22, width: 1 + intensity * 2 });
-    }
-  }
-
-  #drawOverlay(frame: RaceFrame): void {
-    const v = this.#viewport;
-    const byId = new Map(this.#racers.map((racer) => [racer.id, racer]));
-    const rows = [...frame.racers].sort((a, b) => Number(b.finished) - Number(a.finished) || b.progress - a.progress || a.lane - b.lane);
-    const panelWidth = Math.min(v.portrait ? 148 : 190, v.width * 0.34);
-    const fontSize = v.compact ? 9 : 11;
-    const lineHeight = v.compact ? 12 : 15;
-    this.#boardPanel.clear().roundRect(8, 8, panelWidth, 12 * lineHeight + 32, 10)
-      .fill({ color: 0x061027, alpha: 0.72 }).stroke({ color: 0x8bbcff, alpha: 0.3, width: 1 });
-    this.#boardText.style.fontSize = fontSize;
-    this.#boardText.style.lineHeight = lineHeight;
-    this.#boardText.x = 17;
-    this.#boardText.y = 16;
-    this.#boardText.text = ["LIVE ORDER", ...rows.slice(0, 12).map((row, index) => {
-      const name = byId.get(row.id)?.name || `Racer ${row.lane + 1}`;
-      return `${String(index + 1).padStart(2, " ")}  ${name.slice(0, v.portrait ? 12 : 17)}`;
-    })].join("\n");
-
-    let status = "";
-    if ((frame.countdownMs || 0) > 0) status = String(Math.max(1, Math.ceil(frame.countdownMs! / 1000)));
-    else if (frame.state === "paused") status = "PAUSED";
-    else if (frame.state === "idle") status = "RACE OPEN";
-    else if (frame.state === "finished") {
-      const winner = byId.get(frame.winnerId ?? rows[0]?.id ?? "");
-      status = winner ? `${winner.name.toUpperCase()} WINS!` : "FINISH!";
-    }
-    this.#statusText.text = status;
-    this.#statusText.style.fontSize = v.portrait ? 34 : v.compact ? 40 : 56;
-    this.#statusText.anchor.set(0.5);
-    this.#statusText.x = v.width * 0.5;
-    this.#statusText.y = v.height * (v.portrait ? 0.07 : 0.08);
-  }
-
-  #drawTrail(actor: PetActor, elapsedMs: number, moving: boolean): void {
-    actor.trail.clear();
-    if (!moving || actor.trailKind === "none") return;
-    const pulse = 0.65 + Math.sin(elapsedMs * 0.02) * 0.2;
-    if (actor.trailKind === "dust") {
-      for (let i = 0; i < 3; i++) actor.trail.circle(-22 - i * 10, 8 + (i % 2) * 5, 4 + i)
-        .fill({ color: 0xc8a46b, alpha: pulse * (0.55 - i * 0.1) });
-    } else if (actor.trailKind === "spark") {
-      for (let i = 0; i < 4; i++) actor.trail.star(-20 - i * 11, (i % 2) * 8, 4, 5, 2)
-        .fill({ color: actor.accent, alpha: pulse * (0.8 - i * 0.12) });
-    } else if (actor.trailKind === "rainbow") {
-      const colors = [0xff4d6d, 0xffd166, 0x63e6be, 0x4dabf7, 0xb197fc];
-      colors.forEach((color, i) => actor.trail.moveTo(-16, -8 + i * 4).lineTo(-70, -8 + i * 4)
-        .stroke({ color, alpha: pulse * 0.75, width: 3 }));
-    }
-  }
-
-  #petGraphic(pet: ArenaPet): Graphics {
-    const body = this.#color(pet.color);
-    const accent = this.#color(pet.accent);
+  #petFrames(pet: ArenaPet): readonly [Graphics, Graphics] {
     let hash = 0;
     for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
     const character = CHARACTERS.find((item) => item.id === pet.species) || CHARACTERS[hash % CHARACTERS.length]!;
-    const g = new Graphics({ label: `pet-body-${pet.species}` });
-    const px = 3;
-    const palette = character.palette as Record<string, string>;
-    for (let y = 0; y < character.px.length; y++) {
-      const row = character.px[y]!;
+    return [
+      this.#drawPet(character.px, character.palette as Record<string, string>, pet),
+      this.#drawPet(this.#strideFrame(character.px), character.palette as Record<string, string>, pet),
+    ];
+  }
+
+  #drawPet(rows: readonly string[], palette: Record<string, string>, pet: ArenaPet): Graphics {
+    const body = this.#color(pet.color);
+    const accent = this.#color(pet.accent);
+    const graphic = new Graphics();
+    const cell = (x: number, y: number, color: number) => graphic
+      .rect((x - GRID_W / 2) * PIXEL_SIZE, (y - GRID_H / 2) * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE)
+      .fill(color);
+
+    rows.forEach((row, y) => {
       for (let x = 0; x < row.length; x++) {
-      const key = row[x]!;
-      if (key === ".") continue;
-      const source = key === "L" ? body : this.#color(palette[key] || pet.accent);
-      g.rect((x - 12) * px, (y - 8) * px, px, px).fill(source);
+        const key = row[x]!;
+        if (key === "." || key === " ") continue;
+        cell(x, y, key === "L" ? body : this.#color(palette[key] || pet.color));
       }
+    });
+    this.#drawCosmetics(cell, pet, accent);
+    return graphic;
+  }
+
+  #drawCosmetics(cell: (x: number, y: number, color: number) => void, pet: ArenaPet, accent: number): void {
+    const row = (x1: number, x2: number, y: number, color = accent) => {
+      for (let x = x1; x <= x2; x++) cell(x, y, color);
+    };
+    if (pet.accessory === "bandana") {
+      row(6, 17, 8); row(6, 17, 9); row(17, 19, 10); row(17, 19, 11);
+    } else if (pet.accessory === "visor") {
+      row(7, 17, 4); row(7, 17, 5); row(17, 19, 6);
+    } else if (pet.accessory === "crown") {
+      row(8, 9, 1); row(12, 13, 1); row(16, 17, 1);
+      row(8, 9, 2); row(12, 13, 2); row(16, 17, 2);
+      for (let y = 3; y <= 5; y++) row(8, 17, y);
+    } else if (pet.accessory === "headphones") {
+      row(8, 17, 2); row(8, 17, 3);
+      for (let y = 4; y <= 8; y++) { row(6, 7, y); row(18, 19, y); }
+    } else if (pet.accessory === "cape") {
+      for (let y = 7; y <= 10; y++) row(4, 6, y);
+      for (let y = 11; y <= 12; y++) row(2, 6, y);
     }
-    const cell = (x: number, y: number, color = accent) => g.rect((x - 12) * px, (y - 8) * px, px, px).fill(color);
-    if (pet.accessory === "crown") { cell(9, 1); cell(10, 0); cell(11, 1); cell(12, -1); cell(13, 1); cell(14, 0); }
-    else if (pet.accessory === "visor") for (let x = 7; x <= 16; x++) cell(x, 6);
-    else if (pet.accessory === "bandana") for (let x = 6; x <= 17; x++) cell(x, 10);
-    else if (pet.accessory === "cape") for (let y = 8; y <= 14; y++) { cell(4, y); if (y > 10) cell(3, y); }
-    else if (pet.accessory === "headphones") for (let y = 4; y <= 9; y++) { cell(5, y); cell(18, y); }
-    return g;
+
+    const ink = 0x17191f;
+    if (pet.expression === "happy") {
+      cell(10, 6, ink); cell(15, 6, ink); row(12, 14, 9, ink);
+    } else if (pet.expression === "fierce") {
+      row(9, 11, 6, ink); row(14, 16, 6, ink); row(12, 14, 9, ink);
+    } else if (pet.expression === "sleepy") {
+      row(9, 11, 7, ink); row(14, 16, 7, ink);
+    }
+  }
+
+  #strideFrame(rows: readonly string[]): string[] {
+    return rows.map((row, y) => {
+      if (y < 9) return row;
+      return y % 2 ? `.${row.slice(0, GRID_W - 1)}` : `${row.slice(1)}.`;
+    });
   }
 
   #color(value: string): number {
