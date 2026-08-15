@@ -856,3 +856,6 @@ a.moment:hover { background: var(--hover-soft); }
 .runner-nameplate{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;padding:2px 6px;border-radius:99px;background:rgba(8,13,20,.85);color:#fff;font:700 9px/1.4 var(--font-condensed);box-shadow:0 2px 8px #0006}
 .runner-nameplate b{color:var(--racer)}
 @media(max-width:640px){.pet-option-grid{grid-template-columns:1fr}.race-crowd{opacity:.75}.runner-nameplate{font-size:8px}}
+
+.arena-track-wrap.cinematic-race .race-scenery{z-index:0}
+.arena-track-wrap.cinematic-race .scoreboard,.arena-track-wrap.cinematic-race .track,.arena-track-wrap.cinematic-race .countdown{position:relative;z-index:2}
