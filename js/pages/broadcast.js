@@ -236,7 +236,7 @@ function paint(view, event, racers) {
         <div class="bc-track" id="bc-track">
           <div class="bc-finish"></div>
           ${racers.map((r, i) => `
-            <div class="bc-lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(((i + .5) / racers.length) * 100).toFixed(2)}%">
+            <div class="bc-lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
               <span class="bc-lane-name" style="--racer:${esc(r.color)}">
                 <b>${r.number}</b>${esc(r.name)}
               </span>
