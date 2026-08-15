@@ -20,7 +20,7 @@ renderer reaches feature parity.
 2. TypeScript port of the deterministic simulation with parity fixtures. **Complete.**
 3. Pixi scenery, camera motion, speed-field, and responsive viewport. **Complete.**
 4. Pet SVG-to-texture pipeline, animation states, trails, and reactions. **Complete.**
-5. Shared countdown, pause/resume, reconnect, leaderboard, and winner scene.
+5. Shared countdown, pause/resume, reconnect, leaderboard, and winner scene. **Complete.**
 6. Device matrix and fallback validation; enable PixiJS by default.
 
 ## Required validation
