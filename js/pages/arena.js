@@ -893,7 +893,10 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   /* Keep the race in view while leaving the commissioner console stable.
      Controls no longer collapse or change location during an active run. */
-  stage.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+  stage.scrollIntoView({
+    behavior: reduceMotion() ? "auto" : "smooth",
+    block: window.matchMedia("(max-width: 720px)").matches ? "center" : "start",
+  });
 
   if (reduceMotion()) status.textContent = "Racing";
   else await countdown(stage);
