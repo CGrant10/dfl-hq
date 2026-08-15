@@ -669,3 +669,30 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-stage .bc-runner-art{width:12vw;height:8vw}
   .bc-stage .bc-runner{height:8vw}
 }
+
+
+/* Racer-first composition: direct left positioning replaces full-width rails. */
+.bc-stage .bc-runner{
+  left:3%;right:auto;width:10vw;height:6.8vw;min-height:48px;
+  transform:translateX(-50%);will-change:left;
+}
+.bc-stage .bc-runner-art{width:10vw;height:6.8vw;filter:drop-shadow(0 .65vw .6vw rgba(0,0,0,.72))}
+.bc-stage .bc-runner-name{top:76%;font-size:clamp(10px,.9vw,17px);padding:.16vw .48vw;border:1px solid rgba(255,255,255,.18)}
+.bc-stage .bc-lane{height:6.6vw}
+.bc-stage .race-scenery{transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)}
+.bc-stage.is-racing .bc-head{padding:.65vw 1.4vw .45vw;background:linear-gradient(180deg,rgba(5,13,25,.8),transparent)}
+.bc-stage.is-racing .bc-brand-sub,.bc-stage.is-racing .bc-sub{display:none}
+.bc-stage.is-racing .bc-event{font-size:2vw}
+.bc-stage.is-racing .bc-brand-mark{font-size:1.8vw}
+.bc-stage.is-racing .bc-clock{font-size:2.6vw}
+.bc-stage .bc-bar{opacity:.18;transition:opacity .2s}
+.bc-stage .bc-bar:hover,.bc-stage .bc-bar:focus-within{opacity:1}
+.bc-stage.is-racing .bc-foot{opacity:.28}
+.bc-stage .bc-board{border-color:rgba(255,255,255,.2);box-shadow:0 .8vw 2vw #0008}
+.bc-stage .bc-finish{right:4%}
+@media(max-width:800px){
+  .bc-stage .bc-runner{width:16vw;height:10.8vw}
+  .bc-stage .bc-runner-art{width:16vw;height:10.8vw}
+  .bc-stage .bc-lane{height:10vw}
+  .bc-stage.is-racing .bc-event{font-size:4vw}
+}
