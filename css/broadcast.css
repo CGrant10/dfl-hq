@@ -805,3 +805,81 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-launch { align-items:stretch; flex-direction:column; }
   .bc-launch .btn { width:100%; }
 }
+
+
+/* Responsive race stage: safe lanes and true viewport sizing on every device. */
+body.broadcasting,
+body.broadcasting .view { width:100%; height:100%; }
+.bc-stage {
+  width:100dvw;
+  height:100dvh;
+  max-width:100%;
+  max-height:100%;
+}
+.bc-track,
+.arena-track-wrap.cinematic-race .track {
+  contain:layout paint;
+}
+
+/* Wide phones and short browser windows must size racers from height, not width. */
+@media (orientation:landscape) and (max-height:600px) {
+  .bc-stage { grid-template-rows:auto minmax(0,1fr); }
+  .bc-stage .bc-head {
+    gap:10px;
+    padding:6px max(10px,env(safe-area-inset-right)) 5px max(10px,env(safe-area-inset-left));
+  }
+  .bc-stage .bc-brand-sub,
+  .bc-stage .bc-sub,
+  .bc-stage .bc-foot { display:none; }
+  .bc-stage .bc-brand-mark { font-size:clamp(15px,4.4vh,24px); }
+  .bc-stage .bc-event { font-size:clamp(16px,5.2vh,28px); }
+  .bc-stage .bc-clock { font-size:clamp(20px,6.5vh,34px); }
+  .bc-stage .bc-body { min-height:0; padding:4px 8px 7px; }
+  .bc-stage .bc-track { height:100%; border-radius:8px; }
+  .bc-stage .bc-runner,
+  .bc-stage .bc-runner-art {
+    width:15vh;
+    height:10vh;
+    min-height:30px;
+  }
+  .bc-stage .bc-lane { height:10.5vh; min-height:32px; }
+  .bc-stage .bc-runner-name {
+    top:72%;
+    max-width:18vh;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:clamp(8px,2.5vh,12px);
+  }
+  .bc-stage .bc-board {
+    width:min(31vw,180px);
+    max-height:42%;
+    overflow:hidden;
+  }
+  .bc-stage .bc-board-list li {
+    min-height:20px;
+    height:5.8vh;
+    font-size:clamp(8px,2.4vh,11px);
+  }
+
+  .arena-track-wrap.cinematic-race .track {
+    height:clamp(250px,calc(100dvh - 92px),460px);
+    min-height:0;
+  }
+  .arena-track-wrap.cinematic-race .runner,
+  .arena-track-wrap.cinematic-race .runner-art {
+    width:56px;
+    height:38px;
+  }
+  .arena-track-wrap.cinematic-race .lane { height:40px; }
+}
+
+/* Very narrow portrait viewers get extra vertical breathing room as well. */
+@media (orientation:portrait) and (max-width:520px) {
+  .bc-stage { grid-template-rows:auto minmax(0,1fr) auto; }
+  .bc-stage .bc-head { padding:10px 12px 7px; }
+  .bc-stage .bc-body { min-height:0; padding:6px 8px 10px; }
+  .bc-stage .bc-foot { padding:6px 12px calc(6px + env(safe-area-inset-bottom)); }
+  .bc-stage .bc-runner,
+  .bc-stage .bc-runner-art { width:14vw; height:9.5vw; }
+  .bc-stage .bc-runner-name { top:74%; max-width:21vw; overflow:hidden; text-overflow:ellipsis; }
+}
