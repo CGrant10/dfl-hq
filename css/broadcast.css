@@ -696,3 +696,82 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-stage .bc-lane{height:10vw}
   .bc-stage.is-racing .bc-event{font-size:4vw}
 }
+
+
+/* ---------------- commissioner race console (v1.76) ---------------- */
+.bc-panel {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--panel) 94%, var(--accent) 6%), var(--panel));
+}
+.bc-console-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.bc-console-head h2 { margin: 2px 0 4px; }
+.bc-console-head p { margin: 0; max-width: 54ch; }
+.bc-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.bc-state-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.bc-state--running .bc-state-dot { background: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent); }
+.bc-state--paused .bc-state-dot { background: #f2b84b; }
+.bc-state--finished .bc-state-dot { background: #77a7ff; }
+.bc-command {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(260px, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+.bc-primary {
+  min-height: 74px;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  font-size: 18px;
+}
+.bc-primary small { font-size: 11px; font-weight: 600; opacity: .76; }
+.bc-transport { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bc-transport .btn { min-height: 58px; }
+.bc-console-foot {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.bc-view-options { display: flex; gap: 14px; padding: 0; margin: 0; border: 0; }
+.bc-view-options legend { width: 100%; margin-bottom: 7px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.bc-view-options label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; }
+.bc-view-options input { width: auto; }
+.bc-result-actions { display: flex; gap: 8px; }
+.bc-result-actions .danger:not(:disabled) { color: #ff8f8f; border-color: color-mix(in srgb, #ff6b6b 46%, var(--line)); }
+.bc-setup { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.bc-setup summary { cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 750; }
+.bc-setup p { margin: 10px 0 8px; }
+.bc-url input { min-width: 0; }
+
+@media (max-width: 700px) {
+  .bc-console-head, .bc-console-foot { align-items: stretch; flex-direction: column; }
+  .bc-state { align-self: flex-start; }
+  .bc-command { grid-template-columns: 1fr; }
+  .bc-primary { min-height: 68px; }
+  .bc-transport .btn { min-height: 50px; }
+  .bc-result-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .bc-url { align-items: stretch; flex-direction: column; }
+  .bc-url .btn { min-height: 44px; }
+}
