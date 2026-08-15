@@ -236,7 +236,7 @@ function paint(view, event, racers) {
         <div class="bc-track" id="bc-track">
           <div class="bc-finish"></div>
           ${racers.map((r, i) => `
-            <div class="bc-lane">
+            <div class="bc-lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(((i + .5) / racers.length) * 100).toFixed(2)}%">
               <span class="bc-lane-name" style="--racer:${esc(r.color)}">
                 <b>${r.number}</b>${esc(r.name)}
               </span>
@@ -567,7 +567,7 @@ function elapsedMs(row) {
   lane, and the sprite width is subtracted so it stops on the line. The
   sprite is sized in vw here, so the offset has to be too.
 */
-const SPRITE_VW = 5;
+const SPRITE_VW = 7.5;
 const trackX = (p) =>
   `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_VW).toFixed(3)}vw)`;
 
