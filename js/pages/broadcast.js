@@ -423,7 +423,7 @@ function watch(view, id, racers) {
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
         const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
-        els.runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+        els.runners[i].style.left = raceLeft(p);
         cameraLead = Math.max(cameraLead, p);
       }
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
@@ -447,8 +447,10 @@ function watch(view, id, racers) {
       const track = els.track;
       if (state === "running" || state === "paused") {
         track?.classList.add("is-running");
+        els.stage?.classList.add("is-racing");
       } else {
         track?.classList.remove("is-running");
+        els.stage?.classList.remove("is-racing");
       }
 
       while (live.nextEvent < (live.events?.length || 0) && elapsed >= live.events[live.nextEvent].ms) {
@@ -567,9 +569,7 @@ function elapsedMs(row) {
   lane, and the sprite width is subtracted so it stops on the line. The
   sprite is sized in vw here, so the offset has to be too.
 */
-const SPRITE_VW = 7.5;
-const trackX = (p) =>
-  `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_VW).toFixed(3)}vw)`;
+const raceLeft = (p) => `${(3 + Math.max(0, Math.min(1, p)) * 88).toFixed(3)}%`;
 
 /**
  * Live standings.
