@@ -33,3 +33,4 @@ describe("Arena responsive viewport", () => {
     expect(screenX(view, 2)).toBe(screenX(view, 1));
   });
 });
+
