@@ -29,6 +29,57 @@ import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, n
 const reduceMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
+/*
+  A MEMBER'S ARENA PAGE IS THE WAITING ROOM.
+
+  The clean 16:9 broadcast route already owns the realtime subscription and
+  the polling fallback. Reusing that viewer keeps one shared clock and one
+  playback loop. While an event is idle, members can inspect the line-up here;
+  the moment the commissioner starts, this watcher moves them into the shared
+  viewer automatically.
+*/
+let sharedWatch = null;
+
+function stopSharedWatch() {
+  if (!sharedWatch) return;
+  clearInterval(sharedWatch.poll);
+  sharedWatch.channel?.unsubscribe?.();
+  sharedWatch = null;
+}
+
+function enterSharedRace(event) {
+  if (!event || !["running", "paused", "finished"].includes(event.bc_state)) return false;
+  stopSharedWatch();
+  location.hash = `#/broadcast?id=${event.id}`;
+  return true;
+}
+
+function watchSharedRace(eventId) {
+  stopSharedWatch();
+
+  const accept = (event) => enterSharedRace(event);
+  const channel = db().channel(`arena-wait-${eventId}`)
+    .on("postgres_changes", {
+      event: "UPDATE", schema: "public", table: "arena_events",
+      filter: `id=eq.${eventId}`,
+    }, (payload) => accept(payload.new))
+    .subscribe();
+
+  const poll = setInterval(async () => {
+    try {
+      const { data } = await db().from("arena_events")
+        .select("id,bc_state").eq("id", eventId).maybeSingle();
+      accept(data);
+    } catch { /* Realtime is primary; the next poll can try again. */ }
+  }, 1500);
+
+  sharedWatch = { channel, poll };
+}
+
+export function leave() {
+  stopSharedWatch();
+}
+
 export async function render(view) {
   const id = new URLSearchParams(location.hash.split("?")[1] || "").get("id");
   if (id) return renderEvent(view, id);
@@ -127,6 +178,9 @@ async function renderEvent(view, id) {
   const results = resultsRes.data || [];
   const byId    = new Map(members.map((m) => [String(m.id), m]));
 
+  // A member opening an already-live event goes straight to the shared view.
+  if (!canEdit() && enterSharedRace(event)) return;
+
   view.innerHTML = `
     <header class="page-head">
       <a class="backlink" href="#/arena">← Arena</a>
@@ -194,14 +248,21 @@ async function renderEvent(view, id) {
   wireLineup(view, event, parts, members, () => render(view));
   if (canEdit()) {
     wireBroadcast(view, stage, event, parts, byId, () => render(view));
+  } else {
+    watchSharedRace(event.id);
   }
 
   if (!results.length) {
-    stage.innerHTML = `
-      <div class="row-end">
-        <button class="btn" id="arena-start" ${parts.length < 2 ? "disabled" : ""}>
-          ${parts.length < 2 ? "Add racers to start" : "Start the race"}
-        </button>
+    stage.innerHTML = canEdit() ? `
+      <div class="arena-ready">
+        <strong>${parts.length < 2 ? "Line-up needed" : "Race ready"}</strong>
+        <span>${parts.length < 2
+          ? "Add at least two racers below."
+          : "Use Race controls below to start the shared race."}</span>
+      </div>` : `
+      <div class="arena-ready is-waiting" role="status">
+        <strong>Waiting for the commissioner</strong>
+        <span>This page will open the shared race automatically when it starts.</span>
       </div>`;
   }
 }
@@ -429,7 +490,7 @@ function wireLineup(view, event, parts, members, refresh) {
 // ============================ broadcast mode ==========================
 
 /*
-  The commissioner's control panel for the OBS view.
+  The commissioner's control panel for the shared race.
 
   Nothing here draws a race - it only writes state to the event row, and the
   broadcast page (and any phone watching) derives everything from that. So
@@ -448,23 +509,27 @@ function broadcastCard(event, parts) {
   const paused  = event.bc_state === "paused";
 
   return `
-    <section class="card bc-panel" data-collapse="arena-broadcast" data-collapse-title="Broadcast controls">
+    <section class="card bc-panel" data-collapse="arena-broadcast" data-collapse-title="Race controls">
 
-      <div class="bc-url">
-        <input id="bc-url" type="text" readonly value="${esc(url)}">
-        <button class="btn ghost small" id="bc-copy">Copy</button>
-      </div>
+      <details class="bc-setup">
+        <summary>OBS setup</summary>
+        <p class="muted tiny">Paste this URL into an OBS Browser Source once. Race controls stay here.</p>
+        <div class="bc-url">
+          <input id="bc-url" type="text" readonly value="${esc(url)}">
+          <button class="btn ghost small" id="bc-copy">Copy URL</button>
+        </div>
+      </details>
 
       <div class="bc-controls">
         <button class="btn small" id="bc-start" ${parts.length < 2 ? "disabled" : ""}>
-          ${running || paused ? "Restart" : "Start race"}
+          ${running || paused ? "Restart shared race" : "Start shared race"}
         </button>
         <button class="btn ghost small" id="bc-pause" ${running || paused ? "" : "disabled"}>
           ${paused ? "Resume" : "Pause"}
         </button>
-        <button class="btn ghost small" id="bc-skip" ${running || paused ? "" : "disabled"}>Skip to finish</button>
-        <button class="btn ghost small" id="bc-reset">Reset</button>
-        <button class="btn ghost small" id="bc-save" ${parts.length < 2 ? "disabled" : ""}>Save result</button>
+        <button class="btn ghost small" id="bc-skip" ${running || paused ? "" : "disabled"}>Finish now</button>
+        <button class="btn ghost small" id="bc-reset">Reset race</button>
+        <button class="btn ghost small" id="bc-save" ${parts.length < 2 ? "disabled" : ""}>Save final result</button>
       </div>
 
       <div class="bc-toggles">
@@ -571,7 +636,7 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
         refresh(), which would rebuild the page and throw away the stage
         this race is about to be drawn into.
       */
-      const seed = Number(event.seed) || newSeed();
+      const seed = newSeed();
       try {
         await updateRow("arena_events", event.id, {
           seed,
@@ -1123,8 +1188,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
 
       <div class="row-end">
         <a class="btn ghost small" href="#/arena">Back to Arena</a>
-        ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay</button>` : ""}
-        ${canEdit() ? `<button class="btn small" id="arena-start">Run again</button>` : ""}
+        ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay locally</button>` : ""}
         ${canEdit() ? `<button class="btn danger small" id="arena-clear">Clear result</button>` : ""}
       </div>
     </div>`;
