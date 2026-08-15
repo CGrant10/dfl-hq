@@ -21,7 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
-import { createArenaRenderer } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
@@ -210,6 +210,7 @@ function teardown() {
   clearInterval(live.poll);
   live.resizeObserver?.disconnect?.();
   live.channel?.unsubscribe?.();
+  live.pixi?.destroy?.();
   live = null;
 }
 
@@ -219,6 +220,11 @@ function paint(view, event, racers) {
   view.innerHTML = `
     <div class="bc-stage cinematic-race" id="bc-stage" data-theme="${esc(event.theme || "stadium")}">
       <div class="race-scenery" aria-hidden="true">
+        <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
+          <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
+            <feGaussianBlur data-arena-motion-blur stdDeviation="0 0" edgeMode="duplicate"></feGaussianBlur>
+          </filter>
+        </svg>
         <div class="race-sky"></div><div class="race-hills far"></div>
         <div class="race-hills near"></div><div class="race-crowd"></div>
       </div>
@@ -300,7 +306,8 @@ function paint(view, event, racers) {
  * every state change - pausing must not re-roll the race.
  */
 function watch(view, id, racers) {
-  live = { raf: 0, poll: 0, channel: null, resizeObserver: null, trackWidth: 1, sim: null, simKey: "", state: null };
+  live = { raf: 0, poll: 0, channel: null, resizeObserver: null, pixi: null,
+    trackWidth: 1, sim: null, simKey: "", state: null, sceneryBlurX: 0 };
 
   const els = {
     runners: racers.map((_, i) => view.querySelector(`#bc-runner-${i}`)),
@@ -311,6 +318,7 @@ function watch(view, id, racers) {
     list:    view.querySelector("#bc-board-list"),
     track:   view.querySelector("#bc-track"),
     scenery: view.querySelector(".race-scenery"),
+    sceneryBlur: view.querySelector("[data-arena-motion-blur]"),
     stage:   view.querySelector("#bc-stage"),
     overlay: view.querySelector("#bc-overlay"),
     count:   view.querySelector("#bc-count"),
@@ -319,10 +327,10 @@ function watch(view, id, racers) {
     winArt:  view.querySelector("#bc-winner-art"),
   };
 
-  let pixi = null;
+  const session = live;
   createArenaRenderer(els.track, racers).then((renderer) => {
-    pixi = renderer;
-    if (renderer && els.scenery) els.scenery.style.visibility = "hidden";
+    if (live !== session) { renderer?.destroy(); return; }
+    live.pixi = renderer;
   });
   live.trackWidth = Math.max(1, els.track?.clientWidth || 1);
   if (typeof ResizeObserver === "function" && els.track) {
@@ -356,6 +364,7 @@ function watch(view, id, racers) {
       live.shown = drama.shown;
       live.events = drama.events;
       live.visuals = visualEvents(live.sim, live.shown, racers);
+      live.pixiTimeline = createReactionTimeline(live.events, live.visuals, racers.length);
       live.nextVisual = 0;
       live.nextEvent = 0;
       live.expiry = [];
@@ -414,6 +423,7 @@ function watch(view, id, racers) {
       const sim = live.sim;
       const elapsed = elapsedMs(row);
       const state = row.bc_state;
+      const raceComplete = state === "finished" || elapsed >= (live.lastFinish || Infinity);
 
       /*
         The countdown is not a state, it is a negative clock. The
@@ -439,27 +449,39 @@ function watch(view, id, racers) {
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
       const src = live.shown || sim.samples;
+      const heat = intensityAt(src, lo);
+      const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
+      if (els.track && els.track.dataset.heat !== band) els.track.dataset.heat = band;
       let cameraLead = 0;
       const pixiRacers = [];
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
-        const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
+        const pixiRacer = presentationRacerFrame({
+          id: racers[i].id, lane: i, samples: s, lo, hi, mix, elapsedMs: elapsed,
+          finished: live.homed?.has(i) || false, timeline: live.pixiTimeline,
+        });
+        const p = pixiRacer.progress;
         els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
-        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: live.homed?.has(i) || false });
+        pixiRacers.push(pixiRacer);
       }
       const pixiLeader = pixiRacers.reduce((best, item) => item.progress > best.progress ? item : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
-      const pixiState = state === "paused" ? "paused" : state === "finished" ? "finished" : state === "idle" ? "idle" : "running";
-      pixi?.render({
+      const pixiState = raceComplete ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
+      live.pixi?.render({
         elapsedMs: Math.max(0, elapsed),
         state: elapsed < 0 ? "idle" : pixiState,
-        heat: Number(els.track?.dataset.heat || 0),
+        heat: Number(band),
         racers: pixiRacers,
         countdownMs: elapsed < 0 ? Math.abs(elapsed) : 0,
         winnerId: sim.order[0]?.racer?.id,
       });
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
+      const backdrop = backgroundMotion(elapsed < 0 ? "idle" : pixiState, heat,
+        elapsed >= (live.winnerMs || Infinity));
+      live.sceneryBlurX += (backdrop.blurX - live.sceneryBlurX) * .16;
+      els.sceneryBlur?.setAttribute("stdDeviation", `${live.sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
+      els.stage?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
 
       /*
         EVENTS AND REACTIONS.
@@ -478,7 +500,7 @@ function watch(view, id, racers) {
       live.lastElapsed = elapsed;
 
       const track = els.track;
-      if (state === "running" && elapsed >= 0) {
+      if (state === "running" && elapsed >= 0 && !raceComplete) {
         track?.classList.add("is-running");
         els.stage?.classList.add("is-racing");
       } else {
@@ -529,11 +551,6 @@ function watch(view, id, racers) {
         el?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
       }
 
-      /* Final stretch, as a band the CSS reads - one write per change. */
-      const band = (() => { const h = intensityAt(src, lo);
-        return h > .66 ? "3" : h > .33 ? "2" : h > 0 ? "1" : "0"; })();
-      if (track && track.dataset.heat !== band) track.dataset.heat = band;
-
       if (row.bc_show_timer !== false) {
         // Frozen at the last finish: a race clock that carries on counting
         // after everybody is home is just a stopwatch nobody stopped.
@@ -550,7 +567,7 @@ function watch(view, id, racers) {
       }
 
       const finishMs = sim.order.at(-1)?.finishMs ?? 0;
-      const done = state === "finished" || (state === "running" && elapsed >= finishMs);
+      const done = raceComplete;
 
       if (done) {
         const win = sim.order[0];

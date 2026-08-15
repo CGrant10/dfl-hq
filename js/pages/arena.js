@@ -20,7 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
@@ -824,6 +824,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   /* Scanned once, before a frame is drawn - see visualEvents(). The loop
      below only walks this queue, so nothing is compared per frame. */
   const visuals = visualEvents(sim, shown, racers);
+  const pixiTimeline = createReactionTimeline(events, visuals, racers.length);
 
   stage.innerHTML = `
     <div class="arena-track-wrap cinematic-race" data-theme="${esc(event.theme || "stadium")}">
@@ -984,13 +985,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
-    /* Pixi gets deterministic event timestamps as presentation metadata.
-       These never feed back into progress, order, timing, or results. */
-    const pixiReactions = racers.map(() => new Map());
     let sceneryBlurX = 0;
-    const setPixiReaction = (index, kind, at, duration) => {
-      pixiReactions[index]?.set(kind, { kind, startedMs: at, untilMs: at + duration });
-    };
     let leader = -1;
 
     function frame(now) {
@@ -1017,15 +1012,15 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const pixiRacers = [];
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
-        const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
-        const previous = s[Math.max(0, lo - 1)];
-        const velocity = Math.max(0, Math.min(1, (s[hi] - s[lo]) * 180));
-        const acceleration = Math.max(-1, Math.min(1, ((s[hi] - s[lo]) - (s[lo] - previous)) * 500));
+        const pixiRacer = presentationRacerFrame({
+          id: racers[i].id, lane: i, samples: s, lo, hi, mix, elapsedMs: elapsed,
+          timeline: pixiTimeline,
+        });
+        const p = pixiRacer.progress;                  // interpolate between ticks
         runners[i].style.setProperty("--race-x", `${(trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
-        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: p >= 1,
-          speed: velocity, acceleration });
+        pixiRacers.push(pixiRacer);
       }
       const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
@@ -1045,7 +1040,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           el.classList.remove("is-surge", "is-stumble");
           el.classList.add(ev.kind === "stumble" ? "is-stumble" : "is-surge");
           reacting.set(ev.racer, elapsed + ev.durMs);
-          setPixiReaction(ev.racer, ev.kind === "stumble" ? "stumble" : "surge", ev.ms, ev.durMs);
         }
       }
       for (const [i, until] of reacting) {
@@ -1064,7 +1058,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         counts[ev.kind] = (counts[ev.kind] || 0) + 1;
         const hot = ev.intensity >= 0.6;
         if (ev.kind === "jump") {
-          setPixiReaction(ev.racer, "jump", ev.ms, ev.durMs);
           const el = runners[ev.racer];
           if (el) { el.classList.add("is-jump"); expiry.push([el, "is-jump", elapsed + ev.durMs]); }
           const row = rows[ev.racer];
@@ -1074,7 +1067,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           if (ev.text && elapsed - calledAt > 1800) { status.textContent = ev.text; calledAt = elapsed; }
         } else if (ev.kind === "swap") {
           for (const i of [ev.racer, ev.other]) {
-            setPixiReaction(i, "duel", ev.ms, ev.durMs);
             const el = runners[i];
             /*
               TWO CALLS, NOT ONE STRING. classList.add("is-duel is-hot")
@@ -1094,7 +1086,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           }
         } else if (ev.kind === "near") {
           for (const i of [ev.racer, ev.other]) {
-            setPixiReaction(i, "near", ev.ms, ev.durMs);
             const el = runners[i];
             if (el) { el.classList.add("is-near"); expiry.push([el, "is-near", elapsed + ev.durMs]); }
           }
@@ -1106,11 +1097,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         if (elapsed >= expiry[k][2]) {
           expiry[k][0].classList.remove(expiry[k][1], "is-hot");
           expiry.splice(k, 1);
-        }
-      }
-      for (const active of pixiReactions) {
-        for (const [kind, reaction] of active) {
-          if (elapsed >= reaction.untilMs) active.delete(kind);
         }
       }
 
@@ -1125,18 +1111,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       sceneryBlurX += (backdrop.blurX - sceneryBlurX) * .16;
       sceneryBlur?.setAttribute("stdDeviation", `${sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       raceWrap?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
-      /* Pixi consumes the same precomputed reaction classes as the legacy
-         renderer. This keeps visual events synchronized without giving the
-         presentation layer any influence over race outcomes. */
-      for (let i = 0; i < pixiRacers.length; i++) {
-        const active = pixiReactions[i];
-        const reaction = ["stumble", "jump", "duel", "near", "surge"]
-          .map((kind) => active?.get(kind)).find(Boolean);
-        if (reaction) {
-          pixiRacers[i].reaction = reaction.kind;
-          pixiRacers[i].reactionStartedMs = reaction.startedMs;
-        }
-      }
       pixi?.render({
         elapsedMs: elapsed,
         state: elapsed >= lastFinish ? "finished" : "running",
