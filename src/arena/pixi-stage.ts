@@ -1,11 +1,20 @@
-import { Application, Container, Graphics } from "pixi.js";
+import { Application, Container, Graphics, Sprite } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
+import { normalizePet, petMotion, petTextureUri } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 
 const SKY = 0x09142f;
 const TRACK = 0x16264f;
 const LANE = 0x8bbcff;
 const SPEED = 0xb8e8ff;
+
+interface PetActor {
+  root: Container;
+  sprite: Sprite;
+  trail: Graphics;
+  trailKind: string;
+  accent: number;
+}
 
 /** GPU presentation only; the deterministic engine remains authoritative. */
 export class PixiRaceStage implements RaceRenderer {
@@ -23,7 +32,7 @@ export class PixiRaceStage implements RaceRenderer {
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
-  #actorById = new Map<RaceRacer["id"], Container>();
+  #actorById = new Map<RaceRacer["id"], PetActor>();
   #lastFrame: RaceFrame | null = null;
 
   async mount(host: HTMLElement): Promise<void> {
@@ -47,15 +56,19 @@ export class PixiRaceStage implements RaceRenderer {
     this.#actorById.clear();
     this.actors.removeChildren();
     for (const racer of racers) {
-      const actor = new Container({ label: `racer-${racer.id}` });
-      actor.eventMode = "none";
+      const root = new Container({ label: `racer-${racer.id}` });
+      root.eventMode = "none";
+      const pet = normalizePet(racer.pet, racer.color);
+      const trail = new Graphics({ label: `trail-${pet.trail}` });
       const shadow = new Graphics().ellipse(0, 13, 22, 7).fill({ color: 0x000000, alpha: 0.34 });
-      const marker = new Graphics().roundRect(-15, -18, 30, 32, 8)
-        .fill({ color: this.#color(racer.color), alpha: 1 })
-        .stroke({ color: 0xffffff, alpha: 0.8, width: 2 });
-      actor.addChild(shadow, marker);
-      this.#actorById.set(racer.id, actor);
-      this.actors.addChild(actor);
+      const sprite = Sprite.from(petTextureUri(pet, racer.color));
+      sprite.label = `pet-${pet.species}`;
+      sprite.anchor.set(0.5, 0.72);
+      sprite.width = 58;
+      sprite.height = 58;
+      root.addChild(trail, shadow, sprite);
+      this.#actorById.set(racer.id, { root, sprite, trail, trailKind: pet.trail, accent: this.#color(pet.accent) });
+      this.actors.addChild(root);
     }
     this.#drawCourse();
   }
@@ -67,11 +80,18 @@ export class PixiRaceStage implements RaceRenderer {
     for (const racer of frame.racers) {
       const actor = this.#actorById.get(racer.id);
       if (!actor) continue;
-      actor.x = screenX(this.#viewport, racer.progress);
-      actor.y = laneY(this.#viewport, racer.lane, this.#racers.length);
-      actor.scale.set(this.#viewport.actorScale * (racer.leading ? 1.08 : 1));
-      actor.rotation = frame.state === "running" ? Math.sin(frame.elapsedMs * 0.018 + racer.lane) * 0.035 : 0;
-      actor.alpha = frame.state === "idle" ? 0.9 : 1;
+      const motion = petMotion(racer.reaction, racer.finished, frame.state);
+      const stride = Math.sin(frame.elapsedMs * (motion === "surge" ? 0.035 : 0.022) + racer.lane);
+      actor.root.x = screenX(this.#viewport, racer.progress);
+      actor.root.y = laneY(this.#viewport, racer.lane, this.#racers.length);
+      actor.root.scale.set(this.#viewport.actorScale * (racer.leading ? 1.08 : 1));
+      actor.root.rotation = motion === "stumble" ? -0.18 : motion === "jump" ? stride * 0.1 : stride * 0.035;
+      actor.root.alpha = frame.state === "idle" ? 0.9 : 1;
+      actor.sprite.y = motion === "run" || motion === "surge" ? -Math.abs(stride) * (motion === "surge" ? 8 : 4)
+        : motion === "jump" ? -14 : motion === "win" ? -Math.abs(stride) * 10 : 0;
+      actor.sprite.scale.x = motion === "stumble" ? 1.14 : motion === "surge" ? 1.12 : 1;
+      actor.sprite.scale.y = motion === "stumble" ? 0.78 : motion === "jump" ? 1.12 : 1;
+      this.#drawTrail(actor, frame.elapsedMs, motion !== "idle");
     }
     const shake = frame.state === "running" ? intensity * Math.sin(frame.elapsedMs * 0.055) * 2.2 : 0;
     this.course.y = shake;
@@ -124,6 +144,23 @@ export class PixiRaceStage implements RaceRenderer {
       const length = 22 + (i % 5) * 18 + intensity * 90;
       this.#speedLines.moveTo(x, y).lineTo(x - length, y)
         .stroke({ color: SPEED, alpha: 0.08 + intensity * 0.22, width: 1 + intensity * 2 });
+    }
+  }
+
+  #drawTrail(actor: PetActor, elapsedMs: number, moving: boolean): void {
+    actor.trail.clear();
+    if (!moving || actor.trailKind === "none") return;
+    const pulse = 0.65 + Math.sin(elapsedMs * 0.02) * 0.2;
+    if (actor.trailKind === "dust") {
+      for (let i = 0; i < 3; i++) actor.trail.circle(-22 - i * 10, 8 + (i % 2) * 5, 4 + i)
+        .fill({ color: 0xc8a46b, alpha: pulse * (0.55 - i * 0.1) });
+    } else if (actor.trailKind === "spark") {
+      for (let i = 0; i < 4; i++) actor.trail.star(-20 - i * 11, (i % 2) * 8, 4, 5, 2)
+        .fill({ color: actor.accent, alpha: pulse * (0.8 - i * 0.12) });
+    } else if (actor.trailKind === "rainbow") {
+      const colors = [0xff4d6d, 0xffd166, 0x63e6be, 0x4dabf7, 0xb197fc];
+      colors.forEach((color, i) => actor.trail.moveTo(-16, -8 + i * 4).lineTo(-70, -8 + i * 4)
+        .stroke({ color, alpha: pulse * 0.75, width: 3 }));
     }
   }
 
