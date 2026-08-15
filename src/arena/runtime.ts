@@ -8,17 +8,25 @@ export interface LiveArenaRenderer {
 
 export async function createArenaRenderer(parent: HTMLElement, racers: readonly RaceRacer[]): Promise<LiveArenaRenderer | null> {
   if (!parent) return null;
-  const fallbackChildren = Array.from(parent.children) as HTMLElement[];
+  const track = parent.querySelector<HTMLElement>(".track") || parent;
+  // Keep the proven DOM composition and controls. Only the legacy character
+  // artwork is replaced after Pixi has mounted successfully; everything is
+  // restored automatically if Pixi cannot start.
+  const fallbackChildren = Array.from(track.querySelectorAll<HTMLElement>(".runner-art"));
   const previousVisibility = new Map(fallbackChildren.map((child) => [child, child.style.visibility]));
   const host = document.createElement("div");
   host.className = "arena-pixi-host";
-  Object.assign(host.style, { position: "absolute", inset: "0", zIndex: "8", overflow: "hidden", pointerEvents: "none" });
-  if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
-  parent.appendChild(host);
+  Object.assign(host.style, { position: "absolute", inset: "0", zIndex: "1", overflow: "hidden", pointerEvents: "none" });
+  if (getComputedStyle(track).position === "static") track.style.position = "relative";
+  track.appendChild(host);
   const stage = new PixiRaceStage();
   try {
     await stage.mount(host);
     await stage.setRacers(racers);
+    stage.render({
+      elapsedMs: 0, state: "idle", heat: 0,
+      racers: racers.map((racer, lane) => ({ id: racer.id, progress: 0, lane, leading: false, finished: false })),
+    });
     for (const child of fallbackChildren) child.style.visibility = "hidden";
     parent.classList.add("has-pixi-race");
     return { render: (frame) => stage.render(frame), destroy: () => {
@@ -32,3 +40,4 @@ export async function createArenaRenderer(parent: HTMLElement, racers: readonly 
     return null;
   }
 }
+
