@@ -859,3 +859,12 @@ a.moment:hover { background: var(--hover-soft); }
 
 .arena-track-wrap.cinematic-race .race-scenery{z-index:0}
 .arena-track-wrap.cinematic-race .scoreboard,.arena-track-wrap.cinematic-race .track,.arena-track-wrap.cinematic-race .countdown{position:relative;z-index:2}
+
+
+/* Desktop Pet selector: native, keyboard-friendly control; phones keep the visual gallery. */
+.pet-species-select{display:none}
+@media(min-width:641px){
+  .pet-species-select{display:grid;gap:var(--s-1);width:min(100%,28rem)}
+  .pet-species-select select{display:block;width:100%;min-height:44px}
+  .pet-roster{display:none}
+}

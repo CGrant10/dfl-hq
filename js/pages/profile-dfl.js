@@ -145,6 +145,15 @@ function editCard(m, draft) {
                 <button type="button" class="btn ghost small${draft.preview === mode ? " on" : ""}"
                         data-pet-preview="${mode}">${mode[0].toUpperCase() + mode.slice(1)}</button>`).join("")}
             </div>
+            <label class="pet-species-select">
+              <span class="pet-option-label">Character</span>
+              <select data-pet-species-select aria-label="Pet character">
+                ${dflCharacterIds().map((id) => {
+                  const c = dflCharacter(id);
+                  return `<option value="${esc(id)}" ${pet.species === id ? "selected" : ""}>${esc(c?.label || id)}</option>`;
+                }).join("")}
+              </select>
+            </label>
             <div class="pet-roster" role="radiogroup" aria-label="Pet character">
               ${dflCharacterIds().map((id) => {
                 const c = dflCharacter(id);
@@ -244,6 +253,11 @@ export function wireDflPage(view, member, isMe, refresh) {
 
   host.addEventListener("change", async (e) => {
     if (!draft) return;
+    if (e.target.matches("[data-pet-species-select]")) {
+      draft.pet.species = e.target.value;
+      paint();
+      return;
+    }
     if (e.target.matches("[data-photo-file]")) {
       const file = e.target.files?.[0];
       if (!file) return;
