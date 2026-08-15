@@ -214,3 +214,4 @@ export class PixiRaceStage implements RaceRenderer {
     return Number.isFinite(parsed) ? parsed : 0x38bdf8;
   }
 }
+
