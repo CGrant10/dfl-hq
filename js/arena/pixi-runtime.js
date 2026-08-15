@@ -1636,7 +1636,7 @@ function Ze(e, t, n) {
 //#endregion
 //#region src/arena/viewport.ts
 function Qe(e, t) {
-	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * (i ? .12 : a ? .09 : .11), s = r * (i ? .86 : a ? .91 : .89), c = n * (i ? .06 : .045), l = n * (i ? .94 : .955), u = s - o, d = Math.max(.58, Math.min(1.35, Math.min(n / 1050, r / 690)));
+	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * (i ? .12 : a ? .09 : .11), s = r * (i ? .86 : a ? .91 : .89), c = n * (i ? .06 : .045), l = n * (i ? .94 : .955), u = s - o, d = Math.min(n / 1050, r / 690), f = u / 12 / 58 * .78, p = Math.max(.28, Math.min(1.35, d, f));
 	return {
 		width: n,
 		height: r,
@@ -1648,7 +1648,7 @@ function Qe(e, t) {
 		trackLeft: c,
 		trackRight: l,
 		trackWidth: l - c,
-		actorScale: d
+		actorScale: p
 	};
 }
 function $e(e, t, n) {
