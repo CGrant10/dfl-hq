@@ -35,6 +35,17 @@ const PET_COLOURS = [
   "#C8102E", "#E5011B", "#003396", "#4aa3ff", "#2fbf5f",
   "#EFC94C", "#F08279", "#a06be0", "#e07b39", "#8b98ab",
 ];
+const PET_ACCENTS = ["#ffffff", "#ffd84a", "#65e5ff", "#ff78b9", "#8cff98", "#202733"];
+const PET_ACCESSORIES = [
+  ["none", "None"], ["bandana", "Bandana"], ["visor", "Visor"],
+  ["crown", "Crown"], ["headphones", "Headphones"], ["cape", "Cape"],
+];
+const PET_EXPRESSIONS = [
+  ["focused", "Focused"], ["happy", "Happy"], ["fierce", "Fierce"], ["sleepy", "Sleepy"],
+];
+const PET_TRAILS = [
+  ["none", "None"], ["dust", "Dust"], ["spark", "Sparks"], ["rainbow", "Rainbow"],
+];
 
 /** The stored pet, whether it arrives as jsonb or as text. */
 export function petOf(member) {
@@ -52,7 +63,8 @@ const initials = (name) =>
 function petArt(pet, size = "big", preview = "idle") {
   const species = pet?.species || dflCharacterIds()[0];
   const colour = pet?.color || PET_COLOURS[0];
-  return `<div class="pet-art is-${esc(size)} preview-${esc(preview)}" style="--racer:${esc(colour)}">${dflSpriteMarkup(species, colour)}</div>`;
+  const trail = pet?.trail || "none";
+  return `<div class="pet-art is-${esc(size)} preview-${esc(preview)} trail-${esc(trail)}" style="--racer:${esc(colour)};--pet-accent:${esc(pet?.accent || PET_ACCENTS[0])}">${dflSpriteMarkup(species, colour, pet)}</div>`;
 }
 
 // ------------------------------------------------------------- markup
@@ -143,11 +155,30 @@ function editCard(m, draft) {
                 </button>`;
               }).join("")}
             </div>
+            <span class="pet-option-label">Body colour</span>
             <div class="pet-swatches">
               ${PET_COLOURS.map((c) => `
                 <button type="button" class="pet-swatch${pet.color === c ? " on" : ""}"
                         style="--sw:${esc(c)}" data-pet-color="${esc(c)}"
                         aria-label="Pet colour ${esc(c)}"></button>`).join("")}
+            </div>
+            <span class="pet-option-label">Accent colour</span>
+            <div class="pet-swatches">
+              ${PET_ACCENTS.map((c) => `
+                <button type="button" class="pet-swatch${pet.accent === c ? " on" : ""}"
+                        style="--sw:${esc(c)}" data-pet-accent="${esc(c)}"
+                        aria-label="Accent colour ${esc(c)}"></button>`).join("")}
+            </div>
+            <div class="pet-option-grid">
+              <label><span class="pet-option-label">Accessory</span>
+                <select data-pet-accessory>${PET_ACCESSORIES.map(([v, label]) => `<option value="${v}" ${pet.accessory === v ? "selected" : ""}>${label}</option>`).join("")}</select>
+              </label>
+              <label><span class="pet-option-label">Expression</span>
+                <select data-pet-expression>${PET_EXPRESSIONS.map(([v, label]) => `<option value="${v}" ${pet.expression === v ? "selected" : ""}>${label}</option>`).join("")}</select>
+              </label>
+              <label><span class="pet-option-label">Race trail</span>
+                <select data-pet-trail>${PET_TRAILS.map(([v, label]) => `<option value="${v}" ${pet.trail === v ? "selected" : ""}>${label}</option>`).join("")}</select>
+              </label>
             </div>
           </div>
         </div>
@@ -185,6 +216,10 @@ export function wireDflPage(view, member, isMe, refresh) {
       name: stored.name || "",
       species: stored.species || dflCharacterIds()[0],
       color: stored.color || PET_COLOURS[0],
+      accent: stored.accent || PET_ACCENTS[0],
+      accessory: stored.accessory || "none",
+      expression: stored.expression || "focused",
+      trail: stored.trail || "none",
     },
     preview: "run",
   });
@@ -202,6 +237,9 @@ export function wireDflPage(view, member, isMe, refresh) {
       if (n) n.textContent = String(draft.bio.length);
     }
     if (e.target.matches("[data-pet-name]")) draft.pet.name = e.target.value;
+    if (e.target.matches("[data-pet-accessory]")) { draft.pet.accessory = e.target.value; paint(); }
+    if (e.target.matches("[data-pet-expression]")) { draft.pet.expression = e.target.value; paint(); }
+    if (e.target.matches("[data-pet-trail]")) { draft.pet.trail = e.target.value; paint(); }
   });
 
   host.addEventListener("change", async (e) => {
@@ -230,6 +268,8 @@ export function wireDflPage(view, member, isMe, refresh) {
     if (preview) { draft.preview = preview.dataset.petPreview; paint(); return; }
     const sw = e.target.closest("[data-pet-color]");
     if (sw) { draft.pet.color = sw.dataset.petColor; paint(); return; }
+    const accent = e.target.closest("[data-pet-accent]");
+    if (accent) { draft.pet.accent = accent.dataset.petAccent; paint(); return; }
     if (e.target.closest("[data-photo-pick]")) { host.querySelector("[data-photo-file]")?.click(); return; }
     if (e.target.closest("[data-photo-clear]")) { draft.image = null; paint(); return; }
 
