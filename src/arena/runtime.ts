@@ -7,6 +7,9 @@ export interface LiveArenaRenderer {
 }
 
 export async function createArenaRenderer(parent: HTMLElement, racers: readonly RaceRacer[]): Promise<LiveArenaRenderer | null> {
+  if (!parent) return null;
+  const fallbackChildren = Array.from(parent.children) as HTMLElement[];
+  const previousVisibility = new Map(fallbackChildren.map((child) => [child, child.style.visibility]));
   const host = document.createElement("div");
   host.className = "arena-pixi-host";
   Object.assign(host.style, { position: "absolute", inset: "0", zIndex: "8", overflow: "hidden", pointerEvents: "none" });
@@ -15,9 +18,13 @@ export async function createArenaRenderer(parent: HTMLElement, racers: readonly 
   const stage = new PixiRaceStage();
   try {
     await stage.mount(host);
-    stage.setRacers(racers);
+    await stage.setRacers(racers);
+    for (const child of fallbackChildren) child.style.visibility = "hidden";
     parent.classList.add("has-pixi-race");
-    return { render: (frame) => stage.render(frame), destroy: () => { stage.destroy(); host.remove(); parent.classList.remove("has-pixi-race"); } };
+    return { render: (frame) => stage.render(frame), destroy: () => {
+      stage.destroy(); host.remove(); parent.classList.remove("has-pixi-race");
+      for (const child of fallbackChildren) child.style.visibility = previousVisibility.get(child) || "";
+    } };
   } catch (error) {
     console.warn("Pixi Arena unavailable; using DOM renderer", error);
     try { stage.destroy(); } catch { /* initialization may be partial */ }
