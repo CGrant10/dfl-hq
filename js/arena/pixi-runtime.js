@@ -2,10 +2,10 @@ import { $ as e, B as t, C as n, I as r, J as i, K as a, L as o, U as s, W as c,
 import { t as S } from "./getPo2TextureFromSource-Df-ffBe0.js";
 import { t as C } from "./canvasUtils-BhZPiFjM.js";
 import { D as w, E as T, f as E, u as ee } from "./RenderTargetSystem-CL31NvbB.js";
-import { a as te, i as ne, n as D, o as O, r as k, s as A } from "./CanvasRenderer-BB6FIAvI.js";
-import { t as re } from "./CanvasPool-BTs3zFci.js";
+import { a as D, i as O, n as te, o as k, r as A, s as j } from "./CanvasRenderer-BB6FIAvI.js";
+import { t as ne } from "./CanvasPool-BTs3zFci.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/environment-browser/browserExt.mjs
-var ie = {
+var re = {
 	extension: {
 		type: _.Environment,
 		name: "browser",
@@ -15,7 +15,7 @@ var ie = {
 	load: async () => {
 		await import("./browserAll-BLsQxPm-.js");
 	}
-}, ae = {
+}, ie = {
 	extension: {
 		type: _.Environment,
 		name: "webworker",
@@ -25,9 +25,9 @@ var ie = {
 	load: async () => {
 		await import("./webworkerAll-N0IZNyOt.js");
 	}
-}, j;
-function oe(e) {
-	return j === void 0 && (j = (() => {
+}, M;
+function ae(e) {
+	return M === void 0 && (M = (() => {
 		let t = {
 			stencil: !0,
 			failIfMajorPerformanceCaveat: e ?? w.defaultOptions.failIfMajorPerformanceCaveat
@@ -43,13 +43,13 @@ function oe(e) {
 		} catch {
 			return !1;
 		}
-	})()), j;
+	})()), M;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/utils/browser/isWebGPUSupported.mjs
-var M;
-async function se(e = {}) {
-	return M === void 0 && (M = await (async () => {
+var N;
+async function oe(e = {}) {
+	return N === void 0 && (N = await (async () => {
 		let t = y.get().getNavigator().gpu;
 		if (!t) return !1;
 		try {
@@ -57,24 +57,24 @@ async function se(e = {}) {
 		} catch {
 			return !1;
 		}
-	})()), M;
+	})()), N;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/autoDetectRenderer.mjs
-var ce = [
+var se = [
 	"webgl",
 	"webgpu",
 	"canvas"
 ];
-async function le(e) {
+async function ce(e) {
 	let t = [];
-	e.preference ? Array.isArray(e.preference) ? t = e.preference.slice() : (t.push(e.preference), ce.forEach((n) => {
+	e.preference ? Array.isArray(e.preference) ? t = e.preference.slice() : (t.push(e.preference), se.forEach((n) => {
 		n !== e.preference && t.push(n);
-	})) : t = ce.slice();
+	})) : t = se.slice();
 	let n, r = {};
 	for (let i = 0; i < t.length; i++) {
 		let a = t[i];
-		if (a === "webgpu" && await se()) {
+		if (a === "webgpu" && await oe()) {
 			let { WebGPURenderer: t } = await import("./WebGPURenderer-qWv9ERNr.js").then((e) => e.t);
 			n = t, r = {
 				...e,
@@ -82,7 +82,7 @@ async function le(e) {
 			};
 			break;
 		}
-		if (a === "webgl" && oe(e.failIfMajorPerformanceCaveat ?? w.defaultOptions.failIfMajorPerformanceCaveat)) {
+		if (a === "webgl" && ae(e.failIfMajorPerformanceCaveat ?? w.defaultOptions.failIfMajorPerformanceCaveat)) {
 			let { WebGLRenderer: t } = await import("./WebGLRenderer-CYZnrh0q.js").then((e) => e.t);
 			n = t, r = {
 				...e,
@@ -105,7 +105,7 @@ async function le(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/app/ResizePlugin.mjs
-var N = class {
+var le = class {
 	static init(e) {
 		Object.defineProperty(this, "resizeTo", {
 			configurable: !0,
@@ -135,7 +135,7 @@ var N = class {
 		globalThis.removeEventListener("resize", this.queueResize), this._cancelResize(), this._cancelResize = null, this.queueResize = null, this.resizeTo = null, this.resize = null;
 	}
 };
-N.extension = _.Application;
+le.extension = _.Application;
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/app/TickerPlugin.mjs
 var ue = class {
@@ -164,7 +164,7 @@ var ue = class {
 		}
 	}
 };
-ue.extension = _.Application, m.add(N), m.add(ue);
+ue.extension = _.Application, m.add(le), m.add(ue);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/app/Application.mjs
 var de = class e {
@@ -172,7 +172,7 @@ var de = class e {
 		this.stage = new b(), e[0] !== void 0 && g(i, "Application constructor options are deprecated, please use Application.init() instead.");
 	}
 	async init(t) {
-		t = { ...t }, this.stage ||= new b(), this.renderer = await le(t), e._plugins.forEach((e) => {
+		t = { ...t }, this.stage ||= new b(), this.renderer = await ce(t), e._plugins.forEach((e) => {
 			e.init.call(this, t);
 		});
 	}
@@ -283,12 +283,12 @@ function ge(e, t, n) {
 	for (let r = 0, i = 4 * n * t; r < t; ++r, i += 4) if (e[i + 3] !== 0) return !1;
 	return !0;
 }
-function _e(e, t, n, r, i) {
+function I(e, t, n, r, i) {
 	let a = 4 * t;
 	for (let t = r, o = r * a + 4 * n; t <= i; ++t, o += a) if (e[o + 3] !== 0) return !1;
 	return !0;
 }
-function ve(...e) {
+function _e(...e) {
 	let t = e[0];
 	t.canvas || (t = {
 		canvas: e[0],
@@ -301,13 +301,13 @@ function ve(...e) {
 	for (; l < a && ge(s, i, l);) ++l;
 	if (l === a) return u.EMPTY;
 	for (; ge(s, i, f);) --f;
-	for (; _e(s, i, c, l, f);) ++c;
-	for (; _e(s, i, d, l, f);) --d;
+	for (; I(s, i, c, l, f);) ++c;
+	for (; I(s, i, d, l, f);) --d;
 	return ++d, ++f, F.globalCompositeOperation = "source-over", F.strokeRect(c, l, d - c, f - l), F.globalCompositeOperation = "copy", o ??= new u(), o.set(c / r, l / r, (d - c) / r, (f - l) / r), o;
 }
 //#endregion
 //#region node_modules/.pnpm/tiny-lru@11.4.7/node_modules/tiny-lru/dist/tiny-lru.js
-var ye = class {
+var ve = class {
 	constructor(e = 0, t = 0, n = !1) {
 		this.first = null, this.items = Object.create(null), this.last = null, this.max = e, this.resetTtl = n, this.size = 0, this.ttl = t;
 	}
@@ -393,26 +393,26 @@ var ye = class {
 		return t;
 	}
 };
-function be(e = 1e3, t = 0, n = !1) {
+function ye(e = 1e3, t = 0, n = !1) {
 	if (isNaN(e) || e < 0) throw TypeError("Invalid max value");
 	if (isNaN(t) || t < 0) throw TypeError("Invalid ttl value");
 	if (typeof n != "boolean") throw TypeError("Invalid resetTtl value");
-	return new ye(e, t, n);
+	return new ve(e, t, n);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/utils/parseTaggedText.mjs
-function xe(e) {
+function L(e) {
 	return !!e.tagStyles && Object.keys(e.tagStyles).length > 0;
 }
-function Se(e) {
+function R(e) {
 	return e.includes("<");
 }
-function Ce(e, t) {
+function be(e, t) {
 	return e.clone().assign(t);
 }
-function we(e, t) {
+function xe(e, t) {
 	let n = [], r = t.tagStyles;
-	if (!xe(t) || !Se(e)) return n.push({
+	if (!L(t) || !R(e)) return n.push({
 		text: e,
 		style: t
 	}), n;
@@ -450,7 +450,7 @@ function we(e, t) {
 						text: o,
 						style: i[i.length - 1]
 					}), o = "");
-					let e = i[i.length - 1], l = Ce(e, r[t]);
+					let e = i[i.length - 1], l = be(e, r[t]);
 					i.push(l), a.push(t), s = c + 1;
 					continue;
 				}
@@ -465,7 +465,7 @@ function we(e, t) {
 		style: i[i.length - 1]
 	}), n;
 }
-var Te = /* @__PURE__ */ new Set([10, 13]), Ee = /* @__PURE__ */ new Set([
+var Se = /* @__PURE__ */ new Set([10, 13]), Ce = /* @__PURE__ */ new Set([
 	9,
 	32,
 	8192,
@@ -480,48 +480,48 @@ var Te = /* @__PURE__ */ new Set([10, 13]), Ee = /* @__PURE__ */ new Set([
 	8202,
 	8287,
 	12288
-]), De = /* @__PURE__ */ new Set([
+]), we = /* @__PURE__ */ new Set([
 	45,
 	8208,
 	8211,
 	8212,
 	173
-]), Oe = /(\r\n|\r|\n)/, ke = /(?:\r\n|\r|\n)/;
-function I(e) {
-	return typeof e == "string" && Te.has(e.charCodeAt(0));
-}
-function L(e, t) {
-	return typeof e == "string" && Ee.has(e.charCodeAt(0));
-}
-function Ae(e) {
-	return typeof e == "string" && De.has(e.charCodeAt(0));
-}
-function R(e) {
-	return e === "normal" || e === "pre-line";
-}
+]), Te = /(\r\n|\r|\n)/, Ee = /(?:\r\n|\r|\n)/;
 function z(e) {
-	return e === "normal";
+	return typeof e == "string" && Se.has(e.charCodeAt(0));
 }
-function B(e) {
-	if (typeof e != "string") return "";
-	let t = e.length - 1;
-	for (; t >= 0 && L(e[t]);) t--;
-	return t < e.length - 1 ? e.slice(0, t + 1) : e;
+function B(e, t) {
+	return typeof e == "string" && Ce.has(e.charCodeAt(0));
+}
+function De(e) {
+	return typeof e == "string" && we.has(e.charCodeAt(0));
 }
 function V(e) {
+	return e === "normal" || e === "pre-line";
+}
+function H(e) {
+	return e === "normal";
+}
+function U(e) {
+	if (typeof e != "string") return "";
+	let t = e.length - 1;
+	for (; t >= 0 && B(e[t]);) t--;
+	return t < e.length - 1 ? e.slice(0, t + 1) : e;
+}
+function Oe(e) {
 	let t = [], n = [];
 	if (typeof e != "string") return t;
 	for (let r = 0; r < e.length; r++) {
 		let i = e[r], a = e[r + 1];
-		if (L(i, a) || I(i)) {
+		if (B(i, a) || z(i)) {
 			n.length > 0 && (t.push(n.join("")), n.length = 0), i === "\r" && a === "\n" ? (t.push("\r\n"), r++) : t.push(i);
 			continue;
 		}
-		n.push(i), Ae(i) && a && !L(a) && !I(a) && (t.push(n.join("")), n.length = 0);
+		n.push(i), De(i) && a && !B(a) && !z(a) && (t.push(n.join("")), n.length = 0);
 	}
 	return n.length > 0 && t.push(n.join("")), t;
 }
-function H(e, t, n, r) {
+function ke(e, t, n, r) {
 	let i = n(e), a = [];
 	for (let n = 0; n < i.length; n++) {
 		let o = i[n], s = o, c = 1;
@@ -536,19 +536,19 @@ function H(e, t, n, r) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/utils/measureTaggedText.mjs
-var je = /\r\n|\r|\n/g;
-function Me(e, t, n, r, i, a, o, s, c) {
-	let l = we(e, t);
-	if (z(t.whiteSpace)) for (let e = 0; e < l.length; e++) {
+var Ae = /\r\n|\r|\n/g;
+function je(e, t, n, r, i, a, o, s, c) {
+	let l = xe(e, t);
+	if (H(t.whiteSpace)) for (let e = 0; e < l.length; e++) {
 		let t = l[e];
 		l[e] = {
-			text: t.text.replace(je, " "),
+			text: t.text.replace(Ae, " "),
 			style: t.style
 		};
 	}
 	let u = [], d = [];
 	for (let e of l) {
-		let t = e.text.split(Oe);
+		let t = e.text.split(Te);
 		for (let n = 0; n < t.length; n++) {
 			let r = t[n];
 			r === "\r\n" || r === "\r" || r === "\n" ? (u.push(d), d = []) : r.length > 0 && d.push({
@@ -558,7 +558,7 @@ function Me(e, t, n, r, i, a, o, s, c) {
 		}
 	}
 	(d.length > 0 || u.length === 0) && u.push(d);
-	let f = n ? Ne(u, t, r, a, s, c) : u, p = [], m = [], h = [], g = [], _ = [], v = 0, y = t._fontString, b = o(y);
+	let f = n ? Me(u, t, r, a, s, c) : u, p = [], m = [], h = [], g = [], _ = [], v = 0, y = t._fontString, b = o(y);
 	b.fontSize === 0 && (b.fontSize = t.fontSize, b.ascent = t.fontSize);
 	let x = "", S = !!t.dropShadow, C = t._stroke?.width || 0;
 	for (let e of f) {
@@ -592,8 +592,8 @@ function Me(e, t, n, r, i, a, o, s, c) {
 		hasDropShadow: S
 	};
 }
-function Ne(e, t, n, r, i, a) {
-	let { letterSpacing: o, whiteSpace: s, wordWrapWidth: c, breakWords: l } = t, u = R(s), d = c + o, f = {}, p = "", m = (e, t) => {
+function Me(e, t, n, r, i, a) {
+	let { letterSpacing: o, whiteSpace: s, wordWrapWidth: c, breakWords: l } = t, u = V(s), d = c + o, f = {}, p = "", m = (e, t) => {
 		let i = `${e}|${t.styleKey}`, a = f[i];
 		if (a === void 0) {
 			let o = t._fontString;
@@ -602,7 +602,7 @@ function Ne(e, t, n, r, i, a) {
 		return a;
 	}, h = [];
 	for (let t of e) {
-		let e = Pe(t), n = h.length, r = (t) => {
+		let e = Ne(t), n = h.length, r = (t) => {
 			let n = 0, r = t;
 			do {
 				let { token: t, style: i } = e[r];
@@ -623,14 +623,14 @@ function Ne(e, t, n, r, i, a) {
 		}, _ = () => {
 			if (g(), s.length > 0) {
 				let e = s[s.length - 1];
-				e.text = B(e.text), e.text.length === 0 && s.pop();
+				e.text = U(e.text), e.text.length === 0 && s.pop();
 			}
 			h.push(s), s = [], c = 0, f = !1;
 		};
 		for (let t = 0; t < e.length; t++) {
 			let { token: n, style: v, continuesFromPrevious: y } = e[t], b = m(n, v);
 			if (u) {
-				let e = L(n), t = p?.text[p.text.length - 1] ?? s[s.length - 1]?.text.slice(-1) ?? "", r = t ? L(t) : !1;
+				let e = B(n), t = p?.text[p.text.length - 1] ?? s[s.length - 1]?.text.slice(-1) ?? "", r = t ? B(t) : !1;
 				if (e && r) continue;
 			}
 			let x = !y, S = x ? r(t) : b;
@@ -638,7 +638,7 @@ function Ne(e, t, n, r, i, a) {
 				if (c > 0 && _(), l) {
 					let e = o(t);
 					for (let t = 0; t < e.length; t++) {
-						let n = e[t].token, r = e[t].style, o = H(n, l, a, i);
+						let n = e[t].token, r = e[t].style, o = ke(n, l, a, i);
 						for (let e of o) {
 							let t = m(e, r);
 							t + c > d && _(), !p || p.style !== r ? (g(), p = {
@@ -656,7 +656,7 @@ function Ne(e, t, n, r, i, a) {
 					}))), f = !1, t += e.length - 1;
 				}
 			} else if (S + c > d && x) {
-				if (L(n)) {
+				if (B(n)) {
 					f = !1;
 					continue;
 				}
@@ -669,7 +669,7 @@ function Ne(e, t, n, r, i, a) {
 				style: v
 			}) : p.text += n, c += b;
 			else {
-				let e = L(n);
+				let e = B(n);
 				if (c === 0 && e && !f) continue;
 				!p || p.style !== v ? (g(), p = {
 					text: n,
@@ -679,18 +679,18 @@ function Ne(e, t, n, r, i, a) {
 		}
 		if (g(), s.length > 0) {
 			let e = s[s.length - 1];
-			e.text = B(e.text), e.text.length === 0 && s.pop();
+			e.text = U(e.text), e.text.length === 0 && s.pop();
 		}
 		(s.length > 0 || h.length === n) && h.push(s);
 	}
 	return h;
 }
-function Pe(e) {
+function Ne(e) {
 	let t = [], n = !1;
 	for (let r of e) {
-		let e = V(r.text), i = !0;
+		let e = Oe(r.text), i = !0;
 		for (let a of e) {
-			let e = L(a) || I(a), o = i && n && !e;
+			let e = B(a) || z(a), o = i && n && !e;
 			t.push({
 				token: a,
 				style: r.style,
@@ -702,40 +702,40 @@ function Pe(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/utils/wordWrap.mjs
-var Fe = { willReadFrequently: !0 };
-function U(e, t, n, r, i) {
+var Pe = { willReadFrequently: !0 };
+function Fe(e, t, n, r, i) {
 	let a = n[e];
 	return typeof a != "number" && (a = i(e, t, r) + t, n[e] = a), a;
 }
 function Ie(e, t, n, r, i, a, o) {
-	let s = n.getContext("2d", Fe);
+	let s = n.getContext("2d", Pe);
 	s.font = t._fontString;
-	let c = 0, l = "", u = [], d = /* @__PURE__ */ Object.create(null), { letterSpacing: f, whiteSpace: p } = t, m = R(p), h = z(p), g = !m, _ = t.wordWrapWidth + f, v = V(e);
+	let c = 0, l = "", u = [], d = /* @__PURE__ */ Object.create(null), { letterSpacing: f, whiteSpace: p } = t, m = V(p), h = H(p), g = !m, _ = t.wordWrapWidth + f, v = Oe(e);
 	for (let e = 0; e < v.length; e++) {
 		let n = v[e];
-		if (I(n)) {
+		if (z(n)) {
 			if (!h) {
-				u.push(B(l)), g = !m, l = "", c = 0;
+				u.push(U(l)), g = !m, l = "", c = 0;
 				continue;
 			}
 			n = " ";
 		}
 		if (m) {
-			let e = L(n), t = L(l[l.length - 1]);
+			let e = B(n), t = B(l[l.length - 1]);
 			if (e && t) continue;
 		}
-		let p = U(n, f, d, s, r);
+		let p = Fe(n, f, d, s, r);
 		if (p > _) {
-			if (l !== "" && (u.push(B(l)), l = "", c = 0), i(n, t.breakWords)) {
-				let e = H(n, t.breakWords, o, a);
+			if (l !== "" && (u.push(U(l)), l = "", c = 0), i(n, t.breakWords)) {
+				let e = ke(n, t.breakWords, o, a);
 				for (let t of e) {
-					let e = U(t, f, d, s, r);
-					e + c > _ && (u.push(B(l)), g = !1, l = "", c = 0), l += t, c += e;
+					let e = Fe(t, f, d, s, r);
+					e + c > _ && (u.push(U(l)), g = !1, l = "", c = 0), l += t, c += e;
 				}
-			} else l.length > 0 && (u.push(B(l)), l = "", c = 0), u.push(B(n)), g = !1, l = "", c = 0;
-		} else p + c > _ && (g = !1, u.push(B(l)), l = "", c = 0), (l.length > 0 || !L(n) || g) && (l += n, c += p);
+			} else l.length > 0 && (u.push(U(l)), l = "", c = 0), u.push(U(n)), g = !1, l = "", c = 0;
+		} else p + c > _ && (g = !1, u.push(U(l)), l = "", c = 0), (l.length > 0 || !B(n) || g) && (l += n, c += p);
 	}
-	let y = B(l);
+	let y = U(l);
 	return y.length > 0 && u.push(y), u.join("\n");
 }
 //#endregion
@@ -755,8 +755,8 @@ var Le = { willReadFrequently: !0 }, W = class e {
 	static measureText(t = " ", n, r = e._canvas, i = n.wordWrap) {
 		let a = `${t}-${n.styleKey}-wordWrap-${i}`;
 		if (e._measurementCache.has(a)) return e._measurementCache.get(a);
-		if (xe(n) && Se(t)) {
-			let r = Me(t, n, i, e._context, e._measureText, e._measureTextAdvance, e.measureFont, e.canBreakChars, e.wordWrapSplit), o = new e(t, n, r.width, r.height, r.lines, r.lineWidths, r.lineHeight, r.maxLineWidth, r.fontProperties, {
+		if (L(n) && R(t)) {
+			let r = je(t, n, i, e._context, e._measureText, e._measureTextAdvance, e.measureFont, e.canBreakChars, e.wordWrapSplit), o = new e(t, n, r.width, r.height, r.lines, r.lineWidths, r.lineHeight, r.maxLineWidth, r.fontProperties, {
 				runsByLine: r.runsByLine,
 				lineAscents: r.lineAscents,
 				lineDescents: r.lineDescents,
@@ -769,7 +769,7 @@ var Le = { willReadFrequently: !0 }, W = class e {
 		s.fontSize === 0 && (s.fontSize = n.fontSize, s.ascent = n.fontSize, s.descent = 0);
 		let c = e._context;
 		c.font = o;
-		let l = (i ? e._wordWrap(t, n, r) : t).split(ke), u = Array(l.length), d = 0;
+		let l = (i ? e._wordWrap(t, n, r) : t).split(Ee), u = Array(l.length), d = 0;
 		for (let t = 0; t < l.length; t++) {
 			let r = e._measureText(l[t], n.letterSpacing, c);
 			u[t] = r, d = Math.max(d, r);
@@ -806,7 +806,7 @@ var Le = { willReadFrequently: !0 }, W = class e {
 		return Ie(t, n, r, e._measureTextAdvance, e.canBreakWords, e.canBreakChars, e.wordWrapSplit);
 	}
 	static isBreakingSpace(e, t) {
-		return L(e, t);
+		return B(e, t);
 	}
 	static canBreakWords(e, t) {
 		return t;
@@ -859,7 +859,7 @@ W.METRICS_STRING = "|ÉqÅ", W.BASELINE_SYMBOL = "M", W.BASELINE_MULTIPLIER = 1.
 		};
 	}
 	return (e) => [...e];
-})(), W.experimentalLetterSpacing = !1, W._fonts = {}, W._measurementCache = be(1e3);
+})(), W.experimentalLetterSpacing = !1, W._fonts = {}, W._measurementCache = ye(1e3);
 var G = W, Re = [
 	"serif",
 	"sans-serif",
@@ -886,11 +886,11 @@ function q(n, i, a, s = 0, c = 0, l = 0) {
 		let t = i.createPattern(n.texture.source.resource, "repeat"), r = n.matrix.copyTo(e.shared);
 		return r.scale(n.texture.source.pixelWidth, n.texture.source.pixelHeight), t.setTransform(r), t;
 	}
-	if (n.fill instanceof O) {
+	if (n.fill instanceof k) {
 		let e = n.fill, t = i.createPattern(e.texture.source.resource, "repeat");
 		return C.applyPatternTransform(t, e.transform, !1), t;
 	}
-	if (n.fill instanceof A) {
+	if (n.fill instanceof j) {
 		let e = n.fill, t = e.type === "linear", r = e.textureSpace === "local", u = 1, d = 1;
 		r && a && (u = a.width + s, d = a.height + s);
 		let f, p = !1;
@@ -927,10 +927,10 @@ function J(e) {
 }
 var Y = new class {
 	getCanvasAndContext(e) {
-		let { text: t, style: n, resolution: r = 1 } = e, i = n._getFinalPadding(), a = G.measureText(t || " ", n), o = Math.ceil(Math.ceil(Math.max(1, a.width) + i * 2) * r), s = Math.ceil(Math.ceil(Math.max(1, a.height) + i * 2) * r), c = re.getOptimalCanvasAndContext(o, s);
+		let { text: t, style: n, resolution: r = 1 } = e, i = n._getFinalPadding(), a = G.measureText(t || " ", n), o = Math.ceil(Math.ceil(Math.max(1, a.width) + i * 2) * r), s = Math.ceil(Math.ceil(Math.max(1, a.height) + i * 2) * r), c = ne.getOptimalCanvasAndContext(o, s);
 		return this._renderTextToCanvas(n, i, r, c, a), {
 			canvasAndContext: c,
-			frame: n.trim ? ve({
+			frame: n.trim ? _e({
 				canvas: c.canvas,
 				width: o,
 				height: s,
@@ -940,7 +940,7 @@ var Y = new class {
 		};
 	}
 	returnCanvasAndContext(e) {
-		re.returnCanvasAndContext(e);
+		ne.returnCanvasAndContext(e);
 	}
 	_renderTextToCanvas(e, t, n, r, i) {
 		if (i.runsByLine && i.runsByLine.length > 0) {
@@ -1235,22 +1235,22 @@ var Y = new class {
 	}
 	set fill(e) {
 		e !== this._originalFill && (this._originalFill = e, this._isFillStyle(e) && (this._originalFill = this._createProxy({
-			...k.defaultFillStyle,
+			...A.defaultFillStyle,
 			...e
 		}, () => {
-			this._fill = ne({ ...this._originalFill }, k.defaultFillStyle);
-		})), this._fill = ne(e === 0 ? "black" : e, k.defaultFillStyle), this.update());
+			this._fill = O({ ...this._originalFill }, A.defaultFillStyle);
+		})), this._fill = O(e === 0 ? "black" : e, A.defaultFillStyle), this.update());
 	}
 	get stroke() {
 		return this._originalStroke;
 	}
 	set stroke(e) {
 		e !== this._originalStroke && (this._originalStroke = e, this._isFillStyle(e) && (this._originalStroke = this._createProxy({
-			...k.defaultStrokeStyle,
+			...A.defaultStrokeStyle,
 			...e
 		}, () => {
-			this._stroke = te({ ...this._originalStroke }, k.defaultStrokeStyle);
-		})), this._stroke = te(e, k.defaultStrokeStyle), this.update());
+			this._stroke = D({ ...this._originalStroke }, A.defaultStrokeStyle);
+		})), this._stroke = D(e, A.defaultStrokeStyle), this.update());
 	}
 	get tagStyles() {
 		return this._tagStyles;
@@ -1322,7 +1322,7 @@ var Y = new class {
 		return new Proxy(e, { set: (e, n, r) => e[n] === r || (e[n] = r, t?.(n, r), this.update(), !0) });
 	}
 	_isFillStyle(e) {
-		return (e ?? null) !== null && !(o.isColorLike(e) || e instanceof A || e instanceof O);
+		return (e ?? null) !== null && !(o.isColorLike(e) || e instanceof j || e instanceof k);
 	}
 };
 X.defaultDropShadow = {
@@ -1369,7 +1369,7 @@ function Ve(e) {
 		g(i, "strokeThickness is now a part of stroke");
 		let n = t.stroke, r = {};
 		if (o.isColorLike(n)) r.color = n;
-		else if (n instanceof A || n instanceof O) r.fill = n;
+		else if (n instanceof j || n instanceof k) r.fill = n;
 		else if (Object.hasOwnProperty.call(n, "color") || Object.hasOwnProperty.call(n, "fill")) r = n;
 		else throw Error("Invalid stroke value.");
 		e.stroke = {
@@ -1380,7 +1380,7 @@ function Ve(e) {
 	if (Array.isArray(t.fillGradientStops)) {
 		if (g(i, "gradient fill is now a fill pattern: `new FillGradient(...)`"), !Array.isArray(t.fill) || t.fill.length === 0) throw Error("Invalid fill value. Expected an array of colors for gradient fill.");
 		t.fill.length !== t.fillGradientStops.length && r("The number of fill colors must match the number of fill gradient stops.");
-		let n = new A({
+		let n = new j({
 			start: {
 				x: 0,
 				y: 0
@@ -1591,40 +1591,40 @@ var Je = class extends pe {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/index.mjs
-m.add(ie, ae);
+m.add(re, ie);
 //#endregion
 //#region src/arena/pet-texture.ts
-var Q = /^#[0-9a-f]{6}$/i, Ye = /* @__PURE__ */ new Set([
+var Ye = /^#[0-9a-f]{6}$/i, Xe = /* @__PURE__ */ new Set([
 	"none",
 	"bandana",
 	"visor",
 	"crown",
 	"headphones",
 	"cape"
-]), Xe = /* @__PURE__ */ new Set([
+]), Ze = /* @__PURE__ */ new Set([
 	"focused",
 	"happy",
 	"fierce",
 	"sleepy"
 ]);
-function Ze(e, t = "#38bdf8") {
+function Qe(e, t = "#38bdf8") {
 	let n = e || {};
 	return {
 		name: String(n.name || "").slice(0, 24),
 		species: String(n.species || "emberrat").replace(/[^a-z0-9_-]/gi, "").slice(0, 32) || "emberrat",
-		color: Q.test(n.color || "") ? n.color : t,
-		accent: Q.test(n.accent || "") ? n.accent : "#ffffff",
+		color: Ye.test(n.color || "") ? n.color : t,
+		accent: Ye.test(n.accent || "") ? n.accent : "#ffffff",
 		trail: [
 			"none",
 			"dust",
 			"spark",
 			"rainbow"
 		].includes(n.trail || "") ? n.trail : "none",
-		accessory: Ye.has(n.accessory) ? n.accessory : "none",
-		expression: Xe.has(n.expression) ? n.expression : "focused"
+		accessory: Xe.has(n.accessory) ? n.accessory : "none",
+		expression: Ze.has(n.expression) ? n.expression : "focused"
 	};
 }
-function Qe(e, t, n) {
+function $e(e, t, n) {
 	return t ? "win" : e && [
 		"surge",
 		"stumble",
@@ -1635,8 +1635,8 @@ function Qe(e, t, n) {
 }
 //#endregion
 //#region src/arena/viewport.ts
-function $e(e, t) {
-	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * (i ? .19 : a ? .18 : .2), s = r * (i ? .83 : a ? .84 : .82), c = n * (i ? .06 : .045), l = n * (i ? .94 : .955), u = s - o, d = Math.min(n / 1050, r / 690), f = u / 12 / 58 * 1.45, p = Math.max(.42, Math.min(1.45, d * 1.12, f));
+function et(e, t) {
+	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * .1, s = r * .9, c = n * .03, l = n * .91, u = s - o, d = (!i && r <= 600 ? 56 : n <= 640 ? 68 : 88) / 72;
 	return {
 		width: n,
 		height: r,
@@ -1648,20 +1648,20 @@ function $e(e, t) {
 		trackLeft: c,
 		trackRight: l,
 		trackWidth: l - c,
-		actorScale: p
+		actorScale: d
 	};
 }
-function et(e, t, n) {
+function tt(e, t, n) {
 	let r = Math.max(1, n), i = Math.max(0, Math.min(r - 1, t));
 	return e.laneTop + e.laneHeight * ((i + .5) / r);
 }
-function tt(e, t) {
+function nt(e, t) {
 	let n = Math.max(0, Math.min(1, t));
 	return e.trackLeft + e.trackWidth * n;
 }
 //#endregion
 //#region js/arena/dfl-sprites.js
-var $ = [
+var Q = [
 	{
 		id: "emberrat",
 		label: "Emberrat",
@@ -2203,262 +2203,191 @@ var $ = [
 		]
 	}
 ];
-new Map($.map((e) => [e.id, e]));
+new Map(Q.map((e) => [e.id, e]));
 //#endregion
 //#region src/arena/pixi-stage.ts
-var nt = 6667500, rt = 3112501, it = 16777215, at = 12118271, ot = class {
+var $ = 3, rt = class {
 	app = new fe();
 	scenery = new b({ label: "scenery" });
 	course = new b({ label: "course" });
 	actors = new b({ label: "racers" });
 	effects = new b({ label: "effects" });
 	overlay = new b({ label: "overlay" });
-	#e = new D({ label: "sky" });
-	#t = new D({ label: "parallax" });
-	#n = new D({ label: "track" });
-	#r = new D({ label: "lane-lines" });
-	#i = new D({ label: "finish-line" });
-	#a = new D({ label: "speed-lines" });
-	#o = new D({ label: "leaderboard-panel" });
-	#s = new Je({
+	#e = new te({ label: "legacy-feature-set" });
+	#t = new Je({
 		text: "",
 		style: {
 			fill: 16777215,
 			fontFamily: "monospace",
-			fontSize: 12,
-			lineHeight: 16
+			fontSize: 12
 		}
 	});
-	#c = new Je({
-		text: "",
-		style: {
-			fill: 16777215,
-			fontFamily: "sans-serif",
-			fontSize: 56,
-			fontWeight: "900",
-			align: "center",
-			stroke: {
-				color: 463142,
-				width: 7
-			}
-		}
-	});
-	#l = null;
-	#u = $e(1280, 720);
-	#d = [];
-	#f = /* @__PURE__ */ new Map();
-	#p = null;
+	#n = null;
+	#r = et(1280, 720);
+	#i = [];
+	#a = /* @__PURE__ */ new Map();
+	#o = null;
+	#s = null;
 	async mount(e) {
-		this.#l = e, await this.app.init({
+		this.#n = e, await this.app.init({
 			resizeTo: e,
 			backgroundAlpha: 0,
-			antialias: !0,
+			antialias: !1,
 			autoDensity: !0,
 			resolution: Math.min(window.devicePixelRatio || 1, 2),
 			preference: "webgl"
-		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e, this.#t), this.course.addChild(this.#n, this.#r, this.#i), this.effects.addChild(this.#a), this.overlay.addChild(this.#o, this.#s, this.#c), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.resize();
+		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e), this.overlay.addChild(this.#t), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.resize(), typeof ResizeObserver == "function" && (this.#s = new ResizeObserver(() => this.resize()), this.#s.observe(e));
 	}
 	async setRacers(e) {
-		this.#d = e, this.#f.clear(), this.actors.removeChildren();
+		this.#i = e, this.#a.clear(), this.actors.removeChildren();
 		for (let t of e) {
 			let e = new b({ label: `racer-${t.id}` });
 			e.eventMode = "none";
-			let n = Ze(t.pet, t.color), r = new D({ label: `trail-${n.trail}` }), i = new D().ellipse(0, 13, 22, 7).fill({
-				color: 0,
-				alpha: .34
-			}), a = this.#v(n);
-			a.label = `pet-${n.species}`, e.addChild(r, i, a), this.#f.set(t.id, {
+			let n = Qe(t.pet, t.color), r = this.#l(n), i = new b({ label: `pet-${n.species}` });
+			i.addChild(...r), e.addChild(i), this.#a.set(t.id, {
 				root: e,
-				sprite: a,
-				trail: r,
-				trailKind: n.trail,
-				accent: this.#y(n.accent)
+				art: i,
+				frames: r
 			}), this.actors.addChild(e);
 		}
-		this.#m();
 	}
 	render(e) {
-		this.#p = e;
-		let t = e.state === "running" ? Math.min(1, e.heat / 3) : 0;
-		this.#h(e.elapsedMs, t), this.#g(e);
-		for (let t of e.racers) {
-			let n = this.#f.get(t.id);
-			if (!n) continue;
-			let r = Qe(t.reaction, t.finished, e.state), i = Math.sin(e.elapsedMs * (r === "surge" ? .035 : .022) + t.lane);
-			n.root.x = tt(this.#u, t.progress), n.root.y = et(this.#u, t.lane, this.#d.length);
-			let a = .82 + (this.#d.length > 1 ? t.lane / (this.#d.length - 1) : .5) * .28;
-			n.root.scale.set(this.#u.actorScale * a * (t.leading ? 1.1 : 1)), n.root.rotation = r === "stumble" ? -.18 : r === "jump" ? i * .1 : i * .035, n.root.alpha = e.state === "idle" ? .9 : 1;
-			let o = Math.sin(e.elapsedMs * .006 + t.lane * 2.7);
-			n.sprite.y = r === "run" || r === "surge" ? -Math.abs(i) * (r === "surge" ? 11 : 6) - Math.max(0, o - .82) * 22 : r === "jump" ? -14 : r === "win" ? -Math.abs(i) * 10 : 0, n.sprite.scale.x = r === "stumble" ? 1.22 : r === "surge" ? 1.18 : 1 + Math.abs(i) * .08, n.sprite.scale.y = r === "stumble" ? .68 : r === "jump" ? 1.18 : 1 - Math.abs(i) * .06, this.#_(n, e.elapsedMs, r !== "idle");
+		this.#o = e;
+		let t = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? !1;
+		for (let n of e.racers) {
+			let r = this.#a.get(n.id);
+			if (!r) continue;
+			let i = n.finished && n.id === e.winnerId ? "win" : n.finished ? "idle" : $e(n.reaction, !1, e.state), a = this.#c(e.elapsedMs, n.lane, e.heat, i);
+			r.root.position.set(nt(this.#r, n.progress), tt(this.#r, n.lane, this.#i.length)), r.root.scale.set(this.#r.actorScale), r.root.rotation = 0, r.root.alpha = 1, r.art.position.set(a.x, t ? 0 : a.y), r.art.scale.set(t ? 1 : a.scale), r.art.rotation = t ? 0 : a.rotation;
+			let o = i === "surge" || i === "duel" ? 260 : i === "stumble" ? 900 : i === "win" || this.#r.width >= 801 ? 380 : 620, s = !t && Math.floor(e.elapsedMs / o) % 2 == 1;
+			r.frames[0].visible = !s, r.frames[1].visible = s;
 		}
-		let n = e.state === "running" ? t * Math.sin(e.elapsedMs * .055) * 2.2 : 0;
-		this.course.y = n, this.actors.y = -n * .35;
 	}
 	resize() {
-		this.app.resize(), this.#u = $e(this.app.screen.width, this.app.screen.height), this.#m(), this.#p && this.render(this.#p);
+		this.#n && (this.app.resize(), this.#r = et(this.app.screen.width, this.app.screen.height), this.#o && this.render(this.#o));
 	}
 	destroy() {
-		this.#f.clear(), this.#d = [], this.#p = null, this.app.destroy(!0, { children: !0 }), this.#l = null;
+		this.#s?.disconnect(), this.#s = null, this.#a.clear(), this.#i = [], this.#o = null, this.app.destroy(!0, { children: !0 }), this.#n = null;
 	}
-	#m() {
-		let e = this.#u;
-		this.#e.clear().rect(0, 0, e.width, e.height).fill(nt), this.#t.clear();
-		for (let t = -1; t < 8; t++) {
-			let n = t * e.width / 6;
-			this.#t.poly([
-				n,
-				e.laneTop,
-				n + e.width / 12,
-				e.laneTop - e.height * .16,
-				n + e.width / 6,
-				e.laneTop
-			]).fill({
-				color: 5084752,
-				alpha: .82
-			});
-		}
-		this.#t.rect(0, e.laneTop - e.height * .025, e.width, e.height * .025).fill({
-			color: 13628671,
-			alpha: .55
-		}), this.#t.rect(0, e.laneBottom, e.width, e.height - e.laneBottom).fill({
-			color: 1587487,
-			alpha: .9
-		}), this.#n.clear().rect(0, e.laneTop, e.width, e.laneHeight).fill(rt), this.#r.clear();
-		let t = Math.max(1, this.#d.length);
-		for (let n = 1; n < t; n++) {
-			let r = e.laneTop + e.laneHeight * (n / t);
-			this.#r.moveTo(0, r).lineTo(e.width, r).stroke({
-				color: it,
-				alpha: .035,
-				width: 1
-			});
-		}
-		this.#i.clear();
-		let n = Math.max(7, Math.min(16, e.width / 72));
-		for (let t = 0; t < Math.ceil(e.laneHeight / n); t++) for (let r = 0; r < 2; r++) this.#i.rect(e.trackRight - n + r * n, e.laneTop + t * n, n, n).fill({
-			color: (t + r) % 2 ? 16777215 : 1120295,
-			alpha: .95
-		});
+	#c(e, t, n, r) {
+		let i = 1 + Math.max(0, Math.min(3, n)) * .16, a = Math.sin(e * .015 * i + t * .7);
+		return r === "surge" || r === "duel" ? {
+			x: 0,
+			y: -2 - a,
+			scale: 1.07 + a * .01,
+			rotation: a * Math.PI / 90
+		} : r === "stumble" ? {
+			x: a < 0 ? -2 : 1,
+			y: 0,
+			scale: 1,
+			rotation: a * Math.PI / 30
+		} : r === "jump" ? {
+			x: 0,
+			y: -1 - Math.abs(a) * 3,
+			scale: 1.06 + Math.abs(a) * .06,
+			rotation: -Math.abs(a) * Math.PI / 60
+		} : r === "win" ? {
+			x: 0,
+			y: -Math.abs(a) * 7,
+			scale: 1 + Math.abs(a) * .12,
+			rotation: 0
+		} : r === "run" ? {
+			x: 0,
+			y: -Math.abs(a) * 2,
+			scale: 1,
+			rotation: a * Math.PI / 120
+		} : {
+			x: 0,
+			y: -.75 - a * .75,
+			scale: 1,
+			rotation: 0
+		};
 	}
-	#h(e, t) {
-		let n = this.#u;
-		this.#t.x = -(e * (.018 + t * .035) % (n.width / 6));
-		let r = e * (.28 + t * .72) % Math.max(1, n.width);
-		this.#a.clear();
-		let i = Math.round(10 + t * 22);
-		for (let e = 0; e < i; e++) {
-			let i = (e * 97.3 % n.width - r + n.width) % n.width, a = n.laneTop + e * 53 % Math.max(1, n.laneHeight), o = 22 + e % 5 * 18 + t * 90;
-			this.#a.moveTo(i, a).lineTo(i - o, a).stroke({
-				color: at,
-				alpha: .08 + t * .22,
-				width: 1 + t * 2
-			});
-		}
+	#l(e) {
+		let t = 0;
+		for (let n of e.species) t = Math.imul(t, 31) + n.charCodeAt(0) >>> 0;
+		let n = Q.find((t) => t.id === e.species) || Q[t % Q.length];
+		return [this.#u(n.px, n.palette, e), this.#u(this.#f(n.px), n.palette, e)];
 	}
-	#g(e) {
-		let t = this.#u, n = new Map(this.#d.map((e) => [e.id, e])), r = [...e.racers].sort((e, t) => Number(t.finished) - Number(e.finished) || t.progress - e.progress || e.lane - t.lane), i = Math.min(t.portrait ? 148 : 190, t.width * .34), a = t.compact ? 9 : 11, o = t.compact ? 12 : 15;
-		this.#o.clear().roundRect(8, 8, i, 12 * o + 32, 10).fill({
-			color: 397351,
-			alpha: .72
-		}).stroke({
-			color: 9157887,
-			alpha: .3,
-			width: 1
-		}), this.#s.style.fontSize = a, this.#s.style.lineHeight = o, this.#s.x = 17, this.#s.y = 16, this.#s.text = ["LIVE ORDER", ...r.slice(0, 12).map((e, r) => {
-			let i = n.get(e.id)?.name || `Racer ${e.lane + 1}`;
-			return `${String(r + 1).padStart(2, " ")}  ${i.slice(0, t.portrait ? 12 : 17)}`;
-		})].join("\n");
-		let s = "";
-		if ((e.countdownMs || 0) > 0) s = String(Math.max(1, Math.ceil(e.countdownMs / 1e3)));
-		else if (e.state === "paused") s = "PAUSED";
-		else if (e.state === "idle") s = "RACE OPEN";
-		else if (e.state === "finished") {
-			let t = n.get(e.winnerId ?? r[0]?.id ?? "");
-			s = t ? `${t.name.toUpperCase()} WINS!` : "FINISH!";
-		}
-		this.#c.text = s, this.#c.style.fontSize = t.portrait ? 34 : t.compact ? 40 : 56, this.#c.anchor.set(.5), this.#c.x = t.width * .5, this.#c.y = t.height * (t.portrait ? .07 : .08);
-	}
-	#_(e, t, n) {
-		if (e.trail.clear(), !n || e.trailKind === "none") return;
-		let r = .65 + Math.sin(t * .02) * .2;
-		if (e.trailKind === "dust") for (let t = 0; t < 3; t++) e.trail.circle(-22 - t * 10, 8 + t % 2 * 5, 4 + t).fill({
-			color: 13149291,
-			alpha: r * (.55 - t * .1)
-		});
-		else if (e.trailKind === "spark") for (let t = 0; t < 4; t++) e.trail.star(-20 - t * 11, t % 2 * 8, 4, 5, 2).fill({
-			color: e.accent,
-			alpha: r * (.8 - t * .12)
-		});
-		else e.trailKind === "rainbow" && [
-			16731501,
-			16765286,
-			6547134,
-			5090295,
-			11638780
-		].forEach((t, n) => e.trail.moveTo(-16, -8 + n * 4).lineTo(-70, -8 + n * 4).stroke({
-			color: t,
-			alpha: r * .75,
-			width: 3
-		}));
-	}
-	#v(e) {
-		let t = this.#y(e.color), n = this.#y(e.accent), r = 0;
-		for (let t of e.species) r = Math.imul(r, 31) + t.charCodeAt(0) >>> 0;
-		let i = $.find((t) => t.id === e.species) || $[r % $.length], a = new D({ label: `pet-body-${e.species}` }), o = i.palette;
-		for (let n = 0; n < i.px.length; n++) {
-			let r = i.px[n];
-			for (let i = 0; i < r.length; i++) {
-				let s = r[i];
-				if (s === ".") continue;
-				let c = s === "L" ? t : this.#y(o[s] || e.accent);
-				a.rect((i - 12) * 3, (n - 8) * 3, 3, 3).fill(c);
+	#u(e, t, n) {
+		let r = this.#p(n.color), i = this.#p(n.accent), a = new te(), o = (e, t, n) => a.rect((e - 12) * $, (t - 15 / 2) * $, $, $).fill(n);
+		return e.forEach((e, i) => {
+			for (let a = 0; a < e.length; a++) {
+				let s = e[a];
+				s !== "." && s !== " " && o(a, i, s === "L" ? r : this.#p(t[s] || n.color));
 			}
-		}
-		let s = (e, t, r = n) => a.rect((e - 12) * 3, (t - 8) * 3, 3, 3).fill(r);
-		if (e.accessory === "crown") s(9, 1), s(10, 0), s(11, 1), s(12, -1), s(13, 1), s(14, 0);
-		else if (e.accessory === "visor") for (let e = 7; e <= 16; e++) s(e, 6);
-		else if (e.accessory === "bandana") for (let e = 6; e <= 17; e++) s(e, 10);
-		else if (e.accessory === "cape") for (let e = 8; e <= 14; e++) s(4, e), e > 10 && s(3, e);
-		else if (e.accessory === "headphones") for (let e = 4; e <= 9; e++) s(5, e), s(18, e);
-		return a;
+		}), this.#d(o, n, i), a;
 	}
-	#y(e) {
+	#d(e, t, n) {
+		let r = (t, r, i, a = n) => {
+			for (let n = t; n <= r; n++) e(n, i, a);
+		};
+		if (t.accessory === "bandana") r(6, 17, 8), r(6, 17, 9), r(17, 19, 10), r(17, 19, 11);
+		else if (t.accessory === "visor") r(7, 17, 4), r(7, 17, 5), r(17, 19, 6);
+		else if (t.accessory === "crown") {
+			r(8, 9, 1), r(12, 13, 1), r(16, 17, 1), r(8, 9, 2), r(12, 13, 2), r(16, 17, 2);
+			for (let e = 3; e <= 5; e++) r(8, 17, e);
+		} else if (t.accessory === "headphones") {
+			r(8, 17, 2), r(8, 17, 3);
+			for (let e = 4; e <= 8; e++) r(6, 7, e), r(18, 19, e);
+		} else if (t.accessory === "cape") {
+			for (let e = 7; e <= 10; e++) r(4, 6, e);
+			for (let e = 11; e <= 12; e++) r(2, 6, e);
+		}
+		let i = 1513759;
+		t.expression === "happy" ? (e(10, 6, i), e(15, 6, i), r(12, 14, 9, i)) : t.expression === "fierce" ? (r(9, 11, 6, i), r(14, 16, 6, i), r(12, 14, 9, i)) : t.expression === "sleepy" && (r(9, 11, 7, i), r(14, 16, 7, i));
+	}
+	#f(e) {
+		return e.map((e, t) => t < 9 ? e : t % 2 ? `.${e.slice(0, 23)}` : `${e.slice(1)}.`);
+	}
+	#p(e) {
 		let t = Number.parseInt(e.replace("#", ""), 16);
 		return Number.isFinite(t) ? t : 3718648;
 	}
 };
 //#endregion
 //#region src/arena/runtime.ts
-async function st(e, t) {
+async function it(e, t) {
 	if (!e) return null;
-	let n = Array.from(e.children), r = new Map(n.map((e) => [e, e.style.visibility])), i = document.createElement("div");
-	i.className = "arena-pixi-host", Object.assign(i.style, {
+	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art")), i = new Map(r.map((e) => [e, e.style.visibility])), a = document.createElement("div");
+	a.className = "arena-pixi-host", Object.assign(a.style, {
 		position: "absolute",
 		inset: "0",
-		zIndex: "8",
+		zIndex: "1",
 		overflow: "hidden",
 		pointerEvents: "none"
-	}), getComputedStyle(e).position === "static" && (e.style.position = "relative"), e.appendChild(i);
-	let a = new ot();
+	}), getComputedStyle(n).position === "static" && (n.style.position = "relative"), n.appendChild(a);
+	let o = new rt();
 	try {
-		await a.mount(i), await a.setRacers(t);
-		for (let e of n) e.style.visibility = "hidden";
+		await o.mount(a), await o.setRacers(t), o.render({
+			elapsedMs: 0,
+			state: "idle",
+			heat: 0,
+			racers: t.map((e, t) => ({
+				id: e.id,
+				progress: 0,
+				lane: t,
+				leading: !1,
+				finished: !1
+			}))
+		});
+		for (let e of r) e.style.visibility = "hidden";
 		return e.classList.add("has-pixi-race"), {
-			render: (e) => a.render(e),
+			render: (e) => o.render(e),
 			destroy: () => {
-				a.destroy(), i.remove(), e.classList.remove("has-pixi-race");
-				for (let e of n) e.style.visibility = r.get(e) || "";
+				o.destroy(), a.remove(), e.classList.remove("has-pixi-race");
+				for (let e of r) e.style.visibility = i.get(e) || "";
 			}
 		};
 	} catch (e) {
 		console.warn("Pixi Arena unavailable; using DOM renderer", e);
 		try {
-			a.destroy();
+			o.destroy();
 		} catch {}
-		return i.remove(), null;
+		return a.remove(), null;
 	}
 }
 //#endregion
-export { st as createArenaRenderer };
+export { it as createArenaRenderer };
 
 //# sourceMappingURL=pixi-runtime.js.map
