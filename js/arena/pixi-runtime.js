@@ -1669,12 +1669,13 @@ var tt = 594991, nt = 1451599, rt = 9157887, it = 12118271, at = class {
 	effects = new b({ label: "effects" });
 	overlay = new b({ label: "overlay" });
 	#e = new D({ label: "sky" });
-	#t = new D({ label: "track" });
-	#n = new D({ label: "lane-lines" });
-	#r = new D({ label: "finish-line" });
-	#i = new D({ label: "speed-lines" });
-	#a = new D({ label: "leaderboard-panel" });
-	#o = new qe({
+	#t = new D({ label: "parallax" });
+	#n = new D({ label: "track" });
+	#r = new D({ label: "lane-lines" });
+	#i = new D({ label: "finish-line" });
+	#a = new D({ label: "speed-lines" });
+	#o = new D({ label: "leaderboard-panel" });
+	#s = new qe({
 		text: "",
 		style: {
 			fill: 16777215,
@@ -1683,7 +1684,7 @@ var tt = 594991, nt = 1451599, rt = 9157887, it = 12118271, at = class {
 			lineHeight: 16
 		}
 	});
-	#s = new qe({
+	#c = new qe({
 		text: "",
 		style: {
 			fill: 16777215,
@@ -1697,101 +1698,134 @@ var tt = 594991, nt = 1451599, rt = 9157887, it = 12118271, at = class {
 			}
 		}
 	});
-	#c = null;
-	#l = Qe(1280, 720);
-	#u = [];
-	#d = /* @__PURE__ */ new Map();
-	#f = null;
+	#l = null;
+	#u = Qe(1280, 720);
+	#d = [];
+	#f = /* @__PURE__ */ new Map();
+	#p = null;
 	async mount(e) {
-		this.#c = e, await this.app.init({
+		this.#l = e, await this.app.init({
 			resizeTo: e,
 			backgroundAlpha: 0,
 			antialias: !0,
 			autoDensity: !0,
 			resolution: Math.min(window.devicePixelRatio || 1, 2),
 			preference: "webgl"
-		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e), this.course.addChild(this.#t, this.#n, this.#r), this.effects.addChild(this.#i), this.overlay.addChild(this.#a, this.#o, this.#s), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.resize();
+		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e, this.#t), this.course.addChild(this.#n, this.#r, this.#i), this.effects.addChild(this.#a), this.overlay.addChild(this.#o, this.#s, this.#c), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.resize();
 	}
 	async setRacers(e) {
-		this.#u = e, this.#d.clear(), this.actors.removeChildren();
+		this.#d = e, this.#f.clear(), this.actors.removeChildren();
 		for (let t of e) {
 			let e = new b({ label: `racer-${t.id}` });
 			e.eventMode = "none";
 			let n = Xe(t.pet, t.color), r = new D({ label: `trail-${n.trail}` }), i = new D().ellipse(0, 13, 22, 7).fill({
 				color: 0,
 				alpha: .34
-			}), a = this.#_(n);
-			a.label = `pet-${n.species}`, e.addChild(r, i, a), this.#d.set(t.id, {
+			}), a = this.#v(n);
+			a.label = `pet-${n.species}`, e.addChild(r, i, a), this.#f.set(t.id, {
 				root: e,
 				sprite: a,
 				trail: r,
 				trailKind: n.trail,
-				accent: this.#v(n.accent)
+				accent: this.#y(n.accent)
 			}), this.actors.addChild(e);
 		}
-		this.#p();
+		this.#m();
 	}
 	render(e) {
-		this.#f = e;
+		this.#p = e;
 		let t = e.state === "running" ? Math.min(1, e.heat / 3) : 0;
-		this.#m(e.elapsedMs, t), this.#h(e);
+		this.#h(e.elapsedMs, t), this.#g(e);
 		for (let t of e.racers) {
-			let n = this.#d.get(t.id);
+			let n = this.#f.get(t.id);
 			if (!n) continue;
 			let r = Ze(t.reaction, t.finished, e.state), i = Math.sin(e.elapsedMs * (r === "surge" ? .035 : .022) + t.lane);
-			n.root.x = et(this.#l, t.progress), n.root.y = $e(this.#l, t.lane, this.#u.length), n.root.scale.set(this.#l.actorScale * (t.leading ? 1.08 : 1)), n.root.rotation = r === "stumble" ? -.18 : r === "jump" ? i * .1 : i * .035, n.root.alpha = e.state === "idle" ? .9 : 1, n.sprite.y = r === "run" || r === "surge" ? -Math.abs(i) * (r === "surge" ? 8 : 4) : r === "jump" ? -14 : r === "win" ? -Math.abs(i) * 10 : 0, n.sprite.scale.x = r === "stumble" ? 1.14 : r === "surge" ? 1.12 : 1, n.sprite.scale.y = r === "stumble" ? .78 : r === "jump" ? 1.12 : 1, this.#g(n, e.elapsedMs, r !== "idle");
+			n.root.x = et(this.#u, t.progress), n.root.y = $e(this.#u, t.lane, this.#d.length);
+			let a = .76 + (this.#d.length > 1 ? t.lane / (this.#d.length - 1) : .5) * .42;
+			n.root.scale.set(this.#u.actorScale * a * (t.leading ? 1.1 : 1)), n.root.rotation = r === "stumble" ? -.18 : r === "jump" ? i * .1 : i * .035, n.root.alpha = e.state === "idle" ? .9 : 1;
+			let o = Math.sin(e.elapsedMs * .006 + t.lane * 2.7);
+			n.sprite.y = r === "run" || r === "surge" ? -Math.abs(i) * (r === "surge" ? 11 : 6) - Math.max(0, o - .82) * 22 : r === "jump" ? -14 : r === "win" ? -Math.abs(i) * 10 : 0, n.sprite.scale.x = r === "stumble" ? 1.22 : r === "surge" ? 1.18 : 1 + Math.abs(i) * .08, n.sprite.scale.y = r === "stumble" ? .68 : r === "jump" ? 1.18 : 1 - Math.abs(i) * .06, this.#_(n, e.elapsedMs, r !== "idle");
 		}
 		let n = e.state === "running" ? t * Math.sin(e.elapsedMs * .055) * 2.2 : 0;
 		this.course.y = n, this.actors.y = -n * .35;
 	}
 	resize() {
-		this.app.resize(), this.#l = Qe(this.app.screen.width, this.app.screen.height), this.#p(), this.#f && this.render(this.#f);
+		this.app.resize(), this.#u = Qe(this.app.screen.width, this.app.screen.height), this.#m(), this.#p && this.render(this.#p);
 	}
 	destroy() {
-		this.#d.clear(), this.#u = [], this.#f = null, this.app.destroy(!0, { children: !0 }), this.#c = null;
+		this.#f.clear(), this.#d = [], this.#p = null, this.app.destroy(!0, { children: !0 }), this.#l = null;
 	}
-	#p() {
-		let e = this.#l;
-		this.#e.clear().rect(0, 0, e.width, e.height).fill(tt), this.#t.clear().rect(0, e.laneTop, e.width, e.laneHeight).fill(nt), this.#n.clear();
-		let t = Math.max(1, this.#u.length);
+	#m() {
+		let e = this.#u;
+		this.#e.clear().rect(0, 0, e.width, e.height).fill(tt), this.#t.clear();
+		for (let t = -1; t < 8; t++) {
+			let n = t * e.width / 6;
+			this.#t.poly([
+				n,
+				e.laneTop,
+				n + e.width / 12,
+				e.laneTop - e.height * .12,
+				n + e.width / 6,
+				e.laneTop
+			]).fill({
+				color: 1589096,
+				alpha: .7
+			});
+		}
+		this.#t.rect(0, e.laneTop - e.height * .025, e.width, e.height * .025).fill({
+			color: 7526143,
+			alpha: .4
+		}), this.#n.clear().poly([
+			0,
+			e.laneTop,
+			e.width,
+			e.laneTop + e.height * .035,
+			e.width,
+			e.laneBottom,
+			0,
+			e.laneBottom - e.height * .025
+		]).fill(nt), this.#r.clear();
+		let t = Math.max(1, this.#d.length);
 		for (let n = 1; n < t; n++) {
 			let r = e.laneTop + e.laneHeight * (n / t);
-			this.#n.moveTo(0, r).lineTo(e.width, r).stroke({
+			this.#r.moveTo(0, r).lineTo(e.width, r).stroke({
 				color: rt,
 				alpha: .13,
 				width: 1
 			});
 		}
-		this.#r.clear();
+		this.#i.clear();
 		let n = Math.max(7, Math.min(16, e.width / 72));
-		for (let t = 0; t < Math.ceil(e.laneHeight / n); t++) for (let r = 0; r < 2; r++) this.#r.rect(e.trackRight - n + r * n, e.laneTop + t * n, n, n).fill({
+		for (let t = 0; t < Math.ceil(e.laneHeight / n); t++) for (let r = 0; r < 2; r++) this.#i.rect(e.trackRight - n + r * n, e.laneTop + t * n, n, n).fill({
 			color: (t + r) % 2 ? 16777215 : 1120295,
 			alpha: .95
 		});
 	}
-	#m(e, t) {
-		let n = this.#l, r = e * (.28 + t * .72) % Math.max(1, n.width);
-		this.#i.clear();
+	#h(e, t) {
+		let n = this.#u;
+		this.#t.x = -(e * (.018 + t * .035) % (n.width / 6));
+		let r = e * (.28 + t * .72) % Math.max(1, n.width);
+		this.#a.clear();
 		let i = Math.round(10 + t * 22);
 		for (let e = 0; e < i; e++) {
 			let i = (e * 97.3 % n.width - r + n.width) % n.width, a = n.laneTop + e * 53 % Math.max(1, n.laneHeight), o = 22 + e % 5 * 18 + t * 90;
-			this.#i.moveTo(i, a).lineTo(i - o, a).stroke({
+			this.#a.moveTo(i, a).lineTo(i - o, a).stroke({
 				color: it,
 				alpha: .08 + t * .22,
 				width: 1 + t * 2
 			});
 		}
 	}
-	#h(e) {
-		let t = this.#l, n = new Map(this.#u.map((e) => [e.id, e])), r = [...e.racers].sort((e, t) => Number(t.finished) - Number(e.finished) || t.progress - e.progress || e.lane - t.lane), i = Math.min(t.portrait ? 148 : 190, t.width * .34), a = t.compact ? 9 : 11, o = t.compact ? 12 : 15;
-		this.#a.clear().roundRect(8, 8, i, 12 * o + 32, 10).fill({
+	#g(e) {
+		let t = this.#u, n = new Map(this.#d.map((e) => [e.id, e])), r = [...e.racers].sort((e, t) => Number(t.finished) - Number(e.finished) || t.progress - e.progress || e.lane - t.lane), i = Math.min(t.portrait ? 148 : 190, t.width * .34), a = t.compact ? 9 : 11, o = t.compact ? 12 : 15;
+		this.#o.clear().roundRect(8, 8, i, 12 * o + 32, 10).fill({
 			color: 397351,
 			alpha: .72
 		}).stroke({
 			color: 9157887,
 			alpha: .3,
 			width: 1
-		}), this.#o.style.fontSize = a, this.#o.style.lineHeight = o, this.#o.x = 17, this.#o.y = 16, this.#o.text = ["LIVE ORDER", ...r.slice(0, 12).map((e, r) => {
+		}), this.#s.style.fontSize = a, this.#s.style.lineHeight = o, this.#s.x = 17, this.#s.y = 16, this.#s.text = ["LIVE ORDER", ...r.slice(0, 12).map((e, r) => {
 			let i = n.get(e.id)?.name || `Racer ${e.lane + 1}`;
 			return `${String(r + 1).padStart(2, " ")}  ${i.slice(0, t.portrait ? 12 : 17)}`;
 		})].join("\n");
@@ -1803,9 +1837,9 @@ var tt = 594991, nt = 1451599, rt = 9157887, it = 12118271, at = class {
 			let t = n.get(e.winnerId ?? r[0]?.id ?? "");
 			s = t ? `${t.name.toUpperCase()} WINS!` : "FINISH!";
 		}
-		this.#s.text = s, this.#s.style.fontSize = t.portrait ? 34 : t.compact ? 40 : 56, this.#s.anchor.set(.5), this.#s.x = t.width * .5, this.#s.y = t.height * (t.portrait ? .07 : .08);
+		this.#c.text = s, this.#c.style.fontSize = t.portrait ? 34 : t.compact ? 40 : 56, this.#c.anchor.set(.5), this.#c.x = t.width * .5, this.#c.y = t.height * (t.portrait ? .07 : .08);
 	}
-	#g(e, t, n) {
+	#_(e, t, n) {
 		if (e.trail.clear(), !n || e.trailKind === "none") return;
 		let r = .65 + Math.sin(t * .02) * .2;
 		if (e.trailKind === "dust") for (let t = 0; t < 3; t++) e.trail.circle(-22 - t * 10, 8 + t % 2 * 5, 4 + t).fill({
@@ -1828,73 +1862,24 @@ var tt = 594991, nt = 1451599, rt = 9157887, it = 12118271, at = class {
 			width: 3
 		}));
 	}
-	#_(e) {
-		let t = this.#v(e.color), n = this.#v(e.accent), r = 0;
-		for (let t of e.species) r = Math.imul(r, 31) + t.charCodeAt(0) >>> 0;
-		let i = r % 4, a = new D({ label: `pet-body-${e.species}` });
-		return i === 0 ? a.rect(-23, -35, 10, 15).rect(13, -35, 10, 15) : i === 1 ? a.poly([
-			-25,
-			-18,
-			-17,
-			-40,
-			-7,
-			-18
-		]).poly([
-			7,
-			-18,
-			17,
-			-40,
-			25,
-			-18
-		]) : i === 2 ? a.circle(-20, -22, 10).circle(20, -22, 10) : a.rect(-27, -26, 12, 10).rect(15, -26, 12, 10), a.fill(t).roundRect(-24, -24, 48, 38, 6).fill(t).rect(-18, 10, 12, 17).rect(6, 10, 12, 17).fill(t), e.expression === "sleepy" ? a.moveTo(-14, -10).lineTo(-5, -10).moveTo(5, -10).lineTo(14, -10).stroke({
-			color: n,
-			width: 3
-		}) : e.expression === "happy" ? a.circle(-10, -10, 3).circle(10, -10, 3).fill(n).moveTo(-7, 1).quadraticCurveTo(0, 8, 7, 1).stroke({
-			color: n,
-			width: 3
-		}) : a.rect(-14, -13, 7, 7).rect(7, -13, 7, 7).fill(n).rect(-6, 1, 12, 3).fill(n), e.accessory === "crown" ? a.poly([
-			-17,
-			-24,
-			-17,
-			-38,
-			-7,
-			-29,
-			0,
-			-42,
-			8,
-			-29,
-			18,
-			-38,
-			18,
-			-24
-		]).fill(n) : e.accessory === "visor" ? a.rect(-19, -16, 38, 10).fill({
-			color: n,
-			alpha: .9
-		}) : e.accessory === "bandana" ? a.rect(-24, 3, 48, 7).poly([
-			13,
-			10,
-			24,
-			22,
-			7,
-			15
-		]).fill(n) : e.accessory === "cape" ? a.poly([
-			-20,
-			0,
-			-36,
-			28,
-			0,
-			25,
-			10,
-			2
-		]).fill({
-			color: n,
-			alpha: .9
-		}) : e.accessory === "headphones" && a.moveTo(-25, -8).arc(0, -8, 25, Math.PI, 0).stroke({
-			color: n,
-			width: 5
-		}).rect(-29, -10, 7, 17).rect(22, -10, 7, 17).fill(n), a;
-	}
 	#v(e) {
+		let t = this.#y(e.color), n = this.#y(e.accent), r = 0;
+		for (let t of e.species) r = Math.imul(r, 31) + t.charCodeAt(0) >>> 0;
+		let i = r % 4, a = new D({ label: `pet-body-${e.species}` }), o = (e, n, r = t) => a.rect((e - 8) * 4, (n - 8) * 4, 4, 4).fill(r);
+		for (let e = 4; e <= 11; e++) for (let t = 3; t <= 12; t++) (t !== 3 && t !== 12 || e !== 4 && e !== 11) && o(t, e);
+		if (i === 0) for (let e = 0; e < 4; e++) o(4, e), o(11, e);
+		else if (i === 1) o(3, 3), o(4, 2), o(5, 1), o(10, 1), o(11, 2), o(12, 3);
+		else if (i === 2) o(2, 4), o(2, 5), o(13, 4), o(13, 5);
+		else for (let e = 5; e <= 10; e++) o(e, 2);
+		for (let e = 12; e <= 14; e++) o(5, e), o(6, e), o(9, e), o(10, e);
+		if (e.expression === "sleepy" ? (o(5, 6, n), o(6, 6, n), o(9, 6, n), o(10, 6, n)) : (o(5, 6, n), o(10, 6, n), o(6, 9, n), o(7, 10, n), o(8, 10, n), o(9, 9, n)), e.accessory === "crown") o(5, 2, n), o(6, 1, n), o(7, 2, n), o(8, 0, n), o(9, 2, n), o(10, 1, n);
+		else if (e.accessory === "visor") for (let e = 4; e <= 11; e++) o(e, 6, n);
+		else if (e.accessory === "bandana") for (let e = 3; e <= 12; e++) o(e, 10, n);
+		else if (e.accessory === "cape") for (let e = 8; e <= 13; e++) o(2, e, n), e > 9 && o(1, e, n);
+		else if (e.accessory === "headphones") for (let e = 4; e <= 8; e++) o(2, e, n), o(13, e, n);
+		return a;
+	}
+	#y(e) {
 		let t = Number.parseInt(e.replace("#", ""), 16);
 		return Number.isFinite(t) ? t : 3718648;
 	}
