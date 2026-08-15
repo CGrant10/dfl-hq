@@ -933,7 +933,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
-        runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+        runners[i].style.left = raceLeft(p);
         cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
       }
@@ -1150,8 +1150,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   Subtracting the sprite width keeps it inside the lane at the finish, so
   nothing has to be measured inside the animation loop.
 */
-const SPRITE_W = 46;
-const trackX = (p) => `calc(${(p * 100).toFixed(3)}% - ${(p * SPRITE_W).toFixed(1)}px)`;
+const raceLeft = (p) => `${(3 + Math.max(0, Math.min(1, p)) * 88).toFixed(3)}%`;
 
 function countdown(stage) {
   const box = stage.querySelector("#countdown");
