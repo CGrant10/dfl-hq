@@ -731,6 +731,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       sprite: pet?.species || p.sprite,
       image: pet ? null : p.sprite_image,
       color: pet?.color || p.color || laneColor(i),
+      pet,
       number: p.number ?? i + 1,
     };
   });
@@ -751,7 +752,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const visuals = visualEvents(sim, shown, racers);
 
   stage.innerHTML = `
-    <div class="arena-track-wrap">
+    <div class="arena-track-wrap cinematic-race" data-theme="${esc(event.theme || "stadium")}">
+      <div class="race-scenery" aria-hidden="true">
+        <div class="race-sky"></div><div class="race-hills far"></div>
+        <div class="race-hills near"></div><div class="race-crowd"></div>
+      </div>
       <div class="scoreboard">
         <span class="sb-brand">DFL ARENA</span>
         <span class="sb-status" id="sb-status">On the line</span>
@@ -766,10 +771,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
             <span class="lane-tag" style="--racer:${esc(r.color)}">
               <b>${r.number}</b>${esc(r.name)}
             </span>
-            <div class="runner" id="runner-${i}">
-              <div class="runner-art" style="--racer:${esc(r.color)}">
-                ${spriteMarkup(event.theme, r.sprite, r.color, r.image)}
+            <div class="runner trail-${esc(r.pet?.trail || "none")}" id="runner-${i}">
+              <div class="runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
+                ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
               </div>
+              <span class="runner-nameplate"><b>${r.number}</b> ${esc(r.name)}</span>
             </div>
           </div>`).join("")}
       </div>
