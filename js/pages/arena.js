@@ -574,7 +574,8 @@ function broadcastCard(event, parts) {
 }
 
 /** Seconds of countdown before the racers move. */
-const COUNTDOWN_MS = 3400;
+const COUNTDOWN_MS = 2700;
+const COUNTDOWN_STEP_MS = 900;
 
 /*
    IS A PARAMETER, and it has to be.
@@ -663,6 +664,10 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
     }
 
     if (t.closest("#bc-start")) {
+      if (panel.dataset.raceBusy === "true") return;
+      panel.dataset.raceBusy = "true";
+      const startButton = panel.querySelector("#bc-start");
+      if (startButton) startButton.disabled = true;
       /*
         THIS BUTTON USED TO ONLY TELL THE OTHER SCREEN TO RACE.
 
@@ -691,9 +696,16 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
       } catch (err) {
         console.warn("arena: shared race not updated", err);
         toast(err.message || "The shared race could not start", true);
+        delete panel.dataset.raceBusy;
+        if (startButton) startButton.disabled = parts.length < 2;
         return;
       }
-      await runRace(view, stage, event, parts, byId, seed, { save: true });
+      const completed = await runRace(view, stage, event, parts, byId, seed, { save: true });
+      if (completed) refresh();
+      else if (panel.isConnected) {
+        delete panel.dataset.raceBusy;
+        if (startButton) startButton.disabled = parts.length < 2;
+      }
       return;
     }
 
@@ -905,7 +917,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   stage.querySelector("#track")?.classList.add("is-running");
   const started = performance.now();
 
-  await new Promise((resolve) => {
+  const completed = await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
     const total = lastFinish + 250;
     let nextCall = 0, calledAt = -9999, nextEvent = 0, nextVisual = 0;
@@ -927,6 +939,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     let leader = -1;
 
     function frame(now) {
+      /* A Pause, Reset, route change, or re-render detaches this stage.
+         Stop the old loop before it can write classes or save a ghost result. */
+      if (!stage.isConnected) { resolve(false); return; }
       const elapsed = now - started;
       const t = Math.min(sim.frames, elapsed / TICK_MS);
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
@@ -1129,14 +1144,16 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           `controls ${document.querySelector('[data-collapse="arena-broadcast"]')?.classList.contains("is-folded") ? "HIDDEN" : "visible"}`;
       }
 
-      if (elapsed >= total) resolve();
+      if (elapsed >= total) resolve(true);
       else requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   });
 
+  if (!completed) return false;
   await finish();
   slot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  return true;
 }
 
 /*
@@ -1164,16 +1181,22 @@ function countdown(stage) {
     const steps = ["3", "2", "1", "GO!"];
     let i = 0;
     const tick = () => {
-      num.textContent = steps[i];
-      num.classList.toggle("go", steps[i] === "GO!");
-      // restart the pop animation
+      if (!stage.isConnected) { resolve(); return; }
+      const step = steps[i];
+      num.textContent = step;
+      num.classList.toggle("go", step === "GO!");
       num.style.animation = "none";
       void num.offsetWidth;
       num.style.animation = "";
-      status.textContent = steps[i] === "GO!" ? "Away!" : "Set";
+      status.textContent = step === "GO!" ? "Away!" : "Set";
+      if (step === "GO!") {
+        /* The race and shared clock begin on GO, not after the overlay fades. */
+        setTimeout(() => box.isConnected && box.classList.add("hidden"), 420);
+        resolve();
+        return;
+      }
       i++;
-      if (i < steps.length) setTimeout(tick, 700);
-      else setTimeout(() => { box.classList.add("hidden"); resolve(); }, 420);
+      setTimeout(tick, COUNTDOWN_STEP_MS);
     };
     tick();
   });
@@ -1278,10 +1301,14 @@ async function saveResults(event, sim, seed) {
     const { error } = await db().from("arena_results").insert(rows);
     if (error) throw error;
 
+    const finalOffset = (sim.order.at(-1)?.finishMs ?? 0) + 400;
     await updateRow("arena_events", event.id, {
       status: "complete",
       seed,
       completed_at: new Date().toISOString(),
+      bc_state: "finished",
+      bc_started_at: new Date().toISOString(),
+      bc_offset_ms: finalOffset,
     });
     toast("Result saved");
   } catch (err) {
