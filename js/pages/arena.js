@@ -1012,7 +1012,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       }
       const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
-      pixi?.render({ elapsedMs: elapsed, state: elapsed >= lastFinish ? "finished" : "running", heat: Number(track?.dataset.heat || 0), racers: pixiRacers, winnerId: sim.order[0].racer.id });
       if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
@@ -1094,6 +1093,26 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const heat = intensityAt(shown, lo);
       const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
       if (track && track.dataset.heat !== band) track.dataset.heat = band;
+      /* Pixi consumes the same precomputed reaction classes as the legacy
+         renderer. This keeps visual events synchronized without giving the
+         presentation layer any influence over race outcomes. */
+      for (let i = 0; i < pixiRacers.length; i++) {
+        const el = runners[i];
+        if (!el) continue;
+        pixiRacers[i].reaction = el.classList.contains("is-stumble") ? "stumble"
+          : el.classList.contains("is-jump") ? "jump"
+          : el.classList.contains("is-duel") ? "duel"
+          : el.classList.contains("is-near") ? "near"
+          : el.classList.contains("is-surge") ? "surge"
+          : undefined;
+      }
+      pixi?.render({
+        elapsedMs: elapsed,
+        state: elapsed >= lastFinish ? "finished" : "running",
+        heat: Number(band),
+        racers: pixiRacers,
+        winnerId: sim.order[0].racer.id,
+      });
 
       /*
         THE BOARD. Ranked by drawn position while running, but a racer who
@@ -1363,3 +1382,4 @@ async function saveResults(event, sim, seed) {
     if (canEdit()) toast(err.message || "Could not save the result", true);
   }
 }
+
