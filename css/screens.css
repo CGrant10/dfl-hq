@@ -887,9 +887,9 @@ a.moment:hover { background: var(--hover-soft); }
 @keyframes pxFrameA{0%,49%{opacity:1}50%,100%{opacity:0}}
 @keyframes pxFrameB{0%,49%{opacity:0}50%,100%{opacity:1}}
 @media(prefers-reduced-motion:reduce){
-  .racer-px.has-frames .px-frame{animation:none!important}
-  .racer-px.has-frames .px-frame-a{opacity:1}
-  .racer-px.has-frames .px-frame-b{opacity:0}
+  .pet-art .racer-px.has-frames .px-frame{animation:none!important}
+  .pet-art .racer-px.has-frames .px-frame-a{opacity:1}
+  .pet-art .racer-px.has-frames .px-frame-b{opacity:0}
 }
 
 
@@ -912,11 +912,6 @@ a.moment:hover { background: var(--hover-soft); }
 .winner-pet{display:block;width:112px;height:76px;margin:.25rem auto}
 .winner-pet svg{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 10px 10px #0006)}
 @keyframes arenaFinishFlash{0%{opacity:0;transform:scale(1.8)}20%,55%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.9)}}
-@media(prefers-reduced-motion:reduce){
-  .cinematic-race .race-scenery{transform:none!important}
-  .arena-track-wrap.has-winner::after{animation:none;opacity:1}
-}
-
 
 /* Match the shared open-field view on the admin Arena stage. */
 .arena-track-wrap.cinematic-race .track{position:relative;display:block;height:clamp(430px,68vh,720px);overflow:hidden}
@@ -960,12 +955,12 @@ a.moment:hover { background: var(--hover-soft); }
     inset:0;
     z-index:1;
     pointer-events:none;
-    opacity:.72;
+    opacity:.88;
     mix-blend-mode:screen;
     background:
       repeating-linear-gradient(101deg,
         transparent 0 5.5%,
-        rgba(255,255,255,.08) 5.7% 5.9%,
+        rgba(255,255,255,.16) 5.7% 5.9%,
         transparent 6.1% 11%),
       linear-gradient(90deg,rgba(255,255,255,.03),transparent 32%,rgba(255,255,255,.08));
     background-size:190% 100%,100% 100%;
@@ -979,7 +974,7 @@ a.moment:hover { background: var(--hover-soft); }
     inset:-12% -8%;
     z-index:3;
     pointer-events:none;
-    opacity:.58;
+    opacity:.74;
     background:
       linear-gradient(102deg,transparent 0 12%,rgba(255,255,255,.8) 12.25% 12.45%,transparent 12.8%),
       linear-gradient(98deg,transparent 0 42%,rgba(185,231,255,.65) 42.15% 42.35%,transparent 42.8%),
@@ -993,7 +988,7 @@ a.moment:hover { background: var(--hover-soft); }
 
   .arena-track-wrap:has(.track.is-running) .race-scenery,
   .bc-stage.is-racing .race-scenery {
-    filter:saturate(1.28) contrast(1.08) blur(1.2px);
+    filter:saturate(1.46) contrast(1.18) brightness(.84) blur(2.8px);
   }
 
   .arena-track-wrap:has(.track.is-running) .race-sky::after,
@@ -1014,7 +1009,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-crowd,
   .bc-stage.is-racing .race-crowd {
     animation:animeCrowdRush calc(.16s / var(--anime-speed)) linear infinite;
-    filter:blur(1.4px) saturate(1.2);
+    filter:blur(2.4px) saturate(1.3) contrast(1.08);
   }
 
   .track.is-running[data-heat="1"],
@@ -1168,9 +1163,9 @@ a.moment:hover { background: var(--hover-soft); }
     inset:0;
     z-index:1;
     pointer-events:none;
-    opacity:.58;
+    opacity:.76;
     mix-blend-mode:screen;
-    background:repeating-linear-gradient(101deg,transparent 0 7%,rgba(255,255,255,.16) 7.25% 7.55%,transparent 7.8% 14%);
+    background:repeating-linear-gradient(101deg,transparent 0 7%,rgba(255,255,255,.24) 7.25% 7.55%,transparent 7.8% 14%);
     background-size:190% 100%;
     animation:portraitSpeedField .42s linear infinite;
   }
@@ -1181,7 +1176,7 @@ a.moment:hover { background: var(--hover-soft); }
     inset:-8%;
     z-index:3;
     pointer-events:none;
-    opacity:.48;
+    opacity:.65;
     background:
       linear-gradient(102deg,transparent 0 18%,rgba(255,255,255,.72) 18.3% 18.55%,transparent 19%),
       linear-gradient(98deg,transparent 0 58%,rgba(190,235,255,.62) 58.2% 58.45%,transparent 59%);
@@ -1191,7 +1186,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-scenery,
   .bc-stage.is-racing .race-scenery {
     transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)!important;
-    filter:saturate(1.22) contrast(1.06) blur(.8px);
+    filter:saturate(1.4) contrast(1.16) brightness(.88) blur(2.2px);
   }
   .arena-track-wrap:has(.track.is-running) .race-sky::after,
   .bc-stage.is-racing .race-sky::after { animation:portraitCloudRush .8s linear infinite; }
@@ -1202,7 +1197,7 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap:has(.track.is-running) .race-crowd,
   .bc-stage.is-racing .race-crowd {
     animation:portraitCrowdRush .18s linear infinite;
-    filter:blur(1px) saturate(1.18);
+    filter:blur(2px) saturate(1.26) contrast(1.06);
   }
 }
 @keyframes portraitSpeedField {
@@ -1244,11 +1239,135 @@ a.moment:hover { background: var(--hover-soft); }
   contain:layout paint;
 }
 
-@media (prefers-reduced-motion:no-preference) {
-  /* Horizontal-only blur sells forward speed without softening racers,
-     labels, the scoreboard, track markings, or finish line. */
-  .arena-track-wrap:has(.track.is-running) .race-scenery,
-  .bc-stage.is-racing .race-scenery {
-    filter:url("#arena-motion-blur") saturate(1.28) contrast(1.08);
-  }
+/* Horizontal-only blur sells forward speed without softening racers, labels,
+   the scoreboard, track markings, or finish line. The app preference—not the
+   operating system—selects its intensity. */
+.arena-track-wrap.race-motion-full:has(.track.is-running) .race-scenery,
+.bc-stage.race-motion-full.is-racing .race-scenery {
+  filter:url("#arena-motion-blur") saturate(1.46) contrast(1.18) brightness(.84);
+}
+.arena-track-wrap.race-motion-reduced:has(.track.is-running) .race-scenery,
+.bc-stage.race-motion-reduced.is-racing .race-scenery {
+  filter:url("#arena-motion-blur") saturate(1.16) contrast(1.06) brightness(.94);
+}
+
+/* Final-stretch lighting is deliberately more dramatic than ordinary running:
+   the scenery drops back while the Pixi subject plane stays fully sharp. */
+.arena-track-wrap.race-motion-full:has(.track.is-running[data-heat="3"]) .race-scenery,
+.bc-stage.race-motion-full.is-racing:has(.bc-track[data-heat="3"]) .race-scenery {
+  filter:url("#arena-motion-blur") saturate(1.34) contrast(1.2) brightness(.68);
+}
+
+/* Explicit Arena motion policy. These !important declarations intentionally
+   outrank the site's general OS accessibility rule, but only inside a race. */
+.race-motion-full .track.is-running .runner-art { animation:dfl-run .32s linear infinite!important; }
+.race-motion-full .runner.is-surge .runner-art,
+.race-motion-full .runner.is-duel .runner-art { animation:dfl-surge .18s linear infinite!important; }
+.race-motion-full .runner.is-stumble .runner-art { animation:dfl-stumble .3s ease-in-out 4!important; }
+.race-motion-full .runner.is-jump .runner-art { animation:ar-jump .3s var(--ease) 3!important; }
+.race-motion-full .runner.is-winner .runner-art { animation:dfl-win .5s var(--ease) 3!important; }
+.bc-stage.race-motion-full.is-racing .bc-track.is-running .bc-runner-art { animation:bcRun .32s linear infinite!important; }
+.bc-stage.race-motion-full .bc-runner.is-surge .bc-runner-art,
+.bc-stage.race-motion-full .bc-runner.is-duel .bc-runner-art { animation:bcSurge .18s linear infinite!important; }
+.bc-stage.race-motion-full .bc-runner.is-stumble .bc-runner-art { animation:bcStumble .3s ease-in-out 4!important; }
+.bc-stage.race-motion-full .bc-runner.is-jump .bc-runner-art { animation:bcJump .3s ease-out 3!important; }
+.bc-stage.race-motion-full .bc-runner.is-winner .bc-runner-art { animation:bcWin .5s ease-out 3!important; }
+.race-motion-full .px-frame-a { animation:pxFrameA .38s steps(1,end) infinite!important; }
+.race-motion-full .px-frame-b { animation:pxFrameB .38s steps(1,end) infinite!important; }
+.race-motion-full .countdown #countdown-n { animation:countPop .9s var(--ease) both!important; }
+.bc-stage.race-motion-full .bc-count { animation:bcCount .7s cubic-bezier(.2,.7,.3,1) both!important; }
+.bc-stage.race-motion-full .bc-winner { animation:bcFade .45s ease both!important; }
+.bc-stage.race-motion-full .bc-winner-name { animation:bcWinnerName .6s cubic-bezier(.2,.7,.3,1) both!important; }
+.bc-stage.race-motion-full .bc-winner-inner::before { animation:bc-rays 11s linear infinite!important; }
+.bc-stage.race-motion-full.is-finished .bc-winner-inner { animation:bcWinnerEnter .72s cubic-bezier(.2,.9,.2,1) both!important; }
+.bc-stage.race-motion-full .bc-winner-art { animation:bcChampion .9s steps(4,end) infinite!important; }
+.bc-stage.race-motion-full.is-finished .bc-winner::after { animation:bcConfetti 1.45s linear infinite!important; }
+
+/* Reduced effects remains animated and legible: slower stride, restrained
+   reactions, sparse speed fields, no final-stretch shake. */
+.race-motion-reduced .track.is-running .runner-art { animation:dfl-run .58s linear infinite!important; }
+.race-motion-reduced .runner.is-surge .runner-art,
+.race-motion-reduced .runner.is-duel .runner-art { animation:dfl-surge .42s linear infinite!important; }
+.race-motion-reduced .runner.is-stumble .runner-art { animation:dfl-stumble .55s ease-in-out 2!important; }
+.race-motion-reduced .runner.is-jump .runner-art { animation:ar-jump .58s var(--ease) 2!important; }
+.race-motion-reduced .runner.is-winner .runner-art { animation:dfl-win .78s var(--ease) 2!important; }
+.bc-stage.race-motion-reduced.is-racing .bc-track.is-running .bc-runner-art { animation:bcRun .58s linear infinite!important; }
+.bc-stage.race-motion-reduced .bc-runner.is-surge .bc-runner-art,
+.bc-stage.race-motion-reduced .bc-runner.is-duel .bc-runner-art { animation:bcSurge .42s linear infinite!important; }
+.bc-stage.race-motion-reduced .bc-runner.is-stumble .bc-runner-art { animation:bcStumble .55s ease-in-out 2!important; }
+.bc-stage.race-motion-reduced .bc-runner.is-jump .bc-runner-art { animation:bcJump .58s ease-out 2!important; }
+.bc-stage.race-motion-reduced .bc-runner.is-winner .bc-runner-art { animation:bcWin .78s ease-out 2!important; }
+.race-motion-reduced .px-frame-a { animation:pxFrameA .68s steps(1,end) infinite!important; }
+.race-motion-reduced .px-frame-b { animation:pxFrameB .68s steps(1,end) infinite!important; }
+.race-motion-reduced .track[data-heat="3"],
+.bc-stage.race-motion-reduced .bc-track[data-heat="3"] { animation:none!important; }
+.race-motion-reduced .track.is-running::before,
+.bc-stage.race-motion-reduced.is-racing .bc-track::before { opacity:.22!important; animation-duration:1.15s!important; }
+.race-motion-reduced .track.is-running::after,
+.bc-stage.race-motion-reduced.is-racing .bc-track::after { opacity:.12!important; animation-duration:.9s!important; }
+.race-motion-reduced .countdown #countdown-n { animation:countPop 1.25s ease-out both!important; }
+.bc-stage.race-motion-reduced .bc-count { animation:bcCount 1.1s ease-out both!important; }
+.bc-stage.race-motion-reduced .bc-winner { animation:bcFade .7s ease both!important; }
+.bc-stage.race-motion-reduced .bc-winner-name { animation:bcWinnerName .9s ease-out both!important; }
+.bc-stage.race-motion-reduced .bc-winner-inner::before { animation:bc-rays 24s linear infinite!important; opacity:.2; }
+.bc-stage.race-motion-reduced.is-finished .bc-winner-inner { animation:bcWinnerEnter 1s ease-out both!important; }
+.bc-stage.race-motion-reduced .bc-winner-art { animation:bcChampion 1.5s steps(2,end) 3!important; }
+.bc-stage.race-motion-reduced.is-finished .bc-winner::after { animation:bcConfetti 2.4s linear 2!important; opacity:.38; }
+
+@media (min-width:801px) {
+  .race-motion-full .track.is-running::before,
+  .bc-stage.race-motion-full.is-racing .bc-track::before { animation:animeSpeedField calc(.48s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full .track.is-running::after,
+  .bc-stage.race-motion-full.is-racing .bc-track::after { animation:animeForegroundStreaks calc(.34s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-sky::after,
+  .bc-stage.race-motion-full.is-racing .race-sky::after { animation:animeCloudRush calc(.72s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-hills.near,
+  .bc-stage.race-motion-full.is-racing .race-hills.near { animation:animeNearRush calc(.34s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-hills.far,
+  .bc-stage.race-motion-full.is-racing .race-hills.far { animation:animeFarRush calc(.78s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-crowd,
+  .bc-stage.race-motion-full.is-racing .race-crowd { animation:animeCrowdRush calc(.16s / var(--anime-speed)) linear infinite!important; }
+  .race-motion-full .track.is-running[data-heat="3"],
+  .bc-stage.race-motion-full .bc-track[data-heat="3"] { animation:animeFinalShake .12s steps(2,end) infinite!important; }
+
+  .race-motion-reduced .track.is-running::before,
+  .bc-stage.race-motion-reduced.is-racing .bc-track::before { animation:animeSpeedField 1.35s linear infinite!important; }
+  .race-motion-reduced .track.is-running::after,
+  .bc-stage.race-motion-reduced.is-racing .bc-track::after { animation:animeForegroundStreaks 1.1s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-sky::after,
+  .bc-stage.race-motion-reduced.is-racing .race-sky::after { animation:animeCloudRush 2.4s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-hills.near,
+  .bc-stage.race-motion-reduced.is-racing .race-hills.near { animation:animeNearRush 1.45s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-hills.far,
+  .bc-stage.race-motion-reduced.is-racing .race-hills.far { animation:animeFarRush 2.7s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-crowd,
+  .bc-stage.race-motion-reduced.is-racing .race-crowd { animation:animeCrowdRush .75s linear infinite!important; }
+}
+
+@media (max-width:800px) {
+  .race-motion-full .track.is-running::before,
+  .bc-stage.race-motion-full.is-racing .bc-track::before { animation:portraitSpeedField .42s linear infinite!important; }
+  .race-motion-full .track.is-running::after,
+  .bc-stage.race-motion-full.is-racing .bc-track::after { animation:portraitForeground .3s linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-sky::after,
+  .bc-stage.race-motion-full.is-racing .race-sky::after { animation:portraitCloudRush .8s linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-hills.near,
+  .bc-stage.race-motion-full.is-racing .race-hills.near { animation:portraitNearRush .4s linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-hills.far,
+  .bc-stage.race-motion-full.is-racing .race-hills.far { animation:portraitFarRush .9s linear infinite!important; }
+  .race-motion-full:has(.track.is-running) .race-crowd,
+  .bc-stage.race-motion-full.is-racing .race-crowd { animation:portraitCrowdRush .18s linear infinite!important; }
+
+  .race-motion-reduced .track.is-running::before,
+  .bc-stage.race-motion-reduced.is-racing .bc-track::before { animation:portraitSpeedField 1.15s linear infinite!important; }
+  .race-motion-reduced .track.is-running::after,
+  .bc-stage.race-motion-reduced.is-racing .bc-track::after { animation:portraitForeground .9s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-sky::after,
+  .bc-stage.race-motion-reduced.is-racing .race-sky::after { animation:portraitCloudRush 2.5s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-hills.near,
+  .bc-stage.race-motion-reduced.is-racing .race-hills.near { animation:portraitNearRush 1.5s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-hills.far,
+  .bc-stage.race-motion-reduced.is-racing .race-hills.far { animation:portraitFarRush 2.8s linear infinite!important; }
+  .race-motion-reduced:has(.track.is-running) .race-crowd,
+  .bc-stage.race-motion-reduced.is-racing .race-crowd { animation:portraitCrowdRush .78s linear infinite!important; }
 }

@@ -22,6 +22,7 @@ import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
 import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
+import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
@@ -30,6 +31,12 @@ const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
   "#f2e05a", "#ff7fb0", "#8fd14f", "#ff9a4a", "#7f8cff", "#d6b254",
 ];
+
+const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
+const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
+  element?.classList.toggle("race-motion-reduced", reduced);
+  element?.classList.toggle("race-motion-full", !reduced);
+};
 
 // Everything this view owns, so teardown is one call. Leaving a stray rAF
 // loop or a live channel behind would keep drawing over the next scene.
@@ -194,6 +201,14 @@ function wireBar(view, id, racers) {
       } catch { toast("Fullscreen was refused by the browser", true); }
     }
   });
+
+  bar.addEventListener("change", (e) => {
+    if (e.target.id !== "bc-motion") return;
+    setReduceRaceMotion(e.target.checked);
+    applyRaceMotionClass(stage, e.target.checked);
+    show();
+    toast(e.target.checked ? "Race effects reduced on this device" : "Full race effects restored");
+  });
 }
 
 /** Called by the router when leaving the page. */
@@ -208,6 +223,7 @@ function teardown() {
   if (!live) return;
   cancelAnimationFrame(live.raf);
   clearInterval(live.poll);
+  live.stopMotionWatch?.();
   live.resizeObserver?.disconnect?.();
   live.channel?.unsubscribe?.();
   live.pixi?.destroy?.();
@@ -218,7 +234,7 @@ function teardown() {
 
 function paint(view, event, racers) {
   view.innerHTML = `
-    <div class="bc-stage cinematic-race" id="bc-stage" data-theme="${esc(event.theme || "stadium")}">
+    <div class="bc-stage cinematic-race ${raceMotionClass()}" id="bc-stage" data-theme="${esc(event.theme || "stadium")}">
       <div class="race-scenery" aria-hidden="true">
         <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
           <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
@@ -286,6 +302,7 @@ function paint(view, event, racers) {
         <button class="bc-btn" id="bc-end" title="Skip to finish">Skip</button>
         <button class="bc-btn" id="bc-zero" title="Reset to the start line">Reset</button>
         <button class="bc-btn" id="bc-full" title="Fullscreen">Fullscreen</button>
+        <label class="bc-motion-setting" title="Use gentler race effects on this device"><input type="checkbox" id="bc-motion" ${getReduceRaceMotion() ? "checked" : ""}> Reduce race motion/effects</label>
         <span class="bc-bar-hint">Admin only · hides itself while streaming</span>
       </div>
 
@@ -307,7 +324,8 @@ function paint(view, event, racers) {
  */
 function watch(view, id, racers) {
   live = { raf: 0, poll: 0, channel: null, resizeObserver: null, pixi: null,
-    trackWidth: 1, sim: null, simKey: "", state: null, sceneryBlurX: 0 };
+    trackWidth: 1, sim: null, simKey: "", state: null, sceneryBlurX: 0,
+    reduceMotionEffects: getReduceRaceMotion(), stopMotionWatch: null };
 
   const els = {
     runners: racers.map((_, i) => view.querySelector(`#bc-runner-${i}`)),
@@ -328,6 +346,14 @@ function watch(view, id, racers) {
   };
 
   const session = live;
+  applyRaceMotionClass(els.stage, live.reduceMotionEffects);
+  live.stopMotionWatch = onReduceRaceMotionChange((reduced) => {
+    if (live !== session) return;
+    live.reduceMotionEffects = reduced;
+    applyRaceMotionClass(els.stage, reduced);
+    const checkbox = view.querySelector("#bc-motion");
+    if (checkbox) checkbox.checked = reduced;
+  });
   createArenaRenderer(els.track, racers).then((renderer) => {
     if (live !== session) { renderer?.destroy(); return; }
     live.pixi = renderer;
@@ -475,10 +501,11 @@ function watch(view, id, racers) {
         racers: pixiRacers,
         countdownMs: elapsed < 0 ? Math.abs(elapsed) : 0,
         winnerId: sim.order[0]?.racer?.id,
+        reduceMotionEffects: live.reduceMotionEffects,
       });
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
       const backdrop = backgroundMotion(elapsed < 0 ? "idle" : pixiState, heat,
-        elapsed >= (live.winnerMs || Infinity));
+        elapsed >= (live.winnerMs || Infinity), live.reduceMotionEffects);
       live.sceneryBlurX += (backdrop.blurX - live.sceneryBlurX) * .16;
       els.sceneryBlur?.setAttribute("stdDeviation", `${live.sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       els.stage?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));

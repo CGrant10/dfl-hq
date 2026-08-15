@@ -21,14 +21,18 @@ import { loadMembers } from "../members.js";
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
 import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
+import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
 import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
 
-const reduceMotion = () =>
-  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
+const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
+  element?.classList.toggle("race-motion-reduced", reduced);
+  element?.classList.toggle("race-motion-full", !reduced);
+};
 
 /*
   A MEMBER'S ARENA PAGE IS THE WAITING ROOM.
@@ -556,6 +560,7 @@ function broadcastCard(event, parts) {
           <legend>Viewer display</legend>
           <label><input type="checkbox" id="bc-board-t" ${event.bc_show_board === false ? "" : "checked"}> Leaderboard</label>
           <label><input type="checkbox" id="bc-timer-t" ${event.bc_show_timer === false ? "" : "checked"}> Race clock</label>
+          <label><input type="checkbox" id="bc-motion-t" ${getReduceRaceMotion() ? "checked" : ""}> Reduce race motion/effects</label>
         </fieldset>
         <div class="bc-result-actions">
           <button class="btn ghost small" id="bc-save" ${finished && ready ? "" : "disabled"}>Save result</button>
@@ -770,6 +775,11 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
   panel.addEventListener("change", (e) => {
     if (e.target.id === "bc-board-t") write({ bc_show_board: e.target.checked });
     if (e.target.id === "bc-timer-t") write({ bc_show_timer: e.target.checked });
+    if (e.target.id === "bc-motion-t") {
+      setReduceRaceMotion(e.target.checked);
+      view.querySelectorAll(".arena-track-wrap, .bc-stage").forEach((el) => applyRaceMotionClass(el, e.target.checked));
+      toast(e.target.checked ? "Race effects reduced on this device" : "Full race effects restored");
+    }
   });
 }
 
@@ -827,7 +837,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const pixiTimeline = createReactionTimeline(events, visuals, racers.length);
 
   stage.innerHTML = `
-    <div class="arena-track-wrap cinematic-race" data-theme="${esc(event.theme || "stadium")}">
+    <div class="arena-track-wrap cinematic-race ${raceMotionClass()}" data-theme="${esc(event.theme || "stadium")}">
       <div class="race-scenery" aria-hidden="true">
         <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
           <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
@@ -901,10 +911,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   const clock   = stage.querySelector("#sb-clock");
   const slot    = stage.querySelector("#arena-result-slot");
 
-  /* Declared up here, not beside the code that sets it: the reduced-motion
-     path calls finish() before the racing path runs at all, and a `const`
-     declared later would be in its temporal dead zone - a ReferenceError
-     for exactly the users who asked for less motion. */
   const finish = async () => {
     status.textContent = "Final";
     stage.querySelector("#track")?.classList.remove("is-running");
@@ -917,31 +923,26 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     if (save) await saveResults(event, sim, seed);
   };
 
-  /*
-    REDUCED MOTION IS STILL A RACE.
-
-    The old path placed everybody on the finish line and returned immediately.
-    On a desktop where Windows or the browser requested reduced motion, Start
-    therefore looked broken: the result appeared with no race at all. CSS
-    already removes transitions and character keyframes for this preference,
-    so the normal clock can keep playing while the decorative motion stays
-    quiet. Only the animated countdown is skipped below.
-  */
-
   /* Keep the race in view while leaving the commissioner console stable.
      Controls no longer collapse or change location during an active run. */
+  let reducedMotionEffects = getReduceRaceMotion();
+  const raceWrap = stage.querySelector(".arena-track-wrap");
+  applyRaceMotionClass(raceWrap, reducedMotionEffects);
+  const stopMotionWatch = onReduceRaceMotionChange((reduced) => {
+    reducedMotionEffects = reduced;
+    applyRaceMotionClass(raceWrap, reduced);
+  });
   stage.scrollIntoView({
-    behavior: reduceMotion() ? "auto" : "smooth",
+    behavior: reducedMotionEffects ? "auto" : "smooth",
     block: window.matchMedia("(max-width: 720px)").matches ? "center" : "start",
   });
 
-  const pixi = await createArenaRenderer(stage.querySelector(".arena-track-wrap"), racers);
+  const pixi = await createArenaRenderer(raceWrap, racers);
   const startGrid = racers.map((racer, lane) => ({
     id: racer.id, progress: 0, lane, leading: lane === 0, finished: false,
   }));
-  if (reduceMotion()) status.textContent = "Racing";
-  else await countdown(stage, (countdownMs) => pixi?.render({
-    elapsedMs: 0, state: "idle", heat: 0, racers: startGrid, countdownMs,
+  await countdown(stage, (countdownMs) => pixi?.render({
+    elapsedMs: 0, state: "idle", heat: 0, racers: startGrid, countdownMs, reduceMotionEffects: reducedMotionEffects,
   }));
 
   status.textContent = "Racing";
@@ -966,7 +967,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const track = stage.querySelector("#track");
     const scenery = stage.querySelector(".race-scenery");
     const sceneryBlur = stage.querySelector("[data-arena-motion-blur]");
-    const raceWrap = stage.querySelector(".arena-track-wrap");
     /*
       Composite racer travel instead of changing `left` every frame.
       Track width is measured only when the stage resizes; each animation
@@ -981,7 +981,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       runner?.style.setProperty("--race-x", `${(trackWidth * .03).toFixed(2)}px`);
       runner?.classList.add("is-positioned");
     }
-    const stopPlayback = (value) => { sizeWatcher?.disconnect(); resolve(value); };
+    const stopPlayback = (value) => { sizeWatcher?.disconnect(); stopMotionWatch(); resolve(value); };
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
@@ -1107,7 +1107,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       if (track && track.dataset.heat !== band) track.dataset.heat = band;
       /* Genuine X-axis-only background blur. It is applied to the existing
          scenery layer, never the track, racers, labels, board, or finish. */
-      const backdrop = backgroundMotion("running", heat, elapsed >= winnerMs);
+      const backdrop = backgroundMotion("running", heat, elapsed >= winnerMs, reducedMotionEffects);
       sceneryBlurX += (backdrop.blurX - sceneryBlurX) * .16;
       sceneryBlur?.setAttribute("stdDeviation", `${sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       raceWrap?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
@@ -1117,6 +1117,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         heat: Number(band),
         racers: pixiRacers,
         winnerId: sim.order[0].racer.id,
+        reduceMotionEffects: reducedMotionEffects,
       });
 
       /*

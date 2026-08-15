@@ -23,7 +23,7 @@ export function effectSample(bucket: number, lane: number, index: number): Effec
 }
 
 export function effectDensity(heat: number, compact: boolean, reducedMotion: boolean): number {
-  if (reducedMotion || heat <= 0) return 0;
-  const quality = compact ? 0.58 : 1;
-  return Math.round((4 + Math.min(3, heat) * 4) * quality);
+  if (heat <= 0) return 0;
+  const quality = (compact ? 0.72 : 1) * (reducedMotion ? 0.28 : 1);
+  return Math.round((18 + Math.min(3, heat) * 11) * quality);
 }

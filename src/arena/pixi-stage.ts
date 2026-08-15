@@ -3,7 +3,7 @@ import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 import { motionPose, racerVariant } from "./animation";
-import { drawAnimeField, drawWinnerConvergence } from "./anime-effects";
+import { drawAnimeField, drawForegroundRush, drawWinnerConvergence } from "./anime-effects";
 import { drawRacerEffects } from "./racer-effects";
 import { pixelPoseRows } from "./pixel-poses";
 import { CHARACTERS, GRID_H, GRID_W } from "../../js/arena/dfl-sprites.js";
@@ -37,7 +37,9 @@ export class PixiRaceStage implements RaceRenderer {
   readonly overlay = new Container({ label: "overlay" });
   readonly #compatGraphics = new Graphics({ label: "legacy-feature-set" });
   readonly #compatText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12 } });
-  readonly #speedLines = new Graphics({ label: "speed-lines" });
+  readonly #backgroundLines = new Graphics({ label: "background-speed-lines" });
+  readonly #winnerField = new Graphics({ label: "winner-focus" });
+  readonly #foregroundLines = new Graphics({ label: "foreground-speed-lines" });
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
@@ -61,7 +63,11 @@ export class PixiRaceStage implements RaceRenderer {
     this.scenery.addChild(this.#compatGraphics);
     this.overlay.addChild(this.#compatText);
     this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay);
-    this.effects.addChild(this.#speedLines);
+    // Most velocity treatment lives behind the subject plane so characters
+    // remain pixel-crisp. Only a sparse highlight pass crosses in front.
+    this.course.addChild(this.#backgroundLines, this.#winnerField);
+    this.effects.addChild(this.#foregroundLines);
+    this.#foregroundLines.blendMode = "add";
     this.resize();
     if (typeof ResizeObserver === "function") {
       this.#resizeObserver = new ResizeObserver(() => this.resize());
@@ -97,8 +103,10 @@ export class PixiRaceStage implements RaceRenderer {
 
   render(frame: RaceFrame): void {
     this.#lastFrame = frame;
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    drawAnimeField(this.#speedLines, frame, this.#viewport, reducedMotion);
+    const reducedMotion = frame.reduceMotionEffects === true;
+    drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
+    drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
+    this.#winnerField.clear();
     let shake = 0;
     let winnerEnergy: { x: number; y: number; intensity: number } | null = null;
     for (const racer of frame.racers) {
@@ -140,15 +148,17 @@ export class PixiRaceStage implements RaceRenderer {
       actor.art.scale.set(phase.scaleX, phase.scaleY);
       actor.art.rotation = phase.rotation;
 
-      const visibleFrame = reducedMotion ? 0 : phase.frame;
+      const visibleFrame = phase.frame;
       actor.frames.forEach((spriteFrame, index) => { spriteFrame.visible = index === visibleFrame; });
-      if (reducedMotion) actor.frames[0].visible = true;
       drawRacerEffects({
         graphics: actor.fx,
         pose: phase,
         elapsedMs: frame.elapsedMs,
         variant: actor.variant,
         color: actor.color,
+        heat: frame.heat,
+        speed: racer.speed ?? 0,
+        acceleration: racer.acceleration ?? 0,
         active: frame.state === "running" || frame.state === "finished",
         reducedMotion,
       });
@@ -159,8 +169,8 @@ export class PixiRaceStage implements RaceRenderer {
       };
       shake = Math.max(shake, phase.impact);
     }
-    if (winnerEnergy) drawWinnerConvergence(this.#speedLines, this.#viewport.width, this.#viewport.height,
-      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity);
+    if (winnerEnergy) drawWinnerConvergence(this.#winnerField, this.#viewport.width, this.#viewport.height,
+      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity, reducedMotion);
     // Running-only, sub-pixel canvas shake. It cannot reflow or resize the DOM.
     const allowShake = frame.state === "running" && !reducedMotion && frame.heat >= 2;
     this.actors.position.set(allowShake ? Math.sin(frame.elapsedMs * 0.09) * shake * 1.15 : 0,
