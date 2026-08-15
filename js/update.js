@@ -6,10 +6,11 @@
 // somebody is staring at the old screen. This checks a plain text file
 // on the server and offers a button that force-clears everything.
 //
-// THREE PLACES MUST MATCH on every release, or this button misfires:
-//   1. APP_VERSION in js/config.js
-//   2. CACHE_NAME  in sw.js
+// RELEASE SOURCES:
+//   1. the dfl-app-version meta in index.html (read by config.js)
+//   2. CACHE_NAME in sw.js
 //   3. version.txt at the project root
+// config.js deliberately reads (1), so it cannot drift independently.
 // =====================================================================
 
 import { APP_VERSION } from "./config.js";
@@ -175,8 +176,15 @@ export function setupUpdates() {
   const el = bar();
   if (!el) return;
 
-  el.addEventListener("click", (e) => {
-    if (e.target.closest("#update-go")) forceUpdate();
+  el.addEventListener("click", async (e) => {
+    const go = e.target.closest("#update-go");
+    if (go) {
+      go.disabled = true;
+      go.textContent = "Updating…";
+      el.querySelector("#update-no")?.remove();
+      await forceUpdate();
+      return;
+    }
     if (e.target.closest("#update-no")) el.classList.add("hidden");
   });
 
