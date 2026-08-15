@@ -1157,3 +1157,75 @@ a.moment:hover { background: var(--hover-soft); }
     animation-iteration-count:infinite!important;
   }
 }
+
+
+/* Portrait cinematic pass: the full speed language is not landscape-only. */
+@media (max-width:800px) {
+  .arena-track-wrap .track.is-running::before,
+  .bc-stage.is-racing .bc-track::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    opacity:.58;
+    mix-blend-mode:screen;
+    background:repeating-linear-gradient(101deg,transparent 0 7%,rgba(255,255,255,.16) 7.25% 7.55%,transparent 7.8% 14%);
+    background-size:190% 100%;
+    animation:portraitSpeedField .42s linear infinite;
+  }
+  .arena-track-wrap .track.is-running::after,
+  .bc-stage.is-racing .bc-track::after {
+    content:"";
+    position:absolute;
+    inset:-8%;
+    z-index:3;
+    pointer-events:none;
+    opacity:.48;
+    background:
+      linear-gradient(102deg,transparent 0 18%,rgba(255,255,255,.72) 18.3% 18.55%,transparent 19%),
+      linear-gradient(98deg,transparent 0 58%,rgba(190,235,255,.62) 58.2% 58.45%,transparent 59%);
+    background-size:165% 48%,205% 45%;
+    animation:portraitForeground .3s linear infinite;
+  }
+  .arena-track-wrap:has(.track.is-running) .race-scenery,
+  .bc-stage.is-racing .race-scenery {
+    transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)!important;
+    filter:saturate(1.22) contrast(1.06) blur(.8px);
+  }
+  .arena-track-wrap:has(.track.is-running) .race-sky::after,
+  .bc-stage.is-racing .race-sky::after { animation:portraitCloudRush .8s linear infinite; }
+  .arena-track-wrap:has(.track.is-running) .race-hills.near,
+  .bc-stage.is-racing .race-hills.near { animation:portraitNearRush .4s linear infinite; }
+  .arena-track-wrap:has(.track.is-running) .race-hills.far,
+  .bc-stage.is-racing .race-hills.far { animation:portraitFarRush .9s linear infinite; }
+  .arena-track-wrap:has(.track.is-running) .race-crowd,
+  .bc-stage.is-racing .race-crowd {
+    animation:portraitCrowdRush .18s linear infinite;
+    filter:blur(1px) saturate(1.18);
+  }
+}
+@keyframes portraitSpeedField {
+  from { background-position:0 0; }
+  to { background-position:-95% 0; }
+}
+@keyframes portraitForeground {
+  from { background-position:95% 0,120% 80%; }
+  to { background-position:-80% 0,-90% 80%; }
+}
+@keyframes portraitCloudRush {
+  from { transform:translateX(18%); }
+  to { transform:translateX(-115%); }
+}
+@keyframes portraitNearRush {
+  from { transform:translateX(0) scaleX(1.08); }
+  to { transform:translateX(-16%) scaleX(1.08); }
+}
+@keyframes portraitFarRush {
+  from { transform:translateX(0) scaleX(1.18); }
+  to { transform:translateX(-7%) scaleX(1.18); }
+}
+@keyframes portraitCrowdRush {
+  from { background-position:0 0,9px 9px,0 0; }
+  to { background-position:-72px 0,-63px 9px,0 0; }
+}
