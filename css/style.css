@@ -2568,3 +2568,37 @@ input.masked {
   /* Nothing on this page should end up underneath the drawer. */
   #arena-wrap, .arena-page { padding-bottom: var(--s-8); }
 }
+
+
+/* Arena control polish: one calm waiting state and OBS setup out of the way. */
+.arena-ready {
+  display: grid;
+  gap: .3rem;
+  justify-items: center;
+  padding: 1.35rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid var(--line, rgba(255,255,255,.14));
+  border-radius: 14px;
+  background: var(--card, rgba(255,255,255,.04));
+}
+.arena-ready span { color: var(--muted, #9aa3ad); font-size: .9rem; }
+.arena-ready.is-waiting strong::before {
+  content: "";
+  display: inline-block;
+  width: .55rem;
+  height: .55rem;
+  margin-right: .5rem;
+  border-radius: 50%;
+  background: var(--accent, #2fbf5f);
+  box-shadow: 0 0 0 .28rem color-mix(in srgb, var(--accent, #2fbf5f) 20%, transparent);
+}
+.bc-setup {
+  margin-bottom: .85rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--line, rgba(255,255,255,.14));
+  border-radius: 12px;
+}
+.bc-setup summary { cursor: pointer; font-weight: 700; }
+.bc-setup[open] summary { margin-bottom: .55rem; }
+.bc-setup p { margin: 0 0 .55rem; }
