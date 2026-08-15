@@ -25,6 +25,7 @@ export class PixiRaceStage implements RaceRenderer {
   readonly effects = new Container({ label: "effects" });
   readonly overlay = new Container({ label: "overlay" });
   readonly #sky = new Graphics({ label: "sky" });
+  readonly #parallax = new Graphics({ label: "parallax" });
   readonly #track = new Graphics({ label: "track" });
   readonly #laneLines = new Graphics({ label: "lane-lines" });
   readonly #finish = new Graphics({ label: "finish-line" });
@@ -47,7 +48,7 @@ export class PixiRaceStage implements RaceRenderer {
     this.app.canvas.className = "arena-pixi-canvas";
     this.app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(this.app.canvas);
-    this.scenery.addChild(this.#sky);
+    this.scenery.addChild(this.#sky, this.#parallax);
     this.course.addChild(this.#track, this.#laneLines, this.#finish);
     this.effects.addChild(this.#speedLines);
     this.overlay.addChild(this.#boardPanel, this.#boardText, this.#statusText);
@@ -86,13 +87,16 @@ export class PixiRaceStage implements RaceRenderer {
       const stride = Math.sin(frame.elapsedMs * (motion === "surge" ? 0.035 : 0.022) + racer.lane);
       actor.root.x = screenX(this.#viewport, racer.progress);
       actor.root.y = laneY(this.#viewport, racer.lane, this.#racers.length);
-      actor.root.scale.set(this.#viewport.actorScale * (racer.leading ? 1.08 : 1));
+      const depth = this.#racers.length > 1 ? racer.lane / (this.#racers.length - 1) : 0.5;
+      const depthScale = 0.76 + depth * 0.42;
+      actor.root.scale.set(this.#viewport.actorScale * depthScale * (racer.leading ? 1.1 : 1));
       actor.root.rotation = motion === "stumble" ? -0.18 : motion === "jump" ? stride * 0.1 : stride * 0.035;
       actor.root.alpha = frame.state === "idle" ? 0.9 : 1;
-      actor.sprite.y = motion === "run" || motion === "surge" ? -Math.abs(stride) * (motion === "surge" ? 8 : 4)
+      const chaos = Math.sin(frame.elapsedMs * 0.006 + racer.lane * 2.7);
+      actor.sprite.y = motion === "run" || motion === "surge" ? -Math.abs(stride) * (motion === "surge" ? 11 : 6) - Math.max(0, chaos - 0.82) * 22
         : motion === "jump" ? -14 : motion === "win" ? -Math.abs(stride) * 10 : 0;
-      actor.sprite.scale.x = motion === "stumble" ? 1.14 : motion === "surge" ? 1.12 : 1;
-      actor.sprite.scale.y = motion === "stumble" ? 0.78 : motion === "jump" ? 1.12 : 1;
+      actor.sprite.scale.x = motion === "stumble" ? 1.22 : motion === "surge" ? 1.18 : 1 + Math.abs(stride) * 0.08;
+      actor.sprite.scale.y = motion === "stumble" ? 0.68 : motion === "jump" ? 1.18 : 1 - Math.abs(stride) * 0.06;
       this.#drawTrail(actor, frame.elapsedMs, motion !== "idle");
     }
     const shake = frame.state === "running" ? intensity * Math.sin(frame.elapsedMs * 0.055) * 2.2 : 0;
@@ -118,7 +122,13 @@ export class PixiRaceStage implements RaceRenderer {
   #drawCourse(): void {
     const v = this.#viewport;
     this.#sky.clear().rect(0, 0, v.width, v.height).fill(SKY);
-    this.#track.clear().rect(0, v.laneTop, v.width, v.laneHeight).fill(TRACK);
+    this.#parallax.clear();
+    for (let i = -1; i < 8; i++) {
+      const x = i * v.width / 6;
+      this.#parallax.poly([x, v.laneTop, x + v.width / 12, v.laneTop - v.height * 0.12, x + v.width / 6, v.laneTop]).fill({ color: 0x183f68, alpha: 0.7 });
+    }
+    this.#parallax.rect(0, v.laneTop - v.height * 0.025, v.width, v.height * 0.025).fill({ color: 0x72d6ff, alpha: 0.4 });
+    this.#track.clear().poly([0, v.laneTop, v.width, v.laneTop + v.height * 0.035, v.width, v.laneBottom, 0, v.laneBottom - v.height * 0.025]).fill(TRACK);
     this.#laneLines.clear();
     const count = Math.max(1, this.#racers.length);
     for (let lane = 1; lane < count; lane++) {
@@ -137,6 +147,7 @@ export class PixiRaceStage implements RaceRenderer {
 
   #drawSpeedField(elapsedMs: number, intensity: number): void {
     const v = this.#viewport;
+    this.#parallax.x = -((elapsedMs * (0.018 + intensity * 0.035)) % (v.width / 6));
     const travel = (elapsedMs * (0.28 + intensity * 0.72)) % Math.max(1, v.width);
     this.#speedLines.clear();
     const count = Math.round(10 + intensity * 22);
@@ -206,20 +217,24 @@ export class PixiRaceStage implements RaceRenderer {
     for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
     const shape = hash % 4;
     const g = new Graphics({ label: `pet-body-${pet.species}` });
-    if (shape === 0) g.rect(-23, -35, 10, 15).rect(13, -35, 10, 15);
-    else if (shape === 1) g.poly([-25, -18, -17, -40, -7, -18]).poly([7, -18, 17, -40, 25, -18]);
-    else if (shape === 2) g.circle(-20, -22, 10).circle(20, -22, 10);
-    else g.rect(-27, -26, 12, 10).rect(15, -26, 12, 10);
-    g.fill(body).roundRect(-24, -24, 48, 38, 6).fill(body)
-      .rect(-18, 10, 12, 17).rect(6, 10, 12, 17).fill(body);
-    if (pet.expression === "sleepy") g.moveTo(-14, -10).lineTo(-5, -10).moveTo(5, -10).lineTo(14, -10).stroke({ color: accent, width: 3 });
-    else if (pet.expression === "happy") g.circle(-10, -10, 3).circle(10, -10, 3).fill(accent).moveTo(-7, 1).quadraticCurveTo(0, 8, 7, 1).stroke({ color: accent, width: 3 });
-    else g.rect(-14, -13, 7, 7).rect(7, -13, 7, 7).fill(accent).rect(-6, 1, 12, 3).fill(accent);
-    if (pet.accessory === "crown") g.poly([-17, -24, -17, -38, -7, -29, 0, -42, 8, -29, 18, -38, 18, -24]).fill(accent);
-    else if (pet.accessory === "visor") g.rect(-19, -16, 38, 10).fill({ color: accent, alpha: 0.9 });
-    else if (pet.accessory === "bandana") g.rect(-24, 3, 48, 7).poly([13, 10, 24, 22, 7, 15]).fill(accent);
-    else if (pet.accessory === "cape") g.poly([-20, 0, -36, 28, 0, 25, 10, 2]).fill({ color: accent, alpha: 0.9 });
-    else if (pet.accessory === "headphones") g.moveTo(-25, -8).arc(0, -8, 25, Math.PI, 0).stroke({ color: accent, width: 5 }).rect(-29, -10, 7, 17).rect(22, -10, 7, 17).fill(accent);
+    const px = 4;
+    const cell = (x: number, y: number, color = body) => g.rect((x - 8) * px, (y - 8) * px, px, px).fill(color);
+    for (let y = 4; y <= 11; y++) for (let x = 3; x <= 12; x++) {
+      if ((x === 3 || x === 12) && (y === 4 || y === 11)) continue;
+      cell(x, y);
+    }
+    if (shape === 0) for (let y = 0; y < 4; y++) { cell(4, y); cell(11, y); }
+    else if (shape === 1) { cell(3, 3); cell(4, 2); cell(5, 1); cell(10, 1); cell(11, 2); cell(12, 3); }
+    else if (shape === 2) { cell(2, 4); cell(2, 5); cell(13, 4); cell(13, 5); }
+    else { for (let x = 5; x <= 10; x++) cell(x, 2); }
+    for (let y = 12; y <= 14; y++) { cell(5, y); cell(6, y); cell(9, y); cell(10, y); }
+    if (pet.expression === "sleepy") { cell(5, 6, accent); cell(6, 6, accent); cell(9, 6, accent); cell(10, 6, accent); }
+    else { cell(5, 6, accent); cell(10, 6, accent); cell(6, 9, accent); cell(7, 10, accent); cell(8, 10, accent); cell(9, 9, accent); }
+    if (pet.accessory === "crown") { cell(5, 2, accent); cell(6, 1, accent); cell(7, 2, accent); cell(8, 0, accent); cell(9, 2, accent); cell(10, 1, accent); }
+    else if (pet.accessory === "visor") for (let x = 4; x <= 11; x++) cell(x, 6, accent);
+    else if (pet.accessory === "bandana") for (let x = 3; x <= 12; x++) cell(x, 10, accent);
+    else if (pet.accessory === "cape") { for (let y = 8; y <= 13; y++) { cell(2, y, accent); if (y > 9) cell(1, y, accent); } }
+    else if (pet.accessory === "headphones") { for (let y = 4; y <= 8; y++) { cell(2, y, accent); cell(13, y, accent); } }
     return g;
   }
 
