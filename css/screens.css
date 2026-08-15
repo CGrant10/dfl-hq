@@ -929,3 +929,18 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap.cinematic-race .track{height:72vh;min-height:500px}
   .arena-track-wrap.cinematic-race .runner-art{width:58px;height:40px}
 }
+
+
+/* Racer-first admin stage: direct positions stay obvious at every width. */
+.arena-track-wrap.cinematic-race .runner{
+  left:3%;right:auto;width:88px;height:58px;
+  transform:translateX(-50%);will-change:left;
+}
+.arena-track-wrap.cinematic-race .runner-art{width:88px;height:58px;filter:drop-shadow(0 8px 7px #0009)}
+.arena-track-wrap.cinematic-race .lane{height:clamp(42px,6vh,66px)}
+.arena-track-wrap.cinematic-race .race-scenery{transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)}
+.arena-track-wrap.cinematic-race .runner-nameplate{top:76%;font-size:10px;border:1px solid #ffffff30}
+@media(max-width:640px){
+  .arena-track-wrap.cinematic-race .runner{width:68px;height:46px}
+  .arena-track-wrap.cinematic-race .runner-art{width:68px;height:46px}
+}
