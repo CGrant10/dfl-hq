@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Sprite } from "pixi.js";
+import { Application, Container, Graphics, Sprite, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, petTextureUri } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
@@ -29,6 +29,9 @@ export class PixiRaceStage implements RaceRenderer {
   readonly #laneLines = new Graphics({ label: "lane-lines" });
   readonly #finish = new Graphics({ label: "finish-line" });
   readonly #speedLines = new Graphics({ label: "speed-lines" });
+  readonly #boardPanel = new Graphics({ label: "leaderboard-panel" });
+  readonly #boardText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12, lineHeight: 16 } });
+  readonly #statusText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "sans-serif", fontSize: 56, fontWeight: "900", align: "center", stroke: { color: 0x071126, width: 7 } } });
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
@@ -47,6 +50,7 @@ export class PixiRaceStage implements RaceRenderer {
     this.scenery.addChild(this.#sky);
     this.course.addChild(this.#track, this.#laneLines, this.#finish);
     this.effects.addChild(this.#speedLines);
+    this.overlay.addChild(this.#boardPanel, this.#boardText, this.#statusText);
     this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay);
     this.resize();
   }
@@ -77,6 +81,7 @@ export class PixiRaceStage implements RaceRenderer {
     this.#lastFrame = frame;
     const intensity = frame.state === "running" ? Math.min(1, frame.heat / 3) : 0;
     this.#drawSpeedField(frame.elapsedMs, intensity);
+    this.#drawOverlay(frame);
     for (const racer of frame.racers) {
       const actor = this.#actorById.get(racer.id);
       if (!actor) continue;
@@ -145,6 +150,39 @@ export class PixiRaceStage implements RaceRenderer {
       this.#speedLines.moveTo(x, y).lineTo(x - length, y)
         .stroke({ color: SPEED, alpha: 0.08 + intensity * 0.22, width: 1 + intensity * 2 });
     }
+  }
+
+  #drawOverlay(frame: RaceFrame): void {
+    const v = this.#viewport;
+    const byId = new Map(this.#racers.map((racer) => [racer.id, racer]));
+    const rows = [...frame.racers].sort((a, b) => Number(b.finished) - Number(a.finished) || b.progress - a.progress || a.lane - b.lane);
+    const panelWidth = Math.min(v.portrait ? 148 : 190, v.width * 0.34);
+    const fontSize = v.compact ? 9 : 11;
+    const lineHeight = v.compact ? 12 : 15;
+    this.#boardPanel.clear().roundRect(8, 8, panelWidth, 12 * lineHeight + 32, 10)
+      .fill({ color: 0x061027, alpha: 0.72 }).stroke({ color: 0x8bbcff, alpha: 0.3, width: 1 });
+    this.#boardText.style.fontSize = fontSize;
+    this.#boardText.style.lineHeight = lineHeight;
+    this.#boardText.x = 17;
+    this.#boardText.y = 16;
+    this.#boardText.text = ["LIVE ORDER", ...rows.slice(0, 12).map((row, index) => {
+      const name = byId.get(row.id)?.name || `Racer ${row.lane + 1}`;
+      return `${String(index + 1).padStart(2, " ")}  ${name.slice(0, v.portrait ? 12 : 17)}`;
+    })].join("\n");
+
+    let status = "";
+    if ((frame.countdownMs || 0) > 0) status = String(Math.max(1, Math.ceil(frame.countdownMs! / 1000)));
+    else if (frame.state === "paused") status = "PAUSED";
+    else if (frame.state === "idle") status = "RACE OPEN";
+    else if (frame.state === "finished") {
+      const winner = byId.get(frame.winnerId ?? rows[0]?.id ?? "");
+      status = winner ? `${winner.name.toUpperCase()} WINS!` : "FINISH!";
+    }
+    this.#statusText.text = status;
+    this.#statusText.style.fontSize = v.portrait ? 34 : v.compact ? 40 : 56;
+    this.#statusText.anchor.set(0.5);
+    this.#statusText.x = v.width * 0.5;
+    this.#statusText.y = v.height * (v.portrait ? 0.07 : 0.08);
   }
 
   #drawTrail(actor: PetActor, elapsedMs: number, moving: boolean): void {
