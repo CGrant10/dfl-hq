@@ -2,6 +2,7 @@ import { PixiRaceStage } from "./pixi-stage";
 import type { RaceFrame, RaceRacer } from "./contracts";
 
 export { backgroundMotion } from "./background-motion";
+export { createReactionTimeline, presentationRacerFrame, reactionAt } from "./presentation-frame";
 
 export interface LiveArenaRenderer {
   render(frame: RaceFrame): void;
@@ -18,7 +19,7 @@ export async function createArenaRenderer(parent: HTMLElement, racers: readonly 
   // Keep the proven DOM composition and controls. Only the legacy character
   // artwork is replaced after Pixi has mounted successfully; everything is
   // restored automatically if Pixi cannot start.
-  const fallbackChildren = Array.from(track.querySelectorAll<HTMLElement>(".runner-art"));
+  const fallbackChildren = Array.from(track.querySelectorAll<HTMLElement>(".runner-art, .bc-runner-art"));
   const previousVisibility = new Map(fallbackChildren.map((child) => [child, {
     value: child.style.getPropertyValue("visibility"),
     priority: child.style.getPropertyPriority("visibility"),

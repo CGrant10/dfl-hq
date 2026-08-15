@@ -1247,7 +1247,8 @@ a.moment:hover { background: var(--hover-soft); }
 @media (prefers-reduced-motion:no-preference) {
   /* Horizontal-only blur sells forward speed without softening racers,
      labels, the scoreboard, track markings, or finish line. */
-  .arena-track-wrap:has(.track.is-running) .race-scenery {
+  .arena-track-wrap:has(.track.is-running) .race-scenery,
+  .bc-stage.is-racing .race-scenery {
     filter:url("#arena-motion-blur") saturate(1.28) contrast(1.08);
   }
 }

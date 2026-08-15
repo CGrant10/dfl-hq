@@ -1019,5 +1019,20 @@ body.broadcasting .view { width:100%; height:100%; }
   visibility:hidden!important;
   opacity:0!important;
 }
+.bc-track.has-pixi-race .bc-runner-art {
+  visibility:hidden!important;
+  opacity:0!important;
+}
+.bc-stage .bc-overlay {
+  position:absolute!important;
+  inset:0!important;
+  width:auto!important;
+  height:auto!important;
+  margin:0!important;
+  z-index:10!important;
+  pointer-events:none!important;
+  overflow:hidden!important;
+  contain:layout paint;
+}
 .arena-pixi-host,
 .arena-pixi-host canvas { display:block!important; width:100%!important; height:100%!important; }
