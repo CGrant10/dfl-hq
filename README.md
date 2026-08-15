@@ -7,8 +7,10 @@ keepers, polls, finances, the calendar and the hall of fame.
 Sleeper is used as a data source — the league's seasons are imported from it to
 power the history and analytics.
 
-Plain HTML, CSS and vanilla JavaScript. No build step, no npm, no framework.
-Supabase is the database. It installs to a phone home screen as a PWA.
+The production app is plain HTML, CSS and vanilla JavaScript, served directly by
+GitHub Pages. TypeScript, Vite, and PixiJS tooling now support the staged Arena
+renderer migration without changing the current deployment. Supabase is the
+database. It installs to a phone home screen as a PWA.
 
 ---
 
