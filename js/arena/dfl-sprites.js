@@ -566,13 +566,26 @@ function cosmeticPaths(pet = {}) {
   return accessory + expression;
 }
 
+function strideFrame(px) {
+  return px.map((row, y) => {
+    if (y < 9) return row;
+    const dir = y % 2 ? 1 : -1;
+    return dir > 0 ? "." + row.slice(0, GRID_W - 1) : row.slice(1) + ".";
+  });
+}
+
 export function dflSpriteMarkup(id, laneColour, pet = null) {
   const c = dflCharacter(id) || hashedCharacter(id);
-  /* Cosmetics are an SVG overlay, so every surface still uses one compact
-     renderer and old two-argument calls remain valid. */
-  return `<svg class="racer-art racer-px" xmlns="http://www.w3.org/2000/svg" ` +
+  const colour = laneColour || "#2fbf5f";
+  const cosmetics = cosmeticPaths(pet || {});
+  /*
+    Two real pixel poses share one SVG. Frame B shifts the lower-body rows
+    into a stride while keeping the head readable; CSS swaps the groups with
+    steps(), so Profile, Arena and Broadcast always animate the same artwork.
+  */
+  return `<svg class="racer-art racer-px has-frames" xmlns="http://www.w3.org/2000/svg" ` +
          `viewBox="0 0 ${GRID_W} ${GRID_H}" shape-rendering="crispEdges" aria-hidden="true">` +
-         pixelPaths(c.px, c.palette, laneColour || "#2fbf5f") +
-         cosmeticPaths(pet || {}) +
+         `<g class="px-frame px-frame-a">${pixelPaths(c.px, c.palette, colour)}${cosmetics}</g>` +
+         `<g class="px-frame px-frame-b">${pixelPaths(strideFrame(c.px), c.palette, colour)}${cosmetics}</g>` +
          `</svg>`;
 }
