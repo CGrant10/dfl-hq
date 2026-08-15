@@ -451,7 +451,14 @@ function watch(view, id, racers) {
       const pixiLeader = pixiRacers.reduce((best, item) => item.progress > best.progress ? item : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
       const pixiState = state === "paused" ? "paused" : state === "finished" ? "finished" : state === "idle" ? "idle" : "running";
-      pixi?.render({ elapsedMs: Math.max(0, elapsed), state: pixiState, heat: Number(els.track?.dataset.heat || 0), racers: pixiRacers, winnerId: sim.order[0]?.racer?.id });
+      pixi?.render({
+        elapsedMs: Math.max(0, elapsed),
+        state: elapsed < 0 ? "idle" : pixiState,
+        heat: Number(els.track?.dataset.heat || 0),
+        racers: pixiRacers,
+        countdownMs: elapsed < 0 ? Math.abs(elapsed) : 0,
+        winnerId: sim.order[0]?.racer?.id,
+      });
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
