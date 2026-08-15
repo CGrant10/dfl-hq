@@ -837,13 +837,16 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     if (save) await saveResults(event, sim, seed);
   };
 
-  // Reduced motion: no countdown, no movement - place everyone and reveal.
-  if (reduceMotion()) {
-    runners.forEach((el) => { el.style.transform = `translate3d(${trackX(1)},0,0)`; });
-    clock.textContent = (sim.order.at(-1).finishMs / 1000).toFixed(1) + "s";
-    await finish();
-    return;
-  }
+  /*
+    REDUCED MOTION IS STILL A RACE.
+
+    The old path placed everybody on the finish line and returned immediately.
+    On a desktop where Windows or the browser requested reduced motion, Start
+    therefore looked broken: the result appeared with no race at all. CSS
+    already removes transitions and character keyframes for this preference,
+    so the normal clock can keep playing while the decorative motion stays
+    quiet. Only the animated countdown is skipped below.
+  */
 
   /* THE RACE GETS THE SCREEN. The control panel sits below the stage, so
      an admin who just pressed Start is looking at buttons while the race
@@ -879,7 +882,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   controlsWereOpen = !!panel && !panel.classList.contains("is-folded");
   if (controlsWereOpen) foldControls(panel, true);
 
-  await countdown(stage);
+  if (reduceMotion()) status.textContent = "Racing";
+  else await countdown(stage);
 
   status.textContent = "Racing";
   stage.querySelector("#track")?.classList.add("is-running");
