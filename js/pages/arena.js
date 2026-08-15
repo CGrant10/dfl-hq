@@ -20,7 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
-import { createArenaRenderer } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer } from "../arena/pixi-runtime.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
@@ -987,6 +987,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* Pixi gets deterministic event timestamps as presentation metadata.
        These never feed back into progress, order, timing, or results. */
     const pixiReactions = racers.map(() => new Map());
+    let sceneryBlurX = 0;
     const setPixiReaction = (index, kind, at, duration) => {
       pixiReactions[index]?.set(kind, { kind, startedMs: at, untilMs: at + duration });
     };
@@ -1017,10 +1018,14 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
+        const previous = s[Math.max(0, lo - 1)];
+        const velocity = Math.max(0, Math.min(1, (s[hi] - s[lo]) * 180));
+        const acceleration = Math.max(-1, Math.min(1, ((s[hi] - s[lo]) - (s[lo] - previous)) * 500));
         runners[i].style.setProperty("--race-x", `${(trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
-        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: p >= 1 });
+        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: p >= 1,
+          speed: velocity, acceleration });
       }
       const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
@@ -1116,7 +1121,10 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       if (track && track.dataset.heat !== band) track.dataset.heat = band;
       /* Genuine X-axis-only background blur. It is applied to the existing
          scenery layer, never the track, racers, labels, board, or finish. */
-      sceneryBlur?.setAttribute("stdDeviation", `${(.3 + Math.min(1, heat) * 2.5).toFixed(2)} .12`);
+      const backdrop = backgroundMotion("running", heat, elapsed >= winnerMs);
+      sceneryBlurX += (backdrop.blurX - sceneryBlurX) * .16;
+      sceneryBlur?.setAttribute("stdDeviation", `${sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
+      raceWrap?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
       /* Pixi consumes the same precomputed reaction classes as the legacy
          renderer. This keeps visual events synchronized without giving the
          presentation layer any influence over race outcomes. */
@@ -1262,6 +1270,13 @@ function countdown(stage, onStep = null) {
   const box = stage.querySelector("#countdown");
   const num = stage.querySelector("#countdown-n");
   const status = stage.querySelector("#sb-status");
+  /* This is a layout invariant, not a responsive approximation. Inline
+     important properties prevent any earlier landscape rule from putting
+     the countdown back into flex/grid flow and resizing the Pixi host. */
+  box.style.setProperty("position", "absolute", "important");
+  box.style.setProperty("inset", "0", "important");
+  box.style.setProperty("z-index", "10", "important");
+  box.style.setProperty("pointer-events", "none", "important");
   box.classList.remove("hidden");
 
   return new Promise((resolve) => {

@@ -1,4 +1,6 @@
 import type { PetMotion } from "./pet-texture";
+import { cyclePose, type PixelPose } from "./pixel-poses";
+import { winnerPhase } from "./winner-sequence";
 
 export interface MotionPose {
   x: number;
@@ -10,6 +12,9 @@ export interface MotionPose {
   afterimage: number;
   impact: number;
   dust: number;
+  skid: number;
+  energy: number;
+  frame: PixelPose;
 }
 
 export interface MotionInput {
@@ -19,6 +24,8 @@ export interface MotionInput {
   lane: number;
   heat: number;
   variant: number;
+  speed?: number;
+  acceleration?: number;
   reducedMotion?: boolean;
 }
 
@@ -29,7 +36,7 @@ const pulse = (value: number) => Math.sin(clamp01(value) * Math.PI);
 
 const base = (strideMs = 380): MotionPose => ({
   x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0,
-  strideMs, afterimage: 0, impact: 0, dust: 0,
+  strideMs, afterimage: 0, impact: 0, dust: 0, skid: 0, energy: 0, frame: 0,
 });
 
 /**
@@ -51,17 +58,22 @@ export function motionPose(input: MotionInput): MotionPose {
   }
 
   if (input.motion === "run") {
+    const speed = clamp01(input.speed ?? heat / 3);
+    const acceleration = Math.max(-1, Math.min(1, input.acceleration ?? 0));
     const strideMs = Math.max(235, 410 - heat * 48);
     const stride = input.elapsedMs / strideMs * TAU + input.lane * 0.61;
     const lift = Math.abs(Math.sin(stride));
+    const contact = Math.max(0, Math.cos(stride));
     return {
       ...base(strideMs),
-      x: Math.sin(stride * 0.5) * 0.45,
-      y: -0.8 - lift * (1.6 + heat * 0.35),
-      scaleX: 1 + Math.sin(stride) * 0.018,
-      scaleY: 1 - Math.sin(stride) * 0.015,
-      rotation: Math.sin(stride) * 0.018,
+      x: Math.sin(stride * 0.5) * 0.45 + acceleration * 1.2,
+      y: -0.8 - lift * (1.6 + heat * 0.35) + contact * 0.55,
+      scaleX: 1 + Math.sin(stride) * 0.018 + contact * 0.025,
+      scaleY: 1 - Math.sin(stride) * 0.015 - contact * 0.045,
+      rotation: -speed * 0.045 + acceleration * -0.03 + Math.sin(stride) * 0.016,
+      frame: cyclePose(input.elapsedMs + input.lane * 31, strideMs),
       dust: 0.14 + heat * 0.1,
+      energy: Math.max(0, acceleration) * 0.28,
     };
   }
 
@@ -79,6 +91,8 @@ export function motionPose(input: MotionInput): MotionPose {
       rotation: -0.08 * launch * (1 - recover),
       afterimage: launch * (0.45 + heat * 0.1),
       dust: 0.65 + launch * 0.35,
+      energy: launch,
+      frame: cyclePose(age, 190),
     };
   }
 
@@ -87,16 +101,20 @@ export function motionPose(input: MotionInput): MotionPose {
     const catchFoot = pulse(p / 0.16);
     const skid = p >= 0.16 && p < 0.58 ? pulse((p - 0.16) / 0.42) : 0;
     const recover = p >= 0.58 ? easeOut((p - 0.58) / 0.42) : 0;
-    const tumble = input.variant > 0.62 ? skid : 0;
+    const slipVariant = input.variant >= 0.34 && input.variant < 0.67;
+    const wipeoutVariant = input.variant >= 0.67;
+    const tumble = wipeoutVariant ? skid : 0;
     return {
       ...base(480),
-      x: -catchFoot * 2.5 - skid * 3.2 + recover * 1.2,
-      y: catchFoot * 1.2 + skid * 2.4 - recover * 1.1,
-      scaleX: 1 + skid * 0.09,
-      scaleY: 1 - skid * 0.14,
-      rotation: catchFoot * 0.16 + skid * (0.22 + tumble * 0.34) - recover * 0.16,
+      x: -catchFoot * 2.5 + (slipVariant ? skid * 3.8 : -skid * 3.2) + recover * 1.2,
+      y: catchFoot * 1.2 + skid * (wipeoutVariant ? 6.2 : 2.4) - recover * 1.1,
+      scaleX: 1 + skid * 0.1,
+      scaleY: 1 - skid * 0.15,
+      rotation: catchFoot * 0.16 + skid * (slipVariant ? -0.32 : 0.24 + tumble * 0.58) - recover * 0.18,
       impact: pulse((p - 0.12) / 0.22),
       dust: Math.max(catchFoot, skid) * 0.9,
+      skid,
+      frame: p < 0.16 ? 1 : p < 0.58 ? (wipeoutVariant ? 3 : 2) : 0,
     };
   }
 
@@ -114,6 +132,7 @@ export function motionPose(input: MotionInput): MotionPose {
       rotation: flight ? -0.07 + flight * 0.12 : 0,
       impact: land,
       dust: Math.max(crouch * 0.5, land),
+      frame: crouch ? 2 : flight ? 1 : land ? 3 : 0,
     };
   }
 
@@ -130,6 +149,8 @@ export function motionPose(input: MotionInput): MotionPose {
       afterimage: burst * 0.45,
       impact: pulse((p - 0.38) / 0.2) * 0.75,
       dust: 0.35 + burst * 0.45,
+      energy: burst,
+      frame: cyclePose(age, 205),
     };
   }
 
@@ -146,22 +167,36 @@ export function motionPose(input: MotionInput): MotionPose {
       rotation: -dodge * 0.13 + snap * 0.08,
       impact: snap * 0.65,
       dust: snap * 0.55,
+      frame: dodge > snap ? 1 : snap > 0 ? 3 : 0,
     };
   }
 
-  // Winner: hit-pause, launch, then a readable loop without moving lanes.
-  const p = clamp01(age / 1500);
-  const launch = p < 0.18 ? 0 : pulse((p - 0.18) / 0.42);
-  const celebrate = p < 0.6 ? 0 : Math.abs(Math.sin((p - 0.6) * Math.PI * 5));
+  if (input.motion === "lose") {
+    const reaction = winnerPhase(age).loserReaction;
+    return {
+      ...base(520),
+      x: -reaction * 2,
+      y: reaction * 1.8,
+      scaleX: 1 + reaction * 0.04,
+      scaleY: 1 - reaction * 0.1,
+      rotation: reaction * (input.variant > 0.5 ? 0.09 : -0.09),
+      frame: reaction > 0.4 ? 2 : 0,
+      dust: reaction * 0.22,
+    };
+  }
+
+  const win = winnerPhase(age);
   return {
     ...base(260),
-    y: -launch * 8 - celebrate * 5,
-    scaleX: 1 + launch * 0.18 + celebrate * 0.08,
-    scaleY: 1 - launch * 0.08 + celebrate * 0.08,
-    rotation: Math.sin(p * Math.PI * 4) * launch * 0.08,
-    afterimage: launch * 0.55,
-    impact: pulse((p - 0.08) / 0.15),
-    dust: launch * 0.8,
+    y: -win.launch * 8 - win.celebrate * 5,
+    scaleX: 1 + win.launch * 0.18 + win.celebrate * 0.08,
+    scaleY: 1 - win.launch * 0.08 + win.celebrate * 0.08,
+    rotation: Math.sin(age * 0.012) * win.launch * 0.08,
+    afterimage: win.launch * 0.48,
+    impact: Math.max(win.freeze, win.converge * 0.55),
+    dust: win.launch * 0.8,
+    energy: win.converge,
+    frame: win.freeze ? 2 : cyclePose(age, 360),
   };
 }
 

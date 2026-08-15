@@ -37,6 +37,9 @@ export interface RacerFrame {
   lane: number;
   leading: boolean;
   finished: boolean;
+  /** Presentation-only normalized velocity/acceleration from authoritative frames. */
+  speed?: number;
+  acceleration?: number;
   reaction?: "surge" | "stumble" | "jump" | "duel" | "near";
   /** Presentation timestamp only; race progress remains authoritative. */
   reactionStartedMs?: number;

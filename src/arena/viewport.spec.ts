@@ -23,7 +23,8 @@ describe("Arena responsive viewport", () => {
     expect(arenaViewport(1280, 720).actorScale * 72).toBeCloseTo(88);
     expect(arenaViewport(1920, 1080).actorScale * 72).toBeCloseTo(88);
     expect(arenaViewport(390, 844).actorScale * 72).toBeCloseTo(68);
-    expect(arenaViewport(844, 390).actorScale * 72).toBeCloseTo(56);
+    expect(arenaViewport(667, 375).actorScale * 72).toBeCloseTo(88);
+    expect(arenaViewport(844, 390).actorScale * 72).toBeCloseTo(88);
   });
   it("clamps invalid lane and progress values", () => {
     const view = arenaViewport(1280, 720);

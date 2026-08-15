@@ -8,7 +8,7 @@ describe("Arena presentation choreography", () => {
   });
 
   it("never produces non-finite transforms for any motion", () => {
-    for (const motion of ["idle", "run", "surge", "stumble", "jump", "duel", "near", "win"] as const) {
+    for (const motion of ["idle", "run", "surge", "stumble", "jump", "duel", "near", "win", "lose"] as const) {
       for (const elapsedMs of [0, 90, 320, 780, 1600]) {
         const pose = motionPose({ motion, elapsedMs, motionStartedMs: 100, lane: 11, heat: 3, variant: 0.72 });
         expect(Object.values(pose).every(Number.isFinite)).toBe(true);
