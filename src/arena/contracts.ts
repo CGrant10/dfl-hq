@@ -14,10 +14,13 @@ export interface SharedRaceEvent {
 }
 
 export interface RacePet {
+  name?: string;
   species: string;
   color: string;
   accent: string;
   trail: string;
+  accessory?: string;
+  expression?: string;
 }
 
 export interface RaceRacer {
