@@ -937,3 +937,75 @@ body.broadcasting .view { width:100%; height:100%; }
     scroll-margin-bottom:calc(70px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* Full-field standings rail: never overlays the course or finish line. */
+.bc-stage .bc-body {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) clamp(150px,19vw,330px);
+  gap:clamp(5px,1vw,18px);
+}
+.bc-stage .bc-body.no-board { grid-template-columns:minmax(0,1fr); }
+.bc-stage .bc-board {
+  position:relative;
+  inset:auto;
+  right:auto;
+  top:auto;
+  width:auto;
+  height:100%;
+  max-height:100%;
+  margin:0;
+  align-self:stretch;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  border-radius:clamp(6px,.8vw,14px);
+}
+.bc-stage .bc-board-list {
+  display:grid;
+  grid-auto-rows:minmax(0,1fr);
+  align-content:stretch;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.bc-stage .bc-board-list li,
+.bc-stage .bc-board-list li:nth-child(n+4) {
+  display:grid;
+  grid-template-columns:clamp(18px,1.7vw,32px) minmax(0,1fr) auto;
+  height:auto;
+  min-height:0;
+  padding:0 clamp(4px,.55vw,10px);
+  gap:clamp(3px,.35vw,7px);
+  font-size:clamp(8px,.78vw,14px);
+}
+.bc-stage .bc-board-head {
+  padding:clamp(5px,.55vw,10px) clamp(6px,.7vw,12px);
+  font-size:clamp(8px,.7vw,12px);
+}
+.bc-stage .bc-pos { font-size:clamp(10px,1vw,18px); }
+.bc-stage .bc-time { font-size:clamp(7px,.68vw,12px); }
+
+@media (max-width:800px) {
+  .bc-stage .bc-body {
+    grid-template-columns:minmax(0,1fr) minmax(112px,31vw);
+    gap:5px;
+  }
+  .bc-stage .bc-board {
+    position:relative;
+    inset:auto;
+    width:auto;
+    height:100%;
+    max-height:100%;
+    overflow:hidden;
+  }
+  .bc-stage .bc-board-list li,
+  .bc-stage .bc-board-list li:nth-child(n+4) {
+    display:grid;
+    height:auto;
+    min-height:0;
+    grid-template-columns:18px minmax(0,1fr) auto;
+    padding:0 4px;
+    font-size:clamp(7px,2vw,10px);
+  }
+  .bc-stage .bc-time { font-size:clamp(6px,1.6vw,9px); }
+}
