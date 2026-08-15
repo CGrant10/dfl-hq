@@ -14,7 +14,9 @@ export function arenaViewport(width: number, height: number): ArenaViewport {
   const trackLeft = safeWidth * (portrait ? 0.06 : 0.045);
   const trackRight = safeWidth * (portrait ? 0.94 : 0.955);
   const laneHeight = laneBottom - laneTop;
-  const actorScale = Math.max(0.58, Math.min(1.35, Math.min(safeWidth / 1050, safeHeight / 690)));
+  const screenScale = Math.min(safeWidth / 1050, safeHeight / 690);
+  const laneScale = (laneHeight / 12 / 58) * 0.78;
+  const actorScale = Math.max(0.28, Math.min(1.35, screenScale, laneScale));
   return { width: safeWidth, height: safeHeight, portrait, compact, laneTop, laneBottom,
     laneHeight, trackLeft, trackRight, trackWidth: trackRight - trackLeft, actorScale };
 }
@@ -29,3 +31,4 @@ export function screenX(viewport: ArenaViewport, progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
   return viewport.trackLeft + viewport.trackWidth * p;
 }
+
