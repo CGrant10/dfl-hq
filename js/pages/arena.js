@@ -929,12 +929,17 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     block: window.matchMedia("(max-width: 720px)").matches ? "center" : "start",
   });
 
+  const pixi = await createArenaRenderer(stage.querySelector(".arena-track-wrap"), racers);
+  const startGrid = racers.map((racer, lane) => ({
+    id: racer.id, progress: 0, lane, leading: lane === 0, finished: false,
+  }));
   if (reduceMotion()) status.textContent = "Racing";
-  else await countdown(stage);
+  else await countdown(stage, (countdownMs) => pixi?.render({
+    elapsedMs: 0, state: "idle", heat: 0, racers: startGrid, countdownMs,
+  }));
 
   status.textContent = "Racing";
   stage.querySelector("#track")?.classList.add("is-running");
-  const pixi = await createArenaRenderer(stage.querySelector(".arena-track-wrap"), racers);
   const started = performance.now();
   let pausedFor = 0;
   let pausedAt = null;
@@ -1211,7 +1216,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 }
 
 
-function countdown(stage) {
+function countdown(stage, onStep = null) {
   const box = stage.querySelector("#countdown");
   const num = stage.querySelector("#countdown-n");
   const status = stage.querySelector("#sb-status");
@@ -1223,6 +1228,7 @@ function countdown(stage) {
     const tick = () => {
       if (!stage.isConnected) { resolve(); return; }
       const step = steps[i];
+      onStep?.(Math.max(0, (steps.length - 1 - i) * COUNTDOWN_STEP_MS));
       num.textContent = step;
       num.classList.toggle("go", step === "GO!");
       num.style.animation = "none";
