@@ -947,7 +947,7 @@ a.moment:hover { background: var(--hover-soft); }
 
 
 /* Desktop anime race pass: the course moves around crisp, readable racers. */
-@media (min-width: 801px) and (prefers-reduced-motion: no-preference) {
+@media (min-width: 801px) {
   .arena-track-wrap.cinematic-race,
   .bc-stage.cinematic-race {
     --anime-speed: 1;
@@ -998,22 +998,22 @@ a.moment:hover { background: var(--hover-soft); }
 
   .arena-track-wrap:has(.track.is-running) .race-sky::after,
   .bc-stage.is-racing .race-sky::after {
-    animation:animeCloudRush calc(1.15s / var(--anime-speed)) linear infinite;
+    animation:animeCloudRush calc(.72s / var(--anime-speed)) linear infinite;
   }
 
   .arena-track-wrap:has(.track.is-running) .race-hills.near,
   .bc-stage.is-racing .race-hills.near {
-    animation:animeNearRush calc(.62s / var(--anime-speed)) linear infinite;
+    animation:animeNearRush calc(.34s / var(--anime-speed)) linear infinite;
   }
 
   .arena-track-wrap:has(.track.is-running) .race-hills.far,
   .bc-stage.is-racing .race-hills.far {
-    animation:animeFarRush calc(1.5s / var(--anime-speed)) linear infinite;
+    animation:animeFarRush calc(.78s / var(--anime-speed)) linear infinite;
   }
 
   .arena-track-wrap:has(.track.is-running) .race-crowd,
   .bc-stage.is-racing .race-crowd {
-    animation:animeCrowdRush calc(.28s / var(--anime-speed)) linear infinite;
+    animation:animeCrowdRush calc(.16s / var(--anime-speed)) linear infinite;
     filter:blur(1.4px) saturate(1.2);
   }
 
@@ -1068,11 +1068,11 @@ a.moment:hover { background: var(--hover-soft); }
   }
   @keyframes animeNearRush {
     from { transform:translateX(0) scaleX(1.08); }
-    to { transform:translateX(-24%) scaleX(1.08); }
+    to { transform:translateX(-18%) scaleX(1.08); }
   }
   @keyframes animeFarRush {
     from { transform:translateX(0) scaleX(1.18); }
-    to { transform:translateX(-11%) scaleX(1.18); }
+    to { transform:translateX(-8%) scaleX(1.18); }
   }
   @keyframes animeCrowdRush {
     from { background-position:0 0,9px 9px,0 0; }
@@ -1083,5 +1083,19 @@ a.moment:hover { background: var(--hover-soft); }
     25% { transform:translate3d(-2px,1px,0); }
     50% { transform:translate3d(2px,-1px,0); }
     75% { transform:translate3d(-1px,-1px,0); }
+  }
+}
+
+
+/*
+  Desktop race motion is intentionally explicit. Some desktop systems report
+  reduced motion globally, which previously suppressed the requested race
+  presentation entirely. The race keeps its fast scenery and speed field;
+  non-race pages still honor the operating-system preference.
+*/
+@media (min-width:801px) {
+  .arena-track-wrap:has(.track.is-running) .race-scenery,
+  .bc-stage.is-racing .race-scenery {
+    transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)!important;
   }
 }
