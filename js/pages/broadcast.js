@@ -265,6 +265,7 @@ function paint(view, event, racers) {
       <div class="bc-winner hidden" id="bc-winner">
         <div class="bc-winner-inner">
           <span class="bc-winner-kicker">Winner</span>
+          <span class="bc-winner-art" id="bc-winner-art" aria-hidden="true"></span>
           <span class="bc-winner-name" id="bc-winner-name"></span>
           <span class="bc-winner-event">${esc(event.name)}</span>
         </div>
@@ -307,10 +308,13 @@ function watch(view, id, racers) {
     body:    view.querySelector(".bc-body"),
     list:    view.querySelector("#bc-board-list"),
     track:   view.querySelector("#bc-track"),
+    scenery: view.querySelector(".race-scenery"),
+    stage:   view.querySelector("#bc-stage"),
     overlay: view.querySelector("#bc-overlay"),
     count:   view.querySelector("#bc-count"),
     winner:  view.querySelector("#bc-winner"),
     winName: view.querySelector("#bc-winner-name"),
+    winArt:  view.querySelector("#bc-winner-art"),
   };
 
   const apply = (row) => {
@@ -415,11 +419,14 @@ function watch(view, id, racers) {
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
       const src = live.shown || sim.samples;
+      let cameraLead = 0;
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
         const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
         els.runners[i].style.transform = `translate3d(${trackX(p)},0,0)`;
+        cameraLead = Math.max(cameraLead, p);
       }
+      if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
         EVENTS AND REACTIONS.
@@ -513,10 +520,18 @@ function watch(view, id, racers) {
       if (done) {
         const win = sim.order[0];
         els.winName.textContent = win?.racer.name || "";
+        if (win && els.winArt && !els.winArt.dataset.racer) {
+          const art = els.runners[win.index]?.querySelector(".bc-runner-art");
+          els.winArt.innerHTML = art?.innerHTML || "";
+          els.winArt.dataset.racer = String(win.index);
+        }
+        els.stage?.classList.add("is-finished");
         els.winner.classList.remove("hidden");
         els.status.textContent = "Final";
       } else {
         els.winner.classList.add("hidden");
+        els.stage?.classList.remove("is-finished");
+        if (els.winArt) { els.winArt.innerHTML = ""; delete els.winArt.dataset.racer; }
         if (state === "running") {
           els.status.textContent = elapsed > finishMs * 0.82 ? "Final stretch" : "Racing";
         } else if (state === "paused")  els.status.textContent = "Paused";
