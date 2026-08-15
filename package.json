@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm test"
+    "build": "vite build",
+    "check": "pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
     "pixi.js": "^8.19.0"
