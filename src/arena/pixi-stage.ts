@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Sprite, Text } from "pixi.js";
+import { Application, Assets, Container, Graphics, Sprite, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, petTextureUri } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
@@ -55,17 +55,19 @@ export class PixiRaceStage implements RaceRenderer {
     this.resize();
   }
 
-  setRacers(racers: readonly RaceRacer[]): void {
+  async setRacers(racers: readonly RaceRacer[]): Promise<void> {
     this.#racers = racers;
     this.#actorById.clear();
     this.actors.removeChildren();
-    for (const racer of racers) {
+    await Promise.all(racers.map(async (racer) => {
       const root = new Container({ label: `racer-${racer.id}` });
       root.eventMode = "none";
       const pet = normalizePet(racer.pet, racer.color);
       const trail = new Graphics({ label: `trail-${pet.trail}` });
       const shadow = new Graphics().ellipse(0, 13, 22, 7).fill({ color: 0x000000, alpha: 0.34 });
-      const sprite = Sprite.from(petTextureUri(pet, racer.color));
+      const texture = await Assets.load(petTextureUri(pet, racer.color));
+      texture.source.scaleMode = "nearest";
+      const sprite = new Sprite(texture);
       sprite.label = `pet-${pet.species}`;
       sprite.anchor.set(0.5, 0.72);
       sprite.width = 58;
@@ -73,7 +75,7 @@ export class PixiRaceStage implements RaceRenderer {
       root.addChild(trail, shadow, sprite);
       this.#actorById.set(racer.id, { root, sprite, trail, trailKind: pet.trail, accent: this.#color(pet.accent) });
       this.actors.addChild(root);
-    }
+    }));
     this.#drawCourse();
   }
 
