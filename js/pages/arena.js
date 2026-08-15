@@ -505,63 +505,64 @@ function broadcastCard(event, parts) {
   if (!canEdit()) return "";
 
   const url = `${location.origin}${location.pathname}#/broadcast?id=${event.id}`;
-  const running = event.bc_state === "running";
-  const paused  = event.bc_state === "paused";
+  const state = event.bc_state || "idle";
+  const running = state === "running";
+  const paused = state === "paused";
+  const finished = state === "finished";
+  const ready = parts.length >= 2;
+  const statusLabel = running ? "Race live" : paused ? "Race paused" : finished ? "Race finished" : "Ready to race";
+  const statusHelp = !ready ? "Add at least two racers to begin." :
+    running ? "The shared race is moving on every viewer." :
+    paused ? "Viewers are holding on the same frame." :
+    finished ? "Review the finish, save it, or reset for another run." :
+    "All viewers are waiting at the starting line.";
 
   return `
-    <section class="card bc-panel" data-collapse="arena-broadcast" data-collapse-title="Race controls">
+    <section class="card bc-panel" aria-labelledby="bc-console-title">
+      <header class="bc-console-head">
+        <div>
+          <span class="eyebrow">Commissioner console</span>
+          <h2 id="bc-console-title">Race control</h2>
+          <p class="muted tiny">${esc(statusHelp)}</p>
+        </div>
+        <div class="bc-state bc-state--${esc(state)}" role="status">
+          <span class="bc-state-dot" aria-hidden="true"></span>
+          <span>${esc(statusLabel)}</span>
+        </div>
+      </header>
+
+      <div class="bc-command">
+        <button class="btn bc-primary" id="bc-start" ${ready ? "" : "disabled"}>
+          <span>${running || paused || finished ? "Run race again" : "Start race"}</span>
+          <small>${ready ? `${parts.length} racers · shared live` : "Lineup incomplete"}</small>
+        </button>
+        <div class="bc-transport" aria-label="Race transport controls">
+          <button class="btn ghost" id="bc-pause" ${running || paused ? "" : "disabled"}>${paused ? "Resume race" : "Pause race"}</button>
+          <button class="btn ghost" id="bc-skip" ${running || paused ? "" : "disabled"}>Finish now</button>
+        </div>
+      </div>
+
+      <div class="bc-console-foot">
+        <fieldset class="bc-view-options">
+          <legend>Viewer display</legend>
+          <label><input type="checkbox" id="bc-board-t" ${event.bc_show_board === false ? "" : "checked"}> Leaderboard</label>
+          <label><input type="checkbox" id="bc-timer-t" ${event.bc_show_timer === false ? "" : "checked"}> Race clock</label>
+        </fieldset>
+        <div class="bc-result-actions">
+          <button class="btn ghost small" id="bc-save" ${finished && ready ? "" : "disabled"}>Save result</button>
+          <button class="btn ghost small danger" id="bc-reset" ${state === "idle" ? "disabled" : ""}>Reset race</button>
+        </div>
+      </div>
 
       <details class="bc-setup">
-        <summary>OBS setup</summary>
-        <p class="muted tiny">Paste this URL into an OBS Browser Source once. Race controls stay here.</p>
+        <summary>Viewer / OBS link</summary>
+        <p class="muted tiny">This public link opens directly into the race view. No profile is required.</p>
         <div class="bc-url">
-          <input id="bc-url" type="text" readonly value="${esc(url)}">
-          <button class="btn ghost small" id="bc-copy">Copy URL</button>
+          <input id="bc-url" type="text" readonly aria-label="Public race viewer URL" value="${esc(url)}">
+          <button class="btn ghost small" id="bc-copy">Copy link</button>
         </div>
       </details>
-
-      <div class="bc-controls">
-        <button class="btn small" id="bc-start" ${parts.length < 2 ? "disabled" : ""}>
-          ${running || paused ? "Restart shared race" : "Start shared race"}
-        </button>
-        <button class="btn ghost small" id="bc-pause" ${running || paused ? "" : "disabled"}>
-          ${paused ? "Resume" : "Pause"}
-        </button>
-        <button class="btn ghost small" id="bc-skip" ${running || paused ? "" : "disabled"}>Finish now</button>
-        <button class="btn ghost small" id="bc-reset">Reset race</button>
-        <button class="btn ghost small" id="bc-save" ${parts.length < 2 ? "disabled" : ""}>Save final result</button>
-      </div>
-
-      <div class="bc-toggles">
-        <label><input type="checkbox" id="bc-board-t" ${event.bc_show_board === false ? "" : "checked"}> Leaderboard</label>
-        <label><input type="checkbox" id="bc-timer-t" ${event.bc_show_timer === false ? "" : "checked"}> Timer</label>
-        <span class="pill ${running ? "green" : paused ? "warn" : "grey"}">${esc(event.bc_state || "idle")}</span>
-      </div>
     </section>`;
-}
-
-/*
-  FOLD THE CONTROLS WITHOUT REMEMBERING IT.
-
-  collapse.js persists every fold to localStorage, which is right when a
-  person presses the button and wrong here: an automatic hide is not a
-  preference, and clicking the button on their behalf meant the controls
-  stayed folded for good after the first race.
-
-  So this sets the same `is-folded` class the system uses and syncs the
-  injected button's label and aria-expanded by hand - the visible result is
-  identical, the button still works, and nothing is written to storage.
-  The Show/Hide button collapse.js already injected is the affordance for
-  bringing them back mid-race.
-*/
-function foldControls(card, folded) {
-  if (!card) return;
-  card.classList.toggle("is-folded", folded);
-  const btn = card.querySelector(":scope > .dfl-fold");
-  if (!btn) return;
-  btn.setAttribute("aria-expanded", String(!folded));
-  const hint = btn.querySelector("[data-fold-hint]");
-  if (hint) hint.textContent = folded ? "Show" : "Hide";
 }
 
 /** Seconds of countdown before the racers move. */
@@ -833,15 +834,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
      path calls finish() before the racing path runs at all, and a `const`
      declared later would be in its temporal dead zone - a ReferenceError
      for exactly the users who asked for less motion. */
-  let controlsWereOpen = false;
-
   const finish = async () => {
     status.textContent = "Final";
     stage.querySelector("#track")?.classList.remove("is-running");
-    /* Hand the controls back exactly as they were found, through the same
-       button - so the label and the caret agree with the state again. */
-    const p = document.querySelector('[data-collapse="arena-broadcast"]');
-    if (controlsWereOpen) foldControls(p, false);
     /* The winner's celebration is added by the cascade the moment they
        actually cross, not here - by the time this runs the last racer is
        home and the moment has passed. */
@@ -862,39 +857,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     quiet. Only the animated countdown is skipped below.
   */
 
-  /* THE RACE GETS THE SCREEN. The control panel sits below the stage, so
-     an admin who just pressed Start is looking at buttons while the race
-     runs above them. Scroll the track into view first. */
+  /* Keep the race in view while leaving the commissioner console stable.
+     Controls no longer collapse or change location during an active run. */
   stage.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
-
-  /*
-    THE CONTROLS GET OUT OF THE WAY once the race is actually going.
-
-    They are a <details> already (collapse.js), so hiding them is setting
-    .open = false - no second control system, and the existing summary is
-    the "show them again" affordance the brief asked for. It is restored
-    after the last racer is home, because that is when an admin wants
-    Save result and Replay again.
-  */
-  /*
-    THE CONTROLS FOLD THROUGH collapse.js, NOT THROUGH .open.
-
-    THE BUG: this card is a <section class="card" data-collapse="...">, and
-    the first version set panel.open = false on it. `open` is a property of
-    <details>. Setting it on a section silently does nothing at all - no
-    error, no effect - so the controls simply stayed on screen for the whole
-    race.
-
-    collapse.js has no exported API: it injects a .dfl-fold button into each
-    marked card and toggles an `is-folded` class from that button's own
-    handler. Clicking that button IS the public interface, and using it
-    keeps the caret, aria-expanded and the Show/Hide label in step - which
-    also gives the "small unobtrusive control to bring them back" for free,
-    because that button stays visible while the card is folded.
-  */
-  const panel = document.querySelector('[data-collapse="arena-broadcast"]');
-  controlsWereOpen = !!panel && !panel.classList.contains("is-folded");
-  if (controlsWereOpen) foldControls(panel, true);
 
   if (reduceMotion()) status.textContent = "Racing";
   else await countdown(stage);
