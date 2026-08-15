@@ -40,4 +40,3 @@ export async function createArenaRenderer(parent: HTMLElement, racers: readonly 
     return null;
   }
 }
-
