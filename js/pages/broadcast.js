@@ -78,6 +78,7 @@ export async function render(view) {
       sprite: pet?.species || p.sprite,
       image: pet ? null : p.sprite_image,
       color: pet?.color || p.color || LANE_COLORS[i % LANE_COLORS.length],
+      pet,
       number: p.number ?? i + 1,
     };
   });
@@ -214,7 +215,11 @@ function teardown() {
 
 function paint(view, event, racers) {
   view.innerHTML = `
-    <div class="bc-stage" id="bc-stage">
+    <div class="bc-stage cinematic-race" id="bc-stage" data-theme="${esc(event.theme || "stadium")}">
+      <div class="race-scenery" aria-hidden="true">
+        <div class="race-sky"></div><div class="race-hills far"></div>
+        <div class="race-hills near"></div><div class="race-crowd"></div>
+      </div>
       <header class="bc-head">
         <div class="bc-brand">
           <span class="bc-brand-mark">DFL <span>HQ</span></span>
@@ -235,10 +240,11 @@ function paint(view, event, racers) {
               <span class="bc-lane-name" style="--racer:${esc(r.color)}">
                 <b>${r.number}</b>${esc(r.name)}
               </span>
-              <div class="bc-runner" id="bc-runner-${i}">
-                <div class="bc-runner-art" style="--racer:${esc(r.color)}">
-                  ${spriteMarkup(event.theme, r.sprite, r.color, r.image)}
+              <div class="bc-runner trail-${esc(r.pet?.trail || "none")}" id="bc-runner-${i}">
+                <div class="bc-runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
+                  ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
                 </div>
+                <span class="bc-runner-name"><b>${r.number}</b> ${esc(r.name)}</span>
               </div>
             </div>`).join("")}
         </div>
