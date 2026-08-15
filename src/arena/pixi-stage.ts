@@ -2,10 +2,11 @@ import { Application, Container, Graphics, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, type ArenaPet } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
+import { CHARACTERS } from "../../js/arena/dfl-sprites.js";
 
-const SKY = 0x09142f;
-const TRACK = 0x16264f;
-const LANE = 0x8bbcff;
+const SKY = 0x65bcec;
+const TRACK = 0x2f7e35;
+const LANE = 0xffffff;
 const SPEED = 0xb8e8ff;
 
 interface PetActor {
@@ -88,7 +89,7 @@ export class PixiRaceStage implements RaceRenderer {
       actor.root.x = screenX(this.#viewport, racer.progress);
       actor.root.y = laneY(this.#viewport, racer.lane, this.#racers.length);
       const depth = this.#racers.length > 1 ? racer.lane / (this.#racers.length - 1) : 0.5;
-      const depthScale = 0.76 + depth * 0.42;
+      const depthScale = 0.82 + depth * 0.28;
       actor.root.scale.set(this.#viewport.actorScale * depthScale * (racer.leading ? 1.1 : 1));
       actor.root.rotation = motion === "stumble" ? -0.18 : motion === "jump" ? stride * 0.1 : stride * 0.035;
       actor.root.alpha = frame.state === "idle" ? 0.9 : 1;
@@ -125,15 +126,16 @@ export class PixiRaceStage implements RaceRenderer {
     this.#parallax.clear();
     for (let i = -1; i < 8; i++) {
       const x = i * v.width / 6;
-      this.#parallax.poly([x, v.laneTop, x + v.width / 12, v.laneTop - v.height * 0.12, x + v.width / 6, v.laneTop]).fill({ color: 0x183f68, alpha: 0.7 });
+      this.#parallax.poly([x, v.laneTop, x + v.width / 12, v.laneTop - v.height * 0.16, x + v.width / 6, v.laneTop]).fill({ color: 0x4d9650, alpha: 0.82 });
     }
-    this.#parallax.rect(0, v.laneTop - v.height * 0.025, v.width, v.height * 0.025).fill({ color: 0x72d6ff, alpha: 0.4 });
-    this.#track.clear().poly([0, v.laneTop, v.width, v.laneTop + v.height * 0.035, v.width, v.laneBottom, 0, v.laneBottom - v.height * 0.025]).fill(TRACK);
+    this.#parallax.rect(0, v.laneTop - v.height * 0.025, v.width, v.height * 0.025).fill({ color: 0xcff4ff, alpha: 0.55 });
+    this.#parallax.rect(0, v.laneBottom, v.width, v.height - v.laneBottom).fill({ color: 0x18391f, alpha: 0.9 });
+    this.#track.clear().rect(0, v.laneTop, v.width, v.laneHeight).fill(TRACK);
     this.#laneLines.clear();
     const count = Math.max(1, this.#racers.length);
     for (let lane = 1; lane < count; lane++) {
       const y = v.laneTop + v.laneHeight * (lane / count);
-      this.#laneLines.moveTo(0, y).lineTo(v.width, y).stroke({ color: LANE, alpha: 0.13, width: 1 });
+      this.#laneLines.moveTo(0, y).lineTo(v.width, y).stroke({ color: LANE, alpha: 0.035, width: 1 });
     }
     this.#finish.clear();
     const size = Math.max(7, Math.min(16, v.width / 72));
@@ -215,26 +217,25 @@ export class PixiRaceStage implements RaceRenderer {
     const accent = this.#color(pet.accent);
     let hash = 0;
     for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
-    const shape = hash % 4;
+    const character = CHARACTERS.find((item) => item.id === pet.species) || CHARACTERS[hash % CHARACTERS.length]!;
     const g = new Graphics({ label: `pet-body-${pet.species}` });
-    const px = 4;
-    const cell = (x: number, y: number, color = body) => g.rect((x - 8) * px, (y - 8) * px, px, px).fill(color);
-    for (let y = 4; y <= 11; y++) for (let x = 3; x <= 12; x++) {
-      if ((x === 3 || x === 12) && (y === 4 || y === 11)) continue;
-      cell(x, y);
+    const px = 3;
+    const palette = character.palette as Record<string, string>;
+    for (let y = 0; y < character.px.length; y++) {
+      const row = character.px[y]!;
+      for (let x = 0; x < row.length; x++) {
+      const key = row[x]!;
+      if (key === ".") continue;
+      const source = key === "L" ? body : this.#color(palette[key] || pet.accent);
+      g.rect((x - 12) * px, (y - 8) * px, px, px).fill(source);
+      }
     }
-    if (shape === 0) for (let y = 0; y < 4; y++) { cell(4, y); cell(11, y); }
-    else if (shape === 1) { cell(3, 3); cell(4, 2); cell(5, 1); cell(10, 1); cell(11, 2); cell(12, 3); }
-    else if (shape === 2) { cell(2, 4); cell(2, 5); cell(13, 4); cell(13, 5); }
-    else { for (let x = 5; x <= 10; x++) cell(x, 2); }
-    for (let y = 12; y <= 14; y++) { cell(5, y); cell(6, y); cell(9, y); cell(10, y); }
-    if (pet.expression === "sleepy") { cell(5, 6, accent); cell(6, 6, accent); cell(9, 6, accent); cell(10, 6, accent); }
-    else { cell(5, 6, accent); cell(10, 6, accent); cell(6, 9, accent); cell(7, 10, accent); cell(8, 10, accent); cell(9, 9, accent); }
-    if (pet.accessory === "crown") { cell(5, 2, accent); cell(6, 1, accent); cell(7, 2, accent); cell(8, 0, accent); cell(9, 2, accent); cell(10, 1, accent); }
-    else if (pet.accessory === "visor") for (let x = 4; x <= 11; x++) cell(x, 6, accent);
-    else if (pet.accessory === "bandana") for (let x = 3; x <= 12; x++) cell(x, 10, accent);
-    else if (pet.accessory === "cape") { for (let y = 8; y <= 13; y++) { cell(2, y, accent); if (y > 9) cell(1, y, accent); } }
-    else if (pet.accessory === "headphones") { for (let y = 4; y <= 8; y++) { cell(2, y, accent); cell(13, y, accent); } }
+    const cell = (x: number, y: number, color = accent) => g.rect((x - 12) * px, (y - 8) * px, px, px).fill(color);
+    if (pet.accessory === "crown") { cell(9, 1); cell(10, 0); cell(11, 1); cell(12, -1); cell(13, 1); cell(14, 0); }
+    else if (pet.accessory === "visor") for (let x = 7; x <= 16; x++) cell(x, 6);
+    else if (pet.accessory === "bandana") for (let x = 6; x <= 17; x++) cell(x, 10);
+    else if (pet.accessory === "cape") for (let y = 8; y <= 14; y++) { cell(4, y); if (y > 10) cell(3, y); }
+    else if (pet.accessory === "headphones") for (let y = 4; y <= 9; y++) { cell(5, y); cell(18, y); }
     return g;
   }
 
