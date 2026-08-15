@@ -933,6 +933,21 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const track = stage.querySelector("#track");
     const scenery = stage.querySelector(".race-scenery");
     const raceWrap = stage.querySelector(".arena-track-wrap");
+    /*
+      Composite racer travel instead of changing `left` every frame.
+      Track width is measured only when the stage resizes; each animation
+      frame writes one CSS variable consumed by translate3d on the runner.
+    */
+    let trackWidth = Math.max(1, track?.clientWidth || 1);
+    const sizeWatcher = typeof ResizeObserver === "function" ? new ResizeObserver((entries) => {
+      trackWidth = Math.max(1, entries[0]?.contentRect?.width || track?.clientWidth || 1);
+    }) : null;
+    sizeWatcher?.observe(track);
+    for (const runner of runners) {
+      runner?.style.setProperty("--race-x", `${(trackWidth * .03).toFixed(2)}px`);
+      runner?.classList.add("is-positioned");
+    }
+    const stopPlayback = (value) => { sizeWatcher?.disconnect(); resolve(value); };
     /* A racer wearing a reaction, and when it expires. The class drives a
        CSS keyframe on the character; nothing here moves anything. */
     const reacting = new Map();
@@ -941,7 +956,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     function frame(now) {
       /* A Pause, Reset, route change, or re-render detaches this stage.
          Stop the old loop before it can write classes or save a ghost result. */
-      if (!stage.isConnected) { resolve(false); return; }
+      if (!stage.isConnected) { stopPlayback(false); return; }
       const elapsed = now - started;
       const t = Math.min(sim.frames, elapsed / TICK_MS);
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
@@ -950,7 +965,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
-        runners[i].style.left = raceLeft(p);
+        runners[i].style.setProperty("--race-x", `${(trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
       }
@@ -1144,7 +1159,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           `controls ${document.querySelector('[data-collapse="arena-broadcast"]')?.classList.contains("is-folded") ? "HIDDEN" : "visible"}`;
       }
 
-      if (elapsed >= total) resolve(true);
+      if (elapsed >= total) stopPlayback(true);
       else requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
@@ -1156,20 +1171,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   return true;
 }
 
-/*
-  Progress to a CSS translate.
-
-  CAREFUL: a percentage in translateX resolves against the ELEMENT'S OWN
-  width, not the parent's. That is why .runner is a full-width rail that
-  spans the lane and the sprite sits at its left edge - translating the rail
-  by 50% moves the sprite half a lane, which is what you want. When the
-  transform was on the 46px sprite itself, "100%" was 46 pixels and the
-  racers looked frozen on the start line.
-
-  Subtracting the sprite width keeps it inside the lane at the finish, so
-  nothing has to be measured inside the animation loop.
-*/
-const raceLeft = (p) => `${(3 + Math.max(0, Math.min(1, p)) * 88).toFixed(3)}%`;
 
 function countdown(stage) {
   const box = stage.querySelector("#countdown");

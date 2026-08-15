@@ -1099,3 +1099,61 @@ a.moment:hover { background: var(--hover-soft); }
     transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)!important;
   }
 }
+
+
+/* Race compositor v2: transform-only travel, shared by Arena and viewer. */
+.arena-track-wrap.cinematic-race .runner.is-positioned,
+.bc-stage .bc-runner.is-positioned {
+  left:0;
+  transform:translate3d(calc(var(--race-x,0px) - 50%),0,0);
+  will-change:transform;
+}
+
+/* Desktop receives the full character performance even when the OS motion
+   preference was inherited from an unrelated accessibility setting. */
+@media (min-width:801px) {
+  .arena-track-wrap .track.is-running .runner-art {
+    animation:dfl-run .32s linear infinite!important;
+  }
+  .arena-track-wrap .runner.is-surge .runner-art,
+  .arena-track-wrap .runner.is-duel .runner-art {
+    animation:dfl-surge .18s linear infinite!important;
+  }
+  .arena-track-wrap .runner.is-stumble .runner-art {
+    animation:dfl-stumble .3s ease-in-out 4!important;
+  }
+  .arena-track-wrap .runner.is-jump .runner-art {
+    animation:ar-jump .3s var(--ease) 3!important;
+  }
+  .arena-track-wrap .runner.is-winner .runner-art {
+    animation:dfl-win .5s var(--ease) 3!important;
+  }
+  .bc-stage.is-racing .bc-track.is-running .bc-runner-art {
+    animation:bcRun .32s linear infinite!important;
+  }
+  .bc-stage .bc-runner.is-surge .bc-runner-art,
+  .bc-stage .bc-runner.is-duel .bc-runner-art {
+    animation:bcSurge .18s linear infinite!important;
+  }
+  .bc-stage .bc-runner.is-stumble .bc-runner-art {
+    animation:bcStumble .3s ease-in-out 4!important;
+  }
+  .bc-stage .bc-runner.is-jump .bc-runner-art {
+    animation:bcJump .3s ease-out 3!important;
+  }
+  .bc-stage .bc-runner.is-winner .bc-runner-art {
+    animation:bcWin .5s ease-out 3!important;
+  }
+  .arena-track-wrap .track.is-running .px-frame-a,
+  .bc-stage.is-racing .px-frame-a { animation-name:pxFrameA!important; }
+  .arena-track-wrap .track.is-running .px-frame-b,
+  .bc-stage.is-racing .px-frame-b { animation-name:pxFrameB!important; }
+  .arena-track-wrap .track.is-running .px-frame-a,
+  .arena-track-wrap .track.is-running .px-frame-b,
+  .bc-stage.is-racing .px-frame-a,
+  .bc-stage.is-racing .px-frame-b {
+    animation-duration:.38s!important;
+    animation-timing-function:steps(1,end)!important;
+    animation-iteration-count:infinite!important;
+  }
+}

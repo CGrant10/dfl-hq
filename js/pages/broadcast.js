@@ -207,6 +207,7 @@ function teardown() {
   if (!live) return;
   cancelAnimationFrame(live.raf);
   clearInterval(live.poll);
+  live.resizeObserver?.disconnect?.();
   live.channel?.unsubscribe?.();
   live = null;
 }
@@ -298,7 +299,7 @@ function paint(view, event, racers) {
  * every state change - pausing must not re-roll the race.
  */
 function watch(view, id, racers) {
-  live = { raf: 0, poll: 0, channel: null, sim: null, simKey: "", state: null };
+  live = { raf: 0, poll: 0, channel: null, resizeObserver: null, trackWidth: 1, sim: null, simKey: "", state: null };
 
   const els = {
     runners: racers.map((_, i) => view.querySelector(`#bc-runner-${i}`)),
@@ -316,6 +317,19 @@ function watch(view, id, racers) {
     winName: view.querySelector("#bc-winner-name"),
     winArt:  view.querySelector("#bc-winner-art"),
   };
+
+  live.trackWidth = Math.max(1, els.track?.clientWidth || 1);
+  if (typeof ResizeObserver === "function" && els.track) {
+    live.resizeObserver = new ResizeObserver((entries) => {
+      if (!live) return;
+      live.trackWidth = Math.max(1, entries[0]?.contentRect?.width || els.track.clientWidth || 1);
+    });
+    live.resizeObserver.observe(els.track);
+  }
+  for (const runner of els.runners) {
+    runner?.style.setProperty("--race-x", `${(live.trackWidth * .03).toFixed(2)}px`);
+    runner?.classList.add("is-positioned");
+  }
 
   const apply = (row) => {
     if (!row) return;
@@ -423,7 +437,7 @@ function watch(view, id, racers) {
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
         const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
-        els.runners[i].style.left = raceLeft(p);
+        els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
       }
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
@@ -445,7 +459,7 @@ function watch(view, id, racers) {
       live.lastElapsed = elapsed;
 
       const track = els.track;
-      if (state === "running") {
+      if (state === "running" && elapsed >= 0) {
         track?.classList.add("is-running");
         els.stage?.classList.add("is-racing");
       } else {
@@ -564,12 +578,6 @@ function elapsedMs(row) {
   return Date.now() - started - 0 + (row.bc_offset_ms || 0);
 }
 
-/*
-  Same rule as the app track: the percentage is of the RAIL, which spans the
-  lane, and the sprite width is subtracted so it stops on the line. The
-  sprite is sized in vw here, so the offset has to be too.
-*/
-const raceLeft = (p) => `${(3 + Math.max(0, Math.min(1, p)) * 88).toFixed(3)}%`;
 
 /**
  * Live standings.
