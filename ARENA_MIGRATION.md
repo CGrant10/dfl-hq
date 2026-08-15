@@ -21,7 +21,7 @@ renderer reaches feature parity.
 3. Pixi scenery, camera motion, speed-field, and responsive viewport. **Complete.**
 4. Pet SVG-to-texture pipeline, animation states, trails, and reactions. **Complete.**
 5. Shared countdown, pause/resume, reconnect, leaderboard, and winner scene. **Complete.**
-6. Device matrix and fallback validation; enable PixiJS by default.
+6. Device matrix and automatic DOM fallback; enable PixiJS by default. **Complete.**
 
 ## Required validation
 
