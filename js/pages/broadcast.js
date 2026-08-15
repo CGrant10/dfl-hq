@@ -21,6 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
+import { createArenaRenderer } from "../arena/pixi-runtime.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
@@ -318,6 +319,8 @@ function watch(view, id, racers) {
     winArt:  view.querySelector("#bc-winner-art"),
   };
 
+  let pixi = null;
+  createArenaRenderer(els.track, racers).then((renderer) => { pixi = renderer; });
   live.trackWidth = Math.max(1, els.track?.clientWidth || 1);
   if (typeof ResizeObserver === "function" && els.track) {
     live.resizeObserver = new ResizeObserver((entries) => {
@@ -434,12 +437,18 @@ function watch(view, id, racers) {
 
       const src = live.shown || sim.samples;
       let cameraLead = 0;
+      const pixiRacers = [];
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
         const p = elapsed <= 0 ? 0 : s[lo] + (s[hi] - s[lo]) * mix;
         els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
+        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: live.homed?.has(i) || false });
       }
+      const pixiLeader = pixiRacers.reduce((best, item) => item.progress > best.progress ? item : best, pixiRacers[0]);
+      if (pixiLeader) pixiLeader.leading = true;
+      const pixiState = state === "paused" ? "paused" : state === "finished" ? "finished" : state === "idle" ? "idle" : "running";
+      pixi?.render({ elapsedMs: Math.max(0, elapsed), state: pixiState, heat: Number(els.track?.dataset.heat || 0), racers: pixiRacers, winnerId: sim.order[0]?.racer?.id });
       if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
