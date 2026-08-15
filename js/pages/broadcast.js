@@ -102,7 +102,7 @@ export async function render(view) {
   few idle seconds. OBS never moves a pointer, so the capture never sees it.
   It writes the same state the Arena panel writes, so either can drive.
 */
-const COUNTDOWN_MS = 3400;
+const COUNTDOWN_MS = 2700;
 const BAR_IDLE_MS = 2600;
 
 function wireBar(view, id, racers) {
@@ -445,7 +445,7 @@ function watch(view, id, racers) {
       live.lastElapsed = elapsed;
 
       const track = els.track;
-      if (state === "running" || state === "paused") {
+      if (state === "running") {
         track?.classList.add("is-running");
         els.stage?.classList.add("is-racing");
       } else {
