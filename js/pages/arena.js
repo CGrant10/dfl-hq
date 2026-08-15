@@ -1382,4 +1382,3 @@ async function saveResults(event, sim, seed) {
     if (canEdit()) toast(err.message || "Could not save the result", true);
   }
 }
-
