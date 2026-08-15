@@ -51,7 +51,7 @@ export interface RaceFrame {
 
 export interface RaceRenderer {
   mount(host: HTMLElement): Promise<void>;
-  setRacers(racers: readonly RaceRacer[]): void;
+  setRacers(racers: readonly RaceRacer[]): Promise<void>;
   render(frame: RaceFrame): void;
   resize(): void;
   destroy(): void;
