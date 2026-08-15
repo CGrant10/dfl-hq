@@ -790,3 +790,48 @@ a.moment:hover { background: var(--hover-soft); }
   .dfl-pet-edit, .dfl-pet { gap: var(--s-3); }
   .pet-art.is-big { width: 104px; height: 78px; }
 }
+
+
+/* DFL Pet roster v2: browse characters visually and preview race motion. */
+.pet-preview-modes { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.pet-preview-modes .on { border-color: var(--accent); color: var(--accent); }
+.pet-roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: var(--s-2);
+  max-height: 310px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.pet-choice {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 0;
+  padding: var(--s-2);
+  color: var(--text);
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.pet-choice span { width: 64px; height: 42px; }
+.pet-choice svg { width: 100%; height: 100%; image-rendering: pixelated; }
+.pet-choice b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.pet-choice.on { border-color: var(--accent); background: var(--hover-soft); }
+.pet-art.preview-run svg { animation: petPreviewRun .46s steps(2, end) infinite; }
+.pet-art.preview-surge svg { animation: petPreviewSurge .65s steps(3, end) infinite; }
+.pet-art.preview-win svg { animation: petPreviewWin .8s steps(4, end) infinite; }
+@keyframes petPreviewRun {
+  0%,100% { transform: translateY(2px) rotate(-2deg); }
+  50% { transform: translateY(-5px) rotate(3deg); }
+}
+@keyframes petPreviewSurge {
+  0%,100% { transform: translateX(-3px) scale(1); }
+  45% { transform: translateX(5px) scale(1.13) rotate(-4deg); }
+}
+@keyframes petPreviewWin {
+  0%,100% { transform: translateY(0) rotate(0); }
+  45% { transform: translateY(-14px) rotate(-6deg) scale(1.08); }
+  70% { transform: translateY(-5px) rotate(5deg); }
+}
