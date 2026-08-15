@@ -17,7 +17,7 @@ renderer reaches feature parity.
 ## Delivery phases
 
 1. Tooling and typed renderer contracts.
-2. TypeScript port of the deterministic simulation with parity fixtures.
+2. TypeScript port of the deterministic simulation with parity fixtures. **Complete.**
 3. Pixi scenery, camera, speed-field, and responsive viewport.
 4. Pet SVG-to-texture pipeline, animation states, trails, and reactions.
 5. Shared countdown, pause/resume, reconnect, leaderboard, and winner scene.

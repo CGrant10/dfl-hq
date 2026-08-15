@@ -1,5 +1,5 @@
 export type RaceState = "idle" | "running" | "paused" | "finished";
-export type RaceLength = "sprint" | "medium" | "long";
+export type RaceLength = "short" | "medium" | "long" | "custom";
 
 export interface SharedRaceEvent {
   id: number;
