@@ -20,6 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
+import { createArenaRenderer } from "../arena/pixi-runtime.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
@@ -929,6 +930,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   status.textContent = "Racing";
   stage.querySelector("#track")?.classList.add("is-running");
+  const pixi = await createArenaRenderer(stage.querySelector(".arena-track-wrap"), racers);
   const started = performance.now();
   let pausedFor = 0;
   let pausedAt = null;
@@ -990,13 +992,18 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
       let cameraLead = 0;
+      const pixiRacers = [];
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const p = s[lo] + (s[hi] - s[lo]) * mix;      // interpolate between ticks
         runners[i].style.setProperty("--race-x", `${(trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
         cameraLead = Math.max(cameraLead, p);
         if (p >= 1) runners[i].classList.add("is-home");
+        pixiRacers.push({ id: racers[i].id, progress: p, lane: i, leading: false, finished: p >= 1 });
       }
+      const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
+      if (pixiLeader) pixiLeader.leading = true;
+      pixi?.render({ elapsedMs: elapsed, state: elapsed >= lastFinish ? "finished" : "running", heat: Number(track?.dataset.heat || 0), racers: pixiRacers, winnerId: sim.order[0].racer.id });
       if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
 
       /*
