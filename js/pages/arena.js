@@ -436,8 +436,9 @@ function wireLineup(view, event, parts, members, refresh) {
   the panel works from anywhere with signal, including a phone in a bar, and
   the machine running OBS never needs to be touched once the scene is set.
 
-  The Broadcast link is deliberately a plain URL: that string is what gets
-  pasted into an OBS Browser Source.
+  The browser-source URL stays copyable for one-time OBS setup. The operator
+  controls the shared race here; there is no second "Open broadcast" action
+  competing with those controls.
 */
 function broadcastCard(event, parts) {
   if (!canEdit()) return "";
@@ -455,7 +456,6 @@ function broadcastCard(event, parts) {
       </div>
 
       <div class="bc-controls">
-        <a class="btn small" href="#/broadcast?id=${event.id}">Open broadcast</a>
         <button class="btn small" id="bc-start" ${parts.length < 2 ? "disabled" : ""}>
           ${running || paused ? "Restart" : "Start race"}
         </button>
