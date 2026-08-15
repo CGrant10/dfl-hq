@@ -320,7 +320,10 @@ function watch(view, id, racers) {
   };
 
   let pixi = null;
-  createArenaRenderer(els.track, racers).then((renderer) => { pixi = renderer; });
+  createArenaRenderer(els.track, racers).then((renderer) => {
+    pixi = renderer;
+    if (renderer && els.scenery) els.scenery.style.visibility = "hidden";
+  });
   live.trackWidth = Math.max(1, els.track?.clientWidth || 1);
   if (typeof ResizeObserver === "function" && els.track) {
     live.resizeObserver = new ResizeObserver((entries) => {

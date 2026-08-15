@@ -701,6 +701,10 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
         if (startButton) startButton.disabled = parts.length < 2;
         return;
       }
+      for (const id of ["#bc-pause", "#bc-skip", "#bc-reset"]) {
+        const control = panel.querySelector(id);
+        if (control) control.disabled = false;
+      }
       const completed = await runRace(view, stage, event, parts, byId, seed, { save: true });
       if (completed) refresh();
       else if (panel.isConnected) {
