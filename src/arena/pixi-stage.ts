@@ -2,6 +2,10 @@ import { Application, Container, Graphics, Text } from "pixi.js";
 import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
+import { motionPose, racerVariant } from "./animation";
+import { drawAnimeField, drawWinnerConvergence } from "./anime-effects";
+import { drawRacerEffects } from "./racer-effects";
+import { pixelPoseRows } from "./pixel-poses";
 import { CHARACTERS, GRID_H, GRID_W } from "../../js/arena/dfl-sprites.js";
 
 const PIXEL_SIZE = 3;
@@ -9,7 +13,13 @@ const PIXEL_SIZE = 3;
 interface PetActor {
   root: Container;
   art: Container;
-  frames: readonly [Graphics, Graphics];
+  frames: readonly [Graphics, Graphics, Graphics, Graphics];
+  fx: Graphics;
+  color: number;
+  variant: number;
+  motion: PetMotion;
+  motionStartedMs: number;
+  finishedAtMs: number | null;
 }
 
 /**
@@ -27,6 +37,7 @@ export class PixiRaceStage implements RaceRenderer {
   readonly overlay = new Container({ label: "overlay" });
   readonly #compatGraphics = new Graphics({ label: "legacy-feature-set" });
   readonly #compatText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12 } });
+  readonly #speedLines = new Graphics({ label: "speed-lines" });
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
@@ -50,6 +61,7 @@ export class PixiRaceStage implements RaceRenderer {
     this.scenery.addChild(this.#compatGraphics);
     this.overlay.addChild(this.#compatText);
     this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay);
+    this.effects.addChild(this.#speedLines);
     this.resize();
     if (typeof ResizeObserver === "function") {
       this.#resizeObserver = new ResizeObserver(() => this.resize());
@@ -59,6 +71,7 @@ export class PixiRaceStage implements RaceRenderer {
 
   async setRacers(racers: readonly RaceRacer[]): Promise<void> {
     this.#racers = racers;
+    this.app.canvas.dataset.racerCount = String(racers.length);
     this.#actorById.clear();
     this.actors.removeChildren();
     for (const racer of racers) {
@@ -68,8 +81,16 @@ export class PixiRaceStage implements RaceRenderer {
       const frames = this.#petFrames(pet);
       const art = new Container({ label: `pet-${pet.species}` });
       art.addChild(...frames);
-      root.addChild(art);
-      this.#actorById.set(racer.id, { root, art, frames });
+      const fx = new Graphics({ label: `effects-${racer.id}` });
+      root.addChild(fx, art);
+      this.#actorById.set(racer.id, {
+        root, art, frames, fx,
+        color: this.#color(pet.accent),
+        variant: racerVariant(racer.id, racers.indexOf(racer)),
+        motion: "idle",
+        motionStartedMs: 0,
+        finishedAtMs: null,
+      });
       this.actors.addChild(root);
     }
   }
@@ -77,12 +98,36 @@ export class PixiRaceStage implements RaceRenderer {
   render(frame: RaceFrame): void {
     this.#lastFrame = frame;
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    drawAnimeField(this.#speedLines, frame, this.#viewport, reducedMotion);
+    let shake = 0;
+    let winnerEnergy: { x: number; y: number; intensity: number } | null = null;
     for (const racer of frame.racers) {
       const actor = this.#actorById.get(racer.id);
       if (!actor) continue;
       const winner = racer.finished && racer.id === frame.winnerId;
-      const motion = winner ? "win" : racer.finished ? "idle" : petMotion(racer.reaction, false, frame.state);
-      const phase = this.#motionPhase(frame.elapsedMs, racer.lane, frame.heat, motion);
+      const motion: PetMotion = winner ? "win"
+        : frame.state === "finished" && racer.finished ? "lose"
+        : racer.finished ? "idle"
+        : petMotion(racer.reaction, false, frame.state);
+      if (winner && actor.finishedAtMs == null) actor.finishedAtMs = frame.elapsedMs;
+      if (!racer.finished) actor.finishedAtMs = null;
+      if (actor.motion !== motion) {
+        actor.motion = motion;
+        actor.motionStartedMs = racer.reactionStartedMs ?? actor.finishedAtMs ?? frame.elapsedMs;
+      } else if (racer.reactionStartedMs != null) {
+        actor.motionStartedMs = racer.reactionStartedMs;
+      }
+      const phase = motionPose({
+        motion,
+        elapsedMs: frame.elapsedMs,
+        motionStartedMs: actor.motionStartedMs,
+        lane: racer.lane,
+        heat: frame.heat,
+        variant: actor.variant,
+        speed: racer.speed ?? 0,
+        acceleration: racer.acceleration ?? 0,
+        reducedMotion,
+      });
 
       actor.root.position.set(
         screenX(this.#viewport, racer.progress),
@@ -91,24 +136,42 @@ export class PixiRaceStage implements RaceRenderer {
       actor.root.scale.set(this.#viewport.actorScale);
       actor.root.rotation = 0;
       actor.root.alpha = 1;
-      actor.art.position.set(phase.x, reducedMotion ? 0 : phase.y);
-      actor.art.scale.set(reducedMotion ? 1 : phase.scale);
-      actor.art.rotation = reducedMotion ? 0 : phase.rotation;
+      actor.art.position.set(phase.x, phase.y);
+      actor.art.scale.set(phase.scaleX, phase.scaleY);
+      actor.art.rotation = phase.rotation;
 
-      const frameDuration = motion === "surge" || motion === "duel" ? 260
-        : motion === "stumble" ? 900
-        : motion === "win" ? 380
-        : this.#viewport.width >= 801 ? 380 : 620;
-      const strideFrame = !reducedMotion && Math.floor(frame.elapsedMs / frameDuration) % 2 === 1;
-      actor.frames[0].visible = !strideFrame;
-      actor.frames[1].visible = strideFrame;
+      const visibleFrame = reducedMotion ? 0 : phase.frame;
+      actor.frames.forEach((spriteFrame, index) => { spriteFrame.visible = index === visibleFrame; });
+      if (reducedMotion) actor.frames[0].visible = true;
+      drawRacerEffects({
+        graphics: actor.fx,
+        pose: phase,
+        elapsedMs: frame.elapsedMs,
+        variant: actor.variant,
+        color: actor.color,
+        active: frame.state === "running" || frame.state === "finished",
+        reducedMotion,
+      });
+      if (winner && phase.energy > 0) winnerEnergy = {
+        x: actor.root.position.x,
+        y: actor.root.position.y,
+        intensity: phase.energy,
+      };
+      shake = Math.max(shake, phase.impact);
     }
+    if (winnerEnergy) drawWinnerConvergence(this.#speedLines, this.#viewport.width, this.#viewport.height,
+      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity);
+    // Running-only, sub-pixel canvas shake. It cannot reflow or resize the DOM.
+    const allowShake = frame.state === "running" && !reducedMotion && frame.heat >= 2;
+    this.actors.position.set(allowShake ? Math.sin(frame.elapsedMs * 0.09) * shake * 1.15 : 0,
+      allowShake ? Math.cos(frame.elapsedMs * 0.11) * shake * 0.7 : 0);
   }
 
   resize(): void {
     if (!this.#host) return;
     this.app.resize();
     this.#viewport = arenaViewport(this.app.screen.width, this.app.screen.height);
+    this.app.canvas.dataset.actorWidth = String(Math.round(this.#viewport.actorScale * 72));
     if (this.#lastFrame) this.render(this.#lastFrame);
   }
 
@@ -122,34 +185,15 @@ export class PixiRaceStage implements RaceRenderer {
     this.#host = null;
   }
 
-  #motionPhase(elapsedMs: number, lane: number, heat: number, motion: PetMotion): { x: number; y: number; scale: number; rotation: number } {
-    const heatRate = 1 + Math.max(0, Math.min(3, heat)) * 0.16;
-    const wave = Math.sin(elapsedMs * 0.015 * heatRate + lane * 0.7);
-    if (motion === "surge" || motion === "duel") {
-      return { x: 0, y: -2 - wave, scale: 1.07 + wave * 0.01, rotation: wave * Math.PI / 90 };
-    }
-    if (motion === "stumble") {
-      return { x: wave < 0 ? -2 : 1, y: 0, scale: 1, rotation: wave * Math.PI / 30 };
-    }
-    if (motion === "jump") {
-      return { x: 0, y: -1 - Math.abs(wave) * 3, scale: 1.06 + Math.abs(wave) * 0.06, rotation: -Math.abs(wave) * Math.PI / 60 };
-    }
-    if (motion === "win") {
-      return { x: 0, y: -Math.abs(wave) * 7, scale: 1 + Math.abs(wave) * 0.12, rotation: 0 };
-    }
-    if (motion === "run") {
-      return { x: 0, y: -Math.abs(wave) * 2, scale: 1, rotation: wave * Math.PI / 120 };
-    }
-    return { x: 0, y: -0.75 - wave * 0.75, scale: 1, rotation: 0 };
-  }
-
-  #petFrames(pet: ArenaPet): readonly [Graphics, Graphics] {
+  #petFrames(pet: ArenaPet): readonly [Graphics, Graphics, Graphics, Graphics] {
     let hash = 0;
     for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
     const character = CHARACTERS.find((item) => item.id === pet.species) || CHARACTERS[hash % CHARACTERS.length]!;
     return [
       this.#drawPet(character.px, character.palette as Record<string, string>, pet),
-      this.#drawPet(this.#strideFrame(character.px), character.palette as Record<string, string>, pet),
+      this.#drawPet(pixelPoseRows(character.px, 1), character.palette as Record<string, string>, pet),
+      this.#drawPet(pixelPoseRows(character.px, 2), character.palette as Record<string, string>, pet),
+      this.#drawPet(pixelPoseRows(character.px, 3), character.palette as Record<string, string>, pet),
     ];
   }
 
@@ -200,13 +244,6 @@ export class PixiRaceStage implements RaceRenderer {
     } else if (pet.expression === "sleepy") {
       row(9, 11, 7, ink); row(14, 16, 7, ink);
     }
-  }
-
-  #strideFrame(rows: readonly string[]): string[] {
-    return rows.map((row, y) => {
-      if (y < 9) return row;
-      return y % 2 ? `.${row.slice(0, GRID_W - 1)}` : `${row.slice(1)}.`;
-    });
   }
 
   #color(value: string): number {

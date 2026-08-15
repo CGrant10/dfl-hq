@@ -1,6 +1,6 @@
 import type { RacePet } from "./contracts";
 
-export type PetMotion = "idle" | "run" | "surge" | "stumble" | "jump" | "duel" | "near" | "win";
+export type PetMotion = "idle" | "run" | "surge" | "stumble" | "jump" | "duel" | "near" | "win" | "lose";
 
 export interface ArenaPet extends RacePet {
   name: string;

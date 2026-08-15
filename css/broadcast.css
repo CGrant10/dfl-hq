@@ -1014,5 +1014,10 @@ body.broadcasting .view { width:100%; height:100%; }
 /* Pixi replaces racer art only. The pre-migration DOM remains the visual
    contract for scenery, scoreboard, countdown, finish line and nameplates. */
 .arena-track-wrap.cinematic-race .countdown { position:absolute; inset:0; }
+.arena-track-wrap .arena-effect-defs { position:absolute; width:0; height:0; overflow:hidden; }
+.arena-track-wrap.has-pixi-race .runner-art {
+  visibility:hidden!important;
+  opacity:0!important;
+}
 .arena-pixi-host,
 .arena-pixi-host canvas { display:block!important; width:100%!important; height:100%!important; }

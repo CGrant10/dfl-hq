@@ -18,10 +18,10 @@ export function arenaViewport(width: number, height: number): ArenaViewport {
   const trackLeft = safeWidth * 0.03;
   const trackRight = safeWidth * 0.91;
   const laneHeight = laneBottom - laneTop;
-  // The legacy CSS uses 88px racers on desktop, 68px on phones and 56px in
-  // short landscape windows. A Pixi character is 24 * 3 = 72px wide.
-  const shortLandscape = !portrait && safeHeight <= 600;
-  const racerWidth = shortLandscape ? 56 : safeWidth <= 640 ? 68 : 88;
+  // The locked large racer is 88px wherever the DOM keeps its desktop racer
+  // width, including short landscape. Only <=640px phone layouts use 68px.
+  // A Pixi character is 24 * 3 = 72px wide.
+  const racerWidth = safeWidth <= 640 ? 68 : 88;
   const actorScale = racerWidth / 72;
   return { width: safeWidth, height: safeHeight, portrait, compact, laneTop, laneBottom,
     laneHeight, trackLeft, trackRight, trackWidth: trackRight - trackLeft, actorScale };
