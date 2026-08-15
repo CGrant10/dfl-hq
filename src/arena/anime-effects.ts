@@ -10,8 +10,9 @@ export function drawAnimeField(
   reducedMotion: boolean,
 ): void {
   graphics.clear();
-  if (frame.state !== "running" || reducedMotion) return;
-  const count = effectDensity(frame.heat, viewport.compact, false);
+  if (frame.state !== "running") return;
+  const count = effectDensity(frame.heat, viewport.compact, reducedMotion);
+  const effectScale = reducedMotion ? 0.34 : 1;
   const heat = Math.max(0.16, Math.min(1, frame.heat / 3));
   const bucket = Math.floor(frame.elapsedMs / (frame.heat >= 2 ? 48 : 72));
   const palette = [0xffffff, 0xbfeaff, 0x72d8ff, 0xffda6a, 0xff8a4c, 0x73f1c0];
@@ -19,11 +20,11 @@ export function drawAnimeField(
   // The subject plane remains untouched; this translucent velocity grade
   // pushes the scenery back so crisp racers separate from a darker world.
   graphics.rect(0, 0, viewport.width, viewport.height)
-    .fill({ color: 0x061525, alpha: 0.06 + heat * 0.2 });
+    .fill({ color: 0x061525, alpha: (0.06 + heat * 0.2) * effectScale });
 
   // Broad, transparent smears sit behind the racers and make the environment
   // read as a rushing field rather than a static illustration with a few lines.
-  const bands = viewport.compact ? 5 : 8;
+  const bands = reducedMotion ? 2 : viewport.compact ? 5 : 8;
   for (let i = 0; i < bands; i++) {
     const sample = effectSample(bucket - 1, frame.heat + 23, i);
     const y = (0.08 + sample.y * 0.84) * viewport.height;
@@ -33,7 +34,7 @@ export function drawAnimeField(
       .stroke({
         color: palette[(i + frame.heat) % palette.length]!,
         width: 8 + sample.length * (13 + heat * 12),
-        alpha: (0.055 + sample.alpha * 0.1) * (0.7 + heat),
+        alpha: (0.055 + sample.alpha * 0.1) * (0.7 + heat) * effectScale,
         cap: "round",
       });
   }
@@ -49,7 +50,7 @@ export function drawAnimeField(
       .stroke({
         color: palette[(i * 3 + frame.heat) % palette.length]!,
         width: sample.length > 0.78 ? 5.4 : sample.length > 0.55 ? 2.8 : 1.35,
-        alpha: sample.alpha * peak * (0.18 + heat * 0.32),
+        alpha: sample.alpha * peak * (0.18 + heat * 0.32) * effectScale,
         cap: "round",
       });
   }
@@ -62,9 +63,10 @@ export function drawForegroundRush(
   reducedMotion: boolean,
 ): void {
   graphics.clear();
-  if (frame.state !== "running" || reducedMotion) return;
+  if (frame.state !== "running") return;
   const heat = Math.max(0, Math.min(1, frame.heat / 3));
-  const count = Math.round((viewport.compact ? 4 : 7) + heat * 7);
+  const effectScale = reducedMotion ? 0.26 : 1;
+  const count = Math.max(1, Math.round(((viewport.compact ? 4 : 7) + heat * 7) * effectScale));
   const bucket = Math.floor(frame.elapsedMs / 38);
   for (let i = 0; i < count; i++) {
     const sample = effectSample(bucket, 91 + frame.heat, i);
@@ -75,15 +77,16 @@ export function drawForegroundRush(
       .stroke({
         color: i % 3 === 0 ? 0xfff0ac : 0xffffff,
         width: sample.length > 0.72 ? 3.2 : 1.25,
-        alpha: sample.alpha * (0.12 + heat * 0.25),
+        alpha: sample.alpha * (0.12 + heat * 0.25) * effectScale,
         cap: "round",
       });
   }
 }
 
-export function drawWinnerConvergence(graphics: Graphics, width: number, height: number, x: number, y: number, intensity: number): void {
+export function drawWinnerConvergence(graphics: Graphics, width: number, height: number, x: number, y: number, intensity: number, reducedMotion = false): void {
   graphics.clear();
   if (intensity <= 0.02) return;
+  if (reducedMotion) intensity *= 0.48;
   graphics.rect(0, 0, width, height).fill({ color: 0x020711, alpha: 0.34 + intensity * 0.28 });
   const max = Math.max(width, height);
   graphics.circle(x, y, 54 + intensity * 54).fill({ color: 0xffc928, alpha: intensity * 0.14 });

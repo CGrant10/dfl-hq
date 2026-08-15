@@ -19,17 +19,19 @@ export interface RacerEffectInput {
 export function drawRacerEffects(input: RacerEffectInput): void {
   const { graphics, pose, elapsedMs, variant, color } = input;
   graphics.clear();
-  if (!input.active || input.reducedMotion) return;
+  if (!input.active) return;
+
+  const effectScale = input.reducedMotion ? 0.34 : 1;
 
   const heat = Math.max(0, Math.min(1, input.heat / 3));
   const speed = Math.max(0, Math.min(1, input.speed));
   const acceleration = Math.max(0, Math.min(1, input.acceleration));
-  const trail = Math.max(pose.afterimage, pose.energy * 0.9, heat * (0.28 + speed * 0.35));
+  const trail = Math.max(pose.afterimage, pose.energy * 0.9, heat * (0.28 + speed * 0.35)) * effectScale;
 
   if (trail > 0.05) {
     // Layered, color-specific acceleration light. The broad pass is faint;
     // narrow cores stay bright and never soften the racer artwork itself.
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < (input.reducedMotion ? 2 : 7); i++) {
       const y = -19 + i * 6.5;
       const length = 34 + trail * (88 + i * 14) + acceleration * 54;
       const wobble = Math.sin(elapsedMs * 0.02 + i * 1.7 + variant * 8) * 1.8;
@@ -41,7 +43,7 @@ export function drawRacerEffects(input: RacerEffectInput): void {
 
     // Three separated ghosts make a surge read as a burst, not a speed tweak.
     if (pose.afterimage > 0.18) {
-      for (let ghost = 1; ghost <= 3; ghost++) {
+      for (let ghost = 1; ghost <= (input.reducedMotion ? 1 : 3); ghost++) {
         const gx = -22 - ghost * (18 + pose.afterimage * 13);
         const alpha = pose.afterimage * (0.36 - ghost * 0.062);
         graphics.roundRect(gx - 15, -18 + ghost, 24, 32, 7)
@@ -61,7 +63,7 @@ export function drawRacerEffects(input: RacerEffectInput): void {
 
   if (pose.dust > 0.08) {
     const bucket = Math.floor(elapsedMs / 58);
-    const dustCount = pose.dust > 0.62 ? 11 : 7;
+    const dustCount = input.reducedMotion ? 3 : pose.dust > 0.62 ? 11 : 7;
     for (let i = 0; i < dustCount; i++) {
       const sample = effectSample(bucket, Math.floor(variant * 17), i);
       const radius = 3.2 + sample.length * (5.2 + pose.dust * 4.4);
@@ -74,7 +76,7 @@ export function drawRacerEffects(input: RacerEffectInput): void {
     }
 
     // Ground sparks and small directional debris make contact feel physical.
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < (input.reducedMotion ? 2 : 6); i++) {
       const sample = effectSample(bucket, Math.floor(variant * 31) + 7, i);
       const sx = -16 - sample.x * 46;
       const sy = 18 + sample.y * 7;
@@ -87,7 +89,7 @@ export function drawRacerEffects(input: RacerEffectInput): void {
     const radius = 20 + pose.impact * 28;
     graphics.circle(0, 0, radius).stroke({ color, width: 3.4, alpha: pose.impact * 0.62 });
     graphics.circle(0, 0, radius * 0.62).stroke({ color: 0xffffff, width: 2, alpha: pose.impact * 0.54 });
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < (input.reducedMotion ? 5 : 14); i++) {
       const angle = i / 14 * Math.PI * 2 + variant;
       const inner = 12 + (i % 2) * 4;
       const outer = 31 + pose.impact * (16 + (i % 4) * 5);

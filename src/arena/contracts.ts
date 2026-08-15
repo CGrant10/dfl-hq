@@ -52,6 +52,8 @@ export interface RaceFrame {
   racers: readonly RacerFrame[];
   countdownMs?: number;
   winnerId?: RaceRacer["id"];
+  /** Explicit local Arena preference; absent/false always means full effects. */
+  reduceMotionEffects?: boolean;
 }
 
 export interface RaceRenderer {

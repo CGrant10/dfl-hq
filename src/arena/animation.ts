@@ -44,13 +44,27 @@ const base = (strideMs = 380): MotionPose => ({
  * authoritative race frame; this function can never change progress/order.
  */
 export function motionPose(input: MotionInput): MotionPose {
+  if (input.reducedMotion) {
+    const full = motionPose({ ...input, reducedMotion: false });
+    return {
+      ...full,
+      x: full.x * 0.42,
+      y: full.y * 0.62,
+      scaleX: 1 + (full.scaleX - 1) * 0.48,
+      scaleY: 1 + (full.scaleY - 1) * 0.48,
+      rotation: full.rotation * 0.42,
+      strideMs: Math.max(390, full.strideMs * 1.35),
+      afterimage: full.afterimage * 0.18,
+      impact: full.impact * 0.35,
+      dust: full.dust * 0.38,
+      skid: full.skid * 0.62,
+      energy: full.energy * 0.36,
+    };
+  }
   const heat = Math.max(0, Math.min(3, input.heat));
   const age = Math.max(0, input.elapsedMs - (input.motionStartedMs ?? 0));
   const phase = input.elapsedMs * (0.012 + heat * 0.0015) + input.lane * 0.73 + input.variant * 1.9;
   const wave = Math.sin(phase);
-
-  // v1.86.1 flattened every decorative transform for reduced motion.
-  if (input.reducedMotion) return base(620);
 
   if (input.motion === "idle") {
     // This is intentionally the exact v1.86.1 idle pose.

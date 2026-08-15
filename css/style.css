@@ -2123,8 +2123,6 @@ input.masked {
 
 @media (prefers-reduced-motion: reduce) {
   .results-card.reveal .order-row { animation: none; }
-  #countdown-n { animation: none; }
-  .runner { will-change: auto; }
 }
 
 /* =====================================================================
@@ -2208,18 +2206,6 @@ input.masked {
   0%, 100% { transform: translateY(0) scale(1) }
   40%      { transform: translateY(-7px) scale(1.12) }
   60%      { transform: translateY(-2px) scale(1.04) }
-}
-
-/*
-  REDUCED MOTION: the characters hold still. The race still runs - the
-  position is information - but nothing bounces, shakes or celebrates.
-*/
-@media (prefers-reduced-motion: reduce) {
-  .runner-art,
-  .track.is-running .runner-art,
-  .runner.is-surge .runner-art,
-  .runner.is-stumble .runner-art,
-  .runner.is-winner .runner-art { animation: none !important; }
 }
 
 /* The scoreboard line carries commentary now, so it needs room and must
@@ -2331,14 +2317,6 @@ input.masked {
   100% { transform: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ar-row { transition: none; }
-  .ar-row.ar-up, .ar-row.ar-down,
-  .runner.is-surge .runner-art::before,
-  .runner.is-surge .runner-art::after,
-  .runner.is-finished .runner-art { animation: none !important; }
-}
-
 /* The ambient counter. Deliberately the quietest line on the page - it is
    a lava lamp, not a metric, and it renders as nothing when you are the
    only one here. */
@@ -2401,11 +2379,6 @@ input.masked {
 .track[data-heat="3"] .runner-art { animation-duration: .24s; }
 .track[data-heat="2"] .ar-row, .track[data-heat="3"] .ar-row { transition-duration: 260ms; }
 .track[data-heat="3"] { box-shadow: inset 0 0 40px rgba(229,1,27,.10); }
-
-@media (prefers-reduced-motion: reduce) {
-  .runner.is-jump .runner-art, .runner.is-duel .runner-art,
-  .runner.is-near .runner-art::before, .ar-row.ar-jump { animation: none !important; }
-}
 
 /* =====================================================================
    THE RACERS, LOUDER.

@@ -301,9 +301,9 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   line-height: 1;
   letter-spacing: .02em;
   text-transform: uppercase;
-  animation: bcWin .6s cubic-bezier(.2,.7,.3,1) both;
+  animation: bcWinnerName .6s cubic-bezier(.2,.7,.3,1) both;
 }
-@keyframes bcWin {
+@keyframes bcWinnerName {
   from { opacity: 0; transform: translate3d(0, 2vw, 0) scale(.94); }
   to   { opacity: 1; transform: none; }
 }
@@ -352,11 +352,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 }
 .bc-toggles input { width: auto; }
 .bc-toggles .pill { margin-left: auto; }
-
-@media (prefers-reduced-motion: reduce) {
-  .bc-count, .bc-winner, .bc-winner-name, .bc-move { animation: none; }
-  .bc-runner { will-change: auto; }
-}
 
 /* ------------------------- the control bar --------------------------- */
 
@@ -417,6 +412,17 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   text-transform: uppercase;
   padding-left: .4vw;
 }
+.bc-motion-setting {
+  display:flex;
+  align-items:center;
+  gap:.35vw;
+  padding:0 .35vw;
+  color:var(--muted);
+  font-size:clamp(10px,.72vw,13px);
+  font-weight:700;
+  white-space:nowrap;
+}
+.bc-motion-setting input { width:auto; margin:0; accent-color:var(--accent); }
 
 /*
   On a phone the broadcast is not the point, but somebody WILL open it there
@@ -436,6 +442,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
     pointer-events: auto;
   }
   .bc-btn { font-size: 12px; padding: 7px 11px; }
+  .bc-motion-setting { gap:5px; padding:3px 6px; font-size:11px; }
   .bc-bar-hint { display: none; }
 }
 
@@ -591,13 +598,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-track[data-heat="3"] .bc-runner-art { animation-duration: .24s }
 .bc-track[data-heat="3"] { box-shadow: inset 0 0 3vw rgba(229,1,27,.10); }
 
-@media (prefers-reduced-motion: reduce) {
-  .bc-runner-art, .bc-runner.is-surge .bc-runner-art,
-  .bc-runner.is-duel .bc-runner-art, .bc-runner.is-stumble .bc-runner-art,
-  .bc-runner.is-jump .bc-runner-art, .bc-runner.is-winner .bc-runner-art,
-  .bc-runner.is-near .bc-runner-art::after { animation: none !important; }
-}
-
 
 /* Cinematic shared viewer: the race occupies the scene; chrome stays secondary. */
 .bc-stage.cinematic-race{background:#65bcec;color:#fff}
@@ -630,8 +630,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-stage .bc-board-list li{min-height:1.65rem;padding:.2rem .4rem}
   .bc-runner-name{font-size:9px;padding:1px 4px}
 }
-@media(prefers-reduced-motion:reduce){.bc-stage .bc-winner-inner::before{animation:none}}
-
 
 /* Cinematic finish sequence shared by phones, desktop and OBS. */
 .bc-stage.is-finished .bc-head,.bc-stage.is-finished .bc-body,.bc-stage.is-finished .bc-foot{filter:saturate(.55) brightness(.48)}
@@ -642,10 +640,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 @keyframes bcWinnerEnter{from{opacity:0;transform:translateY(8vh) scale(.72)}to{opacity:1;transform:none}}
 @keyframes bcChampion{50%{transform:translateY(-1.2vw) rotate(-2deg) scale(1.06)}}
 @keyframes bcConfetti{to{background-position:4vw 12vw}}
-@media(prefers-reduced-motion:reduce){
-  .bc-winner-art,.bc-stage.is-finished .bc-winner-inner,.bc-stage.is-finished .bc-winner::after{animation:none!important}
-}
-
 
 /* Open-field race view: one cinematic course, not twelve progress bars. */
 .bc-stage .bc-body{display:block;padding:.8vw 1.4vw 1.2vw}

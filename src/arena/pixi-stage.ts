@@ -103,11 +103,7 @@ export class PixiRaceStage implements RaceRenderer {
 
   render(frame: RaceFrame): void {
     this.#lastFrame = frame;
-    const systemReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    // Match the established Arena CSS contract: desktop race presentation is
-    // explicit even on systems that inherit a global reduced-motion setting.
-    // Phone-width layouts still honor the preference.
-    const reducedMotion = systemReducedMotion && this.#viewport.width <= 800;
+    const reducedMotion = frame.reduceMotionEffects === true;
     drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
     drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
     this.#winnerField.clear();
@@ -152,9 +148,8 @@ export class PixiRaceStage implements RaceRenderer {
       actor.art.scale.set(phase.scaleX, phase.scaleY);
       actor.art.rotation = phase.rotation;
 
-      const visibleFrame = reducedMotion ? 0 : phase.frame;
+      const visibleFrame = phase.frame;
       actor.frames.forEach((spriteFrame, index) => { spriteFrame.visible = index === visibleFrame; });
-      if (reducedMotion) actor.frames[0].visible = true;
       drawRacerEffects({
         graphics: actor.fx,
         pose: phase,
@@ -175,7 +170,7 @@ export class PixiRaceStage implements RaceRenderer {
       shake = Math.max(shake, phase.impact);
     }
     if (winnerEnergy) drawWinnerConvergence(this.#winnerField, this.#viewport.width, this.#viewport.height,
-      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity);
+      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity, reducedMotion);
     // Running-only, sub-pixel canvas shake. It cannot reflow or resize the DOM.
     const allowShake = frame.state === "running" && !reducedMotion && frame.heat >= 2;
     this.actors.position.set(allowShake ? Math.sin(frame.elapsedMs * 0.09) * shake * 1.15 : 0,

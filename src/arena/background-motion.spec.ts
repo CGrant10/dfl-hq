@@ -13,4 +13,13 @@ describe("isolated Arena background motion", () => {
     expect(backgroundMotion("running", 1).blurY).toBeLessThan(backgroundMotion("running", 1).blurX / 20);
     expect(backgroundMotion("running", 1).intensity).toBe(1);
   });
+
+  it("keeps restrained background motion when the app option is enabled", () => {
+    const full = backgroundMotion("running", 1);
+    const reduced = backgroundMotion("running", 1, false, true);
+    expect(reduced.blurX).toBeGreaterThan(0);
+    expect(reduced.blurX).toBeLessThan(full.blurX);
+    expect(reduced.intensity).toBeGreaterThan(0);
+    expect(reduced.intensity).toBeLessThan(full.intensity);
+  });
 });

@@ -26,9 +26,15 @@ describe("Arena presentation choreography", () => {
     expect(motionPose(input)).toEqual(motionPose({ ...input }));
   });
 
-  it("returns a static legacy fallback for reduced motion", () => {
-    expect(motionPose({ motion: "surge", elapsedMs: 900, lane: 2, heat: 3, variant: 0.5, reducedMotion: true }))
-      .toMatchObject({ x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, afterimage: 0, impact: 0, dust: 0 });
+  it("keeps reactions readable while reducing their intensity", () => {
+    const full = motionPose({ motion: "stumble", elapsedMs: 560, motionStartedMs: 0, lane: 2, heat: 3, variant: 0.9 });
+    const reduced = motionPose({ motion: "stumble", elapsedMs: 560, motionStartedMs: 0, lane: 2, heat: 3, variant: 0.9, reducedMotion: true });
+    expect(reduced.frame).toBe(full.frame);
+    expect(Math.abs(reduced.rotation)).toBeGreaterThan(0);
+    expect(Math.abs(reduced.rotation)).toBeLessThan(Math.abs(full.rotation));
+    expect(reduced.skid).toBeGreaterThan(0);
+    expect(reduced.dust).toBeGreaterThan(0);
+    expect(reduced.dust).toBeLessThan(full.dust);
   });
 
   it("makes a surge visually distinct from ordinary running", () => {
