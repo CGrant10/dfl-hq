@@ -3,6 +3,7 @@ import type { FinishCamera, FinishPresentation, PhotoFinishPresentation, RaceRac
 export const FINAL_STRETCH_START = 0.86;
 export const FINISH_CAMERA_FULL = 0.94;
 export const FINISH_LINE_RATIO = 0.76;
+export const FINISH_APPROACH_RATIO = 0.16;
 export const POST_FINISH_MS = 360;
 export const POST_FINISH_DISTANCE = 0.2;
 export const WINNER_REVEAL_DELAY_MS = 320;
@@ -46,7 +47,13 @@ export function postFinishProgress(progress: number, elapsedMs: number, finishMs
 /** Ratio within the track used by both DOM fallback and Pixi. */
 export function presentationScreenRatio(progress: number, camera: FinishCamera): number {
   const normal = 0.03 + clamp01(progress) * 0.88;
-  const finish = camera.finishRatio + (progress - 1) * 1.55;
+  // At track level the camera sees a long approach, not a progress bar ending
+  // at the stripe. Expand the authoritative final 14% across most of the shot
+  // while keeping the projection monotonic and the official crossing at 1.0.
+  const finish = progress <= FINAL_STRETCH_START
+    ? FINISH_APPROACH_RATIO * clamp01(progress / FINAL_STRETCH_START)
+    : camera.finishRatio + (progress - 1) *
+      ((camera.finishRatio - FINISH_APPROACH_RATIO) / (1 - FINAL_STRETCH_START));
   return normal + (finish - normal) * camera.mix;
 }
 
