@@ -1,3 +1,6 @@
+import type { FinishCamera } from "./contracts";
+import { presentationScreenRatio } from "./finish-presentation";
+
 export interface ArenaViewport {
   width: number; height: number; portrait: boolean; compact: boolean;
   laneTop: number; laneBottom: number; laneHeight: number;
@@ -27,14 +30,20 @@ export function arenaViewport(width: number, height: number): ArenaViewport {
     laneHeight, trackLeft, trackRight, trackWidth: trackRight - trackLeft, actorScale };
 }
 
-export function laneY(viewport: ArenaViewport, lane: number, racerCount: number): number {
+export function laneY(viewport: ArenaViewport, lane: number, racerCount: number, cameraMix = 0): number {
   const count = Math.max(1, racerCount);
   const safeLane = Math.max(0, Math.min(count - 1, lane));
-  return viewport.laneTop + viewport.laneHeight * ((safeLane + 0.5) / count);
+  const laneRatio = (safeLane + 0.5) / count;
+  const normal = viewport.laneTop + viewport.laneHeight * laneRatio;
+  const finish = viewport.height * (0.16 + 0.78 * laneRatio);
+  return normal + (finish - normal) * Math.max(0, Math.min(1, cameraMix));
 }
 
-export function screenX(viewport: ArenaViewport, progress: number): number {
-  const p = Math.max(0, Math.min(1, progress));
-  return viewport.trackLeft + viewport.trackWidth * p;
+export function screenX(viewport: ArenaViewport, progress: number, camera?: FinishCamera): number {
+  if (!camera) {
+    const p = Math.max(0, Math.min(1, progress));
+    return viewport.trackLeft + viewport.trackWidth * p;
+  }
+  return viewport.width * presentationScreenRatio(progress, camera);
 }
 

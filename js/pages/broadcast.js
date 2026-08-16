@@ -21,7 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
@@ -449,7 +449,6 @@ function watch(view, id, racers) {
       const sim = live.sim;
       const elapsed = elapsedMs(row);
       const state = row.bc_state;
-      const raceComplete = state === "finished" || elapsed >= (live.lastFinish || Infinity);
 
       /*
         The countdown is not a state, it is a negative clock. The
@@ -475,25 +474,38 @@ function watch(view, id, racers) {
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
       const src = live.shown || sim.samples;
+      let leaderProgress = 0;
+      for (const samples of src) {
+        const progress = (samples[lo] ?? 0) + ((samples[hi] ?? samples[lo] ?? 0) - (samples[lo] ?? 0)) * mix;
+        leaderProgress = Math.max(leaderProgress, progress);
+      }
+      const finishPresentation = createFinishPresentation({
+        elapsedMs: Math.max(0, elapsed), leaderProgress, order: sim.order, racers,
+      });
+      const visualT = Math.max(0, Math.min(sim.frames, finishPresentation.visualElapsedMs / TICK_MS));
+      const visualLo = Math.floor(visualT);
+      const visualHi = Math.min(sim.frames, visualLo + 1);
+      const visualMix = visualT - visualLo;
+      els.stage.dataset.camera = finishPresentation.camera.state;
+      els.stage.style.setProperty("--finish-camera", finishPresentation.camera.mix.toFixed(4));
       const heat = intensityAt(src, lo);
       const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
       if (els.track && els.track.dataset.heat !== band) els.track.dataset.heat = band;
-      let cameraLead = 0;
       const pixiRacers = [];
       for (let i = 0; i < els.runners.length; i++) {
         const s = src[i];
         const pixiRacer = presentationRacerFrame({
-          id: racers[i].id, lane: i, samples: s, lo, hi, mix, elapsedMs: elapsed,
-          finished: live.homed?.has(i) || false, timeline: live.pixiTimeline,
+          id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,
+          elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,
         });
         const p = pixiRacer.progress;
-        els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
-        cameraLead = Math.max(cameraLead, p);
+        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress ?? p, finishPresentation.camera);
+        els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * screenRatio).toFixed(2)}px`);
         pixiRacers.push(pixiRacer);
       }
       const pixiLeader = pixiRacers.reduce((best, item) => item.progress > best.progress ? item : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
-      const pixiState = raceComplete ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
+      const pixiState = finishPresentation.celebrationActive ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
       live.pixi?.render({
         elapsedMs: Math.max(0, elapsed),
         state: elapsed < 0 ? "idle" : pixiState,
@@ -501,11 +513,12 @@ function watch(view, id, racers) {
         racers: pixiRacers,
         countdownMs: elapsed < 0 ? Math.abs(elapsed) : 0,
         winnerId: sim.order[0]?.racer?.id,
+        finish: finishPresentation,
         reduceMotionEffects: live.reduceMotionEffects,
       });
-      if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
+      if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, leaderProgress).toFixed(4));
       const backdrop = backgroundMotion(elapsed < 0 ? "idle" : pixiState, heat,
-        elapsed >= (live.winnerMs || Infinity), live.reduceMotionEffects);
+        finishPresentation.celebrationActive, live.reduceMotionEffects);
       live.sceneryBlurX += (backdrop.blurX - live.sceneryBlurX) * .16;
       els.sceneryBlur?.setAttribute("stdDeviation", `${live.sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       els.stage?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
@@ -527,7 +540,7 @@ function watch(view, id, racers) {
       live.lastElapsed = elapsed;
 
       const track = els.track;
-      if (state === "running" && elapsed >= 0 && !raceComplete) {
+      if (state === "running" && elapsed >= 0 && !finishPresentation.allExited) {
         track?.classList.add("is-running");
         els.stage?.classList.add("is-racing");
       } else {
@@ -575,7 +588,13 @@ function watch(view, id, racers) {
         live.homed.add(i);
         const el = els.runners[i];
         el?.classList.remove("is-surge", "is-stumble", "is-duel");
-        el?.classList.add(i === sim.order[0].index ? "is-winner" : "is-finished");
+        el?.classList.add("is-finished");
+      }
+
+      if (finishPresentation.celebrationActive) {
+        const winner = els.runners[sim.order[0].index];
+        winner?.classList.remove("is-finished");
+        winner?.classList.add("is-winner");
       }
 
       if (row.bc_show_timer !== false) {
@@ -594,7 +613,7 @@ function watch(view, id, racers) {
       }
 
       const finishMs = sim.order.at(-1)?.finishMs ?? 0;
-      const done = raceComplete;
+      const done = finishPresentation.celebrationActive;
 
       if (done) {
         const win = sim.order[0];

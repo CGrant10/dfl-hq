@@ -33,5 +33,13 @@ describe("Arena responsive viewport", () => {
     expect(screenX(view, -1)).toBe(screenX(view, 0));
     expect(screenX(view, 2)).toBe(screenX(view, 1));
   });
+
+  it("uses the shared finish camera without changing the default geometry", () => {
+    const view = arenaViewport(1280, 720);
+    const camera = { state: "finish" as const, mix: 1, finishRatio: 0.76 };
+    expect(screenX(view, 1, camera)).toBeCloseTo(view.width * 0.76);
+    expect(screenX(view, 1.2, camera)).toBeGreaterThan(screenX(view, 1, camera));
+    expect(laneY(view, 11, 12, 1)).toBeLessThan(view.height);
+  });
 });
 

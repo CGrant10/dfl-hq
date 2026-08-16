@@ -37,12 +37,43 @@ export interface RacerFrame {
   lane: number;
   leading: boolean;
   finished: boolean;
+  /** Presentation-only travel beyond the stripe; authoritative progress stays 0..1. */
+  displayProgress?: number;
+  exiting?: boolean;
   /** Presentation-only normalized velocity/acceleration from authoritative frames. */
   speed?: number;
   acceleration?: number;
   reaction?: "surge" | "stumble" | "jump" | "duel" | "near";
   /** Presentation timestamp only; race progress remains authoritative. */
   reactionStartedMs?: number;
+}
+
+export type FinishCameraState = "normal" | "finalStretch" | "finish";
+
+export interface FinishCamera {
+  state: FinishCameraState;
+  mix: number;
+  finishRatio: number;
+}
+
+export interface PhotoFinishPresentation {
+  phase: "approach" | "flash" | "result";
+  firstId: RaceRacer["id"];
+  secondId: RaceRacer["id"];
+  firstName: string;
+  secondName: string;
+  firstMs: number;
+  secondMs: number;
+  gapMs: number;
+}
+
+export interface FinishPresentation {
+  camera: FinishCamera;
+  visualElapsedMs: number;
+  celebrationActive: boolean;
+  celebrationStartedMs: number;
+  allExited: boolean;
+  photoFinish?: PhotoFinishPresentation;
 }
 
 export interface RaceFrame {
@@ -52,6 +83,7 @@ export interface RaceFrame {
   racers: readonly RacerFrame[];
   countdownMs?: number;
   winnerId?: RaceRacer["id"];
+  finish?: FinishPresentation;
   /** Explicit local Arena preference; absent/false always means full effects. */
   reduceMotionEffects?: boolean;
 }

@@ -616,9 +616,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
 .bc-stage .bc-finish{filter:drop-shadow(0 0 10px #fff)}
 .bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
-.bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,220,92,.42),rgba(255,157,28,.12) 26%,rgba(2,7,14,.95) 62%)}
-.bc-stage .bc-winner-inner::before{content:"";position:absolute;inset:-28%;z-index:-1;background:repeating-conic-gradient(from 0deg,#fff8ca 0 2deg,#ffd84a 2deg 5deg,transparent 5deg 11deg);filter:drop-shadow(0 0 1.2vw #ffbd25);opacity:.42;animation:bc-rays 11s linear infinite}
-@keyframes bc-rays{to{transform:rotate(1turn)}}
+.bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,220,92,.34),rgba(255,157,28,.08) 26%,rgba(2,7,14,.62) 62%)}
 .bc-runner.trail-dust::before,.bc-runner.trail-spark::before,.bc-runner.trail-rainbow::before{content:"";position:absolute;right:68%;top:50%;width:66%;pointer-events:none;opacity:.9}
 .bc-runner.trail-dust::before{height:1.1vw;background:radial-gradient(circle,#dec6a0 0 20%,transparent 23%) 0 50%/1vw 1vw repeat-x}
 .bc-runner.trail-spark::before{height:1.2vw;background:radial-gradient(circle,#ffe45c 0 16%,transparent 20%) 0 50%/1.2vw 1.2vw repeat-x;filter:drop-shadow(0 0 .35vw #ffb800)}
@@ -1030,3 +1028,26 @@ body.broadcasting .view { width:100%; height:100%; }
 }
 .arena-pixi-host,
 .arena-pixi-host canvas { display:block!important; width:100%!important; height:100%!important; }
+
+/* Shared finish camera: the ordinary race geometry remains untouched until
+   the final-stretch state arrives from the common presentation adapter. */
+.bc-stage .bc-finish { transition:right .52s cubic-bezier(.2,.8,.2,1), filter .25s ease; }
+.bc-stage[data-camera="finalStretch"] .bc-finish,
+.bc-stage[data-camera="finish"] .bc-finish { right:24%; filter:drop-shadow(0 0 16px #fff) drop-shadow(0 0 28px #ffd84a); }
+.bc-stage[data-camera="finalStretch"] .race-scenery,
+.bc-stage[data-camera="finish"] .race-scenery {
+  transform:translate3d(calc(var(--race-pan,0) * -5%),calc(var(--finish-camera,0) * -2.2%),0)
+            scale(calc(1 + var(--finish-camera,0) * .065))!important;
+  transform-origin:50% 100%;
+}
+.bc-stage[data-camera="finish"] .bc-track {
+  box-shadow:inset 0 -12px 18px rgba(12,25,20,.32),inset 0 0 80px rgba(255,220,92,.08);
+}
+
+@media(max-width:800px){
+  .lane-tag{z-index:5;top:-6px;left:6px;max-width:42vw;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.9);text-shadow:0 1px 3px #000}
+  .arena-track-wrap.has-pixi-race .runner,
+  .bc-track.has-pixi-race .bc-runner{z-index:3}
+  .arena-track-wrap .runner-nameplate,
+  .bc-stage .bc-runner-name{z-index:6;top:-12%!important;max-width:min(31vw,150px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 9px #0009}
+}
