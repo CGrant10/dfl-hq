@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   FINISH_LINE_RATIO,
+  FINISH_APPROACH_RATIO,
+  FINAL_STRETCH_START,
   PHOTO_FINISH_THRESHOLD_MS,
   POST_FINISH_MS,
   cameraForLeader,
@@ -34,6 +36,16 @@ describe("Arena finish presentation", () => {
     const after = postFinishProgress(1, 10_000 + POST_FINISH_MS, 10_000);
     expect(after).toBeGreaterThan(1);
     expect(presentationScreenRatio(after, camera)).toBeGreaterThan(FINISH_LINE_RATIO);
+  });
+
+  it("expands the authoritative final stretch without reversing racers", () => {
+    const camera = cameraForLeader(1);
+    expect(presentationScreenRatio(FINAL_STRETCH_START, camera)).toBeCloseTo(FINISH_APPROACH_RATIO);
+    expect(presentationScreenRatio(0.9, camera)).toBeGreaterThan(0.3);
+    expect(presentationScreenRatio(0.95, camera)).toBeGreaterThan(0.5);
+    const samples = [0.82, 0.86, 0.9, 0.94, 0.98, 1, 1.1]
+      .map((progress) => presentationScreenRatio(progress, camera));
+    expect(samples.every((value, index) => index === 0 || value > samples[index - 1]!)).toBe(true);
   });
 
   it("uses the real P1/P2 gap for photo finish and a brief hit-stop", () => {

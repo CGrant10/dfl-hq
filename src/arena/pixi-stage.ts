@@ -15,11 +15,13 @@ interface PetActor {
   art: Container;
   frames: readonly [Graphics, Graphics, Graphics, Graphics];
   fx: Graphics;
+  nameplate: Container;
   color: number;
   variant: number;
   motion: PetMotion;
   motionStartedMs: number;
   finishedAtMs: number | null;
+  effectKey: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export class PixiRaceStage implements RaceRenderer {
   readonly actors = new Container({ label: "racers" });
   readonly effects = new Container({ label: "effects" });
   readonly overlay = new Container({ label: "overlay" });
+  readonly #nameplates = new Container({ label: "mobile-nameplates" });
   readonly #compatGraphics = new Graphics({ label: "legacy-feature-set" });
   readonly #compatText = new Text({ text: "", style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 12 } });
   readonly #backgroundLines = new Graphics({ label: "background-speed-lines" });
@@ -51,6 +54,8 @@ export class PixiRaceStage implements RaceRenderer {
   #actorById = new Map<RaceRacer["id"], PetActor>();
   #lastFrame: RaceFrame | null = null;
   #resizeObserver: ResizeObserver | null = null;
+  #fieldKey = "";
+  #photoKey = "";
 
   async mount(host: HTMLElement): Promise<void> {
     this.#host = host;
@@ -72,7 +77,7 @@ export class PixiRaceStage implements RaceRenderer {
     // remain pixel-crisp. Only a sparse highlight pass crosses in front.
     this.course.addChild(this.#backgroundLines, this.#winnerField);
     this.effects.addChild(this.#foregroundLines);
-    this.overlay.addChild(this.#photoField, this.#photoText);
+    this.overlay.addChild(this.#nameplates, this.#photoField, this.#photoText);
     this.#foregroundLines.blendMode = "add";
     this.#winnerField.blendMode = "add";
     this.#photoField.blendMode = "add";
@@ -89,6 +94,7 @@ export class PixiRaceStage implements RaceRenderer {
     this.app.canvas.dataset.racerCount = String(racers.length);
     this.#actorById.clear();
     this.actors.removeChildren();
+    this.#nameplates.removeChildren();
     for (const racer of racers) {
       const root = new Container({ label: `racer-${racer.id}` });
       root.eventMode = "none";
@@ -97,25 +103,40 @@ export class PixiRaceStage implements RaceRenderer {
       const art = new Container({ label: `pet-${pet.species}` });
       art.addChild(...frames);
       const fx = new Graphics({ label: `effects-${racer.id}` });
-      root.addChild(fx, art);
+      const shadow = new Graphics({ label: `contact-${racer.id}` })
+        .ellipse(0, 23, 27, 6).fill({ color: 0x000000, alpha: 0.42 });
+      const nameplate = this.#nameplate(racer);
+      root.addChild(shadow, fx, art);
       this.#actorById.set(racer.id, {
-        root, art, frames, fx,
+        root, art, frames, fx, nameplate,
         color: this.#color(pet.accent),
         variant: racerVariant(racer.id, racers.indexOf(racer)),
         motion: "idle",
         motionStartedMs: 0,
         finishedAtMs: null,
+        effectKey: "",
       });
       this.actors.addChild(root);
+      this.#nameplates.addChild(nameplate);
     }
   }
 
   render(frame: RaceFrame): void {
     this.#lastFrame = frame;
     const reducedMotion = frame.reduceMotionEffects === true;
-    drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
-    drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
-    drawPhotoFinish(this.#photoField, this.#photoText, frame, this.#viewport, reducedMotion);
+    const fieldKey = `${Math.floor(frame.elapsedMs / 34)}:${frame.state}:${frame.heat}:${
+      Math.round((frame.finish?.camera.mix ?? 0) * 20)}:${reducedMotion}:${this.#viewport.width}:${this.#viewport.height}`;
+    if (fieldKey !== this.#fieldKey) {
+      this.#fieldKey = fieldKey;
+      drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
+      drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
+    }
+    const photo = frame.finish?.photoFinish;
+    const photoKey = `${photo?.phase ?? "none"}:${photo?.gapMs ?? 0}:${this.#viewport.width}:${this.#viewport.height}:${reducedMotion}`;
+    if (photoKey !== this.#photoKey) {
+      this.#photoKey = photoKey;
+      drawPhotoFinish(this.#photoField, this.#photoText, frame, this.#viewport, reducedMotion);
+    }
     this.#winnerField.clear();
     let shake = 0;
     let winnerEnergy: { x: number; y: number; intensity: number } | null = null;
@@ -154,10 +175,11 @@ export class PixiRaceStage implements RaceRenderer {
       const cameraMix = frame.finish?.camera.mix ?? 0;
       const displayProgress = racer.displayProgress ?? racer.progress;
       const winnerFocus = winner ? 1 : 0;
-      actor.root.position.set(
-        winnerFocus ? this.#viewport.width * 0.5 : screenX(this.#viewport, displayProgress, frame.finish?.camera),
-        winnerFocus ? this.#viewport.height * 0.5 : laneY(this.#viewport, racer.lane, this.#racers.length, cameraMix),
-      );
+      const actorX = winnerFocus ? this.#viewport.width * 0.5
+        : screenX(this.#viewport, displayProgress, frame.finish?.camera);
+      const actorY = winnerFocus ? this.#viewport.height * 0.5
+        : laneY(this.#viewport, racer.lane, this.#racers.length, cameraMix);
+      actor.root.position.set(actorX, actorY);
       const cameraScale = 1 + cameraMix * (this.#viewport.compact ? 0.02 : 0.08);
       actor.root.scale.set(this.#viewport.actorScale * cameraScale * (winnerFocus ? 1.42 : 1));
       actor.root.rotation = 0;
@@ -168,18 +190,28 @@ export class PixiRaceStage implements RaceRenderer {
 
       const visibleFrame = phase.frame;
       actor.frames.forEach((spriteFrame, index) => { spriteFrame.visible = index === visibleFrame; });
-      drawRacerEffects({
-        graphics: actor.fx,
-        pose: phase,
-        elapsedMs: frame.elapsedMs,
-        variant: actor.variant,
-        color: actor.color,
-        heat: frame.heat,
-        speed: racer.speed ?? 0,
-        acceleration: racer.acceleration ?? 0,
-        active: frame.state === "running" || frame.state === "finished",
-        reducedMotion,
-      });
+      // Procedural trails are intentionally sampled at 30fps. Actor position
+      // and pose remain full-rate, but twelve Graphics clears no longer occur
+      // on every display refresh.
+      const effectKey = `${Math.floor(frame.elapsedMs / 34)}:${frame.heat}:${motion}:${reducedMotion}`;
+      if (effectKey !== actor.effectKey) {
+        actor.effectKey = effectKey;
+        drawRacerEffects({
+          graphics: actor.fx, pose: phase, elapsedMs: frame.elapsedMs,
+          variant: actor.variant, color: actor.color, heat: frame.heat,
+          speed: racer.speed ?? 0, acceleration: racer.acceleration ?? 0,
+          active: frame.state === "running" || frame.state === "finished", reducedMotion,
+        });
+      }
+      const showMobileName = this.#viewport.width <= 800 && !winnerFocus;
+      actor.nameplate.visible = showMobileName;
+      if (showMobileName) {
+        const half = actor.nameplate.width / 2 + 5;
+        actor.nameplate.position.set(
+          Math.max(half, Math.min(this.#viewport.width - half, actorX)),
+          Math.max(12, actorY - this.#viewport.actorScale * 38),
+        );
+      }
       if (winner && phase.energy > 0) winnerEnergy = {
         x: actor.root.position.x,
         y: actor.root.position.y,
@@ -211,6 +243,8 @@ export class PixiRaceStage implements RaceRenderer {
     this.#actorById.clear();
     this.#racers = [];
     this.#lastFrame = null;
+    this.#fieldKey = "";
+    this.#photoKey = "";
     this.app.destroy(true, { children: true });
     this.#host = null;
   }
@@ -225,6 +259,24 @@ export class PixiRaceStage implements RaceRenderer {
       this.#drawPet(pixelPoseRows(character.px, 2), character.palette as Record<string, string>, pet),
       this.#drawPet(pixelPoseRows(character.px, 3), character.palette as Record<string, string>, pet),
     ];
+  }
+
+  #nameplate(racer: RaceRacer): Container {
+    const root = new Container({ label: `name-${racer.id}` });
+    const label = new Text({
+      text: `${racer.number}  ${racer.name}`,
+      style: { fill: 0xffffff, fontFamily: "system-ui, sans-serif", fontSize: 11,
+        fontWeight: "800", dropShadow: { color: 0x000000, alpha: 0.9, blur: 2, distance: 1 } },
+    });
+    label.anchor.set(0.5);
+    const width = Math.min(150, Math.max(48, label.width + 16));
+    const plate = new Graphics().roundRect(-width / 2, -10, width, 20, 5)
+      .fill({ color: 0x07111f, alpha: 0.9 })
+      .stroke({ color: this.#color(racer.color), width: 2, alpha: 0.95 });
+    root.addChild(plate, label);
+    root.eventMode = "none";
+    root.visible = false;
+    return root;
   }
 
   #drawPet(rows: readonly string[], palette: Record<string, string>, pet: ArenaPet): Graphics {

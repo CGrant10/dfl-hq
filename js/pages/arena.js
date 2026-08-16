@@ -1031,7 +1031,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         });
         const p = pixiRacer.progress;                  // interpolate between ticks
         const screenRatio = presentationScreenRatio(pixiRacer.displayProgress ?? p, finishPresentation.camera);
-        runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
+        // Pixi owns visible racer movement after handoff. Keep DOM writes only
+        // for the fallback renderer instead of animating two copies 60fps.
+        if (!pixi) runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
         if (pixiRacer.finished) runners[i].classList.add("is-home");
         pixiRacers.push(pixiRacer);
       }
