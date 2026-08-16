@@ -3,6 +3,7 @@ import type { RaceFrame, RaceRacer } from "./contracts";
 
 export { backgroundMotion } from "./background-motion";
 export { createReactionTimeline, presentationRacerFrame, reactionAt } from "./presentation-frame";
+export { createFinishPresentation, presentationScreenRatio } from "./finish-presentation";
 
 export interface LiveArenaRenderer {
   render(frame: RaceFrame): void;

@@ -3,7 +3,7 @@ import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 import { motionPose, racerVariant } from "./animation";
-import { drawAnimeField, drawForegroundRush, drawWinnerConvergence } from "./anime-effects";
+import { drawAnimeField, drawForegroundRush, drawPhotoFinish, drawWinnerConvergence } from "./anime-effects";
 import { drawRacerEffects } from "./racer-effects";
 import { pixelPoseRows } from "./pixel-poses";
 import { CHARACTERS, GRID_H, GRID_W } from "../../js/arena/dfl-sprites.js";
@@ -40,6 +40,11 @@ export class PixiRaceStage implements RaceRenderer {
   readonly #backgroundLines = new Graphics({ label: "background-speed-lines" });
   readonly #winnerField = new Graphics({ label: "winner-focus" });
   readonly #foregroundLines = new Graphics({ label: "foreground-speed-lines" });
+  readonly #photoField = new Graphics({ label: "photo-finish" });
+  readonly #photoText = new Text({
+    text: "",
+    style: { fill: 0xffffff, fontFamily: "monospace", fontSize: 18, fontWeight: "700", align: "center", lineHeight: 23 },
+  });
   #host: HTMLElement | null = null;
   #viewport: ArenaViewport = arenaViewport(1280, 720);
   #racers: readonly RaceRacer[] = [];
@@ -67,7 +72,11 @@ export class PixiRaceStage implements RaceRenderer {
     // remain pixel-crisp. Only a sparse highlight pass crosses in front.
     this.course.addChild(this.#backgroundLines, this.#winnerField);
     this.effects.addChild(this.#foregroundLines);
+    this.overlay.addChild(this.#photoField, this.#photoText);
     this.#foregroundLines.blendMode = "add";
+    this.#winnerField.blendMode = "add";
+    this.#photoField.blendMode = "add";
+    this.#photoText.anchor.set(0.5);
     this.resize();
     if (typeof ResizeObserver === "function") {
       this.#resizeObserver = new ResizeObserver(() => this.resize());
@@ -106,22 +115,27 @@ export class PixiRaceStage implements RaceRenderer {
     const reducedMotion = frame.reduceMotionEffects === true;
     drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
     drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
+    drawPhotoFinish(this.#photoField, this.#photoText, frame, this.#viewport, reducedMotion);
     this.#winnerField.clear();
     let shake = 0;
     let winnerEnergy: { x: number; y: number; intensity: number } | null = null;
     for (const racer of frame.racers) {
       const actor = this.#actorById.get(racer.id);
       if (!actor) continue;
-      const winner = racer.finished && racer.id === frame.winnerId;
+      const celebrationActive = frame.finish?.celebrationActive === true;
+      const winner = celebrationActive && racer.finished && racer.id === frame.winnerId;
       const motion: PetMotion = winner ? "win"
-        : frame.state === "finished" && racer.finished ? "lose"
+        : celebrationActive && racer.finished ? "lose"
+        : racer.exiting ? "run"
         : racer.finished ? "idle"
         : petMotion(racer.reaction, false, frame.state);
       if (winner && actor.finishedAtMs == null) actor.finishedAtMs = frame.elapsedMs;
       if (!racer.finished) actor.finishedAtMs = null;
       if (actor.motion !== motion) {
         actor.motion = motion;
-        actor.motionStartedMs = racer.reactionStartedMs ?? actor.finishedAtMs ?? frame.elapsedMs;
+        actor.motionStartedMs = celebrationActive
+          ? frame.finish?.celebrationStartedMs ?? frame.elapsedMs
+          : racer.reactionStartedMs ?? actor.finishedAtMs ?? frame.elapsedMs;
       } else if (racer.reactionStartedMs != null) {
         actor.motionStartedMs = racer.reactionStartedMs;
       }
@@ -137,11 +151,15 @@ export class PixiRaceStage implements RaceRenderer {
         reducedMotion,
       });
 
+      const cameraMix = frame.finish?.camera.mix ?? 0;
+      const displayProgress = racer.displayProgress ?? racer.progress;
+      const winnerFocus = winner ? 1 : 0;
       actor.root.position.set(
-        screenX(this.#viewport, racer.progress),
-        laneY(this.#viewport, racer.lane, this.#racers.length),
+        winnerFocus ? this.#viewport.width * 0.5 : screenX(this.#viewport, displayProgress, frame.finish?.camera),
+        winnerFocus ? this.#viewport.height * 0.5 : laneY(this.#viewport, racer.lane, this.#racers.length, cameraMix),
       );
-      actor.root.scale.set(this.#viewport.actorScale);
+      const cameraScale = 1 + cameraMix * (this.#viewport.compact ? 0.02 : 0.08);
+      actor.root.scale.set(this.#viewport.actorScale * cameraScale * (winnerFocus ? 1.42 : 1));
       actor.root.rotation = 0;
       actor.root.alpha = 1;
       actor.art.position.set(phase.x, phase.y);
@@ -170,8 +188,10 @@ export class PixiRaceStage implements RaceRenderer {
       shake = Math.max(shake, phase.impact);
     }
     if (winnerEnergy) drawWinnerConvergence(this.#winnerField, this.#viewport.width, this.#viewport.height,
-      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity, reducedMotion);
+      winnerEnergy.x, winnerEnergy.y, winnerEnergy.intensity, frame.elapsedMs, reducedMotion);
     // Running-only, sub-pixel canvas shake. It cannot reflow or resize the DOM.
+    const cameraShake = (frame.finish?.camera.mix ?? 0) * 0.42;
+    shake = Math.max(shake, cameraShake);
     const allowShake = frame.state === "running" && !reducedMotion && frame.heat >= 2;
     this.actors.position.set(allowShake ? Math.sin(frame.elapsedMs * 0.09) * shake * 1.15 : 0,
       allowShake ? Math.cos(frame.elapsedMs * 0.11) * shake * 0.7 : 0);

@@ -1,4 +1,5 @@
 import type { RacerFrame, RaceRacer } from "./contracts";
+import { POST_FINISH_MS, postFinishProgress } from "./finish-presentation";
 
 export type ReactionKind = NonNullable<RacerFrame["reaction"]>;
 
@@ -74,6 +75,7 @@ export interface PresentationRacerInput {
   mix: number;
   elapsedMs: number;
   finished?: boolean;
+  officialFinishMs?: number;
   timeline?: ReactionTimeline;
 }
 
@@ -89,15 +91,21 @@ export function presentationRacerFrame(input: PresentationRacerInput): RacerFram
   const speed = Math.max(0, Math.min(1, (atHi - atLo) * 180));
   const acceleration = Math.max(-1, Math.min(1,
     ((atHi - atLo) - (atLo - previous)) * 500));
-  const finished = Boolean(input.finished) || progress >= 1;
+  const finished = input.officialFinishMs == null
+    ? Boolean(input.finished) || progress >= 1
+    : input.elapsedMs >= input.officialFinishMs;
+  const displayProgress = postFinishProgress(progress, input.elapsedMs, input.officialFinishMs);
+  const exiting = finished && input.officialFinishMs != null && input.elapsedMs < input.officialFinishMs + POST_FINISH_MS;
   const reaction = finished ? null : reactionAt(input.timeline, input.lane, input.elapsedMs);
   return {
     id: input.id,
     lane: input.lane,
     progress,
+    displayProgress,
     leading: false,
     finished,
-    speed,
+    exiting,
+    speed: exiting ? Math.max(0.72, speed) : speed,
     acceleration,
     ...(reaction ? { reaction: reaction.kind, reactionStartedMs: reaction.startedMs } : {}),
   };

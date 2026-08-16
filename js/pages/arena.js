@@ -20,7 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createReactionTimeline, presentationRacerFrame } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
@@ -953,7 +953,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   const completed = await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
-    const total = lastFinish + 250;
+    const total = lastFinish + 1_100;
     let nextCall = 0, calledAt = -9999, nextEvent = 0, nextVisual = 0;
     /* One timer-free expiry list. Effects are removed by the frame loop
        that added them, so nothing can outlive the race or stack up: at
@@ -961,7 +961,6 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const expiry = [];
     const rows    = racers.map((_, i) => stage.querySelector(`#ar-row-${i}`));
     const official = new Map(sim.order.map((o) => [o.index, o.finishMs]));
-    const winnerMs = sim.order[0].finishMs;
     let lastOrderKey = "";
     const homed = new Set();
     const track = stage.querySelector("#track");
@@ -1008,23 +1007,37 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       const t = Math.min(sim.frames, elapsed / TICK_MS);
       const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
 
-      let cameraLead = 0;
+      let leaderProgress = 0;
+      for (const samples of shown) {
+        const progress = (samples[lo] ?? 0) + ((samples[hi] ?? samples[lo] ?? 0) - (samples[lo] ?? 0)) * mix;
+        leaderProgress = Math.max(leaderProgress, progress);
+      }
+      const finishPresentation = createFinishPresentation({
+        elapsedMs: elapsed, leaderProgress, order: sim.order, racers,
+      });
+      const visualT = Math.min(sim.frames, finishPresentation.visualElapsedMs / TICK_MS);
+      const visualLo = Math.floor(visualT);
+      const visualHi = Math.min(sim.frames, visualLo + 1);
+      const visualMix = visualT - visualLo;
+      raceWrap.dataset.camera = finishPresentation.camera.state;
+      raceWrap.style.setProperty("--finish-camera", finishPresentation.camera.mix.toFixed(4));
+
       const pixiRacers = [];
       for (let i = 0; i < runners.length; i++) {
         const s = shown[i];                            // drawn, not decided
         const pixiRacer = presentationRacerFrame({
-          id: racers[i].id, lane: i, samples: s, lo, hi, mix, elapsedMs: elapsed,
-          timeline: pixiTimeline,
+          id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,
+          elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: official.get(i), timeline: pixiTimeline,
         });
         const p = pixiRacer.progress;                  // interpolate between ticks
-        runners[i].style.setProperty("--race-x", `${(trackWidth * (.03 + Math.max(0, Math.min(1, p)) * .88)).toFixed(2)}px`);
-        cameraLead = Math.max(cameraLead, p);
-        if (p >= 1) runners[i].classList.add("is-home");
+        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress ?? p, finishPresentation.camera);
+        runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
+        if (pixiRacer.finished) runners[i].classList.add("is-home");
         pixiRacers.push(pixiRacer);
       }
       const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
-      if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, cameraLead).toFixed(4));
+      if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, leaderProgress).toFixed(4));
 
       /*
         THE CHARACTERS REACT TO THE SAME EVENTS THE COMMENTARY DOES.
@@ -1107,16 +1120,17 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       if (track && track.dataset.heat !== band) track.dataset.heat = band;
       /* Genuine X-axis-only background blur. It is applied to the existing
          scenery layer, never the track, racers, labels, board, or finish. */
-      const backdrop = backgroundMotion("running", heat, elapsed >= winnerMs, reducedMotionEffects);
+      const backdrop = backgroundMotion("running", heat, finishPresentation.celebrationActive, reducedMotionEffects);
       sceneryBlurX += (backdrop.blurX - sceneryBlurX) * .16;
       sceneryBlur?.setAttribute("stdDeviation", `${sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       raceWrap?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
       pixi?.render({
         elapsedMs: elapsed,
-        state: elapsed >= lastFinish ? "finished" : "running",
+        state: finishPresentation.celebrationActive ? "finished" : "running",
         heat: Number(band),
         racers: pixiRacers,
         winnerId: sim.order[0].racer.id,
+        finish: finishPresentation,
         reduceMotionEffects: reducedMotionEffects,
       });
 
@@ -1171,9 +1185,14 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
             board.find((b) => b.index === i)?.label || "";
         }
         runners[i]?.classList.remove("is-surge", "is-stumble");
-        const isWinner = i === sim.order[0].index;
-        runners[i]?.classList.add(isWinner ? "is-winner" : "is-finished");
-        if (isWinner) raceWrap?.classList.add("has-winner");
+        runners[i]?.classList.add("is-finished");
+      }
+
+      if (finishPresentation.celebrationActive) {
+        const winner = runners[sim.order[0].index];
+        winner?.classList.remove("is-finished");
+        winner?.classList.add("is-winner");
+        raceWrap?.classList.add("has-winner");
       }
 
       /* Whoever is visually in front wears it, so the leader is readable

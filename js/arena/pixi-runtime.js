@@ -1106,9 +1106,9 @@ var H = new class {
 			p = s.measureText(n).width, u += f - p + c, t === " " && (u += o), f = p;
 		}
 	}
-}(), Je = class e extends v {
+}(), U = class e extends v {
 	constructor(t = {}) {
-		super(), this.uid = l("textStyle"), this._tick = 0, this._cachedFontString = null, Ye(t), t instanceof e && (t = t._toObject());
+		super(), this.uid = l("textStyle"), this._tick = 0, this._cachedFontString = null, Je(t), t instanceof e && (t = t._toObject());
 		let n = {
 			...e.defaultTextStyle,
 			...t
@@ -1325,13 +1325,13 @@ var H = new class {
 		return (e ?? null) !== null && !(o.isColorLike(e) || e instanceof k || e instanceof re);
 	}
 };
-Je.defaultDropShadow = {
+U.defaultDropShadow = {
 	alpha: 1,
 	angle: Math.PI / 6,
 	blur: 0,
 	color: "black",
 	distance: 5
-}, Je.defaultTextStyle = {
+}, U.defaultTextStyle = {
 	align: "left",
 	breakWords: !1,
 	dropShadow: null,
@@ -1352,11 +1352,11 @@ Je.defaultDropShadow = {
 	wordWrap: !1,
 	wordWrapWidth: 100
 };
-var U = Je;
-function Ye(e) {
+var W = U;
+function Je(e) {
 	let t = e;
 	if (typeof t.dropShadow == "boolean" && t.dropShadow) {
-		let n = U.defaultDropShadow;
+		let n = W.defaultDropShadow;
 		e.dropShadow = {
 			alpha: t.dropShadowAlpha ?? n.alpha,
 			angle: t.dropShadowAngle ?? n.angle,
@@ -1398,7 +1398,7 @@ function Ye(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/utils/updateTextBounds.mjs
-function Xe(e, t) {
+function Ye(e, t) {
 	let { texture: n, bounds: r } = e, i = t._style._getFinalPadding();
 	x(r, t._anchor, n);
 	let a = t._anchor._x * i * 2, o = t._anchor._y * i * 2;
@@ -1406,7 +1406,7 @@ function Xe(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/BatchableText.mjs
-var Ze = class extends ee {}, Qe = class {
+var Xe = class extends ee {}, Ze = class {
 	constructor(e) {
 		this._renderer = e, e.runners.resolutionChange.add(this), this._managedTexts = new E({
 			renderer: e,
@@ -1429,7 +1429,7 @@ var Ze = class extends ee {}, Qe = class {
 		let n = this._getGpuText(e);
 		if (e._didTextUpdate) {
 			let t = e._autoResolution ? this._renderer.resolution : e.resolution;
-			(n.currentKey !== e.styleKey || e._resolution !== t) && this._updateGpuText(e), e._didTextUpdate = !1, Xe(n, e);
+			(n.currentKey !== e.styleKey || e._resolution !== t) && this._updateGpuText(e), e._didTextUpdate = !1, Ye(n, e);
 		}
 		this._renderer.renderPipes.batch.addToBatch(n, t);
 	}
@@ -1445,7 +1445,7 @@ var Ze = class extends ee {}, Qe = class {
 		return e._gpuData[this._renderer.uid] || this.initGpuText(e);
 	}
 	initGpuText(e) {
-		let t = new Ze();
+		let t = new Xe();
 		return t.currentKey = "--", t.renderable = e, t.transform = e.groupTransform, t.bounds = {
 			minX: 0,
 			maxX: 1,
@@ -1463,7 +1463,7 @@ var Ze = class extends ee {}, Qe = class {
 		this._managedTexts.destroy(), this._renderer = null;
 	}
 };
-Qe.extension = {
+Ze.extension = {
 	type: [
 		_.WebGLPipes,
 		_.WebGPUPipes,
@@ -1473,7 +1473,7 @@ Qe.extension = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/shared/AbstractTextSystem.mjs
-var $e = class {
+var Qe = class {
 	constructor(e, t) {
 		this._activeTextures = {}, this._renderer = e, this._retainCanvasContext = t;
 	}
@@ -1482,7 +1482,7 @@ var $e = class {
 			text: e,
 			style: n,
 			resolution: t
-		}), e.style instanceof U || (e.style = new U(e.style)), e.textureStyle instanceof c || (e.textureStyle = new c(e.textureStyle)), typeof e.text != "string" && (e.text = e.text.toString());
+		}), e.style instanceof W || (e.style = new W(e.style)), e.textureStyle instanceof c || (e.textureStyle = new c(e.textureStyle)), typeof e.text != "string" && (e.text = e.text.toString());
 		let { text: i, style: a, textureStyle: o, autoGenerateMipmaps: s } = e, l = e.resolution ?? this._renderer.resolution, { frame: u, canvasAndContext: d } = H.getCanvasAndContext({
 			text: i,
 			style: a,
@@ -1546,32 +1546,32 @@ var $e = class {
 		for (let e in this._activeTextures) this._activeTextures[e] && this.returnTexture(this._activeTextures[e].texture);
 		this._activeTextures = null;
 	}
-}, et = class extends $e {
+}, $e = class extends Qe {
 	constructor(e) {
 		super(e, !0);
 	}
 };
-et.extension = {
+$e.extension = {
 	type: [_.CanvasSystem],
 	name: "canvasText"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/shared/GpuTextSystem.mjs
-var tt = class extends $e {
+var et = class extends Qe {
 	constructor(e) {
 		super(e, !1);
 	}
 };
-tt.extension = {
+et.extension = {
 	type: [_.WebGLSystem, _.WebGPUSystem],
 	name: "canvasText"
-}, m.add(et), m.add(tt), m.add(Qe);
+}, m.add($e), m.add(et), m.add(Ze);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/Text.mjs
-var nt = class extends he {
+var tt = class extends he {
 	constructor(...e) {
 		let t = ge(e, "Text");
-		super(t, U), this.renderPipeId = "text", t.textureStyle && (this.textureStyle = t.textureStyle instanceof c ? t.textureStyle : new c(t.textureStyle)), this.autoGenerateMipmaps = t.autoGenerateMipmaps ?? s.defaultOptions.autoGenerateMipmaps;
+		super(t, W), this.renderPipeId = "text", t.textureStyle && (this.textureStyle = t.textureStyle instanceof c ? t.textureStyle : new c(t.textureStyle)), this.autoGenerateMipmaps = t.autoGenerateMipmaps ?? s.defaultOptions.autoGenerateMipmaps;
 	}
 	updateBounds() {
 		let e = this._bounds, t = this._anchor, n = 0, r = 0;
@@ -1594,37 +1594,37 @@ var nt = class extends he {
 m.add(ae, oe);
 //#endregion
 //#region src/arena/pet-texture.ts
-var rt = /^#[0-9a-f]{6}$/i, it = /* @__PURE__ */ new Set([
+var nt = /^#[0-9a-f]{6}$/i, rt = /* @__PURE__ */ new Set([
 	"none",
 	"bandana",
 	"visor",
 	"crown",
 	"headphones",
 	"cape"
-]), at = /* @__PURE__ */ new Set([
+]), it = /* @__PURE__ */ new Set([
 	"focused",
 	"happy",
 	"fierce",
 	"sleepy"
 ]);
-function ot(e, t = "#38bdf8") {
+function at(e, t = "#38bdf8") {
 	let n = e || {};
 	return {
 		name: String(n.name || "").slice(0, 24),
 		species: String(n.species || "emberrat").replace(/[^a-z0-9_-]/gi, "").slice(0, 32) || "emberrat",
-		color: rt.test(n.color || "") ? n.color : t,
-		accent: rt.test(n.accent || "") ? n.accent : "#ffffff",
+		color: nt.test(n.color || "") ? n.color : t,
+		accent: nt.test(n.accent || "") ? n.accent : "#ffffff",
 		trail: [
 			"none",
 			"dust",
 			"spark",
 			"rainbow"
 		].includes(n.trail || "") ? n.trail : "none",
-		accessory: it.has(n.accessory) ? n.accessory : "none",
-		expression: at.has(n.expression) ? n.expression : "focused"
+		accessory: rt.has(n.accessory) ? n.accessory : "none",
+		expression: it.has(n.expression) ? n.expression : "focused"
 	};
 }
-function st(e, t, n) {
+function ot(e, t, n) {
 	return t ? "win" : e && [
 		"surge",
 		"stumble",
@@ -1634,8 +1634,62 @@ function st(e, t, n) {
 	].includes(e) ? e : n === "running" ? "run" : "idle";
 }
 //#endregion
+//#region src/arena/finish-presentation.ts
+var st = .86, ct = .76, lt = .2, ut = (e) => Math.max(0, Math.min(1, e)), dt = (e) => {
+	let t = ut(e);
+	return t * t * (3 - 2 * t);
+};
+function ft(e) {
+	let t = dt((e - st) / .07999999999999996);
+	return {
+		state: t <= 0 ? "normal" : t < .98 ? "finalStretch" : "finish",
+		mix: t,
+		finishRatio: ct
+	};
+}
+function pt(e, t, n) {
+	let r = ut(e);
+	return n == null || t < n ? r : 1 + dt((t - n) / 360) * lt;
+}
+function mt(e, t) {
+	let n = .03 + ut(e) * .88;
+	return n + (t.finishRatio + (e - 1) * 1.55 - n) * t.mix;
+}
+function ht(e, t) {
+	let n = e - t;
+	return n < 0 ? e : n < 90 ? t : n < 390 ? t + (n - 90) * 1.3 : e;
+}
+function gt(e, t) {
+	let n = e.order[0], r = e.order[1];
+	if (!n || !r) return;
+	let i = r.finishMs - n.finishMs;
+	if (i < 0 || i > 180 || t) return;
+	let a = e.elapsedMs - r.finishMs, o = e.elapsedMs >= n.finishMs - 700 && e.elapsedMs < r.finishMs ? "approach" : a >= 0 && a < 120 ? "flash" : a >= 120 && a < 1350 ? "result" : "none";
+	if (o !== "none") return {
+		phase: o,
+		firstId: e.racers[n.index]?.id ?? n.index,
+		secondId: e.racers[r.index]?.id ?? r.index,
+		firstName: e.racers[n.index]?.name || "Racer 1",
+		secondName: e.racers[r.index]?.name || "Racer 2",
+		firstMs: n.finishMs,
+		secondMs: r.finishMs,
+		gapMs: i
+	};
+}
+function _t(e) {
+	let t = e.order.at(-1)?.finishMs ?? Infinity, n = e.order[1]?.finishMs, r = n == null || !e.order[0] ? Infinity : n - e.order[0].finishMs, i = r >= 0 && r <= 180, a = e.elapsedMs >= t + 320, o = i && n != null ? ht(e.elapsedMs, n) : e.elapsedMs, s = gt(e, a);
+	return {
+		camera: ft(e.leaderProgress),
+		visualElapsedMs: o,
+		celebrationActive: a,
+		celebrationStartedMs: t + 320,
+		allExited: e.elapsedMs >= t + 360,
+		...s ? { photoFinish: s } : {}
+	};
+}
+//#endregion
 //#region src/arena/viewport.ts
-function ct(e, t) {
+function vt(e, t) {
 	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * .1, s = r * .9, c = n * .03, l = n * .91, u = s - o, d = (n <= 640 ? 68 : 88) / 72;
 	return {
 		width: n,
@@ -1651,42 +1705,45 @@ function ct(e, t) {
 		actorScale: d
 	};
 }
-function lt(e, t, n) {
-	let r = Math.max(1, n), i = Math.max(0, Math.min(r - 1, t));
-	return e.laneTop + e.laneHeight * ((i + .5) / r);
+function yt(e, t, n, r = 0) {
+	let i = Math.max(1, n), a = (Math.max(0, Math.min(i - 1, t)) + .5) / i, o = e.laneTop + e.laneHeight * a;
+	return o + (e.height * (.16 + .78 * a) - o) * Math.max(0, Math.min(1, r));
 }
-function ut(e, t) {
-	let n = Math.max(0, Math.min(1, t));
-	return e.trackLeft + e.trackWidth * n;
+function bt(e, t, n) {
+	if (!n) {
+		let n = Math.max(0, Math.min(1, t));
+		return e.trackLeft + e.trackWidth * n;
+	}
+	return e.width * mt(t, n);
 }
 //#endregion
 //#region src/arena/pixel-poses.ts
-function W(e, t) {
+function G(e, t) {
 	return t === 0 ? e : t > 0 ? `${".".repeat(t)}${e.slice(0, -t)}` : `${e.slice(-t)}${".".repeat(-t)}`;
 }
-function dt(e, t) {
-	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? W(n, r % 2 == 0 ? 1 : -1) : t === 2 ? W(n, +(r % 3 == 0)) : W(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? W(n, 1) : n);
+function xt(e, t) {
+	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? G(n, r % 2 == 0 ? 1 : -1) : t === 2 ? G(n, +(r % 3 == 0)) : G(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? G(n, 1) : n);
 }
-function G(e, t) {
+function K(e, t) {
 	let n = Math.max(120, t);
 	return Math.floor(Math.max(0, e) % n / (n / 4));
 }
 //#endregion
 //#region src/arena/winner-sequence.ts
-var ft = (e) => Math.max(0, Math.min(1, e)), pt = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
-function mt(e) {
+var St = (e) => Math.max(0, Math.min(1, e)), Ct = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
+function wt(e) {
 	let t = Math.max(0, e);
 	return {
 		freeze: +(t < 115),
-		converge: t < 760 ? pt((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
-		launch: pt((t - 190) / 620),
-		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * ft((t - 720) / 280),
-		loserReaction: pt((t - 120) / 760)
+		converge: t < 760 ? Ct((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
+		launch: Ct((t - 190) / 620),
+		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * St((t - 720) / 280),
+		loserReaction: Ct((t - 120) / 760)
 	};
 }
 //#endregion
 //#region src/arena/animation.ts
-var ht = Math.PI * 2, K = (e) => Math.max(0, Math.min(1, e)), gt = (e) => 1 - (1 - K(e)) ** 3, q = (e) => Math.sin(K(e) * Math.PI), J = (e = 380) => ({
+var Tt = Math.PI * 2, q = (e) => Math.max(0, Math.min(1, e)), Et = (e) => 1 - (1 - q(e)) ** 3, J = (e) => Math.sin(q(e) * Math.PI), Y = (e = 380) => ({
 	x: 0,
 	y: 0,
 	scaleX: 1,
@@ -1700,9 +1757,9 @@ var ht = Math.PI * 2, K = (e) => Math.max(0, Math.min(1, e)), gt = (e) => 1 - (1
 	energy: 0,
 	frame: 0
 });
-function _t(e) {
+function Dt(e) {
 	if (e.reducedMotion) {
-		let t = _t({
+		let t = Dt({
 			...e,
 			reducedMotion: !1
 		});
@@ -1723,27 +1780,27 @@ function _t(e) {
 	}
 	let t = Math.max(0, Math.min(3, e.heat)), n = Math.max(0, e.elapsedMs - (e.motionStartedMs ?? 0)), r = e.elapsedMs * (.012 + t * .0015) + e.lane * .73 + e.variant * 1.9, i = Math.sin(r);
 	if (e.motion === "idle") return {
-		...J(),
+		...Y(),
 		y: -.75 - Math.sin(e.elapsedMs * .015 + e.lane * .7) * .75
 	};
 	if (e.motion === "run") {
-		let n = K(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * ht + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
+		let n = q(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * Tt + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
 		return {
-			...J(i),
+			...Y(i),
 			x: Math.sin(a * .5) * .45 + r * 1.2,
 			y: -.8 - o * (1.6 + t * .35) + s * .55,
 			scaleX: 1 + Math.sin(a) * .018 + s * .025,
 			scaleY: 1 - Math.sin(a) * .015 - s * .045,
 			rotation: -n * .045 + r * -.03 + Math.sin(a) * .016,
-			frame: G(e.elapsedMs + e.lane * 31, i),
+			frame: K(e.elapsedMs + e.lane * 31, i),
 			dust: .2 + t * .13 + Math.max(0, r) * .18,
 			energy: Math.max(0, r) * .28
 		};
 	}
 	if (e.motion === "surge") {
-		let e = K(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : q((e - .12) / .48), o = gt((e - .6) / .4);
+		let e = q(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : J((e - .12) / .48), o = Et((e - .6) / .4);
 		return {
-			...J(190),
+			...Y(190),
 			x: -3.4 * (1 - r) + a * 6.2 * (1 - o),
 			y: e < .12 ? 2.2 * r : -3.4 - Math.abs(i) * 2.1,
 			scaleX: 1 + a * .22 * (1 - o),
@@ -1752,29 +1809,29 @@ function _t(e) {
 			afterimage: a * (.7 + t * .1),
 			dust: .65 + a * .35,
 			energy: a,
-			frame: G(n, 190)
+			frame: K(n, 190)
 		};
 	}
 	if (e.motion === "stumble") {
-		let t = K(n / 1120), r = q(t / .16), i = t >= .16 && t < .58 ? q((t - .16) / .42) : 0, a = t >= .58 ? gt((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
+		let t = q(n / 1120), r = J(t / .16), i = t >= .16 && t < .58 ? J((t - .16) / .42) : 0, a = t >= .58 ? Et((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
 		return {
-			...J(480),
+			...Y(480),
 			x: -r * 3.6 + (o ? i * 5.2 : -i * 5.8) + a * 1.8,
 			y: r * 1.8 + i * (s ? 9.2 : 3.8) - a * 1.5,
 			scaleX: 1 + i * .16,
 			scaleY: 1 - i * .23,
 			rotation: r * .24 + i * (o ? -.48 : .34 + c * .86) - a * .28,
-			impact: q((t - .12) / .22),
+			impact: J((t - .12) / .22),
 			dust: Math.max(r, i) * .9,
 			skid: i,
 			frame: t < .16 ? 1 : t < .58 ? s ? 3 : 2 : 0
 		};
 	}
 	if (e.motion === "jump") {
-		let e = K(n / 840), r = e < .16 ? q(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? q((e - .76) / .24) : 0;
+		let e = q(n / 840), r = e < .16 ? J(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? J((e - .76) / .24) : 0;
 		return {
-			...J(285),
-			x: i ? gt(i) * 2.3 : 0,
+			...Y(285),
+			x: i ? Et(i) * 2.3 : 0,
 			y: r * 2.4 - Math.sin(i * Math.PI) * (9.5 + t * 1.05) + a * 2.8,
 			scaleX: 1 + r * .08 - i * .04 + a * .12,
 			scaleY: 1 - r * .12 + i * .08 - a * .16,
@@ -1785,25 +1842,25 @@ function _t(e) {
 		};
 	}
 	if (e.motion === "duel") {
-		let t = K(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
+		let t = q(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
 		return {
-			...J(205),
+			...Y(205),
 			x: r * (1.8 + e.variant),
 			y: -1.5 - Math.abs(i) * 1.8,
 			scaleX: 1 + r * .09,
 			scaleY: 1 - r * .045,
 			rotation: -r * .05,
 			afterimage: r * .45,
-			impact: q((t - .38) / .2) * .75,
+			impact: J((t - .38) / .2) * .75,
 			dust: .35 + r * .45,
 			energy: r,
-			frame: G(n, 205)
+			frame: K(n, 205)
 		};
 	}
 	if (e.motion === "near") {
-		let t = K(n / 680), r = q(t / .55), i = q((t - .5) / .5);
+		let t = q(n / 680), r = J(t / .55), i = J((t - .5) / .5);
 		return {
-			...J(330),
+			...Y(330),
 			x: -r * 2.2 + i * 1.2,
 			y: -r * (3 + e.variant * 2) + i,
 			scaleX: 1 - r * .06 + i * .08,
@@ -1815,9 +1872,9 @@ function _t(e) {
 		};
 	}
 	if (e.motion === "lose") {
-		let t = mt(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
+		let t = wt(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
 		return {
-			...J(520),
+			...Y(520),
 			x: -t * 3.5 - r * 1.5,
 			y: t * 3.2 + r * 2.2,
 			scaleX: 1 + t * .08,
@@ -1827,9 +1884,9 @@ function _t(e) {
 			dust: t * .44
 		};
 	}
-	let a = mt(n);
+	let a = wt(n);
 	return {
-		...J(260),
+		...Y(260),
 		y: -a.launch * 8 - a.celebrate * 5,
 		scaleX: 1 + a.launch * .18 + a.celebrate * .08,
 		scaleY: 1 - a.launch * .08 + a.celebrate * .08,
@@ -1838,38 +1895,38 @@ function _t(e) {
 		impact: Math.max(a.freeze, a.converge * .55),
 		dust: a.launch * .8,
 		energy: a.converge,
-		frame: a.freeze ? 2 : G(n, 360)
+		frame: a.freeze ? 2 : K(n, 360)
 	};
 }
-function vt(e, t) {
+function Ot(e, t) {
 	let n = 2166136261 ^ t;
 	for (let t of String(e)) n = Math.imul(n ^ t.charCodeAt(0), 16777619);
 	return (n >>> 0) / 4294967295;
 }
 //#endregion
 //#region src/arena/effects.ts
-function Y(e) {
+function kt(e) {
 	return e = Math.imul(e ^ e >>> 16, 73244475), e = Math.imul(e ^ e >>> 16, 73244475), (e ^ e >>> 16) >>> 0;
 }
 function X(e, t, n) {
-	let r = Y(e * 131 + t * 977 + n * 7919);
+	let r = kt(e * 131 + t * 977 + n * 7919);
 	return {
 		x: (r & 65535) / 65535,
 		y: (r >>> 16 & 65535) / 65535,
-		length: .35 + (Y(r + 1) & 65535) / 65535 * .65,
-		alpha: .3 + (Y(r + 2) & 65535) / 65535 * .7
+		length: .35 + (kt(r + 1) & 65535) / 65535 * .65,
+		alpha: .3 + (kt(r + 2) & 65535) / 65535 * .7
 	};
 }
-function yt(e, t, n) {
+function At(e, t, n) {
 	if (e <= 0) return 0;
 	let r = (t ? .72 : 1) * (n ? .28 : 1);
 	return Math.round((18 + Math.min(3, e) * 11) * r);
 }
 //#endregion
 //#region src/arena/anime-effects.ts
-function bt(e, t, n, r) {
+function jt(e, t, n, r) {
 	if (e.clear(), t.state !== "running") return;
-	let i = yt(t.heat, n.compact, r), a = r ? .34 : 1, o = Math.max(.16, Math.min(1, t.heat / 3)), s = Math.floor(t.elapsedMs / (t.heat >= 2 ? 48 : 72)), c = [
+	let i = t.finish?.camera.mix ?? 0, a = At(t.heat, n.compact, r) + Math.round(i * (r ? 3 : n.compact ? 7 : 12)), o = r ? .34 : 1, s = Math.max(.16, Math.min(1, t.heat / 3)), c = Math.floor(t.elapsedMs / (t.heat >= 2 ? 48 : 72)), l = [
 		16777215,
 		12577535,
 		7526655,
@@ -1879,48 +1936,75 @@ function bt(e, t, n, r) {
 	];
 	e.rect(0, 0, n.width, n.height).fill({
 		color: 398629,
-		alpha: (.06 + o * .2) * a
+		alpha: (.06 + s * .2) * o
 	});
-	let l = r ? 2 : n.compact ? 5 : 8;
-	for (let r = 0; r < l; r++) {
-		let i = X(s - 1, t.heat + 23, r), l = (.08 + i.y * .84) * n.height, u = n.width * (.28 + i.length * .46), d = n.width * (.35 + i.x * .9);
-		e.moveTo(d, l).lineTo(d - u, l).stroke({
-			color: c[(r + t.heat) % c.length],
-			width: 8 + i.length * (13 + o * 12),
-			alpha: (.055 + i.alpha * .1) * (.7 + o) * a,
+	let u = (r ? 2 : n.compact ? 5 : 8) + Math.round(i * (r ? 1 : 4));
+	for (let r = 0; r < u; r++) {
+		let a = X(c - 1, t.heat + 23, r), u = (.08 + a.y * .84) * n.height, d = n.width * (.28 + a.length * (.46 + i * .18)), f = n.width * (.35 + a.x * .9);
+		e.moveTo(f, u).lineTo(f - d, u).stroke({
+			color: l[(r + t.heat) % l.length],
+			width: 8 + a.length * (13 + s * 12),
+			alpha: (.055 + a.alpha * .1) * (.7 + s) * o,
 			cap: "round"
 		});
 	}
-	for (let r = 0; r < i; r++) {
-		let i = X(s, t.heat, r), l = (t.elapsedMs * (.22 + o * .42) + r * 37) % (n.width * 1.4), u = n.width * 1.15 - l + i.x * n.width * .38, d = i.y * n.height, f = .72 + Math.sin((t.elapsedMs + r * 83) * .008) * .22, p = n.width * (.1 + i.length * (.17 + o * .22));
+	for (let r = 0; r < a; r++) {
+		let i = X(c, t.heat, r), a = (t.elapsedMs * (.22 + s * .42) + r * 37) % (n.width * 1.4), u = n.width * 1.15 - a + i.x * n.width * .38, d = i.y * n.height, f = .72 + Math.sin((t.elapsedMs + r * 83) * .008) * .22, p = n.width * (.1 + i.length * (.17 + s * .22));
 		e.moveTo(u, d).lineTo(u - p, d).stroke({
-			color: c[(r * 3 + t.heat) % c.length],
+			color: l[(r * 3 + t.heat) % l.length],
 			width: i.length > .78 ? 5.4 : i.length > .55 ? 2.8 : 1.35,
-			alpha: i.alpha * f * (.18 + o * .32) * a,
+			alpha: i.alpha * f * (.18 + s * .32) * o,
 			cap: "round"
 		});
 	}
 }
-function xt(e, t, n, r) {
+function Mt(e, t, n, r) {
 	if (e.clear(), t.state !== "running") return;
-	let i = Math.max(0, Math.min(1, t.heat / 3)), a = r ? .26 : 1, o = Math.max(1, Math.round(((n.compact ? 4 : 7) + i * 7) * a)), s = Math.floor(t.elapsedMs / 38);
-	for (let r = 0; r < o; r++) {
-		let o = X(s, 91 + t.heat, r), c = o.x * n.width * 1.2, l = o.y * n.height, u = n.width * (.12 + o.length * .22) * (.7 + i * .6);
-		e.moveTo(c, l).lineTo(c - u, l).stroke({
+	let i = Math.max(0, Math.min(1, t.heat / 3)), a = t.finish?.camera.mix ?? 0, o = r ? .26 : 1, s = Math.max(1, Math.round(((n.compact ? 4 : 7) + i * 7 + a * 7) * o)), c = Math.floor(t.elapsedMs / 38);
+	for (let r = 0; r < s; r++) {
+		let s = X(c, 91 + t.heat, r), l = s.x * n.width * 1.2, u = s.y * n.height, d = n.width * (.12 + s.length * (.22 + a * .12)) * (.7 + i * .6);
+		e.moveTo(l, u).lineTo(l - d, u).stroke({
 			color: r % 3 == 0 ? 16773292 : 16777215,
-			width: o.length > .72 ? 3.2 : 1.25,
-			alpha: o.alpha * (.12 + i * .25) * a,
+			width: s.length > .72 ? 3.2 : 1.25,
+			alpha: s.alpha * (.12 + i * .25) * o,
 			cap: "round"
 		});
 	}
 }
-function St(e, t, n, r, i, a, o = !1) {
+function Nt(e, t, n, r, i) {
+	e.clear(), t.visible = !1;
+	let a = n.finish?.photoFinish;
+	if (!a) return;
+	let o = r.width * (n.finish?.camera.finishRatio ?? .76), s = i ? .35 : 1;
+	if (e.rect(o - 1.5, 0, 3, r.height).fill({
+		color: 16777215,
+		alpha: a.phase === "flash" ? .95 * s : .42 * s
+	}), a.phase === "flash" && e.rect(0, 0, r.width, r.height).fill({
+		color: 16777215,
+		alpha: .68 * s
+	}), a.phase === "approach") {
+		t.text = "PHOTO FINISH", t.position.set(r.width * .5, r.height * .08), t.visible = !0, t.alpha = .88;
+		return;
+	}
+	if (a.phase === "result") {
+		let n = Math.min(470, r.width * .9), i = r.compact ? 94 : 112, o = (r.width - n) / 2, s = r.height * .06;
+		e.roundRect(o, s, n, i, 12).fill({
+			color: 397599,
+			alpha: .86
+		}).stroke({
+			color: 16777215,
+			width: 1.5,
+			alpha: .32
+		}), t.text = `PHOTO FINISH\n1 — ${a.firstName} — ${(a.firstMs / 1e3).toFixed(2)}s\n2 — ${a.secondName} — ${(a.secondMs / 1e3).toFixed(2)}s\nGAP — ${(a.gapMs / 1e3).toFixed(2)}s`, t.position.set(r.width * .5, s + i / 2), t.visible = !0, t.alpha = 1;
+	}
+}
+function Pt(e, t, n, r, i, a, o, s = !1) {
 	if (e.clear(), a <= .02) return;
-	o && (a *= .48), e.rect(0, 0, t, n).fill({
+	s && (a *= .48), e.rect(0, 0, t, n).fill({
 		color: 132881,
 		alpha: .34 + a * .28
 	});
-	let s = Math.max(t, n);
+	let c = Math.max(t, n);
 	e.circle(r, i, 54 + a * 54).fill({
 		color: 16763176,
 		alpha: a * .14
@@ -1928,16 +2012,25 @@ function St(e, t, n, r, i, a, o = !1) {
 		color: 16777215,
 		alpha: a * .08
 	});
-	for (let t = 0; t < 36; t++) {
-		let n = t / 36 * Math.PI * 2, o = s * (.48 + t % 5 * .055), c = 38 + a * (42 + t % 4 * 8);
-		e.moveTo(r + Math.cos(n) * o, i + Math.sin(n) * o).lineTo(r + Math.cos(n) * c, i + Math.sin(n) * c).stroke({
+	let l = s ? 18 : 36, u = o * (s ? 35e-6 : 75e-6);
+	for (let t = 0; t < l; t++) {
+		let n = t / l * Math.PI * 2 + u, o = c * (.48 + t % 5 * .055), s = 38 + a * (42 + t % 4 * 8), d = .006 + t % 4 * .0025, f = d * .22;
+		e.poly([
+			r + Math.cos(n - f) * s,
+			i + Math.sin(n - f) * s,
+			r + Math.cos(n - d) * o,
+			i + Math.sin(n - d) * o,
+			r + Math.cos(n + d) * o,
+			i + Math.sin(n + d) * o,
+			r + Math.cos(n + f) * s,
+			i + Math.sin(n + f) * s
+		]).fill({
 			color: t % 4 == 0 ? 16777215 : t % 2 ? 16767050 : 16754975,
-			width: t % 4 == 0 ? 4.5 : 1.6 + t % 3,
-			alpha: a * (t % 4 == 0 ? .7 : .42)
+			alpha: a * (t % 4 == 0 ? .38 : .22)
 		});
 	}
 	for (let t = 0; t < 22; t++) {
-		let n = X(Math.floor(a * 100), 404, t), o = n.x * Math.PI * 2, c = 62 + n.y * s * .28, l = r + Math.cos(o) * c, u = i + Math.sin(o) * c;
+		let n = X(Math.floor(a * 100), 404, t), o = n.x * Math.PI * 2, s = 62 + n.y * c * .28, l = r + Math.cos(o) * s, u = i + Math.sin(o) * s;
 		e.circle(l, u, 1.2 + n.length * 2.8).fill({
 			color: t % 3 ? 16767050 : 16777215,
 			alpha: a * n.alpha * .72
@@ -1946,7 +2039,7 @@ function St(e, t, n, r, i, a, o = !1) {
 }
 //#endregion
 //#region src/arena/racer-effects.ts
-function Ct(e) {
+function Ft(e) {
 	let { graphics: t, pose: n, elapsedMs: r, variant: i, color: a } = e;
 	if (t.clear(), !e.active) return;
 	let o = e.reducedMotion ? .34 : 1, s = Math.max(0, Math.min(1, e.heat / 3)), c = Math.max(0, Math.min(1, e.speed)), l = Math.max(0, Math.min(1, e.acceleration)), u = Math.max(n.afterimage, n.energy * .9, s * (.28 + c * .35)) * o;
@@ -2576,7 +2669,7 @@ var Z = [
 new Map(Z.map((e) => [e.id, e]));
 //#endregion
 //#region src/arena/pixi-stage.ts
-var Q = 3, wt = class {
+var Q = 3, It = class {
 	app = new me();
 	scenery = new b({ label: "scenery" });
 	course = new b({ label: "course" });
@@ -2584,7 +2677,7 @@ var Q = 3, wt = class {
 	effects = new b({ label: "effects" });
 	overlay = new b({ label: "overlay" });
 	#e = new D({ label: "legacy-feature-set" });
-	#t = new nt({
+	#t = new tt({
 		text: "",
 		style: {
 			fill: 16777215,
@@ -2595,37 +2688,49 @@ var Q = 3, wt = class {
 	#n = new D({ label: "background-speed-lines" });
 	#r = new D({ label: "winner-focus" });
 	#i = new D({ label: "foreground-speed-lines" });
-	#a = null;
-	#o = ct(1280, 720);
-	#s = [];
-	#c = /* @__PURE__ */ new Map();
-	#l = null;
-	#u = null;
+	#a = new D({ label: "photo-finish" });
+	#o = new tt({
+		text: "",
+		style: {
+			fill: 16777215,
+			fontFamily: "monospace",
+			fontSize: 18,
+			fontWeight: "700",
+			align: "center",
+			lineHeight: 23
+		}
+	});
+	#s = null;
+	#c = vt(1280, 720);
+	#l = [];
+	#u = /* @__PURE__ */ new Map();
+	#d = null;
+	#f = null;
 	async mount(e) {
-		this.#a = e, await this.app.init({
+		this.#s = e, await this.app.init({
 			resizeTo: e,
 			backgroundAlpha: 0,
 			antialias: !1,
 			autoDensity: !0,
 			resolution: Math.min(window.devicePixelRatio || 1, 2),
 			preference: "webgl"
-		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e), this.overlay.addChild(this.#t), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.course.addChild(this.#n, this.#r), this.effects.addChild(this.#i), this.#i.blendMode = "add", this.resize(), typeof ResizeObserver == "function" && (this.#u = new ResizeObserver(() => this.resize()), this.#u.observe(e));
+		}), this.app.canvas.className = "arena-pixi-canvas", this.app.canvas.setAttribute("aria-hidden", "true"), e.appendChild(this.app.canvas), this.scenery.addChild(this.#e), this.overlay.addChild(this.#t), this.app.stage.addChild(this.scenery, this.course, this.actors, this.effects, this.overlay), this.course.addChild(this.#n, this.#r), this.effects.addChild(this.#i), this.overlay.addChild(this.#a, this.#o), this.#i.blendMode = "add", this.#r.blendMode = "add", this.#a.blendMode = "add", this.#o.anchor.set(.5), this.resize(), typeof ResizeObserver == "function" && (this.#f = new ResizeObserver(() => this.resize()), this.#f.observe(e));
 	}
 	async setRacers(e) {
-		this.#s = e, this.app.canvas.dataset.racerCount = String(e.length), this.#c.clear(), this.actors.removeChildren();
+		this.#l = e, this.app.canvas.dataset.racerCount = String(e.length), this.#u.clear(), this.actors.removeChildren();
 		for (let t of e) {
 			let n = new b({ label: `racer-${t.id}` });
 			n.eventMode = "none";
-			let r = ot(t.pet, t.color), i = this.#d(r), a = new b({ label: `pet-${r.species}` });
+			let r = at(t.pet, t.color), i = this.#p(r), a = new b({ label: `pet-${r.species}` });
 			a.addChild(...i);
 			let o = new D({ label: `effects-${t.id}` });
-			n.addChild(o, a), this.#c.set(t.id, {
+			n.addChild(o, a), this.#u.set(t.id, {
 				root: n,
 				art: a,
 				frames: i,
 				fx: o,
-				color: this.#m(r.accent),
-				variant: vt(t.id, e.indexOf(t)),
+				color: this.#g(r.accent),
+				variant: Ot(t.id, e.indexOf(t)),
 				motion: "idle",
 				motionStartedMs: 0,
 				finishedAtMs: null
@@ -2633,17 +2738,17 @@ var Q = 3, wt = class {
 		}
 	}
 	render(e) {
-		this.#l = e;
+		this.#d = e;
 		let t = e.reduceMotionEffects === !0;
-		bt(this.#n, e, this.#o, t), xt(this.#i, e, this.#o, t), this.#r.clear();
+		jt(this.#n, e, this.#c, t), Mt(this.#i, e, this.#c, t), Nt(this.#a, this.#o, e, this.#c, t), this.#r.clear();
 		let n = 0, r = null;
 		for (let i of e.racers) {
-			let a = this.#c.get(i.id);
+			let a = this.#u.get(i.id);
 			if (!a) continue;
-			let o = i.finished && i.id === e.winnerId, s = o ? "win" : e.state === "finished" && i.finished ? "lose" : i.finished ? "idle" : st(i.reaction, !1, e.state);
-			o && a.finishedAtMs == null && (a.finishedAtMs = e.elapsedMs), i.finished || (a.finishedAtMs = null), a.motion === s ? i.reactionStartedMs != null && (a.motionStartedMs = i.reactionStartedMs) : (a.motion = s, a.motionStartedMs = i.reactionStartedMs ?? a.finishedAtMs ?? e.elapsedMs);
-			let c = _t({
-				motion: s,
+			let o = e.finish?.celebrationActive === !0, s = o && i.finished && i.id === e.winnerId, c = s ? "win" : o && i.finished ? "lose" : i.exiting ? "run" : i.finished ? "idle" : ot(i.reaction, !1, e.state);
+			s && a.finishedAtMs == null && (a.finishedAtMs = e.elapsedMs), i.finished || (a.finishedAtMs = null), a.motion === c ? i.reactionStartedMs != null && (a.motionStartedMs = i.reactionStartedMs) : (a.motion = c, a.motionStartedMs = o ? e.finish?.celebrationStartedMs ?? e.elapsedMs : i.reactionStartedMs ?? a.finishedAtMs ?? e.elapsedMs);
+			let l = Dt({
+				motion: c,
 				elapsedMs: e.elapsedMs,
 				motionStartedMs: a.motionStartedMs,
 				lane: i.lane,
@@ -2652,14 +2757,16 @@ var Q = 3, wt = class {
 				speed: i.speed ?? 0,
 				acceleration: i.acceleration ?? 0,
 				reducedMotion: t
-			});
-			a.root.position.set(ut(this.#o, i.progress), lt(this.#o, i.lane, this.#s.length)), a.root.scale.set(this.#o.actorScale), a.root.rotation = 0, a.root.alpha = 1, a.art.position.set(c.x, c.y), a.art.scale.set(c.scaleX, c.scaleY), a.art.rotation = c.rotation;
-			let l = c.frame;
+			}), u = e.finish?.camera.mix ?? 0, d = i.displayProgress ?? i.progress, f = +!!s;
+			a.root.position.set(f ? this.#c.width * .5 : bt(this.#c, d, e.finish?.camera), f ? this.#c.height * .5 : yt(this.#c, i.lane, this.#l.length, u));
+			let p = 1 + u * (this.#c.compact ? .02 : .08);
+			a.root.scale.set(this.#c.actorScale * p * (f ? 1.42 : 1)), a.root.rotation = 0, a.root.alpha = 1, a.art.position.set(l.x, l.y), a.art.scale.set(l.scaleX, l.scaleY), a.art.rotation = l.rotation;
+			let m = l.frame;
 			a.frames.forEach((e, t) => {
-				e.visible = t === l;
-			}), Ct({
+				e.visible = t === m;
+			}), Ft({
 				graphics: a.fx,
-				pose: c,
+				pose: l,
 				elapsedMs: e.elapsedMs,
 				variant: a.variant,
 				color: a.color,
@@ -2668,43 +2775,45 @@ var Q = 3, wt = class {
 				acceleration: i.acceleration ?? 0,
 				active: e.state === "running" || e.state === "finished",
 				reducedMotion: t
-			}), o && c.energy > 0 && (r = {
+			}), s && l.energy > 0 && (r = {
 				x: a.root.position.x,
 				y: a.root.position.y,
-				intensity: c.energy
-			}), n = Math.max(n, c.impact);
+				intensity: l.energy
+			}), n = Math.max(n, l.impact);
 		}
-		r && St(this.#r, this.#o.width, this.#o.height, r.x, r.y, r.intensity, t);
-		let i = e.state === "running" && !t && e.heat >= 2;
-		this.actors.position.set(i ? Math.sin(e.elapsedMs * .09) * n * 1.15 : 0, i ? Math.cos(e.elapsedMs * .11) * n * .7 : 0);
+		r && Pt(this.#r, this.#c.width, this.#c.height, r.x, r.y, r.intensity, e.elapsedMs, t);
+		let i = (e.finish?.camera.mix ?? 0) * .42;
+		n = Math.max(n, i);
+		let a = e.state === "running" && !t && e.heat >= 2;
+		this.actors.position.set(a ? Math.sin(e.elapsedMs * .09) * n * 1.15 : 0, a ? Math.cos(e.elapsedMs * .11) * n * .7 : 0);
 	}
 	resize() {
-		this.#a && (this.app.resize(), this.#o = ct(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#o.actorScale * 72)), this.#l && this.render(this.#l));
+		this.#s && (this.app.resize(), this.#c = vt(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#c.actorScale * 72)), this.#d && this.render(this.#d));
 	}
 	destroy() {
-		this.#u?.disconnect(), this.#u = null, this.#c.clear(), this.#s = [], this.#l = null, this.app.destroy(!0, { children: !0 }), this.#a = null;
+		this.#f?.disconnect(), this.#f = null, this.#u.clear(), this.#l = [], this.#d = null, this.app.destroy(!0, { children: !0 }), this.#s = null;
 	}
-	#d(e) {
+	#p(e) {
 		let t = 0;
 		for (let n of e.species) t = Math.imul(t, 31) + n.charCodeAt(0) >>> 0;
 		let n = Z.find((t) => t.id === e.species) || Z[t % Z.length];
 		return [
-			this.#f(n.px, n.palette, e),
-			this.#f(dt(n.px, 1), n.palette, e),
-			this.#f(dt(n.px, 2), n.palette, e),
-			this.#f(dt(n.px, 3), n.palette, e)
+			this.#m(n.px, n.palette, e),
+			this.#m(xt(n.px, 1), n.palette, e),
+			this.#m(xt(n.px, 2), n.palette, e),
+			this.#m(xt(n.px, 3), n.palette, e)
 		];
 	}
-	#f(e, t, n) {
-		let r = this.#m(n.color), i = this.#m(n.accent), a = new D(), o = (e, t, n) => a.rect((e - 12) * Q, (t - 15 / 2) * Q, Q, Q).fill(n);
+	#m(e, t, n) {
+		let r = this.#g(n.color), i = this.#g(n.accent), a = new D(), o = (e, t, n) => a.rect((e - 12) * Q, (t - 15 / 2) * Q, Q, Q).fill(n);
 		return e.forEach((e, i) => {
 			for (let a = 0; a < e.length; a++) {
 				let s = e[a];
-				s !== "." && s !== " " && o(a, i, s === "L" ? r : this.#m(t[s] || n.color));
+				s !== "." && s !== " " && o(a, i, s === "L" ? r : this.#g(t[s] || n.color));
 			}
-		}), this.#p(o, n, i), a;
+		}), this.#h(o, n, i), a;
 	}
-	#p(e, t, n) {
+	#h(e, t, n) {
 		let r = (t, r, i, a = n) => {
 			for (let n = t; n <= r; n++) e(n, i, a);
 		};
@@ -2723,14 +2832,14 @@ var Q = 3, wt = class {
 		let i = 1513759;
 		t.expression === "happy" ? (e(10, 6, i), e(15, 6, i), r(12, 14, 9, i)) : t.expression === "fierce" ? (r(9, 11, 6, i), r(14, 16, 6, i), r(12, 14, 9, i)) : t.expression === "sleepy" && (r(9, 11, 7, i), r(14, 16, 7, i));
 	}
-	#m(e) {
+	#g(e) {
 		let t = Number.parseInt(e.replace("#", ""), 16);
 		return Number.isFinite(t) ? t : 3718648;
 	}
 };
 //#endregion
 //#region src/arena/background-motion.ts
-function Tt(e, t, n = !1, r = !1) {
+function Lt(e, t, n = !1, r = !1) {
 	if (e !== "running") return {
 		blurX: 0,
 		blurY: 0,
@@ -2745,14 +2854,14 @@ function Tt(e, t, n = !1, r = !1) {
 }
 //#endregion
 //#region src/arena/presentation-frame.ts
-var Et = [
+var Rt = [
 	"stumble",
 	"jump",
 	"duel",
 	"near",
 	"surge"
 ];
-function Dt(e, t, n) {
+function zt(e, t, n) {
 	let r = Array.from({ length: Math.max(0, n) }, () => []), i = (e, t, n, i) => {
 		e == null || e < 0 || e >= r.length || r[e]?.push({
 			kind: t,
@@ -2765,34 +2874,36 @@ function Dt(e, t, n) {
 	for (let e of r) e.sort((e, t) => e.startedMs - t.startedMs);
 	return r;
 }
-function Ot(e, t, n) {
+function Bt(e, t, n) {
 	let r = (e?.[t] || []).filter((e) => n >= e.startedMs && n < e.untilMs);
-	for (let e of Et) {
+	for (let e of Rt) {
 		let t = r.find((t) => t.kind === e);
 		if (t) return t;
 	}
 	return null;
 }
-function kt(e) {
-	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = !!e.finished || s >= 1, d = u ? null : Ot(e.timeline, e.lane, e.elapsedMs);
+function Vt(e) {
+	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = e.officialFinishMs == null ? !!e.finished || s >= 1 : e.elapsedMs >= e.officialFinishMs, d = pt(s, e.elapsedMs, e.officialFinishMs), f = u && e.officialFinishMs != null && e.elapsedMs < e.officialFinishMs + 360, p = u ? null : Bt(e.timeline, e.lane, e.elapsedMs);
 	return {
 		id: e.id,
 		lane: e.lane,
 		progress: s,
+		displayProgress: d,
 		leading: !1,
 		finished: u,
-		speed: c,
+		exiting: f,
+		speed: f ? Math.max(.72, c) : c,
 		acceleration: l,
-		...d ? {
-			reaction: d.kind,
-			reactionStartedMs: d.startedMs
+		...p ? {
+			reaction: p.kind,
+			reactionStartedMs: p.startedMs
 		} : {}
 	};
 }
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function At(e, t) {
+async function Ht(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -2807,7 +2918,7 @@ async function At(e, t) {
 		overflow: "hidden",
 		pointerEvents: "none"
 	}), getComputedStyle(n).position === "static" && (n.style.position = "relative"), n.appendChild(a);
-	let o = new wt();
+	let o = new It();
 	try {
 		await o.mount(a);
 		for (let e of r) e.style.setProperty("visibility", "hidden", "important"), e.setAttribute("aria-hidden", "true");
@@ -2853,6 +2964,6 @@ async function At(e, t) {
 	}
 }
 //#endregion
-export { Tt as backgroundMotion, At as createArenaRenderer, Dt as createReactionTimeline, kt as presentationRacerFrame, Ot as reactionAt };
+export { Lt as backgroundMotion, Ht as createArenaRenderer, _t as createFinishPresentation, zt as createReactionTimeline, Vt as presentationRacerFrame, mt as presentationScreenRatio, Bt as reactionAt };
 
 //# sourceMappingURL=pixi-runtime.js.map
