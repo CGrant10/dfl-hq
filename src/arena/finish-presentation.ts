@@ -40,22 +40,30 @@ export const FINISH_CAMERA_FULL = 0.95;
 */
 export const TRACK_START = 0.04;
 /*
-  THE STRIPE SITS AT 58% FOR THE WHOLE RACE, AND NEVER MOVES.
+  THE GEOMETRY IS FIXED. THE MARKER IS SCENERY, AND IT DOES MOVE.
 
-  The brief asked for it to start at ~90% and slide to ~58% when revealed,
-  with the mapping interpolated so nobody jumps. That cannot be done. A
-  racer's screen position is `progress * scale`, so dropping the scale from
-  0.88 to 0.54 walks every racer LEFT by up to 30% of the frame. Spreading
-  that over a transition does not remove it, it just spreads it: at p=0.95
-  the leftward drift only falls below the racer's own forward speed at
-  about a six second transition - longer than the entire finish sequence.
-  Any faster and the whole field visibly reverses at the exact moment the
-  race is decided.
+  progress 1 maps to 58% of the frame for the whole race and that never
+  changes - so a racer's screen position is a function of progress alone.
+  What travels is the STRIPE ELEMENT, in CSS, from offscreen right into its
+  parked position as the leader comes into the final stretch. See
+  finishReveal() below.
 
-  So the geometry is fixed and the REVEAL IS OPACITY ONLY. Nothing moves
-  when the stripe appears, because nothing can. For most of the race the
-  right-hand 40% is simply open track ahead of the leader, which is what
-  "the track continues ahead" is supposed to look like anyway.
+  Those are two different things and the distinction is the whole design.
+  Moving the MAPPING is impossible: screen position is `progress * scale`,
+  so dropping the scale from 0.88 to 0.54 walks every racer LEFT by up to
+  30% of the frame. Spreading that over a transition does not remove it, it
+  just spreads it - at p=0.95 the leftward drift only falls below the
+  racer's own forward speed at about a six second transition, longer than
+  the entire finish sequence. Any faster and the whole field visibly
+  reverses at the moment the race is decided.
+
+  Moving the MARKER costs nothing, because nothing reads it. It is a `<div>`
+  with a transform. presentationScreenRatio() ignores the camera entirely
+  and there is a spec asserting racer x is byte-identical before, during and
+  after the sweep.
+
+  For most of the race the right-hand 40% is open track ahead of the leader,
+  which is what "the track continues ahead" is supposed to look like.
 */
 export const FINISH_LINE_RATIO = 0.58;
 /*
@@ -76,8 +84,23 @@ export const MAX_SETTLE = 0.34;
 */
 export const TRACK_SCALE = FINISH_LINE_RATIO - TRACK_START;
 export const RUN_OFF_RATIO = MAX_SETTLE * TRACK_SCALE;
+/*
+  STILL LIVE, AND DELIBERATELY NOT A COAST.
+
+  This is no longer a distance or a duration for post-finish MOVEMENT - the
+  per-racer run-out owns that. Two things still read it, both of them
+  state gates rather than positions:
+
+    allExited            in createFinishPresentation(), the moment the
+                         renderer may stop calling itself "racing"
+    RacerFrame.exiting   a default in presentation-frame.ts, which
+                         presentFinish() then overwrites for every racer in
+                         both views
+
+  Leave it as a gate. If it ever starts influencing where a racer is drawn,
+  there are two post-finish models again.
+*/
 export const POST_FINISH_MS = 360;
-export const POST_FINISH_DISTANCE = 0.2;
 export const WINNER_REVEAL_DELAY_MS = 320;
 export const PHOTO_FINISH_THRESHOLD_MS = 180;
 export const PHOTO_HIT_STOP_MS = 90;
@@ -111,11 +134,17 @@ const smoothstep = (value: number) => {
 export const MAX_CAMERA_MIX = 0.34;
 
 /**
- * How visible the finish stripe is, 0 to 1.
+ * How far through its entrance the finish marker is, 0 to 1.
  *
- * Hidden for most of the race, then a quick fade as the leader comes into
- * the last tenth. It is a pure opacity signal: no geometry reads it, so a
- * reveal can never move a racer.
+ * NOT an opacity signal - it was one briefly, and a stripe that fades into
+ * the middle of the track reads as a marker being switched on rather than a
+ * finish being reached. It is now the marker's SWEEP progress: the CSS
+ * translates the stripe from offscreen right (reveal 0) to its parked
+ * position (reveal 1). Opacity rides along and completes early, while the
+ * stripe is still travelling, so translation is what the eye reads.
+ *
+ * Written to `--finish-reveal` once per frame by both views. Nothing in the
+ * geometry consumes it, which is why a sweep cannot move a racer.
  */
 export function finishReveal(leaderProgress: number): number {
   return smoothstep((leaderProgress - REVEAL_FROM) / (REVEAL_FULL - REVEAL_FROM));
@@ -131,12 +160,19 @@ export function cameraForLeader(leaderProgress: number): FinishCamera {
   };
 }
 
-export function postFinishProgress(progress: number, elapsedMs: number, finishMs?: number): number {
-  const authoritative = clamp01(progress);
-  if (finishMs == null || elapsedMs < finishMs) return authoritative;
-  const travel = smoothstep((elapsedMs - finishMs) / POST_FINISH_MS);
-  return 1 + travel * POST_FINISH_DISTANCE;
-}
+/*
+  postFinishProgress() AND POST_FINISH_DISTANCE WERE DELETED HERE.
+
+  They were the ORIGINAL post-finish coast: every finisher moved to
+  `1 + smoothstep(age / 360ms) * 0.2`, the same number for all twelve, which
+  is where the finish-line traffic jam came from. The real coast is
+  finishTrajectories() -> presentFinish() in theatre.ts, which is
+  per-racer, velocity-continuous and shared by both views.
+
+  Nothing called the old function any more - presentation-frame.ts had
+  already stopped - so it was a second post-finish model sitting in the
+  codebase waiting to be picked up by mistake. Do not reintroduce one.
+*/
 
 /**
  * Ratio within the frame, used by both the DOM fallback and Pixi.
