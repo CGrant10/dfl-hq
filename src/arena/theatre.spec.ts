@@ -185,10 +185,11 @@ describe("theatre - backwards movement is a feature, but a bounded one", () => {
 
 describe("theatre - convergence and shape", () => {
   it("closes the theatre smoothly onto the truth before the line", () => {
-    expect(closingEase(0.5)).toBe(1);
-    expect(closingEase(1)).toBe(0);
-    expect(closingEase(0.94)).toBeLessThan(1);
-    expect(closingEase(0.94)).toBeGreaterThan(0);
+    // Keyed on each racer's own remaining time, not a shared progress mark.
+    expect(closingEase(5000)).toBe(1);
+    expect(closingEase(0)).toBe(0);
+    expect(closingEase(450)).toBeLessThan(1);
+    expect(closingEase(450)).toBeGreaterThan(0);
     // and the deviation itself has to be gone by the finish
     for (const { sim, drama } of runs) {
       for (let i = 0; i < sim.samples.length; i++) {

@@ -28,9 +28,31 @@ typecheck clean, build clean, version 1.94.0.
 
 ## NOT DONE — this is the next session's job
 
-### 1. The presentation-caused huddle (`closingEase`)
+### 1. The huddle — convergence FIXED, spread metric UNMOVED
 
-**Untouched.** Still `CLOSE_FROM = 0.88` with a whole-field smoothstep.
+`closingEase` now takes **milliseconds to that racer's own finishMs**
+(`CLOSE_MS = 900`) instead of a shared `CLOSE_FROM = 0.88` progress mark. A
+racer three seconds from home keeps their full arc while the leader
+converges. All 89 specs still pass; correctness all zero.
+
+**But it did not move the first-crossing spread.** Seed 1000 still 0.129,
+seed 90210 still 0.103 — identical to before. Verified the new code was
+loaded (`closingEase(5000) === 1`), so this is a real result.
+
+**Why, and what the next session should actually chase.** At the first
+crossing the metric is dominated by two things that are *not* the closing
+envelope: leaders are pinned near 1.0 by the `ahead` allowance
+(`tanh`-softened, →0 as truth→1), and trailing racers are drawn *forward* of
+their truth by their arcs. Seed 1000: trailing truth 0.817, drawn ~0.871.
+So the field compresses because the back is pushed **up**, not because the
+front is pulled back.
+
+The lever is therefore **arc composition** — trailing racers wanting negative
+deviation late — which is the race-shape/disparity work, not the closing
+envelope. Do that pass and re-measure; do not tune `CLOSE_MS` expecting the
+spread number to move.
+
+Previously measured:
 Measured previously:
 
 | | seed 1000 | seed 90210 |

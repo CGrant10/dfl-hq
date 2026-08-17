@@ -46,8 +46,25 @@ export const MAX_DROP = 0.38;
 export const LAUNCH_ZONE = 0.07;
 /** How long the field takes to fan out. */
 export const OPEN_ZONE = 0.26;
-/** Where the drawing starts being pulled back onto the truth. */
-export const CLOSE_FROM = 0.88;
+/*
+  HOW LONG BEFORE A RACER'S OWN FINISH THEY CONVERGE ONTO THE TRUTH.
+
+  This used to be CLOSE_FROM = 0.88 in PROGRESS space, shared by everybody,
+  and that is what caused the finish huddle. Every racer hits 0.88 at
+  roughly the same moment, so the whole field was dragged onto the truth
+  together: drawn spread collapsed from 0.546 mid-race to 0.129 at the first
+  crossing, which is TIGHTER than the truth spread of 0.183. The theatre was
+  squeezing the field harder than the simulation.
+
+  Keyed on each racer's own remaining time instead. A racer three seconds
+  from home keeps their whole arc while the leader converges, so the field
+  stays spread deep into the final stretch and only tightens one racer at a
+  time, as each of them actually arrives.
+
+  The no-early-crossing guarantee does not depend on this - that is the
+  `ahead` allowance, which shrinks to zero as truth approaches 1 regardless.
+*/
+export const CLOSE_MS = 900;
 /** Jitter on top of the arcs. The arcs carry the story. */
 export const THEATRE = 0.175;
 
@@ -61,11 +78,15 @@ export function launchEase(truth: number): number {
   return truth >= LAUNCH_ZONE ? 1 : smoothstep(truth / LAUNCH_ZONE);
 }
 
-/** 0 at the line: the drawing converges onto the truth before it matters. */
-export function closingEase(truth: number): number {
-  if (truth >= 1) return 0;
-  if (truth <= CLOSE_FROM) return 1;
-  return 1 - smoothstep((truth - CLOSE_FROM) / (1 - CLOSE_FROM));
+/**
+ * 1 while a racer is still racing, easing to 0 as their OWN finish arrives.
+ *
+ * @param msToFinish  milliseconds until this racer's authoritative finishMs
+ */
+export function closingEase(msToFinish: number): number {
+  if (msToFinish <= 0) return 0;
+  if (msToFinish >= CLOSE_MS) return 1;
+  return smoothstep(msToFinish / CLOSE_MS);
 }
 
 /** How much of the theatre is open. The field fans out gradually. */
@@ -297,10 +318,15 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
   const events: DramaEvent[] = [];
   const stamped = new Set<string>();
 
+  /* Each racer's own finish, so convergence is individual rather than a
+     field-wide snap at one shared progress threshold. */
+  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));
+
   for (let i = 0; i < n; i++) {
     const w = wave[i]!;
     const src = sim.samples[i]!;
     const mine = arcs[i]!;
+    const finishMs = finishOf.get(i) ?? Infinity;
 
     for (let t = 0; t <= frames; t++) {
       const truth = src[t] ?? 0;
@@ -323,7 +349,7 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
         }
       }
 
-      const gate = launchEase(truth) * closingEase(truth) * openEase(truth);
+      const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS) * openEase(truth);
       const raw = (wob * w.amp * THEATRE * fade + arc) * gate;
 
       /*

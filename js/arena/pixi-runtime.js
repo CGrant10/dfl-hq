@@ -3057,27 +3057,27 @@ function un(e) {
 }
 //#endregion
 //#region src/arena/theatre.ts
-var dn = .46, fn = .38, pn = .07, mn = .26, hn = .88, gn = .175, Q = (e) => {
+var dn = .46, fn = .38, pn = .07, mn = .26, hn = .175, Q = (e) => {
 	let t = e <= 0 ? 0 : e >= 1 ? 1 : e;
 	return t * t * (3 - 2 * t);
 };
-function _n(e) {
+function gn(e) {
 	return e >= .07 ? 1 : Q(e / pn);
 }
-function vn(e) {
-	return e >= 1 ? 0 : e <= .88 ? 1 : 1 - Q((e - hn) / .12);
+function _n(e) {
+	return e <= 0 ? 0 : e >= 900 ? 1 : Q(e / 900);
 }
-function yn(e) {
+function vn(e) {
 	return e >= .26 ? 1 : Q(e / mn);
 }
-function bn(e) {
+function yn(e) {
 	let t = (e, t) => e * Math.tanh(Math.max(0, t) / e);
 	return {
 		ahead: t(dn, (1 - e) * .85),
 		behind: t(fn, e * .9)
 	};
 }
-function xn(e) {
+function bn(e) {
 	let t = e >>> 0;
 	return () => {
 		t = t + 1831565813 >>> 0;
@@ -3085,13 +3085,13 @@ function xn(e) {
 		return e = Math.imul(e ^ e >>> 15, e | 1), e ^= e + Math.imul(e ^ e >>> 7, e | 61), ((e ^ e >>> 14) >>> 0) / 4294967296;
 	};
 }
-function Sn(e, t = 0) {
+function xn(e, t = 0) {
 	if (e <= 0 || e >= 1) return 0;
 	let n = (1 - Math.max(0, Math.min(.8, t))) / 2;
 	return e < n ? Q(e / n) : e > 1 - n ? Q((1 - e) / n) : 1;
 }
-function Cn(e, t, n) {
-	let r = xn((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
+function Sn(e, t, n) {
+	let r = bn((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
 	if (!a) return i;
 	let o = (t) => {
 		let r = 0;
@@ -3128,7 +3128,7 @@ function Cn(e, t, n) {
 	}
 	return i;
 }
-function wn(e) {
+function Cn(e) {
 	let t = new Map(e.order.map((e) => [e.index, e.finishMs]));
 	return e.samples.map((n, r) => {
 		let i = t.get(r) ?? 0, a = Math.max(1, Math.min(e.frames, Math.round(i / 40))), o = a, s = a - 1;
@@ -3136,14 +3136,14 @@ function wn(e) {
 		return Math.max(1e-5, (n[o] ?? 0) - (n[s] ?? 0)) / 40;
 	});
 }
-function Tn(e, t) {
+function wn(e, t) {
 	let n = e.samples.length, r = e.frames;
 	if (!n) return {
 		shown: [],
 		events: [],
 		arcs: []
 	};
-	let i = xn((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
+	let i = bn((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
 		a1: .6 + i() * .55,
 		f1: 1.3 + i() * 1.6,
 		p1: i() * Math.PI * 2,
@@ -3151,13 +3151,13 @@ function Tn(e, t) {
 		f2: 2.2 + i() * 2,
 		p2: i() * Math.PI * 2,
 		amp: .45 + i() * 1.5
-	})), o = Cn(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set();
+	})), o = Sn(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set(), u = new Map(e.order.map((e) => [e.index, e.finishMs]));
 	for (let t = 0; t < n; t++) {
-		let n = a[t], i = e.samples[t], u = o[t];
+		let n = a[t], i = e.samples[t], d = o[t], f = u.get(t) ?? Infinity;
 		for (let e = 0; e <= r; e++) {
-			let r = i[e] ?? 0, a = r >= 1 ? 0 : (1 - r) ** 1.35, o = r * Math.PI * 2, d = Math.sin(o * n.f1 + n.p1) * n.a1 + Math.sin(o * n.f2 + n.p2) * n.a2, f = 0;
-			for (let n of u) {
-				f += n.power * Sn((r - n.start) / n.width, n.hold);
+			let r = i[e] ?? 0, a = r >= 1 ? 0 : (1 - r) ** 1.35, o = r * Math.PI * 2, u = Math.sin(o * n.f1 + n.p1) * n.a1 + Math.sin(o * n.f2 + n.p2) * n.a2, p = 0;
+			for (let n of d) {
+				p += n.power * xn((r - n.start) / n.width, n.hold);
 				let i = `${t}:${n.kind}:${n.start}`;
 				!l.has(i) && r >= n.start + n.width * .28 && (l.add(i), c.push({
 					kind: n.kind === "collapse" ? "stumble" : n.kind,
@@ -3166,8 +3166,8 @@ function Tn(e, t) {
 					durMs: 1800
 				}));
 			}
-			let p = _n(r) * vn(r) * yn(r), m = (d * n.amp * gn * a + f) * p, { ahead: h, behind: g } = bn(r), _ = m >= 0 ? h : g, v = _ > 1e-6 ? _ * Math.tanh(m / _) : 0, y = r * _n(r) + v;
-			y < 0 && (y = 0), r < 1 && y > r + h && (y = r + h), r >= 1 && (y = 1), s[t][e] = y;
+			let m = gn(r) * _n(f - e * 40) * vn(r), h = (u * n.amp * hn * a + p) * m, { ahead: g, behind: _ } = yn(r), v = h >= 0 ? g : _, y = v > 1e-6 ? v * Math.tanh(h / v) : 0, b = r * gn(r) + y;
+			b < 0 && (b = 0), r < 1 && b > r + g && (b = r + g), r >= 1 && (b = 1), s[t][e] = b;
 		}
 	}
 	return c.sort((e, t) => e.ms - t.ms), {
@@ -3176,13 +3176,13 @@ function Tn(e, t) {
 		arcs: o
 	};
 }
-function En(e) {
+function Tn(e) {
 	return Math.max(.09, mt - (Math.max(1, e || 1) - 1) * .022);
 }
-function Dn(e) {
-	let t = wn(e), n = [];
+function En(e) {
+	let t = Cn(e), n = [];
 	for (let r of e.order) {
-		let e = Math.max(1e-6, t[r.index] ?? 1e-4), i = En(r.place), a = i / e;
+		let e = Math.max(1e-6, t[r.index] ?? 1e-4), i = Tn(r.place), a = i / e;
 		n[r.index] = {
 			finishMs: r.finishMs,
 			place: r.place,
@@ -3194,20 +3194,20 @@ function Dn(e) {
 	}
 	return n;
 }
-function On(e, t, n) {
+function Dn(e, t, n) {
 	if (!n || t < n.finishMs) return e;
 	let r = t - n.finishMs;
 	return 1 + n.settle * (1 - Math.exp(-r / n.tau));
 }
-function kn(e, t, n) {
+function On(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
 	if (n) return "celebrating";
 	let r = e - t.finishMs;
 	return r < 160 ? "crossing" : r < t.coastMs ? "coasting" : "settled";
 }
-function An(e, t, n, r) {
-	let i = kn(t, n, r);
-	if (e.phase = i, e.displayProgress = On(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
+function kn(e, t, n, r) {
+	let i = On(t, n, r);
+	if (e.phase = i, e.displayProgress = Dn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
 		let r = t - n.finishMs;
 		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Math.exp(-r / n.tau) * 180));
 	}
@@ -3216,7 +3216,7 @@ function An(e, t, n, r) {
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function jn(e, t) {
+async function An(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -3277,6 +3277,6 @@ async function jn(e, t) {
 	}
 }
 //#endregion
-export { Gt as ACCESSORY_KEYS, Kt as EXPRESSION_KEYS, fn as MAX_DROP, dn as MAX_LEAD, bn as allowance, Sn as arcShape, on as backgroundMotion, Qt as characterIds, Zt as characterSvg, vn as closingEase, On as coastProgress, X as composeCharacter, jn as createArenaRenderer, Ct as createFinishPresentation, cn as createReactionTimeline, wn as crossingSpeeds, Tn as dramatize, dt as finishPassProgress, kn as finishPhase, Dn as finishTrajectories, _n as launchEase, Ht as normalizeCharacter, yn as openEase, Cn as planArcs, An as presentFinish, un as presentationRacerFrame, bt as presentationScreenRatio, ln as reactionAt, Xt as runsToPaths, En as settleOffset, Jt as silhouetteRuns };
+export { Gt as ACCESSORY_KEYS, Kt as EXPRESSION_KEYS, fn as MAX_DROP, dn as MAX_LEAD, yn as allowance, xn as arcShape, on as backgroundMotion, Qt as characterIds, Zt as characterSvg, _n as closingEase, Dn as coastProgress, X as composeCharacter, An as createArenaRenderer, Ct as createFinishPresentation, cn as createReactionTimeline, Cn as crossingSpeeds, wn as dramatize, dt as finishPassProgress, On as finishPhase, En as finishTrajectories, gn as launchEase, Ht as normalizeCharacter, vn as openEase, Sn as planArcs, kn as presentFinish, un as presentationRacerFrame, bt as presentationScreenRatio, ln as reactionAt, Xt as runsToPaths, Tn as settleOffset, Jt as silhouetteRuns };
 
 //# sourceMappingURL=pixi-runtime.js.map
