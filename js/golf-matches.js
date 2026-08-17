@@ -30,7 +30,7 @@ import { db, isAdmin } from "./supabase.js";
 import { esc, empty, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
-         dayPoints, pointsFootnote, pairName, outingState } from "./golf-battle.js";
+         dayPoints, halvedNote, pairName, outingState } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
 
@@ -234,7 +234,12 @@ function board(data) {
   const { total, per } = dayPoints(data.rounds);
   const values = teams.map((t) => total.get(String(t.id)) || 0);
   const allBattles = data.rounds.flatMap((r) => r.battles.filter((b) => b.sides.length === 2));
-  const foot = pointsFootnote(allBattles);
+  /* Halved matches only. "9 still out" used to sit here too, which put a
+     progress report on the one card that is supposed to answer a single
+     question - what is the score - and it was the loudest thing on it before
+     anybody had teed off. The round cards below already say, per match,
+     exactly what is unfinished. */
+  const foot = halvedNote(allBattles);
   const lead = values[0] === values[1]
     ? (allBattles.some((b) => b.result?.complete) ? "All square" : "")
     : `${esc(teams[values[0] > values[1] ? 0 : 1].name)} lead`;
@@ -381,7 +386,21 @@ function roundCard(data, entry) {
      it finished - which is the whole point of folding a finished nine. */
   const badge = teams.length ? teams.map((t) => pts.get(String(t.id)) || 0).join(" – ") : "";
 
-  return `<section class="card golf-round" data-collapse="golf-round-${round.round_number}" data-collapse-title="${esc(label)}" data-collapse-badge="${esc(badge)}">
+  /*
+    A DECIDED NINE FOLDS ITSELF.
+
+    Every match in it is over, its two points are on the fold bar, and the
+    only thing left in the card is a list of finished matches between the
+    reader and the round they are actually playing. It stays one tap away,
+    and one tap is all it takes to keep it open for good - see collapse.js.
+
+    Read off the results that are already computed here; nothing new is
+    worked out and no round is ever folded on the reader's behalf twice.
+  */
+  const playable = battles.filter((b) => b.sides.length === 2);
+  const decided = playable.length > 0 && playable.every((b) => b.result?.complete);
+
+  return `<section class="card golf-round" data-collapse="golf-round-${round.round_number}" data-collapse-title="${esc(label)}" data-collapse-badge="${esc(badge)}"${decided ? ` data-collapse-default="folded"` : ""}>
     <div class="gr-head">
       <div class="gr-head-main"><strong>${esc(label)}</strong>
         <small>${singles ? "Singles" : "2v2"} · ${esc(SCORING_NAMES[scoring])} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>

@@ -257,7 +257,7 @@ function teamDot(p,teams){const team=teamOf(p,teams);
 return team?`<i class="tdot" style="--racer:${esc(team.color||TEAM_COLORS[0])}"></i>`:`<i class="tdot is-none" title="No team yet"></i>`;}
 function teamLabel(p,teams){const team=teamOf(p,teams);
 return `<small class="tteam${team?"":" muted"}">${esc(team?.name||"no team")}</small>`;}
-function lineupCard(outing,parts,teams,byId){const names=[...byId.values()],spare=names.filter(m=>!parts.some(p=>String(p.member_id)===String(m.id)));return `<section class="card golf-lineup-card" data-collapse="golf-players"><div class="card-title-row"><div><div class="card-title">Players</div><p class="muted tiny">Add or remove players from this event. The colour is their team.</p></div></div>${parts.length?`<div class="glist">${parts.map(p=>{
+function lineupCard(outing,parts,teams,byId){const names=[...byId.values()],spare=names.filter(m=>!parts.some(p=>String(p.member_id)===String(m.id)));return `<section class="card golf-lineup-card" data-collapse="golf-players" data-collapse-default="folded"><div class="card-title-row"><div><div class="card-title">Players</div><p class="muted tiny">Add or remove players from this event. The colour is their team.</p></div></div>${parts.length?`<div class="glist">${parts.map(p=>{
         /* The DFL name in brackets when the golf name hides it. Two people
            called "Nick" on a tee sheet is the duplicate-name problem this
            screen exists to settle, so the commissioner can always see who a
@@ -308,7 +308,7 @@ function rosterCard(outing,parts,teams,byId){const options=(p)=>`<option value="
 const row=(p)=>`<div class="grow gedit-row ${p.locked?"is-locked":""}"><span class="gname">${esc(playerName(p,nameMap))}</span><select class="gmove" data-move="${p.id}" data-was="${p.team_id??""}" aria-label="Move player to another team">${options(p)}</select><button type="button" class="btn ghost small glock" data-lock="${p.id}" data-on="${p.locked?"1":"0"}" title="${p.locked?"Unlock":"Lock to this team"}" aria-label="${p.locked?"Unlock":"Lock to this team"}">${p.locked?"🔒":"🔓"}</button></div>`;
 const block=(t)=>{const mine=parts.filter(p=>String(p.team_id)===String(t.id));return `<div class="gedit" style="--racer:${esc(t.color||TEAM_COLORS[0])}"><div class="gedit-head"><input class="gedit-name" type="text" maxlength="40" value="${esc(t.name||"Team")}" data-team-name="${t.id}" aria-label="Team name"><button type="button" class="btn small" data-save-name="${t.id}">Save</button></div><div class="glist">${mine.length?mine.map(row).join(""):`<div class="grow"><span class="muted tiny">Nobody on this team yet</span></div>`}</div></div>`};
 const loose=parts.filter(p=>p.team_id==null);
-return `<section class="card golf-roster-card" data-collapse="golf-roster"><div class="card-title-row"><div><div class="card-title">Team editor</div><p class="muted tiny">Rename a team, move players between teams, and lock anyone who should stay put through a regenerate.</p></div><span class="admin-badge">Admin only</span></div>${teams.length?`<div class="gedits">${teams.map(block).join("")}${loose.length?`<div class="gedit is-spare"><div class="gedit-head"><span class="gedit-title">Unassigned</span></div><div class="glist">${loose.map(row).join("")}</div></div>`:""}</div>`:`<div class="golf-empty-teams">Generate teams first.</div>`}</section>`;}
+return `<section class="card golf-roster-card" data-collapse="golf-roster" data-collapse-default="folded"><div class="card-title-row"><div><div class="card-title">Team editor</div><p class="muted tiny">Rename a team, move players between teams, and lock anyone who should stay put through a regenerate.</p></div><span class="admin-badge">Admin only</span></div>${teams.length?`<div class="gedits">${teams.map(block).join("")}${loose.length?`<div class="gedit is-spare"><div class="gedit-head"><span class="gedit-title">Unassigned</span></div><div class="glist">${loose.map(row).join("")}</div></div>`:""}</div>`:`<div class="golf-empty-teams">Generate teams first.</div>`}</section>`;}
 function wireLineup(view,outing,parts,members,refresh){const root=view.querySelector("#golf-outing");root.addEventListener("change",async e=>{const add=e.target.closest("#golf-add-member");if(!add||!add.value)return;try{await insertRow("golf_participants",{outing_id:outing.id,member_id:Number(add.value),sort_order:parts.length});refresh();}catch(err){toast(err.message||"Could not add that player",true);}});root.addEventListener("click",async e=>{const drop=e.target.closest("[data-drop-player]"),all=e.target.closest("#golf-add-all"),create=e.target.closest("#golf-add-guest");if(drop){try{const{error}=await db().from("golf_participants").delete().eq("id",drop.dataset.dropPlayer);if(error)throw error;refresh();}catch(err){toast(err.message||"Could not remove that player",true);}}if(all){all.disabled=true;const have=new Set(parts.map(p=>String(p.member_id)));try{let n=parts.length;for(const m of members)if(!have.has(String(m.id)))await insertRow("golf_participants",{outing_id:outing.id,member_id:m.id,sort_order:n++});refresh();}catch(err){toast(err.message||"Could not fill the line-up",true);all.disabled=false;}}/* A guest is a golf_participants row and nothing else.
    This used to create a members row, which is how a stranger ended up in the
    "Who are you?" picker and every member dropdown in the app for good. */
@@ -498,7 +498,21 @@ function wireGuest(view, outing, refresh) {
    one afternoon's scorecards.
    ===================================================================== */
 function guestCodeCard(outing) {
-  return `<section class="card golf-guest-admin" data-collapse="golf-guestcode">
+  /*
+    THE THREE DEEP ADMIN TOOLS - this, the team editor and the player list -
+    start folded. Each is a full screen of controls that a commissioner
+    reaches for once and then never again that day, and stacking all three
+    open under the scores is most of why the event page was so long.
+
+    "How teams are decided" is deliberately NOT folded: it is small, and it
+    is the one an admin needs while the day is still being built.
+
+    A default only, and only until the commissioner opens it once - see
+    collapse.js. No event state is consulted here, because outingState()
+    lives with the battles in golf-matches.js and a second opinion computed
+    from outing.status is exactly what that helper exists to prevent.
+  */
+  return `<section class="card golf-guest-admin" data-collapse="golf-guestcode" data-collapse-default="folded">
     <div class="card-title-row">
       <div>
         <div class="card-title">Guest access</div>

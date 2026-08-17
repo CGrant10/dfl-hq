@@ -212,10 +212,37 @@ function board(d, admin) {
   const seats = order(d);
   const round = seats.length ? Math.floor(made.length / seats.length) + 1 : 1;
 
+  /*
+    NOT EVERYBODY ON A TEAM WAS DRAFTED, and the board has to say so rather
+    than printing the word "null" beside their name.
+
+    pick_number is NULL for real reasons, all of them deliberate: a captain
+    is put on their own team without consuming a pick (see setCaptain), the
+    generator clears the pick when it deals players out, and the team editor
+    moves somebody by setting team_id alone. Every one of those is a genuine
+    participant row - so the badge is what is missing, not the player.
+
+    So the number is printed when there IS one and nothing at all when there
+    is not, and a chip with no number gets .is-added so it reads as somebody
+    who was placed rather than as a pick whose number went missing. Nothing
+    is invented and no row is rewritten to tidy up a badge.
+
+    They also sort LAST now. `?? 0` put them in front of the first pick,
+    which had an undrafted player heading a board they were never picked on.
+  */
+  const pickBadge = (p) => (p.pick_number == null ? "" : `<small>${esc(p.pick_number)}</small>`);
+
+  /* Only worth marking when there is something to tell them apart FROM. On a
+     board where nobody was picked - teams generated, or assigned by hand -
+     every chip would be dashed, which says nothing except that the card
+     looks broken. */
+  const marksAdded = made.length > 0;
+
   const roster = (t) => {
     const mine = d.parts.filter((p) => String(p.team_id) === String(t.id));
     const cap = mine.find((p) => String(p.member_id) === String(t.captain_member_id));
-    const drafted = mine.filter((p) => p !== cap).sort((a, b) => (a.pick_number ?? 0) - (b.pick_number ?? 0));
+    const drafted = mine.filter((p) => p !== cap)
+      .sort((a, b) => (a.pick_number ?? Infinity) - (b.pick_number ?? Infinity));
     return `
       <div class="gd-roster ${clock && String(clock.id) === String(t.id) ? "is-up" : ""}"
            style="--racer:${esc(t.color || "var(--accent)")}">
@@ -225,15 +252,28 @@ function board(d, admin) {
         </div>
         <div class="gd-picks">
           <span class="gd-pick is-cap">${esc(nameOf(d, t.captain_member_id))}<small>C</small></span>
-          ${drafted.map((p) => `<span class="gd-pick">${esc(partName(d, p))}<small>${p.pick_number}</small></span>`).join("")}
+          ${drafted.map((p) => `<span class="gd-pick ${marksAdded && p.pick_number == null ? "is-added" : ""}">${esc(partName(d, p))}${pickBadge(p)}</span>`).join("")}
         </div>
       </div>`;
   };
 
   const done = !clock;
 
+  /*
+    A FINISHED DRAFT FOLDS ITSELF.
+
+    While it is running this is the most important thing on the event page
+    and it stays open. The moment the last pick is in it becomes history -
+    twelve names the reader has already seen, sitting between them and the
+    scores - so it asks to start folded, with "Complete" on the fold bar.
+
+    It is only a default: one tap opens it and collapse.js remembers that
+    for good. The rosters are still on the page in the Teams section either
+    way, so nothing is hidden by folding this.
+  */
   return `
-    <section class="card gd-card">
+    <section class="card gd-card" data-collapse="golf-draft" data-collapse-title="The draft"
+             data-collapse-badge="${done ? "Complete" : `Round ${round}`}"${done ? ` data-collapse-default="folded"` : ""}>
       <div class="card-title-row">
         <div>
           <div class="card-title">The draft</div>

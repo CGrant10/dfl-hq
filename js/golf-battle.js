@@ -228,14 +228,35 @@ export function teamPoints(battles) {
   return points;
 }
 
-/** "2 halved" / "1 still out" - what the points total does not say by itself. */
-export function pointsFootnote(battles) {
+/*
+  WHAT THE POINTS TOTAL DOES NOT SAY BY ITSELF.
+
+  Two different facts, and they are separate functions because the callers
+  want different ones. A halved match is a permanent explanation for a
+  missing point - 2-1 out of four matches only adds up once you know one was
+  halved - so it belongs on the tournament board. How many are STILL OUT is
+  a progress report, and the round cards say that far better, match by
+  match, than a count on the hero card ever did.
+
+  Same arithmetic as before, still in one place; pointsFootnote() is kept as
+  the composition of the two for any caller that genuinely wants both.
+*/
+
+/** "2 halved — no point", or "" when none were. */
+export function halvedNote(battles) {
   const halved = battles.filter((x) => x.result?.halved).length;
+  return halved ? `${halved} halved — no point` : "";
+}
+
+/** "1 still out" - matches not yet decided, or "" when they all are. */
+export function openNote(battles) {
   const open = battles.filter((x) => !x.result?.complete).length;
-  const bits = [];
-  if (halved) bits.push(`${halved} halved — no point`);
-  if (open) bits.push(`${open} still out`);
-  return bits.join(" · ");
+  return open ? `${open} still out` : "";
+}
+
+/** Both of the above, joined. */
+export function pointsFootnote(battles) {
+  return [halvedNote(battles), openNote(battles)].filter(Boolean).join(" · ");
 }
 
 /**
