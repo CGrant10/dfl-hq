@@ -640,9 +640,9 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
    --------------------------------------------------------------------- */
 .golf-points-grid { padding: var(--s-5) var(--s-4); }
 .gp-team span { font-size: var(--fs-stat-lg); }
-.golf-leader-row:first-child { background: var(--hover-soft); }
-.golf-leader-row:first-child .golf-leader-pos { color: var(--accent); }
-.golf-leader-score { font-size: var(--fs-stat); }
+/* Leading the board is no longer "happens to be the first row": .gl-row
+   .is-leader in css/golf.css is only set when somebody has actually played
+   a hole, so the emphasis lives there with the rest of that row's ramp. */
 .gb-row:hover { background: var(--hover-soft); }
 /* The round card header carries the state, so it reads as a board rather
    than a list of links. */

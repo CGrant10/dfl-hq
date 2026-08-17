@@ -84,13 +84,45 @@ return [...map.values()];}
    and the scorecard always offers holes 1-18 - so reading outing.holes here
    would call a team finished when they were standing on the 10th tee. */
 const ROUND_HOLES=18;
+/*
+  ONE ROW, IN THE ORDER SOMEBODY STANDING ON A TEE ASKS IT.
+
+  Position, then who, then THE NUMBER, then how far through. The
+  score-to-par is the biggest thing on the row on purpose - it is the one
+  fact the board exists to deliver, and it used to be a 19px figure sat
+  between a team name in the same weight and a chevron in the same colour.
+  Strokes drop to the second line: useful, never the headline.
+
+  Nothing about the ranking changed. Same sort, same to-par, same thru.
+*/
 function leaderRows(teams,scores,holes,outing){const pars=new Map((holes||[]).map(h=>[Number(h.hole),Number(h.par)]));
 const cards=teams.map(t=>{const ss=withPending(outing.id,t.id,scores.filter(s=>String(s.team_id)===String(t.id)));const x=scoreToPar(ss,pars);return{team:t,...x,label:scoreLabel(x.diff,x.holes)};}).sort((a,b)=>{if(!a.holes&&!b.holes)return a.team.sort_order-b.team.sort_order;if(!a.holes)return 1;if(!b.holes)return-1;return a.diff-b.diff||b.holes-a.holes||a.team.sort_order-b.team.sort_order;});
 if(!cards.length)return empty("No teams yet.");
-const thru=x=>!x.holes?"Not started":`${x.holes>=ROUND_HOLES?"F":`Thru ${x.holes}`} · ${x.total} stroke${x.total===1?"":"s"}`;
-return cards.map((x,i)=>`<a class="golf-leader-row" href="#/golf?id=${x.team.outing_id}&team=${x.team.id}"><span class="golf-leader-pos">${i+1}</span><span class="golf-leader-team"><strong>${esc(x.team.name||"Team")}</strong><small>${thru(x)}</small></span><strong class="golf-leader-score">${x.label}</strong><span class="golf-leader-arrow">›</span></a>`).join("");}
+/* Under par, level, over par - the tint is the same vocabulary the
+   scorecard uses, so a red number means the same thing on both screens. */
+const tone=x=>!x.holes?"none":x.diff<0?"under":x.diff>0?"over":"even";
+const progress=x=>!x.holes?"Not started":x.holes>=ROUND_HOLES?"Finished":`Thru ${x.holes}`;
+const strokes=x=>!x.holes?"":`${x.total} stroke${x.total===1?"":"s"}`;
+/* First place, and only when somebody has actually hit a shot - leading a
+   board on which nothing has happened is not leading. */
+return cards.map((x,i)=>{const lead=i===0&&!!x.holes;
+return `<a class="gl-row${lead?" is-leader":""}" href="#/golf?id=${x.team.outing_id}&team=${x.team.id}" aria-label="${esc(x.team.name||"Team")}, ${esc(x.label)}, ${esc(progress(x))} — open this team's scorecard">
+  <span class="gl-pos">${lead?`<svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>`:""}<b>${i+1}</b></span>
+  <span class="gl-team"><strong>${esc(x.team.name||"Team")}</strong>${lead?`<small class="gl-flag">Leader</small>`:""}</span>
+  <span class="gl-score" data-tone="${tone(x)}">${esc(x.label)}</span>
+  <span class="gl-thru"><b>${esc(progress(x))}</b><small>${esc(strokes(x))}</small></span>
+</a>`;}).join("");}
 
-function leaderboard(teams,scores,holes,outing){return `<section class="card golf-leaderboard" data-collapse="golf-leaderboard"><div class="card-title-row"><div><div class="card-title">Live leaderboard</div><p class="muted tiny">Updates as teams enter strokes.</p></div><span class="admin-badge">LIVE</span></div><div class="golf-leader-list" data-leader-list>${leaderRows(teams,scores,holes,outing)}</div></section>`;}
+/*
+  THE BOARD ITSELF.
+
+  Hero content during play: it sits second on the event page, under the
+  tournament points, and it carries the one instruction that used to be
+  hidden inside the Teams section - tapping a team is how you enter its
+  strokes. That is the scoring entry point now, and it belongs here, beside
+  the live numbers, rather than on a roster card.
+*/
+function leaderboard(teams,scores,holes,outing){return `<section class="card golf-leaderboard ge-live" data-collapse="golf-leaderboard" data-collapse-title="Live leaderboard"><div class="gl-head"><div><span class="gl-kicker">Live leaderboard</span><p class="muted tiny">Tap a team to enter its strokes.</p></div><span class="badge live">Live</span></div><div class="golf-leader-list" data-leader-list>${leaderRows(teams,scores,holes,outing)}</div></section>`;}
 
 const LEADER_POLL_MS=15000;
 let leaderTimer=0,onLeaderVisible=null;
@@ -149,12 +181,68 @@ const title=`<header class="page-head golf-event-head"><a class="backlink" href=
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
-view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing"><div class="golf-draft-page"></div><div class="golf-matches-page"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
-function outingOverview(outing,parts,teams,byId,scoreCount){const teamCard=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));return `<div class="gteam-wrap"><a class="gteam gteam-link" style="--racer:${esc(team.color||TEAM_COLORS[0])}" href="#/golf?id=${outing.id}&team=${team.id}"><header class="gteam-head"><div><span class="gteam-name">${esc(team.name||"Team")}</span>${(()=>{/* The captain, when one is set. golf_teams.captain_member_id is a real
-        column behind a migration, so a team without one simply says nothing
-        rather than inventing a leader. */
-      const cap=team.captain_member_id?byId.get(String(team.captain_member_id)):null;
-      return cap?`<span class="gteam-captain"><svg class="ico-sm" aria-hidden="true"><use href="#i-medal"></use></svg>${esc(cap.display_name||"Captain")} · Captain</span>`:"";})()}<span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></div><span class="gteam-open">View scorecard <b>→</b></span></header><div class="gteam-members">${players.length?players.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join(""):`<span class="muted tiny">No players assigned</span>`}</div></a></div>`;};const unassigned=parts.filter(p=>p.team_id==null);return `<section class="golf-event-grid"><div class="card golf-event-summary"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div><section class="card golf-teams-card" data-collapse="golf-teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Select a team to open its scorecard.</p></div>${canEdit()?`<span class="admin-badge">Admin</span>`:""}</div>${teams.length?`<div class="gteams">${teams.map(teamCard).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="muted tiny">${unassigned.length}</span></header><div class="gteam-members">${unassigned.map(p=>`<span>${esc(playerName(p,nameMap))}</span>`).join("")}</div></div>`:""}</section>${canEdit()?`<section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the board above.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}`:""}</section>`;}
+/*
+  THE EVENT PAGE, IN PRIORITY ORDER.
+
+  The DOM order below is the ACTIVE-EVENT order - tournament points, live
+  leaderboard, matches, teams, then the setup tools - because that is what
+  the page is for on the day. The two hero boards come first and the draft
+  board, which used to be the first thing on the page whatever the state,
+  drops below the teams.
+
+  Before anybody tees off that is the wrong page, so #golf-outing is a flex
+  column and css/golf.css re-orders it from data-golf-state: in "upcoming"
+  the draft and the rosters come back to the top and the empty boards go
+  under them. THE STATE IS NOT DECIDED HERE. golf-matches.js sets the
+  attribute from outingState() in golf-battle.js, which is the app's one
+  answer to "what state is this outing in" - a second opinion computed from
+  outing.status alone is exactly the disagreement that helper exists to
+  stop. Until it answers, the active order stands.
+*/
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing" class="golf-event"><div class="golf-board-page ge-board"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}<div class="golf-matches-page ge-matches"></div>${teamsCard(outing,parts,teams,byId)}<div class="golf-draft-page ge-draft"></div>${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+/* =====================================================================
+   THE TEAMS SECTION - a roster, and nothing else
+   ---------------------------------------------------------------------
+   This used to be a scorecard menu wearing a roster's clothes: the whole
+   team card was one anchor to that team's scorecard, ending in "View
+   scorecard →", under a subtitle telling you to pick a team to open one.
+   So the informational part of the page was also the app's main scoring
+   navigation, every player's name sat inside a link, and reading who was
+   on a team meant being one mis-tap from a different screen.
+
+   Scoring did not live here uniquely and never needed to: the live
+   leaderboard rows go to exactly the same scorecards, beside the live
+   numbers, which is where somebody about to enter strokes already is. So
+   this is reference information now - team, colour, captain, players -
+   and nothing in it navigates.
+
+   The captain goes through playerName() like every other golf name rather
+   than reading display_name off the member row, so a captain who has set
+   a golf name is called the same thing here as on the scorecard, the
+   draft board and the shared image.
+
+   SHARE TEAMS is the one action on the card. The button is not rendered
+   here: this leaves a slot and golf-matches.js fills it once it has the
+   rosters, the captains and the pairings, because a share button drawn
+   before there is anything to draw is a dead control.
+   ===================================================================== */
+function teamsCard(outing,parts,teams,byId){
+  const roster=team=>{const players=parts.filter(p=>String(p.team_id)===String(team.id));
+    /* golf_teams.captain_member_id is a real column behind a migration, so a
+       team without one says so rather than inventing a leader. */
+    const cap=team.captain_member_id!=null&&byId.has(String(team.captain_member_id))
+      ?playerName({member_id:team.captain_member_id},nameMap):"";
+    return `<div class="gteam" style="--racer:${esc(team.color||TEAM_COLORS[0])}">
+      <header class="gteam-head"><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></header>
+      <div class="gteam-body">
+        <div class="gteam-block"><span class="gteam-label">Captain</span>${cap?`<span class="gteam-captain"><svg class="ico-sm" aria-hidden="true"><use href="#i-medal"></use></svg>${esc(cap)}</span>`:`<span class="gteam-captain is-none">Not named yet</span>`}</div>
+        <div class="gteam-block"><span class="gteam-label">Players</span>${players.length?`<ul class="gteam-roster">${players.map(p=>`<li>${esc(playerName(p,nameMap))}</li>`).join("")}</ul>`:`<span class="muted tiny">No players assigned</span>`}</div>
+      </div></div>`;};
+  const unassigned=parts.filter(p=>p.team_id==null);
+  return `<section class="card golf-teams-card ge-teams" data-collapse="golf-teams" data-collapse-title="Teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Who is on which team, and who is running it.</p></div><span class="gteam-share" data-teamshare></span></div>${teams.length?`<div class="gteams">${teams.map(roster).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="gteam-count">${unassigned.length}</span></header><div class="gteam-body"><ul class="gteam-roster">${unassigned.map(p=>`<li>${esc(playerName(p,nameMap))}</li>`).join("")}</ul></div></div>`:""}</section>`;}
+/* The event's own facts, then every admin tool in one block so the page
+   order only has to move one thing to demote all of them. */
+function outingOverview(outing,parts,teams,byId,scoreCount){return `<div class="card golf-event-summary ge-facts"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div>${canEdit()?`<div class="ge-admin"><section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the draft board.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}</div>`:""}`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
    a cheerful 204. Without asking for the changed rows back, a member with no
@@ -211,10 +299,11 @@ return modeSwitch+(mode==="draft"?draftControls:generator)+`<div class="golf-dan
 
 /* Rename a team and shuffle who is on it, in one place.
 
-   The team cards above are links to a scorecard, so they are the wrong home
-   for a select and two buttons - a tap meant for the roster would open the
-   card instead. Locking matters here because the generator honours it: a
-   locked player keeps their team when you regenerate. */
+   The Teams section is a read-only roster on purpose, so a select and two
+   buttons do not belong on it - moving somebody between teams is an admin
+   job and it lives with the other admin jobs. Locking matters here because
+   the generator honours it: a locked player keeps their team when you
+   regenerate. */
 function rosterCard(outing,parts,teams,byId){const options=(p)=>`<option value="">— unassigned —</option>${teams.map(t=>`<option value="${t.id}" ${String(t.id)===String(p.team_id)?"selected":""}>${esc(t.name||"Team")}</option>`).join("")}`;
 const row=(p)=>`<div class="grow gedit-row ${p.locked?"is-locked":""}"><span class="gname">${esc(playerName(p,nameMap))}</span><select class="gmove" data-move="${p.id}" data-was="${p.team_id??""}" aria-label="Move player to another team">${options(p)}</select><button type="button" class="btn ghost small glock" data-lock="${p.id}" data-on="${p.locked?"1":"0"}" title="${p.locked?"Unlock":"Lock to this team"}" aria-label="${p.locked?"Unlock":"Lock to this team"}">${p.locked?"🔒":"🔓"}</button></div>`;
 const block=(t)=>{const mine=parts.filter(p=>String(p.team_id)===String(t.id));return `<div class="gedit" style="--racer:${esc(t.color||TEAM_COLORS[0])}"><div class="gedit-head"><input class="gedit-name" type="text" maxlength="40" value="${esc(t.name||"Team")}" data-team-name="${t.id}" aria-label="Team name"><button type="button" class="btn small" data-save-name="${t.id}">Save</button></div><div class="glist">${mine.length?mine.map(row).join(""):`<div class="grow"><span class="muted tiny">Nobody on this team yet</span></div>`}</div></div>`};

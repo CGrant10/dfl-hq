@@ -238,15 +238,10 @@
    path untouched. This is hierarchy only: the score is what people are
    actually looking at, so it takes the stat ramp.
    --------------------------------------------------------------------- */
-.golf-leader-score {
-  font-family: var(--font-display);
-  font-size: var(--fs-stat-sm);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-tight);
-  font-variant-numeric: tabular-nums;
-}
-.golf-leader-pos { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold); }
-.golf-leader-team strong { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+/* The leaderboard row's own ramp moved to css/golf.css when the board was
+   promoted to hero content - it needs a leader row that differs from the
+   rest, which a flat per-class size ramp cannot express. The .golf-leader-*
+   rules that were here have gone with the classes. */
 .gp-team span { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 .gp-team b { font-family: var(--font-display); font-size: var(--fs-label); letter-spacing: var(--ls-wide); }
 .gr-head-main strong {

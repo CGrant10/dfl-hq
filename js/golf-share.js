@@ -490,7 +490,11 @@ export function posterData({ names, sides, result, scoring, round, matchNumber, 
     round: round ? (round.name || `ROUND ${round.round_number}`) : "",
     figures: [0, 1].map((i) => {
       if (scoring !== "match") return String((i === 0 ? result.postedA : result.postedB) || "—");
-      if (!lead) return "AS";
+      /* A dash, not "AS". The poster draws each figure directly above that
+         side's name, so a level match printed "AS" over BOTH names and read
+         as though it were part of them. The state is said once, in words, in
+         the standing line across the bottom: "All square thru 4". */
+      if (!lead) return "—";
       return i === leader
         ? `${lead}${result.complete && result.closedOut && result.remaining > 0 ? `&${result.remaining}` : " UP"}`
         : "—";

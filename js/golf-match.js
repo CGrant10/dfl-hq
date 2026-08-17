@@ -38,9 +38,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
-import { marquee, mood } from "./marquee.js";
 import { passFor } from "./golf-guest.js";
-import { posterData, shareMatchPoster } from "./golf-share.js";
 import { holeResult, fmtToPar, holePar, holeYards, courseHole, wrapsAround } from "./golf-scorecard.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginLabel,
          pairName } from "./golf-battle.js";
@@ -83,11 +81,22 @@ function styles() {
 .dfl-battle-head-top{display:flex;align-items:center;gap:10px}
 .dfl-battle-kicker{font-size:9px;letter-spacing:.14em;font-weight:900;color:var(--accent);display:block;margin-bottom:2px}
 .dfl-battle-head h2{margin:0;font-size:19px}
-.dfl-battle-vs{display:grid;gap:7px;margin-top:11px}
-.dfl-battle-vs-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px;font-size:13px}
-.dfl-battle-vs-dot{width:10px;height:10px;border-radius:50%;background:var(--racer,var(--accent))}
-.dfl-battle-vs-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dfl-battle-vs-row small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:900}
+
+/* ---- where the match stands: two rows and a line, no promo ----
+   The figure has its OWN column. It never sits above a name, which is how
+   a level match used to print "AS" where a surname goes. */
+.dfl-battle-state{padding:11px 14px;border-bottom:1px solid var(--line)}
+.gm-sides{display:grid;gap:4px}
+.gm-side{display:grid;grid-template-columns:9px minmax(0,1fr) auto;align-items:center;gap:9px;padding:5px 0}
+.gm-dot{width:9px;height:9px;border-radius:50%;background:var(--racer,var(--accent))}
+.gm-who{min-width:0;display:grid;gap:1px}
+.gm-who b{font-size:15px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-who small{font-size:9.5px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gm-fig{font-size:20px;font-weight:950;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.gm-side.is-up .gm-fig{color:var(--accent)}
+.gm-vs{font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-left:18px}
+.gm-stand{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:12.5px;font-weight:900;color:var(--muted)}
+.gm-stand.is-done{color:var(--accent)}
 
 /* Same perch as the team card's bar: under the fixed 56px topbar. */
 .dfl-battle-live{position:sticky;top:calc(57px + env(safe-area-inset-top));z-index:5;display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);box-shadow:0 6px 14px rgba(0,0,0,.28)}
@@ -252,60 +261,66 @@ function strokeMap(card, sideId) {
 // ------------------------------------------------------------------ views
 
 /*
-  THE MARQUEE.
+  WHERE THE MATCH STANDS.
 
-  This screen is the one somebody holds up on the tee to settle an argument,
-  so it leads like a broadcast: who against who, the figures at size, and a
-  line that says what is happening in words.
+  This was the broadcast marquee - the same fight-poster block the Arena
+  uses - and it billed one 2v2 of one nine like a title fight. Two things
+  were wrong with that, and the first is the reason this file changed:
 
-  It replaces the old two-row "vs" list AND the thru/standing bar, which
-  between them said the same thing three times. The mood is the drama and
-  standingLine() is the fact underneath it - "TAKING CONTROL" over
-  "Cole & Ryan 2 up thru 7". Nothing here computes a score: r is the
-  battleResult the card was already drawn from.
+  THE MARQUEE STACKS EACH SIDE'S FIGURE DIRECTLY ABOVE ITS NAME. With the
+  match level, sideFigure() handed it "AS" for BOTH sides, so the card read
+
+      AS            AS
+      Brando   vs   Cim Cim
+
+  "AS" is the state of the match. It is not part of anybody's name, and it
+  cannot be, because it was the same word on both sides. Fixed twice over:
+  the figure now sits in its own column beside the name rather than on top
+  of it, and a level match gives both sides a dash and says "All square
+  thru 4" once, underneath, in words - which is what standingLine() has
+  always returned and is perfectly good match-play English.
+
+  The second thing: a match is a DETAIL screen. It answers who is playing,
+  which team they are on, where it stands, what each hole did, and who won.
+  The promotion belongs to the event - the tournament board and the team
+  sheet - not to one nine. So this is quiet: two rows and a line.
+
+  Nothing here computes a score. r is the battleResult the card was already
+  drawn from.
 */
-function matchMarquee(card, names, r, scoring, roundLabel) {
-  const started = !!(r.thru || r.postedA || r.postedB);
+function matchState(card, names, r, scoring) {
   const lead = scoring === "match" ? (r.up || 0) : (r.lead || 0);
-  const m = mood(lead, scoring, r.complete, started, { thru: r.thru || 0, holes: holeCount(card) });
   // r.diff < 0 means slot 1 is ahead - the same test standingLine() uses.
   const leader = !lead ? -1 : (r.diff < 0 ? 0 : 1);
-
-  /* The round label is already "ROUND 1 · 2V2 · MATCH PLAY · MATCH 1" for the
-     page header. Split on its own separator rather than printing all of it
-     inside one very wide pill. */
-  const billing = String(roundLabel).split("·").map((b) => b.trim()).filter(Boolean);
-
-  return marquee({
-    billing,
-    main: card.match.match_number === 1,
-    live: started && !r.complete,
-    final: !!r.complete,
-    mood: m.text, tone: m.tone,
-    where: standingLine(r, names[0], names[1]),
-    sides: card.sides.map((side, i) => ({
-      name: names[i],
-      score: sideFigure(r, i, scoring),
-      colour: side.color || "",
-      up: leader === i,
-      down: leader > -1 && leader !== i,
-    })),
-  });
+  return `<div class="gm-sides">${card.sides.map((side, i) => `
+      <div class="gm-side ${leader === i ? "is-up" : ""}" style="--racer:${esc(side.color || "")}">
+        <i class="gm-dot"></i>
+        <span class="gm-who"><b>${esc(names[i])}</b><small>${esc(side.teamName)}</small></span>
+        <span class="gm-fig">${esc(sideFigure(r, i, scoring))}</span>
+      </div>`).join(`<div class="gm-vs">vs</div>`)}</div>
+    <div class="gm-stand ${r.complete ? "is-done" : ""}">${esc(standingLine(r, names[0], names[1]))}</div>`;
 }
 
 /*
-  WHAT NUMBER GOES ON EACH SIDE OF THE POSTER.
+  WHAT NUMBER GOES BESIDE EACH SIDE.
 
   Stroke play has two totals, so it shows them. Match play does not - a
   match is 2 up, not 2-1 - so the leader carries the margin and the other
-  side carries a dash. Reading r, never recomputing it.
+  side carries a dash.
+
+  A LEVEL MATCH GIVES BOTH SIDES A DASH, not "AS". "AS" is one fact about
+  the match, and printing it twice, once against each contestant, turned a
+  state into a prefix on two names. The state is said once by
+  standingLine() underneath: "All square thru 4".
+
+  Reading r, never recomputing it.
 */
 function sideFigure(r, i, scoring) {
   if (scoring !== "match") return (i === 0 ? r.postedA : r.postedB) || "—";
   const up = r.up || 0;
-  if (!up) return "AS";
+  if (!up) return "—";
   const leader = r.diff < 0 ? 0 : 1;
-  return i === leader ? `${up}${r.complete && r.closedOut && r.remaining > 0 ? `&${r.remaining}` : "UP"}` : "—";
+  return i === leader ? `${up}${r.complete && r.closedOut && r.remaining > 0 ? `&${r.remaining}` : " UP"}` : "—";
 }
 
 function statusLine(sides, editable, stale) {
@@ -480,11 +495,11 @@ function recalc(root, card) {
   }
   const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
   const r = battleResult(maps[0], maps[1], holes, scoringOf(card));
-  /* The marquee is repainted whole rather than field by field: the mood, the
-     billing, which side is dimmed and both figures all move together, and
-     three separate textContent writes is how they get out of step. */
-  const mq = root.querySelector("[data-marquee]");
-  if (mq) mq.innerHTML = matchMarquee(card, names, r, scoringOf(card), mq.dataset.round || "");
+  /* Repainted whole rather than field by field: which side leads, both
+     figures and the standing line all move together, and three separate
+     textContent writes is how they get out of step. */
+  const stateEl = root.querySelector("[data-match-state]");
+  if (stateEl) stateEl.innerHTML = matchState(card, names, r, scoringOf(card));
   const outcome = root.querySelector("[data-outcome]");
   if (outcome) outcome.textContent = outcomeText(r, names);
 }
@@ -555,9 +570,8 @@ async function render(root, matchId) {
       <div class="dfl-battle-head-top"><a class="backlink" href="${back}">← Rounds</a>
         <div><span class="dfl-battle-kicker">${esc(roundLabel)}</span><h2>${esc(names[0])} vs ${esc(names[1])}</h2></div></div>
     </header>
-    <div data-marquee data-round="${esc(roundLabel)}">${matchMarquee(card, names, r, scoring, roundLabel)}</div>
+    <div class="dfl-battle-state" data-match-state>${matchState(card, names, r, scoring)}</div>
     <div class="dfl-battle-status" data-battle-status>${statusLine(card.sides, editable, card.stale)}</div>
-    <div class="dfl-battle-share"><button type="button" class="btn ghost small" data-share-match>Share the match card</button></div>
     ${admin ? `<div class="dfl-battle-admin"><button type="button" class="dfl-battle-clear" data-clear-battle>Clear this match</button></div>` : ""}
     <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>${scoring === "match" ? `UP/DN is ${esc(names[0])}` : "Tap a hole to jump to it"}</span></header>
       <div style="overflow-x:auto">${strip(card, maps, names)}</div></section>
@@ -571,25 +585,19 @@ async function render(root, matchId) {
   wire(root, card, editable);
   watchSync(root, card, editable);
 
-  /* The poster is built and shared INSIDE the click handler, synchronously -
-     see the gesture rule at the top of share.js. Anything awaited first and
-     iOS has already decided the share sheet was not user-initiated. */
-  root.querySelector("[data-share-match]")?.addEventListener("click", () => {
-    try {
-      const maps2 = card.sides.map((s2) => strokeMap(card, s2.id));
-      const r2 = battleResult(maps2[0], maps2[1], holes, scoring);
-      const lead2 = scoring === "match" ? (r2.up || 0) : (r2.lead || 0);
-      const started2 = !!(r2.thru || r2.postedA || r2.postedB);
-      const p = posterData({
-        names, sides: card.sides, result: r2, scoring, round: card.round,
-        matchNumber: card.match.match_number, outing: card.outing,
-        standing: standingLine(r2, names[0], names[1]),
-      });
-      toast(shareMatchPoster(p, mood(lead2, scoring, r2.complete, started2, { thru: r2.thru || 0, holes }).text));
-    } catch (err) {
-      toast(err?.message || "Could not build the match card", true);
-    }
-  });
+  /*
+    NO SHARE BUTTON HERE, on purpose.
+
+    Every individual match used to offer "Share the match card", which built
+    a full-bleed fight poster for one 2v2 of one nine. That is promotional
+    weight on the most detailed screen in Golf, and twelve of them a day.
+
+    The poster infrastructure in golf-share.js is untouched - the tournament
+    board and the team sheet are built by the same file, and matchPosterCanvas
+    and shareMatchPoster are still exported for whatever wants them. What has
+    gone is the exposure: sharing is an EVENT-level action now, on the
+    tournament scoreboard and the Teams card.
+  */
 
   if (admin) {
     const clear = root.querySelector("[data-clear-battle]");

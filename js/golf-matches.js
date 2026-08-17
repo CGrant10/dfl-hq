@@ -30,31 +30,51 @@ import { db, isAdmin } from "./supabase.js";
 import { esc, empty, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
 import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
-         dayPoints, pointsFootnote, pairName } from "./golf-battle.js";
+         dayPoints, pointsFootnote, pairName, outingState } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
 
 const POLL_MS = 15000;
-let host = null, timer = 0, outingId = null;
+/*
+  TWO HOSTS, one module.
+
+  The tournament points board and the rounds used to be drawn into the same
+  placeholder, which pinned the board to wherever the rounds sat - buried
+  under a draft board and above nothing in particular. They are different
+  altitudes of information: the board is the score of the whole day and the
+  rounds are the detail behind it, so the event page leaves two holes and
+  the board goes in the top one, above the live leaderboard.
+
+  Both are still drawn from ONE load() and one result set, so they cannot
+  disagree about the same round.
+*/
+let host = null, boardHost = null, timer = 0, outingId = null;
 
 function styles() {
   if (document.getElementById("dfl-battles-style")) return;
   const s = document.createElement("style");
   s.id = "dfl-battles-style";
   s.textContent = `
-.golf-points{padding:0;overflow:hidden}
-.gp-live{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line-soft);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.golf-points-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:15px 13px}
-.gp-team{min-width:0;display:grid;gap:4px;justify-items:center;text-align:center}
-.gp-team b{font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.gp-team span{font-size:34px;font-weight:950;line-height:1;font-variant-numeric:tabular-nums;color:var(--racer,var(--accent))}
-.gp-dash{font-size:15px;font-weight:900;color:var(--muted)}
+/* ---- THE TOURNAMENT SCOREBOARD: the biggest thing on the event page ----
+   Points from the rounds, which is a different question to the live golf
+   leaderboard underneath it - that one is strokes against par. Both are
+   hero content; this one is the score of the day, so it goes first and it
+   is the only place on the page carrying figures this size. */
+.golf-points{padding:0;overflow:hidden;border-color:var(--accent-dim)}
+.gp-kicker{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 13px 0;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.gp-live{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 13px;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.golf-points-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 13px 17px}
+.gp-team{min-width:0;display:grid;gap:5px;justify-items:center;text-align:center}
+.gp-team b{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gp-team span{font-size:clamp(52px,17vw,76px);font-weight:950;line-height:.9;font-variant-numeric:tabular-nums;color:var(--racer,var(--accent))}
+.gp-team small{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gp-dash{font-size:20px;font-weight:900;color:var(--muted)}
 .golf-points-rounds{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:0 13px 12px}
 .gpr{display:flex;align-items:baseline;gap:5px;padding:5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--bg-2);font-size:10.5px;font-weight:900}
 .gpr small{color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-size:9px}
 .gpr.is-open{border-style:dashed;color:var(--muted)}
 .golf-points-foot{padding:0 13px 12px;text-align:center;font-size:10.5px;color:var(--muted)}
-.golf-points-lead{padding:9px 13px;border-top:1px solid var(--line-soft);text-align:center;font-size:11.5px;font-weight:900;background:var(--bg-3)}
+.golf-points-lead{padding:10px 13px;border-top:1px solid var(--line-soft);text-align:center;font-size:13px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;background:var(--bg-3)}
 .gp-share{padding:10px 13px;border-top:1px solid var(--line-soft);display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 
 .golf-round{padding:0;overflow:hidden}
@@ -116,11 +136,15 @@ async function load(id) {
   const [roundsRes, matchesRes, teamsRes, partsRes, members, outingRes] = await Promise.all([
     db().from("golf_rounds").select("id,round_number,name,format,holes,scoring").eq("outing_id", id).order("round_number"),
     db().from("golf_matches").select("id,match_number,round_id").eq("outing_id", id).order("match_number"),
-    db().from("golf_teams").select("id,name,color,sort_order").eq("outing_id", id).order("sort_order"),
+    /* captain_member_id is read for the board and the shared team sheet.
+       Without it teamSheet()'s captainOf() had nothing to resolve, so the
+       captain line silently never appeared on the picture people share. */
+    db().from("golf_teams").select("id,name,color,sort_order,captain_member_id").eq("outing_id", id).order("sort_order"),
     db().from("golf_participants").select("id,member_id,guest_name,team_id,pick_number,sort_order").eq("outing_id", id),
     loadMembers().catch(() => []),
-    /* Only for the shared image's headline - the page has its own header. */
-    db().from("golf_outings").select("id,name,course,event_date").eq("id", id).maybeSingle(),
+    /* The shared image's headline, plus status - outingState() needs it to
+       decide what the event page should be leading with. */
+    db().from("golf_outings").select("id,name,course,event_date,status").eq("id", id).maybeSingle(),
   ]);
   if (roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error) {
     throw roundsRes.error || matchesRes.error || teamsRes.error || partsRes.error;
@@ -224,16 +248,22 @@ function board(data) {
   }).join("");
 
   const anyLive = data.rounds.some((r) => r.battles.some((b) => b.result && b.result.thru > 0 && !b.result.complete));
+  /* The captain under the team name, because this board is also the thing
+     that gets shared - and "TEAM CHAOS / CAPTAIN CIM CIM" is the billing.
+     Nothing is printed for a team with no captain set. */
+  const caps = teams.map((t) => (t.captain_member_id != null
+    ? playerName({ member_id: t.captain_member_id }, data.names) : ""));
   return `<section class="card golf-points" data-collapse="golf-points" data-collapse-title="Tournament" data-collapse-badge="${values.join(" — ")}">
+    <div class="gp-kicker">Tournament</div>
     ${anyLive ? `<div class="gp-live"><span class="badge live">Live</span><span>A round is under way</span></div>` : ""}
     <div class="golf-points-grid">
-      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(t.color || "")}"><span>${values[i]}</span><b>${esc(t.name)}</b></div>`)
+      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(t.color || "")}"><span>${values[i]}</span><b>${esc(t.name)}</b>${caps[i] ? `<small>Captain ${esc(caps[i])}</small>` : ""}</div>`)
         .join('<div class="gp-dash">—</div>')}
     </div>
     ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}
     ${foot ? `<div class="golf-points-foot">${esc(foot)}</div>` : ""}
     ${lead ? `<div class="golf-points-lead">${lead}</div>` : ""}
-    <div class="gp-share"><button class="btn ghost small" id="gb-share">Share the board</button><button class="btn ghost small" id="gb-share-teams">Share the teams</button></div>
+    <div class="gp-share"><button class="btn ghost small" data-share-board>Share tournament</button></div>
   </section>`;
 }
 
@@ -374,7 +404,9 @@ function view(data) {
     return `${admin ? addRound : ""}${admin ? "" : `<section class="card"><div class="card-body muted tiny">The tournament has not been set up yet.</div></section>`}`;
   }
 
-  return `${board(data)}${data.rounds.map((entry) => roundCard(data, entry)).join("")}${addRound}`;
+  /* The board is NOT in here any more - it is drawn into its own host at the
+     top of the event page. This is the detail level: the rounds. */
+  return `${data.rounds.map((entry) => roundCard(data, entry)).join("")}${addRound}`;
 }
 
 // ----------------------------------------------------------------- actions
@@ -429,6 +461,37 @@ async function assignSeat(data, roundId, sideId, rowId, participantId) {
 
 let data = null;
 
+/*
+  WHAT THE EVENT PAGE SHOULD BE LEADING WITH.
+
+  outingState() in golf-battle.js is the app's single answer to "what state
+  is this outing in", and it already takes exactly the [{round, battles}]
+  shape load() produces. It is asked here rather than in pages/golf.js
+  because this is the only module that has the battles - and asking it in
+  two places from two different sets of facts is how the app ends up with
+  two states that disagree.
+
+  The attribute is all that is set. css/golf.css does the re-ordering.
+*/
+function paintState(state) {
+  const page = document.querySelector("#golf-outing");
+  if (page) page.dataset.golfState = state;
+}
+
+/*
+  SHARE TEAMS lives on the Teams card, which pages/golf.js draws - so that
+  card leaves an empty slot and this fills it. It is filled from here
+  because this is where the rosters, the captains and the pairings are: one
+  team sheet, drawn by golf-share.js, from the one set of data.
+*/
+function paintTeamShare() {
+  const slot = document.querySelector("#golf-outing [data-teamshare]");
+  if (!slot) return;
+  const want = data && data.teams.length
+    ? `<button class="btn ghost small" data-share-teams>Share teams</button>` : "";
+  if (slot.innerHTML !== want) slot.innerHTML = want;
+}
+
 async function draw() {
   if (!host) return;
   try {
@@ -439,27 +502,47 @@ async function draw() {
     host.innerHTML = isAdmin()
       ? `<section class="card"><div class="card-body muted tiny">The tournament needs one migration: run <strong>golf_matches_schema.sql</strong> in Supabase.<br>${esc(err.message || String(err))}</div></section>`
       : "";
+    if (boardHost) boardHost.innerHTML = "";
+    paintState("upcoming");
+    paintTeamShare();
     return;
   }
   styles();
   host.innerHTML = view(data);
+  if (boardHost) boardHost.innerHTML = board(data);
+  paintState(outingState(data.outing, data.rounds).state);
+  paintTeamShare();
+}
+
+/*
+  THE TWO SHARE BUTTONS, wired once on the document.
+
+  They are no longer in the same element - Share tournament rides the points
+  board and Share teams is on the Teams card, which a different module
+  draws - so a listener per host would be two listeners to keep in step and
+  one of them attached to a card this file does not own.
+
+  Deliberately NOT async, and registered ONCE. navigator.share has to be
+  called in the same task as the tap that asked for it, and an async handler
+  that awaits anything on the way there spends the gesture - on iOS that is
+  the difference between the share sheet opening and a NotAllowedError. See
+  the note at the top of share.js.
+*/
+let shareWired = false;
+function wireShare() {
+  if (shareWired) return;
+  shareWired = true;
+  document.addEventListener("click", (e) => {
+    const wantBoard = e.target.closest("[data-share-board]");
+    const wantTeams = e.target.closest("[data-share-teams]");
+    if (!wantBoard && !wantTeams) return;
+    if (!data) return void toast("The tournament is still loading", true);
+    toast(wantBoard ? shareBoard(data, data.outing) : shareTeamSheet(data, data.outing));
+  });
 }
 
 /* Every admin button on the card, and a redraw after each one. */
 function wire() {
-  /*
-    Its own listener, and deliberately NOT async. navigator.share has to be
-    called in the same task as the tap that asked for it, and an async handler
-    that awaits anything on the way there spends the gesture - on iOS that is
-    the difference between the share sheet opening and a NotAllowedError. See
-    the note at the top of share.js.
-  */
-  host.addEventListener("click", (e) => {
-    if (!data) return;
-    if (e.target.closest("#gb-share")) return void toast(shareBoard(data, data.outing));
-    if (e.target.closest("#gb-share-teams")) return void toast(shareTeamSheet(data, data.outing));
-  });
-
   host.addEventListener("change", async (e) => {
     const select = e.target.closest("[data-seat]");
     if (!select) return;
@@ -590,12 +673,16 @@ function wire() {
   });
 }
 
-function stop() { clearInterval(timer); timer = 0; host = null; }
+function stop() { clearInterval(timer); timer = 0; host = null; boardHost = null; }
 
 function boot() {
+  wireShare();
   const find = () => {
     const el = document.querySelector("#golf-outing .golf-matches-page");
     if (!el) { if (host) stop(); return; }
+    /* The board host is optional: a page that leaves no hole for it simply
+       does not get a board, rather than this refusing to draw the rounds. */
+    boardHost = document.querySelector("#golf-outing .golf-board-page");
     if (el === host) return;
     const q = new URLSearchParams(location.hash.split("?")[1] || "");
     outingId = q.get("id");
