@@ -29,6 +29,7 @@ import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
          finishTrajectories, presentFinish, raceShot } from "../arena/race.js";
+import { claimFinish, persistResult, finalOffsetMs } from "../arena/results.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -317,6 +318,7 @@ function paint(view, event, racers) {
 function watch(view, id, racers) {
   live = { raf: 0, poll: 0, channel: null, resizeObserver: null, pixi: null,
     trackWidth: 1, sim: null, simKey: "", state: null, sceneryBlurX: 0,
+    saveTried: false,
     reduceMotionEffects: getReduceRaceMotion(), stopMotionWatch: null };
 
   const els = {
@@ -365,6 +367,11 @@ function watch(view, id, racers) {
 
   const apply = (row) => {
     if (!row) return;
+    /* A race that is back at the start line, or has been re-rolled onto a new
+       seed, is a race whose result has not been written yet - so the one-shot
+       save latch has to come off with it. Without this a "Run race again" in
+       the same session would finish and quietly save nothing. */
+    if (row.bc_state === "idle" || (live.state && row.seed !== live.state.seed)) live.saveTried = false;
     live.state = row;
 
     const ticks = ticksFor(row.race_length, row.length_ticks);
@@ -645,6 +652,33 @@ function watch(view, id, racers) {
       const done = finishPresentation.celebrationActive;
 
       if (done) {
+        /*
+          THE RACE IS OVER, SO THE RESULT GETS WRITTEN - here, once.
+
+          This used to be the Arena page's job, because the Arena page ran
+          its own copy of the race and knew when its own copy ended. It does
+          not run one any more: this view IS the race, for the commissioner
+          as much as for everybody else, so the moment the celebration starts
+          is the only place that actually knows the race finished.
+
+          claimFinish() is a compare-and-set, not a flag on this page. Two
+          admins watching - a phone and the OBS machine - reach this frame
+          together, and only the one whose update actually flips bc_state
+          goes on to write the rows. See arena/results.js.
+
+          Never awaited into the frame loop and never retried: a failed save
+          must not stutter the winner presentation, and the commissioner
+          still has "Save result" on the event page.
+        */
+        if (!live.saveTried && isAdmin()) {
+          live.saveTried = true;
+          const seed = Number(row.seed) || 1;
+          (async () => {
+            if (!(await claimFinish(id, finalOffsetMs(sim)))) return;   // somebody else has it
+            await persistResult(id, sim, seed);
+            toast("Result saved");
+          })().catch((err) => toast(err.message || "Could not save the result", true));
+        }
         const win = sim.order[0];
         els.winName.textContent = win?.racer.name || "";
         if (win && els.winArt && !els.winArt.dataset.racer) {

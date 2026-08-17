@@ -6,7 +6,22 @@
 // punishment - the engine does not know which, and deliberately so.
 //
 //   #/arena          the events list and the history
-//   #/arena?id=12    one event: line-up, the race, the result
+//   #/arena?id=12    one event: line-up, race control, the result
+//   #/broadcast?id=12  THE RACE VIEW - where the race is actually watched
+//
+// THIS PAGE PREPARES AND CONTROLS A RACE. IT DOES NOT PLAY ONE.
+//
+// It used to do both, and the Race View played the same recording at the
+// same time off the same seed. Two playback loops, two cameras, two finish
+// lines - one for whoever happened to be the commissioner and one for
+// everybody else. They drifted, which is what two implementations of one
+// thing do.
+//
+// So there is one race and one viewer. Start writes the shared clock and
+// sends the commissioner to the Race View with everyone else; members are
+// taken there by watchSharedRace(); an OBS browser source parked on that URL
+// simply starts running. The Race View is not an OBS feature - it is the
+// race.
 //
 // Members watch and read. The commissioner creates, sets the line-up,
 // starts the race and saves the result. The database enforces that; the
@@ -16,23 +31,24 @@
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
 import { loadMembers } from "../members.js";
-/* The DFL Pet is a member's racer sprite. This import was missed when the
-   pet landed, so runRace() threw ReferenceError on its first statement -
-   which is why Start did nothing at all from v1.69.0 onward. */
+/* The DFL Pet is a member's racer sprite - here only to draw the winner on
+   the result card. The RACER sprites are the Race View's business. */
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishPassProgress, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
-import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
+import { getReduceRaceMotion, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-/* One emitter for the racer markup, shared with the broadcast viewer, so
-   the two views cannot drift apart again. See arena/racer-view.js. */
-import { racerLanes } from "../arena/racer-view.js";
-import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS,
-         finishTrajectories, presentFinish, raceShot } from "../arena/race.js";
+/*
+  simulate() is still here, and ONLY as arithmetic: "Finish now" needs to know
+  where the last racer crosses, and "Save result" needs the order. Neither
+  draws anything. Every presentation import this file used to carry - the pixi
+  runtime, the racer-view emitter, dramatize/visualEvents/boardState and the
+  camera helpers - went with runRace(); pages/broadcast.js imports them now.
+*/
+import { simulate, newSeed, ticksFor, raceSeconds } from "../arena/race.js";
+import { persistResult } from "../arena/results.js";
 
-const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
   element?.classList.toggle("race-motion-reduced", reduced);
   element?.classList.toggle("race-motion-full", !reduced);
@@ -209,33 +225,32 @@ async function renderEvent(view, id) {
 
       ${results.length ? resultsCard(results, byId, event) : ""}
 
-      <div id="arena-stage"></div>
-
       ${broadcastCard(event, parts)}
+
+      ${waitingCard(parts, results)}
 
       ${lineupCard(event, parts, byId, members)}
     </div>
   `;
 
-  const stage = view.querySelector("#arena-stage");
+  /*
+    REPLAY, which is now the same thing as a race.
 
-  // Start / replay
+    It reuses the stored seed so it is the identical recording, writes the
+    shared clock exactly as Start does, and then goes and watches it in the
+    Race View. It used to play a private local copy - "Replay locally" - which
+    is precisely the second presentation this page no longer owns.
+  */
   view.querySelector("#arena-event").addEventListener("click", async (e) => {
-    const start  = e.target.closest("#arena-start");
     const replay = e.target.closest("#arena-replay");
     const clear  = e.target.closest("#arena-clear");
 
     if (clear) return clearResult(view, event);
-    if (!start && !replay) return;
+    if (!replay) return;
 
     if (parts.length < 2) { toast("An Arena race needs at least two racers", true); return; }
 
-    // A replay reuses the stored seed so it is the same race; a fresh run
-    // draws a new one.
-    const seed = replay && event.seed ? Number(event.seed) : newSeed();
-    /* Tell the broadcast which race this is, so a stream that is already
-       open follows the same recording instead of inventing its own. It is
-       admin-only at the database, so a member's press simply races here. */
+    const seed = event.seed ? Number(event.seed) : newSeed();
     try {
       await updateRow("arena_events", event.id, {
         seed,
@@ -244,8 +259,11 @@ async function renderEvent(view, id) {
         bc_offset_ms: 0,
       });
       event.seed = seed;
-    } catch { /* not an admin: local race only */ }
-    await runRace(view, stage, event, parts, byId, seed, { save: !replay });
+    } catch (err) {
+      toast(err.message || "Only the commissioner can replay a race", true);
+      return;
+    }
+    location.hash = `#/broadcast?id=${event.id}`;
   });
 
   /* The line-up wiring is no longer admin-only, because a member now has one
@@ -256,24 +274,31 @@ async function renderEvent(view, id) {
      silently did nothing. */
   wireLineup(view, event, parts, members, () => render(view));
   if (canEdit()) {
-    wireBroadcast(view, stage, event, parts, byId, () => render(view));
+    wireBroadcast(view, event, parts, byId, () => render(view));
   } else {
     watchSharedRace(event.id);
   }
+}
 
-  if (!results.length) {
-    stage.innerHTML = canEdit() ? `
-      <div class="arena-ready">
-        <strong>${parts.length < 2 ? "Line-up needed" : "Race ready"}</strong>
-        <span>${parts.length < 2
-          ? "Add at least two racers below."
-          : "Use Race controls below to start the shared race."}</span>
-      </div>` : `
-      <div class="arena-ready is-waiting" role="status">
-        <strong>Waiting for the commissioner</strong>
-        <span>This page will open the shared race automatically when it starts.</span>
-      </div>`;
-  }
+/*
+  THE WAITING ROOM, for everybody who is not the commissioner.
+
+  This page no longer draws a race, so what used to be an empty stage waiting
+  to be filled is just a line telling a member what is about to happen: the
+  watcher above moves them into the Race View the moment the commissioner
+  starts, and they do not have to do anything.
+
+  Nothing for an admin - Race control is directly above and says more.
+*/
+function waitingCard(parts, results) {
+  if (canEdit() || results.length) return "";
+  return `
+    <div class="arena-ready is-waiting" role="status">
+      <strong>${parts.length < 2 ? "Waiting on the line-up" : "Waiting for the commissioner"}</strong>
+      <span>${parts.length < 2
+        ? "This race needs at least two racers."
+        : "The Race View opens here automatically the moment the race starts."}</span>
+    </div>`;
 }
 
 function figure(value, label) {
@@ -521,11 +546,24 @@ function broadcastCard(event, parts) {
   const ready = parts.length >= 2;
   const statusLabel = running ? "Race live" : paused ? "Race paused" : finished ? "Race finished" : "Ready to race";
   const statusHelp = !ready ? "Add at least two racers to begin." :
-    running ? "The shared race is moving on every viewer." :
+    running ? "The Race View is live on every viewer." :
     paused ? "Viewers are holding on the same frame." :
     finished ? "Review the finish, save it, or reset for another run." :
-    "All viewers are waiting at the starting line.";
+    "Every viewer is waiting on the starting grid.";
 
+  /*
+    ONE LAUNCH BUTTON, not two.
+
+    There used to be "Open race view" above "Start race", which read as a
+    two-step operation and was not one. Opening the viewer never had to
+    happen first: the Race View draws the starting grid whenever the event is
+    idle, so OBS can be pointed at that URL once, at setup, and left there
+    for good. The button also reset the shared state as a side effect, which
+    made it a hidden third way to wipe a race.
+
+    So the URL moved to the setup drawer below - where a one-time OBS
+    configuration belongs - and this panel has exactly one primary action.
+  */
   return `
     <section class="card bc-panel" aria-labelledby="bc-console-title">
       <header class="bc-console-head">
@@ -540,18 +578,10 @@ function broadcastCard(event, parts) {
         </div>
       </header>
 
-      <div class="bc-launch">
-        <div>
-          <strong>1. Put the race on screen</strong>
-          <span class="muted tiny">Opens the public starting grid without beginning the race.</span>
-        </div>
-        <button class="btn ghost" id="bc-open" data-viewer-url="${esc(url)}">Open race view</button>
-      </div>
-
       <div class="bc-command">
         <button class="btn bc-primary" id="bc-start" ${ready ? "" : "disabled"}>
           <span>${running || paused || finished ? "Run race again" : "Start race"}</span>
-          <small>${ready ? `${parts.length} racers · shared live` : "Lineup incomplete"}</small>
+          <small>${ready ? `${parts.length} racers · opens the Race View` : "Lineup incomplete"}</small>
         </button>
         <div class="bc-transport" aria-label="Race transport controls">
           <button class="btn ghost" id="bc-pause" ${running || paused ? "" : "disabled"}>${paused ? "Resume race" : "Pause race"}</button>
@@ -567,14 +597,24 @@ function broadcastCard(event, parts) {
           <label><input type="checkbox" id="bc-motion-t" ${getReduceRaceMotion() ? "checked" : ""}> Reduce race motion/effects</label>
         </fieldset>
         <div class="bc-result-actions">
-          <button class="btn ghost small" id="bc-save" ${finished && ready ? "" : "disabled"}>Save result</button>
+          <!--
+            Enabled for any race that has been started, not only a "finished"
+            one. The Race View saves the result itself when the celebration
+            begins, but a race that ran to its end without an admin watching
+            leaves bc_state on "running" - and that used to leave this button
+            greyed out, with no way to store a race that had genuinely
+            happened. It writes the same deterministic rows either way.
+          -->
+          <button class="btn ghost small" id="bc-save" ${state !== "idle" && ready && event.seed ? "" : "disabled"}>Save result</button>
           <button class="btn ghost small danger" id="bc-reset" ${state === "idle" ? "disabled" : ""}>Reset race</button>
         </div>
       </div>
 
       <details class="bc-setup">
-        <summary>Viewer / OBS link</summary>
-        <p class="muted tiny">This public link opens directly into the race view. No profile is required.</p>
+        <summary>Race View link (OBS)</summary>
+        <p class="muted tiny">Point an OBS browser source at this once and leave it there. It shows
+          the starting grid while the event is idle and runs the race the moment you press Start —
+          no clicking in the capture. Anyone can open it; no profile required.</p>
         <div class="bc-url">
           <input id="bc-url" type="text" readonly aria-label="Public race viewer URL" value="${esc(url)}">
           <button class="btn ghost small" id="bc-copy">Copy link</button>
@@ -585,17 +625,13 @@ function broadcastCard(event, parts) {
 
 /** Seconds of countdown before the racers move. */
 const COUNTDOWN_MS = 2700;
-const COUNTDOWN_STEP_MS = 900;
 
 /*
-   IS A PARAMETER, and it has to be.
-
-  This is a top-level function; the stage element is a const inside
-  render(). Reaching for it here threw ReferenceError the moment #bc-start
-  was clicked - AFTER the database write had already gone through - so the
-  broadcast started, the Arena did nothing, and the button looked dead.
+  Race control: the shared row is the only thing this panel writes. It never
+  draws a race - the Race View does that for everyone, the commissioner
+  included - so there is no stage to hand in here any more.
 */
-function wireBroadcast(view, stage, event, parts, byId, refresh) {
+function wireBroadcast(view, event, parts, byId, refresh) {
   const panel = view.querySelector(".bc-panel");
   if (!panel) return;
 
@@ -633,32 +669,6 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
   panel.addEventListener("click", async (e) => {
     const t = e.target;
 
-    if (t.closest("#bc-open")) {
-      /*
-        Opening the screen and starting the clock are deliberately separate.
-        Create the window during the click so popup blockers allow it, reset
-        the shared viewer to the starting grid, then navigate it only after
-        the reset has been confirmed by Supabase.
-      */
-      const url = t.closest("#bc-open").dataset.viewerUrl;
-      const raceWindow = window.open("about:blank", "dfl-race-view", `popup=yes,width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`);
-      if (!raceWindow) {
-        toast("Allow pop-ups to open the race view", true);
-        return;
-      }
-      raceWindow.document.title = "Preparing race…";
-      try {
-        await updateSharedEvent({ bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 });
-        raceWindow.location.replace(url);
-        toast("Race view opened at the starting line");
-        refresh();
-      } catch (err) {
-        raceWindow.close();
-        toast(err.message || "Could not prepare the race view", true);
-      }
-      return;
-    }
-
     if (t.closest("#bc-copy")) {
       const input = panel.querySelector("#bc-url");
       try {
@@ -679,21 +689,24 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
       const startButton = panel.querySelector("#bc-start");
       if (startButton) startButton.disabled = true;
       /*
-        THIS BUTTON USED TO ONLY TELL THE OTHER SCREEN TO RACE.
+        ONE WRITE, THEN GO AND WATCH IT.
 
-        It wrote bc_state to the database, which the /broadcast page picks
-        up - and then refresh() re-rendered this page. So on the Arena the
-        operator pressed "Start race", saw a toast, and watched nothing
-        happen. The race was real, it was just somewhere else.
+        This used to write the shared row AND run a second, local copy of the
+        race on this page, on the reasoning that the same seed makes them two
+        cameras on one recording. They were two cameras, and that was the
+        problem: two playback loops, two finish lines, two sets of camera
+        rules, drifting apart one fix at a time. The finish line that worked
+        on one and not the other was exactly that drift.
 
-        Now one press starts BOTH: the broadcast row is written so the OBS
-        page follows, and the same seed is played here immediately. Same
-        seed means simulate() returns the same recording, so the two views
-        are two cameras on one race rather than two races.
+        There is one race now, and the Race View plays it. The commissioner
+        goes there like everybody else - the write below is what members
+        already follow (watchSharedRace) and what OBS already follows, so
+        this navigation is the same event reaching this screen too.
 
-        The write is deliberately NOT the `write()` helper: that calls
-        refresh(), which would rebuild the page and throw away the stage
-        this race is about to be drawn into.
+        The countdown is not started here either: bc_started_at is set a few
+        seconds into the future and every viewer counts down to it on its own
+        clock, so the commissioner arriving a moment later than OBS still
+        lands on the same frame.
       */
       const seed = newSeed();
       try {
@@ -710,16 +723,7 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
         if (startButton) startButton.disabled = parts.length < 2;
         return;
       }
-      for (const id of ["#bc-pause", "#bc-skip", "#bc-reset"]) {
-        const control = panel.querySelector(id);
-        if (control) control.disabled = false;
-      }
-      const completed = await runRace(view, stage, event, parts, byId, seed, { save: true });
-      if (completed) refresh();
-      else if (panel.isConnected) {
-        delete panel.dataset.raceBusy;
-        if (startButton) startButton.disabled = parts.length < 2;
-      }
+      location.hash = `#/broadcast?id=${event.id}`;
       return;
     }
 
@@ -765,13 +769,24 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
       return write({ bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 }, "Broadcast reset");
     }
 
+    /*
+      THE EXPLICIT SAVE, and the same rows the Race View would have written:
+      simulate() on the event's stored seed, so pressing this after the Race
+      View already saved stores byte-identical places and times rather than a
+      second, different race.
+    */
     if (t.closest("#bc-save")) {
-      const racers = parts.map((p, i) => ({
+      const seed = Number(event.seed) || 1;
+      const racers = parts.map((p) => ({
         id: p.member_id,
         name: byId.get(String(p.member_id))?.display_name || "Unknown",
       }));
-      const sim = simulate(racers, ticks, Number(event.seed) || 1);
-      await saveResults(event, sim, Number(event.seed) || 1);
+      try {
+        await persistResult(event.id, simulate(racers, ticks, seed), seed);
+        toast("Result saved");
+      } catch (err) {
+        toast(err.message || "Could not save the result", true);
+      }
       refresh();
     }
   });
@@ -781,579 +796,36 @@ function wireBroadcast(view, stage, event, parts, byId, refresh) {
     if (e.target.id === "bc-timer-t") write({ bc_show_timer: e.target.checked });
     if (e.target.id === "bc-motion-t") {
       setReduceRaceMotion(e.target.checked);
-      view.querySelectorAll(".arena-track-wrap, .bc-stage").forEach((el) => applyRaceMotionClass(el, e.target.checked));
+      view.querySelectorAll(".bc-stage").forEach((el) => applyRaceMotionClass(el, e.target.checked));
       toast(e.target.checked ? "Race effects reduced on this device" : "Full race effects restored");
     }
   });
 }
 
-// =============================== the race =============================
+/* =====================================================================
+   THE RACE USED TO BE PLAYED HERE. IT IS NOT ANY MORE.
+   ---------------------------------------------------------------------
+   runRace() and countdown() lived at this point: ~565 lines that built an
+   .arena-track-wrap stage, mounted a second Pixi renderer, and ran their own
+   requestAnimationFrame loop with their own camera, finish line, reactions,
+   run-out and winner reveal.
 
-/**
- * Countdown, run, reveal.
- *
- * Exported so the race can be driven without a database behind it - the
- * animation is the headline feature and needs to be verifiable on its own.
- *
- * The whole race is simulated first (see race.js), so what happens here is
- * playback: one requestAnimationFrame loop that maps elapsed time to a tick
- * and writes a transform per racer. No layout is read inside the loop and
- * nothing is re-created, which is what keeps it smooth on a phone.
- */
-export async function runRace(view, stage, event, parts, byId, seed, { save }) {
-  const ticks = ticksFor(event.race_length, event.length_ticks);
-  const racers = parts.map((p, i) => {
-    /*
-      THE DFL PET IS THE RACER, when the member has made one.
+   They were a SECOND camera on the same recording. The shared row already
+   drove /broadcast off the identical seed, so the commissioner watched one
+   implementation while every member, every shared link and OBS watched
+   another. Two implementations of one presentation is a drift machine, and
+   it had already drifted: the finish-line sweep behaved differently on the
+   two screens because each had its own copy of it.
 
-      Presentation only: the sprite key and the lane colour are the only
-      things that change. simulate() never sees any of this - it is handed
-      an array of ids and lengths, so the winner, the finish times and the
-      order are byte for byte what they were. A member with no pet falls
-      back to whatever the participant row already said.
-    */
-    const pet = petOf(byId.get(String(p.member_id)));
-    return {
-      id: p.member_id,
-      name: byId.get(String(p.member_id))?.display_name || "Unknown",
-      sprite: pet?.species || p.sprite,
-      image: pet ? null : p.sprite_image,
-      color: pet?.color || p.color || laneColor(i),
-      pet,
-      number: p.number ?? i + 1,
-    };
-  });
+   The Race View owns the presentation now - for the commissioner too. This
+   page prepares and controls the race; #/broadcast plays it.
 
-  const sim = simulate(racers, ticks, seed);
-  /*
-    THE RESULT COMES FROM sim.order; THE PICTURE COMES FROM shown.
-
-    dramatize() adds overtakes, surges and stalls to the DRAWING only, and
-    its wobble is zero by the finish line - so the race is livelier and the
-    winner is still exactly who simulate() decided, which is what is
-    already saved in arena_results for completed events.
-  */
-  const { shown, events } = dramatize(sim, seed);
-  const calls = callouts(sim, shown, racers, events);
-  /* Scanned once, before a frame is drawn - see visualEvents(). The loop
-     below only walks this queue, so nothing is compared per frame. */
-  const visuals = visualEvents(sim, shown, racers);
-  const pixiTimeline = createReactionTimeline(events, visuals, racers.length);
-
-  stage.innerHTML = `
-    <div class="arena-track-wrap cinematic-race ${raceMotionClass()}" data-theme="${esc(event.theme || "stadium")}">
-      <div class="race-scenery" aria-hidden="true">
-        <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
-          <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
-            <feGaussianBlur data-arena-motion-blur stdDeviation="0 0" edgeMode="duplicate"></feGaussianBlur>
-          </filter>
-        </svg>
-        <div class="race-sky"></div><div class="race-hills far"></div>
-        <div class="race-hills near"></div><div class="race-crowd"></div>
-      </div>
-      <div class="scoreboard">
-        <span class="sb-brand">DFL ARENA</span>
-        <span class="sb-status" id="sb-status">On the line</span>
-        <span class="sb-clock" id="sb-clock">0.0s</span>
-      </div>
-
-      <div class="track" id="track">
-        <div class="track-start"></div>
-        <div class="track-finish"></div>
-        ${racerLanes(racers, { theme: event.theme, idPrefix: "runner-" })}
-      </div>
-
-      <div class="countdown hidden" id="countdown"><span id="countdown-n">3</span></div>
-    </div>
-
-    <!--
-      THE LIVE BOARD. Order comes from the DRAWN race so it matches what is
-      on screen; the times come from sim.order, which is the truth. Rows are
-      absolutely positioned and moved with a transform, so a change of
-      position is a transition rather than a re-render - and the DOM is
-      built once, never rebuilt per frame.
-    -->
-    <ol class="ar-board" id="ar-board" style="--rows:${racers.length}">
-      ${racers.map((r, i) => `
-        <li class="ar-row" id="ar-row-${i}" style="--racer:${esc(r.color)}">
-          <span class="ar-pos"></span>
-          <span class="ar-who">${esc(r.name)}</span>
-          <span class="ar-time"></span>
-        </li>`).join("")}
-    </ol>
-    <div id="arena-result-slot"></div>
-  `;
-
-  const runners = racers.map((_, i) => stage.querySelector(`#runner-${i}`));
-
-  /*
-    ARENA DEBUG, behind ?debug=arena. Off by default and shipped that way
-    on purpose: proving the pipeline fires is exactly the thing that was
-    hard to do from the outside, and deleting the tool after one use means
-    doing it again from scratch next time.
-  */
-  const debugOn = /[?&]debug=arena/.test(location.search) || /[?&]debug=arena/.test(location.hash);
-  let dbg = null;
-  if (debugOn) {
-    dbg = document.createElement("pre");
-    dbg.className = "arena-debug";
-    stage.appendChild(dbg);
-  }
-  const counts = { surge: 0, stumble: 0, jump: 0, swap: 0, near: 0 };
-  const status  = stage.querySelector("#sb-status");
-  const clock   = stage.querySelector("#sb-clock");
-  const slot    = stage.querySelector("#arena-result-slot");
-
-  const finish = async () => {
-    status.textContent = "Final";
-    stage.querySelector("#track")?.classList.remove("is-running");
-    /* The winner's celebration is added by the cascade the moment they
-       actually cross, not here - by the time this runs the last racer is
-       home and the moment has passed. */
-    slot.innerHTML = resultsCard(
-      sim.order.map((o) => ({ member_id: o.racer.id, place: o.place, finish_ms: o.finishMs })),
-      byId, event, { fresh: true });
-    if (save) await saveResults(event, sim, seed);
-  };
-
-  /* Keep the race in view while leaving the commissioner console stable.
-     Controls no longer collapse or change location during an active run. */
-  let reducedMotionEffects = getReduceRaceMotion();
-  const raceWrap = stage.querySelector(".arena-track-wrap");
-  applyRaceMotionClass(raceWrap, reducedMotionEffects);
-  raceWrap.dataset.shot = "wide";        // the establishing shot, before GO
-  const stopMotionWatch = onReduceRaceMotionChange((reduced) => {
-    reducedMotionEffects = reduced;
-    applyRaceMotionClass(raceWrap, reduced);
-  });
-  stage.scrollIntoView({
-    behavior: reducedMotionEffects ? "auto" : "smooth",
-    block: window.matchMedia("(max-width: 720px)").matches ? "center" : "start",
-  });
-
-  const pixi = await createArenaRenderer(raceWrap, racers);
-  const startGrid = racers.map((racer, lane) => ({
-    id: racer.id, progress: 0, lane, leading: lane === 0, finished: false,
-  }));
-  await countdown(stage, (countdownMs) => pixi?.render({
-    elapsedMs: 0, state: "idle", heat: 0, racers: startGrid, countdownMs, reduceMotionEffects: reducedMotionEffects,
-  }));
-
-  status.textContent = "Racing";
-  stage.querySelector("#track")?.classList.add("is-running");
-  const started = performance.now();
-  let pausedFor = 0;
-  let pausedAt = null;
-
-  const completed = await new Promise((resolve) => {
-    const lastFinish = sim.order.at(-1).finishMs;
-    /* Long enough for the last finisher's run-out to read before the
-       result card arrives. It was 1.1s, which cut the coast off. */
-    const total = lastFinish + 3_200;
-    let nextCall = 0, calledAt = -9999, nextEvent = 0, nextVisual = 0;
-    /* One timer-free expiry list. Effects are removed by the frame loop
-       that added them, so nothing can outlive the race or stack up: at
-       most one entry per racer per effect class. */
-    const expiry = [];
-    const rows    = racers.map((_, i) => stage.querySelector(`#ar-row-${i}`));
-    const official = new Map(sim.order.map((o) => [o.index, o.finishMs]));
-    /* Finishing place, for the post-finish parking spots. Straight off
-       sim.order, so the spread is the real result and not a guess. */
-    const placeOf = new Map(sim.order.map((o) => [o.index, o.place]));
-    /* EVERY RACER'S RUN-OUT, WORKED OUT BEFORE THE FIRST FRAME.
-       Crossing speed, settle distance, time constant and wind-down are all
-       precomputed, so the loop below evaluates a curve and branches on
-       nothing. */
-    const trajectory = finishTrajectories(sim);
-    let lastOrderKey = "";
-    const homed = new Set();
-    const track = stage.querySelector("#track");
-    const scenery = stage.querySelector(".race-scenery");
-    const sceneryBlur = stage.querySelector("[data-arena-motion-blur]");
-    /*
-      Composite racer travel instead of changing `left` every frame.
-      Track width is measured only when the stage resizes; each animation
-      frame writes one CSS variable consumed by translate3d on the runner.
-    */
-    let trackWidth = Math.max(1, track?.clientWidth || 1);
-    const sizeWatcher = typeof ResizeObserver === "function" ? new ResizeObserver((entries) => {
-      trackWidth = Math.max(1, entries[0]?.contentRect?.width || track?.clientWidth || 1);
-    }) : null;
-    sizeWatcher?.observe(track);
-    for (const runner of runners) {
-      runner?.style.setProperty("--race-x", `${(trackWidth * .03).toFixed(2)}px`);
-      runner?.classList.add("is-positioned");
-    }
-    const stopPlayback = (value) => { sizeWatcher?.disconnect(); stopMotionWatch(); resolve(value); };
-    /* A racer wearing a reaction, and when it expires. The class drives a
-       CSS keyframe on the character; nothing here moves anything. */
-    const reacting = new Map();
-    let sceneryBlurX = 0;
-    let leader = -1;
-    /* When the lead last actually changed hands, which is one of the few
-       moments worth dropping the camera to track level for. */
-    let lastLeadChangeMs = null;
-    let lastReveal = -1;
-
-    function frame(now) {
-      /* A Pause, Reset, route change, or re-render detaches this stage.
-         Stop the old loop before it can write classes or save a ghost result. */
-      if (!stage.isConnected) { stopPlayback(false); return; }
-      if (event.bc_state === "paused") {
-        if (pausedAt == null) pausedAt = now;
-        track?.classList.remove("is-running");
-        status.textContent = "Paused";
-        requestAnimationFrame(frame);
-        return;
-      }
-      if (pausedAt != null) {
-        pausedFor += now - pausedAt;
-        pausedAt = null;
-        track?.classList.add("is-running");
-      }
-      const elapsed = now - started - pausedFor;
-      const t = Math.min(sim.frames, elapsed / TICK_MS);
-      const lo = Math.floor(t), hi = Math.min(sim.frames, lo + 1), mix = t - lo;
-
-      let leaderProgress = 0;
-      for (const samples of shown) {
-        const progress = (samples[lo] ?? 0) + ((samples[hi] ?? samples[lo] ?? 0) - (samples[lo] ?? 0)) * mix;
-        leaderProgress = Math.max(leaderProgress, progress);
-      }
-      const finishPresentation = createFinishPresentation({
-        elapsedMs: elapsed, leaderProgress, order: sim.order, racers,
-      });
-      const visualT = Math.min(sim.frames, finishPresentation.visualElapsedMs / TICK_MS);
-      const visualLo = Math.floor(visualT);
-      const visualHi = Math.min(sim.frames, visualLo + 1);
-      const visualMix = visualT - visualLo;
-      raceWrap.dataset.camera = finishPresentation.camera.state;
-      raceWrap.style.setProperty("--finish-camera", finishPresentation.camera.mix.toFixed(4));
-
-      const pixiRacers = [];
-      for (let i = 0; i < runners.length; i++) {
-        const s = shown[i];                            // drawn, not decided
-        const pixiRacer = presentationRacerFrame({
-          id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,
-          elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: official.get(i), timeline: pixiTimeline,
-        });
-        const p = pixiRacer.progress;                  // interpolate between ticks
-
-        /*
-          THE COAST, WRITTEN OVER THE SHARED ADAPTER'S ONE NUMBER.
-
-          presentationRacerFrame() parks every finisher at the same
-          `1 + 0.2`, which is why twelve racers ended up on one coordinate.
-          The frame payload is built here, so the per-place spot is
-          substituted before either renderer sees it - Pixi positions from
-          `displayProgress`, so this is all it takes to spread them out.
-
-          `progress` is left exactly as it was: the board, the callouts and
-          the result all read that one, and only the DRAWN position moves.
-        */
-        presentFinish(pixiRacer, finishPresentation.visualElapsedMs,
-                      trajectory[i], finishPresentation.celebrationActive);
-        const phase = pixiRacer.phase;
-
-        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
-        /* The runner element carries the name tag, so it has to track the
-           racer whether or not Pixi is drawing the character. The art
-           inside it is already hidden by the Pixi handoff, so this moves a
-           label and nothing else - it does not animate a second racer. */
-        runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
-        if (runners[i].dataset.phase !== phase) runners[i].dataset.phase = phase;
-        if (pixiRacer.finished) runners[i].classList.add("is-home");
-        pixiRacers.push(pixiRacer);
-      }
-      const pixiLeader = pixiRacers.reduce((best, row) => row.progress > best.progress ? row : best, pixiRacers[0]);
-      if (pixiLeader) pixiLeader.leading = true;
-      if (scenery) scenery.style.setProperty("--race-pan", Math.min(1, leaderProgress).toFixed(4));
-
-      /*
-        THE CHARACTERS REACT TO THE SAME EVENTS THE COMMENTARY DOES.
-        dramatize() stamped each moment with the tick the racer reached it,
-        so the word, the animation and the movement land together instead
-        of three systems each having their own opinion.
-      */
-      while (nextEvent < events.length && elapsed >= events[nextEvent].ms) {
-        const ev = events[nextEvent++];
-        counts[ev.kind] = (counts[ev.kind] || 0) + 1;
-        const el = runners[ev.racer];
-        if (el) {
-          el.classList.remove("is-surge", "is-stumble");
-          el.classList.add(ev.kind === "stumble" ? "is-stumble" : "is-surge");
-          reacting.set(ev.racer, elapsed + ev.durMs);
-        }
-      }
-      for (const [i, until] of reacting) {
-        if (elapsed > until) {
-          runners[i]?.classList.remove("is-surge", "is-stumble");
-          reacting.delete(i);
-        }
-      }
-
-      /*
-        THE VISUAL QUEUE. Precomputed, so this is a walk rather than a
-        search: while the next event is due, apply it and move on.
-      */
-      while (nextVisual < visuals.length && elapsed >= visuals[nextVisual].ms) {
-        const ev = visuals[nextVisual++];
-        counts[ev.kind] = (counts[ev.kind] || 0) + 1;
-        const hot = ev.intensity >= 0.6;
-        if (ev.kind === "jump") {
-          const el = runners[ev.racer];
-          if (el) { el.classList.add("is-jump"); expiry.push([el, "is-jump", elapsed + ev.durMs]); }
-          const row = rows[ev.racer];
-          if (row) { row.classList.add("ar-jump"); expiry.push([row, "ar-jump", elapsed + ev.durMs]); }
-          /* The callout line is shared with the commentary, and a jump is
-             the more interesting thing to be saying. */
-          if (ev.text && elapsed - calledAt > 1800) { status.textContent = ev.text; calledAt = elapsed; }
-        } else if (ev.kind === "swap") {
-          for (const i of [ev.racer, ev.other]) {
-            const el = runners[i];
-            /*
-              TWO CALLS, NOT ONE STRING. classList.add("is-duel is-hot")
-              throws InvalidCharacterError - DOMTokenList rejects spaces -
-              and because this runs inside the rAF callback, that exception
-              killed the whole animation loop the first time two racers
-              traded places. Everything after it stopped: positions, the
-              board, the cascading finishes, the callouts. The race simply
-              froze, which is exactly what "the animations do not show"
-              looked like from the outside.
-            */
-            if (el) {
-              el.classList.add("is-duel");
-              if (hot) el.classList.add("is-hot");
-              expiry.push([el, "is-duel", elapsed + ev.durMs]);
-            }
-          }
-        } else if (ev.kind === "near") {
-          for (const i of [ev.racer, ev.other]) {
-            const el = runners[i];
-            if (el) { el.classList.add("is-near"); expiry.push([el, "is-near", elapsed + ev.durMs]); }
-          }
-        }
-      }
-      /* Expire in place. No setTimeout per effect, so a chaotic pack
-         cannot leave a hundred timers running after the race. */
-      for (let k = expiry.length - 1; k >= 0; k--) {
-        if (elapsed >= expiry[k][2]) {
-          expiry[k][0].classList.remove(expiry[k][1], "is-hot");
-          expiry.splice(k, 1);
-        }
-      }
-
-      /* FINAL STRETCH. A curve on the track element, read by CSS - one
-         write when it changes band, not sixty a second. */
-      const heat = intensityAt(shown, lo);
-      const band = heat > .66 ? "3" : heat > .33 ? "2" : heat > 0 ? "1" : "0";
-      if (track && track.dataset.heat !== band) track.dataset.heat = band;
-      /* Genuine X-axis-only background blur. It is applied to the existing
-         scenery layer, never the track, racers, labels, board, or finish. */
-      const backdrop = backgroundMotion("running", heat, finishPresentation.celebrationActive, reducedMotionEffects);
-      sceneryBlurX += (backdrop.blurX - sceneryBlurX) * .16;
-      sceneryBlur?.setAttribute("stdDeviation", `${sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
-      raceWrap?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));
-      pixi?.render({
-        elapsedMs: elapsed,
-        state: finishPresentation.celebrationActive ? "finished" : "running",
-        heat: Number(band),
-        racers: pixiRacers,
-        winnerId: sim.order[0].racer.id,
-        finish: finishPresentation,
-        reduceMotionEffects: reducedMotionEffects,
-      });
-
-      /*
-        THE BOARD. Ranked by drawn position while running, but a racer who
-        has FINISHED is pinned by their official finish time - otherwise a
-        pack all sitting at 1.0 would sort arbitrarily and the final order
-        could contradict the result.
-      */
-      /* ONE authority - see boardState() in race.js. The broadcast asks
-         the same function with the same arguments, so the two boards
-         cannot disagree about the order, the gaps or who is home. */
-      const board = boardState(sim, shown, elapsed);
-      const order = board.map((r) => r.index);
-
-      const key = order.join(",");
-      if (key !== lastOrderKey) {
-        /* Only when it actually changes - twelve transform writes on a
-           change, not on every one of sixty frames a second. */
-        order.forEach((racerIdx, place) => {
-          const row = rows[racerIdx];
-          if (!row) return;
-          const wasPlace = Number(row.dataset.place ?? place);
-          row.style.transform = `translateY(calc(var(--row-h) * ${place}))`;
-          row.querySelector(".ar-pos").textContent = place + 1;
-          row.dataset.place = place;
-          if (place !== wasPlace) {
-            row.classList.remove("ar-up", "ar-down");
-            /* Force the class to re-apply so a racer moving twice in quick
-               succession flashes twice rather than once. */
-            void row.offsetWidth;
-            row.classList.add(place < wasPlace ? "ar-up" : "ar-down");
-          }
-          row.classList.toggle("is-first", place === 0);
-        });
-        lastOrderKey = key;
-      }
-
-      /*
-        CASCADING FINISHES. Each racer crosses on their OWN official time,
-        gets their moment, and the rest keep racing - the loop already ran
-        to the last finisher, but nothing marked the individual arrivals.
-      */
-      for (let i = 0; i < racers.length; i++) {
-        const ms = official.get(i);
-        if (homed.has(i) || elapsed < ms) continue;
-        homed.add(i);
-        const row = rows[i];
-        if (row) {
-          row.classList.add("is-home");
-          row.querySelector(".ar-time").textContent =
-            board.find((b) => b.index === i)?.label || "";
-        }
-        runners[i]?.classList.remove("is-surge", "is-stumble");
-        runners[i]?.classList.add("is-finished");
-      }
-
-      if (finishPresentation.celebrationActive) {
-        const winner = runners[sim.order[0].index];
-        winner?.classList.remove("is-finished");
-        winner?.classList.add("is-winner");
-        raceWrap?.classList.add("has-winner");
-      }
-
-      /* Whoever is visually in front wears it, so the leader is readable
-         at a glance even on a phone-sized track. */
-      const top = order[0];
-      if (top !== leader) {
-        if (leader >= 0) {
-          runners[leader]?.classList.remove("is-leading");
-          /* Only a genuine change of hands counts - not the first frame,
-             where nobody held the lead to begin with. */
-          lastLeadChangeMs = elapsed;
-        }
-        runners[top]?.classList.add("is-leading");
-        leader = top;
-      }
-
-      /*
-        THE SHOT. A flat 2D framing chosen once a frame and written to the
-        wrapper; the CSS transform on .track does the rest. It cannot move
-        a racer - progress is already on screen by the time this runs, and
-        nothing here is fed back into the renderer.
-      */
-      const shot = raceShot({
-        leaderProgress,
-        celebrating: finishPresentation.celebrationActive,
-      });
-      if (raceWrap.dataset.shot !== shot) raceWrap.dataset.shot = shot;
-      /*
-        THE FINISH PASS. Time-derived, so a racer falling backwards cannot
-        drag the scenery back with them - see finishPassProgress().
-      */
-      const pass = finishPassProgress(elapsed, sim.order[0].finishMs, sim.order.at(-1).finishMs);
-      if (pass !== lastReveal) {
-        raceWrap.style.setProperty("--finish-pass", pass.toFixed(4));
-        lastReveal = pass;
-      }
-
-      /* Callouts replace the status word as they come due, and the last
-         one stays up rather than flicking back - the scoreboard has one
-         line and a race has a handful of moments. */
-      while (nextCall < calls.length && elapsed >= calls[nextCall].ms) {
-        status.textContent = calls[nextCall].text;
-        calledAt = elapsed;
-        nextCall++;
-      }
-
-      // Stops on the last finish rather than running on to the extra beat
-      // the animation holds for before the result appears.
-      clock.textContent = (Math.min(elapsed, lastFinish) / 1000).toFixed(1) + "s";
-      /* "Final stretch" only if a callout is not currently holding the
-         line - a call that is two seconds old is still the more
-         interesting thing to be saying. */
-      if (elapsed > total * 0.82 && elapsed - calledAt > 2200) status.textContent = "Final stretch";
-
-      if (dbg) {
-        const live = {};
-        for (const el of runners) for (const c of el?.classList || [])
-          if (c.startsWith("is-")) live[c] = (live[c] || 0) + 1;
-        dbg.textContent =
-          `ARENA DEBUG
-` +
-          `state    ${homed.size === racers.length ? "FINISHED" : "RACING"}
-` +
-          `progress ${Math.round(Math.min(1, elapsed / lastFinish) * 100)}%
-` +
-          `heat     ${track?.dataset.heat ?? "0"}
-` +
-          `finished ${homed.size}/${racers.length}
-
-` +
-          `surges ${counts.surge}  stumbles ${counts.stumble}
-` +
-          `jumps ${counts.jump}  swaps ${counts.swap}  near ${counts.near}
-
-` +
-          `active   ${Object.entries(live).map(([k, v]) => `${k}x${v}`).join(" ") || "none"}
-` +
-          `controls ${document.querySelector('[data-collapse="arena-broadcast"]')?.classList.contains("is-folded") ? "HIDDEN" : "visible"}`;
-      }
-
-      if (elapsed >= total) stopPlayback(true);
-      else requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  });
-
-  if (!completed) return false;
-  await finish();
-  slot.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  return true;
-}
-
-
-function countdown(stage, onStep = null) {
-  const box = stage.querySelector("#countdown");
-  const num = stage.querySelector("#countdown-n");
-  const status = stage.querySelector("#sb-status");
-  /* This is a layout invariant, not a responsive approximation. Inline
-     important properties prevent any earlier landscape rule from putting
-     the countdown back into flex/grid flow and resizing the Pixi host. */
-  box.style.setProperty("position", "absolute", "important");
-  box.style.setProperty("inset", "0", "important");
-  box.style.setProperty("z-index", "10", "important");
-  box.style.setProperty("pointer-events", "none", "important");
-  box.classList.remove("hidden");
-
-  return new Promise((resolve) => {
-    const steps = ["3", "2", "1", "GO!"];
-    let i = 0;
-    const tick = () => {
-      if (!stage.isConnected) { resolve(); return; }
-      const step = steps[i];
-      onStep?.(Math.max(0, (steps.length - 1 - i) * COUNTDOWN_STEP_MS));
-      num.textContent = step;
-      num.classList.toggle("go", step === "GO!");
-      num.style.animation = "none";
-      void num.offsetWidth;
-      num.style.animation = "";
-      status.textContent = step === "GO!" ? "Away!" : "Set";
-      if (step === "GO!") {
-        /* The race and shared clock begin on GO, not after the overlay fades. */
-        setTimeout(() => box.isConnected && box.classList.add("hidden"), 420);
-        resolve();
-        return;
-      }
-      i++;
-      setTimeout(tick, COUNTDOWN_STEP_MS);
-    };
-    tick();
-  });
-}
+   Deleted with it, because nothing else on this page used them:
+     runRace(), countdown(), the #arena-stage host and the .arena-ready
+     stage filler.
+   The pixi runtime, race.js theatre helpers and racer-view emitter are all
+   still imported by pages/broadcast.js - only this page's copy is gone.
+   ===================================================================== */
 
 // ------------------------------- results ------------------------------
 
@@ -1392,7 +864,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
 
       <div class="row-end">
         <a class="btn ghost small" href="#/arena">Back to Arena</a>
-        ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay locally</button>` : ""}
+        ${canEdit() ? `<button class="btn ghost small" id="arena-replay">Replay in Race View</button>` : ""}
         ${canEdit() ? `<button class="btn danger small" id="arena-clear">Clear result</button>` : ""}
       </div>
     </div>`;
@@ -1436,37 +908,5 @@ async function clearResult(view, event) {
     render(view);
   } catch (err) {
     toast(err.message || "Could not clear the result", true);
-  }
-}
-
-/** Replace the stored result, and mark the event final. */
-async function saveResults(event, sim, seed) {
-  try {
-    const { error: wipe } = await db().from("arena_results").delete().eq("event_id", event.id);
-    if (wipe) throw wipe;
-
-    const rows = sim.order.map((o) => ({
-      event_id: event.id,
-      member_id: o.racer.id,
-      place: o.place,
-      finish_ms: o.finishMs,
-    }));
-    const { error } = await db().from("arena_results").insert(rows);
-    if (error) throw error;
-
-    const finalOffset = (sim.order.at(-1)?.finishMs ?? 0) + 400;
-    await updateRow("arena_events", event.id, {
-      status: "complete",
-      seed,
-      completed_at: new Date().toISOString(),
-      bc_state: "finished",
-      bc_started_at: new Date().toISOString(),
-      bc_offset_ms: finalOffset,
-    });
-    toast("Result saved");
-  } catch (err) {
-    // A member watching a race must not see a scary failure: the race still
-    // happened and the order is on screen, it just is not theirs to store.
-    if (canEdit()) toast(err.message || "Could not save the result", true);
   }
 }
