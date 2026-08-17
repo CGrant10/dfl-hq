@@ -316,25 +316,56 @@ function captainOf(team, names) {
   return n?.golf || n?.display || "";
 }
 
+/* The team's colour, resolved once so the roster card, the matchup rows and
+   the captain showdown cannot each fall back to a different default. */
+const teamColour = (team, i) => team?.color || (i === 0 ? "#2fbf5f" : "#4aa3ff");
+
 export function teamSheet(data, outing) {
   const names = data.names || memberNames([]);
   const teams = data.teams.length === 2 ? data.teams : [];
-  const rosters = teams.map((t) => ({
-    team: t,
-    captain: captainOf(t, names),
-    players: (data.parts || [])
+  const rosters = teams.map((t) => {
+    const mine = (data.parts || [])
       .filter((p) => String(p.team_id) === String(t.id))
-      .sort((a, b) => (a.pick_number ?? 9999) - (b.pick_number ?? 9999) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      .map((p) => playerName(p, names)),
-  }));
+      .sort((a, b) => (a.pick_number ?? 9999) - (b.pick_number ?? 9999) || (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    return {
+      team: t,
+      captain: captainOf(t, names),
+      /* WHICH ROW IN THE LIST IS THE CAPTAIN, by member id rather than by
+         matching the name back - two people called Nick would otherwise put
+         the mark on whichever one sorted first. -1 when the team has none. */
+      captainIndex: t.captain_member_id == null ? -1
+        : mine.findIndex((p) => String(p.member_id) === String(t.captain_member_id)),
+      players: mine.map((p) => playerName(p, names)),
+    };
+  });
   const rounds = (data.rounds || []).map((entry) => ({
     round: entry.round,
-    pairs: entry.battles.filter((b) => b.sides.length === 2).map((b) => ({
-      a: pairName(b.sides[0].players.map((p) => p.name)),
-      b: pairName(b.sides[1].players.map((p) => p.name)),
-    })),
+    pairs: entry.battles.filter((b) => b.sides.length === 2).map((b) => {
+      /*
+        THE FIRST TEAM IS ALWAYS ON THE LEFT.
+
+        Matches store their sides in slot order, and nothing guarantees slot 1
+        is the same team in every match of every round. The card now heads
+        each column with a team name, so a column headed TEAM CHAOS with a
+        Team Bogey pair under it would be a picture that lies.
+
+        Presentation only. Which pair plays which pair, and every point it is
+        worth, is decided in golf-battle.js and is not touched by swapping
+        which end of a row a name is drawn at.
+      */
+      const sides = teams.length === 2 && String(b.sides[1].team_id) === String(teams[0].id)
+        ? [b.sides[1], b.sides[0]] : b.sides;
+      return {
+        a: pairName(sides[0].players.map((p) => p.name)),
+        b: pairName(sides[1].players.map((p) => p.name)),
+      };
+    }),
   })).filter((r) => r.pairs.length);
   return { teams, rosters, rounds,
+    /* The headline rivalry, and only when there genuinely is one: both teams
+       must have a real captain. One captain is not a showdown, so the block
+       is not drawn at all rather than drawn with a gap in it. */
+    showdown: rosters.length === 2 && rosters.every((r) => r.captain) ? rosters : null,
     title: outing?.name || "DFL Golf",
     meta: [outing?.course, shortDate(outing?.event_date)].filter(Boolean).join(" · ") };
 }
@@ -380,7 +411,7 @@ export function teamSheetCanvas(data, outing) {
   let rosterBottom = top;
   sheet.rosters.forEach((r, i) => {
     const x = 60 + i * (colW + 30);
-    const colour = r.team.color || (i === 0 ? "#2fbf5f" : "#4aa3ff");
+    const colour = teamColour(r.team, i);
     const rows = Math.max(r.players.length, 1);
     const h = 76 + rows * 44 + 14;
     ctx.fillStyle = CARD; roundRect(ctx, x, top, colW, h, 18); ctx.fill();
@@ -392,48 +423,200 @@ export function teamSheetCanvas(data, outing) {
     ctx.fillStyle = colour;
     fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 900, "left");
     ctx.fillStyle = MUTED; ctx.font = `800 20px ${FONT}`;
-    /* The captain shares the line with the player count rather than taking
-       one of its own - the card is already tight, and "6 PLAYERS ·
-       CAPTAIN SLAW" reads as one fact about the team. */
+    /*
+      THE CAPTAIN IS NAMED ONCE.
+
+      This line used to read "6 PLAYERS · CAPTAIN SLAW" whatever else was on
+      the card. With the showdown below naming both captains at size, that
+      made three separate captions for the same fact. So the name only shares
+      this line when there is no showdown to carry it - a team whose opponent
+      has no captain still says who leads it - and the roster keeps a quiet
+      C against the right row either way.
+    */
     const capLine = `${r.players.length} PLAYER${r.players.length === 1 ? "" : "S"}`
-      + (r.captain ? ` · CAPTAIN ${r.captain.toUpperCase()}` : "");
+      + (r.captain && !sheet.showdown ? ` · CAPTAIN ${r.captain.toUpperCase()}` : "");
     fitText(ctx, capLine, x + 26, top + 78, colW - 52, 20, 800, "left");
-    ctx.fillStyle = INK;
     (r.players.length ? r.players : ["Nobody yet"]).forEach((n, j) => {
+      const isCap = j === r.captainIndex;
+      const rowY = top + 118 + j * 44;
+      ctx.fillStyle = INK;
       ctx.font = `700 28px ${FONT}`;
-      fitText(ctx, n, x + 26, top + 118 + j * 44, colW - 52, 28, 700, "left");
+      /* The C sits in a fixed column at the card's edge rather than after the
+         name, so it lines up down the card and a long name never shoves it
+         off. The name's width is reduced to match, so they cannot collide. */
+      fitText(ctx, n, x + 26, rowY, colW - (isCap ? 78 : 52), 28, 700, "left");
+      if (isCap) {
+        ctx.fillStyle = colour;
+        ctx.font = `900 20px ${FONT}`;
+        ctx.textAlign = "right";
+        ctx.fillText("C", x + colW - 24, rowY);
+      }
     });
     rosterBottom = Math.max(rosterBottom, top + h);
   });
 
-  /* Then every round's pairings, fitted to whatever is left above the footer. */
-  let y = rosterBottom + 40;
-  const bottom = TH - 120;
-  const lines = sheet.rounds.reduce((n, r) => n + 1 + r.pairs.length, 0);
-  const rowH = lines ? Math.min(52, Math.max(26, (bottom - y - sheet.rounds.length * 18) / lines)) : 0;
+  /* =====================================================================
+     THE LOWER HALF: who is against whom.
+     ---------------------------------------------------------------------
+     The matchups used to be two text columns pinned to the outer margins
+     with a lowercase "v" adrift between them - 400px of empty card in the
+     middle of every row, which read as two unrelated lists rather than as
+     one confrontation. And once the eye left the roster cards there was
+     nothing left saying which side was which team.
+
+     Three changes, and the geometry is the important one:
+
+     1. BOTH NAMES ARE ANCHORED TO THE CENTRE, not to the edges. The left
+        name is right-aligned just left of the VS and the right name is
+        left-aligned just right of it, so a short pairing sits tight against
+        the marker and a long one grows OUTWARD into the margin it has. The
+        available width per side is unchanged; what changed is which end of
+        it the text starts from.
+     2. VS, upright and at weight, is the anchor the row is built around.
+     3. Each round is headed with the two team names in their own colours,
+        over the columns they own, and every row carries its side's colour
+        as a dot in a fixed outer column.
+
+     Nothing here can overlap: fitText() is given a width that stops short of
+     the VS gutter, so the type shrinks before it can reach the marker.
+     ===================================================================== */
+  const CX = TW / 2;              // the VS lives here
+  const VS_GAP = 54;              // clear space either side of it
+  const EDGE = 60;                // the card's safe margin
+  const DOT_R = 6, DOT_PAD = 16;  // the team dot that travels with each name
+  /* What a name may occupy, growing outward from the VS. It stops short of
+     the margin by enough for the dot, so fitText() shrinks the type before
+     either can reach the edge - see the long-name note below. */
+  const SIDE_W = CX - VS_GAP - EDGE - (DOT_R * 2 + DOT_PAD + 6);
+
+  const colours = sheet.rosters.map((r, i) => teamColour(r.team, i));
+
+  let y = rosterBottom + 26;
+  const bottom = TH - 116;
+
+  /*
+    THE CAPTAIN SHOWDOWN.
+
+    The two people whose names the day gets argued about, once, between the
+    rosters and the pairings. It is a band rather than a card: the same
+    centre-anchored VS composition the matchup rows use, one size up, so it
+    reads as the headline of the section it introduces rather than as a
+    second poster stapled to the middle.
+
+    Drawn only when sheet.showdown is set - both teams with a real captain -
+    and when it is not, nothing is reserved and the pairings simply start
+    26px under the rosters. See teamSheet().
+  */
+  if (sheet.showdown) {
+    ctx.textAlign = "center";
+    ctx.fillStyle = MUTED;
+    ctx.font = `900 19px ${FONT}`;
+    ctx.fillText("CAPTAINS", CX, y + 18);
+
+    const nameY = y + 66, teamY = y + 92;
+    sheet.showdown.forEach((r, i) => {
+      const left = i === 0;
+      ctx.fillStyle = colours[i];
+      fitText(ctx, r.captain.toUpperCase(), left ? CX - 70 : CX + 70, nameY,
+              CX - 70 - EDGE, 44, 900, left ? "right" : "left");
+      ctx.fillStyle = MUTED;
+      fitText(ctx, r.team.name.toUpperCase(), left ? CX - 70 : CX + 70, teamY,
+              CX - 70 - EDGE, 19, 800, left ? "right" : "left");
+    });
+
+    ctx.fillStyle = INK;
+    ctx.font = `900 32px ${FONT}`;
+    ctx.textAlign = "center";
+    ctx.fillText("VS", CX, nameY - 4);
+
+    y = teamY + 26;
+  }
+
+  /*
+    Then every round, fitted to whatever is left above the footer.
+
+    Each round costs its label and its team header as well as its pairs, so
+    they are all in the divisor - sizing on the pairs alone and then drawing
+    two more rows per round is how the last round used to end up printed
+    through the footer.
+  */
+  const pairCount = sheet.rounds.reduce((n, r) => n + r.pairs.length, 0);
+  /*
+    The furniture is a FIXED height and the pairs get everything left over.
+
+    Sizing the round labels and the team header as fractions of the pair row
+    made them vanish exactly when the card was busiest: a day of three rounds
+    squeezed the row to its floor and the headings went with it, to 12px, so
+    the structure disappeared at the moment there was most to structure.
+    They are the map - they hold their size and the names give ground.
+  */
+  const HEAD_H = 38, LABEL_H = 30, GAP = 16;
+  const free = bottom - y - HEAD_H - sheet.rounds.length * LABEL_H
+             - Math.max(0, sheet.rounds.length - 1) * GAP;
+  const rowH = pairCount ? Math.min(46, Math.max(22, free / pairCount)) : 0;
+
+  /*
+    WHICH SIDE IS WHICH TEAM - said ONCE, over the columns, in the teams' own
+    colours and anchored exactly where the names below are.
+
+    Once is enough because the columns never swap: teamSheet() puts the first
+    team on the left in every pair of every round. Repeating it per round
+    would spend three rows restating something that has not changed, on the
+    card that has the least room to spare - and the coloured dot travelling
+    with every name keeps the answer within a glance anyway.
+  */
+  if (sheet.rounds.length) {
+    sheet.rosters.forEach((roster, i) => {
+      const left = i === 0;
+      ctx.fillStyle = colours[i];
+      fitText(ctx, roster.team.name.toUpperCase(), left ? CX - VS_GAP : CX + VS_GAP,
+              y + 26, SIDE_W, 26, 900, left ? "right" : "left");
+    });
+    y += HEAD_H;
+  }
 
   for (const r of sheet.rounds) {
+    // The round label: a section heading, so the quietest thing in the block.
     ctx.textAlign = "left";
     ctx.fillStyle = MUTED;
-    ctx.font = `800 ${Math.round(rowH * 0.44)}px ${FONT}`;
-    ctx.fillText(`${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoringOf(r.round)].toUpperCase()}`, 62, y + rowH * 0.7);
-    y += rowH;
+    ctx.font = `800 17px ${FONT}`;
+    ctx.fillText(`${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoringOf(r.round)].toUpperCase()}`,
+                 EDGE + 2, y + 21);
+    y += LABEL_H;
+
+    const nameSize = Math.round(Math.min(30, rowH * 0.62));
     for (const p of r.pairs) {
+      const baseline = y + rowH * 0.74;
+      const dotY = baseline - nameSize * 0.3;
+
+      /* The dot rides WITH the name rather than sitting in a column at the
+         margin: with both names pulled in to the centre, a marker left out at
+         the edge belongs to the row but not to the pairing. fitText() has
+         just set the font it actually used, so measureText() gives the width
+         it actually drew - the dot lands the same distance from a short name
+         and a long one. */
       ctx.fillStyle = INK;
-      ctx.font = `700 ${Math.round(rowH * 0.58)}px ${FONT}`;
-      ctx.textAlign = "left";
-      fitText(ctx, p.a, 62, y + rowH * 0.72, TW * 0.40, Math.round(rowH * 0.58), 700, "left");
+      fitText(ctx, p.a, CX - VS_GAP, baseline, SIDE_W, nameSize, 700, "right");
+      const wa = ctx.measureText(p.a).width;
+      ctx.fillStyle = INK;
+      fitText(ctx, p.b, CX + VS_GAP, baseline, SIDE_W, nameSize, 700, "left");
+      const wb = ctx.measureText(p.b).width;
+
+      [[CX - VS_GAP - wa - DOT_PAD, colours[0]], [CX + VS_GAP + wb + DOT_PAD, colours[1]]]
+        .forEach(([dx, colour]) => {
+          ctx.beginPath();
+          ctx.arc(dx, dotY, DOT_R, 0, Math.PI * 2);
+          ctx.fillStyle = colour;
+          ctx.fill();
+        });
+
       ctx.fillStyle = MUTED;
-      ctx.font = `800 ${Math.round(rowH * 0.4)}px ${FONT}`;
+      ctx.font = `900 ${Math.max(15, Math.round(rowH * 0.42))}px ${FONT}`;
       ctx.textAlign = "center";
-      ctx.fillText("v", TW / 2, y + rowH * 0.72);
-      ctx.fillStyle = INK;
-      ctx.font = `700 ${Math.round(rowH * 0.58)}px ${FONT}`;
-      ctx.textAlign = "right";
-      fitText(ctx, p.b, TW - 62, y + rowH * 0.72, TW * 0.40, Math.round(rowH * 0.58), 700, "right");
+      ctx.fillText("VS", CX, baseline);
       y += rowH;
     }
-    y += 18;
+    y += GAP;
   }
 
   ctx.textAlign = "center";
