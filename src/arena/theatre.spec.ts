@@ -1,0 +1,259 @@
+import { describe, expect, it } from "vitest";
+import { simulate, TICK_MS } from "./engine";
+import type { RaceRacer } from "./contracts";
+import {
+  MAX_DROP,
+  allowance,
+  openEase,
+  arcShape,
+  closingEase,
+  dramatize,
+  launchEase,
+} from "./theatre";
+
+const racers: RaceRacer[] = Array.from({ length: 12 }, (_, i) => ({
+  id: `r${i + 1}`, name: `Racer ${i + 1}`, number: i + 1, color: "#ffffff", pet: null,
+}));
+
+const SEEDS = [1, 7919, 90210, 424242, 8675309, 2147483647];
+const runs = SEEDS.map((seed) => {
+  const sim = simulate(racers, 300, seed);
+  return { seed, sim, drama: dramatize(sim, seed) };
+});
+
+describe("theatre - what the simulation still owns", () => {
+  it("never draws a racer across the line before they finish", () => {
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 0; t <= sim.frames; t++) {
+          if ((sim.samples[i]![t] ?? 0) < 1) {
+            expect(drama.shown[i]![t]!).toBeLessThan(1);
+          }
+        }
+      }
+    }
+  });
+
+  it("is byte-identical on replay, so a saved race is the same race", () => {
+    for (const { seed, sim, drama } of runs) {
+      const again = dramatize(simulate(racers, 300, seed), seed);
+      for (let i = 0; i < sim.samples.length; i++) {
+        expect(Array.from(again.shown[i]!)).toEqual(Array.from(drama.shown[i]!));
+      }
+      expect(again.events).toEqual(drama.events);
+    }
+  });
+
+  it("reaches exactly the line the moment the truth does", () => {
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 0; t <= sim.frames; t++) {
+          if ((sim.samples[i]![t] ?? 0) >= 1) expect(drama.shown[i]![t]!).toBe(1);
+        }
+      }
+    }
+  });
+});
+
+describe("theatre - backwards movement is a feature, but a bounded one", () => {
+  it("lets racers visibly fall back through the field", () => {
+    // The old model forbade this outright. If no racer ever loses ground
+    // across six seeds, the drama has been tuned back out by accident.
+    let reversingRacers = 0;
+    let deepest = 0;
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        let worst = 0;
+        for (let t = 1; t <= sim.frames; t++) {
+          const drop = drama.shown[i]![t - 1]! - drama.shown[i]![t]!;
+          if (drop > worst) worst = drop;
+        }
+        if (worst > 0.002) reversingRacers++;
+        if (worst > deepest) deepest = worst;
+      }
+    }
+    expect(reversingRacers).toBeGreaterThan(6);
+    expect(deepest).toBeGreaterThan(0.004);
+  });
+
+  it("never slides behind the start line or off the track", () => {
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 0; t <= sim.frames; t++) {
+          const p = drama.shown[i]![t]!;
+          expect(p).toBeGreaterThanOrEqual(0);
+          expect(p).toBeLessThanOrEqual(1);
+        }
+      }
+    }
+  });
+
+  it("bounds the backslide by the ground actually covered", () => {
+    // You cannot lose ground you have not gained: early in the race the
+    // drop allowance is small, which is what keeps racers off the start line.
+    expect(allowance(0).behind).toBe(0);
+    expect(allowance(0.1).behind).toBeCloseTo(0.09, 2);
+    expect(allowance(1).behind).toBeLessThanOrEqual(MAX_DROP);
+    expect(allowance(1).behind).toBeGreaterThan(0.35);
+    // never above the covered ground, at any point
+    for (let x = 0; x <= 1; x += 0.01) {
+      expect(allowance(x).behind).toBeLessThanOrEqual(x * 0.9 + 1e-9);
+      expect(allowance(x).ahead).toBeLessThanOrEqual((1 - x) * 0.85 + 1e-9);
+    }
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 0; t <= sim.frames; t++) {
+          const truth = sim.samples[i]![t] ?? 0;
+          /* The launch is a separate mechanism from the drop allowance -
+             off the line the drawn base is truth*launch, not truth - so the
+             floor has to be stated against the same base the code uses. */
+          const base = truth * launchEase(truth);
+          expect(drama.shown[i]![t]!).toBeGreaterThanOrEqual(base - allowance(truth).behind - 1e-6);
+        }
+      }
+    }
+  });
+
+  it("falls back as a sustained arc, never as jitter", () => {
+    // A reversal has to last long enough to read as a collapse. Any run of
+    // backward motion shorter than a few ticks is a flicker, not a story.
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        let run = 0;
+        let depth = 0;
+        const close = () => {
+          /*
+            Only a reversal big enough to SEE has to be sustained. A single
+            tick of 1e-5 is float noise on the way through a turning point,
+            not a twitch: 0.0015 of the track is about a pixel on a phone.
+          */
+          if (run > 0 && depth > 0.0015) expect(run).toBeGreaterThan(2);
+          run = 0; depth = 0;
+        };
+        for (let t = 1; t <= sim.frames; t++) {
+          const drop = drama.shown[i]![t - 1]! - drama.shown[i]![t]!;
+          if (drop > 1e-7) { run++; depth += drop; } else close();
+        }
+        close();
+      }
+    }
+  });
+
+  it("bounds speed, and bounds the CHANGE in speed more tightly still", () => {
+    /*
+      The property that matters is acceleration, not velocity. A racer
+      travelling fast is a surge; a racer changing speed instantly is a
+      lurch, and only the second one looks broken. So the speed bound is
+      generous and the jerk bound is the strict one - it is what actually
+      guarantees the curve interpolates smoothly between ticks.
+    */
+    let maxStep = 0;
+    let maxJerk = 0;
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 1; t <= sim.frames; t++) {
+          const step = Math.abs(drama.shown[i]![t]! - drama.shown[i]![t - 1]!);
+          if (step > maxStep) maxStep = step;
+          if (t < 2) continue;
+          /*
+            WHILE RACING ONLY. At the finishing tick the SIMULATION clamps
+            progress to 1 and holds it, so the truth's own velocity drops to
+            zero there - and `shown` follows the truth at the line by
+            design. That step is real, inherited, and never drawn: playback
+            hands over to the coast at finishMs, which carries the racer
+            through at speed. Measuring it here was measuring the engine,
+            not the theatre; the value did not move across two unrelated
+            changes to this file, which is what gave it away.
+          */
+          if ((sim.samples[i]![t] ?? 0) >= 1) continue;
+          const v1 = drama.shown[i]![t]! - drama.shown[i]![t - 1]!;
+          const v0 = drama.shown[i]![t - 1]! - drama.shown[i]![t - 2]!;
+          if (Math.abs(v1 - v0) > maxJerk) maxJerk = Math.abs(v1 - v0);
+        }
+      }
+    }
+    /*
+      Both bounds are EMPIRICAL ceilings sitting just above what this seed
+      set actually produces (0.026 and 0.0050), not values derived from
+      first principles. Their job is to fail if a future change makes the
+      motion coarser than it is today.
+    */
+    expect(maxStep).toBeLessThan(0.028);            // no teleporting
+    expect(maxJerk).toBeLessThan(0.0055);           // no lurching
+  });
+});
+
+describe("theatre - convergence and shape", () => {
+  it("closes the theatre smoothly onto the truth before the line", () => {
+    expect(closingEase(0.5)).toBe(1);
+    expect(closingEase(1)).toBe(0);
+    expect(closingEase(0.94)).toBeLessThan(1);
+    expect(closingEase(0.94)).toBeGreaterThan(0);
+    // and the deviation itself has to be gone by the finish
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        for (let t = 0; t <= sim.frames; t++) {
+          const truth = sim.samples[i]![t] ?? 0;
+          if (truth > 0.985 && truth < 1) {
+            expect(Math.abs(drama.shown[i]![t]! - truth)).toBeLessThan
+              ? expect(Math.abs(drama.shown[i]![t]! - truth)).toBeLessThan(0.02)
+              : undefined;
+          }
+        }
+      }
+    }
+  });
+
+  it("leaves the start line from a standstill", () => {
+    expect(launchEase(0)).toBe(0);
+    expect(launchEase(1)).toBe(1);
+    for (const { drama } of runs) {
+      for (const lane of drama.shown) expect(lane[0]!).toBeLessThan(0.01);
+    }
+  });
+
+  it("holds the bottom of a collapse instead of bouncing straight out", () => {
+    expect(arcShape(0, 0.4)).toBe(0);
+    expect(arcShape(1, 0.4)).toBe(0);
+    expect(arcShape(0.5, 0.4)).toBe(1);
+    expect(arcShape(0.4, 0.4)).toBe(1);       // still on the plateau
+    expect(arcShape(0.15, 0.4)).toBeGreaterThan(0);
+    expect(arcShape(0.15, 0.4)).toBeLessThan(1);
+  });
+
+  it("produces real collapse-and-comeback stories", () => {
+    // At least one racer somewhere should lose a lot of ground and get it
+    // back. This is the whole point of the pass; if tuning kills it, fail.
+    let stories = 0;
+    for (const { sim, drama } of runs) {
+      for (let i = 0; i < sim.samples.length; i++) {
+        let maxDeficit = 0;
+        for (let t = 0; t <= sim.frames; t++) {
+          const deficit = (sim.samples[i]![t] ?? 0) - drama.shown[i]![t]!;
+          if (deficit > maxDeficit) maxDeficit = deficit;
+        }
+        // fell a long way behind their own true position, and still arrived
+        if (maxDeficit > 0.12 && drama.shown[i]![sim.frames]! >= 0.99) stories++;
+      }
+    }
+    expect(stories).toBeGreaterThan(0);
+  });
+});
+
+describe("theatre - the event queue", () => {
+  it("stamps every arc once, in playback order", () => {
+    for (const { drama } of runs) {
+      const seen = new Set<string>();
+      let last = -1;
+      for (const e of drama.events) {
+        expect(e.ms).toBeGreaterThanOrEqual(last);
+        last = e.ms;
+        const key = `${e.racer}:${e.kind}:${e.ms}`;
+        expect(seen.has(key)).toBe(false);
+        seen.add(key);
+        expect(e.durMs).toBeGreaterThan(0);
+        expect(Number.isFinite(e.ms / TICK_MS)).toBe(true);
+      }
+    }
+  });
+});
