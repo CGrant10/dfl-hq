@@ -12,6 +12,15 @@ GitHub Pages. TypeScript, Vite, and PixiJS tooling now support the staged Arena
 renderer migration without changing the current deployment. Supabase is the
 database. It installs to a phone home screen as a PWA.
 
+**The Arena is the one exception, and it is a build.** `js/arena/pixi-runtime.js`
+and the hashed chunks beside it are generated output — Vite compiles them from
+`src/arena/*.ts`. GitHub Pages serves the committed result, so nothing builds at
+deploy time, but that also means editing `src/arena/` changes nothing on its own.
+Run `pnpm build` and commit the regenerated `js/arena/` files, or the live Arena
+keeps running the previous race code. `pnpm check` (typecheck, tests, build) is
+what CI runs on every push. Everything outside `js/arena/` is still hand-written
+and needs no build step.
+
 ---
 
 ## 1. File structure
