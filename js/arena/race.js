@@ -81,10 +81,42 @@ export function simulate(racers, ticks, seed) {
   // A racer's fixed character, drawn once so it is stable for this seed.
   const talent = [], clutch = [], jitter = [];
   for (let i = 0; i < n; i++) {
-    talent.push(0.93 + rand() * 0.14);   // 0.93 - 1.07
+    talent.push(0.98 + rand() * 0.04);   // 0.98 - 1.02, tight: grade below sets the field
     clutch.push(0.90 + rand() * 0.26);   // who shows up at the end
     jitter.push(0.55 + rand() * 0.9);    // how erratic they are
   }
+
+  /*
+    THE FRONT PACK, AND THE BREAK BEHIND IT.
+
+    The old model gave every racer the same job and then rubber-banded them
+    together, so a twelve-runner field finished inside 1.6-3.9 seconds and
+    the last eight arrived in a wall. That is not a close race, it is no
+    race: there was nothing to see once the leader was decided.
+
+    So the day now has a SHAPE, drawn from the seed like everything else:
+
+      packSize   2-4 racers who genuinely contest the finish
+      brk        how far the rest start behind them, as a speed handicap
+      tail       how much further back each one after that sits
+
+    grade[] is a per-racer speed multiplier and nothing else. It does not
+    decide who wins - talent, bursts, stumbles and the run-in still do, and a
+    graded racer on a burst can and does break into the pack. It decides how
+    far apart the field ARRIVES, which is the thing that was broken.
+
+    6.5-10.5% off the pace over a twenty-second race is the 1-2 seconds the
+    break is meant to be; the tail spreads the rest behind that naturally.
+  */
+  const packSize = Math.min(n, 2 + Math.floor(rand() * 3));
+  const seeding = Array.from({ length: n }, () => rand())
+    .map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
+  const brk  = 0.065 + rand() * 0.040;
+  const tail = 0.012 + rand() * 0.020;
+  const grade = new Float64Array(n).fill(1);
+  seeding.forEach((idx, pos) => {
+    if (pos >= packSize) grade[idx] = 1 - brk - tail * (pos - packSize);
+  });
 
   // Distance is abstract: everybody covers 1.0, and the speed scale is set
   // so an average racer arrives near the final tick.
@@ -134,7 +166,7 @@ export function simulate(racers, ticks, seed) {
 
       // --- the speed this racer is currently aiming for ---
       const frac = progress[i];
-      let want = BASE * talent[i];
+      let want = BASE * talent[i] * grade[i];
 
       // drifting noise, scaled by how erratic they are
       want *= 1 + (rand() - 0.5) * 0.22 * jitter[i];
@@ -142,9 +174,15 @@ export function simulate(racers, ticks, seed) {
       if (burst[i] > 0)   want *= 1.35;
       if (stumble[i] > 0) want *= 0.72;
 
-      // Drafting: behind the pack pulls you forward, out front holds you
-      // back. Small, but it is what keeps the field racing each other.
-      want *= 1 + (packMean - frac) * 0.55;
+      /*
+        Drafting FADES OUT over the run. It is what keeps the field racing
+        each other early, and it was also what pulled everybody back together
+        at the line: a restoring force toward the pack mean, applied every
+        tick right up to the finish, erases exactly the gaps the race just
+        spent twenty seconds earning. Past 80% it is gone and the order they
+        have earned is the order that arrives.
+      */
+      want *= 1 + (packMean - frac) * 0.55 * Math.max(0, 1 - frac / 0.8);
 
       // Final stretch, last 20%.
       if (frac > 0.8) want *= 1 + (frac - 0.8) * 1.6 * clutch[i];

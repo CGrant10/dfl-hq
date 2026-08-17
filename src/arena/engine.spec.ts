@@ -14,26 +14,33 @@ const legacyFixtures = [
   {
     seed: 1,
     ticks: 300,
-    order: ["r2", "r1", "r4", "r8", "r11", "r12", "r9", "r10", "r5", "r3", "r7", "r6"],
-    finishMs: [10303, 10307, 10404, 11324, 11376, 11638, 11662, 11753, 11890, 12203, 12445, 13085],
-    checkpoints: [0.003374270861968398, 0.08452656865119934, 0.3303821384906769],
+    order: ["r11", "r9", "r2", "r6", "r4", "r5", "r10", "r12", "r1", "r7", "r3", "r8"],
+    finishMs: [10961, 11846, 12228, 12909, 12960, 13232, 13477, 13838, 14251, 14810, 14990, 15214],
+    checkpoints: [0.0032215036917477846, 0.0654439926147461, 0.23603704571723938],
   },
   {
     seed: 8675309,
     ticks: 550,
-    order: ["r9", "r8", "r3", "r5", "r6", "r4", "r1", "r11", "r12", "r2", "r7", "r10"],
-    finishMs: [19207, 19823, 19863, 19926, 20054, 20437, 20612, 20999, 21363, 21763, 23058, 23312],
-    checkpoints: [0.0018325245473533869, 0.04799583926796913, 0.2034650593996048],
+    order: ["r2", "r7", "r10", "r8", "r1", "r3", "r4", "r5", "r11", "r9", "r6", "r12"],
+    finishMs: [21363, 21799, 21948, 23113, 23202, 23512, 23689, 23796, 24671, 25606, 26056, 28902],
+    checkpoints: [0.0018030678620561957, 0.043282847851514816, 0.17318102717399597],
   },
   {
     seed: 2147483647,
     ticks: 900,
-    order: ["r11", "r3", "r10", "r8", "r5", "r9", "r6", "r2", "r7", "r12", "r1", "r4"],
-    finishMs: [31011, 32207, 32711, 33151, 33668, 33865, 34590, 35022, 35238, 35247, 35664, 35755],
-    checkpoints: [0.0011188192293047905, 0.02848602645099163, 0.11135232448577881],
+    order: ["r3", "r10", "r8", "r2", "r11", "r1", "r5", "r4", "r6", "r12", "r9", "r7"],
+    finishMs: [32628, 33502, 35721, 37011, 37711, 37928, 39110, 40511, 41039, 42797, 43193, 43771],
+    checkpoints: [0.0010784240439534187, 0.03163321688771248, 0.10701527446508408],
   },
 ] as const;
 
+/*
+  These fixtures are a PARITY LOCK between src/arena/engine.ts and the
+  js/arena/race.js copy the app actually runs, not a promise that the physics
+  never change. They were regenerated when the finish-spread model landed; the
+  cross-check below is the part that must never be relaxed, because two copies
+  of a simulation drifting apart is the one failure nothing else would catch.
+*/
 describe("typed race engine legacy parity", () => {
   for (const fixture of legacyFixtures) {
     it(`matches seed ${fixture.seed} at ${fixture.ticks} ticks`, () => {
@@ -42,6 +49,29 @@ describe("typed race engine legacy parity", () => {
       expect(result.order.map((row) => row.finishMs)).toEqual(fixture.finishMs);
       expect([result.samples[0]![0], result.samples[0]![25], result.samples[0]![100]])
         .toEqual(fixture.checkpoints);
+    });
+  }
+});
+
+/*
+  The two implementations, on the same seeds, must agree exactly. race.js is
+  what pages/broadcast.js plays and engine.ts is what everything typed reads,
+  so a change made to one and not the other would silently give the Race View
+  and the saved result two different races.
+*/
+describe("engine.ts matches the js copy it was ported from", () => {
+  for (const fixture of legacyFixtures) {
+    it(`agrees with race.js on seed ${fixture.seed}`, async () => {
+      /* race.js is untyped by design - it is the copy the browser loads
+         directly - so the shape is asserted here rather than inferred. */
+      const legacy = (await import("../../js/arena/race.js")) as unknown as {
+        simulate: (r: readonly RaceRacer[], t: number, s: number) =>
+          { order: { racer: RaceRacer; finishMs: number }[] };
+      };
+      const typed = simulate(racers, fixture.ticks, fixture.seed);
+      const plain = legacy.simulate(racers, fixture.ticks, fixture.seed);
+      expect(typed.order.map((r) => r.racer.id)).toEqual(plain.order.map((r) => r.racer.id));
+      expect(typed.order.map((r) => r.finishMs)).toEqual(plain.order.map((r) => r.finishMs));
     });
   }
 });
