@@ -11,9 +11,12 @@
    square, big enough to read as a chat thumbnail, and legible to somebody
    who has never opened the app.
 
-   FIXED COLOURS, not the theme's. The image ends up on somebody else's
-   phone in somebody else's chat, so it should look the same whoever sent
-   it, and it should not turn white because the sender had light mode on.
+   FIXED COLOURS, frozen from the DEFAULT theme rather than read live. The
+   image ends up on somebody else's phone in somebody else's chat, so it
+   must look the same whoever sent it and must not turn white because the
+   sender had light mode on - but it should still look like this app made
+   it, so the constants below are Medicine Wheel's own values. See the
+   palette block.
    Team colours DO come from the data, because those identify the teams.
 
    Everything here is synchronous - see the gesture rule in share.js.
@@ -34,8 +37,41 @@ import { LEAGUE_FOUNDED } from "./config.js";
   list; the footer is pinned to the bottom edge, so nothing else moves.
 */
 const W = 1080, H = 1350;
-const INK = "#f2f5f8", MUTED = "#8b98a5", BG = "#0d1117", CARD = "#161b22", LINE = "#2b313a";
-const GOLD = "#d6b254";
+
+/* =====================================================================
+   THE HOUSE PALETTE - Medicine Wheel, fixed.
+   ---------------------------------------------------------------------
+   FIXED is the point, and it is not the same thing as arbitrary. The image
+   lands in somebody else's chat on somebody else's phone, so it must not
+   change with whoever pressed share and must not go white because the
+   sender had light mode on. So these are constants and the canvas never
+   reads the runtime theme.
+
+   But they were their OWN constants - a cool blue-grey ground left over
+   from before the app had a house style - so every shared picture arrived
+   looking like a different product to the app that made it. They are the
+   DEFAULT theme's values now, copied from `medicine` in js/theme.js:
+
+     BG      bg        #0b0b0c     CARD  bg2       #141416
+     LINE    line      #2f2f34     INK   text      #f4f2ee
+     MUTED   muted     #a8a096     GOLD  milestone #EFC94C
+     ACCENT  accent    #F08279     OK    ok        #8fd6a4
+
+   Copied deliberately rather than imported: importing theme.js would make
+   the export depend on the viewer's live theme, which is the one thing it
+   must never do. If Medicine Wheel is ever retuned, these move with it by
+   hand - the table above is the map for doing that.
+
+   ACCENT is the theme's TEXT red, not its fill red. #C8102E is a fine
+   block of colour and a poor letter; theme.js already worked that out and
+   keeps the pair separate, so the shared cards use the same lifted red for
+   type that the app does.
+
+   TEAM COLOURS ARE NOT IN HERE. Those come from the database and identify
+   the teams; nothing below may replace one.
+   ===================================================================== */
+const INK = "#f4f2ee", MUTED = "#a8a096", BG = "#0b0b0c", CARD = "#141416", LINE = "#2f2f34";
+const GOLD = "#EFC94C", ACCENT = "#F08279", OK = "#8fd6a4";
 
 /*
   THE ANNIVERSARY BAND.
@@ -61,9 +97,9 @@ function drawAnniv(ctx, width) {
   const text = annivText();
   if (!text) return 0;
   const h = 68;
-  ctx.fillStyle = "rgba(214,178,84,.13)";
+  ctx.fillStyle = "rgba(239,201,76,.13)";
   ctx.fillRect(0, 0, width, h);
-  ctx.strokeStyle = "rgba(214,178,84,.55)";
+  ctx.strokeStyle = "rgba(239,201,76,.55)";
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(width, h - 1); ctx.stroke();
   ctx.fillStyle = GOLD;
@@ -252,7 +288,7 @@ export function boardCanvas(data, outing) {
   /* The state of play, pinned to the bottom rather than floating after the
      rounds, so the card looks the same whether there are two rounds or four. */
   ctx.textAlign = "center";
-  ctx.fillStyle = s.done ? "#2fbf5f" : INK;
+  ctx.fillStyle = s.done ? OK : INK;
   ctx.font = `900 40px ${FONT}`;
   ctx.fillText(s.done ? `FINAL · ${s.lead.toUpperCase()}` : s.lead.toUpperCase(), W / 2, H - 118);
   ctx.fillStyle = MUTED;
@@ -725,7 +761,11 @@ export function matchPosterCanvas(p, moodText) {
   ctx.textAlign = "center";
   const billing = [p.matchNumber === 1 ? "MAIN EVENT" : `MATCH ${p.matchNumber}`, p.round]
     .filter(Boolean).join("   ·   ").toUpperCase();
-  ctx.fillStyle = RED;
+  /* The billing is TYPE, so it takes the theme's text red rather than the
+     crest's fill red - #E5011B is a 3:1 letter on this ground. RED and BLUE
+     stay below as the band colours, where they are a fallback for a team
+     that has no colour of its own, not a house accent. */
+  ctx.fillStyle = ACCENT;
   ctx.font = `900 30px ${FONT}`;
   ctx.fillText(billing, PW / 2, y);
   y += 30;
@@ -759,7 +799,7 @@ export function matchPosterCanvas(p, moodText) {
   ctx.beginPath(); ctx.moveTo(70, statusY - 60); ctx.lineTo(PW - 70, statusY - 60); ctx.stroke();
 
   if (moodText) {
-    ctx.fillStyle = p.result.complete ? "#f2f5f8" : RED;
+    ctx.fillStyle = p.result.complete ? INK : ACCENT;
     fitText(ctx, moodText, PW / 2, statusY, PW - 120, 56, 900);
   }
   ctx.fillStyle = MUTED;
