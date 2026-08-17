@@ -1635,14 +1635,14 @@ function lt(e, t, n) {
 }
 //#endregion
 //#region src/arena/finish-presentation.ts
-var ut = .8, dt = .9, ft = .04, pt = .58, mt = .34, ht = .5399999999999999;
+var ut = .8, dt = .868, ft = .04, pt = .58, mt = .34, ht = .5399999999999999;
 mt * ht;
 var gt = (e) => Math.max(0, Math.min(1, e)), _t = (e) => {
 	let t = gt(e);
 	return t * t * (3 - 2 * t);
 }, vt = .34;
 function yt(e) {
-	return _t((e - dt) / .05499999999999994);
+	return _t((e - dt) / .052000000000000046);
 }
 function bt(e) {
 	let t = _t((e - ut) / .1499999999999999), n = t * vt;

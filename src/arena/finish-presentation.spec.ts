@@ -4,6 +4,7 @@ import {
   MAX_CAMERA_MIX,
   MAX_SETTLE,
   REVEAL_FROM,
+  REVEAL_FULL,
   RUN_OFF_RATIO,
   TRACK_START,
   finishReveal,
@@ -70,12 +71,31 @@ describe("Arena finish presentation", () => {
     expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.97);
   });
 
-  it("hides the stripe until the leader is into the last tenth", () => {
+  it("sweeps the stripe in late, and parks it before anyone crosses", () => {
     expect(finishReveal(0.5)).toBe(0);
     expect(finishReveal(REVEAL_FROM)).toBe(0);
-    expect(finishReveal(0.93)).toBeGreaterThan(0);
-    expect(finishReveal(0.93)).toBeLessThan(1);
+    expect(finishReveal(0.89)).toBeGreaterThan(0);
+    expect(finishReveal(0.89)).toBeLessThan(1);
+    /* Fully parked while the leader still has ground to cover - the sweep
+       must never still be moving when the first finisher arrives. */
+    expect(finishReveal(REVEAL_FULL)).toBe(1);
+    expect(REVEAL_FULL).toBeLessThan(0.94);   // real margin, not a photo finish
     expect(finishReveal(1)).toBe(1);
+  });
+
+  it("moves the stripe without moving a single racer", () => {
+    /*
+      The sweep is scenery: it is a CSS transform on the marker element and
+      nothing in the geometry reads it. Racer x for a given progress must be
+      identical at every point of the sweep.
+    */
+    for (const p of [0.5, 0.88, 0.94, 1, 1.2]) {
+      const atStart = presentationScreenRatio(p, cameraForLeader(REVEAL_FROM));
+      const midSweep = presentationScreenRatio(p, cameraForLeader(0.89));
+      const parked = presentationScreenRatio(p, cameraForLeader(1));
+      expect(midSweep).toBe(atStart);
+      expect(parked).toBe(atStart);
+    }
   });
 
   it("keeps the reveal out of the geometry so it cannot move a racer", () => {

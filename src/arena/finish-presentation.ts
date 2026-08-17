@@ -1,9 +1,27 @@
 import type { FinishCamera, FinishPresentation, PhotoFinishPresentation, RaceRacer } from "./contracts";
 
 export const FINAL_STRETCH_START = 0.80;
-/** The leader is inside the last 10%: show the stripe. */
-export const REVEAL_FROM = 0.90;
-export const REVEAL_FULL = 0.955;
+/*
+  THE SWEEP WINDOW.
+
+  The finish structure travels in from offscreen right between these two
+  leader positions, and it MUST be parked before anybody crosses.
+
+  These are deliberately well short of the line. The first attempt ended the
+  sweep at 0.945 and measured on a real race it parked about 40ms AFTER the
+  winner had already crossed - because leaderProgress is the DRAWN position,
+  which is held below the truth near the line by the shrinking lead
+  allowance, so it arrives later than the raw progress suggests. Ending at
+  0.92 leaves about 1.6 seconds of margin on a twelve second race.
+
+  The window itself is tuned for the TRAVEL, not the margin, and it is very
+  non-linear in time because the leader is accelerating through the final
+  stretch: 0.855-0.92 measured 1.4s of sweep, 0.885-0.92 measured 300ms.
+  0.868 sits between them, and the margin is unaffected either way because
+  only the START moved.
+*/
+export const REVEAL_FROM = 0.868;
+export const REVEAL_FULL = 0.92;
 export const FINISH_CAMERA_FULL = 0.95;
 /*
   THE TRACK, AS ONE LINEAR MAP.
