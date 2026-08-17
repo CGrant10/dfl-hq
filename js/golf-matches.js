@@ -29,7 +29,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { esc, empty, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
-import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, teamPoints,
+import { SCORING_NAMES, battleResult, standingLine, teamPoints, roundHoles,
          dayPoints, halvedNote, pairName, outingState } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
@@ -125,7 +125,9 @@ function styles() {
 
 // ------------------------------------------------------------------- data
 
-const holesOf = (round) => Number(round?.holes) || DEFAULT_ROUND_HOLES;
+/* One rule for "how long is this round", shared with the match card and
+   with the tournament total - see roundHoles() in golf-battle.js. */
+const holesOf = roundHoles;
 const seatsOf = (round) => (round?.format === "singles" ? 1 : 2);
 /* Rounds created before scoring was a choice read as stroke play, which is
    what they were. */

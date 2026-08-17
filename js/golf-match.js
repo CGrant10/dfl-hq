@@ -40,7 +40,7 @@ import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { passFor } from "./golf-guest.js";
 import { holeResult, fmtToPar, holePar, holeYards, courseHole, wrapsAround } from "./golf-scorecard.js";
-import { DEFAULT_ROUND_HOLES, SCORING_NAMES, battleResult, standingLine, marginLabel,
+import { SCORING_NAMES, battleResult, standingLine, marginLabel, roundHoles,
          pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
@@ -49,7 +49,7 @@ import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
 
 const SAVE_DELAY = 600;
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
-const holeCount = (card) => Number(card.round?.holes) || DEFAULT_ROUND_HOLES;
+const holeCount = (card) => roundHoles(card.round);
 const scoringOf = (card) => (card.round?.scoring === "match" ? "match" : "strokes");
 
 /*

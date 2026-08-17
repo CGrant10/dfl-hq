@@ -48,6 +48,37 @@ export const DEFAULT_ROUND_HOLES = 9;
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
+/** How many holes one round is. The rule every card already applies. */
+export function roundHoles(round) {
+  return Number(round?.holes) || DEFAULT_ROUND_HOLES;
+}
+
+/**
+ * HOW MANY HOLES THE TOURNAMENT IS, which is not what the outing row says.
+ *
+ * golf_outings.holes is the COURSE: nine at Rolla, played three times. The
+ * event page printed it as the size of the day, so a 27-hole tournament of
+ * three nines announced itself as "9 holes" - the one number on that card
+ * that was describing something else entirely.
+ *
+ * The rounds own it. Each carries its own hole count precisely because they
+ * differ - a 2v2 over eighteen and a singles nine in the same day - so the
+ * day is their sum and nothing else. 9+9+9 and 18+9 both come to 27, which
+ * is the point: no format is assumed and no total is hardcoded.
+ *
+ * Before any round exists there is nothing to add up, so the caller's
+ * fallback stands - an event still being built says what its course is
+ * rather than "0 holes".
+ *
+ * @param {Array<{holes?:number}>} rounds  golf_rounds rows, in any order
+ * @param {number} fallback                what to say when there are none
+ */
+export function tournamentHoles(rounds, fallback) {
+  const list = rounds || [];
+  if (!list.length) return fallback;
+  return list.reduce((n, r) => n + roundHoles(r), 0);
+}
+
 /** How many of the round's holes this side has actually written down. */
 export function posted(strokes, holes = DEFAULT_ROUND_HOLES) {
   let n = 0;

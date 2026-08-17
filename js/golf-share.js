@@ -19,7 +19,7 @@
    Everything here is synchronous - see the gesture rule in share.js.
    ===================================================================== */
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
-import { SCORING_NAMES, dayPoints, pairName } from "./golf-battle.js";
+import { SCORING_NAMES, dayPoints, pairName, roundHoles } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { LEAGUE_FOUNDED } from "./config.js";
 
@@ -73,7 +73,8 @@ function drawAnniv(ctx, width) {
   return h;
 }
 
-const holesOf = (round) => Number(round?.holes) || 9;
+/* Same rule as every screen, rather than a second copy with its own 9. */
+const holesOf = roundHoles;
 const scoringOf = (round) => (round?.scoring === "match" ? "match" : "strokes");
 
 /* "Sat, Aug 29" - short, because the card has a headline to fit as well. */

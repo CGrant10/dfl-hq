@@ -7,6 +7,7 @@ import { mountJoin } from "../golf-join.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest, realName } from "../golf-people.js";
+import { tournamentHoles } from "../golf-battle.js";
 const DEFAULT_RATING=75;
 /* Set once per render of an event, and read by every card that prints a
    player's name. A participant is either a league member or a guest with a
@@ -15,12 +16,17 @@ let nameMap=new Map();
 const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team Sandbagger","Team Whiff","Team Duff","Team Yips"];
 const TEAM_COLORS=["#2fbf5f","#4aa3ff","#f0a742","#e0574a","#b07cf0","#3ecfcf"];
 export async function render(view){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"),qs.get("match"));return renderList(view);}
-async function renderList(view){view.innerHTML=loading();const [res,partRes,teamRes]=await Promise.all([db().from("golf_outings").select("*").order("event_date",{ascending:false}),db().from("golf_participants").select("outing_id"),db().from("golf_teams").select("outing_id,name,captain_member_id")]);if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}/* Real counts for the poster line. One extra read each, both tiny, and a
+async function renderList(view){view.innerHTML=loading();const [res,partRes,teamRes,roundRes]=await Promise.all([db().from("golf_outings").select("*").order("event_date",{ascending:false}),db().from("golf_participants").select("outing_id"),db().from("golf_teams").select("outing_id,name,captain_member_id"),db().from("golf_rounds").select("outing_id,holes").then(r=>r,()=>({data:[],error:null}))]);if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}/* Real counts for the poster line. One extra read each, both tiny, and a
      failure just means the line says less rather than the page breaking. */
   const playerCount=new Map(),teamCount=new Map();
   for(const r of partRes.data||[])playerCount.set(String(r.outing_id),(playerCount.get(String(r.outing_id))||0)+1);
   for(const r of teamRes.data||[])teamCount.set(String(r.outing_id),(teamCount.get(String(r.outing_id))||0)+1);
-  const counts=o=>({players:playerCount.get(String(o.id))||0,teams:teamCount.get(String(o.id))||0});
+  /* The rounds each event has, so a card can say how long the DAY is rather
+     than how long the course is - same helper, same answer, as the event page
+     itself. An event with no rounds keeps its own hole count. */
+  const roundsBy=new Map();
+  for(const r of roundRes?.error?[]:(roundRes?.data||[])){const k=String(r.outing_id);if(!roundsBy.has(k))roundsBy.set(k,[]);roundsBy.get(k).push(r);}
+  const counts=o=>({players:playerCount.get(String(o.id))||0,teams:teamCount.get(String(o.id))||0,holes:tournamentHoles(roundsBy.get(String(o.id)),o.holes||18)});
   const outings=visible("golf_outings",res.data||[]),live=outings.filter(o=>o.status!=="final"),past=outings.filter(o=>o.status==="final");view.innerHTML=`<div id="golf-wrap"><header class="page-head"><h1>DFL Golf</h1>${addControl("golf_outings","New event")}</header>${outings.length?"":empty(canEdit()?"No golf events yet. Create one above.":"No golf events yet.")}${live.length?`<h2 class="section-title">Upcoming<span class="count">${live.length}</span></h2>${live.map(o=>outingCard(o,counts(o))).join("")}`:""}${past.length?`<h2 class="section-title">Golf history<span class="count">${past.length}</span></h2>${past.map(o=>outingCard(o,counts(o))).join("")}`:""}<div class="golf-bag-page"></div></div>`;wireInline(view.querySelector("#golf-wrap"),()=>render(view));}
 /*
   THE TOURNAMENT POSTER.
@@ -34,13 +40,13 @@ async function renderList(view){view.innerHTML=loading();const [res,partRes,team
   prints nothing rather than "0 players", because an event still being
   built has not got them yet.
 */
-function outingCard(o,count={players:0,teams:0}){
+function outingCard(o,count={players:0,teams:0,holes:0}){
   const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live now","green"]:["Upcoming","warn"];
   const when=o.event_date?fmtWhen(o.event_date,o.event_time):"";
   const facts=[
     count.players?`${count.players} player${count.players===1?"":"s"}`:"",
     count.teams?`${count.teams} team${count.teams===1?"":"s"}`:"",
-    `${o.holes||18} holes`,
+    `${count.holes||o.holes||18} holes`,
   ].filter(Boolean);
   return `<article class="card golf-card dfl-mark ${hiddenClass("golf_outings",o)}">
     <a class="golf-link gposter" href="#/golf?id=${o.id}">
@@ -164,7 +170,27 @@ leaderTimer=setInterval(tick,LEADER_POLL_MS);
    skipped every tick. Refresh now rather than up to 15 seconds from now. */
 onLeaderVisible=()=>{if(!document.hidden)tick();};
 document.addEventListener("visibilitychange",onLeaderVisible);}
-async function renderOuting(view,id,teamId,matchId){view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));nameMap=memberNames(membersList);if(teamId&&!selected){location.hash=`#/golf?id=${id}`;return;}/*
+/*
+  HOW MANY HOLES THE DAY IS.
+
+  One extra read of one tiny table, and it is here rather than handed over
+  from golf-matches.js on purpose: this header sits above the team scorecard
+  and the 2v2 card as well as the event page, and neither of those boots the
+  tournament module - so a figure published from there would have been right
+  on one screen out of three.
+
+  The read can fail on an event whose matches migration has not been run.
+  That is not an error worth a page for: rounds:[] falls the total back to
+  the outing's own hole count, exactly as it did before any of this.
+
+  The arithmetic is NOT here. tournamentHoles() in golf-battle.js owns it,
+  the same file that owns every other fact derived from the rounds.
+*/
+async function renderOuting(view,id,teamId,matchId){view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,roundsRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),db().from("golf_rounds").select("holes").eq("outing_id",id).then(r=>r,()=>({data:[],error:null})),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));nameMap=memberNames(membersList);
+/* The tournament's length, not the course's. A day of three nines is 27
+   holes; golf_outings.holes says 9, because that is the nine they play. */
+const dayHoles=tournamentHoles(roundsRes?.error?[]:(roundsRes?.data||[]),outing.holes||18);
+if(teamId&&!selected){location.hash=`#/golf?id=${id}`;return;}/*
   Up ONE level, never all the way out.
 
   This header sits above the team scorecard and the 2v2 card as well as the
@@ -177,7 +203,7 @@ async function renderOuting(view,id,teamId,matchId){view.innerHTML=loading();con
   to the list.
 */
 const deep=!!(selected||matchId),backHref=deep?`#/golf?id=${id}`:"#/golf",backText=deep?"← Back":"← Golf";
-const title=`<header class="page-head golf-event-head"><a class="backlink" href="${backHref}">${backText}</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtWhen(outing.event_date,outing.event_time))}</span>`:""}<span>· ${outing.holes||18} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}
+const title=`<header class="page-head golf-event-head"><a class="backlink" href="${backHref}">${backText}</a><div><h1>${esc(outing.name)}</h1><div class="golf-meta">${outing.course?`<span>${esc(outing.course)}</span>`:""}${outing.event_date?`<span>· ${esc(fmtWhen(outing.event_date,outing.event_time))}</span>`:""}<span>· ${dayHoles} holes</span></div></div></header>`;if(selected){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-scorecard-page"></div></div>`;return;}
 /* One 2v2, filled in by golf-match.js. Same arrangement as the team card:
    this page leaves a hole and does not need to know what goes in it. */
 if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match-page"></div></div>`;return;}
@@ -199,7 +225,7 @@ if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match
   outing.status alone is exactly the disagreement that helper exists to
   stop. Until it answers, the active order stands.
 */
-view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing" class="golf-event"><div class="golf-board-page ge-board"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}<div class="golf-matches-page ge-matches"></div>${teamsCard(outing,parts,teams,byId)}<div class="golf-draft-page ge-draft"></div>${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing" class="golf-event"><div class="golf-board-page ge-board"></div>${leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}<div class="golf-matches-page ge-matches"></div>${teamsCard(outing,parts,teams,byId)}<div class="golf-draft-page ge-draft"></div>${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length,dayHoles)}</div>`;startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
 /* =====================================================================
    THE TEAMS SECTION - a roster, and nothing else
    ---------------------------------------------------------------------
@@ -242,7 +268,7 @@ function teamsCard(outing,parts,teams,byId){
   return `<section class="card golf-teams-card ge-teams" data-collapse="golf-teams" data-collapse-title="Teams"><div class="card-title-row"><div><div class="card-title">Teams</div><p class="muted tiny">Who is on which team, and who is running it.</p></div><span class="gteam-share" data-teamshare></span></div>${teams.length?`<div class="gteams">${teams.map(roster).join("")}</div>`:`<div class="golf-empty-teams">${canEdit()?"Generate teams below to get started.":"Teams have not been generated yet."}</div>`}${unassigned.length?`<div class="gteam is-spare"><header class="gteam-head"><span class="gteam-name">Unassigned</span><span class="gteam-count">${unassigned.length}</span></header><div class="gteam-body"><ul class="gteam-roster">${unassigned.map(p=>`<li>${esc(playerName(p,nameMap))}</li>`).join("")}</ul></div></div>`:""}</section>`;}
 /* The event's own facts, then every admin tool in one block so the page
    order only has to move one thing to demote all of them. */
-function outingOverview(outing,parts,teams,byId,scoreCount){return `<div class="card golf-event-summary ge-facts"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(outing.holes||18,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div>${canEdit()?`<div class="ge-admin"><section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the draft board.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}</div>`:""}`;}
+function outingOverview(outing,parts,teams,byId,scoreCount,dayHoles){return `<div class="card golf-event-summary ge-facts"><div class="setup-figures">${figure(parts.length,parts.length===1?"player":"players")}${figure(dayHoles,"holes")}${figure(teams.length,teams.length===1?"team":"teams")}</div>${outing.notes?`<p class="muted golf-notes">${esc(outing.notes)}</p>`:""}</div>${canEdit()?`<div class="ge-admin"><section class="card golf-admin-card" data-collapse="golf-teamsetup"><div class="card-title-row"><div><div class="card-title">How teams are decided</div><p class="muted tiny">${teamMode(outing)==="random"?"The generator deals every player out — at random, or evenly by rating with locked players staying put.":teamMode(outing)==="draft"?"Captains pick their players one at a time on the draft board.":"Build random or balanced teams. Locked players stay together."}</p></div><span class="admin-badge">Admin only</span></div>${teamAdminControls(outing,parts,teams,scoreCount,parts.filter(p=>p.pick_number!=null).length)}</section>${guestCodeCard(outing)}${rosterCard(outing,parts,teams,byId)}${lineupCard(outing,parts,teams,byId)}</div>`:""}`;}
 /* An admin-only write that the database REFUSES does not come back as an
    error: row level security makes it match zero rows and PostgREST returns
    a cheerful 204. Without asking for the changed rows back, a member with no

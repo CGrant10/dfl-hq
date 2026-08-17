@@ -653,13 +653,25 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board-list{display:block}
 .bc-stage .bc-board-list li{height:2.45vw;min-height:27px;grid-template-columns:2vw 1fr;font-size:1vw;padding:0 .8vw}
 .bc-stage .bc-board-list li:nth-child(n+4){display:none}
-/* The same sweep the Arena stage uses - see the note in screens.css. */
-.bc-stage .bc-finish{
-  right:42%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8;
-  transform:translateX(calc((1 - var(--finish-reveal,0)) * 55vw));
-  opacity:min(1,calc(var(--finish-reveal,0) * 4));
-  will-change:transform;
-}
+/*
+  THE SECOND .bc-finish BLOCK IS GONE, AND IT WAS THE BUG.
+
+  There were two of these, identical in specificity. The first (above) is the
+  live one and reads --finish-pass. This one was left behind by the change
+  that replaced --finish-reveal with --finish-pass, and being LATER in the
+  file it won the cascade for transform and opacity.
+
+  Nothing has written --finish-reveal since that change. So both declarations
+  fell back to 0, which resolved to translateX(55vw) and OPACITY 0: the
+  shared stage's finish stripe was parked offscreen and fully transparent for
+  the entire race, at every viewport width.
+
+  Deleting it does not change any value that was in effect - a variable
+  nothing sets has no effect to preserve - it just stops shadowing the rule
+  above, which carries the same right/width/z-index/box-shadow and the sweep
+  the Arena stage has always used. The two views now read the SAME variable,
+  written by the same finishPassProgress() call in each page's frame loop.
+*/
 .bc-stage .race-crowd{bottom:0;height:11%;opacity:.5}
 .bc-stage .race-hills{bottom:12%;height:42%}
 .bc-stage .race-hills.far{bottom:24%}
