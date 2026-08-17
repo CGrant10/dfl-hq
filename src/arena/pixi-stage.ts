@@ -3,10 +3,9 @@ import type { RaceFrame, RaceRacer, RaceRenderer } from "./contracts";
 import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-texture";
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 import { motionPose, racerVariant } from "./animation";
+import { composeCharacter, type CharacterComposition } from "./character";
 import { drawAnimeField, drawForegroundRush, drawPhotoFinish, drawWinnerConvergence } from "./anime-effects";
 import { drawRacerEffects } from "./racer-effects";
-import { pixelPoseRows } from "./pixel-poses";
-import { CHARACTERS, GRID_H, GRID_W } from "../../js/arena/dfl-sprites.js";
 
 const PIXEL_SIZE = 3;
 
@@ -259,16 +258,39 @@ export class PixiRaceStage implements RaceRenderer {
     this.#host = null;
   }
 
+  /*
+    FOUR POSES, COMPOSED ONCE, AT SETUP.
+
+    Character resolution, the lane-colour substitution, the run-length
+    merge and the cosmetics all come from composeCharacter() now - the same
+    step the profile preview and the DOM fallback draw through. This class
+    no longer knows what a bandana is.
+
+    Composition happens here, in setRacers(), not per frame: render() only
+    toggles which of the four Graphics is visible.
+  */
   #petFrames(pet: ArenaPet): readonly [Graphics, Graphics, Graphics, Graphics] {
-    let hash = 0;
-    for (const char of pet.species) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
-    const character = CHARACTERS.find((item) => item.id === pet.species) || CHARACTERS[hash % CHARACTERS.length]!;
+    const config = { species: pet.species, color: pet.color, accent: pet.accent,
+                     accessory: pet.accessory, expression: pet.expression };
     return [
-      this.#drawPet(character.px, character.palette as Record<string, string>, pet),
-      this.#drawPet(pixelPoseRows(character.px, 1), character.palette as Record<string, string>, pet),
-      this.#drawPet(pixelPoseRows(character.px, 2), character.palette as Record<string, string>, pet),
-      this.#drawPet(pixelPoseRows(character.px, 3), character.palette as Record<string, string>, pet),
+      this.#drawComposition(composeCharacter(config, 0)),
+      this.#drawComposition(composeCharacter(config, 1)),
+      this.#drawComposition(composeCharacter(config, 2)),
+      this.#drawComposition(composeCharacter(config, 3)),
     ];
+  }
+
+  /** Coloured runs -> one filled rectangle each, centred on the actor. */
+  #drawComposition(composition: CharacterComposition): Graphics {
+    const graphic = new Graphics();
+    for (const run of composition.runs) {
+      graphic
+        .rect((run.x - composition.width / 2) * PIXEL_SIZE,
+              (run.y - composition.height / 2) * PIXEL_SIZE,
+              run.w * PIXEL_SIZE, PIXEL_SIZE)
+        .fill(this.#color(run.color));
+    }
+    return graphic;
   }
 
   /*
@@ -307,55 +329,6 @@ export class PixiRaceStage implements RaceRenderer {
     root.alpha = 0.82;
     root.visible = false;
     return root;
-  }
-
-  #drawPet(rows: readonly string[], palette: Record<string, string>, pet: ArenaPet): Graphics {
-    const body = this.#color(pet.color);
-    const accent = this.#color(pet.accent);
-    const graphic = new Graphics();
-    const cell = (x: number, y: number, color: number) => graphic
-      .rect((x - GRID_W / 2) * PIXEL_SIZE, (y - GRID_H / 2) * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE)
-      .fill(color);
-
-    rows.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) {
-        const key = row[x]!;
-        if (key === "." || key === " ") continue;
-        cell(x, y, key === "L" ? body : this.#color(palette[key] || pet.color));
-      }
-    });
-    this.#drawCosmetics(cell, pet, accent);
-    return graphic;
-  }
-
-  #drawCosmetics(cell: (x: number, y: number, color: number) => void, pet: ArenaPet, accent: number): void {
-    const row = (x1: number, x2: number, y: number, color = accent) => {
-      for (let x = x1; x <= x2; x++) cell(x, y, color);
-    };
-    if (pet.accessory === "bandana") {
-      row(6, 17, 8); row(6, 17, 9); row(17, 19, 10); row(17, 19, 11);
-    } else if (pet.accessory === "visor") {
-      row(7, 17, 4); row(7, 17, 5); row(17, 19, 6);
-    } else if (pet.accessory === "crown") {
-      row(8, 9, 1); row(12, 13, 1); row(16, 17, 1);
-      row(8, 9, 2); row(12, 13, 2); row(16, 17, 2);
-      for (let y = 3; y <= 5; y++) row(8, 17, y);
-    } else if (pet.accessory === "headphones") {
-      row(8, 17, 2); row(8, 17, 3);
-      for (let y = 4; y <= 8; y++) { row(6, 7, y); row(18, 19, y); }
-    } else if (pet.accessory === "cape") {
-      for (let y = 7; y <= 10; y++) row(4, 6, y);
-      for (let y = 11; y <= 12; y++) row(2, 6, y);
-    }
-
-    const ink = 0x17191f;
-    if (pet.expression === "happy") {
-      cell(10, 6, ink); cell(15, 6, ink); row(12, 14, 9, ink);
-    } else if (pet.expression === "fierce") {
-      row(9, 11, 6, ink); row(14, 16, 6, ink); row(12, 14, 9, ink);
-    } else if (pet.expression === "sleepy") {
-      row(9, 11, 7, ink); row(14, 16, 7, ink);
-    }
   }
 
   #color(value: string): number {

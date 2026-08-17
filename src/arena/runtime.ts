@@ -2,6 +2,12 @@ import { PixiRaceStage } from "./pixi-stage";
 import type { RaceFrame, RaceRacer } from "./contracts";
 
 export { backgroundMotion } from "./background-motion";
+/* The shared character composition. Consumed by the SVG emitter in
+   js/arena/sprites.js, the profile preview, and PixiRaceStage. */
+export {
+  ACCESSORY_KEYS, EXPRESSION_KEYS, characterIds, characterSvg,
+  composeCharacter, normalizeCharacter, runsToPaths, silhouetteRuns,
+} from "./character";
 export { createReactionTimeline, presentationRacerFrame, reactionAt } from "./presentation-frame";
 export { createFinishPresentation, finishReveal, presentationScreenRatio } from "./finish-presentation";
 /* The theatre layer, ported out of js/arena/race.js into typed, tested

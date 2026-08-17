@@ -20,7 +20,9 @@
 // register it and that one racer starts using it.
 // =====================================================================
 
-import { CHARACTERS, dflSpriteMarkup } from "./dfl-sprites.js";
+import { CHARACTERS } from "./dfl-sprites.js";
+/* One composition step for every renderer - see src/arena/character.ts. */
+import { characterSvg } from "./pixi-runtime.js";
 
 export const SPRITE_ROOT = "assets/arena/sprites";
 
@@ -130,8 +132,9 @@ export function spriteMarkup(theme, key, color, image, pet = null) {
   }
 
   /* One theme, one renderer. Every racer is a DFL character now, so an
-     unrecognised theme key still lands here rather than on a duck. */
-  return dflSpriteMarkup(key, c, pet);
+     unrecognised theme key still lands here rather than on a duck. The pet
+     carries the cosmetics; `key` is the species when there is no pet. */
+  return characterSvg({ ...(pet || {}), species: pet?.species || key }, c);
 }
 
 // --------------------------- uploaded images --------------------------

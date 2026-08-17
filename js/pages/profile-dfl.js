@@ -17,13 +17,17 @@
    policies for one avatar would be a much bigger change than this pass.
 
    THE PET IS COSMETIC AND IS DRAWN BY THE ARENA'S OWN RENDERER.
-   dflSpriteMarkup() is the same function the race uses, so the preview
-   here and the racer there cannot drift. The simulation never reads it.
+   characterSvg() composes through src/arena/character.ts, the same step
+   the live Pixi race composes through, so the preview here and the racer
+   there cannot drift. The simulation never reads it.
    ===================================================================== */
 
 import { db } from "../supabase.js";
 import { esc, toast } from "../ui.js";
-import { dflSpriteMarkup, dflCharacter, dflCharacterIds } from "../arena/dfl-sprites.js";
+import { dflCharacter, dflCharacterIds } from "../arena/dfl-sprites.js";
+/* The preview and the race draw through the same composition step, so a
+   pet cannot look like one thing here and another on the track. */
+import { characterSvg } from "../arena/pixi-runtime.js";
 
 const BIO_MAX = 500;
 const PHOTO_PX = 256;
@@ -64,7 +68,7 @@ function petArt(pet, size = "big", preview = "idle") {
   const species = pet?.species || dflCharacterIds()[0];
   const colour = pet?.color || PET_COLOURS[0];
   const trail = pet?.trail || "none";
-  return `<div class="pet-art is-${esc(size)} preview-${esc(preview)} trail-${esc(trail)}" style="--racer:${esc(colour)};--pet-accent:${esc(pet?.accent || PET_ACCENTS[0])}">${dflSpriteMarkup(species, colour, pet)}</div>`;
+  return `<div class="pet-art is-${esc(size)} preview-${esc(preview)} trail-${esc(trail)}" style="--racer:${esc(colour)};--pet-accent:${esc(pet?.accent || PET_ACCENTS[0])}">${characterSvg({ ...(pet || {}), species }, colour)}</div>`;
 }
 
 // ------------------------------------------------------------- markup
@@ -160,7 +164,7 @@ function editCard(m, draft) {
                 return `<button type="button" class="pet-choice${pet.species === id ? " on" : ""}"
                   data-pet-species="${esc(id)}" role="radio" aria-checked="${pet.species === id}"
                   title="${esc(c?.blurb || "")}">
-                  <span>${dflSpriteMarkup(id, pet.color)}</span><b>${esc(c?.label || id)}</b>
+                  <span>${characterSvg({ species: id }, pet.color)}</span><b>${esc(c?.label || id)}</b>
                 </button>`;
               }).join("")}
             </div>

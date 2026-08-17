@@ -512,80 +512,18 @@ export function dflCharacter(id) { return BY_ID.get(resolveCharacterId(id)) || n
 export function dflCharacterIds() { return CHARACTERS.map((c) => c.id); }
 
 /*
-  Run-length merge each row into one <path> per colour.
+  THE DRAWING MOVED OUT. This file is the DATA - the roster, the palettes,
+  the pixel grids and the legacy id resolution - and nothing else.
 
-  A 24x15 grid is 360 cells; drawn as rects that is 360 nodes per racer and
-  4,320 in a full field, which is a lot of DOM for a thing that never
-  changes shape. Merged, a character is five or six paths.
+  Run-length merging, the accessory and expression shapes, the stride
+  frames and the SVG emitter all used to live here, and a second copy of
+  the accessories and expressions lived in src/arena/pixi-stage.ts. Both
+  copies agreed, but nothing checked that they did. There is now one
+  composition step in src/arena/character.ts that both renderers consume;
+  see characterSvg() and composeCharacter() there.
 */
-function pixelPaths(px, palette, laneColour) {
-  const runs = new Map();
-  for (let y = 0; y < px.length; y++) {
-    const row = px[y];
-    let x = 0;
-    while (x < row.length) {
-      const ch = row[x];
-      if (ch === "." || ch === " ") { x++; continue; }
-      let w = 1;
-      while (x + w < row.length && row[x + w] === ch) w++;
-      if (!runs.has(ch)) runs.set(ch, []);
-      runs.get(ch).push(`M${x} ${y}h${w}v1h-${w}z`);
-      x += w;
-    }
-  }
-  let out = "";
-  for (const [ch, ds] of runs) {
-    const fill = ch === "L" ? laneColour : (palette[ch] || laneColour);
-    out += `<path fill="${fill}" d="${ds.join("")}"/>`;
-  }
-  return out;
-}
 
-/**
- * One character as inline SVG, sized to the Arena's existing 8:5 lane box.
- *
- * shape-rendering: crispEdges is the whole point - without it the browser
- * antialiases the pixel edges and the sprite turns to mush at the sizes it
- * is actually drawn at.
- */
-function cosmeticPaths(pet = {}) {
-  const accent = String(pet.accent || "#ffffff").replace(/["<>]/g, "");
-  const accessory = {
-    bandana: `<path fill="${accent}" d="M6 8h12v2H6zM17 10h3v2h-3z"/>`,
-    visor: `<path fill="${accent}" d="M7 4h11v2H7zM17 6h3v1h-3z"/>`,
-    crown: `<path fill="${accent}" d="M8 1h2v2h2V1h2v2h2V1h2v5H8z"/>`,
-    headphones: `<path fill="${accent}" d="M6 4h2V2h10v2h2v5h-2V5h-2V4h-6v1H8v4H6z"/>`,
-    cape: `<path fill="${accent}" d="M4 7h3v6H2v-2h2z"/>`,
-  }[pet.accessory] || "";
-  const expression = {
-    happy: `<path fill="#17191f" d="M10 6h1v1h-1zM15 6h1v1h-1zM12 9h3v1h-3z"/>`,
-    fierce: `<path fill="#17191f" d="M9 6h3v1h-2zM14 6h3v1h-2zM12 9h3v1h-3z"/>`,
-    sleepy: `<path fill="#17191f" d="M9 7h3v1H9zM14 7h3v1h-3z"/>`,
-    focused: "",
-  }[pet.expression] || "";
-  return accessory + expression;
-}
-
-function strideFrame(px) {
-  return px.map((row, y) => {
-    if (y < 9) return row;
-    const dir = y % 2 ? 1 : -1;
-    return dir > 0 ? "." + row.slice(0, GRID_W - 1) : row.slice(1) + ".";
-  });
-}
-
-export function dflSpriteMarkup(id, laneColour, pet = null) {
-  const c = dflCharacter(id) || hashedCharacter(id);
-  const colour = laneColour || "#2fbf5f";
-  const cosmetics = cosmeticPaths(pet || {});
-  /*
-    Two real pixel poses share one SVG. Frame B shifts the lower-body rows
-    into a stride while keeping the head readable; CSS swaps the groups with
-    steps(), so Profile, Arena and Broadcast always animate the same artwork.
-  */
-  return `<svg class="racer-art racer-px has-frames" xmlns="http://www.w3.org/2000/svg" ` +
-         `viewBox="0 0 ${GRID_W} ${GRID_H}" shape-rendering="crispEdges" aria-hidden="true">` +
-         `<g class="px-frame px-frame-a">${pixelPaths(c.px, c.palette, colour)}${cosmetics}</g>` +
-         `<g class="px-frame px-frame-b">${pixelPaths(strideFrame(c.px), c.palette, colour)}${cosmetics}</g>` +
-         `</svg>`;
+/** The character for an id, following legacy keys and hashing the unknown. */
+export function characterFor(id) {
+  return dflCharacter(id) || hashedCharacter(id);
 }
