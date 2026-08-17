@@ -2,26 +2,39 @@ import type { FinishCamera, FinishPresentation, PhotoFinishPresentation, RaceRac
 
 export const FINAL_STRETCH_START = 0.80;
 /*
-  THE SWEEP WINDOW.
+  THE FINISH PASSES THROUGH. IT DOES NOT ARRIVE AND PARK.
 
-  The finish structure travels in from offscreen right between these two
-  leader positions, and it MUST be parked before anybody crosses.
+  Driven by ELAPSED TIME against the authoritative finish times, never by
+  drawn leader progress. That distinction is the whole fix: leaderProgress
+  is Math.max over `shown`, recomputed every frame with no latch, and
+  `shown` is allowed to move backwards because collapses are a feature. So
+  the old reveal was a pure function of a non-monotonic input, and measured
+  over 25 seeded races the stripe reversed in 8 of them - worst case about
+  4vw of travelling back out after it had started coming in.
 
-  These are deliberately well short of the line. The first attempt ended the
-  sweep at 0.945 and measured on a real race it parked about 40ms AFTER the
-  winner had already crossed - because leaderProgress is the DRAWN position,
-  which is held below the truth near the line by the shrinking lead
-  allowance, so it arrives later than the raw progress suggests. Ending at
-  0.92 leaves about 1.6 seconds of margin on a twelve second race.
-
-  The window itself is tuned for the TRAVEL, not the margin, and it is very
-  non-linear in time because the leader is accelerating through the final
-  stretch: 0.855-0.92 measured 1.4s of sweep, 0.885-0.92 measured 300ms.
-  0.868 sits between them, and the margin is unaffected either way because
-  only the START moved.
+  finishPassProgress() is monotonic in elapsedMs by construction, stateless
+  between frames, seekable, replay-safe, and identical in the live and
+  shared views because both derive it from the same sim.order.
 */
-export const REVEAL_FROM = 0.868;
-export const REVEAL_FULL = 0.92;
+export const PRE_FINISH_SWEEP_MS = 1500;
+export const POST_FINISH_SWEEP_MS = 900;
+
+/**
+ * How far the finish structure is through its single pass, 0 to 1.
+ *
+ * 0    offscreen right, before anyone is near the line
+ * 0.5  crossing the racers' zone, around the first official finish
+ * 1    offscreen left, after the last racer is home
+ *
+ * One continuous right-to-left pass. It never stops, never reverses and
+ * never re-enters, because it is a clamped ramp on a clock.
+ */
+export function finishPassProgress(elapsedMs: number, firstFinishMs: number, lastFinishMs: number): number {
+  const start = firstFinishMs - PRE_FINISH_SWEEP_MS;
+  const end = Math.max(start + 1, lastFinishMs + POST_FINISH_SWEEP_MS);
+  return clamp01((elapsedMs - start) / (end - start));
+}
+
 export const FINISH_CAMERA_FULL = 0.95;
 /*
   THE TRACK, AS ONE LINEAR MAP.
@@ -133,22 +146,12 @@ const smoothstep = (value: number) => {
 */
 export const MAX_CAMERA_MIX = 0.34;
 
-/**
- * How far through its entrance the finish marker is, 0 to 1.
- *
- * NOT an opacity signal - it was one briefly, and a stripe that fades into
- * the middle of the track reads as a marker being switched on rather than a
- * finish being reached. It is now the marker's SWEEP progress: the CSS
- * translates the stripe from offscreen right (reveal 0) to its parked
- * position (reveal 1). Opacity rides along and completes early, while the
- * stripe is still travelling, so translation is what the eye reads.
- *
- * Written to `--finish-reveal` once per frame by both views. Nothing in the
- * geometry consumes it, which is why a sweep cannot move a racer.
- */
-export function finishReveal(leaderProgress: number): number {
-  return smoothstep((leaderProgress - REVEAL_FROM) / (REVEAL_FULL - REVEAL_FROM));
-}
+/*
+  finishReveal(), REVEAL_FROM and REVEAL_FULL were deleted here.
+
+  They drove the marker from leaderProgress, which is not monotonic. See
+  finishPassProgress() above. Do not reintroduce a progress-driven reveal.
+*/
 
 export function cameraForLeader(leaderProgress: number): FinishCamera {
   const ramp = smoothstep((leaderProgress - FINAL_STRETCH_START) / (FINISH_CAMERA_FULL - FINAL_STRETCH_START));

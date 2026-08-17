@@ -9,7 +9,7 @@ export {
   composeCharacter, normalizeCharacter, runsToPaths, silhouetteRuns,
 } from "./character";
 export { createReactionTimeline, presentationRacerFrame, reactionAt } from "./presentation-frame";
-export { createFinishPresentation, finishReveal, presentationScreenRatio } from "./finish-presentation";
+export { createFinishPresentation, finishPassProgress, presentationScreenRatio } from "./finish-presentation";
 /* The theatre layer, ported out of js/arena/race.js into typed, tested
    modules. Both the Arena stage and the shared viewer consume it from here. */
 export {

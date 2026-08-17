@@ -935,8 +935,11 @@ a.moment:hover { background: var(--hover-soft); }
 */
 .arena-track-wrap.cinematic-race .track-finish{
   right:42%;
-  transform:translateX(calc((1 - var(--finish-reveal,0)) * 55vw));
-  opacity:min(1,calc(var(--finish-reveal,0) * 4));
+  /* 0 = offscreen right, .5 = through the racers, 1 = offscreen left.
+     One continuous pass driven by a clamped clock ramp, so it cannot
+     reverse, stop or re-enter. Scenery: nothing reads it. */
+  transform:translateX(calc((0.5 - var(--finish-pass,0)) * 190vw));
+  opacity:min(1,calc(var(--finish-pass,0) * 12));
   will-change:transform;
 }
 @media(max-width:640px){
@@ -1516,3 +1519,22 @@ a.moment:hover { background: var(--hover-soft); }
   .arena-track-wrap[data-shot] .track,
   .bc-stage[data-shot] .bc-track{transform:none!important;transition:none}
 }
+
+
+/* =====================================================================
+   GLOBAL SPEED LINES: OFF.
+   ---------------------------------------------------------------------
+   Four layers were sliding white horizontal bars through the whole scene
+   at all times - two CSS pseudo-elements here and two Pixi Graphics in
+   anime-effects.ts. They were environment-wide, so they read as the SCREEN
+   moving rather than the racers moving, which is the opposite of what
+   speed lines are for.
+
+   Motion effects belong to racers. Everything racer-specific is untouched:
+   drawRacerEffects() per actor, the .trail-* classes, and the surge /
+   stumble / duel reaction classes.
+   ===================================================================== */
+.arena-track-wrap .track.is-running::before,
+.arena-track-wrap .track.is-running::after,
+.bc-stage.is-racing .bc-track::before,
+.bc-stage.is-racing .bc-track::after { content:none!important; }

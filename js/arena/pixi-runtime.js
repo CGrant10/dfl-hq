@@ -868,7 +868,7 @@ var L = I, Ke = [
 	"fantasy",
 	"system-ui"
 ];
-function qe(e) {
+function R(e) {
 	let t = typeof e.fontSize == "number" ? `${e.fontSize}px` : e.fontSize, n = e.fontFamily;
 	Array.isArray(e.fontFamily) || (n = e.fontFamily.split(","));
 	for (let e = n.length - 1; e >= 0; e--) {
@@ -879,8 +879,8 @@ function qe(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/utils/getCanvasFillStyle.mjs
-var Je = 1e5;
-function R(n, i, a, s = 0, c = 0, l = 0) {
+var qe = 1e5;
+function z(n, i, a, s = 0, c = 0, l = 0) {
 	if (n.texture === t.WHITE && !n.fill) return o.shared.setValue(n.color).setAlpha(n.alpha ?? 1).toHexa();
 	if (!n.fill) {
 		let t = i.createPattern(n.texture.source.resource, "repeat"), r = n.matrix.copyTo(e.shared);
@@ -907,7 +907,7 @@ function R(n, i, a, s = 0, c = 0, l = 0) {
 				let r = (n * a.lineHeight + s / 2) / d;
 				e.colorStops.forEach((e) => {
 					let n = r + e.offset * t;
-					n = Math.max(0, Math.min(1, n)), f.addColorStop(Math.floor(n * Je) / Je, o.shared.setValue(e.color).toHex());
+					n = Math.max(0, Math.min(1, n)), f.addColorStop(Math.floor(n * qe) / qe, o.shared.setValue(e.color).toHex());
 				});
 			}
 		} else e.colorStops.forEach((e) => {
@@ -919,13 +919,13 @@ function R(n, i, a, s = 0, c = 0, l = 0) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/CanvasTextGenerator.mjs
-var Ye = new u();
-function z(e) {
+var Je = new u();
+function B(e) {
 	let t = 0;
 	for (let n = 0; n < e.length; n++) e.charCodeAt(n) === 32 && t++;
 	return t;
 }
-var B = new class {
+var V = new class {
 	getCanvasAndContext(e) {
 		let { text: t, style: n, resolution: r = 1 } = e, i = n._getFinalPadding(), a = L.measureText(t || " ", n), o = Math.ceil(Math.ceil(Math.max(1, a.width) + i * 2) * r), s = Math.ceil(Math.ceil(Math.max(1, a.height) + i * 2) * r), c = ie.getOptimalCanvasAndContext(o, s);
 		return this._renderTextToCanvas(n, i, r, c, a), {
@@ -935,8 +935,8 @@ var B = new class {
 				width: o,
 				height: s,
 				resolution: 1,
-				output: Ye
-			}) : Ye.set(0, 0, o, s)
+				output: Je
+			}) : Je.set(0, 0, o, s)
 		};
 	}
 	returnCanvasAndContext(e) {
@@ -947,7 +947,7 @@ var B = new class {
 			this._renderTaggedTextToCanvas(i, e, t, n, r);
 			return;
 		}
-		let { canvas: a, context: o } = r, s = qe(e), c = i.lines, l = i.lineHeight, u = i.lineWidths, d = i.maxLineWidth, f = i.fontProperties, p = a.height;
+		let { canvas: a, context: o } = r, s = R(e), c = i.lines, l = i.lineHeight, u = i.lineWidths, d = i.maxLineWidth, f = i.fontProperties, p = a.height;
 		if (o.resetTransform(), o.scale(n, n), o.textBaseline = e.textBaseline, e._stroke?.width) {
 			let t = e._stroke;
 			o.lineWidth = t.width, o.miterLimit = t.miterLimit, o.lineJoin = t.join, o.lineCap = t.cap;
@@ -975,7 +975,7 @@ var B = new class {
 				m = _, h = _ + n * l + f.ascent + v, m += this._getAlignmentOffset(u[n], d, e.align);
 				let i = 0;
 				if (e.align === "justify" && e.wordWrap && n < c.length - 1) {
-					let e = z(c[n]);
+					let e = B(c[n]);
 					e > 0 && (i = (d - u[n]) / e);
 				}
 				e._stroke?.width && this._drawLetterSpacing(c[n], e, r, m + t, h + t - g, !0, i), e._fill !== void 0 && this._drawLetterSpacing(c[n], e, r, m + t, h + t - g, !1, i);
@@ -994,7 +994,7 @@ var B = new class {
 		for (let e = 0; e < s.length; e++) {
 			let t = s[e], n = [];
 			for (let e of t) {
-				let t = qe(e.style);
+				let t = R(e.style);
 				o.font = t, n.push({
 					width: L._measureText(e.text, e.style.letterSpacing, o),
 					font: t
@@ -1012,7 +1012,7 @@ var B = new class {
 				let C = 0;
 				if (t.align === "justify" && t.wordWrap && e < s.length - 1) {
 					let e = 0;
-					for (let t of f) e += z(t.text);
+					for (let t of f) e += B(t.text);
 					e > 0 && (C = (l - p) / e);
 				}
 				let w = v + y, T = S + n;
@@ -1023,13 +1023,13 @@ var B = new class {
 						if (o.lineWidth = e.width, o.miterLimit = e.miterLimit, o.lineJoin = e.join, o.lineCap = e.cap, a) {
 							if (t.style.dropShadow) this._setupDropShadow(o, t.style, r, h);
 							else {
-								let e = z(t.text);
+								let e = B(t.text);
 								T += s + e * C;
 								continue;
 							}
 						} else {
 							let r = L.measureFont(c), i = t.style.lineHeight || r.fontSize;
-							o.strokeStyle = R(e, o, {
+							o.strokeStyle = z(e, o, {
 								width: s,
 								height: i,
 								lineHeight: i,
@@ -1038,7 +1038,7 @@ var B = new class {
 						}
 						this._drawLetterSpacing(t.text, t.style, i, T, w + n - m, !0, C);
 					}
-					let l = z(t.text);
+					let l = B(t.text);
 					T += s + l * C;
 				}
 				T = S + n;
@@ -1048,7 +1048,7 @@ var B = new class {
 						if (a) {
 							if (t.style.dropShadow) this._setupDropShadow(o, t.style, r, h);
 							else {
-								let e = z(t.text);
+								let e = B(t.text);
 								T += s + e * C;
 								continue;
 							}
@@ -1059,11 +1059,11 @@ var B = new class {
 								lineHeight: r,
 								lines: [t.text]
 							};
-							o.fillStyle = R(t.style._fill, o, i, n * 2, T - n, v);
+							o.fillStyle = z(t.style._fill, o, i, n * 2, T - n, v);
 						}
 						this._drawLetterSpacing(t.text, t.style, i, T, w + n - m, !1, C);
 					}
-					let l = z(t.text);
+					let l = B(t.text);
 					T += s + l * C;
 				}
 				v += b;
@@ -1071,9 +1071,9 @@ var B = new class {
 		}
 	}
 	_setFillAndStrokeStyles(e, t, n, r, i, a = 0, o = 0) {
-		if (e.fillStyle = t._fill ? R(t._fill, e, n, r * 2, a, o) : null, t._stroke?.width) {
+		if (e.fillStyle = t._fill ? z(t._fill, e, n, r * 2, a, o) : null, t._stroke?.width) {
 			let s = i + r * 2;
-			e.strokeStyle = R(t._stroke, e, n, s, a, o);
+			e.strokeStyle = z(t._stroke, e, n, s, a, o);
 		}
 	}
 	_setupDropShadow(e, t, n, r) {
@@ -1106,9 +1106,9 @@ var B = new class {
 			p = s.measureText(n).width, u += f - p + c, t === " " && (u += o), f = p;
 		}
 	}
-}(), Xe = class e extends v {
+}(), Ye = class e extends v {
 	constructor(t = {}) {
-		super(), this.uid = l("textStyle"), this._tick = 0, this._cachedFontString = null, Ze(t), t instanceof e && (t = t._toObject());
+		super(), this.uid = l("textStyle"), this._tick = 0, this._cachedFontString = null, Xe(t), t instanceof e && (t = t._toObject());
 		let n = {
 			...e.defaultTextStyle,
 			...t
@@ -1276,7 +1276,7 @@ var B = new class {
 		return `${this.uid}-${this._tick}`;
 	}
 	get _fontString() {
-		return this._cachedFontString === null && (this._cachedFontString = qe(this)), this._cachedFontString;
+		return this._cachedFontString === null && (this._cachedFontString = R(this)), this._cachedFontString;
 	}
 	_toObject() {
 		return {
@@ -1325,13 +1325,13 @@ var B = new class {
 		return (e ?? null) !== null && !(o.isColorLike(e) || e instanceof k || e instanceof re);
 	}
 };
-Xe.defaultDropShadow = {
+Ye.defaultDropShadow = {
 	alpha: 1,
 	angle: Math.PI / 6,
 	blur: 0,
 	color: "black",
 	distance: 5
-}, Xe.defaultTextStyle = {
+}, Ye.defaultTextStyle = {
 	align: "left",
 	breakWords: !1,
 	dropShadow: null,
@@ -1352,11 +1352,11 @@ Xe.defaultDropShadow = {
 	wordWrap: !1,
 	wordWrapWidth: 100
 };
-var V = Xe;
-function Ze(e) {
+var H = Ye;
+function Xe(e) {
 	let t = e;
 	if (typeof t.dropShadow == "boolean" && t.dropShadow) {
-		let n = V.defaultDropShadow;
+		let n = H.defaultDropShadow;
 		e.dropShadow = {
 			alpha: t.dropShadowAlpha ?? n.alpha,
 			angle: t.dropShadowAngle ?? n.angle,
@@ -1398,7 +1398,7 @@ function Ze(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/utils/updateTextBounds.mjs
-function Qe(e, t) {
+function Ze(e, t) {
 	let { texture: n, bounds: r } = e, i = t._style._getFinalPadding();
 	x(r, t._anchor, n);
 	let a = t._anchor._x * i * 2, o = t._anchor._y * i * 2;
@@ -1406,7 +1406,7 @@ function Qe(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/canvas/BatchableText.mjs
-var $e = class extends ee {}, et = class {
+var Qe = class extends ee {}, $e = class {
 	constructor(e) {
 		this._renderer = e, e.runners.resolutionChange.add(this), this._managedTexts = new E({
 			renderer: e,
@@ -1429,7 +1429,7 @@ var $e = class extends ee {}, et = class {
 		let n = this._getGpuText(e);
 		if (e._didTextUpdate) {
 			let t = e._autoResolution ? this._renderer.resolution : e.resolution;
-			(n.currentKey !== e.styleKey || e._resolution !== t) && this._updateGpuText(e), e._didTextUpdate = !1, Qe(n, e);
+			(n.currentKey !== e.styleKey || e._resolution !== t) && this._updateGpuText(e), e._didTextUpdate = !1, Ze(n, e);
 		}
 		this._renderer.renderPipes.batch.addToBatch(n, t);
 	}
@@ -1445,7 +1445,7 @@ var $e = class extends ee {}, et = class {
 		return e._gpuData[this._renderer.uid] || this.initGpuText(e);
 	}
 	initGpuText(e) {
-		let t = new $e();
+		let t = new Qe();
 		return t.currentKey = "--", t.renderable = e, t.transform = e.groupTransform, t.bounds = {
 			minX: 0,
 			maxX: 1,
@@ -1463,7 +1463,7 @@ var $e = class extends ee {}, et = class {
 		this._managedTexts.destroy(), this._renderer = null;
 	}
 };
-et.extension = {
+$e.extension = {
 	type: [
 		_.WebGLPipes,
 		_.WebGPUPipes,
@@ -1473,7 +1473,7 @@ et.extension = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/shared/AbstractTextSystem.mjs
-var tt = class {
+var et = class {
 	constructor(e, t) {
 		this._activeTextures = {}, this._renderer = e, this._retainCanvasContext = t;
 	}
@@ -1482,23 +1482,23 @@ var tt = class {
 			text: e,
 			style: n,
 			resolution: t
-		}), e.style instanceof V || (e.style = new V(e.style)), e.textureStyle instanceof c || (e.textureStyle = new c(e.textureStyle)), typeof e.text != "string" && (e.text = e.text.toString());
-		let { text: i, style: a, textureStyle: o, autoGenerateMipmaps: s } = e, l = e.resolution ?? this._renderer.resolution, { frame: u, canvasAndContext: d } = B.getCanvasAndContext({
+		}), e.style instanceof H || (e.style = new H(e.style)), e.textureStyle instanceof c || (e.textureStyle = new c(e.textureStyle)), typeof e.text != "string" && (e.text = e.text.toString());
+		let { text: i, style: a, textureStyle: o, autoGenerateMipmaps: s } = e, l = e.resolution ?? this._renderer.resolution, { frame: u, canvasAndContext: d } = V.getCanvasAndContext({
 			text: i,
 			style: a,
 			resolution: l
 		}), f = S(d.canvas, u.width, u.height, l, s);
 		if (o && (f.source.style = o), a.trim && (u.pad(a.padding), f.frame.copyFrom(u), f.frame.scale(1 / l), f.updateUvs()), a.filters) {
 			let e = this._applyFilters(f, a.filters);
-			return this.returnTexture(f), B.returnCanvasAndContext(d), e;
+			return this.returnTexture(f), V.returnCanvasAndContext(d), e;
 		}
-		return this._renderer.texture.initSource(f._source), this._retainCanvasContext || B.returnCanvasAndContext(d), f;
+		return this._renderer.texture.initSource(f._source), this._retainCanvasContext || V.returnCanvasAndContext(d), f;
 	}
 	returnTexture(e) {
 		let t = e.source, r = t.resource;
 		if (this._retainCanvasContext && r?.getContext) {
 			let e = r.getContext("2d");
-			e && B.returnCanvasAndContext({
+			e && V.returnCanvasAndContext({
 				canvas: r,
 				context: e
 			});
@@ -1546,42 +1546,42 @@ var tt = class {
 		for (let e in this._activeTextures) this._activeTextures[e] && this.returnTexture(this._activeTextures[e].texture);
 		this._activeTextures = null;
 	}
-}, nt = class extends tt {
+}, tt = class extends et {
 	constructor(e) {
 		super(e, !0);
 	}
 };
-nt.extension = {
+tt.extension = {
 	type: [_.CanvasSystem],
 	name: "canvasText"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/shared/GpuTextSystem.mjs
-var rt = class extends tt {
+var nt = class extends et {
 	constructor(e) {
 		super(e, !1);
 	}
 };
-rt.extension = {
+nt.extension = {
 	type: [_.WebGLSystem, _.WebGPUSystem],
 	name: "canvasText"
-}, m.add(nt), m.add(rt), m.add(et);
+}, m.add(tt), m.add(nt), m.add($e);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/Text.mjs
-var it = class extends ge {
+var rt = class extends ge {
 	constructor(...e) {
 		let t = _e(e, "Text");
-		super(t, V), this.renderPipeId = "text", t.textureStyle && (this.textureStyle = t.textureStyle instanceof c ? t.textureStyle : new c(t.textureStyle)), this.autoGenerateMipmaps = t.autoGenerateMipmaps ?? s.defaultOptions.autoGenerateMipmaps;
+		super(t, H), this.renderPipeId = "text", t.textureStyle && (this.textureStyle = t.textureStyle instanceof c ? t.textureStyle : new c(t.textureStyle)), this.autoGenerateMipmaps = t.autoGenerateMipmaps ?? s.defaultOptions.autoGenerateMipmaps;
 	}
 	updateBounds() {
 		let e = this._bounds, t = this._anchor, n = 0, r = 0;
 		if (this._style.trim) {
-			let { frame: e, canvasAndContext: t } = B.getCanvasAndContext({
+			let { frame: e, canvasAndContext: t } = V.getCanvasAndContext({
 				text: this.text,
 				style: this._style,
 				resolution: 1
 			});
-			B.returnCanvasAndContext(t), n = e.width, r = e.height;
+			V.returnCanvasAndContext(t), n = e.width, r = e.height;
 		} else {
 			let e = L.measureText(this._text, this._style);
 			n = e.width, r = e.height;
@@ -1594,37 +1594,37 @@ var it = class extends ge {
 m.add(ae, oe);
 //#endregion
 //#region src/arena/pet-texture.ts
-var at = /^#[0-9a-f]{6}$/i, ot = /* @__PURE__ */ new Set([
+var it = /^#[0-9a-f]{6}$/i, at = /* @__PURE__ */ new Set([
 	"none",
 	"bandana",
 	"visor",
 	"crown",
 	"headphones",
 	"cape"
-]), st = /* @__PURE__ */ new Set([
+]), ot = /* @__PURE__ */ new Set([
 	"focused",
 	"happy",
 	"fierce",
 	"sleepy"
 ]);
-function ct(e, t = "#38bdf8") {
+function st(e, t = "#38bdf8") {
 	let n = e || {};
 	return {
 		name: String(n.name || "").slice(0, 24),
 		species: String(n.species || "emberrat").replace(/[^a-z0-9_-]/gi, "").slice(0, 32) || "emberrat",
-		color: at.test(n.color || "") ? n.color : t,
-		accent: at.test(n.accent || "") ? n.accent : "#ffffff",
+		color: it.test(n.color || "") ? n.color : t,
+		accent: it.test(n.accent || "") ? n.accent : "#ffffff",
 		trail: [
 			"none",
 			"dust",
 			"spark",
 			"rainbow"
 		].includes(n.trail || "") ? n.trail : "none",
-		accessory: ot.has(n.accessory) ? n.accessory : "none",
-		expression: st.has(n.expression) ? n.expression : "focused"
+		accessory: at.has(n.accessory) ? n.accessory : "none",
+		expression: ot.has(n.expression) ? n.expression : "focused"
 	};
 }
-function lt(e, t, n) {
+function ct(e, t, n) {
 	return t ? "win" : e && [
 		"surge",
 		"stumble",
@@ -1635,31 +1635,33 @@ function lt(e, t, n) {
 }
 //#endregion
 //#region src/arena/finish-presentation.ts
-var ut = .8, dt = .868, ft = .04, pt = .58, mt = .34, ht = .5399999999999999;
+var lt = .8, ut = 1500;
+function dt(e, t, n) {
+	let r = t - ut, i = Math.max(r + 1, n + 900);
+	return gt((e - r) / (i - r));
+}
+var ft = .04, pt = .58, mt = .34, ht = .5399999999999999;
 mt * ht;
 var gt = (e) => Math.max(0, Math.min(1, e)), _t = (e) => {
 	let t = gt(e);
 	return t * t * (3 - 2 * t);
 }, vt = .34;
 function yt(e) {
-	return _t((e - dt) / .052000000000000046);
-}
-function bt(e) {
-	let t = _t((e - ut) / .1499999999999999), n = t * vt;
+	let t = _t((e - lt) / .1499999999999999), n = t * vt;
 	return {
 		state: t <= 0 ? "normal" : t < .98 ? "finalStretch" : "finish",
 		mix: n,
 		finishRatio: pt
 	};
 }
-function xt(e, t) {
+function bt(e, t) {
 	return ft + Math.max(0, Math.min(e, 1.34)) * ht;
 }
-function St(e, t) {
+function xt(e, t) {
 	let n = e - t;
 	return n < 0 ? e : n < 90 ? t : n < 390 ? t + (n - 90) * 1.3 : e;
 }
-function Ct(e, t) {
+function St(e, t) {
 	let n = e.order[0], r = e.order[1];
 	if (!n || !r) return;
 	let i = r.finishMs - n.finishMs;
@@ -1676,10 +1678,10 @@ function Ct(e, t) {
 		gapMs: i
 	};
 }
-function wt(e) {
-	let t = e.order.at(-1)?.finishMs ?? Infinity, n = e.order[1]?.finishMs, r = n == null || !e.order[0] ? Infinity : n - e.order[0].finishMs, i = r >= 0 && r <= 180, a = e.elapsedMs >= t + 320, o = i && n != null ? St(e.elapsedMs, n) : e.elapsedMs, s = Ct(e, a);
+function Ct(e) {
+	let t = e.order.at(-1)?.finishMs ?? Infinity, n = e.order[1]?.finishMs, r = n == null || !e.order[0] ? Infinity : n - e.order[0].finishMs, i = r >= 0 && r <= 180, a = e.elapsedMs >= t + 320, o = i && n != null ? xt(e.elapsedMs, n) : e.elapsedMs, s = St(e, a);
 	return {
-		camera: bt(e.leaderProgress),
+		camera: yt(e.leaderProgress),
 		visualElapsedMs: o,
 		celebrationActive: a,
 		celebrationStartedMs: t + 320,
@@ -1689,7 +1691,7 @@ function wt(e) {
 }
 //#endregion
 //#region src/arena/viewport.ts
-function Tt(e, t) {
+function wt(e, t) {
 	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * .1, s = r * .9, c = n * .03, l = n * .91, u = s - o, d = (n <= 640 ? 68 : 88) / 72;
 	return {
 		width: n,
@@ -1705,45 +1707,45 @@ function Tt(e, t) {
 		actorScale: d
 	};
 }
-function Et(e, t, n, r = 0) {
+function Tt(e, t, n, r = 0) {
 	let i = Math.max(1, n), a = (Math.max(0, Math.min(i - 1, t)) + .5) / i;
 	return e.laneTop + e.laneHeight * a;
 }
-function Dt(e, t, n) {
+function Et(e, t, n) {
 	if (!n) {
 		let n = Math.max(0, Math.min(1, t));
 		return e.trackLeft + e.trackWidth * n;
 	}
-	return e.width * xt(t, n);
+	return e.width * bt(t, n);
 }
 //#endregion
 //#region src/arena/pixel-poses.ts
-function H(e, t) {
+function U(e, t) {
 	return t === 0 ? e : t > 0 ? `${".".repeat(t)}${e.slice(0, -t)}` : `${e.slice(-t)}${".".repeat(-t)}`;
 }
-function Ot(e, t) {
-	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? H(n, r % 2 == 0 ? 1 : -1) : t === 2 ? H(n, +(r % 3 == 0)) : H(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? H(n, 1) : n);
+function Dt(e, t) {
+	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? U(n, r % 2 == 0 ? 1 : -1) : t === 2 ? U(n, +(r % 3 == 0)) : U(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? U(n, 1) : n);
 }
-function U(e, t) {
+function W(e, t) {
 	let n = Math.max(120, t);
 	return Math.floor(Math.max(0, e) % n / (n / 4));
 }
 //#endregion
 //#region src/arena/winner-sequence.ts
-var kt = (e) => Math.max(0, Math.min(1, e)), At = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
-function jt(e) {
+var Ot = (e) => Math.max(0, Math.min(1, e)), kt = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
+function At(e) {
 	let t = Math.max(0, e);
 	return {
 		freeze: +(t < 115),
-		converge: t < 760 ? At((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
-		launch: At((t - 190) / 620),
-		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * kt((t - 720) / 280),
-		loserReaction: At((t - 120) / 760)
+		converge: t < 760 ? kt((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
+		launch: kt((t - 190) / 620),
+		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * Ot((t - 720) / 280),
+		loserReaction: kt((t - 120) / 760)
 	};
 }
 //#endregion
 //#region src/arena/animation.ts
-var Mt = Math.PI * 2, W = (e) => Math.max(0, Math.min(1, e)), Nt = (e) => 1 - (1 - W(e)) ** 3, G = (e) => Math.sin(W(e) * Math.PI), K = (e = 380) => ({
+var jt = Math.PI * 2, G = (e) => Math.max(0, Math.min(1, e)), Mt = (e) => 1 - (1 - G(e)) ** 3, K = (e) => Math.sin(G(e) * Math.PI), q = (e = 380) => ({
 	x: 0,
 	y: 0,
 	scaleX: 1,
@@ -1757,9 +1759,9 @@ var Mt = Math.PI * 2, W = (e) => Math.max(0, Math.min(1, e)), Nt = (e) => 1 - (1
 	energy: 0,
 	frame: 0
 });
-function Pt(e) {
+function Nt(e) {
 	if (e.reducedMotion) {
-		let t = Pt({
+		let t = Nt({
 			...e,
 			reducedMotion: !1
 		});
@@ -1780,27 +1782,27 @@ function Pt(e) {
 	}
 	let t = Math.max(0, Math.min(3, e.heat)), n = Math.max(0, e.elapsedMs - (e.motionStartedMs ?? 0)), r = e.elapsedMs * (.012 + t * .0015) + e.lane * .73 + e.variant * 1.9, i = Math.sin(r);
 	if (e.motion === "idle") return {
-		...K(),
+		...q(),
 		y: -.75 - Math.sin(e.elapsedMs * .015 + e.lane * .7) * .75
 	};
 	if (e.motion === "run") {
-		let n = W(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * Mt + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
+		let n = G(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * jt + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
 		return {
-			...K(i),
+			...q(i),
 			x: Math.sin(a * .5) * .45 + r * 1.2,
 			y: -.8 - o * (1.6 + t * .35) + s * .55,
 			scaleX: 1 + Math.sin(a) * .018 + s * .025,
 			scaleY: 1 - Math.sin(a) * .015 - s * .045,
 			rotation: -n * .045 + r * -.03 + Math.sin(a) * .016,
-			frame: U(e.elapsedMs + e.lane * 31, i),
+			frame: W(e.elapsedMs + e.lane * 31, i),
 			dust: .2 + t * .13 + Math.max(0, r) * .18,
 			energy: Math.max(0, r) * .28
 		};
 	}
 	if (e.motion === "surge") {
-		let e = W(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : G((e - .12) / .48), o = Nt((e - .6) / .4);
+		let e = G(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : K((e - .12) / .48), o = Mt((e - .6) / .4);
 		return {
-			...K(190),
+			...q(190),
 			x: -3.4 * (1 - r) + a * 6.2 * (1 - o),
 			y: e < .12 ? 2.2 * r : -3.4 - Math.abs(i) * 2.1,
 			scaleX: 1 + a * .22 * (1 - o),
@@ -1809,29 +1811,29 @@ function Pt(e) {
 			afterimage: a * (.7 + t * .1),
 			dust: .65 + a * .35,
 			energy: a,
-			frame: U(n, 190)
+			frame: W(n, 190)
 		};
 	}
 	if (e.motion === "stumble") {
-		let t = W(n / 1120), r = G(t / .16), i = t >= .16 && t < .58 ? G((t - .16) / .42) : 0, a = t >= .58 ? Nt((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
+		let t = G(n / 1120), r = K(t / .16), i = t >= .16 && t < .58 ? K((t - .16) / .42) : 0, a = t >= .58 ? Mt((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
 		return {
-			...K(480),
+			...q(480),
 			x: -r * 3.6 + (o ? i * 5.2 : -i * 5.8) + a * 1.8,
 			y: r * 1.8 + i * (s ? 9.2 : 3.8) - a * 1.5,
 			scaleX: 1 + i * .16,
 			scaleY: 1 - i * .23,
 			rotation: r * .24 + i * (o ? -.48 : .34 + c * .86) - a * .28,
-			impact: G((t - .12) / .22),
+			impact: K((t - .12) / .22),
 			dust: Math.max(r, i) * .9,
 			skid: i,
 			frame: t < .16 ? 1 : t < .58 ? s ? 3 : 2 : 0
 		};
 	}
 	if (e.motion === "jump") {
-		let e = W(n / 840), r = e < .16 ? G(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? G((e - .76) / .24) : 0;
+		let e = G(n / 840), r = e < .16 ? K(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? K((e - .76) / .24) : 0;
 		return {
-			...K(285),
-			x: i ? Nt(i) * 2.3 : 0,
+			...q(285),
+			x: i ? Mt(i) * 2.3 : 0,
 			y: r * 2.4 - Math.sin(i * Math.PI) * (9.5 + t * 1.05) + a * 2.8,
 			scaleX: 1 + r * .08 - i * .04 + a * .12,
 			scaleY: 1 - r * .12 + i * .08 - a * .16,
@@ -1842,25 +1844,25 @@ function Pt(e) {
 		};
 	}
 	if (e.motion === "duel") {
-		let t = W(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
+		let t = G(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
 		return {
-			...K(205),
+			...q(205),
 			x: r * (1.8 + e.variant),
 			y: -1.5 - Math.abs(i) * 1.8,
 			scaleX: 1 + r * .09,
 			scaleY: 1 - r * .045,
 			rotation: -r * .05,
 			afterimage: r * .45,
-			impact: G((t - .38) / .2) * .75,
+			impact: K((t - .38) / .2) * .75,
 			dust: .35 + r * .45,
 			energy: r,
-			frame: U(n, 205)
+			frame: W(n, 205)
 		};
 	}
 	if (e.motion === "near") {
-		let t = W(n / 680), r = G(t / .55), i = G((t - .5) / .5);
+		let t = G(n / 680), r = K(t / .55), i = K((t - .5) / .5);
 		return {
-			...K(330),
+			...q(330),
 			x: -r * 2.2 + i * 1.2,
 			y: -r * (3 + e.variant * 2) + i,
 			scaleX: 1 - r * .06 + i * .08,
@@ -1872,9 +1874,9 @@ function Pt(e) {
 		};
 	}
 	if (e.motion === "lose") {
-		let t = jt(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
+		let t = At(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
 		return {
-			...K(520),
+			...q(520),
 			x: -t * 3.5 - r * 1.5,
 			y: t * 3.2 + r * 2.2,
 			scaleX: 1 + t * .08,
@@ -1884,9 +1886,9 @@ function Pt(e) {
 			dust: t * .44
 		};
 	}
-	let a = jt(n);
+	let a = At(n);
 	return {
-		...K(260),
+		...q(260),
 		y: -a.launch * 8 - a.celebrate * 5,
 		scaleX: 1 + a.launch * .18 + a.celebrate * .08,
 		scaleY: 1 - a.launch * .08 + a.celebrate * .08,
@@ -1895,17 +1897,17 @@ function Pt(e) {
 		impact: Math.max(a.freeze, a.converge * .55),
 		dust: a.launch * .8,
 		energy: a.converge,
-		frame: a.freeze ? 2 : U(n, 360)
+		frame: a.freeze ? 2 : W(n, 360)
 	};
 }
-function Ft(e, t) {
+function Pt(e, t) {
 	let n = 2166136261 ^ t;
 	for (let t of String(e)) n = Math.imul(n ^ t.charCodeAt(0), 16777619);
 	return (n >>> 0) / 4294967295;
 }
 //#endregion
 //#region js/arena/dfl-sprites.js
-var q = [
+var J = [
 	{
 		id: "emberrat",
 		label: "Emberrat",
@@ -2446,7 +2448,7 @@ var q = [
 			"....DDDD....DDDD........"
 		]
 	}
-], It = new Map(q.map((e) => [e.id, e])), Lt = {
+], Ft = new Map(J.map((e) => [e.id, e])), It = {
 	treecko: "emberrat",
 	torchic: "sparkpup",
 	mudkip: "tinplate",
@@ -2472,24 +2474,24 @@ var q = [
 	ghost: "sudsy",
 	steel: "commish"
 };
-function Rt(e) {
-	if (It.has(e)) return e;
-	let t = Lt[e];
-	return t && It.has(t) ? t : null;
+function Lt(e) {
+	if (Ft.has(e)) return e;
+	let t = It[e];
+	return t && Ft.has(t) ? t : null;
 }
-function zt(e) {
+function Rt(e) {
 	let t = String(e || ""), n = 0;
 	for (let e = 0; e < t.length; e++) n = n * 31 + t.charCodeAt(e) | 0;
-	return q[Math.abs(n) % q.length];
+	return J[Math.abs(n) % J.length];
+}
+function zt(e) {
+	return Ft.get(Lt(e)) || null;
 }
 function Bt(e) {
-	return It.get(Rt(e)) || null;
+	return zt(e) || Rt(e);
 }
-function Vt(e) {
-	return Bt(e) || zt(e);
-}
-var Ht = "#17191f";
-function Ut(e, t) {
+var Vt = "#17191f";
+function Ht(e, t) {
 	let n = e && typeof e == "object" ? e : {}, r = (e) => typeof e == "string" && e ? e : null;
 	return {
 		kind: r(n.kind) || "dfl",
@@ -2501,7 +2503,7 @@ function Ut(e, t) {
 		trail: r(n.trail)
 	};
 }
-var J = (e, t, n, r) => {
+var Y = (e, t, n, r) => {
 	let i = [];
 	for (let a = n; a <= r; a++) i.push({
 		x1: e,
@@ -2509,22 +2511,22 @@ var J = (e, t, n, r) => {
 		y: a
 	});
 	return i;
-}, Wt = {
-	bandana: [...J(6, 17, 8, 9), ...J(17, 19, 10, 11)],
-	visor: [...J(7, 17, 4, 5), ...J(17, 19, 6, 6)],
+}, Ut = {
+	bandana: [...Y(6, 17, 8, 9), ...Y(17, 19, 10, 11)],
+	visor: [...Y(7, 17, 4, 5), ...Y(17, 19, 6, 6)],
 	crown: [
-		...J(8, 9, 1, 2),
-		...J(12, 13, 1, 2),
-		...J(16, 17, 1, 2),
-		...J(8, 17, 3, 5)
+		...Y(8, 9, 1, 2),
+		...Y(12, 13, 1, 2),
+		...Y(16, 17, 1, 2),
+		...Y(8, 17, 3, 5)
 	],
 	headphones: [
-		...J(8, 17, 2, 3),
-		...J(6, 7, 4, 8),
-		...J(18, 19, 4, 8)
+		...Y(8, 17, 2, 3),
+		...Y(6, 7, 4, 8),
+		...Y(18, 19, 4, 8)
 	],
-	cape: [...J(4, 6, 7, 10), ...J(2, 6, 11, 12)]
-}, Gt = {
+	cape: [...Y(4, 6, 7, 10), ...Y(2, 6, 11, 12)]
+}, Wt = {
 	happy: [
 		{
 			x1: 10,
@@ -2569,13 +2571,13 @@ var J = (e, t, n, r) => {
 		y: 7
 	}],
 	focused: []
-}, Kt = ["none", ...Object.keys(Wt)], qt = Object.keys(Gt), Jt = (e, t) => e.map((e) => ({
+}, Gt = ["none", ...Object.keys(Ut)], Kt = Object.keys(Wt), qt = (e, t) => e.map((e) => ({
 	x: e.x1,
 	y: e.y,
 	w: e.x2 - e.x1 + 1,
 	color: t
 }));
-function Yt(e, t, n) {
+function Jt(e, t, n) {
 	let r = [];
 	for (let i = 0; i < e.length; i++) {
 		let a = e[i] ?? "", o = 0;
@@ -2597,104 +2599,52 @@ function Yt(e, t, n) {
 	}
 	return r;
 }
-function Y(e, t = 0) {
-	let n = e.species || e.color ? e : Ut(e), r = Vt(n.species), i = n.color || "#2fbf5f", a = n.accent || "#ffffff", o = Yt(Ot(r.px, t), r.palette, i), s = n.accessory ? Wt[n.accessory] : void 0;
-	s && o.push(...Jt(s, a));
-	let c = n.expression ? Gt[n.expression] : void 0;
-	return c && o.push(...Jt(c, Ht)), {
+function X(e, t = 0) {
+	let n = e.species || e.color ? e : Ht(e), r = Bt(n.species), i = n.color || "#2fbf5f", a = n.accent || "#ffffff", o = Jt(Dt(r.px, t), r.palette, i), s = n.accessory ? Ut[n.accessory] : void 0;
+	s && o.push(...qt(s, a));
+	let c = n.expression ? Wt[n.expression] : void 0;
+	return c && o.push(...qt(c, Vt)), {
 		width: 24,
 		height: 15,
 		pose: t,
 		runs: o
 	};
 }
-var Xt = (e) => e.replace(/["<>&]/g, "");
-function Zt(e) {
+var Yt = (e) => e.replace(/["<>&]/g, "");
+function Xt(e) {
 	let t = /* @__PURE__ */ new Map();
 	for (let n of e) {
 		let e = t.get(n.color) || [];
 		e.push(`M${n.x} ${n.y}h${n.w}v1h-${n.w}z`), t.set(n.color, e);
 	}
 	let n = "";
-	for (let [e, r] of t) n += `<path fill="${Xt(e)}" d="${r.join("")}"/>`;
+	for (let [e, r] of t) n += `<path fill="${Yt(e)}" d="${r.join("")}"/>`;
 	return n;
 }
-function Qt(e, t) {
-	let n = Ut(e, t), r = Y(n, 0), i = Y(n, 2);
-	return `<svg class="racer-art racer-px has-frames" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 15" shape-rendering="crispEdges" aria-hidden="true"><g class="px-frame px-frame-a">${Zt(r.runs)}</g><g class="px-frame px-frame-b">${Zt(i.runs)}</g></svg>`;
+function Zt(e, t) {
+	let n = Ht(e, t), r = X(n, 0), i = X(n, 2);
+	return `<svg class="racer-art racer-px has-frames" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 15" shape-rendering="crispEdges" aria-hidden="true"><g class="px-frame px-frame-a">${Xt(r.runs)}</g><g class="px-frame px-frame-b">${Xt(i.runs)}</g></svg>`;
 }
-function $t() {
-	return q.map((e) => e.id);
+function Qt() {
+	return J.map((e) => e.id);
 }
 //#endregion
 //#region src/arena/effects.ts
-function en(e) {
+function $t(e) {
 	return e = Math.imul(e ^ e >>> 16, 73244475), e = Math.imul(e ^ e >>> 16, 73244475), (e ^ e >>> 16) >>> 0;
 }
-function X(e, t, n) {
-	let r = en(e * 131 + t * 977 + n * 7919);
+function en(e, t, n) {
+	let r = $t(e * 131 + t * 977 + n * 7919);
 	return {
 		x: (r & 65535) / 65535,
 		y: (r >>> 16 & 65535) / 65535,
-		length: .35 + (en(r + 1) & 65535) / 65535 * .65,
-		alpha: .3 + (en(r + 2) & 65535) / 65535 * .7
+		length: .35 + ($t(r + 1) & 65535) / 65535 * .65,
+		alpha: .3 + ($t(r + 2) & 65535) / 65535 * .7
 	};
-}
-function tn(e, t, n) {
-	if (e <= 0) return 0;
-	let r = (t ? .72 : 1) * (n ? .28 : 1);
-	return Math.round((18 + Math.min(3, e) * 11) * r);
 }
 //#endregion
 //#region src/arena/anime-effects.ts
-function nn(e, t, n, r) {
-	if (e.clear(), t.state !== "running") return;
-	let i = t.finish?.camera.mix ?? 0, a = tn(t.heat, n.compact, r) + Math.round(i * (r ? 3 : n.compact ? 7 : 12)), o = r ? .34 : 1, s = Math.max(.16, Math.min(1, t.heat / 3)), c = Math.floor(t.elapsedMs / (t.heat >= 2 ? 48 : 72)), l = [
-		16777215,
-		12577535,
-		7526655,
-		16767594,
-		16747084,
-		7598528
-	];
-	e.rect(0, 0, n.width, n.height).fill({
-		color: 398629,
-		alpha: (.06 + s * .2) * o
-	});
-	let u = (r ? 2 : n.compact ? 5 : 8) + Math.round(i * (r ? 1 : 4));
-	for (let r = 0; r < u; r++) {
-		let a = X(c - 1, t.heat + 23, r), u = (.08 + a.y * .84) * n.height, d = n.width * (.28 + a.length * (.46 + i * .18)), f = n.width * (.35 + a.x * .9);
-		e.moveTo(f, u).lineTo(f - d, u).stroke({
-			color: l[(r + t.heat) % l.length],
-			width: 8 + a.length * (13 + s * 12),
-			alpha: (.055 + a.alpha * .1) * (.7 + s) * o,
-			cap: "round"
-		});
-	}
-	for (let r = 0; r < a; r++) {
-		let i = X(c, t.heat, r), a = (t.elapsedMs * (.22 + s * .42) + r * 37) % (n.width * 1.4), u = n.width * 1.15 - a + i.x * n.width * .38, d = i.y * n.height, f = .72 + Math.sin((t.elapsedMs + r * 83) * .008) * .22, p = n.width * (.1 + i.length * (.17 + s * .22));
-		e.moveTo(u, d).lineTo(u - p, d).stroke({
-			color: l[(r * 3 + t.heat) % l.length],
-			width: i.length > .78 ? 5.4 : i.length > .55 ? 2.8 : 1.35,
-			alpha: i.alpha * f * (.18 + s * .32) * o,
-			cap: "round"
-		});
-	}
-}
-function rn(e, t, n, r) {
-	if (e.clear(), t.state !== "running") return;
-	let i = Math.max(0, Math.min(1, t.heat / 3)), a = t.finish?.camera.mix ?? 0, o = r ? .26 : 1, s = Math.max(1, Math.round(((n.compact ? 4 : 7) + i * 7 + a * 7) * o)), c = Math.floor(t.elapsedMs / 38);
-	for (let r = 0; r < s; r++) {
-		let s = X(c, 91 + t.heat, r), l = s.x * n.width * 1.2, u = s.y * n.height, d = n.width * (.12 + s.length * (.22 + a * .12)) * (.7 + i * .6);
-		e.moveTo(l, u).lineTo(l - d, u).stroke({
-			color: r % 3 == 0 ? 16773292 : 16777215,
-			width: s.length > .72 ? 3.2 : 1.25,
-			alpha: s.alpha * (.12 + i * .25) * o,
-			cap: "round"
-		});
-	}
-}
-function an(e, t, n, r, i) {
+function tn(e, t, n, r, i) {
 	e.clear(), t.visible = !1;
 	let a = n.finish?.photoFinish;
 	if (!a) return;
@@ -2721,7 +2671,7 @@ function an(e, t, n, r, i) {
 		}), t.text = `PHOTO FINISH\n1 — ${a.firstName} — ${(a.firstMs / 1e3).toFixed(2)}s\n2 — ${a.secondName} — ${(a.secondMs / 1e3).toFixed(2)}s\nGAP — ${(a.gapMs / 1e3).toFixed(2)}s`, t.position.set(r.width * .5, s + i / 2), t.visible = !0, t.alpha = 1;
 	}
 }
-function on(e, t, n, r, i, a, o, s = !1) {
+function nn(e, t, n, r, i, a, o, s = !1) {
 	if (e.clear(), a <= .02) return;
 	s && (a *= .48), e.rect(0, 0, t, n).fill({
 		color: 132881,
@@ -2753,7 +2703,7 @@ function on(e, t, n, r, i, a, o, s = !1) {
 		});
 	}
 	for (let t = 0; t < 22; t++) {
-		let n = X(Math.floor(a * 100), 404, t), o = n.x * Math.PI * 2, s = 62 + n.y * c * .28, l = r + Math.cos(o) * s, u = i + Math.sin(o) * s;
+		let n = en(Math.floor(a * 100), 404, t), o = n.x * Math.PI * 2, s = 62 + n.y * c * .28, l = r + Math.cos(o) * s, u = i + Math.sin(o) * s;
 		e.circle(l, u, 1.2 + n.length * 2.8).fill({
 			color: t % 3 ? 16767050 : 16777215,
 			alpha: a * n.alpha * .72
@@ -2762,7 +2712,7 @@ function on(e, t, n, r, i, a, o, s = !1) {
 }
 //#endregion
 //#region src/arena/racer-effects.ts
-function sn(e) {
+function rn(e) {
 	let { graphics: t, pose: n, elapsedMs: r, variant: i, color: a } = e;
 	if (t.clear(), !e.active) return;
 	let o = e.reducedMotion ? .34 : 1, s = Math.max(0, Math.min(1, e.heat / 3)), c = Math.max(0, Math.min(1, e.speed)), l = Math.max(0, Math.min(1, e.acceleration)), u = Math.max(n.afterimage, n.energy * .9, s * (.28 + c * .35)) * o;
@@ -2805,7 +2755,7 @@ function sn(e) {
 	})), n.dust > .08) {
 		let a = Math.floor(r / 58), o = e.reducedMotion ? 3 : n.dust > .62 ? 11 : 7;
 		for (let e = 0; e < o; e++) {
-			let r = X(a, Math.floor(i * 17), e), o = 3.2 + r.length * (5.2 + n.dust * 4.4), s = -20 - r.x * (34 + n.dust * 34), c = 15 + r.y * 10 - o * .2;
+			let r = en(a, Math.floor(i * 17), e), o = 3.2 + r.length * (5.2 + n.dust * 4.4), s = -20 - r.x * (34 + n.dust * 34), c = 15 + r.y * 10 - o * .2;
 			t.circle(s, c, o).fill({
 				color: e % 4 == 0 ? 16777215 : 14141348,
 				alpha: n.dust * r.alpha * (.28 + e % 3 * .075)
@@ -2816,7 +2766,7 @@ function sn(e) {
 			});
 		}
 		for (let r = 0; r < (e.reducedMotion ? 2 : 6); r++) {
-			let e = X(a, Math.floor(i * 31) + 7, r), o = -16 - e.x * 46, s = 18 + e.y * 7;
+			let e = en(a, Math.floor(i * 31) + 7, r), o = -16 - e.x * 46, s = 18 + e.y * 7;
 			t.moveTo(o, s).lineTo(o - 5 - e.length * 12, s - 2 - e.y * 7).stroke({
 				color: r % 2 ? 16761933 : 16777215,
 				width: 1.1 + e.length,
@@ -2847,7 +2797,7 @@ function sn(e) {
 }
 //#endregion
 //#region src/arena/pixi-stage.ts
-var Z = 3, cn = class {
+var Z = 3, an = class {
 	app = new he();
 	scenery = new b({ label: "scenery" });
 	course = new b({ label: "course" });
@@ -2856,7 +2806,7 @@ var Z = 3, cn = class {
 	overlay = new b({ label: "overlay" });
 	#e = new b({ label: "mobile-nameplates" });
 	#t = new D({ label: "legacy-feature-set" });
-	#n = new it({
+	#n = new rt({
 		text: "",
 		style: {
 			fill: 16777215,
@@ -2868,7 +2818,7 @@ var Z = 3, cn = class {
 	#i = new D({ label: "winner-focus" });
 	#a = new D({ label: "foreground-speed-lines" });
 	#o = new D({ label: "photo-finish" });
-	#s = new it({
+	#s = new rt({
 		text: "",
 		style: {
 			fill: 16777215,
@@ -2880,7 +2830,7 @@ var Z = 3, cn = class {
 		}
 	});
 	#c = null;
-	#l = Tt(1280, 720);
+	#l = wt(1280, 720);
 	#u = [];
 	#d = /* @__PURE__ */ new Map();
 	#f = null;
@@ -2902,7 +2852,7 @@ var Z = 3, cn = class {
 		for (let t of e) {
 			let n = new b({ label: `racer-${t.id}` });
 			n.eventMode = "none";
-			let r = ct(t.pet, t.color), i = this.#g(r), a = new b({ label: `pet-${r.species}` });
+			let r = st(t.pet, t.color), i = this.#g(r), a = new b({ label: `pet-${r.species}` });
 			a.addChild(...i);
 			let o = new D({ label: `effects-${t.id}` }), s = new D({ label: `contact-${t.id}` }).ellipse(0, 23, 27, 6).fill({
 				color: 0,
@@ -2915,7 +2865,7 @@ var Z = 3, cn = class {
 				fx: o,
 				nameplate: c,
 				color: this.#y(r.accent),
-				variant: Ft(t.id, e.indexOf(t)),
+				variant: Pt(t.id, e.indexOf(t)),
 				motion: "idle",
 				motionStartedMs: 0,
 				finishedAtMs: null,
@@ -2926,16 +2876,16 @@ var Z = 3, cn = class {
 	render(e) {
 		this.#f = e;
 		let t = e.reduceMotionEffects === !0, n = `${Math.floor(e.elapsedMs / 34)}:${e.state}:${e.heat}:${Math.round((e.finish?.camera.mix ?? 0) * 20)}:${t}:${this.#l.width}:${this.#l.height}`;
-		n !== this.#m && (this.#m = n, nn(this.#r, e, this.#l, t), rn(this.#a, e, this.#l, t));
+		n !== this.#m && (this.#m = n, this.#r.clear(), this.#a.clear());
 		let r = e.finish?.photoFinish, i = `${r?.phase ?? "none"}:${r?.gapMs ?? 0}:${this.#l.width}:${this.#l.height}:${t}`;
-		i !== this.#h && (this.#h = i, an(this.#o, this.#s, e, this.#l, t)), this.#i.clear();
+		i !== this.#h && (this.#h = i, tn(this.#o, this.#s, e, this.#l, t)), this.#i.clear();
 		let a = 0, o = null;
 		for (let n of e.racers) {
 			let r = this.#d.get(n.id);
 			if (!r) continue;
-			let i = e.finish?.celebrationActive === !0, s = i && n.finished && n.id === e.winnerId, c = s ? "win" : i && n.finished ? "lose" : n.exiting ? "run" : n.finished ? "idle" : lt(n.reaction, !1, e.state);
+			let i = e.finish?.celebrationActive === !0, s = i && n.finished && n.id === e.winnerId, c = s ? "win" : i && n.finished ? "lose" : n.exiting ? "run" : n.finished ? "idle" : ct(n.reaction, !1, e.state);
 			s && r.finishedAtMs == null && (r.finishedAtMs = e.elapsedMs), n.finished || (r.finishedAtMs = null), r.motion === c ? n.reactionStartedMs != null && (r.motionStartedMs = n.reactionStartedMs) : (r.motion = c, r.motionStartedMs = i ? e.finish?.celebrationStartedMs ?? e.elapsedMs : n.reactionStartedMs ?? r.finishedAtMs ?? e.elapsedMs);
-			let l = Pt({
+			let l = Nt({
 				motion: c,
 				elapsedMs: e.elapsedMs,
 				motionStartedMs: r.motionStartedMs,
@@ -2945,7 +2895,7 @@ var Z = 3, cn = class {
 				speed: n.speed ?? 0,
 				acceleration: n.acceleration ?? 0,
 				reducedMotion: t
-			}), u = e.finish?.camera.mix ?? 0, d = n.displayProgress ?? n.progress, f = +!!s, p = f ? this.#l.width * .5 : Dt(this.#l, d, e.finish?.camera), m = f ? this.#l.height * .5 : Et(this.#l, n.lane, this.#u.length, u);
+			}), u = e.finish?.camera.mix ?? 0, d = n.displayProgress ?? n.progress, f = +!!s, p = f ? this.#l.width * .5 : Et(this.#l, d, e.finish?.camera), m = f ? this.#l.height * .5 : Tt(this.#l, n.lane, this.#u.length, u);
 			r.root.position.set(p, m);
 			let h = 1 + u * (this.#l.compact ? .02 : .08);
 			r.root.scale.set(this.#l.actorScale * h * (f ? 1.42 : 1)), r.root.rotation = 0, r.root.alpha = 1, r.art.position.set(l.x, l.y), r.art.scale.set(l.scaleX, l.scaleY), r.art.rotation = l.rotation;
@@ -2954,7 +2904,7 @@ var Z = 3, cn = class {
 				e.visible = t === g;
 			});
 			let _ = `${Math.floor(e.elapsedMs / 34)}:${e.heat}:${c}:${t}`;
-			_ !== r.effectKey && (r.effectKey = _, sn({
+			_ !== r.effectKey && (r.effectKey = _, rn({
 				graphics: r.fx,
 				pose: l,
 				elapsedMs: e.elapsedMs,
@@ -2979,14 +2929,14 @@ var Z = 3, cn = class {
 				intensity: l.energy
 			}), a = Math.max(a, l.impact);
 		}
-		o && on(this.#i, this.#l.width, this.#l.height, o.x, o.y, o.intensity, e.elapsedMs, t);
+		o && nn(this.#i, this.#l.width, this.#l.height, o.x, o.y, o.intensity, e.elapsedMs, t);
 		let s = (e.finish?.camera.mix ?? 0) * .42;
 		a = Math.max(a, s);
 		let c = e.state === "running" && !t && e.heat >= 2;
 		this.actors.position.set(c ? Math.sin(e.elapsedMs * .09) * a * 1.15 : 0, c ? Math.cos(e.elapsedMs * .11) * a * .7 : 0);
 	}
 	resize() {
-		this.#c && (this.app.resize(), this.#l = Tt(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#l.actorScale * 72)), this.#f && this.render(this.#f));
+		this.#c && (this.app.resize(), this.#l = wt(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#l.actorScale * 72)), this.#f && this.render(this.#f));
 	}
 	destroy() {
 		this.#p?.disconnect(), this.#p = null, this.#d.clear(), this.#u = [], this.#f = null, this.#m = "", this.#h = "", this.app.destroy(!0, { children: !0 }), this.#c = null;
@@ -3000,10 +2950,10 @@ var Z = 3, cn = class {
 			expression: e.expression
 		};
 		return [
-			this.#_(Y(t, 0)),
-			this.#_(Y(t, 1)),
-			this.#_(Y(t, 2)),
-			this.#_(Y(t, 3))
+			this.#_(X(t, 0)),
+			this.#_(X(t, 1)),
+			this.#_(X(t, 2)),
+			this.#_(X(t, 3))
 		];
 	}
 	#_(e) {
@@ -3012,7 +2962,7 @@ var Z = 3, cn = class {
 		return t;
 	}
 	#v(e) {
-		let t = new b({ label: `name-${e.id}` }), n = new it({
+		let t = new b({ label: `name-${e.id}` }), n = new rt({
 			text: e.name,
 			style: {
 				fill: 16777215,
@@ -3044,7 +2994,7 @@ var Z = 3, cn = class {
 };
 //#endregion
 //#region src/arena/background-motion.ts
-function ln(e, t, n = !1, r = !1) {
+function on(e, t, n = !1, r = !1) {
 	if (e !== "running") return {
 		blurX: 0,
 		blurY: 0,
@@ -3059,14 +3009,14 @@ function ln(e, t, n = !1, r = !1) {
 }
 //#endregion
 //#region src/arena/presentation-frame.ts
-var un = [
+var sn = [
 	"stumble",
 	"jump",
 	"duel",
 	"near",
 	"surge"
 ];
-function dn(e, t, n) {
+function cn(e, t, n) {
 	let r = Array.from({ length: Math.max(0, n) }, () => []), i = (e, t, n, i) => {
 		e == null || e < 0 || e >= r.length || r[e]?.push({
 			kind: t,
@@ -3079,16 +3029,16 @@ function dn(e, t, n) {
 	for (let e of r) e.sort((e, t) => e.startedMs - t.startedMs);
 	return r;
 }
-function fn(e, t, n) {
+function ln(e, t, n) {
 	let r = (e?.[t] || []).filter((e) => n >= e.startedMs && n < e.untilMs);
-	for (let e of un) {
+	for (let e of sn) {
 		let t = r.find((t) => t.kind === e);
 		if (t) return t;
 	}
 	return null;
 }
-function pn(e) {
-	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = e.officialFinishMs == null ? !!e.finished || s >= 1 : e.elapsedMs >= e.officialFinishMs, d = s, f = u && e.officialFinishMs != null && e.elapsedMs < e.officialFinishMs + 360, p = u ? null : fn(e.timeline, e.lane, e.elapsedMs);
+function un(e) {
+	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = e.officialFinishMs == null ? !!e.finished || s >= 1 : e.elapsedMs >= e.officialFinishMs, d = s, f = u && e.officialFinishMs != null && e.elapsedMs < e.officialFinishMs + 360, p = u ? null : ln(e.timeline, e.lane, e.elapsedMs);
 	return {
 		id: e.id,
 		lane: e.lane,
@@ -3107,27 +3057,27 @@ function pn(e) {
 }
 //#endregion
 //#region src/arena/theatre.ts
-var mn = .46, hn = .38, gn = .07, _n = .26, vn = .88, yn = .175, Q = (e) => {
+var dn = .46, fn = .38, pn = .07, mn = .26, hn = .88, gn = .175, Q = (e) => {
 	let t = e <= 0 ? 0 : e >= 1 ? 1 : e;
 	return t * t * (3 - 2 * t);
 };
+function _n(e) {
+	return e >= .07 ? 1 : Q(e / pn);
+}
+function vn(e) {
+	return e >= 1 ? 0 : e <= .88 ? 1 : 1 - Q((e - hn) / .12);
+}
+function yn(e) {
+	return e >= .26 ? 1 : Q(e / mn);
+}
 function bn(e) {
-	return e >= .07 ? 1 : Q(e / gn);
-}
-function xn(e) {
-	return e >= 1 ? 0 : e <= .88 ? 1 : 1 - Q((e - vn) / .12);
-}
-function Sn(e) {
-	return e >= .26 ? 1 : Q(e / _n);
-}
-function Cn(e) {
 	let t = (e, t) => e * Math.tanh(Math.max(0, t) / e);
 	return {
-		ahead: t(mn, (1 - e) * .85),
-		behind: t(hn, e * .9)
+		ahead: t(dn, (1 - e) * .85),
+		behind: t(fn, e * .9)
 	};
 }
-function wn(e) {
+function xn(e) {
 	let t = e >>> 0;
 	return () => {
 		t = t + 1831565813 >>> 0;
@@ -3135,13 +3085,13 @@ function wn(e) {
 		return e = Math.imul(e ^ e >>> 15, e | 1), e ^= e + Math.imul(e ^ e >>> 7, e | 61), ((e ^ e >>> 14) >>> 0) / 4294967296;
 	};
 }
-function Tn(e, t = 0) {
+function Sn(e, t = 0) {
 	if (e <= 0 || e >= 1) return 0;
 	let n = (1 - Math.max(0, Math.min(.8, t))) / 2;
 	return e < n ? Q(e / n) : e > 1 - n ? Q((1 - e) / n) : 1;
 }
-function En(e, t, n) {
-	let r = wn((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
+function Cn(e, t, n) {
+	let r = xn((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
 	if (!a) return i;
 	let o = (t) => {
 		let r = 0;
@@ -3178,7 +3128,7 @@ function En(e, t, n) {
 	}
 	return i;
 }
-function Dn(e) {
+function wn(e) {
 	let t = new Map(e.order.map((e) => [e.index, e.finishMs]));
 	return e.samples.map((n, r) => {
 		let i = t.get(r) ?? 0, a = Math.max(1, Math.min(e.frames, Math.round(i / 40))), o = a, s = a - 1;
@@ -3186,14 +3136,14 @@ function Dn(e) {
 		return Math.max(1e-5, (n[o] ?? 0) - (n[s] ?? 0)) / 40;
 	});
 }
-function On(e, t) {
+function Tn(e, t) {
 	let n = e.samples.length, r = e.frames;
 	if (!n) return {
 		shown: [],
 		events: [],
 		arcs: []
 	};
-	let i = wn((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
+	let i = xn((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
 		a1: .6 + i() * .55,
 		f1: 1.3 + i() * 1.6,
 		p1: i() * Math.PI * 2,
@@ -3201,13 +3151,13 @@ function On(e, t) {
 		f2: 2.2 + i() * 2,
 		p2: i() * Math.PI * 2,
 		amp: .45 + i() * 1.5
-	})), o = En(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set();
+	})), o = Cn(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set();
 	for (let t = 0; t < n; t++) {
 		let n = a[t], i = e.samples[t], u = o[t];
 		for (let e = 0; e <= r; e++) {
 			let r = i[e] ?? 0, a = r >= 1 ? 0 : (1 - r) ** 1.35, o = r * Math.PI * 2, d = Math.sin(o * n.f1 + n.p1) * n.a1 + Math.sin(o * n.f2 + n.p2) * n.a2, f = 0;
 			for (let n of u) {
-				f += n.power * Tn((r - n.start) / n.width, n.hold);
+				f += n.power * Sn((r - n.start) / n.width, n.hold);
 				let i = `${t}:${n.kind}:${n.start}`;
 				!l.has(i) && r >= n.start + n.width * .28 && (l.add(i), c.push({
 					kind: n.kind === "collapse" ? "stumble" : n.kind,
@@ -3216,7 +3166,7 @@ function On(e, t) {
 					durMs: 1800
 				}));
 			}
-			let p = bn(r) * xn(r) * Sn(r), m = (d * n.amp * yn * a + f) * p, { ahead: h, behind: g } = Cn(r), _ = m >= 0 ? h : g, v = _ > 1e-6 ? _ * Math.tanh(m / _) : 0, y = r * bn(r) + v;
+			let p = _n(r) * vn(r) * yn(r), m = (d * n.amp * gn * a + f) * p, { ahead: h, behind: g } = bn(r), _ = m >= 0 ? h : g, v = _ > 1e-6 ? _ * Math.tanh(m / _) : 0, y = r * _n(r) + v;
 			y < 0 && (y = 0), r < 1 && y > r + h && (y = r + h), r >= 1 && (y = 1), s[t][e] = y;
 		}
 	}
@@ -3226,13 +3176,13 @@ function On(e, t) {
 		arcs: o
 	};
 }
-function kn(e) {
+function En(e) {
 	return Math.max(.09, mt - (Math.max(1, e || 1) - 1) * .022);
 }
-function An(e) {
-	let t = Dn(e), n = [];
+function Dn(e) {
+	let t = wn(e), n = [];
 	for (let r of e.order) {
-		let e = Math.max(1e-6, t[r.index] ?? 1e-4), i = kn(r.place), a = i / e;
+		let e = Math.max(1e-6, t[r.index] ?? 1e-4), i = En(r.place), a = i / e;
 		n[r.index] = {
 			finishMs: r.finishMs,
 			place: r.place,
@@ -3244,20 +3194,20 @@ function An(e) {
 	}
 	return n;
 }
-function jn(e, t, n) {
+function On(e, t, n) {
 	if (!n || t < n.finishMs) return e;
 	let r = t - n.finishMs;
 	return 1 + n.settle * (1 - Math.exp(-r / n.tau));
 }
-function Mn(e, t, n) {
+function kn(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
 	if (n) return "celebrating";
 	let r = e - t.finishMs;
 	return r < 160 ? "crossing" : r < t.coastMs ? "coasting" : "settled";
 }
-function Nn(e, t, n, r) {
-	let i = Mn(t, n, r);
-	if (e.phase = i, e.displayProgress = jn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
+function An(e, t, n, r) {
+	let i = kn(t, n, r);
+	if (e.phase = i, e.displayProgress = On(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
 		let r = t - n.finishMs;
 		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Math.exp(-r / n.tau) * 180));
 	}
@@ -3266,7 +3216,7 @@ function Nn(e, t, n, r) {
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function Pn(e, t) {
+async function jn(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -3281,7 +3231,7 @@ async function Pn(e, t) {
 		overflow: "hidden",
 		pointerEvents: "none"
 	}), getComputedStyle(n).position === "static" && (n.style.position = "relative"), n.appendChild(a);
-	let o = new cn();
+	let o = new an();
 	try {
 		await o.mount(a);
 		for (let e of r) e.style.setProperty("visibility", "hidden", "important"), e.setAttribute("aria-hidden", "true");
@@ -3327,6 +3277,6 @@ async function Pn(e, t) {
 	}
 }
 //#endregion
-export { Kt as ACCESSORY_KEYS, qt as EXPRESSION_KEYS, hn as MAX_DROP, mn as MAX_LEAD, Cn as allowance, Tn as arcShape, ln as backgroundMotion, $t as characterIds, Qt as characterSvg, xn as closingEase, jn as coastProgress, Y as composeCharacter, Pn as createArenaRenderer, wt as createFinishPresentation, dn as createReactionTimeline, Dn as crossingSpeeds, On as dramatize, Mn as finishPhase, yt as finishReveal, An as finishTrajectories, bn as launchEase, Ut as normalizeCharacter, Sn as openEase, En as planArcs, Nn as presentFinish, pn as presentationRacerFrame, xt as presentationScreenRatio, fn as reactionAt, Zt as runsToPaths, kn as settleOffset, Yt as silhouetteRuns };
+export { Gt as ACCESSORY_KEYS, Kt as EXPRESSION_KEYS, fn as MAX_DROP, dn as MAX_LEAD, bn as allowance, Sn as arcShape, on as backgroundMotion, Qt as characterIds, Zt as characterSvg, vn as closingEase, On as coastProgress, X as composeCharacter, jn as createArenaRenderer, Ct as createFinishPresentation, cn as createReactionTimeline, wn as crossingSpeeds, Tn as dramatize, dt as finishPassProgress, kn as finishPhase, Dn as finishTrajectories, _n as launchEase, Ht as normalizeCharacter, yn as openEase, Cn as planArcs, An as presentFinish, un as presentationRacerFrame, bt as presentationScreenRatio, ln as reactionAt, Xt as runsToPaths, En as settleOffset, Jt as silhouetteRuns };
 
 //# sourceMappingURL=pixi-runtime.js.map

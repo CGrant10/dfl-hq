@@ -3,11 +3,10 @@ import {
   FINISH_LINE_RATIO,
   MAX_CAMERA_MIX,
   MAX_SETTLE,
-  REVEAL_FROM,
-  REVEAL_FULL,
   RUN_OFF_RATIO,
   TRACK_START,
-  finishReveal,
+  finishPassProgress,
+  PRE_FINISH_SWEEP_MS,
   FINAL_STRETCH_START,
   PHOTO_FINISH_THRESHOLD_MS,
   cameraForLeader,
@@ -71,46 +70,55 @@ describe("Arena finish presentation", () => {
     expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.97);
   });
 
-  it("sweeps the stripe in late, and parks it before anyone crosses", () => {
-    expect(finishReveal(0.5)).toBe(0);
-    expect(finishReveal(REVEAL_FROM)).toBe(0);
-    expect(finishReveal(0.89)).toBeGreaterThan(0);
-    expect(finishReveal(0.89)).toBeLessThan(1);
-    /* Fully parked while the leader still has ground to cover - the sweep
-       must never still be moving when the first finisher arrives. */
-    expect(finishReveal(REVEAL_FULL)).toBe(1);
-    expect(REVEAL_FULL).toBeLessThan(0.94);   // real margin, not a photo finish
-    expect(finishReveal(1)).toBe(1);
-  });
-
-  it("moves the stripe without moving a single racer", () => {
+  it("passes through once, monotonically, and never reverses", () => {
     /*
-      The sweep is scenery: it is a CSS transform on the marker element and
-      nothing in the geometry reads it. Racer x for a given progress must be
-      identical at every point of the sweep.
+      THE BOOMERANG REGRESSION. The old reveal was a function of drawn
+      leader progress, which is non-monotonic because collapses are a
+      feature - measured, the stripe reversed in 8 of 25 seeded races.
+      This is a clamped ramp on a clock, so it cannot.
     */
-    for (const p of [0.5, 0.88, 0.94, 1, 1.2]) {
-      const atStart = presentationScreenRatio(p, cameraForLeader(REVEAL_FROM));
-      const midSweep = presentationScreenRatio(p, cameraForLeader(0.89));
-      const parked = presentationScreenRatio(p, cameraForLeader(1));
-      expect(midSweep).toBe(atStart);
-      expect(parked).toBe(atStart);
+    const first = 11_099;
+    const last = 12_447;
+    let prev = -1;
+    for (let ms = 0; ms <= last + 4000; ms += 16) {
+      const p = finishPassProgress(ms, first, last);
+      expect(p).toBeGreaterThanOrEqual(prev);       // never goes backwards
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThanOrEqual(1);
+      prev = p;
     }
   });
 
-  it("keeps the reveal out of the geometry so it cannot move a racer", () => {
+  it("is hidden for almost the whole race and enters only at the end", () => {
+    const first = 11_099;
+    const last = 12_447;
+    expect(finishPassProgress(0, first, last)).toBe(0);
+    expect(finishPassProgress(first - PRE_FINISH_SWEEP_MS, first, last)).toBe(0);
+    expect(finishPassProgress(first * 0.5, first, last)).toBe(0);
+    expect(finishPassProgress(first, first, last)).toBeGreaterThan(0);
+    expect(finishPassProgress(first, first, last)).toBeLessThan(1);
+    // and it is gone once everyone is home
+    expect(finishPassProgress(last + 2000, first, last)).toBe(1);
+  });
+
+  it("cannot be dragged backwards by a racer falling back", () => {
     /*
-      The brief asked for the stripe to slide left on reveal with the
-      mapping interpolated. That is not possible: screen position is
-      progress * scale, so shrinking the scale walks every racer left, and
-      at p=0.95 the drift only drops below the racer's own forward speed at
-      about a six second transition. The reveal is opacity, and this test
-      is what stops anyone reintroducing it.
+      Seed 32676 reversed the old implementation. The input here is elapsed
+      time, so a backslide in `shown` is structurally incapable of moving
+      the scenery - this asserts the signature carries no progress at all.
     */
-    for (const p of [0.5, 0.9, 1, 1.2]) {
-      const before = presentationScreenRatio(p, cameraForLeader(0.5));
-      const after = presentationScreenRatio(p, cameraForLeader(1));
-      expect(after).toBe(before);
+    const a = finishPassProgress(11_000, 11_099, 12_447);
+    const b = finishPassProgress(11_000, 11_099, 12_447);
+    expect(a).toBe(b);
+    expect(finishPassProgress(11_050, 11_099, 12_447)).toBeGreaterThan(a);
+  });
+
+  it("derives identically for live and shared from the same inputs", () => {
+    // Stateless and pure: two callers with the same clock agree by
+    // construction, so the two views cannot drift.
+    for (const ms of [0, 9000, 10_500, 11_099, 12_000, 13_500]) {
+      expect(finishPassProgress(ms, 11_099, 12_447))
+        .toBe(finishPassProgress(ms, 11_099, 12_447));
     }
   });
 

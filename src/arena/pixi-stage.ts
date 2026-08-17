@@ -4,7 +4,7 @@ import { normalizePet, petMotion, type ArenaPet, type PetMotion } from "./pet-te
 import { arenaViewport, laneY, screenX, type ArenaViewport } from "./viewport";
 import { motionPose, racerVariant } from "./animation";
 import { composeCharacter, type CharacterComposition } from "./character";
-import { drawAnimeField, drawForegroundRush, drawPhotoFinish, drawWinnerConvergence } from "./anime-effects";
+import { drawPhotoFinish, drawWinnerConvergence } from "./anime-effects";
 import { drawRacerEffects } from "./racer-effects";
 
 const PIXEL_SIZE = 3;
@@ -127,8 +127,16 @@ export class PixiRaceStage implements RaceRenderer {
       Math.round((frame.finish?.camera.mix ?? 0) * 20)}:${reducedMotion}:${this.#viewport.width}:${this.#viewport.height}`;
     if (fieldKey !== this.#fieldKey) {
       this.#fieldKey = fieldKey;
-      drawAnimeField(this.#backgroundLines, frame, this.#viewport, reducedMotion);
-      drawForegroundRush(this.#foregroundLines, frame, this.#viewport, reducedMotion);
+      /*
+        GLOBAL SPEED LINES ARE OFF - see the note in screens.css. These two
+        drew horizontal white bars across the entire scene every frame,
+        which reads as the screen moving rather than the racers. The layers
+        stay mounted and cleared so the display list and the chunk graph are
+        unchanged; only the drawing is gone. Racer-specific effects
+        (drawRacerEffects, per actor) are untouched.
+      */
+      this.#backgroundLines.clear();
+      this.#foregroundLines.clear();
     }
     const photo = frame.finish?.photoFinish;
     const photoKey = `${photo?.phase ?? "none"}:${photo?.gapMs ?? 0}:${this.#viewport.width}:${this.#viewport.height}:${reducedMotion}`;

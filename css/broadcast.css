@@ -611,7 +611,15 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 /* The single racer tag is styled once, with the Arena's, in screens.css. */
 .bc-stage .bc-board{align-self:start;margin:1vw;border:1px solid #ffffff30;border-radius:1vw;background:rgba(5,12,22,.7);backdrop-filter:blur(10px);box-shadow:0 .8vw 2vw #0005;overflow:hidden}
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
-.bc-stage .bc-finish{filter:drop-shadow(0 0 10px #fff)}
+.bc-stage .bc-finish{
+  right:42%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8;
+  /* 0 = offscreen right, .5 = through the racers, 1 = offscreen left.
+     One continuous pass driven by a clamped clock ramp, so it cannot
+     reverse, stop or re-enter. Scenery: nothing reads it. */
+  transform:translateX(calc((0.5 - var(--finish-pass,0)) * 190vw));
+  opacity:min(1,calc(var(--finish-pass,0) * 12));
+  will-change:transform;
+}
 .bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
 .bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,220,92,.34),rgba(255,157,28,.08) 26%,rgba(2,7,14,.62) 62%)}
 .bc-runner.trail-dust::before,.bc-runner.trail-spark::before,.bc-runner.trail-rainbow::before{content:"";position:absolute;right:68%;top:50%;width:66%;pointer-events:none;opacity:.9}

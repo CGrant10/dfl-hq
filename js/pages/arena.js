@@ -20,7 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishReveal, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishPassProgress, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
@@ -1250,12 +1250,14 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         celebrating: finishPresentation.celebrationActive,
       });
       if (raceWrap.dataset.shot !== shot) raceWrap.dataset.shot = shot;
-      /* The stripe is hidden until the leader is into the last tenth. Pure
-         opacity - no geometry reads this, so it cannot move a racer. */
-      const reveal = finishReveal(leaderProgress);
-      if (reveal !== lastReveal) {
-        raceWrap.style.setProperty("--finish-reveal", reveal.toFixed(3));
-        lastReveal = reveal;
+      /*
+        THE FINISH PASS. Time-derived, so a racer falling backwards cannot
+        drag the scenery back with them - see finishPassProgress().
+      */
+      const pass = finishPassProgress(elapsed, sim.order[0].finishMs, sim.order.at(-1).finishMs);
+      if (pass !== lastReveal) {
+        raceWrap.style.setProperty("--finish-pass", pass.toFixed(4));
+        lastReveal = pass;
       }
 
       /* Callouts replace the status word as they come due, and the last

@@ -21,7 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishReveal, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishPassProgress, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
@@ -520,11 +520,14 @@ function watch(view, id, racers) {
         celebrating: finishPresentation.celebrationActive,
       });
       if (els.stage.dataset.shot !== shot) els.stage.dataset.shot = shot;
-      /* Same opacity-only stripe reveal as the Arena stage. */
-      const reveal = finishReveal(leaderProgress);
-      if (reveal !== live.lastReveal) {
-        els.stage.style.setProperty("--finish-reveal", reveal.toFixed(3));
-        live.lastReveal = reveal;
+      /*
+        THE FINISH PASS. Time-derived, so a racer falling backwards cannot
+        drag the scenery back with them - see finishPassProgress().
+      */
+      const pass = finishPassProgress(Math.max(0, elapsed), live.sim.order[0].finishMs, live.sim.order.at(-1).finishMs);
+      if (pass !== live.lastReveal) {
+        els.stage.style.setProperty("--finish-pass", pass.toFixed(4));
+        live.lastReveal = pass;
       }
       const pixiState = finishPresentation.celebrationActive ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
       live.pixi?.render({
