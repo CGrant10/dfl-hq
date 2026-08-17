@@ -853,9 +853,7 @@ a.moment:hover { background: var(--hover-soft); }
 .race-hills{position:absolute;left:-10%;width:120%;height:30%;bottom:30%;background:#5aa64d;clip-path:polygon(0 100%,0 55%,9% 15%,17% 62%,28% 9%,38% 62%,49% 20%,62% 65%,73% 8%,85% 55%,94% 18%,100% 58%,100% 100%)}
 .race-hills.far{bottom:39%;background:#8cc66d;opacity:.85;transform:scaleX(1.1)}
 .race-crowd{position:absolute;left:0;right:0;bottom:26%;height:14%;background:radial-gradient(circle,#f7cf57 0 24%,transparent 27%) 0 0/18px 18px,radial-gradient(circle,#e45b6c 0 24%,transparent 27%) 9px 9px/18px 18px,#304756;border-top:5px solid #f5f2db}
-.runner-nameplate{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;padding:2px 6px;border-radius:99px;background:rgba(8,13,20,.85);color:#fff;font:700 9px/1.4 var(--font-condensed);box-shadow:0 2px 8px #0006}
-.runner-nameplate b{color:var(--racer)}
-@media(max-width:640px){.pet-option-grid{grid-template-columns:1fr}.race-crowd{opacity:.75}.runner-nameplate{font-size:8px}}
+@media(max-width:640px){.pet-option-grid{grid-template-columns:1fr}.race-crowd{opacity:.75}}
 
 .arena-track-wrap.cinematic-race .race-scenery{z-index:0}
 .arena-track-wrap.cinematic-race .scoreboard,.arena-track-wrap.cinematic-race .track,.arena-track-wrap.cinematic-race .countdown{position:relative;z-index:2}
@@ -916,9 +914,7 @@ a.moment:hover { background: var(--hover-soft); }
 /* Match the shared open-field view on the admin Arena stage. */
 .arena-track-wrap.cinematic-race .track{position:relative;display:block;height:clamp(430px,68vh,720px);overflow:hidden}
 .arena-track-wrap.cinematic-race .lane{position:absolute;left:0;right:0;top:var(--lane-y);height:clamp(34px,5.2vh,58px);transform:translateY(-50%);border:0;background:transparent}
-.arena-track-wrap.cinematic-race .lane-tag{display:none}
 .arena-track-wrap.cinematic-race .runner-art{width:72px;height:48px}
-.arena-track-wrap.cinematic-race .runner-nameplate{top:82%}
 .arena-track-wrap.cinematic-race .track-finish{right:3%}
 @media(max-width:640px){
   .arena-track-wrap.cinematic-race .track{height:72vh;min-height:500px}
@@ -934,7 +930,6 @@ a.moment:hover { background: var(--hover-soft); }
 .arena-track-wrap.cinematic-race .runner-art{width:88px;height:58px;filter:drop-shadow(0 8px 7px #0009)}
 .arena-track-wrap.cinematic-race .lane{height:clamp(42px,6vh,66px)}
 .arena-track-wrap.cinematic-race .race-scenery{transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)}
-.arena-track-wrap.cinematic-race .runner-nameplate{top:76%;font-size:10px;border:1px solid #ffffff30}
 @media(max-width:640px){
   .arena-track-wrap.cinematic-race .runner{width:68px;height:46px}
   .arena-track-wrap.cinematic-race .runner-art{width:68px;height:46px}
@@ -1385,4 +1380,109 @@ a.moment:hover { background: var(--hover-soft); }
 }
 .arena-track-wrap[data-camera="finish"] .track {
   box-shadow:inset 0 -12px 18px rgba(12,25,20,.32),inset 0 0 80px rgba(255,220,92,.08);
+}
+
+
+/* =====================================================================
+   ONE NAME TAG PER RACER.
+   ---------------------------------------------------------------------
+   .lane-tag is the original track-side identity and is now the only one.
+   It was switched off with display:none while a second badge
+   (.runner-nameplate) was added inside the runner; the second badge is
+   gone and this one has moved into .runner, so it travels with its racer
+   instead of labelling a fixed strip of track.
+
+   Readability over subtlety: the old dim 28%-opacity treatment was built
+   for a quiet lane list, not for a racer moving over grass, crowd and
+   speed lines.
+   ===================================================================== */
+.arena-track-wrap.cinematic-race .lane-tag,
+.bc-stage .bc-lane-name{
+  position:absolute;left:50%;top:78%;right:auto;
+  transform:translateX(-50%);
+  z-index:6;                       /* above the track, below the countdown */
+  display:flex;align-items:center;gap:5px;
+  max-width:min(30vw,168px);
+  padding:2px 7px;border-radius:99px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(6,11,20,.86);
+  color:#fff;opacity:1;
+  /* --font-display, not --font-condensed: that variable has never been
+     defined anywhere, so every `font:` shorthand reaching for it is thrown
+     away whole and silently falls back to 16px/400 - which is why the
+     badge this replaces never wore the type it was written for. */
+  font:800 11px/1.35 var(--font-display);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 2px #000;
+  box-shadow:0 2px 9px rgba(0,0,0,.55);
+  pointer-events:none;
+}
+.arena-track-wrap.cinematic-race .lane-tag b,
+.bc-stage .bc-lane-name b{
+  flex:none;display:inline-grid;place-items:center;
+  width:15px;height:15px;border-radius:50%;
+  background:var(--racer);color:#06240f;
+  font-size:9px;font-weight:900;
+}
+/* The leader's tag reads first; a finished racer's fades back so the
+   crowd of settled names does not compete with the racers still going. */
+.arena-track-wrap.cinematic-race .runner.is-leading .lane-tag,
+.bc-stage .bc-runner.is-leading .bc-lane-name{
+  border-color:rgba(255,216,74,.85);
+  box-shadow:0 2px 12px rgba(255,216,74,.45);
+}
+.arena-track-wrap.cinematic-race .runner[data-phase="settled"] .lane-tag,
+.bc-stage .bc-runner[data-phase="settled"] .bc-lane-name{opacity:.72}
+@media(max-width:640px){
+  .arena-track-wrap.cinematic-race .lane-tag,
+  .bc-stage .bc-lane-name{font-size:10px;max-width:34vw}
+}
+
+
+/* =====================================================================
+   THE 2D CAMERA. A shot, not a dimension.
+   ---------------------------------------------------------------------
+   This is still a flat 2D race and nothing here is 3D. The whole track -
+   ground, scenery crop and the Pixi canvas inside it - is scaled and
+   pushed down so the lower band of the course fills more of the frame and
+   the racers read as closer to the viewer. Racer X positions are computed
+   from progress long before this runs, so no shot can move anybody.
+
+   wide    the establishing shot; the default
+   launch  in tight off the line, so the start has somewhere to go
+   low     ground level, held briefly on a change of lead
+   final   easing back out as the leader reaches the last stretch
+   finish  low and close for the arrivals and the celebration
+   ===================================================================== */
+.arena-track-wrap[data-shot] .track,
+.bc-stage[data-shot] .bc-track{
+  transform-origin:50% 94%;
+  transition:transform .62s cubic-bezier(.22,.75,.2,1);
+  will-change:transform;
+}
+.arena-track-wrap[data-shot="wide"] .track,
+.bc-stage[data-shot="wide"] .bc-track{transform:none}
+.arena-track-wrap[data-shot="launch"] .track,
+.bc-stage[data-shot="launch"] .bc-track{transform:scale(1.09) translateY(2.4%)}
+.arena-track-wrap[data-shot="low"] .track,
+.bc-stage[data-shot="low"] .bc-track{transform:scale(1.15) translateY(4.2%)}
+.arena-track-wrap[data-shot="final"] .track,
+.bc-stage[data-shot="final"] .bc-track{transform:scale(1.05) translateY(1.2%)}
+.arena-track-wrap[data-shot="finish"] .track,
+.bc-stage[data-shot="finish"] .bc-track{transform:scale(1.12) translateY(3%)}
+/* A low shot darkens the top of the frame, which is what selling a
+   ground-level angle in two dimensions actually comes down to. */
+.arena-track-wrap[data-shot="low"] .track::after,
+.arena-track-wrap[data-shot="finish"] .track::after,
+.bc-stage[data-shot="low"] .bc-track::after,
+.bc-stage[data-shot="finish"] .bc-track::after{
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:linear-gradient(180deg,rgba(3,9,18,.34) 0,rgba(3,9,18,.06) 26%,transparent 46%);
+}
+/* Reduced motion keeps one steady wide shot for the whole race. */
+.race-motion-reduced[data-shot] .track,
+.bc-stage.race-motion-reduced[data-shot] .bc-track{transform:none!important}
+@media(prefers-reduced-motion:reduce){
+  .arena-track-wrap[data-shot] .track,
+  .bc-stage[data-shot] .bc-track{transform:none!important;transition:none}
 }

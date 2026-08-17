@@ -26,7 +26,8 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
-import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS,
+         COAST_MS, coastProgress, finishPhase, raceShot } from "../arena/race.js";
 
 const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
@@ -858,14 +859,20 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         <div class="track-finish"></div>
         ${racers.map((r, i) => `
           <div class="lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
-            <span class="lane-tag" style="--racer:${esc(r.color)}">
-              <b>${r.number}</b>${esc(r.name)}
-            </span>
             <div class="runner trail-${esc(r.pet?.trail || "none")}" id="runner-${i}">
               <div class="runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
                 ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
               </div>
-              <span class="runner-nameplate"><b>${r.number}</b> ${esc(r.name)}</span>
+              <!--
+                ONE NAME TAG PER RACER, and it is the original .lane-tag.
+
+                A second badge (.runner-nameplate) had been added inside the
+                runner while this one was left switched off with display:none
+                in the cinematic rules. The original is switched back on and
+                lives inside .runner instead of the lane, so it travels with
+                its racer rather than labelling an empty strip of track.
+              -->
+              <span class="lane-tag" style="--racer:${esc(r.color)}"><b>${r.number}</b>${esc(r.name)}</span>
             </div>
           </div>`).join("")}
       </div>
@@ -928,6 +935,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
   let reducedMotionEffects = getReduceRaceMotion();
   const raceWrap = stage.querySelector(".arena-track-wrap");
   applyRaceMotionClass(raceWrap, reducedMotionEffects);
+  raceWrap.dataset.shot = "wide";        // the establishing shot, before GO
   const stopMotionWatch = onReduceRaceMotionChange((reduced) => {
     reducedMotionEffects = reduced;
     applyRaceMotionClass(raceWrap, reduced);
@@ -961,6 +969,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const expiry = [];
     const rows    = racers.map((_, i) => stage.querySelector(`#ar-row-${i}`));
     const official = new Map(sim.order.map((o) => [o.index, o.finishMs]));
+    /* Finishing place, for the post-finish parking spots. Straight off
+       sim.order, so the spread is the real result and not a guess. */
+    const placeOf = new Map(sim.order.map((o) => [o.index, o.place]));
     let lastOrderKey = "";
     const homed = new Set();
     const track = stage.querySelector("#track");
@@ -986,6 +997,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     const reacting = new Map();
     let sceneryBlurX = 0;
     let leader = -1;
+    /* When the lead last actually changed hands, which is one of the few
+       moments worth dropping the camera to track level for. */
+    let lastLeadChangeMs = null;
 
     function frame(now) {
       /* A Pause, Reset, route change, or re-render detaches this stage.
@@ -1030,10 +1044,36 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: official.get(i), timeline: pixiTimeline,
         });
         const p = pixiRacer.progress;                  // interpolate between ticks
-        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress ?? p, finishPresentation.camera);
-        // Pixi owns visible racer movement after handoff. Keep DOM writes only
-        // for the fallback renderer instead of animating two copies 60fps.
-        if (!pixi) runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
+
+        /*
+          THE COAST, WRITTEN OVER THE SHARED ADAPTER'S ONE NUMBER.
+
+          presentationRacerFrame() parks every finisher at the same
+          `1 + 0.2`, which is why twelve racers ended up on one coordinate.
+          The frame payload is built here, so the per-place spot is
+          substituted before either renderer sees it - Pixi positions from
+          `displayProgress`, so this is all it takes to spread them out.
+
+          `progress` is left exactly as it was: the board, the callouts and
+          the result all read that one, and only the DRAWN position moves.
+        */
+        const finishMs = official.get(i);
+        const visualMs = finishPresentation.visualElapsedMs;
+        const phase = finishPhase(visualMs, finishMs, finishPresentation.celebrationActive);
+        pixiRacer.displayProgress = coastProgress(p, visualMs, finishMs, placeOf.get(i));
+        pixiRacer.exiting = phase === "crossing" || phase === "coasting";
+        if (pixiRacer.exiting) {
+          /* Still running as they cross, winding down into the spot. */
+          pixiRacer.speed = Math.max(0, 0.85 * (1 - (visualMs - finishMs) / COAST_MS));
+        }
+
+        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
+        /* The runner element carries the name tag, so it has to track the
+           racer whether or not Pixi is drawing the character. The art
+           inside it is already hidden by the Pixi handoff, so this moves a
+           label and nothing else - it does not animate a second racer. */
+        runners[i].style.setProperty("--race-x", `${(trackWidth * screenRatio).toFixed(2)}px`);
+        if (runners[i].dataset.phase !== phase) runners[i].dataset.phase = phase;
         if (pixiRacer.finished) runners[i].classList.add("is-home");
         pixiRacers.push(pixiRacer);
       }
@@ -1201,10 +1241,29 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
          at a glance even on a phone-sized track. */
       const top = order[0];
       if (top !== leader) {
-        if (leader >= 0) runners[leader]?.classList.remove("is-leading");
+        if (leader >= 0) {
+          runners[leader]?.classList.remove("is-leading");
+          /* Only a genuine change of hands counts - not the first frame,
+             where nobody held the lead to begin with. */
+          lastLeadChangeMs = elapsed;
+        }
         runners[top]?.classList.add("is-leading");
         leader = top;
       }
+
+      /*
+        THE SHOT. A flat 2D framing chosen once a frame and written to the
+        wrapper; the CSS transform on .track does the rest. It cannot move
+        a racer - progress is already on screen by the time this runs, and
+        nothing here is fed back into the renderer.
+      */
+      const shot = raceShot({
+        elapsedMs: elapsed,
+        leaderProgress,
+        lastLeadChangeMs,
+        celebrating: finishPresentation.celebrationActive,
+      });
+      if (raceWrap.dataset.shot !== shot) raceWrap.dataset.shot = shot;
 
       /* Callouts replace the status word as they come due, and the last
          one stays up rather than flicking back - the scoreboard has one

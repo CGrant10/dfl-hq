@@ -608,10 +608,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-track{background:linear-gradient(180deg,transparent 0 19%,rgba(42,94,44,.28) 19% 100%);border:0;box-shadow:none}
 .bc-stage .bc-lane{border-color:rgba(255,255,255,.26);background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.05))}
 .bc-stage .bc-lane:nth-child(even){background:linear-gradient(90deg,rgba(0,0,0,.08),rgba(255,255,255,.04))}
-.bc-stage .bc-lane-name{opacity:.22;transition:opacity .2s}
-.bc-stage .bc-lane:hover .bc-lane-name{opacity:1}
-.bc-runner-name{position:absolute;left:50%;top:90%;transform:translateX(-50%);white-space:nowrap;padding:.18vw .5vw;border-radius:99px;background:rgba(5,10,18,.86);color:#fff;font:700 clamp(9px,1vw,18px)/1.25 var(--font-condensed);text-shadow:none;box-shadow:0 .2vw .7vw #0007}
-.bc-runner-name b{color:var(--racer)}
+/* The single racer tag is styled once, with the Arena's, in screens.css. */
 .bc-stage .bc-board{align-self:start;margin:1vw;border:1px solid #ffffff30;border-radius:1vw;background:rgba(5,12,22,.7);backdrop-filter:blur(10px);box-shadow:0 .8vw 2vw #0005;overflow:hidden}
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
 .bc-stage .bc-finish{filter:drop-shadow(0 0 10px #fff)}
@@ -626,7 +623,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   .bc-stage .bc-board{position:absolute;right:.5rem;top:.5rem;width:min(38vw,190px);max-height:42%;font-size:.72rem}
   .bc-stage .bc-board-head{padding:.35rem .55rem}
   .bc-stage .bc-board-list li{min-height:1.65rem;padding:.2rem .4rem}
-  .bc-runner-name{font-size:9px;padding:1px 4px}
 }
 
 /* Cinematic finish sequence shared by phones, desktop and OBS. */
@@ -643,10 +639,8 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-body{display:block;padding:.8vw 1.4vw 1.2vw}
 .bc-stage .bc-track{display:block;position:relative;width:100%;height:100%;min-height:0;border-radius:1.2vw;overflow:hidden;background:linear-gradient(180deg,rgba(82,183,235,.08) 0 42%,rgba(47,126,53,.14) 43% 100%)}
 .bc-stage .bc-lane{position:absolute;left:0;right:0;top:var(--lane-y);height:5.4vw;min-height:38px;padding:0;transform:translateY(-50%);border:0!important;background:transparent!important}
-.bc-stage .bc-lane-name{display:none}
 .bc-stage .bc-runner{height:5.2vw;min-height:36px}
 .bc-stage .bc-runner-art{width:7.5vw;height:5.2vw;filter:drop-shadow(0 .5vw .55vw rgba(0,0,0,.65))}
-.bc-stage .bc-runner-name{top:82%;font-size:clamp(8px,.78vw,15px);padding:.1vw .38vw}
 .bc-stage .bc-board{position:absolute;z-index:5;right:2vw;top:1vw;width:17vw;height:auto;max-height:none;margin:0;background:rgba(5,12,22,.76)}
 .bc-stage .bc-board-list{display:block}
 .bc-stage .bc-board-list li{height:2.45vw;min-height:27px;grid-template-columns:2vw 1fr;font-size:1vw;padding:0 .8vw}
@@ -669,7 +663,6 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   transform:translateX(-50%);will-change:left;
 }
 .bc-stage .bc-runner-art{width:10vw;height:6.8vw;filter:drop-shadow(0 .65vw .6vw rgba(0,0,0,.72))}
-.bc-stage .bc-runner-name{top:76%;font-size:clamp(10px,.9vw,17px);padding:.16vw .48vw;border:1px solid rgba(255,255,255,.18)}
 .bc-stage .bc-lane{height:6.6vw}
 .bc-stage .race-scenery{transform:translate3d(calc(var(--race-pan,0) * -5%),0,0)}
 .bc-stage.is-racing .bc-head{padding:.65vw 1.4vw .45vw;background:linear-gradient(180deg,rgba(5,13,25,.8),transparent)}
@@ -835,11 +828,9 @@ body.broadcasting .view { width:100%; height:100%; }
     min-height:30px;
   }
   .bc-stage .bc-lane { height:10.5vh; min-height:32px; }
-  .bc-stage .bc-runner-name {
+  .bc-stage .bc-lane-name {
     top:72%;
     max-width:18vh;
-    overflow:hidden;
-    text-overflow:ellipsis;
     font-size:clamp(8px,2.5vh,12px);
   }
   .bc-stage .bc-board {
@@ -873,7 +864,6 @@ body.broadcasting .view { width:100%; height:100%; }
   .bc-stage .bc-foot { padding:6px 12px calc(6px + env(safe-area-inset-bottom)); }
   .bc-stage .bc-runner,
   .bc-stage .bc-runner-art { width:14vw; height:9.5vw; }
-  .bc-stage .bc-runner-name { top:74%; max-width:21vw; overflow:hidden; text-overflow:ellipsis; }
 }
 
 
@@ -1055,12 +1045,11 @@ body.broadcasting .view { width:100%; height:100%; }
 }
 
 @media(max-width:800px){
-  .lane-tag{z-index:5;top:-6px;left:6px;max-width:42vw;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.9);text-shadow:0 1px 3px #000}
   .arena-track-wrap.has-pixi-race .runner,
   .bc-track.has-pixi-race .bc-runner{z-index:3}
-  .arena-track-wrap .runner-nameplate,
-  .bc-stage .bc-runner-name{z-index:6;top:-12%!important;max-width:min(31vw,150px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 9px #0009}
+  /* Pixi draws its own nameplate at this width, so the DOM tag stands
+     down to keep it to exactly one per racer. Above 800px Pixi draws
+     none and the DOM tag below is the only one. */
   .arena-track-wrap.has-pixi-race .lane-tag,
-  .arena-track-wrap.has-pixi-race .runner-nameplate,
-  .bc-track.has-pixi-race .bc-runner-name{visibility:hidden!important}
+  .bc-track.has-pixi-race .bc-lane-name{visibility:hidden!important}
 }

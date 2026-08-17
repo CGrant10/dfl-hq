@@ -25,7 +25,8 @@ import { backgroundMotion, createArenaRenderer, createFinishPresentation, create
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
-import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS } from "../arena/race.js";
+import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
+         COAST_MS, coastProgress, finishPhase, raceShot } from "../arena/race.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -261,14 +262,13 @@ function paint(view, event, racers) {
           <div class="bc-finish"></div>
           ${racers.map((r, i) => `
             <div class="bc-lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
-              <span class="bc-lane-name" style="--racer:${esc(r.color)}">
-                <b>${r.number}</b>${esc(r.name)}
-              </span>
               <div class="bc-runner trail-${esc(r.pet?.trail || "none")}" id="bc-runner-${i}">
                 <div class="bc-runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
                   ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
                 </div>
-                <span class="bc-runner-name"><b>${r.number}</b> ${esc(r.name)}</span>
+                <!-- One tag per racer, the original .bc-lane-name, moved in
+                     with its runner. The added .bc-runner-name badge is gone. -->
+                <span class="bc-lane-name" style="--racer:${esc(r.color)}"><b>${r.number}</b>${esc(r.name)}</span>
               </div>
             </div>`).join("")}
         </div>
@@ -396,6 +396,10 @@ function watch(view, id, racers) {
       live.expiry = [];
       live.lastElapsed = -1;
       live.official = new Map(live.sim.order.map((o) => [o.index, o.finishMs]));
+      /* Finishing place, for the post-finish parking spots. */
+      live.placeOf = new Map(live.sim.order.map((o) => [o.index, o.place]));
+      live.leaderLane = null;
+      live.lastLeadChangeMs = null;
       live.winnerMs = live.sim.order[0]?.finishMs ?? 0;
       live.homed = new Set();
       live.simKey = key;
@@ -499,12 +503,37 @@ function watch(view, id, racers) {
           elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,
         });
         const p = pixiRacer.progress;
-        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress ?? p, finishPresentation.camera);
+        /* Same coast the Arena applies - one implementation in race.js, so
+           the two cameras cannot disagree about where a finisher parks. */
+        const finishMs = live.official?.get(i);
+        const visualMs = finishPresentation.visualElapsedMs;
+        const phase = finishPhase(visualMs, finishMs, finishPresentation.celebrationActive);
+        pixiRacer.displayProgress = coastProgress(p, visualMs, finishMs, live.placeOf?.get(i));
+        pixiRacer.exiting = phase === "crossing" || phase === "coasting";
+        if (pixiRacer.exiting) {
+          pixiRacer.speed = Math.max(0, 0.85 * (1 - (visualMs - finishMs) / COAST_MS));
+        }
+        const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
         els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * screenRatio).toFixed(2)}px`);
+        if (els.runners[i].dataset.phase !== phase) els.runners[i].dataset.phase = phase;
         pixiRacers.push(pixiRacer);
       }
       const pixiLeader = pixiRacers.reduce((best, item) => item.progress > best.progress ? item : best, pixiRacers[0]);
       if (pixiLeader) pixiLeader.leading = true;
+      /* A genuine change of hands, for the camera. The first leader of the
+         race is not a change - nobody held it before them. */
+      if (pixiLeader && pixiLeader.lane !== live.leaderLane) {
+        if (live.leaderLane != null) live.lastLeadChangeMs = Math.max(0, elapsed);
+        live.leaderLane = pixiLeader.lane;
+      }
+      /* The 2D camera, same states and same rules as the Arena stage. */
+      const shot = raceShot({
+        elapsedMs: Math.max(0, elapsed),
+        leaderProgress,
+        lastLeadChangeMs: live.lastLeadChangeMs,
+        celebrating: finishPresentation.celebrationActive,
+      });
+      if (els.stage.dataset.shot !== shot) els.stage.dataset.shot = shot;
       const pixiState = finishPresentation.celebrationActive ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
       live.pixi?.render({
         elapsedMs: Math.max(0, elapsed),
@@ -536,6 +565,11 @@ function watch(view, id, racers) {
         for (const [el, cls] of live.expiry) el.classList.remove(cls, "is-hot");
         live.expiry.length = 0;
         for (const el of els.runners) el.classList.remove("is-surge","is-stumble","is-jump","is-duel","is-near","is-hot","is-home","is-finished","is-winner","is-leading");
+        /* The camera is seekable too: a rewound clock must not keep
+           holding a low shot for a lead change that has not happened yet. */
+        live.leaderLane = null;
+        live.lastLeadChangeMs = null;
+        for (const el of els.runners) delete el.dataset.phase;
       }
       live.lastElapsed = elapsed;
 

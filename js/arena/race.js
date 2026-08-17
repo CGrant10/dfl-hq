@@ -242,6 +242,36 @@ const THEATRE = 0.155;
 */
 const MAX_LEAD = 0.22;
 
+/*
+  THE LAUNCH, and it is why the field used to appear a quarter of the way
+  down the track on the first frame after GO.
+
+  The theatre envelope above is `(1 - truth) ^ 1.35`, which is at its
+  LARGEST at the start line, and each racer's wobble is two sine waves with
+  a random phase. At tick zero the phase is ~0, so the wobble collapses to
+  `sin(p1)*a1 + sin(p2)*a2` - a random constant per racer worth up to about
+  1.9, which after `amp * THEATRE` is a fifth of the track and was then
+  capped only by MAX_LEAD. Measured on real seeds: the truth at tick 0 is
+  0.0034 for everybody, and the DRAWN position reached 0.2233. The race was
+  never running early and no countdown time leaked into the clock; the very
+  first drawn frame simply had the field smeared across the first quarter.
+
+  So the theatre is now gated shut at the line and opens over the first few
+  percent of the race, and the drawn position is eased in over the same
+  window. Both are multipliers on the DRAWING. simulate() is not consulted,
+  finishMs is untouched, and by LAUNCH_ZONE the drawing has merged back onto
+  the truth - so the only thing that changed is that a race now starts from
+  the start line and accelerates into it.
+*/
+const LAUNCH_ZONE = 0.07;
+
+/** 0 on the start line, 1 once the field is properly away. */
+function launchEase(truth) {
+  if (truth >= LAUNCH_ZONE) return 1;
+  const x = truth <= 0 ? 0 : truth / LAUNCH_ZONE;
+  return x * x * (3 - 2 * x);        // smoothstep: zero slope at the line
+}
+
 /** The scripted moments. 3-5 a race, never more - constant chaos is noise. */
 const KINDS = ["surge", "stumble", "breakaway", "comeback", "push"];
 
@@ -346,7 +376,10 @@ export function dramatize(sim, seed) {
         }
       }
 
-      let p = truth + wob * w.amp * THEATRE * fade;
+      /* Both terms are gated by the launch: the racer leaves the line from
+         a standstill, and the theatre only opens once they are away. */
+      const launch = launchEase(truth);
+      let p = truth * launch + wob * w.amp * THEATRE * fade * launch;
 
       // The four rules that keep this honest.
       if (p > truth + MAX_LEAD) p = truth + MAX_LEAD;   // never a runaway
@@ -607,6 +640,91 @@ export function intensityAt(shown, t) {
   return x * x;                     // slow start, strong finish
 }
 
+
+/* =====================================================================
+   THE FINISH, AFTER THE FINISH.
+   ---------------------------------------------------------------------
+   Crossing the line is decided by simulate(); what a racer does in the two
+   seconds AFTER crossing is decided here, and it is drawing only.
+
+   WHY IT WAS A PILE-UP. The shared adapter moved every finisher to
+   `1 + smoothstep(age / 360ms) * 0.2` - the same number for all twelve, so
+   a second after the last finish all twelve display positions were
+   identical (measured: twelve racers, one distinct X). Everybody parked on
+   the same coordinate, which is the traffic jam.
+
+   WHAT REPLACES IT. Each racer coasts past the line and decelerates into a
+   parking spot that belongs to their PLACE: the winner runs furthest on,
+   and every place behind them settles a little shorter. The offsets are
+   deliberately small because of how the finish camera projects the last
+   stretch - see settleOffset - and lanes already separate the field
+   vertically, so nothing overlaps.
+
+   NOTHING HERE MOVES A FINISH TIME. `finishMs` decides when the coast
+   STARTS; the coast only decides where the racer stands afterwards.
+   ===================================================================== */
+
+/** How long a finisher takes to coast down and settle. */
+export const COAST_MS = 900;
+
+/*
+  How far past the line each place parks, in progress units.
+
+  These look tiny and have to be. Past the line the renderer projects with
+  the finish camera, where one unit of progress is about 4.3 screen widths
+  - so 0.036 is roughly a tenth of the screen, and the old 0.2 was three
+  screens past the right edge. Twelve places spread across ~12% of the
+  shot, first furthest on, nobody off-camera.
+*/
+export function settleOffset(place) {
+  const rank = Math.max(1, place || 1);
+  return Math.max(0.008, 0.036 - (rank - 1) * 0.0026);
+}
+
+/**
+ * Where a finished racer is DRAWN, given their official finish time.
+ *
+ * Before `finishMs` this returns the authoritative progress untouched, so
+ * the moment of crossing is exactly the simulated one.
+ */
+export function coastProgress(progress, elapsedMs, finishMs, place) {
+  if (finishMs == null || elapsedMs < finishMs) return progress;
+  const age = Math.max(0, elapsedMs - finishMs);
+  const x = Math.min(1, age / COAST_MS);
+  const ease = 1 - Math.pow(1 - x, 3);          // quick, then settling
+  return 1 + settleOffset(place) * ease;
+}
+
+/** RACING -> CROSSING -> COASTING -> SETTLED -> CELEBRATING. */
+export function finishPhase(elapsedMs, finishMs, celebrating) {
+  if (finishMs == null || elapsedMs < finishMs) return "racing";
+  const age = elapsedMs - finishMs;
+  if (celebrating) return "celebrating";
+  if (age < 140) return "crossing";
+  if (age < COAST_MS) return "coasting";
+  return "settled";
+}
+
+/* =====================================================================
+   THE SHOT. A 2D camera, chosen once per frame.
+   ---------------------------------------------------------------------
+   The Arena is a flat 2D race and stays one. This picks WHICH framing the
+   wrapper should be wearing; the CSS does the rest with a transform on the
+   track, so no racer's progress is touched by any of it.
+
+   Deliberately few states, and each one has to earn its place: a camera
+   that changes every second is not dramatic, it is unwatchable.
+   ===================================================================== */
+export const SHOT_LAUNCH_MS = 1500;
+const SHOT_LEAD_MS = 1700;
+
+export function raceShot({ elapsedMs, leaderProgress, lastLeadChangeMs, celebrating }) {
+  if (celebrating) return "finish";
+  if (leaderProgress >= 0.86) return "final";
+  if (elapsedMs < SHOT_LAUNCH_MS) return "launch";
+  if (lastLeadChangeMs != null && elapsedMs - lastLeadChangeMs < SHOT_LEAD_MS) return "low";
+  return "wide";
+}
 
 /* =====================================================================
    THE LEADERBOARD, WORKED OUT IN ONE PLACE.
