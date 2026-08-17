@@ -26,7 +26,7 @@ import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } fr
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
-         COAST_MS, coastProgress, finishPhase, raceShot } from "../arena/race.js";
+         crossingSpeeds, presentFinish, raceShot } from "../arena/race.js";
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",
@@ -398,6 +398,7 @@ function watch(view, id, racers) {
       live.official = new Map(live.sim.order.map((o) => [o.index, o.finishMs]));
       /* Finishing place, for the post-finish parking spots. */
       live.placeOf = new Map(live.sim.order.map((o) => [o.index, o.place]));
+      live.crossSpeed = crossingSpeeds(live.sim);
       live.leaderLane = null;
       live.lastLeadChangeMs = null;
       live.winnerMs = live.sim.order[0]?.finishMs ?? 0;
@@ -505,14 +506,14 @@ function watch(view, id, racers) {
         const p = pixiRacer.progress;
         /* Same coast the Arena applies - one implementation in race.js, so
            the two cameras cannot disagree about where a finisher parks. */
-        const finishMs = live.official?.get(i);
-        const visualMs = finishPresentation.visualElapsedMs;
-        const phase = finishPhase(visualMs, finishMs, finishPresentation.celebrationActive);
-        pixiRacer.displayProgress = coastProgress(p, visualMs, finishMs, live.placeOf?.get(i));
-        pixiRacer.exiting = phase === "crossing" || phase === "coasting";
-        if (pixiRacer.exiting) {
-          pixiRacer.speed = Math.max(0, 0.85 * (1 - (visualMs - finishMs) / COAST_MS));
-        }
+        presentFinish(pixiRacer, {
+          elapsedMs: finishPresentation.visualElapsedMs,
+          finishMs: live.official?.get(i),
+          place: live.placeOf?.get(i),
+          crossSpeed: live.crossSpeed?.[i],
+          celebrating: finishPresentation.celebrationActive,
+        });
+        const phase = pixiRacer.phase;
         const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
         els.runners[i].style.setProperty("--race-x", `${(live.trackWidth * screenRatio).toFixed(2)}px`);
         if (els.runners[i].dataset.phase !== phase) els.runners[i].dataset.phase = phase;
@@ -528,9 +529,7 @@ function watch(view, id, racers) {
       }
       /* The 2D camera, same states and same rules as the Arena stage. */
       const shot = raceShot({
-        elapsedMs: Math.max(0, elapsed),
         leaderProgress,
-        lastLeadChangeMs: live.lastLeadChangeMs,
         celebrating: finishPresentation.celebrationActive,
       });
       if (els.stage.dataset.shot !== shot) els.stage.dataset.shot = shot;

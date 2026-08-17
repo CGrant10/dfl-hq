@@ -34,12 +34,19 @@ describe("Arena responsive viewport", () => {
     expect(screenX(view, 2)).toBe(screenX(view, 1));
   });
 
-  it("uses the shared finish camera without changing the default geometry", () => {
+  it("puts the stripe on the shared finish ratio and runs off past it", () => {
     const view = arenaViewport(1280, 720);
-    const camera = { state: "finish" as const, mix: 1, finishRatio: 0.76 };
-    expect(screenX(view, 1, camera)).toBeCloseTo(view.width * 0.76);
-    expect(screenX(view, 1.2, camera)).toBeGreaterThan(screenX(view, 1, camera));
-    expect(laneY(view, 11, 12, 1)).toBeLessThan(view.height);
+    const camera = { state: "finish" as const, mix: 0.34, finishRatio: 0.78 };
+    expect(screenX(view, 1, camera)).toBeCloseTo(view.width * 0.78);
+    expect(screenX(view, 1.16, camera)).toBeGreaterThan(screenX(view, 1, camera));
+  });
+
+  it("no longer squeezes the lanes for the camera", () => {
+    // The faked low angle is gone: lane Y must not depend on the camera.
+    const view = arenaViewport(1280, 720);
+    for (const lane of [0, 5, 11]) {
+      expect(laneY(view, lane, 12, 1)).toBeCloseTo(laneY(view, lane, 12, 0));
+    }
   });
 });
 

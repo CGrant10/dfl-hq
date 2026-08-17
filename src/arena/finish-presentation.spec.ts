@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   FINISH_LINE_RATIO,
-  FINISH_APPROACH_RATIO,
+  MAX_CAMERA_MIX,
+  MAX_SETTLE,
+  RUN_OFF_RATIO,
+  TRACK_START,
   FINAL_STRETCH_START,
   PHOTO_FINISH_THRESHOLD_MS,
-  POST_FINISH_MS,
   cameraForLeader,
   createFinishPresentation,
-  postFinishProgress,
   presentationScreenRatio,
 } from "./finish-presentation";
 
@@ -23,29 +24,43 @@ const order = [
 ];
 
 describe("Arena finish presentation", () => {
-  it("leaves normal camera geometry untouched before the final stretch", () => {
-    const camera = cameraForLeader(0.8);
-    expect(camera.state).toBe("normal");
-    expect(presentationScreenRatio(1, camera)).toBeCloseTo(0.91);
+  it("maps the track with one straight line the camera cannot bend", () => {
+    // The whole point of the rewrite: geometry is independent of the camera,
+    // so "a bit of finish emphasis" can never slide a racer sideways.
+    for (const leader of [0, 0.5, 0.85, 0.94, 1]) {
+      const camera = cameraForLeader(leader);
+      expect(presentationScreenRatio(0, camera)).toBeCloseTo(TRACK_START);
+      expect(presentationScreenRatio(1, camera)).toBeCloseTo(FINISH_LINE_RATIO);
+      expect(presentationScreenRatio(0.5, camera)).toBeCloseTo(
+        TRACK_START + 0.5 * (FINISH_LINE_RATIO - TRACK_START));
+    }
   });
 
-  it("anchors the stripe and lets racers travel beyond it", () => {
+  it("keeps the gradient continuous where a racer crosses", () => {
+    // A change of scale at the stripe is exactly what reads as a stutter.
     const camera = cameraForLeader(1);
-    expect(camera.state).toBe("finish");
-    expect(presentationScreenRatio(1, camera)).toBeCloseTo(FINISH_LINE_RATIO);
-    const after = postFinishProgress(1, 10_000 + POST_FINISH_MS, 10_000);
-    expect(after).toBeGreaterThan(1);
-    expect(presentationScreenRatio(after, camera)).toBeGreaterThan(FINISH_LINE_RATIO);
+    const h = 1e-4;
+    const before = (presentationScreenRatio(1, camera) - presentationScreenRatio(1 - h, camera)) / h;
+    const after = (presentationScreenRatio(1 + h, camera) - presentationScreenRatio(1, camera)) / h;
+    expect(after / before).toBeGreaterThan(0.85);
+    expect(after / before).toBeLessThan(1.2);
   });
 
-  it("expands the authoritative final stretch without reversing racers", () => {
+  it("gives finishers a run-off strip and never leaves the frame", () => {
     const camera = cameraForLeader(1);
-    expect(presentationScreenRatio(FINAL_STRETCH_START, camera)).toBeCloseTo(FINISH_APPROACH_RATIO);
-    expect(presentationScreenRatio(0.9, camera)).toBeGreaterThan(0.3);
-    expect(presentationScreenRatio(0.95, camera)).toBeGreaterThan(0.5);
-    const samples = [0.82, 0.86, 0.9, 0.94, 0.98, 1, 1.1]
+    expect(presentationScreenRatio(1 + MAX_SETTLE, camera))
+      .toBeCloseTo(FINISH_LINE_RATIO + RUN_OFF_RATIO);
+    expect(presentationScreenRatio(1 + MAX_SETTLE, camera)).toBeLessThan(1);
+    expect(presentationScreenRatio(99, camera)).toBeLessThan(1);
+    const samples = [0.5, 0.9, 1, 1.05, 1.1, 1.16]
       .map((progress) => presentationScreenRatio(progress, camera));
     expect(samples.every((value, index) => index === 0 || value > samples[index - 1]!)).toBe(true);
+  });
+
+  it("keeps the camera to an emphasis signal, not a move", () => {
+    expect(cameraForLeader(0.5).mix).toBe(0);
+    expect(cameraForLeader(1).mix).toBeCloseTo(MAX_CAMERA_MIX);
+    expect(MAX_CAMERA_MIX).toBeLessThan(0.4);
   });
 
   it("uses the real P1/P2 gap for photo finish and a brief hit-stop", () => {

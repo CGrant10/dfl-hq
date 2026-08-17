@@ -30,13 +30,19 @@ export function arenaViewport(width: number, height: number): ArenaViewport {
     laneHeight, trackLeft, trackRight, trackWidth: trackRight - trackLeft, actorScale };
 }
 
-export function laneY(viewport: ArenaViewport, lane: number, racerCount: number, cameraMix = 0): number {
+/*
+  Lanes no longer compress under the camera.
+
+  The squeeze existed to fake a low angle, and a faked low angle is exactly
+  what this Arena stopped wanting: it moved every racer vertically at the
+  moment of the finish, competing with the only movement that matters. The
+  parameter is kept so callers do not have to change, and ignored.
+*/
+export function laneY(viewport: ArenaViewport, lane: number, racerCount: number, _cameraMix = 0): number {
   const count = Math.max(1, racerCount);
   const safeLane = Math.max(0, Math.min(count - 1, lane));
   const laneRatio = (safeLane + 0.5) / count;
-  const normal = viewport.laneTop + viewport.laneHeight * laneRatio;
-  const finish = viewport.height * (0.16 + 0.78 * laneRatio);
-  return normal + (finish - normal) * Math.max(0, Math.min(1, cameraMix));
+  return viewport.laneTop + viewport.laneHeight * laneRatio;
 }
 
 export function screenX(viewport: ArenaViewport, progress: number, camera?: FinishCamera): number {

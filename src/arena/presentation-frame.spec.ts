@@ -29,13 +29,20 @@ describe("shared Arena presentation frames", () => {
     expect(frame.progress).toBe(0);
   });
 
-  it("keeps authoritative progress clamped while presenting post-finish travel", () => {
+  it("reports authoritative progress and leaves the coast to presentFinish", () => {
     const frame = presentationRacerFrame({
       id: "r1", lane: 0, samples: [0.96, 1, 1], lo: 1, hi: 2, mix: 1,
       elapsedMs: 1_200, officialFinishMs: 1_000,
     });
     expect(frame.progress).toBe(1);
-    expect(frame.displayProgress).toBeGreaterThan(1);
+    /*
+      The adapter reports the AUTHORITATIVE progress and nothing else. It
+      used to apply a second, differently-tuned coast of its own on top of
+      the one in race.js - two implementations of one idea, which is how
+      the live and shared views ended up disagreeing. presentFinish() owns
+      the coast now, so displayProgress here is the truth.
+    */
+    expect(frame.displayProgress).toBe(1);
     expect(frame.finished).toBe(true);
     expect(frame.exiting).toBe(true);
   });

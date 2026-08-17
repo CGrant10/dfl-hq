@@ -1,9 +1,37 @@
 import type { FinishCamera, FinishPresentation, PhotoFinishPresentation, RaceRacer } from "./contracts";
 
-export const FINAL_STRETCH_START = 0.86;
-export const FINISH_CAMERA_FULL = 0.94;
-export const FINISH_LINE_RATIO = 0.76;
-export const FINISH_APPROACH_RATIO = 0.16;
+export const FINAL_STRETCH_START = 0.80;
+export const FINISH_CAMERA_FULL = 0.95;
+/*
+  THE TRACK, AS ONE LINEAR MAP.
+
+  progress 0   -> TRACK_START
+  progress 1   -> FINISH_LINE_RATIO      (the stripe)
+  progress 1+S -> out into the run-off, at the same scale
+
+  The old geometry had no run-off at all: the line sat at 91% of the frame
+  and `normal` clamped progress at 1, so a finisher had nowhere to go. The
+  finish camera existed partly to manufacture somewhere - it expanded the
+  last 14% of the track across most of the screen, which moved every racer
+  non-linearly the moment it engaged. Reserving a real strip after the
+  stripe means the coast has room without the camera having to distort
+  anything, and the mapping stays a straight line for the whole race.
+*/
+export const TRACK_START = 0.04;
+export const FINISH_LINE_RATIO = 0.78;
+export const MAX_SETTLE = 0.16;
+/*
+  DERIVED, NOT CHOSEN - and the first version of this got it wrong.
+
+  Picking a run-off width independently made the strip a different scale
+  from the track: 1.19 of a frame per unit of progress after the line
+  against 0.74 before it. The position was continuous but the GRADIENT
+  jumped 60% at the stripe, which is a velocity discontinuity at exactly
+  the moment this rewrite exists to smooth. The run-off is the same scale
+  as the track, so the map is one straight line through the crossing.
+*/
+export const TRACK_SCALE = FINISH_LINE_RATIO - TRACK_START;
+export const RUN_OFF_RATIO = MAX_SETTLE * TRACK_SCALE;
 export const POST_FINISH_MS = 360;
 export const POST_FINISH_DISTANCE = 0.2;
 export const WINNER_REVEAL_DELAY_MS = 320;
@@ -28,10 +56,21 @@ const smoothstep = (value: number) => {
   return x * x * (3 - 2 * x);
 };
 
+/*
+  The camera no longer moves anybody.
+
+  `mix` used to drive the projection above AND the lane compression AND the
+  actor scale, so "a bit of finish emphasis" meant every racer sliding to a
+  new x and the lanes squeezing together. It is now a pure emphasis signal
+  with a hard ceiling: scale and glow read it, geometry does not.
+*/
+export const MAX_CAMERA_MIX = 0.34;
+
 export function cameraForLeader(leaderProgress: number): FinishCamera {
-  const mix = smoothstep((leaderProgress - FINAL_STRETCH_START) / (FINISH_CAMERA_FULL - FINAL_STRETCH_START));
+  const ramp = smoothstep((leaderProgress - FINAL_STRETCH_START) / (FINISH_CAMERA_FULL - FINAL_STRETCH_START));
+  const mix = ramp * MAX_CAMERA_MIX;
   return {
-    state: mix <= 0 ? "normal" : mix < 0.98 ? "finalStretch" : "finish",
+    state: ramp <= 0 ? "normal" : ramp < 0.98 ? "finalStretch" : "finish",
     mix,
     finishRatio: FINISH_LINE_RATIO,
   };
@@ -44,17 +83,18 @@ export function postFinishProgress(progress: number, elapsedMs: number, finishMs
   return 1 + travel * POST_FINISH_DISTANCE;
 }
 
-/** Ratio within the track used by both DOM fallback and Pixi. */
-export function presentationScreenRatio(progress: number, camera: FinishCamera): number {
-  const normal = 0.03 + clamp01(progress) * 0.88;
-  // At track level the camera sees a long approach, not a progress bar ending
-  // at the stripe. Expand the authoritative final 14% across most of the shot
-  // while keeping the projection monotonic and the official crossing at 1.0.
-  const finish = progress <= FINAL_STRETCH_START
-    ? FINISH_APPROACH_RATIO * clamp01(progress / FINAL_STRETCH_START)
-    : camera.finishRatio + (progress - 1) *
-      ((camera.finishRatio - FINISH_APPROACH_RATIO) / (1 - FINAL_STRETCH_START));
-  return normal + (finish - normal) * camera.mix;
+/**
+ * Ratio within the frame, used by both the DOM fallback and Pixi.
+ *
+ * ONE STRAIGHT LINE, and deliberately independent of the camera. Progress
+ * below the line maps across the track; progress past it continues into the
+ * run-off at exactly the same scale, so there is no change of gradient where
+ * a racer crosses - which is what a continuous crossing requires. Anything
+ * beyond the parking distance is held, so a bad input cannot leave the frame.
+ */
+export function presentationScreenRatio(progress: number, _camera?: FinishCamera): number {
+  const capped = Math.max(0, Math.min(progress, 1 + MAX_SETTLE));
+  return TRACK_START + capped * TRACK_SCALE;
 }
 
 function visualElapsedForPhoto(elapsedMs: number, decisiveMs: number): number {

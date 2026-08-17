@@ -1,5 +1,5 @@
 import type { RacerFrame, RaceRacer } from "./contracts";
-import { POST_FINISH_MS, postFinishProgress } from "./finish-presentation";
+import { POST_FINISH_MS } from "./finish-presentation";
 
 export type ReactionKind = NonNullable<RacerFrame["reaction"]>;
 
@@ -94,7 +94,16 @@ export function presentationRacerFrame(input: PresentationRacerInput): RacerFram
   const finished = input.officialFinishMs == null
     ? Boolean(input.finished) || progress >= 1
     : input.elapsedMs >= input.officialFinishMs;
-  const displayProgress = postFinishProgress(progress, input.elapsedMs, input.officialFinishMs);
+  /*
+    displayProgress is the authoritative progress here and nothing more.
+
+    This used to apply postFinishProgress(), a SECOND coast with different
+    constants from the one in race.js - two implementations of the same
+    idea, which is how the two views ended up disagreeing about where a
+    finisher stands. The single coast lives in race.js and is applied by
+    presentFinish(); this adapter just reports the truth.
+  */
+  const displayProgress = progress;
   const exiting = finished && input.officialFinishMs != null && input.elapsedMs < input.officialFinishMs + POST_FINISH_MS;
   const reaction = finished ? null : reactionAt(input.timeline, input.lane, input.elapsedMs);
   return {

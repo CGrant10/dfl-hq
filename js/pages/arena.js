@@ -27,7 +27,7 @@ import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
 import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS,
-         COAST_MS, coastProgress, finishPhase, raceShot } from "../arena/race.js";
+         crossingSpeeds, presentFinish, raceShot } from "../arena/race.js";
 
 const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
@@ -972,6 +972,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* Finishing place, for the post-finish parking spots. Straight off
        sim.order, so the spread is the real result and not a guess. */
     const placeOf = new Map(sim.order.map((o) => [o.index, o.place]));
+    /* Real closing speed per racer, measured once. The coast starts from
+       exactly this, which is what makes the crossing continuous. */
+    const crossSpeed = crossingSpeeds(sim);
     let lastOrderKey = "";
     const homed = new Set();
     const track = stage.querySelector("#track");
@@ -1057,15 +1060,14 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           `progress` is left exactly as it was: the board, the callouts and
           the result all read that one, and only the DRAWN position moves.
         */
-        const finishMs = official.get(i);
-        const visualMs = finishPresentation.visualElapsedMs;
-        const phase = finishPhase(visualMs, finishMs, finishPresentation.celebrationActive);
-        pixiRacer.displayProgress = coastProgress(p, visualMs, finishMs, placeOf.get(i));
-        pixiRacer.exiting = phase === "crossing" || phase === "coasting";
-        if (pixiRacer.exiting) {
-          /* Still running as they cross, winding down into the spot. */
-          pixiRacer.speed = Math.max(0, 0.85 * (1 - (visualMs - finishMs) / COAST_MS));
-        }
+        presentFinish(pixiRacer, {
+          elapsedMs: finishPresentation.visualElapsedMs,
+          finishMs: official.get(i),
+          place: placeOf.get(i),
+          crossSpeed: crossSpeed[i],
+          celebrating: finishPresentation.celebrationActive,
+        });
+        const phase = pixiRacer.phase;
 
         const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
         /* The runner element carries the name tag, so it has to track the
@@ -1258,9 +1260,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         nothing here is fed back into the renderer.
       */
       const shot = raceShot({
-        elapsedMs: elapsed,
         leaderProgress,
-        lastLeadChangeMs,
         celebrating: finishPresentation.celebrationActive,
       });
       if (raceWrap.dataset.shot !== shot) raceWrap.dataset.shot = shot;

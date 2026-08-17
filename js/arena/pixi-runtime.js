@@ -1635,31 +1635,28 @@ function st(e, t, n) {
 }
 //#endregion
 //#region src/arena/finish-presentation.ts
-var ct = .86, lt = .76, ut = .16, dt = .2, W = (e) => Math.max(0, Math.min(1, e)), ft = (e) => {
-	let t = W(e);
+var ct = .8, lt = .04, ut = .78, dt = .16, ft = .74;
+dt * ft;
+var pt = (e) => Math.max(0, Math.min(1, e)), mt = (e) => {
+	let t = pt(e);
 	return t * t * (3 - 2 * t);
-};
-function pt(e) {
-	let t = ft((e - ct) / .07999999999999996);
+}, ht = .34;
+function gt(e) {
+	let t = mt((e - ct) / .1499999999999999), n = t * ht;
 	return {
 		state: t <= 0 ? "normal" : t < .98 ? "finalStretch" : "finish",
-		mix: t,
-		finishRatio: lt
+		mix: n,
+		finishRatio: ut
 	};
 }
-function mt(e, t, n) {
-	let r = W(e);
-	return n == null || t < n ? r : 1 + ft((t - n) / 360) * dt;
+function _t(e, t) {
+	return lt + Math.max(0, Math.min(e, 1.16)) * ft;
 }
-function ht(e, t) {
-	let n = .03 + W(e) * .88;
-	return n + ((e <= .86 ? ut * W(e / ct) : t.finishRatio + (e - 1) * ((t.finishRatio - ut) / .14)) - n) * t.mix;
-}
-function gt(e, t) {
+function vt(e, t) {
 	let n = e - t;
 	return n < 0 ? e : n < 90 ? t : n < 390 ? t + (n - 90) * 1.3 : e;
 }
-function _t(e, t) {
+function yt(e, t) {
 	let n = e.order[0], r = e.order[1];
 	if (!n || !r) return;
 	let i = r.finishMs - n.finishMs;
@@ -1676,10 +1673,10 @@ function _t(e, t) {
 		gapMs: i
 	};
 }
-function vt(e) {
-	let t = e.order.at(-1)?.finishMs ?? Infinity, n = e.order[1]?.finishMs, r = n == null || !e.order[0] ? Infinity : n - e.order[0].finishMs, i = r >= 0 && r <= 180, a = e.elapsedMs >= t + 320, o = i && n != null ? gt(e.elapsedMs, n) : e.elapsedMs, s = _t(e, a);
+function bt(e) {
+	let t = e.order.at(-1)?.finishMs ?? Infinity, n = e.order[1]?.finishMs, r = n == null || !e.order[0] ? Infinity : n - e.order[0].finishMs, i = r >= 0 && r <= 180, a = e.elapsedMs >= t + 320, o = i && n != null ? vt(e.elapsedMs, n) : e.elapsedMs, s = yt(e, a);
 	return {
-		camera: pt(e.leaderProgress),
+		camera: gt(e.leaderProgress),
 		visualElapsedMs: o,
 		celebrationActive: a,
 		celebrationStartedMs: t + 320,
@@ -1689,7 +1686,7 @@ function vt(e) {
 }
 //#endregion
 //#region src/arena/viewport.ts
-function yt(e, t) {
+function xt(e, t) {
 	let n = Math.max(240, e), r = Math.max(240, t), i = r > n, a = r < 520 || n < 520, o = r * .1, s = r * .9, c = n * .03, l = n * .91, u = s - o, d = (n <= 640 ? 68 : 88) / 72;
 	return {
 		width: n,
@@ -1705,45 +1702,45 @@ function yt(e, t) {
 		actorScale: d
 	};
 }
-function bt(e, t, n, r = 0) {
-	let i = Math.max(1, n), a = (Math.max(0, Math.min(i - 1, t)) + .5) / i, o = e.laneTop + e.laneHeight * a;
-	return o + (e.height * (.16 + .78 * a) - o) * Math.max(0, Math.min(1, r));
+function St(e, t, n, r = 0) {
+	let i = Math.max(1, n), a = (Math.max(0, Math.min(i - 1, t)) + .5) / i;
+	return e.laneTop + e.laneHeight * a;
 }
-function xt(e, t, n) {
+function Ct(e, t, n) {
 	if (!n) {
 		let n = Math.max(0, Math.min(1, t));
 		return e.trackLeft + e.trackWidth * n;
 	}
-	return e.width * ht(t, n);
+	return e.width * _t(t, n);
 }
 //#endregion
 //#region src/arena/pixel-poses.ts
-function G(e, t) {
+function W(e, t) {
 	return t === 0 ? e : t > 0 ? `${".".repeat(t)}${e.slice(0, -t)}` : `${e.slice(-t)}${".".repeat(-t)}`;
 }
-function St(e, t) {
-	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? G(n, r % 2 == 0 ? 1 : -1) : t === 2 ? G(n, +(r % 3 == 0)) : G(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? G(n, 1) : n);
+function wt(e, t) {
+	return t === 0 ? [...e] : e.map((n, r) => r >= Math.max(9, e.length - 6) ? t === 1 ? W(n, r % 2 == 0 ? 1 : -1) : t === 2 ? W(n, +(r % 3 == 0)) : W(n, r % 2 == 0 ? -1 : 1) : t === 1 || t === 3 ? W(n, 1) : n);
 }
-function K(e, t) {
+function G(e, t) {
 	let n = Math.max(120, t);
 	return Math.floor(Math.max(0, e) % n / (n / 4));
 }
 //#endregion
 //#region src/arena/winner-sequence.ts
-var Ct = (e) => Math.max(0, Math.min(1, e)), wt = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
-function Tt(e) {
+var Tt = (e) => Math.max(0, Math.min(1, e)), Et = (e) => e <= 0 || e >= 1 ? 0 : Math.sin(e * Math.PI);
+function Dt(e) {
 	let t = Math.max(0, e);
 	return {
 		freeze: +(t < 115),
-		converge: t < 760 ? wt((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
-		launch: wt((t - 190) / 620),
-		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * Ct((t - 720) / 280),
-		loserReaction: wt((t - 120) / 760)
+		converge: t < 760 ? Et((t - 80) / 680) : .72 + Math.sin(t * .006) * .08,
+		launch: Et((t - 190) / 620),
+		celebrate: t < 720 ? 0 : Math.abs(Math.sin((t - 720) * .014)) * Tt((t - 720) / 280),
+		loserReaction: Et((t - 120) / 760)
 	};
 }
 //#endregion
 //#region src/arena/animation.ts
-var Et = Math.PI * 2, q = (e) => Math.max(0, Math.min(1, e)), Dt = (e) => 1 - (1 - q(e)) ** 3, J = (e) => Math.sin(q(e) * Math.PI), Y = (e = 380) => ({
+var Ot = Math.PI * 2, K = (e) => Math.max(0, Math.min(1, e)), kt = (e) => 1 - (1 - K(e)) ** 3, q = (e) => Math.sin(K(e) * Math.PI), J = (e = 380) => ({
 	x: 0,
 	y: 0,
 	scaleX: 1,
@@ -1757,9 +1754,9 @@ var Et = Math.PI * 2, q = (e) => Math.max(0, Math.min(1, e)), Dt = (e) => 1 - (1
 	energy: 0,
 	frame: 0
 });
-function Ot(e) {
+function At(e) {
 	if (e.reducedMotion) {
-		let t = Ot({
+		let t = At({
 			...e,
 			reducedMotion: !1
 		});
@@ -1780,27 +1777,27 @@ function Ot(e) {
 	}
 	let t = Math.max(0, Math.min(3, e.heat)), n = Math.max(0, e.elapsedMs - (e.motionStartedMs ?? 0)), r = e.elapsedMs * (.012 + t * .0015) + e.lane * .73 + e.variant * 1.9, i = Math.sin(r);
 	if (e.motion === "idle") return {
-		...Y(),
+		...J(),
 		y: -.75 - Math.sin(e.elapsedMs * .015 + e.lane * .7) * .75
 	};
 	if (e.motion === "run") {
-		let n = q(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * Et + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
+		let n = K(e.speed ?? t / 3), r = Math.max(-1, Math.min(1, e.acceleration ?? 0)), i = Math.max(235, 410 - t * 48), a = e.elapsedMs / i * Ot + e.lane * .61, o = Math.abs(Math.sin(a)), s = Math.max(0, Math.cos(a));
 		return {
-			...Y(i),
+			...J(i),
 			x: Math.sin(a * .5) * .45 + r * 1.2,
 			y: -.8 - o * (1.6 + t * .35) + s * .55,
 			scaleX: 1 + Math.sin(a) * .018 + s * .025,
 			scaleY: 1 - Math.sin(a) * .015 - s * .045,
 			rotation: -n * .045 + r * -.03 + Math.sin(a) * .016,
-			frame: K(e.elapsedMs + e.lane * 31, i),
+			frame: G(e.elapsedMs + e.lane * 31, i),
 			dust: .2 + t * .13 + Math.max(0, r) * .18,
 			energy: Math.max(0, r) * .28
 		};
 	}
 	if (e.motion === "surge") {
-		let e = q(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : J((e - .12) / .48), o = Dt((e - .6) / .4);
+		let e = K(n / 920), r = e < .12 ? e / .12 : 1, a = e < .12 ? 0 : q((e - .12) / .48), o = kt((e - .6) / .4);
 		return {
-			...Y(190),
+			...J(190),
 			x: -3.4 * (1 - r) + a * 6.2 * (1 - o),
 			y: e < .12 ? 2.2 * r : -3.4 - Math.abs(i) * 2.1,
 			scaleX: 1 + a * .22 * (1 - o),
@@ -1809,29 +1806,29 @@ function Ot(e) {
 			afterimage: a * (.7 + t * .1),
 			dust: .65 + a * .35,
 			energy: a,
-			frame: K(n, 190)
+			frame: G(n, 190)
 		};
 	}
 	if (e.motion === "stumble") {
-		let t = q(n / 1120), r = J(t / .16), i = t >= .16 && t < .58 ? J((t - .16) / .42) : 0, a = t >= .58 ? Dt((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
+		let t = K(n / 1120), r = q(t / .16), i = t >= .16 && t < .58 ? q((t - .16) / .42) : 0, a = t >= .58 ? kt((t - .58) / .42) : 0, o = e.variant >= .34 && e.variant < .67, s = e.variant >= .67, c = s ? i : 0;
 		return {
-			...Y(480),
+			...J(480),
 			x: -r * 3.6 + (o ? i * 5.2 : -i * 5.8) + a * 1.8,
 			y: r * 1.8 + i * (s ? 9.2 : 3.8) - a * 1.5,
 			scaleX: 1 + i * .16,
 			scaleY: 1 - i * .23,
 			rotation: r * .24 + i * (o ? -.48 : .34 + c * .86) - a * .28,
-			impact: J((t - .12) / .22),
+			impact: q((t - .12) / .22),
 			dust: Math.max(r, i) * .9,
 			skid: i,
 			frame: t < .16 ? 1 : t < .58 ? s ? 3 : 2 : 0
 		};
 	}
 	if (e.motion === "jump") {
-		let e = q(n / 840), r = e < .16 ? J(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? J((e - .76) / .24) : 0;
+		let e = K(n / 840), r = e < .16 ? q(e / .16) : 0, i = e >= .16 && e < .76 ? (e - .16) / .6 : 0, a = e >= .76 ? q((e - .76) / .24) : 0;
 		return {
-			...Y(285),
-			x: i ? Dt(i) * 2.3 : 0,
+			...J(285),
+			x: i ? kt(i) * 2.3 : 0,
 			y: r * 2.4 - Math.sin(i * Math.PI) * (9.5 + t * 1.05) + a * 2.8,
 			scaleX: 1 + r * .08 - i * .04 + a * .12,
 			scaleY: 1 - r * .12 + i * .08 - a * .16,
@@ -1842,25 +1839,25 @@ function Ot(e) {
 		};
 	}
 	if (e.motion === "duel") {
-		let t = q(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
+		let t = K(n / 1050), r = Math.max(0, Math.sin(t * Math.PI * 5));
 		return {
-			...Y(205),
+			...J(205),
 			x: r * (1.8 + e.variant),
 			y: -1.5 - Math.abs(i) * 1.8,
 			scaleX: 1 + r * .09,
 			scaleY: 1 - r * .045,
 			rotation: -r * .05,
 			afterimage: r * .45,
-			impact: J((t - .38) / .2) * .75,
+			impact: q((t - .38) / .2) * .75,
 			dust: .35 + r * .45,
 			energy: r,
-			frame: K(n, 205)
+			frame: G(n, 205)
 		};
 	}
 	if (e.motion === "near") {
-		let t = q(n / 680), r = J(t / .55), i = J((t - .5) / .5);
+		let t = K(n / 680), r = q(t / .55), i = q((t - .5) / .5);
 		return {
-			...Y(330),
+			...J(330),
 			x: -r * 2.2 + i * 1.2,
 			y: -r * (3 + e.variant * 2) + i,
 			scaleX: 1 - r * .06 + i * .08,
@@ -1872,9 +1869,9 @@ function Ot(e) {
 		};
 	}
 	if (e.motion === "lose") {
-		let t = Tt(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
+		let t = Dt(n).loserReaction, r = n > 920 ? .34 + Math.sin(n * .008 + e.variant * 9) * .08 : 0;
 		return {
-			...Y(520),
+			...J(520),
 			x: -t * 3.5 - r * 1.5,
 			y: t * 3.2 + r * 2.2,
 			scaleX: 1 + t * .08,
@@ -1884,9 +1881,9 @@ function Ot(e) {
 			dust: t * .44
 		};
 	}
-	let a = Tt(n);
+	let a = Dt(n);
 	return {
-		...Y(260),
+		...J(260),
 		y: -a.launch * 8 - a.celebrate * 5,
 		scaleX: 1 + a.launch * .18 + a.celebrate * .08,
 		scaleY: 1 - a.launch * .08 + a.celebrate * .08,
@@ -1895,38 +1892,38 @@ function Ot(e) {
 		impact: Math.max(a.freeze, a.converge * .55),
 		dust: a.launch * .8,
 		energy: a.converge,
-		frame: a.freeze ? 2 : K(n, 360)
+		frame: a.freeze ? 2 : G(n, 360)
 	};
 }
-function kt(e, t) {
+function jt(e, t) {
 	let n = 2166136261 ^ t;
 	for (let t of String(e)) n = Math.imul(n ^ t.charCodeAt(0), 16777619);
 	return (n >>> 0) / 4294967295;
 }
 //#endregion
 //#region src/arena/effects.ts
-function At(e) {
+function Y(e) {
 	return e = Math.imul(e ^ e >>> 16, 73244475), e = Math.imul(e ^ e >>> 16, 73244475), (e ^ e >>> 16) >>> 0;
 }
 function X(e, t, n) {
-	let r = At(e * 131 + t * 977 + n * 7919);
+	let r = Y(e * 131 + t * 977 + n * 7919);
 	return {
 		x: (r & 65535) / 65535,
 		y: (r >>> 16 & 65535) / 65535,
-		length: .35 + (At(r + 1) & 65535) / 65535 * .65,
-		alpha: .3 + (At(r + 2) & 65535) / 65535 * .7
+		length: .35 + (Y(r + 1) & 65535) / 65535 * .65,
+		alpha: .3 + (Y(r + 2) & 65535) / 65535 * .7
 	};
 }
-function jt(e, t, n) {
+function Mt(e, t, n) {
 	if (e <= 0) return 0;
 	let r = (t ? .72 : 1) * (n ? .28 : 1);
 	return Math.round((18 + Math.min(3, e) * 11) * r);
 }
 //#endregion
 //#region src/arena/anime-effects.ts
-function Mt(e, t, n, r) {
+function Nt(e, t, n, r) {
 	if (e.clear(), t.state !== "running") return;
-	let i = t.finish?.camera.mix ?? 0, a = jt(t.heat, n.compact, r) + Math.round(i * (r ? 3 : n.compact ? 7 : 12)), o = r ? .34 : 1, s = Math.max(.16, Math.min(1, t.heat / 3)), c = Math.floor(t.elapsedMs / (t.heat >= 2 ? 48 : 72)), l = [
+	let i = t.finish?.camera.mix ?? 0, a = Mt(t.heat, n.compact, r) + Math.round(i * (r ? 3 : n.compact ? 7 : 12)), o = r ? .34 : 1, s = Math.max(.16, Math.min(1, t.heat / 3)), c = Math.floor(t.elapsedMs / (t.heat >= 2 ? 48 : 72)), l = [
 		16777215,
 		12577535,
 		7526655,
@@ -1958,7 +1955,7 @@ function Mt(e, t, n, r) {
 		});
 	}
 }
-function Nt(e, t, n, r) {
+function Pt(e, t, n, r) {
 	if (e.clear(), t.state !== "running") return;
 	let i = Math.max(0, Math.min(1, t.heat / 3)), a = t.finish?.camera.mix ?? 0, o = r ? .26 : 1, s = Math.max(1, Math.round(((n.compact ? 4 : 7) + i * 7 + a * 7) * o)), c = Math.floor(t.elapsedMs / 38);
 	for (let r = 0; r < s; r++) {
@@ -1971,7 +1968,7 @@ function Nt(e, t, n, r) {
 		});
 	}
 }
-function Pt(e, t, n, r, i) {
+function Ft(e, t, n, r, i) {
 	e.clear(), t.visible = !1;
 	let a = n.finish?.photoFinish;
 	if (!a) return;
@@ -1998,7 +1995,7 @@ function Pt(e, t, n, r, i) {
 		}), t.text = `PHOTO FINISH\n1 — ${a.firstName} — ${(a.firstMs / 1e3).toFixed(2)}s\n2 — ${a.secondName} — ${(a.secondMs / 1e3).toFixed(2)}s\nGAP — ${(a.gapMs / 1e3).toFixed(2)}s`, t.position.set(r.width * .5, s + i / 2), t.visible = !0, t.alpha = 1;
 	}
 }
-function Ft(e, t, n, r, i, a, o, s = !1) {
+function It(e, t, n, r, i, a, o, s = !1) {
 	if (e.clear(), a <= .02) return;
 	s && (a *= .48), e.rect(0, 0, t, n).fill({
 		color: 132881,
@@ -2039,7 +2036,7 @@ function Ft(e, t, n, r, i, a, o, s = !1) {
 }
 //#endregion
 //#region src/arena/racer-effects.ts
-function It(e) {
+function Lt(e) {
 	let { graphics: t, pose: n, elapsedMs: r, variant: i, color: a } = e;
 	if (t.clear(), !e.active) return;
 	let o = e.reducedMotion ? .34 : 1, s = Math.max(0, Math.min(1, e.heat / 3)), c = Math.max(0, Math.min(1, e.speed)), l = Math.max(0, Math.min(1, e.acceleration)), u = Math.max(n.afterimage, n.energy * .9, s * (.28 + c * .35)) * o;
@@ -2669,7 +2666,7 @@ var Z = [
 new Map(Z.map((e) => [e.id, e]));
 //#endregion
 //#region src/arena/pixi-stage.ts
-var Q = 3, Lt = class {
+var Q = 3, Rt = class {
 	app = new me();
 	scenery = new b({ label: "scenery" });
 	course = new b({ label: "course" });
@@ -2702,7 +2699,7 @@ var Q = 3, Lt = class {
 		}
 	});
 	#c = null;
-	#l = yt(1280, 720);
+	#l = xt(1280, 720);
 	#u = [];
 	#d = /* @__PURE__ */ new Map();
 	#f = null;
@@ -2737,7 +2734,7 @@ var Q = 3, Lt = class {
 				fx: o,
 				nameplate: c,
 				color: this.#b(r.accent),
-				variant: kt(t.id, e.indexOf(t)),
+				variant: jt(t.id, e.indexOf(t)),
 				motion: "idle",
 				motionStartedMs: 0,
 				finishedAtMs: null,
@@ -2748,16 +2745,16 @@ var Q = 3, Lt = class {
 	render(e) {
 		this.#f = e;
 		let t = e.reduceMotionEffects === !0, n = `${Math.floor(e.elapsedMs / 34)}:${e.state}:${e.heat}:${Math.round((e.finish?.camera.mix ?? 0) * 20)}:${t}:${this.#l.width}:${this.#l.height}`;
-		n !== this.#m && (this.#m = n, Mt(this.#r, e, this.#l, t), Nt(this.#a, e, this.#l, t));
+		n !== this.#m && (this.#m = n, Nt(this.#r, e, this.#l, t), Pt(this.#a, e, this.#l, t));
 		let r = e.finish?.photoFinish, i = `${r?.phase ?? "none"}:${r?.gapMs ?? 0}:${this.#l.width}:${this.#l.height}:${t}`;
-		i !== this.#h && (this.#h = i, Pt(this.#o, this.#s, e, this.#l, t)), this.#i.clear();
+		i !== this.#h && (this.#h = i, Ft(this.#o, this.#s, e, this.#l, t)), this.#i.clear();
 		let a = 0, o = null;
 		for (let n of e.racers) {
 			let r = this.#d.get(n.id);
 			if (!r) continue;
 			let i = e.finish?.celebrationActive === !0, s = i && n.finished && n.id === e.winnerId, c = s ? "win" : i && n.finished ? "lose" : n.exiting ? "run" : n.finished ? "idle" : st(n.reaction, !1, e.state);
 			s && r.finishedAtMs == null && (r.finishedAtMs = e.elapsedMs), n.finished || (r.finishedAtMs = null), r.motion === c ? n.reactionStartedMs != null && (r.motionStartedMs = n.reactionStartedMs) : (r.motion = c, r.motionStartedMs = i ? e.finish?.celebrationStartedMs ?? e.elapsedMs : n.reactionStartedMs ?? r.finishedAtMs ?? e.elapsedMs);
-			let l = Ot({
+			let l = At({
 				motion: c,
 				elapsedMs: e.elapsedMs,
 				motionStartedMs: r.motionStartedMs,
@@ -2767,7 +2764,7 @@ var Q = 3, Lt = class {
 				speed: n.speed ?? 0,
 				acceleration: n.acceleration ?? 0,
 				reducedMotion: t
-			}), u = e.finish?.camera.mix ?? 0, d = n.displayProgress ?? n.progress, f = +!!s, p = f ? this.#l.width * .5 : xt(this.#l, d, e.finish?.camera), m = f ? this.#l.height * .5 : bt(this.#l, n.lane, this.#u.length, u);
+			}), u = e.finish?.camera.mix ?? 0, d = n.displayProgress ?? n.progress, f = +!!s, p = f ? this.#l.width * .5 : Ct(this.#l, d, e.finish?.camera), m = f ? this.#l.height * .5 : St(this.#l, n.lane, this.#u.length, u);
 			r.root.position.set(p, m);
 			let h = 1 + u * (this.#l.compact ? .02 : .08);
 			r.root.scale.set(this.#l.actorScale * h * (f ? 1.42 : 1)), r.root.rotation = 0, r.root.alpha = 1, r.art.position.set(l.x, l.y), r.art.scale.set(l.scaleX, l.scaleY), r.art.rotation = l.rotation;
@@ -2776,7 +2773,7 @@ var Q = 3, Lt = class {
 				e.visible = t === g;
 			});
 			let _ = `${Math.floor(e.elapsedMs / 34)}:${e.heat}:${c}:${t}`;
-			_ !== r.effectKey && (r.effectKey = _, It({
+			_ !== r.effectKey && (r.effectKey = _, Lt({
 				graphics: r.fx,
 				pose: l,
 				elapsedMs: e.elapsedMs,
@@ -2799,14 +2796,14 @@ var Q = 3, Lt = class {
 				intensity: l.energy
 			}), a = Math.max(a, l.impact);
 		}
-		o && Ft(this.#i, this.#l.width, this.#l.height, o.x, o.y, o.intensity, e.elapsedMs, t);
+		o && It(this.#i, this.#l.width, this.#l.height, o.x, o.y, o.intensity, e.elapsedMs, t);
 		let s = (e.finish?.camera.mix ?? 0) * .42;
 		a = Math.max(a, s);
 		let c = e.state === "running" && !t && e.heat >= 2;
 		this.actors.position.set(c ? Math.sin(e.elapsedMs * .09) * a * 1.15 : 0, c ? Math.cos(e.elapsedMs * .11) * a * .7 : 0);
 	}
 	resize() {
-		this.#c && (this.app.resize(), this.#l = yt(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#l.actorScale * 72)), this.#f && this.render(this.#f));
+		this.#c && (this.app.resize(), this.#l = xt(this.app.screen.width, this.app.screen.height), this.app.canvas.dataset.actorWidth = String(Math.round(this.#l.actorScale * 72)), this.#f && this.render(this.#f));
 	}
 	destroy() {
 		this.#p?.disconnect(), this.#p = null, this.#d.clear(), this.#u = [], this.#f = null, this.#m = "", this.#h = "", this.app.destroy(!0, { children: !0 }), this.#c = null;
@@ -2817,9 +2814,9 @@ var Q = 3, Lt = class {
 		let n = Z.find((t) => t.id === e.species) || Z[t % Z.length];
 		return [
 			this.#v(n.px, n.palette, e),
-			this.#v(St(n.px, 1), n.palette, e),
-			this.#v(St(n.px, 2), n.palette, e),
-			this.#v(St(n.px, 3), n.palette, e)
+			this.#v(wt(n.px, 1), n.palette, e),
+			this.#v(wt(n.px, 2), n.palette, e),
+			this.#v(wt(n.px, 3), n.palette, e)
 		];
 	}
 	#_(e) {
@@ -2884,7 +2881,7 @@ var Q = 3, Lt = class {
 };
 //#endregion
 //#region src/arena/background-motion.ts
-function Rt(e, t, n = !1, r = !1) {
+function zt(e, t, n = !1, r = !1) {
 	if (e !== "running") return {
 		blurX: 0,
 		blurY: 0,
@@ -2899,14 +2896,14 @@ function Rt(e, t, n = !1, r = !1) {
 }
 //#endregion
 //#region src/arena/presentation-frame.ts
-var zt = [
+var Bt = [
 	"stumble",
 	"jump",
 	"duel",
 	"near",
 	"surge"
 ];
-function Bt(e, t, n) {
+function Vt(e, t, n) {
 	let r = Array.from({ length: Math.max(0, n) }, () => []), i = (e, t, n, i) => {
 		e == null || e < 0 || e >= r.length || r[e]?.push({
 			kind: t,
@@ -2919,16 +2916,16 @@ function Bt(e, t, n) {
 	for (let e of r) e.sort((e, t) => e.startedMs - t.startedMs);
 	return r;
 }
-function Vt(e, t, n) {
+function Ht(e, t, n) {
 	let r = (e?.[t] || []).filter((e) => n >= e.startedMs && n < e.untilMs);
-	for (let e of zt) {
+	for (let e of Bt) {
 		let t = r.find((t) => t.kind === e);
 		if (t) return t;
 	}
 	return null;
 }
-function Ht(e) {
-	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = e.officialFinishMs == null ? !!e.finished || s >= 1 : e.elapsedMs >= e.officialFinishMs, d = mt(s, e.elapsedMs, e.officialFinishMs), f = u && e.officialFinishMs != null && e.elapsedMs < e.officialFinishMs + 360, p = u ? null : Vt(e.timeline, e.lane, e.elapsedMs);
+function Ut(e) {
+	let t = Math.max(0, Math.min(e.samples.length - 1, e.lo)), n = Math.max(t, Math.min(e.samples.length - 1, e.hi)), r = Math.max(0, Math.min(1, e.mix)), i = e.samples[t] ?? 0, a = e.samples[n] ?? i, o = e.samples[Math.max(0, t - 1)] ?? i, s = e.elapsedMs <= 0 ? 0 : i + (a - i) * r, c = Math.max(0, Math.min(1, (a - i) * 180)), l = Math.max(-1, Math.min(1, (a - i - (i - o)) * 500)), u = e.officialFinishMs == null ? !!e.finished || s >= 1 : e.elapsedMs >= e.officialFinishMs, d = s, f = u && e.officialFinishMs != null && e.elapsedMs < e.officialFinishMs + 360, p = u ? null : Ht(e.timeline, e.lane, e.elapsedMs);
 	return {
 		id: e.id,
 		lane: e.lane,
@@ -2948,7 +2945,7 @@ function Ht(e) {
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function Ut(e, t) {
+async function Wt(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -2963,7 +2960,7 @@ async function Ut(e, t) {
 		overflow: "hidden",
 		pointerEvents: "none"
 	}), getComputedStyle(n).position === "static" && (n.style.position = "relative"), n.appendChild(a);
-	let o = new Lt();
+	let o = new Rt();
 	try {
 		await o.mount(a);
 		for (let e of r) e.style.setProperty("visibility", "hidden", "important"), e.setAttribute("aria-hidden", "true");
@@ -3009,6 +3006,6 @@ async function Ut(e, t) {
 	}
 }
 //#endregion
-export { Rt as backgroundMotion, Ut as createArenaRenderer, vt as createFinishPresentation, Bt as createReactionTimeline, Ht as presentationRacerFrame, ht as presentationScreenRatio, Vt as reactionAt };
+export { zt as backgroundMotion, Wt as createArenaRenderer, bt as createFinishPresentation, Vt as createReactionTimeline, Ut as presentationRacerFrame, _t as presentationScreenRatio, Ht as reactionAt };
 
 //# sourceMappingURL=pixi-runtime.js.map

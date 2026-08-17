@@ -228,7 +228,10 @@ export function simulate(racers, ticks, seed) {
   still read as a queue. This is about a sixth of the track, which is
   enough to actually lose and regain a place.
 */
-const THEATRE = 0.155;
+/* The arcs now carry the story, so this is only the jitter on top of them.
+   It is barely raised; the variation comes from the arcs and from the much
+   wider per-racer amplitude, not from multiplying this. */
+const THEATRE = 0.175;
 
 /*
   And a hard ceiling on how far the drawing may run ahead of the truth.
@@ -240,7 +243,7 @@ const THEATRE = 0.155;
   the track is a place or two, which is the point, and it self-releases
   because the truth only ever moves forward.
 */
-const MAX_LEAD = 0.22;
+const MAX_LEAD = 0.46;
 
 /*
   THE LAUNCH, and it is why the field used to appear a quarter of the way
@@ -272,8 +275,108 @@ function launchEase(truth) {
   return x * x * (3 - 2 * x);        // smoothstep: zero slope at the line
 }
 
+/*
+  THE CLOSE, and it is why a finish used to stutter.
+
+  The old rule was `if (truth < 1 && p > 0.985) p = 0.985` - a hard ceiling
+  that stopped the drawing from crossing early. It worked, and it froze
+  every racer. Measured on seed 90210: the winner approached the line at
+  0.0046 per tick, sat at exactly 0.985 for four ticks (160ms of dead
+  stop), then moved 0.015 in a single tick - three times approach speed -
+  and the post-finish coast then started from rest on top of that. That is
+  the approach/stop/shoot sequence, and it was one line.
+
+  A ceiling is the wrong instrument. What the invariant actually needs is
+  for the DRAWING TO CONVERGE ON THE TRUTH before the line, and convergence
+  is a multiplier, not a clamp: the theatre closes smoothly across the last
+  tenth of the race, so by the line the drawn position IS the true position
+  and there is nothing left to clamp. No ceiling, no freeze, no snap - and
+  the same guarantee, more strongly, because it holds continuously rather
+  than at one threshold.
+*/
+const CLOSE_FROM = 0.90;
+
+/*
+  HOW FAST THE THEATRE OPENS, which is not the same as how fast the racers
+  leave the line.
+
+  The launch gate reaches full inside 7% of the race - about eight tenths of
+  a second - and the deviation was allowed to reach its full size just as
+  fast. Measured: racers hit +0.34 of lead by tick 16, travelling at 0.05 of
+  the track per tick against a normal 0.004, and then stopped dead against
+  the cap. A twelvefold velocity change in one tick is the opposite of the
+  smoothness this pass is for.
+
+  The field now fans out over the first quarter of the race instead. Same
+  eventual spread, no wall to hit.
+*/
+const OPEN_ZONE = 0.26;
+
+function openEase(truth) {
+  if (truth >= OPEN_ZONE) return 1;
+  const x = truth <= 0 ? 0 : truth / OPEN_ZONE;
+  return x * x * (3 - 2 * x);
+}
+
+/** 1 while the theatre is open, easing to 0 exactly at the line. */
+function closingEase(truth) {
+  if (truth >= 1) return 0;
+  if (truth <= CLOSE_FROM) return 1;
+  const x = (truth - CLOSE_FROM) / (1 - CLOSE_FROM);
+  return 1 - x * x * (3 - 2 * x);
+}
+
+/* =====================================================================
+   THE STORY ARCS.
+   ---------------------------------------------------------------------
+   The waves below make a race BUSY; they do not make it dramatic. Busy is
+   twelve racers trading a place every second and the field never breaking
+   up, which is what "too orderly" describes.
+
+   An arc is a single long deviation - several seconds of it - shaped as a
+   raised cosine so it has zero slope at both ends and therefore cannot
+   produce a visible kink where it starts or stops. One racer pulling +0.16
+   away over eight seconds is a BREAKAWAY. The same curve inverted is a
+   COLLAPSE. Placed late and positive it is a LATE CHARGE; placed after a
+   deficit it is a COMEBACK.
+
+   Field compression needs no arc of its own: every arc is scaled by the
+   closing ease above, so the whole field is drawn back onto the truth as
+   the line approaches. The spread opens up and then squeezes shut, which
+   is the shape a real race has.
+   ===================================================================== */
+const ARC_KINDS = ["breakaway", "collapse", "comeback", "latecharge"];
+
+/** Zero slope at both ends: a bump that cannot kink where it begins. */
+function arcShape(x) {
+  if (x <= 0 || x >= 1) return 0;
+  return 0.5 - 0.5 * Math.cos(x * Math.PI * 2);
+}
+
 /** The scripted moments. 3-5 a race, never more - constant chaos is noise. */
 const KINDS = ["surge", "stumble", "breakaway", "comeback", "push"];
+
+/**
+ * Each racer's speed at the instant they cross, in progress per millisecond.
+ *
+ * Read off the authoritative samples either side of the finishing tick, so
+ * it is the racer's REAL closing speed. The post-finish coast starts from
+ * exactly this, which is what makes the crossing velocity-continuous rather
+ * than a fresh animation from a standstill.
+ */
+export function crossingSpeeds(sim) {
+  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));
+  return sim.samples.map((s, i) => {
+    const finishMs = finishOf.get(i) ?? 0;
+    const tick = Math.max(1, Math.min(sim.frames, Math.round(finishMs / TICK_MS)));
+    /* Step back to the last pair of ticks that were still moving: at and
+       after the line the samples are pinned to 1 and would read as zero. */
+    let a = tick, b = tick - 1;
+    while (a > 1 && s[a] - s[b] <= 0) { a--; b--; }
+    const perTick = Math.max(1e-5, s[a] - s[b]);
+    return perTick / TICK_MS;
+  });
+}
 
 /**
  * Visual positions for playback, plus the moments that produced them.
@@ -305,8 +408,55 @@ export function dramatize(sim, seed) {
     wave.push({
       a1: 0.60 + rand() * 0.55, f1: 1.3 + rand() * 2.2, p1: rand() * Math.PI * 2,
       a2: 0.34 + rand() * 0.46, f2: 3.0 + rand() * 3.6, p2: rand() * Math.PI * 2,
-      amp: 0.85 + rand() * 0.6,
+      /*
+        WIDENED, AND PER RACER. This used to be 0.85-1.45, which is barely a
+        spread at all: twelve racers all wobbling by about the same amount
+        read as one organism. At 0.45-1.95 some racers are genuinely calm
+        and others are all over the track, which is most of what makes a
+        field look like twelve individuals rather than a peloton.
+      */
+      amp: 0.45 + rand() * 1.5,
     });
+  }
+
+  /*
+    THE ARCS. One or two per racer, several seconds each.
+
+    Placed in TRUTH space rather than tick space so a short race and a long
+    race get the same shape. Windows are 0.16-0.34 of the race - at a
+    medium length that is four to nine seconds, which is long enough to
+    watch somebody go and long enough to watch it come apart.
+
+    A breakaway goes to somebody near the front, a comeback to somebody
+    near the back, so the arc agrees with where the racer actually is.
+  */
+  const arcs = Array.from({ length: n }, () => []);
+  const arcCount = n <= 4 ? n : Math.round(n * 1.7);
+  for (let k = 0; k < arcCount; k++) {
+    const kind = ARC_KINDS[Math.floor(rand() * ARC_KINDS.length)];
+    const width = 0.18 + rand() * 0.22;
+    /* Late charges sit at the end; everything else spreads across the
+       middle. Nothing starts before 8% - the launch owns the start. */
+    const start = kind === "latecharge"
+      ? 0.58 + rand() * 0.16
+      : 0.08 + rand() * 0.52;
+
+    let tick = 0;
+    while (tick < frames && sim.samples[0][tick] < start) tick++;
+    const standing = Array.from({ length: n }, (_, i) => i)
+      .sort((a, b) => sim.samples[b][tick] - sim.samples[a][tick]);
+
+    let racer;
+    if (kind === "breakaway") racer = standing[Math.floor(rand() * Math.min(3, n))];
+    else if (kind === "comeback" || kind === "latecharge") racer = standing[n - 1 - Math.floor(rand() * Math.min(4, n))];
+    else racer = standing[Math.floor(rand() * n)];
+
+    /* Two overlapping arcs on one racer would add into a single enormous
+       deviation instead of reading as two moments. */
+    if (arcs[racer].some((a) => start < a.start + a.width && a.start < start + width)) continue;
+
+    const power = (kind === "collapse" ? -1 : 1) * (0.13 + rand() * 0.13);
+    arcs[racer].push({ kind, start, width, power });
   }
 
   /*
@@ -357,6 +507,7 @@ export function dramatize(sim, seed) {
     const w = wave[i];
     const src = sim.samples[i];
     const mine = script.filter((e) => e.racer === i);
+    const myArcs = arcs[i];
     let prev = 0, prevTruth = 0;
     for (let t = 0; t <= frames; t++) {
       const truth = src[t];
@@ -379,26 +530,70 @@ export function dramatize(sim, seed) {
       /* Both terms are gated by the launch: the racer leaves the line from
          a standstill, and the theatre only opens once they are away. */
       const launch = launchEase(truth);
-      let p = truth * launch + wob * w.amp * THEATRE * fade * launch;
-
-      // The four rules that keep this honest.
-      if (p > truth + MAX_LEAD) p = truth + MAX_LEAD;   // never a runaway
+      const close = closingEase(truth);
 
       /*
-        NEVER BACKWARDS, AND NEVER DEAD STOPPED.
+        THE ARCS ARE ADDED IN PROGRESS, NOT IN WOBBLE UNITS.
 
-        Holding at `prev` was enough to stop reverse motion, but a racer
-        whose wobble had gone negative could sit at a literal standstill
-        for eight seconds of a twenty-second race waiting for the truth to
-        catch up - which reads as a bug, not a stumble. The floor now
-        creeps forward at a fraction of the racer's real speed, so a stall
-        is a crawl. It cannot outrun the cap above, because it advances
-        more slowly than the truth does.
+        The wobble is a shape that gets multiplied by fade, which collapses
+        it to nothing past about 80% - fine for jitter, useless for a story
+        that is supposed to still be running in the last third. An arc is a
+        deviation in its own right, scaled only by the launch and the close,
+        so a late charge is still a late charge at 85% and is still folded
+        away by the line.
       */
-      const floor = prev + (truth - prevTruth) * 0.18;
+      let arc = 0;
+      for (const a of myArcs) {
+        arc += a.power * arcShape((truth - a.start) / a.width);
+        const key = `${i}:${a.kind}:${a.start}`;
+        if (!stamped.has(key) && truth >= a.start + a.width * 0.32) {
+          stamped.add(key);
+          events.push({ kind: a.kind === "collapse" ? "stumble" : a.kind, racer: i,
+                        ms: t * TICK_MS, durMs: 1600 });
+        }
+      }
+
+      /*
+        SATURATED, NOT CLAMPED.
+
+        A hard clamp is a wall: a racer accelerating into it stops in a
+        single tick. tanh approaches the same limit asymptotically, so the
+        deviation slows as it nears the allowance and the velocity stays
+        continuous - and because tanh is strictly less than 1, the bound
+        holds just as absolutely as the clamp did.
+      */
+      const allow = Math.min(MAX_LEAD, (1 - truth) * 0.85);
+      const raw = (wob * w.amp * THEATRE * fade + arc) * launch * close * openEase(truth);
+      const dev = allow > 1e-6 ? allow * Math.tanh(raw / allow) : 0;
+      let p = truth * launch + dev;
+
+      /*
+        ORDER MATTERS HERE, AND GETTING IT WRONG COST BOTH INVARIANTS.
+
+        The floor stops a stalling racer from freezing; the cap stops the
+        drawing reaching the line early. The first version applied the cap
+        and THEN the floor, which let the floor win - and the floor is a
+        ratchet, because it is computed from the previous DRAWN position.
+        Past 60% the cap rises at 0.15 per unit of truth while the floor
+        rises at 0.30, so a racer pinned to the cap climbed straight
+        through it: measured at 692 early crossings over 40 races, one
+        racer drawn at 1.0007 while its true progress was 0.93. The
+        `truth >= 1` rule then yanked it back to 1.0, which is where the 49
+        backwards steps came from - the same bug twice.
+
+        Floor first, cap last. The cap is monotonically increasing
+        (truth + 0.34 below 60%, then 0.85 + 0.15 * truth, equal at the
+        join), so clamping to it can never pull a racer behind where they
+        were, and nothing can outrun it. Both invariants now hold by
+        construction rather than by tuning.
+      */
+      const floor = prev + (truth - prevTruth) * 0.30;
       if (p < floor) p = floor;
-      if (truth < 1 && p > 0.985) p = 0.985;     // never over the line early
       if (p < 0) p = 0;
+
+      /* The saturation above already holds this; it stays as the hard
+         guarantee, because the floor is applied between the two. */
+      if (p > truth + allow) p = truth + allow;
       if (truth >= 1) p = 1;                     // the truth wins at the line
 
       shown[i][t] = p;
@@ -664,44 +859,105 @@ export function intensityAt(shown, t) {
    STARTS; the coast only decides where the racer stands afterwards.
    ===================================================================== */
 
-/** How long a finisher takes to coast down and settle. */
-export const COAST_MS = 900;
+/** Roughly how long a finisher takes to wind down. See coastProgress. */
+export const COAST_MS = 1100;
 
 /*
   How far past the line each place parks, in progress units.
 
-  These look tiny and have to be. Past the line the renderer projects with
-  the finish camera, where one unit of progress is about 4.3 screen widths
-  - so 0.036 is roughly a tenth of the screen, and the old 0.2 was three
-  screens past the right edge. Twelve places spread across ~12% of the
-  shot, first furthest on, nobody off-camera.
+  Bigger than they were, because the projection under them changed. These
+  used to be ~0.03 and had to be: the old finish camera expanded the last
+  stretch across the screen, so one unit of progress was about 4.3 screen
+  widths. The mapping is linear now with a real run-off strip after the
+  line (see finish-presentation.ts), so a progress unit is a progress unit
+  and these are honest distances again.
+
+  First runs furthest on, and every place behind settles a little shorter.
 */
+export const MAX_SETTLE = 0.16;
+
 export function settleOffset(place) {
   const rank = Math.max(1, place || 1);
-  return Math.max(0.008, 0.036 - (rank - 1) * 0.0026);
+  return Math.max(0.04, MAX_SETTLE - (rank - 1) * 0.011);
 }
 
 /**
  * Where a finished racer is DRAWN, given their official finish time.
  *
- * Before `finishMs` this returns the authoritative progress untouched, so
- * the moment of crossing is exactly the simulated one.
+ * CONTINUOUS IN POSITION AND IN VELOCITY, which is the whole point.
+ *
+ * The old curve was `1 + settle * (1 - (1-x)^3)` on a fixed 900ms. Its
+ * position was continuous - it starts at exactly 1 - but its VELOCITY was
+ * not: it began at whatever `3 * settle / 900ms` happened to be, unrelated
+ * to how fast the racer was actually travelling. A racer who had just been
+ * clamped to a standstill by the old 0.985 shelf therefore stopped, and
+ * then a fresh animation launched them forward from rest.
+ *
+ * This is an exponential decay whose INITIAL velocity is the racer's real
+ * crossing speed and whose total travel is exactly the settle distance:
+ *
+ *   x(age) = 1 + S * (1 - e^(-age * v0 / S))
+ *   x'(0)  = S * (v0 / S) = v0        <- matches the approach exactly
+ *   x(inf) = 1 + S                    <- the deterministic parking spot
+ *
+ * So the racer carries their momentum through the line and bleeds it off
+ * smoothly. Nothing about `finishMs` moves; this only decides where they
+ * are standing afterwards.
+ *
+ * @param {number} crossSpeed  progress per ms at the line, from crossingSpeeds()
  */
-export function coastProgress(progress, elapsedMs, finishMs, place) {
+export function coastProgress(progress, elapsedMs, finishMs, place, crossSpeed) {
   if (finishMs == null || elapsedMs < finishMs) return progress;
   const age = Math.max(0, elapsedMs - finishMs);
-  const x = Math.min(1, age / COAST_MS);
-  const ease = 1 - Math.pow(1 - x, 3);          // quick, then settling
-  return 1 + settleOffset(place) * ease;
+  const settle = settleOffset(place);
+  const v0 = Math.max(1e-6, crossSpeed || settle / COAST_MS);
+  return 1 + settle * (1 - Math.exp(-age * v0 / settle));
+}
+
+/** How long that decay takes to become imperceptible, for this racer. */
+export function coastDurationMs(place, crossSpeed) {
+  const settle = settleOffset(place);
+  const v0 = Math.max(1e-6, crossSpeed || settle / COAST_MS);
+  return Math.min(4000, (settle / v0) * 4);      // four time constants
+}
+
+/**
+ * Apply the whole finish presentation to one renderer frame, in place.
+ *
+ * ONE IMPLEMENTATION, TWO VIEWS. The Arena stage and the shared broadcast
+ * were each doing this inline with their own copy of the same six lines,
+ * which is precisely how the two of them drift. Both call this now, so a
+ * change to how a finisher coasts, winds down or parks lands in both
+ * places or in neither.
+ *
+ * Mutates and returns `frame` - it is a per-racer object the caller has
+ * just built and is about to hand to the renderer, so there is nothing to
+ * gain from allocating a second one sixty times a second.
+ */
+export function presentFinish(frame, { elapsedMs, finishMs, place, crossSpeed, celebrating }) {
+  const coastMs = coastDurationMs(place, crossSpeed);
+  const phase = finishPhase(elapsedMs, finishMs, celebrating, coastMs);
+  frame.phase = phase;
+  frame.displayProgress = coastProgress(frame.progress, elapsedMs, finishMs, place, crossSpeed);
+  frame.exiting = phase === "crossing" || phase === "coasting";
+  if (frame.exiting) {
+    /* Winding down from the speed they actually crossed at, on the same
+       decay curve as the position - so the legs slow as the racer slows. */
+    const age = elapsedMs - finishMs;
+    const settle = settleOffset(place);
+    const v0 = Math.max(1e-6, crossSpeed || settle / COAST_MS);
+    frame.speed = Math.max(0, Math.min(1, (v0 * Math.exp(-age * v0 / settle)) * 180));
+  }
+  return frame;
 }
 
 /** RACING -> CROSSING -> COASTING -> SETTLED -> CELEBRATING. */
-export function finishPhase(elapsedMs, finishMs, celebrating) {
+export function finishPhase(elapsedMs, finishMs, celebrating, coastMs = COAST_MS) {
   if (finishMs == null || elapsedMs < finishMs) return "racing";
   const age = elapsedMs - finishMs;
   if (celebrating) return "celebrating";
   if (age < 140) return "crossing";
-  if (age < COAST_MS) return "coasting";
+  if (age < coastMs) return "coasting";
   return "settled";
 }
 
@@ -715,14 +971,18 @@ export function finishPhase(elapsedMs, finishMs, celebrating) {
    Deliberately few states, and each one has to earn its place: a camera
    that changes every second is not dramatic, it is unwatchable.
    ===================================================================== */
-export const SHOT_LAUNCH_MS = 1500;
-const SHOT_LEAD_MS = 1700;
+/*
+  THREE STATES, DOWN FROM FIVE.
 
-export function raceShot({ elapsedMs, leaderProgress, lastLeadChangeMs, celebrating }) {
+  The launch push and the ground-level hold on a lead change are gone. A
+  camera that moves whenever anything happens competes with the racers for
+  the eye, and the racers are the thing worth watching. What is left is a
+  stable shot for four fifths of the race, a barely-there tightening as the
+  leader reaches the last stretch, and a small push for the arrivals.
+*/
+export function raceShot({ leaderProgress, celebrating }) {
   if (celebrating) return "finish";
-  if (leaderProgress >= 0.86) return "final";
-  if (elapsedMs < SHOT_LAUNCH_MS) return "launch";
-  if (lastLeadChangeMs != null && elapsedMs - lastLeadChangeMs < SHOT_LEAD_MS) return "low";
+  if (leaderProgress >= 0.80) return "final";
   return "wide";
 }
 
