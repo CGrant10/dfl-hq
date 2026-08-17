@@ -203,14 +203,24 @@ export class PixiRaceStage implements RaceRenderer {
           active: frame.state === "running" || frame.state === "finished", reducedMotion,
         });
       }
-      const showMobileName = this.#viewport.width <= 800 && !winnerFocus;
-      actor.nameplate.visible = showMobileName;
-      if (showMobileName) {
-        const half = actor.nameplate.width / 2 + 5;
+      /*
+        DRAWN AT EVERY WIDTH NOW. It used to appear only below 800px, so a
+        desktop Arena had no names on its racers at all and the DOM tag -
+        a second implementation - covered for it. One tag, one renderer,
+        pinned to the actor, identical in the Arena and the shared viewer.
+      */
+      const showName = !winnerFocus;
+      actor.nameplate.visible = showName;
+      if (showName) {
+        const half = actor.nameplate.width / 2 + 4;
         actor.nameplate.position.set(
           Math.max(half, Math.min(this.#viewport.width - half, actorX)),
-          Math.max(12, actorY - this.#viewport.actorScale * 38),
+          Math.max(10, actorY - this.#viewport.actorScale * 34),
         );
+        /* Secondary by default; briefly promoted while leading or finishing. */
+        const lifted = racer.leading === true || racer.finished === true;
+        actor.nameplate.alpha = lifted ? 1 : 0.82;
+        actor.nameplate.scale.set(lifted ? 1.06 : 1);
       }
       if (winner && phase.energy > 0) winnerEnergy = {
         x: actor.root.position.x,
@@ -261,20 +271,40 @@ export class PixiRaceStage implements RaceRenderer {
     ];
   }
 
+  /*
+    THE ONE NAME TAG, and it is deliberately quiet.
+
+    This used to be an 11px bold label on an opaque plate with a 2px
+    coloured stroke, up to 150px wide. On a 245px-wide phone track that is
+    most of the lane: twelve of them filled the viewport and the racers -
+    the thing anybody is actually watching - were behind them.
+
+    Now: 9px, no plate stroke, a barely-there backing that exists only so
+    the text survives being over grass or crowd, and a small colour pip
+    instead of a coloured border. It identifies the racer and then gets out
+    of the way. `emphasis` lifts one of them briefly on a lead change or a
+    finish, then it drops back.
+  */
   #nameplate(racer: RaceRacer): Container {
     const root = new Container({ label: `name-${racer.id}` });
     const label = new Text({
-      text: `${racer.number}  ${racer.name}`,
-      style: { fill: 0xffffff, fontFamily: "system-ui, sans-serif", fontSize: 11,
-        fontWeight: "800", dropShadow: { color: 0x000000, alpha: 0.9, blur: 2, distance: 1 } },
+      text: racer.name,
+      style: { fill: 0xffffff, fontFamily: "system-ui, sans-serif", fontSize: 9,
+        fontWeight: "700", dropShadow: { color: 0x000000, alpha: 0.85, blur: 2, distance: 1 } },
     });
-    label.anchor.set(0.5);
-    const width = Math.min(150, Math.max(48, label.width + 16));
-    const plate = new Graphics().roundRect(-width / 2, -10, width, 20, 5)
-      .fill({ color: 0x07111f, alpha: 0.9 })
-      .stroke({ color: this.#color(racer.color), width: 2, alpha: 0.95 });
-    root.addChild(plate, label);
+    label.anchor.set(0, 0.5);
+    const pipR = 2.5;
+    const width = label.width + pipR * 2 + 9;
+    const plate = new Graphics()
+      .roundRect(-width / 2 - 3, -7, width + 6, 14, 4)
+      .fill({ color: 0x060b14, alpha: 0.42 });
+    const pip = new Graphics()
+      .circle(-width / 2 + pipR, 0, pipR)
+      .fill({ color: this.#color(racer.color), alpha: 1 });
+    label.position.set(-width / 2 + pipR * 2 + 5, 0);
+    root.addChild(plate, pip, label);
     root.eventMode = "none";
+    root.alpha = 0.82;
     root.visible = false;
     return root;
   }

@@ -1045,9 +1045,4 @@ body.broadcasting .view { width:100%; height:100%; }
 @media(max-width:800px){
   .arena-track-wrap.has-pixi-race .runner,
   .bc-track.has-pixi-race .bc-runner{z-index:3}
-  /* Pixi draws its own nameplate at this width, so the DOM tag stands
-     down to keep it to exactly one per racer. Above 800px Pixi draws
-     none and the DOM tag below is the only one. */
-  .arena-track-wrap.has-pixi-race .lane-tag,
-  .bc-track.has-pixi-race .bc-lane-name{visibility:hidden!important}
 }

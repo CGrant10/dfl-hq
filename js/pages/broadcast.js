@@ -25,6 +25,8 @@ import { backgroundMotion, createArenaRenderer, createFinishPresentation, create
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
+/* The same emitter the Arena stage uses. */
+import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
          crossingSpeeds, presentFinish, raceShot } from "../arena/race.js";
 
@@ -260,17 +262,7 @@ function paint(view, event, racers) {
       <div class="bc-body">
         <div class="bc-track" id="bc-track">
           <div class="bc-finish"></div>
-          ${racers.map((r, i) => `
-            <div class="bc-lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
-              <div class="bc-runner trail-${esc(r.pet?.trail || "none")}" id="bc-runner-${i}">
-                <div class="bc-runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
-                  ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
-                </div>
-                <!-- One tag per racer, the original .bc-lane-name, moved in
-                     with its runner. The added .bc-runner-name badge is gone. -->
-                <span class="bc-lane-name" style="--racer:${esc(r.color)}"><b>${r.number}</b>${esc(r.name)}</span>
-              </div>
-            </div>`).join("")}
+          ${racerLanes(racers, { theme: event.theme, prefix: "bc", idPrefix: "bc-runner-" })}
         </div>
 
         <aside class="bc-board" id="bc-board">

@@ -26,6 +26,9 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { themeLabel, slotsFor, assignSprites, spriteMarkup,
          toSpritePng, MAX_SPRITE_UPLOAD } from "../arena/sprites.js";
+/* One emitter for the racer markup, shared with the broadcast viewer, so
+   the two views cannot drift apart again. See arena/racer-view.js. */
+import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS,
          crossingSpeeds, presentFinish, raceShot } from "../arena/race.js";
 
@@ -857,24 +860,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
       <div class="track" id="track">
         <div class="track-start"></div>
         <div class="track-finish"></div>
-        ${racers.map((r, i) => `
-          <div class="lane" style="--lane:${i};--lanes:${racers.length};--lane-y:${(10 + ((i + .5) / racers.length) * 80).toFixed(2)}%">
-            <div class="runner trail-${esc(r.pet?.trail || "none")}" id="runner-${i}">
-              <div class="runner-art" style="--racer:${esc(r.color)};--pet-accent:${esc(r.pet?.accent || "#ffffff")}">
-                ${spriteMarkup(event.theme, r.sprite, r.color, r.image, r.pet)}
-              </div>
-              <!--
-                ONE NAME TAG PER RACER, and it is the original .lane-tag.
-
-                A second badge (.runner-nameplate) had been added inside the
-                runner while this one was left switched off with display:none
-                in the cinematic rules. The original is switched back on and
-                lives inside .runner instead of the lane, so it travels with
-                its racer rather than labelling an empty strip of track.
-              -->
-              <span class="lane-tag" style="--racer:${esc(r.color)}"><b>${r.number}</b>${esc(r.name)}</span>
-            </div>
-          </div>`).join("")}
+        ${racerLanes(racers, { theme: event.theme, idPrefix: "runner-" })}
       </div>
 
       <div class="countdown hidden" id="countdown"><span id="countdown-n">3</span></div>

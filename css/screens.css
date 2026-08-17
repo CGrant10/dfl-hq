@@ -1396,34 +1396,51 @@ a.moment:hover { background: var(--hover-soft); }
    for a quiet lane list, not for a racer moving over grass, crowd and
    speed lines.
    ===================================================================== */
+/*
+  THE FALLBACK TAG. Pixi draws the real one on the canvas, pinned to the
+  actor; this only appears when Pixi could not start, so exactly one name
+  is ever visible per racer. It is styled to match the canvas plate -
+  quiet, small, a colour pip rather than a coloured border - so the two
+  renderers do not look like two different apps.
+*/
 .arena-track-wrap.cinematic-race .lane-tag,
 .bc-stage .bc-lane-name{
   position:absolute;left:50%;top:78%;right:auto;
   transform:translateX(-50%);
   z-index:6;                       /* above the track, below the countdown */
   display:flex;align-items:center;gap:5px;
-  max-width:min(30vw,168px);
-  padding:2px 7px;border-radius:99px;
-  border:1px solid rgba(255,255,255,.22);
-  background:rgba(6,11,20,.86);
-  color:#fff;opacity:1;
+  max-width:min(30vw,140px);
+  padding:1px 5px;border-radius:4px;
+  border:0;
+  background:rgba(6,11,20,.42);
+  color:#fff;opacity:.82;
   /* --font-display, not --font-condensed: that variable has never been
      defined anywhere, so every `font:` shorthand reaching for it is thrown
      away whole and silently falls back to 16px/400 - which is why the
      badge this replaces never wore the type it was written for. */
-  font:800 11px/1.35 var(--font-display);
+  font:700 9px/1.3 var(--font-display);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-shadow:0 1px 2px #000;
-  box-shadow:0 2px 9px rgba(0,0,0,.55);
   pointer-events:none;
 }
 .arena-track-wrap.cinematic-race .lane-tag b,
 .bc-stage .bc-lane-name b{
   flex:none;display:inline-grid;place-items:center;
-  width:15px;height:15px;border-radius:50%;
-  background:var(--racer);color:#06240f;
-  font-size:9px;font-weight:900;
+  width:5px;height:5px;border-radius:50%;
+  background:var(--racer);color:transparent;
+  font-size:0;overflow:hidden;
 }
+/*
+  ORDER MATTERS: this must come AFTER the block above, not before it.
+
+  Both selectors are three classes, so at equal specificity the later rule
+  wins - and with the hide placed first, the fallback's `display:flex` beat
+  it and every racer wore TWO name tags, the canvas one and this one. Which
+  is the exact duplication this pass exists to remove, reintroduced by rule
+  order. Verified in the browser: 12 visible before, 0 after.
+*/
+.arena-track-wrap.has-pixi-race .lane-tag,
+.bc-track.has-pixi-race .bc-lane-name{display:none}
 /* The leader's tag reads first; a finished racer's fades back so the
    crowd of settled names does not compete with the racers still going. */
 .arena-track-wrap.cinematic-race .runner.is-leading .lane-tag,

@@ -878,7 +878,7 @@ export const MAX_SETTLE = 0.16;
 
 export function settleOffset(place) {
   const rank = Math.max(1, place || 1);
-  return Math.max(0.04, MAX_SETTLE - (rank - 1) * 0.011);
+  return Math.max(0.035, MAX_SETTLE - (rank - 1) * 0.0155);
 }
 
 /**

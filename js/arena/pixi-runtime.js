@@ -2785,10 +2785,12 @@ var Q = 3, Rt = class {
 				active: e.state === "running" || e.state === "finished",
 				reducedMotion: t
 			}));
-			let v = this.#l.width <= 800 && !f;
+			let v = !f;
 			if (r.nameplate.visible = v, v) {
-				let e = r.nameplate.width / 2 + 5;
-				r.nameplate.position.set(Math.max(e, Math.min(this.#l.width - e, p)), Math.max(12, m - this.#l.actorScale * 38));
+				let e = r.nameplate.width / 2 + 4;
+				r.nameplate.position.set(Math.max(e, Math.min(this.#l.width - e, p)), Math.max(10, m - this.#l.actorScale * 34));
+				let t = n.leading === !0 || n.finished === !0;
+				r.nameplate.alpha = t ? 1 : .82, r.nameplate.scale.set(t ? 1.06 : 1);
 			}
 			s && l.energy > 0 && (o = {
 				x: r.root.position.x,
@@ -2821,30 +2823,29 @@ var Q = 3, Rt = class {
 	}
 	#_(e) {
 		let t = new b({ label: `name-${e.id}` }), n = new nt({
-			text: `${e.number}  ${e.name}`,
+			text: e.name,
 			style: {
 				fill: 16777215,
 				fontFamily: "system-ui, sans-serif",
-				fontSize: 11,
-				fontWeight: "800",
+				fontSize: 9,
+				fontWeight: "700",
 				dropShadow: {
 					color: 0,
-					alpha: .9,
+					alpha: .85,
 					blur: 2,
 					distance: 1
 				}
 			}
 		});
-		n.anchor.set(.5);
-		let r = Math.min(150, Math.max(48, n.width + 16)), i = new D().roundRect(-r / 2, -10, r, 20, 5).fill({
-			color: 463135,
-			alpha: .9
-		}).stroke({
+		n.anchor.set(0, .5);
+		let r = 2.5, i = n.width + r * 2 + 9, a = new D().roundRect(-i / 2 - 3, -7, i + 6, 14, 4).fill({
+			color: 396052,
+			alpha: .42
+		}), o = new D().circle(-i / 2 + r, 0, r).fill({
 			color: this.#b(e.color),
-			width: 2,
-			alpha: .95
+			alpha: 1
 		});
-		return t.addChild(i, n), t.eventMode = "none", t.visible = !1, t;
+		return n.position.set(-i / 2 + r * 2 + 5, 0), t.addChild(a, o, n), t.eventMode = "none", t.alpha = .82, t.visible = !1, t;
 	}
 	#v(e, t, n) {
 		let r = this.#b(n.color), i = this.#b(n.accent), a = new D(), o = (e, t, n) => a.rect((e - 12) * Q, (t - 15 / 2) * Q, Q, Q).fill(n);
