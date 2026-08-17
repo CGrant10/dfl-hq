@@ -1,3 +1,16 @@
 # macOS / Windows shell junk
 .DS_Store
 Thumbs.db
+
+# The Arena's build toolchain. Nothing here is deployed: GitHub Pages serves
+# the committed output in js/arena/, not this. It was never listed because
+# until now nobody had run the build on a working copy.
+node_modules/
+.vite/
+
+# Vite build output for the Arena. The compiled chunks ARE committed - GitHub
+# Pages serves them and there is no build step at deploy - but the sourcemaps
+# are not: they are ~1.8MB, the service worker would precache them, and the
+# repo has never carried them. The `//# sourceMappingURL=` comments in the
+# chunks are therefore unresolved by design; devtools 404s on them, nothing else.
+js/arena/*.js.map
