@@ -20,7 +20,7 @@ import { loadMembers } from "../members.js";
    pet landed, so runRace() threw ReferenceError on its first statement -
    which is why Start did nothing at all from v1.69.0 onward. */
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishReveal, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
@@ -30,7 +30,7 @@ import { themeLabel, slotsFor, assignSprites, spriteMarkup,
    the two views cannot drift apart again. See arena/racer-view.js. */
 import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, callouts, visualEvents, intensityAt, boardState, newSeed, ticksFor, raceSeconds, TICK_MS,
-         crossingSpeeds, presentFinish, raceShot } from "../arena/race.js";
+         finishTrajectories, presentFinish, raceShot } from "../arena/race.js";
 
 const raceMotionClass = () => getReduceRaceMotion() ? "race-motion-reduced" : "race-motion-full";
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
@@ -947,7 +947,9 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
 
   const completed = await new Promise((resolve) => {
     const lastFinish = sim.order.at(-1).finishMs;
-    const total = lastFinish + 1_100;
+    /* Long enough for the last finisher's run-out to read before the
+       result card arrives. It was 1.1s, which cut the coast off. */
+    const total = lastFinish + 3_200;
     let nextCall = 0, calledAt = -9999, nextEvent = 0, nextVisual = 0;
     /* One timer-free expiry list. Effects are removed by the frame loop
        that added them, so nothing can outlive the race or stack up: at
@@ -958,9 +960,11 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* Finishing place, for the post-finish parking spots. Straight off
        sim.order, so the spread is the real result and not a guess. */
     const placeOf = new Map(sim.order.map((o) => [o.index, o.place]));
-    /* Real closing speed per racer, measured once. The coast starts from
-       exactly this, which is what makes the crossing continuous. */
-    const crossSpeed = crossingSpeeds(sim);
+    /* EVERY RACER'S RUN-OUT, WORKED OUT BEFORE THE FIRST FRAME.
+       Crossing speed, settle distance, time constant and wind-down are all
+       precomputed, so the loop below evaluates a curve and branches on
+       nothing. */
+    const trajectory = finishTrajectories(sim);
     let lastOrderKey = "";
     const homed = new Set();
     const track = stage.querySelector("#track");
@@ -989,6 +993,7 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
     /* When the lead last actually changed hands, which is one of the few
        moments worth dropping the camera to track level for. */
     let lastLeadChangeMs = null;
+    let lastReveal = -1;
 
     function frame(now) {
       /* A Pause, Reset, route change, or re-render detaches this stage.
@@ -1046,13 +1051,8 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
           `progress` is left exactly as it was: the board, the callouts and
           the result all read that one, and only the DRAWN position moves.
         */
-        presentFinish(pixiRacer, {
-          elapsedMs: finishPresentation.visualElapsedMs,
-          finishMs: official.get(i),
-          place: placeOf.get(i),
-          crossSpeed: crossSpeed[i],
-          celebrating: finishPresentation.celebrationActive,
-        });
+        presentFinish(pixiRacer, finishPresentation.visualElapsedMs,
+                      trajectory[i], finishPresentation.celebrationActive);
         const phase = pixiRacer.phase;
 
         const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
@@ -1250,6 +1250,13 @@ export async function runRace(view, stage, event, parts, byId, seed, { save }) {
         celebrating: finishPresentation.celebrationActive,
       });
       if (raceWrap.dataset.shot !== shot) raceWrap.dataset.shot = shot;
+      /* The stripe is hidden until the leader is into the last tenth. Pure
+         opacity - no geometry reads this, so it cannot move a racer. */
+      const reveal = finishReveal(leaderProgress);
+      if (reveal !== lastReveal) {
+        raceWrap.style.setProperty("--finish-reveal", reveal.toFixed(3));
+        lastReveal = reveal;
+      }
 
       /* Callouts replace the status word as they come due, and the last
          one stays up rather than flicking back - the scoreboard has one

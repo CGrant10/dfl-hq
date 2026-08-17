@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { arenaViewport, laneY, screenX } from "./viewport";
+import { FINISH_LINE_RATIO, MAX_SETTLE } from "./finish-presentation";
 
 describe("Arena responsive viewport", () => {
   const devices = [[320, 568], [390, 844], [667, 375], [844, 390], [1280, 720], [1920, 1080]] as const;
@@ -36,9 +37,11 @@ describe("Arena responsive viewport", () => {
 
   it("puts the stripe on the shared finish ratio and runs off past it", () => {
     const view = arenaViewport(1280, 720);
-    const camera = { state: "finish" as const, mix: 0.34, finishRatio: 0.78 };
-    expect(screenX(view, 1, camera)).toBeCloseTo(view.width * 0.78);
-    expect(screenX(view, 1.16, camera)).toBeGreaterThan(screenX(view, 1, camera));
+    const camera = { state: "finish" as const, mix: 0.34, finishRatio: FINISH_LINE_RATIO };
+    expect(screenX(view, 1, camera)).toBeCloseTo(view.width * FINISH_LINE_RATIO);
+    /* And there is real room past it - the run-out, not a sliver. */
+    const runOut = screenX(view, 1 + MAX_SETTLE, camera) - screenX(view, 1, camera);
+    expect(runOut).toBeGreaterThan(view.width * 0.15);
   });
 
   it("no longer squeezes the lanes for the camera", () => {

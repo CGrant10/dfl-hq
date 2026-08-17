@@ -3,8 +3,10 @@ import {
   FINISH_LINE_RATIO,
   MAX_CAMERA_MIX,
   MAX_SETTLE,
+  REVEAL_FROM,
   RUN_OFF_RATIO,
   TRACK_START,
+  finishReveal,
   FINAL_STRETCH_START,
   PHOTO_FINISH_THRESHOLD_MS,
   cameraForLeader,
@@ -55,6 +57,41 @@ describe("Arena finish presentation", () => {
     const samples = [0.5, 0.9, 1, 1.05, 1.1, 1.16]
       .map((progress) => presentationScreenRatio(progress, camera));
     expect(samples.every((value, index) => index === 0 || value > samples[index - 1]!)).toBe(true);
+  });
+
+  it("reserves a real run-out: stripe near the middle, open space past it", () => {
+    // The huddle was geometric: twelve parking spots inside 12% of the
+    // frame, hard against a stripe at 78%. The stripe is at 58% now and the
+    // run-out is the rest.
+    expect(FINISH_LINE_RATIO).toBeGreaterThan(0.5);
+    expect(FINISH_LINE_RATIO).toBeLessThan(0.62);
+    const runOut = presentationScreenRatio(1 + MAX_SETTLE) - presentationScreenRatio(1);
+    expect(runOut).toBeGreaterThan(0.15);
+    expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.97);
+  });
+
+  it("hides the stripe until the leader is into the last tenth", () => {
+    expect(finishReveal(0.5)).toBe(0);
+    expect(finishReveal(REVEAL_FROM)).toBe(0);
+    expect(finishReveal(0.93)).toBeGreaterThan(0);
+    expect(finishReveal(0.93)).toBeLessThan(1);
+    expect(finishReveal(1)).toBe(1);
+  });
+
+  it("keeps the reveal out of the geometry so it cannot move a racer", () => {
+    /*
+      The brief asked for the stripe to slide left on reveal with the
+      mapping interpolated. That is not possible: screen position is
+      progress * scale, so shrinking the scale walks every racer left, and
+      at p=0.95 the drift only drops below the racer's own forward speed at
+      about a six second transition. The reveal is opacity, and this test
+      is what stops anyone reintroducing it.
+    */
+    for (const p of [0.5, 0.9, 1, 1.2]) {
+      const before = presentationScreenRatio(p, cameraForLeader(0.5));
+      const after = presentationScreenRatio(p, cameraForLeader(1));
+      expect(after).toBe(before);
+    }
   });
 
   it("keeps the camera to an emphasis signal, not a move", () => {

@@ -35,6 +35,7 @@
    ===================================================================== */
 
 import { TICK_MS } from "./engine";
+import { MAX_SETTLE } from "./finish-presentation";
 import type { RaceSimulation } from "./engine";
 
 /** How far off the truth a racer may be DRAWN, ahead. */
@@ -347,4 +348,112 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
 
   events.sort((a, b) => a.ms - b.ms);
   return { shown, events, arcs };
+}
+
+
+/* =====================================================================
+   THE FINISH, AFTER THE FINISH.
+   ---------------------------------------------------------------------
+   Crossing is decided by simulate(). What a racer does in the seconds
+   AFTER crossing is decided here, and it is drawing only.
+
+   PRECOMPUTED, ONCE. Every racer's whole run-out - crossing speed, settle
+   distance, time constant, how long the wind-down lasts - is derived
+   before the first frame. The animation loop then evaluates a closed-form
+   curve per racer per frame and branches on nothing.
+   ===================================================================== */
+
+export interface FinishTrajectory {
+  finishMs: number;
+  place: number;
+  /** Progress per ms at the line - the coast starts at exactly this. */
+  crossSpeed: number;
+  /** Total run-out distance in progress units. */
+  settle: number;
+  /** Exponential time constant, settle / crossSpeed. */
+  tau: number;
+  /** When the wind-down has become imperceptible. */
+  coastMs: number;
+}
+
+/**
+ * How far past the line each place parks, in progress units.
+ *
+ * First runs furthest on and every place behind settles shorter, so the
+ * field fans out across the run-out instead of stacking on the stripe.
+ */
+export function settleOffset(place: number): number {
+  const rank = Math.max(1, place || 1);
+  return Math.max(0.09, MAX_SETTLE - (rank - 1) * 0.022);
+}
+
+/** Every racer's run-out, worked out before playback starts. */
+export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
+  const speeds = crossingSpeeds(sim);
+  const byIndex: FinishTrajectory[] = [];
+  for (const row of sim.order) {
+    const crossSpeed = Math.max(1e-6, speeds[row.index] ?? 1e-4);
+    const settle = settleOffset(row.place);
+    const tau = settle / crossSpeed;
+    byIndex[row.index] = {
+      finishMs: row.finishMs, place: row.place, crossSpeed, settle, tau,
+      coastMs: Math.min(6000, tau * 3),
+    };
+  }
+  return byIndex;
+}
+
+/**
+ * Where a finished racer is DRAWN.
+ *
+ * CONTINUOUS IN POSITION AND VELOCITY. An exponential whose initial
+ * velocity IS the racer's measured crossing speed and whose total travel is
+ * the per-place run-out distance:
+ *
+ *   x(age) = 1 + S * (1 - e^(-age / tau)),  tau = S / v0
+ *   x'(0)  = S / tau = v0          <- matches the approach exactly
+ *
+ * There is no clamp at the stripe and no second animation: the racer
+ * carries their momentum through and bleeds it off afterwards.
+ */
+export function coastProgress(progress: number, elapsedMs: number, trajectory?: FinishTrajectory): number {
+  if (!trajectory || elapsedMs < trajectory.finishMs) return progress;
+  const age = elapsedMs - trajectory.finishMs;
+  return 1 + trajectory.settle * (1 - Math.exp(-age / trajectory.tau));
+}
+
+/** RACING -> CROSSING -> COASTING -> SETTLED -> CELEBRATING. */
+export function finishPhase(elapsedMs: number, trajectory: FinishTrajectory | undefined, celebrating: boolean): string {
+  if (!trajectory || elapsedMs < trajectory.finishMs) return "racing";
+  if (celebrating) return "celebrating";
+  const age = elapsedMs - trajectory.finishMs;
+  if (age < 160) return "crossing";
+  if (age < trajectory.coastMs) return "coasting";
+  return "settled";
+}
+
+/**
+ * Apply the whole finish presentation to one renderer frame, in place.
+ *
+ * ONE IMPLEMENTATION, TWO VIEWS - the Arena stage and the shared viewer
+ * both call this, so a change to how a finisher flies through lands in
+ * both or in neither.
+ */
+export function presentFinish(
+  frame: { progress: number; displayProgress?: number; exiting?: boolean; speed?: number; phase?: string },
+  elapsedMs: number,
+  trajectory: FinishTrajectory | undefined,
+  celebrating: boolean,
+): typeof frame {
+  const phase = finishPhase(elapsedMs, trajectory, celebrating);
+  frame.phase = phase;
+  frame.displayProgress = coastProgress(frame.progress, elapsedMs, trajectory);
+  frame.exiting = phase === "crossing" || phase === "coasting";
+  if (frame.exiting && trajectory) {
+    /* Winding down on the same curve as the position, so the legs slow
+       exactly as the racer slows. */
+    const age = elapsedMs - trajectory.finishMs;
+    frame.speed = Math.max(0, Math.min(1, trajectory.crossSpeed * Math.exp(-age / trajectory.tau) * 180));
+  }
+  return frame;
 }

@@ -645,7 +645,12 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board-list{display:block}
 .bc-stage .bc-board-list li{height:2.45vw;min-height:27px;grid-template-columns:2vw 1fr;font-size:1vw;padding:0 .8vw}
 .bc-stage .bc-board-list li:nth-child(n+4){display:none}
-.bc-stage .bc-finish{right:22%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8}
+.bc-stage .bc-finish{
+  right:42%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8;
+  opacity:var(--finish-reveal,0);
+  transform:scaleY(calc(.72 + var(--finish-reveal,0) * .28));
+  transition:opacity .28s ease-out,transform .28s ease-out;
+}
 .bc-stage .race-crowd{bottom:0;height:11%;opacity:.5}
 .bc-stage .race-hills{bottom:12%;height:42%}
 .bc-stage .race-hills.far{bottom:24%}
@@ -674,7 +679,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-bar:hover,.bc-stage .bc-bar:focus-within{opacity:1}
 .bc-stage.is-racing .bc-foot{opacity:.28}
 .bc-stage .bc-board{border-color:rgba(255,255,255,.2);box-shadow:0 .8vw 2vw #0008}
-.bc-stage .bc-finish{right:22%}
+.bc-stage .bc-finish{right:42%}
 @media(max-width:800px){
   .bc-stage .bc-runner{width:16vw;height:10.8vw}
   .bc-stage .bc-runner-art{width:16vw;height:10.8vw}

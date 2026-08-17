@@ -3,12 +3,13 @@ import type { RaceFrame, RaceRacer } from "./contracts";
 
 export { backgroundMotion } from "./background-motion";
 export { createReactionTimeline, presentationRacerFrame, reactionAt } from "./presentation-frame";
-export { createFinishPresentation, presentationScreenRatio } from "./finish-presentation";
+export { createFinishPresentation, finishReveal, presentationScreenRatio } from "./finish-presentation";
 /* The theatre layer, ported out of js/arena/race.js into typed, tested
    modules. Both the Arena stage and the shared viewer consume it from here. */
 export {
   allowance, arcShape, closingEase, crossingSpeeds, dramatize, launchEase, openEase, planArcs,
   MAX_DROP, MAX_LEAD,
+  coastProgress, finishPhase, finishTrajectories, presentFinish, settleOffset,
 } from "./theatre";
 
 export interface LiveArenaRenderer {

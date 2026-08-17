@@ -1,6 +1,9 @@
 import type { FinishCamera, FinishPresentation, PhotoFinishPresentation, RaceRacer } from "./contracts";
 
 export const FINAL_STRETCH_START = 0.80;
+/** The leader is inside the last 10%: show the stripe. */
+export const REVEAL_FROM = 0.90;
+export const REVEAL_FULL = 0.955;
 export const FINISH_CAMERA_FULL = 0.95;
 /*
   THE TRACK, AS ONE LINEAR MAP.
@@ -18,8 +21,31 @@ export const FINISH_CAMERA_FULL = 0.95;
   anything, and the mapping stays a straight line for the whole race.
 */
 export const TRACK_START = 0.04;
-export const FINISH_LINE_RATIO = 0.78;
-export const MAX_SETTLE = 0.16;
+/*
+  THE STRIPE SITS AT 58% FOR THE WHOLE RACE, AND NEVER MOVES.
+
+  The brief asked for it to start at ~90% and slide to ~58% when revealed,
+  with the mapping interpolated so nobody jumps. That cannot be done. A
+  racer's screen position is `progress * scale`, so dropping the scale from
+  0.88 to 0.54 walks every racer LEFT by up to 30% of the frame. Spreading
+  that over a transition does not remove it, it just spreads it: at p=0.95
+  the leftward drift only falls below the racer's own forward speed at
+  about a six second transition - longer than the entire finish sequence.
+  Any faster and the whole field visibly reverses at the exact moment the
+  race is decided.
+
+  So the geometry is fixed and the REVEAL IS OPACITY ONLY. Nothing moves
+  when the stripe appears, because nothing can. For most of the race the
+  right-hand 40% is simply open track ahead of the leader, which is what
+  "the track continues ahead" is supposed to look like anyway.
+*/
+export const FINISH_LINE_RATIO = 0.58;
+/*
+  And the run-out is now genuinely large: 0.58 -> ~0.95 of the frame. The
+  old 0.16 settle across a 12% strip is why twelve finishers parked in a
+  column against the stripe.
+*/
+export const MAX_SETTLE = 0.34;
 /*
   DERIVED, NOT CHOSEN - and the first version of this got it wrong.
 
@@ -65,6 +91,17 @@ const smoothstep = (value: number) => {
   with a hard ceiling: scale and glow read it, geometry does not.
 */
 export const MAX_CAMERA_MIX = 0.34;
+
+/**
+ * How visible the finish stripe is, 0 to 1.
+ *
+ * Hidden for most of the race, then a quick fade as the leader comes into
+ * the last tenth. It is a pure opacity signal: no geometry reads it, so a
+ * reveal can never move a racer.
+ */
+export function finishReveal(leaderProgress: number): number {
+  return smoothstep((leaderProgress - REVEAL_FROM) / (REVEAL_FULL - REVEAL_FROM));
+}
 
 export function cameraForLeader(leaderProgress: number): FinishCamera {
   const ramp = smoothstep((leaderProgress - FINAL_STRETCH_START) / (FINISH_CAMERA_FULL - FINAL_STRETCH_START));
