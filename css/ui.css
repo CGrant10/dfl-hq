@@ -310,13 +310,42 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
    nothing to keep in step with anything else. `is-running` is added by the
    inline script so a skipped launch never animates at all.
    --------------------------------------------------------------------- */
+/*
+  THE GROUND IS THE DEFAULT THEME'S, frozen.
+
+  It was #07090d with #f5f7fa/#8b98ab inks - a cool blue-grey left over from
+  before the app had a house style, so the front door was the one surface that
+  did not look like the app behind it. These are Medicine Wheel's own values
+  now, the same set the shared golf cards were moved onto:
+
+    #0b0b0c ground   #f4f2ee ink   #a8a096 muted
+    #F08279 accent   #EFC94C season gold
+
+  Still literals, and for the reason spelled out further down: this plate does
+  not follow the runtime theme, so it must not use the theme's inks.
+
+  DEPTH, not decoration. A flat rectangle reads as a loading screen. Two soft
+  radials - a cool key from above, a warm floor - plus a vignette give the
+  sense of a lit room with no moving parts at all. HQ used to get nothing here
+  while only the broadcast opening had a wash.
+*/
 #splash {
   position: fixed; inset: 0; z-index: 100;
   display: grid; place-items: center;
-  background: #07090d;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(244,242,238,.07), transparent 62%),
+    radial-gradient(90% 60% at 50% 108%, rgba(239,201,76,.05), transparent 70%),
+    #0b0b0c;
   /* The plate itself does not move. Only its contents arrive, which is what
      keeps this feeling like a title card rather than a transition. */
 }
+/* The vignette, on a pseudo-element so it sits over the gradients and under
+   the lockup. No asset, and it is what stops the corners reading as flat. */
+#splash::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(100% 75% at 50% 45%, transparent 48%, rgba(0,0,0,.55));
+}
+#splash .sp-inner { position: relative; z-index: 1; }
 #splash.is-gone { display: none; }
 #splash.is-full.is-running  { animation: dfl-splash-out var(--t-slow) var(--ease) 1.6s forwards; }
 #splash.is-short.is-running { animation: dfl-splash-out 200ms var(--ease) .55s forwards; }
@@ -348,7 +377,7 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   font-weight: var(--fw-bold);
   letter-spacing: .34em;
   text-transform: uppercase;
-  color: #f5f7fa;
+  color: #f4f2ee;
   opacity: 0;
 }
 .sp-tag {
@@ -356,10 +385,31 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   font-weight: var(--fw-bold);
   letter-spacing: .16em;
   text-transform: uppercase;
-  color: #8b98ab;
-  max-width: 22ch;
+  color: #a8a096;
+  max-width: 24ch;
   opacity: 0;
 }
+/*
+  THE SEASON LINE and the rule under the wordmark: the two pieces of structure
+  that separate a title card from a logo on a background. Both quiet, and the
+  rule is 1px - a broadcast plate is built out of hairlines, not boxes.
+*/
+.sp-season {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: #EFC94C;
+  opacity: 0;
+}
+/* No season, no gap: an empty span would still hold a row of the grid. */
+.sp-season:empty { display: none; }
+.sp-rule {
+  width: min(52vw, 300px); height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244,242,238,.28), transparent);
+  opacity: 0;
+}
+
 /* One pass of light, once. A sweep that repeats is a loading bar. */
 .sp-sweep {
   position: absolute; inset: 0 auto 0 0; width: 42%;
@@ -367,10 +417,15 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
   transform: translateX(-120%);
 }
-#splash.is-full.is-running .sp-mark  { animation: dfl-sp-rise 620ms var(--ease) .2s both; }
-#splash.is-full.is-running .sp-word  { animation: dfl-sp-rise 520ms var(--ease) .5s both; }
-#splash.is-full.is-running .sp-tag   { animation: dfl-sp-rise 520ms var(--ease) 1s both; }
-#splash.is-full.is-running .sp-sweep { animation: dfl-sp-sweep 900ms var(--ease) .8s 1 forwards; }
+/* The season line lands just before the wordmark so the two read as one
+   lockup rather than two arrivals; the rule is struck after both. The plate
+   still leaves at 1.6s, so no stage was pushed later to fit these in. */
+#splash.is-full.is-running .sp-mark   { animation: dfl-sp-rise 620ms var(--ease) .2s both; }
+#splash.is-full.is-running .sp-season { animation: dfl-sp-rise 420ms var(--ease) .44s both; }
+#splash.is-full.is-running .sp-word   { animation: dfl-sp-rise 520ms var(--ease) .54s both; }
+#splash.is-full.is-running .sp-rule   { animation: dfl-sp-wipe 560ms var(--ease) .82s both; }
+#splash.is-full.is-running .sp-tag    { animation: dfl-sp-rise 520ms var(--ease) 1s both; }
+#splash.is-full.is-running .sp-sweep  { animation: dfl-sp-sweep 900ms var(--ease) .8s 1 forwards; }
 
 /*
   THE SHORT ONE. Same elements, same keyframes, one stage instead of four:
@@ -379,6 +434,8 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   introduced to it again.
 */
 #splash.is-short .sp-tag,
+#splash.is-short .sp-season,
+#splash.is-short .sp-rule,
 #splash.is-short .sp-sweep { display: none; }
 #splash.is-short.is-running .sp-mark { animation: dfl-sp-rise 300ms var(--ease) .05s both; }
 #splash.is-short.is-running .sp-word { animation: dfl-sp-rise 300ms var(--ease) .15s both; }
@@ -391,13 +448,18 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   delays, same elements. What changes is a colour and two strings, which is
   the whole point of doing it this way rather than writing three of these.
 */
-#splash.is-golf .sp-tag { color: #E67582; }
+#splash.is-golf .sp-tag { color: #F08279; }
 /* Broadcast is the loud one: the tagline takes the crest red at size and
    the plate carries a faint red wash, because MAIN EVENT should not look
    like a subtitle. */
-#splash.is-broadcast { background: radial-gradient(90% 60% at 50% 45%, rgba(229,1,27,.13), transparent 70%), #07090d; }
+#splash.is-broadcast {
+  background:
+    radial-gradient(90% 60% at 50% 45%, rgba(200,16,46,.20), transparent 70%),
+    radial-gradient(120% 80% at 50% -10%, rgba(244,242,238,.05), transparent 62%),
+    #0b0b0c;
+}
 #splash.is-broadcast .sp-tag {
-  color: #E67582;
+  color: #F08279;
   font-size: var(--fs-h3);
   letter-spacing: .28em;
 }
@@ -407,6 +469,9 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   to   { opacity: 1; transform: none }
 }
 @keyframes dfl-sp-sweep { to { transform: translateX(320%) } }
+/* The rule draws out from the middle rather than fading in - it is the one
+   element whose arrival should read as a line being struck. */
+@keyframes dfl-sp-wipe { from { opacity: 0; transform: scaleX(.2) } to { opacity: 1; transform: none } }
 @keyframes dfl-splash-out { to { opacity: 0; visibility: hidden } }
 
 /*
@@ -420,8 +485,38 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
   #splash.is-running { animation: dfl-splash-out 160ms linear .55s forwards !important; }
   #splash.is-running .sp-mark,
   #splash.is-running .sp-word,
-  #splash.is-running .sp-tag { animation: none !important; opacity: 1; }
+  #splash.is-running .sp-season,
+  #splash.is-running .sp-rule,
+  #splash.is-running .sp-tag { animation: none !important; opacity: 1; transform: none; }
   #splash .sp-sweep { display: none; }
+}
+
+/*
+  THE ROOM GETS BIGGER; THE LOCKUP IS NOT JUST STRETCHED.
+
+  A phone needs the crest to leave room for the words beneath it. A desktop has
+  room to let the plate breathe, so the crest grows, the tracking opens and the
+  gaps carry it. A landscape phone has neither - 375px of height with a 66vw
+  crest pushes the tagline off the plate - so there the crest is sized off the
+  HEIGHT instead, and the rule steps out of the way.
+*/
+@media (min-width: 900px) {
+  .sp-inner  { gap: var(--s-5); }
+  .sp-mark   { width: min(38vw, 460px); }
+  .sp-word   { letter-spacing: .42em; }
+  .sp-rule   { width: min(30vw, 380px); }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .sp-inner { gap: var(--s-2); padding: var(--s-3); }
+  .sp-mark  { width: auto; height: min(38vh, 150px); }
+  .sp-word  { font-size: var(--fs-h3); letter-spacing: .28em; }
+  .sp-rule  { display: none; }
+  #splash.is-short .sp-mark { width: auto; height: min(30vh, 120px); }
+}
+/* 360px and under: .34em of tracking is a lot of width for a wordmark. */
+@media (max-width: 360px) {
+  .sp-word   { letter-spacing: .22em; }
+  .sp-season { letter-spacing: .24em; }
 }
 
 /* ---------------------------------------------------------------------
