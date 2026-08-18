@@ -400,7 +400,6 @@ function advisorBody(data) {
   return `
     ${leadCard(lead, candidates, data)}
 
-    ${leadLine(data) ? `<p class="ka-lead">${leadLine(data)}</p>` : ""}
     ${ruleLine(rules, context)}
     ${marketLine(market)}
 
@@ -415,10 +414,7 @@ function advisorBody(data) {
         ${compareTable(candidates, context)}
       </div>` : ""}
 
-    <ul class="ka-gaps">${gaps(data).map((g) => `<li>${g}</li>`).join("")}</ul>
-    <p class="muted tiny">${counts.total} QB/RB/WR/TE on your
-      ${esc(data.rosterSeason ?? "")} roster${counts.unknownPlayer
-        ? ` · ${counts.unknownPlayer} not in the Sleeper player list` : ""}.</p>`;
+    ${blockers(data).map((b) => `<p class="ka-blocker">${b}</p>`).join("")}`;
 }
 
 /* The lead: one player, the four labelled figures, and why. */
@@ -457,28 +453,23 @@ const HEADLINE = new Set([LABELS.BEST_VALUE, LABELS.BEST_PLAYER, LABELS.SAFE_CHO
 const CALLS = new Set([...HEADLINE, LABELS.POOR_VALUE]);
 
 /*
-  THE "RANKED ON…" PARAGRAPH IS GONE.
+  NO LEAD PARAGRAPH, AND NO FOOTNOTES.
 
-  It explained the methodology at the top of every card - which season each
-  figure came from, and which of them were missing. Every one of those facts is
-  already on the card twice over: each figure is labelled with its own season,
-  and a genuinely missing input is named in the gaps list at the bottom. So the
-  paragraph was a preamble the reader had to get past to reach the player, and
-  it went.
+  This card has lost three blocks of prose in a row, all of them true and none
+  of them wanted: the methodology ("Ranked on 2025 production, your 2025 draft
+  round and the 2026 market"), then the residue of it ("From your 2025 roster.
+  1 keeper allowed"), then the explanatory list underneath - roster count,
+  "expected rounds are approximate", "N players need a draft round".
 
-  What is left is the one thing not stated anywhere else: which roster this was
-  read from, and how many keepers the league allows.
+  The card opens on the recommendation now and ends on the comparison. Every
+  figure is already labelled with its own season and a missing one already
+  reads "—", so the explanations were restating what the layout says. The
+  roster season is still on the card, on the lead card and in the compare-all
+  headers.
+
+  What survives is blockers() below: not commentary, but the states where the
+  card would otherwise be quietly wrong.
 */
-function leadLine(data) {
-  const from = data.rosterSeason != null
-    ? `From your <strong>${esc(data.rosterSeason)}</strong> roster${
-        data.leagueSeason != null && data.leagueSeason !== data.rosterSeason
-          ? " — the last one played" : ""}.` : "";
-  const allowance = data.maxKeepers != null
-    ? ` <strong>${data.maxKeepers} keeper${data.maxKeepers === 1 ? "" : "s"}</strong>
-        allowed.` : "";
-  return `${from}${allowance}`.trim();
-}
 
 function ruleLine(rules, context) {
   const summary = describeRules(rules);
@@ -497,8 +488,19 @@ function marketLine(market) {
     ${fresh?.label ? `· ${esc(fresh.label)}` : ""}</p>`;
 }
 
-function gaps(data) {
-  const { counts, context, rules } = data;
+/*
+  ONLY THE THINGS THAT MEAN THE CARD IS LYING.
+
+  gaps() used to print seven kinds of note, and six of them were commentary a
+  reader did not ask for. What is left is the set where a figure is ABSENT for a
+  fixable reason and the card cannot say so any other way - a migration that has
+  not been run, or a sync that has not happened. Those are not subtext; without
+  them the Advisor shows every cost as "—" and offers no clue why.
+
+  A normal, fully-synced league sees NOTHING here, which is the point.
+*/
+function blockers(data) {
+  const { context, rules } = data;
   const out = [];
   if (data.needsRulesMigration) {
     out.push(`Keeper rules are not switched on yet. Run
@@ -506,11 +508,6 @@ function gaps(data) {
   } else if (!rules) {
     out.push(`No keeper rules are configured for ${esc(context.targetSeason ?? "this season")},
       so no keeper cost is shown.`);
-  }
-  if (counts.needsReview) {
-    out.push(`${counts.needsReview} player${counts.needsReview === 1 ? " has" : "s have"}
-      no <strong>${esc(context.draftBasisSeason)}</strong> DFL draft round on record —
-      a commissioner enters those by hand.`);
   }
   if (data.needsDraftSync) {
     out.push(`Draft rounds are missing. Run <strong>sleeper_draft_schema.sql</strong>,
@@ -520,17 +517,6 @@ function gaps(data) {
     out.push(`This league's scoring settings have not been synced, so
       ${esc(context.productionSeason)} points cannot be worked out. Run
       <strong>Sync Sleeper</strong> on the Admin page.`);
-  } else if (!counts.withProduction) {
-    out.push(`No ${esc(context.productionSeason)} statistics came back for these
-      players, so production is not shown.`);
-  }
-  if (!counts.withMarket) {
-    out.push(`No ${esc(context.marketSeason)} draft market is available, so no
-      expected round and no draft value is shown.`);
-  }
-  if (data.leagueSize) {
-    out.push(`Expected rounds are approximate — an average draft position divided
-      across ${esc(data.leagueSize)} teams, not a prediction of this league's board.`);
   }
   return out;
 }

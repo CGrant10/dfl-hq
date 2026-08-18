@@ -1618,23 +1618,15 @@ a.moment:hover { background: var(--hover-soft); }
 .keeper-advisor .ka-list,
 .keeper-advisor .ka-more { padding-left: 0; padding-right: 0; }
 
-.ka-lead {
-  margin: 0 0 var(--s-3);
-  font-size: var(--fs-body);
-  color: var(--body-text);
+/* The only prose left on the card: a state where a figure is missing for a
+   fixable reason. A fully-synced league never sees one. */
+.ka-blocker {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-micro);
+  color: var(--muted);
   line-height: var(--lh-body);
 }
-
-/* The configured rules, restated quietly under the lead. Secondary on
-   purpose - it is provenance, not the point of the card. */
-.ka-rules {
-  margin: 0 0 var(--s-3);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-wide);
-  text-transform: uppercase;
-  color: var(--muted);
-}
+.ka-blocker strong { color: var(--body-text); }
 
 .ka-list { list-style: none; margin: 0; padding: 0; }
 .ka-row {
@@ -1710,18 +1702,6 @@ a.moment:hover { background: var(--hover-soft); }
   white-space: nowrap;
 }
 .ka-cost.none { color: var(--muted); }
-
-/* What the advisor cannot tell you, and where that would come from. This is
-   the honest part of the card and it is styled to be read, not skipped. */
-.ka-gaps {
-  margin: var(--s-3) 0 var(--s-2);
-  padding-left: var(--s-4);
-  font-size: var(--fs-micro);
-  color: var(--muted);
-  line-height: var(--lh-body);
-}
-.ka-gaps li { margin-bottom: 3px; }
-.ka-gaps strong { color: var(--body-text); }
 
 /* Folded, the comparison is one row; open, it continues the list above it
    without a second set of card edges. */
