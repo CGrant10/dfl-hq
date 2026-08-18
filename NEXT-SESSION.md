@@ -1,192 +1,164 @@
-# DFL HQ ARENA — NEXT SESSION: CHARACTER CUSTOMIZATION
+# DFL HQ — NEXT SESSION
 
-The presentation/flow pass (v1.102.0) is done and verified. **Character
-customization is the next project** — see `CHARACTERS.md`, phases 2–6.
+**Live thread: keepers.** Two of four goals from the keeper brief are shipped
+and verified. Pick up at "What to do next" below.
 
----
+Arena is paused and its handoff moved to `ARENA-NEXT.md`. Do not reopen it.
 
-## Done in v1.102.0 — do not redo
-
-### 1. Entering the Race View no longer starts the race
-
-`#bc-start` on the event page (`js/pages/arena.js`) used to write `seed`,
-`bc_state: running` and `bc_started_at = now + 2700ms` and *then* navigate, so
-the shared countdown was already running while the Race View was loading. It
-now **writes nothing** and only navigates. Its label is "Go to Race View"
-("Go to the live race" when one is already running).
-
-`#bc-go` inside the Race View (`js/pages/broadcast.js`) is the **only**
-control that starts a race. It writes a **new seed**, `bc_state: running`,
-`bc_started_at = now + COUNTDOWN_MS`, `bc_offset_ms: 0`.
-
-Same-seed **Replay** stays on the event page and still writes the clock with
-the stored seed — deliberately untouched, it is the one same-seed flow.
-
-`write()` in `wireBar` now hands the patch straight to `apply()` via
-`live.apply`, so the commissioner's own screen reacts to its own button
-instead of waiting for realtime or the 1s poll. Measured: countdown drawn at
-"3" **55ms** after the press.
-
-`data-race-state` on `.bc-stage` is `idle | countdown | running | paused |
-finished`. The idle view keeps the control bar legible (`BAR_STANDBY_MS`
-7000 rather than 2600) and still auto-hides, so an OBS source settles to a
-clean starting grid.
-
-### 2. The finish line arrives before anyone crosses it
-
-**This was geometry, not overlay timing.** `finishPassProgress()` was a
-right-to-left *pass* over `first - 1500 → last + 900`, so its midpoint — the
-only moment the stripe is over the crossing point — landed **1.6s to 5.0s
-after the winner had already finished**. Measured at the winner's crossing,
-the stripe was at **108%–131% of the frame**: offscreen right. Racers crossed
-nothing, and the photo-finish result panel appeared while it was still out
-there.
-
-Replaced by **`finishArrival(elapsedMs, firstFinishMs)`**: an eased, clamped
-ramp that brings the structure in from offscreen right and **stops on
-`FINISH_LINE_RATIO` 420ms before the first official finish**
-(`FINISH_SETTLED_LEAD_MS`). `lastFinishMs` is no longer an input. CSS
-variable renamed `--finish-pass` → `--finish-arrival` (1 = on the line) so a
-stale consumer cannot silently read a differently-scaled value.
-
-Measured — stripe left edge, % of track (v1.102.1, `PRE_FINISH_SWEEP_MS`
-1100):
-
-| relative to the winner's crossing | stripe |
-|---|---|
-| −1100ms | 113% (offscreen) |
-| −1040ms | enters the frame |
-| −900ms | 77% |
-| −700ms | 62% |
-| −420ms onward | 58% (on the line) |
-| last finish + 320ms | fades out (CSS, `data-race-state="finished"`) |
-
-**2600 was tried first and was too long.** It put the structure in frame 2.4s
-before the winner, and with a spread of 3.9s–10.7s it then stood in the middle
-of the shot for six to thirteen seconds while the tail streamed through. It
-cannot go below about a second: with a static ground, progress 1.0 maps to
-`FINISH_LINE_RATIO` for **every** racer, so the line has to be standing there
-while the field comes through, and how long that takes is the finish spread.
-A line that sweeps past instead is a line whose position disagrees with
-somebody's official crossing. Making the finish a genuinely ~2s event needs
-the spread work below, or a scrolling-track camera (racers held mid-frame,
-ground panning) — which would make racer screen x time-dependent and retire
-the camera-independence spec.
-
-`FinishPresentation` gained **`crossingShown` / `crossingShownMs`** — the one
-answer to "may the UI say who won yet". The decisive crossing is P2's line in
-a photo finish and the winner's own otherwise. `celebrationActive` is gated on
-it, and the photo-finish **result** phase now waits for
-`crossingShownMs + RESULT_BEAT_MS` (220ms) instead of P2 + 120ms. The
-`approach` phase ("PHOTO FINISH", tension only) is unchanged and still runs
-before the line.
-
-Verified over 6 real close finishes: approach ≈ −0.76s, flash at the
-crossing, result +220ms, stripe on the line throughout. Winner card and
-`is-winner` appear at `last + 320ms` and never earlier.
-
-### 3. The course, instead of a skybox
-
-`.race-scenery` **moved inside `.bc-track`** in `paint()`. It used to be a
-sibling of the header and footer, so its percentages measured the window
-while the lanes measured the track — the horizon landed mid-field, the top
-lanes ran through the sky and the crowd sat under the bottom lane's feet.
-
-New bands (`css/broadcast.css`, scoped `.bc-stage.cinematic-race` — three
-classes, so it wins over `screens.css`'s two-class skybox rules regardless of
-load order), as % of the track:
-
-```
-0    - 11%    sky strip
-3    - 13%    distant hills + treeline   (.race-hills.far / .race-hills)
-6    - 14%    stand + crowd              (.race-stands / .race-crowd)
-12.5 - 16.5%  DFL banners                (.race-banners)
-15.9 - 17%    far fence                  (.race-rail)
-16.5 - 100%   THE COURSE                 (.race-course)
-98   - 100%   near verge                 (.race-verge)
-```
-
-`LANE_BAND_TOP` 0.18 / `LANE_BAND_BOTTOM` 0.92 in `src/arena/viewport.ts` are
-the single definition of the running surface; `js/arena/racer-view.js` imports
-them for the DOM lanes. **Shifted, not squeezed** — pitch only 6.67% → 6.17%.
-0.94 was tried first and clipped the bottom lane's feet on a 294px landscape
-track (feet at 100.2%); `viewport.spec.ts` now measures against the four real
-track boxes rather than window sizes.
-
-Also: `.bc-finish` and the new `.race-start-gate` span the running surface
-(14.5%–98.5%) instead of the whole frame, the stripe gained a gantry cap, and
-`.bc-body` is full-bleed.
-
-### Verified
-
-1920x1080, 1280x720, 844x390 landscape, 254x687 portrait: every lane's feet
-between the course top and the bottom edge, no console errors, reduced motion
-toggles clean. Mid-race join lands at the shared elapsed position and does not
-touch the row. typecheck clean, **100 tests**, build clean.
+Current version: **1.107.0**. Read the v1.106.0 and v1.107.0 commit messages —
+they carry the full reasoning and are more detailed than this file.
 
 ---
 
-## Architecture that must be preserved
+## Read this first, or you will waste a pass
 
-```
-simulate()            authoritative truth — never touched
-theatre.ts            dramatize / planArcs / allowance / closingEase
-finishTrajectories()  precomputed per racer
-presentFinish()       owns displayProgress / exiting / speed / phase
-presentationScreenRatio()  ONE straight line, camera-independent (spec)
-finishArrival()       scenery only, time-derived, monotonic, stops on the line
-crossingShown         the ONLY gate on any result graphic
-LANE_BAND_TOP/BOTTOM  the course band, read by Pixi and the DOM alike
-composeCharacter()    single character source of truth
-#bc-go                the only writer of a race start
-```
+**Verify before you build.** Twice in the last sessions a brief described
+infrastructure as already existing when it did not (a "keeper rules engine", a
+"Share Keeper Board", `sleeper_draft_picks`). Grep the repo and read the live
+database before consuming anything.
 
-Geometry: `TRACK_START` 0.04, `FINISH_LINE_RATIO` 0.58, `MAX_SETTLE` 0.34,
-course top 0.165, lane band 0.18–0.92.
+**The service worker serves stale JS.** Every deploy and every harness run.
+Clear `caches` and unregister the service worker, or you will verify against
+old code and believe a fix failed. This has bitten every session.
+
+**PostgREST caps reads at 1000 rows.** `sleeper_draft_picks` has 1080. A
+verification script that forgets this will "discover" that 2025 is missing and
+blame the sync. Paginate with `Range` headers.
+
+**Vitest passing is not visual verification.** The convention in this repo is a
+throwaway `_verify/` harness that swaps `js/supabase.js` (and `js/sleeper.js`,
+to skip the 5MB player map) via an HTML import map, then drives the REAL page
+modules. Delete `_verify/` before committing. Never write to production to test.
 
 ---
 
-## Still open
+## What is done — do not rebuild
 
-### The huddle — convergence fixed, spread metric unmoved
+### v1.106.0 — keeper rules are configuration
 
-`closingEase` takes **milliseconds to that racer's own finishMs**
-(`CLOSE_MS = 900`) instead of a shared `CLOSE_FROM = 0.88` progress mark. It
-did **not** move the first-crossing spread: seed 1000 still 0.129, seed 90210
-still 0.103.
+`js/keeper-rules.js` is the **only** keeper calculation in the app. Everything
+consumes `evaluate()`. The old prose recogniser (`COST_RULES`,
+`costRuleFrom()`) is deleted — do not reintroduce a second formula.
 
-Why: at the first crossing the metric is dominated by two things that are not
-the closing envelope — leaders pinned near 1.0 by the `ahead` allowance, and
-trailing racers drawn *forward* of their truth by their arcs (seed 1000:
-trailing truth 0.817, drawn ~0.871). The field compresses because the back is
-pushed **up**, not because the front is pulled back.
+`keeper_rules` table, one row per **effective season**, seeded with the
+commissioner's stated rules and confirmed live:
 
-The lever is **arc composition** — trailing racers wanting negative deviation
-late — which is the race-shape/disparity work. Do that pass and re-measure;
-do not tune `CLOSE_MS` expecting the spread number to move.
+```
+max_keeper_seasons 3 · cost_basis original_draft_round
+round_adjustment 1  · min_keeper_round 1 · progression fixed_from_original
+```
 
-| | seed 1000 | seed 90210 |
-|---|---|---|
-| drawn spread mid-race | 0.546 | 0.185 |
-| drawn spread at first crossing | **0.129** | 0.103 |
-| TRUTH spread at first crossing | 0.183 | 0.112 |
+R8→R7 in years 1/2/3 then ineligible; R2→R1; R1→R1 (floor holds; no
+compounding). Changing a future season cannot rewrite the past — `configFor()`
+takes the newest set effective at or before the target season, and a saved
+keeper row is a fact.
 
-Constraint: drawn must still meet truth at each racer's official crossing.
-`theatre.spec.ts` enforces no-early-crossing, bounded backslide, determinism
-and smoothness.
+**Original ≠ latest.** `originalQualifyingRound()` takes the EARLIEST pick on
+record. The keeper right is established by the first time the league drafted
+the player; taking the newest pick made players cheaper every time somebody
+re-drafted them. Verified: Bijan went R8 in 2022 and R1 in 2025 — cost is R7.
 
-### Deferred
+**Tenure counts canonical rows only.** `priorKeeperSeasons()` ignores rows with
+no `player_id`. Legacy nickname rows ("Puka", "JJettas", "NA") are surfaced
+verbatim by `legacyKeeperNames()` for review and never matched. Do not
+fuzzy-backfill them — false history is worse than incomplete history.
 
-1. `src/arena/engine.ts` dead while `ARENA_MIGRATION.md` says "Complete"
-2. `--font-condensed` undefined; `.pet-option-label` still reaches for it
-3. Two CSS namespaces (`.runner*` / `.bc-*`); the legacy
-   `.arena-track-wrap` race rules in `screens.css` are dead — the event page
-   has not drawn a race since the shared-viewer change
-4. `.bc-stage .bc-body{display:block}` and `.bc-board{position:absolute}` in
-   the "Open-field race view" block never take effect — the board still
-   occupies a 20vw grid column instead of floating over the course. Pre-dates
-   this pass; fixing it would widen the course by ~20%
-5. `pet-texture.ts` `normalizePet` vs `normalizeCharacter`
-6. Editing `src/arena/*.ts` requires `pnpm build`
-7. **Character customization — Phases 2–6, `CHARACTERS.md`. This is next.**
-8. Race disparity / race shapes — after the huddle fix
+### v1.107.0 — the commissioner picks a member, then a player
+
+`js/keeper-entry.js`. Add keeper → member → their newest **populated** roster
+(searchable) → tap a player → review autofilled facts → save. Returns to the
+member step with a count per member. "Add by hand" keeps the generic editor for
+corrections.
+
+Grouped Available / Needs review / Unavailable with the reason on every row.
+Unavailable is listed but not clickable; **review IS clickable** — a missing
+original round is what a commissioner is there to supply.
+
+New rows carry `member_id` + `player_id` plus snapshots (`player_name`,
+`player_pos`, `player_team`, `team_snapshot`) and the audit trail
+(`original_round`, `keeper_year`, `calculated_round`, `rules_season`,
+`round_overridden`). Overrides are shown in the accent before saving and are
+never silently recalculated.
+
+Reuses `js/focus-trap.js`. Do not write another focus utility.
+
+---
+
+## What to do next, in this order
+
+### 1. Share Keeper Board  ← start here
+
+Add "Share Keeper Board" to the Keepers page: a purpose-built image of the
+**whole league's** keeper selections for the selected season, in the Medicine
+identity. Not a screenshot.
+
+- Audit `js/share.js`, `js/fact-share.js`, `js/golf-share.js` first and reuse
+  the existing canvas/export/share-API/filename helpers. Do not build a second
+  image system.
+- Every member appears in canonical order. A member with no keeper shows an
+  understated "No keeper submitted" — an incomplete board must not look
+  complete.
+- Enrich new rows (position, NFL team) from `player_id`; legacy rows still show
+  their stored name and round. Never hide a keeper because it cannot be
+  enriched.
+- Optional rule-summary line via `describeRules(config)`; omit it rather than
+  print something confusing.
+- Same flow must work partial and complete — the data decides.
+- **Verify by generating and looking at actual images**: no submissions,
+  partial, full, legacy rows, long team name, long player name.
+
+### 2. Golf → Medicine identity
+
+Golf still reads as a separate green/blue product. `js/pages/golf.js` has a
+hard-coded `TEAM_COLORS` array; `css/golf.css` and every `js/golf-*.js` share
+renderer need auditing too.
+
+- Classify each colour: A branding, B semantic state (under/over par, live,
+  winner), C neutral. Replace A only. Keep B.
+- Centralise the small branded share palette — a DOM-independent constants
+  module, not five copies.
+- **Generate every Golf share image type and inspect them.** Grep is not
+  verification (§36 of the brief was explicit).
+- Do not touch scoring, matches, battle, draft, guest auth or the offline
+  queue. Styling only.
+
+### 3. Ticker / BottomLine + nav and route motion
+
+App-shell polish, last because it touches everything. Ticker above the bottom
+nav from data the app already has (next event, open poll, announcement, golf
+status, champion). No fake urgency language. Suppress on Broadcast, Admin, live
+Arena and focused Golf surfaces. `prefers-reduced-motion` must not marquee.
+Subtle tab-bar active transition and a short route fade/translate — read the
+existing `page-in` behaviour in `js/router.js` first.
+
+---
+
+## Open question for the commissioner
+
+Keeper costs are now live against real draft history. **Nobody has confirmed
+the calculated rounds against what the league believes them to be.** Ask, and
+trace any disagreement before building on top. The one known soft spot: players
+whose earliest pick is 2020 may predate the synced history (2019 has no Sleeper
+draft board), and the entry sheet warns about exactly those.
+
+---
+
+## Standing constraints
+
+Do not touch: Arena, Golf scoring/matches/battle/draft/guest auth/offline
+queue, Home broadcast ranking, splash, finances, poll voting, calendar logic,
+History lore, member identity model, admin auth, service-worker/update
+algorithm, Medicine palette values, `focus-trap.js`.
+
+Do not redo the v1.105.0 History work (tabscroll, Yearbook picker, Moments
+folding) or the focus-trap integration. Regression-test them after shared CSS
+changes; rewrite only on a real regression.
+
+Migrations are additive and re-runnable. `SCHEMA.md` is the run-order baseline —
+keep it current. Legacy keeper rows are never deleted.
+
+**Version bumps move together:** `package.json`, `sw.js` cache name,
+`version.txt`, and the `dfl-app-version` meta in `index.html`.
+
+Verify with: `npx tsc --noEmit`, `npx vitest run` (152 tests as of 1.107.0 —
+preserve them), `npx vite build`, plus a harness pass for raw-JS UI.
