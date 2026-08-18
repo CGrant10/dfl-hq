@@ -43,6 +43,101 @@ export const sleeper = {
 };
 
 // ---------------------------------------------------------------------
+// Season stats, and the upcoming season's ADP
+// ---------------------------------------------------------------------
+// The Keeper Advisor needs two things Sleeper publishes and this app was not
+// reading: what a player actually did last season, and what the upcoming
+// draft is expected to cost.
+//
+// BOTH ARE PUBLIC AND KEYLESS, like everything else in this file. There is no
+// API key anywhere in DFL HQ, no server-side proxy and no secret to leak,
+// because the provider the app already trusts for rosters, drafts, identity
+// and scoring settings also answers these two questions.
+//
+//   STATS   /v1/stats/nfl/regular/<season>  ->  { player_id: {statKey: count} }
+//           The same stat keys the league's own scoring_settings uses, which
+//           is what makes dfl-scoring.js a dot product. ~1.9MB.
+//
+//   ADP     /projections/nfl/<season>?season_type=regular&order_by=adp_<fmt>
+//           One row per player with adp_std / adp_half_ppr / adp_ppr, the
+//           player's position, and last_modified. Keyed on the SLEEPER player
+//           id, so there is no name matching to get wrong. The position[]
+//           filter takes it from 8.6MB to 2.9MB.
+//
+// Both are cached in the Cache API, the way the player map already is,
+// because both are megabytes and neither changes on the timescale of a page
+// view. A completed season's stats never change at all; ADP moves daily in
+// August, so it gets a much shorter life and the card shows its date.
+// ---------------------------------------------------------------------
+
+const STATS_CACHE  = "sleeper-stats-v1";
+const MARKET_CACHE = "sleeper-market-v1";
+const WEEK_MS      = 7 * 24 * 60 * 60 * 1000;
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+/* The four positions the Advisor evaluates. Kickers and defences are not
+   requested at all, which is both a smaller download and one less way for one
+   to reach a surface that must not mention them. */
+const MARKET_POSITIONS = ["QB", "RB", "WR", "TE"];
+
+/**
+ * Fetch-and-cache JSON that is too big to pull on every page view.
+ *
+ * A cache hit inside its life is returned without touching the network. A
+ * stale hit is still returned if the fetch fails, because last week's ADP is
+ * a great deal more useful than an empty card - the caller gets a timestamp
+ * and says how old it is.
+ */
+async function cachedJson(cacheName, url, maxAgeMs) {
+  const cache = await caches.open(cacheName);
+  const hit = await cache.match(url);
+  const hitAt = hit ? Number(hit.headers.get("x-fetched-at") || 0) : 0;
+
+  if (hit && Date.now() - hitAt < maxAgeMs) {
+    return { data: await hit.json(), fetchedAt: hitAt, fromCache: true };
+  }
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Sleeper API ${res.status}`);
+    const data = await res.json();
+    const fetchedAt = Date.now();
+    await cache.put(url, new Response(JSON.stringify(data), {
+      headers: { "Content-Type": "application/json", "x-fetched-at": String(fetchedAt) },
+    }));
+    return { data, fetchedAt, fromCache: false };
+  } catch (err) {
+    if (hit) return { data: await hit.json(), fetchedAt: hitAt, fromCache: true, stale: true };
+    throw err;
+  }
+}
+
+/**
+ * One completed season's stats for every player, keyed by Sleeper player id.
+ * @returns {Promise<{data:Object, fetchedAt:number}>}
+ */
+export function loadSeasonStats(season) {
+  const year = Number(season);
+  if (!Number.isFinite(year)) return Promise.resolve({ data: {}, fetchedAt: 0 });
+  return cachedJson(STATS_CACHE, `${BASE}/stats/nfl/regular/${year}`, WEEK_MS);
+}
+
+/**
+ * The upcoming season's ADP rows, for the four positions the Advisor uses.
+ *
+ * `format` is the league's own scoring format - see scoringFormat() in
+ * dfl-scoring.js - so a PPR league is never shown standard-scoring ADP.
+ * @returns {Promise<{data:Object[], fetchedAt:number}>}
+ */
+export function loadMarketAdp(season, format = "ppr") {
+  const year = Number(season);
+  if (!Number.isFinite(year)) return Promise.resolve({ data: [], fetchedAt: 0 });
+  const positions = MARKET_POSITIONS.map((p) => `position[]=${p}`).join("&");
+  const url = `https://api.sleeper.app/projections/nfl/${year}`
+            + `?season_type=regular&order_by=adp_${format}&${positions}`;
+  return cachedJson(MARKET_CACHE, url, SIX_HOURS_MS);
+}
+
+// ---------------------------------------------------------------------
 // Player names
 // ---------------------------------------------------------------------
 // Rosters come back as bare player ids ("4034"). The id -> name map is a
@@ -53,7 +148,6 @@ export const sleeper = {
 
 const PLAYER_CACHE = "sleeper-players-v1";
 const PLAYER_URL   = `${BASE}/players/nfl`;
-const WEEK_MS      = 7 * 24 * 60 * 60 * 1000;
 
 let playersPromise = null;
 

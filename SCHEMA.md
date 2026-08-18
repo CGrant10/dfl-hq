@@ -88,7 +88,8 @@ Dependencies are real: a file that adds a column to `members` needs
 
 | # | File | What it establishes |
 |---|---|---|
-| 27 | `keeper_rules_schema.sql` | `keeper_rules` (season-aware keeper configuration, seeded with the commissioner's stated rules) and stable identity columns on `keepers` (`member_id`, `player_id`, snapshots, `original_round`, `keeper_year`, `calculated_round`, `round_overridden`). Without it the Keeper Advisor loads and says so; no keeper cost is shown. |
+| 27 | `keeper_rules_schema.sql` | `keeper_rules` (season-aware keeper configuration, seeded with the commissioner's stated rules) and stable identity columns on `keepers` (`member_id`, `player_id`, snapshots, `basis_round`, `basis_season`, `keeper_year`, `calculated_round`, `round_overridden`). Without it the Keeper Advisor loads and says so; no keeper cost is shown. |
+| 27a | `keeper_basis_correction.sql` | Corrects the keeper **cost basis** to `previous_season_draft_round` — a 2026 keeper is priced from the 2025 draft, not from the player's earliest DFL pick. Widens the two CHECK constraints, renames the stored values, adds `keepers.basis_round` / `basis_season`, and **reports** (never rewrites) saved rows created under the old basis. Safe to run before or after 27. |
 
 ### Front-page broadcast
 
@@ -135,6 +136,7 @@ up:
 | `golf_matches_schema.sql` | The tournament board does not appear; the rest of golf works. |
 | `sleeper_draft_schema.sql` | The Keeper Advisor loads and says draft rounds are missing, naming the file to run. |
 | `keeper_rules_schema.sql` | The Keeper Advisor loads, omits the rule summary, shows every cost as "—" and names the file to run. |
+| `keeper_basis_correction.sql` | Everything still works: `js/keeper-rules.js` reads the old `original_draft_round` / `fixed_from_original` values and normalises them, so the *calculation* is already corrected in code. Only the stored wording, the two new `keepers` columns and the audit report are missing. |
 
 Rows that a migration could not map safely are **preserved, never deleted**.
 `polls_schema.sql` leaves unmatched votes with a NULL `member_id`;

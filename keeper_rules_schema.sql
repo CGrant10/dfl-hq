@@ -22,13 +22,22 @@
 --
 -- THE COMMISSIONER'S STATED RULES, seeded below as the 2026 configuration:
 --   maximum tenure     3 keeper seasons
---   cost basis         the player's ORIGINAL qualifying DFL draft round
+--   cost basis         the player's DFL draft round in the season IMMEDIATELY
+--                      BEFORE the keeper season (a 2026 keeper is priced from
+--                      the 2025 draft)
 --   adjustment         1 round earlier
 --   minimum            Round 1
---   progression        fixed from the original round; it does NOT compound
+--   progression        fixed from that basis; it does NOT compound
 --
---   original R8 -> R7 in years 1, 2 and 3, then ineligible
---   original R2 -> R1        original R1 -> R1 (the floor holds)
+--   2025 R8 -> 2026 keeper R7, and R7 again in years 2 and 3, then ineligible
+--   2025 R2 -> R1            2025 R1 -> R1 (the floor holds)
+--
+--   NOTE: v1.106.0 seeded this as 'original_draft_round' and described it as
+--   the player's earliest DFL pick. That was wrong - see
+--   keeper_basis_correction.sql, which renames the value and explains the
+--   difference. This file now seeds the corrected basis directly; the
+--   correction file is still required for the `keepers` columns and the audit
+--   report, and both are safe to run in either order.
 --
 -- WHAT THIS DELIBERATELY DOES NOT DO
 --   It does not touch one existing keeper row. The legacy rows identify people
@@ -52,16 +61,23 @@ create table if not exists public.keeper_rules (
   -- how many seasons one player may be kept in total
   max_keeper_seasons  int  not null default 3 check (max_keeper_seasons between 1 and 20),
   -- what the cost is measured from; only one basis is supported today
-  cost_basis          text not null default 'original_draft_round'
-                        check (cost_basis in ('original_draft_round')),
+  -- 'previous_season_draft_round' is the DFL rule. 'original_draft_round' is
+  -- the v1.106.0 spelling, accepted so an already-seeded database validates;
+  -- keeper_basis_correction.sql renames it and js/keeper-rules.js normalises it.
+  cost_basis          text not null default 'previous_season_draft_round'
+                        check (cost_basis in ('previous_season_draft_round',
+                                              'original_draft_round')),
   -- how many rounds earlier than the basis the keeper costs
   round_adjustment    int  not null default 1 check (round_adjustment between 0 and 20),
   -- the earliest round a keeper can ever cost
   min_keeper_round    int  not null default 1 check (min_keeper_round between 1 and 40),
-  -- 'fixed_from_original' = same cost every keeper year (the DFL rule)
-  -- 'escalates_per_year'  = the adjustment applies again each year
-  progression         text not null default 'fixed_from_original'
-                        check (progression in ('fixed_from_original', 'escalates_per_year')),
+  -- 'fixed_from_basis'   = same cost every keeper year (the DFL rule)
+  -- 'escalates_per_year' = the adjustment applies again each year
+  -- 'fixed_from_original' is the v1.106.0 spelling of the first, kept legal
+  -- for the same reason cost_basis keeps its old value legal.
+  progression         text not null default 'fixed_from_basis'
+                        check (progression in ('fixed_from_basis', 'escalates_per_year',
+                                               'fixed_from_original')),
   notes               text not null default '',
   updated_at          timestamptz not null default now()
 );
@@ -71,8 +87,8 @@ create table if not exists public.keeper_rules (
 insert into public.keeper_rules
   (effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression, notes)
 values
-  (2026, 3, 'original_draft_round', 1, 1, 'fixed_from_original',
-   'Seeded from the commissioner''s stated rules: 3-year maximum, one round earlier than the original qualifying draft round, floor of Round 1, cost fixed from the original round.')
+  (2026, 3, 'previous_season_draft_round', 1, 1, 'fixed_from_basis',
+   'Keeper cost is one round earlier than the player''s DFL draft round in the season immediately before the keeper season (a 2026 keeper is priced from the 2025 draft), floor of Round 1, cost fixed from that basis, three keeper seasons maximum.')
 on conflict (effective_season) do nothing;
 
 
@@ -95,6 +111,14 @@ alter table public.keepers
   add column if not exists team_snapshot text,
   -- The calculation that produced this row, recorded so it can be audited
   -- later without re-deriving it under whatever rules exist then.
+  -- The draft this cost was measured from. basis_season is what v1.107.0
+  -- lacked: a round with no season beside it cannot be checked afterwards.
+  -- See keeper_basis_correction.sql.
+  add column if not exists basis_round      int,
+  add column if not exists basis_season     int,
+  -- LEGACY (v1.107.0 only): the player's EARLIEST DFL round, written while
+  -- the app wrongly used that as the basis. Never written by new rows and
+  -- never recalculated - an approved keeper row is a historical fact.
   add column if not exists original_round   int,
   add column if not exists keeper_year      int,
   add column if not exists calculated_round int,

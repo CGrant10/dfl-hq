@@ -14,9 +14,12 @@ import { db, selectAll } from "../supabase.js";
 import { esc, empty, groupBy } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
-import { loadPlayers } from "../sleeper.js";
-import { advise, badgesFor, reasonFor, CLASS, NO_MARKET } from "../keeper-advisor.js";
-import { configFor, describeRules } from "../keeper-rules.js";
+import { loadPlayers, loadSeasonStats, loadMarketAdp } from "../sleeper.js";
+import { advise, badgesFor, comparisonRow, factsFor, whyFor, marketFrom,
+         CLASS, LABELS, NO_MARKET, NO_PRODUCTION } from "../keeper-advisor.js";
+import { configFor, decisionContext, describeRules } from "../keeper-rules.js";
+import { positionalFinish, scoringFormat, seasonTotals } from "../dfl-scoring.js";
+import { normalizeSleeperMarket } from "../keeper-market.js";
 import { openKeeperEntry } from "../keeper-entry.js";
 
 let year = null;   // remembered while the app stays open
@@ -114,9 +117,10 @@ export async function render(view) {
   league's shared reference and this pass does not touch a line of it.
 
   MOUNTED AFTER THE PAGE HAS DRAWN, on purpose. The advisor needs the Sleeper
-  player map, which is a multi-megabyte download the app caches for a week -
-  the first visit of the week would otherwise hold the whole page hostage
-  behind it. The historical table paints first; the advisor fills in.
+  player map, a season of stats and the upcoming ADP board - several megabytes
+  between them, all cached, none of which should hold the page hostage on the
+  first visit of the week. The historical table paints first; the advisor
+  fills in.
 
   IDENTITY IS THE MEMBER, and only ever the member: currentMember() ->
   sleeper_user_id -> the newest sleeper_rosters row for that id. The roster is
@@ -136,7 +140,7 @@ async function mountAdvisor(view) {
   }
 
   host.innerHTML = advisorShell(
-    `<p class="muted tiny">Reading your roster and the draft boards…</p>`, member);
+    `<p class="muted tiny">Reading your roster, last season and the draft board…</p>`, member);
 
   let data;
   try {
@@ -151,7 +155,11 @@ async function mountAdvisor(view) {
 }
 
 /*
-  Four reads and the player map, in parallel.
+  THE READS, and the three seasons they belong to.
+
+  For a 2026 decision this loads 2025 production, the 2025 draft board and the
+  2026 ADP board. decisionContext() is the only place that offset is written
+  down - see keeper-rules.js - so nothing here computes `season - 1` by hand.
 
   The picks query is scoped to the ids ON THIS ROSTER rather than pulling
   every pick the league has ever made - a roster is about twenty players and
@@ -160,7 +168,7 @@ async function mountAdvisor(view) {
 async function advisorData(member) {
   const uid = member.sleeper_user_id;
 
-  const [rosterRes, leagueRes, rulesRes, keeperRowsRes, draftSpanRes] = await Promise.all([
+  const [rosterRes, leagueRes, rulesRes, keeperRowsRes] = await Promise.all([
     /*
       THE NEWEST ROSTER THAT ACTUALLY HAS PLAYERS, which is not always the
       newest row. A season in pre_draft has a roster for everybody and nobody
@@ -174,8 +182,10 @@ async function advisorData(member) {
       .select("season, players, team_name, synced_at")
       .eq("sleeper_user_id", uid)
       .order("season", { ascending: false }).limit(4),
+    /* The league's own season, keeper allowance and - the new one - the
+       scoring settings every points total on this card is computed from. */
     db().from("sleeper_leagues")
-      .select("season, max_keepers, status")
+      .select("season, max_keepers, status, scoring_settings")
       .order("season", { ascending: false }).limit(1),
     /*
       THE CONFIGURED RULES, and they are the only authority now. The prose in
@@ -189,9 +199,6 @@ async function advisorData(member) {
        contribute - see priorKeeperSeasons() - so legacy nickname rows are read
        but never counted. */
     db().from("keepers").select("year, member_id, player_id, player_name, team, player, round_cost"),
-    /* Where draft history begins, so a player first drafted in the earliest
-       synced season can be flagged as possibly predating it. */
-    db().from("sleeper_draft_picks").select("season").order("season", { ascending: true }).limit(1),
   ]);
 
   const rosterRows = rosterRes.data || [];
@@ -201,6 +208,7 @@ async function advisorData(member) {
      the column is missing and the whole select fails - which is not worth
      losing the advisor over, so an error here just means "not stated". */
   const maxKeepers = leagueRes.error ? null : (league?.max_keepers ?? null);
+  const scoring = leagueRes.error ? null : (league?.scoring_settings || null);
 
   /*
     The season being decided. The league's own current season is the answer -
@@ -208,36 +216,91 @@ async function advisorData(member) {
     played, which is exactly the keeper relationship.
   */
   const targetSeason = league?.season ?? null;
+  const ctx = decisionContext(targetSeason);
   /* A missing keeper_rules table is the un-migrated state: no rules, which the
      engine reports as "no-rules" and the card explains. */
   const ruleSets = rulesRes.error ? [] : (rulesRes.data || []);
   const rules = configFor(ruleSets, targetSeason);
   const keeperRows = keeperRowsRes.error ? [] : (keeperRowsRes.data || []);
-  const earliestSyncedSeason = draftSpanRes.error
-    ? null : ((draftSpanRes.data || [])[0]?.season ?? null);
 
   const ids = Array.isArray(roster?.players) ? roster.players.map(String) : [];
-  const [players, picksRes] = await Promise.all([
+
+  /*
+    LEAGUE SIZE COMES FROM THE LEAGUE, not from a twelve somebody typed. An
+    expected round is a ceiling division by the team count, so a wrong size is
+    wrong by a round at the top of the board and by three at the bottom -
+    silently. Counted from the draft-basis season's roster rows.
+  */
+  const sizeRes = ctx.draftBasisSeason != null
+    ? await db().from("sleeper_rosters").select("roster_id")
+        .eq("season", ctx.draftBasisSeason)
+    : { data: [] };
+  const leagueSize = (sizeRes.data || []).length || null;
+
+  const format = scoringFormat(scoring);
+
+  const [players, picksRes, statsRes, marketRes] = await Promise.all([
     ids.length ? loadPlayers().catch(() => ({})) : Promise.resolve({}),
     ids.length
       ? db().from("sleeper_draft_picks")
           .select("season, player_id, round, pick_no, sleeper_user_id")
           .in("player_id", ids)
       : Promise.resolve({ data: [] }),
+    /* Last season, for production. A completed season never changes, so this
+       is cached for a week. Failure is a level-2 fallback, not an error. */
+    ids.length && scoring
+      ? loadSeasonStats(ctx.productionSeason).catch(() => ({ data: {}, fetchedAt: 0 }))
+      : Promise.resolve({ data: {}, fetchedAt: 0 }),
+    /* The upcoming draft, for market value. Failure is a level-3 fallback. */
+    ids.length
+      ? loadMarketAdp(ctx.marketSeason, format).catch(() => ({ data: [], fetchedAt: 0 }))
+      : Promise.resolve({ data: [], fetchedAt: 0 }),
   ]);
+
+  /*
+    PRODUCTION, SCORED THE WAY THIS LEAGUE SCORES.
+
+    Two passes over the same stats: the positional finish is ranked over every
+    player at the position in the league, because "RB5 of the players I happen
+    to own" would mean nothing, and the roster totals fill in anybody the
+    ranking skipped. Both use the league's own scoring_settings; neither uses
+    Sleeper's pts_ppr, which is a different scoring system with a similar name.
+  */
+  const stats = statsRes.data || {};
+  const finishes = scoring
+    ? positionalFinish({ stats, players, scoringSettings: scoring })
+    : new Map();
+  const totals = scoring
+    ? seasonTotals({ playerIds: ids, stats, players, scoringSettings: scoring })
+    : new Map();
+  const production = new Map();
+  for (const id of ids) {
+    const finish = finishes.get(id);
+    const total = totals.get(id);
+    if (finish) production.set(id, { ...finish, games: total?.games ?? null });
+    else if (total?.points != null) production.set(id, { ...total, positionRank: null, label: null });
+  }
+
+  const marketRows = normalizeSleeperMarket(marketRes.data || [], {
+    leagueSize, scoringFormat: format, season: ctx.marketSeason,
+  });
+  const market = marketRows.length ? marketFrom(marketRows) : NO_MARKET;
 
   return {
     ...advise({
       member, sleeperUserId: uid, roster, players,
       /* A missing sleeper_draft_picks table is the un-migrated state. No
-         rounds means every candidate classifies as never-drafted, which the
-         card then explains rather than hiding. */
+         rounds means every candidate needs review, which the card explains
+         rather than hiding. */
       draftPicks: picksRes.error ? [] : (picksRes.data || []),
-      rules, targetSeason, keeperRows, earliestSyncedSeason,
-      maxKeepers, market: NO_MARKET,
+      rules, targetSeason, keeperRows,
+      maxKeepers, market, production: production.size ? production : NO_PRODUCTION,
     }),
     needsDraftSync: !!picksRes.error,
     needsRulesMigration: !!rulesRes.error,
+    needsScoring: !scoring,
+    leagueSize,
+    scoringFormat: format,
     leagueSeason: league?.season ?? null,
     rosterSeason: roster?.season ?? null,
   };
@@ -252,12 +315,15 @@ function advisorShell(inner, member) {
 }
 
 /*
-  THE COPY IS DELIBERATELY HUMBLE.
+  THE COPY IS SPECIFIC, WHICH IS WHAT MAKES IT HONEST.
 
-  "Your strongest options" and never "keep this player". Every line under a
-  name is a fact with its source in the wording, and where a fact is missing
-  the card says which one and where it would come from. See the header of
-  js/keeper-advisor.js for why value language is absent.
+  Every figure carries its season. "R8" on its own is the ambiguity that let a
+  wrong draft basis survive a release, so this card writes "2025 Draft · R8"
+  and "2026 Keeper · R7", and the market line names its source and its date.
+
+  Where a fact is missing the card says which one and what it would take to
+  get it, and the recommendation labels are gated on the data that would make
+  them true - see dataLevel() and badgesFor() in keeper-advisor.js.
 */
 function advisorBody(data) {
   if (data.state === "no-member") {
@@ -278,71 +344,158 @@ function advisorBody(data) {
       admin can run <strong>Sync Sleeper</strong> on the Admin page.</p>`;
   }
 
-  const { candidates, counts, rules, targetSeason, maxKeepers, shortlist } = data;
-  const top = candidates.slice(0, shortlist);
+  const { candidates, counts, rules, context, shortlist, market } = data;
+  /*
+    The lead is drawn once, at the top, with its four figures and its
+    reasoning. It is NOT repeated as row 1 - the first cut printed the same
+    player twice, which on a 375px screen is a whole screenful of duplicate.
+    The numbering still counts them as first, so the list starts at 2.
+  */
+  const lead = candidates[0]?.standing === "eligible" ? candidates[0] : null;
+  const start = lead ? 1 : 0;
+  const top = candidates.slice(start, shortlist);
   const rest = candidates.slice(shortlist);
 
-  const allowance = maxKeepers != null
-    ? `Sleeper has this league at <strong>${maxKeepers} keeper${maxKeepers === 1 ? "" : "s"}</strong>.`
-    : "";
-  /* The configured rules, as a sentence, derived entirely from the stored
-     configuration - there is no hard-coded "3-year" or "-1" in this file. */
-  const summary = describeRules(rules);
-  /* Name the roster being read. If it is not the current league season, say
-     so plainly - it is last season's squad, which is what keepers come from,
-     but the reader should not have to infer that. */
-  const from = data.rosterSeason != null
-    ? `From your <strong>${esc(data.rosterSeason)}</strong> roster${
-        data.leagueSeason != null && data.leagueSeason !== data.rosterSeason
-          ? ` — the last one played` : ""}.`
-    : "";
-
-  /* The honest statement of what is missing, and where it would come from.
-     This is the whole difference between an advisor and a fortune teller. */
-  const gaps = [];
-  if (data.needsRulesMigration) {
-    gaps.push(`Keeper rules are not switched on yet. Run
-      <strong>keeper_rules_schema.sql</strong> in the Supabase SQL editor.`);
-  } else if (!rules) {
-    gaps.push(`No keeper rules are configured for ${esc(targetSeason ?? "this season")},
-      so no keeper cost is shown.`);
-  }
-  if (counts.needsReview) {
-    gaps.push(`${counts.needsReview} player${counts.needsReview === 1 ? " needs" : "s need"}
-      commissioner review — no original qualifying draft round on record.`);
-  }
-  if (data.needsDraftSync) {
-    gaps.push(`Draft rounds are missing. Run <strong>sleeper_draft_schema.sql</strong>,
-      then <strong>Sync Sleeper</strong>.`);
-  } else if (!counts.draftRoundKnown) {
-    gaps.push(`None of these players has a draft pick on record in this league.`);
-  }
-  gaps.push(`There is no player market ranking in DFL HQ, so nothing here calls
-    anybody the best player or the best value.`);
-
   return `
-    <p class="ka-lead">Your strongest <strong>options</strong> — not a
-      recommendation. ${from} ${allowance}</p>
-    ${summary ? `<p class="ka-rules">${esc(targetSeason ?? "")} keeper rules ·
-      ${esc(summary)}</p>` : ""}
+    ${leadCard(lead, candidates, data)}
 
-    <ol class="ka-list">
-      ${top.map((c, i) => candidateRow(c, i + 1, candidates)).join("")}
+    <p class="ka-lead">${leadLine(data)}</p>
+    ${ruleLine(rules, context)}
+    ${marketLine(market)}
+
+    <ol class="ka-list" start="${start + 1}" ${top.length ? "" : "hidden"}>
+      ${top.map((c, i) => candidateRow(c, start + i + 1, candidates)).join("")}
     </ol>
 
     ${rest.length ? `
       <div class="ka-more" data-collapse="keeper-compare" data-collapse-default="folded"
-           data-collapse-title="Compare all players"
+           data-collapse-title="Compare all ${counts.total}"
            data-collapse-badge="${rest.length} more">
-        <ol class="ka-list" start="${shortlist + 1}">
-          ${rest.map((c, i) => candidateRow(c, shortlist + i + 1, candidates)).join("")}
-        </ol>
+        ${compareTable(candidates, context)}
       </div>` : ""}
 
-    <ul class="ka-gaps">${gaps.map((g) => `<li>${g}</li>`).join("")}</ul>
-    <p class="muted tiny">${counts.total} players on your
+    <ul class="ka-gaps">${gaps(data).map((g) => `<li>${g}</li>`).join("")}</ul>
+    <p class="muted tiny">${counts.total} QB/RB/WR/TE on your
       ${esc(data.rosterSeason ?? "")} roster${counts.unknownPlayer
         ? ` · ${counts.unknownPlayer} not in the Sleeper player list` : ""}.</p>`;
+}
+
+/* The lead: one player, the four labelled figures, and why. */
+function leadCard(c, all, data) {
+  if (!c) return "";
+  const badges = badgesFor(c, all);
+  /*
+    ONLY A POSITIVE CALL FILLS THE ACCENT SLOT. "POOR VALUE" in the accent
+    reads as a recommendation to a reader skimming - which is how the whole
+    league's best roster ended up headlined POOR VALUE in the harness. It is
+    still shown, as a chip beside the others, because it is true.
+  */
+  const headline = badges.find((b) => HEADLINE.has(b)) || null;
+  const chips = badges.filter((b) => b !== headline);
+  const facts = factsFor(c);
+  return `
+    <div class="ka-lead-card">
+      ${headline ? `<span class="ka-headline">${esc(headline)}</span>` : ""}
+      <p class="ka-lead-who"><strong>${esc(c.name || `Player ${c.playerId}`)}</strong>
+        <span class="ka-where">${esc([c.position, c.nflTeam].filter(Boolean).join(" · "))}</span></p>
+      <dl class="ka-facts">
+        ${facts.map((f) => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join("")}
+      </dl>
+      <p class="ka-why-long">${esc(whyFor(c))}</p>
+      ${chips.length ? `<span class="ka-badges">${chips
+        .map((b) => `<span class="pill tiny ${CALLS.has(b) ? "is-call" : ""}">${esc(b)}</span>`)
+        .join("")}</span>` : ""}
+    </div>`;
+}
+
+/* The calls that can headline the lead card: a reader should never see a
+   warning rendered as the recommendation. */
+const HEADLINE = new Set([LABELS.BEST_VALUE, LABELS.BEST_PLAYER, LABELS.SAFE_CHOICE,
+                          LABELS.FINAL_YEAR, LABELS.VALUE_PLAY]);
+/* Every label that is a judgement rather than a fact, for the chip styling. */
+const CALLS = new Set([...HEADLINE, LABELS.POOR_VALUE]);
+
+/* What the card is allowed to claim, given what arrived. */
+function leadLine(data) {
+  const { context } = data;
+  const from = data.rosterSeason != null
+    ? `From your <strong>${esc(data.rosterSeason)}</strong> roster${
+        data.leagueSeason != null && data.leagueSeason !== data.rosterSeason
+          ? " — the last one played" : ""}.` : "";
+  const allowance = data.maxKeepers != null
+    ? ` Sleeper has this league at <strong>${data.maxKeepers} keeper${
+        data.maxKeepers === 1 ? "" : "s"}</strong>.` : "";
+
+  const claim = {
+    1: `Ranked on <strong>${esc(context.productionSeason)}</strong> production,
+        your <strong>${esc(context.draftBasisSeason)}</strong> draft round and the
+        <strong>${esc(context.marketSeason)}</strong> market.`,
+    2: `Ranked on <strong>${esc(context.productionSeason)}</strong> production and
+        keeper cost. There is no ${esc(context.marketSeason)} market price, so
+        nothing here is called a value.`,
+    3: `Ranked on keeper cost against the <strong>${esc(context.marketSeason)}</strong>
+        market. There is no ${esc(context.productionSeason)} production, so nothing
+        here vouches for how good anybody is.`,
+    4: `Keeper facts only — no ${esc(context.productionSeason)} production and no
+        ${esc(context.marketSeason)} market price.`,
+  }[data.data.level];
+
+  return `${claim} ${from}${allowance}`;
+}
+
+function ruleLine(rules, context) {
+  const summary = describeRules(rules);
+  if (!summary) return "";
+  return `<p class="ka-rules">${esc(context.targetSeason ?? "")} keeper rules ·
+    ${esc(summary)}</p>`;
+}
+
+/* SOURCE AND DATE, always together. A market number with no date is a
+   number somebody has to trust rather than check. */
+function marketLine(market) {
+  if (!market?.available) return "";
+  const fresh = market.freshness;
+  return `<p class="ka-source ${fresh?.stale ? "is-stale" : ""}">${esc(market.source || "Market")}
+    ${market.scoringFormat ? `· ${esc(market.scoringFormat.replace("_", " "))}` : ""}
+    ${fresh?.label ? `· ${esc(fresh.label)}` : ""}</p>`;
+}
+
+function gaps(data) {
+  const { counts, context, rules } = data;
+  const out = [];
+  if (data.needsRulesMigration) {
+    out.push(`Keeper rules are not switched on yet. Run
+      <strong>keeper_rules_schema.sql</strong> in the Supabase SQL editor.`);
+  } else if (!rules) {
+    out.push(`No keeper rules are configured for ${esc(context.targetSeason ?? "this season")},
+      so no keeper cost is shown.`);
+  }
+  if (counts.needsReview) {
+    out.push(`${counts.needsReview} player${counts.needsReview === 1 ? " has" : "s have"}
+      no <strong>${esc(context.draftBasisSeason)}</strong> DFL draft round on record —
+      a commissioner enters those by hand.`);
+  }
+  if (data.needsDraftSync) {
+    out.push(`Draft rounds are missing. Run <strong>sleeper_draft_schema.sql</strong>,
+      then <strong>Sync Sleeper</strong>.`);
+  }
+  if (data.needsScoring) {
+    out.push(`This league's scoring settings have not been synced, so
+      ${esc(context.productionSeason)} points cannot be worked out. Run
+      <strong>Sync Sleeper</strong> on the Admin page.`);
+  } else if (!counts.withProduction) {
+    out.push(`No ${esc(context.productionSeason)} statistics came back for these
+      players, so production is not shown.`);
+  }
+  if (!counts.withMarket) {
+    out.push(`No ${esc(context.marketSeason)} draft market is available, so no
+      expected round and no draft value is shown.`);
+  }
+  if (data.leagueSize) {
+    out.push(`Expected rounds are approximate — an average draft position divided
+      across ${esc(data.leagueSize)} teams, not a prediction of this league's board.`);
+  }
+  return out;
 }
 
 function candidateRow(c, n, all) {
@@ -353,7 +506,7 @@ function candidateRow(c, n, all) {
     ? `<span class="ka-cost">R${c.keeperCost}</span>`
     : `<span class="ka-cost none" title="${c.standing === "unavailable"
         ? "Not eligible under the configured rules"
-        : "No original qualifying draft round on record"}">—</span>`;
+        : `No ${c.basisSeason ?? "previous season"} draft round on record`}">—</span>`;
 
   return `
     <li class="ka-row ${c.class === CLASS.UNKNOWN ? "is-unknown" : ""} ${
@@ -362,12 +515,61 @@ function candidateRow(c, n, all) {
       <span class="ka-main">
         <span class="ka-name">${esc(who)}</span>
         ${where ? `<span class="ka-where">${esc(where)}</span>` : ""}
-        <span class="ka-why">${esc(reasonFor(c))}</span>
+        <span class="ka-why">${factsFor(c).map((f) =>
+          `<span class="ka-fact"><b>${esc(f.label)}</b> ${esc(f.value)}</span>`).join("")}</span>
         ${badges.length ? `<span class="ka-badges">${badges
-          .map((b) => `<span class="pill tiny">${esc(b)}</span>`).join("")}</span>` : ""}
+          .map((b) => `<span class="pill tiny ${CALLS.has(b) ? "is-call" : ""}">${esc(b)}</span>`)
+          .join("")}</span>` : ""}
       </span>
       ${cost}
     </li>`;
+}
+
+/*
+  COMPARE ALL, with every column labelled by its season.
+
+  A table rather than a repeat of the list, because comparing fourteen players
+  on six numbers is what a table is for. It scrolls inside its own box - the
+  page itself never scrolls sideways, at any width.
+*/
+function compareTable(all, context) {
+  const rows = all.map(comparisonRow);
+  const n = (v, dp = 0) => v == null ? "—" : Number(v).toFixed(dp);
+  return `
+    <div class="ka-table-wrap">
+      <table class="ka-table">
+        <thead>
+          <tr>
+            <th>Player</th><th>Pos</th>
+            <th class="num">${esc(context.productionSeason)} Pts</th>
+            <th>${esc(context.productionSeason)} Finish</th>
+            <th class="num">${esc(context.draftBasisSeason)} Draft</th>
+            <th class="num">${esc(context.targetSeason)} Keeper</th>
+            <th class="num">${esc(context.marketSeason)} ADP</th>
+            <th class="num">${esc(context.marketSeason)} Exp.</th>
+            <th class="num">Value</th>
+            <th>Keeper year</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r) => `
+            <tr class="${r.standing === "unavailable" ? "is-unavailable" : ""}">
+              <td>${esc(r.player)}</td>
+              <td>${esc(r.position)}</td>
+              <td class="num">${n(r.productionPoints, 1)}</td>
+              <td>${esc(r.positionFinish || "—")}</td>
+              <td class="num">${r.basisRound != null ? `R${r.basisRound}` : "—"}</td>
+              <td class="num">${r.keeperRound != null ? `R${r.keeperRound}` : "—"}</td>
+              <td class="num">${n(r.marketAdp, 1)}</td>
+              <td class="num">${r.expectedRound != null ? `R${r.expectedRound}` : "—"}</td>
+              <td class="num ${r.roundValue != null && r.roundValue > 0 ? "is-plus" : ""}">${
+                r.roundValue == null ? "—" : (r.roundValue > 0 ? `+${r.roundValue}` : r.roundValue)}</td>
+              <td>${r.keeperYear != null && r.maxKeeperYears != null
+                ? `${r.keeperYear} of ${r.maxKeeperYears}` : "—"}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 /**

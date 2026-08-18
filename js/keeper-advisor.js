@@ -1,119 +1,162 @@
 // =====================================================================
-// keeper-advisor.js - your strongest keeper OPTIONS, and nothing invented
+// keeper-advisor.js - which keeper is actually worth keeping
 // ---------------------------------------------------------------------
-// WHAT THIS IS ALLOWED TO KNOW
+// WHAT CHANGED, AND WHY THE OLD HEADER HAD TO GO
 //
-// Everything below is derived from facts DFL HQ already holds or that
-// Sleeper publishes about THIS league:
+// Until now this file could not answer "who is the best keeper" and said so
+// at length: there was no market price to compare a cost against and no
+// measure of how good anybody was, so every label was a bare fact ("drafted
+// round 12 in 2025") and the ordering was "cheapest cost first". That made
+// the advice systematically wrong in one direction - a 14th-round scrub with
+// a cheap keeper price outranked an elite player - because cheap is not the
+// same as valuable.
 //
-//   your roster        sleeper_rosters.players, for the newest season, found
-//                      by members.sleeper_user_id - never by team name
-//   player identity    the Sleeper player map (name, position, NFL team)
-//   draft rounds       sleeper_draft_picks: round, pick_no and picked_by for
-//                      every pick on record, 2020-2025
-//   keeper allowance   sleeper_leagues.max_keepers, straight from Sleeper
+// Two of those gaps are now closed with real data, from the provider the app
+// already trusts:
 //
-// WHAT THIS IS NOT ALLOWED TO DO, AND THE REASON IT MATTERS
+//   PRODUCTION   Sleeper's season stats, scored with the DFL's OWN
+//                scoring_settings - see dfl-scoring.js, which reproduces the
+//                league's real week-1 2025 matchup scores to the cent. Not
+//                pts_ppr, which is a different scoring system with the same
+//                name.
+//   MARKET       Sleeper's ADP feed for the upcoming season, keyed on Sleeper
+//                player ids - see keeper-market.js. No key, no scraping, no
+//                secret, no server.
 //
-// There is NO market value in this app. No ADP, no rankings, no
-// projections, nobody's age and nobody's injury risk. So the advisor cannot
-// answer "who is the best player" or "who is the best value", and it does
-// not pretend to:
+// THE THREE SEASONS, AND NOT MIXING THEM UP
 //
-//   * "Best value" needs a market price to compare a cost against. A round
-//     12 cost is only a discount if the player is worth more than round 12,
-//     and we have no idea what anybody is worth. Cheap is not valuable.
-//   * "Best player" needs a ranking. We have positions, not quality.
-//   * "Upside" needs age, situation or projections. We have none of them.
+// Every number on this card belongs to a specific season, and for a 2026
+// decision they are not all the same season:
 //
-// So every label this file produces is a statement about DATA WE HAVE. The
-// honest ones read like "drafted round 12 in 2025" and "never drafted in
-// this league". See LABELS below - each is a fact with its source attached.
+//   2025  production        what the player actually did
+//   2025  draft basis       the round this league drafted them in
+//   2026  market            what the upcoming draft is expected to cost
+//   2026  keeper cost       what the rules charge, from the 2025 basis
 //
-// THE KEEPER COST IS NOT KNOWN, AND THAT IS A FINDING
+// decisionContext() in keeper-rules.js is the only place those offsets are
+// written down, and everything here takes them from it. The UI labels every
+// figure with its season, because "R8" with no year on it is exactly the
+// ambiguity that let the wrong-basis bug survive a release.
 //
-// It is not in the rules table (the live table has no keeper rules at all),
-// it is not in Sleeper (`is_keeper` is null on all 1080 picks - this league
-// runs keepers by hand), and it cannot be recovered from the keepers table
-// because those rows identify people by first name and players by nickname
-// ("Shawn"/"Puka", "Cim"/"Mcbride"), which is not something to match on.
+// FOUR POSITIONS, AND NO OTHERS
 //
-// So costOf() returns a cost ONLY when a keeper rule that states one is
-// actually recorded. Recognised rule text is the single narrow door in this
-// file, it is spelled out in COST_RULES, and everything else classifies as
-// "cost unknown". Nothing here ever computes a round cost it cannot cite.
+// QB, RB, WR and TE. A kicker or a team defence is never evaluated, ranked,
+// badged, compared or mentioned - see isAdvisorPosition(). The
+// commissioner's entry sheet is a data-entry tool and still lists them;
+// an advisor recommending a keeper kicker is noise dressed as advice.
+//
+// NO BLACK-BOX SCORE
+//
+// Nothing here prints "Keeper Score 94". The ordering does use a weighted sum
+// internally - a list has to have an order - but every component of it is
+// shown on the card as its own fact with its own season, so a reader can
+// disagree with the ranking for a stated reason. See rankCandidates().
 // =====================================================================
 
-import { evaluate, originalQualifyingRound, priorKeeperSeasons } from "./keeper-rules.js";
+import { decisionContext, evaluate, priorSeasonDraftRound,
+         priorKeeperSeasons } from "./keeper-rules.js";
+import { ADVISOR_POSITIONS, isAdvisorPosition } from "./dfl-scoring.js";
+import { formatRoundValue, marketFreshness, roundValue } from "./keeper-market.js";
 
 /**
- * @typedef {Object} MarketValue    The future seam - see marketFrom().
+ * @typedef {Object} MarketValue    normalised in keeper-market.js
  * @property {string} playerId
- * @property {number} [rank]            overall rank, 1 = best
- * @property {number} [projectedRound]  where the market would draft them
+ * @property {number} [rank]            overall ADP rank, 1 = first off the board
+ * @property {number} [positionRank]    rank within the position
+ * @property {number} [adp]             average draft position
+ * @property {number} [projectedRound]  the round this league would spend
  * @property {string} source            who said so
+ * @property {string} scoringFormat     which scoring the ADP is for
  * @property {string} updatedAt         ISO date, so the UI can show its age
  */
 
-/*
-  THE MARKET SEAM, and it is deliberately three lines.
-
-  The comparison logic below asks this for a value and copes with nothing
-  coming back, which is what happens today. A real source - a public
-  rankings API with stable player ids and a timestamp - becomes one function
-  that returns these objects, and no part of the UI has to learn its name.
-
-  Not built out further on purpose: an abstraction over zero providers is a
-  guess about the one that arrives.
-*/
-export function marketFrom(rows = []) {
+/**
+ * Wrap normalised market rows in the shape the Advisor consumes.
+ *
+ * Provider-agnostic on purpose: this takes the objects keeper-market.js
+ * produces and nothing in here or in any view knows the word "Sleeper".
+ */
+export function marketFrom(rows = [], { now = Date.now() } = {}) {
   const byId = new Map();
   for (const r of rows) {
     if (r && r.playerId != null) byId.set(String(r.playerId), r);
   }
+  const first = rows[0] || null;
   return {
     available: byId.size > 0,
     /** @returns {MarketValue|null} */
     get: (playerId) => byId.get(String(playerId)) || null,
-    source: rows[0]?.source || null,
-    updatedAt: rows[0]?.updatedAt || null,
+    source: first?.source || null,
+    scoringFormat: first?.scoringFormat || null,
+    updatedAt: first?.updatedAt || null,
+    freshness: marketFreshness(first?.updatedAt || null, { now }),
+    size: byId.size,
   };
 }
 
-/** The empty market: what the advisor runs on today. */
+/** The empty market: what the advisor falls back to when the feed is down. */
 export const NO_MARKET = marketFrom([]);
 
-/*
-  THE PROSE RECOGNISER IS GONE, AND COST_RULES / costRuleFrom() WITH IT.
-
-  It pattern-matched English in the `rules` table to find a keeper cost
-  ("costs the round they were drafted in, minus one round"). That was the only
-  honest option while nothing machine-readable existed, and it is not one now:
-  js/keeper-rules.js holds the commissioner's configured rules, season-aware
-  and validated, and this file consumes evaluate() like everything else does.
-
-  Do not reintroduce a second cost calculation here. If a keeper cost is wrong,
-  it is wrong in one place.
-*/
+/** The empty production set, for the same reason. */
+export const NO_PRODUCTION = new Map();
 
 /*
-  THE FOUR CLASSES, named the way the brief names them.
+  THE FOUR CLASSES.
 
-  KNOWN      a cost rule is recorded AND we know the draft round
-  NO_COST    on the roster, draft round known, but no rule to price it
-  NO_ROUND   on the roster and never drafted in this league - so there is no
-             round to price even if a rule existed
+  KNOWN      the rules priced this keeper for this season
+  NO_COST    a basis round exists but the rules produced no cost (no rules
+             configured, most likely)
+  NO_ROUND   no draft record in the season the basis comes from - the
+             commissioner supplies the round
   UNKNOWN    the player id is not in the Sleeper player map at all
 */
 export const CLASS = {
   KNOWN:    "cost-known",
   NO_COST:  "cost-unknown",
-  NO_ROUND: "never-drafted",
+  NO_ROUND: "no-prior-round",
   UNKNOWN:  "unknown-player",
 };
 
+/*
+  WHAT COUNTS AS A STRONG SEASON, BY POSITION.
+
+  A points total cannot be compared across positions and a positional finish
+  can: RB24 is a startable running back in a twelve-team league and QB24 is
+  not a startable quarterback anywhere. These cutoffs are roughly "a player
+  you would start", which is the honest threshold for calling production
+  strong, and they are stated here rather than buried in a comparison so they
+  can be argued with and tested.
+
+  One starting quarterback and one tight end per team, two or three running
+  backs and three or four receivers - twelve teams.
+*/
+export const STRONG_FINISH = { QB: 12, RB: 24, WR: 30, TE: 12 };
+
+/*
+  Number(null) is 0 and Number("") is 0, and 0 is inside every cutoff - so a
+  player with NO production would have read as a strong season, and a missing
+  stat line would have earned a "safe choice". Unknown is tested before
+  coercion, which is the same trap evaluate() documents for draft rounds.
+*/
+function rankOf(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 1 ? n : null;
+}
+
+/** Was this a season worth keeping a player for, at their position? */
+export function isStrongFinish(position, positionRank) {
+  const cutoff = STRONG_FINISH[String(position || "").toUpperCase()];
+  const rank = rankOf(positionRank);
+  if (!cutoff || rank == null) return false;
+  return rank <= cutoff;
+}
+
 /**
- * Every player on the roster, with what is actually known about each.
+ * Every EVALUATED player on the roster, with what is known about each.
+ *
+ * Kickers and defences are dropped here, at the front door, so nothing
+ * downstream - ranking, badges, counts, comparison - can reintroduce one.
  *
  * @param {Object}   input
  * @param {string[]} input.playerIds        sleeper_rosters.players
@@ -124,36 +167,28 @@ export const CLASS = {
  * @param {number}   input.targetSeason     the season being decided
  * @param {Object[]} [input.keeperRows]     existing keeper rows, for tenure
  * @param {number|string} [input.memberId]  whose keeper history to count
- * @param {number|null} [input.earliestSyncedSeason]  where draft history starts
  * @param {Object}   [input.market]         from marketFrom()
+ * @param {Map}      [input.production]     from positionalFinish()/seasonTotals()
  */
 export function candidates({ playerIds = [], players = {}, draftPicks = [],
                              sleeperUserId = null, rules = null, targetSeason = null,
                              keeperRows = [], memberId = null,
-                             earliestSyncedSeason = null, market = NO_MARKET }) {
-  /*
-    THE NEWEST PICK IS FOR DISPLAY. THE EARLIEST ONE SETS THE COST.
+                             market = NO_MARKET, production = NO_PRODUCTION }) {
+  const ctx = decisionContext(targetSeason);
 
-    Two different questions, and v1.105.0 only asked the first. "Drafted round
-    14 in 2025" is what a manager recognises, so it is still shown - but the
-    keeper right was established by the FIRST time this league drafted the
-    player, and the cost is pinned to that round. Taking the newest pick would
-    make a player cheaper every time somebody re-drafted them. See
-    originalQualifyingRound().
-  */
-  const latestPick = new Map();
-  for (const p of draftPicks) {
-    if (!p || p.player_id == null) continue;
-    const id = String(p.player_id);
-    const seen = latestPick.get(id);
-    if (!seen || Number(p.season) > Number(seen.season)) latestPick.set(id, p);
-  }
-
-  return playerIds.map((rawId) => {
-    const id = String(rawId);
+  return playerIds.map(String).filter((id) => {
+    /*
+      An id the player map does not recognise cannot be positionally filtered,
+      so it is kept and classified as unknown - hiding it would mean a roster
+      slot silently vanished. Everything the map DOES recognise must be one of
+      the four positions.
+    */
+    const meta = players[id];
+    return !meta || isAdvisorPosition(meta.p);
+  }).map((id) => {
     const meta = players[id] || null;
-    const pick = latestPick.get(id) || null;
     const value = market.get(id);
+    const prod = production.get?.(id) || null;
 
     const name = meta?.n || null;
     const position = meta?.p || "";
@@ -167,35 +202,41 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
     */
     const freeAgent = meta ? (!nflTeam || nflTeam === "FA") : false;
 
-    const draftRound = pick ? Number(pick.round) : null;
-    const draftSeason = pick ? Number(pick.season) : null;
-    /* Did they draft this player themselves, or arrive later by trade or
-       waiver? Compared on Sleeper user ids, never on a name. */
-    const draftedByMe = pick && sleeperUserId != null
-      ? String(pick.sleeper_user_id) === String(sleeperUserId)
+    /*
+      THE BASIS: the round this league drafted them in the season before the
+      one being decided. Not their earliest pick, not their most recent pick -
+      that season's pick, or nothing. See priorSeasonDraftRound().
+    */
+    const basis = priorSeasonDraftRound(draftPicks, id, { targetSeason });
+    /* Who spent that pick. Compared on Sleeper user ids, never on a name. */
+    const basisPick = draftPicks.find((p) => p && String(p.player_id) === id
+      && Number(p.season) === ctx.draftBasisSeason) || null;
+    const draftedByMe = basisPick && sleeperUserId != null
+      ? String(basisPick.sleeper_user_id) === String(sleeperUserId)
       : null;
 
-    /* The original qualifying round, and how many seasons this member has
-       already kept this player - both fed to the one rules engine. */
-    const origin = originalQualifyingRound(draftPicks, id, { earliestSyncedSeason });
     const prior = priorKeeperSeasons(keeperRows, {
       playerId: id, memberId, beforeSeason: targetSeason });
     const standing = evaluate({ config: rules, targetSeason,
-                                originalRound: origin.round, priorKeeperSeasons: prior });
+                                basisRound: basis.round, basisSeason: basis.season,
+                                priorKeeperSeasons: prior });
 
     let klass;
     if (!meta) klass = CLASS.UNKNOWN;
     else if (standing.state === "eligible") klass = CLASS.KNOWN;
-    else if (origin.round == null) klass = CLASS.NO_ROUND;
+    else if (basis.round == null) klass = CLASS.NO_ROUND;
     else klass = CLASS.NO_COST;
+
+    const expected = value?.projectedRound ?? null;
+    const rounds = roundValue(standing.calculatedRound, expected);
 
     return {
       playerId: id, name, position, nflTeam, freeAgent,
-      /* Display: the most recent time this league drafted them. */
-      draftRound, draftSeason, draftedByMe, draftPickNo: pick ? Number(pick.pick_no) : null,
-      /* Cost basis: the FIRST time, which is what the rules charge against. */
-      originalRound: origin.round, originalSeason: origin.season,
-      originUncertain: origin.uncertain, originReason: origin.reason,
+      /* The keeper basis, and the season it came from. */
+      basisRound: basis.round, basisSeason: basis.season,
+      basisFound: basis.found, basisReason: basis.reason,
+      basisOtherSeasons: basis.otherSeasons,
+      draftedByMe, draftPickNo: basisPick ? Number(basisPick.pick_no) : null,
       priorKeeperSeasons: prior,
       class: klass,
       keeperCost: standing.calculatedRound,
@@ -205,128 +246,379 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
       standing: standing.state,
       standingReason: standing.reason,
       reviewNeeded: standing.reviewNeeded,
+      /* Last season, scored the way this league scores. */
+      productionSeason: ctx.productionSeason,
+      productionPoints: prod?.points ?? null,
+      productionGames: prod?.games ?? null,
+      positionRank: prod?.positionRank ?? null,
+      positionFinish: prod?.label ?? null,
+      strongProduction: isStrongFinish(position, prod?.positionRank),
+      /* The upcoming draft. */
+      marketSeason: ctx.marketSeason,
+      marketAdp: value?.adp ?? null,
       marketRank: value?.rank ?? null,
-      marketProjectedRound: value?.projectedRound ?? null,
+      marketPositionRank: value?.positionRank ?? null,
+      marketProjectedRound: expected,
+      strongMarket: isStrongFinish(position, value?.positionRank),
+      /* The comparison the whole card turns on. */
+      roundValue: rounds,
+      roundValueLabel: formatRoundValue(rounds),
     };
   });
 }
 
 /*
-  HOW THE LIST IS ORDERED, and why it is not a score.
+  WHAT THE DATA SUPPORTS SAYING - the four levels from the brief.
 
-  A single number would be a claim - "this is a 93" - and there is nothing to
-  compute one from. So the order is a stated preference over facts, in this
-  sequence, and the UI prints the reason beside each row:
+  The card must never blank itself and must never claim more than it can back.
+  So the level is computed from what actually arrived, and the labels below are
+  gated on it: "Best value" needs a market price to be a discount against, and
+  "safe choice" needs to know the player is good.
 
-    1. a priced keeper is more useful than an unpriced one (only ever
-       happens once a rule is recorded), CHEAPEST cost first - and cheapest
-       means the LATEST round. Giving up a 14th-round pick to keep somebody
-       costs almost nothing; giving up your first-round pick costs the most
-       expensive asset you own. The first cut of this sorted round numbers
-       ascending and put "Round 1 cost" at the top labelled as the lowest
-       cost, which is exactly backwards.
-    2. then players whose draft round we know, latest round first - because
-       every round-based keeper rule anybody uses makes a later pick cheaper,
-       so a later round is the more likely bargain. This is NOT a claim that
-       they are good.
-    3. then players with no draft round in this league
-    4. then ids the player map does not recognise
-    5. a free agent sinks within its group, because keeping somebody who is
-       not on an NFL roster is almost certainly a mistake
-
-  Ties break on name so the list is stable between renders.
+    full            production + market + priced keepers
+    no-market       production and keeper facts; no discount claims
+    no-production   market and keeper facts; no quality claims
+    facts-only      keeper facts alone, which is where v1.107.0 lived
 */
+export function dataLevel(list = [], market = NO_MARKET) {
+  const hasProduction = list.some((c) => c.productionPoints != null);
+  const hasMarket = market.available
+    && list.some((c) => c.marketProjectedRound != null);
+  if (hasProduction && hasMarket) return { level: 1, name: "full", hasProduction, hasMarket };
+  if (hasProduction)              return { level: 2, name: "no-market", hasProduction, hasMarket };
+  if (hasMarket)                  return { level: 3, name: "no-production", hasProduction, hasMarket };
+  return { level: 4, name: "facts-only", hasProduction, hasMarket };
+}
+
+/*
+  HOW THE LIST IS ORDERED.
+
+  Groups first, because a player who cannot be kept does not belong above one
+  who can:
+
+    0  eligible and priced
+    1  needs review (the commissioner can supply the round)
+    2  an id the player map does not recognise
+    3  proven ineligible - a settled answer, listed last and never hidden
+
+  Within the eligible group the order is a weighted sum of the three things the
+  card prints, and nothing else:
+
+    round value   4 points per round saved against the expected market round.
+                  Weighted highest because it is the actual keeper question,
+                  and it is what a manager is trading.
+    production    how good last season was, as distance inside the positional
+                  starter cutoff. RB4 scores more than RB18 by twenty.
+    market        the same measure applied to where the upcoming draft has
+                  them, so a player the market has cooled on is not carried
+                  by one good year.
+
+  It is deliberately NOT shown as a number. Every term is on the card as its
+  own fact with its own season, so "why is he above him" always has an answer
+  a reader can check - which a "94" never does. The weights are the argument;
+  they are here, in one place, in the open.
+
+  A free agent sinks within its group: keeping somebody who is not on an NFL
+  roster is almost certainly a mistake regardless of what they cost.
+*/
+const VALUE_PER_ROUND = 4;
+const FINISH_SPAN = 24;   // the common scale every position is mapped onto
+
+/*
+  A rank inside the position's starter cutoff, mapped onto one 0-24 scale.
+
+  The scale has to be SHARED, or the position with the deepest cutoff wins by
+  arithmetic: measuring "rounds inside the cutoff" directly gave a receiver up
+  to 30 points and a quarterback at most 12, so QB1 scored less than WR18.
+
+  It also has to be PROPORTIONAL rather than capped. The first cut clamped at
+  24 and every receiver from WR1 to WR7 came out identical, which quietly made
+  the order of the best players on a roster alphabetical - verified live, where
+  it put Amon-Ra St. Brown above Jaxon Smith-Njigba despite worse production
+  AND a worse market rank.
+
+  Outside the cutoff scores nothing rather than going negative: "worse than a
+  starter" is one fact, not a scale.
+*/
+function finishPoints(position, rank) {
+  const r = rankOf(rank);
+  if (r == null) return 0;
+  const cutoff = STRONG_FINISH[String(position || "").toUpperCase()] || 0;
+  if (!cutoff) return 0;
+  const inside = cutoff - r + 1;
+  if (inside <= 0) return 0;
+  return Math.round(FINISH_SPAN * (inside / cutoff));
+}
+
+/** The internal ordering weight. Exported for tests, never for display. */
+export function orderingWeight(c) {
+  const value = c.roundValue == null ? 0 : c.roundValue * VALUE_PER_ROUND;
+  return value
+    + finishPoints(c.position, c.positionRank)
+    + finishPoints(c.position, c.marketPositionRank);
+}
+
 export function rankCandidates(list = []) {
-  /* Ineligible sinks below everything that can actually be kept, and an
-     unrecognised player id sinks below that. */
-  const groupOf = (c) => c.standing === "unavailable" ? 4
+  const groupOf = (c) => c.standing === "unavailable" ? 3
                        : c.class === CLASS.KNOWN ? 0
-                       : c.class === CLASS.NO_COST ? 1
-                       : c.class === CLASS.NO_ROUND ? 2 : 3;
+                       : c.class === CLASS.UNKNOWN ? 2 : 1;
   return [...list].sort((a, b) => {
     const g = groupOf(a) - groupOf(b);
     if (g) return g;
     if (a.freeAgent !== b.freeAgent) return a.freeAgent ? 1 : -1;
+    const w = orderingWeight(b) - orderingWeight(a);
+    if (w) return w;
+    /* With nothing to separate them - the facts-only fallback - a later basis
+       round is the more likely bargain, which is the old ordering kept as the
+       last tiebreak rather than as the whole rule. */
     if (a.keeperCost != null && b.keeperCost != null && a.keeperCost !== b.keeperCost) {
-      return b.keeperCost - a.keeperCost;      // a later round is a cheaper keeper
-    }
-    if (a.draftRound != null && b.draftRound != null && a.draftRound !== b.draftRound) {
-      return b.draftRound - a.draftRound;      // later round first
+      return b.keeperCost - a.keeperCost;
     }
     return String(a.name || a.playerId).localeCompare(String(b.name || b.playerId));
   });
 }
 
 /*
-  THE LABELS.
+  THE LABELS, and the exact condition each one needs.
 
-  Every one of these is a fact with its source in the wording. There is no
-  "Best value" and no "Safest choice" here, because both are claims about a
-  market this app cannot see. The moment a market source exists, the two
-  value labels at the top start appearing and they carry the source with
-  them - which is the only condition under which they are honest.
+  Every label is gated on the data that would make it true, so a missing
+  market cannot produce a "Best value" and a missing stat line cannot produce
+  a "Safe choice". The criteria are constants in this file and each has a test.
 */
 export const LABELS = {
-  /* "Lowest cost" = the latest round given up, not the lowest round number. */
-  CHEAPEST_COST: "Lowest keeper cost",
-  LATEST_ROUND:  "Latest-round pick",
-  EARLIEST_ROUND: "Earliest-round pick",
-  RETURNING:     "You drafted them",
-  FINAL_YEAR:    "Final keeper year",
+  BEST_VALUE:    "BEST VALUE",
+  BEST_PLAYER:   "BEST PLAYER",
+  SAFE_CHOICE:   "SAFE CHOICE",
+  VALUE_PLAY:    "VALUE PLAY",
+  FINAL_YEAR:    "FINAL-YEAR VALUE",
+  POOR_VALUE:    "POOR VALUE",
   LIMIT_REACHED: "Keeper limit reached",
   NEEDS_REVIEW:  "Needs review",
+  RETURNING:     "You drafted them",
   ACQUIRED:      "Acquired, not drafted",
-  NEVER_DRAFTED: "Never drafted in this league",
-  NEEDS_MARKET:  "Needs market ranking",
   NOT_ON_NFL:    "Not on an NFL roster",
   UNKNOWN_ID:    "Not in the Sleeper player list",
 };
 
-/**
- * The one-line reason printed under a candidate. Facts only.
- */
-export function reasonFor(c) {
-  if (c.class === CLASS.UNKNOWN) return LABELS.UNKNOWN_ID;
-  const bits = [];
-  if (c.originalRound != null) {
-    bits.push(`Original R${c.originalRound}`);
-    if (c.keeperCost != null) bits.push(`Keeper R${c.keeperCost}`);
-  } else {
-    bits.push("Original draft round unknown");
-  }
-  /* Tenure, in the configured league's own terms - never a hard-coded 3. */
-  if (c.standing === "unavailable") bits.push(c.standingReason);
-  else if (c.finalKeeperYear) bits.push("FINAL YEAR");
-  else if (c.keeperYear != null && c.maxKeeperYears != null) {
-    bits.push(`Year ${c.keeperYear} of ${c.maxKeeperYears}`);
-  }
-  if (c.reviewNeeded && c.originalRound == null) bits.push("needs review");
-  if (c.freeAgent) bits.push("not on an NFL roster");
-  return bits.join(" · ");
-}
+/** A discount has to be worth a sentence before it earns a value label. */
+export const MIN_VALUE_ROUNDS = 2;
 
 /**
- * The badges on a candidate: which superlatives it actually holds, worked
- * out against the rest of the list rather than asserted.
+ * Which superlatives a candidate actually holds, worked out against the rest
+ * of the list rather than asserted.
+ *
+ * @param {object} c
+ * @param {object[]} all
  */
 export function badgesFor(c, all = []) {
-  const out = [];
-  const priced = all.filter((x) => x.keeperCost != null && x.standing === "eligible");
+  if (c.class === CLASS.UNKNOWN) return [LABELS.UNKNOWN_ID];
 
-  /* The cheapest keeper is the one costing the LATEST round - handing over a
-     14th-round pick costs almost nothing, a first-rounder costs the most
-     valuable thing you own. Math.max, not Math.min. */
-  if (c.keeperCost != null && c.standing === "eligible" && priced.length > 1 &&
-      c.keeperCost === Math.max(...priced.map((x) => x.keeperCost))) {
-    out.push(LABELS.CHEAPEST_COST);
+  const out = [];
+  const eligible = all.filter((x) => x.standing === "eligible");
+  const withValue = eligible.filter((x) => x.roundValue != null);
+
+  /* BEST VALUE - the biggest positive discount on a player who was actually
+     good. A cheap keeper on a bad player is a VALUE PLAY, not best value.
+     A superlative, so exactly one candidate can hold it: the largest saving,
+     and on a tie the one the ordering already prefers. */
+  const valuePool = withValue.filter((x) => x.roundValue >= MIN_VALUE_ROUNDS && x.strongProduction);
+  if (valuePool.length && c.playerId === bestBy(valuePool,
+        (x) => -(x.roundValue * 1000 + orderingWeight(x)))) {
+    out.push(LABELS.BEST_VALUE);
   }
-  if (c.finalKeeperYear && c.standing === "eligible") out.push(LABELS.FINAL_YEAR);
+
+  /* BEST PLAYER - the strongest player on the roster by what the market and
+     last season say, regardless of what keeping them costs. Needs one of the
+     two to exist; with neither, nobody is called the best. */
+  const strengthPool = eligible.filter((x) => x.marketRank != null || x.positionRank != null);
+  if (c.standing === "eligible" && strengthPool.length > 1
+      && c.playerId === bestBy(strengthPool, playerStrength)) {
+    out.push(LABELS.BEST_PLAYER);
+  }
+
+  /* SAFE CHOICE - good last year, still valued by the market, and cheaper
+     than the market. No superlative, so several can hold it. */
+  if (c.standing === "eligible" && c.strongProduction && c.strongMarket
+      && c.roundValue != null && c.roundValue > 0) {
+    out.push(LABELS.SAFE_CHOICE);
+  }
+
+  /* VALUE PLAY - a real discount on a player last season does not vouch for. */
+  if (c.standing === "eligible" && c.roundValue != null
+      && c.roundValue >= MIN_VALUE_ROUNDS && !c.strongProduction) {
+    out.push(LABELS.VALUE_PLAY);
+  }
+
+  /* FINAL-YEAR VALUE - worth spending the last keeper season on. */
+  if (c.standing === "eligible" && c.finalKeeperYear
+      && c.roundValue != null && c.roundValue > 0) {
+    out.push(LABELS.FINAL_YEAR);
+  }
+
+  /* POOR VALUE - the keeper costs as much as, or more than, drafting them. */
+  if (c.standing === "eligible" && c.roundValue != null && c.roundValue <= 0) {
+    out.push(LABELS.POOR_VALUE);
+  }
+
   if (c.standing === "unavailable") out.push(LABELS.LIMIT_REACHED);
-  if (c.reviewNeeded && c.class !== CLASS.UNKNOWN) out.push(LABELS.NEEDS_REVIEW);
+  if (c.reviewNeeded) out.push(LABELS.NEEDS_REVIEW);
   if (c.draftedByMe === true) out.push(LABELS.RETURNING);
   if (c.draftedByMe === false) out.push(LABELS.ACQUIRED);
   if (c.freeAgent) out.push(LABELS.NOT_ON_NFL);
   return out;
+}
+
+/*
+  How good a player is, independent of what they cost.
+
+  The market's overall rank is the better answer where it exists - it is a
+  cross-position judgement, which a positional finish is not. Without it, fall
+  back to how far inside their positional cutoff they finished. Lower is
+  better, so both are expressed as a sort key where less wins.
+*/
+function playerStrength(c) {
+  if (c.marketRank != null) return c.marketRank;
+  const points = finishPoints(c.position, c.positionRank);
+  return points ? 1000 - points : 9999;
+}
+
+/** The single winner of a superlative, decided deterministically. */
+function bestBy(list, keyOf) {
+  let best = null;
+  let bestKey = Infinity;
+  for (const c of [...list].sort((a, b) => String(a.playerId).localeCompare(String(b.playerId)))) {
+    const key = keyOf(c);
+    if (key < bestKey) { bestKey = key; best = c; }
+  }
+  return best?.playerId ?? null;
+}
+
+/**
+ * The explanation printed under a name: the facts, each with its season.
+ *
+ * Deliberately not a sentence generator. Four labelled figures in a fixed
+ * order read faster than prose and cannot imply a claim the data does not
+ * support - a missing one is simply absent.
+ */
+export function factsFor(c) {
+  if (c.class === CLASS.UNKNOWN) {
+    return [{ label: "Player", value: LABELS.UNKNOWN_ID }];
+  }
+  const out = [];
+
+  if (c.productionPoints != null) {
+    out.push({
+      label: `${c.productionSeason} performance`,
+      value: `${c.productionPoints.toFixed(1)} DFL pts${c.positionFinish ? ` · ${c.positionFinish}` : ""}`,
+    });
+  }
+  out.push({
+    label: `${c.basisSeason ?? "Previous"} DFL draft`,
+    value: c.basisRound != null ? `Round ${c.basisRound}` : "Not found — needs review",
+  });
+  if (c.keeperCost != null) {
+    out.push({
+      label: `${c.marketSeason ?? ""} keeper`.trim(),
+      value: `Round ${c.keeperCost}${c.keeperYear != null && c.maxKeeperYears != null
+        ? ` · Year ${c.keeperYear} of ${c.maxKeeperYears}` : ""}`,
+    });
+  } else if (c.standing === "unavailable") {
+    out.push({ label: "Keeper", value: c.standingReason });
+  }
+  if (c.marketAdp != null) {
+    out.push({
+      label: `${c.marketSeason} market`,
+      value: `ADP ${round1(c.marketAdp)}${c.marketProjectedRound != null
+        ? ` · Expected Round ${c.marketProjectedRound}` : ""}`,
+    });
+  }
+  if (c.roundValueLabel) {
+    out.push({ label: "Draft value", value: c.roundValueLabel });
+  }
+  return out;
+}
+
+/**
+ * WHY, in one sentence, and only from what is present.
+ *
+ * Each branch names the facts it is standing on. Nothing here reaches for a
+ * reason it cannot show above it.
+ */
+export function whyFor(c) {
+  if (c.class === CLASS.UNKNOWN) {
+    return "This id is not in the Sleeper player list, so nothing can be said about them.";
+  }
+  if (c.standing === "unavailable") return c.standingReason;
+  if (c.reviewNeeded) {
+    return `${c.basisReason} — a commissioner can enter the keeper round to record this one.`;
+  }
+
+  const bits = [];
+  if (c.productionPoints != null) {
+    /*
+      Three tiers rather than two. "Strong" for a WR26 is a stretch even though
+      WR26 clears the starter cutoff and earns the label gating - so the top
+      half of the cutoff is strong, the rest of it is startable, and below it
+      is quieter. The gating is unchanged; only the adjective is graded.
+    */
+    const cutoff = STRONG_FINISH[String(c.position || "").toUpperCase()] || 0;
+    const finish = c.positionFinish ? ` (${c.positionFinish})` : "";
+    bits.push(!c.strongProduction
+      ? `A quieter ${c.productionSeason}${finish}`
+      : c.positionRank <= Math.ceil(cutoff / 2)
+        ? `Strong ${c.productionSeason} production${finish}`
+        : `A startable ${c.productionSeason}${finish}`);
+  }
+  if (c.marketProjectedRound != null) {
+    bits.push(`an expected Round ${c.marketProjectedRound} price in ${c.marketSeason}`);
+  }
+  if (c.keeperCost != null) bits.push(`a Round ${c.keeperCost} keeper cost`);
+
+  if (!bits.length) return c.standingReason;
+
+  const sentence = bits.length === 1 ? bits[0]
+    : `${bits.slice(0, -1).join(", ")} and ${bits.at(-1)}`;
+  if (c.roundValue != null && c.roundValue > 0) {
+    return `${sentence} — ${formatRoundValue(c.roundValue)} of draft value.`;
+  }
+  if (c.roundValue === 0) {
+    return `${sentence} — keeping them costs exactly what drafting them would.`;
+  }
+  if (c.roundValue != null && c.roundValue < 0) {
+    return `${sentence} — ${formatRoundValue(c.roundValue)}: the keeper is the`
+         + ` more expensive way to get them.`;
+  }
+  if (c.marketProjectedRound == null) {
+    return `${sentence}. No market price for ${c.marketSeason} yet, so this is not a value claim.`;
+  }
+  return `${sentence}.`;
+}
+
+/** The compare-all row: one object per candidate, every season named. */
+export function comparisonRow(c) {
+  return {
+    player: c.name || `Player ${c.playerId}`,
+    position: c.position,
+    nflTeam: c.nflTeam,
+    productionSeason: c.productionSeason,
+    productionPoints: c.productionPoints,
+    positionFinish: c.positionFinish,
+    basisSeason: c.basisSeason,
+    basisRound: c.basisRound,
+    keeperSeason: c.marketSeason,
+    keeperRound: c.keeperCost,
+    keeperYear: c.keeperYear,
+    maxKeeperYears: c.maxKeeperYears,
+    marketSeason: c.marketSeason,
+    marketAdp: c.marketAdp,
+    expectedRound: c.marketProjectedRound,
+    roundValue: c.roundValue,
+    standing: c.standing,
+  };
+}
+
+function round1(n) {
+  return Math.round(Number(n) * 10) / 10;
 }
 
 /**
@@ -340,8 +632,8 @@ export function badgesFor(c, all = []) {
 export function advise(input) {
   const { member = null, sleeperUserId = null, roster = null,
           players = null, draftPicks = [], rules = null, targetSeason = null,
-          keeperRows = [], earliestSyncedSeason = null,
-          maxKeepers = null, market = NO_MARKET } = input || {};
+          keeperRows = [], maxKeepers = null,
+          market = NO_MARKET, production = NO_PRODUCTION } = input || {};
 
   if (!member) return { state: "no-member" };
   if (!sleeperUserId) return { state: "no-sleeper-id", member };
@@ -352,23 +644,35 @@ export function advise(input) {
 
   const list = rankCandidates(candidates({
     playerIds, players: players || {}, draftPicks, sleeperUserId,
-    rules, targetSeason, keeperRows, memberId: member?.id,
-    earliestSyncedSeason, market,
+    rules, targetSeason, keeperRows, memberId: member?.id, market, production,
   }));
 
-  const known = list.filter((c) => c.standing === "eligible").length;
-  const rounds = list.filter((c) => c.originalRound != null).length;
+  const ctx = decisionContext(targetSeason);
+  const levels = dataLevel(list, market);
 
   return {
     state: "ready",
     member, sleeperUserId, roster, rules, targetSeason, maxKeepers,
-    market: { available: market.available, source: market.source, updatedAt: market.updatedAt },
+    context: ctx,
+    positions: ADVISOR_POSITIONS,
+    data: levels,
+    market: { available: market.available, source: market.source,
+              scoringFormat: market.scoringFormat, updatedAt: market.updatedAt,
+              freshness: market.freshness },
     candidates: list,
-    counts: { total: list.length, costKnown: known, draftRoundKnown: rounds,
-              neverDrafted: list.filter((c) => c.originalRound == null && c.class !== CLASS.UNKNOWN).length,
-              unavailable: list.filter((c) => c.standing === "unavailable").length,
-              needsReview: list.filter((c) => c.reviewNeeded && c.class !== CLASS.UNKNOWN).length,
-              unknownPlayer: list.filter((c) => c.class === CLASS.UNKNOWN).length },
+    counts: {
+      /* Evaluated players only - a kicker was never a candidate, so counting
+         one here would be counting something the card does not show. */
+      total: list.length,
+      costKnown: list.filter((c) => c.standing === "eligible").length,
+      basisKnown: list.filter((c) => c.basisRound != null).length,
+      noPriorRound: list.filter((c) => c.basisRound == null && c.class !== CLASS.UNKNOWN).length,
+      unavailable: list.filter((c) => c.standing === "unavailable").length,
+      needsReview: list.filter((c) => c.reviewNeeded && c.class !== CLASS.UNKNOWN).length,
+      unknownPlayer: list.filter((c) => c.class === CLASS.UNKNOWN).length,
+      withProduction: list.filter((c) => c.productionPoints != null).length,
+      withMarket: list.filter((c) => c.marketProjectedRound != null).length,
+    },
     /* How many rows to lead with. The allowance if Sleeper stated one, and
        never more than a screenful. */
     shortlist: Math.min(list.length, Math.max(3, (Number(maxKeepers) || 0) + 2)),

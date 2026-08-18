@@ -40,8 +40,8 @@ import { esc, toast } from "./ui.js";
 import { loadMembers } from "./members.js";
 import { loadPlayers } from "./sleeper.js";
 import { trapFocus } from "./focus-trap.js";
-import { configFor, describeRules, evaluate, originalQualifyingRound,
-         priorKeeperSeasons } from "./keeper-rules.js";
+import { configFor, describeRules, evaluate, priorSeasonDraftRound,
+         priorKeeperSeasons, ruleExample } from "./keeper-rules.js";
 
 /**
  * Open the keeper entry sheet.
@@ -101,9 +101,18 @@ export async function openKeeperEntry({ season, onSaved = () => {} } = {}) {
     return;
   }
 
+  /*
+    THE RULE, AND A WORKED EXAMPLE IN REAL SEASONS.
+
+    "Previous season's draft -1 round" is the rule; "a player drafted in Round
+    8 in 2025 would cost Round 7 as a 2026 keeper" is the sentence a
+    commissioner can check against their own memory. Both come from the stored
+    configuration - see ruleExample().
+  */
   const rulesLine = describeRules(data.rules);
+  const worked = ruleExample(data.rules, { targetSeason: data.season });
   host.querySelector("[data-ke-rules]").textContent = rulesLine
-    ? `${season} rules · ${rulesLine}`
+    ? `${season} rules · ${rulesLine}${worked ? ` — ${worked.text}` : ""}`
     : "No keeper rules are configured for this season";
 
   /* Sheet state. `member` and `pick` survive stepping backwards, so choosing
@@ -207,9 +216,14 @@ export async function openKeeperEntry({ season, onSaved = () => {} } = {}) {
       member_id + player_id are the identity: everything that has to be
       reliable later keys off them. team/player are the SNAPSHOT - what these
       people were called on the day - so a row still reads correctly after a
-      rename, exactly as the legacy rows do. original_round, keeper_year and
-      calculated_round record what the engine proposed, so this decision can
-      be audited later without re-deriving it under whatever rules exist then.
+      rename, exactly as the legacy rows do.
+
+      basis_round + basis_season record WHICH DRAFT the cost was measured
+      from, which is the whole thing v1.107.0 got wrong: it wrote a round into
+      `original_round` with no season beside it, so a row could not be checked
+      afterwards. New rows name the season. `original_round` is left alone and
+      left NULL - the old column keeps meaning what it meant on the rows that
+      already carry it, and nothing rewrites those.
     */
     const row = {
       year: data.season,
@@ -221,7 +235,8 @@ export async function openKeeperEntry({ season, onSaved = () => {} } = {}) {
       player_pos: pick.position || null,
       player_team: pick.nflTeam || null,
       team_snapshot: state.member.team_name || null,
-      original_round: pick.standing.originalRound,
+      basis_round: pick.standing.basisRound,
+      basis_season: pick.standing.basisSeason,
       keeper_year: pick.standing.keeperYear,
       calculated_round: proposed,
       round_cost: Number.isFinite(entered) ? entered : proposed,
@@ -265,7 +280,7 @@ function saveError(err) {
   if (err?.code === "23505") return "That player is already recorded as a keeper this season.";
   const msg = err?.message || "Could not save that keeper";
   if (/member_id|player_id|column/.test(msg)) {
-    return "Run keeper_rules_schema.sql in Supabase to enable keeper entry.";
+    return "Run keeper_rules_schema.sql then keeper_basis_correction.sql in Supabase to enable keeper entry.";
   }
   return msg;
 }
@@ -273,13 +288,19 @@ function saveError(err) {
 // ------------------------------- data --------------------------------
 
 async function loadEntryData(season) {
-  const [members, rulesRes, keepersRes, draftSpanRes] = await Promise.all([
+  /*
+    THE EARLIEST SYNCED SEASON IS NO LONGER READ, and that read is gone with
+    it. It existed to warn that a player's first pick might predate the synced
+    history, which mattered only while the basis was their earliest pick. A
+    2026 keeper asks one question - is there a 2025 pick - and 2019 has no
+    bearing on the answer.
+  */
+  const [members, rulesRes, keepersRes] = await Promise.all([
     loadMembers(),
     db().from("keeper_rules")
       .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression")
       .order("effective_season", { ascending: false }),
     db().from("keepers").select("year, member_id, player_id, player_name, team, player, round_cost"),
-    db().from("sleeper_draft_picks").select("season").order("season", { ascending: true }).limit(1),
   ]);
 
   const existing = keepersRes.error ? [] : (keepersRes.data || []);
@@ -297,8 +318,6 @@ async function loadEntryData(season) {
     members,
     rules: configFor(rulesRes.error ? [] : (rulesRes.data || []), season),
     existing, taken,
-    earliestSyncedSeason: draftSpanRes.error
-      ? null : ((draftSpanRes.data || [])[0]?.season ?? null),
     rosters: new Map(),      // memberId -> { season, candidates } , filled lazily
     players: null,
   };
@@ -339,18 +358,20 @@ async function ensureRoster(data, member) {
 
   const candidates = ids.map((id) => {
     const meta = players[id] || null;
-    const origin = originalQualifyingRound(picks, id,
-      { earliestSyncedSeason: data.earliestSyncedSeason });
+    /* The keeper basis: this league's draft round in the season BEFORE the one
+       being recorded. Not the earliest pick - see priorSeasonDraftRound(). */
+    const basis = priorSeasonDraftRound(picks, id, { targetSeason: data.season });
     const prior = priorKeeperSeasons(data.existing, {
       playerId: id, memberId: member.id, beforeSeason: data.season });
     const standing = evaluate({ config: data.rules, targetSeason: data.season,
-                                originalRound: origin.round, priorKeeperSeasons: prior });
+                                basisRound: basis.round, basisSeason: basis.season,
+                                priorKeeperSeasons: prior });
     return {
       playerId: id,
       name: meta?.n || null,
       position: meta?.p || "",
       nflTeam: meta?.t || "",
-      origin, standing,
+      basis, standing,
       alreadyKept: data.taken.has(`${data.season}:${id}`),
     };
   });
@@ -444,17 +465,20 @@ function candidateGroups(data, state) {
   return groups.filter(([, list]) => list.length).map(([label, list]) => `
     <div class="ke-group">
       <div class="ke-group-head">${esc(label)}<span class="count">${list.length}</span></div>
-      ${list.map((c) => playerRow(c, label === "Unavailable")).join("")}
+      ${list.map((c) => playerRow(c, label === "Unavailable", data.season)).join("")}
     </div>`).join("");
 }
 
-function playerRow(c, locked) {
+function playerRow(c, locked, season) {
   const who = c.name || `Player ${c.playerId}`;
   const where = [c.position, c.nflTeam].filter(Boolean).join(" · ");
+  /* SEASON-SPECIFIC, always: "2025 Draft R8 · 2026 Keeper R7". A bare "R8"
+     is the ambiguity that let the wrong draft basis survive a release. */
   const line = c.alreadyKept
     ? "Already recorded this season"
     : c.standing.state === "eligible"
-      ? `Original R${c.standing.originalRound} · Keeper R${c.standing.calculatedRound} · ${
+      ? `${c.standing.basisSeason} Draft R${c.standing.basisRound} · ${
+          season} Keeper R${c.standing.calculatedRound} · ${
           c.standing.finalKeeperYear ? "FINAL YEAR"
             : `Year ${c.standing.keeperYear} of ${c.standing.maxKeeperYears}`}`
       : c.standing.reason;
@@ -491,20 +515,21 @@ function reviewStep(data, state) {
       </div>
 
       <dl class="ke-facts">
-        <div><dt>Original qualifying round</dt><dd>${s.originalRound != null
-          ? `R${s.originalRound}${c.origin.season ? ` <span class="muted tiny">(${esc(c.origin.season)} draft)</span>` : ""}`
-          : `<span class="muted">unknown</span>`}</dd></div>
+        <div><dt>${esc(s.basisSeason ?? "Previous season")} DFL draft</dt><dd>${s.basisRound != null
+          ? `Round ${s.basisRound}`
+          : `<span class="muted">not found</span>`}</dd></div>
         <div><dt>Keeper year</dt><dd>${s.keeperYear != null
           ? `${s.keeperYear} of ${s.maxKeeperYears}${s.finalKeeperYear ? " · final" : ""}`
           : `<span class="muted">—</span>`}</dd></div>
-        <div><dt>Calculated cost</dt><dd>${proposed != null
-          ? `R${proposed}` : `<span class="muted">not calculable</span>`}</dd></div>
+        <div><dt>${esc(data.season)} keeper cost</dt><dd>${proposed != null
+          ? `Round ${proposed}` : `<span class="muted">not calculable</span>`}</dd></div>
       </dl>
 
-      ${c.origin.uncertain && s.originalRound != null ? `<p class="ke-warn">${esc(c.origin.reason)}.
-        Check the round before saving.</p>` : ""}
-      ${s.originalRound == null ? `<p class="ke-warn">${esc(s.reason)}. Enter the keeper
-        round yourself to record this one.</p>` : ""}
+      ${s.basisRound == null ? `<p class="ke-warn">${esc(s.reason)}. Enter the keeper
+        round yourself to record this one.${c.basis.otherSeasons.length
+          ? ` For reference only, this league drafted them in
+              ${esc(c.basis.otherSeasons.map((o) => `${o.season} R${o.round}`).join(", "))} —
+              none of which is the ${esc(s.basisSeason ?? "")} basis.` : ""}</p>` : ""}
 
       <label class="ke-field">
         <span>Keeper round</span>

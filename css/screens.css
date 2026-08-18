@@ -1728,9 +1728,150 @@ a.moment:hover { background: var(--hover-soft); }
 .ka-more { border-top: 1px solid var(--line-soft); }
 .ka-more > .dfl-fold .dfl-fold-title { color: var(--muted); }
 
+/* =====================================================================
+   THE RECOMMENDATION, v1.108
+   ---------------------------------------------------------------------
+   The lead card is the one place the Advisor makes a call, so it gets the
+   only accent panel on the page. Below it every candidate row carries the
+   same four labelled figures in the same order - and every one of them names
+   its season, because "R8" with no year on it is the ambiguity that let a
+   wrong draft basis survive a release.
+
+   Nothing here introduces a colour. The accent, the lines and the surfaces
+   are the Medicine tokens the rest of the app uses.
+   ===================================================================== */
+
+.ka-lead-card {
+  margin: 0 0 var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+}
+.ka-headline {
+  display: inline-block;
+  margin-bottom: var(--s-2);
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+}
+.ka-lead-who { margin: 0 0 var(--s-2); display: grid; gap: 2px; }
+.ka-lead-who strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+
+/* The four figures, each with its season in the term. A two-column grid at
+   any width the phone gives us; one column when it does not. */
+.ka-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--s-2);
+  margin: 0 0 var(--s-2);
+}
+.ka-facts > div { display: grid; gap: 1px; min-width: 0; }
+.ka-facts dt {
+  margin: 0;
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ka-facts dd {
+  margin: 0;
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+.ka-why-long { margin: 0; font-size: var(--fs-micro); color: var(--body-text); line-height: var(--lh-body); }
+
+/* Provenance for the market number: who said so, and when. */
+.ka-source {
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+.ka-source.is-stale { color: var(--accent); font-weight: var(--fw-bold); }
+
+/* A candidate row's facts: label in bold, value after it, wrapping as a
+   sentence rather than as a grid - a list row cannot afford a second grid. */
+.ka-why { display: flex; flex-wrap: wrap; gap: 2px var(--s-2); }
+.ka-fact { white-space: nowrap; }
+.ka-fact b {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* A recommendation label is a call, not a fact, so it reads as the accent. */
+.ka-badges .pill.is-call {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
+/* =====================================================================
+   COMPARE ALL - a real table, scrolling inside its own box
+   ---------------------------------------------------------------------
+   Ten columns cannot be made to fit a 375px phone and should not be tried.
+   The table scrolls sideways INSIDE this wrapper; the page never does, at
+   any width. The player column sticks so a horizontal scroll never leaves
+   the reader looking at anonymous numbers.
+   ===================================================================== */
+
+.ka-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid var(--line-soft);
+}
+.ka-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+}
+.ka-table th,
+.ka-table td {
+  padding: var(--s-2) var(--s-2);
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+}
+.ka-table thead th {
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg-2);
+  position: sticky;
+  top: 0;
+}
+.ka-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ka-table td.is-plus { color: var(--accent); font-weight: var(--fw-bold); }
+.ka-table tbody tr.is-unavailable { opacity: .6; }
+.ka-table th:first-child,
+.ka-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--bg-2);
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ka-table thead th:first-child { z-index: 2; }
+
 @media (max-width: 420px) {
   .ka-row { grid-template-columns: 1.2rem 1fr auto; gap: var(--s-2); padding-left: var(--s-3); padding-right: var(--s-3); }
   .keeper-advisor > *:not(.dfl-fold) { padding-left: var(--s-3); padding-right: var(--s-3); }
+  .ka-facts { grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
 }
 
 
