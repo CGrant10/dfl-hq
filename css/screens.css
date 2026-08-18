@@ -231,6 +231,68 @@
   color: var(--accent);
 }
 
+/*
+  THE CLOSED-POLL ARCHIVE.
+
+  Open polls are decisions; closed ones are history, and history used to
+  double the length of this page under a heading that looked exactly like the
+  one above the live polls. It is one fold row now - js/collapse.js, the app's
+  only collapse implementation, which supplies the <button>, the aria-expanded
+  state and the remembered choice.
+
+  Styled to read as the section heading it replaced rather than as a card:
+  same hairline and radius as a card edge, muted label, and the count sitting
+  where a .section-title .count would have been. Nothing inside is changed -
+  opening it gives back the identical result cards.
+*/
+.poll-archive { margin-top: var(--s-5); }
+.poll-archive > .dfl-fold {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+}
+.poll-archive > .dfl-fold .dfl-fold-title { color: var(--muted); }
+/* Open, the row is a header over the cards it introduces and needs the gap. */
+.poll-archive:not(.is-folded) > .dfl-fold { margin-bottom: var(--s-3); }
+
+/*
+  A POLL OPTION IS A THUMB TARGET.
+
+  The button wraps only the label row, which is 29px tall on a phone - under
+  the 44px anybody's thumb actually wants, and this is the one control on the
+  page whose whole job is being tapped. The padding is vertical only and the
+  bar it sits above is untouched, so the results read exactly as they did;
+  the difference is that the hit area now reaches the bar rather than stopping
+  short of it. Voting logic, markup and copy are unchanged.
+*/
+.result-pick { padding: var(--s-2) 0; }
+.result-pick .result-top { margin-bottom: var(--s-1); }
+
+/*
+  PROFILE - two halves, and the headings between them stay quiet.
+
+  The page is long and every .section-title on it costs 38px of vertical
+  space before a word is read. Inside the profile they are dividers between
+  an identity block and a reference block, not chapter openings, so they get
+  the tighter rhythm. Everywhere else in the app keeps the original spacing.
+*/
+#profile-wrap .section-title { margin: var(--s-5) 0 var(--s-2); }
+/* A folded card is already a single labelled row; a heading immediately
+   above one does not need to push it further down the page. */
+#profile-wrap .section-title + .card.is-folded { margin-top: 0; }
+/*
+  On a 375px phone the fold row is caret + label + count + Show inside the
+  card's own padding, and the label is the part that must survive: a badge
+  that grows pushed "Financial status" into "Financial sta…". The count gives
+  up its space first now.
+*/
+#profile-wrap .dfl-fold-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
 /* ---------------------------------------------------------------------
    GOLF - a live tournament interface
 

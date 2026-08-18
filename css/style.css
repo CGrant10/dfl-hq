@@ -626,8 +626,53 @@ textarea { min-height: 96px; resize: vertical; }
   border-bottom: 1px solid var(--line-soft);
 }
 .evrow:last-child { border-bottom: none; }
-.evrow.next { border-left: 2px solid var(--accent); padding-left: 13px; }
-.schedule.is-past { opacity: .78; }
+/*
+  THE NEXT EVENT, and only the next one.
+
+  This rule used to land on every upcoming row, because calendar.js passed
+  the same flag to all of them - six accent rules down the left edge, none
+  of which meant anything. It marks upcoming[0] now, so the emphasis is
+  worth having: the accent rule, a slightly lifted surface, a firmer date
+  block and the small label below. Deliberately not a hero card - the point
+  of this list is that the whole season fits on one phone screen.
+*/
+.evrow.next {
+  border-left: 2px solid var(--accent);
+  padding-left: 13px;
+  background: var(--bg-3);
+}
+.evrow.next .evdate {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--bg-2);
+}
+.evrow.next .evday { font-size: 20px; }
+.evrow.next .evtitle { font-weight: 800; }
+/* Small, uppercase, in the accent - the same language as .section-title, so
+   it reads as a label on the row rather than as another pill competing with
+   the "in 3 days" one beside it. */
+.ev-next-tag {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+/*
+  PAST EVENTS, HELD BACK - on the rows, not on the card, and that is the fix.
+
+  This used to be `.schedule.is-past { opacity: .78 }` and it never once took
+  effect. Every card on an entering page runs the `cardIn` keyframes with
+  fill-mode `both`, and cardIn's last frame is `opacity: 1` - an animated
+  value beats a normal declaration no matter how specific the selector is, so
+  the past schedule has always drawn at full strength. Putting it on .evrow,
+  which nothing animates, gets the de-emphasis the rule was asking for without
+  reaching for !important.
+*/
+.schedule.is-past .evrow { opacity: .74; }
 
 /* the stacked MON / 29 block */
 .evdate {

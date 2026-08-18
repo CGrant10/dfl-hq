@@ -61,15 +61,26 @@ async function paintEvents(body) {
   const upcoming = shown.filter((e) => e.event_date >= today);
   const past     = shown.filter((e) => e.event_date < today).reverse();
 
+  /*
+    ONLY THE NEAREST EVENT IS "NEXT".
+
+    Every upcoming row used to get the .next class, which carries the accent
+    rule down its left edge - so a schedule with six things on it had six
+    events all claiming to be the next one, and the one question this page
+    exists to answer ("what is happening next?") took reading the dates to
+    work out. The class now goes to upcoming[0] and nothing else. The list
+    is already sorted by event_date ascending, so index 0 IS the nearest:
+    no new date arithmetic, and the sort is untouched.
+  */
   body.innerHTML = `
     ${upcoming.length
-      ? `<div class="card schedule">${upcoming.map((e) => eventRow(e, true)).join("")}</div>`
+      ? `<div class="card schedule">${upcoming.map((e, i) => eventRow(e, true, i === 0)).join("")}</div>`
       : empty(canEdit() ? "Nothing on the schedule. Add the first event below."
                         : "Nothing on the schedule. An admin can add events.")}
     ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
     ${past.length ? `
       <h2 class="section-title">Past<span class="count">${past.length}</span></h2>
-      <div class="card schedule is-past">${past.map((e) => eventRow(e, false)).join("")}</div>` : ""}
+      <div class="card schedule is-past">${past.map((e) => eventRow(e, false, false)).join("")}</div>` : ""}
   `;
 }
 
@@ -77,21 +88,27 @@ async function paintEvents(body) {
  * One line per event: the date as a stacked block on the left, the title and
  * details on the right. Scans like a schedule, which is how anybody actually
  * reads this page - "when is the draft" should not need a card each.
+ *
+ * `isNext` marks the nearest upcoming event and nothing else. It is a
+ * modest emphasis on purpose - a stronger surface, a firmer date block and
+ * one small label - rather than a hero card, because the value of this list
+ * is that the whole season fits on a phone screen.
  */
-function eventRow(e, upcoming) {
+function eventRow(e, upcoming, isNext = false) {
   const d = new Date(String(e.event_date).length === 10
     ? e.event_date + "T12:00:00" : e.event_date);
   const month = isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short" });
   const day   = isNaN(d) ? "?" : d.getDate();
 
   return `
-    <div class="evrow ${upcoming ? "next" : ""} ${hiddenClass("events", e)}">
+    <div class="evrow ${isNext ? "next" : ""} ${hiddenClass("events", e)}">
       <div class="evdate" aria-hidden="true">
         <span class="evmon">${esc(month)}</span>
         <span class="evday">${esc(day)}</span>
       </div>
       <div class="evbody">
         <div class="evtop">
+          ${isNext ? `<span class="ev-next-tag">Next</span>` : ""}
           <span class="evtitle">${esc(e.title)}</span>
           <span class="pill ${upcoming ? "green" : "grey"}">${esc(relDate(e.event_date))}</span>
         </div>

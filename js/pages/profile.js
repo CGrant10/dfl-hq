@@ -84,19 +84,53 @@ export async function render(view) {
     sameName(p.owner_name, member.display_name) || sameName(p.team_name, member.team_name))
     .sort((a, b) => b.season - a.season);
 
+  /*
+    TWO HALVES, AND THE PAGE SAYS WHICH IS WHICH.
+
+    Everything on this page is worth having and none of it has been removed.
+    The problem was that it had all arrived as one more card on the end, so a
+    championship, a dues table and a colour-mode picker carried identical
+    weight and the answer to "who is this person?" was somewhere in the middle
+    of eleven identical rectangles.
+
+    WHO THIS IS - open, no fold control, in this order:
+      the header, the trophy cabinet, the career figures, the career extremes,
+      and the DFL character. The character moved UP from below the dues table:
+      it is the one part of this page the member chose themselves, which makes
+      it identity rather than reference.
+
+    RECORD & REFERENCE - folded by default, one tap away:
+      league history, head to head, keepers, dues, and a long awards list.
+      These are things you go looking for, not things you need on arrival.
+      Each fold row carries a count, so a shut card still tells you how much
+      is in it.
+
+    SETTINGS - your own profile only, and last, because a golf name and a
+    colour mode are neither identity nor record.
+
+    Folding is js/collapse.js, the app's only collapse implementation: a real
+    <button> with aria-expanded and an aria-label, keyboard operable, and the
+    reader's choice remembered per device. Every "folded" below is only a
+    DEFAULT - one tap and that card stays open for good.
+  */
+  const reference = [
+    awardsCard(member),
+    historyCard(seasons, leagues.data || [], member.sleeper_user_id),
+    loreName ? rivalryCard(foes, loreName, members) : "",
+    keepersCard(myKeepers),
+    duesCard(myDues),
+  ].filter(Boolean);
+
   view.innerHTML = `
     <div id="profile-wrap">
       ${header(member, isMe, currentTeam, sleeperUser?.data?.current_season)}
       ${dfl ? cabinetCard(dfl) : ""}
       ${careerCard(careerStats, seasons.length)}
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
-      ${awardsCard(member)}
-      ${historyCard(seasons, leagues.data || [], member.sleeper_user_id)}
-      ${loreName ? rivalryCard(foes, loreName, members) : ""}
-      ${keepersCard(myKeepers)}
-      ${duesCard(myDues)}
       <div data-dfl-host></div>
-      ${isMe ? golfNameCard(member) + appearanceCard() : ""}
+      ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
+      ${reference.join("")}
+      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard()}` : ""}
       ${othersCard(members, member)}
     </div>
   `;
@@ -219,12 +253,21 @@ function careerCard(c, seasonCount) {
 
 // ------------------------------- awards -------------------------------
 
+/*
+  Folded only when it is long enough to be in the way. Two or three awards
+  are a nice thing to see on arrival; fourteen are a list you scroll past.
+  The threshold is the whole reason collapse.js reads its default on every
+  draw rather than once.
+*/
+const AWARDS_FOLD_FROM = 5;
+
 function awardsCard(m) {
   const lines = (m.awards || "").split("\n").map((s) => s.trim()).filter(Boolean);
   if (!lines.length) return "";
+  const long = lines.length >= AWARDS_FOLD_FROM;
   return `
-    <div class="card">
-      <div class="card-title">Awards</div>
+    <div class="card" data-collapse="profile-awards" data-collapse-title="Awards"
+         data-collapse-badge="${lines.length}"${long ? ` data-collapse-default="folded"` : ""}>
       <ul class="tidy">${lines.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
     </div>`;
 }
@@ -237,8 +280,9 @@ function historyCard(seasons, leagues, userId) {
   const runnerYears = new Set(seasonsWon(leagues, "runner_up_user_id", userId).map((l) => l.season));
 
   return `
-    <div class="card">
-      <div class="card-title">League history</div>
+    <div class="card" data-collapse="profile-history" data-collapse-default="folded"
+         data-collapse-title="League history"
+         data-collapse-badge="${seasons.length} season${seasons.length === 1 ? "" : "s"}">
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr>
@@ -271,8 +315,8 @@ function keepersCard(rows) {
   if (!rows.length) return "";
   const byYear = [...groupBy(rows, "year").entries()].sort((a, b) => b[0] - a[0]);
   return `
-    <div class="card">
-      <div class="card-title">Keepers</div>
+    <div class="card" data-collapse="profile-keepers" data-collapse-default="folded"
+         data-collapse-title="Keepers" data-collapse-badge="${rows.length}">
       ${byYear.map(([year, list]) => `
         <div class="subcard">
           <strong>${esc(year)}</strong>
@@ -288,9 +332,12 @@ function keepersCard(rows) {
 
 function duesCard(rows) {
   if (!rows.length) return "";
+  const owing = rows.filter((p) =>
+    Number(p.amount_paid || 0) < Number(p.amount_due || 0)).length;
   return `
-    <div class="card">
-      <div class="card-title">Financial status</div>
+    <div class="card" data-collapse="profile-dues" data-collapse-default="folded"
+         data-collapse-title="Financial status"
+         data-collapse-badge="${owing ? `${owing} due` : "Settled"}">
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr><th>Season</th><th class="num">Due</th><th class="num">Paid</th><th>Status</th></tr></thead>
@@ -597,9 +644,12 @@ function rivalryCard(rows, name, members) {
   if (!rows.length) return "";
   const memberByUser = new Map(members.map((m) => [m.sleeper_user_id, m]));
 
+  /* The section title moved into the fold row rather than sitting above it,
+     so a shut card is one line instead of a heading over a heading. */
   return `
-    <h2 class="section-title">Head to head</h2>
-    <div class="card">
+    <div class="card" data-collapse="profile-h2h" data-collapse-default="folded"
+         data-collapse-title="Head to head"
+         data-collapse-badge="${rows.length} opponent${rows.length === 1 ? "" : "s"}">
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr>

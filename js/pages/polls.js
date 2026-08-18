@@ -63,6 +63,39 @@ export async function render(view) {
   const open   = shown.filter((p) => p.active);
   const closed = shown.filter((p) => !p.active);
 
+  /*
+    OPEN POLLS ARE THE PAGE. The heading above them is only worth its space
+    when there is something else below to distinguish them from - with no
+    closed polls, "Open · 3" labels the entire screen and the three cards
+    underneath already say they are open.
+  */
+  const openBlock = !open.length ? "" : `
+    ${closed.length ? `<h2 class="section-title">Open<span class="count">${open.length}</span></h2>` : ""}
+    ${open.map((p) => pollCard(p, votes, members, me, admin)).join("")}`;
+
+  /*
+    CLOSED POLLS ARE HISTORY, so they fold away behind one row instead of
+    doubling the length of the page. Nothing is summarised: opening it gives
+    back the identical result cards, with every voter name and every tally,
+    because a decided poll is exactly the thing somebody scrolls back to
+    settle an argument about.
+
+    This is the app's one collapse implementation (js/collapse.js). The fold
+    control is a real <button> carrying aria-expanded and an aria-label, it is
+    keyboard operable, and the reader's choice is remembered per device -
+    "folded" here is only the DEFAULT, so one tap keeps it open for good.
+
+    Rendered only when there is something in it, so the page never shows an
+    empty accordion.
+  */
+  const closedBlock = !closed.length ? "" : `
+    <section class="poll-archive" data-collapse="polls-closed"
+             data-collapse-default="folded"
+             data-collapse-title="Closed polls"
+             data-collapse-badge="${closed.length}">
+      ${closed.map((p) => pollCard(p, votes, members, me, admin)).join("")}
+    </section>`;
+
   view.innerHTML = `
     <div id="poll-list">
       <header class="page-head">
@@ -82,12 +115,8 @@ export async function render(view) {
         canEdit() ? "No polls yet. Add one above."
                   : "No polls yet. An admin can add one.")}
 
-      ${open.length ? `
-        <h2 class="section-title">Open<span class="count">${open.length}</span></h2>
-        ${open.map((p) => pollCard(p, votes, members, me, admin)).join("")}` : ""}
-      ${closed.length ? `
-        <h2 class="section-title">Closed<span class="count">${closed.length}</span></h2>
-        ${closed.map((p) => pollCard(p, votes, members, me, admin)).join("")}` : ""}
+      ${openBlock}
+      ${closedBlock}
     </div>
   `;
 
