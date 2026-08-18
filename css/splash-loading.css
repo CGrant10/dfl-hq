@@ -1,0 +1,86 @@
+/* DFL HQ splash/header polish — v1.109.8
+   Pure presentation. The app still boots underneath the splash exactly as before. */
+
+/* Give the uploaded seal a little more presence without changing topbar height. */
+.brand-mark {
+  width: 36px !important;
+  height: 36px !important;
+  flex: 0 0 36px !important;
+  border-radius: 10px !important;
+  object-fit: cover;
+}
+@media (max-width: 380px) {
+  .brand-text .creed { display: none; }
+  .brand-text { line-height: 1; }
+}
+
+/* HQ full-launch gets a theatrical progress sequence. Short launches and the
+   Golf/Broadcast openings keep their existing timing and behavior. */
+#splash.is-full.is-hq.is-running {
+  animation: dfl-splash-out 220ms var(--ease) 2.72s forwards;
+}
+
+#splash.is-full.is-hq .sp-rule {
+  width: min(64vw, 330px);
+  height: 5px;
+  border: 1px solid rgba(244,242,238,.18);
+  border-radius: 999px;
+  background: rgba(244,242,238,.08);
+  overflow: hidden;
+  opacity: 0;
+  transform: none;
+}
+#splash.is-full.is-hq .sp-rule::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #E5011B 0%, #E5011B 45%, #003396 100%);
+  transform: scaleX(.03);
+  transform-origin: left center;
+}
+#splash.is-full.is-hq.is-running .sp-rule {
+  animation: dfl-loading-track-in 280ms var(--ease) .86s both;
+}
+#splash.is-full.is-hq.is-running .sp-rule::before {
+  animation: dfl-loading-progress 1.78s cubic-bezier(.18,.72,.22,1) .92s forwards;
+}
+
+#splash.is-full.is-hq .sp-tag {
+  min-height: 1.25em;
+  color: transparent;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+#splash.is-full.is-hq .sp-tag::before {
+  content: "LOADING PLAYERS...";
+  display: block;
+  color: #f4f2ee;
+  animation: dfl-loading-copy 1.9s steps(1,end) 1s both;
+}
+
+@keyframes dfl-loading-track-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dfl-loading-progress {
+  0%   { transform: scaleX(.03); }
+  38%  { transform: scaleX(.39); }
+  68%  { transform: scaleX(.72); }
+  88%  { transform: scaleX(.9); }
+  100% { transform: scaleX(1); }
+}
+@keyframes dfl-loading-copy {
+  0%, 31%  { content: "LOADING PLAYERS..."; color: #f4f2ee; }
+  32%, 68% { content: "LOADING SINS..."; color: #f4f2ee; }
+  69%, 100%{ content: "TIME TO FOLD!"; color: #EFC94C; }
+}
+
+/* Reduced-motion users keep the repo's existing short, static opening. */
+@media (prefers-reduced-motion: reduce) {
+  #splash.is-full.is-hq .sp-tag { color: #f4f2ee; }
+  #splash.is-full.is-hq .sp-tag::before { display: none; }
+  #splash.is-full.is-hq .sp-rule::before { animation: none !important; transform: scaleX(1); }
+}
