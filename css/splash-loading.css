@@ -135,6 +135,17 @@
   display: none;
 }
 
+/* The snapshot is the personal league glance now: record, leader and dues.
+   Poll status already belongs to the SIN door and the BottomLine, so showing
+   it here too made the same fact compete with its navigation. Keep the data
+   pipeline untouched; this is presentation-only and makes the strip three
+   equal, compact figures on every screen size. */
+#home-wrap .fp-snap > :nth-child(4) { display: none; }
+#home-wrap .fp-snap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#home-wrap .fp-snap > a { padding-left: var(--s-3); padding-right: var(--s-3); }
+#home-wrap .fp-snap b,
+#home-wrap .fp-snap small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Reduced-motion users keep the repo's existing short, static opening and
    get no route movement either. */
 @media (prefers-reduced-motion: reduce) {
