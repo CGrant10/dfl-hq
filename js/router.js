@@ -67,12 +67,9 @@ let leaving = null;
 /*
   WHO WANTS TELLING WHEN THE ROUTE CHANGES.
 
-  The tab indicator and the BottomLine both need to react to a navigation, and
-  both need to do it AFTER the page has rendered - an indicator measured while
-  the old page is still in the DOM measures the old tab. A hashchange listener
-  of their own would fire before this function had finished, so the router
-  announces instead. One subscriber list, called at the end of renderRoute(),
-  and a throw in one callback cannot stop the next or break the navigation.
+  BottomLine and other subscribers still receive the settled route AFTER the
+  page has rendered. The tab indicator no longer needs to wait for that point:
+  it is shell chrome, so the router can measure it as soon as the route starts.
 */
 const listeners = new Set();
 export function onRoute(fn) {
@@ -80,9 +77,47 @@ export function onRoute(fn) {
   return () => listeners.delete(fn);
 }
 
+/*
+  THE TAB INDICATOR HAS TWO MOMENTS:
+
+    pointerdown   preview the tab under the thumb immediately
+    route start   reconcile to the actual route (Back/Forward included)
+
+  The second step is authoritative, so a preview can never leave the bar in a
+  false state. Geometry is still measured from the real elements; no equal-tab
+  assumption and no change to the routing contract.
+*/
+function setTabIndicatorTarget(target) {
+  const bar = document.getElementById("tabbar");
+  if (!bar || !target) return;
+  bar.style.setProperty("--tab-x", `${target.offsetLeft}px`);
+  bar.style.setProperty("--tab-w", `${target.offsetWidth}px`);
+  bar.classList.add("has-indicator");
+}
+
+function syncTabIndicator() {
+  const bar = document.getElementById("tabbar");
+  if (!bar) return;
+  const active = bar.querySelector("a.on") ||
+    (document.getElementById("more-btn")?.classList.contains("on") ? document.getElementById("more-btn") : null);
+  if (!active) {
+    bar.classList.remove("has-indicator");
+    return;
+  }
+  setTabIndicatorTarget(active);
+}
+
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
+  const changed = name !== lastAnimated;
+
+  /* Give the thumb immediate visual acknowledgement while the page module is
+     loading/rendering. This class is presentation only; it never delays work. */
+  if (changed) {
+    view.classList.remove("page-in");
+    view.classList.add("page-switching");
+  }
 
   /* Before anything else, and never allowed to stop the navigation: a page
      that throws on the way out must not trap you on it. */
@@ -100,6 +135,10 @@ export async function renderRoute() {
      and you cannot tell where you are. */
   document.getElementById("more-btn")?.classList.toggle("on", !matched);
 
+  /* Route start, not render completion. This is what removes the lag on a tap
+     and also keeps browser Back/Forward perfectly in sync. */
+  syncTabIndicator();
+
   view.innerHTML = loading();
   try {
     const mod = await routes[name]();
@@ -112,31 +151,21 @@ export async function renderRoute() {
   window.scrollTo(0, 0);
 
   /*
-    THE ROUTE TRANSITION, and it is a polish of what was here rather than a
-    replacement: the same `page-in` class, the same keyframes, the same forced
-    reflow to restart them.
+    THE ROUTE TRANSITION.
 
-    WHAT CHANGED is that it no longer replays for a navigation that did not go
-    anywhere. A page that re-renders itself - the Keepers year tabs, a golf
-    poll, an inline edit saving - used to call renderRoute() and get the whole
-    fade-and-lift again, which reads as a flicker on something that did not
-    move. Same route as last time means the class is left alone, so the
-    animation plays on an actual change of page and nowhere else.
-
-    Navigation is never delayed by any of this: the page is already in the DOM
-    and rendered by the time the class is touched, and the animation is
-    decoration on top. Back and Forward come through hashchange like every
-    other navigation and are treated identically.
+    The subtle `page-switching` state began at route start, so the tap already
+    felt acknowledged while this work happened. Once the actual page exists,
+    remove that state and play the existing entrance animation. Same-route
+    re-renders remain animation-free, exactly as before.
   */
-  const changed = name !== lastAnimated;
   lastAnimated = name;
   if (changed) {
-    view.classList.remove("page-in");
+    view.classList.remove("page-switching");
     void view.offsetWidth;
     view.classList.add("page-in");
   }
 
-  /* After the page exists, so a subscriber can measure it. */
+  /* After the page exists, so subscribers that need page content can measure it. */
   for (const fn of listeners) {
     try { fn(name); } catch (err) { console.warn(err); }
   }
@@ -146,6 +175,15 @@ export async function renderRoute() {
 let lastAnimated = null;
 
 export function startRouter() {
+  const bar = document.getElementById("tabbar");
+  /* pointerdown fires at contact, before click/hashchange. Only direct route
+     tabs preview; More is a sheet, so it stays put until a route is chosen. */
+  bar?.addEventListener("pointerdown", (event) => {
+    const target = event.target.closest("a[data-route]");
+    if (target) setTabIndicatorTarget(target);
+  }, { passive: true });
+
+  window.addEventListener("resize", syncTabIndicator);
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
   renderRoute();

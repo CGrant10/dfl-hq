@@ -1,4 +1,4 @@
-/* DFL HQ splash/header polish — v1.109.8
+/* DFL HQ splash/header polish — v1.109.9
    Pure presentation. The app still boots underneath the splash exactly as before. */
 
 /* Give the uploaded seal a little more presence without changing topbar height. */
@@ -78,9 +78,44 @@
   69%, 100%{ content: "TIME TO FOLD!"; color: #EFC94C; }
 }
 
-/* Reduced-motion users keep the repo's existing short, static opening. */
+/* ---------------------------------------------------------------------
+   ROUTE FEEL
+
+   The bar now gets its destination on pointerdown, so its travel should be
+   quick enough to feel attached to the thumb rather than chasing it. This
+   overrides the older 220ms shell value without changing its geometry.
+   --------------------------------------------------------------------- */
+.tabbar::before {
+  transition: left 150ms cubic-bezier(.2,.7,.2,1),
+              width 150ms cubic-bezier(.2,.7,.2,1),
+              opacity 100ms ease !important;
+}
+
+/* Route work starts immediately, and this restrained state makes that start
+   visible without blocking the render. The real page then gets the existing
+   page-in animation when it is ready. */
+.view.page-switching {
+  opacity: .82;
+  transform: translate3d(0, 4px, 0);
+  transition: opacity 90ms ease-out, transform 90ms ease-out;
+  will-change: opacity, transform;
+}
+
+/* A slightly tighter arrival keeps the second half of the transition from
+   feeling like it is still moving after the thumb has already left the bar. */
+.page-in { animation-duration: 190ms !important; }
+.page-in > .card,
+.page-in > div > .card { animation-duration: 210ms !important; }
+.page-in > .card:nth-child(2),  .page-in > div > .card:nth-child(2)  { animation-delay: .02s !important; }
+.page-in > .card:nth-child(3),  .page-in > div > .card:nth-child(3)  { animation-delay: .04s !important; }
+.page-in > .card:nth-child(4),  .page-in > div > .card:nth-child(4)  { animation-delay: .05s !important; }
+.page-in > .card:nth-child(n+5),.page-in > div > .card:nth-child(n+5){ animation-delay: .06s !important; }
+
+/* Reduced-motion users keep the repo's existing short, static opening and
+   get no route movement either. */
 @media (prefers-reduced-motion: reduce) {
   #splash.is-full.is-hq .sp-tag { color: #f4f2ee; }
   #splash.is-full.is-hq .sp-tag::before { display: none; }
   #splash.is-full.is-hq .sp-rule::before { animation: none !important; transform: scaleX(1); }
+  .view.page-switching { opacity: 1; transform: none; transition: none; }
 }
