@@ -12,73 +12,41 @@
 //   Keeper rules the machine-readable keeper configuration
 //   Finances    dues and payouts across every owner at once
 //   Sleeper     syncing league history
-//   Password    the admin password itself
-//
-// The password is checked by Postgres (see is_admin() in schema.sql), not
-// by this file. Hiding these controls is only a convenience; the database
-// is what actually refuses writes from non-admins.
+//   Commissioner Access  assigning scoped commissioner PINs and permissions
+//   Password    the legacy/master admin password itself
 // =====================================================================
 
 import { adminLogin, adminLogout, isAdmin, changeAdminPassword, configured } from "../supabase.js";
 import { renderManager } from "../crud.js";
 import { renderBroadcastPanel } from "./admin_broadcast.js";
+import { renderCommissionerPanel } from "./admin_commissioners.js";
 import { specFor } from "../sections.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { renderKeeperRulesPanel } from "./admin_keepers.js";
 import { esc, toast } from "../ui.js";
 
-// The structural lists that are easier to manage as a table.
 const TABLES = [
   { id: "members",         tab: "Members",   table: "members" },
   { id: "rule_categories", tab: "Rule tabs", table: "rule_categories" },
 ];
 
-// Custom panels rather than single-table editors.
 const PANELS = [
   { id: "finances", tab: "Fees", render: renderFinancePanel },
-  /* The keeper rules are the one piece of league configuration with no page
-     of its own: the Keepers page shows what they PRODUCE, and the Rules page
-     is prose. Editing them belonged here from the start. */
   { id: "keepers",  tab: "Keeper rules", render: renderKeeperRulesPanel },
   { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
-  /* Broadcast slides get a panel rather than a bare manager because the
-     generator switches belong on the same screen. They are not inline
-     controls on the front page for a simple reason: the stage rotates, so
-     an Edit button there would move out from under the cursor. */
   { id: "broadcast", tab: "Broadcast", render: renderBroadcastPanel },
+  { id: "commissioners", tab: "Commissioner Access", render: renderCommissionerPanel },
 ];
 
 let activeSection = "members";
 
 // -------------------------------------------------------- password box
 
-/*
-  WHY THIS IS NOT AN <input type="password">
-
-  There is one shared commissioner password for the whole league. A browser
-  password manager treats any type="password" field as a personal login: it
-  offers to save it, offers to fill it, and puts a "this password is weak"
-  warning on it. None of that applies here, and all of it gets in the way.
-
-  So the field is a normal text input that CSS masks instead. Chrome sees
-  no credential, so it has nothing to save, fill or grade - while the
-  characters are still hidden on screen. The data-*-ignore attributes cover
-  the third-party managers, which go by their own markers rather than by the
-  input type.
-
-  Firefox has only supported -webkit-text-security recently, so when it is
-  missing we fall back to a real password field. Masking the value matters
-  more than silencing the prompt.
-*/
 const CAN_MASK = typeof CSS !== "undefined"
   && typeof CSS.supports === "function"
   && CSS.supports("-webkit-text-security", "disc");
 
-/**
- * The admin password input, with an eye button that reveals what you typed.
- * Phone keyboards make blind password entry genuinely annoying.
- */
 function passwordField(id, placeholder) {
   const shared = `id="${id}" required
     ${placeholder ? `placeholder="${esc(placeholder)}"` : ""}
@@ -103,22 +71,12 @@ function passwordField(id, placeholder) {
     </div>`;
 }
 
-/**
- * Wire every eye button inside a container.
- *
- * Bound to each button rather than delegated from `root`, because `root`
- * is #view, which survives re-renders - render() runs again on sign-in and
- * sign-out, so a delegated listener stacked up and fired twice per click,
- * flipping the field hidden -> shown -> hidden and appearing to do nothing.
- * The buttons themselves are rebuilt every render, so they cannot double up.
- */
 function wireEyes(root) {
   root.querySelectorAll("button[data-eye]").forEach((btn) => {
     const input = root.querySelector("#" + btn.dataset.eye);
     if (!input) return;
 
     btn.addEventListener("click", () => {
-      // Masked fields drop a class; the fallback still swaps the type.
       const show = CAN_MASK ? input.classList.contains("masked")
                             : input.type === "password";
       if (CAN_MASK) input.classList.toggle("masked", !show);
@@ -157,9 +115,9 @@ export async function render(view) {
 
     <div id="admin-body"></div>
 
-    <div class="section-head"><h2>Password</h2></div>
+    <div class="section-head"><h2>Master password</h2></div>
     <form class="card" id="pw-form">
-      <label for="new-pw">New admin password</label>
+      <label for="new-pw">New master admin password</label>
       ${passwordField("new-pw", "at least 6 characters")}
       <div class="row-end"><button class="btn ghost" type="submit">Change password</button></div>
     </form>
@@ -199,7 +157,7 @@ export async function render(view) {
     try {
       await changeAdminPassword(input.value);
       input.value = "";
-      toast("Password changed");
+      toast("Master password changed");
     } catch (err) {
       toast(err.message || "Could not change password", true);
     }
@@ -213,7 +171,7 @@ function renderLogin(view) {
     <h1>Admin</h1>
     <form class="card" id="login-form">
       <div class="card-title">Commissioner sign in</div>
-      <label for="pw">Admin password</label>
+      <label for="pw">Master admin password</label>
       ${passwordField("pw", "")}
       <div class="row-end"><button class="btn" type="submit">Sign in</button></div>
     </form>
