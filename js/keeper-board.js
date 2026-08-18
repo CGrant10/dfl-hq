@@ -185,17 +185,17 @@ export function boardCanvas(board) {
 
   // ---- the billing ----------------------------------------------------
   /*
-    THE CREST IS THE BILLING, so it is drawn at a size you can actually read.
-    It was 150px wide on a 1080px card - a thumbnail of a logo, and in a chat
-    preview the lettering inside it turned to mush. At 300 the artwork carries
-    the card the way it does on the stage.
+    THE CREST IS THE BILLING. At 300px it was still only 28% of a 1080px card
+    and read like a header icon in chat previews. At 460px it owns roughly 43%
+    of the canvas width, while tighter surrounding gaps preserve room for the
+    keeper rows below.
   */
-  let y = 74;
+  let y = 48;
   const img = crestImage();
   if (img) {
-    const cw = 300, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
+    const cw = 460, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
     ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
-    y += ch + 40;
+    y += ch + 24;
   }
 
   ctx.textAlign = "center";
@@ -203,14 +203,14 @@ export function boardCanvas(board) {
   ctx.fillStyle = INK;
   ctx.font = `900 66px ${FONT}`;
   ctx.fillText(`${board.season} KEEPERS`, W / 2, y);
-  y += 46;
+  y += 42;
 
   ctx.fillStyle = MUTED;
   ctx.font = `800 26px ${FONT}`;
   ctx.letterSpacing = "4px";
   ctx.fillText(`${board.submitted} OF ${board.total} SUBMITTED`, W / 2, y);
   ctx.letterSpacing = "0px";
-  y += 40;
+  y += 30;
 
   /*
     THE RULE SUMMARY IS NOT ON THE CARD.
