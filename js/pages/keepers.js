@@ -17,6 +17,7 @@ import { currentMember } from "../members.js";
 import { loadPlayers } from "../sleeper.js";
 import { advise, badgesFor, reasonFor, CLASS, NO_MARKET } from "../keeper-advisor.js";
 import { configFor, describeRules } from "../keeper-rules.js";
+import { openKeeperEntry } from "../keeper-entry.js";
 
 let year = null;   // remembered while the app stays open
 
@@ -29,9 +30,18 @@ export async function render(view) {
       <div data-advisor-host></div>
       <div id="keeper-body">
         ${empty("No keepers recorded yet.")}
-        ${canEdit() ? `<div class="row-end">${addControl("keepers", "Add keeper")}</div>` : ""}
+        ${canEdit() ? `<div class="row-end ke-actions">
+           <button type="button" class="btn" data-keeper-entry>Add keeper</button>
+           ${addControl("keepers", "Add by hand")}
+         </div>` : ""}
       </div>`;
     wireInline(view.querySelector("#keeper-body"), () => render(view));
+    view.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-keeper-entry]")) return;
+      /* No keeper rows yet, so there is no year tab to read - the league's
+         current season is what a first keeper would be recorded against. */
+      openKeeperEntry({ season: new Date().getFullYear(), onSaved: () => render(view) });
+    });
     mountAdvisor(view);
     return;
   }
@@ -66,7 +76,10 @@ export async function render(view) {
       : `${year} · nothing recorded`;
 
     body.innerHTML = teamList(mine)
-      + (canEdit() ? `<div class="row-end">${addControl("keepers", "Add keeper", { year })}</div>` : "");
+      + (canEdit() ? `<div class="row-end ke-actions">
+           <button type="button" class="btn" data-keeper-entry>Add keeper</button>
+           ${addControl("keepers", "Add by hand", { year })}
+         </div>` : "");
   };
 
   view.querySelector("#year-tabs").addEventListener("click", (e) => {
@@ -79,6 +92,17 @@ export async function render(view) {
   });
 
   wireInline(body, () => render(view));
+
+  /*
+    THE POINT-AND-CLICK PATH IS THE DEFAULT, and the generic editor stays
+    beside it as "Add by hand" - a commissioner still has to be able to
+    correct a row whose source data is wrong, which is exactly what the
+    legacy rows need. Delegated on the view, so a repaint cannot double it.
+  */
+  view.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-keeper-entry]")) return;
+    openKeeperEntry({ season: year, onSaved: () => render(view) });
+  });
 
   paint();
   mountAdvisor(view);

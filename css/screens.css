@@ -1789,3 +1789,108 @@ a.moment:hover { background: var(--hover-soft); }
   letter-spacing: var(--ls-tight);
   text-transform: none;
 }
+
+
+/* =====================================================================
+   KEEPER ENTRY SHEET (v1.107)
+   ---------------------------------------------------------------------
+   The commissioner's point-and-click path: member, then player, then
+   review. Mobile first - this is used standing up at a draft, on a phone,
+   so every target is a full-width row and the roster list is the thing
+   that scrolls rather than the page.
+   ===================================================================== */
+
+.ke-card { display: flex; flex-direction: column; max-height: min(88vh, 760px); padding: 0; }
+.ke-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-3); padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.ke-head h2 { margin: 2px 0 4px; font-size: var(--fs-h2); }
+.ke-head p { margin: 0; }
+/* The list scrolls, not the sheet: the header and the save row stay put. */
+.ke-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--s-4); }
+.ke-hint { margin: 0 0 var(--s-3); font-size: var(--fs-micro); color: var(--muted); }
+
+.ke-actions { display: flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; }
+
+/* ---- step 1: the league ---- */
+.ke-members { display: grid; gap: var(--s-2); }
+.ke-member {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  width: 100%; min-height: 52px; padding: var(--s-3);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--bg-2); color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.ke-member:hover, .ke-member:focus-visible { border-color: var(--accent); background: var(--bg-3); }
+.ke-member-main { display: grid; gap: 1px; min-width: 0; }
+.ke-member-state { font-size: var(--fs-micro); color: var(--muted); white-space: nowrap; }
+
+/* ---- step 2: the roster ---- */
+.ke-step-head {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-bottom: var(--s-3); flex-wrap: wrap;
+}
+.ke-search { display: block; margin-bottom: var(--s-3); }
+.ke-search input { width: 100%; min-height: 44px; }
+.ke-list { display: grid; gap: var(--s-3); }
+.ke-group-head {
+  display: flex; align-items: center; gap: var(--s-2);
+  margin-bottom: var(--s-2);
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--muted);
+}
+.ke-group-head .count {
+  background: var(--bg-3); border: 1px solid var(--line); border-radius: var(--r-pill);
+  padding: 1px 7px; font-size: 11px; letter-spacing: 0; color: var(--text);
+}
+.ke-player {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  width: 100%; min-height: 56px; padding: var(--s-3);
+  border: 0; border-top: 1px solid var(--line-soft);
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.ke-group > .ke-player:first-of-type { border-top: 0; }
+.ke-player:hover, .ke-player:focus-visible { background: var(--bg-3); }
+/* Listed, explained, and not clickable. Seeing why is the point. */
+.ke-player.is-locked { opacity: .6; cursor: default; }
+.ke-player-main { display: grid; gap: 1px; min-width: 0; }
+.ke-player-name { font-family: var(--font-display); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+.ke-player-where {
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--muted);
+}
+.ke-player-line { font-size: var(--fs-micro); color: var(--body-text); }
+.ke-player-round {
+  font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap;
+}
+
+/* ---- step 3: review ---- */
+.ke-review-who { display: grid; gap: 2px; margin-bottom: var(--s-3); }
+.ke-review-who strong { font-family: var(--font-display); font-size: var(--fs-h2); letter-spacing: var(--ls-tight); }
+.ke-facts { display: grid; gap: var(--s-2); margin: 0 0 var(--s-3); }
+.ke-facts > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3);
+  padding-bottom: var(--s-2); border-bottom: 1px solid var(--line-soft);
+}
+.ke-facts dt { font-size: var(--fs-micro); color: var(--muted); margin: 0; }
+.ke-facts dd { margin: 0; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.ke-field { display: grid; gap: 4px; margin-bottom: var(--s-3); }
+.ke-field > span:first-child { font-size: var(--fs-micro); font-weight: var(--fw-bold); }
+.ke-field input { min-height: 44px; }
+/* An override is stated in the accent, because a saved row that disagrees
+   with the rules must never be a silent difference. */
+.ke-field small.is-override { color: var(--accent); font-weight: var(--fw-bold); }
+.ke-warn {
+  margin: 0 0 var(--s-3); padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--accent); background: var(--bg-3);
+  font-size: var(--fs-micro); color: var(--body-text);
+}
+.ke-error { margin: 0 0 var(--s-2); font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-bold); }
+.ke-error:empty { display: none; }
+
+@media (max-width: 420px) {
+  .ke-head, .ke-body { padding: var(--s-3); }
+  .ke-head h2 { font-size: var(--fs-h3); }
+}
