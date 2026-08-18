@@ -91,6 +91,13 @@
               opacity 100ms ease !important;
 }
 
+/* ui.css still draws a second, static top line on whichever tab owns `.on`.
+   The shell-level ::before above is now the sole indicator; keeping both is
+   what caused the stationary line plus the sliding line during a tap. */
+.tabbar :is(a, .tabmore).on::before {
+  display: none !important;
+}
+
 /* Route work starts immediately, and this restrained state makes that start
    visible without blocking the render. The real page then gets the existing
    page-in animation when it is ready. */
