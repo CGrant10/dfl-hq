@@ -9,6 +9,7 @@
 //
 //   Members     adding a person to the league, ordering the picker
 //   Rule tabs   the sections rules are filed under
+//   Keeper rules the machine-readable keeper configuration
 //   Finances    dues and payouts across every owner at once
 //   Sleeper     syncing league history
 //   Password    the admin password itself
@@ -24,6 +25,7 @@ import { renderBroadcastPanel } from "./admin_broadcast.js";
 import { specFor } from "../sections.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
+import { renderKeeperRulesPanel } from "./admin_keepers.js";
 import { esc, toast } from "../ui.js";
 
 // The structural lists that are easier to manage as a table.
@@ -35,6 +37,10 @@ const TABLES = [
 // Custom panels rather than single-table editors.
 const PANELS = [
   { id: "finances", tab: "Fees", render: renderFinancePanel },
+  /* The keeper rules are the one piece of league configuration with no page
+     of its own: the Keepers page shows what they PRODUCE, and the Rules page
+     is prose. Editing them belonged here from the start. */
+  { id: "keepers",  tab: "Keeper rules", render: renderKeeperRulesPanel },
   { id: "sleeper",  tab: "Sleeper",  render: renderSleeperPanel },
   /* Broadcast slides get a panel rather than a bare manager because the
      generator switches belong on the same screen. They are not inline

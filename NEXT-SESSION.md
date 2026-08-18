@@ -5,7 +5,7 @@ Advisor are shipped and verified. Pick up at "What to do next".
 
 Arena is paused and its handoff moved to `ARENA-NEXT.md`. Do not reopen it.
 
-Current version: **1.108.0**. Read the v1.106.0, v1.107.0 and v1.108.0 commit
+Current version: **1.109.0**. Read the v1.106.0, v1.107.0 and v1.108.0 commit
 messages — they carry the full reasoning.
 
 ---
@@ -139,5 +139,5 @@ rewritten — the audit reports, a commissioner decides.
 **Version bumps move together:** `package.json`, `sw.js` cache name,
 `version.txt`, and the `dfl-app-version` meta in `index.html`.
 
-Verify with: `npx tsc --noEmit`, `npx vitest run` (251 tests as of 1.108.0 —
+Verify with: `npx tsc --noEmit`, `npx vitest run` (277 tests as of 1.109.0 —
 preserve them), `npx vite build`, plus a harness pass for raw-JS UI.

@@ -2620,3 +2620,136 @@ input.masked {
 .bc-setup summary { cursor: pointer; font-weight: 700; }
 .bc-setup[open] summary { margin-bottom: .55rem; }
 .bc-setup p { margin: 0 0 .55rem; }
+
+/* =====================================================================
+   THE DFL BOTTOMLINE  (v1.109)
+   ---------------------------------------------------------------------
+   A scoreboard ribbon above the tab bar. It sits in the same fixed stack
+   as the nav, one z-index below it, and it pushes the page's bottom
+   padding down by its own height rather than floating over the last card -
+   which is the whole difference between a ribbon and something covering
+   the content.
+
+   --bl-h is the one number: the strip's height. body's padding-bottom and
+   every other bottom-anchored thing already measure from the nav, so they
+   pick this up by adding it once.
+   ===================================================================== */
+
+:root { --bl-h: 30px; }
+
+.bottomline {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc(60px + env(safe-area-inset-bottom));
+  z-index: 19;                       /* under .tabbar (20), over the page */
+  height: var(--bl-h);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #0c1119;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line);
+  padding-left:  env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  font-size: 11.5px;
+  /* The strip is decoration over content; it must never eat a tap meant for
+     the page. Only the links inside it are interactive. */
+  pointer-events: none;
+}
+.bottomline a { pointer-events: auto; }
+
+/* The page gets out of its way. */
+body.has-bottomline { padding-bottom: calc(76px + var(--bl-h) + env(safe-area-inset-bottom)); }
+body.has-bottomline .install { bottom: calc(84px + var(--bl-h) + env(safe-area-inset-bottom)); }
+body.has-bottomline .install.update { bottom: calc(146px + var(--bl-h) + env(safe-area-inset-bottom)); }
+body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-inset-bottom)); }
+
+.bl-tape { display: flex; width: max-content; will-change: transform; animation: blRun var(--bl-duration, 30s) linear infinite; }
+.bl-run { display: flex; align-items: center; flex: 0 0 auto; }
+@keyframes blRun { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+/* Hovering is a desktop affordance: stop the tape so a link can be read and
+   clicked. On a phone there is no hover and nothing changes. */
+@media (hover: hover) { .bottomline:hover .bl-tape { animation-play-state: paused; } }
+
+.bl-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 14px;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--body-text);
+}
+.bl-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.bl-text { font-weight: 600; }
+.bl-dot { flex: 0 0 auto; width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
+
+/* REDUCED MOTION: one item at a time, swapped on a timer by bottomline.js.
+   Not a slower marquee - no marquee. */
+.bl-static { position: relative; width: 100%; height: 100%; }
+.bl-slot {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+}
+.bl-slot.on { opacity: 1; visibility: visible; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-tape { animation: none; }
+}
+
+@media (max-width: 380px) {
+  :root { --bl-h: 28px; }
+  .bl-item { padding: 0 10px; }
+  .bottomline { font-size: 11px; }
+}
+
+
+/* =====================================================================
+   TAB BAR - THE SLIDING INDICATOR  (v1.109)
+   ---------------------------------------------------------------------
+   The active tab already turned red and already drew a bar via
+   `.on:after`. What it did not do was MOVE: the bar appeared under the new
+   tab and vanished from the old one, which reads as a redraw rather than a
+   change of place.
+
+   So the bar is now ONE element, positioned by two custom properties that
+   app.js measures and sets. It transitions its left and width, so it slides
+   from tab to tab. No layout shift - it is absolutely positioned inside a
+   bar whose height it does not affect - no bounce, and no scale.
+
+   The old per-tab `:after` stays for the FIRST paint (before app.js has
+   measured anything) and is hidden the moment the indicator is live, so
+   there is never a frame with nothing selected.
+   ===================================================================== */
+
+.tabbar { position: fixed; }               /* already fixed; restated for the ::before below */
+.tabbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--tab-x, 0px);
+  width: var(--tab-w, 0px);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  opacity: 0;
+  transition: left .22s cubic-bezier(.4, 0, .2, 1),
+              width .22s cubic-bezier(.4, 0, .2, 1),
+              opacity .18s ease;
+  pointer-events: none;
+}
+.tabbar.has-indicator::before { opacity: 1; }
+/* One indicator, not two: the per-tab bar hands over as soon as the measured
+   one exists. */
+.tabbar.has-indicator :is(a, .tabmore).on:after { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tabbar::before { transition: opacity .18s ease; }
+}

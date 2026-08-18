@@ -25,6 +25,7 @@ import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./
 import { SCORING_NAMES, dayPoints, pairName, roundHoles } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { LEAGUE_FOUNDED } from "./config.js";
+import { SHARE_INK, teamInk } from "./brand-ink.js";
 
 /*
   ONE RATIO FOR EVERY DFL CARD: 1080x1350, 4:5.
@@ -70,8 +71,11 @@ const W = 1080, H = 1350;
    TEAM COLOURS ARE NOT IN HERE. Those come from the database and identify
    the teams; nothing below may replace one.
    ===================================================================== */
-const INK = "#f4f2ee", MUTED = "#a8a096", BG = "#0b0b0c", CARD = "#141416", LINE = "#2f2f34";
-const GOLD = "#EFC94C", ACCENT = "#F08279", OK = "#8fd6a4";
+/* ONE LIST, in js/brand-ink.js. These were five separate copies across the
+   share renderers; retuning the identity meant finding all of them. brand-ink
+   is constants with no DOM, so importing it cannot make an export depend on
+   the viewer's live theme - which is the thing the note above forbids. */
+const { INK, MUTED, BG, CARD, LINE, GOLD, ACCENT, OK } = SHARE_INK;
 
 /*
   THE ANNIVERSARY BAND.
@@ -188,7 +192,7 @@ function drawScore(ctx, s, top) {
 
   s.teams.forEach((team, i) => {
     const cx = i === 0 ? W * 0.27 : W * 0.73;
-    const colour = team.color || (i === 0 ? "#2fbf5f" : "#4aa3ff");
+    const colour = teamInk(team.color, i);
     ctx.fillStyle = colour;
     ctx.font = `950 150px ${FONT}`;
     ctx.textAlign = "center";
@@ -354,7 +358,7 @@ function captainOf(team, names) {
 
 /* The team's colour, resolved once so the roster card, the matchup rows and
    the captain showdown cannot each fall back to a different default. */
-const teamColour = (team, i) => team?.color || (i === 0 ? "#2fbf5f" : "#4aa3ff");
+const teamColour = (team, i) => teamInk(team?.color, i);
 
 export function teamSheet(data, outing) {
   const names = data.names || memberNames([]);
@@ -692,7 +696,7 @@ export function shareTeamSheet(data, outing) {
    will show without cropping the margin out of the middle.
    ===================================================================== */
 const PW = 1080, PH = 1350;
-const RED = "#E5011B", BLUE = "#003396";
+const RED = SHARE_INK.CREST_RED, BLUE = SHARE_INK.CREST_BLUE;
 
 /** The numbers the poster is about. Handed in, never derived here. */
 export function posterData({ names, sides, result, scoring, round, matchNumber, outing, standing }) {
@@ -745,10 +749,10 @@ export function matchPosterCanvas(p, moodText) {
 
   /* The two team colours as bands top and bottom, so the poster is that
      match's colours before a word is read. Falls back to the crest pair. */
-  drawPosterBand(ctx, 0, 260, hexA(p.sides[0]?.color || RED, 0.30));
+  drawPosterBand(ctx, 0, 260, hexA(teamInk(p.sides[0]?.color, 0) || RED, 0.30));
   ctx.save();
   ctx.translate(PW, PH); ctx.rotate(Math.PI);
-  drawPosterBand(ctx, 0, 260, hexA(p.sides[1]?.color || BLUE, 0.30));
+  drawPosterBand(ctx, 0, 260, hexA(teamInk(p.sides[1]?.color, 1) || BLUE, 0.30));
   ctx.restore();
 
   ctx.strokeStyle = LINE; ctx.lineWidth = 6;
@@ -781,7 +785,9 @@ export function matchPosterCanvas(p, moodText) {
     ctx.fillStyle = i === p.leader ? "#ffffff" : MUTED;
     ctx.font = `900 132px ${FONT}`;
     ctx.fillText(p.figures[i], PW / 2, top + 148);
-    const c = p.sides[i]?.color || (i === 0 ? RED : BLUE);
+    /* The team's ink, translated - a stored legacy colour would otherwise put
+       Golf's old green and blue back on the poster. */
+    const c = teamInk(p.sides[i]?.color, i) || (i === 0 ? RED : BLUE);
     ctx.fillStyle = c;
     ctx.fillRect(PW / 2 - 70, top + 178, 140, 8);
   };

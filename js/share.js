@@ -29,11 +29,21 @@
 
 export const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 
-/* The crest, fetched once now so that drawing it later needs no await. */
-const crest = new Image();
+/*
+  The crest, fetched once now so that drawing it later needs no await.
+
+  Guarded on Image existing rather than assumed, so that a module which draws
+  a share card can be imported by a unit test - the alternative was that every
+  data function in every renderer became untestable because of one preload.
+  In a browser this is exactly what it always was: eagerly fetched at import
+  time, so the gesture rule above still holds.
+*/
+const crest = typeof Image === "function" ? new Image() : null;
 let crestReady = false;
-crest.onload = () => { crestReady = true; };
-crest.src = new URL("../icons/crest-512.png", import.meta.url).href;
+if (crest) {
+  crest.onload = () => { crestReady = true; };
+  crest.src = new URL("../icons/crest-512.png", import.meta.url).href;
+}
 export const crestImage = () => (crestReady ? crest : null);
 
 /** A rounded rectangle path, since canvas has no such primitive everywhere. */

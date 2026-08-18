@@ -21,6 +21,7 @@ import { db, isAdmin } from "./supabase.js";
 import { loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { memberNames, playerName } from "./golf-people.js";
+import { teamInk } from "./brand-ink.js";
 
 /* Watchers are a few seconds behind the taps, which is fine for a draft -
    the pick is announced out loud before it is entered. */
@@ -170,7 +171,7 @@ function setup(d, admin) {
       .map((p) => `<option value="${p.member_id}" ${String(p.member_id) === String(cap) ? "selected" : ""}>
                      ${esc(partName(d, p))}</option>`).join("");
     return `
-      <div class="gd-seat" style="--racer:${esc(t.color || "var(--accent)")}">
+      <div class="gd-seat" style="--racer:${esc(teamInk(t.color, t.sort_order))}">
         <span class="gd-pos">${i + 1}</span>
         <span class="gd-team">${esc(t.name || "Team")}</span>
         ${admin ? `
@@ -245,7 +246,7 @@ function board(d, admin) {
       .sort((a, b) => (a.pick_number ?? Infinity) - (b.pick_number ?? Infinity));
     return `
       <div class="gd-roster ${clock && String(clock.id) === String(t.id) ? "is-up" : ""}"
-           style="--racer:${esc(t.color || "var(--accent)")}">
+           style="--racer:${esc(teamInk(t.color, t.sort_order))}">
         <div class="gd-roster-head">
           <span class="gd-team">${esc(t.name || "Team")}</span>
           <span class="gd-count">${mine.length}</span>
@@ -285,7 +286,7 @@ function board(d, admin) {
       </div>
 
       ${done ? "" : `
-        <div class="gd-clock" style="--racer:${esc(clock.color || "var(--accent)")}">
+        <div class="gd-clock" style="--racer:${esc(teamInk(clock.color, clock.sort_order))}">
           <span class="gd-clock-lbl">On the clock</span>
           <span class="gd-clock-team">${esc(clock.name || "Team")}</span>
           <span class="gd-clock-cap">${esc(nameOf(d, clock.captain_member_id))} · pick ${made.length + 1}</span>

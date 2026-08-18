@@ -11,9 +11,8 @@
 // =====================================================================
 
 import { db, selectAll } from "../supabase.js";
-import { esc, empty, groupBy } from "../ui.js";
+import { esc, empty, groupBy, toast } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
-import { currentMember } from "../members.js";
 import { loadPlayers, loadSeasonStats, loadMarketAdp } from "../sleeper.js";
 import { advise, badgesFor, comparisonRow, factsFor, whyFor, marketFrom,
          CLASS, LABELS, NO_MARKET, NO_PRODUCTION } from "../keeper-advisor.js";
@@ -21,6 +20,8 @@ import { configFor, decisionContext, describeRules } from "../keeper-rules.js";
 import { positionalFinish, scoringFormat, seasonTotals } from "../dfl-scoring.js";
 import { normalizeSleeperMarket } from "../keeper-market.js";
 import { openKeeperEntry } from "../keeper-entry.js";
+import { boardData, shareKeeperBoard } from "../keeper-board.js";
+import { currentMember, loadMembers } from "../members.js";
 
 let year = null;   // remembered while the app stays open
 
@@ -79,10 +80,11 @@ export async function render(view) {
       : `${year} · nothing recorded`;
 
     body.innerHTML = teamList(mine)
-      + (canEdit() ? `<div class="row-end ke-actions">
-           <button type="button" class="btn" data-keeper-entry>Add keeper</button>
-           ${addControl("keepers", "Add by hand", { year })}
-         </div>` : "");
+      + `<div class="row-end ke-actions">
+           <button type="button" class="btn ghost small" data-keeper-share>Share keeper board</button>
+           ${canEdit() ? `<button type="button" class="btn" data-keeper-entry>Add keeper</button>
+             ${addControl("keepers", "Add by hand", { year })}` : ""}
+         </div>`;
   };
 
   view.querySelector("#year-tabs").addEventListener("click", (e) => {
@@ -105,6 +107,45 @@ export async function render(view) {
   view.addEventListener("click", (e) => {
     if (!e.target.closest("[data-keeper-entry]")) return;
     openKeeperEntry({ season: year, onSaved: () => render(view) });
+  });
+
+  /*
+    SHARE THE BOARD, and it must stay SYNCHRONOUS from the tap.
+
+    Safari refuses navigator.share() outside the task that started it, and an
+    await ends that task - so the members and the player map are fetched when
+    the page loads, not when the button is pressed. `boardReady` is what the
+    handler reads; until it exists the button says so rather than opening an
+    empty share sheet. Same rule as every other share path - see share.js.
+  */
+  let boardReady = null;
+  const primeBoard = async () => {
+    try {
+      const members = await loadMembers();
+      const ids = rows.filter((r) => r.player_id != null).map((r) => String(r.player_id));
+      /* Only bother with the 5MB player map if a row could actually be
+         enriched by it. The snapshot columns cover most rows already. */
+      const needsMap = rows.some((r) => r.player_id != null && !r.player_pos);
+      const players = needsMap && ids.length ? await loadPlayers().catch(() => ({})) : {};
+      const ruleSets = await db().from("keeper_rules")
+        .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression");
+      boardReady = { members, players, ruleSets: ruleSets.error ? [] : (ruleSets.data || []) };
+    } catch {
+      /* A board with no member list is still a board of the rows that exist,
+         so this degrades rather than disabling the button. */
+      boardReady = { members: [], players: {}, ruleSets: [] };
+    }
+  };
+  primeBoard();
+
+  view.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-keeper-share]")) return;
+    if (!boardReady) { toast("Still reading the league — try again in a moment"); return; }
+    const board = boardData({
+      season: year, members: boardReady.members, keeperRows: rows,
+      players: boardReady.players, rules: configFor(boardReady.ruleSets, year),
+    });
+    toast(shareKeeperBoard(board));
   });
 
   paint();

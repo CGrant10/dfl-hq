@@ -2035,3 +2035,85 @@ a.moment:hover { background: var(--hover-soft); }
   .ke-head, .ke-body { padding: var(--s-3); }
   .ke-head h2 { font-size: var(--fs-h3); }
 }
+
+/* =====================================================================
+   KEEPER RULES EDITOR  (v1.109)
+   ---------------------------------------------------------------------
+   Four numbers and a live worked example. The example is the reason the
+   screen exists, so it gets the accent panel and the largest type on it -
+   somebody changing "rounds earlier" should read the consequence without
+   looking anywhere else.
+   ===================================================================== */
+
+.kr-card { display: grid; gap: var(--s-3); }
+.kr-seasons { margin: 0; }
+.kr-note {
+  margin: 0;
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+.kr-form { display: grid; gap: var(--s-3); }
+.kr-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--s-3);
+}
+.kr-field { display: grid; gap: 4px; align-content: start; }
+.kr-field > span:first-child {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kr-field :is(input, select) { min-height: 44px; }
+/* The one fact on the form that is not editable, drawn as a fact rather than
+   as a disabled input - a greyed-out box invites somebody to try. */
+.kr-field.is-fixed {
+  padding: var(--s-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+}
+.kr-field.is-fixed strong { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
+
+.kr-preview {
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-fill);
+  border-radius: var(--r-md);
+  background: var(--bg-3);
+}
+.kr-preview-head {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--s-2);
+}
+.kr-summary {
+  margin: 0 0 var(--s-2);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kr-example {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-tight);
+}
+.kr-example strong { color: var(--accent); }
+.kr-cases {
+  margin: 0 0 var(--s-2);
+  padding-left: var(--s-4);
+  font-size: var(--fs-micro);
+  color: var(--body-text);
+}
+.kr-cases li { margin-bottom: 2px; }
+.kr-errors { margin: var(--s-2) 0 0; font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-bold); }
+.kr-errors:empty { display: none; }

@@ -8,7 +8,8 @@ import { loadMembers, restoreMember, selectMember, currentMember, getMemberId } 
 import { startPresence } from "./presence.js";
 import { initTheme } from "./theme.js";
 import { loadSettings } from "./settings.js";
-import { startRouter, renderRoute, go } from "./router.js";
+import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
+import { paintBottomline, startBottomline } from "./bottomline.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { esc, toast } from "./ui.js";
@@ -184,8 +185,45 @@ document.getElementById("whoami")?.addEventListener("click",()=>{
   openPicker({cancellable:!!getUsername()});
 });
 window.addEventListener("dfl:pick-member",()=>openPicker({cancellable:true}));
+
+/*
+  THE SLIDING TAB INDICATOR.
+
+  The CSS owns the transition; this only ever measures. Two custom properties
+  on the bar - the active tab's offset and its width - and the ::before slides
+  between them. Measured rather than computed from an index because the bar
+  scrolls horizontally on a narrow phone and the tabs are not equal width.
+
+  offsetLeft is relative to the bar, and the bar is the offsetParent (it is
+  position:fixed), so a scrolled bar needs no correction - which is exactly why
+  this is not done with getBoundingClientRect.
+*/
+function moveTabIndicator(){
+  const bar=document.getElementById("tabbar");
+  if(!bar)return;
+  const active=bar.querySelector("a.on")||document.getElementById("more-btn")?.classList.contains("on")
+    ?bar.querySelector("a.on")||document.getElementById("more-btn"):null;
+  if(!active){bar.classList.remove("has-indicator");return;}
+  bar.style.setProperty("--tab-x",`${active.offsetLeft}px`);
+  bar.style.setProperty("--tab-w",`${active.offsetWidth}px`);
+  bar.classList.add("has-indicator");
+}
+/* A rotate or a keyboard opening changes the tab widths under it. */
+window.addEventListener("resize",moveTabIndicator);
+
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();startRouter();/* A broadcast/OBS URL is a public spectator surface. It must render without
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();
+  /*
+    THE TAB INDICATOR AND THE BOTTOMLINE, both hung off the router's own
+    notification rather than off hashchange - so they update after the page has
+    swapped rather than racing it, and Back/Forward get the same treatment as a
+    tap because the router handles all three identically.
+  */
+  onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); });
+  startRouter();
+  /* Off the critical path on purpose: the first paint of the app does not wait
+     for a ticker, and a failure means no ticker rather than no app. */
+  startBottomline(currentRoute);/* A broadcast/OBS URL is a public spectator surface. It must render without
    asking the viewer to identify themselves, including in a fresh browser. */
 if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicker();
 else if(getUsername())registerUser(getUsername());if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);setupInstall();setupUpdates()}

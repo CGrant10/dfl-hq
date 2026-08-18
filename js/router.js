@@ -64,6 +64,22 @@ export function go(name) {
 */
 let leaving = null;
 
+/*
+  WHO WANTS TELLING WHEN THE ROUTE CHANGES.
+
+  The tab indicator and the BottomLine both need to react to a navigation, and
+  both need to do it AFTER the page has rendered - an indicator measured while
+  the old page is still in the DOM measures the old tab. A hashchange listener
+  of their own would fire before this function had finished, so the router
+  announces instead. One subscriber list, called at the end of renderRoute(),
+  and a throw in one callback cannot stop the next or break the navigation.
+*/
+const listeners = new Set();
+export function onRoute(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
@@ -95,12 +111,39 @@ export async function renderRoute() {
 
   window.scrollTo(0, 0);
 
-  // Fade/slide the new page in. Restarting the animation needs the class
-  // removed, a forced reflow, then the class back on.
-  view.classList.remove("page-in");
-  void view.offsetWidth;
-  view.classList.add("page-in");
+  /*
+    THE ROUTE TRANSITION, and it is a polish of what was here rather than a
+    replacement: the same `page-in` class, the same keyframes, the same forced
+    reflow to restart them.
+
+    WHAT CHANGED is that it no longer replays for a navigation that did not go
+    anywhere. A page that re-renders itself - the Keepers year tabs, a golf
+    poll, an inline edit saving - used to call renderRoute() and get the whole
+    fade-and-lift again, which reads as a flicker on something that did not
+    move. Same route as last time means the class is left alone, so the
+    animation plays on an actual change of page and nowhere else.
+
+    Navigation is never delayed by any of this: the page is already in the DOM
+    and rendered by the time the class is touched, and the animation is
+    decoration on top. Back and Forward come through hashchange like every
+    other navigation and are treated identically.
+  */
+  const changed = name !== lastAnimated;
+  lastAnimated = name;
+  if (changed) {
+    view.classList.remove("page-in");
+    void view.offsetWidth;
+    view.classList.add("page-in");
+  }
+
+  /* After the page exists, so a subscriber can measure it. */
+  for (const fn of listeners) {
+    try { fn(name); } catch (err) { console.warn(err); }
+  }
 }
+
+/* The last route the transition actually played for - see above. */
+let lastAnimated = null;
 
 export function startRouter() {
   window.addEventListener("hashchange", renderRoute);

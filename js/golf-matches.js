@@ -33,6 +33,7 @@ import { SCORING_NAMES, battleResult, standingLine, teamPoints, roundHoles,
          dayPoints, halvedNote, pairName, outingState } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
+import { teamInk } from "./brand-ink.js";
 
 const POLL_MS = 15000;
 /*
@@ -185,7 +186,7 @@ async function load(id) {
       return {
         ...s,
         teamName: team?.name || "Team",
-        color: team?.color || "",
+        color: teamInk(team?.color, team?.sort_order ?? i),
         players: rows.map((r) => ({
           row_id: r.id,
           participant_id: r.participant_id,
@@ -264,7 +265,7 @@ function board(data) {
     <div class="gp-kicker">Tournament</div>
     ${anyLive ? `<div class="gp-live"><span class="badge live">Live</span><span>A round is under way</span></div>` : ""}
     <div class="golf-points-grid">
-      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(t.color || "")}"><span>${values[i]}</span><b>${esc(t.name)}</b>${caps[i] ? `<small>Captain ${esc(caps[i])}</small>` : ""}</div>`)
+      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(teamInk(t.color, i))}"><span>${values[i]}</span><b>${esc(t.name)}</b>${caps[i] ? `<small>Captain ${esc(caps[i])}</small>` : ""}</div>`)
         .join('<div class="gp-dash">—</div>')}
     </div>
     ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}

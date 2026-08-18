@@ -43,6 +43,7 @@ import { holeResult, fmtToPar, holePar, holeYards, courseHole, wrapsAround } fro
 import { SCORING_NAMES, battleResult, standingLine, marginLabel, roundHoles,
          pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
+import { teamInk } from "./brand-ink.js";
 import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
          onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush, refusals,
          MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
@@ -221,7 +222,7 @@ async function fetchMatch(matchId) {
       const team = teamById.get(String(s.team_id));
       return {
         id: s.id, team_id: s.team_id, slot: Number(s.slot),
-        teamName: team?.name || "Team", color: team?.color || "",
+        teamName: team?.name || "Team", color: teamInk(team?.color, team?.sort_order ?? i),
         players: mine.map((p) => {
           const part = byPart.get(String(p.participant_id));
           return {

@@ -8,13 +8,25 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest, realName } from "../golf-people.js";
 import { tournamentHoles } from "../golf-battle.js";
+import { newTeamColor, teamInk } from "../brand-ink.js";
 const DEFAULT_RATING=75;
 /* Set once per render of an event, and read by every card that prints a
    player's name. A participant is either a league member or a guest with a
    name typed for the day, so no card can read a name off member_id. */
 let nameMap=new Map();
 const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team Sandbagger","Team Whiff","Team Duff","Team Yips"];
-const TEAM_COLORS=["#2fbf5f","#4aa3ff","#f0a742","#e0574a","#b07cf0","#3ecfcf"];
+/*
+  TEAM COLOURS COME FROM THE HOUSE IDENTITY NOW, not from six hues invented
+  here. The old list - a spring green, a sky blue, an orange, a coral, a violet
+  and a teal - was Golf's own brand: it reached the teams card, the team dots,
+  the roster editor, the draft board and every shared image, so Golf looked
+  like a different product. See js/brand-ink.js.
+
+  teamInk() translates a STORED colour on the way to the screen, so an event
+  generated last summer stops looking like a different app without anything
+  rewriting golf_teams.color. newTeamColor() is what a newly generated team
+  gets written with. Nothing about teams, scoring or persistence changes.
+*/
 export async function render(view){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"),qs.get("match"));return renderList(view);}
 async function renderList(view){view.innerHTML=loading();const [res,partRes,teamRes,roundRes]=await Promise.all([db().from("golf_outings").select("*").order("event_date",{ascending:false}),db().from("golf_participants").select("outing_id"),db().from("golf_teams").select("outing_id,name,captain_member_id"),db().from("golf_rounds").select("outing_id,holes").then(r=>r,()=>({data:[],error:null}))]);if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}/* Real counts for the poster line. One extra read each, both tiny, and a
      failure just means the line says less rather than the page breaking. */
@@ -267,7 +279,7 @@ function teamsCard(outing,parts,teams,byId){
        team without one says so rather than inventing a leader. */
     const cap=team.captain_member_id!=null&&byId.has(String(team.captain_member_id))
       ?playerName({member_id:team.captain_member_id},nameMap):"";
-    return `<div class="gteam" style="--racer:${esc(team.color||TEAM_COLORS[0])}">
+    return `<div class="gteam" style="--racer:${esc(teamInk(team.color, team.sort_order))}">
       <header class="gteam-head"><span class="gteam-name">${esc(team.name||"Team")}</span><span class="gteam-count">${players.length} player${players.length===1?"":"s"}</span></header>
       <div class="gteam-body">
         <div class="gteam-block"><span class="gteam-label">Captain</span>${cap?`<span class="gteam-captain"><svg class="ico-sm" aria-hidden="true"><use href="#i-medal"></use></svg>${esc(cap)}</span>`:`<span class="gteam-captain is-none">Not named yet</span>`}</div>
@@ -289,7 +301,7 @@ function figure(value,label){return `<div class="setup-figure"><span class="sf-v
    what you have to read one at a time. */
 const teamOf=(p,teams)=>teams.find(t=>String(t.id)===String(p.team_id));
 function teamDot(p,teams){const team=teamOf(p,teams);
-return team?`<i class="tdot" style="--racer:${esc(team.color||TEAM_COLORS[0])}"></i>`:`<i class="tdot is-none" title="No team yet"></i>`;}
+return team?`<i class="tdot" style="--racer:${esc(teamInk(team.color, team.sort_order))}"></i>`:`<i class="tdot is-none" title="No team yet"></i>`;}
 function teamLabel(p,teams){const team=teamOf(p,teams);
 return `<small class="tteam${team?"":" muted"}">${esc(team?.name||"no team")}</small>`;}
 function lineupCard(outing,parts,teams,byId){const names=[...byId.values()],spare=names.filter(m=>!parts.some(p=>String(p.member_id)===String(m.id)));return `<section class="card golf-lineup-card" data-collapse="golf-players" data-collapse-default="folded"><div class="card-title-row"><div><div class="card-title">Players</div><p class="muted tiny">Add or remove players from this event. The colour is their team.</p></div></div>${parts.length?`<div class="glist">${parts.map(p=>{
@@ -341,7 +353,7 @@ return modeSwitch+(mode==="draft"?draftControls:generator)+`<div class="golf-dan
    regenerate. */
 function rosterCard(outing,parts,teams,byId){const options=(p)=>`<option value="">— unassigned —</option>${teams.map(t=>`<option value="${t.id}" ${String(t.id)===String(p.team_id)?"selected":""}>${esc(t.name||"Team")}</option>`).join("")}`;
 const row=(p)=>`<div class="grow gedit-row ${p.locked?"is-locked":""}"><span class="gname">${esc(playerName(p,nameMap))}</span><select class="gmove" data-move="${p.id}" data-was="${p.team_id??""}" aria-label="Move player to another team">${options(p)}</select><button type="button" class="btn ghost small glock" data-lock="${p.id}" data-on="${p.locked?"1":"0"}" title="${p.locked?"Unlock":"Lock to this team"}" aria-label="${p.locked?"Unlock":"Lock to this team"}">${p.locked?"🔒":"🔓"}</button></div>`;
-const block=(t)=>{const mine=parts.filter(p=>String(p.team_id)===String(t.id));return `<div class="gedit" style="--racer:${esc(t.color||TEAM_COLORS[0])}"><div class="gedit-head"><input class="gedit-name" type="text" maxlength="40" value="${esc(t.name||"Team")}" data-team-name="${t.id}" aria-label="Team name"><button type="button" class="btn small" data-save-name="${t.id}">Save</button></div><div class="glist">${mine.length?mine.map(row).join(""):`<div class="grow"><span class="muted tiny">Nobody on this team yet</span></div>`}</div></div>`};
+const block=(t)=>{const mine=parts.filter(p=>String(p.team_id)===String(t.id));return `<div class="gedit" style="--racer:${esc(teamInk(t.color, t.sort_order))}"><div class="gedit-head"><input class="gedit-name" type="text" maxlength="40" value="${esc(t.name||"Team")}" data-team-name="${t.id}" aria-label="Team name"><button type="button" class="btn small" data-save-name="${t.id}">Save</button></div><div class="glist">${mine.length?mine.map(row).join(""):`<div class="grow"><span class="muted tiny">Nobody on this team yet</span></div>`}</div></div>`};
 const loose=parts.filter(p=>p.team_id==null);
 return `<section class="card golf-roster-card" data-collapse="golf-roster" data-collapse-default="folded"><div class="card-title-row"><div><div class="card-title">Team editor</div><p class="muted tiny">Rename a team, move players between teams, and lock anyone who should stay put through a regenerate.</p></div><span class="admin-badge">Admin only</span></div>${teams.length?`<div class="gedits">${teams.map(block).join("")}${loose.length?`<div class="gedit is-spare"><div class="gedit-head"><span class="gedit-title">Unassigned</span></div><div class="glist">${loose.map(row).join("")}</div></div>`:""}</div>`:`<div class="golf-empty-teams">Generate teams first.</div>`}</section>`;}
 function wireLineup(view,outing,parts,members,refresh){const root=view.querySelector("#golf-outing");root.addEventListener("change",async e=>{const add=e.target.closest("#golf-add-member");if(!add||!add.value)return;try{await insertRow("golf_participants",{outing_id:outing.id,member_id:Number(add.value),sort_order:parts.length});refresh();}catch(err){toast(err.message||"Could not add that player",true);}});root.addEventListener("click",async e=>{const drop=e.target.closest("[data-drop-player]"),all=e.target.closest("#golf-add-all"),create=e.target.closest("#golf-add-guest");if(drop){try{const{error}=await db().from("golf_participants").delete().eq("id",drop.dataset.dropPlayer);if(error)throw error;refresh();}catch(err){toast(err.message||"Could not remove that player",true);}}if(all){all.disabled=true;const have=new Set(parts.map(p=>String(p.member_id)));try{let n=parts.length;for(const m of members)if(!have.has(String(m.id)))await insertRow("golf_participants",{outing_id:outing.id,member_id:m.id,sort_order:n++});refresh();}catch(err){toast(err.message||"Could not fill the line-up",true);all.disabled=false;}}/* A guest is a golf_participants row and nothing else.
@@ -442,10 +454,10 @@ return;}
 
 if(make){const want=Math.max(2,Math.min(6,Number(view.querySelector("#golf-team-count")?.value)||2));
 make.disabled=true;
-try{for(let i=0;i<want;i++)await insertRow("golf_teams",{outing_id:outing.id,name:TEAM_NAMES[i%TEAM_NAMES.length],color:TEAM_COLORS[i%TEAM_COLORS.length],sort_order:i,draft_order:i});
+try{for(let i=0;i<want;i++)await insertRow("golf_teams",{outing_id:outing.id,name:TEAM_NAMES[i%TEAM_NAMES.length],color:newTeamColor(i),sort_order:i,draft_order:i});
 toast(`${want} empty teams created`);refresh();}
 catch(err){toast(err.message||"Could not create the teams",true);make.disabled=false;}}});}
-async function generateTeams(outing,parts,existingTeams,rate,want,mode){const teams=[...existingTeams];while(teams.length<want){const i=teams.length;teams.push(await insertRow("golf_teams",{outing_id:outing.id,name:TEAM_NAMES[i%TEAM_NAMES.length],color:TEAM_COLORS[i%TEAM_COLORS.length],sort_order:i}));}while(teams.length>want){const gone=teams.pop();const{error}=await db().from("golf_teams").delete().eq("id",gone.id);if(error)throw error;}const locked=parts.filter(p=>p.locked&&p.team_id!=null),pool=parts.filter(p=>!(p.locked&&p.team_id!=null)),load=new Map(teams.map(t=>[String(t.id),0]));locked.forEach(p=>{const k=String(p.team_id);if(load.has(k))load.set(k,load.get(k)+1);});if(mode==="balanced")pool.sort((a,b)=>rate(b.member_id)-rate(a.member_id));else for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}for(const p of pool){let best=teams[0],bestLoad=Infinity;for(const t of teams){const l=load.get(String(t.id));if(l<bestLoad){bestLoad=l;best=t;}}load.set(String(best.id),bestLoad+1);/* Clear the pick as well as setting the team. A generated assignment is not
+async function generateTeams(outing,parts,existingTeams,rate,want,mode){const teams=[...existingTeams];while(teams.length<want){const i=teams.length;teams.push(await insertRow("golf_teams",{outing_id:outing.id,name:TEAM_NAMES[i%TEAM_NAMES.length],color:newTeamColor(i),sort_order:i}));}while(teams.length>want){const gone=teams.pop();const{error}=await db().from("golf_teams").delete().eq("id",gone.id);if(error)throw error;}const locked=parts.filter(p=>p.locked&&p.team_id!=null),pool=parts.filter(p=>!(p.locked&&p.team_id!=null)),load=new Map(teams.map(t=>[String(t.id),0]));locked.forEach(p=>{const k=String(p.team_id);if(load.has(k))load.set(k,load.get(k)+1);});if(mode==="balanced")pool.sort((a,b)=>rate(b.member_id)-rate(a.member_id));else for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}for(const p of pool){let best=teams[0],bestLoad=Infinity;for(const t of teams){const l=load.get(String(t.id));if(l<bestLoad){bestLoad=l;best=t;}}load.set(String(best.id),bestLoad+1);/* Clear the pick as well as setting the team. A generated assignment is not
    a pick, and leaving an old pick_number behind would have the draft board
    reporting picks that nobody ever made. */
 await updateRow("golf_participants",p.id,{team_id:best.id,pick_number:null,picked_at:null}).catch(()=>updateRow("golf_participants",p.id,{team_id:best.id}));}}
