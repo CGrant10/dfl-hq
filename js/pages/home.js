@@ -5,12 +5,11 @@
 // leads with whatever is actually happening, because that is the only
 // question a front page has to answer:
 //
-//   THE STAGE     the DFL Broadcast billboard. What it shows is ranked by
-//                 broadcast-deck.js, drawn by broadcast-stage.js, and every
-//                 item carries an explicit temporal state so nothing on this
-//                 screen can imply that a finished season is happening now.
-//   THE SNAPSHOT  four figures - your rank, the leader, what is owed,
-//                 what is open - each a link to where it came from.
+//   THE STAGE     the DFL Broadcast billboard. Curated commissioner slides,
+//                 genuinely important live competition, and league lore.
+//                 Routine utility belongs to the BottomLine and its pages.
+//   THE SNAPSHOT  three visible figures - your record, the leader and dues -
+//                 each a link to where it came from.
 //   THE CREED     DRAFT * GOLF * SIN * FOLD, still the navigation.
 //   NEWS          announcements as news cards rather than table rows.
 //
@@ -59,6 +58,35 @@ export function leave() {
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
+
+/*
+  THE FRONT-PAGE EDITORIAL FILTER.
+
+  buildDeck() remains the complete broadcast engine because Admin and the
+  broadcast tooling still need to understand every automatic source. Home is
+  more selective: the big screen is the featured story, while the BottomLine
+  is the wire service. Calendar reminders, open polls, ordinary announcements
+  and dues therefore stay out of the Stage. Upcoming Golf / pre-draft fantasy
+  and an old personal matchup are utility too; live or recently completed
+  competition still belongs here.
+
+  Build a generous ranked pool first, THEN filter it. Filtering an eight-item
+  deck would let utility cards consume the eight slots before fun facts and
+  history ever got a chance to enter the show.
+*/
+const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
+function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
+  const ranked = buildDeck(ctx, { custom, off, overrides, max: 20 });
+  const picked = ranked.filter((it) => {
+    if (it.source === "manual") return true;
+    if (STAGE_UTILITY.has(it.generator)) return false;
+    if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
+    if (it.generator === "myMatchup" && it.temporal !== "live") return false;
+    return true;
+  }).slice(0, 8);
+  if (picked.length) return picked;
+  return ranked.filter((it) => it.generator === "identity").slice(0, 1);
+}
 
 export async function render(view) {
   leave();                                   // a re-render replaces the stage
@@ -118,7 +146,7 @@ export async function render(view) {
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const deck1 = buildDeck(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff(), overrides });
+  const deck1 = editorialStage(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff(), overrides });
 
   /*
     WHAT'S NEW sits under the snapshot rather than above the stage: it is a
@@ -194,7 +222,7 @@ export async function render(view) {
   let custom = manual;
   /* Read once per render off the warm settings cache, not per slide. */
   const off = broadcastOff();
-  const build = (day) => buildDeck(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off, overrides });
+  const build = (day) => editorialStage(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off, overrides });
   /* The live poll re-reads the hand-written slides too, so a slide that was
      scheduled to start - or that an admin just published - arrives during a
      golf day without anybody reloading the page. */

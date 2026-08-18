@@ -1,13 +1,25 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0d1117"><meta name="dfl-app-version" content="1.109.14"><title>DFL HQ</title><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="DFL HQ"><link rel="preload" href="fonts/rajdhani-700.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/broadcast.css"><link rel="stylesheet" href="css/golf.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/screens.css"><link rel="stylesheet" href="css/marquee.css"><link rel="stylesheet" href="css/stage.css"><link rel="stylesheet" href="css/splash-loading.css"></head><body>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0d1117"><meta name="dfl-app-version" content="1.109.15"><title>DFL HQ</title><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="DFL HQ"><link rel="preload" href="fonts/rajdhani-700.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/broadcast.css"><link rel="stylesheet" href="css/golf.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/screens.css"><link rel="stylesheet" href="css/marquee.css"><link rel="stylesheet" href="css/stage.css"><link rel="stylesheet" href="css/splash-loading.css"></head><body>
 <script>
+/* =====================================================================
+   THE THEME, BEFORE THE FIRST PAINT.
+
+   theme.js applies the palette when its module loads, which is after CSS
+   has already painted the :root defaults - so a Medicine Wheel or light
+   user saw a frame of the dark palette first. This sets the ground colour
+   and the data-mode attribute synchronously from the same localStorage key
+   theme.js uses, and then theme.js does the full job a moment later.
+
+   It is deliberately tiny and duplicates only the two values that cause a
+   visible flash. The palette itself still lives in exactly one place.
+   ===================================================================== */
 (function () {
   try {
     var v = localStorage.getItem("dfl.mode");
     var mode = (v === "dark" || v === "light" || v === "medicine") ? v
              : v === "system"
                ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-               : "medicine";
+               : "medicine";                        // no preference recorded
     var bg = mode === "light" ? "#eef1f6" : mode === "medicine" ? "#0b0b0c" : "#0d1117";
     var el = document.documentElement;
     el.setAttribute("data-mode", mode);
@@ -19,15 +31,61 @@
 </script>
 <div id="splash" aria-hidden="true" data-founded="2017"><div class="sp-inner"><img class="sp-mark" src="ChatGPT%20Image%20Aug%2018%2C%202026%2C%2004_09_46%20PM.png" alt="" width="512" height="512" fetchpriority="high" decoding="sync"><span class="sp-season" data-sp-season></span><span class="sp-word" data-sp-word>DFL HQ</span><span class="sp-rule" aria-hidden="true"></span><span class="sp-tag" data-sp-tag>The boys. The league. The history.</span></div><span class="sp-sweep" aria-hidden="true"></span></div>
 <script>
+/* =====================================================================
+   THE OPENING
+   ---------------------------------------------------------------------
+   Inline and synchronous on purpose: an opening that waits for a module to
+   load is a white flash followed by an opening.
+
+   IT IS NOT A LOADING SCREEN. It COVERS the app; it does not delay it.
+   Every module below is already being fetched, boot() runs underneath, the
+   router draws Home behind the plate, and nothing here waits on Supabase or
+   on any request at all. There is no spinner because there is nothing to
+   wait for.
+
+   ONE LAUNCH, ONE OPENING - and this rule has been wrong twice.
+
+   First it skipped for thirty minutes flat. Then it skipped under two
+   minutes and ran a stub for eight hours. Both were clock-based, and both
+   had the same failure: somebody using the app normally never saw the full
+   thing once, which made a shipped feature look like it did not exist.
+
+   So it is per SESSION, not per clock. A new tab, or a PWA opened from the
+   home screen, is a new session and gets the FULL opening - that is a
+   launch, and a launch is what this is for. Reloading, or coming back to a
+   tab that is already open, is not a launch and gets the short one. Nothing
+   is ever skipped entirely, because "nothing" is exactly what made this look
+   unimplemented.
+
+     new session      full, ~1.85s
+     same session     short, ~0.75s
+     ?intro           force full
+     ?intro=short     force short
+   ===================================================================== */
 (function () {
   var el = document.getElementById("splash");
   if (!el) return;
+
   var force = /[?&]intro(=([a-z]+))?/.exec(location.search) || /[?&]intro(=([a-z]+))?/.exec(location.hash);
   var forced = force ? (force[2] || "full") : "";
+
+  /* sessionStorage is per tab and per PWA launch, and it is cleared when the
+     app is closed - which is exactly the definition of "a launch" we want. */
   var seen = false;
   try { seen = sessionStorage.getItem("dfl.opened") === "1"; sessionStorage.setItem("dfl.opened", "1"); } catch (e) {}
   try { localStorage.setItem("dfl.lastLaunch", String(Date.now())); } catch (e) {}
+
   var mode = forced || (seen ? "short" : "full");
+
+  /* WHICH OPENING. Read entirely off the route and what is already on this
+     device - no request is made to decide it, which is the rule. The hash is
+     available before the router exists because this runs first.
+
+       a specific golf match, or the broadcast stage   BROADCAST
+       anywhere in golf, or a device holding a golf
+       event pass                                      GOLF
+       everything else                                 HQ
+  */
   var word = "DFL HQ", tag = "The boys. The league. The history.", kind = "hq";
   try {
     var h = location.hash || "";
@@ -42,6 +100,11 @@
     var w = el.querySelector("[data-sp-word]"), t = el.querySelector("[data-sp-tag]");
     if (w) w.textContent = word;
     if (t) t.textContent = tag;
+    /* THE SEASON LINE. Computed here rather than imported, because this runs
+       before any module has loaded - that is what makes the opening paint
+       instantly. data-founded on the plate mirrors LEAGUE_FOUNDED in
+       js/config.js; the two have to move together, which is why it is stated
+       on the element rather than buried in this script. */
     var s = el.querySelector("[data-sp-season]");
     if (s) {
       var founded = Number(el.getAttribute("data-founded")) || 0;
@@ -49,11 +112,15 @@
       s.textContent = n > 0 ? "Season " + n : "";
     }
   } catch (e) {}
+
   el.classList.add(mode === "short" ? "is-short" : "is-full");
   el.classList.add("is-running");
+
   el.addEventListener("animationend", function (e) {
     if (e.animationName === "dfl-splash-out") el.remove();
   });
+  /* The backstop. A throttled background tab may never fire an animation
+     event; the plate still has to leave. */
   setTimeout(function () { if (el.parentNode) el.remove(); }, mode === "short" ? 1600 : 3000);
 })();
 </script>
