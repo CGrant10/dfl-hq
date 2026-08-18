@@ -6,7 +6,7 @@
 
 import { db, insertRow } from "../supabase.js";
 import { esc, empty, fmtDate, fmtWhen, relDate, toast, errorBox, loading } from "../ui.js";
-import { getUsername } from "../store.js";
+import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
 let tab = "events";
@@ -104,17 +104,83 @@ function eventRow(e, upcoming) {
 
 // ----------------------------------------------------------- side events
 
-async function paintSide(body, view) {
-  const username = getUsername();
+/*
+  A SIGN-UP BELONGS TO A MEMBER.
 
-  const [eventsRes, signupsRes] = await Promise.all([
+  This page used to identify people by getUsername() - the free-text league
+  name from before the member picker existed - and match them with
+  `people.includes(username)`. Three things were wrong with it and all three
+  were invisible until they bit:
+
+    * renaming a member orphaned every sign-up they had
+    * "Grant" and "grant" were two different people
+    * whether the page recognised you depended on a localStorage MIRROR of
+      your display name, written by selectMember(), rather than on the member
+      you had actually selected - so identity here could disagree with
+      identity on Polls, which has used member_id for a while
+
+  It is member_id now, the same canonical identity Polls, Golf, the Arena and
+  Profile all use, and display names are resolved from `members` at paint
+  time. Nothing on this page stores a person's name.
+
+  See side_events_member_schema.sql.
+*/
+
+/* Set when the database still predates side_events_member_schema.sql.
+   Joining cannot work in that state, so the tab says so rather than failing
+   to load. Same shape as the notice Polls shows for polls_schema.sql. */
+let needsMigration = false;
+
+/**
+ * Sign-ups, with member_id when the column is there.
+ *
+ * A database that has not had side_events_member_schema.sql run against it
+ * yet is exactly the state somebody is in the moment they pull this version,
+ * and a missing column is a 42703 that would take the whole tab down.
+ */
+async function loadSignups() {
+  const withMember = await db().from("side_event_signups")
+    .select("side_event_id, member_id, username");
+  if (!withMember.error) { needsMigration = false; return withMember; }
+  if (!/member_id/.test(withMember.error.message || "")) return withMember;
+
+  needsMigration = true;
+  return db().from("side_event_signups").select("side_event_id, username");
+}
+
+/**
+ * Who a sign-up is: the member profile first, the stored legacy name after.
+ *
+ * Rows the migration could not map safely keep their username and a NULL
+ * member_id - it preserves them rather than deleting them - so those still
+ * show the name they were created with.
+ */
+function signupName(signup, members) {
+  const m = signup.member_id != null ? members.get(String(signup.member_id)) : null;
+  return m?.display_name || signup.username || "Someone";
+}
+
+/** Whether a sign-up row belongs to `me`. Legacy rows fall back to the name. */
+function isMine(signup, me) {
+  if (!me) return false;
+  if (signup.member_id != null) return String(signup.member_id) === String(me.id);
+  return String(signup.username || "").trim().toLowerCase()
+      === String(me.display_name || "").trim().toLowerCase();
+}
+
+async function paintSide(body, view) {
+  const me = currentMember();
+
+  const [eventsRes, signupsRes, membersRes] = await Promise.all([
     db().from("side_events").select("*").order("created_at", { ascending: false }),
-    db().from("side_event_signups").select("side_event_id, username"),
+    loadSignups(),
+    db().from("members").select("id, display_name"),
   ]);
   if (eventsRes.error || signupsRes.error) throw eventsRes.error || signupsRes.error;
 
   const events  = visible("side_events", eventsRes.data || []);
   const signups = signupsRes.data || [];
+  const members = new Map((membersRes.data || []).map((m) => [String(m.id), m]));
 
   const addRow = canEdit()
     ? `<div class="row-end">${addControl("side_events", "Add side event")}</div>` : "";
@@ -125,9 +191,19 @@ async function paintSide(body, view) {
     return;
   }
 
+  const notices = `
+    ${needsMigration ? `<div class="card note">
+        <div class="card-body">Joining is not switched on yet. Run
+        <strong>side_events_member_schema.sql</strong> in the Supabase SQL editor, then reload.</div>
+      </div>` : ""}
+    ${me || needsMigration ? "" : `<div class="card note">
+        <div class="card-body">Pick your name in the top right to join a side event.</div>
+      </div>`}`;
+
   const cards = events.map((ev) => {
-    const people = signups.filter((s) => s.side_event_id === ev.id).map((s) => s.username);
-    const joined = people.includes(username);
+    const mine   = signups.filter((s) => s.side_event_id === ev.id);
+    const people = mine.map((s) => signupName(s, members));
+    const joined = mine.some((s) => isMine(s, me));
     const open   = ev.status === "Open";
 
     return `
@@ -151,24 +227,43 @@ async function paintSide(body, view) {
   }).join("");
 
   // Wrapped in a fresh element so the click listener is never doubled up.
-  body.innerHTML = `<div id="side-list">${cards}${addRow}</div>`;
+  body.innerHTML = `<div id="side-list">${notices}${cards}${addRow}</div>`;
 
   body.querySelector("#side-list").addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-join]");
     if (!btn) return;
-    if (!username) { toast("Set your league name first", true); return; }
+    /* No member, no sign-up. There is deliberately no fall back to a typed
+       name here: an anonymous row is a row nobody can ever be recognised as,
+       and the database refuses it now anyway. */
+    if (!me) { toast("Pick your name in the top right to join", true); return; }
 
     btn.disabled = true;
     try {
       await insertRow("side_event_signups", {
         side_event_id: Number(btn.dataset.join),
-        username,
+        member_id: Number(me.id),
       });
       toast("You're in");
       paint(body, view);
     } catch (err) {
       btn.disabled = false;
-      toast(err.code === "23505" ? "You already joined" : err.message, true);
+      toast(joinError(err), true);
     }
   });
+}
+
+/**
+ * The two failures worth naming: joining twice, and a database that has not
+ * had the migration run. Everything else says what Postgres said.
+ */
+function joinError(error) {
+  if (error.code === "23505") return "You already joined";
+  const msg = error.message || "Could not join";
+  if (/member_id|42703|schema cache/i.test(msg) || error.code === "42703") {
+    return "Run side_events_member_schema.sql in Supabase to enable joining";
+  }
+  if (error.code === "42501" || /row-level security/i.test(msg)) {
+    return "Pick your name in the top right, then try again";
+  }
+  return msg;
 }

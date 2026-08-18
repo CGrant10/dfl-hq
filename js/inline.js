@@ -238,12 +238,27 @@ export async function openEditor(table, id, preset, refresh) {
     else if (f.default !== undefined)   setValue(form, f, f.default);
   });
 
+  /*
+    THE EDITOR OWNS ITS OWN GLOBALS, INCLUDING WHEN IT IS ABANDONED.
+
+    The sheet is appended to document.body, not to #view, so that a re-render
+    underneath it does not tear the form out from under somebody typing. The
+    cost is that navigating away does NOT remove it: the router replaces
+    #view, the overlay stays, and you land on the next page with a stranded
+    Add/Edit dialog over it and a keydown listener still on the document.
+
+    So the hash is a close reason as much as Escape or Cancel is. Both
+    listeners come off in one place, so there is exactly one teardown path
+    however the sheet is dismissed.
+  */
   const close = () => {
     document.removeEventListener("keydown", onKey);
+    window.removeEventListener("hashchange", close);
     host.remove();
   };
   const onKey = (e) => { if (e.key === "Escape") close(); };
   document.addEventListener("keydown", onKey);
+  window.addEventListener("hashchange", close);
 
   host.querySelector("[data-close]").addEventListener("click", close);
   // Backdrop only - a click that started inside the card must not close it.

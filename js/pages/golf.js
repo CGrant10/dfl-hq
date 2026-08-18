@@ -132,6 +132,15 @@ function leaderboard(teams,scores,holes,outing){return `<section class="card gol
 
 const LEADER_POLL_MS=15000;
 let leaderTimer=0,onLeaderVisible=null;
+/*
+  Called by the router on the way out. The leaderboard poll is a 15s interval
+  plus a visibilitychange listener on the document, and both outlived
+  navigation: the tick did stop ITSELF the first time it noticed its list had
+  left the DOM, but until then the interval and the listener were still
+  registered on somebody else's page. render() already calls stopLeaderPoll()
+  for the rebuild case; this is the other direction.
+*/
+export function leave(){stopLeaderPoll();}
 function stopLeaderPoll(){clearInterval(leaderTimer);leaderTimer=0;
 if(onLeaderVisible){document.removeEventListener("visibilitychange",onLeaderVisible);onLeaderVisible=null;}}
 

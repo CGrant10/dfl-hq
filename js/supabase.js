@@ -2,7 +2,22 @@
 // supabase.js - database access
 // =====================================================================
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+/*
+  PINNED, EXACTLY.
+
+  This used to be `@supabase/supabase-js@2/+esm`, which is not a version - it
+  is "whatever the latest v2 happens to be when the browser asks". Every
+  member's device could be on a different build of the client library, a
+  release published on a Tuesday could change behaviour with no commit here to
+  explain it, and there would be nothing to roll back to. The service worker
+  makes it worse rather than better: it caches CDN responses by URL, so a
+  floating URL is one cache key whose contents change underneath it.
+
+  2.112.3 is what `@2` resolved to and what this app has been running and
+  verified against. This is a PIN, not an upgrade - moving it is a deliberate,
+  separate change with its own verification.
+*/
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 import { getAdminToken, setAdminToken } from "./store.js";
 import { golfHeaders, golfHeaderKey } from "./golf-guest.js";
@@ -118,6 +133,18 @@ export async function deleteRow(table, id) {
   if (error) throw error;
 }
 
+/*
+  LEGACY, AND WRITE-ONLY.
+
+  `users` predates the member picker: it was the list of names that had ever
+  opened the app, back when a name was the identity. Nothing in the app reads
+  this table any more - members.js, polls, side events, golf and the arena all
+  work from members.id - so this is an append-only historical record and
+  nothing else. It is kept because it costs one fire-and-forget upsert and
+  because dropping the table is a data decision, not a code one.
+
+  Do not add anything that READS this. Canonical identity is members.id.
+*/
 export async function registerUser(username) {
   if (!configured) return;
   try {

@@ -36,16 +36,40 @@ export function go(name) {
   location.hash = "#/" + name;
 }
 
-/** Draw the current route into #view and light up the matching tab. */
-// The page we are on, so it can be told when it is being left. Only the
-// broadcast view needs this - it owns a rAF loop and a realtime channel, and
-// leaving those running behind the next page would keep drawing over it.
+/*
+  THE LIFECYCLE RULE, and it is the whole of the convention.
+
+    A page that creates a persistent resource in render() owns tearing it
+    down in leave(). render() may call its own leave() first when it is
+    rebuilding itself.
+
+  "Persistent" means anything that outlives the DOM the router is about to
+  throw away: an interval, a rAF loop, a Supabase realtime channel, an
+  observer, a listener on window or document, or an unsubscribe callback.
+  Listeners on elements the page itself created are NOT persistent - those
+  die with the elements - so they need nothing.
+
+  leave() is optional and deliberately stays that way. A page with no such
+  resource must not grow an empty one for the sake of uniformity, because an
+  empty leave() reads as "this was checked and there is cleanup here" when the
+  truth is the opposite. There is no framework and no lifecycle manager: the
+  four lines below are the entire mechanism.
+
+  Exporting leave() today: broadcast (rAF loop, realtime channel, poll,
+  ResizeObserver, Pixi renderer), home (the stage timer and the presence
+  subscription) and arena (the shared-race watcher's channel and poll), plus
+  golf (the leaderboard poll and its visibilitychange listener). The comment
+  that used to sit here said only broadcast needed it, which stopped being
+  true three features ago.
+*/
 let leaving = null;
 
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
 
+  /* Before anything else, and never allowed to stop the navigation: a page
+     that throws on the way out must not trap you on it. */
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
 

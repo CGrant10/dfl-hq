@@ -4,9 +4,33 @@
 // No accounts and no passwords. Opening the app asks "Who are you?" and
 // the chosen member's id is kept in localStorage.
 //
-// The old free-text league name is still honoured: whichever member is
-// picked also writes their display_name into the existing username slot,
-// so polls and side-event sign-ups keep working unchanged.
+// THE IDENTITY MODEL, in one place, because the app has four things that
+// could loosely be called "who you are" and they are not interchangeable:
+//
+//   MEMBER      the canonical league identity. members.id. Everything that
+//               records participation uses it: votes, side-event sign-ups,
+//               golf scores, arena racer picks, profile.
+//   GOLF GUEST  an event-scoped identity and nothing more (golf-guest.js).
+//               A guest has no member row and must never be treated as a
+//               league member.
+//   ADMIN       an authorisation state, not a person. Being admin does not
+//               replace or imply a member identity.
+//   USERNAME    LEGACY COMPATIBILITY ONLY. See below.
+//
+// The username slot in store.js is still mirrored from display_name when a
+// member is picked. It no longer carries any participation identity - polls
+// moved to member_id in polls_schema.sql and side events followed in
+// side_events_member_schema.sql - and what still reads it is:
+//
+//   * app.js, as the "Who are you?" chip's last-resort label and as the
+//     "has this device ever identified itself" test on first run
+//   * supabase.js registerUser(), which appends to the write-only legacy
+//     `users` table
+//   * polls.js / calendar.js, to DISPLAY historical rows whose member_id
+//     the migrations could not map safely
+//
+// Nothing new should depend on it. It is removable once the first-run test
+// in app.js no longer needs a pre-member-picker device to look identified.
 // =====================================================================
 
 import { db, configured } from "./supabase.js";
@@ -62,7 +86,9 @@ export async function restoreMember() {
 export function selectMember(member) {
   current = member;
   localStorage.setItem(KEY, String(member.id));
-  setUsername(member.display_name);   // keeps polls and sign-ups working
+  /* The legacy mirror. Not identity any more - see the header - but the
+     first-run test and the chip's fallback label still read it. */
+  setUsername(member.display_name);
 }
 
 export function clearMember() {

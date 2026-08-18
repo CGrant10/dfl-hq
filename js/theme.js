@@ -1,17 +1,24 @@
 // =====================================================================
-// DFL HQ - one palette, two modes
+// DFL HQ - one crest, three palettes
 // ---------------------------------------------------------------------
-// There is exactly ONE theme now: the crest. Medicine Wheel and Blue /
-// Green are gone, and so is the "favourite team recolours the app" idea -
-// it never worked (the picker fed NFL team ids into a map that only held
-// theme ids, so every choice collapsed to the default).
+// The "favourite NFL team recolours the app" idea is gone and is not coming
+// back - it never worked (the picker fed NFL team ids into a map that only
+// held theme ids, so every choice collapsed to the default) and one league
+// wants one identity.
 //
-// What a member chooses instead is LIGHT or DARK, and the default is
-// whatever their phone is already set to.
+// What is left is a palette picker with four entries, three of which are
+// real palettes and one of which is the absence of a choice. See MODES,
+// PICKABLE and modeOptions() below; this list is generated from them, so if
+// they disagree with this comment, they are right and this is stale.
 //
-//   system (default)  follow the OS, and keep following it if it changes
-//   dark              force dark
-//   light             force light
+//   medicine (default)  Medicine Wheel. A dark palette, and what a device
+//                       that has never touched the picker gets.
+//   system              follow the OS, and keep following it if it changes
+//   dark                force dark
+//   light               force light
+//
+// This header used to say "one palette, two modes" and that Medicine Wheel
+// was gone. It came back as the default; nobody updated the comment.
 //
 // ---------------------------------------------------------------------
 // THE COLOUR RULE, which is the whole point of this file
@@ -43,16 +50,15 @@ export const CREST = { red: "#E5011B", blue: "#003396", black: "#0A0A0A", white:
 /*
   WHERE A NEW PALETTE GOES.
 
-  The favourite-NFL-team colouring is gone - one league, one palette - but
-  the mechanism that made it possible is still here and is the right place
-  for a DFL palette of our own. A third entry in MODES, listed in
+  One more entry in MODES, the same id added to PICKABLE and to
   modeOptions(), and every surface in the app follows it: style.css expresses
-  everything below in these variables and apply() sets them at runtime.
+  everything below in these variables and apply() sets them at runtime. The
+  Medicine Wheel entry below IS that shape - it was added with no new
+  plumbing, which is the evidence that the mechanism works.
 
-  A Medicine Wheel palette would be exactly that shape - one more entry, no
-  new plumbing. The only rule the app enforces is the contrast one stated
-  above: a colour used for TEXT has to clear 6:1 on the background it sits
-  on, or it goes in the fill pair instead.
+  The only rule the app enforces is the contrast one stated above: a colour
+  used for TEXT has to clear 6:1 on the background it sits on, or it goes in
+  the fill pair instead.
 
   Per-mode values. Only two things actually differ: the surfaces, and which
   end of each hue is readable against them.
@@ -336,8 +342,9 @@ export function modeOptions() {
 }
 
 /* ---------------------------------------------------------------------
-   Kept only so nothing that still imports them breaks. There is one
-   theme now, so they answer for the crest and ignore what they are asked.
+   Kept only so nothing that still imports them breaks. Palette choice goes
+   through savedMode()/saveMode() now, so these answer for the crest and
+   ignore what they are asked. They are not the mode picker.
    --------------------------------------------------------------------- */
 export function applyTheme() { apply(); }
 export function savedTheme() { return "dfl"; }

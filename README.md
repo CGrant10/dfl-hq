@@ -31,17 +31,12 @@ dfl_hq/
 ├── manifest.json            name, icons, colours, shortcuts for install
 ├── sw.js                    service worker: offline app shell
 ├── version.txt              current version; drives the update button
-├── schema.sql               run this once in Supabase
-├── sleeper_schema.sql       Sleeper tables (additive, run once)
-├── finance_schema.sql       League Finances tables (additive, run once)
-├── members_schema.sql       member profiles + Sleeper hidden flag (run once)
-├── rules_schema.sql         editable rule tabs (additive, run once)
-├── polls_schema.sql         member-owned changeable votes (additive, run once)
-├── golf_schema.sql          golf outings + one shared card per team (run once)
-├── golf_courses_schema.sql  course library: pars, yardage, stroke index (run once)
-├── golf_draft_schema.sql    captains drafting players into teams (run once)
-├── golf_bag_schema.sql      private club distances (run once)
-├── golf_matches_schema.sql  the tournament: rounds, 2v2s, singles, guests (run once)
+├── schema.sql               run this FIRST in Supabase
+├── SCHEMA.md                ← every .sql file, in run order. THE baseline.
+├── *.sql                    27 additive migrations. SCHEMA.md lists them all
+│                            with their dependencies; this tree does not try
+│                            to, because it fell three features behind while
+│                            pretending to be complete.
 ├── README.md                this file
 ├── css/
 │   └── style.css            the whole theme; colours live in :root at the top
@@ -104,10 +99,20 @@ dfl_hq/
 
 5. Press **Run**. It creates all the tables, the security rules, and a few
    starter league rules you can delete later.
-6. Then run the additive files, each in its own new query:
-   `sleeper_schema.sql`, `finance_schema.sql`, `members_schema.sql`,
-   `rules_schema.sql`, `polls_schema.sql`. `polls_schema.sql` needs `members`
-   to exist, so run it after `members_schema.sql`.
+6. Then run the additive files, each in its own new query, **in the order
+   given in [SCHEMA.md](SCHEMA.md)**. There are 27 of them and several have
+   real dependencies - anything that adds a column to `members` needs
+   `members_schema.sql` first - so the order there is not decorative.
+
+   The short version for a league that only wants the core app working:
+   `members_schema.sql`, `polls_schema.sql`,
+   `side_events_member_schema.sql`, `profile_schema.sql`,
+   `settings_schema.sql`, `rules_schema.sql`, `sleeper_schema.sql`,
+   `finance_schema.sql`. Golf, the Arena and the front-page broadcast each
+   have their own group; SCHEMA.md says which.
+
+   SCHEMA.md also lists what the app does when a migration is missing, which
+   is never "crash" - each affected page says which file to run.
 
 Re-running the whole file later is safe, and it **does** reset the admin
 password to whatever is on that line.
