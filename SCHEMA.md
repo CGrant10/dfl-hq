@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 28 `.sql` files (one base plus 27 additive) and the
+one in.** This exists because the repository has 29 `.sql` files (one base plus 28 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -78,13 +78,19 @@ Dependencies are real: a file that adds a column to `members` needs
 | 24 | `arena_broadcast_schema.sql` | `bc_state`, `bc_started_at`, `bc_offset_ms` — the shared race clock. The Race View cannot run a race without these. |
 | 25 | `arena_pick_racer_schema.sql` | Members choosing their own racer; also defines `dfl_current_member()`. |
 
+### Draft data — required for the Keeper Advisor
+
+| # | File | What it establishes |
+|---|---|---|
+| 26 | `sleeper_draft_schema.sql` | `sleeper_draft_picks` (season, round, pick_no, player_id, picked_by) and `sleeper_leagues.max_keepers`. Run it, then **Sync Sleeper**. Without it the Keeper Advisor still loads but every player reads "never drafted in this league". |
+
 ### Front-page broadcast
 
 | # | File | What it establishes |
 |---|---|---|
-| 26 | `broadcast_items_schema.sql` | Hand-written front-page slides. |
-| 27 | `broadcast_items_polish.sql` | Additive follow-up to 26. |
-| 28 | `broadcast_v2_schema.sql` | `members.broadcast_image` / `lookalike_image` / `chaos_image`, plus automatic-slide overrides. |
+| 27 | `broadcast_items_schema.sql` | Hand-written front-page slides. |
+| 28 | `broadcast_items_polish.sql` | Additive follow-up to 27. |
+| 29 | `broadcast_v2_schema.sql` | `members.broadcast_image` / `lookalike_image` / `chaos_image`, plus automatic-slide overrides. |
 
 ### Not schema
 
@@ -121,6 +127,7 @@ up:
 | `presence_schema.sql` | The presence line is simply absent. `beat()` returns quietly. |
 | `arena_broadcast_schema.sql` | Race control toasts "Run arena_broadcast_schema.sql". |
 | `golf_matches_schema.sql` | The tournament board does not appear; the rest of golf works. |
+| `sleeper_draft_schema.sql` | The Keeper Advisor loads and says draft rounds are missing, naming the file to run. |
 
 Rows that a migration could not map safely are **preserved, never deleted**.
 `polls_schema.sql` leaves unmatched votes with a NULL `member_id`;

@@ -14,6 +14,7 @@ import { setupUpdates } from "./update.js";
 import { esc, toast } from "./ui.js";
 import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
+import { trapFocus } from "./focus-trap.js";
 /* welcomeForm and welcomeInput used to be looked up here and have never
    existed in index.html - leftovers from the free-text name box that the
    member picker replaced. Every branch that touched them was dead. */
@@ -29,8 +30,35 @@ function paintName(){
   if(!whoamiName)return;
   whoamiName.textContent=m?m.display_name:(g?g.name:(getUsername()||"Who are you?"));
 }
+/*
+  FOCUS, FOR THE TWO THINGS THAT COVER THE PAGE.
+
+  Both overlays already behaved by mouse and by thumb. By keyboard neither
+  did: opening one left focus on the button BEHIND it, so the first Tab walked
+  into a page that aria-modal has told a screen reader to ignore, and closing
+  dropped focus back to the top of the document.
+
+  One release function per surface, held here because there is exactly one of
+  each on the page. releaseX() is idempotent (see focus-trap.js), so calling
+  it on a close path that has already run costs nothing.
+
+  The picker and the golf-join card are SIBLING overlay cards and the hidden
+  one keeps its buttons in the DOM - which is why moving between them has to
+  release one trap and take another, and why focus-trap.js filters on
+  visibility rather than on markup alone.
+*/
+let releasePicker = null;
+let releaseJoin = null;
+let releaseMore = null;
+
+function dropPickerFocus(){releasePicker?.();releasePicker=null;releaseJoin?.();releaseJoin=null}
+/* Every path that hides #welcome goes through here, so there is one place
+   where the overlay closing and the focus going back are the same event. */
+function closeWelcome(){welcome?.classList.add("hidden");dropPickerFocus()}
+
 async function openPicker({cancellable=false}={}){
   if(!welcome||!memberList)return;
+  releaseJoin?.();releaseJoin=null;
   welcomeJoin?.classList.add("hidden");
   welcomeCard?.classList.remove("hidden");
   /* Dismissable when there is somewhere to go back to. This is what the
@@ -38,6 +66,20 @@ async function openPicker({cancellable=false}={}){
      parameter that toggled a class on null. */
   welcomeCancel?.classList.toggle("hidden",!cancellable);
   welcome.classList.remove("hidden");
+  /*
+    Trapped BEFORE the list arrives, so a slow members read cannot leave a
+    keyboard stranded on the page behind an open modal. The heading is the
+    landing point rather than the first member button: it is what a screen
+    reader should announce, and it stops Enter from instantly choosing
+    whoever happens to be first.
+  */
+  releasePicker?.();
+  /* The list does not exist yet, so the landing point is a FUNCTION - see
+     focus-trap.js. Whoever is already chosen, else the first member: the
+     dialog exists to pick a name, so a keyboard should arrive on the names
+     rather than on the golf escape hatch beside them. */
+  releasePicker=trapFocus(welcomeCard||welcome,{initial:()=>
+    memberList.querySelector(".memberbtn.on")||memberList.querySelector(".memberbtn")});
   memberList.innerHTML=`<div class="muted tiny">Loading members…</div>`;
   let members=[];
   try{members=await loadMembers({force:true})}catch{}
@@ -60,11 +102,15 @@ async function openPicker({cancellable=false}={}){
 function openGolfJoin(){
   if(!welcome||!welcomeJoin)return;
   welcome.classList.remove("hidden");
+  /* The picker is hidden but its buttons are still in the DOM one element
+     away, so its trap has to go before this one arrives or Tab would walk
+     into a member list nobody can see. */
+  releasePicker?.();releasePicker=null;
   welcomeCard?.classList.add("hidden");
   welcomeJoin.classList.remove("hidden");
   mountJoin(welcomeJoin,{
     onDone:(pass)=>{
-      welcome.classList.add("hidden");
+      closeWelcome();
       paintName();
       location.hash=`#/golf?id=${pass.outing}`;
       renderRoute();
@@ -73,6 +119,10 @@ function openGolfJoin(){
        has to get in somehow. */
     onCancel:()=>openPicker({cancellable:!!(currentMember()||getUsername()||golfPass())}),
   });
+  /* mountJoin() has just built the form, so its first field exists to be
+     focused. Taken after mounting for that reason. */
+  releaseJoin?.();
+  releaseJoin=trapFocus(welcomeJoin);
 }
 
 function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()}
@@ -85,23 +135,45 @@ const moreSheet=document.getElementById("more"),moreBtn=document.getElementById(
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
 const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
-const closeMore=()=>{moreSheet?.classList.add("hidden");syncMore()};
-moreBtn?.addEventListener("click",()=>{moreSheet?.classList.toggle("hidden");syncMore()});
+/*
+  Closing gives focus back to the More button. That is the right place even
+  when the close was a link: the sheet is the app's navigation, so a keyboard
+  lands back on the control that opens it rather than at the top of a document
+  it has just navigated to.
+*/
+const closeMore=()=>{moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
+const openMore=()=>{
+  moreSheet?.classList.remove("hidden");
+  syncMore();
+  releaseMore?.();
+  /* Close first, not the first nav link: it is the one control in here whose
+     job is getting out, and it puts Escape and Tab on the same footing. */
+  releaseMore=trapFocus(moreSheet.querySelector(".sheet-card")||moreSheet,{initial:"#more-close"});
+};
+moreBtn?.addEventListener("click",()=>{
+  if(moreSheet?.classList.contains("hidden"))openMore();else closeMore();
+});
 document.getElementById("more-close")?.addEventListener("click",closeMore);
 // Tapping the backdrop closes it; tapping the card must not.
 moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});
 moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore()});
 window.addEventListener("hashchange",closeMore);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMore()});
-if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;selectMember(member);paintName();welcome?.classList.add("hidden");await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
-welcomeCancel?.addEventListener("click",()=>welcome?.classList.add("hidden"));
+if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;selectMember(member);paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
+welcomeCancel?.addEventListener("click",closeWelcome);
 welcomeGolf?.addEventListener("click",openGolfJoin);
 /* Escape closes the picker only when there is a way back in - trapping
    somebody in a modal is the bug this pass exists to fix, and so is letting
    them escape a first run with no identity at all. */
+/*
+  THE FIRST-RUN RULE IS UNCHANGED, and the focus work must not weaken it.
+  Escape still only closes the picker for somebody who already has an
+  identity; a fresh browser cannot dismiss it, and the trap adds no other way
+  out because it never closes anything - it only moves focus.
+*/
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape"||welcome?.classList.contains("hidden"))return;
-  if(currentMember()||getUsername()||golfPass())welcome.classList.add("hidden");
+  if(currentMember()||getUsername()||golfPass())closeWelcome();
 });
 document.getElementById("whoami")?.addEventListener("click",()=>{
   if(currentMember())return go("profile");

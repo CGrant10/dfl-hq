@@ -27,6 +27,19 @@ export const sleeper = {
   matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`),
   transactions: (id, week)    => get(`/league/${id}/transactions/${week}`),
   winnersBracket: (id)        => get(`/league/${id}/winners_bracket`),
+  /*
+    THE DRAFT. Two calls: the league's drafts (one per season for DFL), then
+    that draft's picks. A pick carries round, pick_no, draft_slot, player_id,
+    roster_id and picked_by - picked_by being a Sleeper USER id, the same
+    thing members.sleeper_user_id holds, so a pick maps to a member without
+    going anywhere near a name.
+
+    Verified against this league: 180 picks per season for 2020-2025, zero
+    for 2019 (not drafted on Sleeper) and zero for a draft still in
+    pre_draft. An absent draft is a null, not an error.
+  */
+  drafts:       (id)          => get(`/league/${id}/drafts`),
+  draftPicks:   (draftId)     => get(`/draft/${draftId}/picks`),
 };
 
 // ---------------------------------------------------------------------

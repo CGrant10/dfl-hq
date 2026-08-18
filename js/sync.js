@@ -32,7 +32,7 @@ const CONCURRENCY = 4;    // parallel week requests; polite to the API
 export async function syncSleeper(leagueId, log = () => {}) {
   if (!leagueId) throw new Error("Enter a Sleeper league ID first.");
 
-  const counts = { seasons: 0, users: 0, rosters: 0, matchups: 0, transactions: 0 };
+  const counts = { seasons: 0, users: 0, rosters: 0, matchups: 0, transactions: 0, draftPicks: 0 };
 
   // ---- 1. Walk the chain and collect every league first ----
   const chain = [];
@@ -73,6 +73,7 @@ export async function syncSleeper(leagueId, log = () => {}) {
     counts.rosters      += seasonCounts.rosters;
     counts.matchups     += seasonCounts.matchups;
     counts.transactions += seasonCounts.transactions;
+    counts.draftPicks   += seasonCounts.draftPicks;
     counts.seasons++;
     seasons.push(season);
   }
@@ -213,6 +214,9 @@ async function syncSeason(league, season, log) {
     status:             league.status || "",
     scoring_settings:   league.scoring_settings || {},
     playoff_teams:      league.settings?.playoff_teams ?? null,
+    /* Sleeper's own answer to "how many can I keep", rather than the app
+       guessing or hard-coding one. Reads 1 for every DFL season on record. */
+    max_keepers:        league.settings?.max_keepers ?? null,
     previous_league_id: league.previous_league_id || null,
     champion_user_id:   championRoster != null ? ownerOf.get(championRoster) ?? null : null,
     runner_up_user_id:  runnerUpRoster != null ? ownerOf.get(runnerUpRoster) ?? null : null,
@@ -261,7 +265,66 @@ async function syncSeason(league, season, log) {
     log(`   ${txRows.length} transactions`);
   }
 
+  counts.draftPicks = await syncDraft(leagueId, season, log);
+
   return counts;
+}
+
+/*
+  THE DRAFT, for the one fact the Keeper Advisor cannot get anywhere else:
+  the round a player actually went in, in this league.
+
+  Deliberately quiet about the two normal ways this comes back empty. A
+  season with no draft on Sleeper (2019, the league's first year) and a draft
+  that has not happened yet (2026, still pre_draft) both give zero picks, and
+  neither is a failure worth stopping a sync over - the advisor reads an
+  absent round as absent and says so.
+
+  Nothing is deleted. Upserting on (season, pick_no) means re-syncing a
+  season rewrites only its own board, exactly like every other table here.
+*/
+async function syncDraft(leagueId, season, log) {
+  let drafts;
+  try {
+    drafts = await sleeper.drafts(leagueId);
+  } catch (err) {
+    log(`   no draft data for ${season} (${err.message})`);
+    return 0;
+  }
+  if (!drafts?.length) return 0;
+
+  let written = 0;
+  for (const draft of drafts) {
+    const picks = await sleeper.draftPicks(draft.draft_id).catch(() => null);
+    if (!picks?.length) continue;
+
+    const rows = picks
+      /* A pick with no player is an unmade pick on a board still in
+         progress. There is nothing to record about it. */
+      .filter((p) => p.player_id != null && p.round != null && p.pick_no != null)
+      .map((p) => ({
+        season,
+        draft_id:        String(draft.draft_id),
+        pick_no:         Number(p.pick_no),
+        round:           Number(p.round),
+        draft_slot:      p.draft_slot ?? null,
+        player_id:       String(p.player_id),
+        roster_id:       p.roster_id ?? null,
+        sleeper_user_id: p.picked_by || null,
+        /* Carried faithfully. It is null on all 1080 DFL picks on record -
+           this league runs keepers by hand - and the advisor treats a null
+           as "not stated" rather than as "not a keeper". */
+        is_keeper:       p.is_keeper ?? null,
+        synced_at:       new Date().toISOString(),
+      }));
+
+    if (!rows.length) continue;
+    await upsert("sleeper_draft_picks", rows, "season,pick_no");
+    written += rows.length;
+  }
+
+  if (written) log(`   ${written} draft picks`);
+  return written;
 }
 
 // ---------------------------------------------------------------------

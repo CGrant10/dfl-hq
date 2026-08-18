@@ -62,12 +62,20 @@ export async function render(view) {
 
   view.innerHTML = `
     <h1>History</h1>
-    <div class="tabs" id="hist-tabs">
-      <button data-tab="fame"    class="${tab === "fame" ? "on" : ""}">Hall of Fame</button>
-      <button data-tab="moments" class="${tab === "moments" ? "on" : ""}">Moments</button>
-      <button data-tab="seasons" class="${tab === "seasons" ? "on" : ""}">Yearbook</button>
-      <button data-tab="alltime" class="${tab === "alltime" ? "on" : ""}">All-time</button>
-      <button data-tab="records" class="${tab === "records" ? "on" : ""}">Records</button>
+    <!--
+      FIVE TABS DO NOT FIT A PHONE, and .tabs has always been a horizontal
+      scroller - the problem was that it did not look like one. At 375px the
+      strip is wider than the screen with nothing to say so, so "Records"
+      simply did not exist unless you happened to swipe. tabscroll adds the
+      edge fade, the snap and the keyboard roles; scrollTabIntoView() below
+      keeps the current one in shot.
+    -->
+    <div class="tabs tabscroll" id="hist-tabs" role="tablist" aria-label="History sections">
+      <button data-tab="fame"    role="tab" aria-selected="${tab === "fame"}"    class="${tab === "fame" ? "on" : ""}">Hall of Fame</button>
+      <button data-tab="moments" role="tab" aria-selected="${tab === "moments"}" class="${tab === "moments" ? "on" : ""}">Moments</button>
+      <button data-tab="seasons" role="tab" aria-selected="${tab === "seasons"}" class="${tab === "seasons" ? "on" : ""}">Yearbook</button>
+      <button data-tab="alltime" role="tab" aria-selected="${tab === "alltime"}" class="${tab === "alltime" ? "on" : ""}">All-time</button>
+      <button data-tab="records" role="tab" aria-selected="${tab === "records"}" class="${tab === "records" ? "on" : ""}">Records</button>
     </div>
     <div id="hist-body"></div>
   `;
@@ -85,8 +93,12 @@ export async function render(view) {
     const btn = e.target.closest("button[data-tab]");
     if (!btn) return;
     tab = btn.dataset.tab;
-    view.querySelectorAll("#hist-tabs button")
-        .forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+    view.querySelectorAll("#hist-tabs button").forEach((b) => {
+      const on = b.dataset.tab === tab;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", String(on));
+    });
+    scrollTabIntoView(btn);
     paint();
   });
 
@@ -95,6 +107,9 @@ export async function render(view) {
     if (!btn) return;
     season = Number(btn.dataset.season);
     paint();
+    /* paint() rebuilt the picker, so the button just clicked is gone - find
+       its replacement and keep the choice visible. */
+    scrollTabIntoView(view.querySelector(`#year-picker button[data-season="${season}"]`));
     /* The yearbook is long and the picker is at the top of it - jumping
        back up is the difference between reading a season and hunting for
        where it started. */
@@ -106,6 +121,12 @@ export async function render(view) {
   wireInline(body, () => { clearLore(); render(view); });
 
   paint();
+  /* Arriving back on a tab that sits off the right of a phone screen should
+     not look like the first tab is selected. */
+  scrollTabIntoView(view.querySelector(`#hist-tabs button[data-tab="${tab}"]`));
+  if (tab === "seasons") {
+    scrollTabIntoView(view.querySelector(`#year-picker button[data-season="${season}"]`));
+  }
 }
 
 function nameCell(who) {
@@ -227,16 +248,50 @@ function momentsView(data) {
   const byYear = groupBy(list, (m) => m.season ?? "—");
   const years = [...byYear.keys()].sort((x, y) => (Number(y) || 0) - (Number(x) || 0));
 
+  /*
+    A YEAR AT A TIME, and only the newest one open.
+
+    Every moment the league has is on this tab - it is over a hundred rows
+    already and it grows every Sunday, so the page was several screens of
+    scrolling before you reached the season you came for. Each year is now a
+    fold: js/collapse.js, the app's only collapse implementation, with the
+    newest year open and the rest asking to start folded.
+
+    NOTHING IS COLLAPSED INSIDE A YEAR and no moment is removed. The fold row
+    carries the year and its count, so a shut year still tells you how much is
+    in it. "folded" is only a default - one tap and collapse.js remembers that
+    year open for good, per device.
+  */
   return `
     <p class="page-sub" style="margin-bottom:14px">
       ${list.length} moments · read off every game on record
       <span class="muted">· nothing here is invented</span>
     </p>
-    ${years.map((y) => `
-      <h2 class="section-title">${esc(y)}</h2>
-      <div class="card momentlist">${byYear.get(y).map(momentRow).join("")}</div>`).join("")}
+    ${years.map((y, i) => {
+      const rows = byYear.get(y);
+      return `
+      <div class="card momentlist" data-collapse="hist-moments-${esc(y)}"
+           data-collapse-title="${esc(y)}"
+           data-collapse-badge="${rows.length} moment${rows.length === 1 ? "" : "s"}"
+           ${i === 0 ? "" : `data-collapse-default="folded"`}>
+        ${rows.map(momentRow).join("")}
+      </div>`;
+    }).join("")}
     ${canEdit() ? `<div class="row-end">${addControl("history", "Add a moment")}</div>` : ""}
   `;
+}
+
+/*
+  Keep the chosen tab or year in shot inside its scroller.
+
+  `nearest` rather than `center`: on a wide screen where the whole strip fits,
+  nearest does nothing at all, which is what should happen. And `block:
+  "nearest"` so scrolling a horizontal strip never drags the page up or down.
+*/
+function scrollTabIntoView(button) {
+  if (!button) return;
+  try { button.scrollIntoView({ inline: "nearest", block: "nearest" }); }
+  catch { /* older engines: the strip is still scrollable by hand */ }
 }
 
 /*
@@ -277,8 +332,20 @@ function yearbookView(data) {
   if (!years.includes(season)) season = years.find(hasGames) ?? years[0];
 
   const y = yearbook(data, season);
-  const picker = `<div class="tabs">${years.map((n) =>
-    `<button data-season="${n}" class="${n === season ? "on" : ""}">${n}</button>`).join("")}</div>`;
+  /*
+    ONE BUTTON PER SEASON, and that list only ever grows - eight seasons
+    already overflow a 375px screen and 2031 will overflow a tablet. Rather
+    than swap it for a <select> and lose the at-a-glance row, it becomes the
+    same contained scroller the tab strip uses, and the selected year is
+    scrolled into shot after every paint. Desktop still shows the whole row.
+
+    Kept as buttons on purpose: the click handler, the remembered `season`
+    and the scroll-to-top behaviour all work exactly as they did.
+  */
+  const picker = `<div class="tabs tabscroll" id="year-picker" role="tablist"
+                       aria-label="Season">${years.map((n) =>
+    `<button data-season="${n}" role="tab" aria-selected="${n === season}"
+             class="${n === season ? "on" : ""}">${n}</button>`).join("")}</div>`;
 
   if (!y.played) {
     return `${picker}

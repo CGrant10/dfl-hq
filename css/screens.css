@@ -1598,3 +1598,180 @@ a.moment:hover { background: var(--hover-soft); }
 .arena-track-wrap .track.is-running::after,
 .bc-stage.is-racing .bc-track::before,
 .bc-stage.is-racing .bc-track::after { content:none!important; }
+
+
+/* =====================================================================
+   KEEPER ADVISOR (v1.105)
+   ---------------------------------------------------------------------
+   A list of options, laid out as rows in one card - the same compact
+   language as the league keeper table below it, so the page reads as one
+   thing rather than as a fantasy-site dashboard bolted onto a table.
+
+   The cost column is deliberately the same fixed-width tabular idea the
+   keeper table uses (.kp-cost), because on this page a round number is a
+   column you scan down. An em-dash there means "no cost rule is recorded",
+   never "free".
+   ===================================================================== */
+
+.keeper-advisor { padding: 0; overflow: hidden; }
+.keeper-advisor > *:not(.dfl-fold) { padding-left: var(--s-4); padding-right: var(--s-4); }
+.keeper-advisor .ka-list,
+.keeper-advisor .ka-more { padding-left: 0; padding-right: 0; }
+
+.ka-lead {
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-body);
+  color: var(--body-text);
+  line-height: var(--lh-body);
+}
+
+.ka-list { list-style: none; margin: 0; padding: 0; }
+.ka-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--line-soft);
+}
+.ka-row.is-unknown { opacity: .72; }
+.ka-n {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.ka-main { min-width: 0; display: grid; gap: 2px; }
+.ka-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+}
+.ka-where {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ka-why { font-size: var(--fs-micro); color: var(--body-text); }
+.ka-badges { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: 4px; }
+/*
+  The badges carry their own chip. They were written as .pill, and inside a
+  card context that rule loses its background, border and padding - the three
+  facts ran together as one grey sentence ("Latest-round pick You drafted
+  them") with nothing to say where one ended. Stated here instead, because
+  these are this component's chips.
+*/
+.ka-badges .pill {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-3);
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+/* The fold label must survive; the count gives up its space first. */
+.keeper-advisor .dfl-fold-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+/* The round, as a column. Tabular so the numbers line up down the card. */
+.ka-cost {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ka-cost.none { color: var(--muted); }
+
+/* What the advisor cannot tell you, and where that would come from. This is
+   the honest part of the card and it is styled to be read, not skipped. */
+.ka-gaps {
+  margin: var(--s-3) 0 var(--s-2);
+  padding-left: var(--s-4);
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+.ka-gaps li { margin-bottom: 3px; }
+.ka-gaps strong { color: var(--body-text); }
+
+/* Folded, the comparison is one row; open, it continues the list above it
+   without a second set of card edges. */
+.ka-more { border-top: 1px solid var(--line-soft); }
+.ka-more > .dfl-fold .dfl-fold-title { color: var(--muted); }
+
+@media (max-width: 420px) {
+  .ka-row { grid-template-columns: 1.2rem 1fr auto; gap: var(--s-2); padding-left: var(--s-3); padding-right: var(--s-3); }
+  .keeper-advisor > *:not(.dfl-fold) { padding-left: var(--s-3); padding-right: var(--s-3); }
+}
+
+
+/* =====================================================================
+   TABSCROLL - a horizontal tab strip that admits it scrolls (v1.105)
+   ---------------------------------------------------------------------
+   .tabs has always had overflow-x:auto and nowrap buttons, so five History
+   tabs never wrapped - they just went off the right of a 375px screen with
+   nothing on screen to say so. "Records" was unreachable unless you guessed
+   to swipe. Same story for the Yearbook's one-button-per-season row, which
+   grows by one every year.
+
+   Three additions and no new component:
+     * a mask that fades the last few pixels, which is the affordance
+     * scroll-snap, so a swipe lands on a tab rather than between two
+     * a taller minimum, because 31px was under anybody's thumb
+
+   The mask is only applied when the strip actually overflows - there is no
+   CSS test for that, so it is painted at the right edge only and disappears
+   into the background when the content ends short of it. Nothing here changes
+   the buttons' own look, which stays the app's pill.
+   ===================================================================== */
+
+.tabscroll {
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* The trailing padding is wider than the fade, so a strip whose content
+     ends exactly at the edge never has its last tab half under the mask. */
+  padding-right: var(--s-5);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+.tabscroll::-webkit-scrollbar { display: none; }
+.tabscroll > button {
+  scroll-snap-align: start;
+  min-height: 40px;
+}
+/* A strip that fits needs no fade at all, and on a pointer device the row is
+   not swiped - so the mask is a small-screen affordance only. */
+@media (min-width: 700px) {
+  .tabscroll { mask-image: none; padding-right: 0; }
+}
+
+/* =====================================================================
+   MOMENTS, A YEAR AT A TIME
+   ---------------------------------------------------------------------
+   The year's <h2 class="section-title"> became the fold row, so the card
+   needs the top padding back that .momentlist gives away, and the rows need
+   to start below the button rather than butting against it.
+   ===================================================================== */
+.momentlist > .dfl-fold { border-bottom: 1px solid var(--line-soft); }
+.momentlist.is-folded > .dfl-fold { border-bottom: 0; }
+.momentlist > .dfl-fold .dfl-fold-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-tight);
+  text-transform: none;
+}
