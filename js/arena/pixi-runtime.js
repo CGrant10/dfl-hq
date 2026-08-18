@@ -1635,7 +1635,7 @@ function ct(e, t, n) {
 }
 //#endregion
 //#region src/arena/finish-presentation.ts
-var lt = .8, ut = 2600;
+var lt = .8, ut = 1100;
 function dt(e, t) {
 	let n = t - ut, r = t - 420;
 	return 1 - (1 - _t((e - n) / Math.max(1, r - n))) ** 3;

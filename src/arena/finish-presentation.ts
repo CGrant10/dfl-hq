@@ -51,7 +51,22 @@ export const FINAL_STRETCH_START = 0.80;
   protecting. It simply stops when it is home, because a finish line that
   keeps travelling past the field is a finish line nobody crosses.
 */
-export const PRE_FINISH_SWEEP_MS = 2600;
+/*
+  SHORT ON PURPOSE. It used to be 2600, which put the structure in frame about
+  2.4s before the winner, and with a finish spread of 3.9s to 10.7s it then
+  stood there for six to thirteen seconds while the tail streamed through -
+  read on screen as a line parked in the middle of the shot that the field ran
+  in front of for ten seconds rather than a finish anybody arrived at.
+
+  1100 gives it about a second in frame before the winner: it comes in fast,
+  settles, and the leaders are through almost immediately. It cannot be made
+  shorter than the crossings themselves, because a static ground maps progress
+  1.0 to FINISH_LINE_RATIO for every racer - the line has to be standing there
+  while the field comes through, and how long that takes is the finish spread,
+  not this constant. The exit is CSS: data-race-state="finished" fades it out
+  once the last racer is home.
+*/
+export const PRE_FINISH_SWEEP_MS = 1100;
 /*
   Settled THIS long before the first official crossing.
 

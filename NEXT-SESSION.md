@@ -49,15 +49,29 @@ ramp that brings the structure in from offscreen right and **stops on
 variable renamed `--finish-pass` → `--finish-arrival` (1 = on the line) so a
 stale consumer cannot silently read a differently-scaled value.
 
-Measured, seed 424242 at 1920x1080 — stripe left edge, % of track:
+Measured — stripe left edge, % of track (v1.102.1, `PRE_FINISH_SWEEP_MS`
+1100):
 
 | relative to the winner's crossing | stripe |
 |---|---|
-| −3000ms | 124.4% (invisible) |
-| −2000ms | 82.8% |
-| −1200ms | 60.3% |
-| −700ms | 57.3% |
-| −420ms → +∞ | 57.2% (on the line) |
+| −1100ms | 113% (offscreen) |
+| −1040ms | enters the frame |
+| −900ms | 77% |
+| −700ms | 62% |
+| −420ms onward | 58% (on the line) |
+| last finish + 320ms | fades out (CSS, `data-race-state="finished"`) |
+
+**2600 was tried first and was too long.** It put the structure in frame 2.4s
+before the winner, and with a spread of 3.9s–10.7s it then stood in the middle
+of the shot for six to thirteen seconds while the tail streamed through. It
+cannot go below about a second: with a static ground, progress 1.0 maps to
+`FINISH_LINE_RATIO` for **every** racer, so the line has to be standing there
+while the field comes through, and how long that takes is the finish spread.
+A line that sweeps past instead is a line whose position disagrees with
+somebody's official crossing. Making the finish a genuinely ~2s event needs
+the spread work below, or a scrolling-track camera (racers held mid-frame,
+ground panning) — which would make racer screen x time-dependent and retire
+the camera-independence spec.
 
 `FinishPresentation` gained **`crossingShown` / `crossingShownMs`** — the one
 answer to "may the UI say who won yet". The decisive crossing is P2's line in
