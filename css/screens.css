@@ -1625,6 +1625,17 @@ a.moment:hover { background: var(--hover-soft); }
   line-height: var(--lh-body);
 }
 
+/* The configured rules, restated quietly under the lead. Secondary on
+   purpose - it is provenance, not the point of the card. */
+.ka-rules {
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .ka-list { list-style: none; margin: 0; padding: 0; }
 .ka-row {
   display: grid;
@@ -1635,6 +1646,9 @@ a.moment:hover { background: var(--hover-soft); }
   border-top: 1px solid var(--line-soft);
 }
 .ka-row.is-unknown { opacity: .72; }
+/* Proven ineligible: still shown, because seeing WHY somebody cannot be kept
+   is the useful part - just held back from the eligible options above it. */
+.ka-row.is-unavailable { opacity: .6; }
 .ka-n {
   font-family: var(--font-display);
   font-size: var(--fs-h3);

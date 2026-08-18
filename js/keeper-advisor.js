@@ -44,6 +44,8 @@
 // "cost unknown". Nothing here ever computes a round cost it cannot cite.
 // =====================================================================
 
+import { evaluate, originalQualifyingRound, priorKeeperSeasons } from "./keeper-rules.js";
+
 /**
  * @typedef {Object} MarketValue    The future seam - see marketFrom().
  * @property {string} playerId
@@ -82,48 +84,17 @@ export function marketFrom(rows = []) {
 export const NO_MARKET = marketFrom([]);
 
 /*
-  RECOGNISED KEEPER COST RULES.
+  THE PROSE RECOGNISER IS GONE, AND COST_RULES / costRuleFrom() WITH IT.
 
-  A pattern only earns a place here if the sentence it matches states a cost
-  unambiguously. `cost` receives the round the player was drafted in and
-  returns what keeping them costs.
+  It pattern-matched English in the `rules` table to find a keeper cost
+  ("costs the round they were drafted in, minus one round"). That was the only
+  honest option while nothing machine-readable existed, and it is not one now:
+  js/keeper-rules.js holds the commissioner's configured rules, season-aware
+  and validated, and this file consumes evaluate() like everything else does.
 
-  This exists so that the day somebody writes the league's keeper rule into
-  Rules -> Keepers, the advisor starts costing keepers and CITES that rule.
-  Until then it does not cost anything, because there is nothing to cite.
+  Do not reintroduce a second cost calculation here. If a keeper cost is wrong,
+  it is wrong in one place.
 */
-export const COST_RULES = [
-  {
-    id: "round-minus-one",
-    test: /round\s+they\s+were\s+drafted\s+in[,\s]*\s*minus\s+one|one\s+round\s+earlier\s+than\s+(?:they\s+were\s+)?drafted/i,
-    label: "drafted round minus one",
-    cost: (round) => Math.max(1, round - 1),
-  },
-  {
-    id: "same-round",
-    test: /costs?\s+the\s+(?:same\s+)?round\s+they\s+were\s+drafted(?!\s*in[,\s]*\s*minus)/i,
-    label: "the round they were drafted",
-    cost: (round) => round,
-  },
-];
-
-/**
- * Which cost rule, if any, the league has actually written down.
- *
- * @param {{title?:string, content?:string}[]} keeperRules  rules rows, category "keeper"
- * @returns {{id:string,label:string,cost:(r:number)=>number,citation:string}|null}
- */
-export function costRuleFrom(keeperRules = []) {
-  for (const row of keeperRules) {
-    const text = `${row?.title || ""} ${row?.content || ""}`;
-    for (const rule of COST_RULES) {
-      if (rule.test.test(text)) {
-        return { ...rule, citation: String(row.content || row.title || "").trim() };
-      }
-    }
-  }
-  return null;
-}
 
 /*
   THE FOUR CLASSES, named the way the brief names them.
@@ -149,14 +120,27 @@ export const CLASS = {
  * @param {Object}   input.players          the Sleeper player map, {id:{n,p,t}}
  * @param {Object[]} input.draftPicks       sleeper_draft_picks rows
  * @param {string}   input.sleeperUserId    whose roster this is
- * @param {Object|null} input.costRule      from costRuleFrom()
+ * @param {Object|null} input.rules         a validated rule set (keeper-rules.js)
+ * @param {number}   input.targetSeason     the season being decided
+ * @param {Object[]} [input.keeperRows]     existing keeper rows, for tenure
+ * @param {number|string} [input.memberId]  whose keeper history to count
+ * @param {number|null} [input.earliestSyncedSeason]  where draft history starts
  * @param {Object}   [input.market]         from marketFrom()
  */
 export function candidates({ playerIds = [], players = {}, draftPicks = [],
-                             sleeperUserId = null, costRule = null,
-                             market = NO_MARKET }) {
-  /* The newest pick per player, because a player drafted in 2021 and again
-     in 2024 is priced off the round that actually applies now. */
+                             sleeperUserId = null, rules = null, targetSeason = null,
+                             keeperRows = [], memberId = null,
+                             earliestSyncedSeason = null, market = NO_MARKET }) {
+  /*
+    THE NEWEST PICK IS FOR DISPLAY. THE EARLIEST ONE SETS THE COST.
+
+    Two different questions, and v1.105.0 only asked the first. "Drafted round
+    14 in 2025" is what a manager recognises, so it is still shown - but the
+    keeper right was established by the FIRST time this league drafted the
+    player, and the cost is pinned to that round. Taking the newest pick would
+    make a player cheaper every time somebody re-drafted them. See
+    originalQualifyingRound().
+  */
   const latestPick = new Map();
   for (const p of draftPicks) {
     if (!p || p.player_id == null) continue;
@@ -191,20 +175,36 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
       ? String(pick.sleeper_user_id) === String(sleeperUserId)
       : null;
 
+    /* The original qualifying round, and how many seasons this member has
+       already kept this player - both fed to the one rules engine. */
+    const origin = originalQualifyingRound(draftPicks, id, { earliestSyncedSeason });
+    const prior = priorKeeperSeasons(keeperRows, {
+      playerId: id, memberId, beforeSeason: targetSeason });
+    const standing = evaluate({ config: rules, targetSeason,
+                                originalRound: origin.round, priorKeeperSeasons: prior });
+
     let klass;
     if (!meta) klass = CLASS.UNKNOWN;
-    else if (draftRound == null) klass = CLASS.NO_ROUND;
-    else if (costRule) klass = CLASS.KNOWN;
+    else if (standing.state === "eligible") klass = CLASS.KNOWN;
+    else if (origin.round == null) klass = CLASS.NO_ROUND;
     else klass = CLASS.NO_COST;
-
-    const keeperCost = klass === CLASS.KNOWN && costRule
-      ? costRule.cost(draftRound) : null;
 
     return {
       playerId: id, name, position, nflTeam, freeAgent,
+      /* Display: the most recent time this league drafted them. */
       draftRound, draftSeason, draftedByMe, draftPickNo: pick ? Number(pick.pick_no) : null,
-      class: klass, keeperCost,
-      costRuleId: klass === CLASS.KNOWN && costRule ? costRule.id : null,
+      /* Cost basis: the FIRST time, which is what the rules charge against. */
+      originalRound: origin.round, originalSeason: origin.season,
+      originUncertain: origin.uncertain, originReason: origin.reason,
+      priorKeeperSeasons: prior,
+      class: klass,
+      keeperCost: standing.calculatedRound,
+      keeperYear: standing.keeperYear,
+      maxKeeperYears: standing.maxKeeperYears,
+      finalKeeperYear: standing.finalKeeperYear,
+      standing: standing.state,
+      standingReason: standing.reason,
+      reviewNeeded: standing.reviewNeeded,
       marketRank: value?.rank ?? null,
       marketProjectedRound: value?.projectedRound ?? null,
     };
@@ -237,7 +237,10 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
   Ties break on name so the list is stable between renders.
 */
 export function rankCandidates(list = []) {
-  const groupOf = (c) => c.class === CLASS.KNOWN ? 0
+  /* Ineligible sinks below everything that can actually be kept, and an
+     unrecognised player id sinks below that. */
+  const groupOf = (c) => c.standing === "unavailable" ? 4
+                       : c.class === CLASS.KNOWN ? 0
                        : c.class === CLASS.NO_COST ? 1
                        : c.class === CLASS.NO_ROUND ? 2 : 3;
   return [...list].sort((a, b) => {
@@ -269,6 +272,9 @@ export const LABELS = {
   LATEST_ROUND:  "Latest-round pick",
   EARLIEST_ROUND: "Earliest-round pick",
   RETURNING:     "You drafted them",
+  FINAL_YEAR:    "Final keeper year",
+  LIMIT_REACHED: "Keeper limit reached",
+  NEEDS_REVIEW:  "Needs review",
   ACQUIRED:      "Acquired, not drafted",
   NEVER_DRAFTED: "Never drafted in this league",
   NEEDS_MARKET:  "Needs market ranking",
@@ -279,20 +285,22 @@ export const LABELS = {
 /**
  * The one-line reason printed under a candidate. Facts only.
  */
-export function reasonFor(c, { costRule = null } = {}) {
-  const bits = [];
+export function reasonFor(c) {
   if (c.class === CLASS.UNKNOWN) return LABELS.UNKNOWN_ID;
-  if (c.keeperCost != null && costRule) {
-    bits.push(`Round ${c.keeperCost} cost · ${costRule.label}`);
-  } else if (c.draftRound != null) {
-    bits.push(`Drafted round ${c.draftRound} in ${c.draftSeason}`);
+  const bits = [];
+  if (c.originalRound != null) {
+    bits.push(`Original R${c.originalRound}`);
+    if (c.keeperCost != null) bits.push(`Keeper R${c.keeperCost}`);
   } else {
-    bits.push(LABELS.NEVER_DRAFTED);
+    bits.push("Original draft round unknown");
   }
-  if (c.draftRound != null) {
-    bits.push(c.draftedByMe ? "your own pick" : "acquired since");
+  /* Tenure, in the configured league's own terms - never a hard-coded 3. */
+  if (c.standing === "unavailable") bits.push(c.standingReason);
+  else if (c.finalKeeperYear) bits.push("FINAL YEAR");
+  else if (c.keeperYear != null && c.maxKeeperYears != null) {
+    bits.push(`Year ${c.keeperYear} of ${c.maxKeeperYears}`);
   }
-  /* Lower-cased to sit mid-sentence, but NFL stays an acronym. */
+  if (c.reviewNeeded && c.originalRound == null) bits.push("needs review");
   if (c.freeAgent) bits.push("not on an NFL roster");
   return bits.join(" · ");
 }
@@ -303,19 +311,18 @@ export function reasonFor(c, { costRule = null } = {}) {
  */
 export function badgesFor(c, all = []) {
   const out = [];
-  const priced = all.filter((x) => x.keeperCost != null);
-  const rounded = all.filter((x) => x.draftRound != null && !x.freeAgent);
+  const priced = all.filter((x) => x.keeperCost != null && x.standing === "eligible");
 
-  /* The cheapest keeper is the one costing the LATEST round - see the note
-     on rankCandidates(). Math.max, not Math.min. */
-  if (c.keeperCost != null && priced.length > 1 &&
+  /* The cheapest keeper is the one costing the LATEST round - handing over a
+     14th-round pick costs almost nothing, a first-rounder costs the most
+     valuable thing you own. Math.max, not Math.min. */
+  if (c.keeperCost != null && c.standing === "eligible" && priced.length > 1 &&
       c.keeperCost === Math.max(...priced.map((x) => x.keeperCost))) {
     out.push(LABELS.CHEAPEST_COST);
   }
-  if (c.draftRound != null && !c.freeAgent && rounded.length > 1) {
-    if (c.draftRound === Math.max(...rounded.map((x) => x.draftRound))) out.push(LABELS.LATEST_ROUND);
-    if (c.draftRound === Math.min(...rounded.map((x) => x.draftRound))) out.push(LABELS.EARLIEST_ROUND);
-  }
+  if (c.finalKeeperYear && c.standing === "eligible") out.push(LABELS.FINAL_YEAR);
+  if (c.standing === "unavailable") out.push(LABELS.LIMIT_REACHED);
+  if (c.reviewNeeded && c.class !== CLASS.UNKNOWN) out.push(LABELS.NEEDS_REVIEW);
   if (c.draftedByMe === true) out.push(LABELS.RETURNING);
   if (c.draftedByMe === false) out.push(LABELS.ACQUIRED);
   if (c.freeAgent) out.push(LABELS.NOT_ON_NFL);
@@ -332,7 +339,8 @@ export function badgesFor(c, all = []) {
  */
 export function advise(input) {
   const { member = null, sleeperUserId = null, roster = null,
-          players = null, draftPicks = [], keeperRules = [],
+          players = null, draftPicks = [], rules = null, targetSeason = null,
+          keeperRows = [], earliestSyncedSeason = null,
           maxKeepers = null, market = NO_MARKET } = input || {};
 
   if (!member) return { state: "no-member" };
@@ -342,21 +350,24 @@ export function advise(input) {
   const playerIds = Array.isArray(roster.players) ? roster.players.map(String) : [];
   if (!playerIds.length) return { state: "no-players", member, sleeperUserId, roster };
 
-  const costRule = costRuleFrom(keeperRules);
   const list = rankCandidates(candidates({
-    playerIds, players: players || {}, draftPicks, sleeperUserId, costRule, market,
+    playerIds, players: players || {}, draftPicks, sleeperUserId,
+    rules, targetSeason, keeperRows, memberId: member?.id,
+    earliestSyncedSeason, market,
   }));
 
-  const known = list.filter((c) => c.class === CLASS.KNOWN).length;
-  const rounds = list.filter((c) => c.draftRound != null).length;
+  const known = list.filter((c) => c.standing === "eligible").length;
+  const rounds = list.filter((c) => c.originalRound != null).length;
 
   return {
     state: "ready",
-    member, sleeperUserId, roster, costRule, maxKeepers,
+    member, sleeperUserId, roster, rules, targetSeason, maxKeepers,
     market: { available: market.available, source: market.source, updatedAt: market.updatedAt },
     candidates: list,
     counts: { total: list.length, costKnown: known, draftRoundKnown: rounds,
-              neverDrafted: list.filter((c) => c.class === CLASS.NO_ROUND).length,
+              neverDrafted: list.filter((c) => c.originalRound == null && c.class !== CLASS.UNKNOWN).length,
+              unavailable: list.filter((c) => c.standing === "unavailable").length,
+              needsReview: list.filter((c) => c.reviewNeeded && c.class !== CLASS.UNKNOWN).length,
               unknownPlayer: list.filter((c) => c.class === CLASS.UNKNOWN).length },
     /* How many rows to lead with. The allowance if Sleeper stated one, and
        never more than a screenful. */

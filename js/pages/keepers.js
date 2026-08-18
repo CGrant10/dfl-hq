@@ -16,6 +16,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { currentMember } from "../members.js";
 import { loadPlayers } from "../sleeper.js";
 import { advise, badgesFor, reasonFor, CLASS, NO_MARKET } from "../keeper-advisor.js";
+import { configFor, describeRules } from "../keeper-rules.js";
 
 let year = null;   // remembered while the app stays open
 
@@ -135,7 +136,7 @@ async function mountAdvisor(view) {
 async function advisorData(member) {
   const uid = member.sleeper_user_id;
 
-  const [rosterRes, leagueRes, rulesRes] = await Promise.all([
+  const [rosterRes, leagueRes, rulesRes, keeperRowsRes, draftSpanRes] = await Promise.all([
     /*
       THE NEWEST ROSTER THAT ACTUALLY HAS PLAYERS, which is not always the
       newest row. A season in pre_draft has a roster for everybody and nobody
@@ -152,7 +153,21 @@ async function advisorData(member) {
     db().from("sleeper_leagues")
       .select("season, max_keepers, status")
       .order("season", { ascending: false }).limit(1),
-    db().from("rules").select("title, content").eq("category", "keeper").order("sort_order"),
+    /*
+      THE CONFIGURED RULES, and they are the only authority now. The prose in
+      the `rules` table is the league's human-readable constitution and is no
+      longer parsed for a calculation - see keeper_rules_schema.sql for why.
+    */
+    db().from("keeper_rules")
+      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression, updated_at")
+      .order("effective_season", { ascending: false }),
+    /* Existing keeper rows, for tenure. Only rows carrying a player_id can
+       contribute - see priorKeeperSeasons() - so legacy nickname rows are read
+       but never counted. */
+    db().from("keepers").select("year, member_id, player_id, player_name, team, player, round_cost"),
+    /* Where draft history begins, so a player first drafted in the earliest
+       synced season can be flagged as possibly predating it. */
+    db().from("sleeper_draft_picks").select("season").order("season", { ascending: true }).limit(1),
   ]);
 
   const rosterRows = rosterRes.data || [];
@@ -162,7 +177,20 @@ async function advisorData(member) {
      the column is missing and the whole select fails - which is not worth
      losing the advisor over, so an error here just means "not stated". */
   const maxKeepers = leagueRes.error ? null : (league?.max_keepers ?? null);
-  const keeperRules = rulesRes.error ? [] : (rulesRes.data || []);
+
+  /*
+    The season being decided. The league's own current season is the answer -
+    2026 while 2026 is in pre_draft - and the roster being read is the last one
+    played, which is exactly the keeper relationship.
+  */
+  const targetSeason = league?.season ?? null;
+  /* A missing keeper_rules table is the un-migrated state: no rules, which the
+     engine reports as "no-rules" and the card explains. */
+  const ruleSets = rulesRes.error ? [] : (rulesRes.data || []);
+  const rules = configFor(ruleSets, targetSeason);
+  const keeperRows = keeperRowsRes.error ? [] : (keeperRowsRes.data || []);
+  const earliestSyncedSeason = draftSpanRes.error
+    ? null : ((draftSpanRes.data || [])[0]?.season ?? null);
 
   const ids = Array.isArray(roster?.players) ? roster.players.map(String) : [];
   const [players, picksRes] = await Promise.all([
@@ -181,9 +209,11 @@ async function advisorData(member) {
          rounds means every candidate classifies as never-drafted, which the
          card then explains rather than hiding. */
       draftPicks: picksRes.error ? [] : (picksRes.data || []),
-      keeperRules, maxKeepers, market: NO_MARKET,
+      rules, targetSeason, keeperRows, earliestSyncedSeason,
+      maxKeepers, market: NO_MARKET,
     }),
     needsDraftSync: !!picksRes.error,
+    needsRulesMigration: !!rulesRes.error,
     leagueSeason: league?.season ?? null,
     rosterSeason: roster?.season ?? null,
   };
@@ -224,13 +254,16 @@ function advisorBody(data) {
       admin can run <strong>Sync Sleeper</strong> on the Admin page.</p>`;
   }
 
-  const { candidates, counts, costRule, maxKeepers, shortlist } = data;
+  const { candidates, counts, rules, targetSeason, maxKeepers, shortlist } = data;
   const top = candidates.slice(0, shortlist);
   const rest = candidates.slice(shortlist);
 
   const allowance = maxKeepers != null
     ? `Sleeper has this league at <strong>${maxKeepers} keeper${maxKeepers === 1 ? "" : "s"}</strong>.`
     : "";
+  /* The configured rules, as a sentence, derived entirely from the stored
+     configuration - there is no hard-coded "3-year" or "-1" in this file. */
+  const summary = describeRules(rules);
   /* Name the roster being read. If it is not the current league season, say
      so plainly - it is last season's squad, which is what keepers come from,
      but the reader should not have to infer that. */
@@ -243,10 +276,16 @@ function advisorBody(data) {
   /* The honest statement of what is missing, and where it would come from.
      This is the whole difference between an advisor and a fortune teller. */
   const gaps = [];
-  if (!costRule) {
-    gaps.push(`No keeper <strong>cost</strong> rule is recorded, so no round cost is
-      shown. An admin can write it in <a href="#/rules">Rules → Keepers</a> and
-      these become priced.`);
+  if (data.needsRulesMigration) {
+    gaps.push(`Keeper rules are not switched on yet. Run
+      <strong>keeper_rules_schema.sql</strong> in the Supabase SQL editor.`);
+  } else if (!rules) {
+    gaps.push(`No keeper rules are configured for ${esc(targetSeason ?? "this season")},
+      so no keeper cost is shown.`);
+  }
+  if (counts.needsReview) {
+    gaps.push(`${counts.needsReview} player${counts.needsReview === 1 ? " needs" : "s need"}
+      commissioner review — no original qualifying draft round on record.`);
   }
   if (data.needsDraftSync) {
     gaps.push(`Draft rounds are missing. Run <strong>sleeper_draft_schema.sql</strong>,
@@ -260,9 +299,11 @@ function advisorBody(data) {
   return `
     <p class="ka-lead">Your strongest <strong>options</strong> — not a
       recommendation. ${from} ${allowance}</p>
+    ${summary ? `<p class="ka-rules">${esc(targetSeason ?? "")} keeper rules ·
+      ${esc(summary)}</p>` : ""}
 
     <ol class="ka-list">
-      ${top.map((c, i) => candidateRow(c, i + 1, candidates, costRule)).join("")}
+      ${top.map((c, i) => candidateRow(c, i + 1, candidates)).join("")}
     </ol>
 
     ${rest.length ? `
@@ -270,32 +311,34 @@ function advisorBody(data) {
            data-collapse-title="Compare all players"
            data-collapse-badge="${rest.length} more">
         <ol class="ka-list" start="${shortlist + 1}">
-          ${rest.map((c, i) => candidateRow(c, shortlist + i + 1, candidates, costRule)).join("")}
+          ${rest.map((c, i) => candidateRow(c, shortlist + i + 1, candidates)).join("")}
         </ol>
       </div>` : ""}
 
     <ul class="ka-gaps">${gaps.map((g) => `<li>${g}</li>`).join("")}</ul>
-    ${costRule ? `<p class="muted tiny">Cost rule: “${esc(costRule.citation)}”</p>` : ""}
     <p class="muted tiny">${counts.total} players on your
       ${esc(data.rosterSeason ?? "")} roster${counts.unknownPlayer
         ? ` · ${counts.unknownPlayer} not in the Sleeper player list` : ""}.</p>`;
 }
 
-function candidateRow(c, n, all, costRule) {
+function candidateRow(c, n, all) {
   const badges = badgesFor(c, all);
   const who = c.name || `Player ${c.playerId}`;
   const where = [c.position, c.nflTeam].filter(Boolean).join(" · ");
   const cost = c.keeperCost != null
     ? `<span class="ka-cost">R${c.keeperCost}</span>`
-    : `<span class="ka-cost none" title="No keeper cost rule is recorded">—</span>`;
+    : `<span class="ka-cost none" title="${c.standing === "unavailable"
+        ? "Not eligible under the configured rules"
+        : "No original qualifying draft round on record"}">—</span>`;
 
   return `
-    <li class="ka-row ${c.class === CLASS.UNKNOWN ? "is-unknown" : ""}">
+    <li class="ka-row ${c.class === CLASS.UNKNOWN ? "is-unknown" : ""} ${
+        c.standing === "unavailable" ? "is-unavailable" : ""}">
       <span class="ka-n" aria-hidden="true">${n}</span>
       <span class="ka-main">
         <span class="ka-name">${esc(who)}</span>
         ${where ? `<span class="ka-where">${esc(where)}</span>` : ""}
-        <span class="ka-why">${esc(reasonFor(c, { costRule }))}</span>
+        <span class="ka-why">${esc(reasonFor(c))}</span>
         ${badges.length ? `<span class="ka-badges">${badges
           .map((b) => `<span class="pill tiny">${esc(b)}</span>`).join("")}</span>` : ""}
       </span>
