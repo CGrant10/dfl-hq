@@ -221,16 +221,26 @@ export function hideBottomline() {
 }
 
 /**
- * Draw (or redraw) the strip for a route.
+ * Draw the strip for a route.
  *
- * Cheap to call on every navigation: the items are fetched once per page load
- * and reused, so changing route re-renders from memory.
+ * The ticker is shell chrome, not page content. Once it is visible, ordinary
+ * route changes leave its DOM alone so the marquee keeps its exact animation
+ * position. Suppressed routes still tear it down intentionally; returning
+ * from one builds a fresh strip.
  */
 export function paintBottomline(route, hash = location.hash) {
   if (suppressedOn(route, hash)) { hideBottomline(); return; }
   if (!items.length) { hideBottomline(); return; }
 
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+  /* This is the persistence rule. Replacing host.innerHTML restarts both the
+     CSS marquee and the reduced-motion rotation timer, so if the strip is
+     already mounted in the same motion mode there is nothing to repaint. */
+  if (host && host.classList.contains("is-static") === reduced) {
+    document.body.classList.add("has-bottomline");
+    return;
+  }
 
   if (!host) {
     host = document.createElement("div");
