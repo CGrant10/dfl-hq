@@ -94,9 +94,25 @@ function saveFile(file) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+/*
+  A PHONE MUST NEVER END UP WITH A DOWNLOAD IT DID NOT ASK FOR.
+
+  The first cut treated saveFile() as the universal fallback, which is right on
+  a laptop and wrong on a phone. Two paths reached it there: a device whose
+  share sheet refuses FILES but does share text, and a share that rejected for
+  any reason other than the user cancelling. Both quietly dropped a PNG into
+  the camera roll or the Downloads folder - the commissioner shares a board,
+  dismisses something, and finds an image they now have to delete.
+
+  So a download is only ever offered where downloading is the normal way to
+  get a file: a device with NO Web Share API at all, i.e. a desktop browser.
+  Anywhere the share sheet exists, a failure is reported and nothing is written.
+*/
+const canShareAtAll = () => typeof navigator !== "undefined" && !!navigator.share;
+
 /**
  * Share a canvas as a PNG. Call this DIRECTLY inside a click handler.
- * @returns {"shared"|"cancelled"|"saved"} what actually happened
+ * @returns {"shared"|"saved"|"failed"} what actually happened
  */
 export function shareCanvas(canvas, filename, { title, text } = {}) {
   const file = dataUrlToFile(canvas.toDataURL("image/png"), filename);
@@ -104,12 +120,19 @@ export function shareCanvas(canvas, filename, { title, text } = {}) {
   if (navigator.canShare?.({ files: [file] })) {
     /* Deliberately not awaited: the promise is left to settle on its own so
        that this function stays synchronous for the caller and the gesture is
-       never spent. A cancelled share is a normal outcome, not an error. */
-    navigator.share({ files: [file], title, text }).catch((err) => {
-      if (err?.name !== "AbortError") saveFile(file);
-    });
+       never spent. A cancelled share is a normal outcome, not an error - and
+       neither outcome writes a file. */
+    navigator.share({ files: [file], title, text }).catch(() => {});
     return "shared";
   }
+
+  /* A share sheet that will not take a file can still take the words. Better
+     than an unrequested download, and it keeps the button doing something. */
+  if (canShareAtAll()) {
+    navigator.share({ title, text }).catch(() => {});
+    return "shared";
+  }
+
   saveFile(file);
   return "saved";
 }

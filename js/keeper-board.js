@@ -184,12 +184,18 @@ export function boardCanvas(board) {
   ctx.fillRect(0, 0, W, 10);
 
   // ---- the billing ----------------------------------------------------
-  let y = 96;
+  /*
+    THE CREST IS THE BILLING, so it is drawn at a size you can actually read.
+    It was 150px wide on a 1080px card - a thumbnail of a logo, and in a chat
+    preview the lettering inside it turned to mush. At 300 the artwork carries
+    the card the way it does on the stage.
+  */
+  let y = 74;
   const img = crestImage();
   if (img) {
-    const cw = 150, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
-    ctx.drawImage(img, (W - cw) / 2, y - 34, cw, ch);
-    y += ch + 6;
+    const cw = 300, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
+    ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
+    y += ch + 40;
   }
 
   ctx.textAlign = "center";
@@ -207,18 +213,15 @@ export function boardCanvas(board) {
   y += 40;
 
   /*
-    The rule summary, and it is genuinely optional. It goes in only if it fits
-    on one line at a legible size - a wrapped or shrunken rule line is worse
-    than no rule line, because a half-read rule is how an argument starts.
+    THE RULE SUMMARY IS NOT ON THE CARD.
+
+    It used to print "3-year maximum · Previous season's draft -1 round · Floor
+    R1" under the count. The commissioner asked for it off: the board is a
+    scoreboard of who kept whom, and the rules are a separate conversation that
+    lives on the Rules page and in the editor. `boardData().rulesLine` is still
+    produced - boardText() and any future caller can use it - but nothing is
+    painted here.
   */
-  if (board.rulesLine) {
-    ctx.font = `700 24px ${FONT}`;
-    if (ctx.measureText(board.rulesLine).width <= W - 200) {
-      ctx.fillStyle = GOLD;
-      ctx.fillText(board.rulesLine, W / 2, y);
-      y += 34;
-    }
-  }
 
   // ---- the rows -------------------------------------------------------
   const footer = 116;
