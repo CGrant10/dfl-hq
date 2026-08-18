@@ -70,6 +70,7 @@ if (placementStyle) {
 /* ------------------------------- items ------------------------------- */
 
 const DAY = 86400000;
+const REFRESH_MS = 5 * 60 * 1000;
 
 function whenText(value, timeValue) {
   if (!value) return "";
@@ -191,7 +192,13 @@ async function championName(userId) {
 
 let host = null;
 let rotate = null;
+let refreshTimer = null;
+let refreshing = false;
 let items = [];
+
+function itemKey(list) {
+  return JSON.stringify(list.map((i) => [i.label || "", i.text || "", i.route || "", i.tone || ""]));
+}
 
 function markup(list, reduced) {
   const cell = (i) => `
@@ -226,9 +233,10 @@ export function hideBottomline() {
  * The ticker is shell chrome, not page content. Once it is visible, ordinary
  * route changes leave its DOM alone so the marquee keeps its exact animation
  * position. Suppressed routes still tear it down intentionally; returning
- * from one builds a fresh strip.
+ * from one builds a fresh strip. A forced paint is used only when refreshed
+ * league data actually changed.
  */
-export function paintBottomline(route, hash = location.hash) {
+export function paintBottomline(route, hash = location.hash, { force = false } = {}) {
   if (suppressedOn(route, hash)) { hideBottomline(); return; }
   if (!items.length) { hideBottomline(); return; }
 
@@ -237,7 +245,7 @@ export function paintBottomline(route, hash = location.hash) {
   /* This is the persistence rule. Replacing host.innerHTML restarts both the
      CSS marquee and the reduced-motion rotation timer, so if the strip is
      already mounted in the same motion mode there is nothing to repaint. */
-  if (host && host.classList.contains("is-static") === reduced) {
+  if (!force && host && host.classList.contains("is-static") === reduced) {
     document.body.classList.add("has-bottomline");
     return;
   }
@@ -276,12 +284,32 @@ export function paintBottomline(route, hash = location.hash) {
   }
 }
 
+/* Refresh quietly while the app is open. The important rule is that a read is
+   NOT a repaint: identical data leaves the mounted tape completely untouched,
+   preserving its animation position. Only a real content change earns a DOM
+   replacement. */
+async function refreshBottomline(routeOf) {
+  if (refreshing) return;
+  refreshing = true;
+  try {
+    const next = await bottomlineItems();
+    if (itemKey(next) === itemKey(items)) return;
+    items = next;
+    paintBottomline(routeOf(), location.hash, { force: true });
+  } catch {
+    /* A background refresh is decoration. Keep the last good strip. */
+  } finally {
+    refreshing = false;
+  }
+}
+
 /**
  * Start the strip. Called once from app.js after the router is up.
  *
  * The reads happen here, off the critical path - the first paint of the app
  * does not wait for a ticker. A failure means no strip, which is a perfectly
- * good outcome for a decoration.
+ * good outcome for a decoration. After that, a five-minute refresh keeps the
+ * facts current without touching the ticker unless something actually changed.
  */
 export async function startBottomline(routeOf) {
   try {
@@ -289,6 +317,8 @@ export async function startBottomline(routeOf) {
   } catch {
     items = [];
   }
-  if (!items.length) return;
-  paintBottomline(routeOf(), location.hash);
+  if (items.length) paintBottomline(routeOf(), location.hash);
+
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => refreshBottomline(routeOf), REFRESH_MS);
 }
