@@ -42,6 +42,31 @@ import { suppressedOn } from "./bottomline-routes.js";
 
 export { suppressedOn };
 
+/*
+  DESKTOP PLACEMENT.
+
+  style.css positions the BottomLine 60px above the bottom edge because on a
+  phone it sits directly above the fixed bottom tab bar. At 900px the tab bar
+  moves under the HEADER instead, so keeping that 60px offset leaves a fake
+  empty nav slot below the ticker. This module owns the strip, so it owns the
+  one responsive correction too. Kept here rather than changing the desktop
+  nav rules: the nav is already correct.
+*/
+const placementStyle = typeof document !== "undefined" ? document.createElement("style") : null;
+if (placementStyle) {
+  placementStyle.id = "dfl-bottomline-desktop-placement";
+  placementStyle.textContent = `
+    @media (min-width: 900px) {
+      .bottomline { bottom: 0; }
+      body.has-bottomline { padding-bottom: calc(40px + var(--bl-h)); }
+      body.has-bottomline .install { bottom: calc(24px + var(--bl-h)); }
+      body.has-bottomline .install.update { bottom: calc(86px + var(--bl-h)); }
+      body.has-bottomline .toast { bottom: calc(24px + var(--bl-h)); }
+    }
+  `;
+  document.head.appendChild(placementStyle);
+}
+
 /* ------------------------------- items ------------------------------- */
 
 const DAY = 86400000;
