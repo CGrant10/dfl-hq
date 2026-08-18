@@ -118,6 +118,23 @@
 .page-in > .card:nth-child(4),  .page-in > div > .card:nth-child(4)  { animation-delay: .05s !important; }
 .page-in > .card:nth-child(n+5),.page-in > div > .card:nth-child(n+5){ animation-delay: .06s !important; }
 
+/* ---------------------------------------------------------------------
+   HOME HIERARCHY
+
+   Home should be a front page, not copies of Calendar and Polls. The first
+   block after the creed is the editorial Latest section; the next two are
+   the duplicate Upcoming and Open Polls feeds. Hide those two while their
+   dedicated pages, snapshot and BottomLine keep the same information easy
+   to reach. Keep Latest tight by showing only its newest announcement.
+   --------------------------------------------------------------------- */
+#home-wrap > .creed-doors + .block + .block,
+#home-wrap > .creed-doors + .block + .block + .block {
+  display: none;
+}
+#home-wrap > .creed-doors + .block .fp-news > article:nth-child(n+2) {
+  display: none;
+}
+
 /* Reduced-motion users keep the repo's existing short, static opening and
    get no route movement either. */
 @media (prefers-reduced-motion: reduce) {
