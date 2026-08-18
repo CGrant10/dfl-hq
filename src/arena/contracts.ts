@@ -70,6 +70,13 @@ export interface PhotoFinishPresentation {
 export interface FinishPresentation {
   camera: FinishCamera;
   visualElapsedMs: number;
+  /*
+    Has the viewer actually SEEN the race being decided yet? Every graphic
+    that resolves it - winner card, first-place emphasis, winner focus,
+    photo-finish result - is gated on this and nothing else.
+  */
+  crossingShown: boolean;
+  crossingShownMs: number;
   celebrationActive: boolean;
   celebrationStartedMs: number;
   allExited: boolean;

@@ -32,6 +32,10 @@
 
 import { esc } from "../ui.js";
 import { spriteMarkup } from "./sprites.js";
+/* The course band, from the same module Pixi reads it from. The DOM lanes
+   and the canvas actors have to agree about where the ground is, or one of
+   the two renderers puts racers in the sky. See src/arena/viewport.ts. */
+import { LANE_BAND_TOP, LANE_BAND_BOTTOM } from "./pixi-runtime.js";
 
 /**
  * One lane, with its racer.
@@ -49,7 +53,7 @@ export function racerLane(racer, index, count, { prefix = "", theme = "", id = "
      so the caller's namespace picks one - but only one tag is emitted and
      only one rule set styles it, which is the part that was duplicated. */
   const tag    = prefix ? `${prefix}-lane-name` : "lane-tag";
-  const laneY  = (10 + ((index + 0.5) / count) * 80).toFixed(2);
+  const laneY  = ((LANE_BAND_TOP + ((index + 0.5) / count) * (LANE_BAND_BOTTOM - LANE_BAND_TOP)) * 100).toFixed(2);
 
   return `
     <div class="${lane}" style="--lane:${index};--lanes:${count};--lane-y:${laneY}%">

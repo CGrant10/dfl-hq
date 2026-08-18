@@ -227,7 +227,7 @@ async function renderEvent(view, id) {
 
       ${broadcastCard(event, parts)}
 
-      ${waitingCard(parts, results)}
+      ${waitingCard(parts, results, event)}
 
       ${lineupCard(event, parts, byId, members)}
     </div>
@@ -290,7 +290,7 @@ async function renderEvent(view, id) {
 
   Nothing for an admin - Race control is directly above and says more.
 */
-function waitingCard(parts, results) {
+function waitingCard(parts, results, event) {
   if (canEdit() || results.length) return "";
   return `
     <div class="arena-ready is-waiting" role="status">
@@ -298,6 +298,11 @@ function waitingCard(parts, results) {
       <span>${parts.length < 2
         ? "This race needs at least two racers."
         : "The Race View opens here automatically the moment the race starts."}</span>
+      ${parts.length < 2 ? "" : `
+        <!-- Standing on the grid early is allowed, and it is no longer a
+             different picture from the one OBS is showing: the Race View is
+             idle until the commissioner presses Start race in there. -->
+        <a class="btn ghost small" href="#/broadcast?id=${event.id}">Wait on the starting grid</a>`}
     </div>`;
 }
 
@@ -549,20 +554,29 @@ function broadcastCard(event, parts) {
     running ? "The Race View is live on every viewer." :
     paused ? "Viewers are holding on the same frame." :
     finished ? "Review the finish, save it, or reset for another run." :
-    "Every viewer is waiting on the starting grid.";
+    "Open the Race View, get the screen ready, then press Start race in there.";
 
   /*
-    ONE LAUNCH BUTTON, not two.
+    ONE ACTION, AND IT DOES NOT START THE RACE.
 
-    There used to be "Open race view" above "Start race", which read as a
-    two-step operation and was not one. Opening the viewer never had to
-    happen first: the Race View draws the starting grid whenever the event is
-    idle, so OBS can be pointed at that URL once, at setup, and left there
-    for good. The button also reset the shared state as a side effect, which
-    made it a hidden third way to wipe a race.
+    It used to. "Start race" wrote bc_state, bc_started_at and a new seed and
+    THEN navigated, so the shared countdown was already running while the
+    Race View was still loading members, building the simulation and mounting
+    Pixi. The commissioner - the person who pressed it - reliably arrived
+    somewhere around "1", with no chance to rotate the phone, go fullscreen,
+    or check that OBS was actually live.
 
-    So the URL moved to the setup drawer below - where a one-time OBS
-    configuration belongs - and this panel has exactly one primary action.
+    Entering the view and starting the clock are two different actions and
+    they are two different buttons now. This one only opens the canonical
+    Race View, which draws the starting grid while the event is idle. The
+    START control lives in there, next to the picture, where the person
+    pressing it can see what everybody else is seeing.
+
+    It writes NOTHING. That is deliberate beyond the countdown: this panel is
+    reachable at any time, including in the middle of a live race, and a
+    launch action that reset or re-seeded anything on the way past would be a
+    way to wipe a race by navigating. Reset race and Save result are still
+    here, explicit, below.
   */
   return `
     <section class="card bc-panel" aria-labelledby="bc-console-title">
@@ -580,8 +594,12 @@ function broadcastCard(event, parts) {
 
       <div class="bc-command">
         <button class="btn bc-primary" id="bc-start" ${ready ? "" : "disabled"}>
-          <span>${running || paused || finished ? "Run race again" : "Start race"}</span>
-          <small>${ready ? `${parts.length} racers · opens the Race View` : "Lineup incomplete"}</small>
+          <span>${running || paused ? "Go to the live race" : "Go to Race View"}</span>
+          <small>${ready
+            ? (running || paused
+                ? `${parts.length} racers · already running`
+                : `${parts.length} racers · then press Start race in there`)
+            : "Lineup incomplete"}</small>
         </button>
         <div class="bc-transport" aria-label="Race transport controls">
           <button class="btn ghost" id="bc-pause" ${running || paused ? "" : "disabled"}>${paused ? "Resume race" : "Pause race"}</button>
@@ -613,8 +631,9 @@ function broadcastCard(event, parts) {
       <details class="bc-setup">
         <summary>Race View link (OBS)</summary>
         <p class="muted tiny">Point an OBS browser source at this once and leave it there. It shows
-          the starting grid while the event is idle and runs the race the moment you press Start —
-          no clicking in the capture. Anyone can open it; no profile required.</p>
+          the starting grid while the event is idle and runs the race the moment you press
+          <strong>Start race</strong> inside the Race View — merely opening the view changes nothing
+          in the capture. Anyone can open it; no profile required.</p>
         <div class="bc-url">
           <input id="bc-url" type="text" readonly aria-label="Public race viewer URL" value="${esc(url)}">
           <button class="btn ghost small" id="bc-copy">Copy link</button>
@@ -684,45 +703,19 @@ function wireBroadcast(view, event, parts, byId, refresh) {
     }
 
     if (t.closest("#bc-start")) {
-      if (panel.dataset.raceBusy === "true") return;
-      panel.dataset.raceBusy = "true";
-      const startButton = panel.querySelector("#bc-start");
-      if (startButton) startButton.disabled = true;
       /*
-        ONE WRITE, THEN GO AND WATCH IT.
+        GO AND WATCH IT. Nothing else.
 
-        This used to write the shared row AND run a second, local copy of the
-        race on this page, on the reasoning that the same seed makes them two
-        cameras on one recording. They were two cameras, and that was the
-        problem: two playback loops, two finish lines, two sets of camera
-        rules, drifting apart one fix at a time. The finish line that worked
-        on one and not the other was exactly that drift.
+        The write that used to be here - seed, bc_state running, bc_started_at
+        now + COUNTDOWN_MS - has moved to the Start race button inside the
+        Race View, which is the only control that owns the shared clock now.
+        See the note on this panel above, and #bc-go in pages/broadcast.js.
 
-        There is one race now, and the Race View plays it. The commissioner
-        goes there like everybody else - the write below is what members
-        already follow (watchSharedRace) and what OBS already follows, so
-        this navigation is the same event reaching this screen too.
-
-        The countdown is not started here either: bc_started_at is set a few
-        seconds into the future and every viewer counts down to it on its own
-        clock, so the commissioner arriving a moment later than OBS still
-        lands on the same frame.
+        Opening a race that is already running is the same navigation: the
+        Race View derives elapsed time from bc_started_at, so a mid-race join
+        lands on the correct shared frame rather than restarting anything.
       */
-      const seed = newSeed();
-      try {
-        await updateSharedEvent({
-          seed,
-          bc_state: "running",
-          bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
-          bc_offset_ms: 0,
-        });
-      } catch (err) {
-        console.warn("arena: shared race not updated", err);
-        toast(err.message || "The shared race could not start", true);
-        delete panel.dataset.raceBusy;
-        if (startButton) startButton.disabled = parts.length < 2;
-        return;
-      }
+      if (parts.length < 2) { toast("An Arena race needs at least two racers", true); return; }
       location.hash = `#/broadcast?id=${event.id}`;
       return;
     }

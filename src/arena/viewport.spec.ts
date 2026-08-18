@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arenaViewport, laneY, screenX } from "./viewport";
+import { LANE_BAND_BOTTOM, LANE_BAND_TOP, arenaViewport, laneY, screenX } from "./viewport";
 import { FINISH_LINE_RATIO, MAX_SETTLE } from "./finish-presentation";
 
 describe("Arena responsive viewport", () => {
@@ -14,12 +14,55 @@ describe("Arena responsive viewport", () => {
       expect(last).toBeGreaterThan(first);
       expect(screenX(view, 0)).toBeGreaterThanOrEqual(0);
       expect(screenX(view, 1)).toBeLessThanOrEqual(view.width);
-      expect(first).toBeCloseTo(view.height * (0.1 + 0.8 / 24));
-      expect(last).toBeCloseTo(view.height * (0.9 - 0.8 / 24));
+      const band = LANE_BAND_BOTTOM - LANE_BAND_TOP;
+      expect(first).toBeCloseTo(view.height * (LANE_BAND_TOP + band / 24));
+      expect(last).toBeCloseTo(view.height * (LANE_BAND_BOTTOM - band / 24));
       expect(screenX(view, 0)).toBeCloseTo(view.width * 0.03);
       expect(screenX(view, 1)).toBeCloseTo(view.width * 0.91);
     });
   }
+  /*
+    MEASURED TRACK BOXES, NOT WINDOW SIZES.
+
+    arenaViewport() is handed the Pixi HOST, which is the track - the stage
+    minus the header, the footer and the leaderboard column. Testing it with
+    window dimensions is how a bottom lane whose feet hung 0.2% off the edge
+    of a 294px-tall landscape track passed a spec that thought the box was
+    390px tall. These four are measured from the running Race View at
+    1920x1080, 1280x720, 844x390 landscape and 254x687 portrait.
+  */
+  const trackBoxes = [[1572, 792], [1024, 527], [675, 294], [139, 466]] as const;
+
+  it("keeps every lane inside the course band, below the scenery", () => {
+    /*
+      THE GROUNDING INVARIANT. The strip above LANE_BAND_TOP is sky, hills
+      and crowd; the band itself is the running surface. A racer drawn above
+      the band is a racer running through the scenery, and one drawn below it
+      has their feet clipped off the bottom of the course - so both ends have
+      to clear by half a drawn character at every size the app runs at.
+    */
+    for (const [width, height] of trackBoxes) {
+      const view = arenaViewport(width, height);
+      const halfCharacter = 15 * 3 * view.actorScale / 2;
+      const courseTop = view.height * 0.165;      // css/broadcast.css .race-course
+      expect(laneY(view, 0, 12) + halfCharacter).toBeGreaterThan(courseTop);
+      expect(laneY(view, 11, 12) + halfCharacter).toBeLessThanOrEqual(view.height);
+      expect(laneY(view, 0, 12)).toBeGreaterThanOrEqual(view.height * LANE_BAND_TOP);
+      expect(laneY(view, 11, 12)).toBeLessThanOrEqual(view.height * LANE_BAND_BOTTOM);
+    }
+  });
+
+  it("shifted the band down without squeezing the lanes together", () => {
+    // A drawn character is 15 rows at PIXEL_SIZE 3. The pitch has to stay at
+    // least that, or grounding the field would have cost lane separation.
+    const view = arenaViewport(1920, 1080);
+    const pitch = laneY(view, 1, 12) - laneY(view, 0, 12);
+    expect(pitch).toBeGreaterThanOrEqual(15 * 3 * view.actorScale * 0.88);
+    expect(LANE_BAND_BOTTOM - LANE_BAND_TOP).toBeGreaterThan(0.72);
+    expect(LANE_BAND_TOP).toBeGreaterThan(0.12);
+    expect(LANE_BAND_BOTTOM).toBeLessThanOrEqual(0.95);
+  });
+
   it("matches the legacy responsive racer sizes", () => {
     expect(arenaViewport(1280, 720).actorScale * 72).toBeCloseTo(88);
     expect(arenaViewport(1920, 1080).actorScale * 72).toBeCloseTo(88);

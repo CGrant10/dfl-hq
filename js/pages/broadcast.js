@@ -21,7 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishPassProgress, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishArrival, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
@@ -116,6 +116,13 @@ export async function render(view) {
 */
 const COUNTDOWN_MS = 2700;
 const BAR_IDLE_MS = 2600;
+/*
+  Longer while the race has not started, because the bar is now the thing the
+  commissioner has come here to press. It still hides itself, so an OBS
+  browser source pointed at this URL settles to a clean starting grid - OBS
+  never moves a pointer, so the capture never brings it back.
+*/
+const BAR_STANDBY_MS = 7000;
 
 function wireBar(view, id, racers) {
   const bar = view.querySelector("#bc-bar");
@@ -136,10 +143,15 @@ function wireBar(view, id, racers) {
 
   const stage = view.querySelector("#bc-stage");
   let hideTimer = 0;
+  const standingBy = () => {
+    const state = live?.state?.bc_state;
+    return !state || state === "idle";
+  };
   const show = () => {
     bar.classList.add("on");
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => bar.classList.remove("on"), BAR_IDLE_MS);
+    hideTimer = setTimeout(() => bar.classList.remove("on"),
+                           standingBy() ? BAR_STANDBY_MS : BAR_IDLE_MS);
   };
   stage.addEventListener("pointermove", show);
   stage.addEventListener("pointerdown", show);
@@ -150,6 +162,22 @@ function wireBar(view, id, racers) {
   const write = async (patch, note) => {
     try {
       await updateRow("arena_events", id, patch);
+      /*
+        DRAW IT HERE IMMEDIATELY, rather than waiting to be told about it.
+
+        This screen learns about the shared row from realtime, with a 1s poll
+        behind it. That was fine while the race was started from somewhere
+        else - this view was loading, and read the row on the way in. Now that
+        START is here, the commissioner's own screen was the one waiting for a
+        round trip to hear about its own button, and on the poll path it could
+        lose a second of a 2.7s countdown before it drew anything.
+
+        The patch is the same shape the realtime message carries, so this is
+        the message arriving instantly for the one client that already knows.
+        Every other viewer is unaffected and still counts down to the same
+        bc_started_at.
+      */
+      if (live?.state) live.apply?.({ ...live.state, ...patch });
       if (note) toast(note);
     } catch (err) {
       toast(/bc_state|column/.test(err.message || "")
@@ -163,9 +191,29 @@ function wireBar(view, id, racers) {
     show();
 
     if (e.target.closest("#bc-go")) {
-      const seed = r?.seed || newSeed();
+      /*
+        THIS IS THE START OF THE RACE, AND IT IS THE ONLY ONE.
+
+        The event page used to write this row and then navigate here, which
+        meant the countdown was already running while this view was still
+        loading its members, building its simulation and mounting Pixi. The
+        commissioner arrived somewhere between "2" and "GO". Nobody had time
+        to rotate a phone, go fullscreen or check that OBS was live.
+
+        The event page now only opens this view. Entering is not starting.
+        The shared clock is written HERE, by a human pressing this button
+        while looking at the starting grid, and every viewer - phones, other
+        admins, the OBS browser source - counts down to the same
+        bc_started_at from their own clock.
+
+        A NEW SEED EVERY TIME, because this is "run a race". Watching a
+        stored race again is a different action with different semantics and
+        it still lives on the event page as Replay, which reuses the saved
+        seed. Rolling here as well would have quietly turned the one
+        same-seed flow into a re-roll.
+      */
       return write({
-        seed,
+        seed: newSeed(),
         bc_state: "running",
         bc_started_at: new Date(Date.now() + COUNTDOWN_MS).toISOString(),
         bc_offset_ms: 0,
@@ -239,15 +287,6 @@ function teardown() {
 function paint(view, event, racers) {
   view.innerHTML = `
     <div class="bc-stage cinematic-race ${raceMotionClass()}" id="bc-stage" data-theme="${esc(event.theme || "stadium")}">
-      <div class="race-scenery" aria-hidden="true">
-        <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
-          <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
-            <feGaussianBlur data-arena-motion-blur stdDeviation="0 0" edgeMode="duplicate"></feGaussianBlur>
-          </filter>
-        </svg>
-        <div class="race-sky"></div><div class="race-hills far"></div>
-        <div class="race-hills near"></div><div class="race-crowd"></div>
-      </div>
       <header class="bc-head">
         <div class="bc-brand">
           <span class="bc-brand-mark">DFL <span>HQ</span></span>
@@ -262,6 +301,42 @@ function paint(view, event, racers) {
 
       <div class="bc-body">
         <div class="bc-track" id="bc-track">
+          <!--
+            THE SCENERY LIVES INSIDE THE TRACK NOW, AND THAT IS THE FIX.
+
+            It used to be a sibling of the header and the footer, pinned to
+            the whole stage, so its percentages measured the WINDOW while the
+            lanes measured the TRACK. Two coordinate systems, nothing keeping
+            them in step: the horizon landed around the middle of the field
+            and the top five or six racers ran through the sky, with the
+            crowd down by the bottom lane's feet.
+
+            In here, 0% and 100% are the top and bottom of the racers' own
+            box. The course band below LANE_BAND_TOP is the running surface,
+            everything above it is the world behind the course, and a racer
+            cannot be drawn outside the band - so "planted on the course" is
+            structural rather than a coincidence of two sets of numbers.
+          -->
+          <div class="race-scenery" aria-hidden="true">
+            <svg class="arena-effect-defs" width="0" height="0" focusable="false" aria-hidden="true">
+              <filter id="arena-motion-blur" x="-12%" y="-4%" width="124%" height="108%" color-interpolation-filters="sRGB">
+                <feGaussianBlur data-arena-motion-blur stdDeviation="0 0" edgeMode="duplicate"></feGaussianBlur>
+              </filter>
+            </svg>
+            <div class="race-sky"></div>
+            <div class="race-hills far"></div>
+            <div class="race-hills near"></div>
+            <div class="race-stands"></div>
+            <div class="race-crowd"></div>
+            <div class="race-banners">
+              <span>DFL</span><span>ARENA</span><span>DFL</span><span>ARENA</span>
+              <span>DFL</span><span>ARENA</span><span>DFL</span><span>ARENA</span>
+            </div>
+            <div class="race-rail"></div>
+            <div class="race-course"></div>
+            <div class="race-verge"></div>
+          </div>
+          <div class="race-start-gate" aria-hidden="true"></div>
           <div class="bc-finish"></div>
           ${racerLanes(racers, { theme: event.theme, prefix: "bc", idPrefix: "bc-runner-" })}
         </div>
@@ -290,13 +365,13 @@ function paint(view, event, racers) {
 
       <div class="bc-bar" id="bc-bar">
         <a class="bc-btn" href="#/arena?id=${event.id}" title="Leave broadcast">Exit</a>
-        <button class="bc-btn" id="bc-go" title="Start / restart">Start</button>
+        <button class="bc-btn bc-btn-go" id="bc-go" title="Start the race - writes the shared countdown for every viewer">Start race</button>
         <button class="bc-btn" id="bc-hold" title="Pause / resume">Pause</button>
         <button class="bc-btn" id="bc-end" title="Skip to finish">Skip</button>
         <button class="bc-btn" id="bc-zero" title="Reset to the start line">Reset</button>
         <button class="bc-btn" id="bc-full" title="Fullscreen">Fullscreen</button>
         <label class="bc-motion-setting" title="Use gentler race effects on this device"><input type="checkbox" id="bc-motion" ${getReduceRaceMotion() ? "checked" : ""}> Reduce race motion/effects</label>
-        <span class="bc-bar-hint">Admin only · hides itself while streaming</span>
+        <span class="bc-bar-hint">Admin only · hides itself while streaming. Press <strong>Start race</strong> when everyone is watching.</span>
       </div>
 
       <footer class="bc-foot">
@@ -423,6 +498,11 @@ function watch(view, id, racers) {
     els.clock.classList.toggle("hidden", row.bc_show_timer === false);
   };
 
+  /* The control bar writes the shared row and then hands the patch straight
+     to this, so the commissioner's own screen never waits for the round trip
+     to react to its own button. See write() in wireBar. */
+  live.apply = apply;
+
   // Initial read, then realtime, with polling as the safety net.
   const fetchRow = async () => {
     const { data } = await db().from("arena_events").select("*").eq("id", id).maybeSingle();
@@ -528,15 +608,23 @@ function watch(view, id, racers) {
       });
       if (els.stage.dataset.shot !== shot) els.stage.dataset.shot = shot;
       /*
-        THE FINISH PASS. Time-derived, so a racer falling backwards cannot
-        drag the scenery back with them - see finishPassProgress().
+        THE FINISH STRUCTURE'S APPROACH. Time-derived, so a racer falling
+        backwards cannot drag the scenery back with them, and anchored to the
+        WINNER'S finish rather than to the middle of the whole finish window -
+        which is what used to leave the stripe offscreen at the exact moment
+        the race was decided. See finishArrival().
       */
-      const pass = finishPassProgress(Math.max(0, elapsed), live.sim.order[0].finishMs, live.sim.order.at(-1).finishMs);
-      if (pass !== live.lastReveal) {
-        els.stage.style.setProperty("--finish-pass", pass.toFixed(4));
-        live.lastReveal = pass;
+      const arrival = finishArrival(Math.max(0, elapsed), live.sim.order[0].finishMs);
+      if (arrival !== live.lastArrival) {
+        els.stage.style.setProperty("--finish-arrival", arrival.toFixed(4));
+        live.lastArrival = arrival;
       }
       const pixiState = finishPresentation.celebrationActive ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
+      /* Standing by, counting down, racing or done - the stylesheet needs to
+         know so the starting grid can present itself and the control bar can
+         stay put while nothing is happening. */
+      const shownState = state === "idle" ? "idle" : elapsed < 0 ? "countdown" : pixiState;
+      if (els.stage.dataset.raceState !== shownState) els.stage.dataset.raceState = shownState;
       live.pixi?.render({
         elapsedMs: Math.max(0, elapsed),
         state: elapsed < 0 ? "idle" : pixiState,
@@ -696,7 +784,7 @@ function watch(view, id, racers) {
         if (state === "running") {
           els.status.textContent = elapsed > finishMs * 0.82 ? "Final stretch" : "Racing";
         } else if (state === "paused")  els.status.textContent = "Paused";
-        else if (state === "idle")      els.status.textContent = "Standing by";
+        else if (state === "idle")      els.status.textContent = "Standing by on the starting grid";
       }
     }
     live.raf = requestAnimationFrame(frame);

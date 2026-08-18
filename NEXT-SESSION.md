@@ -1,93 +1,114 @@
-# DFL HQ ARENA — NEXT SESSION: FINISH HUDDLE (closingEase)
+# DFL HQ ARENA — NEXT SESSION: CHARACTER CUSTOMIZATION
 
-## Done in v1.94.0 — do not redo
-
-**Boomerang: FIXED.** `finishReveal(leaderProgress)` is deleted. The marker is
-driven by `finishPassProgress(elapsedMs, firstFinishMs, lastFinishMs)` — a
-clamped ramp on the clock, monotonic by construction, stateless, seekable,
-identical live/shared. Verified over **26 seeds including 32676**: zero
-reversals, zero backward travel.
-
-**Parking: GONE.** One continuous right-to-left pass. Measured on seed 90210:
-stripe at 153% of frame at half-race and 2s before the first finish (offscreen,
-hidden), 77% at the first crossing, 9% at the last crossing, -37% after
-everyone is home. It never stops and never re-enters.
-
-**Global white streaks: OFF.** CSS `.track.is-running::before/::after` and the
-`.bc-track` equivalents get `content:none`; `drawAnimeField()` and
-`drawForegroundRush()` are no longer called and their Graphics are cleared
-each frame (layers stay mounted so the display list and chunk graph are
-unchanged). Racer-specific effects untouched: `drawRacerEffects()` per actor,
-`.trail-*`, surge/stumble/duel classes.
-
-**Tests:** 89 passing. New: monotonic-pass regression, hidden-until-late,
-cannot-be-dragged-backwards, live/shared identical derivation.
-typecheck clean, build clean, version 1.94.0.
+The presentation/flow pass (v1.102.0) is done and verified. **Character
+customization is the next project** — see `CHARACTERS.md`, phases 2–6.
 
 ---
 
-## NOT DONE — this is the next session's job
+## Done in v1.102.0 — do not redo
 
-### 1. The huddle — convergence FIXED, spread metric UNMOVED
+### 1. Entering the Race View no longer starts the race
 
-`closingEase` now takes **milliseconds to that racer's own finishMs**
-(`CLOSE_MS = 900`) instead of a shared `CLOSE_FROM = 0.88` progress mark. A
-racer three seconds from home keeps their full arc while the leader
-converges. All 89 specs still pass; correctness all zero.
+`#bc-start` on the event page (`js/pages/arena.js`) used to write `seed`,
+`bc_state: running` and `bc_started_at = now + 2700ms` and *then* navigate, so
+the shared countdown was already running while the Race View was loading. It
+now **writes nothing** and only navigates. Its label is "Go to Race View"
+("Go to the live race" when one is already running).
 
-**But it did not move the first-crossing spread.** Seed 1000 still 0.129,
-seed 90210 still 0.103 — identical to before. Verified the new code was
-loaded (`closingEase(5000) === 1`), so this is a real result.
+`#bc-go` inside the Race View (`js/pages/broadcast.js`) is the **only**
+control that starts a race. It writes a **new seed**, `bc_state: running`,
+`bc_started_at = now + COUNTDOWN_MS`, `bc_offset_ms: 0`.
 
-**Why, and what the next session should actually chase.** At the first
-crossing the metric is dominated by two things that are *not* the closing
-envelope: leaders are pinned near 1.0 by the `ahead` allowance
-(`tanh`-softened, →0 as truth→1), and trailing racers are drawn *forward* of
-their truth by their arcs. Seed 1000: trailing truth 0.817, drawn ~0.871.
-So the field compresses because the back is pushed **up**, not because the
-front is pulled back.
+Same-seed **Replay** stays on the event page and still writes the clock with
+the stored seed — deliberately untouched, it is the one same-seed flow.
 
-The lever is therefore **arc composition** — trailing racers wanting negative
-deviation late — which is the race-shape/disparity work, not the closing
-envelope. Do that pass and re-measure; do not tune `CLOSE_MS` expecting the
-spread number to move.
+`write()` in `wireBar` now hands the patch straight to `apply()` via
+`live.apply`, so the commissioner's own screen reacts to its own button
+instead of waiting for realtime or the 1s poll. Measured: countdown drawn at
+"3" **55ms** after the press.
 
-Previously measured:
-Measured previously:
+`data-race-state` on `.bc-stage` is `idle | countdown | running | paused |
+finished`. The idle view keeps the control bar legible (`BAR_STANDBY_MS`
+7000 rather than 2600) and still auto-hides, so an OBS source settles to a
+clean starting grid.
 
-| | seed 1000 | seed 90210 |
-|---|---|---|
-| drawn spread mid-race | 0.546 | 0.185 |
-| drawn spread at first crossing | **0.129** | 0.103 |
-| TRUTH spread at first crossing | 0.183 | 0.112 |
+### 2. The finish line arrives before anyone crosses it
 
-The drawn field is compressed **below the truth** at the line — a ~76%
-collapse landing exactly when the finish should look dramatic.
+**This was geometry, not overlay timing.** `finishPassProgress()` was a
+right-to-left *pass* over `first - 1500 → last + 900`, so its midpoint — the
+only moment the stripe is over the crossing point — landed **1.6s to 5.0s
+after the winner had already finished**. Measured at the winner's crossing,
+the stripe was at **108%–131% of the frame**: offscreen right. Racers crossed
+nothing, and the photo-finish result panel appeared while it was still out
+there.
 
-Options in `src/arena/theatre.ts`:
+Replaced by **`finishArrival(elapsedMs, firstFinishMs)`**: an eased, clamped
+ramp that brings the structure in from offscreen right and **stops on
+`FINISH_LINE_RATIO` 420ms before the first official finish**
+(`FINISH_SETTLED_LEAD_MS`). `lastFinishMs` is no longer an input. CSS
+variable renamed `--finish-pass` → `--finish-arrival` (1 = on the line) so a
+stale consumer cannot silently read a differently-scaled value.
 
-- move `CLOSE_FROM` later (0.94+)
-- gentler envelope (currently `1 - smoothstep(...)`)
-- **preferred:** close down per racer against *their own* distance/time to
-  their authoritative `finishMs`, rather than one shared progress threshold —
-  a racer 3 seconds from home should still be allowed their arc while the
-  leader converges
+Measured, seed 424242 at 1920x1080 — stripe left edge, % of track:
 
-Constraint: drawn must still meet truth at each racer's official crossing.
-`theatre.spec.ts` enforces no-early-crossing, bounded backslide, determinism
-and smoothness — those must keep passing.
+| relative to the winner's crossing | stripe |
+|---|---|
+| −3000ms | 124.4% (invisible) |
+| −2000ms | 82.8% |
+| −1200ms | 60.3% |
+| −700ms | 57.3% |
+| −420ms → +∞ | 57.2% (on the line) |
 
-### 2. Measurements to repeat after the fix
+`FinishPresentation` gained **`crossingShown` / `crossingShownMs`** — the one
+answer to "may the UI say who won yet". The decisive crossing is P2's line in
+a photo finish and the winner's own otherwise. `celebrationActive` is gated on
+it, and the photo-finish **result** phase now waits for
+`crossingShownMs + RESULT_BEAT_MS` (220ms) instead of P2 + 120ms. The
+`approach` phase ("PHOTO FINISH", tension only) is unchanged and still runs
+before the line.
 
-mid-race spread · 2s before first finish · first crossing · middle finishers ·
-last crossing. Judge the **temporal shape**, not just max spread.
+Verified over 6 real close finishes: approach ≈ −0.76s, flash at the
+crossing, result +220ms, stripe on the line throughout. Winner card and
+`is-winner` appear at `last + 320ms` and never earlier.
 
-### 3. Visual acceptance not yet performed
+### 3. The course, instead of a skybox
 
-I ran the numeric verification only. **Nobody has watched a race on desktop or
-phone since this change.** Confirm: no line for most of the race, one
-continuous pass, no boomerang, racers run through it, streaks gone, racer
-effects intact, live and shared match.
+`.race-scenery` **moved inside `.bc-track`** in `paint()`. It used to be a
+sibling of the header and footer, so its percentages measured the window
+while the lanes measured the track — the horizon landed mid-field, the top
+lanes ran through the sky and the crowd sat under the bottom lane's feet.
+
+New bands (`css/broadcast.css`, scoped `.bc-stage.cinematic-race` — three
+classes, so it wins over `screens.css`'s two-class skybox rules regardless of
+load order), as % of the track:
+
+```
+0    - 11%    sky strip
+3    - 13%    distant hills + treeline   (.race-hills.far / .race-hills)
+6    - 14%    stand + crowd              (.race-stands / .race-crowd)
+12.5 - 16.5%  DFL banners                (.race-banners)
+15.9 - 17%    far fence                  (.race-rail)
+16.5 - 100%   THE COURSE                 (.race-course)
+98   - 100%   near verge                 (.race-verge)
+```
+
+`LANE_BAND_TOP` 0.18 / `LANE_BAND_BOTTOM` 0.92 in `src/arena/viewport.ts` are
+the single definition of the running surface; `js/arena/racer-view.js` imports
+them for the DOM lanes. **Shifted, not squeezed** — pitch only 6.67% → 6.17%.
+0.94 was tried first and clipped the bottom lane's feet on a 294px landscape
+track (feet at 100.2%); `viewport.spec.ts` now measures against the four real
+track boxes rather than window sizes.
+
+Also: `.bc-finish` and the new `.race-start-gate` span the running surface
+(14.5%–98.5%) instead of the whole frame, the stripe gained a gantry cap, and
+`.bc-body` is full-bleed.
+
+### Verified
+
+1920x1080, 1280x720, 844x390 landscape, 254x687 portrait: every lane's feet
+between the course top and the bottom edge, no console errors, reduced motion
+toggles clean. Mid-race join lands at the shared elapsed position and does not
+touch the row. typecheck clean, **100 tests**, build clean.
 
 ---
 
@@ -99,22 +120,59 @@ theatre.ts            dramatize / planArcs / allowance / closingEase
 finishTrajectories()  precomputed per racer
 presentFinish()       owns displayProgress / exiting / speed / phase
 presentationScreenRatio()  ONE straight line, camera-independent (spec)
-finishPassProgress()  scenery only, time-derived, monotonic
+finishArrival()       scenery only, time-derived, monotonic, stops on the line
+crossingShown         the ONLY gate on any result graphic
+LANE_BAND_TOP/BOTTOM  the course band, read by Pixi and the DOM alike
 composeCharacter()    single character source of truth
+#bc-go                the only writer of a race start
 ```
 
-Geometry: `TRACK_START` 0.04, `FINISH_LINE_RATIO` 0.58, `MAX_SETTLE` 0.34.
-Correctness invariants (all currently 0): winner / order / finishMs mismatch,
-early crossing, off-track, replay mismatch.
+Geometry: `TRACK_START` 0.04, `FINISH_LINE_RATIO` 0.58, `MAX_SETTLE` 0.34,
+course top 0.165, lane band 0.18–0.92.
 
 ---
 
-## Still deferred
+## Still open
+
+### The huddle — convergence fixed, spread metric unmoved
+
+`closingEase` takes **milliseconds to that racer's own finishMs**
+(`CLOSE_MS = 900`) instead of a shared `CLOSE_FROM = 0.88` progress mark. It
+did **not** move the first-crossing spread: seed 1000 still 0.129, seed 90210
+still 0.103.
+
+Why: at the first crossing the metric is dominated by two things that are not
+the closing envelope — leaders pinned near 1.0 by the `ahead` allowance, and
+trailing racers drawn *forward* of their truth by their arcs (seed 1000:
+trailing truth 0.817, drawn ~0.871). The field compresses because the back is
+pushed **up**, not because the front is pulled back.
+
+The lever is **arc composition** — trailing racers wanting negative deviation
+late — which is the race-shape/disparity work. Do that pass and re-measure;
+do not tune `CLOSE_MS` expecting the spread number to move.
+
+| | seed 1000 | seed 90210 |
+|---|---|---|
+| drawn spread mid-race | 0.546 | 0.185 |
+| drawn spread at first crossing | **0.129** | 0.103 |
+| TRUTH spread at first crossing | 0.183 | 0.112 |
+
+Constraint: drawn must still meet truth at each racer's official crossing.
+`theatre.spec.ts` enforces no-early-crossing, bounded backslide, determinism
+and smoothness.
+
+### Deferred
 
 1. `src/arena/engine.ts` dead while `ARENA_MIGRATION.md` says "Complete"
 2. `--font-condensed` undefined; `.pet-option-label` still reaches for it
-3. Two CSS namespaces (`.runner*` / `.bc-*`)
-4. `pet-texture.ts` `normalizePet` vs `normalizeCharacter`
-5. Editing `src/arena/character.ts` requires `pnpm build`
-6. Character Phases 2–6 — see `CHARACTERS.md`
-7. **Race disparity / race shapes — after the huddle fix**
+3. Two CSS namespaces (`.runner*` / `.bc-*`); the legacy
+   `.arena-track-wrap` race rules in `screens.css` are dead — the event page
+   has not drawn a race since the shared-viewer change
+4. `.bc-stage .bc-body{display:block}` and `.bc-board{position:absolute}` in
+   the "Open-field race view" block never take effect — the board still
+   occupies a 20vw grid column instead of floating over the course. Pre-dates
+   this pass; fixing it would widen the course by ~20%
+5. `pet-texture.ts` `normalizePet` vs `normalizeCharacter`
+6. Editing `src/arena/*.ts` requires `pnpm build`
+7. **Character customization — Phases 2–6, `CHARACTERS.md`. This is next.**
+8. Race disparity / race shapes — after the huddle fix

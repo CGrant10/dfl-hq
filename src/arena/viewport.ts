@@ -7,17 +7,47 @@ export interface ArenaViewport {
   trackLeft: number; trackRight: number; trackWidth: number; actorScale: number;
 }
 
+/*
+  THE LANE BAND IS THE COURSE, AND IT IS THE ONLY PLACE A RACER MAY BE.
+
+  This used to be the middle 80% of the track - lane centres from 10% to
+  90% - which was a reasonable spread of twelve rows and a bad composition.
+  The scenery behind it drew its horizon around the middle of that same
+  band, so the top four or five lanes were literally above the horizon: the
+  racers in them read as running through the sky, with the crowd somewhere
+  down by their feet.
+
+  The band is now the RUNNING SURFACE and the strip above it is the world
+  behind the course - sky, distant hills, crowd, banners. Shifting rather
+  than squeezing was the point: the pitch between lanes only drops from
+  6.67% to 6.17% of the track, so nothing got meaningfully more crowded to
+  buy the horizon.
+
+  BOTTOM IS 0.92 AND NOT 0.94 BECAUSE OF SHORT LANDSCAPE. A drawn character
+  is 15 rows at PIXEL_SIZE 3, scaled - about 55px - and a phone in landscape
+  gives the track under 300px of height, so the last lane's feet are more
+  than 9% of the box below its centre. At 0.94 they landed at 100.2% and the
+  bottom racer's contact shadow was clipped off the edge of the course. It is
+  measured against the real track boxes in viewport.spec.ts, not against
+  window heights, because the track is what the renderer is handed.
+
+  css/broadcast.css lays the course bands out against these two numbers and
+  js/arena/racer-view.js positions the DOM lanes from them, so there is one
+  definition of where the ground is. If they move, they move together.
+*/
+export const LANE_BAND_TOP = 0.18;
+export const LANE_BAND_BOTTOM = 0.92;
+
 export function arenaViewport(width: number, height: number): ArenaViewport {
   const safeWidth = Math.max(240, width);
   const safeHeight = Math.max(240, height);
   const portrait = safeHeight > safeWidth;
   const compact = safeHeight < 520 || safeWidth < 520;
-  // These are the pre-Pixi Arena's layout constants. The DOM renderer places
-  // lane centres through the middle 80% of the track and moves racer centres
-  // from 3% to 91% of its width. Pixi must use the same coordinate system so
-  // switching renderers cannot change the composition.
-  const laneTop = safeHeight * 0.1;
-  const laneBottom = safeHeight * 0.9;
+  // The DOM renderer places lane centres through the course band and moves
+  // racer centres from 3% to 91% of the track width. Pixi must use the same
+  // coordinate system so switching renderers cannot change the composition.
+  const laneTop = safeHeight * LANE_BAND_TOP;
+  const laneBottom = safeHeight * LANE_BAND_BOTTOM;
   const trackLeft = safeWidth * 0.03;
   const trackRight = safeWidth * 0.91;
   const laneHeight = laneBottom - laneTop;

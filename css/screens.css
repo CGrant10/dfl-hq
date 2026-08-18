@@ -930,11 +930,14 @@ a.moment:hover { background: var(--hover-soft); }
 */
 .arena-track-wrap.cinematic-race .track-finish{
   right:42%;
-  /* 0 = offscreen right, .5 = through the racers, 1 = offscreen left.
-     One continuous pass driven by a clamped clock ramp, so it cannot
-     reverse, stop or re-enter. Scenery: nothing reads it. */
-  transform:translateX(calc((0.5 - var(--finish-pass,0)) * 190vw));
-  opacity:min(1,calc(var(--finish-pass,0) * 12));
+  /* Same variable and the same approach curve as the shared viewer's stripe -
+     0 offscreen right, 1 standing on the line. Written by finishArrival().
+     Keeping the two in step is why the file that replaced --finish-reveal
+     with a differently-scaled variable left a stripe parked offscreen for a
+     whole release: if this ever reads a name nothing writes, it is invisible
+     and silent about it. */
+  transform:translateX(calc((1 - var(--finish-arrival,0)) * 55vw));
+  opacity:min(1,calc(var(--finish-arrival,0) * 6));
   will-change:transform;
 }
 @media(max-width:640px){

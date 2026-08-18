@@ -613,11 +613,20 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
 .bc-stage .bc-finish{
   right:42%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8;
-  /* 0 = offscreen right, .5 = through the racers, 1 = offscreen left.
-     One continuous pass driven by a clamped clock ramp, so it cannot
-     reverse, stop or re-enter. Scenery: nothing reads it. */
-  transform:translateX(calc((0.5 - var(--finish-pass,0)) * 190vw));
-  opacity:min(1,calc(var(--finish-pass,0) * 12));
+  /*
+    0 = offscreen right, 1 = STANDING ON THE LINE, where every racer crosses.
+
+    An approach that completes, driven by a clamped, eased clock ramp, so it
+    cannot reverse, stop short or re-enter. It used to be a pass that carried
+    on to offscreen left, whose midpoint - the only moment it was actually
+    over the crossing point - landed one to five seconds AFTER the winner had
+    finished. The racers crossed nothing. See finishArrival().
+
+    Scenery: nothing reads it, and presentationScreenRatio() ignores the
+    camera entirely, so this element can travel as much as it likes.
+  */
+  transform:translateX(calc((1 - var(--finish-arrival,0)) * 55vw));
+  opacity:min(1,calc(var(--finish-arrival,0) * 6));
   will-change:transform;
 }
 .bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
@@ -657,8 +666,8 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   THE SECOND .bc-finish BLOCK IS GONE, AND IT WAS THE BUG.
 
   There were two of these, identical in specificity. The first (above) is the
-  live one and reads --finish-pass. This one was left behind by the change
-  that replaced --finish-reveal with --finish-pass, and being LATER in the
+  live one and reads the current variable (--finish-arrival today). This one
+  was left behind by the change that renamed it, and being LATER in the
   file it won the cascade for transform and opacity.
 
   Nothing has written --finish-reveal since that change. So both declarations
@@ -1051,4 +1060,192 @@ body.broadcasting .view { width:100%; height:100%; }
 @media(max-width:800px){
   .arena-track-wrap.has-pixi-race .runner,
   .bc-track.has-pixi-race .bc-runner{z-index:3}
+}
+
+
+/* =====================================================================
+   THE COURSE (v1.102) - the racers run ON something now
+   ---------------------------------------------------------------------
+   WHAT WAS WRONG. The scenery was a skybox: sky over far hills over near
+   hills, with the crowd pinned to the BOTTOM of the stage, and it was a
+   sibling of the header and the footer - so its percentages measured the
+   whole window while the lanes measured the track. Nothing kept the two
+   coordinate systems in step. The horizon landed in the middle of the
+   field, the top five or six racers were drawn above it, and the crowd was
+   below the bottom lane's feet. Twelve characters running through the sky
+   with the audience underneath them.
+
+   THE COMPOSITION NOW. Flat and horizontal, and it is one stack inside the
+   track, so 0% and 100% are the top and bottom of the racers' own box:
+
+     0     -  11%   sky, a strip, not a backdrop
+     3     -  13%   distant hills and a treeline, BEHIND everything
+     6     -  14%   the stand, the crowd, the far fence
+     12.5  -  16.5% DFL banners along the top of the fence
+     16.5  - 100%   THE RACE COURSE. Every lane centre is between
+                    LANE_BAND_TOP (18%) and LANE_BAND_BOTTOM (92%), so
+                    every racer's feet are on this surface with course
+                    visible above and below them.
+     98    - 100%   the near verge, in front of the bottom lane
+
+   The one rule the numbers exist to enforce: a racer is drawn centred on a
+   lane, a drawn character is 15 rows at PIXEL_SIZE 3, and lane 1's feet
+   therefore land at about 21% - four and a half points of course above
+   them. src/arena/viewport.spec.ts fails if that stops being true at any
+   size the app runs at.
+
+   SCOPED WITH THREE CLASSES ON PURPOSE. screens.css loads after this file
+   and styles `.cinematic-race .race-sky` and friends with two, so a
+   two-class rule here would lose the cascade to the old skybox no matter
+   what it said. `.bc-stage.cinematic-race` wins on specificity instead of
+   on load order, which is not something a future file reorder can undo.
+
+   Art direction: stylised league grounds. Flat 2D, no gradients pretending
+   to be photographs, no stadium, no lane-numbered athletics track. The
+   course supports the racers and stays quiet behind them.
+   ===================================================================== */
+
+/* Full bleed: the course is the picture, so it gets the whole row. */
+.bc-stage.cinematic-race .bc-body{padding:0}
+.bc-stage.cinematic-race .bc-track{
+  border-radius:0;border:0;overflow:hidden;
+  /* Under the course, and visible nowhere - a wrong colour here is how you
+     find out one of the bands has a gap in it. */
+  background:#2c4a2c;
+}
+/* Dark surround, so the lit course reads as the subject rather than as a
+   brighter patch of one big blue sky. */
+.bc-stage.cinematic-race{background:#0a1218}
+
+.bc-stage.cinematic-race .race-scenery{inset:0;z-index:0;overflow:hidden}
+
+/* --- behind the course ------------------------------------------------ */
+.bc-stage.cinematic-race .race-sky{
+  inset:auto;left:0;right:0;top:0;height:11%;
+  background:linear-gradient(180deg,#4fa8d8 0,#84cdea 58%,#c6e6ef 100%);
+}
+/* Two clouds, small, because there is not much sky to put them in. */
+.bc-stage.cinematic-race .race-sky::after{
+  content:"";position:absolute;left:14%;top:16%;
+  width:3.4vw;height:1vw;border-radius:99px;background:#fff;opacity:.72;
+  box-shadow:14vw .5vw 0 .2vw #fff,31vw -.2vw 0 .1vw #fff;
+}
+.bc-stage.cinematic-race .race-hills{
+  left:-10%;width:120%;bottom:87%;height:7%;
+  background:#4b7f45;opacity:.95;
+}
+.bc-stage.cinematic-race .race-hills.far{
+  bottom:89%;height:8%;background:#7fb072;opacity:.8;transform:scaleX(1.08);
+}
+/* The stand: a plain plate with a roof line. Structure, not a building. */
+.bc-stage.cinematic-race .race-stands{
+  position:absolute;left:0;right:0;bottom:86%;height:8%;
+  background:linear-gradient(180deg,#2b3d4c 0 18%,#22323f 18% 100%);
+  border-top:.22vw solid #f2efdd;
+}
+.bc-stage.cinematic-race .race-crowd{
+  bottom:87%;height:5.4%;opacity:.85;border-top:0;
+  background:
+    radial-gradient(circle,#f7cf57 0 24%,transparent 27%) 0 0/1.1vw 1.1vw,
+    radial-gradient(circle,#e45b6c 0 24%,transparent 27%) .55vw .55vw/1.1vw 1.1vw,
+    radial-gradient(circle,#7fd7f0 0 24%,transparent 27%) .28vw .82vw/1.6vw 1.6vw,
+    transparent;
+}
+/* The far fence, and the DFL signage hung along it. */
+.bc-stage.cinematic-race .race-banners{
+  position:absolute;left:0;right:0;bottom:83.5%;height:4%;
+  display:flex;align-items:stretch;gap:.5vw;padding:0 1vw;
+  font-family:"Rajdhani",system-ui,sans-serif;
+}
+.bc-stage.cinematic-race .race-banners span{
+  flex:1 1 0;display:grid;place-items:center;
+  font-size:1.05vw;font-weight:700;letter-spacing:.18em;line-height:1;
+  color:#0d1b12;background:#e9e2c6;border-bottom:.16vw solid #b9ae86;
+  border-radius:.12vw;
+}
+.bc-stage.cinematic-race .race-banners span:nth-child(even){
+  color:#f4f1e2;background:#2f8f4f;border-bottom-color:#1d6234;
+}
+.bc-stage.cinematic-race .race-rail{
+  position:absolute;left:0;right:0;bottom:83%;height:1.1%;
+  background:linear-gradient(180deg,#d8d3bd 0 45%,#8d8874 45% 100%);
+}
+
+/* --- the running surface --------------------------------------------- */
+.bc-stage.cinematic-race .race-course{
+  position:absolute;left:0;right:0;top:16.5%;bottom:0;
+  background:
+    /* mown bands, so the surface has depth without competing for attention */
+    repeating-linear-gradient(180deg,rgba(0,0,0,.05) 0 3.9%,transparent 3.9% 7.8%),
+    /* scuffed running line down the middle of the field */
+    linear-gradient(180deg,transparent 0 26%,rgba(150,116,66,.16) 32% 74%,transparent 80% 100%),
+    linear-gradient(180deg,#5f9440 0,#69a046 34%,#71a94c 72%,#6a9f47 100%);
+  box-shadow:inset 0 .35vw .9vw rgba(0,0,0,.22);
+}
+/* The kerb where the course meets the fence: a hard edge sells the plane. */
+.bc-stage.cinematic-race .race-course::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:.9%;
+  background:#cbc6ad;opacity:.5;
+}
+.bc-stage.cinematic-race .race-verge{
+  position:absolute;left:0;right:0;bottom:0;height:2%;
+  background:
+    radial-gradient(circle,rgba(28,50,24,.5) 0 22%,transparent 26%) 0 0/.9vw .9vw,
+    linear-gradient(180deg,#4c7a34,#3d6329);
+}
+
+/* --- the two structures on the course -------------------------------- */
+/*
+  Both of these span the RUNNING SURFACE, not the whole track. A stripe that
+  ran from the top of the frame to the bottom crossed the sky, the crowd and
+  the banners, which is the same mistake as putting racers up there.
+*/
+.bc-stage.cinematic-race .bc-finish{top:14.5%;bottom:1.5%}
+.bc-stage.cinematic-race .bc-finish::before{
+  content:"";position:absolute;left:-.9vw;right:-.9vw;top:0;height:1.2vw;
+  background:#f5f7fa;border-radius:.15vw;box-shadow:0 .2vw .5vw rgba(0,0,0,.45);
+}
+/*
+  THE STARTING GRID, so an idle Race View looks like racers waiting to go
+  rather than racers stopped for no reason. Fixed at TRACK_START (4% of the
+  track width, the idle screen ratio), and it is scenery: nothing reads it.
+*/
+.bc-stage.cinematic-race .race-start-gate{
+  position:absolute;left:4%;top:16.5%;bottom:1.5%;width:.28vw;z-index:1;
+  transform:translateX(-50%);
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.85) 0 1.2vh,rgba(255,255,255,.25) 1.2vh 2.4vh);
+  opacity:.5;transition:opacity .3s ease;
+}
+/* It belongs to the start. Once the field is away it has nothing to say. */
+.bc-stage.cinematic-race[data-race-state="running"] .race-start-gate,
+.bc-stage.cinematic-race[data-race-state="finished"] .race-start-gate{opacity:.14}
+
+/* --- standing by ------------------------------------------------------ */
+/*
+  Entering the Race View is not starting the race, so the idle view has to
+  say so. The commissioner gets a legible control bar to find START in, and
+  the footer says what the screen is waiting for.
+*/
+.bc-stage.cinematic-race[data-race-state="idle"] .bc-bar{opacity:.92}
+.bc-stage.cinematic-race[data-race-state="idle"] .bc-bar.on{opacity:1}
+.bc-btn-go{
+  font-weight:700;
+  border-color:color-mix(in srgb,var(--accent) 60%,transparent);
+  background:color-mix(in srgb,var(--accent) 22%,transparent);
+}
+.bc-stage.cinematic-race[data-race-state="idle"] .bc-foot{opacity:1}
+.bc-stage.cinematic-race[data-race-state="idle"] #bc-status{color:var(--accent)}
+
+@media(max-width:800px){
+  /* Phones get a slightly taller sky and banner strip because the track is
+     shorter in absolute terms; the band boundaries stay put so the grounding
+     invariant is unchanged. */
+  .bc-stage.cinematic-race .race-banners span{font-size:2.1vw;letter-spacing:.1em}
+  .bc-stage.cinematic-race .race-sky::after{width:6vw;height:1.8vw}
+  .bc-stage.cinematic-race .bc-finish::before{height:2.4vw}
+}
+
+@media(prefers-reduced-motion:reduce){
+  /* The course is static art either way; only the gate's fade is motion. */
+  .bc-stage.cinematic-race .race-start-gate{transition:none}
 }
