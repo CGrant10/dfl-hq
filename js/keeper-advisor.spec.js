@@ -321,13 +321,48 @@ describe("the recommendation labels have explicit criteria", () => {
     expect(isStrongFinish("RB", null)).toBe(false);
   });
 
-  it("POOR VALUE when the keeper costs the same as, or more than, the market", () => {
-    const level = one({ keeperCost: 4, expected: 4 });
-    expect(badgesFor(level, [level])).toContain(LABELS.POOR_VALUE);
-    const worse = one({ keeperCost: 3, expected: 7 });
-    expect(badgesFor(worse, [worse])).toContain(LABELS.POOR_VALUE);
+  it("POOR VALUE only for overpaying on a player nobody rates", () => {
+    /* Worse than the market, not at the floor, and weak on both measures. */
+    const bad = one({ positionRank: 50, marketPositionRank: 60, keeperCost: 3, expected: 7 });
+    expect(badgesFor(bad, [bad])).toContain(LABELS.POOR_VALUE);
+
     const better = one({ keeperCost: 7, expected: 2 });
     expect(badgesFor(better, [better])).not.toContain(LABELS.POOR_VALUE);
+  });
+
+  it("does NOT call paying the market price poor value", () => {
+    /* Par is not a mistake. */
+    const level = one({ positionRank: 50, marketPositionRank: 60, keeperCost: 4, expected: 4 });
+    expect(badgesFor(level, [level])).not.toContain(LABELS.POOR_VALUE);
+  });
+
+  it("does NOT call an ELITE player poor value for costing a round more", () => {
+    /* Overpaying by a round for a top-five player is a defensible choice. */
+    const elite = one({ positionRank: 3, marketPositionRank: 2, keeperCost: 3, expected: 5 });
+    expect(badgesFor(elite, [elite])).not.toContain(LABELS.POOR_VALUE);
+  });
+
+  it("NEVER calls a keeper at the rules' floor poor value", () => {
+    /*
+      Bijan Robinson: 2025 draft R1, so he keeps at R1 - the floor - and the
+      market has him in round 1 too, for a round value of zero. The first cut
+      badged the best player on the roster POOR VALUE, which is a complaint
+      about the floor rule rather than about the pick.
+    */
+    const out = advise({ ...base, rules,
+      roster: { season: 2025, players: ["100"] },
+      production: new Map([["100", { points: 370.8, positionRank: 2, label: "RB2" }]]),
+      market: marketFrom(normalizeSleeperMarket([
+        { player_id: "100", player: { position: "RB" }, stats: { adp_ppr: 2.4 } },
+      ], { leagueSize: 12, scoringFormat: "ppr" })),
+    });
+    const bijan = out.candidates[0];
+    expect(bijan).toMatchObject({ basisRound: 1, keeperCost: 1, marketProjectedRound: 1,
+                                  roundValue: 0, atFloor: true });
+    const badges = badgesFor(bijan, out.candidates);
+    expect(badges).not.toContain(LABELS.POOR_VALUE);
+    expect(badges).toContain(LABELS.SAFE_CHOICE);
+    expect(whyFor(bijan)).toMatch(/cheapest a keeper can cost/);
   });
 
   it("SAFE CHOICE needs strong production AND a strong market AND a discount", () => {

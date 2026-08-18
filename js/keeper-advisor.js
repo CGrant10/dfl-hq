@@ -263,6 +263,16 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
       /* The comparison the whole card turns on. */
       roundValue: rounds,
       roundValueLabel: formatRoundValue(rounds),
+      /*
+        AT THE FLOOR, the keeper costs as little as the rules permit. Bijan
+        Robinson went R1 in 2025, so he keeps at R1 and the market has him in
+        round 1 too - a round value of zero. Calling that "poor value" is a
+        criticism of the floor rule, not of the pick, and it is exactly wrong
+        about the best player on the roster. Recorded here so badgesFor() can
+        refuse to say it.
+      */
+      atFloor: standing.calculatedRound != null && rules != null
+        && standing.calculatedRound <= rules.min_keeper_round,
     };
   });
 }
@@ -436,10 +446,12 @@ export function badgesFor(c, all = []) {
     out.push(LABELS.BEST_PLAYER);
   }
 
-  /* SAFE CHOICE - good last year, still valued by the market, and cheaper
-     than the market. No superlative, so several can hold it. */
+  /* SAFE CHOICE - good last year, still valued by the market, and not paying
+     over the odds. A player already at the rules' floor counts: there is no
+     cheaper price available, so "no discount" is not a mark against them.
+     No superlative, so several can hold it. */
   if (c.standing === "eligible" && c.strongProduction && c.strongMarket
-      && c.roundValue != null && c.roundValue > 0) {
+      && c.roundValue != null && (c.roundValue > 0 || (c.atFloor && c.roundValue >= 0))) {
     out.push(LABELS.SAFE_CHOICE);
   }
 
@@ -455,8 +467,28 @@ export function badgesFor(c, all = []) {
     out.push(LABELS.FINAL_YEAR);
   }
 
-  /* POOR VALUE - the keeper costs as much as, or more than, drafting them. */
-  if (c.standing === "eligible" && c.roundValue != null && c.roundValue <= 0) {
+  /*
+    POOR VALUE - and it needs all three of these, because the first cut said it
+    far too readily.
+
+      1. STRICTLY worse than the market, not merely level. Paying exactly what
+         the draft would cost is par, not a mistake.
+      2. NOT already at the rules' floor. A first-round keeper cannot be made
+         cheaper by anybody, so the label would be complaining about the rule
+         rather than the decision - and it landed on Bijan Robinson, who is the
+         best keeper on the roster.
+      3. NOT a player LAST SEASON rates. Overpaying by a round for a top-five
+         finisher is a defensible choice; overpaying for one who finished QB29
+         is the thing worth flagging.
+
+    Market strength deliberately does NOT rescue a player here. Requiring both
+    measures to be weak made the label disappear from the entire league -
+    including a quarterback who finished 29th at his position and still costs
+    two rounds more than drafting him would, which is precisely the case the
+    label exists for.
+  */
+  if (c.standing === "eligible" && c.roundValue != null && c.roundValue < 0
+      && !c.atFloor && !c.strongProduction) {
     out.push(LABELS.POOR_VALUE);
   }
 
@@ -582,7 +614,9 @@ export function whyFor(c) {
     return `${sentence} — ${formatRoundValue(c.roundValue)} of draft value.`;
   }
   if (c.roundValue === 0) {
-    return `${sentence} — keeping them costs exactly what drafting them would.`;
+    return c.atFloor
+      ? `${sentence} — the cheapest a keeper can cost under these rules.`
+      : `${sentence} — keeping them costs exactly what drafting them would.`;
   }
   if (c.roundValue != null && c.roundValue < 0) {
     return `${sentence} — ${formatRoundValue(c.roundValue)}: the keeper is the`

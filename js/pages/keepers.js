@@ -400,7 +400,7 @@ function advisorBody(data) {
   return `
     ${leadCard(lead, candidates, data)}
 
-    <p class="ka-lead">${leadLine(data)}</p>
+    ${leadLine(data) ? `<p class="ka-lead">${leadLine(data)}</p>` : ""}
     ${ruleLine(rules, context)}
     ${marketLine(market)}
 
@@ -456,32 +456,28 @@ const HEADLINE = new Set([LABELS.BEST_VALUE, LABELS.BEST_PLAYER, LABELS.SAFE_CHO
 /* Every label that is a judgement rather than a fact, for the chip styling. */
 const CALLS = new Set([...HEADLINE, LABELS.POOR_VALUE]);
 
-/* What the card is allowed to claim, given what arrived. */
+/*
+  THE "RANKED ON…" PARAGRAPH IS GONE.
+
+  It explained the methodology at the top of every card - which season each
+  figure came from, and which of them were missing. Every one of those facts is
+  already on the card twice over: each figure is labelled with its own season,
+  and a genuinely missing input is named in the gaps list at the bottom. So the
+  paragraph was a preamble the reader had to get past to reach the player, and
+  it went.
+
+  What is left is the one thing not stated anywhere else: which roster this was
+  read from, and how many keepers the league allows.
+*/
 function leadLine(data) {
-  const { context } = data;
   const from = data.rosterSeason != null
     ? `From your <strong>${esc(data.rosterSeason)}</strong> roster${
         data.leagueSeason != null && data.leagueSeason !== data.rosterSeason
           ? " — the last one played" : ""}.` : "";
   const allowance = data.maxKeepers != null
-    ? ` Sleeper has this league at <strong>${data.maxKeepers} keeper${
-        data.maxKeepers === 1 ? "" : "s"}</strong>.` : "";
-
-  const claim = {
-    1: `Ranked on <strong>${esc(context.productionSeason)}</strong> production,
-        your <strong>${esc(context.draftBasisSeason)}</strong> draft round and the
-        <strong>${esc(context.marketSeason)}</strong> market.`,
-    2: `Ranked on <strong>${esc(context.productionSeason)}</strong> production and
-        keeper cost. There is no ${esc(context.marketSeason)} market price, so
-        nothing here is called a value.`,
-    3: `Ranked on keeper cost against the <strong>${esc(context.marketSeason)}</strong>
-        market. There is no ${esc(context.productionSeason)} production, so nothing
-        here vouches for how good anybody is.`,
-    4: `Keeper facts only — no ${esc(context.productionSeason)} production and no
-        ${esc(context.marketSeason)} market price.`,
-  }[data.data.level];
-
-  return `${claim} ${from}${allowance}`;
+    ? ` <strong>${data.maxKeepers} keeper${data.maxKeepers === 1 ? "" : "s"}</strong>
+        allowed.` : "";
+  return `${from}${allowance}`.trim();
 }
 
 function ruleLine(rules, context) {
