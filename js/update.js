@@ -13,6 +13,10 @@
 // config.js deliberately reads (1), so it cannot drift independently.
 // =====================================================================
 
+/* Arena finish-line presentation is global to the shared race viewer, so it
+   rides with this always-loaded module instead of becoming another script tag
+   that can drift out of the app shell. */
+import "./arena-finish-line.js";
 import { APP_VERSION } from "./config.js";
 
 const bar = () => document.getElementById("update");
@@ -22,8 +26,8 @@ const bar = () => document.getElementById("update");
  *
  * Deliberately NOT a static `import { routeNames } from "./router.js"`. This
  * file's whole job is coping with a device holding a mismatched set of files,
- * and a static import of a symbol that an older router.js does not export is
- * a hard module-link failure - the app would not boot at all, which is a far
+ * and a static import of a symbol that an older router.js does not export is a
+ * hard module-link failure - the app would not boot at all, which is a far
  * worse bug than the one being fixed. A dynamic read degrades instead: an
  * older router just means falling back to the routes the tab bar advertises.
  */
