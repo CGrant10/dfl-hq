@@ -6,6 +6,7 @@
 import { loading, errorBox } from "./ui.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
 import { startMemberLock } from "./member-lock.js";
+import { dflSeasonCount } from "./config.js";
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -54,6 +55,44 @@ function syncTabIndicator() {
   setTabIndicatorTarget(active);
 }
 
+/*
+  DFL predates the Sleeper archive by two seasons. The synced rows remain the
+  authority for records, points, averages and standings; only labels that mean
+  "how many DFL seasons" get the legacy tenure added. Keeping this at the
+  presentation boundary means a Sleeper sync can never erase those two years.
+*/
+function decorateDflSeasonCounts(view, route) {
+  const apply = () => {
+    if (route === "profile") {
+      for (const stat of view.querySelectorAll(".statgrid .stat")) {
+        const label = stat.querySelector(".stat-l");
+        const value = stat.querySelector(".stat-v");
+        if (!label || !value || label.textContent.trim().toLowerCase() !== "seasons") continue;
+        if (value.dataset.dflTenure === "1") continue;
+        const synced = Number(value.textContent.replace(/[^0-9.-]/g, ""));
+        if (!Number.isFinite(synced)) continue;
+        value.textContent = String(dflSeasonCount(synced));
+        value.dataset.dflTenure = "1";
+      }
+    }
+    if (route === "history") {
+      for (const meta of view.querySelectorAll(".card-meta")) {
+        if (meta.dataset.dflTenure === "1") continue;
+        const m = /^\s*(\d+)\s+seasons?\s+of\s+history\b/i.exec(meta.textContent || "");
+        if (!m) continue;
+        meta.textContent = meta.textContent.replace(m[1], String(dflSeasonCount(Number(m[1]))));
+        meta.dataset.dflTenure = "1";
+      }
+    }
+  };
+  apply();
+  if (route === "history" && !view._dflSeasonObserver) {
+    const observer = new MutationObserver(apply);
+    observer.observe(view, { childList: true, subtree: true });
+    view._dflSeasonObserver = observer;
+  }
+}
+
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
@@ -61,6 +100,7 @@ export async function renderRoute() {
   if (changed) { view.classList.remove("page-in"); view.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
+  if (view._dflSeasonObserver) { view._dflSeasonObserver.disconnect(); view._dflSeasonObserver = null; }
 
   let matched = false;
   document.querySelectorAll("#tabbar a").forEach((a) => {
@@ -76,6 +116,7 @@ export async function renderRoute() {
     const mod = await routes[name]();
     if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);
+    decorateDflSeasonCounts(view, name);
     if (name === "profile") {
       import("./profile-commissioner.js")
         .then((m) => m.decorateCommissionerBadge(view))
