@@ -9,7 +9,13 @@ import {
   finishSettledMs,
   FINISH_SETTLED_LEAD_MS,
   RESULT_BEAT_MS,
-  PRE_FINISH_SWEEP_MS,
+  FINISH_ROLL_MS,
+  FINISH_ENTRY_RATIO,
+  ROLL_LINEAR_UNTIL,
+  ROLL_SLOPE,
+  STAMP_HOLD_MS,
+  finishGroundRatio,
+  finishStamp,
   FINAL_STRETCH_START,
   PHOTO_FINISH_THRESHOLD_MS,
   cameraForLeader,
@@ -94,7 +100,7 @@ describe("Arena finish presentation", () => {
   it("is hidden for almost the whole race and is standing on the line before the crossing", () => {
     const first = 11_099;
     expect(finishArrival(0, first)).toBe(0);
-    expect(finishArrival(first - PRE_FINISH_SWEEP_MS, first)).toBe(0);
+    expect(finishArrival(first - FINISH_ROLL_MS, first)).toBe(0);
     expect(finishArrival(first * 0.5, first)).toBe(0);
     /*
       THE FIX, AS AN ASSERTION. The structure is HOME - not halfway, not
@@ -218,4 +224,152 @@ describe("Arena finish presentation", () => {
       }
     });
   });
+
+  /* ================= the line is scenery, not an overlay ================= */
+
+  it("rolls at ground speed, not at graphic speed", () => {
+    /*
+      THE REGRESSION THIS EXISTS TO CATCH. The old roll covered the same
+      travel in 1100ms, about eleven times the leader's own screen speed, and
+      a thing that crosses the ground eleven times faster than the runners on
+      it reads as a graphic flying over the top - which is exactly what it
+      looked like.
+
+      The racers' late-race screen speed is TRACK_SCALE over the race, sped up
+      through the final stretch: about 1e-4 of the frame per ms. The structure
+      is allowed to be quicker than the field it is coming to meet, but only
+      by a small factor. Above about 3x it stops reading as ground.
+    */
+    const travel = FINISH_ENTRY_RATIO - FINISH_LINE_RATIO;
+    const rollMs = FINISH_ROLL_MS - FINISH_SETTLED_LEAD_MS;
+    const structureSpeed = (travel * ROLL_SLOPE) / rollMs;
+    const racerSpeed = 1e-4;
+    expect(structureSpeed / racerSpeed).toBeLessThan(3);
+    expect(structureSpeed / racerSpeed).toBeGreaterThan(0.5);
+  });
+
+  it("spends most of the roll at ONE velocity and only bleeds off at the end", () => {
+    // An ease-out across the whole travel is fastest on its first frame and
+    // decelerating for the entire journey. Nothing on the ground moves like
+    // that. Ninety percent of this happens at a constant speed.
+    const first = 11_099;
+    const start = first - FINISH_ROLL_MS;
+    const settled = finishSettledMs(first);
+    const at = (r: number) => finishArrival(start + (settled - start) * r, first);
+    const step = 0.02;
+    const slopes: number[] = [];
+    for (let r = 0; r + step <= ROLL_LINEAR_UNTIL - 0.01; r += step) {
+      slopes.push((at(r + step) - at(r)) / step);
+    }
+    const min = Math.min(...slopes), max = Math.max(...slopes);
+    expect(max - min).toBeLessThan(0.02);          // one velocity, not a curve
+    expect(at(ROLL_LINEAR_UNTIL)).toBeGreaterThan(0.88);  // 90% of the travel
+    // ...and it still arrives, with the last of the distance easing to rest.
+    expect(at(1)).toBeCloseTo(1);
+    const tail = (at(1) - at(0.98)) / 0.02;
+    expect(tail).toBeLessThan(min / 2);
+  });
+
+  it("places the structure in the racers' own coordinate system", () => {
+    /*
+      The finish line used to be a DOM div at `right:42%` translating in from
+      55vw - its own units, its own layer, its own idea of where the middle
+      is. It now returns a ratio of the frame, the same thing
+      presentationScreenRatio() returns for a racer, and it comes to rest on
+      exactly progress 1.0. A finish line anywhere else is one nobody crosses.
+    */
+    const first = 11_099;
+    expect(finishGroundRatio(first, first)).toBeCloseTo(presentationScreenRatio(1));
+    expect(finishGroundRatio(first - FINISH_SETTLED_LEAD_MS, first))
+      .toBeCloseTo(FINISH_LINE_RATIO);
+    expect(finishGroundRatio(0, first)).toBeCloseTo(FINISH_ENTRY_RATIO);
+    // It approaches from ahead of the field and never overtakes anybody.
+    for (let ms = 0; ms <= first; ms += 50) {
+      expect(finishGroundRatio(ms, first)).toBeGreaterThanOrEqual(FINISH_LINE_RATIO);
+    }
+  });
+
+  it("rolls in monotonically, one direction only", () => {
+    const first = 11_099;
+    let prev = Infinity;
+    for (let ms = 0; ms <= first + 4000; ms += 16) {
+      const x = finishGroundRatio(ms, first);
+      expect(x).toBeLessThanOrEqual(prev + 1e-12);
+      prev = x;
+    }
+  });
+
+  it("is in shot and MOVING for seconds before the winner, not parked", () => {
+    // The complaint was that it arrived and stood there. It is now travelling
+    // for most of its time on screen, and parked only for the settling beat.
+    const first = 11_099;
+    const entered = finishGroundRatio(first - FINISH_ROLL_MS + 200, first);
+    expect(entered).toBeLessThan(FINISH_ENTRY_RATIO);
+    expect(finishGroundRatio(first - 2000, first)).toBeLessThan(entered);
+    expect(finishGroundRatio(first - 1000, first))
+      .toBeLessThan(finishGroundRatio(first - 2000, first));
+  });
+
+  /* ===================== the line times each racer ===================== */
+
+  it("stamps each racer as they touch the line, latest one holding the slot", () => {
+    expect(finishStamp(order, 0)).toBeUndefined();
+    expect(finishStamp(order, 9_999)).toBeUndefined();
+
+    const first = finishStamp(order, 10_000);
+    expect(first?.index).toBe(0);
+    expect(first?.place).toBe(1);
+    expect(first?.finishMs).toBe(10_000);
+    expect(first?.fade).toBeCloseTo(1);
+
+    // 120ms later the second racer is on the line. The slot is theirs - two
+    // times overlapping at one structure is unreadable.
+    const second = finishStamp(order, 10_120);
+    expect(second?.index).toBe(1);
+    expect(second?.place).toBe(2);
+
+    const third = finishStamp(order, 11_000);
+    expect(third?.place).toBe(3);
+    expect(finishStamp(order, 11_000 + STAMP_HOLD_MS)).toBeUndefined();
+  });
+
+  it("fades a stamp monotonically and is seekable", () => {
+    let prev = Infinity;
+    for (let ms = 11_000; ms < 11_000 + STAMP_HOLD_MS; ms += 20) {
+      const stamp = finishStamp(order, ms);
+      expect(stamp?.fade).toBeLessThanOrEqual(prev + 1e-12);
+      prev = stamp?.fade ?? 0;
+      expect(finishStamp(order, ms)?.fade).toBe(stamp?.fade);  // pure
+    }
+  });
+
+  it("carries the structure position and the stamp on the presentation", () => {
+    const frame = createFinishPresentation({
+      elapsedMs: 10_000, leaderProgress: 1, order, racers,
+    });
+    expect(frame.groundRatio).toBeCloseTo(finishGroundRatio(10_000, 10_000));
+    expect(frame.stamp?.index).toBe(0);
+    const early = createFinishPresentation({
+      elapsedMs: 0, leaderProgress: 0, order, racers,
+    });
+    expect(early.groundRatio).toBeCloseTo(FINISH_ENTRY_RATIO);
+    expect(early.stamp).toBeUndefined();
+  });
+
+  /* ================== the run-off has to fit the field ================== */
+
+  it("reserves a run-off measured in racer widths, not in frame percent", () => {
+    /*
+      0.34 gave twelve finishers 18% of the width, about 1.2% each, against a
+      drawn racer 10% of the width wide - so every one of them overlapped its
+      neighbours almost entirely and the run-out was a pile. This asserts the
+      per-place stagger, which is the thing that reads.
+    */
+    const runOut = presentationScreenRatio(1 + MAX_SETTLE) - presentationScreenRatio(1);
+    expect(runOut).toBeGreaterThan(0.3);
+    expect(runOut / 12).toBeGreaterThan(0.025);
+    // and the last place still parks inside the frame
+    expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.95);
+  });
+
 });

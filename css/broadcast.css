@@ -612,22 +612,117 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-board{align-self:start;margin:1vw;border:1px solid #ffffff30;border-radius:1vw;background:rgba(5,12,22,.7);backdrop-filter:blur(10px);box-shadow:0 .8vw 2vw #0005;overflow:hidden}
 .bc-stage .bc-board-head{background:rgba(255,255,255,.08)}
 .bc-stage .bc-finish{
-  right:42%;width:.65vw;z-index:4;box-shadow:0 0 1.8vw #fff8;
   /*
-    0 = offscreen right, 1 = STANDING ON THE LINE, where every racer crosses.
+    THE FINISH LINE IS A STRUCTURE STANDING ON THE COURSE.
 
-    An approach that completes, driven by a clamped, eased clock ramp, so it
-    cannot reverse, stop short or re-enter. It used to be a pass that carried
-    on to offscreen left, whose midpoint - the only moment it was actually
-    over the crossing point - landed one to five seconds AFTER the winner had
-    finished. The racers crossed nothing. See finishArrival().
+    It used to be a 0.65vw glowing bar at `right:42%`, z-index 4, sliding in
+    from translateX(55vw) - its own units, its own layer, ABOVE the racer
+    plane, and roughly eleven times the leader's screen speed. Every one of
+    those four things says "graphic", and together they are the whole "it
+    flies into the middle of the screen" complaint.
 
-    Scenery: nothing reads it, and presentationScreenRatio() ignores the
-    camera entirely, so this element can travel as much as it likes.
+    Now:
+      position   left: --finish-x, a ratio of the frame written from
+                 finishGroundRatio() - the SAME coordinate system
+                 presentationScreenRatio() puts the racers in
+      layer      z-index 0, so it sits above the scenery and BELOW both the
+                 Pixi canvas (z-index 1) and the DOM runners (2/3). The field
+                 runs IN FRONT of it, which is the single biggest reason it
+                 now reads as part of the course
+      motion     no transform, no CSS transition. It moves because its
+                 position moves, at ground speed, once per frame
+      form       posts planted in the lane band, a gantry over the top, a
+                 checkered face and a contact shadow on the ground
+
+    The lane band numbers below are LANE_BAND_TOP/BOTTOM with the gantry
+    allowed above the top one. If viewport.ts moves the ground, this moves
+    with it - see the note on LANE_BAND_TOP.
   */
-  transform:translateX(calc((1 - var(--finish-arrival,0)) * 55vw));
-  opacity:min(1,calc(var(--finish-arrival,0) * 6));
-  will-change:transform;
+  left:calc(var(--finish-x,1.02) * 100%);
+  right:auto;
+  top:14.5%;
+  bottom:6%;
+  width:1.9vw;
+  z-index:0;
+  transform:translateX(-50%);
+  /* The checkered face. A conic repeat is one paint, no extra elements. */
+  background-image:repeating-conic-gradient(#f4f7fa 0% 25%, #121a24 0% 50%);
+  background-size:.95vw .95vw;
+  border-left:.12vw solid rgba(255,255,255,.5);
+  border-right:.12vw solid rgba(0,0,0,.45);
+  /* A hint of lift off the grass, not a glow. 1.1vw of pure white read as a
+     lit UI column standing on the course. */
+  box-shadow:0 0 .45vw rgba(255,248,220,.22), inset 0 0 .6vw rgba(0,0,0,.4);
+  will-change:left;
+}
+/* The gantry: what makes it a structure over the course rather than a stripe
+   painted on it. Deliberately wider than the post it sits on. */
+.bc-stage .bc-finish::before{
+  /*
+    CAPPING THE POST, not floating above it. At top:-1.5vw this sat in the sky
+    band with clear grass between it and the post it was supposed to be
+    resting on, which reads as a detached chip rather than a crossbar - and a
+    detached chip is the exact "this is UI" cue the whole change is removing.
+    top:0 puts it ON the structure.
+  */
+  content:"";position:absolute;left:-1.9vw;right:-1.9vw;top:0;height:1.15vw;
+  background:linear-gradient(180deg,#f7f9fc,#c9d3dd 62%,#8e9aa6);
+  border-radius:.14vw;
+  box-shadow:0 .28vw .5vw rgba(0,0,0,.55), inset 0 -.14vw .28vw rgba(0,0,0,.3);
+}
+/* Planted, not floating. The contact shadow is the cheapest possible cue that
+   the thing has weight and is touching the ground the racers run on. */
+.bc-stage .bc-finish::after{
+  /*
+    The contact shadow was hung BELOW the structure's own box, at
+    bottom:-.55vw, which put it under the last lane and off the grass - so the
+    one cue that the thing has weight was drawn where nobody could see it.
+    It sits inside the base now and is dark enough to read against the course.
+  */
+  content:"";position:absolute;left:-2.1vw;right:-2.1vw;bottom:0;height:1.4vw;
+  background:radial-gradient(ellipse at 50% 100%,rgba(0,0,0,.62),rgba(0,0,0,.28) 45%,transparent 72%);
+  pointer-events:none;
+}
+/*
+  THE LINE TIMES THEM AS THEY TOUCH IT.
+
+  Rides the same --finish-x as the structure, so it cannot drift off the line
+  it is reporting. Above the racer plane on purpose - this one IS a graphic,
+  and a time nobody can read because a racer is standing on it is not a
+  timing display. --stamp-fade is written per frame from finishStamp().
+*/
+.bc-stage .bc-finish-stamp{
+  position:absolute;
+  left:calc(var(--finish-x,1.02) * 100%);
+  /*
+    Sits just above the gantry (14.5%) rather than at the top of the frame,
+    where a -42% drift clipped it against the track's own edge, and it lifts
+    by a quarter of its height rather than half - a stamp that leaves the
+    structure stops being the structure's reading of the time.
+  */
+  top:8%;
+  z-index:6;
+  transform:translate(-50%,calc(-25% * var(--stamp-fade,0)));
+  opacity:var(--stamp-fade,0);
+  padding:.15vw .6vw;
+  border-radius:.5vw;
+  background:rgba(5,12,22,.82);
+  border:1px solid rgba(255,255,255,.28);
+  color:var(--chalk,#fff);
+  /* vw everywhere else in this file, but a TIME has to stay readable: at
+     1.05vw this is 8px on an 800px window and 20px on an OBS canvas. */
+  font-size:clamp(11px,1.05vw,22px);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  pointer-events:none;
+  will-change:opacity,transform;
+}
+.bc-stage .bc-finish-stamp .bc-stamp-place{
+  color:#ffd84a;
+  margin-right:.45em;
+  padding-right:.45em;
+  border-right:1px solid rgba(255,255,255,.24);
 }
 .bc-stage .bc-clock{background:rgba(5,12,22,.7);border:1px solid #ffffff30;border-radius:.8vw;padding:.2vw .8vw;box-shadow:0 .5vw 1.5vw #0004}
 .bc-stage .bc-winner{background:radial-gradient(circle at 50% 45%,rgba(255,220,92,.34),rgba(255,157,28,.08) 26%,rgba(2,7,14,.62) 62%)}
@@ -709,7 +804,12 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 .bc-stage .bc-bar:hover,.bc-stage .bc-bar:focus-within{opacity:1}
 .bc-stage.is-racing .bc-foot{opacity:.28}
 .bc-stage .bc-board{border-color:rgba(255,255,255,.2);box-shadow:0 .8vw 2vw #0008}
-.bc-stage .bc-finish{right:42%}
+/*
+  `.bc-stage .bc-finish{right:42%}` WAS HERE, and it was the third place in
+  this file that claimed to know where the finish line stands. It is placed
+  from --finish-x now - one declaration, one coordinate system. A stray
+  `right` is how the last two regressions in this element started.
+*/
 @media(max-width:800px){
   .bc-stage .bc-runner{width:16vw;height:10.8vw}
   .bc-stage .bc-runner-art{width:16vw;height:10.8vw}
@@ -1034,13 +1134,25 @@ body.broadcasting .view { width:100%; height:100%; }
 .arena-pixi-host,
 .arena-pixi-host canvas { display:block!important; width:100%!important; height:100%!important; }
 
-/* Shared finish camera: the ordinary race geometry remains untouched until
-   the final-stretch state arrives from the common presentation adapter. */
-.bc-stage .bc-finish { transition:right .52s cubic-bezier(.2,.8,.2,1), filter .25s ease; }
+/*
+  THE TRANSITION ON `right` IS GONE, AND IT WAS A TRAP.
+
+  Nothing has written `right` on this element since it started being placed
+  from --finish-x, so the transition had nothing to animate - but it would
+  have quietly smeared the first frame of any future change to `right`, and a
+  CSS transition on top of a per-frame variable smears rather than smooths.
+  The position is a per-frame value now. It does not want help.
+*/
 /* Glow only. The stripe does not move any more: its position is the
    shared FINISH_LINE_RATIO and the geometry is camera-independent. */
+/*
+  Emphasis, not illumination. 16px of white plus 28px of gold turned the
+  structure into a lit column standing on the grass at the exact moment it is
+  supposed to read as part of the course - and the finish camera engages right
+  as the field arrives, so that is the frame everybody actually sees.
+*/
 .bc-stage[data-camera="finalStretch"] .bc-finish,
-.bc-stage[data-camera="finish"] .bc-finish { filter:drop-shadow(0 0 16px #fff) drop-shadow(0 0 28px #ffd84a); }
+.bc-stage[data-camera="finish"] .bc-finish { filter:drop-shadow(0 .2vw .4vw rgba(0,0,0,.5)) drop-shadow(0 0 .5vw rgba(255,216,74,.45)); }
 .bc-stage[data-camera="finalStretch"] .race-scenery,
 .bc-stage[data-camera="finish"] .race-scenery,
 .arena-track-wrap[data-camera="finalStretch"] .race-scenery,
@@ -1200,11 +1312,14 @@ body.broadcasting .view { width:100%; height:100%; }
   ran from the top of the frame to the bottom crossed the sky, the crowd and
   the banners, which is the same mistake as putting racers up there.
 */
-.bc-stage.cinematic-race .bc-finish{top:14.5%;bottom:1.5%}
-.bc-stage.cinematic-race .bc-finish::before{
-  content:"";position:absolute;left:-.9vw;right:-.9vw;top:0;height:1.2vw;
-  background:#f5f7fa;border-radius:.15vw;box-shadow:0 .2vw .5vw rgba(0,0,0,.45);
-}
+/*
+  The finish structure's band and gantry are declared ONCE, with the rest of
+  it, in the `.bc-stage .bc-finish` block above. They used to be here as well
+  - a second `top/bottom` and a second, flatter `::before` - and being later
+  and more specific this copy silently won, so edits made up there had no
+  effect on the live view. That is the same shadowing bug this file has
+  already had once with --finish-reveal.
+*/
 /*
   THE STARTING GRID, so an idle Race View looks like racers waiting to go
   rather than racers stopped for no reason. Fixed at TRACK_START (4% of the
@@ -1255,7 +1370,10 @@ body.broadcasting .view { width:100%; height:100%; }
      invariant is unchanged. */
   .bc-stage.cinematic-race .race-banners span{font-size:2.1vw;letter-spacing:.1em}
   .bc-stage.cinematic-race .race-sky::after{width:6vw;height:1.8vw}
-  .bc-stage.cinematic-race .bc-finish::before{height:2.4vw}
+  /* Phones get a chunkier crossbar because vw shrinks it, but it STAYS ON the
+     post - `top` is not a phone concern and setting it here is what put the
+     gantry back in the sky after it had been fixed. */
+  .bc-stage .bc-finish::before{height:2.4vw;left:-3vw;right:-3vw}
 }
 
 @media(prefers-reduced-motion:reduce){

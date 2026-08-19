@@ -973,34 +973,39 @@ a.moment:hover { background: var(--hover-soft); }
 .arena-track-wrap.cinematic-race .lane{position:absolute;left:0;right:0;top:var(--lane-y);height:clamp(34px,5.2vh,58px);transform:translateY(-50%);border:0;background:transparent}
 .arena-track-wrap.cinematic-race .runner-art{width:72px;height:48px}
 /*
-  THE STRIPE SWEEPS IN. It does not fade into the middle of the track.
+  THE STRUCTURE ROLLS IN ALONG THE GROUND. It does not sweep across the shot.
 
-  Fixed at the shared FINISH_LINE_RATIO (58% of the frame, so right:42%) and
-  parked there for good once it arrives. Before that it waits offscreen to
-  the right and travels in as the leader comes into the last tenth, which
-  reads as the finish structure ARRIVING rather than materialising.
+  It is scenery, and scenery moves at ground speed or it is not scenery. The
+  old version travelled 55vw in 1100ms - about eleven times the leader's own
+  screen speed - from its own `right:42%` anchor, on a layer ABOVE the racers.
+  All three of those said "graphic", and it read as one flying into the middle
+  of the frame and parking.
 
-  It is scenery. Nothing about a racer's position is computed from it, and
-  presentationScreenRatio() ignores the camera entirely - there is a spec
-  that fails if anyone makes the geometry camera-dependent again. So this
-  element can move as much as it likes without touching the field.
-
-  55vw is comfortably past the right edge of the track at every width the
-  app runs at, and .track clips it. --finish-reveal is a smoothstep written
-  once per frame during the sweep, so no CSS transition is used here: a
-  transition on top of a per-frame variable smears rather than smooths.
+  Nothing about a racer's position is computed from it, and
+  presentationScreenRatio() ignores the camera entirely - there is a spec that
+  fails if anyone makes the geometry camera-dependent again. So the structure
+  can travel as much as it likes without touching the field.
 */
 .arena-track-wrap.cinematic-race .track-finish{
-  right:42%;
-  /* Same variable and the same approach curve as the shared viewer's stripe -
-     0 offscreen right, 1 standing on the line. Written by finishArrival().
-     Keeping the two in step is why the file that replaced --finish-reveal
-     with a differently-scaled variable left a stripe parked offscreen for a
-     whole release: if this ever reads a name nothing writes, it is invisible
-     and silent about it. */
-  transform:translateX(calc((1 - var(--finish-arrival,0)) * 55vw));
-  opacity:min(1,calc(var(--finish-arrival,0) * 6));
-  will-change:transform;
+  /*
+    PARITY WITH THE SHARED VIEWER'S STRUCTURE, which is the only reason this
+    rule exists - the event page has not drawn a race since the shared-viewer
+    change, but the two finish treatments have always been kept in step and a
+    stripe that quietly diverges here is how the --finish-reveal regression
+    survived a whole release.
+
+    Placed from --finish-x, a ratio of the frame written by
+    finishGroundRatio(), in the racers' own coordinate system. No transform
+    and no transition: it moves at ground speed because its position moves,
+    once per frame. z-index 0 keeps it behind the racer plane so the field
+    runs in front of it. See css/broadcast.css `.bc-stage .bc-finish` for the
+    full commentary.
+  */
+  left:calc(var(--finish-x,1.02) * 100%);
+  right:auto;
+  z-index:0;
+  transform:translateX(-50%);
+  will-change:left;
 }
 @media(max-width:640px){
   .arena-track-wrap.cinematic-race .track{height:72vh;min-height:500px}
@@ -1452,7 +1457,8 @@ a.moment:hover { background: var(--hover-soft); }
 }
 
 /* The same finish camera geometry is consumed by the Arena event stage. */
-.arena-track-wrap.cinematic-race .track-finish { transition:right .52s cubic-bezier(.2,.8,.2,1),filter .25s ease; }
+/* The `right` transition is gone here too - nothing writes `right`, and a
+   transition on top of a per-frame position smears rather than smooths. */
 /* Glow only - the stripe's position is the shared FINISH_LINE_RATIO. */
 .arena-track-wrap[data-camera="finalStretch"] .track-finish,
 .arena-track-wrap[data-camera="finish"] .track-finish {

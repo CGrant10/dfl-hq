@@ -407,10 +407,22 @@ export interface FinishTrajectory {
  *
  * First runs furthest on and every place behind settles shorter, so the
  * field fans out across the run-out instead of stacking on the stripe.
+ *
+ * THE STEP IS DERIVED FROM THE FIELD, NOT A CONSTANT - and that was the bug.
+ * It used to be a flat 0.022 per place, which fans twelve racers across 0.242
+ * of progress no matter how much run-off exists. Widening MAX_SETTLE
+ * therefore slid the whole pack further down the track WITHOUT spreading it:
+ * same huddle, further right. The step now divides the actual run-off by the
+ * actual field, so every place gets its share of whatever room there is and
+ * last place lands on SETTLE_MIN however many racers turn up.
  */
-export function settleOffset(place: number): number {
-  const rank = Math.max(1, place || 1);
-  return Math.max(0.09, MAX_SETTLE - (rank - 1) * 0.022);
+export const SETTLE_MIN = 0.10;
+
+export function settleOffset(place: number, racerCount = 12): number {
+  const count = Math.max(2, racerCount);
+  const rank = Math.min(count, Math.max(1, place || 1));
+  const step = (MAX_SETTLE - SETTLE_MIN) / (count - 1);
+  return Math.max(SETTLE_MIN, MAX_SETTLE - (rank - 1) * step);
 }
 
 /** Every racer's run-out, worked out before playback starts. */
@@ -419,7 +431,7 @@ export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
   const byIndex: FinishTrajectory[] = [];
   for (const row of sim.order) {
     const crossSpeed = Math.max(1e-6, speeds[row.index] ?? 1e-4);
-    const settle = settleOffset(row.place);
+    const settle = settleOffset(row.place, sim.order.length);
     const tau = settle / crossSpeed;
     byIndex[row.index] = {
       finishMs: row.finishMs, place: row.place, crossSpeed, settle, tau,

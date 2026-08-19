@@ -9,7 +9,10 @@ import {
   closingEase,
   dramatize,
   launchEase,
+  settleOffset,
+  SETTLE_MIN,
 } from "./theatre";
+import { MAX_SETTLE, TRACK_START, presentationScreenRatio } from "./finish-presentation";
 
 const racers: RaceRacer[] = Array.from({ length: 12 }, (_, i) => ({
   id: `r${i + 1}`, name: `Racer ${i + 1}`, number: i + 1, color: "#ffffff", pet: null,
@@ -257,4 +260,56 @@ describe("theatre - the event queue", () => {
       }
     }
   });
+
+  /* ===================== the run-out has to fan ===================== */
+
+  it("fans the field across the WHOLE run-off, whatever size the field is", () => {
+    /*
+      THE HUDDLE, AS ARITHMETIC. The step used to be a flat 0.022 per place,
+      which spreads twelve racers over 0.242 of progress no matter how much
+      run-off exists - so widening MAX_SETTLE slid the pack further down the
+      track without spreading it at all. Same pile, further right.
+
+      The step is derived from the run-off and the field now, so first place
+      parks at MAX_SETTLE, last place at SETTLE_MIN, and every field size
+      uses all the room there is.
+    */
+    for (const count of [4, 8, 12]) {
+      expect(settleOffset(1, count)).toBeCloseTo(MAX_SETTLE);
+      expect(settleOffset(count, count)).toBeCloseTo(SETTLE_MIN);
+    }
+  });
+
+  it("gives every place its own parking spot, monotonically", () => {
+    const count = 12;
+    const spots = Array.from({ length: count }, (_, i) => settleOffset(i + 1, count));
+    expect(new Set(spots.map((v) => v.toFixed(6))).size).toBe(count);
+    for (let i = 1; i < spots.length; i += 1) {
+      expect(spots[i]!).toBeLessThan(spots[i - 1]!);
+    }
+  });
+
+  it("separates finishers by a readable share of a racer width", () => {
+    /*
+      A drawn racer is 10% of the frame wide, so twelve of them standing clear
+      of each other would need 120% of the frame and is not on offer. What IS
+      on offer is a stagger big enough to read as placings rather than as a
+      pile: about a third of a racer width per place.
+
+      At the old numbers this was 1.2% of the frame - an eighth of a racer -
+      which is what "the racers huddle up to it" was describing.
+    */
+    const count = 12;
+    const screenAt = (place: number) =>
+      presentationScreenRatio(1 + settleOffset(place, count));
+    const first = screenAt(1), last = screenAt(count);
+    expect(first - last).toBeGreaterThan(0.28);
+    const perPlace = (first - last) / (count - 1);
+    expect(perPlace).toBeGreaterThan(0.025);
+    // Everybody parks past the line, and nobody parks off the frame.
+    expect(last).toBeGreaterThan(presentationScreenRatio(1));
+    expect(first).toBeLessThan(0.95);
+    expect(last).toBeGreaterThan(TRACK_START);
+  });
+
 });

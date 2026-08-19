@@ -17,21 +17,30 @@ theatre.ts            dramatize / planArcs / allowance / closingEase
 finishTrajectories()  precomputed per racer
 presentFinish()       owns displayProgress / exiting / speed / phase
 presentationScreenRatio()  ONE straight line, camera-independent (spec)
-finishArrival()       scenery only, time-derived, monotonic, stops on the line
+finishGroundRatio()  the structure's position IN RACER UNITS - scenery,
+                     time-derived, monotonic, rolls at ground speed, stops
+                     on the line. Carried as finish.groundRatio
+finishStamp()        which racer the line is timing right now, if any
 crossingShown         the ONLY gate on any result graphic
 LANE_BAND_TOP/BOTTOM  the course band, read by Pixi and the DOM alike
 composeCharacter()    single character source of truth
 #bc-go                the only writer of a race start
 ```
 
-Geometry: `TRACK_START` 0.04, `FINISH_LINE_RATIO` 0.58, `MAX_SETTLE` 0.34,
+Geometry: `TRACK_START` 0.04, `FINISH_LINE_RATIO` 0.58, `MAX_SETTLE` 0.65,
 course top 0.165, lane band 0.18–0.92.
 
 ---
 
 ## Still open
 
-### The huddle — convergence fixed, spread metric unmoved
+### The huddle — POST-CROSSING FIXED; the mid-race spread metric is what is left
+
+**The pile-up against the finish line is gone.** `settleOffset()` now derives
+its per-place step from the run-off and the field size, `MAX_SETTLE` is 0.65,
+and twelve finishers fan across 63.4-90.5% of the frame instead of 61.1-69.7%.
+See `FINISH.md`. Everything below is about the *mid-race* spread at the first
+crossing, which is a different problem with a different cause.
 
 `closingEase` takes **milliseconds to that racer's own finishMs**
 (`CLOSE_MS = 900`) instead of a shared `CLOSE_FROM = 0.88` progress mark. It

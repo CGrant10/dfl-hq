@@ -21,7 +21,7 @@
 import { db, updateRow, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, finishArrival, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
@@ -338,6 +338,14 @@ function paint(view, event, racers) {
           </div>
           <div class="race-start-gate" aria-hidden="true"></div>
           <div class="bc-finish"></div>
+          <!--
+            THE LINE TIMES THEM AS THEY TOUCH IT. Rides the same --finish-x as
+            the structure so it cannot drift off the line it is reporting, and
+            it is the one part of this that IS a graphic - a time with a racer
+            standing on it is not a timing display, so it sits above the
+            racer plane while the structure sits below it.
+          -->
+          <div class="bc-finish-stamp" aria-hidden="true"><span class="bc-stamp-place"></span><span class="bc-stamp-time"></span></div>
           ${racerLanes(racers, { theme: event.theme, prefix: "bc", idPrefix: "bc-runner-" })}
         </div>
 
@@ -392,6 +400,9 @@ function paint(view, event, racers) {
  */
 function watch(view, id, racers) {
   live = { raf: 0, poll: 0, channel: null, resizeObserver: null, pixi: null,
+    /* Per-frame write guards. A rewound clock resets them with everything
+       else, so seeking backwards cannot leave a stale stamp on the line. */
+    lastGroundRatio: null, lastStampKey: "", lastStampFade: 0,
     trackWidth: 1, sim: null, simKey: "", state: null, sceneryBlurX: 0,
     saveTried: false,
     reduceMotionEffects: getReduceRaceMotion(), stopMotionWatch: null };
@@ -405,6 +416,10 @@ function watch(view, id, racers) {
     list:    view.querySelector("#bc-board-list"),
     track:   view.querySelector("#bc-track"),
     scenery: view.querySelector(".race-scenery"),
+    finish:  view.querySelector(".bc-finish"),
+    stamp:   view.querySelector(".bc-finish-stamp"),
+    stampPlace: view.querySelector(".bc-stamp-place"),
+    stampTime:  view.querySelector(".bc-stamp-time"),
     sceneryBlur: view.querySelector("[data-arena-motion-blur]"),
     stage:   view.querySelector("#bc-stage"),
     overlay: view.querySelector("#bc-overlay"),
@@ -608,16 +623,46 @@ function watch(view, id, racers) {
       });
       if (els.stage.dataset.shot !== shot) els.stage.dataset.shot = shot;
       /*
-        THE FINISH STRUCTURE'S APPROACH. Time-derived, so a racer falling
-        backwards cannot drag the scenery back with them, and anchored to the
-        WINNER'S finish rather than to the middle of the whole finish window -
-        which is what used to leave the stripe offscreen at the exact moment
-        the race was decided. See finishArrival().
+        THE FINISH STRUCTURE'S POSITION ON THE COURSE.
+
+        A ratio of the frame in the RACERS' own coordinate system, so the
+        structure and the field are placed by one map and the structure can be
+        drawn beneath the racer plane where the ground is. Time-derived, so a
+        racer falling backwards cannot drag the scenery back with them, and
+        anchored to the WINNER'S finish rather than to the middle of the whole
+        finish window - which is what used to leave it offscreen at the exact
+        moment the race was decided. It rolls at ground speed and comes to rest
+        on progress 1.0. See finishGroundRatio().
       */
-      const arrival = finishArrival(Math.max(0, elapsed), live.sim.order[0].finishMs);
-      if (arrival !== live.lastArrival) {
-        els.stage.style.setProperty("--finish-arrival", arrival.toFixed(4));
-        live.lastArrival = arrival;
+      const groundRatio = finishPresentation.groundRatio;
+      if (groundRatio !== live.lastGroundRatio) {
+        els.stage.style.setProperty("--finish-x", groundRatio.toFixed(5));
+        live.lastGroundRatio = groundRatio;
+      }
+      /*
+        AND THE TIME OF WHOEVER IS ON IT. One slot: crossings can arrive
+        120ms apart and two times overlapping at one structure is unreadable,
+        so finishStamp() hands the slot to the racer who is on the line now.
+        The board keeps the full order - this is the touch.
+      */
+      const stamp = finishPresentation.stamp;
+      const stampKey = stamp ? `${stamp.index}:${stamp.finishMs}` : "";
+      if (stampKey !== live.lastStampKey) {
+        live.lastStampKey = stampKey;
+        if (stamp && els.stampPlace && els.stampTime) {
+          /* "P1", not "1" - the place and the time sit side by side and a
+             bare digit ran straight into the seconds as "110.17s". */
+          els.stampPlace.textContent = `P${stamp.place}`;
+          /* Same formatting as the board's winner time, from the same
+             authoritative finishMs - the stamp and the board cannot disagree
+             about what a racer's time was. */
+          els.stampTime.textContent = `${(stamp.finishMs / 1000).toFixed(2)}s`;
+        }
+      }
+      const stampFade = stamp ? stamp.fade : 0;
+      if (Math.abs(stampFade - live.lastStampFade) > 0.004 || (stampFade === 0) !== (live.lastStampFade === 0)) {
+        els.stage.style.setProperty("--stamp-fade", stampFade.toFixed(3));
+        live.lastStampFade = stampFade;
       }
       const pixiState = finishPresentation.celebrationActive ? "finished" : state === "paused" ? "paused" : state === "idle" ? "idle" : "running";
       /* Standing by, counting down, racing or done - the stylesheet needs to

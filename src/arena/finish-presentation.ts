@@ -52,21 +52,34 @@ export const FINAL_STRETCH_START = 0.80;
   keeps travelling past the field is a finish line nobody crosses.
 */
 /*
-  SHORT ON PURPOSE. It used to be 2600, which put the structure in frame about
-  2.4s before the winner, and with a finish spread of 3.9s to 10.7s it then
-  stood there for six to thirteen seconds while the tail streamed through -
-  read on screen as a line parked in the middle of the shot that the field ran
-  in front of for ten seconds rather than a finish anybody arrived at.
+  LONG ON PURPOSE, AND THAT IS THE WHOLE POINT.
 
-  1100 gives it about a second in frame before the winner: it comes in fast,
-  settles, and the leaders are through almost immediately. It cannot be made
-  shorter than the crossings themselves, because a static ground maps progress
-  1.0 to FINISH_LINE_RATIO for every racer - the line has to be standing there
-  while the field comes through, and how long that takes is the finish spread,
-  not this constant. The exit is CSS: data-race-state="finished" fades it out
-  once the last racer is home.
+  It was 1100ms. Over a travel of nearly half the frame that is a velocity
+  roughly ELEVEN TIMES the leader's own screen speed, and a thing that crosses
+  the ground eleven times faster than the runners on it is not standing on
+  that ground - it is a graphic flying over the top of it. Which is exactly
+  what it looked like: a stripe that flew into the middle of the shot and
+  parked.
+
+  A finish line is scenery. Scenery moves at ground speed or it is not
+  scenery. Racers cover TRACK_SCALE (0.54 of the frame) over a whole race and
+  accelerate through the final stretch, which measures about 1e-4 of the frame
+  per millisecond at the sharp end. Rolling FINISH_ENTRY_RATIO -> 
+  FINISH_LINE_RATIO at that speed takes:
+
+    (1.02 - 0.58) * 1.0989 / 1e-4  ~=  4835ms
+
+  So 4800. The number is DERIVED from the racers' own speed, not chosen for
+  drama - if the geometry or the pacing changes, recompute it rather than
+  taste it. See the velocity spec, which asserts the ratio against the real
+  simulation and fails if this drifts into flying again.
+
+  What this does NOT change is how long the line stands still before the
+  winner: that is FINISH_SETTLED_LEAD_MS, still 420ms. The extra time is
+  spent ROLLING, in shot, which is the effect being asked for. The exit is
+  CSS: data-race-state="finished" fades it out once the last racer is home.
 */
-export const PRE_FINISH_SWEEP_MS = 1100;
+export const FINISH_ROLL_MS = 4800;
 /*
   Settled THIS long before the first official crossing.
 
@@ -93,19 +106,55 @@ export const FINISH_SETTLED_LEAD_MS = 420;
  * depend on the spread is precisely what put the stripe offscreen at the
  * moment of the crossing.
  */
+export const ROLL_LINEAR_UNTIL = 0.82;
+/*
+  Slope continuity, solved rather than tuned. A linear run at k for the first
+  `a` of the ramp, then a decelerating tail that reaches 1 with zero slope:
+
+    e(r <= a) = k*r
+    e(r >  a) = k*a + (1 - k*a) * (1 - ((1-r)/(1-a))^2)
+
+  Matching the two slopes at r = a gives k(1+a) = 2, so k = 2/(1+a) and there
+  is nothing left to choose. At a = 0.82 that is k = 1.0989: NINETY PERCENT of
+  the travel happens at one constant velocity and the last tenth bleeds off
+  over the final 18% of the time. That is a heavy object rolling to a stop.
+
+  An ease-out cubic across the WHOLE distance - which is what this was - has
+  its maximum speed on the first frame and decelerates for the entire travel.
+  Nothing on the ground moves like that. It is the signature of a panel
+  animating into place, and it is why the old line read as UI.
+*/
+export const ROLL_SLOPE = 2 / (1 + ROLL_LINEAR_UNTIL);
+
 export function finishArrival(elapsedMs: number, firstFinishMs: number): number {
-  const start = firstFinishMs - PRE_FINISH_SWEEP_MS;
+  const start = firstFinishMs - FINISH_ROLL_MS;
   const settled = firstFinishMs - FINISH_SETTLED_LEAD_MS;
   const ramp = clamp01((elapsedMs - start) / Math.max(1, settled - start));
-  /*
-    Eased, not linear, and the easing belongs HERE rather than in a CSS
-    transition. A transition on top of a per-frame variable smears instead of
-    smoothing, and a linear ramp across most of the frame width reads as a
-    wipe. Ease-out cubic is monotonic, so every property the linear ramp had -
-    no reversal, no re-entry, seekable, identical in every view - survives it:
-    the structure sweeps in and decelerates onto the line.
-  */
-  return 1 - (1 - ramp) ** 3;
+  const a = ROLL_LINEAR_UNTIL;
+  if (ramp <= a) return ROLL_SLOPE * ramp;
+  const atA = ROLL_SLOPE * a;
+  const tail = (1 - ramp) / (1 - a);
+  return atA + (1 - atA) * (1 - tail * tail);
+}
+
+/*
+  THE FINISH LINE'S POSITION IN THE RACERS' OWN COORDINATE SYSTEM.
+
+  This is the part that makes it scenery rather than an overlay. It returns a
+  ratio of the frame - the same units presentationScreenRatio() returns for a
+  racer - so the structure and the field are placed by one coordinate system
+  and the structure can be drawn into the course layer BEHIND the actors,
+  where the ground is.
+
+  It ends at exactly presentationScreenRatio(1), because that is where every
+  racer's progress 1.0 lands and a finish line anywhere else is a finish line
+  nobody crosses. Do not give this its own resting place.
+*/
+export const FINISH_ENTRY_RATIO = 1.02;
+
+export function finishGroundRatio(elapsedMs: number, firstFinishMs: number): number {
+  const arrival = finishArrival(elapsedMs, firstFinishMs);
+  return FINISH_ENTRY_RATIO + (FINISH_LINE_RATIO - FINISH_ENTRY_RATIO) * arrival;
 }
 
 /** The moment the finish structure is standing on the line, fully drawn. */
@@ -140,13 +189,13 @@ export const FINISH_CAMERA_FULL = 0.95;
 */
 export const TRACK_START = 0.04;
 /*
-  THE GEOMETRY IS FIXED. THE MARKER IS SCENERY, AND IT DOES MOVE.
+  THE GEOMETRY IS FIXED. THE STRUCTURE IS SCENERY, AND IT ROLLS TO REST HERE.
 
   progress 1 maps to 58% of the frame for the whole race and that never
   changes - so a racer's screen position is a function of progress alone.
-  What travels is the STRIPE ELEMENT, in CSS, from offscreen right into its
-  parked position as the leader comes into the final stretch. See
-  finishReveal() below.
+  What travels is the STRUCTURE, from FINISH_ENTRY_RATIO to this number, at
+  ground speed, drawn in the course layer under the actors. See
+  finishGroundRatio().
 
   Those are two different things and the distinction is the whole design.
   Moving the MAPPING is impossible: screen position is `progress * scale`,
@@ -157,21 +206,35 @@ export const TRACK_START = 0.04;
   the entire finish sequence. Any faster and the whole field visibly
   reverses at the moment the race is decided.
 
-  Moving the MARKER costs nothing, because nothing reads it. It is a `<div>`
-  with a transform. presentationScreenRatio() ignores the camera entirely
-  and there is a spec asserting racer x is byte-identical before, during and
-  after the sweep.
+  Moving the STRUCTURE costs nothing, because nothing reads its position to
+  place a racer. presentationScreenRatio() ignores the camera entirely and
+  there is a spec asserting racer x is byte-identical before, during and
+  after the roll.
 
   For most of the race the right-hand 40% is open track ahead of the leader,
   which is what "the track continues ahead" is supposed to look like.
 */
 export const FINISH_LINE_RATIO = 0.58;
 /*
-  And the run-out is now genuinely large: 0.58 -> ~0.95 of the frame. The
-  old 0.16 settle across a 12% strip is why twelve finishers parked in a
-  column against the stripe.
+  SIZED AGAINST THE RACERS, NOT AGAINST THE FRAME.
+
+  It was 0.34, which reserves 0.58 -> 0.764 of the frame: 18% of the width for
+  twelve parked finishers, about 1.2% apart. A drawn racer is 10vw wide. So
+  every finisher overlapped its neighbours almost completely and the run-out
+  was a pile with a leader sticking out of the front - the "racers huddle up
+  to it" complaint, and it survived the last two passes because the run-out
+  was measured as a fraction of the frame instead of in racer widths.
+
+  0.65 reserves 0.58 -> 0.931, which is 35% of the width and about 3.2% per
+  place. Twelve racers still cannot stand clear of each other - that would
+  need 120% of the frame - but a third of a racer width per place reads as a
+  field fanned out across a run-off, with real gaps between the placings that
+  earned them. The stagger, not the separation, is what kills a huddle.
+
+  0.931 is checked against FINISH_CAMERA_FULL by spec, so the last finisher
+  cannot be parked off the frame.
 */
-export const MAX_SETTLE = 0.34;
+export const MAX_SETTLE = 0.65;
 /*
   DERIVED, NOT CHOSEN - and the first version of this got it wrong.
 
@@ -346,6 +409,49 @@ function photoFinish(
   };
 }
 
+/*
+  THE LINE TIMES THEM AS THEY TOUCH IT.
+
+  STAMP_HOLD_MS is how long one racer's time stays legible at the structure
+  before it hands off to the board, and it is deliberately longer than the
+  tightest gap the sim produces. When crossings arrive closer together than
+  that, the LATEST one wins the slot outright rather than the two overlapping
+  into an unreadable smear - a finish line shows the racer who is on it.
+
+  Pure and seekable like everything else here: it is a scan of the order
+  against the clock, holds no state between frames, and a rewound clock
+  reconstructs exactly the same stamp.
+*/
+export const STAMP_HOLD_MS = 1_400;
+
+export interface FinishStamp {
+  index: number;
+  place: number;
+  finishMs: number;
+  /** 1 at the moment of the touch, falling to 0 as the stamp lets go. */
+  fade: number;
+}
+
+export function finishStamp(order: readonly FinishOrderRow[], elapsedMs: number): FinishStamp | undefined {
+  let latest: FinishOrderRow | undefined;
+  let place = 0;
+  for (let i = 0; i < order.length; i += 1) {
+    const row = order[i];
+    if (!row || row.finishMs > elapsedMs) break;
+    latest = row;
+    place = i + 1;
+  }
+  if (!latest) return undefined;
+  const age = elapsedMs - latest.finishMs;
+  if (age >= STAMP_HOLD_MS) return undefined;
+  return {
+    index: latest.index,
+    place,
+    finishMs: latest.finishMs,
+    fade: 1 - smoothstep(age / STAMP_HOLD_MS),
+  };
+}
+
 /** Pure, seekable finish choreography driven only by authoritative results. */
 export function createFinishPresentation(input: FinishPresentationInput): FinishPresentation {
   const lastFinishMs = input.order.at(-1)?.finishMs ?? Infinity;
@@ -360,8 +466,19 @@ export function createFinishPresentation(input: FinishPresentationInput): Finish
     ? visualElapsedForPhoto(input.elapsedMs, secondFinishMs)
     : input.elapsedMs;
   const photo = photoFinish(input, celebrationActive, crossingShownMs);
+  const firstFinishMs = input.order[0]?.finishMs ?? Infinity;
+  const stamp = finishStamp(input.order, input.elapsedMs);
   return {
     camera: cameraForLeader(input.leaderProgress),
+    /*
+      The structure's own position, carried on the presentation object so that
+      every renderer - Pixi course layer, DOM fallback, OBS - places it from
+      one number derived from one clock. Two views cannot disagree about where
+      the finish line is.
+    */
+    groundRatio: Number.isFinite(firstFinishMs)
+      ? finishGroundRatio(input.elapsedMs, firstFinishMs)
+      : FINISH_ENTRY_RATIO,
     visualElapsedMs,
     /*
       THE PRESENTATION TRUTH FLAG. Everything that resolves the race for the
@@ -375,6 +492,7 @@ export function createFinishPresentation(input: FinishPresentationInput): Finish
     celebrationActive,
     celebrationStartedMs: lastFinishMs + WINNER_REVEAL_DELAY_MS,
     allExited: input.elapsedMs >= lastFinishMs + POST_FINISH_MS,
+    ...(stamp ? { stamp } : {}),
     ...(photo ? { photoFinish: photo } : {}),
   };
 }

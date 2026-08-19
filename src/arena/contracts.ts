@@ -67,8 +67,17 @@ export interface PhotoFinishPresentation {
   gapMs: number;
 }
 
+export interface FinishStampPresentation {
+  index: number;
+  place: number;
+  finishMs: number;
+  fade: number;
+}
+
 export interface FinishPresentation {
   camera: FinishCamera;
+  /** Where the finish structure stands, as a ratio of the frame. Racer units. */
+  groundRatio: number;
   visualElapsedMs: number;
   /*
     Has the viewer actually SEEN the race being decided yet? Every graphic
@@ -80,6 +89,8 @@ export interface FinishPresentation {
   celebrationActive: boolean;
   celebrationStartedMs: number;
   allExited: boolean;
+  /** The racer currently being timed by the line, if one is. */
+  stamp?: FinishStampPresentation;
   photoFinish?: PhotoFinishPresentation;
 }
 
