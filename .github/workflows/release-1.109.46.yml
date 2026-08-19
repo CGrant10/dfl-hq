@@ -1,0 +1,88 @@
+name: One-shot v1.109.46 cleanup
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/release-1.109.46.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply focused fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          # Arena: remove the dramatic photo-finish special case. Setting the
+          # threshold below any valid (non-negative) gap makes the existing
+          # branch unreachable; the normal crossing/timing path stays intact.
+          p = Path('src/arena/finish-presentation.ts')
+          s = p.read_text()
+          old = 'export const PHOTO_FINISH_THRESHOLD_MS = 180;'
+          if old not in s:
+              raise SystemExit('photo-finish threshold marker not found')
+          s = s.replace(old, 'export const PHOTO_FINISH_THRESHOLD_MS = -1; // Disabled: close races run straight through like every other finish.')
+          p.write_text(s)
+
+          # Chip Eaters: compact single-line rows, and place the section AFTER
+          # the active History content instead of ahead of Hall of Fame/tabs.
+          p = Path('js/chip-eaters.js')
+          s = p.read_text()
+          start = s.index('function card(rows){')
+          end = s.index('export async function decorateChipEaters', start)
+          card = r'''function card(rows){return `<section class="card" data-chip-eaters><div class="card-title-row"><div class="card-title">🌶️ Chip Eaters</div></div><div class="card-body" style="padding-top:4px">${rows.length?rows.map(r=>`<div class="chip-eater-row" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.08))"><strong style="flex:0 0 auto">${esc(r.season)}</strong><span aria-hidden="true" style="flex:0 0 auto">🌶️</span><span style="flex:0 0 auto">${canEdit()?editableName({text:r.name,field:"lastPlace",key:r.season,canEdit:true}):r.memberId?`<a class="plainlink" href="#/profile?id=${r.memberId}">${esc(r.name)}</a>`:esc(r.name)}</span>${r.team&&r.team!==r.name?`<span class="muted tiny" style="flex:0 0 auto">${esc(r.team)}</span>`:""}<span class="pill ${r.done?"green":"warn"}" style="flex:0 0 auto">${r.done?"Chip eaten":"Punishment due"}</span>${r.locked?`<span class="muted tiny" style="flex:0 0 auto">set by hand</span>`:""}${canEdit()?`<button class="linkbtn" style="flex:0 0 auto" type="button" data-chip-done="${r.season}" data-chip-name="${esc(r.name)}">${r.done?"Undo":"Mark eaten"}</button>`:""}</div>`).join(""):`<span class="muted">No completed seasons yet.</span>`}</div></section>`}
+'''
+          s = s[:start] + card + s[end:]
+          old_pos = 'tabs.insertAdjacentElement("beforebegin",wrap.firstElementChild);wire(view,d);return;'
+          new_pos = 'body.insertAdjacentElement("afterend",wrap.firstElementChild);wire(view,d);return;'
+          if old_pos not in s:
+              raise SystemExit('Chip Eater History placement marker not found')
+          s = s.replace(old_pos, new_pos)
+          p.write_text(s)
+
+          # Synced PWA release markers.
+          version = '1.109.46'
+          Path('version.txt').write_text(version)
+
+          pkg = json.loads(Path('package.json').read_text())
+          pkg['version'] = version
+          Path('package.json').write_text(json.dumps(pkg, indent=2) + '\n')
+
+          p = Path('sw.js')
+          s = p.read_text()
+          s, n = re.subn(r'const CACHE_NAME = "dfl-hq-v[^"]+";', f'const CACHE_NAME = "dfl-hq-v{version}";', s, count=1)
+          if n != 1: raise SystemExit('service worker version marker not found')
+          p.write_text(s)
+
+          p = Path('index.html')
+          s = p.read_text()
+          s, n = re.subn(r'<meta name="dfl-app-version" content="[^"]+">', f'<meta name="dfl-app-version" content="{version}">', s, count=1)
+          if n != 1: raise SystemExit('index version marker not found')
+          p.write_text(s)
+          PY
+      - name: Check and rebuild Arena runtime
+        run: pnpm check
+      - name: Commit release
+        run: |
+          rm .github/workflows/release-1.109.46.yml
+          git config user.name "dfl-hq-release"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Release v1.109.46: clean Arena finish and Chip Eaters"
+          git push
