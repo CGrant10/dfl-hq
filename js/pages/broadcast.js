@@ -18,7 +18,7 @@
 // See the comment at the top of arena_broadcast_schema.sql.
 // =====================================================================
 
-import { db, updateRow, isAdmin } from "../supabase.js";
+import { db, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { petOf } from "./profile-dfl.js";
 import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
@@ -147,21 +147,71 @@ function wireBar(view, id, racers) {
     const state = live?.state?.bc_state;
     return !state || state === "idle";
   };
+  /*
+    GETTING OUT IS NOT ALLOWED TO TIME OUT.
+
+    The bar's resting state is opacity 0, translated 130% down and
+    pointer-events:none - so when the auto-hide fired it took EXIT with it, and
+    Exit is the only way back into an app whose header and tab bar this page
+    hides. For a member it is worse still: the block above removes every race
+    control, so their bar contains Exit and almost nothing else, and hiding it
+    hides the entire point of it.
+
+    A member's bar therefore never hides. There is nothing on it that needs to
+    get out of an OBS shot, because nobody is broadcasting a member's screen.
+    Commissioners keep the auto-hide - a control bar across the bottom of the
+    broadcast is exactly what it exists to avoid - and get Escape as well.
+  */
   const show = () => {
     bar.classList.add("on");
     clearTimeout(hideTimer);
+    if (memberSafe) return;
     hideTimer = setTimeout(() => bar.classList.remove("on"),
                            standingBy() ? BAR_STANDBY_MS : BAR_IDLE_MS);
   };
   stage.addEventListener("pointermove", show);
   stage.addEventListener("pointerdown", show);
+  /* Touch-only browsers that do not synthesise pointer events would otherwise
+     have no way to bring a hidden bar back at all. */
+  stage.addEventListener("touchstart", show, { passive: true });
+  /* And a keyboard route out that does not depend on finding the bar first. */
+  const exitHref = bar.querySelector("a.bc-btn[href]")?.getAttribute("href");
+  const onKey = (e) => {
+    if (e.key !== "Escape" || !exitHref) return;
+    if (document.fullscreenElement) return;   // Escape belongs to fullscreen first
+    location.hash = exitHref;
+  };
+  document.addEventListener("keydown", onKey);
+  if (live) live.stopBarKeys = () => document.removeEventListener("keydown", onKey);
   show();
 
   const row = () => live?.state;
 
   const write = async (patch, note) => {
     try {
-      await updateRow("arena_events", id, patch);
+      /*
+        ASK FOR THE ROW BACK. THIS IS NOT DEFENSIVENESS, IT IS THE BUG.
+
+        updateRow() runs .update().eq("id") with no .select(), so a write that
+        RLS refuses matches zero rows and comes back with no error at all - a
+        cheerful 204. This function then took that as success, ran the
+        optimistic local apply below, and toasted "Countdown".
+
+        So the commissioner's own screen started counting down while the shared
+        row still said idle, and one second later the poll read the real row
+        back and the countdown STOPPED. Reset behaved the same way: toast said
+        "Reset", the result stayed on screen. Both looked like the race engine
+        was broken when the truth was that the write never happened.
+
+        The same trap is already documented for the keeper rules editor. Any
+        privileged write in this app has to ask for the row back and report a
+        zero-row result, because the database's way of saying "no" is silence.
+      */
+      const { data, error } = await db()
+        .from("arena_events").update(patch).eq("id", id).select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error(
+        "That was refused. A commissioner needs the Broadcast permission, and arena_commissioner_policy.sql has to have been run.");
       /*
         DRAW IT HERE IMMEDIATELY, rather than waiting to be told about it.
 
@@ -276,6 +326,7 @@ function teardown() {
   cancelAnimationFrame(live.raf);
   clearInterval(live.poll);
   live.stopMotionWatch?.();
+  live.stopBarKeys?.();
   live.resizeObserver?.disconnect?.();
   live.channel?.unsubscribe?.();
   live.pixi?.destroy?.();
@@ -634,7 +685,24 @@ function watch(view, id, racers) {
         moment the race was decided. It rolls at ground speed and comes to rest
         on progress 1.0. See finishGroundRatio().
       */
-      const groundRatio = finishPresentation.groundRatio;
+      /*
+        A NUMBER, WHATEVER THE BUNDLE SAYS.
+
+        finish.groundRatio arrives from js/arena/pixi-runtime.js, which is a
+        COMMITTED build artefact - so a client running new page code against an
+        older cached bundle gets undefined here, and `undefined.toFixed()`
+        throws inside the animation frame. That kills the rAF loop, which stops
+        the race dead after the countdown and stops anything from redrawing,
+        including a reset. It is not hypothetical: a stale APP_SHELL entry kept
+        the service worker from installing for three releases, so clients were
+        held on exactly that kind of skew.
+
+        This app already survives a partial DATABASE rather than white-screening.
+        A partial cache is the same problem. A missing value parks the structure
+        off-frame and the race still runs.
+      */
+      const groundRatio = Number.isFinite(finishPresentation.groundRatio)
+        ? finishPresentation.groundRatio : 1.02;
       if (groundRatio !== live.lastGroundRatio) {
         els.stage.style.setProperty("--finish-x", groundRatio.toFixed(5));
         live.lastGroundRatio = groundRatio;

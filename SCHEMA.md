@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 38 `.sql` files (one base plus 37 additive) and the
+one in.** This exists because the repository has 39 `.sql` files (one base plus 38 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -116,6 +116,12 @@ Dependencies are real: a file that adds a column to `members` needs
 | 36 | `golf_bag_public_schema.sql` | `golf_bag_visibility` — opt-in public bags, default private. Needs `golf_bag_schema.sql` (20). |
 | 37 | `golf_profile_schema.sql` | `golf_profiles` (handicap index, 9/18 averages, derived `rating` and its `rating_source`), `golf_save_profile()`, `sportsbook_reprice_open_golf()` and `golf_save_profile_and_reprice()`. Needs 20 and 35: saving a handicap reprices every open golf line, so it has to be installed after the lines exist. Also **replaces** several `sportsbook_golf_*` rating functions from 35 with handicap-aware versions — run 35 first, then this, or the older definitions win. |
 
+### Arena write access for commissioners
+
+| # | File | What it establishes |
+|---|---|---|
+| 38 | `arena_commissioner_policy.sql` | Commissioner-aware `"admin write"` policies on `arena_events`, `arena_participants` and `arena_results`, keyed to the **`broadcast`** permission. Needs 31. Closes a real gap: 31 rewrote the policy for seven tables and no arena table was among them, so the Admin UI offered a `broadcast` permission that granted nothing and a commissioner-PIN session could not start, pause, skip or reset a race. Skips any arena table whose own migration has not been run, and **reports** which commissioners can now run a race. `has_commissioner_permission()` still accepts legacy `is_admin()`, so the shared Admin password is unaffected. |
+
 ### Not schema
 
 `sql/seed_rolla_country_club.sql` is course **data**, not structure. Optional,
@@ -167,6 +173,7 @@ up:
 | `sportsbook_golf_schema.sql` | The Sportsbook loads; the golf board is absent and a single note names the failure. Non-golf markets are untouched. |
 | `golf_profile_schema.sql` | Golf Bag loads without the profile form; golf lines keep their rating-only prices from 35. |
 | `golf_bag_public_schema.sql` | The bag visibility toggle cannot save and says so; bags stay private, which is the safe direction. |
+| `arena_commissioner_policy.sql` | A commissioner cannot run a race: Start / Hold / Skip / Reset are all refused. The Race View now **says so** rather than counting down locally and stopping a second later — but the shared Admin password is the only way to start a race until this is run. |
 | `keeper_basis_correction.sql` | Everything still works: `js/keeper-rules.js` reads the old `original_draft_round` / `fixed_from_original` values and normalises them, so the *calculation* is already corrected in code. Only the stored wording, the two new `keepers` columns and the audit report are missing. |
 
 Rows that a migration could not map safely are **preserved, never deleted**.
