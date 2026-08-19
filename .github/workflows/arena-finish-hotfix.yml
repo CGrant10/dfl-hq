@@ -1,0 +1,60 @@
+name: Arena finish-line hotfix
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/arena-finish-hotfix.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch finish playback and bump release
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          p = Path('js/pages/broadcast.js')
+          s = p.read_text()
+
+          old = '''      const visualT = Math.max(0, Math.min(sim.frames, finishPresentation.visualElapsedMs / TICK_MS));\n      const visualLo = Math.floor(visualT);\n      const visualHi = Math.min(sim.frames, visualLo + 1);\n      const visualMix = visualT - visualLo;'''
+          new = '''      /* Finish presentation may freeze or remap its own clock for graphics,\n         but racer motion never reads that clock. The line observes the race;\n         it does not control it. */\n      const racerElapsed = Math.max(0, elapsed);\n      const visualT = Math.max(0, Math.min(sim.frames, racerElapsed / TICK_MS));\n      const visualLo = Math.floor(visualT);\n      const visualHi = Math.min(sim.frames, visualLo + 1);\n      const visualMix = visualT - visualLo;'''
+          if old not in s: raise SystemExit('visual clock block not found')
+          s = s.replace(old, new, 1)
+
+          old = '''        const pixiRacer = presentationRacerFrame({\n          id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,\n          elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,\n        });\n        const p = pixiRacer.progress;'''
+          new = '''        const pixiRacer = presentationRacerFrame({\n          id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,\n          elapsedMs: racerElapsed, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,\n        });\n\n        /* Theatre is allowed to tell stories in the race, but it is not allowed\n           to fake an arrival. Past 70% true progress, progressively restrict how\n           far AHEAD the drawing may be; by 82% it can lead truth by at most 1.5%\n           of the track. Behind-truth collapses are untouched. This prevents a\n           slow racer being drawn at 95-99% for seconds while its actual race is\n           still far from the line. */\n        const truthSamples = sim.samples[i];\n        const truth = (truthSamples[visualLo] ?? 0) +\n          ((truthSamples[visualHi] ?? truthSamples[visualLo] ?? 0) - (truthSamples[visualLo] ?? 0)) * visualMix;\n        if (truth >= 0.70 && pixiRacer.progress > truth) {\n          const close = Math.min(1, (truth - 0.70) / 0.12);\n          const maxAhead = 0.12 + (0.015 - 0.12) * close;\n          const guarded = Math.min(pixiRacer.progress, truth + maxAhead);\n          pixiRacer.progress = guarded;\n          pixiRacer.displayProgress = guarded;\n        }\n        const p = pixiRacer.progress;'''
+          if old not in s: raise SystemExit('racer frame block not found')
+          s = s.replace(old, new, 1)
+
+          old = '''        presentFinish(pixiRacer, finishPresentation.visualElapsedMs,\n                      live.trajectory?.[i], finishPresentation.celebrationActive);'''
+          new = '''        presentFinish(pixiRacer, racerElapsed,\n                      live.trajectory?.[i], finishPresentation.celebrationActive);'''
+          if old not in s: raise SystemExit('presentFinish block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          Path('version.txt').write_text('1.109.44')
+
+          pkg = json.loads(Path('package.json').read_text())
+          pkg['version'] = '1.109.44'
+          Path('package.json').write_text(json.dumps(pkg, indent=2) + '\n')
+
+          sw = Path('sw.js')
+          x = sw.read_text().replace('dfl-hq-v1.109.43', 'dfl-hq-v1.109.44', 1)
+          sw.write_text(x)
+
+          idx = Path('index.html')
+          x = idx.read_text().replace('name="dfl-app-version" content="1.109.43"', 'name="dfl-app-version" content="1.109.44"', 1)
+          idx.write_text(x)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/pages/broadcast.js version.txt package.json sw.js index.html
+          git commit -m "Fix Arena finish-line racer stalls and release v1.109.44"
+          git push
