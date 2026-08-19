@@ -634,7 +634,11 @@ function watch(view, id, racers) {
       const finishPresentation = createFinishPresentation({
         elapsedMs: Math.max(0, elapsed), leaderProgress, order: sim.order, racers,
       });
-      const visualT = Math.max(0, Math.min(sim.frames, finishPresentation.visualElapsedMs / TICK_MS));
+      /* Finish presentation may freeze or remap its own clock for graphics,
+         but racer motion never reads that clock. The line observes the race;
+         it does not control it. */
+      const racerElapsed = Math.max(0, elapsed);
+      const visualT = Math.max(0, Math.min(sim.frames, racerElapsed / TICK_MS));
       const visualLo = Math.floor(visualT);
       const visualHi = Math.min(sim.frames, visualLo + 1);
       const visualMix = visualT - visualLo;
@@ -648,12 +652,29 @@ function watch(view, id, racers) {
         const s = src[i];
         const pixiRacer = presentationRacerFrame({
           id: racers[i].id, lane: i, samples: s, lo: visualLo, hi: visualHi, mix: visualMix,
-          elapsedMs: finishPresentation.visualElapsedMs, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,
+          elapsedMs: racerElapsed, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,
         });
+
+        /* Theatre is allowed to tell stories in the race, but it is not allowed
+           to fake an arrival. Past 70% true progress, progressively restrict how
+           far AHEAD the drawing may be; by 82% it can lead truth by at most 1.5%
+           of the track. Behind-truth collapses are untouched. This prevents a
+           slow racer being drawn at 95-99% for seconds while its actual race is
+           still far from the line. */
+        const truthSamples = sim.samples[i];
+        const truth = (truthSamples[visualLo] ?? 0) +
+          ((truthSamples[visualHi] ?? truthSamples[visualLo] ?? 0) - (truthSamples[visualLo] ?? 0)) * visualMix;
+        if (truth >= 0.70 && pixiRacer.progress > truth) {
+          const close = Math.min(1, (truth - 0.70) / 0.12);
+          const maxAhead = 0.12 + (0.015 - 0.12) * close;
+          const guarded = Math.min(pixiRacer.progress, truth + maxAhead);
+          pixiRacer.progress = guarded;
+          pixiRacer.displayProgress = guarded;
+        }
         const p = pixiRacer.progress;
         /* Same coast the Arena applies - one implementation in race.js, so
            the two cameras cannot disagree about where a finisher parks. */
-        presentFinish(pixiRacer, finishPresentation.visualElapsedMs,
+        presentFinish(pixiRacer, racerElapsed,
                       live.trajectory?.[i], finishPresentation.celebrationActive);
         const phase = pixiRacer.phase;
         const screenRatio = presentationScreenRatio(pixiRacer.displayProgress, finishPresentation.camera);
