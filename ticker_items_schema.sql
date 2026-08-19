@@ -1,54 +1,50 @@
 -- =====================================================================
--- DFL HQ - the bottom ticker gets editable lines
+-- DFL HQ - editable bottom ticker
 -- ---------------------------------------------------------------------
 -- Run after members_schema.sql and commissioner_roles_schema.sql.
 -- Safe to re-run.
 --
--- The ticker was entirely DERIVED: next event, golf day, open poll, newest
--- announcement, reigning champion - all computed in js/bottomline.js with no
--- row anywhere a commissioner could touch. Good defaults, and no way to say
--- anything the league had not already put in a table.
---
--- This adds hand-written lines ALONGSIDE the derived ones rather than instead
--- of them. A league that writes nothing sees exactly what it saw before, which
--- is why there is no "enabled" switch: an empty table is the old behaviour.
---
--- DELIBERATELY SMALLER THAN broadcast_items. That table has seventeen columns
--- because a slide is a piece of design. A ticker line is a label, a sentence
--- and somewhere to go, so this has five fields worth filling in and no
--- treatment, no image, no background, no dwell.
+-- Manual rows are ordinary ticker lines. Five seeded rows are override slots
+-- for the ticker's automatic facts. On an automatic row, blank label/text/route
+-- means "keep the generated value"; editing any of them changes only the ticker
+-- wording, never the event, poll, golf outing, announcement or champion record.
 -- =====================================================================
 
 create table if not exists public.ticker_items (
   id         bigint generated always as identity primary key,
-  -- The small caps chip at the front. "Notice", "Reminder", "Golf".
   label      text not null default '',
-  -- The line itself. The only required field.
   text       text not null,
-  -- A route name, not a URL: bottomline.js maps these to #/<route> the same way
-  -- the derived items do, so a typo cannot produce a link out of the app.
   route      text not null default '',
-  -- Higher shows first. Manual lines sort above derived ones regardless.
   weight     int  not null default 0,
   active     boolean not null default true,
-  -- Optional window. Both null means always.
   starts_at  timestamptz,
   ends_at    timestamptz,
   created_at timestamptz not null default now()
 );
 
+-- Null = hand-written line. Named values are the five automatic ticker slots.
+alter table public.ticker_items add column if not exists auto_source text;
+
+-- Keep one override row per automatic source without changing manual rows.
+create unique index if not exists idx_ticker_auto_source
+  on public.ticker_items(auto_source) where auto_source is not null;
 create index if not exists idx_ticker_active on public.ticker_items(active, weight desc);
+
+-- Seed the automatic slots. Blank values deliberately mean "use automatic".
+insert into public.ticker_items(label,text,route,weight,active,auto_source)
+values
+  ('','','',-100,true,'next_event'),
+  ('','','',-100,true,'golf'),
+  ('','','',-100,true,'poll'),
+  ('','','',-100,true,'notice'),
+  ('','','',-100,true,'champion')
+on conflict (auto_source) where auto_source is not null do nothing;
 
 alter table public.ticker_items enable row level security;
 
 drop policy if exists "public read" on public.ticker_items;
 create policy "public read" on public.ticker_items for select using (true);
 
-/*
-  Written by the shared Admin password or a commissioner holding `broadcast` -
-  the same permission that owns the slides, because this is the same job.
-  has_commissioner_permission() accepts legacy is_admin().
-*/
 do $$
 begin
   execute 'drop policy if exists "commissioner write" on public.ticker_items';
@@ -63,18 +59,17 @@ begin
 end;
 $$;
 
--- ---------------------------------------------------------------------
--- REPORT: what the ticker will show, and what is waiting on a date.
--- ---------------------------------------------------------------------
 select
   case
+    when auto_source is not null then 'automatic override'
     when not active then 'off'
     when starts_at is not null and starts_at > now() then 'scheduled'
     when ends_at   is not null and ends_at   < now() then 'expired'
     else 'showing'
   end as state,
+  auto_source,
   weight,
-  coalesce(nullif(label, ''), '(no label)') as label,
-  text
+  coalesce(nullif(label, ''), '(automatic label)') as label,
+  coalesce(nullif(text, ''), '(automatic text)') as text
 from public.ticker_items
-order by weight desc, created_at desc;
+order by (auto_source is null) desc, weight desc, created_at desc;
