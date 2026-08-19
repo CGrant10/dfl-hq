@@ -487,6 +487,21 @@ export function createFinishPresentation(input: FinishPresentationInput): Finish
     groundRatio: Number.isFinite(firstFinishMs)
       ? finishGroundRatio(input.elapsedMs, firstFinishMs)
       : FINISH_ENTRY_RATIO,
+    /*
+      THE COURSE STOPS WHEN THE LINE IS HOME.
+
+      Once the structure is standing on the crossing point, the world has
+      arrived: the scenery stops travelling and the motion blur comes off, and
+      the only thing still moving is the racers running through. That is what a
+      finish looks like from a fixed camera, and it is the difference between
+      "the line reached us" and "the line is sliding past while we run".
+
+      Derived from the same clock as everything else here rather than from drawn
+      progress, so it cannot flicker on a collapse - which is precisely how the
+      previous attempt at this went wrong.
+    */
+    courseStopped: Number.isFinite(firstFinishMs)
+      && input.elapsedMs >= finishSettledMs(firstFinishMs),
     visualElapsedMs,
     /*
       THE PRESENTATION TRUTH FLAG. Everything that resolves the race for the

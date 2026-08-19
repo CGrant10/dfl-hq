@@ -1351,6 +1351,32 @@ body.broadcasting .view { width:100%; height:100%; }
 .bc-stage.cinematic-race .bc-finish{transition:opacity .3s ease,filter .25s ease}
 .bc-stage.cinematic-race[data-race-state="finished"] .bc-finish{opacity:0}
 
+/*
+  THE COURSE HAS ARRIVED. Written by broadcast.js from finish.courseStopped, which
+  is time-derived - so it cannot flicker when a racer collapses, which is exactly
+  how the previous attempt at freezing the course went wrong.
+
+  Belt to the JS's braces: the blur is already zeroed and the pan already held in
+  the frame loop, and this stops any CSS-side scenery motion as well so there is
+  one visual answer rather than two halves of one.
+*/
+.bc-stage[data-course-stopped="true"] .race-scenery,
+.bc-stage[data-course-stopped="true"] .race-scenery * {
+  animation-play-state: paused;
+}
+.bc-stage[data-course-stopped="true"] .race-scenery { filter: none; }
+
+/*
+  AND THE START GATE GOES once the field is away. It marked TRACK_START for a
+  standing grid; with the finish structure in shot it is just a second vertical
+  line arguing with the first. This replaces the old opacity:.14, which left a
+  ghost of it on screen.
+*/
+.bc-stage.cinematic-race[data-race-state="running"] .race-start-gate,
+.bc-stage.cinematic-race[data-race-state="finished"] .race-start-gate {
+  display: none;
+}
+
 /* --- standing by ------------------------------------------------------ */
 /*
   Entering the Race View is not starting the race, so the idle view has to

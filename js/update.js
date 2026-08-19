@@ -16,7 +16,26 @@
 /* Arena finish-line presentation is global to the shared race viewer, so it
    rides with this always-loaded module instead of becoming another script tag
    that can drift out of the app shell. */
-import "./arena-finish-line.js";
+/*
+  THE SECOND FINISH LINE IS GONE, AND IT WAS THE BOOMERANG.
+
+  js/arena-finish-line.js was a global requestAnimationFrame loop that wrote
+  --course-finish-x and overrode `left` with !important, so it beat the
+  time-derived --finish-x that broadcast.js writes. Two systems, one position,
+  and the one that won was driven by leaderRatio() - the DRAWN leader position,
+  read back out of the DOM.
+
+  Drawn progress is NOT MONOTONIC. Collapses are a feature, so `shown` is allowed
+  to move backwards, and finishArrival()'s own comment records what that costs:
+  "measured over 25 seeded races the stripe reversed in 8 of them", followed by
+  "Do not reintroduce a progress-driven reveal." That is exactly what came back,
+  and the finish line boomerangged.
+
+  Its two good behaviours were kept and moved to where they belong: the start
+  gate hides once the field is away (css/broadcast.css), and the course stops
+  travelling when the structure is home (finish.courseStopped, written once per
+  frame from the same clock as everything else).
+*/
 import { APP_VERSION } from "./config.js";
 
 const bar = () => document.getElementById("update");

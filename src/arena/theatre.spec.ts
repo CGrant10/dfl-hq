@@ -430,4 +430,110 @@ describe("theatre - the event queue", () => {
     }
   });
 
+
+  /* ============ the final stretch, and what must not be clamped ============ */
+
+  it("never leaves a racer running in place at the line", () => {
+    /*
+      THE REPORT THIS EXISTS FOR: "no racer should be stuck behind the finish
+      line running in place."
+
+      The cause was allowance().ahead being a flat (1 - truth) * 0.85 - four
+      fifths of a racer's REMAINING track, spendable in advance. At truth 96.9%
+      that permits a drawing at 99.5%, so truth covered 3% of the course over the
+      final half second while the drawing covered 0.5%: TWO PIXELS on a 785px
+      track, legs going the whole time.
+
+      Measured in pixels rather than progress because that is the complaint -
+      the number a viewer can see. Before the taper the worst case was 2.0px;
+      after it, 10.1px, and every seed clears 8.
+
+      If this fails, look at LEAD_TAPER_TO before anything else, and do NOT try to
+      fix it inside the last 500ms - the first attempt did exactly that and
+      changed nothing, because the racer is already at the line when that window
+      opens.
+    */
+    const SCALE = 0.54;        // progress -> fraction of frame
+    const TRACK_PX = 785;      // a real measured track width
+    for (const seed of SEEDS) {
+      const sim = simulate(racers, 320, seed);
+      const { shown } = dramatize(sim, seed);
+      for (const row of sim.order) {
+        const i = row.index;
+        const finishTick = Math.min(sim.frames, Math.round(row.finishMs / TICK_MS));
+        const back = Math.max(0, finishTick - Math.round(500 / TICK_MS));
+        const px = ((shown[i]?.[finishTick] ?? 0) - (shown[i]?.[back] ?? 0)) * SCALE * TRACK_PX;
+        expect(px, `seed ${seed} racer ${i} moved ${px.toFixed(1)}px in its final 500ms`)
+          .toBeGreaterThan(8);
+      }
+    }
+  });
+
+  it("still lets the drawing run well ahead mid-race", () => {
+    /*
+      THE OTHER HALF OF THE SAME CHANGE. Tapering the late lead must not flatten
+      the race into the truth - breakaways and collapses are the whole point of
+      this file. The taper starts at LEAD_TAPER_FROM, so everything below it keeps
+      the full allowance and the mid-race lead stays where it was: 20-25%.
+    */
+    for (const seed of SEEDS) {
+      const sim = simulate(racers, 320, seed);
+      const { shown } = dramatize(sim, seed);
+      let lead = 0;
+      for (const row of sim.order) {
+        const i = row.index;
+        const last = Math.min(sim.frames, Math.round(row.finishMs / TICK_MS));
+        for (let t = 0; t <= last; t += 1) {
+          lead = Math.max(lead, (shown[i]?.[t] ?? 0) - (sim.samples[i]?.[t] ?? 0));
+        }
+      }
+      expect(lead, `seed ${seed} lost its mid-race drama`).toBeGreaterThan(0.15);
+    }
+  });
+
+  it("lets nobody reach the line before their own time", () => {
+    // The line gives a racer their time, so being drawn ACROSS it early would be
+    // the drawing telling a different story from the result.
+    for (const seed of SEEDS) {
+      const sim = simulate(racers, 320, seed);
+      const { shown } = dramatize(sim, seed);
+      for (const row of sim.order) {
+        const i = row.index;
+        const finishTick = Math.min(sim.frames, Math.round(row.finishMs / TICK_MS));
+        for (let t = 0; t < finishTick; t += 1) {
+          expect(shown[i]?.[t] ?? 0, `seed ${seed} racer ${i} crossed early`).toBeLessThan(1);
+        }
+      }
+    }
+  });
+
+  it("keeps backward steps small in the final stretch", () => {
+    /*
+      WHY A CEILING IS THE WRONG TOOL. Collapses are a feature and the theatre
+      draws them small: past 70% truth the worst backward step is well under 1%
+      of the track, which reads as a stumble.
+
+      A ceiling that tightens as truth rises subtracts from a rising value, so it
+      converts those small steps into large ones - measured at up to 5.8%, about
+      24px of backward lurch on a 785px track, arriving in the second the race is
+      decided. That is what this bound protects: not "no reversals", but
+      reversals small enough to be drama rather than a glitch.
+    */
+    for (const seed of SEEDS) {
+      const sim = simulate(racers, 320, seed);
+      const { shown } = dramatize(sim, seed);
+      let worst = 0;
+      for (const row of sim.order) {
+        const i = row.index;
+        const last = Math.min(sim.frames, Math.round(row.finishMs / TICK_MS));
+        for (let t = 1; t <= last; t += 1) {
+          if ((sim.samples[i]?.[t] ?? 0) < 0.70) continue;
+          const step = (shown[i]?.[t] ?? 0) - (shown[i]?.[t - 1] ?? 0);
+          if (step < worst) worst = step;
+        }
+      }
+      expect(Math.abs(worst), `seed ${seed} worst backward step`).toBeLessThan(0.015);
+    }
+  });
+
 });

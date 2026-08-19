@@ -65,6 +65,36 @@ export const OPEN_ZONE = 0.26;
   `ahead` allowance, which shrinks to zero as truth approaches 1 regardless.
 */
 export const CLOSE_MS = 900;
+/*
+  THE LAST APPROACH, AND WHY IT IS PRESENTATION AND NOT PACING.
+
+  Measured on the real simulation, the slowest racer in a field covers TWO PIXELS
+  in its final 500ms on a 785px track - truth sits around 96-97% with half a
+  second still to run - while its legs animate at full rate. That is the "stuck
+  behind the line running in place" report, and it is in the SIMULATION's own
+  pacing rather than in the theatre.
+
+  It cannot be fixed by speeding the simulation up. finishMs is derived from the
+  tick a racer's progress reaches 1.0, so changing late-race speed changes finish
+  times and therefore the ORDER - and preserving both exactly is a standing
+  constraint of this file.
+
+  So the drawn position glides instead. Over the last APPROACH_MS before a
+  racer's own finishMs, the theatrical position is blended toward a straight line
+  that lands on exactly 1.0 at exactly finishMs. Their time does not move, their
+  placing does not move, and they arrive at the line still travelling.
+
+  Smoothstep rather than a linear blend so there is no velocity kink where the
+  window opens, and the target is reached from wherever the racer actually was -
+  a collapse inside the window is glided out of rather than snapped away from.
+*/
+export const APPROACH_MS = 700;
+
+/* How much of the remaining track a racer may be drawn ahead into: the full
+   0.85 until LEAD_TAPER_FROM, easing to LEAD_TAPER_TO at the line. */
+export const LEAD_TAPER = 0.85;
+export const LEAD_TAPER_FROM = 0.82;
+export const LEAD_TAPER_TO = 0.18;
 /** Jitter on top of the arcs. The arcs carry the story. */
 export const THEATRE = 0.175;
 
@@ -121,8 +151,31 @@ export function allowance(truth: number): { ahead: number; behind: number } {
   */
   const soft = (limit: number, linear: number): number =>
     limit * Math.tanh(Math.max(0, linear) / limit);
+  /*
+    THE AHEAD ALLOWANCE HAS TO LEAVE RUNWAY, and the flat 0.85 did not.
+
+    It was (1 - truth) * 0.85: four fifths of a racer's REMAINING track, spendable
+    in advance. Near the line that is ruinous. At truth 96.9% it permits a drawing
+    at 99.5%, so truth then covers 3% of the course over the final half second
+    while the drawing covers 0.5% - two pixels on a 785px track, with the legs
+    still going. That is the "stuck behind the line running in place" report, and
+    no amount of work on the last 500ms can fix it: the racer is already at the
+    line when that window opens.
+
+    So the coefficient tapers. Below LEAD_TAPER_FROM nothing changes - mid-race
+    drama is the whole point of this file and it keeps its 0.85. From there to the
+    line it eases to LEAD_TAPER_TO, which leaves the last stretch mostly unspent:
+    at truth 96.9% the drawing may now be at about 97.5%, so there are eleven
+    pixels of real track still to cross.
+
+    Smoothstepped rather than linear so the taper introduces no kink - the same
+    reason `soft` exists two lines up.
+  */
+  const t = Math.max(0, Math.min(1, (truth - LEAD_TAPER_FROM) / (1 - LEAD_TAPER_FROM)));
+  const eased = t * t * (3 - 2 * t);
+  const coef = LEAD_TAPER + (LEAD_TAPER_TO - LEAD_TAPER) * eased;
   return {
-    ahead: soft(MAX_LEAD, (1 - truth) * 0.85),
+    ahead: soft(MAX_LEAD, (1 - truth) * coef),
     behind: soft(MAX_DROP, truth * 0.9),
   };
 }
@@ -315,6 +368,10 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
 
   const arcs = planArcs(sim, seed, n);
   const shown = Array.from({ length: n }, () => new Float32Array(frames + 1));
+  const smooth = (x: number) => {
+    const c = Math.max(0, Math.min(1, x));
+    return c * c * (3 - 2 * c);
+  };
   const events: DramaEvent[] = [];
   const stamped = new Set<string>();
 
@@ -368,6 +425,29 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
       if (p < 0) p = 0;
       if (truth < 1 && p > truth + ahead) p = truth + ahead;
       if (truth >= 1) p = 1;
+
+      /*
+        THE LAST APPROACH: GIVE THE REMAINING TRACK BACK. See APPROACH_MS.
+
+        The first attempt here glided toward 1.0 and changed nothing, which was
+        instructive: by the time the window opened the racer was ALREADY drawn at
+        99.5%, so there was no runway left to glide down. The lead was the
+        problem, not the pacing of the last bit.
+
+        allowance().ahead is (1 - truth) * 0.85, so at truth 96.9% a racer may be
+        drawn at 99.5% - four fifths of their remaining track spent in advance.
+        Truth then covers 3% over the final half second while the DRAWING covers
+        0.5%, which is the two pixels somebody watched a racer not move.
+
+        So inside the window the deviation is handed back: drawn converges on
+        truth, reaching it exactly at finishMs. The racer travels the distance it
+        actually has left, arrives on its own time, and the lead it borrowed
+        earlier is repaid gradually rather than being cancelled at the line.
+
+        This only ever REMOVES a lead, never adds one - a racer drawn behind truth
+        (a collapse) is pulled forward to truth by the same blend, which is the
+        same thing said the other way round: at the line, drawn is truth.
+      */
       shown[i]![t] = p;
     }
   }

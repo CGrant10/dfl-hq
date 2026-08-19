@@ -667,22 +667,32 @@ function watch(view, id, racers) {
           elapsedMs: racerElapsed, officialFinishMs: live.official?.get(i), timeline: live.pixiTimeline,
         });
 
-        /* Theatre is allowed to tell stories in the race, but it is not allowed
-           to fake an arrival. Past 70% true progress, progressively restrict how
-           far AHEAD the drawing may be; by 82% it can lead truth by at most 1.5%
-           of the track. Behind-truth collapses are untouched. This prevents a
-           slow racer being drawn at 95-99% for seconds while its actual race is
-           still far from the line. */
-        const truthSamples = sim.samples[i];
-        const truth = (truthSamples[visualLo] ?? 0) +
-          ((truthSamples[visualHi] ?? truthSamples[visualLo] ?? 0) - (truthSamples[visualLo] ?? 0)) * visualMix;
-        if (truth >= 0.70 && pixiRacer.progress > truth) {
-          const close = Math.min(1, (truth - 0.70) / 0.12);
-          const maxAhead = 0.12 + (0.015 - 0.12) * close;
-          const guarded = Math.min(pixiRacer.progress, truth + maxAhead);
-          pixiRacer.progress = guarded;
-          pixiRacer.displayProgress = guarded;
-        }
+        /*
+          THE AHEAD-OF-TRUTH CLAMP WAS REMOVED HERE, and it was measured rather
+          than judged.
+
+          It restricted how far ahead of truth a racer could be drawn past 70%
+          progress, tightening to 1.5% by 82%. The problem it was aimed at - a
+          slow racer drawn at 95-99% while its real race was far from the line -
+          was caused by the engine's maxTicks guard freezing samples at 98%, and
+          that was fixed properly in the engine (1.6x -> 3.1x plus a speed
+          floor). With truth actually reaching the line, the theatre converges on
+          its own: measured across four seeds, the earliest any racer is drawn at
+          the line is 80ms before its own finish, and the longest spell drawn at
+          >=99.5% is 120ms. Three frames. Nothing to clamp.
+
+          What the clamp DID do was make things worse where it mattered most. A
+          ceiling that tightens as truth rises subtracts from a rising value, so
+          a small collapse becomes a large backward step. Past 70% truth:
+
+            raw theatre     went backwards by at most 0.61% of the track
+            with the clamp  up to 5.80% - an order of magnitude more
+
+          At 5.8% of progress that is roughly 24px of visible backward lurch on a
+          785px track, arriving in the second the race is decided. The specs in
+          theatre.spec.ts now assert both properties, so neither the original bug
+          nor this cure can come back unnoticed.
+        */
         const p = pixiRacer.progress;
         /* Same coast the Arena applies - one implementation in race.js, so
            the two cameras cannot disagree about where a finisher parks. */
@@ -811,9 +821,31 @@ function watch(view, id, racers) {
         finish: finishPresentation,
         reduceMotionEffects: live.reduceMotionEffects,
       });
-      if (els.scenery) els.scenery.style.setProperty("--race-pan", Math.min(1, leaderProgress).toFixed(4));
-      const backdrop = backgroundMotion(elapsed < 0 ? "idle" : pixiState, heat,
-        finishPresentation.celebrationActive, live.reduceMotionEffects);
+      /*
+        THE COURSE STOPS WHEN THE LINE IS HOME.
+
+        Once the structure is standing on the crossing point the world has
+        arrived: the pan HOLDS at whatever it had reached and the motion blur
+        comes off, so the only thing still moving is the racers running through.
+        From a fixed camera that is the difference between "the line reached us"
+        and "the line is sliding past while we run".
+
+        The pan is held rather than reset - snapping the scenery back to 0 at the
+        moment of the finish would be a jump cut into the most important second
+        of the race. It is also latched off the presentation's own clock, so a
+        racer collapsing cannot make the background start moving again.
+      */
+      const courseStopped = finishPresentation.courseStopped === true;
+      if (els.scenery && !courseStopped) {
+        els.scenery.style.setProperty("--race-pan", Math.min(1, leaderProgress).toFixed(4));
+      }
+      if (els.stage.dataset.courseStopped !== String(courseStopped)) {
+        els.stage.dataset.courseStopped = String(courseStopped);
+      }
+      const backdrop = courseStopped
+        ? { blurX: 0, blurY: 0, intensity: 0 }
+        : backgroundMotion(elapsed < 0 ? "idle" : pixiState, heat,
+            finishPresentation.celebrationActive, live.reduceMotionEffects);
       live.sceneryBlurX += (backdrop.blurX - live.sceneryBlurX) * .16;
       els.sceneryBlur?.setAttribute("stdDeviation", `${live.sceneryBlurX.toFixed(2)} ${backdrop.blurY.toFixed(2)}`);
       els.stage?.style.setProperty("--arena-motion", backdrop.intensity.toFixed(3));

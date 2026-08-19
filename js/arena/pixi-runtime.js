@@ -1714,6 +1714,7 @@ function jt(e) {
 	return {
 		camera: wt(e.leaderProgress),
 		groundRatio: Number.isFinite(u) ? ht(e.elapsedMs, u) : mt,
+		courseStopped: Number.isFinite(u) && e.elapsedMs >= gt(u),
 		visualElapsedMs: c,
 		crossingShown: o,
 		crossingShownMs: a,
@@ -3093,27 +3094,27 @@ function bn(e) {
 }
 //#endregion
 //#region src/arena/theatre.ts
-var xn = .46, Sn = .38, Cn = .07, wn = .26, Tn = .175, Q = (e) => {
+var xn = .46, Sn = .38, Cn = .07, wn = .26, Tn = .85, En = .82, Dn = .175, Q = (e) => {
 	let t = e <= 0 ? 0 : e >= 1 ? 1 : e;
 	return t * t * (3 - 2 * t);
 };
-function En(e) {
+function On(e) {
 	return e >= .07 ? 1 : Q(e / Cn);
 }
-function Dn(e) {
+function kn(e) {
 	return e <= 0 ? 0 : e >= 900 ? 1 : Q(e / 900);
 }
-function On(e) {
+function An(e) {
 	return e >= .26 ? 1 : Q(e / wn);
 }
-function kn(e) {
-	let t = (e, t) => e * Math.tanh(Math.max(0, t) / e);
+function jn(e) {
+	let t = (e, t) => e * Math.tanh(Math.max(0, t) / e), n = Math.max(0, Math.min(1, (e - En) / .18000000000000005)), r = Tn + -.6699999999999999 * (n * n * (3 - 2 * n));
 	return {
-		ahead: t(xn, (1 - e) * .85),
+		ahead: t(xn, (1 - e) * r),
 		behind: t(Sn, e * .9)
 	};
 }
-function An(e) {
+function Mn(e) {
 	let t = e >>> 0;
 	return () => {
 		t = t + 1831565813 >>> 0;
@@ -3121,13 +3122,13 @@ function An(e) {
 		return e = Math.imul(e ^ e >>> 15, e | 1), e ^= e + Math.imul(e ^ e >>> 7, e | 61), ((e ^ e >>> 14) >>> 0) / 4294967296;
 	};
 }
-function jn(e, t = 0) {
+function Nn(e, t = 0) {
 	if (e <= 0 || e >= 1) return 0;
 	let n = (1 - Math.max(0, Math.min(.8, t))) / 2;
 	return e < n ? Q(e / n) : e > 1 - n ? Q((1 - e) / n) : 1;
 }
-function Mn(e, t, n) {
-	let r = An((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
+function Pn(e, t, n) {
+	let r = Mn((t >>> 0 ^ 1374496513) >>> 0), i = Array.from({ length: n }, () => []), a = e.samples[0];
 	if (!a) return i;
 	let o = (t) => {
 		let r = 0;
@@ -3164,7 +3165,7 @@ function Mn(e, t, n) {
 	}
 	return i;
 }
-function Nn(e) {
+function Fn(e) {
 	let t = new Map(e.order.map((e) => [e.index, e.finishMs]));
 	return e.samples.map((n, r) => {
 		let i = t.get(r) ?? 0, a = Math.max(1, Math.min(e.frames, Math.round(i / 40))), o = a, s = a - 1;
@@ -3172,14 +3173,14 @@ function Nn(e) {
 		return Math.max(1e-5, (n[o] ?? 0) - (n[s] ?? 0)) / 40;
 	});
 }
-function Pn(e, t) {
+function In(e, t) {
 	let n = e.samples.length, r = e.frames;
 	if (!n) return {
 		shown: [],
 		events: [],
 		arcs: []
 	};
-	let i = An((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
+	let i = Mn((t >>> 0 ^ 2654435769) >>> 0), a = Array.from({ length: n }, () => ({
 		a1: .6 + i() * .55,
 		f1: 1.3 + i() * 1.6,
 		p1: i() * Math.PI * 2,
@@ -3187,13 +3188,13 @@ function Pn(e, t) {
 		f2: 2.2 + i() * 2,
 		p2: i() * Math.PI * 2,
 		amp: .45 + i() * 1.5
-	})), o = Mn(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set(), u = new Map(e.order.map((e) => [e.index, e.finishMs]));
+	})), o = Pn(e, t, n), s = Array.from({ length: n }, () => new Float32Array(r + 1)), c = [], l = /* @__PURE__ */ new Set(), u = new Map(e.order.map((e) => [e.index, e.finishMs]));
 	for (let t = 0; t < n; t++) {
 		let n = a[t], i = e.samples[t], d = o[t], f = u.get(t) ?? Infinity;
 		for (let e = 0; e <= r; e++) {
 			let r = i[e] ?? 0, a = r >= 1 ? 0 : (1 - r) ** 1.35, o = r * Math.PI * 2, u = Math.sin(o * n.f1 + n.p1) * n.a1 + Math.sin(o * n.f2 + n.p2) * n.a2, p = 0;
 			for (let n of d) {
-				p += n.power * jn((r - n.start) / n.width, n.hold);
+				p += n.power * Nn((r - n.start) / n.width, n.hold);
 				let i = `${t}:${n.kind}:${n.start}`;
 				!l.has(i) && r >= n.start + n.width * .28 && (l.add(i), c.push({
 					kind: n.kind === "collapse" ? "stumble" : n.kind,
@@ -3202,7 +3203,7 @@ function Pn(e, t) {
 					durMs: 1800
 				}));
 			}
-			let m = En(r) * Dn(f - e * 40) * On(r), h = (u * n.amp * Tn * a + p) * m, { ahead: g, behind: _ } = kn(r), v = h >= 0 ? g : _, y = v > 1e-6 ? v * Math.tanh(h / v) : 0, b = r * En(r) + y;
+			let m = On(r) * kn(f - e * 40) * An(r), h = (u * n.amp * Dn * a + p) * m, { ahead: g, behind: _ } = jn(r), v = h >= 0 ? g : _, y = v > 1e-6 ? v * Math.tanh(h / v) : 0, b = r * On(r) + y;
 			b < 0 && (b = 0), r < 1 && b > r + g && (b = r + g), r >= 1 && (b = 1), s[t][e] = b;
 		}
 	}
@@ -3212,10 +3213,10 @@ function Pn(e, t) {
 		arcs: o
 	};
 }
-function Fn(e, t = 12) {
+function Ln(e, t = 12) {
 	return yt;
 }
-function In(e, t) {
+function Rn(e, t) {
 	let n = Math.max(1e-9, t), r = n * 600 * 6 / 2;
 	if (e <= r) {
 		let t = n * 4 / 1200, r = n;
@@ -3223,47 +3224,47 @@ function In(e, t) {
 	}
 	return 600 + (e - r) / (n * 5);
 }
-function Ln(e) {
-	let t = Nn(e), n = [];
+function zn(e) {
+	let t = Fn(e), n = [];
 	for (let r of e.order) {
-		let i = Math.max(1e-6, t[r.index] ?? 1e-4), a = Fn(r.place, e.order.length), o = a / i;
+		let i = Math.max(1e-6, t[r.index] ?? 1e-4), a = Ln(r.place, e.order.length), o = a / i;
 		n[r.index] = {
 			finishMs: r.finishMs,
 			place: r.place,
 			crossSpeed: i,
 			settle: a,
 			tau: o,
-			coastMs: Math.min(3e4, In(a, i))
+			coastMs: Math.min(3e4, Rn(a, i))
 		};
 	}
 	return n;
 }
-function Rn(e) {
+function Bn(e) {
 	return 1 + 4 * Math.min(1, Math.max(0, e) / 600);
 }
-function zn(e, t, n) {
+function Vn(e, t, n) {
 	if (!n || t < n.finishMs) return e;
 	let r = t - n.finishMs, i = n.crossSpeed, a = r <= 600 ? i * (r + 4 * r * r / 1200) : i * 1800 + i * 5 * (r - 600);
 	return 1 + Math.min(n.settle, a);
 }
-function Bn(e, t, n) {
+function Hn(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
 	if (n) return "celebrating";
 	let r = e - t.finishMs;
 	return r < 160 ? "crossing" : r < t.coastMs ? "coasting" : "settled";
 }
-function Vn(e, t, n, r) {
-	let i = Bn(t, n, r);
-	if (e.phase = i, e.displayProgress = zn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
+function Un(e, t, n, r) {
+	let i = Hn(t, n, r);
+	if (e.phase = i, e.displayProgress = Vn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
 		let r = t - n.finishMs;
-		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Rn(r) * 40 * 180));
+		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Bn(r) * 40 * 180));
 	}
 	return e;
 }
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function Hn(e, t) {
+async function Wn(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -3324,6 +3325,6 @@ async function Hn(e, t) {
 	}
 }
 //#endregion
-export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, kn as allowance, jn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, Dn as closingEase, zn as coastProgress, X as composeCharacter, Hn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Nn as crossingSpeeds, Pn as dramatize, pt as finishArrival, Bn as finishPhase, gt as finishSettledMs, Ln as finishTrajectories, En as launchEase, Qt as normalizeCharacter, On as openEase, Mn as planArcs, Vn as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, Fn as settleOffset, an as silhouetteRuns };
+export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, jn as allowance, Nn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, kn as closingEase, Vn as coastProgress, X as composeCharacter, Wn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Fn as crossingSpeeds, In as dramatize, pt as finishArrival, Hn as finishPhase, gt as finishSettledMs, zn as finishTrajectories, On as launchEase, Qt as normalizeCharacter, An as openEase, Pn as planArcs, Un as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, Ln as settleOffset, an as silhouetteRuns };
 
 //# sourceMappingURL=pixi-runtime.js.map

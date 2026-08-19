@@ -78,6 +78,8 @@ export interface FinishPresentation {
   camera: FinishCamera;
   /** Where the finish structure stands, as a ratio of the frame. Racer units. */
   groundRatio: number;
+  /** The structure is home: scenery stops travelling, only racers still move. */
+  courseStopped: boolean;
   visualElapsedMs: number;
   /*
     Has the viewer actually SEEN the race being decided yet? Every graphic

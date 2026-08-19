@@ -34,7 +34,29 @@ course top 0.165, lane band 0.18–0.92.
 
 ## Still open
 
-### The huddle — POST-CROSSING FIXED; the mid-race spread metric is what is left
+### The huddle — FIXED AT BOTH ENDS as of v1.109.51
+
+**Post-crossing** was fixed earlier: `settleOffset()` derives its per-place step
+from the run-off and the field, and finishers run off the frame rather than
+parking.
+
+**Mid-race spread at the first crossing is now fixed too**, and by the change
+nobody expected to do it. `allowance().ahead` was a flat `(1 - truth) * 0.85`, so
+a trailing racer could be drawn four fifths of the way through its remaining
+track — which is exactly the "the back is pushed UP" mechanism described below.
+Tapering that coefficient near the line (LEAD_TAPER_FROM/TO) to stop racers
+stalling at the finish moved the metric as a side effect:
+
+| | seed 90210 | seed 1 | seed 8675309 |
+|---|---|---|---|
+| drawn spread at first crossing, before | 0.103 | — | — |
+| after the taper | **0.362** | **0.238** | **0.146** |
+
+So the lever was not arc composition after all: it was the late-race ahead
+allowance. The section below is kept because its diagnosis of WHY the metric was
+stuck is what pointed at it.
+
+### The original diagnosis — convergence fixed, spread metric unmoved
 
 **The pile-up against the finish line is gone.** `settleOffset()` now derives
 its per-place step from the run-off and the field size, `MAX_SETTLE` is 0.65,
