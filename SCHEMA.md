@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 46 `.sql` files (one base plus 45 additive) and the
+one in.** This exists because the repository has 47 `.sql` files (one base plus 46 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -157,6 +157,12 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 44 | `season_result_override_schema.sql` | `sleeper_leagues.champion_locked` / `last_place_locked`, and `set_season_result()`. Needs 9, 42 and 31. **The override writes the same column everything else reads** — `champion_user_id` is read in fourteen files, so a separate override table would mean teaching all fourteen to prefer it and the one that got missed would disagree forever. The lock is what makes that safe: Sync Sleeper omits a locked column from its patch entirely rather than writing it back, so a season the bracket gets right stays automatic and one it cannot know stays corrected. Takes **member ids**, resolves them to Sleeper user ids itself, and **creates a placeholder league row** (`manual-<season>`) for a season Sleeper never had — which is the 2019 case. Passing null clears the lock and hands the column back to the sync. Ends with a report of every season, both titles, and whether a human set them. |
+
+### The bottom ticker gets editable lines
+
+| # | File | What it establishes |
+|---|---|---|
+| 45 | `ticker_items_schema.sql` | `ticker_items` — label, text, route, weight, active and an optional showing window. Needs 2 and 31. The ticker was entirely **derived** (next event, golf day, open poll, newest announcement, reigning champion) with no row a commissioner could touch. Hand-written lines now sit **alongside** the derived ones, ahead of them — so an empty table is exactly the old behaviour and there is no "enabled" switch to get wrong. Deliberately five fields against `broadcast_items`' seventeen: a slide is a piece of design, a ticker line is a sentence. `route` is a route **name**, not a URL, so a typo cannot make a link out of the app. Written by `broadcast` — the same permission that owns the slides. Ends with a report of what is showing, scheduled, expired or off. |
 
 ### Not schema
 

@@ -37,6 +37,7 @@
 // =====================================================================
 
 import { db } from "./supabase.js";
+import { manualTickerItems } from "./ticker-lines.js";
 import { esc } from "./ui.js";
 import { suppressedOn } from "./bottomline-routes.js";
 
@@ -110,7 +111,7 @@ function shortTime(value) {
 export async function bottomlineItems() {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [eventsRes, golfRes, pollsRes, annRes, leagueRes] = await Promise.all([
+  const [eventsRes, golfRes, pollsRes, annRes, leagueRes, manualRes] = await Promise.all([
     db().from("events").select("title, event_date, event_time")
       .gte("event_date", today).order("event_date", { ascending: true }).limit(1)
       .then((r) => r, () => ({ error: true })),
@@ -128,9 +129,33 @@ export async function bottomlineItems() {
     db().from("sleeper_leagues").select("season, champion_user_id, status")
       .order("season", { ascending: false }).limit(4)
       .then((r) => r, () => ({ error: true })),
+    /*
+      HAND-WRITTEN LINES, alongside the derived ones rather than instead of them.
+      An absent table means an absent migration, which is indistinguishable from
+      an empty one here - and both mean "show what you always showed".
+    */
+    db().from("ticker_items").select("label, text, route, weight, active, starts_at, ends_at")
+      .eq("active", true).order("weight", { ascending: false }).limit(12)
+      .then((r) => r, () => ({ error: true })),
   ]);
 
   const items = [];
+
+  /*
+    MANUAL LINES FIRST, and that ordering is the point rather than a detail.
+
+    Everything else in this function is the app noticing something. A line
+    somebody typed is the league SAYING something, so it goes in front - a
+    reminder about Thursday's draw that queued behind the reigning champion
+    would be a reminder nobody read.
+
+    Ordered among themselves by weight, then by the order the query returned.
+    Windows are filtered here rather than in SQL so a row with a start in the
+    future is simply skipped instead of needing two more query parameters.
+  */
+  for (const row of manualTickerItems(manualRes.error ? [] : manualRes.data || [])) {
+    items.push(row);
+  }
 
   // ---- next event ----
   const event = (eventsRes.error ? [] : eventsRes.data || [])[0];

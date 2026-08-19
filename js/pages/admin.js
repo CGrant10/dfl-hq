@@ -19,6 +19,10 @@ import { esc, toast } from "../ui.js";
 const TABLES = [
   { id: "members", tab: "Members", table: "members", permission: "members" },
   { id: "rule_categories", tab: "Rule tabs", table: "rule_categories", permission: "rules" },
+  /* The ticker is the same job as the slides, so it answers to the same
+     permission. A table tab rather than a hand-built panel because the CRUD
+     list is already the right shape for five fields. */
+  { id: "ticker_items", tab: "Ticker", table: "ticker_items", permission: "broadcast" },
 ];
 
 const PANELS = [

@@ -230,7 +230,54 @@ export const SECTIONS = [
       { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
     ],
   },
-  {
+    {
+    /*
+      THE TICKER, and it is deliberately the smallest spec in this file.
+
+      broadcast_items has seventeen fields because a slide is a piece of design.
+      A ticker line is a label, a sentence and somewhere to go - so this has five
+      and nothing is marked `advanced`, because there is nothing here worth
+      hiding. If it ever needs a sixth, that is the moment to ask whether it has
+      stopped being a ticker.
+    */
+    id: "ticker_items", tab: "Ticker",
+    table: "ticker_items", singular: "ticker line", plural: "ticker lines",
+    order: "weight", asc: false,
+    label: (r) => r.text || "Empty line",
+    sub: (r) => {
+      const bits = [];
+      if (r.label) bits.push(r.label);
+      if (!r.active) bits.push("off");
+      if (r.starts_at || r.ends_at) bits.push("scheduled");
+      if (r.weight) bits.push(`weight ${r.weight}`);
+      return bits.join(" · ");
+    },
+    fields: [
+      { name: "text", label: "The line", type: "text", required: true,
+        placeholder: "Draft order draw is Thursday" },
+      { name: "label", label: "Chip in front (optional)", type: "text",
+        placeholder: "Reminder" },
+      /* A route NAME, never a URL. bottomline.js maps it to #/<route> exactly as
+         the derived items do, so a typo cannot make a link out of the app. */
+      { name: "route", label: "Tapping it goes to", type: "select", default: "",
+        options: [
+          { value: "", label: "Nowhere" },
+          { value: "home", label: "Home" },
+          { value: "calendar", label: "Calendar" },
+          { value: "polls", label: "Polls" },
+          { value: "golf", label: "Golf" },
+          { value: "keepers", label: "Keepers" },
+          { value: "history", label: "History" },
+          { value: "sportsbook", label: "Sportsbook" },
+          { value: "finances", label: "Fees" },
+        ] },
+      { name: "weight", label: "Show earlier (higher first)", type: "number", default: 0 },
+      { name: "active", label: "On", type: "checkbox", default: true },
+      { name: "starts_at", label: "Show from (optional)", type: "datetime", advanced: true },
+      { name: "ends_at", label: "Stop showing (optional)", type: "datetime", advanced: true },
+    ],
+  },
+{
     id: "broadcast_items", tab: "Broadcast",
     table: "broadcast_items", singular: "broadcast slide", plural: "broadcast slides",
     order: "weight", asc: false,
