@@ -460,7 +460,11 @@ catch(err){toast(err.message||"Could not create the teams",true);make.disabled=f
 async function generateTeams(outing,parts,existingTeams,rate,want,mode){const teams=[...existingTeams];while(teams.length<want){const i=teams.length;teams.push(await insertRow("golf_teams",{outing_id:outing.id,name:TEAM_NAMES[i%TEAM_NAMES.length],color:newTeamColor(i),sort_order:i}));}while(teams.length>want){const gone=teams.pop();const{error}=await db().from("golf_teams").delete().eq("id",gone.id);if(error)throw error;}const locked=parts.filter(p=>p.locked&&p.team_id!=null),pool=parts.filter(p=>!(p.locked&&p.team_id!=null)),load=new Map(teams.map(t=>[String(t.id),0]));locked.forEach(p=>{const k=String(p.team_id);if(load.has(k))load.set(k,load.get(k)+1);});if(mode==="balanced")pool.sort((a,b)=>rate(b.member_id)-rate(a.member_id));else for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}for(const p of pool){let best=teams[0],bestLoad=Infinity;for(const t of teams){const l=load.get(String(t.id));if(l<bestLoad){bestLoad=l;best=t;}}load.set(String(best.id),bestLoad+1);/* Clear the pick as well as setting the team. A generated assignment is not
    a pick, and leaving an old pick_number behind would have the draft board
    reporting picks that nobody ever made. */
-await updateRow("golf_participants",p.id,{team_id:best.id,pick_number:null,picked_at:null}).catch(()=>updateRow("golf_participants",p.id,{team_id:best.id}));}}
+/* The fallback is for a database without pick_number/picked_at. A REFUSED
+   write is not that, and retrying it with fewer columns just refuses again -
+   so it is rethrown rather than reported as a missing column. */
+await updateRow("golf_participants",p.id,{team_id:best.id,pick_number:null,picked_at:null})
+  .catch(err=>{if(err?.refused)throw err;return updateRow("golf_participants",p.id,{team_id:best.id});});}}
 
 /* =====================================================================
    GUEST ACCESS

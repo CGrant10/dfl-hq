@@ -884,7 +884,17 @@ async function clearResult(view, event) {
   if (!confirm("Delete this race result? The line-up and sprites are kept.")) return;
 
   try {
-    const { error } = await db().from("arena_results").delete().eq("event_id", event.id);
+    /*
+      The delete is asked to name what it removed. A delete RLS refuses matches
+      zero rows and returns no error, exactly like a refused update - so a
+      commissioner without the Broadcast permission got "Result cleared" and a
+      result still sitting on the screen.
+
+      Zero rows is only WRONG if there was something to remove, which is why
+      this reports through the event update below rather than guessing here: a
+      race whose result was already gone legitimately deletes nothing.
+    */
+    const { error } = await db().from("arena_results").delete().eq("event_id", event.id).select("id");
     if (error) throw error;
 
     const back = { status: "setup", seed: null, completed_at: null };
@@ -892,8 +902,14 @@ async function clearResult(view, event) {
       // Reset the broadcast too, where those columns exist.
       await updateRow("arena_events", event.id,
         { ...back, bc_state: "idle", bc_started_at: null, bc_offset_ms: 0 });
-    } catch {
-      // No broadcast columns yet - the result still clears.
+    } catch (err) {
+      /*
+        This fallback exists for a database that predates the bc_ columns. A
+        REFUSAL is not that, and retrying the same refused write with fewer
+        columns just refuses again - so it has to be told apart, or a
+        permissions problem is reported as a schema problem.
+      */
+      if (err?.refused) throw err;
       await updateRow("arena_events", event.id, back);
     }
 

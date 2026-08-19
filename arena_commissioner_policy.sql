@@ -33,7 +33,9 @@ begin
     -- Who is in the race, and their chosen racer.
     ('arena_participants', 'broadcast'),
     -- The saved result, written once when a race finishes.
-    ('arena_results',      'broadcast')
+    ('arena_results',      'broadcast'),
+    -- Hand-written front-page slides. Same permission, same screen owner.
+    ('broadcast_items',    'broadcast')
   ) as v(table_name, permission_name)
   loop
     -- Skip tables whose migration has not been run rather than failing the

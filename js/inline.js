@@ -8,6 +8,27 @@ import { field, setValue, readForm, fillOptionsFrom } from "./form.js";
 import { hiddenCards, setCardHidden } from "./settings.js";
 import { esc, toast } from "./ui.js";
 
+/*
+  WHICH PERMISSION GOVERNS WHICH TABLE.
+
+  A table that is NOT in here falls through to isMasterAdmin() below - the
+  shared Admin password and nothing else. That default is the right way round
+  (deny, not allow) but it is also completely silent, and the Admin screen
+  offers TWELVE permission checkboxes without saying that some of them govern
+  no table at all.
+
+  That is how "a commissioner cannot edit a race" happened: `arena_events` was
+  missing, so canEdit("arena_events") returned isMasterAdmin(), the editor
+  refused with "You do not have permission to edit that", and it refused on the
+  CLIENT - before any policy was consulted. Adding the database policy changed
+  nothing, because the request was never sent.
+
+  STILL UNMAPPED, and therefore still master-admin-only however the checkbox is
+  set: golf, sportsbook, fees, sleeper. Those four permissions currently grant
+  nothing anywhere. `members` is mapped here but has no matching database
+  policy, so it passes this gate and is then refused by RLS - which at least
+  now reports itself, see updateRow() in supabase.js.
+*/
 const TABLE_PERMISSION = {
   announcements: "announcements",
   events: "calendar",
@@ -18,6 +39,11 @@ const TABLE_PERMISSION = {
   rule_categories: "rules",
   history: "history",
   members: "members",
+  /* The Arena. arena_commissioner_policy.sql carries the matching policies. */
+  arena_events: "broadcast",
+  arena_participants: "broadcast",
+  arena_results: "broadcast",
+  broadcast_items: "broadcast",
 };
 
 /** No table means "does this device have any privileged session?". A named

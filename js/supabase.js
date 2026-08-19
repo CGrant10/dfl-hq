@@ -168,9 +168,40 @@ export async function insertRow(table, row) {
   return data;
 }
 
+/*
+  ASK FOR THE ROW BACK. A REFUSED WRITE IS SILENT OTHERWISE.
+
+  PostgREST answers an update that RLS refuses with 204 and zero rows, NOT an
+  error. Without a .select() this function therefore returned successfully for
+  a write that never happened, and every caller went on to toast "Saved",
+  "Countdown", "Result cleared".
+
+  That has now caused three separate "the app is broken" reports:
+
+    keeper rules   the editor toasted Saved over a refused write, fixed
+                   locally in that screen in v1.109.0
+    race start     the Race View counted down against a shared row that still
+                   said idle, and the poll put it back a second later
+    clear result   "Result cleared", and the result stayed on screen
+
+  Fixing it in each screen leaves the trap armed for the next one, so it is
+  fixed here. A zero-row update now throws with `refused` set, which callers
+  can distinguish from a genuine Postgres error - see clearResult() in
+  pages/arena.js, which has to tell a refusal apart from a missing column.
+
+  This does change behaviour for a caller that updates a row which no longer
+  exists: that used to pass quietly and now reports. That is the correct answer
+  to "did my write land" and it is the whole point.
+*/
 export async function updateRow(table, id, patch) {
-  const { error } = await db().from(table).update(patch).eq("id", id);
+  const { data, error } = await db().from(table).update(patch).eq("id", id).select("id");
   if (error) throw error;
+  if (!data || data.length === 0) {
+    const refusal = new Error(
+      `That change was refused, or ${table} row ${id} no longer exists. If you are signed in as a commissioner, check the matching permission in Admin - Commissioner Access.`);
+    refusal.refused = true;
+    throw refusal;
+  }
 }
 
 export async function deleteRow(table, id) {
