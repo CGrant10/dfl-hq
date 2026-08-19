@@ -16,6 +16,7 @@ const PERMISSIONS = [
   ["polls", "Polls"],
   ["keepers", "Keepers"],
   ["golf", "Golf"],
+  ["sportsbook", "Sportsbook"],
   ["broadcast", "Broadcast / Stage"],
   ["fees", "Fees"],
   ["history", "History / Facts"],
@@ -60,8 +61,8 @@ export async function renderCommissionerPanel(root) {
       </select>
 
       <label for="commissioner-pin">New / reset PIN</label>
-      <input id="commissioner-pin" type="password" inputmode="numeric" minlength="4" required
-        autocomplete="new-password" placeholder="At least 4 characters">
+      <input id="commissioner-pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" required
+        autocomplete="new-password" placeholder="At least 4 digits">
       <p class="muted">Saving always sets this member's PIN to the value above.</p>
 
       <label class="checkrow"><input type="checkbox" id="commissioner-owner"> <span><strong>Owner</strong><br><small class="muted">Full access, including managing commissioners.</small></span></label>
@@ -83,9 +84,7 @@ export async function renderCommissionerPanel(root) {
   const owner = root.querySelector("#commissioner-owner");
   const permissionInputs = [...root.querySelectorAll("#commissioner-perms input[type=checkbox]")];
 
-  const syncOwner = () => {
-    permissionInputs.forEach((box) => { box.disabled = owner.checked; });
-  };
+  const syncOwner = () => { permissionInputs.forEach((box) => { box.disabled = owner.checked; }); };
   owner.addEventListener("change", syncOwner);
   syncOwner();
 
@@ -106,9 +105,7 @@ export async function renderCommissionerPanel(root) {
       toast(owner.checked ? "Owner access saved" : "Commissioner access saved");
     } catch (err) {
       toast(err.message || "Could not save commissioner access", true);
-    } finally {
-      submit.disabled = false;
-    }
+    } finally { submit.disabled = false; }
   });
 
   root.querySelector("#commissioner-disable").addEventListener("click", async () => {
@@ -123,8 +120,6 @@ export async function renderCommissionerPanel(root) {
       permissionInputs.forEach((box) => { box.checked = false; });
       syncOwner();
       toast("Commissioner access disabled");
-    } catch (err) {
-      toast(err.message || "Could not disable commissioner access", true);
-    }
+    } catch (err) { toast(err.message || "Could not disable commissioner access", true); }
   });
 }

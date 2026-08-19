@@ -4,6 +4,7 @@
 // =====================================================================
 
 import { loading, errorBox } from "./ui.js";
+import { ensureSportsbookNav } from "./sportsbook-nav.js";
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -13,6 +14,7 @@ const routes = {
   polls:    () => import("./pages/polls.js"),
   arena:    () => import("./pages/arena.js"),
   golf:     () => import("./pages/golf.js"),
+  sportsbook:() => import("./pages/sportsbook.js"),
   broadcast:() => import("./pages/broadcast.js"),
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
@@ -144,6 +146,11 @@ export async function renderRoute() {
     const mod = await routes[name]();
     if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);
+    if (name === "profile") {
+      import("./profile-commissioner.js")
+        .then((m) => m.decorateCommissionerBadge(view))
+        .catch(() => {});
+    }
   } catch (err) {
     view.innerHTML = errorBox(err);
   }
@@ -175,6 +182,7 @@ export async function renderRoute() {
 let lastAnimated = null;
 
 export function startRouter() {
+  ensureSportsbookNav();
   const bar = document.getElementById("tabbar");
   /* pointerdown fires at contact, before click/hashchange. Only direct route
      tabs preview; More is a sheet, so it stays put until a route is chosen. */
