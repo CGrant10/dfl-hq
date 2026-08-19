@@ -186,10 +186,12 @@ $$;
 -- ---------------------------------------------------------------------
 -- THE FEED, as one read.
 --
--- Collapses a burst into one line: twelve keeper rows written by the
--- commissioner in one sitting is one event to a reader, not twelve. The bucket
--- is (entity, action, member, five-minute window), which is coarse enough to
--- fold a batch and fine enough to keep two separate sittings apart.
+-- Collapses a burst into one line. The important distinction is RECORDS, not
+-- trigger hits: saving one keeper can legitimately update that same row twice,
+-- and an Arena race updates the same event row several times as its shared
+-- clock/state advances. Those are still one keeper and one Arena event to a
+-- human reader. Multiple distinct ids in the same five-minute bucket remain a
+-- real batch and keep their real count.
 -- ---------------------------------------------------------------------
 create or replace function public.activity_feed(row_limit int default 12)
 returns table (
@@ -209,7 +211,7 @@ returns table (
     a.member_id,
     max(m.display_name)     as display_name,
     bool_or(a.as_commissioner) as as_commissioner,
-    count(*)                as row_count,
+    count(distinct coalesce(a.entity_id, 'activity-log:' || a.id::text)) as row_count,
     max(a.created_at)       as last_at
   from public.activity_log a
   left join public.members m on m.id = a.member_id
