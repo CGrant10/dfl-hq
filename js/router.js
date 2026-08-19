@@ -5,6 +5,7 @@
 
 import { loading, errorBox } from "./ui.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
+import { startMemberLock } from "./member-lock.js";
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -94,6 +95,7 @@ export async function renderRoute() {
 let lastAnimated = null;
 export function startRouter() {
   ensureSportsbookNav();
+  startMemberLock();
   const bar = document.getElementById("tabbar");
   bar?.addEventListener("pointerdown", (event) => {
     const target = event.target.closest("a[data-route]");
