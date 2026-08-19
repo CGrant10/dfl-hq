@@ -129,15 +129,20 @@ export function simulate(racers, ticks, seed) {
   const stumble  = new Int16Array(n);
 
   /*
-    The clock is a target, not a wall.
+    EVERY RACER MUST ACTUALLY CROSS.
 
-    `ticks` is where an AVERAGE racer arrives, so a slow one is still short
-    of the line when it runs out - and a racer frozen at 99% who never
-    crosses looks like a bug rather than a last place. So the simulation is
-    allowed to run on until everybody is home, with a hard cap so a
-    pathological seed cannot loop forever.
+    `ticks` is where an AVERAGE racer arrives. The old 1.6x emergency guard
+    was too close to the slowest legitimate pace, so an unlucky racer could
+    hit it at 98-99%. Their samples then froze beside the stripe while only
+    their estimated finish clock continued, which looked exactly like a racer
+    waiting at the line and then being ranked behind somebody who arrived
+    later on screen.
+
+    The speed floor below guarantees forward motion. 3.1x is only an
+    emergency guard far beyond any normal finish: the race is unchanged up
+    to the old cutoff, and a slow racer simply keeps running until they cross.
   */
-  const maxTicks = Math.ceil(ticks * 1.6);
+  const maxTicks = Math.ceil(ticks * 3.1);
   const samples = Array.from({ length: n }, () => new Float32Array(maxTicks + 1));
   const finishTick = new Float64Array(n).fill(-1);
 
@@ -211,8 +216,8 @@ export function simulate(racers, ticks, seed) {
   // never filled, leaving the tail of every lane at zero.
   const lastWritten = Math.max(0, Math.min(t - 1, maxTicks));
 
-  // Anyone still going at the cap is placed by distance covered, and their
-  // lane is held at wherever they got to rather than left at zero.
+  // This remains a pathological emergency fallback only. With the 3.1x guard
+  // and the positive speed floor, legitimate racers should always cross first.
   for (let i = 0; i < n; i++) {
     if (finishTick[i] < 0) finishTick[i] = maxTicks + (1 - progress[i]) * ticks;
     const held = samples[i][lastWritten];
