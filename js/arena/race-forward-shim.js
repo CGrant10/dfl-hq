@@ -13,9 +13,10 @@ export function dramatize(sim) {
   return { shown: sim.samples, events: [] };
 }
 
-/* The cinematic stylesheet accidentally re-declared the winner as relative,
-   which made it become a fourth grid row and physically shove the race upward.
-   Keep result presentation on the same overlay plane as the countdown. */
+/* Keep result presentation on an overlay plane, but never over the controls.
+   A later cinematic selector used to turn both the winner and the control bar
+   back into relative grid children. The winner shoved the race upward and then
+   sat above the buttons. Lock both layers to their intended jobs here. */
 if (typeof document !== "undefined" && !document.getElementById("arena-novelty-overrides")) {
   const style = document.createElement("style");
   style.id = "arena-novelty-overrides";
@@ -26,6 +27,10 @@ if (typeof document !== "undefined" && !document.getElementById("arena-novelty-o
       z-index: 12 !important;
       margin: 0 !important;
     }
+    .bc-stage.cinematic-race .bc-bar {
+      position: fixed !important;
+      z-index: 30 !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -35,10 +40,11 @@ if (typeof document !== "undefined" && !document.getElementById("arena-novelty-o
 
   Before the line, the simulation owns position. At the exact crossing we
   immediately continue at a deliberately strong screen-readable run-out pace.
-  There is no ease, settle, parking, or finish-state brake. The initial step
-  starts from the racer's actual crossing speed, multiplied only because the
-  course camera stops and a literal race-space speed reads as slow motion on a
-  phone once the background no longer moves.
+  There is no ease, settle, parking, or finish-state brake.
+
+  7.5x is intentionally only a small step up from the previous 6x. The race
+  itself finally feels right, so this is not another physics rewrite; it just
+  shortens the visible moment a finished racer spends near the stripe.
 */
 export function presentFinish(racerFrame, elapsedMs, trajectory, celebrating = false) {
   if (!racerFrame) return racerFrame;
@@ -49,7 +55,7 @@ export function presentFinish(racerFrame, elapsedMs, trajectory, celebrating = f
   }
   const age = Math.max(0, elapsedMs - trajectory.finishMs);
   const crossSpeed = Math.max(0.000001, Number(trajectory.crossSpeed) || 0.0001);
-  racerFrame.displayProgress = 1 + age * crossSpeed * 6;
+  racerFrame.displayProgress = 1 + age * crossSpeed * 7.5;
   racerFrame.phase = celebrating ? "celebrating" : "coasting";
   return racerFrame;
 }
