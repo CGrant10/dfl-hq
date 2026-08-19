@@ -1,10 +1,10 @@
 // =====================================================================
 // DFL Arena — equal-racer novelty race backbone
 // ---------------------------------------------------------------------
-// Deliberately simple: every racer starts equal, receives independent random
-// pace changes, and continuously moves forward. There are no racer traits,
-// handicaps, drafting, rubber-banding, comeback scripts, finish convergence,
-// or finish-aware movement. The visible crossing IS the result.
+// Every racer starts equal. Independent random pace PHASES create the race:
+// somebody can open a real gap, get reeled in, or fly through the field.
+// There are no traits, handicaps, drafting, rubber-banding, comeback scripts,
+// finish convergence, or finish-aware movement. The visible crossing is truth.
 // =====================================================================
 
 export const DUCK_TICK_MS = 40;
@@ -20,9 +20,6 @@ function seededFallback(seed) {
   };
 }
 
-// Use browser crypto when available. The seed exists only as a deterministic
-// fallback for environments/tests without Web Crypto; it does not assign a
-// winner or give any racer a persistent advantage.
 function randomSource(seed) {
   const cryptoObj = globalThis.crypto;
   if (cryptoObj?.getRandomValues) {
@@ -41,8 +38,7 @@ export function simulateForwardRace(racers, ticks, seed) {
 
   const rand = randomSource(seed);
   const base = 1 / Math.max(1, Number(ticks) || 1);
-  const maxTicks = Math.ceil(Math.max(1, ticks) * 3);
-
+  const maxTicks = Math.ceil(Math.max(1, ticks) * 3.4);
   const progress = new Float64Array(n);
   const speed = new Float64Array(n);
   const target = new Float64Array(n);
@@ -50,37 +46,35 @@ export function simulateForwardRace(racers, ticks, seed) {
   const finishTick = new Float64Array(n).fill(-1);
   const samples = Array.from({ length: n }, () => new Float32Array(maxTicks + 1));
 
-  // Everyone is born equal. Only independent random pace changes separate them.
   for (let i = 0; i < n; i++) {
-    const initial = base * (0.72 + rand() * 0.56);
+    const initial = base * (0.55 + rand() * 0.90);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 2 + Math.floor(rand() * 8);
+    retargetAt[i] = 8 + Math.floor(rand() * 20);
   }
 
   let done = 0;
   let lastWritten = 0;
-
   for (let t = 0; t <= maxTicks && done < n; t++) {
     lastWritten = t;
-
     for (let i = 0; i < n; i++) {
-      if (finishTick[i] >= 0) {
-        samples[i][t] = 1;
-        continue;
-      }
+      if (finishTick[i] >= 0) { samples[i][t] = 1; continue; }
 
-      // Frequent independent pace changes create the passing and bunching.
-      // This rule is identical at 5%, 50%, and 99% of the course.
+      /* Hold random pace phases long enough to create visible gaps. The old
+         tiny, frequent rerolls averaged everybody back into a straight wall. */
       if (t >= retargetAt[i]) {
-        target[i] = base * (0.50 + rand() * 1.10);
-        retargetAt[i] = t + 2 + Math.floor(rand() * 10);
+        const roll = rand();
+        const multiplier = roll < 0.14
+          ? 0.24 + rand() * 0.30
+          : roll > 0.86
+            ? 1.72 + rand() * 0.55
+            : 0.62 + rand() * 0.92;
+        target[i] = base * multiplier;
+        retargetAt[i] = t + 8 + Math.floor(rand() * 23);
       }
 
-      // Smooth the random changes enough to look like motion, not teleporting.
-      speed[i] += (target[i] - speed[i]) * 0.28;
-      speed[i] = Math.max(base * 0.42, Math.min(base * 1.68, speed[i]));
-
+      speed[i] += (target[i] - speed[i]) * 0.14;
+      speed[i] = Math.max(base * 0.20, Math.min(base * 2.35, speed[i]));
       const before = progress[i];
       progress[i] += speed[i];
 
@@ -90,16 +84,14 @@ export function simulateForwardRace(racers, ticks, seed) {
         progress[i] = 1;
         done++;
       }
-
       samples[i][t] = progress[i];
     }
   }
 
-  // Positive minimum speed means this should only cover pathological inputs.
   for (let i = 0; i < n; i++) {
     if (finishTick[i] < 0) {
       const remaining = Math.max(0, 1 - progress[i]);
-      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.42);
+      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.20);
     }
     for (let t = lastWritten + 1; t <= maxTicks; t++) samples[i][t] = 1;
   }
@@ -108,12 +100,5 @@ export function simulateForwardRace(racers, ticks, seed) {
     .map((r, index) => ({ racer: r, index, finishMs: Math.round(finishTick[index] * DUCK_TICK_MS) }))
     .sort((a, b) => a.finishMs - b.finishMs || a.index - b.index)
     .map((row, i) => ({ ...row, place: i + 1 }));
-
-  return {
-    samples,
-    order,
-    ticks,
-    frames: maxTicks,
-    finishTick: Math.max(...finishTick),
-  };
+  return { samples, order, ticks, frames: maxTicks, finishTick: Math.max(...finishTick) };
 }
