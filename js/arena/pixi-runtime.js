@@ -3227,7 +3227,7 @@ function Ln(e) {
 			crossSpeed: i,
 			settle: a,
 			tau: o,
-			coastMs: Math.min(6e3, o * 3)
+			coastMs: Math.min(6e3, a / i)
 		};
 	}
 	return n;
@@ -3235,7 +3235,7 @@ function Ln(e) {
 function Rn(e, t, n) {
 	if (!n || t < n.finishMs) return e;
 	let r = t - n.finishMs;
-	return 1 + n.settle * (1 - Math.exp(-r / n.tau));
+	return 1 + Math.min(n.settle, n.crossSpeed * r);
 }
 function zn(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
@@ -3245,11 +3245,7 @@ function zn(e, t, n) {
 }
 function Bn(e, t, n, r) {
 	let i = zn(t, n, r);
-	if (e.phase = i, e.displayProgress = Rn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
-		let r = t - n.finishMs;
-		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Math.exp(-r / n.tau) * 180));
-	}
-	return e;
+	return e.phase = i, e.displayProgress = Rn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n && (e.speed = Math.max(0, Math.min(1, n.crossSpeed * 40 * 180))), e;
 }
 //#endregion
 //#region src/arena/runtime.ts

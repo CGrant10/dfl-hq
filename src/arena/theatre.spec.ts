@@ -11,6 +11,9 @@ import {
   launchEase,
   settleOffset,
   SETTLE_MIN,
+  coastProgress,
+  finishTrajectories,
+  presentFinish,
 } from "./theatre";
 import { MAX_SETTLE, TRACK_START, presentationScreenRatio } from "./finish-presentation";
 
@@ -310,6 +313,101 @@ describe("theatre - the event queue", () => {
     expect(last).toBeGreaterThan(presentationScreenRatio(1));
     expect(first).toBeLessThan(0.95);
     expect(last).toBeGreaterThan(TRACK_START);
+  });
+
+
+  /* ============== through the line, not into a wind-down ============== */
+
+  const traj = (crossSpeed: number, settle: number, finishMs = 10_000) =>
+    ({ finishMs, place: 1, crossSpeed, settle, tau: settle / crossSpeed,
+       coastMs: settle / crossSpeed });
+
+  it("keeps EXACTLY the crossing pace after the line", () => {
+    /*
+      THE SLOW-MOTION BUG. This was an exponential wind-down,
+      1 + S(1 - e^(-age/tau)), whose velocity starts at v0 and decays to
+      nothing - so a racer crossed the line and immediately began gliding to a
+      halt. Velocity-continuous, and still wrong: a runner crosses a finish
+      line and keeps running.
+    */
+    const t = traj(0.0002, 0.65);
+    const step = 50;
+    const speeds: number[] = [];
+    for (let age = 0; age + step <= t.coastMs - step; age += step) {
+      const a = coastProgress(1, t.finishMs + age, t);
+      const b = coastProgress(1, t.finishMs + age + step, t);
+      speeds.push((b - a) / step);
+    }
+    expect(speeds.length).toBeGreaterThan(4);
+    for (const v of speeds) expect(v).toBeCloseTo(t.crossSpeed, 9);
+    // No decay whatsoever: last stride is the same as the first.
+    expect(speeds.at(-1)!).toBeCloseTo(speeds[0]!, 9);
+  });
+
+  it("is continuous at the line and never goes backwards", () => {
+    const t = traj(0.00018, 0.5);
+    expect(coastProgress(1, t.finishMs, t)).toBeCloseTo(1);
+    let prev = -Infinity;
+    for (let age = 0; age <= t.coastMs * 2; age += 16) {
+      const x = coastProgress(1, t.finishMs + age, t);
+      expect(x).toBeGreaterThanOrEqual(prev - 1e-12);
+      expect(x).toBeGreaterThanOrEqual(1);
+      prev = x;
+    }
+  });
+
+  it("holds at the run-out limit rather than running off the map", () => {
+    const t = traj(0.0002, 0.65);
+    const held = coastProgress(1, t.finishMs + t.coastMs * 4, t);
+    expect(held).toBeCloseTo(1 + t.settle);
+    expect(coastProgress(1, t.finishMs + t.coastMs * 40, t)).toBeCloseTo(1 + t.settle);
+  });
+
+  it("does not wind the legs down either", () => {
+    // The renderer speed decayed on the same exponential, so the run
+    // animation slowed to a walk while the racer was still visibly moving.
+    const t = traj(0.0002, 0.65);
+    const early = { progress: 1 } as { progress: number; speed?: number; phase?: string };
+    const late = { progress: 1 } as { progress: number; speed?: number; phase?: string };
+    presentFinish(early, t.finishMs + 20, t, false);
+    presentFinish(late, t.finishMs + t.coastMs * 0.9, t, false);
+    expect(early.speed).toBeGreaterThan(0);
+    expect(late.speed).toBeCloseTo(early.speed!, 9);
+  });
+
+  it("hands the renderer a finisher speed in the same units as a racer's", () => {
+    /*
+      THE 40x BUG. crossingSpeeds() is progress per MILLISECOND;
+      presentationRacerFrame() builds its speed from progress per TICK. This
+      line used the per-ms number in the per-tick formula, so a racer's legs
+      dropped to a fortieth of their rate the instant they crossed - slow
+      motion coming from the animation rather than from the geometry.
+
+      A mid-race racer covering the course over a few hundred ticks sits
+      around 0.7, so a finisher at the same ground speed has to be in that
+      neighbourhood and nowhere near 0.02.
+    */
+    const sim = simulate(racers, 320, 90210);
+    const all = finishTrajectories(sim);
+    const winner = all[sim.order[0]!.index]!;
+    const frame = { progress: 1 } as { progress: number; speed?: number; phase?: string };
+    presentFinish(frame, winner.finishMs + 40, winner, false);
+    expect(frame.speed).toBeGreaterThan(0.2);
+    expect(frame.speed).toBeLessThanOrEqual(1);
+  });
+
+  it("still fans the field across the run-off with the pace unchanged", () => {
+    // The run-through must not have cost the anti-huddle fix: the per-place
+    // settle DISTANCE is what spreads them, not the deceleration curve.
+    const sim = simulate(racers, 320, 90210);
+    const all = finishTrajectories(sim);
+    const settled = sim.order.map((row) => {
+      const t = all[row.index]!;
+      return coastProgress(1, row.finishMs + t.coastMs * 2, t);
+    });
+    expect(new Set(settled.map((v) => v.toFixed(6))).size).toBe(12);
+    expect(Math.max(...settled) - Math.min(...settled)).toBeGreaterThan(0.4);
+    for (const v of settled) expect(v).toBeGreaterThan(1);
   });
 
 });

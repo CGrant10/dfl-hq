@@ -392,13 +392,16 @@ export function dramatize(sim: RaceSimulation, seed: number): DramatizeResult {
 export interface FinishTrajectory {
   finishMs: number;
   place: number;
-  /** Progress per ms at the line - the coast starts at exactly this. */
+  /** Progress per ms at the line - and after it, unchanged. */
   crossSpeed: number;
-  /** Total run-out distance in progress units. */
+  /** How far past the line this place runs before it is held, in progress. */
   settle: number;
-  /** Exponential time constant, settle / crossSpeed. */
+  /**
+   * Kept for callers and for the record; NOT used to place a racer any more.
+   * It was the exponential time constant of a wind-down that no longer exists.
+   */
   tau: number;
-  /** When the wind-down has become imperceptible. */
+  /** When the run-out is complete: settle / crossSpeed, a straight division. */
   coastMs: number;
 }
 
@@ -435,7 +438,10 @@ export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
     const tau = settle / crossSpeed;
     byIndex[row.index] = {
       finishMs: row.finishMs, place: row.place, crossSpeed, settle, tau,
-      coastMs: Math.min(6000, tau * 3),
+      /* Exactly when the run-out distance is used up, because the pace is
+         constant. It used to be tau * 3 - the point at which an exponential
+         had become imperceptible, which is meaningless without one. */
+      coastMs: Math.min(6000, settle / crossSpeed),
     };
   }
   return byIndex;
@@ -444,20 +450,32 @@ export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
 /**
  * Where a finished racer is DRAWN.
  *
- * CONTINUOUS IN POSITION AND VELOCITY. An exponential whose initial
- * velocity IS the racer's measured crossing speed and whose total travel is
- * the per-place run-out distance:
+ * THEY RUN STRAIGHT THROUGH AT PACE. NOTHING SLOWS DOWN AT THE LINE.
  *
- *   x(age) = 1 + S * (1 - e^(-age / tau)),  tau = S / v0
- *   x'(0)  = S / tau = v0          <- matches the approach exactly
+ *   x(age) = 1 + v0 * age,  held once it reaches 1 + S
+ *   x'(age) = v0                          <- the approach speed, forever
  *
- * There is no clamp at the stripe and no second animation: the racer
- * carries their momentum through and bleeds it off afterwards.
+ * This used to be an exponential wind-down, x = 1 + S(1 - e^(-age/tau)),
+ * whose velocity starts at v0 and decays to nothing. It was velocity-
+ * continuous at the crossing and it was still wrong: a racer that crosses a
+ * finish line and immediately begins gliding to a halt reads as slow motion,
+ * and twelve of them doing it together reads as the race deflating rather
+ * than finishing. A runner crosses the line and keeps running.
+ *
+ * Constant velocity is continuous at the line too - MORE continuous, in fact,
+ * since the derivative no longer changes at all - so every property the coast
+ * had survives: no clamp at the stripe, no second animation, no discontinuity
+ * where a racer crosses, and the per-place run-out distance still fans the
+ * field out across the run-off.
+ *
+ * The hold at 1 + S is the frame's edge, not a deceleration: presentation
+ * geometry caps at 1 + MAX_SETTLE, and a racer who has run their whole
+ * run-out has left the part of the course the camera covers.
  */
 export function coastProgress(progress: number, elapsedMs: number, trajectory?: FinishTrajectory): number {
   if (!trajectory || elapsedMs < trajectory.finishMs) return progress;
   const age = elapsedMs - trajectory.finishMs;
-  return 1 + trajectory.settle * (1 - Math.exp(-age / trajectory.tau));
+  return 1 + Math.min(trajectory.settle, trajectory.crossSpeed * age);
 }
 
 /** RACING -> CROSSING -> COASTING -> SETTLED -> CELEBRATING. */
@@ -488,10 +506,28 @@ export function presentFinish(
   frame.displayProgress = coastProgress(frame.progress, elapsedMs, trajectory);
   frame.exiting = phase === "crossing" || phase === "coasting";
   if (frame.exiting && trajectory) {
-    /* Winding down on the same curve as the position, so the legs slow
-       exactly as the racer slows. */
-    const age = elapsedMs - trajectory.finishMs;
-    frame.speed = Math.max(0, Math.min(1, trajectory.crossSpeed * Math.exp(-age / trajectory.tau) * 180));
+    /*
+      AND THE LEGS KEEP UP. This decayed on the same exponential as the old
+      position curve, so a finisher's run animation slowed to a walk while
+      they were still visibly moving - the slow-motion read, coming from the
+      animation as much as from the geometry. The pace past the line is the
+      pace at the line, so the speed the renderer is handed is constant too.
+    */
+    /*
+      * TICK_MS, AND THAT WAS A SEPARATE BUG WORTH 40x.
+
+      crossingSpeeds() returns progress per MILLISECOND (perTick / TICK_MS).
+      presentationRacerFrame() builds a racing speed from progress per TICK
+      (`(atHi - atLo) * 180`). This line used the per-ms number with the
+      per-tick formula, so the moment a racer crossed the line the speed handed
+      to the renderer fell from about 0.72 to about 0.018 - a fortieth - and
+      their legs went to a crawl while they were still travelling at full pace.
+
+      That is the other half of the slow-motion look, and it was there before
+      the wind-down was removed: fixing the geometry alone left the animation
+      still doing it.
+    */
+    frame.speed = Math.max(0, Math.min(1, trajectory.crossSpeed * TICK_MS * 180));
   }
   return frame;
 }

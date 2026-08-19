@@ -473,6 +473,8 @@ function watch(view, id, racers) {
     stampTime:  view.querySelector(".bc-stamp-time"),
     sceneryBlur: view.querySelector("[data-arena-motion-blur]"),
     stage:   view.querySelector("#bc-stage"),
+    go:      view.querySelector("#bc-go"),
+    hold:    view.querySelector("#bc-hold"),
     overlay: view.querySelector("#bc-overlay"),
     count:   view.querySelector("#bc-count"),
     winner:  view.querySelector("#bc-winner"),
@@ -737,7 +739,35 @@ function watch(view, id, racers) {
          know so the starting grid can present itself and the control bar can
          stay put while nothing is happening. */
       const shownState = state === "idle" ? "idle" : elapsed < 0 ? "countdown" : pixiState;
-      if (els.stage.dataset.raceState !== shownState) els.stage.dataset.raceState = shownState;
+      if (els.stage.dataset.raceState !== shownState) {
+        els.stage.dataset.raceState = shownState;
+        /*
+          THE BUTTON SAYS WHAT IT WILL DO.
+
+          #bc-hold was labelled "Pause" permanently, so a paused race offered
+          "Pause" next to "Start race" and the obvious thing to press was
+          Start. Start is not resume: it rolls a NEW SEED and begins a
+          different race, which is a genuinely destructive thing to hand
+          somebody who only wanted to carry on.
+
+          So the label follows the state, and Start is disabled outright while
+          paused - the way out of a pause is Resume, and if somebody really
+          does want a fresh race there is Reset first. Guarded for null
+          because a member's bar has had these removed entirely.
+        */
+        const paused = shownState === "paused";
+        if (els.hold) {
+          const label = paused ? "Resume" : "Pause";
+          if (els.hold.textContent !== label) els.hold.textContent = label;
+          els.hold.title = paused ? "Resume the race where it stopped" : "Pause the race for every viewer";
+        }
+        if (els.go) {
+          els.go.disabled = paused;
+          els.go.title = paused
+            ? "Paused - press Resume to carry on. Starting would roll a new seed and run a different race."
+            : "Start the race - writes the shared countdown for every viewer";
+        }
+      }
       live.pixi?.render({
         elapsedMs: Math.max(0, elapsed),
         state: elapsed < 0 ? "idle" : pixiState,

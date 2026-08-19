@@ -388,6 +388,9 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   pointer-events: auto;
 }
 
+/* A disabled control has to LOOK unavailable, or "Start is off while paused"
+   is a rule the screen keeps to itself and the user just thinks it is broken. */
+.bc-bar .bc-btn:disabled{opacity:.34;cursor:not-allowed;filter:grayscale(.6)}
 .bc-btn {
   appearance: none;
   border: 1px solid rgba(255,255,255,.16);
