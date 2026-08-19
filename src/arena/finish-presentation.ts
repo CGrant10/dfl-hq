@@ -69,17 +69,20 @@ export const FINAL_STRETCH_START = 0.80;
 
     (1.02 - 0.58) * 1.0989 / 1e-4  ~=  4835ms
 
-  So 4800. The number is DERIVED from the racers' own speed, not chosen for
-  drama - if the geometry or the pacing changes, recompute it rather than
-  taste it. See the velocity spec, which asserts the ratio against the real
-  simulation and fails if this drifts into flying again.
+  which was the first value here. It is 3500 now, and the reason is that the
+  brief changed: the structure should come into shot with about three to four
+  seconds of race left, and the crossing should feel as quick as the racers
+  are. 3500 puts it at the right edge 3.5s before the winner and moves it at
+  about 1.6x their speed - still reading as ground rather than as a graphic
+  (the spec caps that ratio at 3x), but arriving with the urgency of the
+  finish rather than drifting in ahead of it.
 
   What this does NOT change is how long the line stands still before the
   winner: that is FINISH_SETTLED_LEAD_MS, still 420ms. The extra time is
   spent ROLLING, in shot, which is the effect being asked for. The exit is
   CSS: data-race-state="finished" fades it out once the last racer is home.
 */
-export const FINISH_ROLL_MS = 4800;
+export const FINISH_ROLL_MS = 3500;
 /*
   Settled THIS long before the first official crossing.
 
@@ -216,25 +219,30 @@ export const TRACK_START = 0.04;
 */
 export const FINISH_LINE_RATIO = 0.58;
 /*
-  SIZED AGAINST THE RACERS, NOT AGAINST THE FRAME.
+  HOW FAR PAST THE LINE THE CAMERA FOLLOWS A RACER - AND IT IS OFF THE FRAME.
 
-  It was 0.34, which reserves 0.58 -> 0.764 of the frame: 18% of the width for
-  twelve parked finishers, about 1.2% apart. A drawn racer is 10vw wide. So
-  every finisher overlapped its neighbours almost completely and the run-out
-  was a pile with a leader sticking out of the front - the "racers huddle up
-  to it" complaint, and it survived the last two passes because the run-out
-  was measured as a fraction of the frame instead of in racer widths.
+  This has now been three different ideas, and the first two were both trying
+  to solve a problem that should not have existed:
 
-  0.65 reserves 0.58 -> 0.931, which is 35% of the width and about 3.2% per
-  place. Twelve racers still cannot stand clear of each other - that would
-  need 120% of the frame - but a third of a racer width per place reads as a
-  field fanned out across a run-off, with real gaps between the placings that
-  earned them. The stagger, not the separation, is what kills a huddle.
+    0.34   twelve finishers parked across 18% of the frame, about 1.2% each
+           against a drawn racer 10% wide, so they overlapped almost entirely.
+           The pile-up.
+    0.65   the same twelve fanned across 35% instead, roughly a third of a
+           racer width per place. Better, and still a car park: everybody came
+           to a dead stop a short way past the line.
 
-  0.931 is checked against FINISH_CAMERA_FULL by spec, so the last finisher
-  cannot be parked off the frame.
+  Nobody parks now. A racer crosses the line, keeps their pace, and leaves the
+  shot - which is what a runner does, and it dissolves the huddle completely
+  rather than arranging it more neatly. 1.15 of progress past the line maps to
+  120% of the frame, so a racer is fully clear of a 10vw-wide body before the
+  geometry holds them, and `.bc-track` has overflow:hidden so they are clipped
+  rather than piling against the edge.
+
+  The hold at the end is a numeric backstop, not a deceleration: it stops
+  positions growing without bound in a long-running tab. Nothing visible ever
+  reaches it.
 */
-export const MAX_SETTLE = 0.65;
+export const MAX_SETTLE = 1.15;
 /*
   DERIVED, NOT CHOSEN - and the first version of this got it wrong.
 

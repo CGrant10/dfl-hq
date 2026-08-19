@@ -1635,7 +1635,7 @@ function ct(e, t, n) {
 }
 //#endregion
 //#region src/arena/finish-presentation.ts
-var lt = .8, ut = 4800, dt = .82, ft = 2 / 1.8199999999999998;
+var lt = .8, ut = 3500, dt = .82, ft = 2 / 1.8199999999999998;
 function pt(e, t) {
 	let n = t - ut, r = t - 420, i = xt((e - n) / Math.max(1, r - n)), a = dt;
 	if (i <= a) return ft * i;
@@ -1650,7 +1650,7 @@ function ht(e, t) {
 function gt(e) {
 	return e - 420;
 }
-var _t = .04, vt = .58, yt = .65, bt = .5399999999999999;
+var _t = .04, vt = .58, yt = 1.15, bt = .5399999999999999;
 yt * bt;
 var xt = (e) => Math.max(0, Math.min(1, e)), St = (e) => {
 	let t = xt(e);
@@ -1665,7 +1665,7 @@ function wt(e) {
 	};
 }
 function Tt(e, t) {
-	return _t + Math.max(0, Math.min(e, 1.65)) * bt;
+	return _t + Math.max(0, Math.min(e, 2.15)) * bt;
 }
 function Et(e, t) {
 	let n = e - t;
@@ -3212,45 +3212,43 @@ function Pn(e, t) {
 		arcs: o
 	};
 }
-var Fn = .1;
-function In(e, t = 12) {
-	let n = Math.max(2, t), r = Math.min(n, Math.max(1, e || 1)), i = (yt - Fn) / (n - 1);
-	return Math.max(Fn, yt - (r - 1) * i);
+function Fn(e, t = 12) {
+	return yt;
 }
-function Ln(e) {
+function In(e) {
 	let t = Nn(e), n = [];
 	for (let r of e.order) {
-		let i = Math.max(1e-6, t[r.index] ?? 1e-4), a = In(r.place, e.order.length), o = a / i;
+		let i = Math.max(1e-6, t[r.index] ?? 1e-4), a = Fn(r.place, e.order.length), o = a / i;
 		n[r.index] = {
 			finishMs: r.finishMs,
 			place: r.place,
 			crossSpeed: i,
 			settle: a,
 			tau: o,
-			coastMs: Math.min(6e3, a / i)
+			coastMs: Math.min(3e4, a / i)
 		};
 	}
 	return n;
 }
-function Rn(e, t, n) {
+function Ln(e, t, n) {
 	if (!n || t < n.finishMs) return e;
 	let r = t - n.finishMs;
 	return 1 + Math.min(n.settle, n.crossSpeed * r);
 }
-function zn(e, t, n) {
+function Rn(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
 	if (n) return "celebrating";
 	let r = e - t.finishMs;
 	return r < 160 ? "crossing" : r < t.coastMs ? "coasting" : "settled";
 }
-function Bn(e, t, n, r) {
-	let i = zn(t, n, r);
-	return e.phase = i, e.displayProgress = Rn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n && (e.speed = Math.max(0, Math.min(1, n.crossSpeed * 40 * 180))), e;
+function zn(e, t, n, r) {
+	let i = Rn(t, n, r);
+	return e.phase = i, e.displayProgress = Ln(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n && (e.speed = Math.max(0, Math.min(1, n.crossSpeed * 40 * 180))), e;
 }
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function Vn(e, t) {
+async function Bn(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -3311,6 +3309,6 @@ async function Vn(e, t) {
 	}
 }
 //#endregion
-export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, kn as allowance, jn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, Dn as closingEase, Rn as coastProgress, X as composeCharacter, Vn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Nn as crossingSpeeds, Pn as dramatize, pt as finishArrival, zn as finishPhase, gt as finishSettledMs, Ln as finishTrajectories, En as launchEase, Qt as normalizeCharacter, On as openEase, Mn as planArcs, Bn as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, In as settleOffset, an as silhouetteRuns };
+export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, kn as allowance, jn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, Dn as closingEase, Ln as coastProgress, X as composeCharacter, Bn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Nn as crossingSpeeds, Pn as dramatize, pt as finishArrival, Rn as finishPhase, gt as finishSettledMs, In as finishTrajectories, En as launchEase, Qt as normalizeCharacter, On as openEase, Mn as planArcs, zn as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, Fn as settleOffset, an as silhouetteRuns };
 
 //# sourceMappingURL=pixi-runtime.js.map

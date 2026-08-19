@@ -57,26 +57,42 @@ describe("Arena finish presentation", () => {
     expect(after / before).toBeLessThan(1.2);
   });
 
-  it("gives finishers a run-off strip and never leaves the frame", () => {
-    const camera = cameraForLeader(1);
+  it("gives finishers a run-off strip and follows them out of shot", () => {
+    /*
+      "never leaves the frame" was the old rule, and it was the rule that
+      parked twelve racers on screen. They run through the line and out now, so
+      the map is required to reach PAST the frame - what must not happen is a
+      racer being drawn BEHIND the line or the position running away without
+      bound.
+    */
+    const camera = { state: "finish" as const, mix: 0.34, finishRatio: FINISH_LINE_RATIO };
     expect(presentationScreenRatio(1 + MAX_SETTLE, camera))
       .toBeCloseTo(FINISH_LINE_RATIO + RUN_OFF_RATIO);
-    expect(presentationScreenRatio(1 + MAX_SETTLE, camera)).toBeLessThan(1);
-    expect(presentationScreenRatio(99, camera)).toBeLessThan(1);
+    expect(presentationScreenRatio(1 + MAX_SETTLE, camera)).toBeGreaterThan(1);
+    expect(presentationScreenRatio(99, camera))
+      .toBeCloseTo(presentationScreenRatio(1 + MAX_SETTLE, camera));
+    expect(presentationScreenRatio(0, camera)).toBeCloseTo(TRACK_START);
     const samples = [0.5, 0.9, 1, 1.05, 1.1, 1.16]
       .map((progress) => presentationScreenRatio(progress, camera));
     expect(samples.every((value, index) => index === 0 || value > samples[index - 1]!)).toBe(true);
   });
 
-  it("reserves a real run-out: stripe near the middle, open space past it", () => {
-    // The huddle was geometric: twelve parking spots inside 12% of the
-    // frame, hard against a stripe at 78%. The stripe is at 58% now and the
-    // run-out is the rest.
+  it("follows a racer off the frame instead of parking them on it", () => {
+    /*
+      This assertion has been inverted on purpose. It used to require the
+      run-out to END INSIDE the frame - first 0.34 (twelve finishers inside 18%
+      of the width, the pile-up), then 0.65 (fanned across 35%, a tidier car
+      park). Both were arranging stationary racers. They run through the line
+      and out of shot now, so the geometry has to reach PAST the frame and the
+      track's overflow:hidden does the rest.
+    */
     expect(FINISH_LINE_RATIO).toBeGreaterThan(0.5);
     expect(FINISH_LINE_RATIO).toBeLessThan(0.62);
-    const runOut = presentationScreenRatio(1 + MAX_SETTLE) - presentationScreenRatio(1);
-    expect(runOut).toBeGreaterThan(0.15);
-    expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.97);
+    expect(presentationScreenRatio(1)).toBeCloseTo(FINISH_LINE_RATIO);
+    expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeGreaterThan(1.1);
+    /* Still bounded: a bad input cannot send a racer to infinity. */
+    expect(presentationScreenRatio(99)).toBeCloseTo(presentationScreenRatio(1 + MAX_SETTLE));
+    expect(RUN_OFF_RATIO).toBeGreaterThan(0.5);
   });
 
   it("approaches once, monotonically, and never reverses", () => {
@@ -358,18 +374,14 @@ describe("Arena finish presentation", () => {
 
   /* ================== the run-off has to fit the field ================== */
 
-  it("reserves a run-off measured in racer widths, not in frame percent", () => {
-    /*
-      0.34 gave twelve finishers 18% of the width, about 1.2% each, against a
-      drawn racer 10% of the width wide - so every one of them overlapped its
-      neighbours almost entirely and the run-out was a pile. This asserts the
-      per-place stagger, which is the thing that reads.
-    */
-    const runOut = presentationScreenRatio(1 + MAX_SETTLE) - presentationScreenRatio(1);
-    expect(runOut).toBeGreaterThan(0.3);
-    expect(runOut / 12).toBeGreaterThan(0.025);
-    // and the last place still parks inside the frame
-    expect(presentationScreenRatio(1 + MAX_SETTLE)).toBeLessThan(0.95);
+  it("keeps the whole map monotonic through the crossing and out", () => {
+    const samples = [0.5, 0.9, 1, 1.1, 1.5, 2, 2.15]
+      .map((p) => presentationScreenRatio(p));
+    expect(samples.every((v, i) => i === 0 || v >= samples[i - 1]!)).toBe(true);
+    /* One straight line, still: the gradient at the crossing is unchanged. */
+    const h = 1e-4;
+    const before = (presentationScreenRatio(1) - presentationScreenRatio(1 - h)) / h;
+    const after = (presentationScreenRatio(1 + h) - presentationScreenRatio(1)) / h;
+    expect(after).toBeCloseTo(before, 6);
   });
-
 });

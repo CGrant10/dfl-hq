@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 39 `.sql` files (one base plus 38 additive) and the
+one in.** This exists because the repository has 40 `.sql` files (one base plus 39 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -122,6 +122,12 @@ Dependencies are real: a file that adds a column to `members` needs
 |---|---|---|
 | 38 | `arena_commissioner_policy.sql` | Commissioner-aware `"admin write"` policies on `arena_events`, `arena_participants` and `arena_results`, keyed to the **`broadcast`** permission. Needs 31. Closes a real gap: 31 rewrote the policy for seven tables and no arena table was among them, so the Admin UI offered a `broadcast` permission that granted nothing and a commissioner-PIN session could not start, pause, skip or reset a race. Skips any arena table whose own migration has not been run, and **reports** which commissioners can now run a race. `has_commissioner_permission()` still accepts legacy `is_admin()`, so the shared Admin password is unaffected. |
 
+### Members choose their own keeper
+
+| # | File | What it establishes |
+|---|---|---|
+| 39 | `keeper_self_entry_schema.sql` | `keeper_season_state` (the commissioner's per-season freeze), plus `keeper_self_status()`, `keeper_set_self()`, `keeper_clear_self()` and `keeper_set_season_lock()`. Needs 27, 27a and 26; `profile_lock_schema.sql` (32) is optional and strengthens it. **The `keepers` table policy is deliberately NOT relaxed** — every function is `security definer`, so a member can only ever write a keeper through them, with four rules applied: your own keeper, a player from your own roster last season, the season not locked, and the cost computed from `keeper_rules` + `sleeper_draft_picks` rather than accepted from the client. A member who has set a Profile PIN must present it; one who has not is trusted exactly as far as votes trust them. Ends with a readiness report. |
+
 ### Not schema
 
 `sql/seed_rolla_country_club.sql` is course **data**, not structure. Optional,
@@ -173,6 +179,7 @@ up:
 | `sportsbook_golf_schema.sql` | The Sportsbook loads; the golf board is absent and a single note names the failure. Non-golf markets are untouched. |
 | `golf_profile_schema.sql` | Golf Bag loads without the profile form; golf lines keep their rating-only prices from 35. |
 | `golf_bag_public_schema.sql` | The bag visibility toggle cannot save and says so; bags stay private, which is the safe direction. |
+| `keeper_self_entry_schema.sql` | The "Your keeper" card does not appear on the Keepers page at all, and the member-entry freeze is absent from Admin → Keeper rules. `keeper-self.js` treats the missing RPCs as "this league has not opted in" rather than as an error. Commissioner entry is unaffected. |
 | `arena_commissioner_policy.sql` | A commissioner cannot run a race: Start / Hold / Skip / Reset are all refused. The Race View now **says so** rather than counting down locally and stopping a second later — but the shared Admin password is the only way to start a race until this is run. |
 | `keeper_basis_correction.sql` | Everything still works: `js/keeper-rules.js` reads the old `original_draft_round` / `fixed_from_original` values and normalises them, so the *calculation* is already corrected in code. Only the stored wording, the two new `keepers` columns and the audit report are missing. |
 

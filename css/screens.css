@@ -1626,6 +1626,30 @@ a.moment:hover { background: var(--hover-soft); }
 
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
+/* =====================================================================
+   YOUR OWN KEEPER. Sits under the Advisor and takes its options from it.
+   Deliberately plain: the Advisor above is the card doing the persuading, and
+   two accent-heavy cards in a row read as an argument with itself.
+   ===================================================================== */
+.keeper-self .card-heading { margin-bottom: .4rem; }
+.keeper-self.is-locked { opacity: .92; }
+.ks-none { color: var(--muted); font-size: .92rem; margin: .2rem 0 .7rem; }
+.ks-mine { list-style: none; margin: .2rem 0 .8rem; padding: 0; display: grid; gap: .35rem; }
+.ks-mine li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
+  padding: .45rem .6rem; border: 1px solid var(--line); border-radius: .6rem;
+  background: rgba(255,255,255,.03);
+}
+.ks-pos, .ks-basis { color: var(--muted); font-size: .8rem; }
+.ks-cost { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ks-locked { color: var(--muted); font-size: .86rem; margin: .3rem 0 0; }
+.ks-form { display: grid; gap: .35rem; }
+.ks-form label { font-size: .82rem; color: var(--muted); }
+.ks-form select, .ks-form input { width: 100%; }
+/* Empty until something goes wrong, so it must not reserve a line. */
+.ks-error:empty { display: none; }
+.ks-error { color: #ff8f8f; font-size: .84rem; margin: .3rem 0 0; }
+
 .ka-blocker {
   margin: var(--s-3) 0 0;
   font-size: var(--fs-micro);

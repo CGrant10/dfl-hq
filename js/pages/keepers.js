@@ -13,6 +13,7 @@
 import { db, selectAll } from "../supabase.js";
 import { esc, empty, groupBy, toast } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
+import { selfStatus, myKeepers, pickable, selfCard, wireSelfCard } from "../keeper-self.js";
 import { loadPlayers, loadSeasonStats, loadMarketAdp } from "../sleeper.js";
 import { advise, badgesFor, comparisonRow, factsFor, whyFor, marketFrom,
          CLASS, LABELS, NO_MARKET, NO_PRODUCTION } from "../keeper-advisor.js";
@@ -193,6 +194,64 @@ async function mountAdvisor(view) {
   }
 
   host.innerHTML = advisorShell(advisorBody(data), member);
+
+  /*
+    THE MEMBER'S OWN CHOICE, next to the advice about it.
+
+    Mounted here rather than in the page markup because it reuses the
+    Advisor's candidate list: same member, same season, costs already priced by
+    keeper-rules.js. Reading the roster a second time to build a picker would
+    be a second answer to "what can I keep".
+
+    Everything it offers is still checked server-side. This is where the
+    options come from, not where the rules are.
+  */
+  await mountSelfCard(host, data, member);
+}
+
+async function mountSelfCard(host, data, member) {
+  const season = data?.context?.targetSeason;
+  if (!season || !host) return;
+
+  let status = null;
+  try {
+    status = await selfStatus(season);
+  } catch {
+    /* A real failure is not worth taking the Advisor down for - the card is an
+       addition to it, and the commissioner route still exists. */
+    return;
+  }
+  /* No migration, no card. A league that has not run it has not opted in. */
+  if (!status) return;
+
+  /* One mount, however many times the advisor is remounted. Inserting a
+     sibling without clearing the last one leaves two cards fighting over the
+     same season. */
+  host.parentElement?.querySelectorAll("[data-keeper-self-host]").forEach((el) => el.remove());
+  const mount = document.createElement("div");
+  mount.dataset.keeperSelfHost = "1";
+  host.insertAdjacentElement("afterend", mount);
+
+  const draw = async () => {
+    let mine = [];
+    try { mine = await myKeepers(season, status.member_id); } catch { mine = []; }
+    const options = pickable(data.candidates || []);
+    mount.innerHTML = selfCard({ season, status, mine, options });
+    return options;
+  };
+
+  const options = await draw();
+  wireSelfCard(mount, {
+    season,
+    options,
+    onSaved: async () => {
+      /* Re-read the status too: a save can be the thing that uses up the last
+         slot, and the card has to stop offering what it cannot do. */
+      try { status = (await selfStatus(season)) || status; } catch { /* keep the old one */ }
+      await draw();
+      render(document.getElementById("view") || document.body);
+    },
+  });
 }
 
 /*

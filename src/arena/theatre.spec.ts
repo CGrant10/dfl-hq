@@ -10,7 +10,6 @@ import {
   dramatize,
   launchEase,
   settleOffset,
-  SETTLE_MIN,
   coastProgress,
   finishTrajectories,
   presentFinish,
@@ -264,57 +263,30 @@ describe("theatre - the event queue", () => {
     }
   });
 
-  /* ===================== the run-out has to fan ===================== */
+  /* ================== through the line and out of shot ================== */
 
-  it("fans the field across the WHOLE run-off, whatever size the field is", () => {
+  it("gives every racer the same exit distance, because nobody parks", () => {
     /*
-      THE HUDDLE, AS ARITHMETIC. The step used to be a flat 0.022 per place,
-      which spreads twelve racers over 0.242 of progress no matter how much
-      run-off exists - so widening MAX_SETTLE slid the pack further down the
-      track without spreading it at all. Same pile, further right.
-
-      The step is derived from the run-off and the field now, so first place
-      parks at MAX_SETTLE, last place at SETTLE_MIN, and every field size
-      uses all the room there is.
+      The per-place fan is gone with the parking it existed to arrange. Two
+      versions of settleOffset() tried to spread twelve STATIONARY finishers
+      across a strip narrower than three of their own bodies. The answer was
+      that they should not be stopping.
     */
     for (const count of [4, 8, 12]) {
-      expect(settleOffset(1, count)).toBeCloseTo(MAX_SETTLE);
-      expect(settleOffset(count, count)).toBeCloseTo(SETTLE_MIN);
+      for (const place of [1, 2, count]) {
+        expect(settleOffset(place, count)).toBeCloseTo(MAX_SETTLE);
+      }
     }
   });
 
-  it("gives every place its own parking spot, monotonically", () => {
-    const count = 12;
-    const spots = Array.from({ length: count }, (_, i) => settleOffset(i + 1, count));
-    expect(new Set(spots.map((v) => v.toFixed(6))).size).toBe(count);
-    for (let i = 1; i < spots.length; i += 1) {
-      expect(spots[i]!).toBeLessThan(spots[i - 1]!);
-    }
+  it("carries a racer clear off the frame, not to a parking spot on it", () => {
+    // A drawn racer is about 10% of the frame wide and centred on its
+    // position, so "gone" means the position itself is past 100%.
+    const exit = presentationScreenRatio(1 + MAX_SETTLE);
+    expect(exit).toBeGreaterThan(1.1);
+    expect(presentationScreenRatio(1)).toBeCloseTo(0.58);
+    expect(TRACK_START).toBeLessThan(0.1);
   });
-
-  it("separates finishers by a readable share of a racer width", () => {
-    /*
-      A drawn racer is 10% of the frame wide, so twelve of them standing clear
-      of each other would need 120% of the frame and is not on offer. What IS
-      on offer is a stagger big enough to read as placings rather than as a
-      pile: about a third of a racer width per place.
-
-      At the old numbers this was 1.2% of the frame - an eighth of a racer -
-      which is what "the racers huddle up to it" was describing.
-    */
-    const count = 12;
-    const screenAt = (place: number) =>
-      presentationScreenRatio(1 + settleOffset(place, count));
-    const first = screenAt(1), last = screenAt(count);
-    expect(first - last).toBeGreaterThan(0.28);
-    const perPlace = (first - last) / (count - 1);
-    expect(perPlace).toBeGreaterThan(0.025);
-    // Everybody parks past the line, and nobody parks off the frame.
-    expect(last).toBeGreaterThan(presentationScreenRatio(1));
-    expect(first).toBeLessThan(0.95);
-    expect(last).toBeGreaterThan(TRACK_START);
-  });
-
 
   /* ============== through the line, not into a wind-down ============== */
 
@@ -396,18 +368,25 @@ describe("theatre - the event queue", () => {
     expect(frame.speed).toBeLessThanOrEqual(1);
   });
 
-  it("still fans the field across the run-off with the pace unchanged", () => {
-    // The run-through must not have cost the anti-huddle fix: the per-place
-    // settle DISTANCE is what spreads them, not the deceleration curve.
+  it("gets the whole field off the frame, at pace, none of them parked on it", () => {
+    /*
+      The replacement for the fan spec. There is nothing to fan any more - what
+      matters is that every racer, on a real simulation, is carried past the
+      right-hand edge rather than coming to rest somewhere a viewer can see
+      them standing still.
+    */
     const sim = simulate(racers, 320, 90210);
     const all = finishTrajectories(sim);
-    const settled = sim.order.map((row) => {
+    for (const row of sim.order) {
       const t = all[row.index]!;
-      return coastProgress(1, row.finishMs + t.coastMs * 2, t);
-    });
-    expect(new Set(settled.map((v) => v.toFixed(6))).size).toBe(12);
-    expect(Math.max(...settled) - Math.min(...settled)).toBeGreaterThan(0.4);
-    for (const v of settled) expect(v).toBeGreaterThan(1);
+      const gone = coastProgress(1, row.finishMs + t.coastMs * 1.2, t);
+      expect(gone).toBeCloseTo(1 + MAX_SETTLE);
+      expect(presentationScreenRatio(gone)).toBeGreaterThan(1);
+      /* and they were still moving at pace a moment before leaving */
+      const a = coastProgress(1, row.finishMs + t.coastMs * 0.4, t);
+      const b = coastProgress(1, row.finishMs + t.coastMs * 0.4 + 50, t);
+      expect((b - a) / 50).toBeCloseTo(t.crossSpeed, 9);
+    }
   });
 
 });

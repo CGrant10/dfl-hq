@@ -406,26 +406,21 @@ export interface FinishTrajectory {
 }
 
 /**
- * How far past the line each place parks, in progress units.
+ * How far past the line a racer runs before the geometry holds them.
  *
- * First runs furthest on and every place behind settles shorter, so the
- * field fans out across the run-out instead of stacking on the stripe.
+ * ONE DISTANCE FOR EVERYBODY NOW, and the per-place fan is gone with the
+ * parking it existed to arrange. Two versions of this tried to spread twelve
+ * stationary finishers across a strip narrower than three of their own bodies:
+ * a flat 0.022 step (which ignored how much room there was) and then a step
+ * derived from the run-off (which used the room, and still parked them). The
+ * answer was that they should not be stopping.
  *
- * THE STEP IS DERIVED FROM THE FIELD, NOT A CONSTANT - and that was the bug.
- * It used to be a flat 0.022 per place, which fans twelve racers across 0.242
- * of progress no matter how much run-off exists. Widening MAX_SETTLE
- * therefore slid the whole pack further down the track WITHOUT spreading it:
- * same huddle, further right. The step now divides the actual run-off by the
- * actual field, so every place gets its share of whatever room there is and
- * last place lands on SETTLE_MIN however many racers turn up.
+ * Kept as a function of `place` so every caller and re-export keeps working,
+ * and because a future treatment may want per-place exits again. It ignores
+ * both arguments deliberately - see MAX_SETTLE.
  */
-export const SETTLE_MIN = 0.10;
-
-export function settleOffset(place: number, racerCount = 12): number {
-  const count = Math.max(2, racerCount);
-  const rank = Math.min(count, Math.max(1, place || 1));
-  const step = (MAX_SETTLE - SETTLE_MIN) / (count - 1);
-  return Math.max(SETTLE_MIN, MAX_SETTLE - (rank - 1) * step);
+export function settleOffset(_place: number, _racerCount = 12): number {
+  return MAX_SETTLE;
 }
 
 /** Every racer's run-out, worked out before playback starts. */
@@ -438,10 +433,18 @@ export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
     const tau = settle / crossSpeed;
     byIndex[row.index] = {
       finishMs: row.finishMs, place: row.place, crossSpeed, settle, tau,
-      /* Exactly when the run-out distance is used up, because the pace is
-         constant. It used to be tau * 3 - the point at which an exponential
-         had become imperceptible, which is meaningless without one. */
-      coastMs: Math.min(6000, settle / crossSpeed),
+      /*
+        Exactly when the exit distance is used up, because the pace is
+        constant. Two wrong versions of this line: `tau * 3` (the point an
+        exponential became imperceptible - meaningless once there is no
+        exponential) and then the same division still wearing the old 6000ms
+        ceiling, which quietly made coastMs stop meaning "when they are gone"
+        the moment the exit distance grew past six seconds of travel.
+
+        The 30s guard is only that - a guard against a pathological crossSpeed
+        near the 1e-6 floor above. Nothing real approaches it.
+      */
+      coastMs: Math.min(30_000, settle / crossSpeed),
     };
   }
   return byIndex;

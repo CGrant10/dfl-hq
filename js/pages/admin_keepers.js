@@ -55,6 +55,18 @@ export async function renderKeeperRulesPanel(host) {
     db().from("sleeper_leagues").select("season").order("season", { ascending: false }).limit(1),
   ]);
 
+  /*
+    THE MEMBER-ENTRY FREEZE, read here so the panel that owns the rules also
+    owns the switch that closes them. Absent table = the migration has not been
+    run = no member entry to freeze, so the control is simply not drawn rather
+    than drawn broken.
+  */
+  let lockRows = null;
+  try {
+    const res = await db().from("keeper_season_state").select("season, member_entry_locked");
+    lockRows = res.error ? null : (res.data || []);
+  } catch { lockRows = null; }
+
   if (rulesRes.error) {
     host.innerHTML = `<div class="card"><div class="card-body">
       Keeper rules are not switched on yet. Run <strong>keeper_rules_schema.sql</strong>
@@ -72,7 +84,7 @@ export async function renderKeeperRulesPanel(host) {
   const paint = () => {
     const row = rows.find((r) => Number(r.effective_season) === Number(editing));
     const draft = row || { ...DEFAULT_RULES, effective_season: editing };
-    host.innerHTML = form(rows, draft, !row, leagueSeason);
+    host.innerHTML = form(rows, draft, !row, leagueSeason) + lockCard(editing, lockRows);
     wire();
   };
 
@@ -120,7 +132,56 @@ export async function renderKeeperRulesPanel(host) {
       <p class="muted tiny">${esc(ex8.text)}</p>`;
   }
 
+  function lockCard(season, locks) {
+    if (locks == null) return "";
+    const locked = !!locks.find((r) => Number(r.season) === Number(season))?.member_entry_locked;
+    /*
+      SAID AS A CONSEQUENCE, not as a state. "Locked / unlocked" tells a
+      commissioner what the flag is; what they actually need to know before
+      pressing it is who stops being able to do what.
+    */
+    return `<section class="card"><div class="card-body">
+      <h3 class="card-heading">Member entry for ${season}</h3>
+      <p class="muted tiny">${locked
+        ? `Closed. Members cannot choose or change their own ${season} keeper. You still can.`
+        : `Open. Members can choose and change their own ${season} keeper until you close it.`}</p>
+      <div class="row-end">
+        <button type="button" class="btn ${locked ? "" : "danger"}" data-kr-lock="${locked ? "0" : "1"}"
+                data-kr-lock-season="${season}">
+          ${locked ? `Reopen ${season} for members` : `Close ${season} to members`}
+        </button>
+      </div>
+    </div></section>`;
+  }
+
   function wire() {
+    host.querySelectorAll("[data-kr-lock]").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const want = b.dataset.krLock === "1";
+        const season = Number(b.dataset.krLockSeason);
+        b.disabled = true;
+        try {
+          const { data, error } = await db().rpc("keeper_set_season_lock",
+            { target_season: season, locked: want });
+          if (error) throw error;
+          /* The RPC returns the stored row, so the panel reflects what the
+             database now says rather than what was asked for. */
+          const saved = Array.isArray(data) ? data[0] : data;
+          if (!saved) throw new Error("That was refused.");
+          lockRows = [
+            ...(lockRows || []).filter((r) => Number(r.season) !== season),
+            { season, member_entry_locked: !!saved.member_entry_locked },
+          ];
+          toast(saved.member_entry_locked
+            ? `${season} closed to members` : `${season} reopened for members`);
+          paint();
+        } catch (err) {
+          b.disabled = false;
+          toast(err?.message || "Could not change that", true);
+        }
+      });
+    });
+
     host.querySelectorAll("[data-kr-season]").forEach((b) => {
       b.addEventListener("click", () => { editing = Number(b.dataset.krSeason); paint(); });
     });
