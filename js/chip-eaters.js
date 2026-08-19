@@ -23,7 +23,18 @@ import { setSeasonResult } from "./season-result.js";
 
 async function data(){
   const [leagues,standings,history,members]=await Promise.all([
-    db().from("sleeper_leagues").select("season,status,last_place_user_id,last_place_locked").eq("status","complete")
+    /*
+      NO status FILTER, AND THAT IS WHY THE NEWEST ONE WAS MISSING.
+
+      This asked for status='complete'. Sleeper marks a league complete some time
+      after the brackets finish - and for a season it has not got round to
+      marking, last_place_user_id was already sitting there, correct, read from a
+      finished losers bracket, and being filtered out. A season that HAS a last
+      place has by definition finished its consolation final, so the column is
+      the better test and the status column adds nothing but a way to lose the
+      most recent answer.
+    */
+    db().from("sleeper_leagues").select("season,status,last_place_user_id,last_place_locked")
       .then(r=>r,()=>({data:[],error:null}))
       /* last_place_user_id arrives with chip_eater_schema.sql. Before that the
          column does not exist and the select 42703s, so fall back to the shape
@@ -34,7 +45,7 @@ async function data(){
         /* No last_place_user_id column means chip_eater_schema.sql has not been
            run. Fall back to the shape without it and REMEMBER, so the empty
            state can name the file instead of blaming the seasons. */
-        const bare=await db().from("sleeper_leagues").select("season,status").eq("status","complete");
+        const bare=await db().from("sleeper_leagues").select("season,status");
         return {...bare,chipColumnMissing:true};
       }),
     db().from("sleeper_standings").select("season,sleeper_user_id,team_name,rank,wins,losses,points_for"),
@@ -58,24 +69,50 @@ function automatic(d){
       return {season,memberId:m?.id||null,
         name:m?.display_name||teamNameOf.get(`${season}:${uid}`)||"Unknown",
         team:teamNameOf.get(`${season}:${uid}`)||m?.team_name||"",
-        manual:false,locked:l.last_place_locked===true,done:false};
+        manual:false,locked:l.last_place_locked===true,
+        /* Whether the chip has been eaten is still recorded in a history note -
+           the only place it has ever lived - so a column-sourced row reads it
+           from there rather than always reporting an outstanding punishment. */
+        done:/complete|completed|ate|done/i.test(
+          (d.manual.find(h=>Number(h.year)===season)?.notes)||"")};
     });
 }
+/*
+  WHO WINS WHEN TWO SOURCES DISAGREE.
+
+  sleeper_leagues.last_place_user_id is the authority: the sync writes it from
+  the losers bracket, and set_season_result() writes it when a commissioner names
+  somebody by hand, with last_place_locked set so the sync leaves it alone. One
+  column, one answer.
+
+  The `history` rows with category 'Chip Eater' are LEGACY. The old prompt-based
+  "Correct season" flow wrote them, so a league that used it has rows that now
+  compete with the real column - and the first cut of this function let them WIN,
+  which meant a stale hand-typed row from months ago overrode a correct bracket
+  reading. That is very likely why a recent season looked wrong.
+
+  So they fill gaps and nothing else: a season the column can answer ignores
+  them. They are still read rather than deleted, because a season from before the
+  column existed may only be recorded there, and this file does not delete league
+  history to tidy up its own model.
+*/
 function chipEaters(d){
   const auto=new Map(automatic(d).map(r=>[Number(r.season),r]));
-  for(const h of d.manual){const y=Number(h.year);if(y<FIRST_SEASON)continue;const m=d.members.find(x=>String(x.display_name).toLowerCase()===String(h.winner||"").toLowerCase()||String(x.team_name||"").toLowerCase()===String(h.winner||"").toLowerCase());auto.set(y,{season:y,memberId:m?.id||null,name:h.winner||m?.display_name||"Unknown",team:m?.team_name||"",manual:true,done:/complete|completed|ate|done/i.test(h.notes||""),historyId:h.id,notes:h.notes||""})}
+  for(const h of d.manual){
+    const y=Number(h.year);
+    if(y<FIRST_SEASON)continue;
+    if(auto.has(y))continue;                    // the column already answered
+    const m=d.members.find(x=>
+      String(x.display_name).toLowerCase()===String(h.winner||"").toLowerCase()
+      ||String(x.team_name||"").toLowerCase()===String(h.winner||"").toLowerCase());
+    auto.set(y,{season:y,memberId:m?.id||null,name:h.winner||m?.display_name||"Unknown",
+      team:m?.team_name||"",manual:true,locked:false,
+      done:/complete|completed|ate|done/i.test(h.notes||""),
+      historyId:h.id,notes:h.notes||"",legacy:true});
+  }
   return [...auto.values()].sort((a,b)=>b.season-a.season);
 }
 
-/*
-  ONE ROW MEANS ONE ROW.
-
-  Commissioner controls used to make the punishment board wrap into a second
-  line on phones while members saw a shorter row. That made the same history
-  look like two different components depending on permissions and screen size.
-  Every piece is now non-shrinking and non-wrapping; if a very narrow device
-  cannot fit it, the row scrolls horizontally instead of becoming two lines.
-*/
 /*
   AN EMPTY BOARD THAT SAYS WHY IT IS EMPTY.
 
