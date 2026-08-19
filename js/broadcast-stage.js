@@ -154,14 +154,15 @@ function backdrop(item) {
   const bg = item.background || "default";
   const art = bg === "image" && item.image;
   /* The crest earns its place on a logo slide and on a champion - a title
-     belongs to the league - and nowhere else. */
+     belongs to the league - and nowhere else. The Chip Eater keeps the slot and
+     swaps the mark: same layer, same opacity, a toilet instead of the crest. */
   const crest = bg === "logo" || item.treatment === "champion";
   return `
     ${art ? `<img class="bx-art" src="${esc(item.image)}" alt="" draggable="false" decoding="async">
              <span class="bx-scrim"></span>` : ""}
     <span class="bx-fx bx-corners" aria-hidden="true">
       <span class="bx-weave"></span>
-      ${crest ? `<span class="bx-crest"></span>` : ""}
+      ${crest ? `<span class="bx-crest${item.variant === "chip" ? " is-chip" : ""}"></span>` : ""}
       <span class="bx-vignette"></span>
       <span class="bx-sweep"></span>
     </span>`;

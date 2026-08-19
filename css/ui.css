@@ -877,3 +877,50 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
   /* Nothing moves. Stated so nobody adds a drift later and calls it a
      brand animation - this is furniture. */
 }
+
+
+/* =====================================================================
+   IMAGE FIELD - "choose a picture" wherever a form used to ask for a URL.
+   ---------------------------------------------------------------------
+   js/image-field.js draws this. Four places use it: the Members form's four
+   picture columns, a broadcast slide's backdrop, and the running-order
+   override editor.
+
+   The thumbnail is a FIXED BOX with object-fit, not an auto-sized image. An
+   avatar and a 720px stage backdrop go through the same control, and letting
+   the preview size itself meant the form's layout jumped by 300px depending on
+   which picture somebody happened to pick.
+   ===================================================================== */
+
+.imgf { margin-bottom: 4px; }
+.imgf-row { display: flex; align-items: flex-start; gap: 12px; }
+
+.imgf-thumb {
+  flex: 0 0 auto;
+  width: 76px; height: 76px;
+  display: grid; place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-sm);
+  background: var(--bg-3);
+}
+.imgf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.imgf-thumb.is-empty { border-style: dashed; }
+.imgf-none {
+  font-size: var(--fs-micro);
+  color: var(--muted);
+  text-align: center;
+  padding: 0 6px;
+}
+
+.imgf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+/* The file input lives inside the label, so the label IS the button - one
+   element, no click forwarding, and it works from the keyboard for free. */
+.imgf-pick { cursor: pointer; }
+.imgf-actions .muted { flex: 1 1 100%; }
+
+/* The pasted link stays available and stays out of the way: a <details> that is
+   closed by default, because picking a file is the answer nine times in ten. */
+.imgf-url summary { cursor: pointer; margin-top: 8px; }
+.imgf-url input { margin-top: 6px; }
+.imgf-hint { margin-top: 6px; }

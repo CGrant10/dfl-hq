@@ -24,14 +24,18 @@
 
 import { db } from "../supabase.js";
 import { esc, toast } from "../ui.js";
+import { shrinkToDataUri } from "../image-field.js";
+import { PRESETS, describeValue, fmtBytes, MAX_SOURCE_BYTES } from "../image-shrink.js";
 import { dflCharacter, dflCharacterIds } from "../arena/dfl-sprites.js";
 /* The preview and the race draw through the same composition step, so a
    pet cannot look like one thing here and another on the track. */
 import { characterSvg } from "../arena/pixi-runtime.js";
 
 const BIO_MAX = 500;
-const PHOTO_PX = 256;
-const PHOTO_MAX_BYTES = 4 * 1024 * 1024;
+/* The numbers now come from the shared preset, so the member's own picker and
+   the Members admin form cannot disagree about what "shrunk" means. */
+const PHOTO_PX = PRESETS.avatar.maxPx;
+const PHOTO_MAX_BYTES = MAX_SOURCE_BYTES;
 
 /* A small palette, not a colour wheel: the DFL's own colours plus enough
    variety that twelve members can look different from each other. */
@@ -128,7 +132,8 @@ function editCard(m, draft) {
             <input type="file" accept="image/png,image/jpeg,image/webp" hidden data-photo-file>
           </span>
         </div>
-        <span class="muted tiny">JPG, PNG or WebP. Cropped square and shrunk to ${PHOTO_PX}px on your device before it is saved.</span>
+        <span class="muted tiny">Cropped square and shrunk to ${PHOTO_PX}px on your device before it is saved.${
+          photo ? ` ${esc(describeValue(photo))}.` : ""}</span>
       </div>
 
       <div class="dfl-field">
@@ -265,13 +270,13 @@ export function wireDflPage(view, member, isMe, refresh) {
     if (e.target.matches("[data-photo-file]")) {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { toast("Use a JPG, PNG or WebP", true); return; }
-      if (file.size > PHOTO_MAX_BYTES) { toast("That image is too large", true); return; }
+      if (!/^image\//.test(file.type)) { toast("Pick an image file", true); return; }
+      if (file.size > PHOTO_MAX_BYTES) { toast(`That image is over ${fmtBytes(PHOTO_MAX_BYTES)}`, true); return; }
       try {
-        draft.image = await squarePng(file, PHOTO_PX);
+        draft.image = await shrinkToDataUri(file, "avatar");
         paint();
-        toast("Photo ready — press Save");
-      } catch { toast("Could not read that image", true); }
+        toast(`Photo ready (${describeValue(draft.image)}) — press Save`);
+      } catch (err) { toast(err.message || "Could not read that image", true); }
     }
   });
 
@@ -325,15 +330,8 @@ export function wireDflPage(view, member, isMe, refresh) {
   });
 }
 
-/** Crop to a square and shrink. The same approach as the crest picker. */
-async function squarePng(fileObj, size) {
-  const bitmap = await createImageBitmap(fileObj);
-  try {
-    const side = Math.min(bitmap.width, bitmap.height);
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    canvas.getContext("2d").drawImage(
-      bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
-    return canvas.toDataURL("image/png");
-  } finally { bitmap.close?.(); }
-}
+/*
+  squarePng() USED TO LIVE HERE and wrote a 256px PNG - around 150KB of base64
+  for a photograph, into a text column every member downloads. shrinkToDataUri()
+  writes WebP at the same size, which is the same picture at a fifth of that.
+*/

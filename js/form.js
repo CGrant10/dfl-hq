@@ -8,8 +8,13 @@
 //
 // Field shape:
 //   { name, label, type, options?, optionsFrom?, required?, placeholder?, default? }
-// Types: text | textarea | number | date | select | checkbox | list
+// Types: text | textarea | number | date | select | checkbox | list | image
 //   list  -> one item per line in a textarea, saved as a JSON array
+//   image -> a file picker that shrinks on the device and stores the picture
+//            in the column itself; still accepts a pasted link. The value is
+//            carried by a hidden text input, so this file's read/set paths
+//            treat it as ordinary text. Set `preset` to "avatar" for a square
+//            headshot, otherwise it is sized for a backdrop.
 //
 // A select can take its choices from another table instead of a fixed
 // list, which is how owner profiles pick a synced Sleeper user:
@@ -19,7 +24,12 @@
 
 import { selectAll } from "./supabase.js";
 import { layoutFields } from "./form-layout.js";
+import { imageFieldHtml, setImageValue, wireImageFields } from "./image-field.js";
 import { esc, toArray } from "./ui.js";
+
+/* Registered here rather than in each page, because every form in the app is
+   drawn through this file. See image-field.js on why the handlers are delegated. */
+wireImageFields();
 
 /** Turn any optionsFrom fields into a plain options list before drawing. */
 export async function fillOptionsFrom(fields) {
@@ -85,6 +95,12 @@ export function field(f, prefix = "f_") {
                 <input id="${id}" name="${f.name}" type="checkbox" style="width:auto">
                 <span>${esc(f.label)}</span>
               </label>`;
+    case "image":
+      /* No ${req}: a picture is never required, and an image field cannot be
+         validated by the browser anyway - its input is hidden, and a hidden
+         required input blocks submit with an error nobody can see. */
+      return `<label for="${id}">${esc(f.label)}</label>${
+        imageFieldHtml({ id, name: f.name, preset: f.preset || "backdrop" })}`;
     case "select":
       input = `<select id="${id}" name="${f.name}" ${req}>
                  ${f.options.map((o) => `<option value="${esc(o.value ?? o)}">${esc(o.label ?? o)}</option>`).join("")}
@@ -98,6 +114,9 @@ export function field(f, prefix = "f_") {
 }
 
 export function setValue(form, f, value) {
+  /* The image control is a group, not an input, so it is set through its own
+     module - which also redraws the preview and the Remove button. */
+  if (f.type === "image") { setImageValue(form, f.name, value); return; }
   const el = form.elements[f.name];
   if (!el) return;
   if (f.type === "checkbox")   el.checked = value === undefined ? true : !!value;

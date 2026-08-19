@@ -246,6 +246,25 @@ export function paintBottomline(route, hash = location.hash, { force = false } =
   }
 }
 
+/*
+  The route reader, kept so the Admin refresh button can repaint without being
+  handed the router. startBottomline() is called once from app.js with the real
+  one; before that there is nothing on screen to repaint anyway.
+*/
+let routeReader = null;
+
+/**
+ * Re-read the ticker and repaint it immediately.
+ *
+ * The timer below already does this every few minutes. This is the same work on
+ * demand, for the Admin screen: an admin who has just written a line should not
+ * have to wait out an interval to find out whether it shows.
+ */
+export async function refreshBottomlineNow() {
+  items = await bottomlineItems();
+  if (routeReader) paintBottomline(routeReader(), location.hash, { force: true });
+}
+
 async function refreshBottomline(routeOf) {
   if (refreshing) return;
   refreshing = true;
@@ -259,6 +278,7 @@ async function refreshBottomline(routeOf) {
 }
 
 export async function startBottomline(routeOf) {
+  routeReader = routeOf;
   try { items = await bottomlineItems(); }
   catch { items = []; }
   if (items.length) paintBottomline(routeOf(), location.hash);

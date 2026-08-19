@@ -212,7 +212,16 @@ export const SECTIONS = [
       { name: "championships", label: "Championships", type: "number", default: 0 },
       { name: "awards",        label: "Awards (one per line)", type: "textarea",
         placeholder: "Highest scorer 2025\nBest trade 2024" },
-      { name: "profile_image", label: "Profile image URL (optional)", type: "text" },
+      /*
+        PICK A FILE, NOT A URL.
+
+        These four were text boxes asking for a link, which is why so many
+        member pictures point at somebody else's server and no longer load. The
+        image control shrinks on the device and stores the picture in the column
+        itself - a headshot lands around 20KB - and it still accepts a pasted
+        link so the rows that already hold one keep working. See image-shrink.js.
+      */
+      { name: "profile_image", label: "Profile picture", type: "image", preset: "avatar" },
       /*
         THE BROADCAST PICTURES. profile_image stays what it is - the
         picture of the person. These are for the stage, which wants more
@@ -222,9 +231,9 @@ export const SECTIONS = [
         slide has to ask for it by name, because "chaos" turning up on a
         championship card is not a nice surprise.
       */
-      { name: "broadcast_image", label: "Broadcast image (used on stage slides)", type: "text" },
-      { name: "lookalike_image", label: "Look-alike image (the celebrity double)", type: "text" },
-      { name: "chaos_image",     label: "Chaos image (never chosen automatically)", type: "text" },
+      { name: "broadcast_image", label: "Broadcast image (used on stage slides)", type: "image" },
+      { name: "lookalike_image", label: "Look-alike image (the celebrity double)", type: "image" },
+      { name: "chaos_image",     label: "Chaos image (never chosen automatically)", type: "image" },
       { name: "notes",         label: "Notes", type: "textarea" },
       { name: "active",        label: "Show in the member picker", type: "checkbox", default: true },
       { name: "sort_order",    label: "Order in the list", type: "number", default: 0 },
@@ -309,7 +318,7 @@ export const SECTIONS = [
       { name: "subtitle", label: "Subtitle", type: "text", placeholder: "Saturday, 7pm" },
       { name: "body",     label: "Body copy", type: "textarea", placeholder: "Bring your own excuses." },
       { name: "figure", advanced: true,   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
-      { name: "image", advanced: true,    label: "Image URL (optional)", type: "text" },
+      { name: "image", advanced: true,    label: "Background picture (optional)", type: "image" },
       { name: "href", advanced: true,     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
       /*
         TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.

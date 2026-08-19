@@ -26,9 +26,41 @@ import { specFor } from "../sections.js";
 import { GENERATOR_LABELS, generatorStanding, weightToPass, renderItemFromRow, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderItem } from "../broadcast-stage.js";
 import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
+import { imageFieldHtml, wireImageFields } from "../image-field.js";
+import { clearLore } from "../lore.js";
+import { refreshBottomlineNow } from "../bottomline.js";
+
+wireImageFields();
+
+/*
+  THE REFRESH BUTTON, and what it is actually for.
+
+  Everything on this screen writes straight to Supabase, so the DATA is never
+  stale - what goes stale is what has already been read. Three things cache:
+
+    this panel      the running order and the preview were read once when the
+                    tab opened, so a slide edited in another tab, or by another
+                    commissioner, is not shown here
+    lore            js/lore.js keeps one shared copy of the league's history
+                    for the whole visit, and the deck is built from it
+    the strip       js/bottomline.js re-reads on a timer, so a new ticker line
+                    can take minutes to appear
+
+  So Refresh drops the caches and reads again, in that order. It is not a
+  "publish" button: nothing is held back waiting for it, and the front page
+  would have caught up on its own eventually. It is for the ten seconds after
+  an edit when you want to see whether it worked.
+*/
+function refreshBar(label) {
+  return `<div class="row-end" style="margin-bottom:10px">
+    <span class="muted tiny" data-bx-refreshed></span>
+    <button type="button" class="btn ghost small" data-bx-refresh>${esc(label)}</button>
+  </div>`;
+}
 
 export async function renderBroadcastPanel(host) {
   host.innerHTML = `
+    ${refreshBar("Refresh the broadcast")}
     <section class="block" data-bx-order>
       <h2 class="section-title">Running order</h2>
       <div data-bx-rows></div>
@@ -46,6 +78,51 @@ export async function renderBroadcastPanel(host) {
   await renderOrder(host.querySelector("[data-bx-rows]"));
   renderManager(host.querySelector("[data-bx-manager]"), specFor("broadcast_items"));
   await renderSources(host.querySelector("[data-bx-switches]"));
+  wireRefresh(host, () => renderBroadcastPanel(host));
+}
+
+/*
+  THE TICKER, with the same button.
+
+  It was a bare table tab, which is still the right shape for five fields - this
+  wraps it rather than replacing it, so the list, the form and the permission are
+  all unchanged and the only new thing on the screen is Refresh.
+*/
+export async function renderTickerPanel(host) {
+  host.innerHTML = `${refreshBar("Refresh the ticker")}<div data-tk-manager></div>`;
+  renderManager(host.querySelector("[data-tk-manager]"), specFor("ticker_items"));
+  wireRefresh(host, () => renderTickerPanel(host));
+}
+
+/**
+ * Drop the caches, re-read, and say when.
+ *
+ * The button is disabled for the duration: a second click while the first read
+ * is in flight would re-render the panel underneath the handler that is still
+ * running against it, and the second render wins with the older data.
+ */
+function wireRefresh(host, again) {
+  const btn = host.querySelector("[data-bx-refresh]");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Refreshing…";
+    try {
+      clearLore();                       // the deck is built from this
+      await refreshBottomlineNow();      // the strip at the bottom of every page
+      await again();                     // and this panel, from the database
+      /* again() replaced the markup, so the stamp has to be found afresh - the
+         element this handler captured is no longer in the document. */
+      const stamp = host.querySelector("[data-bx-refreshed]");
+      if (stamp) stamp.textContent = `Read at ${new Date().toLocaleTimeString()}`;
+      toast("Refreshed");
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = label;
+      toast(err.message || "Could not refresh", true);
+    }
+  });
 }
 
 // ------------------------------------------------------- the running order
@@ -229,8 +306,10 @@ async function renderSources(list) {
             { v: "default", l: "DFL house" }, { v: "dark", l: "Dark" },
             { v: "light", l: "Light" }, { v: "image", l: "Image" }, { v: "logo", l: "Crest" },
           ])}
-          <label class="ov-field"><span>Image URL</span>
-            <input type="text" data-ov="${esc(id)}" data-field="image" value="${esc(ov.image || "")}" placeholder="https://…"></label>
+          <label class="ov-field"><span>Background picture</span>
+            ${imageFieldHtml({ id: `ov-image-${id}`, name: `ov-image-${id}`,
+                               value: ov.image || "", preset: "backdrop",
+                               attrs: `data-ov="${esc(id)}" data-field="image"` })}</label>
           <label class="ov-field"><span>Seconds</span>
             <input type="number" min="3" max="15" data-ov="${esc(id)}" data-field="dwell_seconds" value="${esc(ov.dwell_seconds ?? "")}" placeholder="auto"></label>
           <label class="ov-field ov-check">
