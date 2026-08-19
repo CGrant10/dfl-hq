@@ -1,4 +1,4 @@
-name: Arena spectator exit fix
+name: Arena visible-position physics release
 
 on:
   push:
@@ -21,26 +21,22 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Stop finished Arena events from trapping spectators in Race View
+      - name: Make visible racer position authoritative
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import json, re
 
-          p = Path('js/pages/arena.js')
+          p = Path('js/pages/broadcast.js')
           s = p.read_text()
-          old = 'if (!event || !["running", "paused", "finished"].includes(event.bc_state)) return false;'
-          new = 'if (!event || !["running", "paused"].includes(event.bc_state)) return false;'
+          old = '''      const drama = dramatize(live.sim, Number(row.seed) || 1);\n      live.shown = drama.shown;\n      live.events = drama.events;\n      live.visuals = visualEvents(live.sim, live.shown, racers);'''
+          new = '''      const drama = dramatize(live.sim, Number(row.seed) || 1);\n      /*\n        WHAT YOU SEE IS THE RACE.\n\n        Theatre may still add reactions/callouts, but it no longer owns a\n        second position track. The deterministic simulation samples are the\n        positions drawn on screen, and finishMs is recorded from the exact\n        interpolated tick where that same progress reaches 1.0. Therefore a\n        racer can never visually arrive at the stripe and wait for a separate\n        hidden finish clock: reaching the visible line IS the finish.\n      */\n      live.shown = live.sim.samples;\n      live.events = drama.events;\n      live.visuals = visualEvents(live.sim, live.shown, racers);'''
           if old not in s:
-              raise SystemExit('Arena spectator redirect anchor not found')
+              raise SystemExit('broadcast theatre-position anchor not found')
           s = s.replace(old, new, 1)
-          s = s.replace(
-              'function enterSharedRace(event) {\n  if (!event || !["running", "paused"].includes(event.bc_state)) return false;',
-              'function enterSharedRace(event) {\n  /* Only a LIVE race owns the spectator screen. A finished race belongs back\n     on the Arena event page so Exit works and members can read the saved\n     results instead of being redirected straight back into Broadcast. */\n  if (!event || !["running", "paused"].includes(event.bc_state)) return false;',
-              1)
           p.write_text(s)
 
-          VERSION = '1.109.59'
+          VERSION = '1.109.61'
           Path('version.txt').write_text(VERSION + '\n')
 
           pkg = json.loads(Path('package.json').read_text())
@@ -74,6 +70,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/pages/arena.js js/config.js version.txt package.json sw.js index.html
-          git commit -m "Let Arena spectators exit finished races and release v1.109.59"
+          git add js/pages/broadcast.js js/config.js version.txt package.json sw.js index.html
+          git commit -m "Make Arena visible position authoritative and release v1.109.61"
           git push
