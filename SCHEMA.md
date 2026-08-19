@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 44 `.sql` files (one base plus 43 additive) and the
+one in.** This exists because the repository has 45 `.sql` files (one base plus 44 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -146,10 +146,29 @@ Dependencies are real: a file that adds a column to `members` needs
 |---|---|---|
 | 42 | `chip_eater_schema.sql` | `sleeper_leagues.last_place_user_id`. Needs 9, and needs **Sync Sleeper** run afterwards to populate it. The Chip Eater was being read from `sleeper_standings.rank`, which the sync computes as record-then-points-for — the table going *into* the playoffs. Last place is decided in the losers bracket, so the sync reads that bracket (`js/sleeper-bracket.js` `readLastPlace()`) and stores the owner here. `NULL` is a real answer: a league running no consolation bracket has no last place, and the season shows no Chip Eater rather than a guess. Ends with a report comparing what the bracket says against what the old record-based rule would have said. |
 
+### The remaining commissioner scopes
+
+| # | File | What it establishes |
+|---|---|---|
+| 43 | `commissioner_scopes_schema.sql` | `"commissioner write"` policies for the four permissions that governed nothing: **sleeper** (all nine tables Sync Sleeper writes — this is what made a sync fail with *"new row violates row-level security policy for table sleeper_users"*), **fees** (five finance tables), **golf** (fifteen tables), and **members** (which had a client gate and no policy, so it passed the browser check and was refused by RLS). Needs 31. Uses a **distinct policy name** rather than reusing `"admin write"`, because several golf tables also carry a member-scoped self-write policy and RLS permissive policies are OR'd — a member keeps their own access and a commissioner gains theirs. The sportsbook is deliberately absent: its commissioner actions already run through `security definer` RPCs that check the permission themselves, and its wallets/bets/ledger are member-owned. Ends with a report of every offered permission and whether it now governs anything. |
+
 ### Not schema
 
 `sql/seed_rolla_country_club.sql` is course **data**, not structure. Optional,
 run whenever.
+
+### A GAP IN THIS BASELINE, stated plainly
+
+**`golf_outings`, `golf_participants`, `golf_teams` and `golf_scores` are created
+by no file in this repository.** They exist in the live database and the app
+writes them every day, but `golf_schema.sql` only `ALTER`s them — they were made
+by hand in Supabase before the migrations existed. So this document is a correct
+run order for everything except those four, and a database built purely from
+these files would fail the first time Golf tried to write.
+
+Nothing depends on fixing it today; migrations that touch them all guard on
+`information_schema`. But it is the one thing here that would stop a rebuild,
+and it should be written up rather than discovered.
 
 ---
 
