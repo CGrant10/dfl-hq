@@ -65,20 +65,36 @@ export function simulateForwardRace(racers, ticks, seed) {
         continue;
       }
 
+      const homeStretch = progress[i] >= 0.82;
+
       // Pace changes every ~120-520ms. This is the whole drama: no arcs,
       // rubber-banding, drafting, comeback scripts or finish-line logic.
       if (t >= retargetAt[i]) {
         const wander = 0.62 + rand() * 0.86; // broad enough for real passes
-        target[i] = base * personality[i] * wander;
+        const nextTarget = base * personality[i] * wander;
+
+        /*
+          RUN THROUGH THE STRIPE.
+
+          Novelty races read cleanly because nobody gets a fresh braking event
+          in the final few feet. Once a racer is genuinely coming home, their
+          pace may hold or improve but it never decays. The finish line itself
+          still has no input here; this is simply a no-brakes closing stretch.
+        */
+        target[i] = homeStretch
+          ? Math.max(target[i], speed[i], nextTarget, base * 1.02)
+          : nextTarget;
         retargetAt[i] = t + 3 + Math.floor(rand() * 11);
       }
 
       // Momentum keeps the random pace changes looking like running rather
       // than teleporting between velocities.
+      const beforeSpeed = speed[i];
       speed[i] += (target[i] - speed[i]) * 0.22;
+      if (homeStretch && speed[i] < beforeSpeed) speed[i] = beforeSpeed;
 
       // Always moving. The finish line cannot slow, stop, hold or reverse one.
-      const floor = base * 0.44;
+      const floor = homeStretch ? base * 1.02 : base * 0.44;
       const ceiling = base * 1.62;
       if (speed[i] < floor) speed[i] = floor;
       if (speed[i] > ceiling) speed[i] = ceiling;
