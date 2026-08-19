@@ -275,7 +275,7 @@ function controls(items) {
    6000 - the two copies had already drifted from the DWELL table in
    broadcast-deck.js, so a change there did not reach a slide that arrived
    without a dwell. */
-export const DWELL_FALLBACK = 4200;
+export const DWELL_FALLBACK = 3600;
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 

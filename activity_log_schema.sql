@@ -96,7 +96,30 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare
   row_id text;
   note   text := coalesce(tg_argv[0], '');
+  mode   text := coalesce(tg_argv[1], 'always');
+  privileged boolean;
 begin
+  /*
+    TWO MODES, BECAUSE A FEED THAT RECORDS EVERYTHING IS NOT A FEED.
+
+    The first cut watched nineteen tables unconditionally, which produced a log
+    of the app working rather than of the league doing anything. The short list
+    splits cleanly in two:
+
+      always        worth a line whoever did it - a poll vote, a rule proposal,
+                    a vote on one, a keeper changed
+      commissioner  league content, logged ONLY when the writer held a
+                    privileged session. A member editing their own row is not
+                    news; the commissioner rewriting the rules is.
+
+    Deciding it HERE rather than by picking tables is what makes "if any of the
+    commissioners makes a change" expressible at all: it is a fact about the
+    WRITER, not about the table, and no list of tables can say it.
+  */
+  privileged := public.activity_request_privileged();
+  if mode = 'commissioner' and not privileged then
+    return null;
+  end if;
   /*
     to_jsonb on the row and then ->> 'id' rather than NEW.id, because this one
     function serves tables whose primary keys are named and typed differently.
@@ -115,7 +138,7 @@ begin
     row_id,
     lower(tg_op),
     public.activity_request_member(),
-    public.activity_request_privileged(),
+    privileged,
     note
   );
 
@@ -143,26 +166,37 @@ declare
   item record;
 begin
   for item in select * from (values
-    ('keepers',              'keeper'),
-    ('announcements',        'announcement'),
-    ('events',               'calendar event'),
-    ('side_events',          'side event'),
-    ('polls',                'poll'),
-    ('rules',                'rule'),
-    ('rule_categories',      'rule section'),
-    ('history',              'history entry'),
-    ('members',              'member profile'),
-    ('keeper_rules',         'keeper rules'),
-    ('keeper_season_state',  'keeper season lock'),
-    ('arena_events',         'arena event'),
-    ('arena_results',        'arena result'),
-    ('golf_outings',         'golf outing'),
-    ('golf_profiles',        'golf profile'),
-    ('sportsbook_markets',   'betting line'),
-    ('sportsbook_bets',      'bet'),
-    ('rule_proposals',       'rule proposal'),
-    ('commissioner_access',  'commissioner access')
-  ) as v(table_name, label)
+    -- ---- ALWAYS. Somebody took part; that is what a feed is for. ---------
+    ('votes',                'poll vote',           'always'),
+    ('rule_proposals',       'rule proposal',       'always'),
+    ('rule_proposal_votes',  'proposal vote',       'always'),
+    ('keepers',              'keeper',              'always'),
+    -- ---- COMMISSIONER ONLY. League content, logged when a privileged
+    --      session wrote it and silent when a member did. ------------------
+    ('announcements',        'announcement',        'commissioner'),
+    ('events',               'calendar event',      'commissioner'),
+    ('side_events',          'side event',          'commissioner'),
+    ('polls',                'poll',                'commissioner'),
+    ('rules',                'rule',                'commissioner'),
+    ('rule_categories',      'rule section',        'commissioner'),
+    ('history',              'history entry',       'commissioner'),
+    ('members',              'member',              'commissioner'),
+    ('keeper_rules',         'keeper rules',        'commissioner'),
+    ('keeper_season_state',  'keeper season lock',  'commissioner'),
+    ('ticker_items',         'ticker line',         'commissioner'),
+    ('broadcast_items',      'broadcast slide',     'commissioner'),
+    ('sportsbook_markets',   'betting line',        'commissioner'),
+    ('arena_events',         'arena event',         'commissioner'),
+    ('commissioner_access',  'commissioner access', 'commissioner')
+    /*
+      DROPPED FROM THE FIRST CUT, and why each one goes:
+
+        arena_results    written by a race finishing, not by a person
+        golf_profiles    a member's own handicap; their business
+        sportsbook_bets  every ticket in the league would drown everything else
+        golf_outings     an outing already announces itself on the Golf page
+    */
+) as v(table_name, label, mode)
   loop
     if not exists (
       select 1 from information_schema.tables
@@ -176,9 +210,9 @@ begin
                    item.table_name, item.table_name);
     execute format(
       'create trigger trg_activity_%I after insert or update or delete on public.%I '
-      'for each row execute function public.activity_record(%L)',
-      item.table_name, item.table_name, item.label);
-    raise notice 'activity log attached to %', item.table_name;
+      'for each row execute function public.activity_record(%L, %L)',
+      item.table_name, item.table_name, item.label, item.mode);
+    raise notice 'activity log attached to % (%)', item.table_name, item.mode;
   end loop;
 end;
 $$;
@@ -225,13 +259,45 @@ grant execute on function public.activity_request_member() to anon, authenticate
 grant execute on function public.activity_request_privileged() to anon, authenticated;
 grant execute on function public.activity_feed(int) to anon, authenticated;
 
+/*
+  AND DETACH THE ONES THIS FILE NO LONGER WATCHES.
+
+  A trigger created by an earlier run would otherwise keep firing forever -
+  re-running a migration has to be able to take something away, not only add.
+  Anything named trg_activity_% on a table missing from the list above is
+  dropped, which is what makes the trimmed list actually take effect on a
+  database that already ran the wide version.
+*/
+do $$
+declare t record;
+begin
+  for t in
+    select c.relname as tbl, tg.tgname as trg
+    from pg_trigger tg
+    join pg_class c on c.oid = tg.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and not tg.tgisinternal
+      and tg.tgname like 'trg_activity_%'
+      and c.relname not in ('votes','rule_proposals','rule_proposal_votes','keepers',
+        'announcements','events','side_events','polls','rules','rule_categories',
+        'history','members','keeper_rules','keeper_season_state','ticker_items',
+        'broadcast_items','sportsbook_markets','arena_events','commissioner_access')
+  loop
+    execute format('drop trigger if exists %I on public.%I', t.trg, t.tbl);
+    raise notice 'activity log detached from % (no longer watched)', t.tbl;
+  end loop;
+end;
+$$;
+
 -- ---------------------------------------------------------------------
--- REPORT: which tables are being watched.
+-- REPORT: which tables are watched, and in which mode.
 -- ---------------------------------------------------------------------
 select
   c.relname as watched_table,
-  t.tgname  as trigger_name
+  case when pg_get_triggerdef(t.oid) like '%commissioner%'
+       then 'commissioner writes only' else 'every write' end as logs,
+  t.tgname as trigger_name
 from pg_trigger t
 join pg_class c on c.oid = t.tgrelid
 where t.tgname like 'trg_activity_%' and not t.tgisinternal
-order by c.relname;
+order by logs, c.relname;

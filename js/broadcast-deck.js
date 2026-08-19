@@ -107,18 +107,21 @@ import { memberImage } from "./members.js";
   with a paragraph in it, and stat/event keep the shortest because they are one
   figure and a date.
 
-  The floor is the entrance animation. Each slide now runs a ~700ms staggered
-  entrance (see css/stage.css), so a 3s slot would spend a quarter of its life
-  arriving. 3.4s is the shortest that still reads as a held slide rather than a
-  flicker, and it is what event/stat get.
+  The floor is the entrance animation, and shortening THAT is what let these
+  come down. Glitch lock is ~520ms where the old staggered rise was ~700ms, so
+  a 3s slot now spends a sixth of its life arriving rather than a quarter -
+  3s reads as a held slide again, which it did not before.
+
+  Announcements keep the longest slot because they are the only treatment with
+  a sentence to finish reading rather than a name to recognise.
 */
 export const DWELL = {
-  scoreboard: 4200,
-  champion:   4200,
-  announcement: 5000,
-  event:      3400,
-  stat:       3400,
-  hero:       4200,
+  scoreboard: 3600,
+  champion:   3600,
+  announcement: 4200,
+  event:      3000,
+  stat:       3000,
+  hero:       3600,
 };
 
 /** Seconds a commissioner may choose, matching the CHECK in the migration. */

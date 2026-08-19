@@ -438,32 +438,68 @@
 
    The stagger is CSS, but the ROTATION CLOCK IS NOT - see
    broadcast-stage.js for why that has to be JS.
+
+   The entrance itself is GLITCH LOCK, ~520ms end to end.
    ===================================================================== */
 
-@keyframes bx-rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: none; }
+/*
+  GLITCH LOCK. Chosen from the entrance reel, and it is the fastest thing in
+  that set for a reason: the whole entrance is 520ms, so a 3s slide spends a
+  sixth of its life arriving instead of a quarter.
+
+  Two ideas make it read as "locking on" rather than "sliding in":
+
+    steps(1, end)   no interpolation. The text SNAPS between a handful of
+                    offsets like a signal finding itself, which is what a
+                    smooth translate can never look like however you ease it.
+    the fringe      text-shadow in the two accent colours, offset opposite
+                    ways and pulled to zero. Chromatic split, and it costs a
+                    shadow rather than a duplicated element.
+
+  The fringe uses --accent-fill / --accent-2-fill, so each theme glitches in
+  its OWN colours - the reel mocked it in crest red/blue, which would have
+  planted those two hues on every theme in the app.
+*/
+@keyframes bx-glitch {
+  0%   { opacity: 0; transform: translateX(-7px);
+         text-shadow: 4px 0 var(--accent-fill), -4px 0 var(--accent-2-fill); }
+  18%  { opacity: 1; transform: translateX(6px); }
+  34%  { transform: translateX(-4px);
+         text-shadow: -3px 0 var(--accent-fill), 3px 0 var(--accent-2-fill); }
+  52%  { transform: translateX(3px); }
+  70%  { transform: translateX(-1px);
+         text-shadow: 1px 0 var(--accent-fill), -1px 0 var(--accent-2-fill); }
+  100% { transform: none; text-shadow: none; }
 }
-@keyframes bx-wipe {
-  from { opacity: 0; transform: translateY(22px) scale(.97); }
-  to   { opacity: 1; transform: none; }
+/* The supporting lines settle in the same language, quieter and no fringe. */
+@keyframes bx-lock {
+  0%   { opacity: 0; transform: translateX(4px); }
+  30%  { opacity: 1; }
+  60%  { transform: translateX(-2px); }
+  100% { transform: none; }
 }
 
-.bx-slide.bx-in .bx-kicker            { animation: bx-rise 380ms var(--ease) 40ms both; }
-.bx-slide.bx-in .bx-name,
-.bx-slide.bx-in .bx-head,
-.bx-slide.bx-in .bx-figure            { animation: bx-wipe 460ms var(--ease) 110ms both; }
+.bx-slide.bx-in .bx-kicker,
 .bx-slide.bx-in .bx-sub,
 .bx-slide.bx-in .bx-statword,
-.bx-slide.bx-in .bx-when-text         { animation: bx-rise 380ms var(--ease) 210ms both; }
+.bx-slide.bx-in .bx-when-text,
 .bx-slide.bx-in .bx-body,
-.bx-slide.bx-in .bx-when              { animation: bx-rise 380ms var(--ease) 280ms both; }
+.bx-slide.bx-in .bx-when            { animation: bx-lock 460ms steps(1, end) both; }
+.bx-slide.bx-in .bx-name,
+.bx-slide.bx-in .bx-head,
+.bx-slide.bx-in .bx-figure          { animation: bx-glitch 520ms steps(1, end) both; }
+/* A very short stagger only. Anything longer and the 520ms saving is spent. */
+.bx-slide.bx-in .bx-sub,
+.bx-slide.bx-in .bx-statword,
+.bx-slide.bx-in .bx-when-text       { animation-delay: 90ms; }
+.bx-slide.bx-in .bx-body,
+.bx-slide.bx-in .bx-when            { animation-delay: 140ms; }
 /* The scoreboard's own parts, so a score arrives like a score. */
-.bx-slide.bx-in .mq-billing           { animation: bx-rise 340ms var(--ease) 40ms both; }
-.bx-slide.bx-in .mq-tape              { animation: bx-wipe 460ms var(--ease) 130ms both; }
-.bx-slide.bx-in .mq-status            { animation: bx-rise 380ms var(--ease) 260ms both; }
+.bx-slide.bx-in .mq-billing         { animation: bx-lock 420ms steps(1, end) both; }
+.bx-slide.bx-in .mq-tape            { animation: bx-glitch 520ms steps(1, end) both; }
+.bx-slide.bx-in .mq-status          { animation: bx-lock 460ms steps(1, end) 140ms both; }
 /* Artwork drifts, very slightly, for as long as it is on screen. */
-.bx-slide.bx-in .bx-art               { animation: bx-drift 9s linear both; }
+.bx-slide.bx-in .bx-art             { animation: bx-drift 9s linear both; }
 @keyframes bx-drift { from { transform: scale(1.06); } to { transform: scale(1.12); } }
 
 /*
@@ -476,6 +512,12 @@
 @media (prefers-reduced-motion: reduce) {
   .bx-sweep, .bx-slide.bx-in .bx-art { animation: none !important; }
   .bx-art { transform: none !important; }
+  /*
+    And the entrance. Glitch lock is a deliberate flicker with a colour fringe
+    - the one thing in the file that MUST be off here, not merely shortened,
+    because the hardcoded 520ms does not answer to the token durations.
+  */
+  .bx-slide.bx-in * { animation-name: none !important; text-shadow: none !important; }
 }
 
 /* =====================================================================
