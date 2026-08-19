@@ -206,8 +206,16 @@ algorithm, Medicine palette values, `focus-trap.js`.
 
 Migrations are additive and re-runnable. `SCHEMA.md` is the run-order baseline
 and lists all 38 files — update it in the same commit that adds a migration.
-Legacy keeper rows are never deleted and approved keeper rows are never
-rewritten — the audit reports, a commissioner decides.
+Legacy keeper rows are never deleted, and no automated pass rewrites an approved
+keeper row — the audit reports, a commissioner decides.
+
+**The one deliberate exception, added in v1.109.39:** a MEMBER may replace or
+remove their own keeper for a season that is not locked, whoever entered it. The
+first cut refused when the row came from the commissioner and that was the wrong
+model — it is their roster and their keeper, and a commissioner entering one on
+their behalf is a convenience, not a decision taken away from them. The
+commissioner's lever is `keeper_season_state`: close the season and nobody
+moves.
 
 **Version bumps move together, in one commit:** `package.json`, `sw.js` cache
 name, `version.txt`, and the `dfl-app-version` meta in `index.html`.

@@ -49,13 +49,19 @@ create table if not exists public.keeper_season_state (
 );
 
 -- ---------------------------------------------------------------------
--- WHO PUT THIS ROW HERE.
+-- WHO PUT THIS ROW HERE. A RECORD, NOT A PERMISSION.
 --
--- Without this the self-service path cannot tell its own rows from the
--- commissioner's, and the "make room at the cap" step below would happily
--- delete a keeper the commissioner had entered by hand. The standing rule in
--- this repo is that approved keeper rows are never rewritten, so a member's
--- write has to be able to see which rows are theirs to replace.
+-- This started life as a guard: a member could only replace rows they had
+-- submitted themselves, so a commissioner-entered keeper was refused with "ask
+-- them to change it". That was the wrong model and the commissioner said so -
+-- THE MEMBER ALWAYS HAS A SAY. It is their roster and their keeper; a
+-- commissioner entering one on their behalf is a convenience, not a decision
+-- taken away from them.
+--
+-- So the column stays and the gate is gone. It still records who entered each
+-- row, which the card shows and an audit can read, and it no longer decides
+-- who may change it. The commissioner's override is not row ownership - it is
+-- keeper_season_state: close the season and nobody moves.
 --
 -- Existing rows default to false, which is correct: everything already in the
 -- table was entered by a commissioner.
@@ -307,23 +313,17 @@ begin
   */
   cost_rd := greatest(1, basis_rd - rules.round_adjustment);
 
-  -- Make room, but ONLY out of rows this member submitted themselves. A
-  -- commissioner-entered keeper is a decision somebody else recorded and it is
-  -- not a member's to overwrite - if that is what fills their slot, they are
-  -- told to go and ask, which is a conversation rather than a silent delete.
+  -- Make room out of ANY of this member's rows for the season, whoever entered
+  -- them. A commissioner-entered keeper used to be refused here; it is a
+  -- convenience on the member's behalf, not a decision taken away from them, so
+  -- changing it is theirs to do. If the commissioner wants the board frozen,
+  -- that is keeper_season_state, checked at the top of this function.
   select count(*) into used from public.keepers k
     where k.year = target_season and k.member_id = me;
 
-  if used >= cap and not exists (
-    select 1 from public.keepers k
-    where k.year = target_season and k.member_id = me and k.self_submitted
-  ) then
-    raise exception 'Your % keeper was entered by the commissioner. Ask them to change it.', target_season;
-  end if;
-
   while used >= cap loop
     select k.id into victim from public.keepers k
-      where k.year = target_season and k.member_id = me and k.self_submitted
+      where k.year = target_season and k.member_id = me
       order by k.created_at asc, k.id asc limit 1;
     exit when victim is null;
     delete from public.keepers where id = victim;
@@ -376,21 +376,15 @@ begin
     raise exception 'Keepers for % are locked', target_season;
   end if;
 
-  /* Same rule as replacing: a member may withdraw what they chose and nothing
-     else. A commissioner-entered row survives a member pressing Remove. */
+  /* Their keeper, whoever typed it in. Remove used to skip
+     commissioner-entered rows, which left a member looking at a keeper they
+     could see, disagreed with, and had no way to withdraw. */
   with gone as (
     delete from public.keepers
-      where year = target_season and member_id = me and self_submitted
+      where year = target_season and member_id = me
       returning 1
   )
   select count(*) into removed from gone;
-
-  if removed = 0 and exists (
-    select 1 from public.keepers
-    where year = target_season and member_id = me
-  ) then
-    raise exception 'Your % keeper was entered by the commissioner. Ask them to change it.', target_season;
-  end if;
 
   return removed;
 end;
