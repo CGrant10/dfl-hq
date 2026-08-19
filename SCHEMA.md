@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 30 `.sql` files (one base plus 29 additive) and the
+one in.** This exists because the repository has 38 `.sql` files (one base plus 37 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -99,6 +99,23 @@ Dependencies are real: a file that adds a column to `members` needs
 | 29 | `broadcast_items_polish.sql` | Additive follow-up to 28. |
 | 30 | `broadcast_v2_schema.sql` | `members.broadcast_image` / `lookalike_image` / `chaos_image`, plus automatic-slide overrides. |
 
+### Commissioner roles and profile locks
+
+| # | File | What it establishes |
+|---|---|---|
+| 31 | `commissioner_roles_schema.sql` | `commissioner_access` (per-member PIN hash, scoped `permissions`, `is_owner`), `is_commissioner()`, `has_commissioner_permission()`, `my_commissioner_access()`, `save_commissioner()`, `disable_commissioner()`. Needs `pgcrypto`. The shared Admin password keeps working untouched — this adds a second, narrower way in, so screens can migrate one at a time. Without it Admin → Commissioner Access cannot load and only the master password grants privilege. |
+| 32 | `profile_lock_schema.sql` | `profile_locks`, `profile_lock_status()`, `profile_verify_pin()`, `profile_set_pin()`, `profile_disable_pin()`, `profile_owner_reset_pin()`. Needs `pgcrypto`. A member claims their own first PIN; changing or clearing it afterwards needs the current PIN, and only a commissioner **Owner** can reset it — which is why this runs after 31. |
+
+### Sportsbook — in this order
+
+| # | File | What it establishes |
+|---|---|---|
+| 33 | `sportsbook_schema.sql` | `sportsbook_wallets` / `_ledger` / `_markets` / `_outcomes` / `_bets`, plus `sportsbook_touch_wallet()`, `sportsbook_place_bet()`, `sportsbook_create_market()`, `sportsbook_settle_market()`, `sportsbook_leaderboard()` and `public_commissioners()`. SIN is play money: 500 to start, +50 per elapsed day, catch-up capped at ten days per return. **Also defines `public_commissioners()`, which the profile commissioner badge reads** — so a database with 31 but not 33 shows no badges. |
+| 34 | `sportsbook_auto_schema.sql` | `sportsbook_markets.auto_key`, `sportsbook_auto_templates`, `sportsbook_maintain_auto_board()`, `sportsbook_void_market()`. Keeps an offseason board alive **without a cron job** — every Sportsbook visit maintains it: expired auto props go `locked` and wait for a ruling, fresh League Lore chaos props refill the open slots. |
+| 35 | `sportsbook_golf_schema.sql` | `sportsbook_maintain_golf_board()` and the golf pricing helpers (`_side_odds`, `_spread`, `_margin_total`, `_american`, real player names via `_golf_player_name`). Needs 33, 34 and the golf tournament tables (16). **Re-running voids and refunds open `golf:%` auto markets** so corrected lines can regenerate — that is deliberate, and it is the one file here that moves SIN. |
+| 36 | `golf_bag_public_schema.sql` | `golf_bag_visibility` — opt-in public bags, default private. Needs `golf_bag_schema.sql` (20). |
+| 37 | `golf_profile_schema.sql` | `golf_profiles` (handicap index, 9/18 averages, derived `rating` and its `rating_source`), `golf_save_profile()`, `sportsbook_reprice_open_golf()` and `golf_save_profile_and_reprice()`. Needs 20 and 35: saving a handicap reprices every open golf line, so it has to be installed after the lines exist. Also **replaces** several `sportsbook_golf_*` rating functions from 35 with handicap-aware versions — run 35 first, then this, or the older definitions win. |
+
 ### Not schema
 
 `sql/seed_rolla_country_club.sql` is course **data**, not structure. Optional,
@@ -116,6 +133,13 @@ deliberate — each file stands alone — but if the definition ever needs to
 change, it has to change in all three.
 
 `public.is_admin()` lives in `schema.sql` and nowhere else.
+
+The newer features each read the calling member through their **own** local
+copy of the same header logic rather than calling `dfl_current_member()`:
+`request_member_id()` (`commissioner_roles_schema.sql`), `profile_member_id()`
+(`profile_lock_schema.sql`) and `sportsbook_member_id()`
+(`sportsbook_schema.sql`). Same `x-member-id` header, three more places the
+definition would have to change.
 
 ---
 
@@ -136,6 +160,13 @@ up:
 | `golf_matches_schema.sql` | The tournament board does not appear; the rest of golf works. |
 | `sleeper_draft_schema.sql` | The Keeper Advisor loads and says draft rounds are missing, naming the file to run. |
 | `keeper_rules_schema.sql` | The Keeper Advisor loads, omits the rule summary, shows every cost as "—" and names the file to run. |
+| `commissioner_roles_schema.sql` | Admin → Commissioner Access shows its load error. `hasPermission()` returns false for everyone except the master password, so scoped screens fall back to master-only. |
+| `profile_lock_schema.sql` | `profile_lock_status()` throws, `member-lock.js` swallows it and treats every member as unlocked. The owner reset button toasts "Run profile_lock_schema.sql in Supabase first". |
+| `sportsbook_schema.sql` | The Sportsbook route loads and shows "The Sportsbook could not load" with the Postgres error. Nothing else is affected. |
+| `sportsbook_auto_schema.sql` | The Sportsbook loads with whatever hand-written markets exist; the auto board simply never refills (`autoReady` false, caught and ignored). |
+| `sportsbook_golf_schema.sql` | The Sportsbook loads; the golf board is absent and a single note names the failure. Non-golf markets are untouched. |
+| `golf_profile_schema.sql` | Golf Bag loads without the profile form; golf lines keep their rating-only prices from 35. |
+| `golf_bag_public_schema.sql` | The bag visibility toggle cannot save and says so; bags stay private, which is the safe direction. |
 | `keeper_basis_correction.sql` | Everything still works: `js/keeper-rules.js` reads the old `original_draft_round` / `fixed_from_original` values and normalises them, so the *calculation* is already corrected in code. Only the stored wording, the two new `keepers` columns and the audit report are missing. |
 
 Rows that a migration could not map safely are **preserved, never deleted**.
@@ -158,6 +189,16 @@ called "who you are":
   row. Never a league member.
 - **Admin** — an authorisation state proved by the `x-admin-token` header. Not
   a person, and it does not imply or replace a member identity.
+- **Commissioner** — a per-member privileged session proved by the
+  `x-member-id` + `x-commissioner-pin` header pair, carrying a list of scoped
+  permissions (or `is_owner`, which grants all of them). Unlike Admin it **is**
+  attached to a person, and it drops the moment the selected member changes.
+  `isAdmin()` is true for either; use `isMasterAdmin()`,
+  `isCommissionerOwner()` or `hasPermission(scope)` when the difference
+  matters.
+- **Profile lock** — not an identity at all: an optional PIN gate in front of
+  *choosing* a member. Passing it proves nothing to the database; it only
+  unlocks the picker for the app session.
 - **Username** — legacy compatibility only. The `users` table is write-only
   and nothing reads it; the `username` columns on `votes` and
   `side_event_signups` exist to display historical rows. Nothing new should
