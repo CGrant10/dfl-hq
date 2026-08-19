@@ -45,6 +45,9 @@ import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lor
 import { dayMood } from "./marquee.js";
 import { factOfTheDay } from "./funfacts.js";
 import { memberImage } from "./members.js";
+/* The 2022 floor lives with the card, which owns the rule. Importing it
+   rather than restating it is what stopped these two disagreeing. */
+import { FIRST_SEASON as FIRST_CHIP_SEASON } from "./chip-eaters.js";
 
 // --------------------------------------------------------------- priority
 
@@ -673,16 +676,47 @@ function pastChampionItems(ctx) {
 }
 
 /*
-  THE CHIP EATER SLIDES WERE REMOVED HERE.
+  THE CHIP EATER, AND THERE IS EXACTLY ONE.
 
-  They were added on request and taken out on the next look, which is the right
-  way round: the Chip Eaters CARD already tells that story in one place, with the
-  whole history and the "chip eaten" state, and two more slides in an eight-slide
-  deck spent a quarter of the front page repeating it without the detail.
+  This has been in twice and out once. The history is the argument:
 
-  The card is js/chip-eaters.js. Nothing else here reads last_place_user_id, so
-  removing this leaves the deck exactly as it was before v1.109.48.
+    v1.109.48  added as TWO slides, alongside the champions
+    v1.109.52  removed entirely, because two of eight slides spent a quarter of
+               the front page retelling what the Chip Eaters card already says
+    here       back as ONE slide, the most recent season only
+
+  One is the number that was actually wanted both times. The complaint was
+  never that the Chip Eater appeared - it was that the whole history appeared,
+  which is the card's job. The current holder is news; 2022 is an archive.
+
+  It reads last_place_user_id straight from ctx.leagues, which is where a
+  commissioner's manual correction lands too (see season-result.js), so naming
+  the right person on the History page fixes this slide at the same time.
 */
+function chipEaterItem(ctx) {
+  if (!ctx.name) return [];
+  const l = (ctx.leagues || [])
+    .filter((x) => x.last_place_user_id && Number(x.season) >= FIRST_CHIP_SEASON)
+    .sort((a, b) => Number(b.season) - Number(a.season))[0];
+  if (!l) return [];
+  const who = ctx.name(l.last_place_user_id, l.season, null);
+  const art = pictureOf(ctx, who.memberId);
+  return [item({
+    kind: "chip", treatment: "champion", temporal: "historical", priority: P.HISTORY + 10,
+    /* The champion treatment's layout, but not its ceremony: variant swaps the
+       trophy for a medal and the gold rule for a plain one. Coming last is
+       worth a slide; it is not worth a gold rule. */
+    variant: "chip", icon: "i-medal",
+    kicker: `${l.season} Chip Eater`,
+    headline: who.label,
+    /* The sub is the team name when there is one; the hot chip is the point
+       and it goes in the kicker, so this line stays factual. */
+    subtitle: who.sub || "",
+    ...(art ? { image: art, background: "image" } : {}),
+    href: "#/history",
+  })];
+}
+
 
 function recordItems(ctx) {
   if (!ctx.lore) return [];
@@ -793,6 +827,7 @@ export const GENERATORS = [
   ["news", newsItem],
   ["champion", championItem],
   ["pastChampions", pastChampionItems],
+  ["chipEater", chipEaterItem],
   ["records", recordItems],
   ["seasonStat", seasonStatItem],
   ["dues", duesItem],

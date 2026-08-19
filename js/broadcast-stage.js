@@ -76,10 +76,14 @@ function scoreboard(item) {
 }
 
 function champion(item) {
+  /* One layout, two meanings. The Chip Eater borrows the champion's
+     composition - big name, centred, kicker above - and passes a variant so
+     the CSS can drop the ceremony. See chipEaterItem() in broadcast-deck.js. */
+  const v = item.variant ? ` is-${esc(item.variant)}` : "";
   return `
-    <div class="bx-champ">
+    <div class="bx-champ${v}">
       <span class="bx-kicker">
-        <svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>
+        <svg class="ico-sm" aria-hidden="true"><use href="#${esc(item.icon || "i-trophy")}"></use></svg>
         ${esc(item.kicker)}
       </span>
       <strong class="bx-name">${esc(item.headline)}</strong>
@@ -161,6 +165,118 @@ function backdrop(item) {
       <span class="bx-vignette"></span>
       <span class="bx-sweep"></span>
     </span>`;
+}
+
+/*
+  A TEAM NAME GETS ONE LINE.
+
+  "KLUTCH SPORTS GROUP" is nineteen characters against a 14ch headline, so it
+  wrapped to three lines and read as three separate words stacked up. Wrapping
+  is the wrong answer for a name: a name is one thing.
+
+  The type shrinks instead. This cannot be done in CSS - clamp() scales with the
+  VIEWPORT, and the thing that overflows here is the string, which CSS cannot
+  measure. Two reflows, no loop: one pass computes the exact ratio, a second
+  confirms it, because a smaller font-size can change which glyphs are used and
+  the ratio is not perfectly linear.
+
+  The floor matters as much as the fit. Below FIT_FLOOR a name has stopped being
+  a headline, so wrapping comes BACK rather than being shrunk into a caption -
+  a three-word team name on a narrow phone is a real case and unreadably small
+  type would be a worse bug than the one being fixed.
+*/
+/*
+  The slide's own headline, and nothing else. The scoreboard's side names are
+  deliberately out: they sit in a flex column with no definite width, so there
+  is no box to measure them against - see the note on avail below.
+*/
+const FIT_SELECTOR = ".bx-name, .bx-head";
+const FIT_FLOOR = 17;      // px. Below this it is no longer a headline.
+const FIT_SAFETY = 0.985;  // a hair under, so a rounding error cannot re-wrap.
+
+/**
+ * The font-size that makes `natural` fit `avail`, or null to stop trying.
+ *
+ * Pure, so the decision is testable without a layout engine: the DOM half
+ * below only measures and writes.
+ *
+ * @param {number} current px, the size it is set at now
+ * @param {number} natural px, how wide the text wants to be at that size
+ * @param {number} avail   px, how wide it may be
+ * @param {number} floor   px, the smallest headline worth having
+ * @returns {number|null} a size to apply, or null for "let it wrap"
+ */
+export function fitSize(current, natural, avail, floor = FIT_FLOOR) {
+  if (!(current > 0) || !(natural > 0) || !(avail > 0)) return null;
+  if (natural <= avail) return null;               // already fits; nothing to do
+  const wanted = current * (avail / natural) * FIT_SAFETY;
+  return wanted < floor ? null : wanted;
+}
+
+/*
+  Set INLINE, not with a class, and that is the whole reason the first attempt
+  did not work. .bx-champ .bx-name caps the width at 14ch with two classes of
+  specificity, so a one-class .bx-fit rule lost - the name kept wrapping AND
+  measured as 14ch wide, which made it look like it already fitted. An inline
+  style beats every selector in the file and cannot be out-specified later.
+*/
+const FIT_ON = { whiteSpace: "nowrap", maxWidth: "none" };
+/*
+  AND NOT text-wrap. Setting text-wrap:auto here looked like the tidy way to
+  cancel the stylesheet's text-wrap:balance, and it silently undid the nowrap
+  on the line above: text-wrap is a shorthand over text-wrap-mode, white-space
+  is a shorthand over the same longhand, so the second declaration won and the
+  element serialised back to `white-space: normal`. balance has nothing to
+  balance on a single line, so there was never anything to cancel.
+*/
+
+/** Shrink every headline in `slide` until it sits on one line. */
+function fitHeadlines(slide) {
+  slide.querySelectorAll(FIT_SELECTOR).forEach((el) => {
+    const off = () => {
+      ["font-size", "white-space", "max-width"].forEach((k) => el.style.removeProperty(k));
+    };
+    off();
+    Object.assign(el.style, FIT_ON);
+    /* Two passes. The first gets it close from one measurement; the second
+       exists because shrinking can change the width by a pixel or two. */
+    for (let pass = 0; pass < 2; pass += 1) {
+      /*
+        MEASURED AGAINST THE SLIDE, NOT THE PARENT, and this is the subtle part.
+
+        .bx-champ is a content-sized grid. Setting nowrap on its child makes the
+        child's max-content width the container's width too, so the container
+        grows to fit whatever it was asked to hold - and reading clientWidth off
+        it returns the inflated number. The first version did exactly that, and
+        so believed a 366px name fitted a 267px box: it was comparing the string
+        against itself.
+
+        The slide is position:inset-0 inside a fixed-size stage, so its width is
+        definite and cannot be pushed around by its own contents. Its padding is
+        the margin the design reserves, which is the whole point of measuring
+        here - a name that overflows into the padding is the bug too, not just
+        one that wraps.
+      */
+      const box = el.closest(".bx-slide") || el.parentElement;
+      const pad = getComputedStyle(box);
+      const avail = box.clientWidth
+        - (parseFloat(pad.paddingLeft) || 0)
+        - (parseFloat(pad.paddingRight) || 0);
+      /* With nowrap and no max-width the element's box IS its content width,
+         so this is the real "how wide the string wants to be". */
+      const natural = el.getBoundingClientRect().width;
+      const current = parseFloat(getComputedStyle(el).fontSize) || 0;
+      const next = fitSize(current, natural, avail);
+      if (next == null) {
+        /* Either it fits, or it never will above the floor. Too wide at this
+           point means the floor was hit: hand wrapping back, because two
+           readable lines beat one unreadable one. */
+        if (natural > avail) off();
+        return;
+      }
+      el.style.fontSize = `${next}px`;
+    }
+  });
 }
 
 /** One item as markup. An unknown treatment degrades to an announcement. */
@@ -365,6 +481,10 @@ export function startStage(root, deck, { refresh } = {}) {
        duration is 0ms and this is an instant cut, which is the point. */
     const slide = layer.firstElementChild;
     if (slide) {
+      /* BEFORE bx-enter, so the measurement happens on a slide that is in the
+         document but not yet animating - a mid-animation scale() would make
+         getBoundingClientRect() report the wrong width. */
+      fitHeadlines(slide);
       slide.classList.add("bx-enter");
       setTimeout(() => {
         slide.classList.remove("bx-enter");

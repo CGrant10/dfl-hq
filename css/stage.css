@@ -310,6 +310,19 @@
   max-width: 20ch;
   text-wrap: balance;
 }
+
+/*
+  ONE LINE, AND THE TYPE SHRINKS TO EARN IT.
+
+  There is deliberately NO rule here for that. fitHeadlines() in
+  broadcast-stage.js writes nowrap, max-width and the measured font-size as
+  inline styles, because the cap it has to beat is .bx-champ .bx-name at 14ch -
+  two classes, which any single-class rule in this file would lose to. The
+  first version of this fix was such a rule, and it silently did nothing.
+
+  What stays here is the max-width above: it is still the right answer for the
+  wrapping fallback, which is what a name too long to shrink goes back to.
+*/
 .bx-name { font-size: clamp(1.85rem, 9vw, 2.6rem); }
 .bx-head { font-size: clamp(1.35rem, 6.4vw, 1.9rem); }
 
@@ -382,6 +395,19 @@
   width: 64px; height: 2px;
   margin: var(--s-3) auto 0;
   background: linear-gradient(90deg, transparent, var(--milestone), transparent);
+}
+
+/*
+  THE CHIP EATER borrows this whole composition and drops the ceremony.
+
+  Same layout - the slide is still "one name, centred, big" - but the gold rule
+  belongs to a title and coming last is not one. The rule stays, because it is
+  what stops the name floating, and turns muted; the icon is swapped for a medal
+  by the markup rather than here (see champion() in broadcast-stage.js).
+*/
+.bx-champ.is-chip .bx-kicker { color: var(--accent); }
+.bx-champ.is-chip .bx-name::after {
+  background: linear-gradient(90deg, transparent, var(--muted), transparent);
 }
 
 /* ----------------------------------------------------------------- stat */

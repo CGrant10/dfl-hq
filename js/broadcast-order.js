@@ -38,6 +38,7 @@ export const GENERATOR_LABELS = new Map([
   ["news",          ["Announcements", "Recent posts from the commissioner"]],
   ["champion",      ["Current champion", "The reigning title holder"]],
   ["pastChampions", ["Past champions", "Earlier title winners"]],
+  ["chipEater",     ["Chip Eater", "Who came last, most recent season only"]],
   ["records",       ["Record book", "All-time highs and lows"]],
   ["seasonStat",    ["Season stats", "Figures from the current season"]],
   ["dues",          ["Dues", "What the league is owed"]],
@@ -78,6 +79,9 @@ export const GENERATOR_BASE = new Map([
   ["dues",          P.STAT - 50],
   ["funfact",       P.HISTORY + 20],
   ["pastChampions", P.HISTORY],
+  /* Just above the past champions: the current Chip Eater is the only one of
+     the historical slides that is about somebody's standing debt. */
+  ["chipEater",     P.HISTORY + 10],
   ["records",       P.HISTORY],
   ["lore",          P.HISTORY],
   ["arena",         P.HISTORY],
