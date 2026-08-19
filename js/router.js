@@ -13,6 +13,7 @@ const routes = {
   rules:    () => import("./pages/rules.js"),
   keepers:  () => import("./pages/keepers.js"),
   polls:    () => import("./pages/polls.js"),
+  proposals:() => import("./pages/proposals.js"),
   arena:    () => import("./pages/arena.js"),
   golf:     () => import("./pages/golf.js"),
   sportsbook:() => import("./pages/sportsbook.js"),
