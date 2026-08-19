@@ -8,6 +8,7 @@
 
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
+import { dflSeasonCount } from "./config.js";
 
 const W = 1080, H = 1350;
 const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, OK, CREST_RED, CREST_BLUE } = SHARE_INK;
@@ -71,7 +72,7 @@ export function profileShareData({ member, career, extremes = {}, seasonCount = 
   const data = {
     who: member.display_name || "DFL",
     team: (member.team_name || "").trim(),
-    seasons: num(seasonCount) ?? 0,
+    seasons: dflSeasonCount(num(seasonCount) ?? 0),
     record: `${wins}-${losses}${ties ? `-${ties}` : ""}`,
     wins, losses, ties, games,
     winPct,
