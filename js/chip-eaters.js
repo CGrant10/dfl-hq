@@ -29,13 +29,21 @@ async function data(){
          column does not exist and the select 42703s, so fall back to the shape
          without it - the board then reports no automatic chip eaters, which is
          correct rather than wrong. */
-      .then(async r=>r.error?await db().from("sleeper_leagues").select("season,status").eq("status","complete"):r),
+      .then(async r=>{
+        if(!r.error)return r;
+        /* No last_place_user_id column means chip_eater_schema.sql has not been
+           run. Fall back to the shape without it and REMEMBER, so the empty
+           state can name the file instead of blaming the seasons. */
+        const bare=await db().from("sleeper_leagues").select("season,status").eq("status","complete");
+        return {...bare,chipColumnMissing:true};
+      }),
     db().from("sleeper_standings").select("season,sleeper_user_id,team_name,rank,wins,losses,points_for"),
     db().from("history").select("id,year,category,winner,notes").eq("category","Chip Eater"),
     loadMembers({force:false}).then(data=>({data,error:null})).catch(error=>({data:[],error})),
   ]);
   const error=leagues.error||standings.error||history.error||members.error;if(error)throw error;
-  return {leagues:leagues.data||[],standings:standings.data||[],manual:history.data||[],members:members.data||[]};
+  return {leagues:leagues.data||[],standings:standings.data||[],manual:history.data||[],
+          members:members.data||[],chipColumnMissing:leagues.chipColumnMissing===true};
 }
 /** The punishment history starts after 2021. Written down once. */
 export const FIRST_SEASON=2022;
@@ -68,7 +76,24 @@ function chipEaters(d){
   Every piece is now non-shrinking and non-wrapping; if a very narrow device
   cannot fit it, the row scrolls horizontally instead of becoming two lines.
 */
-function card(rows){return `<section class="card" data-chip-eaters><div class="card-title-row"><div class="card-title">🌶️ Chip Eaters</div></div><div class="card-body" style="padding-top:4px">${rows.length?rows.map(r=>`<div class="chip-eater-row" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.08))"><strong style="flex:0 0 auto">${esc(r.season)}</strong><span aria-hidden="true" style="flex:0 0 auto">🌶️</span><span style="flex:0 0 auto">${canEdit()?editableName({text:r.name,field:"lastPlace",key:r.season,canEdit:true}):r.memberId?`<a class="plainlink" href="#/profile?id=${r.memberId}">${esc(r.name)}</a>`:esc(r.name)}</span>${r.team&&r.team!==r.name?`<span class="muted tiny" style="flex:0 0 auto">${esc(r.team)}</span>`:""}<span class="pill ${r.done?"green":"warn"}" style="flex:0 0 auto">${r.done?"Chip eaten":"Punishment due"}</span>${r.locked?`<span class="muted tiny" style="flex:0 0 auto">set by hand</span>`:""}${canEdit()?`<button class="linkbtn" style="flex:0 0 auto" type="button" data-chip-done="${r.season}" data-chip-name="${esc(r.name)}">${r.done?"Undo":"Mark eaten"}</button>`:""}</div>`).join(""):`<span class="muted">No completed seasons yet.</span>`}</div></section>`}
+/*
+  AN EMPTY BOARD THAT SAYS WHY IT IS EMPTY.
+
+  "No completed seasons yet" was true and useless: the usual reason the board is
+  blank is that last_place_user_id has never been filled, which needs
+  chip_eater_schema.sql and then a Sleeper sync - and neither of those is
+  something a reader would guess from a sentence about seasons.
+
+  Three distinguishable states, and the difference is worth the lines: no column
+  at all, a column nothing has written yet, and a genuinely empty history.
+*/
+function chipEmpty(d){
+  if(d.chipColumnMissing) return `<span class="muted">Run <strong>chip_eater_schema.sql</strong> in Supabase, then Sync Sleeper.</span>`;
+  if(!d.leagues.length) return `<span class="muted">No completed seasons yet.</span>`;
+  return `<span class="muted">No Chip Eater on record yet. Run <strong>Sync Sleeper</strong> from the Admin page - last place is read from the losers bracket.</span>`;
+}
+
+function card(rows){return `<section class="card" data-chip-eaters><div class="card-title-row"><div class="card-title">🌶️ Chip Eaters</div></div><div class="card-body" style="padding-top:4px">${rows.length?rows.map(r=>`<div class="chip-eater-row" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.08))"><strong style="flex:0 0 auto">${esc(r.season)}</strong><span aria-hidden="true" style="flex:0 0 auto">🌶️</span><span style="flex:0 0 auto">${canEdit()?editableName({text:r.name,field:"lastPlace",key:r.season,canEdit:true}):r.memberId?`<a class="plainlink" href="#/profile?id=${r.memberId}">${esc(r.name)}</a>`:esc(r.name)}</span>${r.team&&r.team!==r.name?`<span class="muted tiny" style="flex:0 0 auto">${esc(r.team)}</span>`:""}<span class="pill ${r.done?"green":"warn"}" style="flex:0 0 auto">${r.done?"Chip eaten":"Punishment due"}</span>${r.locked?`<span class="muted tiny" style="flex:0 0 auto">set by hand</span>`:""}${canEdit()?`<button class="linkbtn" style="flex:0 0 auto" type="button" data-chip-done="${r.season}" data-chip-name="${esc(r.name)}">${r.done?"Undo":"Mark eaten"}</button>`:""}</div>`).join(""):chipEmpty(d)}</div></section>`}
 
 export async function decorateChipEaters(view){
   if(!view||view.querySelector("[data-chip-eaters]"))return;let d;try{d=await data()}catch{return}const rows=chipEaters(d),hash=location.hash;

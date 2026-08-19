@@ -271,6 +271,12 @@ function controls(items) {
    two and why they are not the same flag.
    ===================================================================== */
 
+/* The dwell an item without one gets. Written once rather than twice as a bare
+   6000 - the two copies had already drifted from the DWELL table in
+   broadcast-deck.js, so a change there did not reach a slide that arrived
+   without a dwell. */
+export const DWELL_FALLBACK = 4200;
+
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /*
@@ -347,7 +353,7 @@ export function startStage(root, deck, { refresh } = {}) {
   function arm() {
     clear();
     if (!running()) return;
-    const dwell = items[i]?.dwell || 6000;
+    const dwell = items[i]?.dwell || DWELL_FALLBACK;
     timer = setTimeout(() => { go(i + 1); }, dwell);
   }
 
@@ -376,7 +382,7 @@ export function startStage(root, deck, { refresh } = {}) {
        current slide gets - dwell is per treatment and per slide. Handing
        it over as a custom property keeps the animation declarative while
        the clock stays here, which is the same split as everywhere else. */
-    const ms = items[i]?.dwell || 6000;
+    const ms = items[i]?.dwell || DWELL_FALLBACK;
     root.querySelectorAll("[data-bx-go]").forEach((d) => {
       const on = Number(d.dataset.bxGo) === i;
       d.classList.toggle("on", on);

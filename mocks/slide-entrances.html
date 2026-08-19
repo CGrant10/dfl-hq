@@ -1,0 +1,155 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DFL slide entrance mocks</title>
+<style>
+:root{
+  --bg:#0b0b0c; --card:#141416; --line:#2f2f34; --ink:#f4f2ee; --muted:#a8a096;
+  --gold:#EFC94C; --accent:#F08279; --red:#E5011B; --blue:#003396;
+  --ease:cubic-bezier(.2,.9,.2,1);
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);padding:20px}
+h1{font-size:1.45rem;margin:0 0 .25rem}
+.sub{color:var(--muted);margin:0 0 1.1rem;font-size:.88rem;max-width:62ch}
+.bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.1rem}
+button{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);
+  border-radius:.5rem;padding:.45rem .85rem;cursor:pointer}
+button:hover{border-color:var(--gold)}
+button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.demo{border:1px solid var(--line);border-radius:.8rem;overflow:hidden;background:#000}
+.demo h2{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  margin:0;padding:.6rem .8rem;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:.5rem}
+.demo h2 em{font-style:normal;color:var(--gold);letter-spacing:0;text-transform:none}
+.stage{position:relative;height:190px;overflow:hidden;cursor:pointer;
+  background:linear-gradient(180deg,#0e1a2b,#0b0b0c)}
+.slide{position:absolute;inset:0;display:grid;align-content:center;gap:.35rem;padding:1rem 1.2rem}
+.kick{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.head{font-size:1.65rem;font-weight:900;line-height:1.05}
+.sub2{font-size:.84rem;color:var(--muted)}
+.rule{position:absolute;left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,var(--red),var(--blue))}
+.note{padding:.55rem .8rem;font-size:.74rem;color:var(--muted);border-top:1px solid var(--line)}
+.halfspeed .demo *{animation-duration:1.5s!important}
+
+/* 1 — SNAP CUT. Broadcast-style hard cut with a wipe bar. The safe default. */
+.a1.run .rule{animation:a1bar 520ms var(--ease) both}
+.a1.run .kick,.a1.run .head,.a1.run .sub2{animation:a1in 420ms var(--ease) both}
+.a1.run .head{animation-delay:70ms}
+.a1.run .sub2{animation-delay:140ms}
+@keyframes a1bar{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+@keyframes a1in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* 2 — SCOREBOARD FLIP. Split-flap board, one line at a time. */
+.a2.run .kick,.a2.run .head,.a2.run .sub2{animation:a2flip 460ms var(--ease) both;
+  transform-origin:top center}
+.a2.run .head{animation-delay:90ms}
+.a2.run .sub2{animation-delay:180ms}
+@keyframes a2flip{from{opacity:0;transform:perspective(600px) rotateX(-88deg)}
+  to{opacity:1;transform:perspective(600px) rotateX(0)}}
+
+/* 3 — CARD DEAL. Dealt in from the corner like a card hitting the felt. */
+.a3.run .slide{animation:a3deal 560ms var(--ease) both}
+.a3.run .kick,.a3.run .head,.a3.run .sub2{animation:a1in 360ms var(--ease) 220ms both}
+@keyframes a3deal{from{opacity:0;transform:translate(38%,26%) rotate(9deg) scale(.9)}
+  to{opacity:1;transform:none}}
+
+/* 4 — TEE SHOT. Rises on an arc and drops onto the mark. */
+.a4.run .head{animation:a4arc 620ms cubic-bezier(.15,.8,.25,1) both}
+.a4.run .kick{animation:a1in 340ms var(--ease) both}
+.a4.run .sub2{animation:a1in 340ms var(--ease) 260ms both}
+@keyframes a4arc{0%{opacity:0;transform:translate(-26%,42%) scale(.82)}
+  60%{opacity:1;transform:translate(4%,-8%) scale(1.04)}
+  100%{transform:none}}
+
+/* 5 — HYPERSPACE. Light streaks collapse, text snaps out of blur. */
+.a5.run .streaks{animation:a5streak 420ms ease-out both}
+.a5.run .kick,.a5.run .head,.a5.run .sub2{animation:a5jump 480ms var(--ease) 110ms both}
+@keyframes a5streak{from{opacity:.85;transform:scaleX(7)}to{opacity:0;transform:scaleX(.2)}}
+@keyframes a5jump{from{opacity:0;letter-spacing:.4em;filter:blur(7px);transform:scale(1.12)}
+  to{opacity:1;letter-spacing:normal;filter:none;transform:none}}
+
+/* 6 — PIXEL BOOT. Types in behind a block cursor. */
+.a6.run .head{animation:a6clip 620ms steps(20,end) both;
+  overflow:hidden;white-space:nowrap;border-right:.45em solid var(--gold)}
+.a6.run .kick{animation:a1in 260ms var(--ease) both}
+.a6.run .sub2{animation:a1in 300ms var(--ease) 640ms both}
+@keyframes a6clip{from{width:0}to{width:100%}}
+
+/* 7 — BLITZ. Hit from the right, overshoots, settles. */
+.a7.run .slide{animation:a7hit 520ms cubic-bezier(.2,1.5,.3,1) both}
+.a7.run .kick,.a7.run .head,.a7.run .sub2{animation:a1in 300ms var(--ease) 160ms both}
+@keyframes a7hit{from{opacity:0;transform:translateX(70%) skewX(-9deg)}
+  70%{transform:translateX(-3%) skewX(2deg)}
+  to{opacity:1;transform:none}}
+
+/* 8 — ODDS TICK. The figure rolls up and lands, like a price changing. */
+.a8.run .head{animation:a8roll 640ms var(--ease) both}
+.a8.run .kick{animation:a1in 280ms var(--ease) both}
+.a8.run .sub2{animation:a1in 300ms var(--ease) 340ms both}
+@keyframes a8roll{0%{opacity:0;transform:translateY(52%) scale(.9);filter:blur(3px)}
+  55%{opacity:1;transform:translateY(-9%) scale(1.03);filter:none}
+  100%{transform:none}}
+
+.streaks{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(90deg,transparent 0 26px,rgba(255,255,255,.45) 26px 30px)}
+</style></head>
+<body>
+<h1>Slide entrances &mdash; pick one, or a few</h1>
+<p class="sub">Each panel replays on load, when you click it, and with <b>Replay all</b>.
+Nothing here is wired into the app yet. Every one runs in about 500&ndash;650ms, which fits
+inside the shorter slide dwell (3.4&ndash;5s) without eating the slide.</p>
+<div class="bar">
+  <button id="all">Replay all</button>
+  <button id="slow" aria-pressed="false">Half speed</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const DEMOS = [
+  ["a1","Snap cut","broadcast","Hard cut, wipe bar, lines step in. The safest and most 'sports TV' of the set."],
+  ["a2","Scoreboard flip","sporty","Split-flap board. Reads as a stadium scoreboard turning over."],
+  ["a3","Card deal","gambling","Dealt in from the corner like a card hitting the felt."],
+  ["a4","Tee shot","golf","Rises on an arc and drops onto the mark."],
+  ["a5","Hyperspace","star wars","Light streaks collapse and the text snaps out of blur. No logos, no fonts to license."],
+  ["a6","Pixel boot","gaming","Types in behind a block cursor. Arcade/terminal. Only good for SHORT headlines."],
+  ["a7","Blitz","football","Hit from the right, overshoots, settles. The most aggressive one here."],
+  ["a8","Odds tick","gambling","The figure rolls up and lands, like a price changing. Best on stat slides."],
+];
+const CONTENT = [
+  ["2025 CHAMPION","Martin77","DaGrapeApes &middot; 11-3"],
+  ["CHIP EATER","sheyg2014","2024 &middot; chip outstanding"],
+  ["GOLF DAY","Rolla Country Club","Saturday &middot; 8:40 tee"],
+  ["OPEN LINE","-110","Chase outright &middot; 150 SIN returns 286"],
+];
+const grid = document.getElementById("grid");
+DEMOS.forEach(([cls, name, theme, note], i) => {
+  const c = CONTENT[i % CONTENT.length];
+  const el = document.createElement("div");
+  el.className = "demo " + cls;
+  el.innerHTML =
+    '<h2><span>' + name + '</span> <em>' + theme + '</em></h2>' +
+    '<div class="stage"><div class="rule"></div><div class="streaks"></div>' +
+      '<div class="slide">' +
+        '<span class="kick">' + c[0] + '</span>' +
+        '<span class="head">' + c[1] + '</span>' +
+        '<span class="sub2">' + c[2] + '</span>' +
+      '</div></div>' +
+    '<div class="note">' + note + '</div>';
+  el.querySelector(".stage").addEventListener("click", () => replay(el));
+  grid.appendChild(el);
+});
+function replay(el){ el.classList.remove("run"); void el.offsetWidth; el.classList.add("run"); }
+function all(){ document.querySelectorAll(".demo").forEach((el,i)=>setTimeout(()=>replay(el), i*110)); }
+document.getElementById("all").addEventListener("click", all);
+const slowBtn = document.getElementById("slow");
+slowBtn.addEventListener("click", () => {
+  const on = document.body.classList.toggle("halfspeed");
+  slowBtn.setAttribute("aria-pressed", String(on));
+  all();
+});
+all();
+</script>
+</body></html>

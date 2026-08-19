@@ -52,11 +52,12 @@ describe("broadcast running order", () => {
   });
 
   it("reorders a real pair rather than only moving a number", () => {
-    /* End to end on two generators that start level: both sit on P.HISTORY, so
-       registry order decides - and one arrow has to break that. */
-    expect(GENERATOR_BASE.get("chipEaters")).toBe(GENERATOR_BASE.get("records"));
-    const w = weightToPass("chipEaters", generatorStanding("records", null), { above: true });
-    expect(generatorStanding("chipEaters", { weight: w }))
+    /* End to end on two generators that start level: lore and records both sit
+       on P.HISTORY, so registry order decides between them - and one arrow has
+       to be able to break that tie. */
+    expect(GENERATOR_BASE.get("lore")).toBe(GENERATOR_BASE.get("records"));
+    const w = weightToPass("lore", generatorStanding("records", null), { above: true });
+    expect(generatorStanding("lore", { weight: w }))
       .toBeGreaterThan(generatorStanding("records", null));
   });
 });

@@ -98,13 +98,27 @@ import { memberImage } from "./members.js";
   A manual slide may override this - see dwellMs(). Automatic slides do
   not, because there is nobody to ask.
 */
+/*
+  FASTER, AND STILL NOT THE SAME FOR EVERY TREATMENT.
+
+  Every slot came down by about a third on the commissioner's read that the
+  rotation felt slow. The RELATIVE order is unchanged and is the part that
+  matters: announcement keeps the longest slot because it is the only treatment
+  with a paragraph in it, and stat/event keep the shortest because they are one
+  figure and a date.
+
+  The floor is the entrance animation. Each slide now runs a ~700ms staggered
+  entrance (see css/stage.css), so a 3s slot would spend a quarter of its life
+  arriving. 3.4s is the shortest that still reads as a held slide rather than a
+  flicker, and it is what event/stat get.
+*/
 export const DWELL = {
-  scoreboard: 6000,
-  champion:   6000,
-  announcement: 7000,
-  event:      5000,
-  stat:       5000,
-  hero:       6000,
+  scoreboard: 4200,
+  champion:   4200,
+  announcement: 5000,
+  event:      3400,
+  stat:       3400,
+  hero:       4200,
 };
 
 /** Seconds a commissioner may choose, matching the CHECK in the migration. */
@@ -656,45 +670,16 @@ function pastChampionItems(ctx) {
 }
 
 /*
-  THE CHIP EATERS, built exactly the way the champions are.
+  THE CHIP EATER SLIDES WERE REMOVED HERE.
 
-  Same shape, same treatment family, same fall-back to no image - because the
-  league treats coming last as an award, and a slide that looked apologetic
-  about it would be the wrong joke.
+  They were added on request and taken out on the next look, which is the right
+  way round: the Chip Eaters CARD already tells that story in one place, with the
+  whole history and the "chip eaten" state, and two more slides in an eight-slide
+  deck spent a quarter of the front page repeating it without the detail.
 
-  TWO SEASONS, and no more. The punishment history starts after 2021
-  (FIRST_CHIP_SEASON, and js/chip-eaters.js holds the same floor for the card),
-  but the deck is not a record book - the whole of it is eight slides. Two is
-  "who owes a chip and who just paid up"; five would be the History page.
-
-  last_place_user_id is filled by the sync from the losers bracket, or by hand
-  through set_season_result(). A season with neither is skipped rather than
-  guessed at - see js/sleeper-bracket.js.
+  The card is js/chip-eaters.js. Nothing else here reads last_place_user_id, so
+  removing this leaves the deck exactly as it was before v1.109.48.
 */
-const FIRST_CHIP_SEASON = 2022;
-const CHIP_SLIDES = 2;
-
-function chipEaterItems(ctx) {
-  if (!ctx.name) return [];
-  return (ctx.leagues || [])
-    .filter((l) => l.last_place_user_id && Number(l.season) >= FIRST_CHIP_SEASON)
-    .sort((a, b) => Number(b.season) - Number(a.season))
-    .slice(0, CHIP_SLIDES)
-    .map((l) => {
-      const who = ctx.name(l.last_place_user_id, l.season, null);
-      const art = pictureOf(ctx, who.memberId);
-      return item({
-        kind: "chip", treatment: "champion", temporal: "historical", priority: P.HISTORY,
-        kicker: `${l.season} Chip Eater`,
-        headline: who.label,
-        /* The sub is the team name when there is one; the hot chip is the point
-           and it goes in the kicker, so this line stays factual. */
-        subtitle: who.sub || "",
-        ...(art ? { image: art, background: "image" } : {}),
-        href: "#/history",
-      });
-    });
-}
 
 function recordItems(ctx) {
   if (!ctx.lore) return [];
@@ -805,7 +790,6 @@ export const GENERATORS = [
   ["news", newsItem],
   ["champion", championItem],
   ["pastChampions", pastChampionItems],
-  ["chipEaters", chipEaterItems],
   ["records", recordItems],
   ["seasonStat", seasonStatItem],
   ["dues", duesItem],

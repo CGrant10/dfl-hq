@@ -10,6 +10,8 @@ import { golfHeaders, golfHeaderKey } from "./golf-guest.js";
 export const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR-PROJECT-REF") && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
 
 let adminClient = null;
+let adminClientKey = "";
+let adminToken = "";
 let adminOn = false;
 let commissionerClient = null;
 let commissionerAccess = null;
@@ -36,9 +38,51 @@ function makePublicClient() {
   return publicClient;
 }
 
+/*
+  THE ADMIN CLIENT CARRIES x-member-id TOO, AND NOT DOING SO WAS A REAL BUG.
+
+  It used to send only the admin token. But `is_admin()` is an AUTHORISATION
+  fact and x-member-id is an IDENTITY fact, and this app has plenty of functions
+  that need the second regardless of the first - every one of them reads the
+  header through dfl_current_member() or a local copy of it.
+
+  So while signed in with the shared Admin password, db() returned this client
+  and every member-scoped call failed for want of an identity:
+
+    dfl_update_profile        'No member on this request' - the reported bug,
+                              nobody could edit their own bio as admin
+    profile_set_pin           could not set or change a Profile PIN
+    keeper_set_self           could not choose their own keeper
+    cast_vote                 could not vote
+    sportsbook_touch_wallet   no bankroll, so no claim and no bets
+    golf_save_profile         no handicap
+
+  The commissioner client has always sent both, which is why the same actions
+  worked in a commissioner session and failed in a master-admin one - a
+  difference nobody would guess from the symptom.
+
+  Sending it grants nothing extra: the member-scoped policies check that the
+  header MATCHES the row being written, and is_admin() still depends on the
+  token alone.
+
+  Keyed like the public client so switching member rebuilds it - a cached header
+  would otherwise let an admin who changed their name go on writing as the
+  previous one.
+*/
+function adminHeaderKey(token) {
+  return `${token}|${memberIdNow()}|${golfHeaderKey()}`;
+}
+
 function makeAdminClient(token) {
+  const memberId = memberIdNow();
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { "x-admin-token": token } },
+    global: {
+      headers: {
+        "x-admin-token": token,
+        ...(memberId ? { "x-member-id": memberId } : {}),
+        ...golfHeaders(),
+      },
+    },
   });
 }
 
@@ -59,7 +103,16 @@ function commissionerStillMatchesMember() {
 }
 
 export function db() {
-  if (adminOn && adminClient) return adminClient;
+  if (adminOn && adminClient) {
+    /* Rebuild on a changed member so the identity header cannot go stale while
+       the authorisation header stays valid. */
+    const key = adminHeaderKey(adminToken);
+    if (key !== adminClientKey) {
+      adminClient = makeAdminClient(adminToken);
+      adminClientKey = key;
+    }
+    return adminClient;
+  }
   if (commissionerStillMatchesMember()) return commissionerClient;
   return makePublicClient();
 }
@@ -85,6 +138,11 @@ export async function adminLogin(password, remember = true) {
   if (error) throw error;
   if (data !== true) return false;
   adminClient = client;
+  /* Remembered so db() can rebuild this client when the selected member
+     changes - see adminHeaderKey(). restoreAdmin() comes through here too, so
+     a page reload gets the same treatment. */
+  adminToken = password;
+  adminClientKey = adminHeaderKey(password);
   adminOn = true;
   commissionerClient = null;
   commissionerAccess = null;
@@ -111,6 +169,8 @@ export async function commissionerLogin(pin, remember = true) {
     permissions: Array.isArray(row.permissions) ? row.permissions : [],
   };
   adminClient = null;
+  adminClientKey = "";
+  adminToken = "";
   adminOn = false;
   setAdminToken("");
   if (remember) setCommissionerPin(pin);
@@ -119,6 +179,8 @@ export async function commissionerLogin(pin, remember = true) {
 
 export function adminLogout() {
   adminClient = null;
+  adminClientKey = "";
+  adminToken = "";
   adminOn = false;
   commissionerClient = null;
   commissionerAccess = null;
@@ -145,6 +207,8 @@ export async function changeAdminPassword(newPassword) {
   const { error } = await db().rpc("set_admin_password", { new_password: newPassword });
   if (error) throw error;
   adminClient = makeAdminClient(newPassword);
+  adminToken = newPassword;
+  adminClientKey = adminHeaderKey(newPassword);
   setAdminToken(newPassword);
 }
 

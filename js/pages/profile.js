@@ -10,6 +10,7 @@
 // =====================================================================
 
 import { db } from "../supabase.js";
+import { shareProfile } from "../profile-share.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
 import { editControls, wireInline } from "../inline.js";
@@ -135,6 +136,33 @@ export async function render(view) {
   `;
 
   wireDflPage(view, member, isMe, () => render(view));
+
+  /*
+    THE SHARE CARD. Everything it prints is already on this page - the career
+    totals, the extremes, the Chip Eater seasons - so it is handed the objects
+    rather than re-reading anything. A share image that queried for itself could
+    disagree with the page it was launched from.
+  */
+  view.querySelector("[data-share-profile]")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      await shareProfile({
+        member,
+        career: careerStats,
+        extremes: dfl || {},
+        seasonCount: seasons.length,
+        /* Chip Eater seasons live on the badge chip-eaters.js adds to the header,
+           so they are read from the DOM rather than fetched twice. */
+        chipSeasons: (view.querySelector('[data-chip-eaters="badge"]')?.title || "")
+          .split(",").map((x) => x.trim()).filter(Boolean),
+      });
+    } catch (err) {
+      toast(err?.message || "Could not build that card", true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
   if (isMe) { wireThemePicker(view); wireGolfName(view, member); }
 
   // An edit changes the member row the picker and the header chip read from,
@@ -255,7 +283,10 @@ function careerCard(c, seasonCount) {
   }
   return `
     <div class="card">
-      <div class="card-title">Career</div>
+      <div class="card-title-row">
+        <div class="card-title">Career</div>
+        <button type="button" class="btn ghost small" data-share-profile>Share card</button>
+      </div>
       <div class="statgrid is-3up">
         ${stat("Seasons", seasonCount)}
         ${stat("Record", `${c.wins}-${c.losses}${c.ties ? "-" + c.ties : ""}`)}
