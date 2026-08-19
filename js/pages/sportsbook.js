@@ -1,16 +1,13 @@
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
-// ---------------------------------------------------------------------
-// Foundation release: bankroll, daily drip, open markets, betting, ledger,
-// and leaderboard. League Lore will create data-driven lines in the next
-// layer; this page already understands source="lore" when they arrive.
 // =====================================================================
-import { db } from "../supabase.js";
+import { db, hasPermission } from "../supabase.js";
 import { currentMember } from "../members.js";
 import { esc, toast } from "../ui.js";
 
 const fmtOdds = (n) => Number(n) > 0 ? `+${Number(n)}` : String(Number(n));
 const fmtTime = (v) => v ? new Date(v).toLocaleString([], { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" }) : "";
+const isOpen = (m) => m.status === "open" && (!m.closes_at || new Date(m.closes_at) > new Date());
 
 export async function render(view) {
   const me = currentMember();
@@ -26,13 +23,12 @@ export async function render(view) {
     const touch = await db().rpc("sportsbook_touch_wallet");
     if (touch.error) throw touch.error;
     wallet = touch.data?.[0] || null;
-
     const [ledgerRes, leaderRes, marketRes, outcomeRes, betsRes] = await Promise.all([
-      db().rpc("sportsbook_my_ledger", { row_limit: 12 }),
+      db().rpc("sportsbook_my_ledger", { row_limit: 16 }),
       db().rpc("sportsbook_leaderboard"),
-      db().from("sportsbook_markets").select("*").order("created_at", { ascending:false }).limit(30),
+      db().from("sportsbook_markets").select("*").order("created_at", { ascending:false }).limit(40),
       db().from("sportsbook_outcomes").select("*").order("sort_order"),
-      db().rpc("sportsbook_my_bets", { row_limit: 20 }),
+      db().rpc("sportsbook_my_bets", { row_limit: 30 }),
     ]);
     const err = ledgerRes.error || leaderRes.error || marketRes.error || outcomeRes.error || betsRes.error;
     if (err) throw err;
@@ -42,10 +38,7 @@ export async function render(view) {
     outcomes = outcomeRes.data || [];
     bets = betsRes.data || [];
   } catch (err) {
-    view.innerHTML = `<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">
-      The Sportsbook needs its database migration. Run <strong>sportsbook_schema.sql</strong> in Supabase, then come back here.
-      <br><span class="muted tiny">${esc(err.message || String(err))}</span>
-    </div></div>`;
+    view.innerHTML = `<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook needs <strong>sportsbook_schema.sql</strong> in Supabase.<br><span class="muted tiny">${esc(err.message || String(err))}</span></div></div>`;
     return;
   }
 
@@ -57,10 +50,11 @@ export async function render(view) {
   }
   const marketMap = new Map(markets.map((m) => [String(m.id), m]));
   const outcomeMap = new Map(outcomes.map((o) => [String(o.id), o]));
-  const open = markets.filter((m) => m.status === "open" && (!m.closes_at || new Date(m.closes_at) > new Date()));
+  const open = markets.filter(isOpen);
+  const canBook = hasPermission("sportsbook");
 
   view.innerHTML = `<div id="sportsbook-wrap">
-    <header class="page-head"><div><h1>DFL Sportsbook</h1><p class="muted">Fake money. Real receipts.</p></div></header>
+    <header class="page-head"><div><h1>DFL Sportsbook</h1><p class="muted">Fake money. Real receipts. Terrible judgment encouraged.</p></div></header>
 
     <section class="card">
       <div class="card-title-row">
@@ -73,30 +67,64 @@ export async function render(view) {
       </div>
     </section>
 
+    ${canBook ? commissionerBook() : ""}
+
     <section class="block">
       <h2 class="section-title">The board<span class="count">${open.length}</span></h2>
-      ${open.length ? open.map((m) => marketCard(m, byMarket.get(String(m.id)) || [], bets)).join("") : `
-        <div class="card"><div class="card-body">
-          <strong>The windows are dark.</strong><br><span class="muted">No lines are open yet. League Lore odds and commissioner specials are the next layer.</span>
-        </div></div>`}
+      ${open.length ? open.map((m) => marketCard(m, byMarket.get(String(m.id)) || [], bets, canBook)).join("") : `<div class="card"><div class="card-body"><strong>The windows are dark.</strong><br><span class="muted">No lines are open. Apparently everyone is behaving, which seems suspicious.</span></div></div>`}
     </section>
 
-    ${bets.length ? `<section class="block"><h2 class="section-title">Your tickets</h2>${bets.slice(0,8).map((b) => {
-      const m = marketMap.get(String(b.market_id)); const o = outcomeMap.get(String(b.outcome_id));
-      return `<div class="card"><div class="card-title-row"><div><strong>${esc(o?.label || "Ticket")}</strong><div class="muted tiny">${esc(m?.title || "DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status === "won" ? "green" : b.status === "lost" ? "grey" : ""}">${esc(b.status)}</span></div><div class="card-meta">${b.stake} SIN risked · ${b.potential_payout} SIN return</div></div>`;
-    }).join("")}</section>` : ""}
+    ${bets.length ? `<section class="block"><h2 class="section-title">Your tickets</h2>${bets.slice(0,10).map((b) => ticketCard(b, marketMap, outcomeMap)).join("")}</section>` : ""}
 
-    <section class="block"><h2 class="section-title">SIN leaderboard</h2>
-      <div class="card"><div class="card-body">${leaders.length ? leaders.slice(0,12).map((r,i) => `<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${Number(r.balance).toLocaleString()} SIN</strong></div>`).join("") : `<span class="muted">The first bankroll has not been opened yet.</span>`}</div></div>
-    </section>
+    <section class="block"><h2 class="section-title">SIN leaderboard</h2><div class="card"><div class="card-body">
+      ${leaders.length ? leaders.slice(0,12).map((r,i) => `<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${Number(r.balance).toLocaleString()} SIN</strong></div>`).join("") : `<span class="muted">The first bankroll has not been opened yet.</span>`}
+    </div></div></section>
 
-    <section class="block"><h2 class="section-title">Ledger</h2>
-      <div class="card"><div class="card-body">${ledger.length ? ledger.map((r) => `<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note || r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount > 0 ? "+" : ""}${r.amount} SIN</strong></div>`).join("") : `<span class="muted">No SIN has moved yet.</span>`}</div></div>
-    </section>
+    <section class="block"><h2 class="section-title">Receipts</h2><div class="card"><div class="card-body">
+      ${ledger.length ? ledger.map((r) => `<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note || r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount > 0 ? "+" : ""}${r.amount} SIN</strong></div>`).join("") : `<span class="muted">No SIN has moved yet.</span>`}
+    </div></div></section>
 
     <p class="muted tiny" style="text-align:center">SIN is DFL play money only. No cash value. The house remembers everything.</p>
   </div>`;
 
+  wireBets(view, outcomeMap);
+  if (canBook) wireCommissioner(view, byMarket);
+}
+
+function commissionerBook() {
+  return `<section class="block"><h2 class="section-title">The window</h2>
+    <form class="card" id="sportsbook-market-form">
+      <div class="card-title">Post a Commissioner Special</div>
+      <p class="muted tiny">Marvel. Gaming. Fantasy. Golf. Dumb bets about the draft. If two outcomes can happen, the window can take action.</p>
+      <label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Will someone complain about a rule before Week 3?">
+      <label for="book-category">Category</label>
+      <select id="book-category"><option>DFL</option><option>Fantasy</option><option>Golf</option><option>Marvel</option><option>Gaming</option></select>
+      <label for="book-close">Closes</label><input id="book-close" type="datetime-local">
+      <label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="The house has seen this movie before.">
+      <div class="section-head"><h3>Lines</h3></div>
+      ${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}
+      <div class="row-end"><button class="btn" type="submit">Open the window</button></div>
+    </form></section>`;
+}
+function outcomeInput(n,label,odds) {
+  return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`;
+}
+
+function marketCard(m, outcomes, bets, canBook) {
+  const mine = new Set((bets || []).filter((b) => String(b.market_id) === String(m.id) && b.status === "open").map((b) => String(b.outcome_id)));
+  return `<article class="card">
+    <div class="card-title-row"><div><span class="muted tiny">${esc(String(m.category || "DFL").toUpperCase())} · ${m.source === "lore" ? "LEAGUE LORE" : "COMMISSIONER SPECIAL"}</span><h3 class="card-heading" style="margin-top:3px">${esc(m.title)}</h3></div>${m.closes_at ? `<span class="pill">Closes ${esc(fmtTime(m.closes_at))}</span>` : ""}</div>
+    ${m.lore_note ? `<p class="muted">${esc(m.lore_note)}</p>` : ""}
+    <div style="display:grid;gap:8px;margin-top:10px">${outcomes.map((o) => `<button class="btn ghost" data-bet-outcome="${o.id}" style="display:flex;justify-content:space-between;align-items:center"><span>${esc(o.label)}${mine.has(String(o.id)) ? ` <small>· ticket open</small>` : ""}</span><strong>${fmtOdds(o.odds_american)}</strong></button>`).join("")}</div>
+    ${canBook ? `<div class="card-meta">Settle winner: ${outcomes.map((o) => `<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")}</div>` : ""}
+  </article>`;
+}
+function ticketCard(b, marketMap, outcomeMap) {
+  const m = marketMap.get(String(b.market_id)); const o = outcomeMap.get(String(b.outcome_id));
+  return `<div class="card"><div class="card-title-row"><div><strong>${esc(o?.label || "Ticket")}</strong><div class="muted tiny">${esc(m?.title || "DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status === "won" ? "green" : b.status === "lost" ? "grey" : ""}">${esc(b.status)}</span></div><div class="card-meta">${b.stake} SIN risked · ${b.potential_payout} SIN return</div></div>`;
+}
+
+function wireBets(view, outcomeMap) {
   view.querySelectorAll("[data-bet-outcome]").forEach((btn) => btn.addEventListener("click", async () => {
     const outcome = outcomeMap.get(String(btn.dataset.betOutcome));
     if (!outcome) return;
@@ -108,20 +136,47 @@ export async function render(view) {
     try {
       const { error } = await db().rpc("sportsbook_place_bet", { target_outcome_id: Number(outcome.id), sin_stake: stake });
       if (error) throw error;
-      toast("Ticket punched");
-      render(view);
-    } catch (err) {
-      toast(err.message || "The house rejected that ticket", true);
-      btn.disabled = false;
-    }
+      toast("Ticket punched"); render(view);
+    } catch (err) { toast(err.message || "The house rejected that ticket", true); btn.disabled = false; }
   }));
 }
 
-function marketCard(m, outcomes, bets) {
-  const mine = new Set((bets || []).filter((b) => String(b.market_id) === String(m.id) && b.status === "open").map((b) => String(b.outcome_id)));
-  return `<article class="card">
-    <div class="card-title-row"><div><span class="muted tiny">${esc(String(m.category || "DFL").toUpperCase())} · ${m.source === "lore" ? "LEAGUE LORE" : "COMMISSIONER SPECIAL"}</span><h3 class="card-heading" style="margin-top:3px">${esc(m.title)}</h3></div>${m.closes_at ? `<span class="pill">Closes ${esc(fmtTime(m.closes_at))}</span>` : ""}</div>
-    ${m.lore_note ? `<p class="muted">${esc(m.lore_note)}</p>` : ""}
-    <div style="display:grid;gap:8px;margin-top:10px">${outcomes.map((o) => `<button class="btn ghost" data-bet-outcome="${o.id}" style="display:flex;justify-content:space-between;align-items:center"><span>${esc(o.label)}${mine.has(String(o.id)) ? ` <small>· ticket open</small>` : ""}</span><strong>${fmtOdds(o.odds_american)}</strong></button>`).join("")}</div>
-  </article>`;
+function wireCommissioner(view) {
+  const form = view.querySelector("#sportsbook-market-form");
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const outcomes = [1,2,3].map((n) => ({
+      label: form.querySelector(`[data-book-label="${n}"]`)?.value.trim() || "",
+      odds: Number(form.querySelector(`[data-book-odds="${n}"]`)?.value.trim() || 0),
+    })).filter((o) => o.label);
+    if (outcomes.length < 2 || outcomes.some((o) => !(o.odds <= -100 || o.odds >= 100))) { toast("Use at least two outcomes with American odds like -110 or +150", true); return; }
+    const closes = form.querySelector("#book-close").value;
+    const btn = form.querySelector('button[type="submit"]'); btn.disabled = true;
+    try {
+      const { error } = await db().rpc("sportsbook_create_market", {
+        market_title: form.querySelector("#book-title").value.trim(),
+        market_category: form.querySelector("#book-category").value,
+        market_source: "commissioner",
+        market_closes_at: closes ? new Date(closes).toISOString() : null,
+        market_lore_note: form.querySelector("#book-note").value.trim(),
+        market_outcomes: outcomes,
+      });
+      if (error) throw error;
+      toast("The window is open"); render(view);
+    } catch (err) { toast(err.message || "Could not open that market", true); btn.disabled = false; }
+  });
+
+  view.querySelectorAll("[data-settle-market]").forEach((btn) => btn.addEventListener("click", async () => {
+    const label = btn.textContent.trim();
+    if (!confirm(`Settle this market with ${label} as the winner? This pays every winning ticket.`)) return;
+    btn.disabled = true;
+    try {
+      const { error } = await db().rpc("sportsbook_settle_market", {
+        target_market_id: Number(btn.dataset.settleMarket),
+        winning_outcome_id: Number(btn.dataset.settleOutcome),
+      });
+      if (error) throw error;
+      toast("Market settled. The house has spoken."); render(view);
+    } catch (err) { toast(err.message || "Could not settle that market", true); btn.disabled = false; }
+  }));
 }
