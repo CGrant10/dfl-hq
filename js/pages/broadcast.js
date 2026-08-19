@@ -634,10 +634,22 @@ function watch(view, id, racers) {
       const finishPresentation = createFinishPresentation({
         elapsedMs: Math.max(0, elapsed), leaderProgress, order: sim.order, racers,
       });
-      /* Finish presentation may freeze or remap its own clock for graphics,
-         but racer motion never reads that clock. The line observes the race;
-         it does not control it. */
+      /*
+        PHOTO FINISH IS PRESENTATION ONLY, AND IT IS NOW OFF.
+
+        Close races use the exact same clock and finish object as every other
+        race. The generated runtime may still know how to draw its old photo
+        treatment, but this viewer never hands that branch to Pixi and never
+        lets it remap visual time. The stripe records the crossing; it does not
+        alter how somebody gets there.
+      */
       const racerElapsed = Math.max(0, elapsed);
+      const firstFinishMs = sim.order[0]?.finishMs ?? Infinity;
+      finishPresentation.visualElapsedMs = racerElapsed;
+      finishPresentation.crossingShownMs = firstFinishMs;
+      finishPresentation.crossingShown = racerElapsed >= firstFinishMs;
+      if ("photoFinish" in finishPresentation) delete finishPresentation.photoFinish;
+
       const visualT = Math.max(0, Math.min(sim.frames, racerElapsed / TICK_MS));
       const visualLo = Math.floor(visualT);
       const visualHi = Math.min(sim.frames, visualLo + 1);
