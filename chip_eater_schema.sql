@@ -10,10 +10,20 @@
 -- which a 4-11 team can escape and an 8-7 team can walk into.
 --
 -- Sleeper decides it in the losers bracket, so the sync now reads that bracket
--- and stores the owner here. NULL is a real and common answer: a league that
--- runs no consolation bracket has no last place to report, and the season shows
--- no Chip Eater rather than a guess. The commissioner's "Correct season" button
--- is the override for those.
+-- and stores the owner here.
+--
+-- THE RULE, SETTLED AGAINST THE REAL LEAGUE: the Chip Eater is the WINNER of the
+-- losers bracket's p:1 game. That bracket is a toilet bowl and its `p` numbers
+-- are placements WITHIN it, not overall finishes - so p:1 is the consolation
+-- final and winning it is how you end up last. Verified against DFL 2022-2025
+-- (CimmeronG, sheyg2014, azhee28, Martin77), which the commissioner supplied
+-- independently; the previous reading - loser of the highest `p` - scored 0 of 4.
+-- See js/sleeper-bracket.js and its spec, whose fixtures are those four brackets
+-- verbatim from the API.
+--
+-- NULL is a real answer: a league that runs no consolation bracket has no last
+-- place to report, and the season shows no Chip Eater rather than a guess. The
+-- commissioner's "Correct season" button is the override for those.
 -- =====================================================================
 
 alter table public.sleeper_leagues

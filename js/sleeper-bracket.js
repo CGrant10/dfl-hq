@@ -10,10 +10,13 @@
 //
 //   { r: round, m: match, t1, t2, w: winner_roster, l: loser_roster, p?: place }
 //
-// `p` appears on the games that DECIDE a placement: p:1 is the championship,
-// p:3 the third-place game, and in the losers bracket the higher numbers are
-// the consolation places. Not every league configures every placement game, so
-// nothing here assumes `p` exists.
+// `p` appears on the games that DECIDE a placement, and it is scoped to ITS OWN
+// bracket. In the winners bracket p:1 is the championship. In the losers bracket
+// p:1 is the CONSOLATION final - a placement within the toilet bowl, not an
+// overall finish - so its winner is last in the league. Reading losers-bracket
+// `p` as an overall placement is the mistake this file exists to have already
+// made. Not every league configures placement games, so nothing here assumes
+// `p` exists.
 // =====================================================================
 
 /**
@@ -36,44 +39,48 @@ export function readWinners(bracket) {
 }
 
 /**
- * Dead last, from the LOSERS bracket.
+ * The Chip Eater: dead last, from the LOSERS bracket.
  *
- * THIS IS NOT THE WORST REGULAR-SEASON RECORD, and that distinction is the whole
- * reason this function exists. `sleeper_standings.rank` is record then points
- * for - it is what the table looked like going INTO the playoffs. The Chip Eater
- * is whoever came last once the brackets were played, which a 4-11 team can
- * escape and a 8-7 team can walk into.
+ * IT IS THE WINNER OF THE p:1 GAME, AND THAT IS NOT A TYPO.
  *
- * The game deciding last place is the one playing for the HIGHEST placement
- * number, and last place is its LOSER. Where a league has configured no
- * placement games, the deepest round of the losers bracket is the same game by
- * construction - you only keep playing the teams that keep losing.
+ * Sleeper's losers bracket is a toilet bowl. Its `p` numbers are placements
+ * WITHIN that bracket, not overall finishes - so `p:1` is the consolation
+ * final, and winning the consolation final is how you end up last in the
+ * league. Advancing through this bracket is the punishment.
  *
- * Returns null rather than guessing when the bracket is absent, empty or
- * unfinished. A season with no answer shows no Chip Eater, which is the honest
- * outcome and is what the commissioner's manual override is for.
+ * I got this wrong twice before settling it against the real league:
+ *
+ *   1. sleeper_standings.rank      worst regular-season record. That is the
+ *                                  table going INTO the playoffs.
+ *   2. loser of the highest `p`    read the bracket as if `p` were an overall
+ *                                  placement and last place were a game you
+ *                                  lose. Scored 0 out of 4.
+ *
+ * Checked against DFL 2022-2025, whose Chip Eaters the commissioner supplied
+ * independently. The p:1 winner is right in all four; the fixtures in
+ * sleeper-bracket.spec.js are those four brackets, verbatim from the API.
+ *
+ * FALLBACK, and its limit. With no `p` at all this takes the winner of the
+ * deepest round, and only when that round holds exactly one game - two tied
+ * for deepest and which one decides last place is not knowable, so it
+ * declines. Every DFL season on record carries `p:1`, so that path is
+ * reasoning rather than something the league has exercised. It returns null
+ * rather than guessing, and a season with no answer shows no Chip Eater -
+ * which is what the commissioner's "Correct season" override is for.
  */
 export function readLastPlace(bracket) {
   if (!Array.isArray(bracket) || !bracket.length) return null;
 
-  const placed = bracket.filter((g) => Number.isFinite(Number(g?.p)));
-  let decider = null;
+  /* The consolation final. Its WINNER is last in the league. */
+  const decider = bracket.find((g) => Number(g?.p) === 1)
+    ?? (() => {
+      const lastRound = Math.max(...bracket.map((g) => Number(g?.r) || 0));
+      const finals = bracket.filter((g) => (Number(g?.r) || 0) === lastRound);
+      return finals.length === 1 ? finals[0] : null;
+    })();
 
-  if (placed.length) {
-    /* Highest `p` is the lowest placing being contested. */
-    decider = placed.reduce((worst, g) => (Number(g.p) > Number(worst.p) ? g : worst), placed[0]);
-  } else {
-    const lastRound = Math.max(...bracket.map((g) => Number(g?.r) || 0));
-    /* More than one game can share the deepest round. The one whose loser is
-       last is not knowable without placements, so this declines rather than
-       picking one of them arbitrarily. */
-    const finals = bracket.filter((g) => (Number(g?.r) || 0) === lastRound);
-    if (finals.length !== 1) return null;
-    decider = finals[0];
-  }
-
-  /* An unplayed game has no loser. Reporting a Chip Eater from a bracket that
+  /* An unplayed game has no winner. Reporting a Chip Eater from a bracket that
      has not finished is how a placeholder becomes permanent. */
-  const loser = decider?.l;
-  return loser == null ? null : loser;
+  const worst = decider?.w;
+  return worst == null ? null : worst;
 }
