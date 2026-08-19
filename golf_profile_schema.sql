@@ -47,6 +47,7 @@ begin
 end; $$;
 grant execute on function public.golf_save_profile(numeric,numeric,numeric) to anon,authenticated;
 
+-- A golfer's own handicap/averages are the first pricing source.
 create or replace function public.sportsbook_golf_side_rating(target_side_id bigint)
 returns numeric language sql stable security definer set search_path=public as $$
   select coalesce(avg(coalesce(gprof.rating,gr.rating,75)),75)::numeric
@@ -71,25 +72,48 @@ returns text language sql immutable as $$
   select trim(trailing '.' from trim(trailing '0' from to_char(v,'FM999990.0')));
 $$;
 
--- Moneyline pair: only a genuine near-tie stays -110/-110.
--- Any meaningful rating edge creates a favorite and a plus-money underdog.
+-- Convert an implied probability to normal American odds.
+create or replace function public.sportsbook_golf_american_from_implied(p numeric)
+returns int language plpgsql immutable as $$
+declare x numeric:=greatest(0.05,least(0.95,p));
+begin
+  if x>=0.5 then return -greatest(100,round(100*x/(1-x))::int);
+  else return greatest(100,round(100*(1-x)/x)::int); end if;
+end; $$;
+
+-- Two-way market with about a 4.5% book hold. A true pick'em is -110/-110;
+-- otherwise the handicap gap moves both sides naturally instead of forcing
+-- every non-tie into an artificial favorite/plus-money pair.
 create or replace function public.sportsbook_golf_moneyline_pair(rating_a numeric,rating_b numeric)
 returns table(odds_a int,odds_b int) language plpgsql immutable as $$
-declare diff numeric:=coalesce(rating_a,75)-coalesce(rating_b,75); fair_a numeric; fav int; dog int;
+declare
+  diff numeric:=coalesce(rating_a,75)-coalesce(rating_b,75);
+  fair_a numeric; implied_a numeric; implied_b numeric;
 begin
-  if abs(diff)<0.25 then return query select -110,-110; return; end if;
-  fair_a:=1/(1+exp(-diff/8.0));
-  if fair_a>0.5 then
-    fav:=-greatest(115,round(100*(fair_a+0.025)/(1-(fair_a+0.025)))::int);
-    dog:=greatest(100,round(100*(1-fair_a-0.025)/(fair_a+0.025))::int);
-    return query select fav,dog;
-  else
-    fair_a:=1-fair_a;
-    fav:=-greatest(115,round(100*(fair_a+0.025)/(1-(fair_a+0.025)))::int);
-    dog:=greatest(100,round(100*(1-fair_a-0.025)/(fair_a+0.025))::int);
-    return query select dog,fav;
-  end if;
+  if abs(diff)<0.35 then return query select -110,-110; return; end if;
+  fair_a:=greatest(0.18,least(0.82,1/(1+exp(-diff/8.0))));
+  implied_a:=fair_a+0.0225;
+  implied_b:=(1-fair_a)+0.0225;
+  return query select public.sportsbook_golf_american_from_implied(implied_a),public.sportsbook_golf_american_from_implied(implied_b);
 end; $$;
+
+-- Match play moves in holes; stroke play moves much closer to the actual
+-- projected handicap gap. Half points prevent pushes on the spread.
+create or replace function public.sportsbook_golf_spread_for_scoring(rating_a numeric,rating_b numeric,scoring text)
+returns numeric language sql immutable as $$
+  select case when scoring='match'
+    then greatest(0.5,least(5.5,round((abs(coalesce(rating_a,75)-coalesce(rating_b,75))/3.5)*2)/2.0))
+    else greatest(0.5,least(12.5,round(abs(coalesce(rating_a,75)-coalesce(rating_b,75))*2)/2.0))
+  end;
+$$;
+
+create or replace function public.sportsbook_golf_margin_total_for_scoring(rating_a numeric,rating_b numeric,scoring text)
+returns numeric language sql immutable as $$
+  select case when scoring='match'
+    then greatest(1.5,least(5.5,round((1.5+abs(coalesce(rating_a,75)-coalesce(rating_b,75))/4.0)*2)/2.0))
+    else greatest(2.5,least(12.5,round((2.5+abs(coalesce(rating_a,75)-coalesce(rating_b,75))*0.75)*2)/2.0))
+  end;
+$$;
 
 create or replace function public.sportsbook_reprice_open_golf()
 returns int language plpgsql security definer set search_path=public as $$
@@ -98,6 +122,7 @@ declare
   r1 numeric; r2 numeric; sp numeric; mt numeric; fav1 boolean; unit text;
   sp_text text; mt_text text; changed int:=0;
 begin
+  -- Tournament team moneyline.
   for m in
     select sm.id market_id,sm.auto_key,(regexp_match(sm.auto_key,'^golf:([0-9]+):team-war:v2$'))[1]::bigint outing_id
     from public.sportsbook_markets sm
@@ -113,6 +138,7 @@ begin
     changed:=changed+1;
   end loop;
 
+  -- Match moneyline, spread, and winning-margin total.
   for m in
     select sm.id market_id,sm.auto_key,gm.id match_id,gr.scoring
     from public.sportsbook_markets sm
@@ -128,17 +154,24 @@ begin
     if m.auto_key like '%:moneyline:v2' then
       select * into ml from public.sportsbook_golf_moneyline_pair(r1,r2);
       update public.sportsbook_outcomes so set odds_american=case so.sort_order when 0 then ml.odds_a else ml.odds_b end where so.market_id=m.market_id;
+
     elsif m.auto_key like '%:spread:v2' then
-      sp:=public.sportsbook_golf_spread(r1,r2); sp_text:=public.sportsbook_golf_line_text(sp);
-      update public.sportsbook_outcomes so set label=case
-        when so.sort_order=0 then public.sportsbook_golf_side_label(s1.id)||case when fav1 then ' -' else ' +' end||sp_text
-        else public.sportsbook_golf_side_label(s2.id)||case when fav1 then ' +' else ' -' end||sp_text end
+      sp:=public.sportsbook_golf_spread_for_scoring(r1,r2,m.scoring);sp_text:=public.sportsbook_golf_line_text(sp);
+      update public.sportsbook_outcomes so set
+        label=case when so.sort_order=0
+          then public.sportsbook_golf_side_label(s1.id)||case when fav1 then ' -' else ' +' end||sp_text
+          else public.sportsbook_golf_side_label(s2.id)||case when fav1 then ' +' else ' -' end||sp_text end,
+        odds_american=-110
       where so.market_id=m.market_id;
+
     elsif m.auto_key like '%:margin-total:v2' then
-      mt:=public.sportsbook_golf_margin_total(r1,r2); mt_text:=public.sportsbook_golf_line_text(mt);
+      mt:=public.sportsbook_golf_margin_total_for_scoring(r1,r2,m.scoring);mt_text:=public.sportsbook_golf_line_text(mt);
       unit:=case when m.scoring='match' then 'holes' else 'strokes' end;
       update public.sportsbook_markets sm set title=public.sportsbook_golf_side_label(s1.id)||' vs '||public.sportsbook_golf_side_label(s2.id)||' — Winning margin O/U '||mt_text||' '||unit where sm.id=m.market_id;
-      update public.sportsbook_outcomes so set label=case when so.sort_order=0 then 'OVER '||mt_text||' '||unit else 'UNDER '||mt_text||' '||unit end where so.market_id=m.market_id;
+      update public.sportsbook_outcomes so set
+        label=case when so.sort_order=0 then 'OVER '||mt_text||' '||unit else 'UNDER '||mt_text||' '||unit end,
+        odds_american=-110
+      where so.market_id=m.market_id;
     end if;
     changed:=changed+1;
   end loop;
@@ -156,4 +189,5 @@ begin
 end; $$;
 grant execute on function public.golf_save_profile_and_reprice(numeric,numeric,numeric) to anon,authenticated;
 
+-- Refresh the current board when this migration is rerun.
 select public.sportsbook_reprice_open_golf();
