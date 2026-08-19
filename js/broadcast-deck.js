@@ -37,6 +37,7 @@
    ===================================================================== */
 
 import { esc, fmtDate, fmtWhen, relDate, money } from "./ui.js";
+import { P, GENERATOR_LABELS, GENERATOR_BASE, generatorStanding, weightToPass } from "./broadcast-order.js";
 import { LEAGUE_FOUNDED } from "./config.js";
 import { db } from "./supabase.js";
 import { battleResult, dayPoints, outingState, marginLabel } from "./golf-battle.js";
@@ -82,19 +83,7 @@ import { memberImage } from "./members.js";
   items past each other.
   ===================================================================
 */
-export const P = {
-  FEATURED: 1000,
-  LIVE:      900,
-  MANUAL:    800,   // a human wrote it. Beats everything except a live game.
-  RECENT:    700,
-  MINE:      650,
-  UPCOMING:  600,
-  ACTIVITY:  500,   // open poll, fresh announcement
-  CHAMPION:  400,   // always eligible - league identity, never drops out
-  STAT:      300,
-  HISTORY:   200,
-  IDENTITY:  100,   // the floor. Always present, so a deck is never empty.
-};
+
 
 /*
   How long each treatment sits on screen.
@@ -836,23 +825,12 @@ export const GENERATORS = [
   when everything else is empty, so offering a switch for it would offer a
   blank front page.
 */
-export const GENERATOR_LABELS = new Map([
-  ["golf",          ["Golf day", "Live and upcoming golf outings"]],
-  ["fantasy",       ["Fantasy matchups", "Scores from the Sleeper league"]],
-  ["myMatchup",     ["Your matchup", "The signed-in member's own game"]],
-  ["events",        ["Calendar events", "Draft night and anything else scheduled"]],
-  ["poll",          ["Open polls", "Whatever the league is voting on"]],
-  ["news",          ["Announcements", "Recent posts from the commissioner"]],
-  ["champion",      ["Current champion", "The reigning title holder"]],
-  ["pastChampions", ["Past champions", "Earlier title winners"]],
-  ["chipEaters",    ["Chip Eaters", "Who came last, and whether they have paid"]],
-  ["records",       ["Record book", "All-time highs and lows"]],
-  ["seasonStat",    ["Season stats", "Figures from the current season"]],
-  ["dues",          ["Dues", "What the league is owed"]],
-  ["lore",          ["Moments", "Rivalries and league history"]],
-  ["arena",         ["Arena", "Racer events"]],
-  ["funfact",       ["Did you know?", "The day's fantasy fun fact"]],
-]);
+
+
+/* Ordering constants and helpers live in js/broadcast-order.js so they can be
+   tested - this file reads the database and therefore cannot be. Re-exported so
+   every existing importer keeps working. */
+export { P, GENERATOR_LABELS, GENERATOR_BASE, generatorStanding, weightToPass };
 
 // ------------------------------------------------------------------- deck
 

@@ -1639,6 +1639,15 @@ a.moment:hover { background: var(--hover-soft); }
 
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
+/* The reorder arrows on an automatic broadcast source. Sized to the switch row
+   beside them so a list of sources does not gain a second rhythm. */
+.srcmove { display: flex; align-items: center; gap: .25rem; margin-left: auto; }
+.srcmove .btn { min-width: 2rem; padding: .15rem .4rem; line-height: 1.1; }
+.srcmove .btn:disabled { opacity: .3; cursor: not-allowed; }
+.srcrow { display: flex; align-items: flex-start; gap: .5rem; flex-wrap: wrap; }
+.srcrow > .switchrow { flex: 1 1 14rem; }
+.srcrow > .ovbox { flex: 1 1 100%; }
+
 /* =====================================================================
    FORMS: essentials first. A 17-field slide form met you all at once; twelve
    of those fields now sit behind one summary, and the disclosure has to read

@@ -23,7 +23,7 @@ import { esc, toast, errorBox } from "../ui.js";
 import { db } from "../supabase.js";
 import { renderManager } from "../crud.js";
 import { specFor } from "../sections.js";
-import { GENERATOR_LABELS, renderItemFromRow, loadBroadcastOverrides } from "../broadcast-deck.js";
+import { GENERATOR_LABELS, generatorStanding, weightToPass, renderItemFromRow, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderItem } from "../broadcast-stage.js";
 import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
 
@@ -176,7 +176,25 @@ async function renderSources(list) {
         ${options.map((o) => `<option value="${esc(o.v)}"${String(value || "") === o.v ? " selected" : ""}>${esc(o.l)}</option>`).join("")}
       </select></label>`;
 
-  list.innerHTML = [...GENERATOR_LABELS].map(([id, [name, what]]) => {
+  /*
+    LISTED IN THE ORDER THEY WILL PLAY, not in registry order.
+
+    The panel used to print the generators in the order they happen to appear in
+    GENERATORS, which is source-code order and tells a commissioner nothing about
+    what the front page does. Sorted by effective standing - base priority plus
+    whatever has been done to it - the list IS the running order, which is what
+    makes the arrows mean something.
+
+    Ties keep registry order, so two sources on the same band do not shuffle
+    between renders.
+  */
+  const order = [...GENERATOR_LABELS.keys()];
+  const ranked = order
+    .map((id, i) => ({ id, i, standing: generatorStanding(id, overrides.get(id)) }))
+    .sort((a, b) => (b.standing - a.standing) || (a.i - b.i));
+
+  list.innerHTML = ranked.map(({ id, standing }, position) => {
+    const [name, what] = GENERATOR_LABELS.get(id);
     const ov = overrides.get(id) || {};
     const tweaked = ov.treatment || ov.background || ov.image || ov.dwell_seconds || ov.featured || ov.weight;
     return `
@@ -188,6 +206,14 @@ async function renderSources(list) {
           <span class="muted">${esc(what)}</span>
         </span>
       </label>
+      <div class="srcmove">
+        <button type="button" class="btn ghost small" data-gen-up="${esc(id)}"
+          ${position === 0 ? "disabled" : ""} aria-label="Move ${esc(name)} earlier">↑</button>
+        <button type="button" class="btn ghost small" data-gen-down="${esc(id)}"
+          ${position === ranked.length - 1 ? "disabled" : ""} aria-label="Move ${esc(name)} later">↓</button>
+        ${ov.featured ? `<span class="muted tiny">featured</span>`
+          : ov.weight ? `<span class="muted tiny">moved</span>` : ""}
+      </div>
       <details class="ovbox"${tweaked ? " open" : ""}>
         <summary>Look${tweaked ? " · customised" : ""}</summary>
         <div class="ovgrid" data-ov-form="${esc(id)}">
@@ -229,7 +255,56 @@ async function renderSources(list) {
   if (list.dataset.wired === "1") return;
   list.dataset.wired = "1";
 
+  /*
+    REORDERING AN AUTOMATIC SOURCE.
+
+    The weight column has existed since broadcast_v2_schema.sql and applyOverride()
+    has always added it to the item's priority - there was simply never a control
+    for it, and a raw "weight" box would have been useless anyway, because a
+    weight means nothing until you know what it is being added to.
+
+    So the arrow does the arithmetic: weightToPass() returns the weight that puts
+    this generator one point past its neighbour's effective standing. One point is
+    enough - the sort is a plain numeric compare, and leaving gaps would make the
+    numbers drift upward every time somebody pressed an arrow.
+
+    It nudges against the automatic ranking rather than pinning a position, which
+    is the honest description: what actually plays also depends on what data
+    exists that day and on the diversify() pass. The heading says "running order"
+    for that reason.
+  */
   list.addEventListener("click", async (e) => {
+    const move = e.target.closest("[data-gen-up],[data-gen-down]");
+    if (move) {
+      const up = move.hasAttribute("data-gen-up");
+      const id = up ? move.dataset.genUp : move.dataset.genDown;
+      /* Recomputed from the CURRENT overrides rather than from the markup, so
+         two quick presses cannot both read the same stale neighbour. */
+      const fresh = await loadBroadcastOverrides();
+      const ranked = [...GENERATOR_LABELS.keys()]
+        .map((gid, i) => ({ gid, i, standing: generatorStanding(gid, fresh.get(gid)) }))
+        .sort((a, b) => (b.standing - a.standing) || (a.i - b.i));
+      const at = ranked.findIndex((r) => r.gid === id);
+      const neighbour = ranked[up ? at - 1 : at + 1];
+      if (!neighbour) return;                       // already at the end it wants
+      move.disabled = true;
+      try {
+        const weight = weightToPass(id, neighbour.standing, { above: up });
+        /* Only the weight is written. Spreading `existing` would send back
+           every column the select happened to return, which is how a "move"
+           quietly rewrites a look somebody set in the box below. */
+        const { error } = await db().from("broadcast_overrides")
+          .upsert({ generator: id, weight, updated_at: new Date().toISOString() },
+                  { onConflict: "generator" });
+        if (error) throw error;
+        await renderSources(list);
+      } catch (err) {
+        move.disabled = false;
+        toast(err?.message || "Could not move that", true);
+      }
+      return;
+    }
+
     const save = e.target.closest("[data-ov-save]");
     const clear = e.target.closest("[data-ov-clear]");
     if (!save && !clear) return;
