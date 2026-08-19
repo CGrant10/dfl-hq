@@ -13,13 +13,12 @@ export const dflSeasonCount = (syncedSeasons = 0) =>
   Math.max(0, Number(syncedSeasons) || 0) + LEGACY_SEASONS;
 
 /*
-  Normally the HTML meta is the browser-side version authority. 1.109.48 is a
-  floor because this release adds an always-loaded Arena presentation module
-  while the existing 1.109.47 HTML shell may already be sitting in a device's
-  HTTP cache. Future HTML versions higher than this floor win automatically.
+  Normally the HTML meta is the browser-side version authority. The release
+  floor also lets a fresh JS release identify itself when an older HTML shell
+  is still sitting in a device cache.
 */
 const META_VERSION = globalThis.document?.querySelector('meta[name="dfl-app-version"]')?.content || "0";
-const RELEASE_FLOOR = "1.109.48";
+const RELEASE_FLOOR = "1.109.56";
 const newer = (a,b) => {
   const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);
   for(let i=0;i<Math.max(x.length,y.length);i++){
