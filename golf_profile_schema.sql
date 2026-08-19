@@ -47,7 +47,6 @@ begin
 end; $$;
 grant execute on function public.golf_save_profile(numeric,numeric,numeric) to anon,authenticated;
 
--- Golf Profile is always the first pricing source. Existing Golf ranking is fallback.
 create or replace function public.sportsbook_golf_side_rating(target_side_id bigint)
 returns numeric language sql stable security definer set search_path=public as $$
   select coalesce(avg(coalesce(gprof.rating,gr.rating,75)),75)::numeric
@@ -67,21 +66,38 @@ returns numeric language sql stable security definer set search_path=public as $
   where gp.team_id=target_team_id;
 $$;
 
--- Present half-point lines as 2.5, never 2.5000000000000000.
 create or replace function public.sportsbook_golf_line_text(v numeric)
 returns text language sql immutable as $$
   select trim(trailing '.' from trim(trailing '0' from to_char(v,'FM999990.0')));
 $$;
 
--- Reprice every OPEN Golf v2 line. Tickets retain the odds copied when placed.
+-- Moneyline pair: only a genuine near-tie stays -110/-110.
+-- Any meaningful rating edge creates a favorite and a plus-money underdog.
+create or replace function public.sportsbook_golf_moneyline_pair(rating_a numeric,rating_b numeric)
+returns table(odds_a int,odds_b int) language plpgsql immutable as $$
+declare diff numeric:=coalesce(rating_a,75)-coalesce(rating_b,75); fair_a numeric; fav int; dog int;
+begin
+  if abs(diff)<0.25 then return query select -110,-110; return; end if;
+  fair_a:=1/(1+exp(-diff/8.0));
+  if fair_a>0.5 then
+    fav:=-greatest(115,round(100*(fair_a+0.025)/(1-(fair_a+0.025)))::int);
+    dog:=greatest(100,round(100*(1-fair_a-0.025)/(fair_a+0.025))::int);
+    return query select fav,dog;
+  else
+    fair_a:=1-fair_a;
+    fav:=-greatest(115,round(100*(fair_a+0.025)/(1-(fair_a+0.025)))::int);
+    dog:=greatest(100,round(100*(1-fair_a-0.025)/(fair_a+0.025))::int);
+    return query select dog,fav;
+  end if;
+end; $$;
+
 create or replace function public.sportsbook_reprice_open_golf()
 returns int language plpgsql security definer set search_path=public as $$
 declare
-  m record; s1 record; s2 record; t1 record; t2 record;
+  m record; s1 record; s2 record; t1 record; t2 record; ml record;
   r1 numeric; r2 numeric; sp numeric; mt numeric; fav1 boolean; unit text;
   sp_text text; mt_text text; changed int:=0;
 begin
-  -- Tournament/team moneyline.
   for m in
     select sm.id market_id,sm.auto_key,(regexp_match(sm.auto_key,'^golf:([0-9]+):team-war:v2$'))[1]::bigint outing_id
     from public.sportsbook_markets sm
@@ -92,13 +108,11 @@ begin
     select gt.* into t2 from public.golf_teams gt where gt.outing_id=m.outing_id and gt.id<>t1.id order by gt.sort_order,gt.id limit 1;
     if t1.id is null or t2.id is null then continue; end if;
     r1:=public.sportsbook_golf_team_rating(t1.id); r2:=public.sportsbook_golf_team_rating(t2.id);
-    update public.sportsbook_outcomes so
-       set odds_american=case so.sort_order when 0 then public.sportsbook_golf_side_odds(r1,r2) else public.sportsbook_golf_side_odds(r2,r1) end
-     where so.market_id=m.market_id;
+    select * into ml from public.sportsbook_golf_moneyline_pair(r1,r2);
+    update public.sportsbook_outcomes so set odds_american=case so.sort_order when 0 then ml.odds_a else ml.odds_b end where so.market_id=m.market_id;
     changed:=changed+1;
   end loop;
 
-  -- Match moneyline, spread, and margin total.
   for m in
     select sm.id market_id,sm.auto_key,gm.id match_id,gr.scoring
     from public.sportsbook_markets sm
@@ -109,21 +123,17 @@ begin
     select gs.* into s1 from public.golf_match_sides gs where gs.match_id=m.match_id and gs.slot=1;
     select gs.* into s2 from public.golf_match_sides gs where gs.match_id=m.match_id and gs.slot=2;
     if s1.id is null or s2.id is null then continue; end if;
-
     r1:=public.sportsbook_golf_side_rating(s1.id); r2:=public.sportsbook_golf_side_rating(s2.id); fav1:=r1>=r2;
 
     if m.auto_key like '%:moneyline:v2' then
-      update public.sportsbook_outcomes so
-         set odds_american=case so.sort_order when 0 then public.sportsbook_golf_side_odds(r1,r2) else public.sportsbook_golf_side_odds(r2,r1) end
-       where so.market_id=m.market_id;
-
+      select * into ml from public.sportsbook_golf_moneyline_pair(r1,r2);
+      update public.sportsbook_outcomes so set odds_american=case so.sort_order when 0 then ml.odds_a else ml.odds_b end where so.market_id=m.market_id;
     elsif m.auto_key like '%:spread:v2' then
       sp:=public.sportsbook_golf_spread(r1,r2); sp_text:=public.sportsbook_golf_line_text(sp);
       update public.sportsbook_outcomes so set label=case
         when so.sort_order=0 then public.sportsbook_golf_side_label(s1.id)||case when fav1 then ' -' else ' +' end||sp_text
         else public.sportsbook_golf_side_label(s2.id)||case when fav1 then ' +' else ' -' end||sp_text end
       where so.market_id=m.market_id;
-
     elsif m.auto_key like '%:margin-total:v2' then
       mt:=public.sportsbook_golf_margin_total(r1,r2); mt_text:=public.sportsbook_golf_line_text(mt);
       unit:=case when m.scoring='match' then 'holes' else 'strokes' end;
@@ -146,5 +156,4 @@ begin
 end; $$;
 grant execute on function public.golf_save_profile_and_reprice(numeric,numeric,numeric) to anon,authenticated;
 
--- Fix currently-open labels/odds immediately when this migration is rerun.
 select public.sportsbook_reprice_open_golf();
