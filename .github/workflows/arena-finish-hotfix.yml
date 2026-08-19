@@ -1,5 +1,5 @@
-name: Arena visible-position physics release
-# trigger: visible-position-physics-v1.109.61
+name: Arena forward-only physics release
+# trigger: duck-style-forward-physics-v1.109.62
 
 on:
   push:
@@ -22,22 +22,53 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Make visible racer position authoritative
+      - name: Replace Arena race physics with forward-only movement
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import json, re
 
-          p = Path('js/pages/broadcast.js')
+          # Shared race entry point: every caller (Broadcast, Arena controls,
+          # replay/results) gets the same forward-only simulation.
+          p = Path('js/arena/race.js')
           s = p.read_text()
-          old = '''      const drama = dramatize(live.sim, Number(row.seed) || 1);\n      live.shown = drama.shown;\n      live.events = drama.events;\n      live.visuals = visualEvents(live.sim, live.shown, racers);'''
-          new = '''      const drama = dramatize(live.sim, Number(row.seed) || 1);\n      /*\n        WHAT YOU SEE IS THE RACE.\n\n        Theatre may still add reactions/callouts, but it no longer owns a\n        second position track. The deterministic simulation samples are the\n        positions drawn on screen, and finishMs is recorded from the exact\n        interpolated tick where that same progress reaches 1.0. Therefore a\n        racer can never visually arrive at the stripe and wait for a separate\n        hidden finish clock: reaching the visible line IS the finish.\n      */\n      live.shown = live.sim.samples;\n      live.events = drama.events;\n      live.visuals = visualEvents(live.sim, live.shown, racers);'''
-          if old not in s:
-              raise SystemExit('broadcast theatre-position anchor not found')
-          s = s.replace(old, new, 1)
+          if 'import { simulateForwardRace } from "./duck-physics.js";' not in s:
+              anchor = '/** Deterministic RNG (mulberry32). Same seed, same race, every time. */'
+              if anchor not in s: raise SystemExit('race import anchor not found')
+              s = s.replace(anchor,
+                  'import { simulateForwardRace } from "./duck-physics.js";\n\n' + anchor, 1)
+
+          old_decl = 'export function simulate(racers, ticks, seed) {'
+          if old_decl in s:
+              s = s.replace(old_decl, 'function simulateLegacy(racers, ticks, seed) {', 1)
+              insert_at = 'function simulateLegacy(racers, ticks, seed) {'
+              s = s.replace(insert_at,
+                  'export function simulate(racers, ticks, seed) {\n'
+                  '  return simulateForwardRace(racers, ticks, seed);\n'
+                  '}\n\n'
+                  + insert_at, 1)
+          elif 'return simulateForwardRace(racers, ticks, seed);' not in s:
+              raise SystemExit('simulate replacement anchor not found')
+
+          # The theatre is now reactions only. No second position timeline.
+          old_export = 'export { dramatize, crossingSpeeds } from "./pixi-runtime.js";'
+          new_export = '''export { crossingSpeeds } from "./pixi-runtime.js";
+export function dramatize(sim) {
+  return { shown: sim.samples, events: [] };
+}'''
+          if old_export in s:
+              s = s.replace(old_export, new_export, 1)
+          elif 'return { shown: sim.samples, events: [] };' not in s:
+              raise SystemExit('dramatize replacement anchor not found')
           p.write_text(s)
 
-          VERSION = '1.109.61'
+          # Broadcast explicitly uses raw samples as the drawn positions too.
+          p = Path('js/pages/broadcast.js')
+          s = p.read_text()
+          s = s.replace('live.shown = drama.shown;', 'live.shown = live.sim.samples;', 1)
+          p.write_text(s)
+
+          VERSION = '1.109.62'
           Path('version.txt').write_text(VERSION + '\n')
 
           pkg = json.loads(Path('package.json').read_text())
@@ -71,6 +102,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/pages/broadcast.js js/config.js version.txt package.json sw.js index.html
-          git commit -m "Make Arena visible position authoritative and release v1.109.61"
+          git add js/arena/race.js js/arena/duck-physics.js js/pages/broadcast.js js/config.js version.txt package.json sw.js index.html
+          git commit -m "Use forward-only Arena physics and release v1.109.62"
           git push
