@@ -1,78 +1,77 @@
 /*
-  Arena finish-line presentation guard.
+  Arena course-line presentation.
 
-  The race simulation owns racer movement and official finish order. The finish
-  structure must never look like a second moving object that racers wait on.
-  It therefore has exactly one visible position: the real crossing point.
+  The simulation still owns the race. These are scenery markers only.
 
-  While the field is still approaching, the structure is hidden. Once the lead
-  racer's DISPLAYED position is genuinely in the finishing zone, the structure
-  appears already planted at the crossing point and stays there. It never
-  sweeps through the runners and it never changes their motion.
+  START: visible on the grid, gone the instant the race is actually running.
+
+  FINISH: never parks in front of the racers and never controls a crossing.
+  It enters from the right as part of the course, passes through the field,
+  and continues off the left. Once the finish sequence begins the course is
+  visually frozen; racers keep running through/off screen on their own clock.
 */
 
-const FINISH_RATIO = 0.58;
-/* presentationScreenRatio(.95) = .553, so this reveals with only the last
-   sliver of track left instead of several seconds before the race gets there. */
-const REVEAL_RATIO = 0.548;
+const FINISH_ENTER = 1.08;
+const FINISH_CROSS = 0.58;
+const FINISH_EXIT = -0.10;
+const PAN_START = 0.72;
+const PAN_END = 1.0;
 
 let raf = 0;
-let stage = null;
-let armed = false;
 
 function ensureStyle() {
-  if (document.getElementById("arena-finish-line-guard-style")) return;
+  if (document.getElementById("arena-course-lines-style")) return;
   const style = document.createElement("style");
-  style.id = "arena-finish-line-guard-style";
+  style.id = "arena-course-lines-style";
   style.textContent = `
     body.broadcasting .bc-stage .bc-finish {
-      left: ${FINISH_RATIO * 100}% !important;
-      opacity: 0;
-      transition: opacity 120ms linear;
-      will-change: opacity;
-    }
-    body.broadcasting .bc-stage[data-finish-armed="true"] .bc-finish {
-      opacity: 1;
+      left: calc(var(--course-finish-x, ${FINISH_ENTER}) * 100%) !important;
+      opacity: var(--course-finish-visible, 0) !important;
+      transition: none !important;
+      will-change: left;
     }
     body.broadcasting .bc-stage .bc-finish-stamp {
-      left: ${FINISH_RATIO * 100}% !important;
+      left: calc(var(--course-finish-x, ${FINISH_ENTER}) * 100%) !important;
+    }
+    body.broadcasting .bc-stage[data-race-state="running"] .race-start-gate,
+    body.broadcasting .bc-stage[data-race-state="finished"] .race-start-gate {
+      display: none !important;
+      opacity: 0 !important;
     }
   `;
   document.head.appendChild(style);
 }
 
-function raceX(runner) {
-  const raw = runner?.style?.getPropertyValue("--race-x") || "";
-  const n = Number.parseFloat(raw);
-  return Number.isFinite(n) ? n : 0;
-}
+function clamp01(n) { return Math.max(0, Math.min(1, n)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
 
 function tick() {
-  const next = document.querySelector("#bc-stage");
-  if (next !== stage) {
-    stage = next;
-    armed = false;
-  }
-
+  const stage = document.querySelector("#bc-stage");
   if (stage) {
     ensureStyle();
-    const state = stage.dataset.raceState || "";
-    const track = stage.querySelector("#bc-track");
-
-    if (state === "idle" || state === "countdown") {
-      armed = false;
-    } else if (!armed && track) {
-      const width = Math.max(1, track.clientWidth || 1);
-      let leader = 0;
-      stage.querySelectorAll(".bc-runner").forEach((runner) => {
-        leader = Math.max(leader, raceX(runner) / width);
-      });
-      if (leader >= REVEAL_RATIO) armed = true;
+    const state = stage.dataset.raceState || "idle";
+    const runners = [...stage.querySelectorAll(".bc-runner")];
+    let leader = 0;
+    for (const runner of runners) {
+      const raw = runner.style.getPropertyValue("--race-progress");
+      const p = Number.parseFloat(raw);
+      if (Number.isFinite(p)) leader = Math.max(leader, p);
     }
 
-    stage.dataset.finishArmed = armed ? "true" : "false";
+    if (state === "idle" || state === "countdown" || leader < PAN_START) {
+      stage.style.setProperty("--course-finish-x", String(FINISH_ENTER));
+      stage.style.setProperty("--course-finish-visible", "0");
+      stage.style.setProperty("--course-freeze-pan", "0");
+    } else {
+      const travel = clamp01((leader - PAN_START) / (PAN_END - PAN_START));
+      const x = travel < 0.62
+        ? lerp(FINISH_ENTER, FINISH_CROSS, travel / 0.62)
+        : lerp(FINISH_CROSS, FINISH_EXIT, (travel - 0.62) / 0.38);
+      stage.style.setProperty("--course-finish-x", x.toFixed(5));
+      stage.style.setProperty("--course-finish-visible", x > -0.06 && x < 1.04 ? "1" : "0");
+      stage.style.setProperty("--course-freeze-pan", travel >= 0.62 ? "1" : "0");
+    }
   }
-
   raf = requestAnimationFrame(tick);
 }
 
