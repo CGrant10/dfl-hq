@@ -101,7 +101,22 @@ export function simulate(racers: readonly RaceRacer[], ticks: number, seed: numb
   const target = new Float64Array(n).fill(base);
   const burst = new Int16Array(n);
   const stumble = new Int16Array(n);
-  const maxTicks = Math.ceil(ticks * 1.6);
+
+  /*
+    EVERY RACER MUST ACTUALLY CROSS.
+
+    The old 1.6x guard was close enough to the slowest legitimate pace that
+    an unlucky tail racer could hit it at 98-99%. At that point the samples
+    stopped, their lane froze beside the stripe, and only their finish time
+    kept advancing by extrapolation. Visually they could sit at the line for
+    seconds and then be ranked behind racers who appeared to arrive later.
+
+    The speed floor below guarantees forward motion. 3.1x is therefore only
+    an emergency guard, far beyond any normal finish, while still protecting
+    against a pathological loop. Normal races are unchanged before the old
+    cutoff; slow racers simply keep running until they truly cross.
+  */
+  const maxTicks = Math.ceil(ticks * 3.1);
   const samples = Array.from({ length: n }, () => new Float32Array(maxTicks + 1));
   const finishAt = new Float64Array(n).fill(-1);
 
