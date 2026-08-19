@@ -1627,6 +1627,63 @@ a.moment:hover { background: var(--hover-soft); }
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
 /* =====================================================================
+   DFL SPORTSBOOK - hierarchy, not more boxes.
+   The board was legible in structure and illegible in practice: every market
+   printed every outcome at the same weight in one column. The price column is
+   the fix - a betting board is read down its numbers.
+   ===================================================================== */
+.sb-bankroll .sb-balance { font-size: 28px; font-variant-numeric: tabular-nums; }
+.sb-claim-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-top: .7rem; }
+.sb-claim { font-weight: 700; }
+
+.sb-section + .sb-section { margin-top: 1.1rem; }
+.sb-market + .sb-market { margin-top: .6rem; }
+.sb-note { margin: .1rem 0 .5rem; }
+
+/* One row per outcome: name on the left, price in a column that lines up. */
+.sb-outcomes { display: grid; gap: .35rem; margin-top: .55rem; }
+.sb-outcome {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .6rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: rgba(255,255,255,.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sb-outcome:hover { background: rgba(255,255,255,.07); }
+.sb-outcome-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Tabular figures so -110 and +2500 sit in the same column width. */
+.sb-price { font-variant-numeric: tabular-nums; font-weight: 700; }
+/* A ticket you already hold, marked where the decision is made rather than
+   only in the tickets list further down. */
+.sb-outcome.is-mine { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.sb-held {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .08em;
+  padding: .1rem .35rem; border-radius: .3rem;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.sb-line + .sb-line { border-top: 1px solid var(--line); padding-top: .6rem; margin-top: .6rem; }
+.sb-line-head { font-size: .78rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.sb-house { margin-top: .45rem; font-size: .8rem; color: var(--muted); }
+
+.sb-ticket-foot { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; }
+.sb-book summary { font-weight: 700; }
+
+@media (max-width: 480px) {
+  /* The label is what gets squeezed on a phone, never the price. */
+  .sb-outcome { padding: .55rem .6rem; }
+  .sb-bankroll .sb-balance { font-size: 24px; }
+}
+
+/* =====================================================================
    YOUR OWN KEEPER. Sits under the Advisor and takes its options from it.
    Deliberately plain: the Advisor above is the card doing the persuading, and
    two accent-heavy cards in a row read as an argument with itself.
