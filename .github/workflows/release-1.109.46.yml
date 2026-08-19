@@ -1,3 +1,4 @@
+# Triggered after workflow existed on main.
 name: One-shot v1.109.46 cleanup
 
 on:
@@ -29,9 +30,6 @@ jobs:
           from pathlib import Path
           import json, re
 
-          # Arena: remove the dramatic photo-finish special case. Setting the
-          # threshold below any valid (non-negative) gap makes the existing
-          # branch unreachable; the normal crossing/timing path stays intact.
           p = Path('src/arena/finish-presentation.ts')
           s = p.read_text()
           old = 'export const PHOTO_FINISH_THRESHOLD_MS = 180;'
@@ -40,8 +38,6 @@ jobs:
           s = s.replace(old, 'export const PHOTO_FINISH_THRESHOLD_MS = -1; // Disabled: close races run straight through like every other finish.')
           p.write_text(s)
 
-          # Chip Eaters: compact single-line rows, and place the section AFTER
-          # the active History content instead of ahead of Hall of Fame/tabs.
           p = Path('js/chip-eaters.js')
           s = p.read_text()
           start = s.index('function card(rows){')
@@ -56,7 +52,6 @@ jobs:
           s = s.replace(old_pos, new_pos)
           p.write_text(s)
 
-          # Synced PWA release markers.
           version = '1.109.46'
           Path('version.txt').write_text(version)
 
