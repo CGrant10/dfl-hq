@@ -19,14 +19,25 @@ export async function render(view) {
   view.innerHTML = `<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
 
   let wallet, ledger, leaders, markets, outcomes, bets;
+  let autoReady = true;
+  let autoState = null;
   try {
     const touch = await db().rpc("sportsbook_touch_wallet");
     if (touch.error) throw touch.error;
     wallet = touch.data?.[0] || null;
+
+    // Auto-board is additive and backward safe. If the new migration has not
+    // been installed yet, the manual Sportsbook keeps working.
+    try {
+      const maintain = await db().rpc("sportsbook_maintain_auto_board", { target_open: 4 });
+      if (maintain.error) throw maintain.error;
+      autoState = maintain.data?.[0] || null;
+    } catch { autoReady = false; }
+
     const [ledgerRes, leaderRes, marketRes, outcomeRes, betsRes] = await Promise.all([
       db().rpc("sportsbook_my_ledger", { row_limit: 16 }),
       db().rpc("sportsbook_leaderboard"),
-      db().from("sportsbook_markets").select("*").order("created_at", { ascending:false }).limit(40),
+      db().from("sportsbook_markets").select("*").order("created_at", { ascending:false }).limit(60),
       db().from("sportsbook_outcomes").select("*").order("sort_order"),
       db().rpc("sportsbook_my_bets", { row_limit: 30 }),
     ]);
@@ -51,6 +62,7 @@ export async function render(view) {
   const marketMap = new Map(markets.map((m) => [String(m.id), m]));
   const outcomeMap = new Map(outcomes.map((o) => [String(o.id), o]));
   const open = markets.filter(isOpen);
+  const rulings = markets.filter((m) => m.status === "locked");
   const canBook = hasPermission("sportsbook");
 
   view.innerHTML = `<div id="sportsbook-wrap">
@@ -64,9 +76,13 @@ export async function render(view) {
       <div class="row" style="margin-top:10px">
         ${Number(wallet?.credited || 0) > 0 ? `<span class="pill green">+${wallet.credited} daily SIN</span>` : ""}
         <span class="pill">Next drip ${esc(fmtTime(wallet?.next_daily_at))}</span>
+        ${autoReady ? `<span class="pill green">Lore board · ${Number(autoState?.open_auto ?? open.filter((m)=>m.auto_key).length)} live</span>` : `<span class="pill warn">Auto board not installed</span>`}
       </div>
     </section>
 
+    ${!autoReady ? `<div class="card note"><div class="card-body"><strong>League Lore is waiting outside the casino.</strong><br><span class="muted">Run <strong>sportsbook_auto_schema.sql</strong> in Supabase to turn on rotating offseason props.</span></div></div>` : ""}
+
+    ${canBook && rulings.length ? rulingQueue(rulings, byMarket) : ""}
     ${canBook ? commissionerBook() : ""}
 
     <section class="block">
@@ -88,17 +104,31 @@ export async function render(view) {
   </div>`;
 
   wireBets(view, outcomeMap);
-  if (canBook) wireCommissioner(view, byMarket);
+  if (canBook) wireCommissioner(view);
+}
+
+function rulingQueue(markets, byMarket) {
+  return `<section class="block"><h2 class="section-title">Needs a ruling<span class="count">${markets.length}</span></h2>
+    <div class="card note"><div class="card-body muted">These props closed outside the app. Pick what actually happened, or void it and every open ticket gets refunded.</div></div>
+    ${markets.map((m) => {
+      const outcomes = byMarket.get(String(m.id)) || [];
+      return `<article class="card">
+        <span class="muted tiny">${esc(String(m.category || "DFL").toUpperCase())} · HOUSE RULING</span>
+        <h3 class="card-heading">${esc(m.title)}</h3>
+        <div class="row" style="gap:8px;flex-wrap:wrap">${outcomes.map((o) => `<button type="button" class="btn small" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)} won</button>`).join("")}</div>
+        <div class="card-meta"><button type="button" class="linkbtn" data-void-market="${m.id}">Void + refund</button></div>
+      </article>`;
+    }).join("")}</section>`;
 }
 
 function commissionerBook() {
   return `<section class="block"><h2 class="section-title">The window</h2>
     <form class="card" id="sportsbook-market-form">
       <div class="card-title">Post a Commissioner Special</div>
-      <p class="muted tiny">Marvel. Gaming. Fantasy. Golf. Dumb bets about the draft. If two outcomes can happen, the window can take action.</p>
+      <p class="muted tiny">Lore keeps the offseason board alive automatically. This window is for the specific nonsense only a commissioner can dream up.</p>
       <label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Will someone complain about a rule before Week 3?">
       <label for="book-category">Category</label>
-      <select id="book-category"><option>DFL</option><option>Fantasy</option><option>Golf</option><option>Marvel</option><option>Gaming</option></select>
+      <select id="book-category"><option>DFL Life</option><option>Fantasy</option><option>Golf</option><option>Marvel</option><option>Gaming</option></select>
       <label for="book-close">Closes</label><input id="book-close" type="datetime-local">
       <label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="The house has seen this movie before.">
       <div class="section-head"><h3>Lines</h3></div>
@@ -112,16 +142,17 @@ function outcomeInput(n,label,odds) {
 
 function marketCard(m, outcomes, bets, canBook) {
   const mine = new Set((bets || []).filter((b) => String(b.market_id) === String(m.id) && b.status === "open").map((b) => String(b.outcome_id)));
+  const source = m.auto_key ? "LEAGUE LORE · AUTO BOARD" : (m.source === "lore" ? "LEAGUE LORE" : "COMMISSIONER SPECIAL");
   return `<article class="card">
-    <div class="card-title-row"><div><span class="muted tiny">${esc(String(m.category || "DFL").toUpperCase())} · ${m.source === "lore" ? "LEAGUE LORE" : "COMMISSIONER SPECIAL"}</span><h3 class="card-heading" style="margin-top:3px">${esc(m.title)}</h3></div>${m.closes_at ? `<span class="pill">Closes ${esc(fmtTime(m.closes_at))}</span>` : ""}</div>
+    <div class="card-title-row"><div><span class="muted tiny">${esc(String(m.category || "DFL").toUpperCase())} · ${source}</span><h3 class="card-heading" style="margin-top:3px">${esc(m.title)}</h3></div>${m.closes_at ? `<span class="pill">Closes ${esc(fmtTime(m.closes_at))}</span>` : ""}</div>
     ${m.lore_note ? `<p class="muted">${esc(m.lore_note)}</p>` : ""}
     <div style="display:grid;gap:8px;margin-top:10px">${outcomes.map((o) => `<button class="btn ghost" data-bet-outcome="${o.id}" style="display:flex;justify-content:space-between;align-items:center"><span>${esc(o.label)}${mine.has(String(o.id)) ? ` <small>· ticket open</small>` : ""}</span><strong>${fmtOdds(o.odds_american)}</strong></button>`).join("")}</div>
-    ${canBook ? `<div class="card-meta">Settle winner: ${outcomes.map((o) => `<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")}</div>` : ""}
+    ${canBook && !m.auto_key ? `<div class="card-meta">Settle early: ${outcomes.map((o) => `<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>` : ""}
   </article>`;
 }
 function ticketCard(b, marketMap, outcomeMap) {
   const m = marketMap.get(String(b.market_id)); const o = outcomeMap.get(String(b.outcome_id));
-  return `<div class="card"><div class="card-title-row"><div><strong>${esc(o?.label || "Ticket")}</strong><div class="muted tiny">${esc(m?.title || "DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status === "won" ? "green" : b.status === "lost" ? "grey" : ""}">${esc(b.status)}</span></div><div class="card-meta">${b.stake} SIN risked · ${b.potential_payout} SIN return</div></div>`;
+  return `<div class="card"><div class="card-title-row"><div><strong>${esc(o?.label || "Ticket")}</strong><div class="muted tiny">${esc(m?.title || "DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status === "won" ? "green" : b.status === "lost" ? "grey" : b.status === "void" ? "warn" : ""}">${esc(b.status)}</span></div><div class="card-meta">${b.stake} SIN risked · ${b.potential_payout} SIN return</div></div>`;
 }
 
 function wireBets(view, outcomeMap) {
@@ -167,7 +198,7 @@ function wireCommissioner(view) {
   });
 
   view.querySelectorAll("[data-settle-market]").forEach((btn) => btn.addEventListener("click", async () => {
-    const label = btn.textContent.trim();
+    const label = btn.textContent.replace(/ won$/i, "").trim();
     if (!confirm(`Settle this market with ${label} as the winner? This pays every winning ticket.`)) return;
     btn.disabled = true;
     try {
@@ -178,5 +209,15 @@ function wireCommissioner(view) {
       if (error) throw error;
       toast("Market settled. The house has spoken."); render(view);
     } catch (err) { toast(err.message || "Could not settle that market", true); btn.disabled = false; }
+  }));
+
+  view.querySelectorAll("[data-void-market]").forEach((btn) => btn.addEventListener("click", async () => {
+    if (!confirm("Void this market and refund every open ticket?")) return;
+    btn.disabled = true;
+    try {
+      const { error } = await db().rpc("sportsbook_void_market", { target_market_id: Number(btn.dataset.voidMarket) });
+      if (error) throw error;
+      toast("Market voided. SIN refunded."); render(view);
+    } catch (err) { toast(err.message || "Could not void that market", true); btn.disabled = false; }
   }));
 }
