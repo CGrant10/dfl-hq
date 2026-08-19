@@ -19,13 +19,34 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
+-- DROP FIRST. `create or replace` CANNOT WIDEN A RETURN TYPE.
+--
+-- sportsbook_schema.sql declared this as
+--   returns table(balance, credited, last_daily_at, next_daily_at)
+-- and the version below adds `claimable` and `claimable_days`. A row type
+-- defined by OUT parameters is part of the signature, so Postgres refuses the
+-- replace with 42P13 rather than quietly changing it - which is the right call
+-- and the reason this drop has to be explicit.
+--
+-- Plain DROP, never CASCADE: cascade would take dependent objects with it and
+-- there is no need. sportsbook_place_bet() calls this function, but PL/pgSQL
+-- resolves calls at RUN time, not at creation time, so it survives the drop and
+-- picks up the new definition on its next call. The grant goes with the old
+-- function and is re-issued below.
+--
+-- Safe to re-run: `if exists` means a fresh database, a half-applied run and a
+-- second pass all behave the same.
+-- ---------------------------------------------------------------------
+drop function if exists public.sportsbook_touch_wallet();
+
+-- ---------------------------------------------------------------------
 -- REPORT ONLY. No credit, no ledger row, no clock movement.
 --
 -- The return shape gains `claimable` and `claimable_days` and keeps `credited`
 -- so an un-updated client still reads a number rather than undefined - it is
 -- always 0 now, because this function no longer pays anybody.
 -- ---------------------------------------------------------------------
-create or replace function public.sportsbook_touch_wallet()
+create function public.sportsbook_touch_wallet()
 returns table(
   balance int,
   credited int,
@@ -78,7 +99,11 @@ grant execute on function public.sportsbook_touch_wallet() to anon, authenticate
 -- absence turning into a stored windfall, and it is the behaviour the old drip
 -- had, kept deliberately.
 -- ---------------------------------------------------------------------
-create or replace function public.sportsbook_claim_daily()
+/* Dropped first for the same reason: if this function's shape is ever widened,
+   a re-run would hit 42P13 exactly as touch_wallet() just did. */
+drop function if exists public.sportsbook_claim_daily();
+
+create function public.sportsbook_claim_daily()
 returns table(
   balance int,
   credited int,

@@ -132,7 +132,7 @@ Dependencies are real: a file that adds a column to `members` needs
 
 | # | File | What it establishes |
 |---|---|---|
-| 40 | `sportsbook_claim_schema.sql` | `sportsbook_claim_daily()`, and `sportsbook_touch_wallet()` rewritten to **report only**. Needs 33. The allowance used to be applied by `touch_wallet()` when the page loaded, so opening the Sportsbook was indistinguishable from taking part; the credit now sits behind a button. The economy is unchanged — 500 to open, 50 per elapsed day, ten days of catch-up, and the clock still advances across every elapsed day so a long absence is not a windfall. `for update` on the wallet row makes a double tap safe. Ends with a report of who has SIN waiting. |
+| 40 | `sportsbook_claim_schema.sql` | `sportsbook_claim_daily()`, and `sportsbook_touch_wallet()` rewritten to **report only**. Needs 33. The allowance used to be applied by `touch_wallet()` when the page loaded, so opening the Sportsbook was indistinguishable from taking part; the credit now sits behind a button. The economy is unchanged — 500 to open, 50 per elapsed day, ten days of catch-up, and the clock still advances across every elapsed day so a long absence is not a windfall. `for update` on the wallet row makes a double tap safe. **Drops `sportsbook_touch_wallet()` before recreating it** — the new version adds two OUT parameters, and a row type defined by OUT parameters is part of the signature, so `create or replace` refuses with 42P13. Plain drop, never cascade; `sportsbook_place_bet()` calls it but PL/pgSQL resolves calls at run time, so it survives. Ends with a report of who has SIN waiting. |
 
 ### Not schema
 
