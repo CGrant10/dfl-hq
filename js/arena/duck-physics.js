@@ -1,19 +1,17 @@
 // =====================================================================
-// Arena forward-only race physics
+// DFL Arena — equal-racer novelty race backbone
 // ---------------------------------------------------------------------
-// Inspired by the simple feel of novelty character races: racers continuously
-// move forward, their pace wanders, and whoever physically reaches 1.0 first
-// wins. The finish line has ZERO influence on movement.
-//
-// Same seed => same recording. Slow devices only drop display frames; they do
-// not change the result because the whole sample track is deterministic.
+// Deliberately simple: every racer starts equal, receives independent random
+// pace changes, and continuously moves forward. There are no racer traits,
+// handicaps, drafting, rubber-banding, comeback scripts, finish convergence,
+// or finish-aware movement. The visible crossing IS the result.
 // =====================================================================
 
 export const DUCK_TICK_MS = 40;
 
-function rng(seed) {
-  let a = seed >>> 0;
-  return function next() {
+function seededFallback(seed) {
+  let a = (Number(seed) || 1) >>> 0;
+  return () => {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -22,19 +20,28 @@ function rng(seed) {
   };
 }
 
-/**
- * Forward-only race.
- *
- * `ticks` is the approximate duration for an average racer, not a deadline.
- * Racers keep moving until every one physically crosses progress 1.0.
- */
+// Use browser crypto when available. The seed exists only as a deterministic
+// fallback for environments/tests without Web Crypto; it does not assign a
+// winner or give any racer a persistent advantage.
+function randomSource(seed) {
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.getRandomValues) {
+    const word = new Uint32Array(1);
+    return () => {
+      cryptoObj.getRandomValues(word);
+      return word[0] / 4294967296;
+    };
+  }
+  return seededFallback(seed);
+}
+
 export function simulateForwardRace(racers, ticks, seed) {
   const n = racers.length;
   if (!n) return { samples: [], order: [], ticks, frames: 0, finishTick: 0 };
 
-  const rand = rng(Number(seed) || 1);
-  const base = 1 / Math.max(1, ticks);
-  const maxTicks = Math.ceil(ticks * 2.75);
+  const rand = randomSource(seed);
+  const base = 1 / Math.max(1, Number(ticks) || 1);
+  const maxTicks = Math.ceil(Math.max(1, ticks) * 3);
 
   const progress = new Float64Array(n);
   const speed = new Float64Array(n);
@@ -43,14 +50,12 @@ export function simulateForwardRace(racers, ticks, seed) {
   const finishTick = new Float64Array(n).fill(-1);
   const samples = Array.from({ length: n }, () => new Float32Array(maxTicks + 1));
 
-  // Small stable personality difference, but nobody is assigned a winner.
-  const personality = Array.from({ length: n }, () => 0.94 + rand() * 0.12);
-
+  // Everyone is born equal. Only independent random pace changes separate them.
   for (let i = 0; i < n; i++) {
-    const initial = base * personality[i] * (0.86 + rand() * 0.28);
+    const initial = base * (0.72 + rand() * 0.56);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 3 + Math.floor(rand() * 8);
+    retargetAt[i] = 2 + Math.floor(rand() * 8);
   }
 
   let done = 0;
@@ -65,46 +70,21 @@ export function simulateForwardRace(racers, ticks, seed) {
         continue;
       }
 
-      const homeStretch = progress[i] >= 0.82;
-
-      // Pace changes every ~120-520ms. This is the whole drama: no arcs,
-      // rubber-banding, drafting, comeback scripts or finish-line logic.
+      // Frequent independent pace changes create the passing and bunching.
+      // This rule is identical at 5%, 50%, and 99% of the course.
       if (t >= retargetAt[i]) {
-        const wander = 0.62 + rand() * 0.86; // broad enough for real passes
-        const nextTarget = base * personality[i] * wander;
-
-        /*
-          RUN THROUGH THE STRIPE.
-
-          Novelty races read cleanly because nobody gets a fresh braking event
-          in the final few feet. Once a racer is genuinely coming home, their
-          pace may hold or improve but it never decays. The finish line itself
-          still has no input here; this is simply a no-brakes closing stretch.
-        */
-        target[i] = homeStretch
-          ? Math.max(target[i], speed[i], nextTarget, base * 1.02)
-          : nextTarget;
-        retargetAt[i] = t + 3 + Math.floor(rand() * 11);
+        target[i] = base * (0.50 + rand() * 1.10);
+        retargetAt[i] = t + 2 + Math.floor(rand() * 10);
       }
 
-      // Momentum keeps the random pace changes looking like running rather
-      // than teleporting between velocities.
-      const beforeSpeed = speed[i];
-      speed[i] += (target[i] - speed[i]) * 0.22;
-      if (homeStretch && speed[i] < beforeSpeed) speed[i] = beforeSpeed;
-
-      // Always moving. The finish line cannot slow, stop, hold or reverse one.
-      const floor = homeStretch ? base * 1.02 : base * 0.44;
-      const ceiling = base * 1.62;
-      if (speed[i] < floor) speed[i] = floor;
-      if (speed[i] > ceiling) speed[i] = ceiling;
+      // Smooth the random changes enough to look like motion, not teleporting.
+      speed[i] += (target[i] - speed[i]) * 0.28;
+      speed[i] = Math.max(base * 0.42, Math.min(base * 1.68, speed[i]));
 
       const before = progress[i];
       progress[i] += speed[i];
 
       if (progress[i] >= 1) {
-        // Exact sub-tick crossing. What reaches the line on screen is what gets
-        // timed; there is no separate appointment with an official finish.
         const fraction = speed[i] > 0 ? (1 - before) / speed[i] : 1;
         finishTick[i] = (t - 1) + Math.max(0, Math.min(1, fraction));
         progress[i] = 1;
@@ -115,16 +95,13 @@ export function simulateForwardRace(racers, ticks, seed) {
     }
   }
 
-  // Emergency only. With the positive floor, ordinary races finish far before
-  // this; if a pathological input gets here, continue mathematically rather
-  // than visually parking somebody near the stripe.
+  // Positive minimum speed means this should only cover pathological inputs.
   for (let i = 0; i < n; i++) {
     if (finishTick[i] < 0) {
       const remaining = Math.max(0, 1 - progress[i]);
-      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.44);
+      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.42);
     }
-    const held = samples[i][lastWritten] || Math.min(1, progress[i]);
-    for (let t = lastWritten + 1; t <= maxTicks; t++) samples[i][t] = held;
+    for (let t = lastWritten + 1; t <= maxTicks; t++) samples[i][t] = 1;
   }
 
   const order = racers
