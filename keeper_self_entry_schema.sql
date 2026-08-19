@@ -100,7 +100,7 @@ $$;
 -- all there are no locks to check and this degrades to the header alone.
 -- ---------------------------------------------------------------------
 create or replace function public.keeper_self_identity_ok(target_member bigint, attempted_pin text)
-returns boolean language plpgsql stable as $$
+returns boolean language plpgsql stable security definer set search_path = public as $$
 declare
   has_lock boolean := false;
 begin
@@ -129,9 +129,25 @@ $$;
 -- Does this member need to type a PIN to submit? The UI asks so it can show
 -- the field only when it will actually be required. It reports on the
 -- CALLER's own member id and nobody else's, so it leaks nothing.
+--
+-- SECURITY DEFINER, AND THE LACK OF IT WAS THE BUG.
+--
+-- profile_locks has RLS enabled with NO policies at all - deliberately, because
+-- the PIN hashes are private and every legitimate read goes through a definer
+-- RPC. So this function, running as the CALLER, could not see the lock and
+-- always answered "no PIN needed". The card therefore never drew the PIN field
+-- and posted attempted_pin: null.
+--
+-- keeper_set_self() IS definer, so it could see the lock, demanded a PIN, got
+-- null, and raised "That needs your Profile PIN" - every single time, with no
+-- field on screen to satisfy it. Two halves of one question, one running as the
+-- owner and one as the caller, disagreeing about whether a lock exists.
+--
+-- Both are definer now. Neither returns anything but a boolean about the
+-- caller's own member, so there is nothing here to leak.
 -- ---------------------------------------------------------------------
 create or replace function public.keeper_self_needs_pin()
-returns boolean language plpgsql stable as $$
+returns boolean language plpgsql stable security definer set search_path = public as $$
 declare me bigint := public.keeper_request_member();
 begin
   if me is null then return false; end if;

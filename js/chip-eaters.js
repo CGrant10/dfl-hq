@@ -1,4 +1,19 @@
-// DFL Chip Eaters — last place, permanently remembered.
+/*
+  DFL Chip Eaters - last place, permanently remembered.
+
+  TWO RULES THE COMMISSIONER SET, both of which the first cut got wrong:
+
+  1. LAST IN THE PLAYOFFS, NOT WORST RECORD. This read
+     sleeper_standings.rank, which the sync computes as record then points for -
+     the table going INTO the playoffs. Last place is decided in the losers
+     bracket, so it comes from sleeper_leagues.last_place_user_id, filled by the
+     sync from that bracket. A season the bracket cannot answer shows NO chip
+     eater rather than falling back to the record, because falling back to the
+     record is the thing that was wrong.
+
+  2. THE PUNISHMENT HISTORY STARTS AFTER 2021. Earlier seasons are not part of
+     it. FIRST_SEASON is the only place that is written down.
+*/
 import { db } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
@@ -6,7 +21,13 @@ import { canEdit } from "./inline.js";
 
 async function data(){
   const [leagues,standings,history,members]=await Promise.all([
-    db().from("sleeper_leagues").select("season,status").eq("status","complete"),
+    db().from("sleeper_leagues").select("season,status,last_place_user_id").eq("status","complete")
+      .then(r=>r,()=>({data:[],error:null}))
+      /* last_place_user_id arrives with chip_eater_schema.sql. Before that the
+         column does not exist and the select 42703s, so fall back to the shape
+         without it - the board then reports no automatic chip eaters, which is
+         correct rather than wrong. */
+      .then(async r=>r.error?await db().from("sleeper_leagues").select("season,status").eq("status","complete"):r),
     db().from("sleeper_standings").select("season,sleeper_user_id,team_name,rank,wins,losses,points_for"),
     db().from("history").select("id,year,category,winner,notes").eq("category","Chip Eater"),
     loadMembers({force:false}).then(data=>({data,error:null})).catch(error=>({data:[],error})),
@@ -14,19 +35,25 @@ async function data(){
   const error=leagues.error||standings.error||history.error||members.error;if(error)throw error;
   return {leagues:leagues.data||[],standings:standings.data||[],manual:history.data||[],members:members.data||[]};
 }
+/** The punishment history starts after 2021. Written down once. */
+export const FIRST_SEASON=2022;
+
 function automatic(d){
-  const complete=new Set(d.leagues.map(l=>Number(l.season))),bySeason=new Map();
-  for(const s of d.standings){const y=Number(s.season);if(!complete.has(y))continue;if(!bySeason.has(y))bySeason.set(y,[]);bySeason.get(y).push(s)}
   const bySleeper=new Map(d.members.filter(m=>m.sleeper_user_id).map(m=>[String(m.sleeper_user_id),m]));
-  return [...bySeason.entries()].map(([season,rows])=>{
-    const ranked=rows.filter(r=>Number.isFinite(Number(r.rank))&&Number(r.rank)>0).sort((a,b)=>Number(b.rank)-Number(a.rank));
-    if(!ranked.length)return null;const r=ranked[0],m=bySleeper.get(String(r.sleeper_user_id));
-    return {season,memberId:m?.id||null,name:m?.display_name||r.team_name||"Unknown",team:r.team_name||m?.team_name||"",rank:Number(r.rank),manual:false,done:false};
-  }).filter(Boolean);
+  const teamNameOf=new Map(d.standings.map(s=>[`${s.season}:${s.sleeper_user_id}`,s.team_name||""]));
+  return d.leagues
+    .filter(l=>Number(l.season)>=FIRST_SEASON&&l.last_place_user_id)
+    .map(l=>{
+      const season=Number(l.season),uid=String(l.last_place_user_id),m=bySleeper.get(uid);
+      return {season,memberId:m?.id||null,
+        name:m?.display_name||teamNameOf.get(`${season}:${uid}`)||"Unknown",
+        team:teamNameOf.get(`${season}:${uid}`)||m?.team_name||"",
+        manual:false,done:false};
+    });
 }
 function chipEaters(d){
   const auto=new Map(automatic(d).map(r=>[Number(r.season),r]));
-  for(const h of d.manual){const y=Number(h.year);const m=d.members.find(x=>String(x.display_name).toLowerCase()===String(h.winner||"").toLowerCase()||String(x.team_name||"").toLowerCase()===String(h.winner||"").toLowerCase());auto.set(y,{season:y,memberId:m?.id||null,name:h.winner||m?.display_name||"Unknown",team:m?.team_name||"",manual:true,done:/complete|completed|ate|done/i.test(h.notes||""),historyId:h.id,notes:h.notes||""})}
+  for(const h of d.manual){const y=Number(h.year);if(y<FIRST_SEASON)continue;const m=d.members.find(x=>String(x.display_name).toLowerCase()===String(h.winner||"").toLowerCase()||String(x.team_name||"").toLowerCase()===String(h.winner||"").toLowerCase());auto.set(y,{season:y,memberId:m?.id||null,name:h.winner||m?.display_name||"Unknown",team:m?.team_name||"",manual:true,done:/complete|completed|ate|done/i.test(h.notes||""),historyId:h.id,notes:h.notes||""})}
   return [...auto.values()].sort((a,b)=>b.season-a.season);
 }
 function card(rows){return `<section class="card" data-chip-eaters><div class="card-title-row"><div class="card-title">🌶️ Chip Eaters</div>${canEdit()?`<button class="btn ghost small" type="button" data-chip-correct>Correct season</button>`:""}</div><div class="card-body">${rows.length?rows.map(r=>`<div class="row" style="justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.08))"><span><strong>${esc(r.season)}</strong> · ${r.memberId?`<a class="plainlink" href="#/profile?id=${r.memberId}">${esc(r.name)}</a>`:esc(r.name)}${r.team&&r.team!==r.name?` <span class="muted tiny">· ${esc(r.team)}</span>`:""}</span><span class="row" style="gap:6px">${r.done?`<span class="pill green">Chip eaten</span>`:""}${canEdit()?`<button class="linkbtn" type="button" data-chip-done="${r.season}" data-chip-name="${esc(r.name)}">${r.done?"Undo":"Mark eaten"}</button>`:""}</span></div>`).join(""):`<span class="muted">No completed seasons yet.</span>`}</div></section>`}

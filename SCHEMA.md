@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 43 `.sql` files (one base plus 42 additive) and the
+one in.** This exists because the repository has 44 `.sql` files (one base plus 43 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -139,6 +139,12 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 41 | `activity_log_schema.sql` | `activity_log`, one AFTER trigger per watched table (`activity_record()`), and `activity_feed(row_limit)` which collapses a burst into one line per (entity, action, member, five-minute window). Needs 2; every other table is optional and skipped with a notice if absent. **Triggers rather than client calls** — a row cannot change without the log seeing it, whoever wrote it, including the Supabase table editor. **Stores no column values**: table, row id, insert/update/delete, who held the app, whether they held a privileged session, and when. No insert policy at all — rows arrive only through the `security definer` trigger, so the log cannot be forged or cleared by a client. The trigger swallows its own errors: a missing feed line is a nuisance, a refused keeper is a bug. |
+
+### The Chip Eater
+
+| # | File | What it establishes |
+|---|---|---|
+| 42 | `chip_eater_schema.sql` | `sleeper_leagues.last_place_user_id`. Needs 9, and needs **Sync Sleeper** run afterwards to populate it. The Chip Eater was being read from `sleeper_standings.rank`, which the sync computes as record-then-points-for — the table going *into* the playoffs. Last place is decided in the losers bracket, so the sync reads that bracket (`js/sleeper-bracket.js` `readLastPlace()`) and stores the owner here. `NULL` is a real answer: a league running no consolation bracket has no last place, and the season shows no Chip Eater rather than a guess. Ends with a report comparing what the bracket says against what the old record-based rule would have said. |
 
 ### Not schema
 

@@ -24,6 +24,19 @@
   border-radius: var(--r-md);
   overflow: hidden;
 }
+/*
+  A FIXED THREE-UP, for a grid whose cell count is known.
+
+  auto-fit is right when the number of stats varies. When it is exactly six, it
+  fits four on a phone and leaves a two-cell orphan row under the figures the
+  card exists to show. Three columns divides six at every width this app runs
+  at, and six divides it on anything wide enough for six.
+*/
+.statgrid.is-3up { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 720px) {
+  .statgrid.is-3up { grid-template-columns: repeat(6, 1fr); }
+}
+
 .statgrid > * {
   background: var(--bg-2);
   padding: var(--s-3);

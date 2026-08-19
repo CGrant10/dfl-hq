@@ -17,6 +17,7 @@
 // =====================================================================
 
 import { db } from "./supabase.js";
+import { readWinners, readLastPlace } from "./sleeper-bracket.js";
 import { sleeper } from "./sleeper.js";
 
 const MAX_SEASONS = 20;   // stops a broken chain from looping forever
@@ -150,10 +151,13 @@ async function syncSeason(league, season, log) {
   const leagueId = league.league_id;
   const counts = { users: 0, rosters: 0, matchups: 0, transactions: 0 };
 
-  const [users, rosters, bracket] = await Promise.all([
+  const [users, rosters, bracket, losers] = await Promise.all([
     sleeper.users(leagueId),
     sleeper.rosters(leagueId),
     sleeper.winnersBracket(leagueId).catch(() => null),
+    /* A league that runs no consolation bracket 404s here, and that is a valid
+       league - last place is then simply unknown rather than guessed. */
+    sleeper.losersBracket(leagueId).catch(() => null),
   ]);
 
   // roster_id -> owner user id, needed all over the place below
@@ -206,6 +210,10 @@ async function syncSeason(league, season, log) {
 
   // ---- champion / runner up from the playoff bracket ----
   const { championRoster, runnerUpRoster } = readBracket(bracket);
+  /* DEAD LAST COMES FROM THE LOSERS BRACKET, never from the standings table.
+     `rank` there is record then points for - what the table looked like going
+     INTO the playoffs - and the Chip Eater is who came last coming out of them. */
+  const lastPlaceRoster = readLastPlace(losers);
 
   await upsert("sleeper_leagues", [{
     sleeper_league_id:  leagueId,
@@ -220,6 +228,7 @@ async function syncSeason(league, season, log) {
     previous_league_id: league.previous_league_id || null,
     champion_user_id:   championRoster != null ? ownerOf.get(championRoster) ?? null : null,
     runner_up_user_id:  runnerUpRoster != null ? ownerOf.get(runnerUpRoster) ?? null : null,
+    last_place_user_id: lastPlaceRoster != null ? ownerOf.get(lastPlaceRoster) ?? null : null,
     // Kept as well as the user id: a winner whose Sleeper account was
     // later deleted has no owner, and without this the season looks like
     // it has no champion at all. The roster still names the team.
@@ -419,22 +428,16 @@ function pairMatchups(raw, season, week, ownerOf, leagueId) {
   return rows;
 }
 
-/**
- * The winners bracket is a list of games. The championship game is the
- * one marked p:1 ("playing for 1st"); fall back to the final round.
- */
-function readBracket(bracket) {
-  if (!bracket?.length) return { championRoster: null, runnerUpRoster: null };
+/*
+  readBracket() USED TO LIVE HERE.
 
-  let final = bracket.find((g) => g.p === 1);
-  if (!final) {
-    const lastRound = Math.max(...bracket.map((g) => g.r || 0));
-    final = bracket.find((g) => g.r === lastRound);
-  }
-  if (!final || final.w == null) return { championRoster: null, runnerUpRoster: null };
-
-  return { championRoster: final.w, runnerUpRoster: final.l ?? null };
-}
+  It moved to js/sleeper-bracket.js, unchanged, so it could be spec'd - sync.js
+  imports the database and therefore cannot be. It went with a new sibling,
+  readLastPlace(), which is the one this file actually needed and which had no
+  home. Both now have tests, which matters for a guess about somebody else's
+  data format whose failure mode is a wrong name carved into league history.
+*/
+const readBracket = readWinners;
 
 // ---------------------------------------------------------------------
 // Plumbing

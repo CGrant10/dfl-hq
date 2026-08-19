@@ -27,6 +27,9 @@ export const sleeper = {
   matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`),
   transactions: (id, week)    => get(`/league/${id}/transactions/${week}`),
   winnersBracket: (id)        => get(`/league/${id}/winners_bracket`),
+  /* Last place is decided here, not by the regular-season table. See
+     js/sleeper-bracket.js readLastPlace(). */
+  losersBracket:  (id)        => get(`/league/${id}/losers_bracket`),
   /*
     THE DRAFT. Two calls: the league's drafts (one per season for DFL), then
     that draft's picks. A pick carries round, pick_no, draft_slot, player_id,

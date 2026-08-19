@@ -230,6 +230,24 @@ function careerTotals(seasons, leagues, userId) {
   };
 }
 
+/*
+  THE CAREER CARD.
+
+  Three changes from the first version, all of them subtraction:
+
+  1. SIX CELLS IN A DELIBERATE GRID. .statgrid is auto-fit at minmax(84px,1fr),
+     which on a 375px phone fits four - so six stats wrapped 4 + 2 and left a
+     half-empty row under the numbers that are the point of the card. `.statgrid
+     is-3up` pins it to three columns, so it reads 3 + 3 on a phone and six
+     across on a desktop. Nothing is ragged at any width.
+
+  2. WIN % IS GONE. It sat immediately beside Record, from which it is exactly
+     derivable, and it was the sixth number competing for the same glance. The
+     record is the fact; the percentage was a restatement of it.
+
+  3. "N seasons on record" WAS A SENTENCE UNDER A GRID OF NUMBERS. It is a
+     number, so it is a cell - and the card loses its footer entirely.
+*/
 function careerCard(c, seasonCount) {
   if (!seasonCount) {
     return `<div class="card"><div class="card-title">Career</div>${empty(
@@ -238,15 +256,14 @@ function careerCard(c, seasonCount) {
   return `
     <div class="card">
       <div class="card-title">Career</div>
-      <div class="statgrid">
+      <div class="statgrid is-3up">
+        ${stat("Seasons", seasonCount)}
         ${stat("Record", `${c.wins}-${c.losses}${c.ties ? "-" + c.ties : ""}`)}
-        ${stat("Win %", (c.winPct * 100).toFixed(1) + "%")}
         ${stat("Points", Math.round(c.pointsFor).toLocaleString())}
         ${stat("Avg finish", c.avgFinish ? c.avgFinish.toFixed(1) : "—")}
         ${stat("Playoffs", c.playoffs)}
         ${stat("Titles", c.titles)}
       </div>
-      <div class="card-meta">${seasonCount} season${seasonCount === 1 ? "" : "s"} on record.</div>
     </div>`;
 }
 
