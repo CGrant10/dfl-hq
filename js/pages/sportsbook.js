@@ -17,10 +17,15 @@ export async function render(view){
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
   let wallet,ledger,leaders,markets,outcomes,bets,autoState=null;
-  let autoReady=true,golfReady=true;
+  let autoReady=true,golfReady=true,golfError="";
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
-    try{const g=await db().rpc("sportsbook_maintain_golf_board");if(g.error)throw g.error;await db().rpc("sportsbook_reprice_open_golf").catch(()=>{});}catch{golfReady=false}
+    try{
+      const g=await db().rpc("sportsbook_maintain_golf_board");
+      if(g.error)throw g.error;
+      const repr=await db().rpc("sportsbook_reprice_open_golf");
+      if(repr.error)golfError=repr.error.message||String(repr.error);
+    }catch(err){golfReady=false;golfError=err?.message||String(err||"Golf board refresh failed")}
     try{const a=await db().rpc("sportsbook_maintain_auto_board",{target_open:6});if(a.error)throw a.error;autoState=a.data?.[0]||null}catch{autoReady=false}
     const[lr,br,mr,or,btr]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
@@ -31,17 +36,18 @@ export async function render(view){
     ]);
     const err=lr.error||br.error||mr.error||or.error||btr.error;if(err)throw err;
     ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];
-  }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook needs <strong>sportsbook_schema.sql</strong> in Supabase.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
+  }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
   const open=markets.filter(isOpen),golf=open.filter(isGolf),other=open.filter(m=>!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"),canBook=hasPermission("sportsbook");
+  const golfNotice=!golfReady&&golf.length===0?`<div class="card note"><div class="card-body"><strong>Golf board refresh failed.</strong>${golfError?`<br><span class="muted tiny">${esc(golfError)}</span>`:""}</div></div>`:"";
 
   view.innerHTML=`<div id="sportsbook-wrap">
     <header class="page-head"><h1>DFL Sportsbook</h1></header>
     ${bankrollCard(me,wallet,golf,open,autoReady,autoState)}
-    ${!golfReady?`<div class="card note"><div class="card-body"><strong>Golf lines unavailable.</strong><br><span class="muted">Run <strong>sportsbook_golf_schema.sql</strong> and <strong>golf_profile_schema.sql</strong>.</span></div></div>`:""}
+    ${golfNotice}
     ${golf.length?golfBoard(golf,byMarket,bets,canBook):""}
     ${categoryBoard(other,byMarket,bets,canBook)}
     ${bets.length?`<section class="block"><h2 class="section-title">Your tickets</h2>${bets.slice(0,10).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}</section>`:""}
