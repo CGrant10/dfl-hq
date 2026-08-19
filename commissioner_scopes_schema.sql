@@ -130,6 +130,16 @@ $$;
 -- ---------------------------------------------------------------------
 -- REPORT: every permission the Admin screen offers, and whether it now
 -- governs anything. Anything reading 0 is still a checkbox that does nothing.
+--
+-- pg_policies is a VIEW and names its columns policyname / tablename / qual.
+-- The underlying catalog pg_policy calls them polname / polrelid / polqual -
+-- the first cut mixed the two and this query died with 42703 while the DO block
+-- above had already done its work.
+--
+-- Counts DISTINCT TABLES, not policies: a table can carry both "admin write"
+-- and "commissioner write" naming the same permission, and counting rows would
+-- report it twice. Reads with_check as well as qual, because a policy can carry
+-- the permission in either.
 -- ---------------------------------------------------------------------
 with offered(permission_name) as (
   values ('announcements'),('calendar'),('polls'),('keepers'),('golf'),
@@ -139,11 +149,12 @@ with offered(permission_name) as (
 governed as (
   select
     o.permission_name,
-    count(p.polname) as tables_covered
+    count(distinct p.tablename) as tables_covered
   from offered o
   left join pg_policies p
     on p.schemaname = 'public'
-   and p.qual like '%' || quote_literal(o.permission_name) || '%'
+   and (coalesce(p.qual, '') || ' ' || coalesce(p.with_check, ''))
+       like '%' || quote_literal(o.permission_name) || '%'
   group by o.permission_name
 )
 select
