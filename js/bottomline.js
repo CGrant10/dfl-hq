@@ -59,10 +59,12 @@ function withOverride(source, item, overrides) {
   const ov = overrides.get(source);
   if (!ov) return item;
   if (ov.active === false) return null;
+  const rawText = String(ov.text || "").trim();
+  const text = /^\(automatic:/i.test(rawText) ? "" : rawText;
   return {
     ...item,
     label: String(ov.label || "").trim() || item.label,
-    text: String(ov.text || "").trim() || item.text,
+    text: text || item.text,
     route: String(ov.route || "").trim() || item.route,
   };
 }
@@ -262,8 +264,6 @@ export async function startBottomline(routeOf) {
   if (items.length) paintBottomline(routeOf(), location.hash);
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(() => refreshBottomline(routeOf), REFRESH_MS);
-  /* Recalculate only on an actual viewport resize. This preserves the normal
-     animation across route changes while still filling a resized desktop. */
   window.addEventListener("resize", () => {
     if (host && !host.classList.contains("is-static")) fillTickerWidth();
   }, { passive: true });
