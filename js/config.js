@@ -5,6 +5,13 @@ export const LEAGUE_NAME = "DFL HQ";
 export const LEAGUE_FOUNDED = 2017;
 export const FIRST_SYNCED_SEASON = 2019;
 
+/* DFL played two seasons before the synced Sleeper record begins. This is
+   tenure metadata only: it must never fabricate wins, points, finishes, or
+   rows for seasons whose box scores we do not have. */
+export const LEGACY_SEASONS = Math.max(0, FIRST_SYNCED_SEASON - LEAGUE_FOUNDED);
+export const dflSeasonCount = (syncedSeasons = 0) =>
+  Math.max(0, Number(syncedSeasons) || 0) + LEGACY_SEASONS;
+
 /*
   Normally the HTML meta is the browser-side version authority. 1.109.48 is a
   floor because this release adds an always-loaded Arena presentation module
