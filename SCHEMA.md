@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 45 `.sql` files (one base plus 44 additive) and the
+one in.** This exists because the repository has 46 `.sql` files (one base plus 45 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -151,6 +151,12 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 43 | `commissioner_scopes_schema.sql` | `"commissioner write"` policies for the four permissions that governed nothing: **sleeper** (all nine tables Sync Sleeper writes — this is what made a sync fail with *"new row violates row-level security policy for table sleeper_users"*), **fees** (five finance tables), **golf** (fifteen tables), and **members** (which had a client gate and no policy, so it passed the browser check and was refused by RLS). Needs 31. Uses a **distinct policy name** rather than reusing `"admin write"`, because several golf tables also carry a member-scoped self-write policy and RLS permissive policies are OR'd — a member keeps their own access and a commissioner gains theirs. The sportsbook is deliberately absent: its commissioner actions already run through `security definer` RPCs that check the permission themselves, and its wallets/bets/ledger are member-owned. Ends with a report of every offered permission and whether it now governs anything. |
+
+### Naming a champion or Chip Eater by hand
+
+| # | File | What it establishes |
+|---|---|---|
+| 44 | `season_result_override_schema.sql` | `sleeper_leagues.champion_locked` / `last_place_locked`, and `set_season_result()`. Needs 9, 42 and 31. **The override writes the same column everything else reads** — `champion_user_id` is read in fourteen files, so a separate override table would mean teaching all fourteen to prefer it and the one that got missed would disagree forever. The lock is what makes that safe: Sync Sleeper omits a locked column from its patch entirely rather than writing it back, so a season the bracket gets right stays automatic and one it cannot know stays corrected. Takes **member ids**, resolves them to Sleeper user ids itself, and **creates a placeholder league row** (`manual-<season>`) for a season Sleeper never had — which is the 2019 case. Passing null clears the lock and hands the column back to the sync. Ends with a report of every season, both titles, and whether a human set them. |
 
 ### Not schema
 

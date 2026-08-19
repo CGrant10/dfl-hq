@@ -139,7 +139,7 @@ export async function loadLore({ force = false } = {}) {
   const [leagues, standings, users, members, matchups, manual, arenaEvents, arenaResults, golf, config] =
     await Promise.all([
       db().from("sleeper_leagues")
-          .select("season,status,champion_user_id,runner_up_user_id,champion_roster_id,runner_up_roster_id,playoff_teams")
+          .select("season,status,champion_locked,champion_user_id,runner_up_user_id,champion_roster_id,runner_up_roster_id,playoff_teams")
           .order("season", { ascending: false }),
       db().from("sleeper_standings")
           .select("season,roster_id,sleeper_user_id,team_name,wins,losses,ties,points_for,points_against,rank,made_playoffs"),

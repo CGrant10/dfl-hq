@@ -1640,6 +1640,30 @@ a.moment:hover { background: var(--hover-soft); }
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
 /* =====================================================================
+   CLICK A NAME TO CHANGE IT.
+   The name has to look changeable without looking like a button in a table -
+   a dotted underline reads as "editable" and keeps the row a row.
+   ===================================================================== */
+.name-pick {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 45%, transparent);
+}
+.name-pick:hover,
+.name-pick:focus-visible { border-bottom-style: solid; }
+/* Sized to the row it replaces so the table does not jump when it opens. */
+.name-pick-select {
+  font: inherit;
+  max-width: 12rem;
+  padding: .1rem .2rem;
+}
+
+/* =====================================================================
    ACTIVITY - who changed what, on the front page.
    Three columns so the names line up, the verbs line up and the times line up:
    a feed is scanned down one of those three, never read across.

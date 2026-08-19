@@ -11,6 +11,8 @@
 // =====================================================================
 
 import { db } from "../supabase.js";
+import { editableName, wireNamePick } from "../name-pick.js";
+import { setSeasonResult } from "../season-result.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
 import { esc, empty, errorBox, groupBy, loading } from "../ui.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
@@ -119,6 +121,17 @@ export async function render(view) {
   // #hist-body is new on every render, so this cannot stack up.
   // An edited moment changes the derivation, so the cache goes with it.
   wireInline(body, () => { clearLore(); render(view); });
+  /*
+    CLICK A CHAMPION'S NAME TO CHANGE IT. Sleeper cannot know every answer -
+    the 2019 title belongs to a member who was removed from the league that
+    year - so the commissioner gets the list and the write locks the column
+    against the next sync. See season_result_override_schema.sql.
+  */
+  wireNamePick(body, data.members || [], async ({ field, key, memberId }) => {
+    await setSeasonResult({ season: Number(key), field, memberId });
+    clearLore();
+    render(view);
+  });
 
   paint();
   /* Arriving back on a tab that sits off the right of a phone screen should
@@ -161,7 +174,11 @@ function fameView(data) {
               ${titled.map((l) => `
                 <tr>
                   <td>${esc(l.season)}</td>
-                  <td>${nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}</td>
+                  <td>${canEdit() ? editableName({
+                    text: name(l.champion_user_id, l.season, l.champion_roster_id).label,
+                    field: "champion", key: l.season, canEdit: true,
+                  }) : nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}${
+                    l.champion_locked ? `<div class="muted tiny">set by hand</div>` : ""}</td>
                   <td class="muted">${l.runner_up_user_id || l.runner_up_roster_id
                     ? nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))
                     : "—"}</td>

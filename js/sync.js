@@ -215,6 +215,29 @@ async function syncSeason(league, season, log) {
      INTO the playoffs - and the Chip Eater is who came last coming out of them. */
   const lastPlaceRoster = readLastPlace(losers);
 
+  /*
+    A HUMAN'S ANSWER OUTRANKS THE BRACKET.
+
+    champion_locked / last_place_locked mean "a commissioner set this by hand,
+    leave it alone" - see season_result_override_schema.sql. The case that
+    demanded it: sheyg2014 won 2019 and Sleeper has no record, because he was
+    removed from the league that year. No amount of re-reading the API will
+    ever produce that answer, so a sync that overwrote it would undo the
+    correction every single time it ran.
+
+    Read before the upsert rather than merged in SQL, because upsert() is a
+    plain column write - putting the condition here keeps that helper dumb.
+    A database without the migration has no columns to read and locks nothing,
+    which is the old behaviour exactly.
+  */
+  let locks = { champion_locked: false, last_place_locked: false };
+  try {
+    const { data } = await db().from("sleeper_leagues")
+      .select("champion_locked,last_place_locked")
+      .eq("season", season).maybeSingle();
+    if (data) locks = data;
+  } catch { /* migration absent: nothing is locked */ }
+
   await upsert("sleeper_leagues", [{
     sleeper_league_id:  leagueId,
     season,
@@ -226,9 +249,17 @@ async function syncSeason(league, season, log) {
        guessing or hard-coding one. Reads 1 for every DFL season on record. */
     max_keepers:        league.settings?.max_keepers ?? null,
     previous_league_id: league.previous_league_id || null,
-    champion_user_id:   championRoster != null ? ownerOf.get(championRoster) ?? null : null,
+    /* Locked columns are omitted from the patch entirely rather than written
+       back with their current value - an upsert that names a column owns it,
+       and not naming it is the only way to be sure a race cannot lose the
+       commissioner's answer. */
+    ...(locks.champion_locked ? {} : {
+      champion_user_id: championRoster != null ? ownerOf.get(championRoster) ?? null : null,
+    }),
     runner_up_user_id:  runnerUpRoster != null ? ownerOf.get(runnerUpRoster) ?? null : null,
-    last_place_user_id: lastPlaceRoster != null ? ownerOf.get(lastPlaceRoster) ?? null : null,
+    ...(locks.last_place_locked ? {} : {
+      last_place_user_id: lastPlaceRoster != null ? ownerOf.get(lastPlaceRoster) ?? null : null,
+    }),
     // Kept as well as the user id: a winner whose Sleeper account was
     // later deleted has no owner, and without this the season looks like
     // it has no champion at all. The roster still names the team.
