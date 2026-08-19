@@ -273,6 +273,44 @@ function controls(items) {
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/*
+  THE TWO DECISIONS THE AUTOPLAY BUG LIVED IN, pulled out so they can be tested
+  without a browser.
+
+  They were four lines inside startStage()'s closure, which meant the only way to
+  check them was to drive a real stage - and a real stage refuses to rotate when
+  document.hidden is true, which it is in any headless or backgrounded pane. So
+  the bug that killed autoplay for every user was, in practice, unobservable in
+  a test. Now it is arithmetic.
+*/
+
+/** Selector for the stage's own controls: arrows, dots, pause. */
+export const STAGE_CONTROL = "[data-bx-step],[data-bx-go],[data-bx-pause]";
+
+/**
+ * Should focus on this element pause the rotation?
+ *
+ * The pause exists so a keyboard user READING a slide is not yanked to the next
+ * one. Focus landing on a NAV CONTROL is the opposite - somebody driving - and
+ * treating it as reading is what latched the pause forever: clicking an arrow
+ * focuses that arrow, focusout only fires when focus leaves the stage, and the
+ * button you just pressed is inside the stage.
+ */
+export function focusShouldPause(el) {
+  if (!el) return false;
+  return !el.closest?.(STAGE_CONTROL);
+}
+
+/**
+ * Is the deck allowed to advance on its own right now?
+ *
+ * One expression, four inputs, no DOM. `softSize` is the number of soft pauses
+ * held - hover, focus, hidden - and any one of them stops the clock.
+ */
+export function shouldRun({ dead = false, userPaused = false, softSize = 0, count = 0 } = {}) {
+  return !dead && !userPaused && softSize === 0 && count > 1;
+}
+
 /** Live data goes stale fastest, so a live deck re-checks itself. */
 const LIVE_POLL_MS = 15000;
 
@@ -302,7 +340,7 @@ export function startStage(root, deck, { refresh } = {}) {
      button would stop working. Click handling is delegated on root for the
      same reason. */
   const pauseBtn = () => root.querySelector("[data-bx-pause]");
-  const running = () => !dead && !userPaused && !soft.size && items.length > 1;
+  const running = () => shouldRun({ dead, userPaused, softSize: soft.size, count: items.length });
 
   function clear() { if (timer) { clearTimeout(timer); timer = null; } }
 
@@ -399,7 +437,20 @@ export function startStage(root, deck, { refresh } = {}) {
     moment you arrive - and then the deck carries on. The pause button is
     the thing that stops it, and it is still one tap away.
   */
-  const step = (delta) => { go(i + delta); };          // go() re-arms
+  const step = (delta) => {
+    /*
+      Driving the deck is the opposite of reading it, so any pause that only
+      meant "somebody is looking at this" comes off. The pause BUTTON is
+      untouched - that is a decision, not an inference.
+
+      softPause() rather than soft.delete(): the set is only half the state.
+      markStill() paints `is-paused` and arm() restarts the clock, and deleting
+      from the set behind their backs left the stage advancing while still
+      wearing its paused styling. Never touch `soft` directly.
+    */
+    softPause("focus", false);
+    go(i + delta);                                     // go() re-arms
+  };
 
   const onClick = (e) => {
     if (e.target.closest("[data-bx-pause]")) { setPaused(!userPaused); return; }
@@ -421,9 +472,40 @@ export function startStage(root, deck, { refresh } = {}) {
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
   const onVis = () => softPause("hidden", document.hidden);
-  const onEnter = () => softPause("hover", true);
+  /* =====================================================================
+     THE TWO LATCHES THAT KILLED AUTOPLAY AFTER ONE ARROW PRESS.
+
+     Both soft pauses were correct in intent and unreleasable in practice, and
+     between them "use the arrow once and the deck never moves again" was
+     guaranteed on every device.
+
+     1. FOCUS. Clicking an arrow FOCUSES that arrow. focusin fired,
+        softPause("focus") went on, and focusout only clears it when focus
+        leaves the stage entirely - which it never does, because the button you
+        just pressed is inside the stage. So the pause latched for the rest of
+        the visit.
+
+        The pause exists so a keyboard user reading a slide is not yanked to the
+        next one. Focus landing on a NAV CONTROL is not that: it is somebody
+        driving, and the comment above step() already says manual navigation
+        must not stop the broadcast. So the controls are excluded and focus
+        inside the slide content still pauses.
+
+     2. HOVER, on touch. pointerenter fires on a tap, and pointerleave often
+        does not fire until the pointer goes somewhere else - so tapping the
+        arrow on a phone latched "hover" with nothing to release it. Hover is a
+        mouse idea; it is now a mouse-only pause, and a touch tap that did
+        somehow set it is released on pointerup.
+  ===================================================================== */
+  const onEnter = (e) => {
+    if (e.pointerType && e.pointerType !== "mouse") return;
+    softPause("hover", true);
+  };
   const onLeave = () => softPause("hover", false);
-  const onFocusIn = () => softPause("focus", true);
+  const onFocusIn = (e) => {
+    if (!focusShouldPause(e.target)) return;
+    softPause("focus", true);
+  };
   const onFocusOut = (e) => {
     if (!root.contains(e.relatedTarget)) softPause("focus", false);
   };
@@ -476,6 +558,11 @@ export function startStage(root, deck, { refresh } = {}) {
     step(dx < 0 ? 1 : -1);                        // drag left = next
   };
   const onCancel = () => { tracking = false; };
+  /* Belt and braces for the touch case: whatever pointerenter did on the way
+     in, a lifted finger is not hovering. */
+  const onUpAlways = (e) => {
+    if (e.pointerType && e.pointerType !== "mouse") softPause("hover", false);
+  };
   /* Capture, so it runs before the anchor's own default action. */
   const onClickCapture = (e) => {
     if (!swiped) return;
@@ -487,6 +574,7 @@ export function startStage(root, deck, { refresh } = {}) {
   root.addEventListener("pointerdown", onDown);
   root.addEventListener("pointermove", onMove);
   root.addEventListener("pointerup", onUp);
+  root.addEventListener("pointerup", onUpAlways);
   root.addEventListener("pointercancel", onCancel);
   root.addEventListener("click", onClickCapture, true);
   root.addEventListener("keydown", onKey);
@@ -578,6 +666,7 @@ export function startStage(root, deck, { refresh } = {}) {
       root.removeEventListener("keydown", onKey);
       root.removeEventListener("contextmenu", onMenu);
       root.removeEventListener("dragstart", onDragStart);
+      root.removeEventListener("pointerup", onUpAlways);
       root.removeEventListener("pointerenter", onEnter);
       root.removeEventListener("pointerleave", onLeave);
       root.removeEventListener("focusin", onFocusIn);
