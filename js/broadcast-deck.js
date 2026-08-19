@@ -108,9 +108,9 @@ import { memberImage } from "./members.js";
   figure and a date.
 
   The floor is the entrance animation, and shortening THAT is what let these
-  come down. Glitch lock is ~520ms where the old staggered rise was ~700ms, so
-  a 3s slot now spends a sixth of its life arriving rather than a quarter -
-  3s reads as a held slide again, which it did not before.
+  come down. Press is ~380ms, ~490 with its stagger, where the old staggered
+  rise was ~700ms - so a 3s slot now spends a sixth of its life arriving rather
+  than a quarter, and 3s reads as a held slide again, which it did not before.
 
   Announcements keep the longest slot because they are the only treatment with
   a sentence to finish reading rather than a name to recognise.

@@ -439,44 +439,38 @@
    The stagger is CSS, but the ROTATION CLOCK IS NOT - see
    broadcast-stage.js for why that has to be JS.
 
-   The entrance itself is GLITCH LOCK, ~520ms end to end.
+   The entrance itself is PRESS, ~380ms, ~490ms with the stagger.
    ===================================================================== */
 
 /*
-  GLITCH LOCK. Chosen from the entrance reel, and it is the fastest thing in
-  that set for a reason: the whole entrance is 520ms, so a 3s slide spends a
-  sixth of its life arriving instead of a quarter.
+  PRESS, picked from the text reel. The shortest thing in that set: 380ms for
+  the headline, ~490ms including the stagger, against Glitch lock's 520 and the
+  original staggered rise's ~700. That saving is what pays for 3s slides.
 
-  Two ideas make it read as "locking on" rather than "sliding in":
+  One beat, and the whole idea is in the overshoot. The line arrives slightly
+  TOO BIG and is stamped down through its resting size to a hair under it
+  before settling - which reads as weight landing rather than as something
+  sliding in. Two properties, opacity and scale, and no third idea.
 
-    steps(1, end)   no interpolation. The text SNAPS between a handful of
-                    offsets like a signal finding itself, which is what a
-                    smooth translate can never look like however you ease it.
-    the fringe      text-shadow in the two accent colours, offset opposite
-                    ways and pulled to zero. Chromatic split, and it costs a
-                    shadow rather than a duplicated element.
-
-  The fringe uses --accent-fill / --accent-2-fill, so each theme glitches in
-  its OWN colours - the reel mocked it in crest red/blue, which would have
-  planted those two hues on every theme in the app.
+  Scale and not translate, deliberately: a scale has no direction, so the same
+  entrance works on a name, a score, a date and a three-line announcement
+  without one of them looking like it came from the wrong edge. It is also the
+  reason nothing here needs per-letter or windowed markup - the roll entrances
+  in the reel all did, which would have meant the deck rewriting slide HTML.
 */
-@keyframes bx-glitch {
-  0%   { opacity: 0; transform: translateX(-7px);
-         text-shadow: 4px 0 var(--accent-fill), -4px 0 var(--accent-2-fill); }
-  18%  { opacity: 1; transform: translateX(6px); }
-  34%  { transform: translateX(-4px);
-         text-shadow: -3px 0 var(--accent-fill), 3px 0 var(--accent-2-fill); }
-  52%  { transform: translateX(3px); }
-  70%  { transform: translateX(-1px);
-         text-shadow: 1px 0 var(--accent-fill), -1px 0 var(--accent-2-fill); }
-  100% { transform: none; text-shadow: none; }
-}
-/* The supporting lines settle in the same language, quieter and no fringe. */
-@keyframes bx-lock {
-  0%   { opacity: 0; transform: translateX(4px); }
-  30%  { opacity: 1; }
-  60%  { transform: translateX(-2px); }
+@keyframes bx-press {
+  0%   { opacity: 0; transform: scale(1.16); }
+  62%  { opacity: 1; transform: scale(.988); }
   100% { transform: none; }
+}
+/*
+  The supporting lines get the same move with the overshoot taken out. A kicker
+  punching in as hard as the headline reads as two headlines arriving; this is
+  the same language, one notch quieter.
+*/
+@keyframes bx-settle {
+  0%   { opacity: 0; transform: scale(1.05); }
+  100% { opacity: 1; transform: none; }
 }
 
 .bx-slide.bx-in .bx-kicker,
@@ -484,20 +478,20 @@
 .bx-slide.bx-in .bx-statword,
 .bx-slide.bx-in .bx-when-text,
 .bx-slide.bx-in .bx-body,
-.bx-slide.bx-in .bx-when            { animation: bx-lock 460ms steps(1, end) both; }
+.bx-slide.bx-in .bx-when            { animation: bx-settle 320ms var(--ease) both; }
 .bx-slide.bx-in .bx-name,
 .bx-slide.bx-in .bx-head,
-.bx-slide.bx-in .bx-figure          { animation: bx-glitch 520ms steps(1, end) both; }
-/* A very short stagger only. Anything longer and the 520ms saving is spent. */
+.bx-slide.bx-in .bx-figure          { animation: bx-press 380ms cubic-bezier(.2,1.1,.25,1) both; }
+/* A very short stagger only. Anything longer and the 380ms saving is spent. */
 .bx-slide.bx-in .bx-sub,
 .bx-slide.bx-in .bx-statword,
-.bx-slide.bx-in .bx-when-text       { animation-delay: 90ms; }
+.bx-slide.bx-in .bx-when-text       { animation-delay: 70ms; }
 .bx-slide.bx-in .bx-body,
-.bx-slide.bx-in .bx-when            { animation-delay: 140ms; }
+.bx-slide.bx-in .bx-when            { animation-delay: 110ms; }
 /* The scoreboard's own parts, so a score arrives like a score. */
-.bx-slide.bx-in .mq-billing         { animation: bx-lock 420ms steps(1, end) both; }
-.bx-slide.bx-in .mq-tape            { animation: bx-glitch 520ms steps(1, end) both; }
-.bx-slide.bx-in .mq-status          { animation: bx-lock 460ms steps(1, end) 140ms both; }
+.bx-slide.bx-in .mq-billing         { animation: bx-settle 300ms var(--ease) both; }
+.bx-slide.bx-in .mq-tape            { animation: bx-press 380ms cubic-bezier(.2,1.1,.25,1) both; }
+.bx-slide.bx-in .mq-status          { animation: bx-settle 320ms var(--ease) 110ms both; }
 /* Artwork drifts, very slightly, for as long as it is on screen. */
 .bx-slide.bx-in .bx-art             { animation: bx-drift 9s linear both; }
 @keyframes bx-drift { from { transform: scale(1.06); } to { transform: scale(1.12); } }
@@ -513,9 +507,9 @@
   .bx-sweep, .bx-slide.bx-in .bx-art { animation: none !important; }
   .bx-art { transform: none !important; }
   /*
-    And the entrance. Glitch lock is a deliberate flicker with a colour fringe
-    - the one thing in the file that MUST be off here, not merely shortened,
-    because the hardcoded 520ms does not answer to the token durations.
+    And the entrance. Press is a scale overshoot, which is exactly the kind of
+    motion this query exists to remove, and its hardcoded 380ms does not answer
+    to the token durations - so it is switched off here rather than shortened.
   */
   .bx-slide.bx-in * { animation-name: none !important; text-shadow: none !important; }
 }

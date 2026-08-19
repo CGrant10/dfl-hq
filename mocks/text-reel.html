@@ -1,0 +1,456 @@
+<title>Text Roll Reel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* =====================================================================
+   TEXT ROLL REEL - twelve typographic entrances for the broadcast slides
+   ---------------------------------------------------------------------
+   Deliberately single-theme dark. These are judged on a dark broadcast
+   stage, so previewing them on a light plate would be lying about them.
+   Every colour is painted explicitly for that reason.
+
+   The demo text is set in Rajdhani, the app's real display face, because
+   a roll animation lives or dies on the letterforms it rolls.
+   ===================================================================== */
+:root{
+  --ground:#08090b;
+  --plate:#101216;
+  --rail:#0c0e12;
+  --line:#22252c;
+  --line-hi:#33373f;
+  --ink:#f2f0ec;
+  --muted:#8b8f99;      /* neutral pulled a touch blue, toward the crest */
+  --dim:#5f636d;
+  --red:#E5011B;        /* the crest's true red */
+  --blue:#2b4fa8;       /* crest blue, lifted to survive a dark ground */
+  --ok:#4b9e7a;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --disp:"Rajdhani","Segoe UI Semibold",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--mono);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---- masthead ------------------------------------------------------- */
+.top{
+  border-bottom:1px solid var(--line);background:var(--rail);
+  padding:22px clamp(16px,4vw,40px) 0;
+  position:sticky;top:0;z-index:5;
+}
+.crest{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{
+  font-family:var(--disp);font-weight:700;font-size:clamp(26px,4.4vw,40px);
+  letter-spacing:.02em;margin:0;line-height:1;text-transform:uppercase;
+}
+.stripe{height:3px;width:64px;background:linear-gradient(90deg,var(--red),var(--blue));align-self:center}
+.lede{color:var(--muted);max-width:70ch;margin:12px 0 0;font-size:13px}
+.lede b{color:var(--ink);font-weight:500}
+
+.rail{display:flex;gap:8px;flex-wrap:wrap;padding:16px 0 14px}
+button{
+  font:500 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  background:var(--plate);color:var(--muted);border:1px solid var(--line);
+  padding:9px 14px;cursor:pointer;border-radius:2px;
+}
+button:hover{border-color:var(--line-hi);color:var(--ink)}
+button[aria-pressed="true"]{border-color:var(--red);color:var(--ink);background:#170a0c}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ---- the grid ------------------------------------------------------- */
+main{padding:clamp(16px,4vw,40px)}
+.family{margin:0 0 34px}
+.family > h2{
+  font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--dim);margin:0 0 4px;
+  padding-bottom:8px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+}
+.family > h2 span{color:var(--muted);letter-spacing:.04em;text-transform:none;font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:16px}
+
+.demo{border:1px solid var(--line);background:var(--plate);border-radius:3px;overflow:hidden}
+.demo:hover{border-color:var(--line-hi)}
+.hdr{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:11px 13px;border-bottom:1px solid var(--line);
+}
+.hdr .nm{font-family:var(--disp);font-weight:600;font-size:17px;letter-spacing:.02em}
+.hdr .no{font-size:10px;color:var(--dim);letter-spacing:.14em}
+
+/* the preview surface itself */
+.stage{
+  position:relative;height:184px;overflow:hidden;cursor:pointer;
+  background:
+    radial-gradient(120% 100% at 12% 0%,rgba(43,79,168,.20),transparent 60%),
+    linear-gradient(180deg,#0d1017,#07080a);
+}
+.stage::after{  /* the corner bracket, so it reads as the app's stage */
+  content:"";position:absolute;left:11px;top:11px;width:16px;height:16px;
+  border-left:1px solid rgba(242,240,236,.24);border-top:1px solid rgba(242,240,236,.24);
+}
+.brand{position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--blue))}
+.slide{position:absolute;inset:0;display:grid;align-content:center;gap:7px;padding:0 20px}
+.kick{font:500 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.head{font-family:var(--disp);font-weight:700;font-size:34px;line-height:1.05;letter-spacing:.005em}
+.sub{font-size:12px;color:var(--muted)}
+.stress .head{font-size:25px}
+
+/* every panel shares ONE quiet treatment for kicker and sub, so what you
+   are comparing is the headline and nothing else */
+.demo.run .kick{animation:q 300ms ease-out both}
+.demo.run .sub{animation:q 300ms ease-out 150ms both}
+@keyframes q{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ---- readout -------------------------------------------------------- */
+.foot{padding:11px 13px;border-top:1px solid var(--line)}
+.bar{height:4px;background:#1b1e24;border-radius:2px;overflow:hidden;margin-bottom:8px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar.warm i{background:var(--red)}
+.nums{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--dim);
+  font-variant-numeric:tabular-nums;margin-bottom:7px}
+.nums b{color:var(--ink);font-weight:500}
+.note{font-size:11.5px;color:var(--muted);line-height:1.45}
+.note em{font-style:normal;color:var(--red)}
+
+/* half speed, for actually seeing what a roll does */
+body.slow .demo *{animation-duration:2.4s!important}
+
+/* =====================================================================
+   THE ENTRANCES
+   ===================================================================== */
+
+/* ---- shared machinery ----
+   .win  a one-line window with the overflow clipped
+   .strip a stack of lines that travels through it
+   .c/.c i a per-character window and its traveller               */
+/* --lh is the measured height of the tallest line in the window, written by
+   the script. A fixed 1.05em was fine until a headline wrapped to two lines,
+   at which point the window clipped half the answer away. */
+.win{display:block;overflow:hidden;height:var(--lh,1.05em);--lh:1.05em}
+.win .strip{display:block}
+.win .strip > span{display:block;height:var(--lh);line-height:1.05}
+.win .strip > span.past{color:var(--dim)}
+.head .c{display:inline-block;overflow:hidden;height:1.05em;vertical-align:bottom}
+.head .c i{display:inline-block;font-style:normal}
+
+/* 1 ODOMETER - the previous value rolls off the top, this one lands. */
+.d1.run .strip{animation:odo 520ms cubic-bezier(.16,.86,.14,1) both}
+@keyframes odo{from{transform:translateY(0)}to{transform:translateY(calc(-1 * var(--lh)))}}
+
+/* 2 SPLIT-FLAP - per character, hinged at the top. Airport board. */
+.d2.run .c i{animation:flap 300ms cubic-bezier(.3,.8,.2,1) both;
+  animation-delay:calc(var(--i) * 34ms);transform-origin:top center}
+@keyframes flap{0%{opacity:0;transform:perspective(420px) rotateX(-92deg)}
+  60%{opacity:1}100%{opacity:1;transform:none}}
+
+/* 3 LINE ROLL - the whole line rolls up out of the floor. The plain one. */
+.d3.run .strip{animation:line 440ms cubic-bezier(.18,.9,.16,1) both}
+@keyframes line{from{transform:translateY(var(--lh))}to{transform:none}}
+
+/* 4 LETTER CASCADE - the same roll, but per letter, left to right. */
+.d4.run .c i{animation:cas 320ms cubic-bezier(.18,.9,.16,1) both;
+  animation-delay:calc(var(--i) * 26ms)}
+@keyframes cas{from{transform:translateY(1.1em)}to{transform:none}}
+
+/* 5 REEL SPIN - three wrong answers blur past before the right one lands. */
+.d5.run .strip{animation:reel 660ms cubic-bezier(.12,.78,.1,1) both}
+.d5.run .strip > span{animation:reelblur 660ms ease-out both}
+@keyframes reel{from{transform:translateY(0)}to{transform:translateY(calc(-3 * var(--lh)))}}
+@keyframes reelblur{0%{filter:blur(3.5px)}72%{filter:blur(1.4px)}100%{filter:none}}
+
+/* 6 DIGIT COUNT - the number itself rolls to its value. Stat slides only. */
+.d6.run .head{animation:q 260ms ease-out both}
+
+/* 7 MASK WIPE - a hard edge travels across and leaves text behind it. */
+.d7.run .head{animation:wipe 460ms cubic-bezier(.36,.9,.2,1) both}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -6% 0 0)}}
+
+/* 8 LOWER THIRD - slides in behind its own mask, like a caption bar. */
+.d8.run .strip{animation:third 480ms cubic-bezier(.16,.86,.14,1) both}
+@keyframes third{from{opacity:0;transform:translateX(-34%)}to{opacity:1;transform:none}}
+
+/* 9 PULL FOCUS - a camera finding the name. No movement, only sharpness. */
+.d9.run .head{animation:foc 500ms cubic-bezier(.25,.9,.2,1) both}
+@keyframes foc{from{opacity:0;filter:blur(11px);transform:scale(1.07)}
+  to{opacity:1;filter:none;transform:none}}
+
+/* 10 KERN LOCK - the letters draw together into their proper spacing. */
+.d10.run .head{animation:kern 480ms cubic-bezier(.2,.9,.15,1) both}
+@keyframes kern{from{opacity:0;letter-spacing:.5em}to{opacity:1;letter-spacing:.005em}}
+
+/* 11 PRESS - stamped down from slightly too big. One beat, very short. */
+.d11.run .head{animation:press 380ms cubic-bezier(.2,1.1,.25,1) both}
+@keyframes press{0%{opacity:0;transform:scale(1.16)}
+  62%{opacity:1;transform:scale(.988)}100%{transform:none}}
+
+/* 12 DROP IN - per letter from above, with one small bounce on landing. */
+.d12.run .c i{animation:drop 340ms cubic-bezier(.22,1.35,.3,1) both;
+  animation-delay:calc(var(--i) * 24ms)}
+@keyframes drop{0%{opacity:0;transform:translateY(-90%)}
+  70%{opacity:1;transform:translateY(7%)}100%{transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .demo *{animation:none!important}
+}
+</style>
+
+<div class="top">
+  <div class="crest"><span class="stripe"></span><h1>Text Roll Reel</h1></div>
+  <p class="lede">Twelve typographic entrances for the broadcast slides, set in <b>Rajdhani</b> on the
+  real stage colours. Click any panel to replay it. The readout under each one is its
+  <b>true duration</b> measured against a <b>3.0s</b> slide slot &mdash; the shortest dwell in the deck.
+  Anything past <b>30%</b> of the slot turns the bar red: that slide spends a third of its life arriving.</p>
+  <div class="rail">
+    <button id="all">Replay all</button>
+    <button id="slow" aria-pressed="false">Half speed</button>
+    <button id="stress" aria-pressed="false">Long headline</button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<script>
+/* Each entry: [class, name, prep, ms, note]
+   prep tells the builder what markup the headline needs:
+     plain     the headline as-is
+     char      split into per-letter windows
+     roll      a two-line strip: a decoy value, then the real one
+     reel      a four-line strip: three decoys, then the real one
+     count     a number the script rolls to its value                */
+const D = [
+  ["Roll", "The ones you asked for. A value travels through a window and stops.", [
+    ["d1","Odometer","roll",520,
+     "The previous value rolls off the top and this one takes its place. Reads as a <em>scoreboard turning over</em> — the only one here that shows you what it replaced."],
+    ["d3","Line roll","mask",440,
+     "The whole line rolls up out of the floor. The plainest of the set and the <em>hardest to get sick of</em>. Fastest too."],
+    ["d4","Letter cascade","char",320,
+     "The same roll, one letter at a time, left to right. Cost grows with the headline — check it against <em>Long headline</em>."],
+    ["d2","Split-flap","char",300,
+     "Per character, hinged at the top, like an airport board. The most <em>mechanical</em> thing here. Needs short names."],
+    ["d5","Reel spin","reel",660,
+     "Three wrong answers blur past before the right one lands. Pure <em>slot machine</em>. Wonderful once, and it is the longest in the reel."],
+    ["d6","Digit count","count",700,
+     "The figure counts to its value. Only makes sense on a <em>number</em> — a stat or a betting line, never a name."],
+  ]],
+  ["Reveal", "The text is already in place; something uncovers it.", [
+    ["d7","Mask wipe","plain",460,
+     "A hard edge travels across and leaves the text behind it. No motion on the letters at all, so it <em>never wobbles</em> on a long headline."],
+    ["d8","Lower third","mask",480,
+     "Slides in from the left behind its own mask, like a caption bar on a broadcast. The most <em>sports-TV</em> option."],
+    ["d9","Pull focus","plain",500,
+     "A camera finding the name: blurred and slightly too large, then sharp. <em>Cinematic</em>, and completely quiet."],
+  ]],
+  ["Settle", "The letters arrive wrong and correct themselves.", [
+    ["d10","Kern lock","plain",480,
+     "The letters draw together into their proper spacing. Elegant on a <em>single word</em>; it reflows the line, so it can push a long headline around."],
+    ["d11","Press","plain",380,
+     "Stamped down from slightly too big, one beat. The <em>shortest</em> thing in the reel and it works on anything."],
+    ["d12","Drop in","char",340,
+     "Per letter from above with one small bounce. The most <em>playful</em>, which also means the least serious."],
+  ]],
+];
+
+/* Real content, so nothing here is judged on lorem. */
+const CONTENT = {
+  d1:  ["2025 CHAMPION","Martin77","DaGrapeApes · 11-3", "azhee28"],
+  d2:  ["CHIP EATER","Martin77","2025 · chip outstanding"],
+  d3:  ["GOLF DAY","Rolla Country Club","Saturday · 8:40 tee"],
+  d4:  ["KEEPER LOCKED","Bijan Robinson","Round 3 · Diet Coke Boys"],
+  d5:  ["CHIP EATER","Martin77","2025 · chip outstanding", ["cimmerong","azhee28","sheyg2014"]],
+  d6:  ["OPEN LINE","286","150 SIN returns · chase outright"],
+  d7:  ["2025 CHAMPION","Martin77","DaGrapeApes · 11-3"],
+  d8:  ["RULE PASSED","Trade deadline week 11","9 for · 3 against", ""],
+  d9:  ["ARENA RESULT","Cimmerong","41.28s · wire to wire"],
+  d10: ["CHAMPION","Sheyg2014","2019 · restored by hand"],
+  d11: ["POLL OPEN","Keeper count","4 votes in · closes Friday"],
+  d12: ["SIDE EVENT","Draft night","Sept 4 · the usual place"],
+};
+const LONG = "The Diet Coke Boys of Bismarck";
+const SLOT = 3000;
+/* Per-letter stagger, mirroring the CSS. Declared up here because the
+   panels measure themselves as they are built. */
+const STAGGER = { d2:34, d4:26, d12:24 };
+
+const main = document.getElementById("main");
+
+D.forEach(([fam, blurb, rows]) => {
+  const sec = document.createElement("section");
+  sec.className = "family";
+  const h = document.createElement("h2");
+  h.innerHTML = fam + " <span>" + blurb + "</span>";
+  sec.appendChild(h);
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  rows.forEach(([cls, name, prep, ms, note]) => grid.appendChild(panel(cls, name, prep, ms, note)));
+  sec.appendChild(grid);
+  main.appendChild(sec);
+});
+
+function panel(cls, name, prep, ms, note){
+  const c = CONTENT[cls];
+  const el = document.createElement("div");
+  el.className = "demo " + cls;
+  el.dataset.prep = prep;
+  el.dataset.head = c[1];
+
+  /* per-letter entrances pay for every character, so the real number
+     depends on the headline. Report that honestly, and re-report it when
+     the long headline is switched on. */
+  el.dataset.base = ms;
+
+  const pct = Math.round(ms / SLOT * 100);
+  el.innerHTML =
+    '<div class="hdr"><span class="nm">' + name + '</span>' +
+      '<span class="no">' + cls.toUpperCase().replace("D","NO.") + '</span></div>' +
+    '<div class="stage"><span class="brand"></span><div class="slide">' +
+      '<span class="kick">' + c[0] + '</span>' +
+      '<span class="head"></span>' +
+      '<span class="sub">' + c[2] + '</span>' +
+    '</div></div>' +
+    '<div class="foot">' +
+      '<div class="bar"><i></i></div>' +
+      '<div class="nums"><span><b class="ms">' + ms + '</b>ms</span>' +
+        '<span><b class="pc">' + pct + '</b>% of a 3.0s slot</span></div>' +
+      '<p class="note">' + note + '</p>' +
+    '</div>';
+
+  el.querySelector(".stage").addEventListener("click", () => replay(el));
+  build(el);
+  return el;
+}
+
+/* Build the headline markup the entrance needs, and measure it. */
+function build(el){
+  const head = el.querySelector(".head");
+  const prep = el.dataset.prep;
+  const stress = document.body.classList.contains("stress");
+  const text = stress ? LONG : el.dataset.head;
+  const c = CONTENT[el.className.split(" ")[1]];
+  head.textContent = "";
+
+  if (prep === "char"){
+    /* One window per character, each carrying its index so the CSS can
+       stagger without a rule per letter. */
+    [...text].forEach((ch, i) => {
+      const w = document.createElement("span");
+      w.className = "c";
+      w.style.setProperty("--i", i);
+      const t = document.createElement("i");
+      t.textContent = ch === " " ? " " : ch;
+      w.appendChild(t);
+      head.appendChild(w);
+    });
+  } else if (prep === "mask"){
+    /* A one-line window with nothing above it: the line simply arrives. */
+    const win = document.createElement("span");
+    win.className = "win";
+    const strip = document.createElement("span");
+    strip.className = "strip";
+    strip.appendChild(line(text, ""));
+    win.appendChild(strip);
+    head.appendChild(win);
+  } else if (prep === "roll" || prep === "reel"){
+    const decoys = prep === "reel" ? c[3] : [c[3] === undefined ? "—" : c[3]];
+    const win = document.createElement("span");
+    win.className = "win";
+    const strip = document.createElement("span");
+    strip.className = "strip";
+    if (prep === "roll"){
+      /* the outgoing value sits ABOVE, so it rolls off the top */
+      strip.appendChild(line(decoys[0], "past"));
+      strip.appendChild(line(text, ""));
+    } else {
+      decoys.forEach(d => strip.appendChild(line(d, "past")));
+      strip.appendChild(line(text, ""));
+    }
+    win.appendChild(strip);
+    head.appendChild(win);
+  } else {
+    head.textContent = text;
+  }
+  fitWindow(head);
+  measure(el);
+}
+
+/* Give a window the height of its tallest line, so a headline that wraps is
+   still fully visible and the travel distance stays exactly one line. */
+function fitWindow(head){
+  const win = head.querySelector(".win");
+  if (!win) return;
+  const lines = [...win.querySelectorAll(".strip > span")];
+  win.style.removeProperty("--lh");
+  lines.forEach(l => l.style.height = "auto");
+  const h = Math.max(...lines.map(l => l.getBoundingClientRect().height));
+  lines.forEach(l => l.style.height = "");
+  if (h > 0) win.style.setProperty("--lh", h + "px");
+}
+function line(t, cls){
+  const s = document.createElement("span");
+  if (cls) s.className = cls;
+  s.textContent = t;
+  return s;
+}
+
+/* The true duration: the base animation plus whatever the stagger adds. */
+function measure(el){
+  const cls = el.className.split(" ")[1];
+  const base = +el.dataset.base;
+  const step = STAGGER[cls] || 0;
+  const n = step ? el.querySelectorAll(".head .c").length : 0;
+  const total = base + (n ? (n - 1) * step : 0);
+  const pct = Math.round(total / SLOT * 100);
+  el.querySelector(".ms").textContent = total;
+  el.querySelector(".pc").textContent = pct;
+  const bar = el.querySelector(".bar");
+  bar.classList.toggle("warm", pct > 30);
+  bar.querySelector("i").style.width = Math.min(100, pct) + "%";
+}
+
+function replay(el){
+  el.classList.remove("run");
+  void el.offsetWidth;
+  el.classList.add("run");
+  if (el.classList.contains("d6")) count(el);
+}
+
+/* The one entrance the CSS cannot do: a figure rolling to its value. */
+function count(el){
+  const head = el.querySelector(".head");
+  const target = parseInt(el.dataset.head.replace(/\D/g, ""), 10);
+  if (!Number.isFinite(target)) return;
+  const started = performance.now();
+  const DUR = 700;
+  (function tick(now){
+    const t = Math.min(1, (now - started) / DUR);
+    /* ease-out, so it decelerates into the number instead of stopping dead */
+    const v = Math.round(target * (1 - Math.pow(1 - t, 3)));
+    head.textContent = String(v);
+    if (t < 1) requestAnimationFrame(tick);
+    else head.textContent = el.dataset.head;
+  })(started);
+}
+
+function all(){
+  document.querySelectorAll(".demo").forEach((el, i) => setTimeout(() => replay(el), i * 90));
+}
+document.getElementById("all").addEventListener("click", all);
+
+const slow = document.getElementById("slow");
+slow.addEventListener("click", () => {
+  slow.setAttribute("aria-pressed", String(document.body.classList.toggle("slow")));
+  all();
+});
+
+const stressBtn = document.getElementById("stress");
+stressBtn.addEventListener("click", () => {
+  const on = document.body.classList.toggle("stress");
+  stressBtn.setAttribute("aria-pressed", String(on));
+  document.querySelectorAll(".demo").forEach(el => build(el));
+  all();
+});
+
+all();
+</script>
