@@ -46,7 +46,7 @@ export async function myKeepers(season, memberId) {
   if (!memberId) return [];
   const { data, error } = await db()
     .from("keepers")
-    .select("id,player_id,player_name,player_pos,player_team,round_cost,basis_round,basis_season,created_at")
+    .select("id,player_id,player_name,player_pos,player_team,round_cost,basis_round,basis_season,self_submitted,created_at")
     .eq("year", Number(season))
     .eq("member_id", memberId)
     .order("created_at", { ascending: false });
@@ -74,6 +74,17 @@ function costLine(c) {
   return `${basis} → R${c.keeperCost}`;
 }
 
+/*
+  A COMMISSIONER-ENTERED ROW IS NOT A MEMBER'S TO REPLACE.
+
+  The standing rule is that approved keeper rows are never rewritten, so
+  keeper_set_self() refuses rather than deleting one to make room, and
+  keeper_clear_self() leaves it alone. The card has to say which rows those are
+  BEFORE somebody presses a button and gets told - a refusal that could have
+  been a label is a bad refusal.
+*/
+const theirs = (mine) => mine.some((row) => row.self_submitted === false);
+
 function currentList(mine, season) {
   if (!mine.length) {
     return `<p class="ks-none">You have not chosen a keeper for ${season} yet.</p>`;
@@ -85,6 +96,8 @@ function currentList(mine, season) {
       <span class="ks-cost">${season} Keeper · R${row.round_cost ?? "—"}</span>
       ${row.basis_season && row.basis_round
         ? `<span class="ks-basis">from ${row.basis_season} R${row.basis_round}</span>` : ""}
+      ${row.self_submitted === false
+        ? `<span class="ks-basis">entered by the commissioner</span>` : ""}
     </li>`).join("")}</ul>`;
 }
 
@@ -118,12 +131,16 @@ export function selfCard({ season, status, mine = [], options = [] }) {
 
   const slots = Number(status.max_keepers) || 1;
   const used = Number(status.used_slots) || 0;
+  const commissionerHeld = theirs(mine) && used >= slots;
 
   return `<section class="card keeper-self"><div class="card-body">
     <h3 class="card-heading">Your ${season} keeper</h3>
     ${currentList(mine, season)}
 
-    ${options.length ? `
+    ${commissionerHeld ? `
+      <p class="muted tiny">Your ${season} keeper was entered by the commissioner, so it is
+        theirs to change. Ask them if it is wrong.</p>
+    ` : options.length ? `
       <form class="ks-form" data-keeper-self-form autocomplete="off">
         <label for="ks-player">${used >= slots && slots === 1 ? "Change to" : "Keep"}</label>
         <select id="ks-player" name="player" required>
@@ -147,7 +164,8 @@ export function selfCard({ season, status, mine = [], options = [] }) {
             your own keeper.</p>` : ""}
 
         <div class="row-end">
-          ${mine.length ? `<button type="button" class="btn ghost small" data-keeper-self-clear>Remove</button>` : ""}
+          ${mine.some((row) => row.self_submitted !== false)
+            ? `<button type="button" class="btn ghost small" data-keeper-self-clear>Remove</button>` : ""}
           <button type="submit" class="btn">${mine.length ? "Change my keeper" : "Save my keeper"}</button>
         </div>
         <p class="ks-error" data-keeper-self-error></p>

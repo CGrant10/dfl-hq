@@ -48,6 +48,21 @@ create table if not exists public.keeper_season_state (
   updated_at          timestamptz not null default now()
 );
 
+-- ---------------------------------------------------------------------
+-- WHO PUT THIS ROW HERE.
+--
+-- Without this the self-service path cannot tell its own rows from the
+-- commissioner's, and the "make room at the cap" step below would happily
+-- delete a keeper the commissioner had entered by hand. The standing rule in
+-- this repo is that approved keeper rows are never rewritten, so a member's
+-- write has to be able to see which rows are theirs to replace.
+--
+-- Existing rows default to false, which is correct: everything already in the
+-- table was entered by a commissioner.
+-- ---------------------------------------------------------------------
+alter table public.keepers
+  add column if not exists self_submitted boolean not null default false;
+
 alter table public.keeper_season_state enable row level security;
 
 drop policy if exists "public read" on public.keeper_season_state;
@@ -286,14 +301,23 @@ begin
 
   cost_rd := greatest(rules.min_keeper_round, basis_rd - rules.round_adjustment);
 
-  -- Make room. Replace this member's own oldest row once the cap is reached
-  -- so choosing again always works.
+  -- Make room, but ONLY out of rows this member submitted themselves. A
+  -- commissioner-entered keeper is a decision somebody else recorded and it is
+  -- not a member's to overwrite - if that is what fills their slot, they are
+  -- told to go and ask, which is a conversation rather than a silent delete.
   select count(*) into used from public.keepers k
     where k.year = target_season and k.member_id = me;
 
+  if used >= cap and not exists (
+    select 1 from public.keepers k
+    where k.year = target_season and k.member_id = me and k.self_submitted
+  ) then
+    raise exception 'Your % keeper was entered by the commissioner. Ask them to change it.', target_season;
+  end if;
+
   while used >= cap loop
     select k.id into victim from public.keepers k
-      where k.year = target_season and k.member_id = me
+      where k.year = target_season and k.member_id = me and k.self_submitted
       order by k.created_at asc, k.id asc limit 1;
     exit when victim is null;
     delete from public.keepers where id = victim;
@@ -304,7 +328,8 @@ begin
     year, member_id, player_id, team, player,
     player_name, player_pos, player_team, team_snapshot,
     basis_round, basis_season, keeper_year,
-    calculated_round, round_cost, round_overridden, rules_season, notes
+    calculated_round, round_cost, round_overridden, rules_season, notes,
+    self_submitted
   ) values (
     target_season, me, pick_player_id,
     coalesce(nullif(mem.team_name, ''), mem.display_name),
@@ -313,7 +338,8 @@ begin
     nullif(mem.team_name, ''),
     basis_rd, basis_yr, 1,
     cost_rd, cost_rd, false, rules.effective_season,
-    'Chosen by the member'
+    'Chosen by the member',
+    true
   )
   returning * into saved;
 
@@ -344,12 +370,21 @@ begin
     raise exception 'Keepers for % are locked', target_season;
   end if;
 
+  /* Same rule as replacing: a member may withdraw what they chose and nothing
+     else. A commissioner-entered row survives a member pressing Remove. */
   with gone as (
     delete from public.keepers
-      where year = target_season and member_id = me
+      where year = target_season and member_id = me and self_submitted
       returning 1
   )
   select count(*) into removed from gone;
+
+  if removed = 0 and exists (
+    select 1 from public.keepers
+    where year = target_season and member_id = me
+  ) then
+    raise exception 'Your % keeper was entered by the commissioner. Ask them to change it.', target_season;
+  end if;
 
   return removed;
 end;
@@ -413,4 +448,5 @@ select
   (select count(*) from public.sleeper_rosters)                   as rosters_on_record,
   (select count(*) from public.members where sleeper_user_id is not null)
                                                                  as members_linked_to_sleeper,
-  (select count(*) from public.members)                           as members_total;
+  (select count(*) from public.members)                           as members_total,
+  (select count(*) from public.keepers where not self_submitted)   as commissioner_entered_rows;
