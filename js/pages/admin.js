@@ -35,9 +35,10 @@ const CAN_MASK = typeof CSS !== "undefined"
   && typeof CSS.supports === "function"
   && CSS.supports("-webkit-text-security", "disc");
 
-function passwordField(id, placeholder, name = "dfl-admin-key") {
+function passwordField(id, placeholder, name = "dfl-admin-key", numeric = false) {
   const shared = `id="${id}" required
     ${placeholder ? `placeholder="${esc(placeholder)}"` : ""}
+    ${numeric ? `inputmode="numeric" pattern="[0-9]*"` : ""}
     autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
     data-form-type="other" data-lpignore="true" data-1p-ignore data-bwignore
     data-protonpass-ignore="true"`;
@@ -161,7 +162,7 @@ function renderLogin(view) {
       <div class="card-title">Commissioner access</div>
       <p class="muted">Signed in as <strong>${esc(member.display_name)}</strong>. Enter your personal commissioner PIN.</p>
       <label for="commissioner-login-pin">Commissioner PIN</label>
-      ${passwordField("commissioner-login-pin", "", "dfl-commissioner-pin")}
+      ${passwordField("commissioner-login-pin", "", "dfl-commissioner-pin", true)}
       <div class="row-end"><button class="btn" type="submit">Enter commissioner mode</button></div>
     </form>` : `<div class="card note"><div class="card-body">Pick your league member first to use a personal commissioner PIN.</div></div>`}
 
