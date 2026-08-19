@@ -40,8 +40,7 @@ export async function render(view) {
     : me;
 
   if (!member) {
-    view.innerHTML = `<h1>Profile</h1>${empty(
-      "No profile selected. Tap your name in the top right to choose one.")}`;
+    view.innerHTML = `<h1>Profile</h1>${empty("No profile selected.")}`;
     return;
   }
 
@@ -234,7 +233,7 @@ function careerTotals(seasons, leagues, userId) {
 function careerCard(c, seasonCount) {
   if (!seasonCount) {
     return `<div class="card"><div class="card-title">Career</div>${empty(
-      "No Sleeper history linked. An admin can connect this profile to a Sleeper account.")}</div>`;
+      "No Sleeper history linked.")}</div>`;
   }
   return `
     <div class="card">

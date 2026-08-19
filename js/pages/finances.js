@@ -52,8 +52,7 @@ export async function render(view) {
   ])].sort((a, b) => b - a);
 
   if (!years.length) {
-    view.innerHTML = `<h1>League Fees</h1>${empty(
-      "No fees on record yet. An admin can set the buy-in from Admin → Fees.")}`;
+    view.innerHTML = `<h1>League Fees</h1>${empty("No fees on record yet.")}`;
     return;
   }
 

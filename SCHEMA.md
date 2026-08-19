@@ -1,7 +1,7 @@
 # DFL HQ — the database baseline
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 41 `.sql` files (one base plus 40 additive) and the
+one in.** This exists because the repository has 43 `.sql` files (one base plus 42 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -133,6 +133,12 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 40 | `sportsbook_claim_schema.sql` | `sportsbook_claim_daily()`, and `sportsbook_touch_wallet()` rewritten to **report only**. Needs 33. The allowance used to be applied by `touch_wallet()` when the page loaded, so opening the Sportsbook was indistinguishable from taking part; the credit now sits behind a button. The economy is unchanged — 500 to open, 50 per elapsed day, ten days of catch-up, and the clock still advances across every elapsed day so a long absence is not a windfall. `for update` on the wallet row makes a double tap safe. **Drops `sportsbook_touch_wallet()` before recreating it** — the new version adds two OUT parameters, and a row type defined by OUT parameters is part of the signature, so `create or replace` refuses with 42P13. Plain drop, never cascade; `sportsbook_place_bet()` calls it but PL/pgSQL resolves calls at run time, so it survives. Ends with a report of who has SIN waiting. |
+
+### The activity log
+
+| # | File | What it establishes |
+|---|---|---|
+| 41 | `activity_log_schema.sql` | `activity_log`, one AFTER trigger per watched table (`activity_record()`), and `activity_feed(row_limit)` which collapses a burst into one line per (entity, action, member, five-minute window). Needs 2; every other table is optional and skipped with a notice if absent. **Triggers rather than client calls** — a row cannot change without the log seeing it, whoever wrote it, including the Supabase table editor. **Stores no column values**: table, row id, insert/update/delete, who held the app, whether they held a privileged session, and when. No insert policy at all — rows arrive only through the `security definer` trigger, so the log cannot be forged or cleared by a client. The trigger swallows its own errors: a missing feed line is a nuisance, a refused keeper is a bug. |
 
 ### Not schema
 

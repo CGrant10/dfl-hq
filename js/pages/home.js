@@ -19,6 +19,7 @@
 // made the page an About screen.
 // =====================================================================
 import { db, configured } from "../supabase.js";
+import { activityCard, ACTIVITY_RPC, ACTIVITY_MISSING } from "../activity.js";
 import { esc, fmtDate, fmtWhen, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
@@ -106,6 +107,23 @@ export async function render(view) {
   if (wn.firstRun) markSeen(new Date(), leagues.data || []);
   const strip = whatsNewStrip(changes, wn.since);
 
+  /* The feed is its own read rather than part of the Promise.all above: it is
+     the newest thing on the page and the one most likely to be missing, so a
+     league that has not run the migration must not have it fail beside the
+     announcements. activityFeed() returns null in that case and the section is
+     simply not drawn. */
+  const activity = await (async () => {
+    try {
+      const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      /* Absent migration draws nothing; any other failure draws an empty
+         section rather than taking the front page down with it. */
+      return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
+    }
+  })();
+
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
@@ -119,6 +137,7 @@ export async function render(view) {
       ${eventList(events.data)}${adminRow(addControl("events", "Add event"))}</section>
     <section class="block"><h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
       ${pollList(polls.data)}${adminRow(addControl("polls", "Add poll"))}</section>
+    ${activityCard(activity)}
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${esc(presenceLine(presenceNow()))}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>

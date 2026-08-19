@@ -179,9 +179,7 @@ function fameView(data) {
             ${addControl("history", "Add entry", { year })}
           </div>
           <div class="card schedule">${sortRows(list).map(entry).join("")}</div>`).join("")
-      : `<div class="card"><div class="card-body muted">
-           Awards, records and the moments nobody is allowed to forget go here.
-           ${canEdit() ? "" : "An admin can add them."}</div>
+      : `<div class="card"><div class="card-body muted">No league history yet.</div>
            ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
          </div>`}
   `;

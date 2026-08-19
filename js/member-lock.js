@@ -29,6 +29,24 @@ const markUnlocked=id=>{try{sessionStorage.setItem(key(id),"1")}catch{}};
   the stronger half of the guarantee, and the half that matters.
 */
 const rememberPin=(id,pin)=>{try{sessionStorage.setItem(pinKey(id),pin)}catch{}};
+/*
+  EXPORTED, BECAUSE THERE WERE TWO OF THESE AND THAT WAS THE BUG.
+
+  pages/profile-locked.js had its own copy of key()/unlocked()/markUnlocked() -
+  same sessionStorage keys, separate code - and it is the gate a member actually
+  passes when they open their own profile. So teaching THIS file to keep the
+  verified PIN fixed the overlay nobody was using and left the real gate
+  discarding it, which is why the keeper card kept asking for a PIN that had just
+  been typed one screen earlier.
+
+  One owner now. profile-locked.js imports these instead of redefining them, so a
+  third gate cannot quietly appear with a fourth opinion about the same state.
+*/
+export const markMemberUnlocked = (id, pin = null) => {
+  markUnlocked(id);
+  if (pin) rememberPin(id, pin);
+};
+export const isMemberUnlocked = (id) => unlocked(id);
 /** The PIN this member unlocked with, for calls that need server-side proof. */
 export function verifiedPin(memberId){
  if(memberId==null)return null;

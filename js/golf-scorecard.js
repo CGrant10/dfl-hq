@@ -282,7 +282,7 @@ function syncLine(outingId,teamId,editable,stale){
   const waiting=pendingCount(outingId,teamId);
   if(waiting)return `<b class="dfl-sync-wait">${waiting} hole${waiting===1?"":"s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
   if(stale)return "Showing the last copy saved on this phone — it will refresh when you have signal.";
-  return "Tap − and + to add strokes, or type the number. Saves on its own.";
+  return "Tap − and + to add strokes, or type the number.";
 }
 
 /* One watcher at a time: a re-render replaces the line it was painting. */

@@ -142,9 +142,7 @@ async function renderList(view) {
         <h1>DFL Arena</h1>
         ${addControl("arena_events", "New event")}
       </header>
-      ${events.length ? "" : empty(canEdit()
-        ? "No Arena events yet. Create one above — draft order, golf teams, punishments, anything."
-        : "No Arena events yet.")}
+      ${events.length ? "" : empty("No Arena events yet.")}
 
       ${open.length ? `
         <h2 class="section-title">Ready to run<span class="count">${open.length}</span></h2>
@@ -553,8 +551,8 @@ function broadcastCard(event, parts) {
   const statusHelp = !ready ? "Add at least two racers to begin." :
     running ? "The Race View is live on every viewer." :
     paused ? "Viewers are holding on the same frame." :
-    finished ? "Review the finish, save it, or reset for another run." :
-    "Open the Race View, get the screen ready, then press Start race in there.";
+    finished ? "" :
+    "Start the race from the Race View.";
 
   /*
     ONE ACTION, AND IT DOES NOT START THE RACE.

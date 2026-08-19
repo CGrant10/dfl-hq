@@ -35,9 +35,7 @@ export async function render(view) {
   if (!categories.length) {
     view.innerHTML = `
       <header class="page-head"><h1>League Rules</h1></header>
-      ${empty(canEdit()
-        ? "No rule sections yet. Add one at Admin → Rule tabs, then add rules here."
-        : "No rules yet. An admin can add them.")}`;
+      ${empty("No rules yet.")}`;
     return;
   }
 

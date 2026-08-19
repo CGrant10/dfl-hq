@@ -1627,6 +1627,35 @@ a.moment:hover { background: var(--hover-soft); }
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
 /* =====================================================================
+   ACTIVITY - who changed what, on the front page.
+   Three columns so the names line up, the verbs line up and the times line up:
+   a feed is scanned down one of those three, never read across.
+   ===================================================================== */
+.act-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+.act-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: .45rem;
+  padding: .4rem 0;
+}
+.act-row + .act-row { border-top: 1px solid var(--line); }
+.act-who { font-weight: 700; white-space: nowrap; }
+.act-what { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.act-when { color: var(--muted); font-size: .78rem; white-space: nowrap; }
+.act-badge {
+  margin-left: .3rem; font-size: .62rem; font-weight: 800;
+  padding: .05rem .25rem; border-radius: .25rem;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  vertical-align: middle;
+}
+@media (max-width: 420px) {
+  /* The time drops under the line rather than squeezing the name off it. */
+  .act-row { grid-template-columns: auto 1fr; }
+  .act-when { grid-column: 2; font-size: .72rem; }
+}
+
+/* =====================================================================
    DFL SPORTSBOOK - hierarchy, not more boxes.
    The board was legible in structure and illegible in practice: every market
    printed every outcome at the same weight in one column. The price column is

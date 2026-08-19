@@ -173,8 +173,7 @@ export function selfCard({ season, status, mine = [], options = [] }) {
                  minlength="4" maxlength="6" autocomplete="one-time-code"
                  autocapitalize="off" spellcheck="false" required
                  style="-webkit-text-security:disc">
-          <p class="muted tiny">You set a PIN on your profile, so it is needed to change
-            your own keeper.</p>` : ""}
+` : ""}
 
         <div class="row-end">
           ${mine.length ? `<button type="button" class="btn ghost small" data-keeper-self-clear>Remove</button>` : ""}

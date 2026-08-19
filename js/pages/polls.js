@@ -111,9 +111,7 @@ export async function render(view) {
           <div class="card-body">Pick your name in the top right to vote.</div>
         </div>`}
 
-      ${polls.length ? "" : empty(
-        canEdit() ? "No polls yet. Add one above."
-                  : "No polls yet. An admin can add one.")}
+      ${polls.length ? "" : empty("No polls yet.")}
 
       ${openBlock}
       ${closedBlock}

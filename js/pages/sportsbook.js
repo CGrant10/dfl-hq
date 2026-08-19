@@ -81,7 +81,7 @@ function bankrollCard(me,wallet,golf,open,autoReady,autoState){
     <div class="card-title-row">
       <div>
         <div class="card-title">${esc(me.display_name)}</div>
-        <p class="muted tiny">50 SIN a day, yours to come and get</p>
+
       </div>
       <strong class="sb-balance">${Number(wallet?.balance||0).toLocaleString()} SIN</strong>
     </div>

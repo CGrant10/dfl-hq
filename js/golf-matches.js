@@ -380,7 +380,7 @@ function roundCard(data, entry) {
       <button class="btn ghost small danger" data-drop-round="${round.id}">Delete round</button>
     </div>
     <p class="muted tiny">${singles
-      ? "Add a match for each 1v1 you want, then pick the two players. Nobody is paired for you."
+      ? "Add a match for each 1v1, then pick the two players."
       : "“Build the pairs” pairs each team in draft order and puts pair 1 against pair 1. Or add matches and fill them in yourself — picking somebody already in this round swaps the two."}${scored ? " Rebuilding is blocked until this round's strokes are cleared." : ""}</p>
     ${battles.length ? `<div class="gb-seats">${seats(data, entry)}</div>` : ""}
   </div>`;

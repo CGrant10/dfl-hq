@@ -134,7 +134,7 @@ function editCard(m, draft) {
       <div class="dfl-field">
         <label class="u-label" for="dfl-bio">About me</label>
         <textarea id="dfl-bio" data-bio maxlength="${BIO_MAX}" rows="4"
-          placeholder="Been making questionable roster decisions since 2019…">${esc(draft.bio)}</textarea>
+          placeholder="Bio">${esc(draft.bio)}</textarea>
         <span class="muted tiny"><span data-bio-count>${draft.bio.length}</span>/${BIO_MAX}</span>
       </div>
 

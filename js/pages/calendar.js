@@ -75,8 +75,7 @@ async function paintEvents(body) {
   body.innerHTML = `
     ${upcoming.length
       ? `<div class="card schedule">${upcoming.map((e, i) => eventRow(e, true, i === 0)).join("")}</div>`
-      : empty(canEdit() ? "Nothing on the schedule. Add the first event below."
-                        : "Nothing on the schedule. An admin can add events.")}
+      : empty("Nothing on the schedule.")}
     ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
     ${past.length ? `
       <h2 class="section-title">Past<span class="count">${past.length}</span></h2>
@@ -204,7 +203,7 @@ async function paintSide(body, view) {
 
   if (!events.length) {
     body.innerHTML =
-      empty("No side events yet. Brackets, pick'em pools and survivor contests go here.") + addRow;
+      empty("No side events yet.") + addRow;
     return;
   }
 

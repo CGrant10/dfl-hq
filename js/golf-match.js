@@ -338,7 +338,7 @@ function statusLine(sides, editable, stale) {
   const waiting = pendingCountSides(sides.map((s) => s.id));
   if (waiting) return `<b class="dfl-battle-wait">${waiting} hole${waiting === 1 ? "" : "s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
   if (stale) return "Showing the last copy saved on this phone — it will refresh when you have signal.";
-  return "Both sides share this card. Tap − and + or type the number; it saves on its own.";
+  return "Both sides share this card.";
 }
 
 /* The paper card: a row per side, tap a hole to jump to it. The lower score
