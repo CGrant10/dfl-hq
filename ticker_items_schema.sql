@@ -5,9 +5,10 @@
 -- Safe to re-run.
 --
 -- Manual rows are ordinary ticker lines. Five seeded rows are override slots
--- for the ticker's automatic facts. On an automatic row, blank label/text/route
--- means "keep the generated value"; editing any of them changes only the ticker
--- wording, never the event, poll, golf outing, announcement or champion record.
+-- for the ticker's automatic facts. On an automatic row, the special
+-- "(automatic: …)" text means "keep generating this line". Replace it with
+-- normal text to override only the ticker wording; the underlying event, poll,
+-- golf outing, announcement or champion record is never changed.
 -- =====================================================================
 
 create table if not exists public.ticker_items (
@@ -22,23 +23,32 @@ create table if not exists public.ticker_items (
   created_at timestamptz not null default now()
 );
 
--- Null = hand-written line. Named values are the five automatic ticker slots.
 alter table public.ticker_items add column if not exists auto_source text;
 
--- Keep one override row per automatic source without changing manual rows.
 create unique index if not exists idx_ticker_auto_source
   on public.ticker_items(auto_source) where auto_source is not null;
 create index if not exists idx_ticker_active on public.ticker_items(active, weight desc);
 
--- Seed the automatic slots. Blank values deliberately mean "use automatic".
 insert into public.ticker_items(label,text,route,weight,active,auto_source)
 values
-  ('','','',-100,true,'next_event'),
-  ('','','',-100,true,'golf'),
-  ('','','',-100,true,'poll'),
-  ('','','',-100,true,'notice'),
-  ('','','',-100,true,'champion')
+  ('','(automatic: next event)','',-100,true,'next_event'),
+  ('','(automatic: golf)','',-100,true,'golf'),
+  ('','(automatic: poll)','',-100,true,'poll'),
+  ('','(automatic: notice)','',-100,true,'notice'),
+  ('','(automatic: champion)','',-100,true,'champion')
 on conflict (auto_source) where auto_source is not null do nothing;
+
+-- Upgrade the blank slots from the first version of this migration so the
+-- existing Ticker manager can tell the five automatic rows apart.
+update public.ticker_items
+set text = case auto_source
+  when 'next_event' then '(automatic: next event)'
+  when 'golf' then '(automatic: golf)'
+  when 'poll' then '(automatic: poll)'
+  when 'notice' then '(automatic: notice)'
+  when 'champion' then '(automatic: champion)'
+  else text end
+where auto_source is not null and coalesce(text,'') = '';
 
 alter table public.ticker_items enable row level security;
 
@@ -70,6 +80,6 @@ select
   auto_source,
   weight,
   coalesce(nullif(label, ''), '(automatic label)') as label,
-  coalesce(nullif(text, ''), '(automatic text)') as text
+  text
 from public.ticker_items
 order by (auto_source is null) desc, weight desc, created_at desc;
