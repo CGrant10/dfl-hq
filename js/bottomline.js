@@ -1,39 +1,5 @@
 // =====================================================================
 // bottomline.js - THE DFL BOTTOMLINE
-// ---------------------------------------------------------------------
-// The strip above the bottom nav that says what is going on in the league.
-// The shape is ESPN's BottomLine; the content is emphatically not.
-//
-// IT ONLY EVER REPORTS THINGS DFL HQ ALREADY KNOWS
-//
-//   next event        the soonest future row in `events`
-//   golf              the soonest upcoming outing, or the last final one
-//   open poll         a poll still taking votes
-//   announcement      the newest one
-//   champion          last season's winner, from sleeper_leagues
-//
-// NO NFL NEWS, no scores from other leagues, no headlines from anywhere.
-// Everything below is a fact from this league's own tables with a route
-// attached, and an item with nothing to say is simply absent.
-//
-// AND NO MANUFACTURED URGENCY. There is no "BREAKING", no red flashing and
-// no countdown on something three months away. The tone is a scoreboard
-// ribbon: label, fact, done.
-//
-// WHERE IT DOES NOT GO
-//
-// suppressedOn() is the list, and it is short: Broadcast (the stage IS the
-// screen), Arena (a live race), and any focused Golf surface - a scorecard or
-// a match control screen, where a moving strip above the nav is competing with
-// the thing somebody is trying to tap between holes. Admin is included because
-// it is a work screen.
-//
-// MOTION IS OPT-IN BY THE READER'S OWN SETTING
-//
-// prefers-reduced-motion gets NO marquee at all - not a slower one. It gets a
-// static list that advances one item at a time on a timer, which is a
-// different thing and an honest one. The CSS animation is the only thing that
-// moves, so nothing here runs a rAF loop.
 // =====================================================================
 
 import { db } from "./supabase.js";
@@ -43,16 +9,6 @@ import { suppressedOn } from "./bottomline-routes.js";
 
 export { suppressedOn };
 
-/*
-  DESKTOP PLACEMENT.
-
-  style.css positions the BottomLine 60px above the bottom edge because on a
-  phone it sits directly above the fixed bottom tab bar. At 900px the tab bar
-  moves under the HEADER instead, so keeping that 60px offset leaves a fake
-  empty nav slot below the ticker. This module owns the strip, so it owns the
-  one responsive correction too. Kept here rather than changing the desktop
-  nav rules: the nav is already correct.
-*/
 const placementStyle = typeof document !== "undefined" ? document.createElement("style") : null;
 if (placementStyle) {
   placementStyle.id = "dfl-bottomline-desktop-placement";
@@ -68,8 +24,6 @@ if (placementStyle) {
   document.head.appendChild(placementStyle);
 }
 
-/* ------------------------------- items ------------------------------- */
-
 const DAY = 86400000;
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -83,8 +37,6 @@ function whenText(value, timeValue) {
     : days === 1 ? "tomorrow"
     : days > 1 && days <= 6 ? date.toLocaleDateString(undefined, { weekday: "long" })
     : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  /* The time only earns its place when the date is close enough for it to
-     matter. "Aug 29 at 7:00 AM" three months out is noise. */
   const at = timeValue && days >= 0 && days <= 6 ? ` · ${shortTime(timeValue)}` : "";
   return `${label}${at}`;
 }
@@ -98,122 +50,109 @@ function shortTime(value) {
   return `${hh}${min === "00" ? "" : `:${min}`}${ampm}`;
 }
 
-/**
- * Read the league and build the strip's items.
- *
- * Five small reads, in parallel, every one of them allowed to fail: a missing
- * table or a table this database has not migrated yet means one fewer item,
- * never a broken strip. That is why each is unwrapped with `?.error ? [] : …`
- * rather than awaited as a unit.
- *
- * @returns {Promise<Array<{label:string, text:string, route?:string, tone?:string}>>}
- */
+function overrideMap(rows) {
+  return new Map((rows || []).filter((r) => r?.auto_source).map((r) => [r.auto_source, r]));
+}
+
+function withOverride(source, item, overrides) {
+  if (!item) return null;
+  const ov = overrides.get(source);
+  if (!ov) return item;
+  if (ov.active === false) return null;
+  return {
+    ...item,
+    label: String(ov.label || "").trim() || item.label,
+    text: String(ov.text || "").trim() || item.text,
+    route: String(ov.route || "").trim() || item.route,
+  };
+}
+
+/** Read league facts, hand-written ticker lines, and ticker-only overrides. */
 export async function bottomlineItems() {
   const today = new Date().toISOString().slice(0, 10);
-
-  const [eventsRes, golfRes, pollsRes, annRes, leagueRes, manualRes] = await Promise.all([
-    db().from("events").select("title, event_date, event_time")
+  const [eventsRes, golfRes, pollsRes, annRes, leagueRes, tickerRes] = await Promise.all([
+    db().from("events").select("title,event_date,event_time")
       .gte("event_date", today).order("event_date", { ascending: true }).limit(1)
       .then((r) => r, () => ({ error: true })),
-    db().from("golf_outings").select("name, event_date, status")
+    db().from("golf_outings").select("name,event_date,status")
       .order("event_date", { ascending: false }).limit(6)
       .then((r) => r, () => ({ error: true })),
-    /* `active` is the only openness a poll has - there is no closing date in
-       the schema, and asking for one 42703s the whole select. */
-    db().from("polls").select("question, active").eq("active", true)
+    db().from("polls").select("question,active").eq("active", true)
       .order("created_at", { ascending: false }).limit(1)
       .then((r) => r, () => ({ error: true })),
-    db().from("announcements").select("title, content, created_at")
+    db().from("announcements").select("title,content,created_at")
       .order("created_at", { ascending: false }).limit(1)
       .then((r) => r, () => ({ error: true })),
-    db().from("sleeper_leagues").select("season, champion_user_id, status")
+    db().from("sleeper_leagues").select("season,champion_user_id,status")
       .order("season", { ascending: false }).limit(4)
       .then((r) => r, () => ({ error: true })),
-    /*
-      HAND-WRITTEN LINES, alongside the derived ones rather than instead of them.
-      An absent table means an absent migration, which is indistinguishable from
-      an empty one here - and both mean "show what you always showed".
-    */
-    db().from("ticker_items").select("label, text, route, weight, active, starts_at, ends_at")
-      .eq("active", true).order("weight", { ascending: false }).limit(12)
-      .then((r) => r, () => ({ error: true })),
+    /* auto_source is optional so an older database still degrades to the old
+       hand-written-only query instead of taking the ticker down. */
+    db().from("ticker_items").select("label,text,route,weight,active,starts_at,ends_at,auto_source")
+      .order("weight", { ascending: false }).limit(24)
+      .then((r) => r, async () => db().from("ticker_items")
+        .select("label,text,route,weight,active,starts_at,ends_at")
+        .eq("active", true).order("weight", { ascending: false }).limit(12)
+        .then((r) => r, () => ({ error: true }))),
   ]);
 
-  const items = [];
+  const tickerRows = tickerRes.error ? [] : tickerRes.data || [];
+  const overrides = overrideMap(tickerRows);
+  const items = manualTickerItems(tickerRows.filter((r) => !r.auto_source));
 
-  /*
-    MANUAL LINES FIRST, and that ordering is the point rather than a detail.
-
-    Everything else in this function is the app noticing something. A line
-    somebody typed is the league SAYING something, so it goes in front - a
-    reminder about Thursday's draw that queued behind the reigning champion
-    would be a reminder nobody read.
-
-    Ordered among themselves by weight, then by the order the query returned.
-    Windows are filtered here rather than in SQL so a row with a start in the
-    future is simply skipped instead of needing two more query parameters.
-  */
-  for (const row of manualTickerItems(manualRes.error ? [] : manualRes.data || [])) {
-    items.push(row);
-  }
-
-  // ---- next event ----
   const event = (eventsRes.error ? [] : eventsRes.data || [])[0];
   if (event?.title) {
     const when = whenText(event.event_date, event.event_time);
-    items.push({ label: "Next up", text: `${event.title}${when ? ` · ${when}` : ""}`,
-                 route: "calendar" });
+    const item = withOverride("next_event", {
+      label: "Next up", text: `${event.title}${when ? ` · ${when}` : ""}`, route: "calendar",
+    }, overrides);
+    if (item) items.push(item);
   }
 
-  // ---- golf: the next one, else the last result ----
-  const outings = golfRes.error ? [] : (golfRes.data || []);
+  const outings = golfRes.error ? [] : golfRes.data || [];
   const upcoming = outings.filter((o) => o.status !== "final" && o.event_date >= today)
     .sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)))[0];
   const lastFinal = outings.filter((o) => o.status === "final")[0];
-  if (upcoming) {
-    const when = whenText(upcoming.event_date);
-    items.push({ label: "Golf", text: `${upcoming.name || "Golf day"}${when ? ` · ${when}` : ""}`,
-                 route: "golf" });
-  } else if (lastFinal) {
-    items.push({ label: "Golf", text: `${lastFinal.name || "Golf day"} · final`, route: "golf" });
+  if (upcoming || lastFinal) {
+    const item = upcoming
+      ? { label: "Golf", text: `${upcoming.name || "Golf day"}${whenText(upcoming.event_date) ? ` · ${whenText(upcoming.event_date)}` : ""}`, route: "golf" }
+      : { label: "Golf", text: `${lastFinal.name || "Golf day"} · final`, route: "golf" };
+    const shown = withOverride("golf", item, overrides);
+    if (shown) items.push(shown);
   }
 
-  // ---- an open poll ----
-  const polls = pollsRes.error ? [] : (pollsRes.data || []);
-  const open = polls[0];
+  const open = (pollsRes.error ? [] : pollsRes.data || [])[0];
   if (open?.question) {
-    items.push({ label: "Poll open", text: open.question, route: "polls" });
+    const item = withOverride("poll", { label: "Poll open", text: open.question, route: "polls" }, overrides);
+    if (item) items.push(item);
   }
 
-  // ---- the newest announcement ----
   const ann = (annRes.error ? [] : annRes.data || [])[0];
   if (ann?.title || ann?.content) {
-    items.push({ label: "Notice", text: ann.title || ann.content, route: "home" });
+    const item = withOverride("notice", { label: "Notice", text: ann.title || ann.content, route: "home" }, overrides);
+    if (item) items.push(item);
   }
 
-  // ---- the reigning champion ----
-  const leagues = leagueRes.error ? [] : (leagueRes.data || []);
+  const leagues = leagueRes.error ? [] : leagueRes.data || [];
   const done = leagues.find((l) => l.status === "complete" && l.champion_user_id);
   if (done) {
-    items.push({ label: `${done.season} champion`, text: await championName(done.champion_user_id),
-                 route: "history" });
+    const name = await championName(done.champion_user_id);
+    const item = name ? withOverride("champion", {
+      label: `${done.season} champion`, text: name, route: "history",
+    }, overrides) : null;
+    if (item) items.push(item);
   }
 
-  return items.filter((i) => i.text);
+  return items.filter((i) => i?.text);
 }
 
-/* The champion by name, from the Sleeper user row - never from a team string.
-   A deleted Sleeper account has no row, and then the item is dropped rather
-   than reading "champion: undefined". */
 async function championName(userId) {
   const res = await db().from("sleeper_users")
-    .select("display_name, team_name").eq("sleeper_user_id", userId).limit(1)
+    .select("display_name,team_name").eq("sleeper_user_id", userId).limit(1)
     .then((r) => r, () => ({ error: true }));
   const row = (res.error ? [] : res.data || [])[0];
   return row?.team_name || row?.display_name || "";
 }
-
-/* ------------------------------- the strip ------------------------------- */
 
 let host = null;
 let rotate = null;
@@ -231,20 +170,40 @@ function markup(list, reduced) {
       <span class="bl-label">${esc(i.label)}</span>
       <span class="bl-text">${esc(i.text)}</span>
     ${i.route ? `</a>` : `</span>`}`;
-
   if (reduced) {
-    /* One item at a time, swapped on a timer. Not a slow marquee - a reader
-       who has asked for less motion should get none of it. */
     return `<div class="bl-static">${list.map((i, n) =>
       `<div class="bl-slot ${n === 0 ? "on" : ""}">${cell(i)}</div>`).join("")}</div>`;
   }
-  /* The tape is printed TWICE and the animation moves it exactly one copy's
-     width, so the loop has no gap and no jump. */
-  const tape = list.map(cell).join(`<span class="bl-dot" aria-hidden="true"></span>`);
+  /* A trailing dot is intentional: when a short sequence is repeated to fill
+     a wide screen, the join between copies looks exactly like every other join. */
+  const dot = `<span class="bl-dot" aria-hidden="true"></span>`;
+  const tape = list.map(cell).join(dot) + dot;
   return `<div class="bl-tape"><div class="bl-run">${tape}</div><div class="bl-run" aria-hidden="true">${tape}</div></div>`;
 }
 
-/** Take the strip down and release everything it owns. */
+/** Fill each half of the marquee wider than the viewport, then animate one half.
+ * Two copies only works when one copy is already wider than the screen; on an
+ * ultrawide display that assumption creates the blank tail the user sees. */
+function fillTickerWidth() {
+  if (!host) return;
+  const runs = [...host.querySelectorAll(".bl-run")];
+  if (runs.length !== 2) return;
+  const first = runs[0];
+  const base = first.innerHTML;
+  first.innerHTML = base;
+  runs[1].innerHTML = base;
+  const baseWidth = Math.max(1, first.scrollWidth);
+  const need = Math.max(host.clientWidth * 1.15, baseWidth);
+  const copies = Math.max(1, Math.ceil(need / baseWidth));
+  if (copies > 1) {
+    const filled = base.repeat(copies);
+    first.innerHTML = filled;
+    runs[1].innerHTML = filled;
+  }
+  const seconds = Math.max(18, Math.round(first.scrollWidth / 42));
+  host.style.setProperty("--bl-duration", `${seconds}s`);
+}
+
 export function hideBottomline() {
   if (rotate) { clearInterval(rotate); rotate = null; }
   host?.remove();
@@ -252,48 +211,24 @@ export function hideBottomline() {
   document.body.classList.remove("has-bottomline");
 }
 
-/**
- * Draw the strip for a route.
- *
- * The ticker is shell chrome, not page content. Once it is visible, ordinary
- * route changes leave its DOM alone so the marquee keeps its exact animation
- * position. Suppressed routes still tear it down intentionally; returning
- * from one builds a fresh strip. A forced paint is used only when refreshed
- * league data actually changed.
- */
 export function paintBottomline(route, hash = location.hash, { force = false } = {}) {
   if (suppressedOn(route, hash)) { hideBottomline(); return; }
   if (!items.length) { hideBottomline(); return; }
-
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-
-  /* This is the persistence rule. Replacing host.innerHTML restarts both the
-     CSS marquee and the reduced-motion rotation timer, so if the strip is
-     already mounted in the same motion mode there is nothing to repaint. */
   if (!force && host && host.classList.contains("is-static") === reduced) {
     document.body.classList.add("has-bottomline");
     return;
   }
-
   if (!host) {
     host = document.createElement("div");
     host.className = "bottomline";
     host.setAttribute("aria-label", "League bottom line");
-    /* Not a live region. It repeats the same handful of facts on a loop, and
-       announcing them again every cycle would be hostile. */
     document.body.appendChild(host);
   }
   host.classList.toggle("is-static", reduced);
   host.innerHTML = markup(items, reduced);
   document.body.classList.add("has-bottomline");
-
-  /* The tape's duration is proportional to its length, so two items do not
-     crawl and eight do not sprint. */
-  const run = host.querySelector(".bl-run");
-  if (run && !reduced) {
-    const seconds = Math.max(18, Math.round(run.scrollWidth / 42));
-    host.style.setProperty("--bl-duration", `${seconds}s`);
-  }
+  if (!reduced) fillTickerWidth();
 
   if (rotate) { clearInterval(rotate); rotate = null; }
   if (reduced) {
@@ -309,10 +244,6 @@ export function paintBottomline(route, hash = location.hash, { force = false } =
   }
 }
 
-/* Refresh quietly while the app is open. The important rule is that a read is
-   NOT a repaint: identical data leaves the mounted tape completely untouched,
-   preserving its animation position. Only a real content change earns a DOM
-   replacement. */
 async function refreshBottomline(routeOf) {
   if (refreshing) return;
   refreshing = true;
@@ -321,29 +252,19 @@ async function refreshBottomline(routeOf) {
     if (itemKey(next) === itemKey(items)) return;
     items = next;
     paintBottomline(routeOf(), location.hash, { force: true });
-  } catch {
-    /* A background refresh is decoration. Keep the last good strip. */
-  } finally {
-    refreshing = false;
-  }
+  } catch { /* keep last good strip */ }
+  finally { refreshing = false; }
 }
 
-/**
- * Start the strip. Called once from app.js after the router is up.
- *
- * The reads happen here, off the critical path - the first paint of the app
- * does not wait for a ticker. A failure means no strip, which is a perfectly
- * good outcome for a decoration. After that, a five-minute refresh keeps the
- * facts current without touching the ticker unless something actually changed.
- */
 export async function startBottomline(routeOf) {
-  try {
-    items = await bottomlineItems();
-  } catch {
-    items = [];
-  }
+  try { items = await bottomlineItems(); }
+  catch { items = []; }
   if (items.length) paintBottomline(routeOf(), location.hash);
-
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(() => refreshBottomline(routeOf), REFRESH_MS);
+  /* Recalculate only on an actual viewport resize. This preserves the normal
+     animation across route changes while still filling a resized desktop. */
+  window.addEventListener("resize", () => {
+    if (host && !host.classList.contains("is-static")) fillTickerWidth();
+  }, { passive: true });
 }
