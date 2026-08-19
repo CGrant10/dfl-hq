@@ -4,6 +4,7 @@
 
 const KEY_NAME  = "dfl.username";
 const KEY_ADMIN = "dfl.adminToken";
+const KEY_COMMISSIONER = "dfl.commissionerPin";
 const KEY_REDUCE_RACE_MOTION = "dfl.reduceRaceMotion";
 export const RACE_MOTION_CHANGE = "dfl:race-motion-change";
 
@@ -19,8 +20,8 @@ export function clearUsername() {
   localStorage.removeItem(KEY_NAME);
 }
 
-// The admin "token" is simply the admin password. It is only ever sent to
-// Supabase over HTTPS in a request header; Postgres decides if it is valid.
+// The admin "token" is simply the master admin password. It is only ever sent
+// to Supabase over HTTPS in a request header; Postgres decides if it is valid.
 export function getAdminToken() {
   return localStorage.getItem(KEY_ADMIN) || "";
 }
@@ -28,6 +29,18 @@ export function getAdminToken() {
 export function setAdminToken(token) {
   if (token) localStorage.setItem(KEY_ADMIN, token);
   else       localStorage.removeItem(KEY_ADMIN);
+}
+
+// Commissioner PINs are scoped to the member selected on this device. The PIN
+// alone grants nothing: Postgres also requires the x-member-id header to match
+// an active commissioner_access row.
+export function getCommissionerPin() {
+  return localStorage.getItem(KEY_COMMISSIONER) || "";
+}
+
+export function setCommissionerPin(pin) {
+  if (pin) localStorage.setItem(KEY_COMMISSIONER, pin);
+  else     localStorage.removeItem(KEY_COMMISSIONER);
 }
 
 // Arena motion is an explicit app preference. It deliberately does not read
