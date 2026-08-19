@@ -11,7 +11,7 @@
 // =====================================================================
 
 import { insertRow, updateRow, deleteRow, selectAll } from "./supabase.js";
-import { field, setValue, readForm, fillOptionsFrom } from "./form.js";
+import { field, fieldSet, setValue, readForm, fillOptionsFrom } from "./form.js";
 import { esc, empty, toast, errorBox, loading } from "./ui.js";
 
 export async function renderManager(host, spec) {
@@ -45,7 +45,7 @@ export async function renderManager(host, spec) {
     <details class="crud-add" id="crud-box">
       <summary id="crud-heading">Add ${esc(spec.singular)}</summary>
       <form class="card" id="crud-form">
-        ${spec.fields.map((f) => field(f, "f_")).join("")}
+        ${fieldSet(spec.fields, "f_")}
         <div class="row-end">
           <button type="button" class="btn ghost hidden" id="crud-cancel">Cancel</button>
           <button type="submit" class="btn" id="crud-save">Save</button>

@@ -4,7 +4,7 @@
 
 import { isAdmin, isMasterAdmin, hasPermission, insertRow, updateRow, deleteRow, selectOne } from "./supabase.js";
 import { specFor } from "./sections.js";
-import { field, setValue, readForm, fillOptionsFrom } from "./form.js";
+import { field, fieldSet, setValue, readForm, fillOptionsFrom } from "./form.js";
 import { hiddenCards, setCardHidden } from "./settings.js";
 import { esc, toast } from "./ui.js";
 
@@ -191,7 +191,7 @@ export async function openEditor(table, id, preset, refresh) {
     <div class="overlay-card wide" role="dialog" aria-modal="true">
       <h2>${esc(id ? `Edit ${spec.singular}` : `Add ${spec.singular}`)}</h2>
       <form id="inline-form">
-        ${spec.fields.map((f) => field(f, "i_")).join("")}
+        ${fieldSet(spec.fields, "i_")}
         <div class="row-end">
           <button type="button" class="btn ghost" data-close>Cancel</button>
           <button type="submit" class="btn">Save</button>

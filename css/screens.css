@@ -1640,6 +1640,34 @@ a.moment:hover { background: var(--hover-soft); }
 /* The only prose left on the card: a state where a figure is missing for a
    fixable reason. A fully-synced league never sees one. */
 /* =====================================================================
+   FORMS: essentials first. A 17-field slide form met you all at once; twelve
+   of those fields now sit behind one summary, and the disclosure has to read
+   as part of the form rather than as a card dropped into it.
+   ===================================================================== */
+.form-advanced {
+  margin: .5rem 0 .2rem;
+  border-top: 1px solid var(--line);
+  padding-top: .5rem;
+}
+.form-advanced > summary {
+  cursor: pointer;
+  font-size: .86rem;
+  color: var(--muted);
+  list-style: none;
+}
+.form-advanced > summary::-webkit-details-marker { display: none; }
+/* A caret that turns, so open/closed is legible without reading the label. */
+.form-advanced > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: .35rem;
+  transition: transform .15s ease;
+}
+.form-advanced[open] > summary::before { transform: rotate(90deg); }
+.form-advanced > summary:hover { color: var(--body-text); }
+.form-advanced-body { display: grid; gap: .55rem; padding-top: .55rem; }
+
+/* =====================================================================
    CLICK A NAME TO CHANGE IT.
    The name has to look changeable without looking like a button in a table -
    a dotted underline reads as "editable" and keeps the row a row.

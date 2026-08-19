@@ -18,6 +18,7 @@
 // =====================================================================
 
 import { selectAll } from "./supabase.js";
+import { layoutFields } from "./form-layout.js";
 import { esc, toArray } from "./ui.js";
 
 /** Turn any optionsFrom fields into a plain options list before drawing. */
@@ -48,6 +49,12 @@ export async function fillOptionsFrom(fields) {
  * manager form and an inline dialog open at the same time, and two inputs
  * sharing an id makes the <label for> point at whichever came first.
  */
+/* The layout rule lives in js/form-layout.js, which is pure and specced -
+   form.js reaches the database through fillOptionsFrom() and so cannot be. */
+export function fieldSet(fields, prefix = "f_", opts = {}) {
+  return layoutFields(fields, (f) => field(f, prefix), opts);
+}
+
 export function field(f, prefix = "f_") {
   const id  = `${prefix}${f.name}`;
   const req = f.required ? "required" : "";

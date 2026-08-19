@@ -666,6 +666,47 @@ function pastChampionItems(ctx) {
   });
 }
 
+/*
+  THE CHIP EATERS, built exactly the way the champions are.
+
+  Same shape, same treatment family, same fall-back to no image - because the
+  league treats coming last as an award, and a slide that looked apologetic
+  about it would be the wrong joke.
+
+  TWO SEASONS, and no more. The punishment history starts after 2021
+  (FIRST_CHIP_SEASON, and js/chip-eaters.js holds the same floor for the card),
+  but the deck is not a record book - the whole of it is eight slides. Two is
+  "who owes a chip and who just paid up"; five would be the History page.
+
+  last_place_user_id is filled by the sync from the losers bracket, or by hand
+  through set_season_result(). A season with neither is skipped rather than
+  guessed at - see js/sleeper-bracket.js.
+*/
+const FIRST_CHIP_SEASON = 2022;
+const CHIP_SLIDES = 2;
+
+function chipEaterItems(ctx) {
+  if (!ctx.name) return [];
+  return (ctx.leagues || [])
+    .filter((l) => l.last_place_user_id && Number(l.season) >= FIRST_CHIP_SEASON)
+    .sort((a, b) => Number(b.season) - Number(a.season))
+    .slice(0, CHIP_SLIDES)
+    .map((l) => {
+      const who = ctx.name(l.last_place_user_id, l.season, null);
+      const art = pictureOf(ctx, who.memberId);
+      return item({
+        kind: "chip", treatment: "champion", temporal: "historical", priority: P.HISTORY,
+        kicker: `${l.season} Chip Eater`,
+        headline: who.label,
+        /* The sub is the team name when there is one; the hot chip is the point
+           and it goes in the kicker, so this line stays factual. */
+        subtitle: who.sub || "",
+        ...(art ? { image: art, background: "image" } : {}),
+        href: "#/history",
+      });
+    });
+}
+
 function recordItems(ctx) {
   if (!ctx.lore) return [];
   const picks = moments(ctx.lore)
@@ -775,6 +816,7 @@ export const GENERATORS = [
   ["news", newsItem],
   ["champion", championItem],
   ["pastChampions", pastChampionItems],
+  ["chipEaters", chipEaterItems],
   ["records", recordItems],
   ["seasonStat", seasonStatItem],
   ["dues", duesItem],
@@ -803,6 +845,7 @@ export const GENERATOR_LABELS = new Map([
   ["news",          ["Announcements", "Recent posts from the commissioner"]],
   ["champion",      ["Current champion", "The reigning title holder"]],
   ["pastChampions", ["Past champions", "Earlier title winners"]],
+  ["chipEaters",    ["Chip Eaters", "Who came last, and whether they have paid"]],
   ["records",       ["Record book", "All-time highs and lows"]],
   ["seasonStat",    ["Season stats", "Figures from the current season"]],
   ["dues",          ["Dues", "What the league is owed"]],

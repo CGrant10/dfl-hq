@@ -261,9 +261,9 @@ export const SECTIONS = [
       { name: "headline", label: "Headline", type: "text", required: true, placeholder: "Draft night is set" },
       { name: "subtitle", label: "Subtitle", type: "text", placeholder: "Saturday, 7pm" },
       { name: "body",     label: "Body copy", type: "textarea", placeholder: "Bring your own excuses." },
-      { name: "figure",   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
-      { name: "image",    label: "Image URL (optional)", type: "text" },
-      { name: "href",     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
+      { name: "figure", advanced: true,   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
+      { name: "image", advanced: true,    label: "Image URL (optional)", type: "text" },
+      { name: "href", advanced: true,     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
       /*
         TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.
 
@@ -273,7 +273,7 @@ export const SECTIONS = [
         stated - so it is asked here too, and "makes no claim" is a real
         answer rather than a blank.
       */
-      { name: "temporal", label: "When is this?", type: "select", default: "none",
+      { name: "temporal", advanced: true, label: "When is this?", type: "select", default: "none",
         options: [
           { value: "none",       label: "Makes no claim about time" },
           { value: "upcoming",   label: "Upcoming" },
@@ -287,7 +287,7 @@ export const SECTIONS = [
         'image' composes the image above as artwork behind the words; there
         is deliberately no second image field.
       */
-      { name: "background", label: "Background", type: "select", default: "default",
+      { name: "background", advanced: true, label: "Background", type: "select", default: "default",
         options: [
           { value: "default", label: "DFL house — the usual broadcast look" },
           { value: "dark",    label: "Dark — dramatic title card" },
@@ -300,7 +300,7 @@ export const SECTIONS = [
         number, because picking "faint" is a design decision and 0.043 is
         not. An image-heavy slide wants faint; a plain one can carry more.
       */
-      { name: "logo_opacity", label: "DFL crest behind the slide", type: "select", default: "default",
+      { name: "logo_opacity", advanced: true, label: "DFL crest behind the slide", type: "select", default: "default",
         options: [
           { value: "default", label: "Default" },
           { value: "subtle",  label: "Subtle" },
@@ -309,17 +309,17 @@ export const SECTIONS = [
         ] },
       /* Blank means "use the treatment default", which is the normal case.
          The range matches the CHECK on the column. */
-      { name: "dwell_seconds", label: "Seconds on screen (blank = automatic)", type: "number",
+      { name: "dwell_seconds", advanced: true, label: "Seconds on screen (blank = automatic)", type: "number",
         placeholder: "5" },
-      { name: "featured", label: "Feature it (pins it to the front of the deck)", type: "checkbox", default: false },
+      { name: "featured", advanced: true, label: "Feature it (pins it to the front of the deck)", type: "checkbox", default: false },
       /* Order is set with the arrows on the Broadcast panel, not typed
          here - two ways to set one thing is how they end up disagreeing. */
-      { name: "weight",   label: "Weight (moves it against automatic slides; 0 is normal)", type: "number", default: 0 },
+      { name: "weight", advanced: true,   label: "Weight (moves it against automatic slides; 0 is normal)", type: "number", default: 0 },
       /* datetime, not date: a slide that starts "on the 29th" would appear
          at midnight, which is not what anyone means by draft night. */
-      { name: "starts_at", label: "Show from (optional)", type: "datetime" },
-      { name: "ends_at",   label: "Stop showing at (optional)", type: "datetime" },
-      { name: "active",    label: "Slide is on", type: "checkbox", default: true },
+      { name: "starts_at", advanced: true, label: "Show from (optional)", type: "datetime" },
+      { name: "ends_at", advanced: true,   label: "Stop showing at (optional)", type: "datetime" },
+      { name: "active", advanced: true,    label: "Slide is on", type: "checkbox", default: true },
     ],
   },
 ];
