@@ -32,48 +32,19 @@ import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceLine, presenceNow, onPresence } from "../presence.js";
 
-/*
-  THE RUNNING STAGE.
-
-  Module-level because there must only ever be one. render() is called again
-  by the inline editors and the crest picker, and the router calls leave() on
-  the way out - both have to be able to stop the timer that the previous
-  render started, or the front page ends up with two clocks advancing the
-  same element and a setTimeout still firing on the calendar screen.
-*/
 let stage = null;
-/* Bumped by every render. loadLore() can take a second, so a phase 2 that
-   resolves after the page was re-rendered (inline edit, crest change) would
-   otherwise hand a stale deck to the new stage. */
 let generation = 0;
-/* The presence watcher's unsubscribe, so leaving home stops listening. */
 let dropPresence = null;
 
-/** Called by the router when this page is left. */
 export function leave() {
   try { stage?.stop(); } catch (err) { console.warn(err); }
   stage = null;
-  try { dropPresence?.(); } catch { /* nothing to drop */ }
+  try { dropPresence?.(); } catch { }
   dropPresence = null;
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
 
-/*
-  THE FRONT-PAGE EDITORIAL FILTER.
-
-  buildDeck() remains the complete broadcast engine because Admin and the
-  broadcast tooling still need to understand every automatic source. Home is
-  more selective: the big screen is the featured story, while the BottomLine
-  is the wire service. Calendar reminders, open polls, ordinary announcements
-  and dues therefore stay out of the Stage. Upcoming Golf / pre-draft fantasy
-  and an old personal matchup are utility too; live or recently completed
-  competition still belongs here.
-
-  Build a generous ranked pool first, THEN filter it. Filtering an eight-item
-  deck would let utility cards consume the eight slots before fun facts and
-  history ever got a chance to enter the show.
-*/
 const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
 function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
   const ranked = buildDeck(ctx, { custom, off, overrides, max: 20 });
@@ -89,7 +60,7 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
 }
 
 export async function render(view) {
-  leave();                                   // a re-render replaces the stage
+  leave();
   const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
@@ -98,16 +69,10 @@ export async function render(view) {
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
     db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
-    /* select("*") rather than a column list: the broadcast images are an
-       optional migration, and naming a column that does not exist yet is a
-       42703 that would take the whole front page down. Twelve rows. */
     db().from("members").select("*"),
     db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
-    /* Recently finalised outings, for What's New only - the stage reads the
-       live outing separately. finalized_at is a real dated event: somebody
-       pressed finalise. */
     db().from("golf_outings").select("id,name,finalized_at").not("finalized_at", "is", null)
         .order("finalized_at", { ascending: false }).limit(5),
   ]);
@@ -120,22 +85,6 @@ export async function render(view) {
   const me = currentMember();
   const myMember = me ? memberRows.find((m) => String(m.id) === String(me.id)) : null;
 
-  /*
-    THE STAGE, IN TWO PHASES, and the order matters.
-
-    Phase 1 builds a deck from the rows THIS PAGE has already fetched. It
-    paints immediately - no extra request stands between opening the app and
-    seeing something.
-
-    Phase 2 loads lore.js (688 matchup rows) and rebuilds, which is what
-    brings your matchup, the record book and past champions in. It is awaited
-    AFTER the first paint on purpose: putting it on the critical path would
-    make the front page slower than it is today, which is a bad trade for
-    slides that are about things that happened years ago.
-  */
-  /* Both in one round trip. The hand-written slides are part of phase 1
-     because a commissioner who posts one expects to see it on the first
-     paint, not after lore has finished loading. */
   const [golfDay, manual, overrides] = await Promise.all([
     golfRow ? loadGolfDay(golfRow.id) : null,
     loadBroadcastItems(),
@@ -148,44 +97,23 @@ export async function render(view) {
   };
   const deck1 = editorialStage(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff(), overrides });
 
-  /*
-    WHAT'S NEW sits under the snapshot rather than above the stage: it is a
-    footnote about the last few days, and putting it first would push the
-    thing that is actually happening below the fold. It is usually "".
-
-    syncedAt comes from lore, which has not loaded yet at this point - so
-    the sync line is the one change this strip reports a beat later. It is
-    not worth blocking the first paint on.
-  */
   const wn = newsWindow();
   const changes = wn.firstRun ? [] : changesSince({
     announcements: announcements.data || [], events: events.data || [],
     polls: polls.data || [], syncedAt: null,
     golf: golfDone.data || [], leagues: leagues.data || [], broadcast: manual,
   }, wn.since);
-  /* A first run stamps the champion watermark too, so the NEXT title the
-     league wins is announced - without this, a device that has never
-     dismissed the strip would never learn what "the champion I already
-     knew about" was, and could never report a new one. */
   if (wn.firstRun) markSeen(new Date(), leagues.data || []);
   const strip = whatsNewStrip(changes, wn.since);
 
   view.innerHTML = `<div id="home-wrap">
-    <!--
-      Every other route has a visible <h1>. This one leads with the stage,
-      whose headline changes every few seconds - making THAT the h1 would
-      give the page a heading that rotates, which is worse than none for
-      anyone navigating by headings. So the page gets a real h1 that simply
-      does not need to be drawn: the crest, the banner and the stage
-      already say what this is to anybody who can see it.
-    -->
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
     ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
-    <section class="block"><h2 class="section-title">Latest<a class="section-link" href="#/calendar">Calendar →</a></h2>
+    <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>
       ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
     <section class="block"><h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
       ${eventList(events.data)}${adminRow(addControl("events", "Add event"))}</section>
@@ -199,9 +127,6 @@ export async function render(view) {
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
 
-  /* The counter updates itself when the next heartbeat lands, and the
-     unsubscribe is held so leave() can drop it - a home page left behind
-     must not keep a watcher alive. */
   const alive = view.querySelector("[data-alive]");
   if (alive) {
     dropPresence?.();
@@ -209,23 +134,10 @@ export async function render(view) {
   }
   wireCrest(view);
 
-  /*
-    START THE CLOCK.
-
-    Everything the stage needs to rebuild itself is closed over here, so the
-    refresh callback is the ONLY thing that knows how to get fresh golf
-    scores - the engine just calls it and takes a deck back. It re-reads the
-    outing rather than the whole page, because a live scorecard is the only
-    thing on this screen that changes minute to minute.
-  */
   let lore = null;
   let custom = manual;
-  /* Read once per render off the warm settings cache, not per slide. */
   const off = broadcastOff();
   const build = (day) => editorialStage(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off, overrides });
-  /* The live poll re-reads the hand-written slides too, so a slide that was
-     scheduled to start - or that an admin just published - arrives during a
-     golf day without anybody reloading the page. */
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -238,14 +150,11 @@ export async function render(view) {
   const root = view.querySelector("[data-bx-stage]");
   if (root) stage = startStage(root, deck1, { refresh });
 
-  /* Phase 2. Nothing above waited for this. It hands the richer deck to the
-     running engine instead of replacing the element, so a slide you are
-     reading is not ripped out from under you when lore lands. */
   loadLore().then((got) => {
     if (got?.error || !got) return;
     lore = got;
-    if (mine !== generation) return;          // a newer render owns the stage now
-    if (!view.querySelector("[data-bx-stage]")) return;   // navigated away mid-flight
+    if (mine !== generation) return;
+    if (!view.querySelector("[data-bx-stage]")) return;
     stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
   view.querySelector("#install-app")?.addEventListener("click", async () => {
@@ -260,37 +169,6 @@ export async function render(view) {
   });
 }
 
-
-/*
-  THE HERO IS THE STAGE NOW.
-
-  Everything that used to live here - heroBlock, golfHero, matchupHero,
-  quietHero, heroShell, scoreBand, golfMood, matchupMood - has moved rather
-  than been deleted. The three hero functions were a priority list wearing an
-  || chain:
-
-    golfHero(...) || matchupHero(...) || quietHero(...)
-
-  which is exactly what broadcast-deck.js does with fourteen generators
-  instead of three. golfMood became dayMood() in marquee.js, beside the
-  match-level mood it always belonged next to. The scoreboard is marquee().
-
-  Nothing was reimplemented on the way across. The golf scores still come
-  from dayPoints(), the names from namer(), the temporal state from
-  outingState() and fantasyState().
-*/
-
-/*
-  THE ANNIVERSARY BANNER.
-
-  2026 is the tenth season, and a tenth season is the one thing on this page
-  that outranks whatever is happening today - so it sits above the stage
-  rather than in the sign-off at the foot, where it used to be a single grey
-  line.
-
-  It only exists on a decade year. Every other season this returns nothing at
-  all, which is the point: a banner that is always there is furniture.
-*/
 function anniversary() {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   if (number < 2 || number % 10 !== 0) return "";
@@ -301,10 +179,6 @@ function anniversary() {
   </aside>`;
 }
 
-// --------------------------------------------------------- the snapshot
-
-/* A record, characterised. Win percentage only - there is no per-week data
-   loaded here, so anything about "streaks" would be invented. */
 function form(row) {
   const games = (row.wins || 0) + (row.losses || 0) + (row.ties || 0);
   if (!games) return "Your record";
@@ -342,8 +216,6 @@ function snapshot({ leagues, members, myMember, standings, dues, polls }) {
     `<a href="${c.href}"><b>${esc(c.value)}</b><small>${esc(c.label)}</small></a>`).join("")}</div>`;
 }
 
-// ------------------------------------------------------------- the rest
-
 function newsList(allRows) {
   const rows = visible("announcements", allRows);
   if (!rows.length) return `<div class="state"><span class="state-title">Nothing yet</span><span>The commissioner has been quiet.</span></div>`;
@@ -354,8 +226,6 @@ function newsList(allRows) {
     ${editControls("announcements", a)}</article>`).join("")}</div>`;
 }
 
-/* The crest, once, at the bottom - the identity block. This is also where the
-   commissioner changes it, which is why it stays on the page at all. */
 function identity(leagues, members, logo) {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   return `<section class="hero">
@@ -369,17 +239,7 @@ function identity(leagues, members, logo) {
 const CREST_SIZE=256,MAX_UPLOAD=12*1024*1024;function wireCrest(view){const pick=view.querySelector("#logo-pick"),file=view.querySelector("#logo-file"),reset=view.querySelector("#logo-reset");if(!pick||!file)return;pick.addEventListener("click",()=>file.click());reset?.addEventListener("click",async()=>{if(!confirm("Go back to the built-in crest?"))return;try{await saveSetting(KEY_LOGO,"");toast("Crest reset");render(view)}catch(err){toast(err.message||"Could not reset the crest",true)}});file.addEventListener("change",async()=>{const chosen=file.files?.[0];if(!chosen)return;if(!chosen.type.startsWith("image/")){toast("That is not an image",true);return}if(chosen.size>MAX_UPLOAD){toast("That image is too large",true);return}pick.disabled=true;pick.textContent="Working…";try{await saveSetting(KEY_LOGO,await toSquarePng(chosen,CREST_SIZE));toast("Crest updated");render(view)}catch(err){toast(err.message||"Could not read that image",true);pick.disabled=false;pick.textContent="Change crest"}})}
 async function toSquarePng(fileObj,size){const bitmap=await createImageBitmap(fileObj);try{const side=Math.min(bitmap.width,bitmap.height),canvas=document.createElement("canvas");canvas.width=canvas.height=size;canvas.getContext("2d").drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,size,size);return canvas.toDataURL("image/png")}finally{bitmap.close?.()}}
 function ordinal(n){const r=n%100;if(r>=11&&r<=13)return `${n}th`;return n+(["th","st","nd","rd"][n%10]||"th")}
-/*
-  THE CREED IS THE NAVIGATION.
 
-  DRAFT * GOLF * SIN * FOLD is printed on the crest, and it happens to name
-  the four things this league does. So it is the way in, rather than a
-  decorative line of type above a ten-icon grid. The full list still exists,
-  behind More in the tab bar.
-
-  Each door carries one live number, and a door with nothing to say says so
-  quietly rather than showing a zero.
-*/
 function creedDoors(events,golfRow,polls,dues){
   const draft=(events||[]).find(e=>/draft/i.test(e.title||e.name||""));
   const open=(polls||[]).length;
