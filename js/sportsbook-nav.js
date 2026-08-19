@@ -1,4 +1,4 @@
-// DFL Sportsbook entry in the existing More sheet. Kept out of index.html so
+// DFL dynamic entries in the existing More sheet. Kept out of index.html so
 // the shell markup stays stable; the router calls this once at startup.
 import { decorateChipEaters } from "./chip-eaters.js";
 
@@ -10,6 +10,13 @@ export function ensureSportsbookNav() {
     link.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-versus"></use></svg><span class="qn-label">Sportsbook</span>`;
     const admin = nav.querySelector('a[href="#/admin"]');
     nav.insertBefore(link, admin || null);
+  }
+  if (nav && !nav.querySelector('a[href="#/proposals"]')) {
+    const link = document.createElement("a");
+    link.href = "#/proposals";
+    link.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#i-rules"></use></svg><span class="qn-label">Proposals</span>`;
+    const rules = nav.querySelector('a[href="#/rules"]');
+    if (rules?.nextSibling) nav.insertBefore(link, rules.nextSibling); else nav.appendChild(link);
   }
   startChipEaters();
 }
