@@ -1,4 +1,4 @@
-name: DFL legacy season-count release
+name: Historical identity hotfix
 
 on:
   push:
@@ -21,46 +21,31 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply DFL season-count rule
+      - name: Preserve 2019 champion identity and bump release
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import json
+          import json, re
 
-          # One source of truth: DFL existed for two seasons before the synced
-          # Sleeper record begins. This adjusts DISPLAYED league-tenure counts
-          # only; it never fabricates wins, points, finishes, or season rows.
-          p = Path('js/config.js')
+          p = Path('js/sync.js')
           s = p.read_text()
-          needle = 'export const FIRST_SYNCED_SEASON = 2019;\n'
-          addition = '''export const FIRST_SYNCED_SEASON = 2019;\nexport const LEGACY_SEASONS = Math.max(0, FIRST_SYNCED_SEASON - LEAGUE_FOUNDED);\nexport const dflSeasonCount = (syncedSeasons = 0) =>\n  Math.max(0, Number(syncedSeasons) || 0) + LEGACY_SEASONS;\n'''
-          if 'export const LEGACY_SEASONS' not in s:
-              if needle not in s: raise SystemExit('config season anchor not found')
-              s = s.replace(needle, addition, 1)
+          needle = '''  const lastPlaceRoster = readLastPlace(losers);\n'''
+          insert = '''  const lastPlaceRoster = readLastPlace(losers);\n\n  /*\n    ONE KNOWN ORPHANED IDENTITY.\n\n    sheyg2014 won 2019 and was removed from that Sleeper league afterward, so\n    the API now returns no owner for his roster. The champion roster itself is\n    still authoritative. Repair only that exact season+roster snapshot after\n    every sync; never rename generic deleted users.\n  */\n  if (season === 2019 && championRoster != null) {\n    const historicalName = "sheyg2014";\n    const [rosterFix, standingsFix] = await Promise.all([\n      db().from("sleeper_rosters")\n        .update({ team_name: historicalName, display_name: historicalName })\n        .eq("season", season).eq("roster_id", championRoster),\n      db().from("sleeper_standings")\n        .update({ team_name: historicalName })\n        .eq("season", season).eq("roster_id", championRoster),\n    ]);\n    if (rosterFix.error) throw rosterFix.error;\n    if (standingsFix.error) throw standingsFix.error;\n    log(`   restored ${season} champion identity: ${historicalName}`);\n  }\n'''
+          if 'restored ${season} champion identity: ${historicalName}' not in s:
+              if needle not in s: raise SystemExit('sync insertion point not found')
+              s = s.replace(needle, insert, 1)
           p.write_text(s)
 
-          p = Path('js/pages/profile.js')
+          p = Path('js/lore.js')
           s = p.read_text()
-          s = s.replace(
-              'import { FIRST_SYNCED_SEASON } from "../config.js";',
-              'import { FIRST_SYNCED_SEASON, dflSeasonCount } from "../config.js";', 1)
-          s = s.replace('${careerCard(careerStats, seasons.length)}',
-                        '${careerCard(careerStats, dflSeasonCount(seasons.length))}', 1)
-          s = s.replace('seasonCount: seasons.length,',
-                        'seasonCount: dflSeasonCount(seasons.length),', 1)
+          needle = '''    // No owner: the Sleeper account was deleted. Use that season's team\n    // name if we captured one, otherwise at least identify the roster, so\n    // the season still appears instead of vanishing.\n    const orphan = season != null && rosterId != null\n'''
+          replacement = '''    // One known historical orphan: Sleeper lost the owner account after the\n    // 2019 champion left the league, but the champion roster is still known.\n    // Scope this to that exact roster so other deleted accounts remain honest.\n    const known2019Champion = season === 2019 && rosterId != null &&\n      (data.leagues || []).some((l) => Number(l.season) === 2019 &&\n        String(l.champion_roster_id) === String(rosterId));\n    if (known2019Champion) return { label: "sheyg2014", sub: "", memberId: null };\n\n    // No owner: the Sleeper account was deleted. Use that season's team\n    // name if we captured one, otherwise at least identify the roster, so\n    // the season still appears instead of vanishing.\n    const orphan = season != null && rosterId != null\n'''
+          if 'known2019Champion' not in s:
+              if needle not in s: raise SystemExit('lore insertion point not found')
+              s = s.replace(needle, replacement, 1)
           p.write_text(s)
 
-          p = Path('js/pages/history.js')
-          s = p.read_text()
-          old = 'import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";'
-          new = 'import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON, dflSeasonCount } from "../config.js";'
-          if old in s: s = s.replace(old, new, 1)
-          s = s.replace(
-              'const seasonCount = new Set(data.standings.map((s) => s.season)).size;',
-              'const seasonCount = dflSeasonCount(new Set(data.standings.map((s) => s.season)).size);', 1)
-          p.write_text(s)
-
-          VERSION = '1.109.55'
+          VERSION = '1.109.57'
           Path('version.txt').write_text(VERSION + '\n')
 
           pkg = json.loads(Path('package.json').read_text())
@@ -69,7 +54,6 @@ jobs:
 
           sw = Path('sw.js')
           x = sw.read_text()
-          import re
           x, n = re.subn(r'const CACHE_NAME = "dfl-hq-v[^"]+";',
                          f'const CACHE_NAME = "dfl-hq-v{VERSION}";', x, count=1)
           if n != 1: raise SystemExit('service worker version anchor not found')
@@ -81,6 +65,13 @@ jobs:
                          f'name="dfl-app-version" content="{VERSION}"', x, count=1)
           if n != 1: raise SystemExit('HTML version anchor not found')
           idx.write_text(x)
+
+          cfg = Path('js/config.js')
+          x = cfg.read_text()
+          x, n = re.subn(r'const RELEASE_FLOOR = "1\.109\.\d+";',
+                         f'const RELEASE_FLOOR = "{VERSION}";', x, count=1)
+          if n != 1: raise SystemExit('release floor anchor not found')
+          cfg.write_text(x)
           PY
       - name: Verify
         run: pnpm check
@@ -88,6 +79,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/config.js js/pages/profile.js js/pages/history.js version.txt package.json sw.js index.html
-          git commit -m "Use full DFL tenure in career season counts and release v1.109.55"
+          git add js/sync.js js/lore.js js/config.js version.txt package.json sw.js index.html
+          git commit -m "Preserve sheyg2014 as 2019 champion and release v1.109.57"
           git push
