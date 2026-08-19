@@ -13,6 +13,10 @@ import {
   coastProgress,
   finishTrajectories,
   presentFinish,
+  EXIT_BOOST,
+  EXIT_RAMP_MS,
+  exitBoostAt,
+  exitDurationMs,
 } from "./theatre";
 import { MAX_SETTLE, TRACK_START, presentationScreenRatio } from "./finish-presentation";
 
@@ -294,26 +298,60 @@ describe("theatre - the event queue", () => {
     ({ finishMs, place: 1, crossSpeed, settle, tau: settle / crossSpeed,
        coastMs: settle / crossSpeed });
 
-  it("keeps EXACTLY the crossing pace after the line", () => {
+  it("crosses at exactly the approach pace, then accelerates away", () => {
     /*
-      THE SLOW-MOTION BUG. This was an exponential wind-down,
-      1 + S(1 - e^(-age/tau)), whose velocity starts at v0 and decays to
-      nothing - so a racer crossed the line and immediately began gliding to a
-      halt. Velocity-continuous, and still wrong: a runner crosses a finish
-      line and keeps running.
+      THE ARITHMETIC BEHIND THIS. progress -> screen is 0.54 of the frame per
+      unit, a racer at the line is at 58%, and the frame ends at 100% - so
+      leaving it costs 0.87 more units. At the measured crossing speed of about
+      1.09e-4 units/ms that is EIGHT SECONDS at a constant pace, which is the
+      "they go very slow at the line" report. A constant velocity cannot both
+      keep pace and get them off the screen; accelerating away can.
+
+      What must not change is the crossing itself: the first instant past the
+      line is still exactly the approach speed.
     */
-    const t = traj(0.0002, 0.65);
-    const step = 50;
-    const speeds: number[] = [];
-    for (let age = 0; age + step <= t.coastMs - step; age += step) {
-      const a = coastProgress(1, t.finishMs + age, t);
-      const b = coastProgress(1, t.finishMs + age + step, t);
-      speeds.push((b - a) / step);
+    const t = traj(0.0002, 1.15);
+    const at = (age: number) => coastProgress(1, t.finishMs + age, t);
+    /* A small h, because the exit ACCELERATES: a finite difference over a whole
+       millisecond reports the average across it and reads high at t=0. */
+    const v = (age: number, h = 0.01) => (at(age + h) - at(age)) / h;
+
+    expect(v(0)).toBeCloseTo(t.crossSpeed, 6);            // continuous at the line
+    expect(v(EXIT_RAMP_MS + 200)).toBeCloseTo(t.crossSpeed * EXIT_BOOST, 6);
+    /* Monotonically faster through the ramp, never slower. */
+    let prev = 0;
+    for (let age = 0; age <= EXIT_RAMP_MS; age += 50) {
+      const speed = v(age);
+      expect(speed).toBeGreaterThanOrEqual(prev - 1e-12);
+      prev = speed;
     }
-    expect(speeds.length).toBeGreaterThan(4);
-    for (const v of speeds) expect(v).toBeCloseTo(t.crossSpeed, 9);
-    // No decay whatsoever: last stride is the same as the first.
-    expect(speeds.at(-1)!).toBeCloseTo(speeds[0]!, 9);
+  });
+
+  it("gets them off the screen in about a second and a half, not eight", () => {
+    // 0.87 units of progress is the distance from the line to the frame edge.
+    const t = traj(0.000109, 1.15);
+    const toEdge = exitDurationMs(0.87, t.crossSpeed);
+    expect(toEdge).toBeLessThan(2500);
+    expect(toEdge).toBeGreaterThan(800);
+    /* and the flat-rate version really was the eight seconds complained about */
+    expect(0.87 / t.crossSpeed).toBeGreaterThan(7000);
+  });
+
+  it("reports the exit duration as the true inverse of the curve", () => {
+    for (const [settle, speed] of [[1.15, 0.0002], [1.15, 0.000109], [0.05, 0.0002]] as const) {
+      const ms = exitDurationMs(settle, speed);
+      const reached = coastProgress(1, 10_000 + ms, traj(speed, settle, 10_000)) - 1;
+      expect(reached).toBeCloseTo(Math.min(settle, reached), 6);
+      expect(reached).toBeCloseTo(settle, 4);
+    }
+  });
+
+  it("ramps the boost from 1 to EXIT_BOOST and holds", () => {
+    expect(exitBoostAt(0)).toBeCloseTo(1);
+    expect(exitBoostAt(EXIT_RAMP_MS / 2)).toBeCloseTo(1 + (EXIT_BOOST - 1) / 2);
+    expect(exitBoostAt(EXIT_RAMP_MS)).toBeCloseTo(EXIT_BOOST);
+    expect(exitBoostAt(EXIT_RAMP_MS * 10)).toBeCloseTo(EXIT_BOOST);
+    expect(exitBoostAt(-50)).toBeCloseTo(1);
   });
 
   it("is continuous at the line and never goes backwards", () => {
@@ -342,9 +380,11 @@ describe("theatre - the event queue", () => {
     const early = { progress: 1 } as { progress: number; speed?: number; phase?: string };
     const late = { progress: 1 } as { progress: number; speed?: number; phase?: string };
     presentFinish(early, t.finishMs + 20, t, false);
-    presentFinish(late, t.finishMs + t.coastMs * 0.9, t, false);
+    presentFinish(late, t.finishMs + EXIT_RAMP_MS, t, false);
     expect(early.speed).toBeGreaterThan(0);
-    expect(late.speed).toBeCloseTo(early.speed!, 9);
+    /* They accelerate away, so the legs go FASTER. What is forbidden is
+       slower - that was the wind-down, and the 40x unit bug under it. */
+    expect(late.speed).toBeGreaterThanOrEqual(early.speed!);
   });
 
   it("hands the renderer a finisher speed in the same units as a racer's", () => {
@@ -382,10 +422,11 @@ describe("theatre - the event queue", () => {
       const gone = coastProgress(1, row.finishMs + t.coastMs * 1.2, t);
       expect(gone).toBeCloseTo(1 + MAX_SETTLE);
       expect(presentationScreenRatio(gone)).toBeGreaterThan(1);
-      /* and they were still moving at pace a moment before leaving */
+      /* and they were moving FASTER than their crossing pace on the way out,
+         never slower - the exit accelerates. */
       const a = coastProgress(1, row.finishMs + t.coastMs * 0.4, t);
       const b = coastProgress(1, row.finishMs + t.coastMs * 0.4 + 50, t);
-      expect((b - a) / 50).toBeCloseTo(t.crossSpeed, 9);
+      expect((b - a) / 50).toBeGreaterThanOrEqual(t.crossSpeed);
     }
   });
 

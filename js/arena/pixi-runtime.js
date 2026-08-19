@@ -3215,7 +3215,15 @@ function Pn(e, t) {
 function Fn(e, t = 12) {
 	return yt;
 }
-function In(e) {
+function In(e, t) {
+	let n = Math.max(1e-9, t), r = n * 600 * 6 / 2;
+	if (e <= r) {
+		let t = n * 4 / 1200, r = n;
+		return (-r + Math.sqrt(r * r + 4 * t * e)) / (2 * t);
+	}
+	return 600 + (e - r) / (n * 5);
+}
+function Ln(e) {
 	let t = Nn(e), n = [];
 	for (let r of e.order) {
 		let i = Math.max(1e-6, t[r.index] ?? 1e-4), a = Fn(r.place, e.order.length), o = a / i;
@@ -3225,30 +3233,37 @@ function In(e) {
 			crossSpeed: i,
 			settle: a,
 			tau: o,
-			coastMs: Math.min(3e4, a / i)
+			coastMs: Math.min(3e4, In(a, i))
 		};
 	}
 	return n;
 }
-function Ln(e, t, n) {
-	if (!n || t < n.finishMs) return e;
-	let r = t - n.finishMs;
-	return 1 + Math.min(n.settle, n.crossSpeed * r);
+function Rn(e) {
+	return 1 + 4 * Math.min(1, Math.max(0, e) / 600);
 }
-function Rn(e, t, n) {
+function zn(e, t, n) {
+	if (!n || t < n.finishMs) return e;
+	let r = t - n.finishMs, i = n.crossSpeed, a = r <= 600 ? i * (r + 4 * r * r / 1200) : i * 1800 + i * 5 * (r - 600);
+	return 1 + Math.min(n.settle, a);
+}
+function Bn(e, t, n) {
 	if (!t || e < t.finishMs) return "racing";
 	if (n) return "celebrating";
 	let r = e - t.finishMs;
 	return r < 160 ? "crossing" : r < t.coastMs ? "coasting" : "settled";
 }
-function zn(e, t, n, r) {
-	let i = Rn(t, n, r);
-	return e.phase = i, e.displayProgress = Ln(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n && (e.speed = Math.max(0, Math.min(1, n.crossSpeed * 40 * 180))), e;
+function Vn(e, t, n, r) {
+	let i = Bn(t, n, r);
+	if (e.phase = i, e.displayProgress = zn(e.progress, t, n), e.exiting = i === "crossing" || i === "coasting", e.exiting && n) {
+		let r = t - n.finishMs;
+		e.speed = Math.max(0, Math.min(1, n.crossSpeed * Rn(r) * 40 * 180));
+	}
+	return e;
 }
 //#endregion
 //#region src/arena/runtime.ts
 var $ = /* @__PURE__ */ new WeakMap();
-async function Bn(e, t) {
+async function Hn(e, t) {
 	if (!e) return null;
 	$.get(e)?.destroy();
 	let n = e.querySelector(".track") || e, r = Array.from(n.querySelectorAll(".runner-art, .bc-runner-art")), i = new Map(r.map((e) => [e, {
@@ -3309,6 +3324,6 @@ async function Bn(e, t) {
 	}
 }
 //#endregion
-export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, kn as allowance, jn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, Dn as closingEase, Ln as coastProgress, X as composeCharacter, Bn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Nn as crossingSpeeds, Pn as dramatize, pt as finishArrival, Rn as finishPhase, gt as finishSettledMs, In as finishTrajectories, En as launchEase, Qt as normalizeCharacter, On as openEase, Mn as planArcs, zn as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, Fn as settleOffset, an as silhouetteRuns };
+export { tn as ACCESSORY_KEYS, nn as EXPRESSION_KEYS, Nt as LANE_BAND_BOTTOM, Mt as LANE_BAND_TOP, Sn as MAX_DROP, xn as MAX_LEAD, kn as allowance, jn as arcShape, gn as backgroundMotion, ln as characterIds, cn as characterSvg, Dn as closingEase, zn as coastProgress, X as composeCharacter, Hn as createArenaRenderer, jt as createFinishPresentation, vn as createReactionTimeline, Nn as crossingSpeeds, Pn as dramatize, pt as finishArrival, Bn as finishPhase, gt as finishSettledMs, Ln as finishTrajectories, En as launchEase, Qt as normalizeCharacter, On as openEase, Mn as planArcs, Vn as presentFinish, bn as presentationRacerFrame, Tt as presentationScreenRatio, yn as reactionAt, sn as runsToPaths, Fn as settleOffset, an as silhouetteRuns };
 
 //# sourceMappingURL=pixi-runtime.js.map

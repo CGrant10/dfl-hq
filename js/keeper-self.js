@@ -19,6 +19,7 @@
 
 import { db } from "./supabase.js";
 import { esc, toast } from "./ui.js";
+import { verifiedPin } from "./member-lock.js";
 
 const MISSING = /keeper_self_status|keeper_set_self|keeper_clear_self|does not exist|not find the function|schema cache/i;
 
@@ -107,6 +108,20 @@ function currentList(mine, season) {
  */
 export function selfCard({ season, status, mine = [], options = [] }) {
   if (!status) return "";
+  /*
+    ONLY ASK FOR WHAT WE DO NOT ALREADY HAVE.
+
+    A member who unlocked the app on the way in has already proved this PIN
+    once this session, and member-lock.js keeps it precisely so this card does
+    not have to ask again. It still goes to the server on every write and is
+    still verified against the stored hash there - what changed is that the
+    person is not re-typing a secret they typed four seconds ago.
+
+    The field comes back if the PIN is not held: a reload in a tab that never
+    saw the lock, or a member who set a PIN after unlocking.
+  */
+  const held = status.member_id ? verifiedPin(status.member_id) : null;
+  const askForPin = !!status.needs_pin && !held;
 
   if (!status.member_id) {
     return `<section class="card keeper-self"><div class="card-body">
@@ -154,7 +169,7 @@ export function selfCard({ season, status, mine = [], options = [] }) {
             </option>`).join("")}
         </select>
 
-        ${status.needs_pin ? `
+        ${askForPin ? `
           <label for="ks-pin">Your Profile PIN</label>
           <input id="ks-pin" name="pin" type="text" inputmode="numeric" pattern="[0-9]*"
                  minlength="4" maxlength="6" autocomplete="one-time-code"
@@ -182,7 +197,7 @@ export function selfCard({ season, status, mine = [], options = [] }) {
 /**
  * Wire the card. `onSaved` re-renders whatever is showing the keeper board.
  */
-export function wireSelfCard(host, { season, options = [], onSaved = () => {} } = {}) {
+export function wireSelfCard(host, { season, memberId = null, options = [], onSaved = () => {} } = {}) {
   if (!host) return;
   const byId = new Map(options.map((c) => [String(c.playerId), c]));
 
@@ -212,7 +227,7 @@ export function wireSelfCard(host, { season, options = [], onSaved = () => {} } 
         pick_name: pick.name || null,
         pick_pos: pick.position || null,
         pick_nfl_team: pick.nflTeam || null,
-        attempted_pin: form.pin?.value || null,
+        attempted_pin: form.pin?.value || verifiedPin(memberId) || null,
       });
       if (error) throw error;
       /*
@@ -237,7 +252,7 @@ export function wireSelfCard(host, { season, options = [], onSaved = () => {} } 
     try {
       const { error } = await db().rpc("keeper_clear_self", {
         target_season: Number(season),
-        attempted_pin: form?.pin?.value || null,
+        attempted_pin: form?.pin?.value || verifiedPin(memberId) || null,
       });
       if (error) throw error;
       toast("Your keeper was removed");

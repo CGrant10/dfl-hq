@@ -423,6 +423,28 @@ export function settleOffset(_place: number, _racerCount = 12): number {
   return MAX_SETTLE;
 }
 
+/*
+  How long the exit takes: the inverse of coastProgress()'s curve.
+
+  Ramp phase covers v0*T*(1+B)/2. Anything beyond that is at the boosted rate,
+  so the remainder is a division. Solving the quadratic for a distance that
+  ends inside the ramp keeps the answer exact for a very slow crosser rather
+  than reporting the ramp length and being wrong.
+*/
+export function exitDurationMs(settle: number, crossSpeed: number): number {
+  const v0 = Math.max(1e-9, crossSpeed);
+  const T = EXIT_RAMP_MS;
+  const B = EXIT_BOOST;
+  const rampDistance = v0 * T * (1 + B) / 2;
+  if (settle <= rampDistance) {
+    /* v0*(t + (B-1)t^2/(2T)) = settle  ->  quadratic in t, positive root. */
+    const a = v0 * (B - 1) / (2 * T);
+    const b = v0;
+    return (-b + Math.sqrt(b * b + 4 * a * settle)) / (2 * a);
+  }
+  return T + (settle - rampDistance) / (v0 * B);
+}
+
 /** Every racer's run-out, worked out before playback starts. */
 export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
   const speeds = crossingSpeeds(sim);
@@ -434,51 +456,83 @@ export function finishTrajectories(sim: RaceSimulation): FinishTrajectory[] {
     byIndex[row.index] = {
       finishMs: row.finishMs, place: row.place, crossSpeed, settle, tau,
       /*
-        Exactly when the exit distance is used up, because the pace is
-        constant. Two wrong versions of this line: `tau * 3` (the point an
-        exponential became imperceptible - meaningless once there is no
-        exponential) and then the same division still wearing the old 6000ms
-        ceiling, which quietly made coastMs stop meaning "when they are gone"
-        the moment the exit distance grew past six seconds of travel.
+        When the exit distance is used up. Not a straight division any more -
+        the exit accelerates, so the ramp covers ground the flat rate would
+        not. Three wrong versions of this line before now: `tau * 3` (the
+        point an exponential became imperceptible, meaningless once there is
+        no exponential), the same division wearing a 6000ms ceiling that
+        quietly stopped it meaning "when they are gone", and then the division
+        itself once the exit stopped being flat.
 
-        The 30s guard is only that - a guard against a pathological crossSpeed
-        near the 1e-6 floor above. Nothing real approaches it.
+        The 30s guard is a guard against a pathological crossSpeed near the
+        1e-6 floor above. Nothing real approaches it.
       */
-      coastMs: Math.min(30_000, settle / crossSpeed),
+      coastMs: Math.min(30_000, exitDurationMs(settle, crossSpeed)),
     };
   }
   return byIndex;
 }
 
+/*
+  THEY CROSS AT PACE AND THEN ACCELERATE AWAY.
+
+  This is the third model and the first one that is honest about the geometry,
+  so the arithmetic is worth writing down:
+
+    progress -> screen is 0.54 of the frame per unit
+    a racer at the line is at 58% and the frame ends at 100%
+    so leaving it means covering 0.87 more units of progress
+
+  Measured crossing speed on the real sim is about 1.09e-4 units/ms, which is
+  5.9% of the frame per second - genuinely the pace they were running. At that
+  pace, clearing the frame takes EIGHT SECONDS.
+
+  That is the "they go very slow at the finish line" complaint, and it is why
+  "keep pace" and "run off the screen" cannot both be satisfied by a constant
+  velocity. The previous pass removed a deceleration and left a racer trundling
+  across 42% of the screen for eight seconds, which looks like slow motion for
+  the same reason a distant aircraft does.
+
+  So: velocity starts at exactly the crossing speed - the crossing itself stays
+  continuous, which is the property every version of this has had to keep - and
+  ramps linearly to EXIT_BOOST over EXIT_RAMP_MS, then holds. A runner going
+  hard through a line and away from it. Closed form, monotonic, no state:
+
+    v(t) = v0 * (1 + (B-1) * min(1, t/T))
+    x(t) = v0 * (t + (B-1) * t^2 / (2T))            for t <= T
+    x(t) = v0 * (T + (B-1) * T/2) + v0 * B * (t-T)  for t >  T
+
+  Velocity is continuous at t=0 (v0, matching the approach) and at t=T (B*v0),
+  because a linear velocity ramp is just constant acceleration. At B=5, T=600
+  they clear the frame in about 1.8s and are gone.
+*/
+export const EXIT_BOOST = 5;
+export const EXIT_RAMP_MS = 600;
+
+/** The exit speed multiplier at `age` ms past the line: 1 rising to EXIT_BOOST. */
+export function exitBoostAt(age: number): number {
+  const t = Math.max(0, age);
+  return 1 + (EXIT_BOOST - 1) * Math.min(1, t / EXIT_RAMP_MS);
+}
+
 /**
  * Where a finished racer is DRAWN.
  *
- * THEY RUN STRAIGHT THROUGH AT PACE. NOTHING SLOWS DOWN AT THE LINE.
- *
- *   x(age) = 1 + v0 * age,  held once it reaches 1 + S
- *   x'(age) = v0                          <- the approach speed, forever
- *
- * This used to be an exponential wind-down, x = 1 + S(1 - e^(-age/tau)),
- * whose velocity starts at v0 and decays to nothing. It was velocity-
- * continuous at the crossing and it was still wrong: a racer that crosses a
- * finish line and immediately begins gliding to a halt reads as slow motion,
- * and twelve of them doing it together reads as the race deflating rather
- * than finishing. A runner crosses the line and keeps running.
- *
- * Constant velocity is continuous at the line too - MORE continuous, in fact,
- * since the derivative no longer changes at all - so every property the coast
- * had survives: no clamp at the stripe, no second animation, no discontinuity
- * where a racer crosses, and the per-place run-out distance still fans the
- * field out across the run-off.
- *
- * The hold at 1 + S is the frame's edge, not a deceleration: presentation
- * geometry caps at 1 + MAX_SETTLE, and a racer who has run their whole
- * run-out has left the part of the course the camera covers.
+ * Held at 1 + settle once the exit distance is used up - a numeric backstop
+ * against unbounded positions in a long-lived tab, not a deceleration. The
+ * racer is far outside the frame by then and clipped by the track's
+ * overflow:hidden.
  */
 export function coastProgress(progress: number, elapsedMs: number, trajectory?: FinishTrajectory): number {
   if (!trajectory || elapsedMs < trajectory.finishMs) return progress;
   const age = elapsedMs - trajectory.finishMs;
-  return 1 + Math.min(trajectory.settle, trajectory.crossSpeed * age);
+  const v0 = trajectory.crossSpeed;
+  const T = EXIT_RAMP_MS;
+  const B = EXIT_BOOST;
+  const travelled = age <= T
+    ? v0 * (age + (B - 1) * age * age / (2 * T))
+    : v0 * (T + (B - 1) * T / 2) + v0 * B * (age - T);
+  return 1 + Math.min(trajectory.settle, travelled);
 }
 
 /** RACING -> CROSSING -> COASTING -> SETTLED -> CELEBRATING. */
@@ -530,7 +584,15 @@ export function presentFinish(
       the wind-down was removed: fixing the geometry alone left the animation
       still doing it.
     */
-    frame.speed = Math.max(0, Math.min(1, trajectory.crossSpeed * TICK_MS * 180));
+    /*
+      And the legs go with them. Same boost as the position, so a racer
+      accelerating away is animated as accelerating away rather than as
+      cruising. It clamps at 1, which is the renderer's ceiling - a sprint
+      looks like a sprint and cannot look like more than one.
+    */
+    const age = elapsedMs - trajectory.finishMs;
+    frame.speed = Math.max(0, Math.min(1,
+      trajectory.crossSpeed * exitBoostAt(age) * TICK_MS * 180));
   }
   return frame;
 }

@@ -243,6 +243,7 @@ async function mountSelfCard(host, data, member) {
   const options = await draw();
   wireSelfCard(mount, {
     season,
+    memberId: status.member_id,
     options,
     onSaved: async () => {
       /* Re-read the status too: a save can be the thing that uses up the last
