@@ -18,9 +18,9 @@ do $$
 declare r record; b record;
 begin
   for r in
-    select id from public.sportsbook_markets
-     where source='lore' and auto_key is not null and status in ('open','locked')
-       and auto_key in (
+    select sm.id from public.sportsbook_markets sm
+     where sm.source='lore' and sm.auto_key is not null and sm.status in ('open','locked')
+       and sm.auto_key in (
          'dfl-rule-smoke','dfl-groupchat-fantasy','dfl-golf-trash','dfl-late-arrival',
          'dfl-bad-purchase','dfl-argument-source','marvel-trailer','marvel-doom',
          'marvel-rewatch','gaming-rage','gaming-rematch','gaming-excuse',
@@ -29,21 +29,21 @@ begin
        )
   loop
     for b in
-      select * from public.sportsbook_bets
-       where market_id=r.id and status='open'
+      select sb.* from public.sportsbook_bets sb
+       where sb.market_id=r.id and sb.status='open'
        for update
     loop
-      update public.sportsbook_bets
+      update public.sportsbook_bets sb
          set status='void', payout=b.stake, settled_at=now()
-       where id=b.id;
-      update public.sportsbook_wallets
-         set balance=balance+b.stake, updated_at=now()
-       where member_id=b.member_id;
+       where sb.id=b.id;
+      update public.sportsbook_wallets sw
+         set balance=sw.balance+b.stake, updated_at=now()
+       where sw.member_id=b.member_id;
       insert into public.sportsbook_ledger(member_id,amount,kind,note,market_id,bet_id)
       values(b.member_id,b.stake,'refund','Retired auto-market refund',r.id,b.id);
     end loop;
-    update public.sportsbook_outcomes set is_winner=null where market_id=r.id;
-    update public.sportsbook_markets set status='void',settled_at=now() where id=r.id;
+    update public.sportsbook_outcomes so set is_winner=null where so.market_id=r.id;
+    update public.sportsbook_markets sm set status='void',settled_at=now() where sm.id=r.id;
   end loop;
 end $$;
 
@@ -70,8 +70,8 @@ security definer
 set search_path=public
 as $$
 declare
-  o record; t record; r record; m record; s1 record; s2 record;
-  market_id bigint; close_at timestamptz; k text; note text;
+  o record; t record; m record; s1 record; s2 record;
+  new_market_id bigint; close_at timestamptz; k text; note text;
 begin
   perform pg_advisory_xact_lock(73910422);
 
@@ -89,34 +89,34 @@ begin
     else now()+interval '72 hours' end;
   if close_at <= now() then close_at := now()+interval '4 hours'; end if;
 
-  if (select count(*) from public.golf_teams where outing_id=o.id) >= 2 then
+  if (select count(*) from public.golf_teams gt where gt.outing_id=o.id) >= 2 then
     k := 'golf:'||o.id||':outright';
-    if not exists(select 1 from public.sportsbook_markets where auto_key=k and status in ('open','locked','settled')) then
+    if not exists(select 1 from public.sportsbook_markets sm where sm.auto_key=k and sm.status in ('open','locked','settled')) then
       insert into public.sportsbook_markets(title,category,source,lore_note,status,closes_at,auto_key)
       values(o.name||' — Who wins the damn thing?','Golf','lore',
         'Real DFL teams. Neutral opening prices for now: Lore will talk shit, but it will not fake a handicap.',
-        'open',close_at,k) returning id into market_id;
-      for t in select id,name,sort_order from public.golf_teams where outing_id=o.id order by sort_order,id loop
+        'open',close_at,k) returning id into new_market_id;
+      for t in select gt.id,gt.name,gt.sort_order from public.golf_teams gt where gt.outing_id=o.id order by gt.sort_order,gt.id loop
         insert into public.sportsbook_outcomes(market_id,label,odds_american,sort_order)
-        values(market_id,coalesce(t.name,'Team'),
-          case (select count(*) from public.golf_teams where outing_id=o.id)
+        values(new_market_id,coalesce(t.name,'Team'),
+          case (select count(*) from public.golf_teams gt2 where gt2.outing_id=o.id)
             when 2 then -110 when 3 then 200 when 4 then 300 else 400 end,
           coalesce(t.sort_order,0));
       end loop;
     end if;
   end if;
 
-  if (select count(*) from public.golf_teams where outing_id=o.id)=2 then
-    select * into s1 from public.golf_teams where outing_id=o.id order by sort_order,id limit 1;
-    select * into s2 from public.golf_teams where outing_id=o.id and id<>s1.id order by sort_order,id limit 1;
+  if (select count(*) from public.golf_teams gt where gt.outing_id=o.id)=2 then
+    select gt.* into s1 from public.golf_teams gt where gt.outing_id=o.id order by gt.sort_order,gt.id limit 1;
+    select gt.* into s2 from public.golf_teams gt where gt.outing_id=o.id and gt.id<>s1.id order by gt.sort_order,gt.id limit 1;
     k := 'golf:'||o.id||':team-war';
-    if not exists(select 1 from public.sportsbook_markets where auto_key=k and status in ('open','locked','settled')) then
+    if not exists(select 1 from public.sportsbook_markets sm where sm.auto_key=k and sm.status in ('open','locked','settled')) then
       insert into public.sportsbook_markets(title,category,source,lore_note,status,closes_at,auto_key)
       values(coalesce(s1.name,'Team 1')||' vs '||coalesce(s2.name,'Team 2')||' — Tournament moneyline','Golf','lore',
         'The computer refuses to pretend either side has earned favorite status yet. Pick your idiots.',
-        'open',close_at,k) returning id into market_id;
+        'open',close_at,k) returning id into new_market_id;
       insert into public.sportsbook_outcomes(market_id,label,odds_american,sort_order) values
-        (market_id,coalesce(s1.name,'Team 1'),-110,0),(market_id,coalesce(s2.name,'Team 2'),-110,1);
+        (new_market_id,coalesce(s1.name,'Team 1'),-110,0),(new_market_id,coalesce(s2.name,'Team 2'),-110,1);
     end if;
   end if;
 
@@ -125,19 +125,23 @@ begin
       from public.golf_matches gm join public.golf_rounds gr on gr.id=gm.round_id
      where gm.outing_id=o.id order by gr.round_number,gm.match_number
   loop
-    select s.*,gt.name team_name into s1 from public.golf_match_sides s join public.golf_teams gt on gt.id=s.team_id where s.match_id=m.id and s.slot=1;
-    select s.*,gt.name team_name into s2 from public.golf_match_sides s join public.golf_teams gt on gt.id=s.team_id where s.match_id=m.id and s.slot=2;
+    select gs.*,gt.name team_name into s1
+      from public.golf_match_sides gs join public.golf_teams gt on gt.id=gs.team_id
+     where gs.match_id=m.id and gs.slot=1;
+    select gs.*,gt.name team_name into s2
+      from public.golf_match_sides gs join public.golf_teams gt on gt.id=gs.team_id
+     where gs.match_id=m.id and gs.slot=2;
     if s1.id is null or s2.id is null then continue; end if;
     k := 'golf:'||o.id||':match:'||m.id;
-    if not exists(select 1 from public.sportsbook_markets where auto_key=k and status in ('open','locked','settled')) then
+    if not exists(select 1 from public.sportsbook_markets sm where sm.auto_key=k and sm.status in ('open','locked','settled')) then
       note := case when m.format='singles'
         then 'Singles. No teammate to blame, no place to hide. The house has removed all adult supervision.'
         else 'Pairs. Four golfers, two balls, and enough shared blame to keep every group chat alive until winter.' end;
       insert into public.sportsbook_markets(title,category,source,lore_note,status,closes_at,auto_key)
       values('Round '||m.round_number||' · Match '||m.match_number||' — '||coalesce(s1.team_name,'Side 1')||' vs '||coalesce(s2.team_name,'Side 2'),
-        'Golf','lore',note,'open',close_at,k) returning id into market_id;
+        'Golf','lore',note,'open',close_at,k) returning id into new_market_id;
       insert into public.sportsbook_outcomes(market_id,label,odds_american,sort_order) values
-        (market_id,coalesce(s1.team_name,'Side 1'),-110,0),(market_id,coalesce(s2.team_name,'Side 2'),-110,1);
+        (new_market_id,coalesce(s1.team_name,'Side 1'),-110,0),(new_market_id,coalesce(s2.team_name,'Side 2'),-110,1);
     end if;
   end loop;
 
@@ -152,32 +156,32 @@ create or replace function public.sportsbook_maintain_auto_board(target_open int
 returns table(open_auto int, awaiting_ruling int)
 language plpgsql security definer set search_path=public
 as $$
-declare wanted int:=greatest(1,least(coalesce(target_open,4),8)); current_open int; need int; t record; market_id bigint; item jsonb; n int;
+declare wanted int:=greatest(1,least(coalesce(target_open,4),8)); current_open int; need int; t record; new_market_id bigint; item jsonb; n int;
 begin
   perform pg_advisory_xact_lock(73910421);
   perform public.sportsbook_maintain_golf_board();
-  update public.sportsbook_markets set status='locked'
-   where source='lore' and auto_key is not null and status='open' and closes_at is not null and closes_at<=now();
-  select count(*) into current_open from public.sportsbook_markets
-   where source='lore' and auto_key is not null and status='open' and (closes_at is null or closes_at>now());
+  update public.sportsbook_markets sm set status='locked'
+   where sm.source='lore' and sm.auto_key is not null and sm.status='open' and sm.closes_at is not null and sm.closes_at<=now();
+  select count(*) into current_open from public.sportsbook_markets sm
+   where sm.source='lore' and sm.auto_key is not null and sm.status='open' and (sm.closes_at is null or sm.closes_at>now());
   need:=greatest(0,wanted-current_open);
   for t in select x.* from public.sportsbook_auto_templates x
     where x.active=true
-      and not exists(select 1 from public.sportsbook_markets m where m.auto_key=x.template_key and m.status in ('open','locked'))
-      and not exists(select 1 from public.sportsbook_markets m where m.auto_key=x.template_key and m.created_at>now()-make_interval(days=>x.cooldown_days))
+      and not exists(select 1 from public.sportsbook_markets sm where sm.auto_key=x.template_key and sm.status in ('open','locked'))
+      and not exists(select 1 from public.sportsbook_markets sm where sm.auto_key=x.template_key and sm.created_at>now()-make_interval(days=>x.cooldown_days))
     order by md5(x.template_key||current_date::text) limit need
   loop
     insert into public.sportsbook_markets(title,category,source,lore_note,status,closes_at,auto_key)
     values(t.title,t.category,'lore',t.lore_note,'open',now()+make_interval(hours=>t.duration_hours),t.template_key)
-    returning id into market_id;
+    returning id into new_market_id;
     n:=0;
     for item in select * from jsonb_array_elements(t.outcomes) loop
       insert into public.sportsbook_outcomes(market_id,label,odds_american,sort_order)
-      values(market_id,item->>'label',(item->>'odds')::int,n); n:=n+1;
+      values(new_market_id,item->>'label',(item->>'odds')::int,n); n:=n+1;
     end loop;
   end loop;
-  select count(*) into current_open from public.sportsbook_markets where source='lore' and auto_key is not null and status='open' and (closes_at is null or closes_at>now());
-  return query select current_open,(select count(*)::int from public.sportsbook_markets where source='lore' and auto_key is not null and status='locked');
+  select count(*) into current_open from public.sportsbook_markets sm where sm.source='lore' and sm.auto_key is not null and sm.status='open' and (sm.closes_at is null or sm.closes_at>now());
+  return query select current_open,(select count(*)::int from public.sportsbook_markets sm where sm.source='lore' and sm.auto_key is not null and sm.status='locked');
 end;
 $$;
 grant execute on function public.sportsbook_maintain_auto_board(int) to anon,authenticated;
