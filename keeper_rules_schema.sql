@@ -70,6 +70,11 @@ create table if not exists public.keeper_rules (
   -- how many rounds earlier than the basis the keeper costs
   round_adjustment    int  not null default 1 check (round_adjustment between 0 and 20),
   -- the earliest round a keeper can ever cost
+  -- LEGACY, and no longer read by anything. The floor is a constant 1 (see
+  -- KEEPER_ROUND_FLOOR in js/keeper-rules.js): a first-round keeper minus a
+  -- round is R0, which is not a round, and no league ever wanted that number to
+  -- be anything else. Kept because dropping a column is destructive and this
+  -- repo's migrations are additive; the default keeps existing inserts legal.
   min_keeper_round    int  not null default 1 check (min_keeper_round between 1 and 40),
   -- 'fixed_from_basis'   = same cost every keeper year (the DFL rule)
   -- 'escalates_per_year' = the adjustment applies again each year

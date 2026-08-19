@@ -50,7 +50,7 @@ export async function renderKeeperRulesPanel(host) {
 
   const [rulesRes, leagueRes] = await Promise.all([
     db().from("keeper_rules")
-      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression, notes, updated_at")
+      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, progression, notes, updated_at")
       .order("effective_season", { ascending: false }),
     db().from("sleeper_leagues").select("season").order("season", { ascending: false }).limit(1),
   ]);
@@ -94,7 +94,6 @@ export async function renderKeeperRulesPanel(host) {
       effective_season: Number(f.effective_season.value),
       max_keeper_seasons: Number(f.max_keeper_seasons.value),
       round_adjustment: Number(f.round_adjustment.value),
-      min_keeper_round: Number(f.min_keeper_round.value),
       progression: f.progression.value,
       /* Not editable: one basis is supported and it is the league's rule.
          Shown as a read-only fact so the screen still states what the cost is
@@ -127,7 +126,7 @@ export async function renderKeeperRulesPanel(host) {
       <ul class="kr-cases">
         <li>${esc(ex2.basisSeason)} Draft R${ex2.basisRound} → ${esc(season)} Keeper R${ex2.cost}</li>
         <li>${esc(ex1.basisSeason)} Draft R${ex1.basisRound} → ${esc(season)} Keeper R${ex1.cost}
-          <span class="muted tiny">the floor holds</span></li>
+          <span class="muted tiny">R1 is the floor, always</span></li>
       </ul>
       <p class="muted tiny">${esc(ex8.text)}</p>`;
   }
@@ -206,7 +205,6 @@ export async function renderKeeperRulesPanel(host) {
             max_keeper_seasons: v.config.max_keeper_seasons,
             cost_basis: v.config.cost_basis,
             round_adjustment: v.config.round_adjustment,
-            min_keeper_round: v.config.min_keeper_round,
             progression: v.config.progression,
             updated_at: new Date().toISOString(),
           }, { onConflict: "effective_season" })
@@ -281,13 +279,6 @@ function form(rows, draft, isNew, leagueSeason) {
             <input name="round_adjustment" type="number" min="0" max="20" inputmode="numeric"
                    value="${esc(draft.round_adjustment)}" required>
             <small class="muted tiny">0 means the keeper costs that same round.</small>
-          </label>
-
-          <label class="kr-field">
-            <span>Minimum keeper round</span>
-            <input name="min_keeper_round" type="number" min="1" max="40" inputmode="numeric"
-                   value="${esc(draft.min_keeper_round)}" required>
-            <small class="muted tiny">The cost can never come out earlier than this.</small>
           </label>
 
           <label class="kr-field">

@@ -298,7 +298,7 @@ async function loadEntryData(season) {
   const [members, rulesRes, keepersRes] = await Promise.all([
     loadMembers(),
     db().from("keeper_rules")
-      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression")
+      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, progression")
       .order("effective_season", { ascending: false }),
     db().from("keepers").select("year, member_id, player_id, player_name, team, player, round_cost"),
   ]);

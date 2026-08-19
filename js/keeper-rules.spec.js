@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  COST_BASIS, DEFAULT_RULES, LEGACY_COST_BASIS, LEGACY_PROGRESSION, PROGRESSION,
+  COST_BASIS, DEFAULT_RULES, KEEPER_ROUND_FLOOR, LEGACY_COST_BASIS, LEGACY_PROGRESSION, PROGRESSION,
   auditSavedBasis, configFor, decisionContext, describeCostBasis, describeRules,
   evaluate, keeperCost, legacyKeeperNames, priorKeeperSeasons,
   priorSeasonDraftRound, ruleExample, validateConfig,
@@ -219,13 +219,37 @@ describe("configuration validation", () => {
     expect(keeperCost(8, legacy)).toBe(keeperCost(8, DEFAULT));
   });
 
+  it("floors at round 1 whatever a stored row claims the minimum is", () => {
+    /*
+      THE FLOOR IS ARITHMETIC, NOT POLICY. It used to be min_keeper_round, a
+      setting between 1 and 40. A first-round keeper minus a round is R0 and R0
+      is not a round, so the only sane value was 1 - and a rule that can only
+      have one value should not be asking. A live row still carrying a
+      different number must not change the answer.
+    */
+    expect(KEEPER_ROUND_FLOOR).toBe(1);
+    const stored = { ...DEFAULT_RULES, min_keeper_round: 7 };
+    expect(keeperCost(1, validateConfig(stored).config)).toBe(1);
+    expect(keeperCost(2, validateConfig(stored).config)).toBe(1);
+    expect(keeperCost(8, validateConfig(stored).config)).toBe(7);
+    /* and an escalating league still cannot walk below it */
+    const esc = validateConfig({ ...DEFAULT_RULES, round_adjustment: 3,
+                                 progression: PROGRESSION.ESCALATES_PER_YEAR }).config;
+    expect(keeperCost(4, esc, 9)).toBe(KEEPER_ROUND_FLOOR);
+  });
+
   it("rejects every invalid shape the brief names", () => {
     const bad = (patch) => validateConfig({ ...DEFAULT_RULES, ...patch });
     expect(bad({ max_keeper_seasons: 0 }).ok).toBe(false);
     expect(bad({ max_keeper_seasons: -3 }).ok).toBe(false);
     expect(bad({ round_adjustment: -1 }).ok).toBe(false);
-    expect(bad({ min_keeper_round: 0 }).ok).toBe(false);
-    expect(bad({ min_keeper_round: -2 }).ok).toBe(false);
+    /* min_keeper_round is no longer configuration. A stored row may still
+       carry any value and it is IGNORED rather than rejected, because the floor
+       is KEEPER_ROUND_FLOOR and a live database has to keep validating. */
+    expect(bad({ min_keeper_round: 0 }).ok).toBe(true);
+    expect(bad({ min_keeper_round: -2 }).ok).toBe(true);
+    expect(validateConfig({ ...DEFAULT_RULES, min_keeper_round: 9 }).config.min_keeper_round)
+      .toBe(undefined);
     expect(bad({ progression: "make_it_up" }).ok).toBe(false);
     expect(bad({ max_keeper_seasons: "three" }).ok).toBe(false);
     expect(bad({ round_adjustment: "" }).ok).toBe(false);
@@ -477,7 +501,9 @@ describe("auditing rows saved under the OLD basis", () => {
 
 describe("rule summaries are derived, never hard-coded", () => {
   it("describes the basis as the PREVIOUS SEASON's draft round", () => {
-    expect(describeRules(DEFAULT)).toBe("3-year maximum · Previous season's draft -1 round · Floor R1");
+    /* " · Floor R1" came off this line with the setting. It described the one
+       value that rule could ever have, so it told a reader nothing. */
+    expect(describeRules(DEFAULT)).toBe("3-year maximum · Previous season's draft -1 round");
     expect(describeCostBasis(DEFAULT)).toBe("Previous season's draft round");
   });
 
@@ -490,12 +516,12 @@ describe("rule summaries are derived, never hard-coded", () => {
   });
 
   it("describes a changed set differently", () => {
-    expect(describeRules(CHANGED)).toBe("2-year maximum · Previous season's draft -2 rounds · Floor R1");
+    expect(describeRules(CHANGED)).toBe("2-year maximum · Previous season's draft -2 rounds");
   });
 
   it("handles a zero adjustment and an escalating league", () => {
     expect(describeRules(ok({ ...DEFAULT_RULES, round_adjustment: 0 })))
-      .toBe("3-year maximum · Previous season's draft round · Floor R1");
+      .toBe("3-year maximum · Previous season's draft round");
     expect(describeRules(ok({ ...DEFAULT_RULES, progression: PROGRESSION.ESCALATES_PER_YEAR })))
       .toMatch(/cost climbs each keeper year$/);
   });

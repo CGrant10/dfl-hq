@@ -54,7 +54,7 @@
 // =====================================================================
 
 import { decisionContext, evaluate, priorSeasonDraftRound,
-         priorKeeperSeasons } from "./keeper-rules.js";
+         priorKeeperSeasons, KEEPER_ROUND_FLOOR } from "./keeper-rules.js";
 import { ADVISOR_POSITIONS, isAdvisorPosition } from "./dfl-scoring.js";
 import { formatRoundValue, marketFreshness, roundValue } from "./keeper-market.js";
 
@@ -271,8 +271,10 @@ export function candidates({ playerIds = [], players = {}, draftPicks = [],
         about the best player on the roster. Recorded here so badgesFor() can
         refuse to say it.
       */
-      atFloor: standing.calculatedRound != null && rules != null
-        && standing.calculatedRound <= rules.min_keeper_round,
+      /* At the cheapest a keeper can ever be. The floor is a constant now, so
+         this no longer depends on a rules row being present to be knowable. */
+      atFloor: standing.calculatedRound != null
+        && standing.calculatedRound <= KEEPER_ROUND_FLOOR,
     };
   });
 }

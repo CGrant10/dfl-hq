@@ -110,12 +110,27 @@ export const LEGACY_COST_BASIS = "original_draft_round";
 export const LEGACY_PROGRESSION = "fixed_from_original";
 
 /** The rules the commissioner supplied, as the seeded starting point. */
+/*
+  ROUND 1 IS THE FLOOR, AND IT IS NOT A SETTING.
+
+  This used to be `min_keeper_round`, a configurable value between 1 and 40 with
+  its own control in the rules editor. Nothing in the league ever wanted it to
+  be anything but 1: it exists because a first-round keeper minus a round is
+  R0, and R0 is not a round. That is arithmetic, not policy - a rule you cannot
+  sensibly set to anything else is a rule that should not be asking.
+
+  The column stays on keeper_rules (dropping it would be a destructive
+  migration in a repo whose migrations are additive) and is neither read nor
+  written any more. validateConfig() still ACCEPTS one so a row seeded with it
+  keeps validating; it is ignored, like the v1.106.0 spellings.
+*/
+export const KEEPER_ROUND_FLOOR = 1;
+
 export const DEFAULT_RULES = {
   effective_season: 2026,
   max_keeper_seasons: 3,
   cost_basis: COST_BASIS.PREVIOUS_SEASON_DRAFT_ROUND,
   round_adjustment: 1,
-  min_keeper_round: 1,
   progression: PROGRESSION.FIXED_FROM_BASIS,
 };
 
@@ -150,7 +165,11 @@ export function validateConfig(input) {
      it is exactly the sort of thing that should be a validation error rather
      than a surprise. */
   const adjustment = num("round_adjustment", { min: 0, max: 20 });
-  const minRound = num("min_keeper_round", { min: 1, max: 40 });
+  /*
+    min_keeper_round is deliberately NOT read. A stored row may still carry one
+    - production does - and it is ignored rather than rejected, because the
+    floor is KEEPER_ROUND_FLOOR now and a live database must keep validating.
+  */
 
   /* The v1.106.0 spellings are read and forgotten, never written. A live
      database seeded before this correction keeps working. */
@@ -176,7 +195,6 @@ export function validateConfig(input) {
       max_keeper_seasons: maxSeasons,
       cost_basis: basis,
       round_adjustment: adjustment,
-      min_keeper_round: minRound,
       progression,
       updated_at: raw.updated_at || null,
     },
@@ -218,7 +236,7 @@ export function keeperCost(basisRound, config, keeperYear = 1) {
   const cost = round - config.round_adjustment * steps;
   /* The floor is a floor, not a wrap: a player taken in the first round
      stays R1 rather than becoming R0 or a negative round. */
-  return Math.max(config.min_keeper_round, cost);
+  return Math.max(KEEPER_ROUND_FLOOR, cost);
 }
 
 /**
@@ -505,7 +523,8 @@ export function describeRules(config) {
   parts.push(config.round_adjustment === 0
     ? "Previous season's draft round"
     : `Previous season's draft -${config.round_adjustment} round${config.round_adjustment === 1 ? "" : "s"}`);
-  parts.push(`Floor R${config.min_keeper_round}`);
+  /* "Floor R1" was on this line. It said nothing a reader did not already
+     assume, and it described the one value the rule could ever have. */
   if (config.progression === PROGRESSION.ESCALATES_PER_YEAR) parts.push("cost climbs each keeper year");
   return parts.join(" · ");
 }

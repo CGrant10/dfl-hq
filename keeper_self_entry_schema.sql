@@ -299,7 +299,13 @@ begin
     raise exception 'No % draft round is on record for that player - ask the commissioner to enter this keeper', basis_yr;
   end if;
 
-  cost_rd := greatest(rules.min_keeper_round, basis_rd - rules.round_adjustment);
+  /*
+    ROUND 1 IS THE FLOOR AND IT IS NOT CONFIGURABLE. keeper_rules.min_keeper_round
+    still exists on the table but is no longer read anywhere - see
+    KEEPER_ROUND_FLOOR in js/keeper-rules.js. A first-round keeper minus a round
+    is R0, and R0 is not a round; that is arithmetic, not league policy.
+  */
+  cost_rd := greatest(1, basis_rd - rules.round_adjustment);
 
   -- Make room, but ONLY out of rows this member submitted themselves. A
   -- commissioner-entered keeper is a decision somebody else recorded and it is

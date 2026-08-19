@@ -129,7 +129,7 @@ export async function render(view) {
       const needsMap = rows.some((r) => r.player_id != null && !r.player_pos);
       const players = needsMap && ids.length ? await loadPlayers().catch(() => ({})) : {};
       const ruleSets = await db().from("keeper_rules")
-        .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression");
+        .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, progression");
       boardReady = { members, players, ruleSets: ruleSets.error ? [] : (ruleSets.data || []) };
     } catch {
       /* A board with no member list is still a board of the rows that exist,
@@ -293,7 +293,7 @@ async function advisorData(member) {
       longer parsed for a calculation - see keeper_rules_schema.sql for why.
     */
     db().from("keeper_rules")
-      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, min_keeper_round, progression, updated_at")
+      .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, progression, updated_at")
       .order("effective_season", { ascending: false }),
     /* Existing keeper rows, for tenure. Only rows carrying a player_id can
        contribute - see priorKeeperSeasons() - so legacy nickname rows are read
