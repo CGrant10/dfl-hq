@@ -7,6 +7,8 @@ import { loading, errorBox } from "./ui.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
 import { startMemberLock } from "./member-lock.js";
 import { dflSeasonCount } from "./config.js";
+import { canEdit } from "./inline.js";
+import { db } from "./supabase.js";
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -16,6 +18,7 @@ const routes = {
   polls:    () => import("./pages/polls.js"),
   proposals:() => import("./pages/proposals.js"),
   arena:    () => import("./pages/arena.js"),
+  "arena-results":() => import("./pages/arena-results.js"),
   golf:     () => import("./pages/golf.js"),
   sportsbook:() => import("./pages/sportsbook.js"),
   broadcast:() => import("./pages/broadcast.js"),
@@ -93,6 +96,54 @@ function decorateDflSeasonCounts(view, route) {
   }
 }
 
+/*
+  SPECTATORS NEED A WAY OUT OF A FINISHED RACE.
+
+  arena.js auto-enters Broadcast for live events. Older code also treated
+  `finished` as live, which meant a regular member could press Exit, land on
+  #/arena?id=..., and get thrown straight back into Broadcast before the saved
+  result ever became readable. Do the finished-state decision here, before the
+  Arena event page gets a chance to redirect. Commissioners still use the full
+  event/control page; regular members get the read-only result.
+*/
+async function redirectFinishedArenaSpectator(name) {
+  if (name !== "arena" || canEdit()) return false;
+  const id = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
+  if (!id) return false;
+  try {
+    const { data, error } = await db().from("arena_events")
+      .select("status,bc_state").eq("id", id).maybeSingle();
+    if (error || !data) return false;
+    if (data.status !== "complete" && data.bc_state !== "finished") return false;
+    location.hash = `#/arena-results?id=${id}`;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function spectatorArenaLinks(view, name) {
+  if (canEdit()) return;
+
+  /* Finished cards go to the readable result instead of the auto-entering
+     event controller. Live/open cards keep their existing behaviour. */
+  if (name === "arena" && !new URLSearchParams((location.hash.split("?")[1] || "")).get("id")) {
+    view.querySelectorAll(".arena-card .arena-link").forEach((link) => {
+      if (!link.querySelector(".pill.grey")) return;
+      const id = new URLSearchParams((link.getAttribute("href") || "").split("?")[1] || "").get("id");
+      if (id) link.setAttribute("href", `#/arena-results?id=${id}`);
+    });
+  }
+
+  /* Broadcast hides the normal app navigation. For spectators its Exit must
+     land somewhere that cannot bounce them straight back into Broadcast. */
+  if (name === "broadcast") {
+    const id = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
+    const exit = view.querySelector('#bc-bar a.bc-btn[href^="#/arena"]');
+    if (id && exit) exit.setAttribute("href", `#/arena-results?id=${id}`);
+  }
+}
+
 export async function renderRoute() {
   const name = currentRoute();
   const view = document.getElementById("view");
@@ -101,6 +152,8 @@ export async function renderRoute() {
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
   if (view._dflSeasonObserver) { view._dflSeasonObserver.disconnect(); view._dflSeasonObserver = null; }
+
+  if (await redirectFinishedArenaSpectator(name)) return;
 
   let matched = false;
   document.querySelectorAll("#tabbar a").forEach((a) => {
@@ -117,6 +170,7 @@ export async function renderRoute() {
     if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);
     decorateDflSeasonCounts(view, name);
+    spectatorArenaLinks(view, name);
     if (name === "profile") {
       import("./profile-commissioner.js")
         .then((m) => m.decorateCommissionerBadge(view))
