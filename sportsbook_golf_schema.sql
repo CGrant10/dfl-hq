@@ -11,10 +11,11 @@
 -- League Lore is allowed to roast, not invent performance data.
 -- =====================================================================
 
--- Retire the old daycare props. Existing OPEN ones are voided/refunded so the
--- board changes immediately when this migration is installed.
+-- Retire the old daycare props. This migration runs in Supabase SQL Editor,
+-- where there is no DFL commissioner request header, so it MUST NOT call the
+-- app-facing sportsbook_void_market() RPC. Refund/void directly here instead.
 do $$
-declare r record;
+declare r record; b record;
 begin
   for r in
     select id from public.sportsbook_markets
@@ -27,7 +28,22 @@ begin
          'fantasy-keeper-regret','fantasy-sleeper-hype'
        )
   loop
-    perform public.sportsbook_void_market(r.id);
+    for b in
+      select * from public.sportsbook_bets
+       where market_id=r.id and status='open'
+       for update
+    loop
+      update public.sportsbook_bets
+         set status='void', payout=b.stake, settled_at=now()
+       where id=b.id;
+      update public.sportsbook_wallets
+         set balance=balance+b.stake, updated_at=now()
+       where member_id=b.member_id;
+      insert into public.sportsbook_ledger(member_id,amount,kind,note,market_id,bet_id)
+      values(b.member_id,b.stake,'refund','Retired auto-market refund',r.id,b.id);
+    end loop;
+    update public.sportsbook_outcomes set is_winner=null where market_id=r.id;
+    update public.sportsbook_markets set status='void',settled_at=now() where id=r.id;
   end loop;
 end $$;
 
@@ -73,7 +89,6 @@ begin
     else now()+interval '72 hours' end;
   if close_at <= now() then close_at := now()+interval '4 hours'; end if;
 
-  -- Outright team winner: real teams, neutral opening prices until ratings exist.
   if (select count(*) from public.golf_teams where outing_id=o.id) >= 2 then
     k := 'golf:'||o.id||':outright';
     if not exists(select 1 from public.sportsbook_markets where auto_key=k and status in ('open','locked','settled')) then
@@ -91,7 +106,6 @@ begin
     end if;
   end if;
 
-  -- Team-v-team tournament line when the outing is the normal two-team war.
   if (select count(*) from public.golf_teams where outing_id=o.id)=2 then
     select * into s1 from public.golf_teams where outing_id=o.id order by sort_order,id limit 1;
     select * into s2 from public.golf_teams where outing_id=o.id and id<>s1.id order by sort_order,id limit 1;
@@ -106,7 +120,6 @@ begin
     end if;
   end if;
 
-  -- Every built match gets its own market. Team names come from the actual sides.
   for m in
     select gm.id,gm.match_number,gm.round_id,gr.round_number,gr.name as round_name,gr.format
       from public.golf_matches gm join public.golf_rounds gr on gr.id=gm.round_id
@@ -135,7 +148,6 @@ end;
 $$;
 grant execute on function public.sportsbook_maintain_golf_board() to anon,authenticated;
 
--- Golf gets first crack at the board; generic auto filler only fills empty seats.
 create or replace function public.sportsbook_maintain_auto_board(target_open int default 4)
 returns table(open_auto int, awaiting_ruling int)
 language plpgsql security definer set search_path=public
