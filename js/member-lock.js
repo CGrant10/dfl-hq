@@ -28,6 +28,7 @@ async function loadCommissionerIds(){
 function closeOverlay(){overlay?.remove();overlay=null}
 function replay(btn){replaying=true;try{btn?.click()}finally{replaying=false}}
 const waitForMember=async id=>{for(let i=0;i<30;i++){if(String(localStorage.getItem("dfl.memberId")||"")===String(id))return true;await new Promise(r=>setTimeout(r,20));}return false};
+const redraw=()=>window.dispatchEvent(new HashChangeEvent("hashchange"));
 
 /* Member View must really be non-admin even when a credential is remembered.
    Preserve the saved secrets, clear only the live privileged client, then put
@@ -45,30 +46,30 @@ async function activateSavedPrivilege(memberId){
  try{return await restoreAdmin()}catch{return false}
 }
 
-function showPrivilegeLogin(member,btn){
+function showPrivilegeLogin(member,btn,{startup=false}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Commissioner access for ${member.display_name}`);
  overlay.innerHTML=`<div class="overlay-card"><h2>Commissioner View</h2><p class="muted">Unlock privileged tools as <strong>${esc(member.display_name)}</strong>.</p>
  <form data-commissioner-login autocomplete="off"><label for="pick-commissioner-pin">Commissioner PIN</label><input id="pick-commissioner-pin" name="dfl-commissioner-pin" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
  <details style="margin-top:12px"><summary class="muted tiny">Owner master access</summary><form data-master-login autocomplete="off" style="margin-top:10px"><label for="pick-master-key">Master password</label><input id="pick-master-key" name="dfl-admin-key" type="password" autocomplete="off" data-lpignore="true" data-1p-ignore><div class="row-end"><button type="submit" class="btn ghost">Open Owner View</button></div></form></details></div>`;
  document.body.appendChild(overlay);
  const pin=overlay.querySelector("#pick-commissioner-pin");pin?.addEventListener("input",()=>{pin.value=pin.value.replace(/\D/g,"").slice(0,12)});
- overlay.querySelector("[data-mode-back]")?.addEventListener("click",()=>showViewChoice(member,btn));
- overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");location.hash="#/home";window.dispatchEvent(new HashChangeEvent("hashchange"));}catch(err){toast(err.message||"Could not unlock commissioner access",true);submit.disabled=false;pin.select();}});
- overlay.querySelector("[data-master-login]")?.addEventListener("submit",async e=>{e.preventDefault();const input=e.currentTarget.querySelector("#pick-master-key"),submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await adminLogin(input.value,true)))throw new Error("Master password not accepted");closeOverlay();toast("Owner View on");location.hash="#/home";window.dispatchEvent(new HashChangeEvent("hashchange"));}catch(err){toast(err.message||"Could not unlock owner access",true);submit.disabled=false;input.select();}});
+ overlay.querySelector("[data-mode-back]")?.addEventListener("click",()=>showViewChoice(member,btn,{startup}));
+ overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");if(startup)redraw();else{location.hash="#/home";redraw();}}catch(err){toast(err.message||"Could not unlock commissioner access",true);submit.disabled=false;pin.select();}});
+ overlay.querySelector("[data-master-login]")?.addEventListener("submit",async e=>{e.preventDefault();const input=e.currentTarget.querySelector("#pick-master-key"),submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await adminLogin(input.value,true)))throw new Error("Master password not accepted");closeOverlay();toast("Owner View on");if(startup)redraw();else{location.hash="#/home";redraw();}}catch(err){toast(err.message||"Could not unlock owner access",true);submit.disabled=false;input.select();}});
  setTimeout(()=>pin?.focus(),0);
 }
 
-function showViewChoice(member,btn){
+function showViewChoice(member,btn,{startup=false}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Choose view for ${member.display_name}`);
- overlay.innerHTML=`<div class="overlay-card"><h2>Open as ${esc(member.display_name)}</h2><p class="muted">Choose how you want to enter DFL HQ.</p><div class="stack" style="gap:10px"><button type="button" class="btn ghost" data-member-view><strong>Member View</strong><span class="muted tiny" style="display:block">Regular league view. No commissioner controls.</span></button><button type="button" class="btn" data-admin-view><strong>Commissioner View</strong><span class="tiny" style="display:block;opacity:.8">Open with your privileged tools.</span></button></div><div class="row-end" style="margin-top:12px"><button type="button" class="btn ghost" data-choice-cancel>Back</button></div></div>`;
+ overlay.innerHTML=`<div class="overlay-card"><h2>Open as ${esc(member.display_name)}</h2><p class="muted">Choose how you want to enter DFL HQ.</p><div class="stack" style="gap:10px"><button type="button" class="btn ghost" data-member-view><strong>Member View</strong><span class="muted tiny" style="display:block">Regular league view. No commissioner controls.</span></button><button type="button" class="btn" data-admin-view><strong>Commissioner View</strong><span class="tiny" style="display:block;opacity:.8">Open with your privileged tools.</span></button></div>${startup?"":`<div class="row-end" style="margin-top:12px"><button type="button" class="btn ghost" data-choice-cancel>Back</button></div>`}</div>`;
  document.body.appendChild(overlay);
  overlay.querySelector("[data-choice-cancel]")?.addEventListener("click",closeOverlay);
- overlay.querySelector("[data-member-view]")?.addEventListener("click",()=>{suspendPrivilege();closeOverlay();replay(btn);toast(`Member View · ${member.display_name}`)});
+ overlay.querySelector("[data-member-view]")?.addEventListener("click",()=>{suspendPrivilege();closeOverlay();if(btn)replay(btn);else redraw();toast(`Member View · ${member.display_name}`)});
  overlay.querySelector("[data-admin-view]")?.addEventListener("click",async()=>{
    const choice=overlay.querySelector("[data-admin-view]");choice.disabled=true;
-   closeOverlay();replay(btn);
-   if(await activateSavedPrivilege(member.id)){toast(`Commissioner View · ${member.display_name}`);location.hash="#/home";window.dispatchEvent(new HashChangeEvent("hashchange"));return;}
-   showPrivilegeLogin(member,btn);
+   closeOverlay();if(btn)replay(btn);
+   if(await activateSavedPrivilege(member.id)){toast(`Commissioner View · ${member.display_name}`);if(startup)redraw();else{location.hash="#/home";redraw();}return;}
+   showPrivilegeLogin(member,btn,{startup});
  });
 }
 
@@ -81,7 +82,7 @@ async function continueMemberPick(btn,member){
 function showLock(member,{onSuccess=null,cancellable=true,afterUnlock=null}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`${member.display_name} locked`);
  overlay.innerHTML=`<div class="overlay-card"><h2>${esc(member.display_name)} is locked</h2><p class="muted">Enter this member's PIN to use DFL HQ as ${esc(member.display_name)}.</p><form data-member-lock-form autocomplete="off"><label for="member-lock-pin">PIN</label><input id="member-lock-pin" name="dfl-member-pin" type="text" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required autofocus style="-webkit-text-security:disc"><div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny">The PIN stays unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
- const input=overlay.querySelector("#member-lock-pin");input?.addEventListener("input",()=>{input.value=input.value.replace(/\D/g,"").slice(0,6)});overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);submit.disabled=false;input.select();}});setTimeout(()=>input?.focus(),0);
+ const input=overlay.querySelector("#member-lock-pin");input?.addEventListener("input",()=>{input.value=input.value.replace(/\D/g,"").slice(0,6)});overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);submit.disabled=false;input.select();}});setTimeout(()=>input?.focus(),0);
 }
 
 function interceptMemberPick(event){
@@ -91,5 +92,26 @@ function interceptMemberPick(event){
  if(unlocked(id)){void continueMemberPick(btn,member);return;}
  btn.disabled=true;isLocked(id).then(locked=>{btn.disabled=false;if(!locked){void continueMemberPick(btn,member);return;}pendingButton=btn;showLock(member,{cancellable:true,afterUnlock:continueMemberPick});});
 }
-async function lockRememberedIdentity(){const member=currentMember();if(!member||unlocked(member.id))return;if(!(await isLocked(member.id)))return;showLock(member,{cancellable:false,onSuccess:()=>{}});}
-export function startMemberLock(){if(started)return;started=true;document.addEventListener("click",interceptMemberPick,true);lockRememberedIdentity();}
+
+async function enterRememberedIdentity(){
+ const member=currentMember();
+ if(!member)return;
+ /* A shared/OBS broadcast is intentionally public and must never get an
+    identity-mode modal dropped over the race. */
+ if(location.hash.split("?")[0]==="#/broadcast")return;
+ const ids=await loadCommissionerIds();
+ const privileged=ids.has(String(member.id));
+ const locked=await isLocked(member.id);
+ if(locked&&!unlocked(member.id)){
+   showLock(member,{cancellable:false,onSuccess:async()=>{if(privileged)showViewChoice(member,null,{startup:true});}});
+   return;
+ }
+ if(privileged)showViewChoice(member,null,{startup:true});
+}
+
+export function startMemberLock(){
+ if(started)return;
+ started=true;
+ document.addEventListener("click",interceptMemberPick,true);
+ void enterRememberedIdentity();
+}
