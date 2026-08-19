@@ -40,7 +40,7 @@ jobs:
               1)
           p.write_text(s)
 
-          VERSION = '1.109.58'
+          VERSION = '1.109.59'
           Path('version.txt').write_text(VERSION + '\n')
 
           pkg = json.loads(Path('package.json').read_text())
@@ -75,5 +75,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/pages/arena.js js/config.js version.txt package.json sw.js index.html
-          git commit -m "Let Arena spectators exit finished races and release v1.109.58"
+          git commit -m "Let Arena spectators exit finished races and release v1.109.59"
           git push
