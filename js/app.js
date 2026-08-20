@@ -6,7 +6,7 @@ import { getUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
 import { loadMembers, restoreMember, selectMember, currentMember, getMemberId } from "./members.js";
 import { startPresence } from "./presence.js";
-import { initTheme } from "./theme.js";
+import { initTheme, syncThemeFromMember } from "./theme.js";
 import { loadSettings } from "./settings.js";
 import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
 import { paintBottomline, startBottomline } from "./bottomline.js";
@@ -213,6 +213,10 @@ window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();
+  /* The palette follows the member, not the browser. localStorage has already
+     painted the first frame; this reconciles it with what they chose on any
+     other device, and is deliberately not awaited so it cannot delay boot. */
+  void syncThemeFromMember();
   /*
     THE TAB INDICATOR AND THE BOTTOMLINE, both hung off the router's own
     notification rather than off hashchange - so they update after the page has

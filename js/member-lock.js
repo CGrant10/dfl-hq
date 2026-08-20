@@ -6,6 +6,7 @@ import { db, restoreAdmin, commissionerLogin, adminLogin, adminLogout } from "./
 import { currentMember } from "./members.js";
 import { getAdminToken, getCommissionerPin, setAdminToken, setCommissionerPin } from "./store.js";
 import { esc, toast } from "./ui.js";
+import { icon } from "./icons.js";
 const key=id=>`dfl.profile.unlocked.${id}`;
 const pinKey=id=>`dfl.profile.pin.${id}`;
 const reminderKey=id=>`dfl.profile.lockReminder.${id}`;
@@ -83,7 +84,7 @@ async function activateSavedPrivilege(memberId){
 function showPrivilegeLogin(member,btn,{startup=false}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Commissioner access for ${member.display_name}`);
  overlay.innerHTML=`<div class="overlay-card"><h2>Commissioner View</h2><p class="muted">Unlock privileged tools as <strong>${esc(member.display_name)}</strong>.</p>
- <form data-commissioner-login autocomplete="off"><label for="pick-commissioner-pin">Commissioner PIN</label><input id="pick-commissioner-pin" name="dfl-commissioner-pin" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
+ <form data-commissioner-login autocomplete="off"><label for="pick-commissioner-pin">Commissioner PIN</label><input class="pin-input" id="pick-commissioner-pin" name="dfl-commissioner-pin" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
  <details style="margin-top:12px"><summary class="muted tiny">Owner master access</summary><form data-master-login autocomplete="off" style="margin-top:10px"><label for="pick-master-key">Master password</label><input id="pick-master-key" name="dfl-admin-key" type="password" autocomplete="off" data-lpignore="true" data-1p-ignore><div class="row-end"><button type="submit" class="btn ghost">Open Owner View</button></div></form></details></div>`;
  document.body.appendChild(overlay);
  const pin=overlay.querySelector("#pick-commissioner-pin");pin?.addEventListener("input",()=>{pin.value=pin.value.replace(/\D/g,"").slice(0,12)});
@@ -95,7 +96,35 @@ function showPrivilegeLogin(member,btn,{startup=false}={}){
 
 function showViewChoice(member,btn,{startup=false}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Choose view for ${member.display_name}`);
- overlay.innerHTML=`<div class="overlay-card"><h2>Open as ${esc(member.display_name)}</h2><p class="muted">Choose how you want to enter DFL HQ.</p><div class="stack" style="gap:10px"><button type="button" class="btn ghost" data-member-view><strong>Member View</strong><span class="muted tiny" style="display:block">Regular league view. No commissioner controls.</span></button><button type="button" class="btn" data-admin-view><strong>Commissioner View</strong><span class="tiny" style="display:block;opacity:.8">Open with your privileged tools.</span></button></div>${startup?"":`<div class="row-end" style="margin-top:12px"><button type="button" class="btn ghost" data-choice-cancel>Back</button></div>`}</div>`;
+ /*
+   TWO CHOICES, DRAWN AS CHOICES.
+
+   These were .btn and .btn.ghost inside a `.stack` - a class that is
+   defined in no stylesheet, so its inline gap:10px did nothing on a
+   display:block element and the two buttons sat flush against each other.
+   Each also held a <strong> and a <span> inside a centred inline-flex with
+   zero vertical padding, so a two-line explanation came out squashed and
+   centred inside a control shaped like a submit button.
+
+   A choice between two ways into the app is a list of options, not a pair
+   of buttons: full width, icon, title, and the sentence that tells them
+   apart, left-aligned so the eye reads down them.
+ */
+ overlay.innerHTML=`<div class="overlay-card"><h2>Open as ${esc(member.display_name)}</h2>
+ <p class="muted">Choose how you want to enter DFL HQ.</p>
+ <div class="choice-list">
+   <button type="button" class="choice" data-member-view>
+     <span class="choice-ico">${icon("user",{size:20})}</span>
+     <span class="choice-body"><strong>Member View</strong>
+       <span class="choice-sub">The regular league view. No commissioner controls.</span></span>
+   </button>
+   <button type="button" class="choice is-primary" data-admin-view>
+     <span class="choice-ico">${icon("shield",{size:20})}</span>
+     <span class="choice-body"><strong>Commissioner View</strong>
+       <span class="choice-sub">Opens with your privileged tools.</span></span>
+   </button>
+ </div>
+ ${startup?"":`<div class="row-end" style="margin-top:14px"><button type="button" class="btn ghost" data-choice-cancel>Back</button></div>`}</div>`;
  document.body.appendChild(overlay);
  overlay.querySelector("[data-choice-cancel]")?.addEventListener("click",closeOverlay);
  overlay.querySelector("[data-member-view]")?.addEventListener("click",()=>{suspendPrivilege();closeOverlay();if(btn){replay(btn);scheduleProfileLockReminder(member);}else redraw();toast(`Member View · ${member.display_name}`)});
@@ -116,7 +145,7 @@ async function continueMemberPick(btn,member){
 
 function showLock(member,{onSuccess=null,cancellable=true,afterUnlock=null}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`${member.display_name} locked`);
- overlay.innerHTML=`<div class="overlay-card"><h2>${esc(member.display_name)} is locked</h2><p class="muted">Enter this member's PIN to use DFL HQ as ${esc(member.display_name)}.</p><form data-member-lock-form autocomplete="off"><label for="member-lock-pin">PIN</label><input id="member-lock-pin" name="dfl-member-pin" type="text" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required autofocus style="-webkit-text-security:disc"><div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny">The PIN stays unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
+ overlay.innerHTML=`<div class="overlay-card is-pin"><span class="pin-mark">${icon("lock",{size:22})}</span><h2>${esc(member.display_name)} is locked</h2><p class="muted">Enter this member's PIN to use DFL HQ as ${esc(member.display_name)}.</p><form data-member-lock-form autocomplete="off"><label for="member-lock-pin">PIN</label><input class="pin-input" id="member-lock-pin" name="dfl-member-pin" type="text" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny">The PIN stays unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
  const input=overlay.querySelector("#member-lock-pin");input?.addEventListener("input",()=>{input.value=input.value.replace(/\D/g,"").slice(0,6)});overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);submit.disabled=false;input.select();}});setTimeout(()=>input?.focus(),0);
 }
 

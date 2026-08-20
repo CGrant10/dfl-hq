@@ -11,8 +11,9 @@
 // hue until it clears the contrast bar below.
 //
 // So the picker has four fixed entries - three real palettes and one that
-// is the absence of a choice - plus a club. See MODES, PICKABLE,
-// modeOptions() and teamOptions() below; those are generated, so if they
+// is the absence of a choice - and a club palette is offered next to the
+// favourite-club picker on the profile instead of as a 36-entry list. See
+// MODES, PICKABLE and modeOptions() below; those are generated, so if they
 // disagree with this comment, they are right and this is stale.
 //
 //   medicine (default)  Medicine Wheel. A dark palette, and what a device
@@ -45,6 +46,10 @@
 // =====================================================================
 
 import { teamPalette, MEDICINE_GROUND } from "./team-theme.js";
+/* For carrying the choice between a member's devices. Neither of these
+   imports theme.js, so there is no cycle. */
+import { db } from "./supabase.js";
+import { currentMember } from "./members.js";
 import { team as nflTeam, nflTeams, teamCode } from "./nfl-teams.js";
 
 const MODE_KEY = "dfl.mode";  // "system" | "dark" | "light" | "medicine" | "team:KC"
@@ -403,6 +408,9 @@ export function saveMode(value) {
   else if (PICKABLE.includes(value) || value === "system") localStorage.setItem(MODE_KEY, value);
   else localStorage.removeItem(MODE_KEY);
   apply();
+  /* Not awaited: the palette has already repainted, and a slow network must
+     never make the picker feel unresponsive. */
+  void pushMode(localStorage.getItem(MODE_KEY) || "");
 }
 
 export function modeOptions() {
@@ -414,22 +422,15 @@ export function modeOptions() {
   ];
 }
 
-/**
- * The 32 clubs as mode options, for a picker that shows their logos.
- *
- * Kept out of modeOptions() on purpose: that list is a row of four buttons
- * and a 36th entry would wreck it. These are a grid.
- */
-export function teamOptions() {
-  return nflTeams().map((t) => ({
-    id: TEAM_PREFIX + t.code,
-    code: t.code,
-    name: t.name,
-    short: t.short,
-    primary: t.primary,
-    secondary: t.secondary,
-  }));
-}
+/*
+  teamOptions() WAS HERE and enumerated the 32 clubs as mode ids for the
+  Appearance card's logo grid. That grid is gone - the club's colours are
+  now offered next to the club picker in the profile editor, which is the
+  only place somebody has just said which club is theirs. Nothing enumerates
+  modes any more, and nfl-teams.js already exports nflTeams() for anything
+  that needs the list. teamModeFor(code) still builds a single team mode.
+*/
+
 
 /* ---------------------------------------------------------------------
    Kept only so nothing that still imports them breaks. Palette choice goes
@@ -440,3 +441,72 @@ export function applyTheme() { apply(); }
 export function savedTheme() { return "dfl"; }
 export function saveTheme() { apply(); }
 export function teamColors() { return { name: "DFL Crest", primary: CREST.red, secondary: CREST.blue }; }
+
+/* =====================================================================
+   THE CHOICE FOLLOWS THE MEMBER, NOT THE BROWSER.
+   ---------------------------------------------------------------------
+   "dfl.mode" is localStorage, which is per device by definition, so
+   picking a club on a desktop could never reach a phone. The mode now also
+   rides on the member row.
+
+   LOCALSTORAGE IS STILL THE AUTHORITY AT BOOT, and that is deliberate. It
+   reads synchronously, before the app knows who is using it, so the page
+   paints in the right palette on the first frame instead of flashing the
+   default while a query runs. The server copy is reconciled a moment later.
+
+   EVERY DATABASE FAILURE HERE IS SWALLOWED. theme_mode arrives in its own
+   migration; a league that has not run theme_sync_schema.sql must keep a
+   working per-device picker rather than see an error every time somebody
+   changes colour.
+   ===================================================================== */
+
+const themeMissing = (err) =>
+  /theme_mode|dfl_save_theme_mode|could not find|does not exist|schema cache/i.test(err?.message || "");
+
+/** Publish this device's choice. Fire and forget - the UI already moved. */
+async function pushMode(value) {
+  try {
+    if (!currentMember()) return;
+    const { error } = await db().rpc("dfl_save_theme_mode", { new_mode: value });
+    if (error && !themeMissing(error)) console.warn("theme: could not save mode", error.message);
+  } catch (err) {
+    if (!themeMissing(err)) console.warn("theme: could not save mode", err);
+  }
+}
+
+/**
+ * Adopt the palette stored against this member, if there is one.
+ *
+ * Called once from boot, after the member is restored. Three cases:
+ *
+ *   nothing stored   publish what this device already has, so the NEXT
+ *                    device to sign in inherits it
+ *   same as local    nothing to do
+ *   different        adopt it and repaint - the member changed it elsewhere
+ *
+ * Adopting writes straight to storage rather than going through saveMode(),
+ * which would push the value back to the server it just came from.
+ */
+export async function syncThemeFromMember() {
+  const me = currentMember();
+  if (!me) return;
+  let remote;
+  try {
+    const { data, error } = await db()
+      .from("members").select("theme_mode").eq("id", me.id).maybeSingle();
+    if (error) throw error;
+    remote = data?.theme_mode || null;
+  } catch (err) {
+    if (!themeMissing(err)) console.warn("theme: could not read mode", err);
+    return;
+  }
+
+  const local = localStorage.getItem(MODE_KEY);
+  if (!remote) { if (local) void pushMode(local); return; }
+  /* An unknown or retired value - a club that no longer exists - is ignored
+     rather than applied, the same way savedMode() ignores it. */
+  if (!PICKABLE.includes(remote) && remote !== "system" && !teamModeFor(codeOfMode(remote))) return;
+  if (remote === local) return;
+  localStorage.setItem(MODE_KEY, remote);
+  apply();
+}

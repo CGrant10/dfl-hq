@@ -1610,76 +1610,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
 }
 
 /* ---------------------------------------------------------------------
-   TEAM COLOURS - the club grid.
+   THE CLUB GRID'S STYLES WERE HERE (.team-theme/.tt-grid/.tt-club).
 
-   Thirty-two badges, so it is an auto-fill grid rather than a fixed column
-   count: it packs as many 62px cells as the card is wide and needs no
-   breakpoints of its own. Each cell carries the club's two colours as
-   --tt-a and --tt-b so the chosen one can be edged in them without the
-   stylesheet knowing a single team.
+   Removed with the grid itself: choosing the app's palette is now a
+   checkbox beside the favourite-club picker in the profile editor, so
+   thirty-two logo cells, their selection ring and their secondary-colour
+   underline have nothing left to style.
    ------------------------------------------------------------------- */
-.team-theme { margin-top: var(--s-4, 16px); display: grid; gap: 9px; }
-.tt-head { display: grid; gap: 2px; }
 
-.tt-mine {
-  justify-self: start;
-  display: inline-flex; align-items: center; gap: 7px;
-}
-
-.tt-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
-  gap: 6px;
-}
-.tt-club {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 3px;
-  /* 56px keeps every badge a comfortable tap target on a phone; the label
-     under it is what makes the grid scannable when a logo is unfamiliar. */
-  min-height: 56px;
-  padding: 6px 2px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--bg-3);
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-}
-.tt-club:hover { border-color: var(--control-line); }
-.tt-code {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .04em;
-}
-/*
-  THE CHOSEN CLUB IS EDGED IN ITS OWN COLOURS, not filled with them.
-
-  A fill would use the raw team colour, and nine clubs' primary is
-  effectively black - the cell would vanish into the card. The ring reads at
-  any colour, and the second colour appears as a bar under the badge so a
-  club is identifiable by the pair rather than one hue.
-*/
-.tt-club.is-on {
-  border-color: var(--tt-a);
-  box-shadow: 0 0 0 1px var(--tt-a) inset;
-  background: color-mix(in srgb, var(--tt-a) 18%, var(--bg-3));
-  color: var(--text);
-}
-.tt-club.is-on .tt-code {
-  /* A 2px underline in the secondary. Drawn on the label rather than the
-     cell edge so it cannot be mistaken for the selection ring. */
-  box-shadow: 0 2px 0 var(--tt-b);
-}
-.tt-club:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* color-mix is recent enough to need a floor. Without this the chosen cell
-   in an older browser keeps the plain --bg-3 and is identified by its ring
-   alone, which still works. */
-@supports not (background: color-mix(in srgb, red 50%, blue)) {
-  .tt-club.is-on { background: var(--bg-3); }
-}
 
 /* ---------------------------------------------------------------------
    Light mode, the handful of places where flipping a variable is not

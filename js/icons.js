@@ -55,6 +55,14 @@ const PATHS = {
   /* A star: a featured achievement. */
   star: `<path d="M12 3.2l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.6l6.1-.8L12 3.2Z"/>`,
 
+  /* A shield: commissioner / privileged access. */
+  shield: `<path d="M12 2.6l7.4 2.7v6c0 4.4-3 8.4-7.4 10.1-4.4-1.7-7.4-5.7-7.4-10.1v-6L12 2.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+           <path d="M8.6 12.2l2.5 2.5 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>`,
+
+  /* A person: the plain member view. */
+  user: `<circle cx="12" cy="8.2" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+         <path d="M4.8 20.2c0-3.6 3.2-5.8 7.2-5.8s7.2 2.2 7.2 5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`,
+
   /* An American football: the favourite-team pill when no logo is shown. */
   football: `<path d="M20.4 3.6c1.4 4.6.1 10.2-3.4 13.7-3.5 3.5-9.1 4.8-13.7 3.4C1.9 16.1 3.2 10.5 6.7 7 10.2 3.5 15.8 2.2 20.4 3.6Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
              <path d="M9.4 14.6l5.2-5.2M10.9 12.1l1.6 1.6M12.9 10.1l1.6 1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`,

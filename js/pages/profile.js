@@ -13,10 +13,9 @@ import { db } from "../supabase.js";
 import { shareProfile } from "../profile-share.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
-import { editControls, wireInline } from "../inline.js";
-import { saveMode, savedMode, activeMode, modeOptions, teamOptions,
+import { wireInline } from "../inline.js";
+import { saveMode, savedMode, activeMode, modeOptions,
          modeLabel, isTeamMode } from "../theme.js";
-import { teamLogo, teamCode } from "../nfl-teams.js";
 import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
 import { wireDflPage } from "./profile-dfl.js";
@@ -141,7 +140,7 @@ export async function render(view) {
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
-      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard(member)}` : ""}
+      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard()}` : ""}
       ${othersCard(members, member)}
     </div>
   `;
@@ -156,10 +155,16 @@ export async function render(view) {
   wireDflPage(view, member, isMe, () => render(view), {
     currentTeam,
     currentSeason: sleeperUser?.data?.current_season,
-    actions: `${isMe
+    /*
+      ONE EDIT BUTTON. editControls("members", ...) used to add a second one
+      here - the admin inline editor - so a commissioner on their own profile
+      saw two Edits that opened different things. The card's own Edit is the
+      only one now; the inline editor is still reachable from the Members
+      admin page, which is where editing somebody ELSE's row belongs.
+    */
+    actions: isMe
       ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
-      : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`}
-      ${editControls("members", member, { compact: true, del: false })}`,
+      : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`,
     onRepaint: () => { void decorateChipEaters(view); },
   });
 
@@ -487,21 +492,19 @@ function modeNote() {
 }
 
 /*
-  THE CLUB GRID IS A GRID, NOT A 36TH BUTTON.
+  THE CLUB GRID MOVED TO THE IDENTITY EDITOR.
 
-  The four fixed palettes are a row of toggles and adding thirty-two more
-  to it would be unreadable. The clubs get their own block below, picked by
-  their real logo - which is the whole reason to have imported them.
+  This card used to carry a grid of all 32 logos. That asked a question
+  nobody has - somebody wants THEIR club's colours, not a browse of the
+  other thirty-one - and it sat in Settings, three cards away from where
+  they had just told the app which club they support. The top card's editor
+  now offers "use these colours as my app theme" next to the club picker.
 
-  A member who has set a favourite team gets it offered first, because that
-  is the one they actually want and hunting for it in an alphabetical grid
-  of thirty-two badges is a chore.
+  What is left here is the four base palettes, which are genuinely a
+  device-level choice and have nothing to do with identity.
 */
-function appearanceCard(member) {
+function appearanceCard() {
   const want = savedMode();
-  const mine = teamCode(member?.favorite_team);
-  const clubs = teamOptions();
-
   return `
     <div class="card">
       <h3 class="card-heading">Appearance</h3>
@@ -511,29 +514,8 @@ function appearanceCard(member) {
                   data-mode-pick="${o.id}" aria-pressed="${o.id === want}">${esc(o.name)}</button>`).join("")}
       </div>
       <p class="muted tiny" id="mode-note">${esc(modeNote())}</p>
-
-      <div class="team-theme">
-        <div class="tt-head">
-          <span class="u-label">Team colours</span>
-          <span class="muted tiny">Your club's primary and secondary on a dark palette.</span>
-        </div>
-        ${mine && clubs.some((c) => c.code === mine) ? `
-          <button type="button" class="btn ghost small tt-mine"
-                  data-mode-pick="team:${esc(mine)}">
-            ${teamLogo(`nfl:${mine}`, { size: 18 })}<span>Use my team</span>
-          </button>` : ""}
-        <div class="tt-grid" role="radiogroup" aria-label="Team colours">
-          ${clubs.map((c) => {
-            const on = want === c.id;
-            return `<button type="button" class="tt-club${on ? " is-on" : ""}"
-              data-mode-pick="${esc(c.id)}" role="radio" aria-checked="${on}"
-              title="${esc(c.name)}" style="--tt-a:${esc(c.primary)};--tt-b:${esc(c.secondary)}">
-              ${teamLogo(`nfl:${c.code}`, { size: 26 })}
-              <span class="tt-code">${esc(c.code)}</span>
-            </button>`;
-          }).join("")}
-        </div>
-      </div>
+      ${isTeamMode(want) ? `<p class="muted tiny">Wearing ${esc(modeLabel(want))} colours.
+        Change that with your favourite club at the top of this page.</p>` : ""}
     </div>`;
 }
 

@@ -41,21 +41,26 @@ import { identityByline, accentOf } from "./profile-identity.js";
   behind - which is every database in the minute after a release.
 */
 const TABLE_GONE = /member_wall_posts|could not find the table/i;
-const COLUMN_GONE = /profile_title|favorite_team|accent_color/i;
+const COLUMN_GONE = /profile_title|favorite_team|featured_achievement|accent_color/i;
 
 /*
   THREE SHAPES OF THE SAME READ, TRIED WIDEST FIRST.
 
   The identity columns arrived in two separate migrations, so a league can
-  legitimately be at any of three points: everything, titles and clubs but
-  no accent colour, or neither. Falling straight from "everything" to
+  legitimately be at any of three points: everything, the identity columns
+  without the accent colour, or neither.
+
+  featured_achievement WAS MISSING FROM ALL THREE. identityByline() started
+  rendering it and this query never asked for it, so every wall post lost
+  its achievement silently - the field was simply undefined and the byline
+  dropped it without complaint. Falling straight from "everything" to
   "neither" would silently drop every byline on a database that is only one
   migration behind - which is the common case right after a release. Each
   step down loses exactly the columns that are actually missing.
 */
 const SELECTS = [
-  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,accent_color)",
-  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team)",
+  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)",
+  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement)",
   "id,member_id,body,image,created_at,members(display_name,profile_image)",
 ];
 

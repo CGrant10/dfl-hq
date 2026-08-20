@@ -38,6 +38,9 @@
 import { db } from "./supabase.js";
 import { esc, toast } from "./ui.js";
 import { refreshMember } from "./members.js";
+/* Picking a club is where somebody decides they want its colours, so the
+   theme switch lives beside the club rather than in a separate card. */
+import { saveMode, savedMode, isTeamMode, teamModeFor, modeTeam } from "./theme.js";
 import { icon } from "./icons.js";
 import { nflTeams, teamCode, teamValue, teamLogo, teamName, teamColor,
          teamGradientVars } from "./nfl-teams.js";
@@ -130,6 +133,29 @@ export function identityByline(member) {
 
 // -------------------------------------------------------------- editor
 
+/*
+  USE MY CLUB'S COLOURS AS THE APP THEME.
+
+  This was a grid of all 32 logos in the Appearance card, which asked a
+  question nobody has: somebody wants THEIR team's colours, not a browse of
+  everyone else's. It belongs next to the club they just picked.
+
+  Disabled until a club is chosen, because there is nothing to theme with -
+  and it says so rather than silently doing nothing when tapped.
+*/
+function themeToggle(member) {
+  const code = teamCode(member?.favorite_team);
+  const on = isTeamMode(savedMode()) && modeTeam(savedMode())?.code === code && !!code;
+  if (!code) {
+    return `<p class="muted tiny ident-theme-note">Pick a club to use its colours as your app theme.</p>`;
+  }
+  return `<label class="ident-theme">
+    <input type="checkbox" data-identity-theme${on ? " checked" : ""}>
+    <span>Use these colours as my app theme</span>
+  </label>
+  <span class="muted tiny">A dark palette with your club's primary and secondary. Follows you to your other devices.</span>`;
+}
+
 export function identitySettingsCard(member, career, extremes, chipSeasons = []) {
   const titles = titleChoices(member, career, extremes, chipSeasons);
   const achievements = achievementOptions(member, career, extremes, chipSeasons);
@@ -161,18 +187,20 @@ export function identitySettingsCard(member, career, extremes, chipSeasons = [])
         </select></label>` : ""}
     </div>` : `<p class="muted tiny">No titles earned yet — win something.</p>`}
 
-    <label class="dfl-field"><span class="u-label">Favourite NFL team</span>
+    <div class="dfl-field">
+      <label class="u-label" for="ident-team-select">Favourite NFL team</label>
       <div class="ident-team-row">
         <span class="ident-team-logo" data-identity-team-logo>
           ${member.favorite_team ? teamLogo(member.favorite_team, { size: 30 }) : ""}
         </span>
-        <select data-identity-team>
+        <select id="ident-team-select" data-identity-team>
           <option value="">None</option>
           ${nflTeams().map(t => `<option value="${esc(teamValue(t.code))}"${
             teamCode(member.favorite_team) === t.code ? " selected" : ""}>${esc(t.name)}</option>`).join("")}
         </select>
       </div>
-    </label>
+      ${themeToggle(member)}
+    </div>
 
     <div class="dfl-field">
       <span class="u-label">Accent colour</span>
@@ -235,6 +263,27 @@ export function wireProfileIdentity(root, member, onSaved) {
     if (e.target.matches("[data-identity-team]")) {
       const slot = host.querySelector("[data-identity-team-logo]");
       if (slot) slot.innerHTML = e.target.value ? teamLogo(e.target.value, { size: 30 }) : "";
+      /*
+        THE THEME FOLLOWS THE CLUB. If the app is already wearing a club's
+        colours and the member picks a different club, the palette moves with
+        them - leaving it on the old team would be the app disagreeing with
+        the badge on the same screen. Changing to "None" hands it back to the
+        default rather than keeping colours for a club they dropped.
+      */
+      const box = host.querySelector("[data-identity-theme]");
+      if (box?.checked || isTeamMode(savedMode())) {
+        const next = e.target.value ? teamModeFor(teamCode(e.target.value)) : null;
+        if (next) saveMode(next);
+        else if (isTeamMode(savedMode())) saveMode("medicine");
+      }
+    }
+    if (e.target.matches("[data-identity-theme]")) {
+      const code = teamCode(host.querySelector("[data-identity-team]")?.value);
+      if (e.target.checked && code) saveMode(teamModeFor(code));
+      /* Turning it off returns to the app's default rather than to whatever
+         was set before - remembering a previous palette would need a second
+         piece of stored state for one checkbox. */
+      else if (!e.target.checked && isTeamMode(savedMode())) saveMode("medicine");
     }
     if (e.target.matches("[data-identity-team], [data-identity-title], [data-identity-achievement]")) repaintPreview();
   });
