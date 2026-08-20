@@ -27,7 +27,17 @@ export const DUCK_TICK_MS = 40;
 */
 export const HOME_STRETCH_START = 0.86;
 export const HOME_STRETCH_MIN_MULTIPLIER = 2.4;
-export const POST_WIN_MIN_MULTIPLIER = 3.35;
+/*
+  AFTER P1, THIS IS PRESENTATION PACE, NOT RACE DRAMA.
+
+  The winner is already decided. The remaining field should visibly charge
+  through a frozen finish scene rather than preserve a many-second simulated
+  spread while a stationary line sits in the middle of the shot. This floor is
+  intentionally strong and is paired with a higher post-win speed ceiling
+  below. Nothing before P1 is touched.
+*/
+export const POST_WIN_MIN_MULTIPLIER = 8.0;
+export const POST_WIN_MAX_MULTIPLIER = 9.0;
 
 export function homeStretchFloor(base, currentSpeed) {
   return Math.max(Number(currentSpeed) || 0, Math.max(0, Number(base) || 0) * HOME_STRETCH_MIN_MULTIPLIER);
@@ -110,15 +120,16 @@ export function simulateForwardRace(racers, ticks, seed) {
       if (homeSpeed[i] > 0 && target[i] < homeSpeed[i]) target[i] = homeSpeed[i];
 
       /* P1 owns the dramatic finish. Everybody else gets the hell home.
-         This is a target floor, not a teleport: position stays continuous and
-         the normal momentum step visibly accelerates trailing racers. */
+         Position stays continuous and place order still comes from crossing;
+         only the already-decided run-home is deliberately compressed. */
       if (winnerIsHome) {
         const runHome = Math.max(base * POST_WIN_MIN_MULTIPLIER, speed[i]);
         if (target[i] < runHome) target[i] = runHome;
       }
 
-      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.38 : 0.22);
-      speed[i] = Math.max(base * 0.08, Math.min(base * 3.65, speed[i]));
+      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.72 : 0.22);
+      const maxSpeed = base * (winnerIsHome ? POST_WIN_MAX_MULTIPLIER : 3.65);
+      speed[i] = Math.max(base * 0.08, Math.min(maxSpeed, speed[i]));
 
       const before = progress[i];
       progress[i] += speed[i];
