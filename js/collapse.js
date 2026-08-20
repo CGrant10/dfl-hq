@@ -179,6 +179,37 @@ function arenaControlStyles() {
   .bc-bar.mobile-collapsed{width:auto!important;max-width:none!important;padding:5px!important;gap:0!important;flex-wrap:nowrap!important;background:rgba(9,13,19,.86)!important}
   .bc-bar.mobile-collapsed>:not(.bc-bar-toggle){display:none!important}
 }
+
+/* The standings rail costs almost a third of the course on a portrait phone.
+   That does not change the race gap, but it crushes the number of pixels the
+   gap has to read. While the race is live, give the course the whole frame;
+   the full standings rail returns automatically as soon as results exist. */
+@media (max-width:800px){
+  .bc-stage[data-race-state="countdown"] .bc-body,
+  .bc-stage[data-race-state="running"] .bc-body{grid-template-columns:minmax(0,1fr)!important}
+  .bc-stage[data-race-state="countdown"] .bc-board,
+  .bc-stage[data-race-state="running"] .bc-board{display:none!important}
+}
+
+/* Finish paint, not finish furniture. Keep the exact same --finish-x ground
+   coordinate and layer, but remove every depth cue: no gantry, bevel, glow or
+   contact shadow. Racers still pass in front of one flat checkered stripe. */
+.bc-stage .bc-finish,
+.arena-track-wrap.cinematic-race .track-finish{
+  top:16.5%!important;
+  bottom:8%!important;
+  width:clamp(8px,1.05vw,18px)!important;
+  background:repeating-conic-gradient(#f5f7fa 0 25%,#151a21 0 50%) 0 0 / clamp(8px,1.05vw,18px) clamp(8px,1.05vw,18px)!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  opacity:.94;
+}
+.bc-stage .bc-finish::before,
+.bc-stage .bc-finish::after,
+.arena-track-wrap.cinematic-race .track-finish::before,
+.arena-track-wrap.cinematic-race .track-finish::after{content:none!important;display:none!important}
+
 @media(prefers-reduced-motion:reduce){.bc-bar{transition:none!important}}
 `;
   document.head.appendChild(s);
