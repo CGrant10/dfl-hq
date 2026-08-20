@@ -491,6 +491,63 @@
   vertical-align: -0.14em;
   flex: 0 0 auto;
 }
+
+/* =====================================================================
+   THE ICON SET CARRIES THE GRADIENT.
+   ---------------------------------------------------------------------
+   An SVG cannot take a CSS gradient the way text can, so the glyphs point
+   at the <linearGradient> defined at the top of index.html, whose stops
+   are the palette pair below.
+
+   THE TWO SELECTORS ARE PRECISE ON PURPOSE:
+
+     .ico             sets fill on the SVG ROOT only. A path with no fill
+                      attribute inherits the gradient; a path carrying
+                      fill="none" keeps its own value, so outline glyphs
+                      are not flooded solid.
+     [stroke=...]     only paths that actually stroke in currentColor are
+                      re-pointed, so nothing else is touched.
+
+   A blanket `fill` on every descendant would have filled in every hollow
+   icon in the set.
+   ===================================================================== */
+.dfl-ico-stop-a { stop-color: var(--accent-fill); }
+.dfl-ico-stop-b { stop-color: var(--accent-2-fill); }
+
+.ico { fill: url(#dfl-ico-grad); }
+.ico [stroke="currentColor"] { stroke: url(#dfl-ico-grad); }
+
+/*
+  AND WHERE A GLYPH MUST KEEP ITS OWN COLOUR.
+
+  On a filled button or a coloured pill the icon has to be the ink that
+  reads on THAT background, not the palette pair - a navy-to-orange camera
+  on a navy-to-orange button is invisible. The champion trophy is gold
+  because a ring is gold, and the chip is the warn amber.
+*/
+.btn .ico,
+.ph-photo-btn .ico,
+.choice.is-primary .choice-ico .ico,
+.wall-submit .ico,
+.is-champion .ico,
+.chip-badge .ico,
+.pill .ico,
+.badge .ico,
+.ka-headline .ico,
+.mode-opt.is-on .ico,
+.tabs button.on .ico { fill: currentColor; }
+
+.btn .ico [stroke="currentColor"],
+.ph-photo-btn .ico [stroke="currentColor"],
+.choice.is-primary .choice-ico .ico [stroke="currentColor"],
+.wall-submit .ico [stroke="currentColor"],
+.is-champion .ico [stroke="currentColor"],
+.chip-badge .ico [stroke="currentColor"],
+.pill .ico [stroke="currentColor"],
+.badge .ico [stroke="currentColor"],
+.ka-headline .ico [stroke="currentColor"],
+.mode-opt.is-on .ico [stroke="currentColor"],
+.tabs button.on .ico [stroke="currentColor"] { stroke: currentColor; }
 .nfl-logo {
   display: inline-block;
   vertical-align: -0.2em;
