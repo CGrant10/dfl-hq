@@ -14,8 +14,6 @@ describe("activity feed lines", () => {
   it("says 'a thing' for a single row and does not double a plural", () => {
     expect(activityLine({ entity: "polls", label: "poll", action: "insert", row_count: 1,
       last_at: at(1) }, { now: NOW }).text).toBe("added a poll");
-    /* "keeper rules" already ends in s; "1 keeper ruless" was the bug this
-       guards against. */
     expect(activityLine({ entity: "keeper_rules", label: "keeper rules", action: "update",
       row_count: 3, last_at: at(1) }, { now: NOW }).text).toBe("changed 3 keeper rules");
   });
@@ -33,27 +31,24 @@ describe("activity feed lines", () => {
     expect(whenText(at(180), NOW)).toBe("3 hr ago");
     expect(whenText(at(60 * 24), NOW)).toBe("yesterday");
     expect(whenText(at(60 * 24 * 4), NOW)).toBe("4 days ago");
-    /* Past a fortnight it becomes a date rather than counting weeks at
-       somebody - nobody thinks in "9 weeks ago". */
     expect(whenText(at(60 * 24 * 90), NOW)).toMatch(/[A-Z][a-z]{2}/);
     expect(whenText("not a date", NOW)).toBe("");
   });
 
-  it("draws nothing at all when the migration is absent", () => {
-    // null means "not installed" and must not put an empty card on the front
-    // page of a league that never asked for the feature.
-    expect(activityCard(null)).toBe("");
-    expect(activityCard([])).toContain("Nothing yet.");
+  it("keeps a wall mount even when activity is unavailable", () => {
+    expect(activityCard(null)).toContain("data-wall-slot");
+    expect(activityCard([])).toContain("data-wall-slot");
   });
 
-  it("marks a commissioner write and links a known member", () => {
-    const html = activityCard([{ entity: "keepers", label: "keeper", action: "update",
+  it("hides commissioner/admin writes and keeps member activity", () => {
+    const commissionerOnly = activityCard([{ entity: "keepers", label: "keeper", action: "update",
       member_id: 7, display_name: "Grant", as_commissioner: true, row_count: 1, last_at: at(3) }]);
-    expect(html).toContain('href="#/profile?id=7"');
-    expect(html).toContain("act-badge");
-    const plain = activityCard([{ entity: "polls", label: "poll", action: "insert",
-      member_id: null, display_name: null, as_commissioner: false, row_count: 1, last_at: at(3) }]);
-    expect(plain).not.toContain("act-badge");
-    expect(plain).toContain("Somebody");
+    expect(commissionerOnly).not.toContain('href="#/profile?id=7"');
+    expect(commissionerOnly).not.toContain("act-badge");
+
+    const member = activityCard([{ entity: "polls", label: "poll vote", action: "insert",
+      member_id: 7, display_name: "Grant", as_commissioner: false, row_count: 1, last_at: at(3) }]);
+    expect(member).toContain('href="#/profile?id=7"');
+    expect(member).toContain("Grant");
   });
 });
