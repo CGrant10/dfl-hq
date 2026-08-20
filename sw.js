@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.109.77";
+const CACHE_NAME = "dfl-hq-v1.109.78";
 /* a.espncdn.com serves the NFL club logos on the profile and the Wall.
    Caching it means a logo seen once still renders offline. */
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
@@ -19,7 +19,8 @@ self.addEventListener("fetch",event=>{
 
   // Finish-line presentation hotfix. Normal imports receive the wrapper,
   // while the wrapper's ?finish-base=1 import reaches the committed runtime
-  // directly. This changes only finish.groundRatio; racer physics stay exact.
+  // directly. This changes only finish presentation timing; racer physics,
+  // finish times and order stay exact.
   if(url.origin===location.origin && url.pathname.endsWith("/js/arena/pixi-runtime.js") && url.searchParams.get("finish-base")!=="1"){
     const shim=new URL("./js/arena/pixi-runtime-finish.js",self.registration.scope);
     event.respondWith(fetch(new Request(shim,{cache:"no-cache"})).then(response=>{
