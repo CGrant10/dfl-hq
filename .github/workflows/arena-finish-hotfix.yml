@@ -1,5 +1,4 @@
-name: Arena forward-only physics release
-# trigger: duck-style-forward-physics-v1.109.62
+name: Guarded v1.109.69 release
 
 on:
   push:
@@ -10,98 +9,137 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Replace Arena race physics with forward-only movement
+
+      - name: Build release candidate
         run: |
+          git fetch origin feat/profile-identity-cleanup
+          git checkout origin/feat/profile-identity-cleanup -- js/profile-identity.js js/pages/profile-dfl.js
+
           python3 - <<'PY'
           from pathlib import Path
           import json, re
 
-          # Shared race entry point: every caller (Broadcast, Arena controls,
-          # replay/results) gets the same forward-only simulation.
-          p = Path('js/arena/race.js')
+          # Arena: presets keep their exact current 900ms theatre close.
+          # Custom races longer than the long preset get a proportionally
+          # longer closing window so a 60s race does not spend its last beat
+          # visually parked near the stripe waiting for truth to catch up.
+          p = Path('src/arena/theatre.ts')
           s = p.read_text()
-          if 'import { simulateForwardRace } from "./duck-physics.js";' not in s:
-              anchor = '/** Deterministic RNG (mulberry32). Same seed, same race, every time. */'
-              if anchor not in s: raise SystemExit('race import anchor not found')
-              s = s.replace(anchor,
-                  'import { simulateForwardRace } from "./duck-physics.js";\n\n' + anchor, 1)
+          old = '''export function closingEase(msToFinish: number): number {
+            if (msToFinish <= 0) return 0;
+            if (msToFinish >= CLOSE_MS) return 1;
+            return smoothstep(msToFinish / CLOSE_MS);
+          }'''
+          new = '''export function closingEase(msToFinish: number, windowMs = CLOSE_MS): number {
+            const window = Math.max(1, windowMs);
+            if (msToFinish <= 0) return 0;
+            if (msToFinish >= window) return 1;
+            return smoothstep(msToFinish / window);
+          }
 
-          old_decl = 'export function simulate(racers, ticks, seed) {'
-          if old_decl in s:
-              s = s.replace(old_decl, 'function simulateLegacy(racers, ticks, seed) {', 1)
-              insert_at = 'function simulateLegacy(racers, ticks, seed) {'
-              s = s.replace(insert_at,
-                  'export function simulate(racers, ticks, seed) {\n'
-                  '  return simulateForwardRace(racers, ticks, seed);\n'
-                  '}\n\n'
-                  + insert_at, 1)
-          elif 'return simulateForwardRace(racers, ticks, seed);' not in s:
-              raise SystemExit('simulate replacement anchor not found')
+          /**
+           * Keep the three shipped presets byte-for-byte on their established
+           * finish feel. A custom race longer than Long scales the theatre close
+           * with its duration instead of cramming the same correction into 900ms.
+           */
+          export function closingWindowMs(ticks: number): number {
+            const rounded = Math.round(Number(ticks) || 0);
+            if (rounded === 300 || rounded === 550 || rounded === 900) return CLOSE_MS;
+            return Math.max(CLOSE_MS, Math.min(2400, rounded));
+          }'''
+          if old not in s:
+            raise SystemExit('closingEase anchor not found')
+          s = s.replace(old, new, 1)
 
-          # The theatre is now reactions only. No second position timeline.
-          old_export = 'export { dramatize, crossingSpeeds } from "./pixi-runtime.js";'
-          new_export = '''export { crossingSpeeds } from "./pixi-runtime.js";
-export function dramatize(sim) {
-  return { shown: sim.samples, events: [] };
-}'''
-          if old_export in s:
-              s = s.replace(old_export, new_export, 1)
-          elif 'return { shown: sim.samples, events: [] };' not in s:
-              raise SystemExit('dramatize replacement anchor not found')
+          old_gate = 'const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS) * openEase(truth);'
+          new_gate = 'const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS, closeMs) * openEase(truth);'
+          if old_gate not in s:
+            raise SystemExit('theatre gate anchor not found')
+          s = s.replace('  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));',
+                        '  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));\n  const closeMs = closingWindowMs(sim.ticks);', 1)
+          s = s.replace(old_gate, new_gate, 1)
           p.write_text(s)
 
-          # Broadcast explicitly uses raw samples as the drawn positions too.
-          p = Path('js/pages/broadcast.js')
+          # Broadcast commissioner bar: preserve button tap targets; just stop
+          # the black pill padding/gap from ballooning on a large fullscreen view.
+          p = Path('css/broadcast.css')
           s = p.read_text()
-          s = s.replace('live.shown = drama.shown;', 'live.shown = live.sim.samples;', 1)
+          old = '''  gap: .6vw;
+            padding: .7vw .9vw;'''
+          new = '''  gap: clamp(4px, .35vw, 8px);
+            padding: clamp(4px, .35vw, 7px) clamp(6px, .5vw, 10px);'''
+          if old not in s:
+            raise SystemExit('broadcast bar spacing anchor not found')
+          s = s.replace(old, new, 1)
           p.write_text(s)
 
-          VERSION = '1.109.62'
-          Path('version.txt').write_text(VERSION + '\n')
+          # Profile identity module is now imported by profile-dfl.js, so make
+          # sure the service worker knows about it on installed devices.
+          p = Path('sw.js')
+          s = p.read_text()
+          if '"./js/profile-identity.js"' not in s:
+            s = s.replace('"./js/profile-share.js"', '"./js/profile-share.js","./js/profile-identity.js"')
+          p.write_text(s)
 
-          pkg = json.loads(Path('package.json').read_text())
-          pkg['version'] = VERSION
-          Path('package.json').write_text(json.dumps(pkg, indent=2) + '\n')
+          # One synchronized release. Keep the release floor aligned too.
+          v = '1.109.69'
+          Path('version.txt').write_text(v + '\n')
 
-          sw = Path('sw.js')
-          x = sw.read_text()
-          x, n = re.subn(r'const CACHE_NAME = "dfl-hq-v[^"]+";',
-                         f'const CACHE_NAME = "dfl-hq-v{VERSION}";', x, count=1)
+          p = Path('package.json')
+          data = json.loads(p.read_text())
+          data['version'] = v
+          p.write_text(json.dumps(data, indent=2) + '\n')
+
+          p = Path('sw.js')
+          s = p.read_text()
+          s, n = re.subn(r'const CACHE_NAME = "dfl-hq-v[^"]+";', f'const CACHE_NAME = "dfl-hq-v{v}";', s, count=1)
           if n != 1: raise SystemExit('service worker version anchor not found')
-          sw.write_text(x)
+          p.write_text(s)
 
-          idx = Path('index.html')
-          x = idx.read_text()
-          x, n = re.subn(r'name="dfl-app-version" content="[^"]+"',
-                         f'name="dfl-app-version" content="{VERSION}"', x, count=1)
-          if n != 1: raise SystemExit('HTML version anchor not found')
-          idx.write_text(x)
+          p = Path('index.html')
+          s = p.read_text()
+          s, n = re.subn(r'name="dfl-app-version" content="[^"]+"', f'name="dfl-app-version" content="{v}"', s, count=1)
+          if n != 1: raise SystemExit('index version anchor not found')
+          p.write_text(s)
 
-          cfg = Path('js/config.js')
-          x = cfg.read_text()
-          x, n = re.subn(r'const RELEASE_FLOOR = "1\.109\.\d+";',
-                         f'const RELEASE_FLOOR = "{VERSION}";', x, count=1)
+          p = Path('js/config.js')
+          s = p.read_text()
+          s, n = re.subn(r'const RELEASE_FLOOR = "[^"]+";', f'const RELEASE_FLOOR = "{v}";', s, count=1)
           if n != 1: raise SystemExit('release floor anchor not found')
-          cfg.write_text(x)
+          p.write_text(s)
           PY
-      - name: Verify
-        run: pnpm check
-      - name: Commit release
+
+      - name: Verify release candidate
+        run: |
+          pnpm check
+          grep -q 'Favorite NFL team' js/profile-identity.js
+          ! grep -q 'Waiver Wire Goblin' js/profile-identity.js
+          ! grep -q 'data-pet-color' js/pages/profile-dfl.js
+          grep -q 'closingWindowMs(sim.ticks)' src/arena/theatre.ts
+          grep -q 'clamp(4px, .35vw, 8px)' css/broadcast.css
+          test "$(cat version.txt)" = "1.109.69"
+          grep -q '"version": "1.109.69"' package.json
+          grep -q 'dfl-hq-v1.109.69' sw.js
+          grep -q 'dfl-app-version" content="1.109.69"' index.html
+
+      - name: Commit verified release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/arena/race.js js/arena/duck-physics.js js/pages/broadcast.js js/config.js version.txt package.json sw.js index.html
-          git commit -m "Use forward-only Arena physics and release v1.109.62"
+          git add src/arena/theatre.ts css/broadcast.css js/profile-identity.js js/pages/profile-dfl.js js/config.js version.txt package.json sw.js index.html
+          git commit -m "Release profile cleanup and custom Arena finish v1.109.69"
           git push
