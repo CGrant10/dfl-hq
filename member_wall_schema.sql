@@ -11,10 +11,15 @@ create index if not exists member_wall_posts_created_idx on public.member_wall_p
 alter table public.member_wall_posts enable row level security;
 drop policy if exists "wall read" on public.member_wall_posts;
 drop policy if exists "wall insert own" on public.member_wall_posts;
+drop policy if exists "wall update own" on public.member_wall_posts;
 drop policy if exists "wall delete own or admin" on public.member_wall_posts;
 create policy "wall read" on public.member_wall_posts for select using (true);
 create policy "wall insert own" on public.member_wall_posts for insert with check (member_id = dfl_current_member());
-create policy "wall delete own or admin" on public.member_wall_posts for delete using (member_id = dfl_current_member() or has_commissioner_permission('broadcast'));
+create policy "wall update own" on public.member_wall_posts for update
+  using (member_id = dfl_current_member())
+  with check (member_id = dfl_current_member());
+create policy "wall delete own or admin" on public.member_wall_posts for delete
+  using (member_id = dfl_current_member() or public.is_admin() or public.is_commissioner());
 
 create table if not exists public.broadcast_submissions (
   id bigint generated always as identity primary key,
