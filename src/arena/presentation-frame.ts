@@ -25,14 +25,29 @@ interface VisualEventLike extends DramaEventLike {
 const priority: readonly ReactionKind[] = ["stumble", "jump", "duel", "near", "surge"];
 
 /**
- * The last half-second is a runway, not a presentation effect.
+ * The last approach is a runway, not a presentation effect.
  *
- * Once a racer enters this window we carry its drawn position to 1.0 at a
- * constant rate. Nothing at the finish line is allowed to ease, hold, or
- * visually park the racer before the authoritative crossing time.
+ * The three shipped presets keep the established 500ms runway exactly. A
+ * longer custom race gets the same idea scaled with its planned duration so
+ * a one-minute race does not spend seconds visually parked by the stripe and
+ * then cram the actual crossing into the same half-second used by a 12s race.
  */
 const FINAL_RUN_MS = 500;
 const SAMPLE_MS = 40;
+const SIMULATION_GUARD_MULTIPLIER = 3.1;
+const PRESET_TICKS = [300, 550, 900] as const;
+
+function finalRunWindowMs(samplesLength: number): number {
+  const plannedTicks = Math.max(1, (Math.max(1, samplesLength) - 1) / SIMULATION_GUARD_MULTIPLIER);
+  const isPreset = PRESET_TICKS.some((ticks) => Math.abs(plannedTicks - ticks) < 1);
+  if (isPreset || plannedTicks <= 900) return FINAL_RUN_MS;
+
+  /* Medium's 500ms runway is the visual baseline. A 1500-tick (~60s)
+     custom race therefore gets about 1.36s to carry its existing motion
+     through the stripe. Capped so an extreme custom duration never turns
+     the final approach into its own scene. */
+  return Math.min(2000, Math.round(FINAL_RUN_MS * plannedTicks / 550));
+}
 
 /**
  * Converts the deterministic race theatre queues into a seekable Pixi
@@ -92,12 +107,13 @@ export interface PresentationRacerInput {
 function finalRunProgress(input: PresentationRacerInput, normalProgress: number): number {
   const finishMs = input.officialFinishMs;
   if (finishMs == null || !Number.isFinite(finishMs)) return normalProgress;
-  const startMs = finishMs - FINAL_RUN_MS;
+  const runMs = finalRunWindowMs(input.samples.length);
+  const startMs = finishMs - runMs;
   if (input.elapsedMs <= startMs || input.elapsedMs >= finishMs) return normalProgress;
 
   const anchorIndex = Math.max(0, Math.min(input.samples.length - 1, Math.floor(startMs / SAMPLE_MS)));
   const anchor = Math.max(0, Math.min(0.999999, input.samples[anchorIndex] ?? normalProgress));
-  const phase = Math.max(0, Math.min(1, (input.elapsedMs - startMs) / FINAL_RUN_MS));
+  const phase = Math.max(0, Math.min(1, (input.elapsedMs - startMs) / runMs));
   return anchor + (1 - anchor) * phase;
 }
 

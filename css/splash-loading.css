@@ -146,6 +146,15 @@
 #home-wrap .fp-snap b,
 #home-wrap .fp-snap small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Broadcast commissioner chrome: keep the controls full-size, but make the
+   black pill hug them instead of scaling its empty padding with a giant OBS
+   viewport. splash-loading.css is loaded last, so this intentionally wins
+   over the older vw shell spacing without touching button geometry. */
+.bc-bar {
+  gap: clamp(4px, .35vw, 8px);
+  padding: clamp(4px, .35vw, 7px) clamp(6px, .5vw, 10px);
+}
+
 /* Reduced-motion users keep the repo's existing short, static opening and
    get no route movement either. */
 @media (prefers-reduced-motion: reduce) {
