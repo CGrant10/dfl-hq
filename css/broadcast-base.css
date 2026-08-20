@@ -62,7 +62,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   line-height: 1;
   text-transform: uppercase;
 }
-.bc-brand-mark span { color: var(--accent); text-shadow: 0 0 1.4vw rgba(47,191,95,.5); }
+.bc-brand-mark span { color: var(--accent-2); text-shadow: 0 0 1.4vw rgba(47,191,95,.5); }
 .bc-brand-sub {
   font-size: .82vw;
   font-weight: 800;
@@ -95,7 +95,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   font-size: 3.4vw;
   font-weight: 700;
   line-height: 1;
-  color: var(--accent);
+  color: var(--accent-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -292,7 +292,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   font-weight: 800;
   letter-spacing: .34em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .bc-winner-name {
   font-family: "Rajdhani", system-ui, sans-serif;
@@ -328,7 +328,7 @@ body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
   text-transform: uppercase;
   color: var(--muted);
 }
-.bc-foot-right { color: var(--accent); }
+.bc-foot-right { color: var(--accent-2); }
 
 /* ---------------------- the commissioner panel ----------------------- */
 /* This part IS in the phone app, so it uses ordinary app sizing. */
@@ -1385,10 +1385,14 @@ body.broadcasting .view { width:100%; height:100%; }
 */
 .bc-stage.cinematic-race[data-race-state="idle"] .bc-bar{opacity:.92}
 .bc-stage.cinematic-race[data-race-state="idle"] .bc-bar.on{opacity:1}
+/* The GO button is the loud one on the deck, so it carries both colours:
+   the primary edge it always had, and a secondary-weighted wash behind it. */
 .bc-btn-go{
   font-weight:700;
   border-color:color-mix(in srgb,var(--accent) 60%,transparent);
-  background:color-mix(in srgb,var(--accent) 22%,transparent);
+  background:linear-gradient(135deg,
+    color-mix(in srgb,var(--accent) 26%,transparent),
+    color-mix(in srgb,var(--accent-2) 26%,transparent));
 }
 .bc-stage.cinematic-race[data-race-state="idle"] .bc-foot{opacity:1}
 .bc-stage.cinematic-race[data-race-state="idle"] #bc-status{color:var(--accent)}

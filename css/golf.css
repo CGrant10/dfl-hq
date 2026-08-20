@@ -1,5 +1,5 @@
 /* DFL HQ - Golf */
-.golf-card{padding:0;overflow:hidden}.golf-link{display:block;padding:16px;text-decoration:none;color:inherit}.golf-link:hover{background:var(--bg-3)}.golf-top{display:flex;align-items:center;gap:10px;justify-content:space-between}.golf-top .card-heading{margin:0}.golf-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;font-size:12px;color:var(--muted)}.golf-card .inline-admin{padding:0 16px 12px}.golf-event-head{align-items:flex-start}.golf-event-head .backlink{margin-top:4px}.golf-event-summary,.golf-teams-card,.golf-admin-card,.golf-lineup-card{padding:14px}.golf-notes{margin:12px 0 0}.card-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.card-title-row .card-title{margin:0}.card-title-row p{margin:3px 0 0}.admin-badge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:4px 7px;white-space:nowrap}.setup-figures{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.setup-figure{padding:10px 8px;border:1px solid var(--line);border-radius:9px;background:var(--bg-3);text-align:center}.sf-v{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}.sf-l{display:block;margin-top:2px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}/* THE TEAM ROSTER. Reference information: a heading, the captain, the
+.golf-card{padding:0;overflow:hidden}.golf-link{display:block;padding:16px;text-decoration:none;color:inherit}.golf-link:hover{background:var(--bg-3)}.golf-top{display:flex;align-items:center;gap:10px;justify-content:space-between}.golf-top .card-heading{margin:0}.golf-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;font-size:12px;color:var(--muted)}.golf-card .inline-admin{padding:0 16px 12px}.golf-event-head{align-items:flex-start}.golf-event-head .backlink{margin-top:4px}.golf-event-summary,.golf-teams-card,.golf-admin-card,.golf-lineup-card{padding:14px}.golf-notes{margin:12px 0 0}.card-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.card-title-row .card-title{margin:0}.card-title-row p{margin:3px 0 0}.admin-badge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:var(--accent-2);border:1px solid var(--line);border-radius:999px;padding:4px 7px;white-space:nowrap}.setup-figures{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.setup-figure{padding:10px 8px;border:1px solid var(--line);border-radius:9px;background:var(--bg-3);text-align:center}.sf-v{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}.sf-l{display:block;margin-top:2px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}/* THE TEAM ROSTER. Reference information: a heading, the captain, the
    players. Nothing in here navigates and nothing in here is a button - the
    card used to be one enormous link to a scorecard, which is why every
    player's name sat inside a tap target. */
@@ -35,11 +35,11 @@
    no border until you touch it. */
 .bag-club{min-width:0;height:38px;padding:0 6px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:14.5px;font-weight:600}
 .bag-club:hover{border-color:var(--line)}
-.bag-club:focus{border-color:var(--accent-fill);background:var(--bg-3)}
+.bag-club:focus{border-color:var(--accent-2-fill);background:var(--bg-3)}
 /* The number is the point of the page, so it is the biggest thing on the row. */
 .bag-yards{display:flex;align-items:baseline;gap:4px}
 .bag-yards input{width:3.6rem;height:38px;padding:0 6px;border:1px solid var(--control-line);border-radius:8px;background:var(--bg-3);color:var(--text);font:inherit;font-size:17px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
-.bag-yards input:focus{border-color:var(--accent-fill)}
+.bag-yards input:focus{border-color:var(--accent-2-fill)}
 .bag-yards small{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}
 .bag-del{padding:5px 8px;font-size:16px;line-height:1;color:var(--muted)}
 
@@ -65,7 +65,7 @@
 /* Whose pick it is, stated once and loudly - the board is read across a
    table by people who are not holding the phone. */
 .gd-clock{display:grid;gap:1px;padding:11px 12px;margin:12px 0;border:1px solid var(--line);border-left:3px solid var(--racer,var(--accent));border-radius:10px;background:var(--bg-3)}
-.gd-clock-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;color:var(--accent)}
+.gd-clock-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;color:var(--accent-2)}
 .gd-clock-team{font-family:var(--font-display);font-size:23px;font-weight:700;line-height:1.1}
 .gd-clock-cap{font-size:12px;color:var(--muted)}
 
@@ -85,8 +85,8 @@
 .gd-picks{display:flex;flex-wrap:wrap;gap:6px;padding:9px 10px}
 .gd-pick{display:inline-flex;align-items:baseline;gap:5px;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--bg-3);font-size:12.5px;font-weight:700}
 .gd-pick small{font-size:9.5px;font-weight:900;color:var(--muted);font-variant-numeric:tabular-nums}
-.gd-pick.is-cap{border-color:var(--accent-dim);color:var(--accent)}
-.gd-pick.is-cap small{color:var(--accent)}
+.gd-pick.is-cap{border-color:var(--accent-dim);color:var(--accent-2)}
+.gd-pick.is-cap small{color:var(--accent-2)}
 /* On the team, but never drafted - the generator dealt them out, or an admin
    moved them in the team editor. They carry no pick number because there is
    no pick to number, so the chip is dashed to say that on purpose rather
@@ -217,7 +217,7 @@
 .gposter-kicker {
   font-size: var(--fs-label); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-caps); text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 /* The name is the poster. Everything else on this card is caption. */
 .gposter-name {

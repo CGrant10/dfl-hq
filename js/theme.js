@@ -316,6 +316,8 @@ function apply() {
   s.setProperty("--accent-sweep", `linear-gradient(90deg, ${fill}, ${fill2})`);
   /* The same pair on a diagonal, for a block rather than a line. */
   s.setProperty("--accent-sweep-135", `linear-gradient(135deg, ${fill}, ${fill2})`);
+  /* And vertically, for the edge-lines down the side of a card. */
+  s.setProperty("--accent-sweep-v", `linear-gradient(180deg, ${fill}, ${fill2})`);
   s.setProperty("--on-accent", m.onAccent);
   /* --accent-dim was the darker partner of the old green and is still used
      for a few borders; the crest blue is the right thing there now. */

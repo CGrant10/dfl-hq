@@ -91,6 +91,7 @@
   */
   --accent-sweep:     linear-gradient(90deg,  #E5011B, #003396);
   --accent-sweep-135: linear-gradient(135deg, #E5011B, #003396);
+  --accent-sweep-v:   linear-gradient(180deg, #E5011B, #003396);
   --accent-dim:    #003396;
   --on-accent:     #FFFFFF; /* text drawn on top of a fill        */
 
@@ -282,7 +283,7 @@ a { color: var(--accent); }
 }
 
 .brand-text span {
-  color: var(--accent);
+  color: var(--accent-2);
   text-shadow: 0 0 12px rgba(229,1,27,.45);
 }
 
@@ -466,7 +467,7 @@ a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
   width: 18px; height: 18px;
   vertical-align: -3px;
   margin-right: 4px;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .card-title  { font-weight: 700; margin-bottom: 4px; }   /* older markup */
 .card-body   {
@@ -506,7 +507,7 @@ a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
 /* -------------------------------- buttons ---------------------------- */
 
 .btn {
-  background: var(--accent-fill);
+  background: var(--accent-sweep-135);
   color: var(--on-accent);
   border: none;
   border-radius: 10px;
@@ -548,7 +549,7 @@ a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
   color: var(--text);
 }
 .quicknav a:hover { background: var(--bg-3); border-color: var(--accent-dim); }
-.quicknav .ico { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.quicknav .ico { width: 20px; height: 20px; flex: none; color: var(--accent-2); }
 .qn-label { font-size: 14.5px; font-weight: 600; }
 
 /* -------------------------------- forms ------------------------------ */
@@ -590,7 +591,7 @@ textarea { min-height: 96px; resize: vertical; }
   white-space: nowrap;
   cursor: pointer;
 }
-.tabs button.on { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent); }
+.tabs button.on { background: var(--accent-sweep-135); border-color: var(--accent); color: var(--on-accent); }
 .tabs button .tabcount {
   display: inline-block;
   margin-left: 5px;
@@ -701,11 +702,11 @@ textarea { min-height: 96px; resize: vertical; }
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .evday { display: block; font-size: 18px; font-weight: 700; line-height: 1.1; }
 
-.evicon { flex: none; width: 24px; color: var(--accent); padding-top: 2px; }
+.evicon { flex: none; width: 24px; color: var(--accent-2); padding-top: 2px; }
 .evicon .ico-sm { width: 20px; height: 20px; }
 
 .evbody { flex: 1; min-width: 0; }
@@ -777,6 +778,15 @@ textarea { min-height: 96px; resize: vertical; }
   color: var(--muted);
   margin-top: 3px;
 }
+/*
+  A REPEATED FIGURE ALTERNATES, it does not pick a side.
+
+  There are as many .kp-cost cells as there are keepers - eleven on this
+  league's board - so whichever single colour they took, that whole page
+  came out in one hue. Making the odd rows primary and the even rows
+  secondary splits it down the middle for free, and stays split however
+  many keepers there are. Same reasoning as the ticker labels.
+*/
 .kp-cost {
   text-align: right;
   font-size: 14px;
@@ -784,7 +794,10 @@ textarea { min-height: 96px; resize: vertical; }
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
-.kp-cost.none { color: var(--muted); font-weight: 500; }
+.kp-row:nth-of-type(even) .kp-cost { color: var(--accent-2); }
+/* "No cost" is muted in both, and must win over the alternation. */
+.kp-cost.none,
+.kp-row:nth-of-type(even) .kp-cost.none { color: var(--muted); font-weight: 500; }
 
 /* ==================== finance season setup =========================== */
 
@@ -828,7 +841,7 @@ textarea { min-height: 96px; resize: vertical; }
   one number that says whether the season adds up.
 */
 .setup-tally { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.setup-tally .ok    { color: var(--accent); font-weight: 700; }
+.setup-tally .ok    { color: var(--accent-2); font-weight: 700; }
 .setup-tally .under { color: var(--warn-ink);   font-weight: 700; }
 .setup-tally .over  { color: var(--danger-ink); font-weight: 700; }
 
@@ -977,7 +990,7 @@ textarea { min-height: 96px; resize: vertical; }
 
 /* second level of tabs, e.g. inside Admin -> Finances */
 .subtabs button { font-size: 12px; padding: 5px 11px; }
-.subtabs button.on { background: var(--bg-3); border-color: var(--accent-dim); color: var(--accent); }
+.subtabs button.on { background: var(--bg-3); border-color: var(--accent-dim); color: var(--accent-2); }
 
 /* ------------------------------- polls ------------------------------- */
 
@@ -1074,7 +1087,7 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .voter.is-you {
   border-color: var(--accent-dim);
-  color: var(--accent);
+  color: var(--accent-2);
   font-weight: 700;
 }
 
@@ -1134,7 +1147,7 @@ textarea { min-height: 96px; resize: vertical; }
 
 .inline-add {
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-2);
   border: 1px dashed var(--accent-dim);
 }
 .inline-add:hover { background: var(--bg-3); filter: none; }
@@ -1259,7 +1272,7 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .hero-stat-s {
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1284,7 +1297,7 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .stat-v { display: block; font-size: 17px; font-weight: 700; }
 .stat-l { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
-.stat-v.good { color: var(--accent); }
+.stat-v.good { color: var(--accent-2); }
 .stat-v.bad  { color: var(--danger-ink); }
 .stat-v.warn { color: var(--warn-ink); }
 
@@ -1474,7 +1487,7 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .tabbar :is(a, .tabmore).on:after { background: var(--accent-sweep); }
 .btn:hover, .btn.ghost:hover { border-color: var(--accent-fill); color: var(--accent); }
-input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !important; box-shadow: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent-2-fill) !important; box-shadow: none; }
 /* The favourite-NFL-team colouring is gone - see the header comment in
    pages/profile.js. One palette, and it is the crest. */
 .dfl-team-card { border-color: var(--theme-border); }
@@ -1528,7 +1541,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
   margin-top: 4px;
   font-size: 10px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1601,7 +1614,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
 /* The live one is filled, not just outlined - on a three-way switch an
    outline alone reads as "hovered" rather than "chosen". */
 .mode-opt.is-on {
-  background: var(--accent-fill);
+  background: var(--accent-sweep-135);
   border-color: var(--accent-fill);
   color: var(--on-accent);
 }
@@ -1986,7 +1999,7 @@ input.masked {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: .16em;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .sb-status {
   margin-left: auto;

@@ -155,7 +155,7 @@
 }
 .rec {
   border: 1px solid var(--line);
-  border-left: 2px solid var(--accent-fill);
+  border-left: 2px solid transparent; border-image: var(--accent-sweep-v) 1;
   border-radius: var(--r-md);
   background: var(--bg-2);
   padding: var(--s-4);
@@ -241,7 +241,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-wide);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 
 /*
@@ -339,7 +339,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 
 /* ---------------------------------------------------------------------
@@ -397,7 +397,7 @@
 .overlay-card textarea { min-height: 96px; line-height: var(--lh-body); resize: vertical; }
 .overlay-card :is(input, select, textarea):focus {
   outline: none;
-  border-color: var(--accent-fill);
+  border-color: var(--accent-2-fill);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 22%, transparent);
 }
 /* A checkbox row is a sentence, not a field, so it keeps its inline shape. */
@@ -445,7 +445,7 @@
   border-radius: 50%;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .choice-body { display: grid; gap: 2px; min-width: 0; }
 .choice-body strong { font-size: var(--fs-h3); line-height: var(--lh-tight); }
@@ -521,7 +521,7 @@
   border-radius: 50%;
   background: var(--bg-3);
   border: 1px solid var(--line);
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .overlay-card.is-pin { text-align: center; }
 .overlay-card.is-pin label { text-align: left; }
@@ -634,7 +634,7 @@
 .moment.is-championship .moment-ico,
 .moment.is-title .moment-ico { color: var(--milestone); }
 .moment.is-championship .moment-head { color: var(--milestone); }
-.moment.is-commissioner .moment-ico { color: var(--accent); }
+.moment.is-commissioner .moment-ico { color: var(--accent-2); }
 a.moment:hover { background: var(--hover-soft); }
 
 /* ----------------------------- yearbook ------------------------------ */
@@ -769,12 +769,12 @@ a.moment:hover { background: var(--hover-soft); }
   margin: 0 0 var(--s-5);
   padding: var(--s-3) var(--s-4);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent-fill);
+  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
   border-radius: var(--r-md);
   background: var(--bg-2);
 }
 .wn-head { display: flex; align-items: center; gap: var(--s-2); }
-.wn-head .ico-sm { width: 16px; height: 16px; color: var(--accent); flex: none; }
+.wn-head .ico-sm { width: 16px; height: 16px; color: var(--accent-2); flex: none; }
 .wn-title {
   font-size: var(--fs-label);
   font-weight: var(--fw-bold);
@@ -837,7 +837,7 @@ a.moment:hover { background: var(--hover-soft); }
 .factcard {
   padding: var(--s-5);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent-fill);
+  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
   border-radius: var(--r-lg);
   background:
     radial-gradient(120% 90% at 100% 0%, var(--hero-wash), transparent 60%),
@@ -847,7 +847,7 @@ a.moment:hover { background: var(--hover-soft); }
   display: inline-flex; align-items: center; gap: var(--s-2);
   font-size: var(--fs-label); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-caps); text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .fact-head {
   margin: var(--s-3) 0 0;
@@ -864,7 +864,7 @@ a.moment:hover { background: var(--hover-soft); }
 
 .factlist { display: grid; gap: var(--s-2); }
 .fact-row { display: flex; align-items: flex-start; gap: var(--s-3); }
-.fact-row .ico-sm { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 3px; }
+.fact-row .ico-sm { width: 18px; height: 18px; color: var(--accent-2); flex: none; margin-top: 3px; }
 .fact-row .card-heading { margin: 0; }
 
 /* --------------------------------------------------------------------
@@ -880,7 +880,7 @@ a.moment:hover { background: var(--hover-soft); }
   color: var(--muted); padding: var(--s-2) 0;
 }
 .ovbox summary::-webkit-details-marker { display: none; }
-.ovbox summary::before { content: "▸ "; color: var(--accent); }
+.ovbox summary::before { content: "▸ "; color: var(--accent-2); }
 .ovbox[open] summary::before { content: "▾ "; }
 .ovgrid { display: grid; gap: var(--s-2); padding: var(--s-2) 0 var(--s-3); }
 .ov-field { display: grid; gap: 2px; }
@@ -910,7 +910,7 @@ a.moment:hover { background: var(--hover-soft); }
   letter-spacing: var(--ls-wide);
 }
 .crud-add > summary::-webkit-details-marker { display: none; }
-.crud-add > summary::before { content: "+"; color: var(--accent); font-size: 1.25em; line-height: 1; }
+.crud-add > summary::before { content: "+"; color: var(--accent-2); font-size: 1.25em; line-height: 1; }
 .crud-add[open] > summary::before { content: "−"; }
 .crud-add[open] > summary { border-radius: var(--r-md) var(--r-md) 0 0; border-bottom: 0; }
 .crud-add > form { margin-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); }
@@ -2129,7 +2129,7 @@ a.moment:hover { background: var(--hover-soft); }
   font-size: var(--fs-h3);
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--accent-2);
   white-space: nowrap;
 }
 .ka-cost.none { color: var(--muted); }
@@ -2165,7 +2165,7 @@ a.moment:hover { background: var(--hover-soft); }
   margin-bottom: var(--s-2);
   padding: 3px 8px;
   border-radius: var(--r-pill);
-  background: var(--accent-fill);
+  background: var(--accent-sweep-135);
   color: var(--on-accent);
   font-size: var(--fs-micro);
   font-weight: var(--fw-bold);
@@ -2210,7 +2210,7 @@ a.moment:hover { background: var(--hover-soft); }
   font-size: var(--fs-micro);
   color: var(--muted);
 }
-.ka-source.is-stale { color: var(--accent); font-weight: var(--fw-bold); }
+.ka-source.is-stale { color: var(--accent-2); font-weight: var(--fw-bold); }
 
 /* A candidate row's facts: label in bold, value after it, wrapping as a
    sentence rather than as a grid - a list row cannot afford a second grid. */
@@ -2225,7 +2225,7 @@ a.moment:hover { background: var(--hover-soft); }
 }
 /* A recommendation label is a call, not a fact, so it reads as the accent. */
 .ka-badges .pill.is-call {
-  border-color: var(--accent);
+  border-color: var(--accent-2);
   color: var(--accent);
   background: transparent;
 }
@@ -2266,7 +2266,7 @@ a.moment:hover { background: var(--hover-soft); }
   top: 0;
 }
 .ka-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.ka-table td.is-plus { color: var(--accent); font-weight: var(--fw-bold); }
+.ka-table td.is-plus { color: var(--accent-2); font-weight: var(--fw-bold); }
 .ka-table tbody tr.is-unavailable { opacity: .6; }
 .ka-table th:first-child,
 .ka-table td:first-child {
@@ -2415,7 +2415,7 @@ a.moment:hover { background: var(--hover-soft); }
 .ke-player-line { font-size: var(--fs-micro); color: var(--body-text); }
 .ke-player-round {
   font-family: var(--font-display); font-size: var(--fs-h3); font-weight: var(--fw-bold);
-  font-variant-numeric: tabular-nums; color: var(--accent); white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--accent-2); white-space: nowrap;
 }
 
 /* ---- step 3: review ---- */
@@ -2439,7 +2439,7 @@ a.moment:hover { background: var(--hover-soft); }
   border-left: 2px solid var(--accent); background: var(--bg-3);
   font-size: var(--fs-micro); color: var(--body-text);
 }
-.ke-error { margin: 0 0 var(--s-2); font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-bold); }
+.ke-error { margin: 0 0 var(--s-2); font-size: var(--fs-micro); color: var(--accent-2); font-weight: var(--fw-bold); }
 .ke-error:empty { display: none; }
 
 @media (max-width: 420px) {
@@ -2492,7 +2492,7 @@ a.moment:hover { background: var(--hover-soft); }
 .kr-preview {
   padding: var(--s-3);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent-fill);
+  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
   border-radius: var(--r-md);
   background: var(--bg-3);
 }
@@ -2518,7 +2518,7 @@ a.moment:hover { background: var(--hover-soft); }
   font-size: var(--fs-h3);
   letter-spacing: var(--ls-tight);
 }
-.kr-example strong { color: var(--accent); }
+.kr-example strong { color: var(--accent-2); }
 .kr-cases {
   margin: 0 0 var(--s-2);
   padding-left: var(--s-4);
@@ -2526,5 +2526,5 @@ a.moment:hover { background: var(--hover-soft); }
   color: var(--body-text);
 }
 .kr-cases li { margin-bottom: 2px; }
-.kr-errors { margin: var(--s-2) 0 0; font-size: var(--fs-micro); color: var(--accent); font-weight: var(--fw-bold); }
+.kr-errors { margin: var(--s-2) 0 0; font-size: var(--fs-micro); color: var(--accent-2); font-weight: var(--fw-bold); }
 .kr-errors:empty { display: none; }

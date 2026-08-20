@@ -97,9 +97,9 @@ export function profileIdentityDisplay(member) {
  *
  * EACH ITEM IS FENCED BY A SPACER GLYPH. Whitespace alone let "DFL
  * Champion" and "CHI" and "High week 184.2 pts" run together into one grey
- * smear at 11px. A diamond between them reads as a divider at a glance,
- * and it is aria-hidden so a screen reader gets three separate items
- * rather than the word "diamond" twice.
+ * smear at 11px. A diamond between them reads as a divider at a glance.
+ * It is drawn by CSS rather than emitted here, so it is invisible to a
+ * screen reader and cannot be orphaned at the start of a wrapped line.
  *
  * Returns "" when the member has set nothing, so a post from an
  * unconfigured member simply has no second line.
@@ -127,8 +127,14 @@ export function identityByline(member) {
   }
 
   if (!bits.length) return "";
-  const spacer = `<span class="ib-sep" aria-hidden="true">&#9670;</span>`;
-  return `<span class="identity-byline">${bits.join(spacer)}</span>`;
+  /*
+    NO SEPARATOR ELEMENTS. The diamond is a ::before on every item after the
+    first, so it belongs to the item it precedes and wraps with it. As its
+    own flex item it could be pushed onto a new line by itself, which reads
+    as a bullet rather than a divider - and the byline has to be allowed to
+    wrap now, because on a phone it does.
+  */
+  return `<span class="identity-byline">${bits.join("")}</span>`;
 }
 
 // -------------------------------------------------------------- editor

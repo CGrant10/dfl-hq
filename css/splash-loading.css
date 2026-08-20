@@ -36,7 +36,10 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #E5011B 0%, #E5011B 45%, #003396 100%);
+  /* An EVEN split, and from the palette rather than hardcoded crest hex:
+     this was #E5011B held for 45% and then blue, so a team palette never
+     reached the loading bar at all and the two colours were not even. */
+  background: var(--accent-sweep);
   transform: scaleX(.03);
   transform-origin: left center;
 }

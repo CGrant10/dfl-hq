@@ -117,7 +117,37 @@ function composer() {
   </form>`;
 }
 
-function stamp(iso) {
+/*
+  A COMPACT STAMP, because the long one was taking a quarter of a phone.
+
+  "Aug 20, 11:57 AM" measured 94px of a 375px screen - metadata winning
+  more room than the author's title. A post's age is what a reader actually
+  wants ("4h", "2d"), and it is a third of the width. The exact time is
+  still on the element: datetime for machines, title for a hover or a long
+  press, so nothing is lost, only shortened.
+
+  Beyond a week the relative form stops meaning anything, so it becomes a
+  date - and a date in another year says which year.
+*/
+function stamp(iso, now = Date.now()) {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+  const secs = Math.max(0, Math.round((now - at.getTime()) / 1000));
+  if (secs < 60) return "now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days <= 7) return `${days}d`;
+  const sameYear = at.getFullYear() === new Date(now).getFullYear();
+  return at.toLocaleDateString([], sameYear
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** The full date and time, for the title attribute. */
+function stampFull(iso) {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return "";
   return at.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -134,14 +164,23 @@ function postHtml(r) {
     : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
   const byline = identityByline(m);
 
+  /*
+    THE BYLINE IS ITS OWN ROW, not a second line inside the name column.
+
+    On a 375px phone that column is 161px once the avatar and the timestamp
+    have taken theirs, and a title, a club and an achievement need about
+    213 - so every one of them truncated at once and the byline read
+    "DFL Ch… CHI 4 playo…". Given a row of its own it spans the name and
+    timestamp columns together, which is enough for all three, and it is
+    allowed to wrap if it still is not.
+  */
   return `<article class="wall-post" style="--ident:${esc(accentOf(m))}">
-    <div class="wall-head">
+    <div class="wall-head${byline ? " has-byline" : ""}">
       ${avatar}
-      <span class="wall-who">
-        <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}">${esc(name)}</a>
-        ${byline}
-      </span>
-      <time class="wall-when muted tiny" datetime="${esc(r.created_at)}">${esc(stamp(r.created_at))}</time>
+      <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}">${esc(name)}</a>
+      <time class="wall-when muted tiny" datetime="${esc(r.created_at)}"
+        title="${esc(stampFull(r.created_at))}">${esc(stamp(r.created_at))}</time>
+      ${byline}
     </div>
     ${r.body ? `<p class="wall-body">${esc(r.body)}</p>` : ""}
     ${r.image ? `<img class="wall-photo" src="${esc(r.image)}"

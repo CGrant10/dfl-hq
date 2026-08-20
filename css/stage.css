@@ -326,7 +326,7 @@
   font-weight: var(--fw-bold);
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-2);
 }
 .bx-kicker .ico-sm { width: 16px; height: 16px; }
 

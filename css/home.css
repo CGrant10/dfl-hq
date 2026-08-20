@@ -143,13 +143,39 @@
 }
 .wall-post:first-child { border-top: 0; }
 
+/*
+  THREE ITEMS ON THE TOP LINE, AND THE BYLINE UNDERNEATH ALL OF THEM.
+
+  The byline used to be the second line of the name column, which on a
+  375px phone is 161px - and a title, a club and an achievement need about
+  213, so all three truncated at once. Its own row starting in the name
+  column spans the name and the timestamp together (~263px at that width),
+  which fits, and it stays visually indented under the name rather than
+  under the avatar.
+*/
 .wall-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "av name time";
   align-items: center;
-  gap: var(--s-2);
+  gap: 2px var(--s-2);
   margin-bottom: var(--s-2);
 }
+.wall-head.has-byline { grid-template-areas: "av name time" ". byline byline"; }
+/*
+  ON A NARROW SCREEN THE BYLINE TAKES THE WHOLE WIDTH, avatar column
+  included. Indented under the name it gets 263px at 375px wide and a
+  title-plus-club-plus-achievement needs about 274, so it wrapped for the
+  sake of a 32px indent. Full width fits the common case on one line; a
+  longer achievement still wraps, which is the point of allowing it to.
+*/
+@media (max-width: 480px) {
+  .wall-head.has-byline { grid-template-areas: "av name time" "byline byline byline"; }
+}
+.wall-avatar { grid-area: av; }
+.wall-name { grid-area: name; }
+.wall-when { grid-area: time; }
+.wall-head .identity-byline { grid-area: byline; }
 .wall-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   object-fit: cover; flex: 0 0 auto;
@@ -160,7 +186,8 @@
   background: var(--bg-3); color: var(--muted);
   font-size: var(--fs-micro); font-weight: var(--fw-bold);
 }
-.wall-who { min-width: 0; display: grid; gap: 1px; }
+/* .wall-who is gone: it existed only to stack the name and the byline in one
+   grid cell, which is the constraint that squeezed the byline. */
 .wall-name {
   font-weight: var(--fw-bold);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -191,8 +218,18 @@
 /* ---------------------------------------------------------------------
    IDENTITY - the byline on a post, the pills on a profile.
    --------------------------------------------------------------------- */
+/*
+  IT WRAPS RATHER THAN CLIPS. Every item used to carry overflow:hidden and
+  an ellipsis, so a byline one pixel too wide truncated all three at once
+  into "DFL Ch… CHI 4 playo…" - three half-words, which is worse than two
+  lines. Nothing here truncates now; the row wraps between items instead,
+  and each item keeps white-space:nowrap so a phrase never breaks mid-way.
+*/
 .identity-byline {
-  display: flex; align-items: center; gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
   min-width: 0;
   font-size: var(--fs-micro);
   letter-spacing: var(--ls-wide);
@@ -200,28 +237,37 @@
   font-weight: var(--fw-bold);
   color: var(--ident, var(--muted));
 }
-.identity-byline > * { min-width: 0; }
-.ib-title { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
-.ib-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ib-team { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.identity-byline > * { white-space: nowrap; }
+.ib-title { display: inline-flex; align-items: center; gap: 4px; }
+.ib-team { display: inline-flex; align-items: center; gap: 4px; }
+.ib-feat { font-weight: var(--fw-semi, 600); letter-spacing: var(--ls-wide); opacity: .9; }
 
-/* The featured achievement is the longest of the three, so it is the one
-   allowed to truncate - the title and the club badge are short and fixed. */
-.ib-feat {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-weight: var(--fw-semi, 600);
-  letter-spacing: var(--ls-wide);
-  opacity: .9;
-}
+/*
+  THE SPACER IS A ::before ON EVERY ITEM BUT THE FIRST.
 
-/* THE SPACER. A diamond rather than whitespace or an interpunct: at 11px
-   uppercase, three grey fragments separated by spaces read as one string.
-   Sized down and dimmed so it divides without competing. */
-.ib-sep {
-  flex: 0 0 auto;
-  font-size: .7em;
+  A diamond rather than whitespace: at 11px uppercase, three grey fragments
+  separated by spaces read as one string. As its own element it was a flex
+  item that a wrap could push to the start of the next line on its own,
+  which reads as a bullet. Attached to the item it precedes, it always
+  wraps with it.
+
+  It is decoration, so it stays out of the accessibility tree - and the
+  explicit text-fill guards it against inheriting a gradient clip from a
+  champion or club treatment.
+*/
+.identity-byline > * + *::before {
+  /* The literal glyph, NOT a CSS unicode escape. A scripted edit collapsed
+     the escape for this character into a raw 0x15 control byte, which drew
+     a tofu box wide enough to push the byline onto two lines - the exact
+     problem this spacer was being reworked to fix. A literal character has
+     no escaping layer left to get wrong. */
+  content: "◆";
+  margin-right: 5px;
+  font-size: .68em;
+  vertical-align: .1em;
   opacity: .45;
-  transform: translateY(-.5px);
+  color: var(--ident, var(--muted));
+  -webkit-text-fill-color: currentColor;
 }
 
 /* ---------------------------------------------------------------------
