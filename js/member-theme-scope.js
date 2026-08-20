@@ -17,11 +17,11 @@ function validMode(value) {
 /*
   PROFILE VISUALS ARE DYNAMIC.
 
-  profile.js and profile-dfl.js rebuild their DOM after member switches and
-  edits. Tag the actual rendered elements instead of relying on :has() or a
-  chain of ancestor selectors. These classes become the stable contract for
-  the polish below and survive every repaint because the observer re-applies
-  them whenever Profile changes.
+  The Profile page rebuilds itself after member switches and edits, so tag the
+  exact rendered surfaces every time it changes. There are two separate career
+  surfaces on this page: the compact six-stat Career card and the record-book
+  block introduced by the literal heading "The career". The latter is the one
+  that needs the hard neutral treatment requested here.
 */
 function tagProfileVisuals(root = document) {
   const grid = root.querySelector?.("#profile-wrap .statgrid.is-3up");
@@ -30,9 +30,19 @@ function tagProfileVisuals(root = document) {
     grid.closest(".card")?.classList.add("dfl-career-card");
   }
 
+  for (const heading of root.querySelectorAll?.("#profile-wrap .section-title") || []) {
+    if (String(heading.textContent || "").trim().toLowerCase() !== "the career") continue;
+    heading.classList.add("dfl-the-career-title");
+    const card = heading.nextElementSibling;
+    if (card?.classList.contains("recbook")) card.classList.add("dfl-the-career-card");
+  }
+
   for (const trophy of root.querySelectorAll?.(".profile-head .ph-record .is-gold .ico-trophy") || []) {
     trophy.classList.add("dfl-profile-champ-trophy");
   }
+
+  const cabinetTrophy = root.querySelector?.("#profile-wrap .cabinet .cab-row:not(.is-second) .ico-sm");
+  if (cabinetTrophy) cabinetTrophy.classList.add("dfl-cabinet-gold-trophy");
 }
 
 function watchProfileVisuals() {
@@ -52,7 +62,7 @@ function loadPermanentChromeStyles() {
     const link = document.createElement("link");
     link.id = "dfl-profile-neutral-css";
     link.rel = "stylesheet";
-    link.href = "css/profile-neutral.css?v=1.109.92";
+    link.href = "css/profile-neutral.css?v=1.109.93";
     document.head.appendChild(link);
   }
 
@@ -74,27 +84,10 @@ function loadPermanentChromeStyles() {
 }
 .tabbar :is(a,.tabmore).on svg{opacity:1!important}
 
-/* Career: explicit rendered classes, no :has() and no inferred structure. */
-#profile-wrap .dfl-career-card{
-  background:linear-gradient(180deg,var(--bg-2),color-mix(in srgb,var(--bg) 42%,var(--bg-2) 58%))!important;
-  border:1px solid var(--line)!important;
-  box-shadow:var(--shadow)!important
-}
+/* Compact Career stats stay restrained and neutral. */
 #profile-wrap .dfl-career-card .card-title{
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
   -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
-}
-#profile-wrap .dfl-career-grid{
-  gap:1px!important;
-  background:color-mix(in srgb,var(--line) 72%,transparent)!important;
-  border:1px solid var(--line)!important;
-  border-radius:14px!important;
-  overflow:hidden!important
-}
-#profile-wrap .dfl-career-grid>.stat{
-  background:color-mix(in srgb,var(--bg-2) 96%,#000 4%)!important;
-  border:0!important;border-radius:0!important;box-shadow:none!important;
-  padding:15px 8px!important
 }
 #profile-wrap .dfl-career-grid .stat-v,
 #profile-wrap .dfl-career-grid .stat-v.good,
@@ -103,20 +96,55 @@ function loadPermanentChromeStyles() {
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
   -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
 }
-#profile-wrap .dfl-career-grid .stat-l{color:var(--muted)!important}
 
-/* Championship hardware gets a real shiny gold treatment on the exact SVG. */
+/* THE CAREER: this is the record-book card the user was referring to.
+   It must ignore team/light theme surfaces completely and read as a quiet,
+   permanent DFL panel. */
+#profile-wrap .dfl-the-career-title{
+  background:none!important;
+  -webkit-background-clip:border-box!important;background-clip:border-box!important;
+  -webkit-text-fill-color:#f4f6f8!important;
+  color:#f4f6f8!important
+}
+#profile-wrap .dfl-the-career-card{
+  background:#111419!important;
+  border:1px solid #2a3038!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.22)!important
+}
+#profile-wrap .dfl-the-career-card .rec{
+  background:#15191f!important
+}
+#profile-wrap .dfl-the-career-card .rec-val{
+  background:none!important;
+  -webkit-background-clip:border-box!important;background-clip:border-box!important;
+  -webkit-text-fill-color:#f6f7f9!important;
+  color:#f6f7f9!important
+}
+#profile-wrap .dfl-the-career-card .rec-label,
+#profile-wrap .dfl-the-career-card .rec-when{
+  color:#98a2af!important
+}
+#profile-wrap .dfl-the-career-card .rec-who{
+  color:#dbe1e8!important
+}
+
+/* Championship hardware. The Trophy Cabinet icon is another <use>-based SVG,
+   so paint the rendered pixels gold the same reliable way the nav is neutralized. */
+.dfl-cabinet-gold-trophy{
+  filter:grayscale(1) sepia(1) saturate(6) hue-rotate(350deg) brightness(1.18) contrast(1.08)
+    drop-shadow(0 0 4px rgba(245,200,76,.42)) drop-shadow(0 1px 0 rgba(255,255,255,.16))!important;
+  opacity:1!important
+}
+
+/* The tiny profile-header championship icon is inline SVG and can take the
+   league gold gradient directly. */
 .dfl-profile-champ-trophy{
   color:#e7c66a!important;
   filter:drop-shadow(0 0 5px rgba(231,198,106,.38)) drop-shadow(0 1px 0 rgba(255,255,255,.08))!important
 }
 .dfl-profile-champ-trophy path:not([fill="none"]),
-.dfl-profile-champ-trophy rect{
-  fill:url(#dfl-gold-grad)!important
-}
-.dfl-profile-champ-trophy path[fill="none"]{
-  stroke:url(#dfl-gold-grad)!important
-}
+.dfl-profile-champ-trophy rect{fill:url(#dfl-gold-grad)!important}
+.dfl-profile-champ-trophy path[fill="none"]{stroke:url(#dfl-gold-grad)!important}
 `;
   document.head.appendChild(style);
 }
