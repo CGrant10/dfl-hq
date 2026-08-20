@@ -14,19 +14,15 @@ export const DUCK_TICK_MS = 40;
 /*
   THE HOME STRETCH IS NOT ALLOWED TO PRESERVE A CRAWL.
 
-  A pace phase can legitimately fall to 10% of normal. That is funny in the
-  middle of the race, but the old home-run rule captured whatever speed a racer
-  happened to have at 86% and made it their FLOOR through the line. If they
-  entered the last 14% during a crawl, the crawl became permanent.
-
-  Keep the pre-winner race natural. Once somebody actually wins, however, the
-  race has already answered its main question. At that point every unfinished
-  racer gets a strong minimum target and stops rerolling pace phases. They still
-  cross from their real current positions, in their real order as the run-home
-  unfolds; they just do not spend ages crawling toward a line P1 already hit.
+  A pace phase can legitimately fall almost to a stop. That is funny in the
+  middle of the race, but it should not turn the final few feet into molasses.
+  Keep the floor late and modest so the field can still stretch, collapse and
+  trade places deep into the race. Once somebody actually wins, however, the
+  race has answered its main question and the separate post-win run-home takes
+  over.
 */
-export const HOME_STRETCH_START = 0.86;
-export const HOME_STRETCH_MIN_MULTIPLIER = 2.4;
+export const HOME_STRETCH_START = 0.90;
+export const HOME_STRETCH_MIN_MULTIPLIER = 1.75;
 /*
   AFTER P1, THIS IS PRESENTATION PACE, NOT RACE DRAMA.
 
@@ -34,7 +30,7 @@ export const HOME_STRETCH_MIN_MULTIPLIER = 2.4;
   through a frozen finish scene rather than preserve a many-second simulated
   spread while a stationary line sits in the middle of the shot. This floor is
   intentionally strong and is paired with a higher post-win speed ceiling
-  below. Nothing before P1 is touched.
+  below. Nothing before P1 is touched by these post-win values.
 */
 export const POST_WIN_MIN_MULTIPLIER = 8.0;
 export const POST_WIN_MAX_MULTIPLIER = 9.0;
@@ -66,12 +62,23 @@ function randomSource(seed) {
   return seededFallback(seed);
 }
 
+/*
+  PHONE-SIZED DRAMA.
+
+  The earlier bands were intentionally varied, but the middle band still held
+  nearly sixty percent of rolls and its range clustered too close to normal.
+  On a desktop that separation reads; compressed onto a phone it looks like a
+  pack moving together.
+
+  Give collapse and rocket phases equal weight, widen both ends, and leave a
+  narrower but still useful normal band between them. The racers remain equal:
+  every lane samples the exact same distribution, independently.
+*/
 function randomPace(base, rand) {
   const roll = rand();
-  // Not subtle on purpose. These phases must read on a phone-sized track.
-  if (roll < 0.22) return base * (0.10 + rand() * 0.30);   // crawl / collapse
-  if (roll > 0.80) return base * (2.00 + rand() * 1.50);   // rocket / breakaway
-  return base * (0.48 + rand() * 1.22);                    // normal race pace
+  if (roll < 0.27) return base * (0.05 + rand() * 0.28);   // deep crawl / collapse
+  if (roll > 0.73) return base * (2.20 + rand() * 1.45);   // rocket / breakaway
+  return base * (0.38 + rand() * 1.42);                    // normal but broad
 }
 
 export function simulateForwardRace(racers, ticks, seed) {
@@ -93,7 +100,9 @@ export function simulateForwardRace(racers, ticks, seed) {
     const initial = randomPace(base, rand);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 10 + Math.floor(rand() * 27);
+    /* 0.32–1.28s. Long enough to visibly open a gap, short enough that a
+       twelve-racer field gets repeated chances to reverse itself. */
+    retargetAt[i] = 8 + Math.floor(rand() * 25);
   }
 
   let done = 0;
@@ -106,12 +115,15 @@ export function simulateForwardRace(racers, ticks, seed) {
 
       const winnerIsHome = winnerTick >= 0;
 
-      /* Long pace phases are what make the field visibly stretch. Tiny rerolls
-         average back toward a straight wall; these last 0.4–1.8 seconds. Once
-         P1 is home, stop inventing new drama and get the field through. */
+      /*
+        Pre-P1 phases are deliberately independent and moderately short. A
+        collapse should have time to drop somebody through the pack, and a
+        rocket should have time to rip back through it, but neither should own
+        the race for several seconds. After P1, stop inventing drama entirely.
+      */
       if (!winnerIsHome && t >= retargetAt[i]) {
         target[i] = randomPace(base, rand);
-        retargetAt[i] = t + 10 + Math.floor(rand() * 36);
+        retargetAt[i] = t + 8 + Math.floor(rand() * 25);
       }
 
       if (progress[i] >= HOME_STRETCH_START && homeSpeed[i] === 0) {
@@ -127,9 +139,11 @@ export function simulateForwardRace(racers, ticks, seed) {
         if (target[i] < runHome) target[i] = runHome;
       }
 
-      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.72 : 0.22);
+      /* Sharper pre-P1 response makes pace changes readable on a narrow phone
+         instead of smearing every phase into the previous one. */
+      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.72 : 0.30);
       const maxSpeed = base * (winnerIsHome ? POST_WIN_MAX_MULTIPLIER : 3.65);
-      speed[i] = Math.max(base * 0.08, Math.min(maxSpeed, speed[i]));
+      speed[i] = Math.max(base * 0.04, Math.min(maxSpeed, speed[i]));
 
       const before = progress[i];
       progress[i] += speed[i];
@@ -148,7 +162,7 @@ export function simulateForwardRace(racers, ticks, seed) {
   for (let i = 0; i < n; i++) {
     if (finishTick[i] < 0) {
       const remaining = Math.max(0, 1 - progress[i]);
-      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.08);
+      finishTick[i] = lastWritten + remaining / Math.max(speed[i], base * 0.04);
     }
     for (let t = lastWritten + 1; t <= maxTicks; t++) samples[i][t] = 1;
   }
