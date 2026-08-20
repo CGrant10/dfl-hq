@@ -23,7 +23,7 @@ export function titleChoices(member, career, extremes, chipSeasons=[]){
   const out=[];
   const titles=Math.max(count(career?.titles),Number(member?.championships)||0);
   const runnerUps=Math.max(count(career?.runnerUps),count(career?.seconds));
-  const playoffs=count(career?.playoffs);
+  const playoffs=count(career?.playoffs ?? career?.total?.playoffs);
   if(titles>=1) out.push("DFL Champion");
   if(titles>=2) out.push("Multi-Time Champion");
   if(runnerUps>=1) out.push("DFL Finalist");
@@ -36,7 +36,7 @@ export function titleChoices(member, career, extremes, chipSeasons=[]){
 
 export function achievementChoices(career, extremes, chipSeasons=[]){
   const out=[];
-  const titles=count(career?.titles), playoffs=count(career?.playoffs), runnerUps=Math.max(count(career?.runnerUps),count(career?.seconds));
+  const titles=count(career?.titles), playoffs=count(career?.playoffs ?? career?.total?.playoffs), runnerUps=Math.max(count(career?.runnerUps),count(career?.seconds));
   if(titles) out.push(`${titles}× DFL Champion`);
   if(runnerUps) out.push(`${runnerUps}× runner-up`);
   if(playoffs) out.push(`${playoffs} playoff trip${playoffs===1?"":"s"}`);
