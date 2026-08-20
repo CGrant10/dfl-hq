@@ -7,6 +7,7 @@ import { restoreAdmin, registerUser, configured } from "./supabase.js";
 import { loadMembers, restoreMember, selectMember, currentMember, getMemberId } from "./members.js";
 import { startPresence } from "./presence.js";
 import { initTheme, syncThemeFromMember } from "./theme.js";
+import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
 import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
 import { paintBottomline, startBottomline } from "./bottomline.js";
@@ -160,7 +161,7 @@ moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});
 moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore()});
 window.addEventListener("hashchange",closeMore);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMore()});
-if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;selectMember(member);paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
+if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;selectMember(member);await adoptSelectedMemberTheme();paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
 welcomeCancel?.addEventListener("click",closeWelcome);
 welcomeGolf?.addEventListener("click",openGolfJoin);
 /* Escape closes the picker only when there is a way back in - trapping
