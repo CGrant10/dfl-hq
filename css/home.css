@@ -339,14 +339,69 @@
   max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* Only the earned title takes the member's colour. Tinting all three
-   turned the rail into a block of one hue and lost the hierarchy. */
+/*
+  WHO GETS WHICH COLOUR, and this is the whole rule:
+
+    title (not a ring)  the member's accent - they chose it, so it is theirs
+    title (a ring)      gold, further down. Not a matter of taste.
+    featured            the member's accent, same reasoning as the title
+    club                that club's OWN two colours as a gradient. Which
+                        team somebody supports is a fact, not a preference
+                        about colour, so it does not take the accent.
+*/
 .idp.is-title {
   border-color: var(--ident, var(--line));
   color: var(--ident, var(--text));
   background: transparent;
 }
-.idp.is-feat { color: var(--text); }
+.idp.is-feat {
+  border-color: color-mix(in srgb, var(--ident, var(--line)) 45%, var(--line));
+  color: var(--ident, var(--text));
+}
+@supports not (border-color: color-mix(in srgb, red 50%, blue)) {
+  .idp.is-feat { border-color: var(--line); }
+}
+
+/* ---------------------------------------------------------------------
+   THE CLUB BADGE - the team's own gradient.
+
+   --t1/--t2 (dark) and --t1l/--t2l (light) are set inline per club by
+   teamGradientVars(), already lifted for the ground they land on: a raw
+   club colour is unreadable about a third of the time, and CSS cannot run
+   that lift per theme. Painted through the text the same way the champion
+   gold is, so the two treatments are one mechanism.
+
+   The gradient goes on the inner <span>, not the pill, so the logo beside
+   it keeps its own colours.
+   --------------------------------------------------------------------- */
+.idp.is-team,
+.ib-team { color: var(--t1, var(--text)); }
+
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .idp.is-team > span,
+  .ib-team > span {
+    background: linear-gradient(92deg, var(--t1, currentColor), var(--t2, currentColor));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  [data-mode="light"] .idp.is-team > span,
+  [data-mode="light"] .ib-team > span {
+    background: linear-gradient(92deg, var(--t1l, currentColor), var(--t2l, currentColor));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+[data-mode="light"] .idp.is-team,
+[data-mode="light"] .ib-team { color: var(--t1l, var(--text)); }
+
+/* The pill's edge picks up the club's primary so the badge reads as theirs
+   even at a glance, without filling it - a fill would need per-club ink. */
+.idp.is-team { border-color: color-mix(in srgb, var(--t1, var(--line)) 50%, var(--line)); }
+@supports not (border-color: color-mix(in srgb, red 50%, blue)) {
+  .idp.is-team { border-color: var(--line); }
+}
 
 /* ---------------------------------------------------------------------
    THE IDENTITY EDITOR

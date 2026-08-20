@@ -72,7 +72,7 @@
 .bx-stage::before {
   content: "";
   position: absolute; inset: 0 0 auto 0; height: 3px; z-index: 6;
-  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep);
 }
 
 .bx-layer { position: absolute; inset: 0; }
@@ -655,13 +655,16 @@
   It pauses with the broadcast rather than running on behind a paused
   stage, which would be a progress bar that lies.
 */
+/* THE DWELL TIMER. A long line that grows, so it runs primary to secondary
+   like every other long line - it was solid primary, which is most of why a
+   team palette looked like one colour on the deck. */
 .bx-dot::before {
   content: "";
   position: absolute; left: 0; top: 50%;
   transform: translateY(-50%);
   height: 5px; width: 0;
   border-radius: 2px;
-  background: var(--accent-fill);
+  background: var(--accent-sweep);
 }
 .bx-dot.on::before { animation: bx-fill var(--bx-dwell, 6000ms) linear both; }
 .bx-stage.is-paused .bx-dot.on::before { animation-play-state: paused; }

@@ -82,11 +82,18 @@ export async function decorateChipEaters(view) {
 
   const mine = chipEaters(d).filter(r => String(r.memberId) === String(memberId));
   if (!mine.length) return;
-  const head = view.querySelector(".profile-head .row");
-  if (!head || head.querySelector('[data-chip-eaters="badge"]')) return;
+  /*
+    THE RECORD STRIP FIRST. The top card now carries debut and championships
+    as a strip of figures and leaves an empty [data-chip-slot] at the end of
+    it for this, because eating the chip is the same kind of fact and belongs
+    beside them. The old .profile-head .row is still accepted so nothing
+    breaks if a card is drawn without the slot.
+  */
+  const head = view.querySelector("[data-chip-slot]") || view.querySelector(".profile-head .row");
+  if (!head || view.querySelector('[data-chip-eaters="badge"]')) return;
 
   const badge = document.createElement("span");
-  badge.className = "pill warn";
+  badge.className = "pill warn chip-badge";
   badge.dataset.chipEaters = "badge";
   badge.innerHTML = `${icon("chilli", { size: 13 })}<span>Chip Eater${mine.length > 1 ? ` ×${mine.length}` : ""}</span>`;
   badge.title = mine.map(r => r.season).join(", ");

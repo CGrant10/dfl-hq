@@ -297,6 +297,20 @@ function apply() {
   const fill = m.fill || CREST.red, fill2 = m.fill2 || CREST.blue;
   s.setProperty("--accent-fill", fill);
   s.setProperty("--accent-2-fill", fill2);
+  /*
+    THE LONG-LINE GRADIENT, as one token.
+
+    A team palette sets both a primary and a secondary, but the stylesheet
+    reached for --accent 118 times and --accent-2 exactly ZERO, so every club
+    came out looking like one colour. The rule now: anything long and linear -
+    a meter fill, a dwell timer, a rule across a hero, the tab indicator -
+    runs primary to secondary, and it reads that from here rather than
+    open-coding the same two-stop gradient in six stylesheets that could
+    drift apart.
+  */
+  s.setProperty("--accent-sweep", `linear-gradient(90deg, ${fill}, ${fill2})`);
+  /* The same pair on a diagonal, for a block rather than a line. */
+  s.setProperty("--accent-sweep-135", `linear-gradient(135deg, ${fill}, ${fill2})`);
   s.setProperty("--on-accent", m.onAccent);
   /* --accent-dim was the darker partner of the old green and is still used
      for a few borders; the crest blue is the right thing there now. */

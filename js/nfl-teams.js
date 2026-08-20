@@ -23,6 +23,9 @@
 // =====================================================================
 
 import { esc } from "./ui.js";
+/* The same lift the team palettes use. A club colour is chosen for a helmet,
+   not for 11px text on a card, and nine primaries are effectively black. */
+import { liftForText } from "./team-theme.js";
 
 /* code, name, short name, ESPN slug override, primary, secondary */
 const TEAMS = [
@@ -133,4 +136,33 @@ export function teamLogo(value, { size = 20, className = "" } = {}) {
     src="${esc(teamLogoUrl(value))}" width="${px}" height="${px}"
     alt="${esc(t.name)}" title="${esc(t.name)}" decoding="async"
     onerror="${esc(onerror)}">`;
+}
+
+/*
+  A CLUB'S COLOURS, READY TO BE A GRADIENT ON TEXT.
+
+  The favourite-team badge is painted in the club's own two colours rather
+  than the member's accent - the accent is for the things they chose, and a
+  club is a fact. But a gradient made from the raw values is unreadable
+  about a third of the time: the Raiders' #101820 on a black card, or the
+  Jets' #FFFFFF on a white one.
+
+  So both ends are lifted for the ground they will actually sit on, and BOTH
+  grounds are emitted, because CSS cannot run this per theme. The stylesheet
+  picks the pair it needs.
+
+  A club whose two colours land in the same place gets a single-colour
+  "gradient", which is correct - it is what that club looks like.
+*/
+const DARK_GROUND = "#141416";
+const LIGHT_GROUND = "#ffffff";
+
+export function teamGradientVars(value) {
+  const t = team(value);
+  if (!t) return "";
+  const d1 = liftForText(t.primary, DARK_GROUND, 5.5) || t.primary;
+  const d2 = liftForText(t.secondary, DARK_GROUND, 5.5) || t.secondary;
+  const l1 = liftForText(t.primary, LIGHT_GROUND, 5.5) || t.primary;
+  const l2 = liftForText(t.secondary, LIGHT_GROUND, 5.5) || t.secondary;
+  return `--t1:${d1};--t2:${d2};--t1l:${l1};--t2l:${l2}`;
 }

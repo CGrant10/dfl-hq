@@ -166,20 +166,45 @@ function itemKey(list) {
   return JSON.stringify(list.map((i) => [i.label || "", i.text || "", i.route || "", i.tone || ""]));
 }
 
+/*
+  LABEL COLOUR ALTERNATES ALONG THE TAPE: primary, secondary, primary,
+  secondary. It is the longest run of accent text in the app, and painting
+  all of it one hue is most of why a team palette looked like one colour.
+
+  WHY THE PARITY IS STAMPED HERE INSTEAD OF IN CSS. The first attempt was
+  `.bl-item:nth-of-type(even)`, which produced primary, primary, secondary,
+  primary - because .bl-item is an <a> when the entry links somewhere and a
+  <span> when it does not, and nth-of-type counts each tag in its own
+  sequence. CSS cannot count by class, so the index comes from the loop that
+  already has it.
+*/
+const altAttr = (n) => n % 2 ? ` data-bl-alt="1"` : "";
+
 function markup(list, reduced) {
-  const cell = (i) => `
-    ${i.route ? `<a class="bl-item" href="#/${esc(i.route)}">` : `<span class="bl-item">`}
+  const cell = (i, n) => `
+    ${i.route ? `<a class="bl-item"${altAttr(n)} href="#/${esc(i.route)}">`
+              : `<span class="bl-item"${altAttr(n)}>`}
       <span class="bl-label">${esc(i.label)}</span>
       <span class="bl-text">${esc(i.text)}</span>
     ${i.route ? `</a>` : `</span>`}`;
   if (reduced) {
     return `<div class="bl-static">${list.map((i, n) =>
-      `<div class="bl-slot ${n === 0 ? "on" : ""}">${cell(i)}</div>`).join("")}</div>`;
+      `<div class="bl-slot ${n === 0 ? "on" : ""}">${cell(i, n)}</div>`).join("")}</div>`;
   }
+  /*
+    THE REPEATING UNIT HAS TO BE AN EVEN NUMBER OF ITEMS.
+
+    fillTickerWidth() repeats this tape verbatim with base.repeat(copies), so
+    an odd-length unit puts two same-coloured labels back to back at every
+    seam - the exact thing the alternation is for. An odd list is laid out
+    twice, which changes nothing about the order or the content and makes the
+    unit even, so no seam can ever double a colour.
+  */
+  const seq = list.length % 2 ? [...list, ...list] : list;
   /* A trailing dot is intentional: when a short sequence is repeated to fill
      a wide screen, the join between copies looks exactly like every other join. */
   const dot = `<span class="bl-dot" aria-hidden="true"></span>`;
-  const tape = list.map(cell).join(dot) + dot;
+  const tape = seq.map(cell).join(dot) + dot;
   return `<div class="bl-tape"><div class="bl-run">${tape}</div><div class="bl-run" aria-hidden="true">${tape}</div></div>`;
 }
 

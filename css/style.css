@@ -80,6 +80,17 @@
   --accent-2:      #7098E6; /* crest blue, made readable - TEXT   */
   --accent-fill:   #E5011B; /* the crest's own red       - FILLS  */
   --accent-2-fill: #003396; /* the crest's own blue      - FILLS  */
+  /*
+    THE LONG-LINE GRADIENT, declared statically as well as by theme.js.
+
+    js/theme.js overwrites this on every apply(). It has to exist here too:
+    `background: var(--accent-sweep)` with the variable unset is an invalid
+    declaration, so a meter fill or a dwell timer would draw NOTHING for the
+    frames before the theme is applied - and permanently if the script ever
+    fails to run.
+  */
+  --accent-sweep:     linear-gradient(90deg,  #E5011B, #003396);
+  --accent-sweep-135: linear-gradient(135deg, #E5011B, #003396);
   --accent-dim:    #003396;
   --on-accent:     #FFFFFF; /* text drawn on top of a fill        */
 
@@ -1031,13 +1042,22 @@ textarea { min-height: 96px; resize: vertical; }
   margin-right: 7px;
   vertical-align: 1px;
 }
-/* Solid primary. A split inside a variable-width bar would move as the
-   percentage changed, which reads as a glitch rather than a design. */
+/*
+  THE METER FILL SWEEPS, and this rule is why it did not.
+
+  screens.css already said `.bar > *` should be a primary-to-secondary
+  gradient, but `.bar > span` here is more specific, so it won and every
+  meter was solid primary. The note it carried worried that "a split inside
+  a variable-width bar would move as the percentage changed" - true of a hard
+  two-colour split, which is not what this is. A smooth gradient rescaling
+  with the fill is how every progress bar on the web behaves and does not
+  read as a glitch.
+*/
 .bar > span {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--accent-fill);
+  background: var(--accent-sweep);
   transition: width .35s cubic-bezier(.22,.61,.36,1);
 }
 .result.mine .result-top { font-weight: 700; color: var(--accent); }
@@ -1154,12 +1174,13 @@ textarea { min-height: 96px; resize: vertical; }
     secondary (--accent-2)  accolades and flourish: trophies and medals,
                             champion callouts, the creed sign-off
 */
+/* A 3px rule the full width of the card: a long line, so it sweeps. */
 .hero::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: var(--accent-fill);
+  background: var(--accent-sweep);
 }
 
 .hero-crest {
@@ -1447,11 +1468,11 @@ textarea { min-height: 96px; resize: vertical; }
    Fills and gradients take the crest pair; text takes the readable pair.
    ------------------------------------------------------------------- */
 .btn.primary, .btn.accent {
-  background: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep-135);
   color: var(--on-accent);
   border-color: var(--accent-fill);
 }
-.tabbar :is(a, .tabmore).on:after { background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill)); }
+.tabbar :is(a, .tabmore).on:after { background: var(--accent-sweep); }
 .btn:hover, .btn.ghost:hover { border-color: var(--accent-fill); color: var(--accent); }
 input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !important; box-shadow: none; }
 /* The favourite-NFL-team colouring is gone - see the header comment in
@@ -1748,8 +1769,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-fill) !im
 
 /* --- profile header, coloured by the member's team ------------------- */
 
-.profile-head { position: relative; overflow: hidden; padding-top: 18px; }
-.profile-top  { display: flex; align-items: flex-start; gap: 14px; }
+/*
+  NO overflow:hidden HERE ANY MORE. It was clipping a decorative stripe the
+  old header drew; the camera badge on the avatar deliberately hangs off the
+  picture's corner, and hidden overflow cut the outer half of it off.
+  .profile-top went with header() - the layout is .ph-top in screens.css.
+*/
+.profile-head { position: relative; padding-top: 18px; }
 .profile-name { font-size: 21px; margin: 0 0 2px; line-height: 1.2; }
 
 
@@ -2752,6 +2778,14 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   text-decoration: none;
   color: var(--body-text);
 }
+/*
+  TICKER LABELS ALTERNATE: primary, secondary, primary, secondary.
+
+  The parity is an attribute set by bottomline.js, not nth-of-type. A
+  .bl-item is an <a> when the entry links somewhere and a <span> when it
+  does not, so nth-of-type counted two separate sequences and produced
+  primary, primary, secondary, primary.
+*/
 .bl-label {
   font-size: 9.5px;
   font-weight: 800;
@@ -2759,6 +2793,7 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   text-transform: uppercase;
   color: var(--accent);
 }
+.bl-item[data-bl-alt] .bl-label { color: var(--accent-2); }
 .bl-text { font-weight: 600; }
 .bl-dot { flex: 0 0 auto; width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
 
@@ -2810,7 +2845,7 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   width: var(--tab-w, 0px);
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep);
   opacity: 0;
   transition: left .22s cubic-bezier(.4, 0, .2, 1),
               width .22s cubic-bezier(.4, 0, .2, 1),

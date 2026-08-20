@@ -280,7 +280,7 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 .tabbar :is(a, .tabmore).on::before {
   content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 2px;
   border-radius: 0 0 2px 2px;
-  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep);
 }
 
 .sheet-card { border-radius: var(--r-lg) var(--r-lg) 0 0; }

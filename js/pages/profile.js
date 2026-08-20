@@ -20,6 +20,7 @@ import { teamLogo, teamCode } from "../nfl-teams.js";
 import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
 import { wireDflPage } from "./profile-dfl.js";
+import { decorateChipEaters } from "../chip-eaters.js";
 /* The same derivation the history page reads, so a career and the record
    book can never disagree about the same game. */
 import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
@@ -123,13 +124,21 @@ export async function render(view) {
     duesCard(myDues),
   ].filter(Boolean);
 
+  /*
+    THE TOP CARD IS profile-dfl.js NOW. header() used to draw an identity
+    card here and the bio, the pickers and the photo button lived in a
+    second card further down, so "who is this" was two cards and changing
+    your own photo meant finding a button in the one that did not show it.
+    One host, filled by one module, and everything identity is inside it.
+  */
   view.innerHTML = `
     <div id="profile-wrap">
-      ${header(member, isMe, currentTeam, sleeperUser?.data?.current_season)}
+      <div data-dfl-host></div>
+      ${member.notes ? `<div class="card"><h3 class="card-heading">Notes</h3>
+                          <div class="card-body">${esc(member.notes)}</div></div>` : ""}
       ${dfl ? cabinetCard(dfl) : ""}
       ${careerCard(careerStats, seasons.length)}
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
-      <div data-dfl-host></div>
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
       ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard(member)}` : ""}
@@ -137,7 +146,22 @@ export async function render(view) {
     </div>
   `;
 
-  wireDflPage(view, member, isMe, () => render(view));
+  /*
+    The switch/back button and the admin edit controls stay profile.js's
+    business - they are about navigation and permissions, not identity - so
+    they are handed to the card as markup rather than reimplemented in it.
+    onRepaint re-runs the Chip Eater decoration, which appends to DOM the
+    card replaces on every state change.
+  */
+  wireDflPage(view, member, isMe, () => render(view), {
+    currentTeam,
+    currentSeason: sleeperUser?.data?.current_season,
+    actions: `${isMe
+      ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
+      : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`}
+      ${editControls("members", member, { compact: true, del: false })}`,
+    onRepaint: () => { void decorateChipEaters(view); },
+  });
 
   /*
     THE SHARE CARD. Everything it prints is already on this page - the career
@@ -180,45 +204,6 @@ export async function render(view) {
 }
 
 // ------------------------------- header -------------------------------
-
-function header(m, isMe, currentTeam, currentSeason) {
-  /* ONE PALETTE. The header used to wear a member's favourite NFL team as a
-     two-stop stripe and a ring on the avatar, from a 32-team colour table.
-     That table is gone: the league has its own colours and borrowing
-     somebody else's for a profile card was the only place in the app still
-     doing it. The crest pair does the job now, which is what .accent
-     already meant. */
-  return `
-    <div class="card profile-head accent">
-      <div class="profile-top">
-        ${m.profile_image
-          ? `<img class="avatar" src="${esc(m.profile_image)}" alt="">`
-          : `<div class="avatar avatar-fallback">${esc(initials(m.display_name))}</div>`}
-        <div style="flex:1;min-width:0">
-          <h1 class="profile-name">${esc(currentTeam || m.display_name)}</h1>
-          <div class="muted">
-            ${esc(m.display_name)}${isMe ? " · this is you" : ""}
-            ${currentTeam && currentSeason
-              ? `<span class="muted tiny"> · ${esc(currentSeason)} team</span>` : ""}
-          </div>
-          <div class="row" style="margin-top:8px">
-            ${m.championships > 0 ? `<span class="pill green">${m.championships}× champion</span>` : ""}
-            ${m.joined_year ? `<span class="pill">Since ${esc(m.joined_year)}</span>` : ""}
-          </div>
-          <div class="row" style="margin-top:10px">
-            ${isMe
-              ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
-              : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`}
-            ${editControls("members", m, { compact: true, del: false })}
-          </div>
-        </div>
-      </div>
-    </div>
-    ${m.notes ? `<div class="card">
-                   <h3 class="card-heading">About</h3>
-                   <div class="card-body">${esc(m.notes)}</div>
-                 </div>` : ""}`;
-}
 
 function initials(name) {
   return String(name || "?").trim().slice(0, 2).toUpperCase();

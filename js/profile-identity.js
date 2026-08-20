@@ -19,6 +19,16 @@
 // title that does gets gold and a trophy instead of the member's accent,
 // on both surfaces and in every theme.
 //
+// WHAT EACH COLOUR MEANS, which is the whole rule:
+//
+//   accent    the member's own choice - a non-champion title and their
+//             featured achievement. Theirs to pick, so it is theirs.
+//   gold      a championship title. Not a matter of taste, so not the
+//             accent. Same treatment on every surface and theme.
+//   club      the favourite-team badge, in that club's own two colours as
+//             a gradient. Which club somebody supports is a fact, not a
+//             preference about colour.
+//
 // THE ACCENT IS THEIRS, NOT THE THEME'S. It is stored per member and only
 // ever used to tint their own byline, badge rail and post edge. It never
 // touches the app's theme tokens, so one member's taste cannot repaint
@@ -29,7 +39,8 @@ import { db } from "./supabase.js";
 import { esc, toast } from "./ui.js";
 import { refreshMember } from "./members.js";
 import { icon } from "./icons.js";
-import { nflTeams, teamCode, teamValue, teamLogo, teamName, teamColor } from "./nfl-teams.js";
+import { nflTeams, teamCode, teamValue, teamLogo, teamName, teamColor,
+         teamGradientVars } from "./nfl-teams.js";
 /* The earned-choice logic lives in a db-free module so it can have a spec.
    Re-exported here because this is the import site every caller already
    knows, and moving them was a refactor, not an API change. */
@@ -60,11 +71,14 @@ export function profileIdentityDisplay(member) {
   }
   const fav = teamName(member?.favorite_team);
   if (fav) {
-    bits.push(`<span class="idp is-team">${teamLogo(member.favorite_team, { size: 18 })}${esc(fav)}</span>`);
+    /* The club wears its OWN two colours, not the member's accent. The accent
+       is for what they chose; which club they support is a fact. */
+    bits.push(`<span class="idp is-team" style="${esc(teamGradientVars(member.favorite_team))}"
+      >${teamLogo(member.favorite_team, { size: 18 })}<span>${esc(fav)}</span></span>`);
   }
   const feat = displayAchievement(member);
   if (feat) {
-    bits.push(`<span class="idp is-feat">${icon("star", { size: 13 })}${esc(feat)}</span>`);
+    bits.push(`<span class="idp is-feat">${icon("star", { size: 13 })}<span>${esc(feat)}</span></span>`);
   }
   if (!bits.length) return "";
   return `<div class="identity-pills" style="--ident:${esc(accent)}">${bits.join("")}</div>`;
@@ -100,7 +114,8 @@ export function identityByline(member) {
 
   const code = teamCode(member.favorite_team);
   if (code) {
-    bits.push(`<span class="ib-team">${teamLogo(member.favorite_team, { size: 14 })}${esc(code)}</span>`);
+    bits.push(`<span class="ib-team" style="${esc(teamGradientVars(member.favorite_team))}"
+      >${teamLogo(member.favorite_team, { size: 14 })}<span>${esc(code)}</span></span>`);
   }
 
   const feat = displayAchievement(member);

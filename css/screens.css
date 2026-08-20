@@ -232,7 +232,7 @@
 .bar > * {
   height: 100%;
   border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep);
   transition: width var(--t-slow) var(--ease);
 }
 .voters { font-size: var(--fs-micro); color: var(--muted); }
@@ -811,6 +811,112 @@ a.moment:hover { background: var(--hover-soft); }
    stack of form rows.
    --------------------------------------------------------------------- */
 .dfl-page { display: grid; gap: var(--s-4); }
+
+/* =====================================================================
+   THE TOP CARD - one card, everything about the person.
+   ---------------------------------------------------------------------
+   Was a header card plus a separate "Your DFL page" card plus a form that
+   replaced the second one. The pickers, the bio and the photo button all
+   live in here now, in both states, so nothing about a person is one card
+   away from the rest of them.
+   ===================================================================== */
+.profile-head { display: grid; gap: var(--s-3); }
+
+.ph-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--s-3);
+}
+.ph-id { min-width: 0; }
+.ph-handle { font-size: var(--fs-label); margin-top: 2px; }
+/* The Edit button sits on the card's own top line rather than below the
+   name, so it never pushes the identity down as the card grows. */
+.ph-edit { align-self: start; white-space: nowrap; }
+
+/* ---------------------------------------------------------------------
+   THE AVATAR, AND THE BUTTON THAT CHANGES IT.
+
+   The camera is pinned to the picture in both states. It used to be a
+   "Change" button in a different card from the photo it applied to, which
+   is why nobody could find it.
+   --------------------------------------------------------------------- */
+.ph-avatar { position: relative; flex: none; line-height: 0; }
+.ph-avatar .avatar { width: 68px; height: 68px; font-size: 22px; }
+.ph-photo-btn {
+  position: absolute;
+  right: -4px; bottom: -4px;
+  /* 28px is under the 44px tap guidance, so the hit area is widened with a
+     transparent ring rather than by growing the badge over the picture. */
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--bg-2);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.ph-photo-btn::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+.ph-photo-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ph-photo-note { margin: 0; display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: baseline; }
+
+/* ---------------------------------------------------------------------
+   THE RECORD STRIP - facts, not choices.
+
+   Separate from the identity pills above it on purpose: a title is picked,
+   a debut year is simply true, and running them together made the chosen
+   ones look like records. Wraps rather than scrolls, because there are
+   only ever three of them.
+   --------------------------------------------------------------------- */
+.ph-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-5);
+}
+.ph-record > div { display: grid; gap: 1px; }
+.ph-record > div:empty { display: none; }
+.ph-record b {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-display);
+  font-size: var(--fs-stat-sm);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+}
+.ph-record small {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* A ring is gold wherever it appears, the same as the champion title. */
+.ph-record .is-gold b { color: #d4af37; }
+[data-mode="light"] .ph-record .is-gold b { color: #6d5311; }
+
+/* The Chip Eater badge is appended here by chip-eaters.js after two more
+   queries, so it arrives late and must not shift the figures when it does -
+   it is a pill on the same baseline, not another column. */
+.ph-record .chip-badge { display: inline-flex; align-items: center; gap: 5px; }
+
+.ph-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.ph-actions:empty { display: none; }
+
+@media (max-width: 420px) {
+  .ph-avatar .avatar { width: 58px; height: 58px; font-size: 19px; }
+  .ph-record { gap: var(--s-2) var(--s-4); }
+  /* The Edit button drops under the name rather than squeezing it. */
+  .ph-top { grid-template-columns: auto minmax(0, 1fr); }
+  .ph-edit { grid-column: 2; justify-self: start; margin-top: 2px; }
+}
 .dfl-bio {
   margin: 0;
   font-size: var(--fs-body);

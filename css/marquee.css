@@ -50,7 +50,7 @@
 .mq-card::before {
   content: "";
   position: absolute; inset: 0 0 auto 0; height: 3px;
-  background: linear-gradient(90deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep);
 }
 
 /* ---------------------------------------------------------------------
@@ -78,7 +78,7 @@
 .mq-tag.is-main {
   color: var(--on-accent);
   border-color: transparent;
-  background: linear-gradient(135deg, var(--accent-fill), var(--accent-2-fill));
+  background: var(--accent-sweep-135);
   letter-spacing: .2em;
 }
 .mq-tag.is-live {
