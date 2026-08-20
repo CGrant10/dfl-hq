@@ -25,6 +25,16 @@ interface VisualEventLike extends DramaEventLike {
 const priority: readonly ReactionKind[] = ["stumble", "jump", "duel", "near", "surge"];
 
 /**
+ * The last half-second is a runway, not a presentation effect.
+ *
+ * Once a racer enters this window we carry its drawn position to 1.0 at a
+ * constant rate. Nothing at the finish line is allowed to ease, hold, or
+ * visually park the racer before the authoritative crossing time.
+ */
+const FINAL_RUN_MS = 500;
+const SAMPLE_MS = 40;
+
+/**
  * Converts the deterministic race theatre queues into a seekable Pixi
  * timeline. Arena, shared viewer and Broadcast can now reconstruct the same
  * active reactions directly from elapsed time, including after reconnect.
@@ -79,6 +89,18 @@ export interface PresentationRacerInput {
   timeline?: ReactionTimeline;
 }
 
+function finalRunProgress(input: PresentationRacerInput, normalProgress: number): number {
+  const finishMs = input.officialFinishMs;
+  if (finishMs == null || !Number.isFinite(finishMs)) return normalProgress;
+  const startMs = finishMs - FINAL_RUN_MS;
+  if (input.elapsedMs <= startMs || input.elapsedMs >= finishMs) return normalProgress;
+
+  const anchorIndex = Math.max(0, Math.min(input.samples.length - 1, Math.floor(startMs / SAMPLE_MS)));
+  const anchor = Math.max(0, Math.min(0.999999, input.samples[anchorIndex] ?? normalProgress));
+  const phase = Math.max(0, Math.min(1, (input.elapsedMs - startMs) / FINAL_RUN_MS));
+  return anchor + (1 - anchor) * phase;
+}
+
 /** One authoritative adapter from deterministic samples to a Pixi racer. */
 export function presentationRacerFrame(input: PresentationRacerInput): RacerFrame {
   const lo = Math.max(0, Math.min(input.samples.length - 1, input.lo));
@@ -87,22 +109,14 @@ export function presentationRacerFrame(input: PresentationRacerInput): RacerFram
   const atLo = input.samples[lo] ?? 0;
   const atHi = input.samples[hi] ?? atLo;
   const previous = input.samples[Math.max(0, lo - 1)] ?? atLo;
-  const progress = input.elapsedMs <= 0 ? 0 : atLo + (atHi - atLo) * mix;
+  const sampledProgress = input.elapsedMs <= 0 ? 0 : atLo + (atHi - atLo) * mix;
+  const progress = finalRunProgress(input, sampledProgress);
   const speed = Math.max(0, Math.min(1, (atHi - atLo) * 180));
   const acceleration = Math.max(-1, Math.min(1,
     ((atHi - atLo) - (atLo - previous)) * 500));
   const finished = input.officialFinishMs == null
     ? Boolean(input.finished) || progress >= 1
     : input.elapsedMs >= input.officialFinishMs;
-  /*
-    displayProgress is the authoritative progress here and nothing more.
-
-    This used to apply postFinishProgress(), a SECOND coast with different
-    constants from the one in race.js - two implementations of the same
-    idea, which is how the two views ended up disagreeing about where a
-    finisher stands. The single coast lives in race.js and is applied by
-    presentFinish(); this adapter just reports the truth.
-  */
   const displayProgress = progress;
   const exiting = finished && input.officialFinishMs != null && input.elapsedMs < input.officialFinishMs + POST_FINISH_MS;
   const reaction = finished ? null : reactionAt(input.timeline, input.lane, input.elapsedMs);
