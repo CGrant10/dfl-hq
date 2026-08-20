@@ -18,7 +18,7 @@ export const dflSeasonCount = (syncedSeasons = 0) =>
   is still sitting in a device cache.
 */
 const META_VERSION = globalThis.document?.querySelector('meta[name="dfl-app-version"]')?.content || "0";
-const RELEASE_FLOOR = "1.109.93";
+const RELEASE_FLOOR = "1.109.94";
 const newer = (a,b) => {
   const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);
   for(let i=0;i<Math.max(x.length,y.length);i++){
