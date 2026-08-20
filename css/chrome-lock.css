@@ -1,0 +1,24 @@
+/* Permanent DFL chrome stays league-neutral while member palettes color content. */
+.brand-word,
+.brand-text .brand-word,
+.brand-text .brand-word span {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+}
+
+.tabbar :is(a, .tabmore),
+.tabbar :is(a, .tabmore).on,
+.tabbar :is(a, .tabmore):hover,
+.tabbar :is(a, .tabmore) svg,
+.tabbar :is(a, .tabmore) .ico {
+  color: #fff !important;
+}
+
+/* Keep the active-position marker personalized; only the permanent text/ink is locked. */
+.tabbar :is(a, .tabmore).on::before,
+.tabbar :is(a, .tabmore).on::after {
+  background: var(--accent-sweep) !important;
+}
