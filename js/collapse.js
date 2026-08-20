@@ -145,8 +145,97 @@ function wire(card) {
   }).observe(card, { attributes: true, attributeFilter: ["data-collapse-default"] });
 }
 
+/* =====================================================================
+   Arena / Broadcast control chrome
+   ---------------------------------------------------------------------
+   The race viewer is shared by desktop/OBS and phones. Its control pill was
+   originally sized in viewport units because the stage is 16:9, which made
+   the BLACK SHELL itself enormous on a desktop monitor. On phones the whole
+   control cluster was deliberately pinned open, where it covers the race.
+
+   Keep this behavior outside the race engine: tighten the desktop pill with
+   ordinary UI pixels, and on phones add one arrow that can tuck the controls
+   away. The first time a race leaves idle, the panel tucks itself automatically.
+   No race state is written and no Arena timing code is touched here.
+   ===================================================================== */
+function arenaControlStyles() {
+  if (document.getElementById("dfl-arena-control-style")) return;
+  const s = document.createElement("style");
+  s.id = "dfl-arena-control-style";
+  s.textContent = `
+/* Desktop: the black shell hugs the actual buttons instead of scaling with
+   the width of a 1080p/4K display. The old instructional sentence was also
+   the thing most likely to spill beyond the pill, so keep controls, lose yap. */
+@media (min-width:901px){
+  .bc-bar{gap:8px!important;padding:8px 10px!important;max-width:calc(100vw - 32px);width:max-content;box-sizing:border-box;box-shadow:0 10px 30px rgba(0,0,0,.6)!important}
+  .bc-bar .bc-btn{font-size:14px!important;padding:8px 13px!important}
+  .bc-bar .bc-motion-setting{gap:6px!important;padding:0 5px!important;font-size:12px!important}
+  .bc-bar .bc-bar-hint{display:none!important}
+}
+.bc-bar-toggle{display:none;appearance:none;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:var(--text);border-radius:999px;width:34px;height:34px;padding:0;font:900 18px/1 system-ui,sans-serif;cursor:pointer;place-items:center}
+@media (max-width:900px){
+  .bc-bar{box-sizing:border-box;transition:width .16s ease,padding .16s ease,background .16s ease!important}
+  .bc-bar-toggle{display:grid;order:-1;flex:0 0 34px}
+  .bc-bar.mobile-collapsed{width:auto!important;max-width:none!important;padding:5px!important;gap:0!important;flex-wrap:nowrap!important;background:rgba(9,13,19,.86)!important}
+  .bc-bar.mobile-collapsed>:not(.bc-bar-toggle){display:none!important}
+}
+@media(prefers-reduced-motion:reduce){.bc-bar{transition:none!important}}
+`;
+  document.head.appendChild(s);
+}
+
+function wireArenaControls() {
+  const bar = document.querySelector("#bc-bar");
+  const stage = document.querySelector("#bc-stage");
+  if (!bar || !stage || bar.dataset.mobileCollapseWired === "1") return;
+  bar.dataset.mobileCollapseWired = "1";
+  arenaControlStyles();
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "bc-bar-toggle";
+  toggle.setAttribute("aria-label", "Collapse race controls");
+  toggle.setAttribute("aria-expanded", "true");
+  toggle.textContent = "⌄";
+  bar.insertBefore(toggle, bar.firstChild);
+
+  const paint = () => {
+    const collapsed = bar.classList.contains("mobile-collapsed");
+    toggle.textContent = collapsed ? "⌃" : "⌄";
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+    toggle.setAttribute("aria-label", collapsed ? "Open race controls" : "Collapse race controls");
+  };
+  const setCollapsed = (collapsed) => {
+    bar.classList.toggle("mobile-collapsed", collapsed);
+    paint();
+  };
+
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setCollapsed(!bar.classList.contains("mobile-collapsed"));
+  });
+
+  let autoCollapsed = false;
+  const followRace = () => {
+    if (!matchMedia("(max-width: 900px)").matches) return;
+    const state = stage.dataset.raceState || "idle";
+    if (state === "idle") {
+      autoCollapsed = false;
+      setCollapsed(false);
+      return;
+    }
+    if (!autoCollapsed && (state === "countdown" || state === "running")) {
+      autoCollapsed = true;
+      setCollapsed(true);
+    }
+  };
+  new MutationObserver(followRace).observe(stage, { attributes:true, attributeFilter:["data-race-state"] });
+  followRace();
+}
+
 function sweep() {
   for (const card of document.querySelectorAll("[data-collapse]")) wire(card);
+  wireArenaControls();
 }
 
 function boot() {
