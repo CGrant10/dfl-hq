@@ -586,14 +586,18 @@
 .btn .ico-trophy,
 .pill .ico-trophy,
 .badge .ico-trophy,
-.is-champion .ico-trophy { fill: url(#dfl-gold-grad) #d4af37; }
+.is-champion .ico-trophy { fill: #f6d35c; }
 .ico-trophy [stroke="currentColor"],
 .btn .ico-trophy [stroke="currentColor"],
 .pill .ico-trophy [stroke="currentColor"],
 .badge .ico-trophy [stroke="currentColor"],
-.is-champion .ico-trophy [stroke="currentColor"] { stroke: url(#dfl-gold-grad) #d4af37; }
-/* The drop shadow is what makes it read as shiny rather than just yellow. */
-.ico-trophy { filter: drop-shadow(0 0 2px rgba(212, 175, 55, .45)); }
+.is-champion .ico-trophy [stroke="currentColor"] { stroke: #f6d35c; }
+/* Solid shiny gold, not a gradient - a gradient clipped through a small
+   glyph reads muddy. The glow is what makes it shiny rather than flat. */
+.ico-trophy {
+  filter: drop-shadow(0 0 2px rgba(255, 226, 120, .7))
+          drop-shadow(0 1px 1px rgba(120, 88, 16, .55));
+}
 .nfl-logo {
   display: inline-block;
   vertical-align: -0.2em;
