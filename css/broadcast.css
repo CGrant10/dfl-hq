@@ -7,18 +7,20 @@
   z-index:20!important;
   overflow:hidden;
   isolation:isolate;
+  display:grid!important;
+  place-items:center!important;
   background:
-    radial-gradient(circle at 50% 44%,rgba(255,216,74,.14),transparent 34%),
+    radial-gradient(circle at 50% 44%,rgba(255,216,74,.14),transparent 38%),
     linear-gradient(180deg,#071019 0%,#05080c 58%,#020407 100%)!important;
 }
 .bc-stage.is-finished .bc-winner::before {
   content:"";
   position:absolute;
-  inset:9% 20%;
+  inset:1% 7%;
   z-index:-1;
   background:url("../icons/dfl-seal-512.png") center/contain no-repeat;
-  opacity:.075;
-  filter:grayscale(1) brightness(1.7);
+  opacity:.13;
+  filter:grayscale(1) brightness(1.9);
   pointer-events:none;
 }
 /* Retire the old confetti layer. The seal is the only background mark. */
@@ -26,22 +28,38 @@
 .bc-stage.is-finished .bc-winner-inner {
   position:relative;
   z-index:1;
-  width:min(92vw,1200px);
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  width:min(94vw,1240px);
+  margin:auto!important;
   gap:clamp(6px,.55vw,12px);
   text-align:center;
 }
 .bc-stage.is-finished .bc-winner-kicker {
-  font-size:clamp(13px,1.05vw,22px);
+  display:block;
+  width:100%;
+  justify-self:center;
+  text-align:center;
+  padding-left:.42em; /* visually balances the tracked final letter */
+  box-sizing:border-box;
+  font-size:clamp(15px,1.2vw,24px);
   letter-spacing:.42em;
   color:#ffd84a;
 }
 .bc-stage.is-finished .bc-winner-art {
-  width:min(22vw,280px);
-  height:min(15vw,190px);
-  margin:.2vw auto .4vw;
+  display:block;
+  justify-self:center;
+  width:min(24vw,310px);
+  height:min(16vw,205px);
+  margin:.15vw auto .35vw;
 }
 .bc-stage.is-finished .bc-winner-name {
+  display:block;
+  justify-self:center;
+  width:100%;
   max-width:100%;
+  text-align:center;
   font-size:clamp(52px,8.2vw,158px);
   line-height:.86;
   text-wrap:balance;
@@ -53,16 +71,22 @@
   font-size:clamp(18px,2.05vw,40px);
   line-height:1;
   letter-spacing:.12em;
+  padding-left:.12em;
   color:#ffd84a;
 }
 .bc-stage.is-finished .bc-winner-event {
+  display:block;
+  width:100%;
+  text-align:center;
   margin-top:clamp(8px,.7vw,14px);
   font-size:clamp(10px,.9vw,17px);
   opacity:.58;
 }
 @media(max-width:800px){
-  .bc-stage.is-finished .bc-winner::before{inset:14% 5%;opacity:.065}
-  .bc-stage.is-finished .bc-winner-art{width:min(38vw,210px);height:min(27vw,150px)}
+  .bc-stage.is-finished .bc-winner::before{inset:4% -8%;opacity:.12}
+  .bc-stage.is-finished .bc-winner-inner{width:96vw}
+  .bc-stage.is-finished .bc-winner-kicker{font-size:clamp(14px,4vw,20px)}
+  .bc-stage.is-finished .bc-winner-art{width:min(42vw,230px);height:min(29vw,160px)}
   .bc-stage.is-finished .bc-winner-name{font-size:clamp(38px,12vw,76px);line-height:.9}
-  .bc-stage.is-finished .bc-winner-name::after{font-size:clamp(14px,4.3vw,25px);letter-spacing:.08em}
+  .bc-stage.is-finished .bc-winner-name::after{font-size:clamp(14px,4.3vw,25px);letter-spacing:.08em;padding-left:.08em}
 }
