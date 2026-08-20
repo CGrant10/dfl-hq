@@ -34,32 +34,23 @@ export function activityLine(row, { now = Date.now() } = {}) {
   };
 }
 
-async function drawWall() {
-  const slot = document.querySelector("[data-wall-slot]");
-  if (!slot) return;
-  try {
-    const wall = await import("./member-wall.js");
-    const rows = await wall.loadWall();
-    slot.innerHTML = wall.wallCard(rows);
-    wall.wireWall(slot, drawWall);
-  } catch (err) {
-    console.warn("member wall unavailable", err);
-    slot.innerHTML = "";
-  }
-}
-
+/*
+  THE WALL USED TO BE MOUNTED FROM HERE, via a queueMicrotask that reached
+  into the document for a [data-wall-slot] this function had just returned as
+  a string. That made the activity feed responsible for rendering an
+  unrelated feature, hid the Wall from anyone reading home.js, and meant the
+  Wall could only ever appear directly after the feed. pages/home.js now
+  loads and places it like any other section.
+*/
 export function activityCard(rows) {
   // Commissioner/admin writes are intentionally absent. The feed is for member
   // activity, not a running audit log of league maintenance.
   const lines = (rows || [])
     .filter((r) => r.as_commissioner !== true)
     .map((r) => activityLine(r));
+  if (!lines.length) return "";
 
-  // The Wall is independent of the activity migration, so it still appears if
-  // activity_feed has not been installed or has nothing to show.
-  if (typeof document !== "undefined") queueMicrotask(drawWall);
-
-  return `${lines.length ? `<section class="block">
+  return `<section class="block">
     <h2 class="section-title">Activity</h2>
     <div class="card"><div class="card-body"><ul class="act-list">${lines.map((l) => `
       <li class="act-row">
@@ -67,5 +58,5 @@ export function activityCard(rows) {
         <span class="act-what">${esc(l.text)}</span>
         <span class="act-when">${esc(l.when)}</span>
       </li>`).join("")}</ul></div></div>
-  </section>` : ""}<div data-wall-slot></div>`;
+  </section>`;
 }

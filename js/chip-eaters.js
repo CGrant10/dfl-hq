@@ -7,6 +7,7 @@
 */
 import { db } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
+import { icon } from "./icons.js";
 
 /** The punishment history starts after 2021. */
 export const FIRST_SEASON = 2022;
@@ -87,7 +88,7 @@ export async function decorateChipEaters(view) {
   const badge = document.createElement("span");
   badge.className = "pill warn";
   badge.dataset.chipEaters = "badge";
-  badge.textContent = `🌶️ Chip Eater${mine.length > 1 ? ` ×${mine.length}` : ""}`;
+  badge.innerHTML = `${icon("chilli", { size: 13 })}<span>Chip Eater${mine.length > 1 ? ` ×${mine.length}` : ""}</span>`;
   badge.title = mine.map(r => r.season).join(", ");
   head.appendChild(badge);
 }

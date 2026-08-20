@@ -1,96 +1,169 @@
+// =====================================================================
+// member-wall.js - The Wall. Members post, everybody reads.
+// ---------------------------------------------------------------------
+// THE BYLINE IS THE IDENTITY SURFACE. A member's title and club sit on a
+// second line under their name, tinted with the accent colour they chose
+// on their profile. That is the answer to "where would this even show" -
+// identity is attached to what somebody says, not parked on a page.
+//
+// The accent is scoped to the post: it is set as --ident on the <article>
+// and only read by that post's own byline and left edge, so twelve
+// members with twelve colours produce a readable list rather than a
+// paint chart.
+//
+// THE STYLES LIVE IN css/home.css. They used to be a template string
+// injected into <head> on first render, which meant the Wall's layout
+// could not be themed, overridden or seen by anybody reading the
+// stylesheets - and it re-ran the same insert on every route change.
+//
+// DEGRADES WITHOUT ITS MIGRATIONS. loadWall() returns null when
+// member_wall_posts is absent and the section is simply not drawn. The
+// identity columns are newer still, so the select asks for them and
+// retries without them if the database has not caught up.
+// =====================================================================
+
 import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { shrinkToDataUri } from "./image-field.js";
+import { icon } from "./icons.js";
+import { identityByline, accentOf } from "./profile-identity.js";
 
-function ensureStyles() {
-  if (document.getElementById("dfl-wall-style")) return;
-  const style = document.createElement("style");
-  style.id = "dfl-wall-style";
-  style.textContent = `
-.wall .card-body{display:grid;gap:14px}
-.wall textarea{width:100%;resize:vertical;min-height:66px}
-.wall-preview,.wall-photo{display:block;width:100%;height:auto;border-radius:12px;object-fit:cover}
-.wall-preview{margin-top:10px;max-height:340px}
-.wall-posts{display:grid;gap:0}
-.wall-post{padding:14px 0;border-top:1px solid var(--line,rgba(255,255,255,.1))}
-.wall-post:first-child{border-top:0}
-.wall-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
-.wall-author{display:flex;align-items:center;gap:8px;min-width:0}
-.wall-avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto}
-.wall-post p{margin:0 0 10px;white-space:pre-wrap;overflow-wrap:anywhere}
-.wall-post .linkbtn{margin-top:8px}
-@media(min-width:760px){.wall-photo{max-height:520px}}
-`;
-  document.head.appendChild(style);
-}
+/*
+  TWO DIFFERENT FAILURES THAT BOTH SAY "does not exist".
+
+    relation "public.member_wall_posts" does not exist   -> no table
+    column members.accent_color does not exist           -> no column
+
+  So the table check has to name the table rather than match the phrase.
+  Testing the phrase alone treated a missing accent colour as a missing
+  Wall and hid the whole section on a database that was one migration
+  behind - which is every database in the minute after a release.
+*/
+const TABLE_GONE = /member_wall_posts|could not find the table/i;
+const COLUMN_GONE = /column[^"']*(profile_title|favorite_team|accent_color)|(profile_title|favorite_team|accent_color)[^"']*does not exist/i;
+
+/*
+  THREE SHAPES OF THE SAME READ, TRIED WIDEST FIRST.
+
+  The identity columns arrived in two separate migrations, so a league can
+  legitimately be at any of three points: everything, titles and clubs but
+  no accent colour, or neither. Falling straight from "everything" to
+  "neither" would silently drop every byline on a database that is only one
+  migration behind - which is the common case right after a release. Each
+  step down loses exactly the columns that are actually missing.
+*/
+const SELECTS = [
+  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,accent_color)",
+  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team)",
+  "id,member_id,body,image,created_at,members(display_name,profile_image)",
+];
 
 export async function loadWall(limit = 12) {
-  const { data, error } = await db()
+  const read = (columns) => db()
     .from("member_wall_posts")
-    .select("id,member_id,body,image,created_at,members(display_name,profile_image)")
+    .select(columns)
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (error) {
-    if (/member_wall_posts|schema cache|does not exist/i.test(error.message || "")) return null;
-    throw error;
+
+  let last = null;
+  for (const columns of SELECTS) {
+    const { data, error } = await read(columns);
+    if (!error) return data || [];
+    last = error;
+    /* A missing identity column is the ONLY thing worth retrying narrower,
+       and it is checked first because its message shares the "does not
+       exist" wording with a missing table. Anything else - no table, a
+       policy refusal, a network fault - stops the loop here. */
+    if (!COLUMN_GONE.test(error.message || "")) break;
   }
-  return data || [];
+  if (TABLE_GONE.test(last?.message || "")) return null;
+  throw last;
 }
 
 export function wallCard(rows) {
   if (rows == null) return "";
-  ensureStyles();
   const me = currentMember();
   return `<section class="block wall">
     <h2 class="section-title">The Wall</h2>
-    <div class="card"><div class="card-body">
-      ${me ? `<form data-wall-form>
-        <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…"></textarea>
-        <div class="row-between">
-          <label class="btn ghost small"><input data-wall-image type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden>📷 Picture</label>
-          <span class="muted tiny" data-wall-file></span>
-          <button class="btn small" type="submit">Post</button>
-        </div>
-        <img data-wall-preview class="wall-preview hidden" alt="">
-      </form>` : ""}
-      <div class="wall-posts">${rows.length ? rows.map(postHtml).join("") : `<span class="muted">Nothing yet. Be the first idiot.</span>`}</div>
-    </div></div>
+    <div class="card wall-card">
+      ${me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
+      <div class="wall-posts">${
+        rows.length
+          ? rows.map(postHtml).join("")
+          : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`
+      }</div>
+    </div>
   </section>`;
 }
 
+function composer() {
+  return `<form class="wall-form" data-wall-form>
+    <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…" data-wall-body></textarea>
+    <img data-wall-preview class="wall-preview hidden" alt="">
+    <div class="wall-actions">
+      <label class="btn ghost small wall-pick">
+        <input data-wall-image type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden>
+        ${icon("camera", { size: 15 })}<span>Picture</span>
+      </label>
+      <span class="muted tiny wall-note" data-wall-file></span>
+      <button class="btn small wall-send" type="submit">Post</button>
+    </div>
+  </form>`;
+}
+
+function stamp(iso) {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+  return at.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+const initials = (name) =>
+  String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
+
 function postHtml(r) {
   const m = r.members || {};
+  const name = m.display_name || "Member";
   const avatar = m.profile_image
-    ? `<img class="wall-avatar" src="${esc(m.profile_image)}" alt="">`
-    : "";
-  return `<article class="wall-post">
+    ? `<img class="wall-avatar" src="${esc(m.profile_image)}" alt="" loading="lazy" decoding="async">`
+    : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
+  const byline = identityByline(m);
+
+  return `<article class="wall-post" style="--ident:${esc(accentOf(m))}">
     <div class="wall-head">
-      <span class="wall-author">${avatar}<strong>${esc(m.display_name || "Member")}</strong></span>
-      <span class="muted tiny">${esc(new Date(r.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</span>
+      ${avatar}
+      <span class="wall-who">
+        <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}">${esc(name)}</a>
+        ${byline}
+      </span>
+      <time class="wall-when muted tiny" datetime="${esc(r.created_at)}">${esc(stamp(r.created_at))}</time>
     </div>
-    ${r.body ? `<p>${esc(r.body)}</p>` : ""}
-    ${r.image ? `<img class="wall-photo" src="${esc(r.image)}" alt="Posted by ${esc(m.display_name || "member")}">` : ""}
-    ${r.image ? `<button class="linkbtn" type="button" data-submit-broadcast="${r.id}">📺 Submit to Broadcast</button>` : ""}
+    ${r.body ? `<p class="wall-body">${esc(r.body)}</p>` : ""}
+    ${r.image ? `<img class="wall-photo" src="${esc(r.image)}"
+        alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
+    ${r.image ? `<button class="wall-submit linkbtn" type="button" data-submit-broadcast="${esc(r.id)}">
+        ${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
   </article>`;
 }
 
 export function wireWall(root, onChanged) {
   let image = "";
   const form = root.querySelector("[data-wall-form]");
+
   root.querySelector("[data-wall-image]")?.addEventListener("change", async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
     const note = root.querySelector("[data-wall-file]");
+    const preview = root.querySelector("[data-wall-preview]");
     try {
-      note.textContent = "Shrinking…";
-      image = await shrinkToDataUri(f, "backdrop");
-      note.textContent = "Ready";
-      const preview = root.querySelector("[data-wall-preview]");
-      preview.src = image;
-      preview.classList.remove("hidden");
+      if (note) note.textContent = "Shrinking…";
+      image = await shrinkToDataUri(file, "backdrop");
+      if (note) note.textContent = "Picture ready";
+      if (preview) { preview.src = image; preview.classList.remove("hidden"); }
     } catch (err) {
-      note.textContent = err.message || "Could not read picture";
+      image = "";
+      if (note) note.textContent = err?.message || "Could not read that picture";
+      if (preview) { preview.removeAttribute("src"); preview.classList.add("hidden"); }
     }
   });
 
@@ -99,38 +172,49 @@ export function wireWall(root, onChanged) {
     const me = currentMember();
     if (!me) return;
     const body = String(new FormData(form).get("body") || "").trim();
-    if (!body && !image) return toast("Write something or add a picture", true);
+    if (!body && !image) { toast("Write something or add a picture", true); return; }
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
-    const { error } = await db().from("member_wall_posts").insert({ member_id: me.id, body, image: image || null });
+    btn.textContent = "Posting…";
+    const { error } = await db()
+      .from("member_wall_posts")
+      .insert({ member_id: me.id, body, image: image || null });
     if (error) {
       btn.disabled = false;
-      return toast(error.message, true);
+      btn.textContent = "Post";
+      toast(error.message, true);
+      return;
     }
     toast("Posted");
     onChanged?.();
   });
 
-  root.querySelectorAll("[data-submit-broadcast]").forEach((btn) => btn.addEventListener("click", async () => {
-    const me = currentMember();
-    if (!me) return;
-    btn.disabled = true;
-    const id = Number(btn.dataset.submitBroadcast);
-    const { data, error } = await db().from("member_wall_posts").select("image,body").eq("id", id).single();
-    if (error || !data?.image) {
-      btn.disabled = false;
-      return toast("Could not load that picture", true);
-    }
-    const { error: submitError } = await db().from("broadcast_submissions").insert({
-      member_id: me.id,
-      image: data.image,
-      caption: String(data.body || "").slice(0, 180),
+  root.querySelectorAll("[data-submit-broadcast]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const me = currentMember();
+      if (!me) return;
+      btn.disabled = true;
+      const id = Number(btn.dataset.submitBroadcast);
+      const { data, error } = await db()
+        .from("member_wall_posts").select("image,body").eq("id", id).single();
+      if (error || !data?.image) {
+        btn.disabled = false;
+        toast("Could not load that picture", true);
+        return;
+      }
+      const { error: submitError } = await db().from("broadcast_submissions").insert({
+        member_id: me.id,
+        image: data.image,
+        caption: String(data.body || "").slice(0, 180),
+      });
+      if (submitError) {
+        btn.disabled = false;
+        toast(submitError.message, true);
+        return;
+      }
+      btn.classList.add("is-sent");
+      btn.innerHTML = `${icon("check", { size: 14 })}<span>Submitted</span>`;
+      toast("Sent to the Broadcast inbox");
     });
-    if (submitError) {
-      btn.disabled = false;
-      return toast(submitError.message, true);
-    }
-    btn.textContent = "Submitted ✓";
-    toast("Sent to Broadcast Inbox");
-  }));
+  });
 }

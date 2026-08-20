@@ -9,6 +9,7 @@ import { pendingFor, dropPending } from "../golf-offline.js";
 import { memberNames, playerName, isGuest, realName } from "../golf-people.js";
 import { tournamentHoles } from "../golf-battle.js";
 import { newTeamColor, teamInk } from "../brand-ink.js";
+import { icon } from "../icons.js";
 const DEFAULT_RATING=75;
 /* Set once per render of an event, and read by every card that prints a
    player's name. A participant is either a league member or a guest with a
@@ -352,7 +353,7 @@ return modeSwitch+(mode==="draft"?draftControls:generator)+`<div class="golf-dan
    the generator honours it: a locked player keeps their team when you
    regenerate. */
 function rosterCard(outing,parts,teams,byId){const options=(p)=>`<option value="">— unassigned —</option>${teams.map(t=>`<option value="${t.id}" ${String(t.id)===String(p.team_id)?"selected":""}>${esc(t.name||"Team")}</option>`).join("")}`;
-const row=(p)=>`<div class="grow gedit-row ${p.locked?"is-locked":""}"><span class="gname">${esc(playerName(p,nameMap))}</span><select class="gmove" data-move="${p.id}" data-was="${p.team_id??""}" aria-label="Move player to another team">${options(p)}</select><button type="button" class="btn ghost small glock" data-lock="${p.id}" data-on="${p.locked?"1":"0"}" title="${p.locked?"Unlock":"Lock to this team"}" aria-label="${p.locked?"Unlock":"Lock to this team"}">${p.locked?"🔒":"🔓"}</button></div>`;
+const row=(p)=>`<div class="grow gedit-row ${p.locked?"is-locked":""}"><span class="gname">${esc(playerName(p,nameMap))}</span><select class="gmove" data-move="${p.id}" data-was="${p.team_id??""}" aria-label="Move player to another team">${options(p)}</select><button type="button" class="btn ghost small glock" data-lock="${p.id}" data-on="${p.locked?"1":"0"}" title="${p.locked?"Unlock":"Lock to this team"}" aria-label="${p.locked?"Unlock":"Lock to this team"}">${icon(p.locked?"lock":"unlock",{size:15})}</button></div>`;
 const block=(t)=>{const mine=parts.filter(p=>String(p.team_id)===String(t.id));return `<div class="gedit" style="--racer:${esc(teamInk(t.color, t.sort_order))}"><div class="gedit-head"><input class="gedit-name" type="text" maxlength="40" value="${esc(t.name||"Team")}" data-team-name="${t.id}" aria-label="Team name"><button type="button" class="btn small" data-save-name="${t.id}">Save</button></div><div class="glist">${mine.length?mine.map(row).join(""):`<div class="grow"><span class="muted tiny">Nobody on this team yet</span></div>`}</div></div>`};
 const loose=parts.filter(p=>p.team_id==null);
 return `<section class="card golf-roster-card" data-collapse="golf-roster" data-collapse-default="folded"><div class="card-title-row"><div><div class="card-title">Team editor</div><p class="muted tiny">Rename a team, move players between teams, and lock anyone who should stay put through a regenerate.</p></div><span class="admin-badge">Admin only</span></div>${teams.length?`<div class="gedits">${teams.map(block).join("")}${loose.length?`<div class="gedit is-spare"><div class="gedit-head"><span class="gedit-title">Unassigned</span></div><div class="glist">${loose.map(row).join("")}</div></div>`:""}</div>`:`<div class="golf-empty-teams">Generate teams first.</div>`}</section>`;}

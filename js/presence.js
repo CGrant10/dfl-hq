@@ -22,6 +22,8 @@
    ===================================================================== */
 
 import { db, configured } from "./supabase.js";
+import { esc } from "./ui.js";
+import { icon } from "./icons.js";
 
 const KEY = "dfl.presenceToken";
 
@@ -118,6 +120,22 @@ export function presenceLine(p = latest) {
   const others = Math.max(0, (p.active || 0) - 1);
   if (!others) return "";
   const who = `${others} DFLer${others === 1 ? "" : "s"}`;
-  if (p.arena > 0) return `🏟️ ${who} · ${p.arena} in the Arena`;
-  return `🔥 ${who} lurking`;
+  if (p.arena > 0) return `${who} · ${p.arena} in the Arena`;
+  return `${who} lurking`;
+}
+
+/*
+  THE SAME LINE WITH ITS GLYPH, for callers that can take markup.
+
+  presenceLine() stays text-only because it is also the accessible name
+  and a textContent assignment; a flame emoji in that string is announced
+  as "fire" mid-sentence and cannot be themed. The icon is drawn in
+  currentColor by the SVG set instead, and is aria-hidden - the words
+  beside it already carry the meaning.
+*/
+export function presenceHtml(p = latest) {
+  const text = presenceLine(p);
+  if (!text) return "";
+  const glyph = (p.arena > 0 ? "stadium" : "flame");
+  return `${icon(glyph, { size: 14, className: "alive-ico" })}<span>${esc(text)}</span>`;
 }

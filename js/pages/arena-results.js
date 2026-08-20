@@ -11,6 +11,7 @@ import { db } from "../supabase.js";
 import { esc, empty, errorBox, loading, fmtDate } from "../ui.js";
 import { loadMembers } from "../members.js";
 import { themeLabel } from "../arena/sprites.js";
+import { icon } from "../icons.js";
 
 const ms = (value) => {
   const n = Number(value);
@@ -66,7 +67,7 @@ export async function render(view) {
                 const member = byId.get(String(r.member_id));
                 const name = member?.display_name || "Unknown";
                 return `<tr>
-                  <td><strong>${esc(r.place)}</strong>${Number(r.place) === 1 ? ` <span aria-hidden="true">🏆</span>` : ""}</td>
+                  <td><strong>${esc(r.place)}</strong>${Number(r.place) === 1 ? ` ${icon("trophy", { size: 14, className: "win-ico" })}` : ""}</td>
                   <td>${member ? `<a href="#/profile?id=${member.id}">${esc(name)}</a>` : esc(name)}</td>
                   <td class="num">${esc(ms(r.finish_ms))}</td>
                 </tr>`;

@@ -30,10 +30,10 @@
 
 import { db, insertRow, updateRow } from "../supabase.js";
 import { esc, empty, errorBox, toast, fmtDate, loading } from "../ui.js";
+import { icon } from "../icons.js";
 import { loadMembers } from "../members.js";
 /* The DFL Pet is a member's racer sprite - here only to draw the winner on
    the result card. The RACER sprites are the Race View's business. */
-import { petOf } from "./profile-dfl.js";
 import { getReduceRaceMotion, setReduceRaceMotion } from "../store.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { currentMember } from "../members.js";
@@ -171,7 +171,7 @@ function eventCard(e, winnerId, byId) {
         <div class="arena-meta">
           <span>${esc(themeLabel(e.theme))}</span>
           ${e.event_date ? `<span>· ${esc(fmtDate(e.event_date))}</span>` : ""}
-          ${winner ? `<span class="arena-winner">· 🏆 ${esc(winner.display_name)}</span>` : ""}
+          ${winner ? `<span class="arena-winner">· ${icon("trophy", { size: 13 })} ${esc(winner.display_name)}</span>` : ""}
         </div>
         ${e.description ? `<div class="card-body">${esc(e.description)}</div>` : ""}
       </a>
@@ -824,7 +824,6 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
   const rows = [...results].sort((a, b) => a.place - b.place);
   const win  = rows[0];
   const winner = win ? byId.get(String(win.member_id)) : null;
-  const winnerPet = petOf(winner);
 
   return `
     <div class="card results-card ${fresh ? "reveal" : ""}">
@@ -832,8 +831,7 @@ function resultsCard(results, byId, event, { fresh = false } = {}) {
 
       ${winner ? `
         <div class="winner-block">
-          <span class="winner-trophy" aria-hidden="true">🏆</span>
-          ${winnerPet ? `<span class="winner-pet" style="--racer:${esc(winnerPet.color || "#2fbf5f")}">${spriteMarkup(event?.theme, winnerPet.species, winnerPet.color, null, winnerPet)}</span>` : ""}
+          <span class="winner-trophy">${icon("trophy", { size: 30 })}</span>
           <span class="winner-name">${esc(winner.display_name)}</span>
           <span class="winner-label">Winner${event?.name ? " · " + esc(event.name) : ""}</span>
         </div>` : ""}

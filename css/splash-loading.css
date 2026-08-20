@@ -119,32 +119,17 @@
 .page-in > .card:nth-child(n+5),.page-in > div > .card:nth-child(n+5){ animation-delay: .06s !important; }
 
 /* ---------------------------------------------------------------------
-   HOME HIERARCHY
+   HOME HIERARCHY - MOVED TO css/home.css
 
-   Home should be a front page, not copies of Calendar and Polls. The first
-   block after the creed is the editorial Latest section; the next two are
-   the duplicate Upcoming and Open Polls feeds. Hide those two while their
-   dedicated pages, snapshot and BottomLine keep the same information easy
-   to reach. Keep Latest tight by showing only its newest announcement.
+   This used to hide the Upcoming and Open Polls sections with positional
+   selectors (`.creed-doors + .block + .block`) while pages/home.js went on
+   rendering them, and it hid the snapshot's fourth figure to force a
+   three-column strip. Both are gone: the duplicate sections are no longer
+   in the markup at all, and the snapshot's responsive columns are declared
+   where the rest of the page's layout lives. Positional rules like those
+   silently changed meaning every time a section was added or reordered,
+   which is exactly what they did when the Wall arrived.
    --------------------------------------------------------------------- */
-#home-wrap > .creed-doors + .block + .block,
-#home-wrap > .creed-doors + .block + .block + .block {
-  display: none;
-}
-#home-wrap > .creed-doors + .block .fp-news > article:nth-child(n+2) {
-  display: none;
-}
-
-/* The snapshot is the personal league glance now: record, leader and dues.
-   Poll status already belongs to the SIN door and the BottomLine, so showing
-   it here too made the same fact compete with its navigation. Keep the data
-   pipeline untouched; this is presentation-only and makes the strip three
-   equal, compact figures on every screen size. */
-#home-wrap .fp-snap > :nth-child(4) { display: none; }
-#home-wrap .fp-snap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-#home-wrap .fp-snap > a { padding-left: var(--s-3); padding-right: var(--s-3); }
-#home-wrap .fp-snap b,
-#home-wrap .fp-snap small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Broadcast commissioner chrome: keep the controls full-size, but make the
    black pill hug them instead of scaling its empty padding with a giant OBS

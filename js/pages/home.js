@@ -31,7 +31,8 @@ import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
-import { presenceLine, presenceNow, onPresence } from "../presence.js";
+import { presenceHtml, presenceNow, onPresence } from "../presence.js";
+import { loadWall, wallCard, wireWall } from "../member-wall.js";
 
 let stage = null;
 let generation = 0;
@@ -112,18 +113,43 @@ export async function render(view) {
      league that has not run the migration must not have it fail beside the
      announcements. activityFeed() returns null in that case and the section is
      simply not drawn. */
-  const activity = await (async () => {
-    try {
-      const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
-      if (error) throw error;
-      return data || [];
-    } catch (err) {
-      /* Absent migration draws nothing; any other failure draws an empty
-         section rather than taking the front page down with it. */
-      return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
-    }
-  })();
+  /* The feed and the Wall are read together and kept off the Promise.all
+     above for the same reason: each depends on a migration a league may not
+     have run, and neither is allowed to take the front page down. Both
+     resolve to null when their table is absent, and null draws nothing. */
+  const [activity, wall] = await Promise.all([
+    (async () => {
+      try {
+        const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        /* Absent migration draws nothing; any other failure draws an empty
+           section rather than taking the front page down with it. */
+        return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
+      }
+    })(),
+    loadWall().catch((err) => { console.warn("wall unavailable", err); return null; }),
+  ]);
 
+  /*
+    THE ORDER IS THE EDIT.
+
+    Stage, then three figures, then the four doors: what is happening, where
+    the reader stands, where to go. The Wall sits directly under the doors
+    because it is the only part of this page that changes because somebody
+    did something, and burying a posting surface under two static lists is
+    how a wall dies. The commissioner and the activity feed follow; the
+    crest closes the page, since the splash already carries the brand.
+
+    UPCOMING AND OPEN POLLS ARE GONE FROM THE MARKUP. They were rendered
+    here and then hidden with a positional `display:none` in
+    splash-loading.css - the data was still fetched, the DOM still built,
+    and the admin "Add" buttons still wired, all to be painted over. The
+    snapshot, the doors and the BottomLine already carry both facts, and
+    Calendar and Polls each have their own add control, so deleting the
+    sections loses nothing and takes the CSS hack with it.
+  */
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
@@ -131,25 +157,43 @@ export async function render(view) {
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
-    <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>
-      ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
-    <section class="block"><h2 class="section-title">Upcoming<a class="section-link" href="#/calendar">Calendar →</a></h2>
-      ${eventList(events.data)}${adminRow(addControl("events", "Add event"))}</section>
-    <section class="block"><h2 class="section-title">Open polls<a class="section-link" href="#/polls">Vote →</a></h2>
-      ${pollList(polls.data)}${adminRow(addControl("polls", "Add poll"))}</section>
-    ${activityCard(activity)}
+    <div data-wall-slot>${wallCard(wall)}</div>
+    <div class="home-lower">
+      <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>
+        ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
+      ${activityCard(activity)}
+    </div>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
-    <p class="dfl-alive" data-alive>${esc(presenceLine(presenceNow()))}</p>
+    <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
 
+  /*
+    THE WALL REDRAWS ITSELF, NOT THE PAGE. A new post used to re-render all
+    of home, which restarts the broadcast stage mid-slide and re-runs every
+    query on the page. Repainting just the slot keeps the stage running.
+  */
+  const redrawWall = async () => {
+    const slot = view.querySelector("[data-wall-slot]");
+    if (!slot) return;
+    try {
+      slot.innerHTML = wallCard(await loadWall());
+      wireWall(slot, redrawWall);
+    } catch (err) {
+      console.warn("wall unavailable", err);
+      slot.innerHTML = "";
+    }
+  };
+  const wallSlot = view.querySelector("[data-wall-slot]");
+  if (wallSlot) wireWall(wallSlot, redrawWall);
+
   const alive = view.querySelector("[data-alive]");
   if (alive) {
     dropPresence?.();
-    dropPresence = onPresence((p) => { alive.textContent = presenceLine(p); });
+    dropPresence = onPresence((p) => { alive.innerHTML = presenceHtml(p); });
   }
   wireCrest(view);
 
@@ -277,6 +321,4 @@ function creedDoors(events,golfRow,polls,dues){
   ).join("")}</nav>`;
 }
 function adminRow(control){return control?`<div class="row-end">${control}</div>`:""}
-function eventList(allRows){const rows=visible("events",allRows);if(!rows.length)return `<div class="state"><span class="state-title">Nothing scheduled</span><span>No events on the calendar yet.</span></div>`;return rows.map(e=>`<article class="card event ${hiddenClass("events",e)}"><div class="event-when"><span class="event-date">${esc(fmtWhen(e.event_date, e.event_time))}</span><span class="badge open">${esc(relDate(e.event_date))}</span></div><h3 class="card-heading">${esc(e.title)}</h3>${e.description?`<div class="card-body">${esc(e.description)}</div>`:""}${editControls("events",e)}</article>`).join("")}
-function pollList(allRows){const rows=visible("polls",allRows);if(!rows.length)return `<div class="state"><span class="state-title">No polls open</span><span>Nothing to vote on right now.</span></div>`;return rows.map(p=>`<a class="card linkcard ${hiddenClass("polls",p)}" href="#/polls"><h3 class="card-heading">${esc(p.question)}</h3><span class="card-cta">Cast your vote →</span></a>${editControls("polls",p,{compact:true})}`).join("")}
 function setupNotice(){return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`}

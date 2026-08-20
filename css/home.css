@@ -1,0 +1,314 @@
+/* =====================================================================
+   home.css - the front page's layout, and the surfaces that carry a
+   member's identity.
+   ---------------------------------------------------------------------
+   WHY THIS FILE EXISTS. Home's layout was spread across four
+   stylesheets: the doors in style.css, the snapshot in ui.css, the
+   activity rows in screens.css, and - least defensibly - a block of
+   positional `display:none` overrides in splash-loading.css that hid two
+   sections the page was still rendering. Changing one thing about this
+   page meant finding which of the four owned it, and the positional
+   selectors broke the moment the markup moved.
+
+   Everything that is specifically about #home-wrap now lives here. This
+   file is loaded last, so it wins without needing !important.
+
+   THE RHYTHM IS ONE VARIABLE. --home-gap sets the space between every
+   band on the page and tightens on small screens, so the page stays
+   dense on a phone and never drifts apart on a monitor.
+
+   THE ACCENT IS ALWAYS --ident, NEVER A THEME TOKEN. Each member's
+   chosen colour is set as an inline --ident on their own post or pill
+   rail and read only from inside it, so twelve members' colours can
+   coexist without any of them touching the app's chrome.
+   ===================================================================== */
+
+#home-wrap {
+  --home-gap: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--home-gap);
+}
+
+/* The bands set their own spacing above, so the generic block margins
+   that applied when this page was a stack of cards are cancelled. */
+#home-wrap > *,
+#home-wrap .home-lower > * { margin-top: 0; margin-bottom: 0; }
+
+/* ---------------------------------------------------------------------
+   THE SNAPSHOT - four figures, and all four survive now.
+
+   The old override hid the fourth cell and forced three columns, because
+   at two-up the labels wrapped. Two rows of two is the honest answer on a
+   narrow screen: every figure keeps its place and nothing is truncated.
+   --------------------------------------------------------------------- */
+#home-wrap .fp-snap {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+#home-wrap .fp-snap > a { padding: var(--s-3); min-width: 0; }
+#home-wrap .fp-snap b,
+#home-wrap .fp-snap small {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (min-width: 560px) {
+  #home-wrap .fp-snap { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------------------------------------------------------------------
+   THE CREED DOORS - the navigation.
+
+   Four across is right down to about 380px, below which the words start
+   to crush. Two-by-two keeps DRAFT/GOLF/SIN/FOLD readable and each tap
+   target comfortably over 44px instead of shrinking them all to fit.
+   --------------------------------------------------------------------- */
+#home-wrap .creed-doors {
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 380px) {
+  #home-wrap .creed-doors { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+#home-wrap .cdoor { padding: var(--s-3) var(--s-2); min-height: 56px; }
+#home-wrap .cd-sub {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------
+   THE LOWER HALF - two columns once there is room for them.
+
+   The container is 900px, so past ~760px a single column leaves half the
+   width empty and pushes the crest below a second scroll. The
+   commissioner and the activity feed are both short lists and sit
+   happily side by side. align-items:start stops the shorter of the two
+   from stretching to match the taller.
+   --------------------------------------------------------------------- */
+.home-lower {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--home-gap);
+  align-items: start;
+}
+@media (min-width: 760px) {
+  .home-lower { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* A feed that returned nothing renders no element at all, so the single
+   remaining child must not be left sitting in a half-width column. */
+.home-lower > :only-child { grid-column: 1 / -1; }
+
+/* ---------------------------------------------------------------------
+   THE WALL
+   --------------------------------------------------------------------- */
+.wall .wall-card { padding: var(--s-4); display: grid; gap: var(--s-4); }
+.wall-signin { margin: 0; }
+
+.wall-form { display: grid; gap: var(--s-2); }
+.wall-form textarea {
+  width: 100%;
+  min-height: 62px;
+  resize: vertical;
+  font: inherit;
+}
+.wall-preview {
+  display: block; width: 100%; height: auto;
+  max-height: 300px; object-fit: cover;
+  border-radius: var(--r-md); border: 1px solid var(--line);
+}
+.wall-preview.hidden { display: none; }
+
+.wall-actions {
+  display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;
+}
+.wall-pick { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.wall-note { min-width: 0; flex: 1 1 auto; }
+/* The send button is pinned right on one line and drops to full width when
+   the note above it has already forced a wrap. */
+.wall-send { margin-left: auto; }
+@media (max-width: 380px) {
+  .wall-note { flex-basis: 100%; order: 3; }
+  .wall-send { margin-left: 0; flex: 1 1 auto; }
+}
+
+.wall-posts { display: grid; gap: 0; }
+.wall-empty { margin: 0; }
+
+.wall-post {
+  --ident: var(--muted);
+  padding: var(--s-3) 0 var(--s-3) var(--s-3);
+  border-top: 1px solid var(--line-soft);
+  /* The member's colour as a hairline down the left edge: enough to tell
+     two people's posts apart while scrolling, not enough to become the
+     loudest thing in the card. */
+  border-left: 2px solid var(--ident);
+}
+.wall-post:first-child { border-top: 0; }
+
+.wall-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.wall-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  object-fit: cover; flex: 0 0 auto;
+  border: 1px solid var(--line);
+}
+.wall-avatar-fallback {
+  display: grid; place-items: center;
+  background: var(--bg-3); color: var(--muted);
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+}
+.wall-who { min-width: 0; display: grid; gap: 1px; }
+.wall-name {
+  font-weight: var(--fw-bold);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wall-when { white-space: nowrap; align-self: start; }
+
+.wall-body {
+  margin: 0 0 var(--s-2);
+  font-size: var(--fs-body); color: var(--body-text);
+  /* Posts are typed by hand, so a pasted URL must wrap rather than push
+     the card sideways, and deliberate line breaks are kept. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.wall-photo {
+  display: block; width: 100%; height: auto;
+  max-height: 340px; object-fit: cover;
+  border-radius: var(--r-md); border: 1px solid var(--line);
+}
+@media (min-width: 760px) { .wall-photo { max-height: 460px; } }
+
+.wall-submit {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: var(--s-2);
+}
+.wall-submit.is-sent { color: var(--muted); pointer-events: none; }
+
+/* ---------------------------------------------------------------------
+   IDENTITY - the byline on a post, the pills on a profile.
+   --------------------------------------------------------------------- */
+.identity-byline {
+  display: flex; align-items: center; gap: 6px;
+  min-width: 0;
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  font-weight: var(--fw-bold);
+  color: var(--ident, var(--muted));
+}
+.identity-byline > * { min-width: 0; }
+.ib-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-team { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.ib-dot { opacity: .5; flex: 0 0 auto; }
+
+.identity-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: var(--s-2) 0 var(--s-3);
+}
+.idp {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: var(--fs-micro); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-wide);
+  border: 1px solid var(--line);
+  background: var(--bg-3);
+  color: var(--body-text);
+  max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Only the earned title takes the member's colour. Tinting all three
+   turned the rail into a block of one hue and lost the hierarchy. */
+.idp.is-title {
+  border-color: var(--ident, var(--line));
+  color: var(--ident, var(--text));
+  background: transparent;
+}
+.idp.is-feat { color: var(--text); }
+
+/* ---------------------------------------------------------------------
+   THE IDENTITY EDITOR
+   --------------------------------------------------------------------- */
+.identity-editor { display: grid; gap: var(--s-3); margin: var(--s-3) 0; }
+.ident-head { display: grid; gap: 2px; }
+.ident-grid {
+  display: grid; gap: var(--s-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 560px) {
+  .ident-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.ident-team-row { display: flex; align-items: center; gap: var(--s-2); }
+.ident-team-row select { flex: 1 1 auto; min-width: 0; }
+.ident-team-logo:empty { display: none; }
+
+.ident-swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+.ident-swatch {
+  width: 30px; height: 30px; padding: 0;
+  border-radius: 50%;
+  background: var(--sw);
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--line) inset;
+  cursor: pointer;
+}
+/* The ring is drawn outside the swatch so selecting one does not change
+   its size and shuffle the row. */
+.ident-swatch.on {
+  border-color: var(--bg-2);
+  box-shadow: 0 0 0 2px var(--text);
+}
+.ident-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.ident-preview { display: grid; gap: 4px; }
+.ident-preview-line {
+  padding: var(--s-2) var(--s-3);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  min-height: 34px;
+  display: flex; align-items: center;
+}
+
+/* ---------------------------------------------------------------------
+   SHARED: the SVG glyph set and the club logos.
+   --------------------------------------------------------------------- */
+/* Icons sit on the text baseline the way a glyph does, and inherit colour,
+   which is the whole reason they replaced the emoji. */
+.ico {
+  display: inline-block;
+  vertical-align: -0.14em;
+  flex: 0 0 auto;
+}
+.nfl-logo {
+  display: inline-block;
+  vertical-align: -0.2em;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* The presence line is an icon plus words, so it needs to be a flex row
+   rather than a text node with a glyph in it. */
+.dfl-alive {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.dfl-alive:empty { display: none; }
+
+/* ---------------------------------------------------------------------
+   TIGHTEN UP ON SMALL SCREENS, OPEN UP ON LARGE ONES.
+   --------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  #home-wrap { --home-gap: var(--s-4); }
+  #home-wrap .section-title { margin-bottom: var(--s-2); }
+  .wall .wall-card { padding: var(--s-3); }
+}
+@media (min-width: 900px) {
+  #home-wrap { --home-gap: var(--s-6); }
+}
+
+/* The crest closes the page; it does not need the full band of space
+   above it that separates two lists of content. */
+#home-wrap .hero { margin-top: var(--s-2); }
+#home-wrap .version-line { margin-top: 0; }

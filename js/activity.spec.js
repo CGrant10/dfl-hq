@@ -35,9 +35,21 @@ describe("activity feed lines", () => {
     expect(whenText("not a date", NOW)).toBe("");
   });
 
-  it("keeps a wall mount even when activity is unavailable", () => {
-    expect(activityCard(null)).toContain("data-wall-slot");
-    expect(activityCard([])).toContain("data-wall-slot");
+  /* The Wall used to be mounted from inside activityCard, so this asserted
+     that an empty feed still emitted its slot. pages/home.js owns that
+     placement now, and the feed's job is only the feed: nothing to report
+     means no section, not an empty card with somebody else's mount in it. */
+  it("draws nothing at all when there is no activity to report", () => {
+    expect(activityCard(null)).toBe("");
+    expect(activityCard([])).toBe("");
+    expect(activityCard(null)).not.toContain("data-wall-slot");
+  });
+
+  it("leaves the wall to whoever placed it", () => {
+    const card = activityCard([{ entity: "polls", label: "poll vote", action: "insert",
+      member_id: 7, display_name: "Grant", row_count: 1, last_at: at(3) }]);
+    expect(card).toContain("act-row");
+    expect(card).not.toContain("data-wall-slot");
   });
 
   it("hides commissioner/admin writes and keeps member activity", () => {

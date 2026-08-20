@@ -1,10 +1,26 @@
-// Profile self-editor: photo, bio, earned identity. Existing Arena pets stay read-only.
+// =====================================================================
+// profile-dfl.js - the self-editor: photo, bio and earned identity.
+// ---------------------------------------------------------------------
+// THE DFL PET IS GONE. It was a cosmetic character with a name, a
+// species, two colours, an accessory, an expression and a trail, and the
+// only place it was ever drawn outside its own editor was the Arena
+// winner card. Arena racers have never read it - they carry their own
+// sprite and colour on arena_participants - so removing it changes
+// nothing about any race, and the six-control editor it needed is what
+// made this card feel like a character creator instead of a profile.
+//
+// What identity means here now is the accent colour, the earned title and
+// the club, all of which show up under the member's name on the Wall.
+// See js/profile-identity.js.
+//
+// The members.pet column is deliberately left in place. Dropping it would
+// throw away data this release simply stops reading; the note at the
+// bottom of profile_identity_accent_schema.sql says how to retire it.
+// =====================================================================
 import { db } from "../supabase.js";
 import { esc, toast } from "../ui.js";
 import { shrinkToDataUri } from "../image-field.js";
 import { PRESETS, describeValue, fmtBytes, MAX_SOURCE_BYTES } from "../image-shrink.js";
-import { dflCharacterIds } from "../arena/dfl-sprites.js";
-import { characterSvg } from "../arena/pixi-runtime.js";
 import { identitySettingsCard, profileIdentityDisplay, wireProfileIdentity } from "../profile-identity.js";
 import { loadLore, career } from "../lore.js";
 
@@ -12,30 +28,23 @@ const BIO_MAX = 500;
 const PHOTO_PX = PRESETS.avatar.maxPx;
 const PHOTO_MAX_BYTES = MAX_SOURCE_BYTES;
 
-export function petOf(member) {
-  const p = member?.pet;
-  if (!p) return null;
-  try {
-    const v = typeof p === "string" ? JSON.parse(p) : p;
-    return v && typeof v === "object" ? v : null;
-  } catch { return null; }
-}
-
 const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase() || "?";
 
-function petArt(pet) {
-  const species = pet?.species || dflCharacterIds()[0];
-  const color = pet?.color || "#C8102E";
-  return `<div class="pet-art is-big trail-${esc(pet?.trail || "none")}" style="--racer:${esc(color)};--pet-accent:${esc(pet?.accent || "#ffffff")}">${characterSvg({ ...(pet || {}), species }, color)}</div>`;
-}
-
 function viewCard(m, isMe) {
-  const pet = petOf(m);
   const bio = String(m.bio || "").trim();
+  const identity = profileIdentityDisplay(m);
   const bioBlock = bio ? `<p class="dfl-bio">${esc(bio)}</p>` : "";
-  const petBlock = pet ? `<div class="dfl-pet">${petArt(pet)}<span class="dfl-pet-id"><strong>${esc(pet.name || "Unnamed")}</strong><span class="muted tiny">DFL Pet · races for ${esc(m.display_name)}</span></span></div>` : "";
-  if (!bioBlock && !petBlock && !isMe) return "";
-  return `<section class="card dfl-page"><div class="card-title-row"><div class="card-title">${isMe ? "Your DFL page" : "About"}</div>${isMe ? `<button type="button" class="btn ghost small" data-dfl-edit>Edit profile</button>` : ""}</div>${profileIdentityDisplay(m)}${bioBlock}${petBlock}</section>`;
+  /* A stranger who has filled in nothing gets no card at all, rather than an
+     empty box that reads as a list of things they have not done. */
+  if (!identity && !bioBlock && !isMe) return "";
+  return `<section class="card dfl-page">
+    <div class="card-title-row">
+      <div class="card-title">${isMe ? "Your DFL page" : "About"}</div>
+      ${isMe ? `<button type="button" class="btn ghost small" data-dfl-edit>Edit profile</button>` : ""}
+    </div>
+    ${identity}
+    ${bioBlock || (isMe ? `<p class="muted tiny">No bio yet — say something about yourself.</p>` : "")}
+  </section>`;
 }
 
 function editCard(m, draft) {
@@ -101,7 +110,10 @@ export function wireDflPage(view, member, isMe, refresh) {
     const save=e.target.closest("[data-dfl-save]"); if(!save)return;
     save.disabled=true;
     try{
-      const {data,error}=await db().rpc("dfl_update_profile",{p_bio:draft.bio,p_image:draft.image===undefined||draft.image===null?null:draft.image,p_pet:petOf(member),p_clear_image:draft.image===null});
+      /* p_pet is omitted, not sent as null: the RPC coalesces its arguments,
+         so leaving it out preserves whatever the column already holds instead
+         of this save being the thing that wipes it. */
+      const {data,error}=await db().rpc("dfl_update_profile",{p_bio:draft.bio,p_image:draft.image===undefined||draft.image===null?null:draft.image,p_clear_image:draft.image===null});
       if(error)throw error;
       if(!Number(data))throw new Error("Pick your name again from the top bar and retry.");
       toast("Profile saved"); editing=false; draft=null; await refresh();
