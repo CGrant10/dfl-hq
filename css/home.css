@@ -312,7 +312,6 @@
   filter: drop-shadow(0 0 3px rgba(212, 175, 55, .55));
 }
 .idp.is-title.is-champion {
-  border-color: rgba(212, 175, 55, .5);
   background: linear-gradient(180deg, rgba(212,175,55,.14), rgba(212,175,55,.05));
 }
 
@@ -349,7 +348,6 @@
   filter: none;
 }
 [data-mode="light"] .idp.is-title.is-champion {
-  border-color: rgba(109, 83, 17, .45);
   background: linear-gradient(180deg, rgba(154,116,25,.13), rgba(154,116,25,.05));
 }
 
@@ -395,18 +393,14 @@
                         team somebody supports is a fact, not a preference
                         about colour, so it does not take the accent.
 */
+/* The COLOUR is the identity; the edge is the same grey as every card.
+   Three differently-tinted outlines in a row read as three unrelated
+   widgets rather than one rail of facts. */
 .idp.is-title {
-  border-color: var(--ident, var(--line));
   color: var(--ident, var(--text));
   background: transparent;
 }
-.idp.is-feat {
-  border-color: color-mix(in srgb, var(--ident, var(--line)) 45%, var(--line));
-  color: var(--ident, var(--text));
-}
-@supports not (border-color: color-mix(in srgb, red 50%, blue)) {
-  .idp.is-feat { border-color: var(--line); }
-}
+.idp.is-feat { color: var(--ident, var(--text)); }
 
 /* ---------------------------------------------------------------------
    THE CLUB BADGE - the team's own gradient.
@@ -442,12 +436,8 @@
 [data-mode="light"] .idp.is-team,
 [data-mode="light"] .ib-team { color: var(--t1l, var(--text)); }
 
-/* The pill's edge picks up the club's primary so the badge reads as theirs
-   even at a glance, without filling it - a fill would need per-club ink. */
-.idp.is-team { border-color: color-mix(in srgb, var(--t1, var(--line)) 50%, var(--line)); }
-@supports not (border-color: color-mix(in srgb, red 50%, blue)) {
-  .idp.is-team { border-color: var(--line); }
-}
+/* The club's gradient is on its text and its logo sits beside it, which is
+   plenty - the edge stays grey like everything else. */
 
 /* ---------------------------------------------------------------------
    THE IDENTITY EDITOR

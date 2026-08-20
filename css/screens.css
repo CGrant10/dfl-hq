@@ -45,14 +45,24 @@
   justify-items: center;
   text-align: center;
 }
+/*
+  A STATGRID FIGURE IS A REFERENCE NUMBER, NOT A HEADLINE.
+
+  --fs-stat-sm is 22px, which is the size for the one figure a card is
+  about. Six of them three-up in the Career card made every number shout
+  at the same volume and pushed "1,234" close to wrapping in a 76px cell
+  on a phone. 17px still reads as the figure without competing with the
+  card title above it.
+*/
 .stat-v {
   font-family: var(--font-display);
-  font-size: var(--fs-stat-sm);
+  font-size: 1.0625rem;
   font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
   font-variant-numeric: tabular-nums;
 }
+@media (min-width: 560px) { .stat-v { font-size: 1.1875rem; } }
 .stat-l {
   /* ONE STEP BELOW MICRO, and only here. A .statgrid cell is 76px of content
      on a 375px phone, and these are tracked caps - at 11px the longest labels
@@ -456,14 +466,15 @@
 }
 /* The recommended route is edged and tinted rather than filled: a solid
    fill made the other option read as disabled. */
+/* The edge stays the same grey as every other card. The recommended route
+   is told apart by its filled icon, not by a coloured outline. */
 .choice.is-primary {
-  border-color: var(--accent-fill);
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--accent-fill) 12%, var(--bg-3)), var(--bg-3));
 }
 .choice.is-primary .choice-ico {
-  background: var(--accent-fill);
-  border-color: var(--accent-fill);
+  background: var(--accent-sweep-135);
+  border-color: transparent;
   color: var(--on-accent);
 }
 @supports not (background: color-mix(in srgb, red 50%, blue)) {
@@ -505,13 +516,39 @@
 .pin-note { margin: var(--s-4) 0 0; }
 
 /* The club-colours switch, beside the club picker it belongs to. */
+/*
+  THE CLUB-COLOURS SWITCH.
+
+  Two inherited rules were wrecking this. `input, textarea, select` sets
+  width:100% for real fields, and a checkbox is neither excluded nor sized
+  here - so the box came out 386px wide and shoved its own label off the
+  edge of the card. And the generic `label` rule paints label text muted and
+  block, which is right for a field caption and wrong for a sentence you
+  click. Both are overridden explicitly rather than relying on order.
+*/
 .ident-theme {
-  display: flex; align-items: center; gap: var(--s-2);
-  margin-top: var(--s-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0;
   cursor: pointer;
   font-size: var(--fs-body);
+  font-weight: var(--fw-semi, 600);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
 }
-.ident-theme input { flex: 0 0 auto; }
+.ident-theme input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 4px;
+  accent-color: var(--accent-fill);
+}
+.ident-theme > span { min-width: 0; }
 .ident-theme-note { margin: var(--s-2) 0 0; }
 
 /* The lock mark, in both the panel and the overlay. */
@@ -2223,11 +2260,19 @@ a.moment:hover { background: var(--hover-soft); }
   text-transform: uppercase;
   color: var(--muted);
 }
-/* A recommendation label is a call, not a fact, so it reads as the accent. */
+/*
+  A CALL IS THE SAME PILL WHEREVER IT APPEARS.
+
+  The lead option's call is .ka-headline - a gradient fill with white text.
+  The second and third options rendered the same kind of label as a hollow
+  outlined chip, so the identical judgement looked like two different
+  things depending on which row it landed in. One treatment.
+*/
 .ka-badges .pill.is-call {
-  border-color: var(--accent-2);
-  color: var(--accent);
-  background: transparent;
+  border-color: transparent;
+  background: var(--accent-sweep-135);
+  color: var(--on-accent);
+  font-weight: var(--fw-bold);
 }
 
 /* =====================================================================
