@@ -14,7 +14,7 @@ drop policy if exists "wall insert own" on public.member_wall_posts;
 drop policy if exists "wall delete own or admin" on public.member_wall_posts;
 create policy "wall read" on public.member_wall_posts for select using (true);
 create policy "wall insert own" on public.member_wall_posts for insert with check (member_id = dfl_current_member());
-create policy "wall delete own or admin" on public.member_wall_posts for delete using (member_id = dfl_current_member() or is_admin());
+create policy "wall delete own or admin" on public.member_wall_posts for delete using (member_id = dfl_current_member() or has_commissioner_permission('broadcast'));
 
 create table if not exists public.broadcast_submissions (
   id bigint generated always as identity primary key,
@@ -32,15 +32,15 @@ alter table public.broadcast_submissions enable row level security;
 drop policy if exists "submission read" on public.broadcast_submissions;
 drop policy if exists "submission insert own" on public.broadcast_submissions;
 drop policy if exists "submission admin update" on public.broadcast_submissions;
-create policy "submission read" on public.broadcast_submissions for select using (member_id = dfl_current_member() or is_admin());
+create policy "submission read" on public.broadcast_submissions for select using (member_id = dfl_current_member() or has_commissioner_permission('broadcast'));
 create policy "submission insert own" on public.broadcast_submissions for insert with check (member_id = dfl_current_member() and status = 'pending');
-create policy "submission admin update" on public.broadcast_submissions for update using (is_admin()) with check (is_admin());
+create policy "submission admin update" on public.broadcast_submissions for update using (has_commissioner_permission('broadcast')) with check (has_commissioner_permission('broadcast'));
 
 create or replace function public.approve_broadcast_submission(p_id bigint, p_dwell_seconds int default 8)
 returns bigint language plpgsql security definer set search_path=public as $$
 declare s public.broadcast_submissions; new_id bigint;
 begin
-  if not is_admin() then raise exception 'Admin access required'; end if;
+  if not has_commissioner_permission('broadcast') then raise exception 'Broadcast commissioner access required'; end if;
   select * into s from public.broadcast_submissions where id=p_id for update;
   if s.id is null then raise exception 'Submission not found'; end if;
   if s.status <> 'pending' then raise exception 'Submission already reviewed'; end if;
