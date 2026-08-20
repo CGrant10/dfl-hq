@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.109.86";
+const CACHE_NAME = "dfl-hq-v1.109.87";
 /* a.espncdn.com serves the NFL club logos on the profile and the Wall.
    Caching it means a logo seen once still renders offline. */
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
@@ -17,10 +17,6 @@ self.addEventListener("fetch",event=>{
   const url=new URL(request.url);
   if(url.hostname.endsWith("supabase.co")||url.hostname.endsWith("sleeper.app")||url.pathname.endsWith("/version.txt"))return;
 
-  // Finish-line presentation hotfix. Normal imports receive the wrapper,
-  // while the wrapper's ?finish-base=1 import reaches the committed runtime
-  // directly. This changes only finish.groundRatio/courseStopped; racer
-  // physics, official finish times and order stay exact.
   if(url.origin===location.origin && url.pathname.endsWith("/js/arena/pixi-runtime.js") && url.searchParams.get("finish-base")!=="1"){
     const shim=new URL("./js/arena/pixi-runtime-finish.js",self.registration.scope);
     event.respondWith(fetch(new Request(shim,{cache:"no-cache"})).then(response=>{
@@ -30,9 +26,6 @@ self.addEventListener("fetch",event=>{
     return;
   }
 
-  // Arena physics swap. All normal imports of race.js receive the forward-only
-  // compatibility module. The shim imports race.js?legacy=1 to reuse helpers;
-  // that query explicitly bypasses this redirect and prevents a module loop.
   if(url.origin===location.origin && url.pathname.endsWith("/js/arena/race.js") && url.searchParams.get("legacy")!=="1"){
     const shim=new URL("./js/arena/race-forward-shim.js",self.registration.scope);
     event.respondWith(fetch(new Request(shim,{cache:"no-cache"})).then(response=>{
