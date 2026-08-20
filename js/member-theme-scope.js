@@ -15,13 +15,13 @@ function validMode(value) {
 }
 
 /* Permanent visual rules belong in a real stylesheet. Give the URL a release
-   query so an installed phone cannot reuse the old module-era polish. */
+   query so an installed phone cannot reuse an older copy. */
 function loadPermanentChromeStyles() {
   if (document.getElementById("dfl-profile-neutral-css")) return;
   const link = document.createElement("link");
   link.id = "dfl-profile-neutral-css";
   link.rel = "stylesheet";
-  link.href = "css/profile-neutral.css?v=1.109.89";
+  link.href = "css/profile-neutral.css?v=1.109.90";
   document.head.appendChild(link);
 }
 loadPermanentChromeStyles();
