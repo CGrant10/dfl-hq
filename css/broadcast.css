@@ -1,4 +1,5 @@
 @import url("./broadcast-base.css");
+@import url("./admin.css");
 
 /* Winner end card: the race is over, so the race view is gone. */
 .bc-stage.is-finished .bc-winner {
@@ -10,83 +11,94 @@
   display:grid!important;
   place-items:center!important;
   background:
-    radial-gradient(circle at 50% 44%,rgba(255,216,74,.14),transparent 38%),
+    radial-gradient(circle at 50% 44%,rgba(255,216,74,.16),transparent 40%),
     linear-gradient(180deg,#071019 0%,#05080c 58%,#020407 100%)!important;
 }
 .bc-stage.is-finished .bc-winner::before {
   content:"";
   position:absolute;
-  inset:1% 7%;
+  inset:-5% -2%;
   z-index:-1;
   background:url("../icons/dfl-seal-512.png") center/contain no-repeat;
-  opacity:.13;
+  opacity:.15;
   filter:grayscale(1) brightness(1.9);
   pointer-events:none;
 }
-/* Retire the old confetti layer. The seal is the only background mark. */
 .bc-stage.is-finished .bc-winner::after { display:none!important; }
 .bc-stage.is-finished .bc-winner-inner {
-  position:relative;
+  position:absolute!important;
+  inset:0!important;
   z-index:1;
   display:grid!important;
+  grid-auto-rows:max-content;
   place-items:center!important;
   align-content:center!important;
-  width:min(94vw,1240px);
-  margin:auto!important;
-  gap:clamp(6px,.55vw,12px);
-  text-align:center;
+  justify-content:center!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  padding:clamp(18px,3vw,52px)!important;
+  box-sizing:border-box;
+  gap:clamp(7px,.65vw,14px);
+  text-align:center!important;
 }
 .bc-stage.is-finished .bc-winner-kicker {
   display:block;
-  width:100%;
-  justify-self:center;
-  text-align:center;
-  padding-left:.42em; /* visually balances the tracked final letter */
-  box-sizing:border-box;
-  font-size:clamp(15px,1.2vw,24px);
-  letter-spacing:.42em;
+  justify-self:center!important;
+  width:max-content!important;
+  margin:0 auto!important;
+  padding:0!important;
+  text-align:center!important;
+  /* letter-spacing leaves a trailing blank after the R. Move the glyphs by
+     half that space so the WORD, not its CSS box, is optically centered. */
+  transform:translateX(.17em);
+  font-size:clamp(22px,1.7vw,34px);
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.34em;
   color:#ffd84a;
 }
 .bc-stage.is-finished .bc-winner-art {
   display:block;
-  justify-self:center;
-  width:min(24vw,310px);
-  height:min(16vw,205px);
-  margin:.15vw auto .35vw;
+  justify-self:center!important;
+  width:min(28vw,380px);
+  height:min(19vw,255px);
+  margin:.15vw auto .25vw!important;
 }
 .bc-stage.is-finished .bc-winner-name {
   display:block;
-  justify-self:center;
+  justify-self:center!important;
   width:100%;
-  max-width:100%;
-  text-align:center;
-  font-size:clamp(52px,8.2vw,158px);
-  line-height:.86;
+  max-width:min(96vw,1500px);
+  margin:0 auto!important;
+  text-align:center!important;
+  font-size:clamp(62px,9.2vw,180px);
+  line-height:.84;
   text-wrap:balance;
 }
 .bc-stage.is-finished .bc-winner-name::after {
   content:"JUST FOLDED EVERYONE";
   display:block;
-  margin-top:clamp(12px,1.2vw,24px);
-  font-size:clamp(18px,2.05vw,40px);
+  margin-top:clamp(13px,1.25vw,26px);
+  font-size:clamp(20px,2.15vw,43px);
   line-height:1;
   letter-spacing:.12em;
-  padding-left:.12em;
+  text-indent:.12em;
   color:#ffd84a;
 }
 .bc-stage.is-finished .bc-winner-event {
   display:block;
   width:100%;
-  text-align:center;
+  text-align:center!important;
   margin-top:clamp(8px,.7vw,14px);
-  font-size:clamp(10px,.9vw,17px);
+  font-size:clamp(11px,.95vw,18px);
   opacity:.58;
 }
 @media(max-width:800px){
-  .bc-stage.is-finished .bc-winner::before{inset:4% -8%;opacity:.12}
-  .bc-stage.is-finished .bc-winner-inner{width:96vw}
-  .bc-stage.is-finished .bc-winner-kicker{font-size:clamp(14px,4vw,20px)}
-  .bc-stage.is-finished .bc-winner-art{width:min(42vw,230px);height:min(29vw,160px)}
-  .bc-stage.is-finished .bc-winner-name{font-size:clamp(38px,12vw,76px);line-height:.9}
-  .bc-stage.is-finished .bc-winner-name::after{font-size:clamp(14px,4.3vw,25px);letter-spacing:.08em;padding-left:.08em}
+  .bc-stage.is-finished .bc-winner::before{inset:-2% -22%;opacity:.14}
+  .bc-stage.is-finished .bc-winner-inner{padding:18px 10px!important}
+  .bc-stage.is-finished .bc-winner-kicker{font-size:clamp(21px,6vw,30px);letter-spacing:.28em;transform:translateX(.14em)}
+  .bc-stage.is-finished .bc-winner-art{width:min(52vw,280px);height:min(36vw,195px)}
+  .bc-stage.is-finished .bc-winner-name{font-size:clamp(46px,14.5vw,92px);line-height:.86}
+  .bc-stage.is-finished .bc-winner-name::after{font-size:clamp(15px,4.6vw,28px);letter-spacing:.075em;text-indent:.075em}
 }
