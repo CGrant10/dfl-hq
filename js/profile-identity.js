@@ -10,9 +10,14 @@
 //
 // That second surface is the point. Identity that only appears on a page
 // nobody visits is decoration; identity attached to the thing a member
-// posts is a signature. identityByline() is deliberately terser than the
-// profile pills - a title, a club badge, and nothing else - because it
-// sits inside somebody else's reading of a post, not on their own page.
+// posts is a signature. identityByline() carries the same three facts as
+// the profile pills at byline scale, each fenced by a diamond spacer so
+// they read as separate items rather than one grey smear.
+//
+// A CHAMPIONSHIP IS THE ONE THING THAT IS NOT A MATTER OF TASTE. Only the
+// title may claim a ring - achievementChoices() will not emit one - and a
+// title that does gets gold and a trophy instead of the member's accent,
+// on both surfaces and in every theme.
 //
 // THE ACCENT IS THEIRS, NOT THE THEME'S. It is stored per member and only
 // ever used to tint their own byline, badge rail and post edge. It never
@@ -25,61 +30,18 @@ import { esc, toast } from "./ui.js";
 import { refreshMember } from "./members.js";
 import { icon } from "./icons.js";
 import { nflTeams, teamCode, teamValue, teamLogo, teamName, teamColor } from "./nfl-teams.js";
+/* The earned-choice logic lives in a db-free module so it can have a spec.
+   Re-exported here because this is the import site every caller already
+   knows, and moving them was a refactor, not an API change. */
+import {
+  ACCENTS, accentOf, isChampionTitle, titleChoices, achievementChoices,
+  achievementOptions, displayAchievement,
+} from "./identity-rules.js";
+export {
+  ACCENTS, accentOf, isChampionTitle, titleChoices, achievementChoices,
+  achievementOptions, displayAchievement,
+};
 
-const count = value => Array.isArray(value) ? value.length : Number(value) || 0;
-function unique(items) { return [...new Set(items.filter(Boolean))]; }
-
-/*
-  THE ACCENT PALETTE IS A LIST, NOT A COLOUR WHEEL. A free <input
-  type=color> lets somebody pick #111 on a dark card or #fff on a light
-  one and make their own byline invisible. Every swatch here has been
-  checked to read on both themes, and the database still validates the
-  format so a hand-edited request cannot inject anything else.
-*/
-export const ACCENTS = [
-  "#C8102E", "#E5011B", "#FF7A45", "#EFC94C", "#2FBF5F",
-  "#22C7A9", "#4AA3FF", "#0057D9", "#A06BE0", "#F06FA8",
-  "#8B98AB", "#F4F2EE",
-];
-const DEFAULT_ACCENT = "#8B98AB";
-
-/** The member's chosen accent, validated, with a readable fallback. */
-export function accentOf(member) {
-  const raw = String(member?.accent_color || "").trim();
-  return /^#[0-9a-f]{6}$/i.test(raw) ? raw : DEFAULT_ACCENT;
-}
-
-// ------------------------------------------------------- earned choices
-
-export function titleChoices(member, career, extremes, chipSeasons = []) {
-  const out = [];
-  const titles = Math.max(count(career?.titles), Number(member?.championships) || 0);
-  const runnerUps = Math.max(count(career?.runnerUps), count(career?.seconds));
-  const playoffs = count(career?.playoffs ?? career?.total?.playoffs);
-  if (titles >= 1) out.push("DFL Champion");
-  if (titles >= 2) out.push("Multi-Time Champion");
-  if (runnerUps >= 1) out.push("DFL Finalist");
-  if (playoffs >= 1) out.push("Playoff Regular");
-  if (Number(extremes?.streak?.win?.run) >= 5) out.push("Certified Heater");
-  if (chipSeasons.length) out.push("Chip Eater Survivor");
-  if (Number(member?.joined_year) && Number(member.joined_year) <= 2019) out.push("DFL Original");
-  return unique(out);
-}
-
-export function achievementChoices(career, extremes, chipSeasons = []) {
-  const out = [];
-  const titles = count(career?.titles);
-  const playoffs = count(career?.playoffs ?? career?.total?.playoffs);
-  const runnerUps = Math.max(count(career?.runnerUps), count(career?.seconds));
-  if (titles) out.push(`${titles}× DFL Champion`);
-  if (runnerUps) out.push(`${runnerUps}× runner-up`);
-  if (playoffs) out.push(`${playoffs} playoff trip${playoffs === 1 ? "" : "s"}`);
-  if (extremes?.bestSeason?.rank) out.push(`Best finish: #${extremes.bestSeason.rank}`);
-  if (extremes?.highWeek?.score) out.push(`Career high week: ${Number(extremes.highWeek.score).toFixed(1)} pts`);
-  if (Number(extremes?.streak?.win?.run) > 1) out.push(`${extremes.streak.win.run}-game win streak`);
-  if (chipSeasons.length) out.push(`Survived the hot chip · ${chipSeasons.join(", ")}`);
-  return unique(out);
-}
 
 // ------------------------------------------------------------- display
 
@@ -87,15 +49,22 @@ export function achievementChoices(career, extremes, chipSeasons = []) {
 export function profileIdentityDisplay(member) {
   const bits = [];
   const accent = accentOf(member);
-  if (member?.profile_title) {
-    bits.push(`<span class="idp is-title">${esc(member.profile_title)}</span>`);
+  const title = member?.profile_title;
+  if (title) {
+    /* A ring is the one thing in here that is not a matter of taste, so it
+       is the one thing that does not take the member's accent colour - it
+       gets gold, and the trophy, on every theme. */
+    const champ = isChampionTitle(title);
+    bits.push(`<span class="idp is-title${champ ? " is-champion" : ""}">${
+      champ ? icon("trophy", { size: 13 }) : ""}<span>${esc(title)}</span></span>`);
   }
   const fav = teamName(member?.favorite_team);
   if (fav) {
     bits.push(`<span class="idp is-team">${teamLogo(member.favorite_team, { size: 18 })}${esc(fav)}</span>`);
   }
-  if (member?.featured_achievement) {
-    bits.push(`<span class="idp is-feat">${icon("star", { size: 13 })}${esc(member.featured_achievement)}</span>`);
+  const feat = displayAchievement(member);
+  if (feat) {
+    bits.push(`<span class="idp is-feat">${icon("star", { size: 13 })}${esc(feat)}</span>`);
   }
   if (!bits.length) return "";
   return `<div class="identity-pills" style="--ident:${esc(accent)}">${bits.join("")}</div>`;
@@ -104,28 +73,51 @@ export function profileIdentityDisplay(member) {
 /**
  * The compact byline that sits under an author's name on a wall post.
  *
- * Title and club only. A featured achievement is a paragraph of bragging
- * and belongs on the profile, not stapled to every sentence somebody
- * writes. Returns "" when the member has set nothing, so a post from an
+ * Title, club and featured achievement - the same three facts as the
+ * profile, at byline scale. The achievement is here because the small,
+ * specific lines are the interesting ones to read next to somebody's
+ * shit-talk; the title carries the ring on its own.
+ *
+ * EACH ITEM IS FENCED BY A SPACER GLYPH. Whitespace alone let "DFL
+ * Champion" and "CHI" and "High week 184.2 pts" run together into one grey
+ * smear at 11px. A diamond between them reads as a divider at a glance,
+ * and it is aria-hidden so a screen reader gets three separate items
+ * rather than the word "diamond" twice.
+ *
+ * Returns "" when the member has set nothing, so a post from an
  * unconfigured member simply has no second line.
  */
 export function identityByline(member) {
   if (!member) return "";
   const bits = [];
-  if (member.profile_title) bits.push(`<span class="ib-title">${esc(member.profile_title)}</span>`);
+
+  const title = member.profile_title;
+  if (title) {
+    const champ = isChampionTitle(title);
+    bits.push(`<span class="ib-title${champ ? " is-champion" : ""}">${
+      champ ? icon("trophy", { size: 12 }) : ""}<span>${esc(title)}</span></span>`);
+  }
+
   const code = teamCode(member.favorite_team);
   if (code) {
     bits.push(`<span class="ib-team">${teamLogo(member.favorite_team, { size: 14 })}${esc(code)}</span>`);
   }
+
+  const feat = displayAchievement(member);
+  if (feat) {
+    bits.push(`<span class="ib-feat">${esc(feat)}</span>`);
+  }
+
   if (!bits.length) return "";
-  return `<span class="identity-byline">${bits.join(`<span class="ib-dot" aria-hidden="true">·</span>`)}</span>`;
+  const spacer = `<span class="ib-sep" aria-hidden="true">&#9670;</span>`;
+  return `<span class="identity-byline">${bits.join(spacer)}</span>`;
 }
 
 // -------------------------------------------------------------- editor
 
 export function identitySettingsCard(member, career, extremes, chipSeasons = []) {
   const titles = titleChoices(member, career, extremes, chipSeasons);
-  const achievements = achievementChoices(career, extremes, chipSeasons);
+  const achievements = achievementOptions(member, career, extremes, chipSeasons);
   const accent = accentOf(member);
   const suggested = teamColor(member?.favorite_team);
 
@@ -205,6 +197,7 @@ export function wireProfileIdentity(root, member, onSaved) {
       ...member,
       profile_title: host.querySelector("[data-identity-title]")?.value || "",
       favorite_team: host.querySelector("[data-identity-team]")?.value || "",
+      featured_achievement: host.querySelector("[data-identity-achievement]")?.value || "",
     });
     slot.innerHTML = line || `<span class="muted tiny">Nothing set yet</span>`;
   };
@@ -228,7 +221,7 @@ export function wireProfileIdentity(root, member, onSaved) {
       const slot = host.querySelector("[data-identity-team-logo]");
       if (slot) slot.innerHTML = e.target.value ? teamLogo(e.target.value, { size: 30 }) : "";
     }
-    if (e.target.matches("[data-identity-team], [data-identity-title]")) repaintPreview();
+    if (e.target.matches("[data-identity-team], [data-identity-title], [data-identity-achievement]")) repaintPreview();
   });
 
   host.querySelector("[data-save-profile-identity]")?.addEventListener("click", async (e) => {

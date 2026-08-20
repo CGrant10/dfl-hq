@@ -201,9 +201,127 @@
   color: var(--ident, var(--muted));
 }
 .identity-byline > * { min-width: 0; }
-.ib-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-title { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.ib-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ib-team { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
-.ib-dot { opacity: .5; flex: 0 0 auto; }
+
+/* The featured achievement is the longest of the three, so it is the one
+   allowed to truncate - the title and the club badge are short and fixed. */
+.ib-feat {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: var(--fw-semi, 600);
+  letter-spacing: var(--ls-wide);
+  opacity: .9;
+}
+
+/* THE SPACER. A diamond rather than whitespace or an interpunct: at 11px
+   uppercase, three grey fragments separated by spaces read as one string.
+   Sized down and dimmed so it divides without competing. */
+.ib-sep {
+  flex: 0 0 auto;
+  font-size: .7em;
+  opacity: .45;
+  transform: translateY(-.5px);
+}
+
+/* ---------------------------------------------------------------------
+   THE CHAMPION TREATMENT
+
+   A ring is the only thing in the identity set that is not taste, so it
+   is the only thing that ignores the member's accent colour. Gold, a
+   trophy, and a slow sheen that crosses the text.
+
+   The gradient is painted onto the text itself via background-clip, with
+   an explicit colour fallback first: a browser without -webkit-text-fill
+   -color shows solid gold rather than invisible text.
+   --------------------------------------------------------------------- */
+.ib-title.is-champion,
+.idp.is-title.is-champion {
+  /* Every stop clears 4.5:1 on the #131a24 card. The darkest was #8a6a1f
+     at 3.47:1, which put the ends of the sweep below the floor. */
+  --gold-1: #a17d25;   /* 4.56:1 */
+  --gold-2: #f7e08a;   /* 13.3:1 */
+  --gold-3: #d4af37;   /* 8.32:1 */
+  color: var(--gold-3);
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .ib-title.is-champion > span,
+  .idp.is-title.is-champion > span {
+    background: linear-gradient(100deg,
+      var(--gold-1) 0%, var(--gold-3) 26%, var(--gold-2) 44%,
+      #fffbe8 50%, var(--gold-2) 56%, var(--gold-3) 74%, var(--gold-1) 100%);
+    background-size: 280% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: champ-sheen 5.5s var(--ease, ease-in-out) infinite;
+  }
+}
+/* The trophy keeps a solid fill - a 12px glyph with a gradient clipped
+   through it just looks muddy. */
+.ib-title.is-champion .ico,
+.idp.is-title.is-champion .ico {
+  color: var(--gold-2);
+  filter: drop-shadow(0 0 3px rgba(212, 175, 55, .55));
+}
+.idp.is-title.is-champion {
+  border-color: rgba(212, 175, 55, .5);
+  background: linear-gradient(180deg, rgba(212,175,55,.14), rgba(212,175,55,.05));
+}
+
+/*
+  LIGHT MODE NEEDS A DARKER RAMP.
+
+  The gold above is tuned for a #131a24 card. Light mode's card is pure
+  white, where #d4af37 is about 1.9:1 and the sheen's #fffbe8 peak is
+  white-on-white - the title would fade out every few seconds. These stops
+  run dark enough to stay readable across the whole sweep: the highlight is
+  a muted #8a6a1f (5.05:1 on white) rather than a near-white, so the sheen
+  is deliberately subtler here. Legible beats shiny.
+*/
+[data-mode="light"] .ib-title.is-champion,
+[data-mode="light"] .idp.is-title.is-champion {
+  /* Every stop clears 4.5:1 on white. The old peak was #b08a1e at 3.23:1. */
+  --gold-1: #4a3a0c;   /* 11.0:1 */
+  --gold-2: #7d5f14;   /* 5.97:1 */
+  --gold-3: #6d5311;   /* 7.25:1 */
+  color: var(--gold-3);
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  [data-mode="light"] .ib-title.is-champion > span,
+  [data-mode="light"] .idp.is-title.is-champion > span {
+    background: linear-gradient(100deg,
+      var(--gold-1) 0%, var(--gold-3) 26%, var(--gold-2) 44%,
+      #8a6a1f 50%, var(--gold-2) 56%, var(--gold-3) 74%, var(--gold-1) 100%);
+    background-size: 280% 100%;
+  }
+}
+[data-mode="light"] .ib-title.is-champion .ico,
+[data-mode="light"] .idp.is-title.is-champion .ico {
+  color: var(--gold-3);
+  filter: none;
+}
+[data-mode="light"] .idp.is-title.is-champion {
+  border-color: rgba(109, 83, 17, .45);
+  background: linear-gradient(180deg, rgba(154,116,25,.13), rgba(154,116,25,.05));
+}
+
+@keyframes champ-sheen {
+  0%,  100% { background-position:   0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* A moving highlight on a permanent badge is exactly the kind of thing
+   that has to stop when somebody has asked for less motion. The gold
+   stays; only the travel goes. */
+@media (prefers-reduced-motion: reduce) {
+  .ib-title.is-champion > span,
+  .idp.is-title.is-champion > span {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
 
 .identity-pills {
   display: flex; flex-wrap: wrap; gap: 6px;

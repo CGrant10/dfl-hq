@@ -41,7 +41,7 @@ import { identityByline, accentOf } from "./profile-identity.js";
   behind - which is every database in the minute after a release.
 */
 const TABLE_GONE = /member_wall_posts|could not find the table/i;
-const COLUMN_GONE = /column[^"']*(profile_title|favorite_team|accent_color)|(profile_title|favorite_team|accent_color)[^"']*does not exist/i;
+const COLUMN_GONE = /profile_title|favorite_team|accent_color/i;
 
 /*
   THREE SHAPES OF THE SAME READ, TRIED WIDEST FIRST.
