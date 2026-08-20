@@ -3,9 +3,8 @@
 
 alter table public.members
   add column if not exists profile_title text,
-  add column if not exists featured_achievement text;
-
--- favorite_team already exists on members; keep it as the canonical NFL pick.
+  add column if not exists featured_achievement text,
+  add column if not exists favorite_team text;
 
 create or replace function public.profile_identity_save(
   target_member_id bigint,
@@ -17,8 +16,18 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  me bigint := public.dfl_current_member();
 begin
-  if target_member_id is null or not exists(select 1 from public.members where id=target_member_id and active=true) then
+  if me is null then
+    raise exception 'No member on this request';
+  end if;
+
+  if target_member_id is null or target_member_id <> me then
+    raise exception 'You can only edit your own profile identity';
+  end if;
+
+  if not exists(select 1 from public.members where id = me and active = true) then
     raise exception 'Member not found';
   end if;
 
@@ -26,8 +35,9 @@ begin
      set profile_title = nullif(left(trim(coalesce(new_title,'')),80),''),
          featured_achievement = nullif(left(trim(coalesce(new_achievement,'')),120),''),
          favorite_team = nullif(left(trim(coalesce(new_favorite_team,'')),24),'')
-   where id=target_member_id;
+   where id = me;
 end;
 $$;
 
+revoke all on function public.profile_identity_save(bigint,text,text,text) from public;
 grant execute on function public.profile_identity_save(bigint,text,text,text) to anon, authenticated;
