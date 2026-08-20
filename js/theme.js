@@ -1,15 +1,19 @@
 // =====================================================================
 // DFL HQ - one crest, three palettes
 // ---------------------------------------------------------------------
-// The "favourite NFL team recolours the app" idea is gone and is not coming
-// back - it never worked (the picker fed NFL team ids into a map that only
-// held theme ids, so every choice collapsed to the default) and one league
-// wants one identity.
+// TEAM PALETTES ARE BACK, AND THIS TIME THEY WORK. The first attempt fed
+// NFL team ids into MODES, which only held theme ids, so every choice
+// collapsed to the default - the reason this header used to say the idea
+// was gone for good. The fix was not a bigger map: js/team-theme.js
+// GENERATES a palette from the club's two colours, so there is no lookup
+// to fall out of sync. A raw team colour is never used as text (nine clubs
+// have a primary that is effectively black); it is lifted along its own
+// hue until it clears the contrast bar below.
 //
-// What is left is a palette picker with four entries, three of which are
-// real palettes and one of which is the absence of a choice. See MODES,
-// PICKABLE and modeOptions() below; this list is generated from them, so if
-// they disagree with this comment, they are right and this is stale.
+// So the picker has four fixed entries - three real palettes and one that
+// is the absence of a choice - plus a club. See MODES, PICKABLE,
+// modeOptions() and teamOptions() below; those are generated, so if they
+// disagree with this comment, they are right and this is stale.
 //
 //   medicine (default)  Medicine Wheel. A dark palette, and what a device
 //                       that has never touched the picker gets.
@@ -40,7 +44,28 @@
 // are the same hue pushed until they clear 6:1 on their own background.
 // =====================================================================
 
-const MODE_KEY = "dfl.mode";           // "system" | "dark" | "light"
+import { teamPalette, MEDICINE_GROUND } from "./team-theme.js";
+import { team as nflTeam, nflTeams, teamCode } from "./nfl-teams.js";
+
+const MODE_KEY = "dfl.mode";  // "system" | "dark" | "light" | "medicine" | "team:KC"
+
+/*
+  A TEAM MODE IS "team:KC" - ONE KEY, NOT TWO.
+
+  Storing the club separately from the mode would give two sources of truth
+  that can disagree: a stored club with the mode set to dark, or a team mode
+  with no club. Carrying the code inside the value makes those states
+  unrepresentable, and validation is just "is this a real club".
+*/
+const TEAM_PREFIX = "team:";
+export const isTeamMode = (v) => String(v || "").startsWith(TEAM_PREFIX);
+export const teamModeFor = (code) => {
+  const hit = nflTeam(code);
+  return hit ? TEAM_PREFIX + hit.code : null;
+};
+const codeOfMode = (v) => isTeamMode(v) ? teamCode(String(v).slice(TEAM_PREFIX.length)) : "";
+/** The club a team mode refers to, or null. */
+export const modeTeam = (v) => isTeamMode(v) ? nflTeam(codeOfMode(v)) : null;
 const LEGACY_THEME_KEY = "dfl.theme";  // removed; cleared on sight
 
 /* The crest itself, sampled from the artwork. Mode-independent: a fill does
@@ -135,33 +160,21 @@ const MODES = {
     "unpaid" have to be told apart at a glance on the fees screen, so ok/warn/
     danger keep their jobs and are only warmed to sit with the rest.
   */
+  /*
+    THE SURFACES COME FROM team-theme.js, WHICH OWNS THEM NOW.
+
+    A team palette is this palette with different accents, so the ground was
+    being maintained in two files. It is defined once, there, and this entry
+    is the wheel's own accents on top. The notes explaining why warn is an
+    amber and danger is pinker moved with the values they describe.
+  */
   medicine: {
-    bg: "#0b0b0c", bg2: "#141416", bg3: "#1d1d20",
-    line: "#2f2f34", lineSoft: "#212125",
-    text: "#f4f2ee", muted: "#a8a096", chalk: "#ffffff",
-    bodyText: "#ddd8d0",
-    hover: "#1d1d20", hoverSoft: "rgba(255,255,255,.03)",
-    controlLine: "#736b60", controlBg: "rgba(24,24,27,.74)",
+    ...MEDICINE_GROUND,
     /* text pair: the red lifted to clear 6:1, the yellow already there */
     accent: "#F08279", accent2: "#EFC94C",
     /* fill pair: the wheel's own red and yellow */
     fill: "#C8102E", fill2: "#EFC94C",
     onAccent: "#FFFFFF",
-    ok: "#8fd6a4", okBg: "rgba(96,176,123,.13)", okLine: "#3f7a52",
-    /* An amber, NOT the wheel's yellow. The first cut used #EFC94C for both
-       this and milestone, which made an OPEN badge and a CHAMPION badge the
-       same colour - and gold is the occasion colour, so warn is the one that
-       had to move. */
-    warnInk: "#E8A33D", warnBg: "rgba(232,163,61,.12)", warnLine: "#7a5a20",
-    /* Lighter and pinker than `accent` for the same reason: UNPAID and a
-       plain accent link were coming out identical. */
-    dangerInk: "#F5A39B", dangerBg: "rgba(200,16,46,.14)", dangerLine: "#7d2029",
-    scUnder: "#7fd39a", scOver: "#f0897e", scBad: "#d93b3b",
-    topbarA: "#101012", topbarB: "#0b0b0c",
-    heroA: "#17171a", heroWash: "rgba(255,255,255,.05)",
-    toastBg: "#232327", onToast: "#f4f2ee",
-    milestone: "#EFC94C",
-    shadow: "0 1px 3px rgba(0,0,0,.42)",
   },
 };
 
@@ -204,6 +217,9 @@ export function savedMode() {
   const v = localStorage.getItem(MODE_KEY);
   if (PICKABLE.includes(v)) return v;
   if (v === "system") return "system";
+  /* A club that no longer exists - a relocation, or a hand-edited value -
+     falls through to the default rather than painting an empty palette. */
+  if (isTeamMode(v)) return teamModeFor(codeOfMode(v)) || DEFAULT_MODE;
   return DEFAULT_MODE;                 // no preference recorded at all
 }
 
@@ -214,9 +230,33 @@ export function activeMode() {
   return media().matches ? "dark" : "light";
 }
 
+/*
+  THE PALETTE FOR A MODE NAME, whether it is one of the three written out
+  above or generated from a club. Everything downstream of here is identical
+  either way, which is why adding 32 palettes needed no new plumbing.
+*/
+function paletteFor(name) {
+  if (isTeamMode(name)) {
+    const t = modeTeam(name);
+    const built = t ? teamPalette(t) : null;
+    /* A club whose colours will not build is a bug, not a user error, so it
+       falls back to the default palette rather than to nothing. */
+    if (built) return built;
+    return MODES[DEFAULT_MODE];
+  }
+  return MODES[name] || MODES[DEFAULT_MODE];
+}
+
+/** A human name for any mode id, including a club. */
+export function modeLabel(id) {
+  const t = modeTeam(id);
+  if (t) return t.name;
+  return modeOptions().find((o) => o.id === id)?.name || id;
+}
+
 function apply() {
   const name = activeMode();
-  const m = MODES[name];
+  const m = paletteFor(name);
   const s = document.documentElement.style;
 
   /*
@@ -301,8 +341,25 @@ function apply() {
   s.setProperty("--theme-primary", fill);
   s.setProperty("--theme-secondary", fill2);
 
-  document.documentElement.setAttribute("data-mode", name);
-  document.body?.setAttribute("data-mode", name);
+  /*
+    data-mode CARRIES "team", NOT "team:KC".
+
+    Every [data-mode="..."] rule in the CSS tests for "light". Writing the
+    club into the same attribute would be a token no rule matches - which
+    is correct today but only by luck, and it would quietly break the first
+    rule anybody writes for `dark`. The mode stays a plain token and the
+    club goes in its own attribute, where a rule can reach it if it ever
+    needs to.
+  */
+  const token = isTeamMode(name) ? "team" : name;
+  document.documentElement.setAttribute("data-mode", token);
+  document.body?.setAttribute("data-mode", token);
+  const club = codeOfMode(name);
+  for (const el of [document.documentElement, document.body]) {
+    if (!el) continue;
+    if (club) el.setAttribute("data-team", club);
+    else el.removeAttribute("data-team");
+  }
   /* The browser chrome follows the page, not the crest: a red address bar
      over a light app looks like a different app. */
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", m.bg);
@@ -327,7 +384,9 @@ export function saveMode(value) {
   /* "system" is WRITTEN rather than cleared - see savedMode(). Removing the
      key would make an explicit "follow my phone" look like no preference,
      and the next person to change the default would silently overrule it. */
-  if (PICKABLE.includes(value) || value === "system") localStorage.setItem(MODE_KEY, value);
+  const team = isTeamMode(value) ? teamModeFor(codeOfMode(value)) : null;
+  if (team) localStorage.setItem(MODE_KEY, team);
+  else if (PICKABLE.includes(value) || value === "system") localStorage.setItem(MODE_KEY, value);
   else localStorage.removeItem(MODE_KEY);
   apply();
 }
@@ -339,6 +398,23 @@ export function modeOptions() {
     { id: "light", name: "Light" },
     { id: "medicine", name: "Medicine Wheel" },
   ];
+}
+
+/**
+ * The 32 clubs as mode options, for a picker that shows their logos.
+ *
+ * Kept out of modeOptions() on purpose: that list is a row of four buttons
+ * and a 36th entry would wreck it. These are a grid.
+ */
+export function teamOptions() {
+  return nflTeams().map((t) => ({
+    id: TEAM_PREFIX + t.code,
+    code: t.code,
+    name: t.name,
+    short: t.short,
+    primary: t.primary,
+    secondary: t.secondary,
+  }));
 }
 
 /* ---------------------------------------------------------------------

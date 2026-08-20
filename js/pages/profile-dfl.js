@@ -121,12 +121,3 @@ export function wireDflPage(view, member, isMe, refresh) {
   });
 }
 
-/*
-  Temporary compatibility for the shared Arena/Broadcast viewer.
-
-  Pet editing and pet presentation are gone. A stale import in broadcast.js
-  still asks for petOf(), though, and ES modules fail the entire page when a
-  named export disappears. Returning null keeps that old caller on its normal
-  arena_participants sprite/color path until the import itself is removed.
-*/
-export function petOf() { return null; }

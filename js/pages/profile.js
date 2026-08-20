@@ -14,7 +14,9 @@ import { shareProfile } from "../profile-share.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
 import { editControls, wireInline } from "../inline.js";
-import { saveMode, savedMode, activeMode, modeOptions } from "../theme.js";
+import { saveMode, savedMode, activeMode, modeOptions, teamOptions,
+         modeLabel, isTeamMode } from "../theme.js";
+import { teamLogo, teamCode } from "../nfl-teams.js";
 import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
 import { wireDflPage } from "./profile-dfl.js";
@@ -130,7 +132,7 @@ export async function render(view) {
       <div data-dfl-host></div>
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
-      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard()}` : ""}
+      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard(member)}` : ""}
       ${othersCard(members, member)}
     </div>
   `;
@@ -485,17 +487,36 @@ function wireGolfName(view, member) {
 /* The note names the mode the way the BUTTON does. Printing the raw id gave
    "Always medicine on this device." the moment a mode arrived whose id was
    not already an English word. */
-const modeName = (id) => modeOptions().find((o) => o.id === id)?.name || id;
-
 function modeNote() {
   const want = savedMode();
-  return want === "system"
-    ? `Following your phone, which is ${modeName(activeMode())} right now.`
-    : `Always ${modeName(want)} on this device.`;
+  if (want === "system") {
+    return `Following your phone, which is ${modeLabel(activeMode())} right now.`;
+  }
+  if (isTeamMode(want)) {
+    /* Naming the club alone would read as if the whole app had become that
+       team's app. It is the accents on a dark palette, and saying so is the
+       difference between a feature and a surprise. */
+    return `${modeLabel(want)} colours, on a dark palette.`;
+  }
+  return `Always ${modeLabel(want)} on this device.`;
 }
 
-function appearanceCard() {
+/*
+  THE CLUB GRID IS A GRID, NOT A 36TH BUTTON.
+
+  The four fixed palettes are a row of toggles and adding thirty-two more
+  to it would be unreadable. The clubs get their own block below, picked by
+  their real logo - which is the whole reason to have imported them.
+
+  A member who has set a favourite team gets it offered first, because that
+  is the one they actually want and hunting for it in an alphabetical grid
+  of thirty-two badges is a chore.
+*/
+function appearanceCard(member) {
   const want = savedMode();
+  const mine = teamCode(member?.favorite_team);
+  const clubs = teamOptions();
+
   return `
     <div class="card">
       <h3 class="card-heading">Appearance</h3>
@@ -505,26 +526,65 @@ function appearanceCard() {
                   data-mode-pick="${o.id}" aria-pressed="${o.id === want}">${esc(o.name)}</button>`).join("")}
       </div>
       <p class="muted tiny" id="mode-note">${esc(modeNote())}</p>
+
+      <div class="team-theme">
+        <div class="tt-head">
+          <span class="u-label">Team colours</span>
+          <span class="muted tiny">Your club's primary and secondary on a dark palette.</span>
+        </div>
+        ${mine && clubs.some((c) => c.code === mine) ? `
+          <button type="button" class="btn ghost small tt-mine"
+                  data-mode-pick="team:${esc(mine)}">
+            ${teamLogo(`nfl:${mine}`, { size: 18 })}<span>Use my team</span>
+          </button>` : ""}
+        <div class="tt-grid" role="radiogroup" aria-label="Team colours">
+          ${clubs.map((c) => {
+            const on = want === c.id;
+            return `<button type="button" class="tt-club${on ? " is-on" : ""}"
+              data-mode-pick="${esc(c.id)}" role="radio" aria-checked="${on}"
+              title="${esc(c.name)}" style="--tt-a:${esc(c.primary)};--tt-b:${esc(c.secondary)}">
+              ${teamLogo(`nfl:${c.code}`, { size: 26 })}
+              <span class="tt-code">${esc(c.code)}</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
     </div>`;
 }
 
 function wireThemePicker(view) {
-  const bar = view.querySelector("#mode-pick");
-  if (bar) bar.addEventListener("click", (e) => {
+  const card = view.querySelector("#mode-pick")?.closest(".card");
+  if (!card) return;
+
+  /*
+    ONE LISTENER FOR BOTH PICKERS, and it repaints the whole card's
+    selection rather than just the bar it was clicked in. Picking a club has
+    to clear the highlight on "Dark", and picking "Dark" has to clear the
+    club - two independent handlers each only knew about their own group and
+    left the app showing two selected palettes at once.
+  */
+  card.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-mode-pick]");
     if (!btn) return;
-    saveMode(btn.dataset.modePick);
-    // Repaint the bar and its note in place - re-rendering the whole profile
-    // to move one highlight would throw the page back to the top.
-    bar.querySelectorAll("[data-mode-pick]").forEach((b) => {
-      const on = b === btn;
+    const picked = btn.dataset.modePick;
+    saveMode(picked);
+
+    // Repaint in place - re-rendering the profile to move one highlight
+    // would throw the page back to the top.
+    const now = savedMode();
+    card.querySelectorAll("[data-mode-pick]").forEach((b) => {
+      const on = b.dataset.modePick === now;
+      /* .tt-mine is a shortcut, not a state: it points at the same mode as
+         one of the grid cells, so letting it light up would show two
+         selections for one choice. */
+      if (b.classList.contains("tt-mine")) return;
       b.classList.toggle("is-on", on);
-      b.setAttribute("aria-pressed", String(on));
+      if (b.hasAttribute("aria-checked")) b.setAttribute("aria-checked", String(on));
+      else b.setAttribute("aria-pressed", String(on));
     });
     const note = view.querySelector("#mode-note");
     if (note) note.textContent = modeNote();
   });
-
 }
 
 // ------------------------------ others --------------------------------

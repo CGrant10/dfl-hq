@@ -20,7 +20,6 @@
 
 import { db, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
-import { petOf } from "./profile-dfl.js";
 import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
@@ -78,19 +77,24 @@ export async function render(view) {
 
   const racers = parts.map((p, i) => {
     /*
-      THE DFL PET IS THE RACER, when the member has made one. Presentation
-      only: the sprite key and the lane colour are all that change, and
-      simulate() never sees either - so the winner, the finish times and
-      the order are byte for byte what they were.
+      THE RACER IS ITS PARTICIPANT ROW. The sprite key, the picture and the
+      lane colour all come from arena_participants, and simulate() sees none
+      of them - so the winner, the finish times and the order are byte for
+      byte what they were.
+
+      This used to layer the member's DFL Pet on top when they had made one.
+      The pet is gone, and removing its export from profile-dfl.js while this
+      import was still here took the whole Broadcast page down with it: a
+      missing named export is a module-level failure, not a quiet undefined.
+      The compatibility stub added to cover that is no longer needed.
     */
-    const pet = petOf(byId.get(String(p.member_id)));
     return {
       id: p.member_id,
       name: byId.get(String(p.member_id))?.display_name || "Unknown",
-      sprite: pet?.species || p.sprite,
-      image: pet ? null : p.sprite_image,
-      color: pet?.color || p.color || LANE_COLORS[i % LANE_COLORS.length],
-      pet,
+      sprite: p.sprite,
+      image: p.sprite_image,
+      color: p.color || LANE_COLORS[i % LANE_COLORS.length],
+      pet: null,
       number: p.number ?? i + 1,
     };
   });
