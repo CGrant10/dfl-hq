@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACCENTS, DEFAULT_ACCENT, accentOf, isChampionTitle, ordinalPlace,
   titleChoices, achievementChoices, achievementOptions, displayAchievement,
+  ringCount, MAX_RINGS,
 } from "./identity-rules.js";
 
 const CAREER = { titles: [2021, 2023], runnerUps: [2020], playoffs: [2020, 2021, 2023] };
@@ -167,5 +168,23 @@ describe("data saved by older releases", () => {
     expect(displayAchievement({ featured_achievement: "  padded  " })).toBe("padded");
     expect(displayAchievement({})).toBe("");
     expect(displayAchievement(null)).toBe("");
+  });
+});
+
+describe("ringCount", () => {
+  it("is zero for a title that is not a ring", () => {
+    expect(ringCount({ profile_title: "DFL Finalist", championships: 3 })).toBe(0);
+    expect(ringCount({ profile_title: "", championships: 3 })).toBe(0);
+  });
+  it("reads the count out of the title first", () => {
+    expect(ringCount({ profile_title: "3× DFL Champion", championships: 1 })).toBe(3);
+    expect(ringCount({ profile_title: "2x DFL Champion" })).toBe(2);
+  });
+  it("falls back to the member's championship count", () => {
+    expect(ringCount({ profile_title: "DFL Champion", championships: 2 })).toBe(2);
+    expect(ringCount({ profile_title: "DFL Champion" })).toBe(1);
+  });
+  it("caps the row so a pill cannot fill with glyphs", () => {
+    expect(ringCount({ profile_title: "DFL Champion", championships: 40 })).toBe(MAX_RINGS);
   });
 });

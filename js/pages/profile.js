@@ -203,7 +203,15 @@ export async function render(view) {
     render(view);
   });
 
-  view.querySelector("#switch-member")?.addEventListener("click", () => {
+  /*
+    DELEGATED, because the button is inside a card that repaints itself.
+    profile-dfl.js replaces the whole card's innerHTML whenever the editor
+    opens or is cancelled, so a listener bound to the button node was alive
+    exactly until the first time somebody tapped Edit and then Cancel -
+    after that "Not you? Switch" was a button with nothing behind it.
+  */
+  view.addEventListener("click", (e) => {
+    if (!e.target.closest("#switch-member")) return;
     window.dispatchEvent(new CustomEvent("dfl:pick-member"));
   });
 }

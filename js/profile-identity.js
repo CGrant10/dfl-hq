@@ -49,12 +49,28 @@ import { nflTeams, teamCode, teamValue, teamLogo, teamName, teamColor,
    knows, and moving them was a refactor, not an API change. */
 import {
   ACCENTS, accentOf, isChampionTitle, titleChoices, achievementChoices,
-  achievementOptions, displayAchievement,
+  achievementOptions, displayAchievement, ringCount,
 } from "./identity-rules.js";
 export {
   ACCENTS, accentOf, isChampionTitle, titleChoices, achievementChoices,
-  achievementOptions, displayAchievement,
+  achievementOptions, displayAchievement, ringCount,
 };
+
+/*
+  ONE TROPHY PER RING. A two-time champion gets two, a three-time gets
+  three - the count is the point, and a number beside a single glyph reads
+  as a label where a row of trophies reads as a record.
+
+  They are wrapped rather than emitted loose so the row is one flex item:
+  inside a pill that ellipsises a long title, three separate glyphs were
+  three separate things the browser could shrink away.
+*/
+function rings(member, size) {
+  const n = ringCount(member);
+  if (!n) return "";
+  return `<span class="idp-rings" aria-label="${n} championship${n === 1 ? "" : "s"}">${
+    icon("trophy", { size }).repeat(n)}</span>`;
+}
 
 
 // ------------------------------------------------------------- display
@@ -70,7 +86,7 @@ export function profileIdentityDisplay(member) {
        gets gold, and the trophy, on every theme. */
     const champ = isChampionTitle(title);
     bits.push(`<span class="idp is-title${champ ? " is-champion" : ""}">${
-      champ ? icon("trophy", { size: 13 }) : ""}<span>${esc(title)}</span></span>`);
+      champ ? rings(member, 13) : ""}<span>${esc(title)}</span></span>`);
   }
   const fav = teamName(member?.favorite_team);
   if (fav) {
@@ -112,7 +128,7 @@ export function identityByline(member) {
   if (title) {
     const champ = isChampionTitle(title);
     bits.push(`<span class="ib-title${champ ? " is-champion" : ""}">${
-      champ ? icon("trophy", { size: 12 }) : ""}<span>${esc(title)}</span></span>`);
+      champ ? rings(member, 12) : ""}<span>${esc(title)}</span></span>`);
   }
 
   const code = teamCode(member.favorite_team);

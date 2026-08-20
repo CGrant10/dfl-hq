@@ -144,3 +144,24 @@ export function displayAchievement(member) {
   const stored = String(member?.featured_achievement || "").trim();
   return stored && !isChampionTitle(stored) ? stored : "";
 }
+
+/**
+ * HOW MANY TROPHIES A TITLE IS WORTH.
+ *
+ * The title is the claim, so the title is read first: "3× DFL Champion"
+ * says three whatever the member row holds. A plain "DFL Champion" falls
+ * back to the championships column, because somebody with two rings who
+ * prefers the unnumbered title has still won twice and the card should
+ * show it.
+ *
+ * Capped, because a run of identical glyphs stops being a count and starts
+ * being a texture - and the pill has a title to fit as well.
+ */
+export const MAX_RINGS = 5;
+export function ringCount(member) {
+  const title = String(member?.profile_title || "");
+  if (!isChampionTitle(title)) return 0;
+  const stated = title.match(/(\d+)\s*(?:×|x)/i);
+  const n = stated ? Number(stated[1]) : Math.max(1, Number(member?.championships) || 0);
+  return Math.min(Math.max(n, 1), MAX_RINGS);
+}

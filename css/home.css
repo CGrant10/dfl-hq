@@ -311,6 +311,21 @@
   color: var(--gold-2);
   filter: drop-shadow(0 0 3px rgba(212, 175, 55, .55));
 }
+/*
+  THE RINGS MUST NOT BE SHRUNK AWAY. The pill is a flex row that ellipsises
+  a long title, and an <svg> is a flex item like any other: on a narrow
+  phone the browser took the 13px it needed out of the trophy first and the
+  glyph collapsed to nothing, which is exactly "the trophy does not show".
+  flex none on the row and on each glyph makes the title the only thing
+  that gives way.
+*/
+.idp-rings {
+  display: inline-flex; align-items: center; gap: 1px;
+  flex: none;
+}
+.idp-rings .ico,
+.ib-title .ico,
+.idp .ico { flex: none; }
 .idp.is-title.is-champion {
   background: linear-gradient(180deg, rgba(212,175,55,.14), rgba(212,175,55,.05));
 }
@@ -571,12 +586,12 @@
 .btn .ico-trophy,
 .pill .ico-trophy,
 .badge .ico-trophy,
-.is-champion .ico-trophy { fill: url(#dfl-gold-grad); }
+.is-champion .ico-trophy { fill: url(#dfl-gold-grad) #d4af37; }
 .ico-trophy [stroke="currentColor"],
 .btn .ico-trophy [stroke="currentColor"],
 .pill .ico-trophy [stroke="currentColor"],
 .badge .ico-trophy [stroke="currentColor"],
-.is-champion .ico-trophy [stroke="currentColor"] { stroke: url(#dfl-gold-grad); }
+.is-champion .ico-trophy [stroke="currentColor"] { stroke: url(#dfl-gold-grad) #d4af37; }
 /* The drop shadow is what makes it read as shiny rather than just yellow. */
 .ico-trophy { filter: drop-shadow(0 0 2px rgba(212, 175, 55, .45)); }
 .nfl-logo {
