@@ -30,40 +30,35 @@ export function activityLine(row, { now = Date.now() } = {}) {
     who,
     text: `${verb} ${what}`,
     when: whenText(row.last_at, now),
-    commissioner: row.as_commissioner === true,
     memberId: row.member_id || null,
   };
 }
 
-async function drawCommunity() {
+async function drawWall() {
   const slot = document.querySelector("[data-wall-slot]");
   if (!slot) return;
   try {
     const wall = await import("./member-wall.js");
     const rows = await wall.loadWall();
     slot.innerHTML = wall.wallCard(rows);
-    wall.wireWall(slot, drawCommunity);
-    const { isAdmin } = await import("./supabase.js");
-    if (isAdmin()) {
-      const inbox = await import("./broadcast-inbox.js");
-      const html = await inbox.broadcastInboxHtml();
-      if (html) {
-        const holder = document.createElement("div");
-        holder.dataset.wallInbox = "1";
-        holder.innerHTML = html;
-        slot.appendChild(holder);
-        inbox.wireBroadcastInbox(holder, drawCommunity);
-      }
-    }
+    wall.wireWall(slot, drawWall);
   } catch (err) {
-    console.warn("community wall unavailable", err);
+    console.warn("member wall unavailable", err);
     slot.innerHTML = "";
   }
 }
 
 export function activityCard(rows) {
-  const lines = (rows || []).filter((r) => r.as_commissioner !== true).map((r) => activityLine(r));
-  if (typeof document !== "undefined") queueMicrotask(drawCommunity);
+  // Commissioner/admin writes are intentionally absent. The feed is for member
+  // activity, not a running audit log of league maintenance.
+  const lines = (rows || [])
+    .filter((r) => r.as_commissioner !== true)
+    .map((r) => activityLine(r));
+
+  // The Wall is independent of the activity migration, so it still appears if
+  // activity_feed has not been installed or has nothing to show.
+  if (typeof document !== "undefined") queueMicrotask(drawWall);
+
   return `${lines.length ? `<section class="block">
     <h2 class="section-title">Activity</h2>
     <div class="card"><div class="card-body"><ul class="act-list">${lines.map((l) => `

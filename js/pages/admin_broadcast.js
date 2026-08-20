@@ -16,8 +16,8 @@
 // renderer" would be a second thing to keep in sync, and it would drift.
 //
 // SECURITY: this panel is a convenience, not a control. Every write it
-// makes is refused by RLS unless is_admin() passes on the request
-// itself. Hiding this tab protects nothing and is not relied on.
+// makes is refused by RLS unless the request has the matching commissioner
+// permission. Hiding this tab protects nothing and is not relied on.
 // =====================================================================
 import { esc, toast, errorBox } from "../ui.js";
 import { db } from "../supabase.js";
@@ -29,6 +29,7 @@ import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
 import { imageFieldHtml, wireImageFields } from "../image-field.js";
 import { clearLore } from "../lore.js";
 import { refreshBottomlineNow } from "../bottomline.js";
+import { broadcastInboxHtml, wireBroadcastInbox } from "../broadcast-inbox.js";
 
 wireImageFields();
 
@@ -61,6 +62,7 @@ function refreshBar(label) {
 export async function renderBroadcastPanel(host) {
   host.innerHTML = `
     ${refreshBar("Refresh the broadcast")}
+    <div data-broadcast-inbox-slot></div>
     <section class="block" data-bx-order>
       <h2 class="section-title">Running order</h2>
       <div data-bx-rows></div>
@@ -75,6 +77,11 @@ export async function renderBroadcastPanel(host) {
       </div>
     </section>`;
 
+  const inboxSlot = host.querySelector("[data-broadcast-inbox-slot]");
+  if (inboxSlot) {
+    inboxSlot.innerHTML = await broadcastInboxHtml();
+    wireBroadcastInbox(inboxSlot, () => renderBroadcastPanel(host));
+  }
   await renderOrder(host.querySelector("[data-bx-rows]"));
   renderManager(host.querySelector("[data-bx-manager]"), specFor("broadcast_items"));
   await renderSources(host.querySelector("[data-bx-switches]"));

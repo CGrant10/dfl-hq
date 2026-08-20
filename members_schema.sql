@@ -51,7 +51,7 @@ create table if not exists public.members (
   display_name   text not null unique,
   team_name      text not null default '',
   profile_image  text,                    -- optional URL
-  favorite_team  text,                    -- e.g. "nfl:KC" - drives the app theme
+  favorite_team  text,                    -- e.g. "nfl:KC"
   joined_year    int,
   championships  int not null default 0,
   awards         text not null default '',  -- one per line
@@ -62,6 +62,12 @@ create table if not exists public.members (
   sort_order     int not null default 0,
   created_at     timestamptz not null default now()
 );
+
+-- CREATE TABLE IF NOT EXISTS does not add columns to an existing table. Keep
+-- newer profile fields additive so re-running this migration actually upgrades
+-- a league that created members before Favorite Team existed.
+alter table public.members
+  add column if not exists favorite_team text;
 
 create index if not exists idx_members_sleeper on public.members(sleeper_user_id);
 
