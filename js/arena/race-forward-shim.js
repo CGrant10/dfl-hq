@@ -5,18 +5,32 @@ export * from "./race.js?legacy=1";
 
 import { simulateForwardRace } from "./duck-physics.js";
 
+/*
+  DURATION MEANS WATCH TIME.
+
+  The story-race model deliberately allows 2x-3.6x surges. Feeding the old
+  nominal tick count straight into that model made a 1500-tick (~60 second)
+  configuration finish in roughly ten seconds because the winner spent much
+  of the race above baseline pace. Keep the drama, but give it a longer
+  internal course so the configured duration once again approximates the time
+  a viewer watches before P1 crosses.
+
+  Six is empirical calibration against the current story bands. It does not
+  change relative racer behavior, order, seed determinism, or post-P1 clear;
+  it only maps the human-facing duration onto the faster dramatic physics.
+*/
+const STORY_TIME_CALIBRATION = 6;
+
 export function simulate(racers, ticks, seed) {
-  return simulateForwardRace(racers, ticks, seed);
+  const calibratedTicks = Math.max(1, Math.round((Number(ticks) || 1) * STORY_TIME_CALIBRATION));
+  return simulateForwardRace(racers, calibratedTicks, seed);
 }
 
 export function dramatize(sim) {
   return { shown: sim.samples, events: [] };
 }
 
-/* Keep result presentation on an overlay plane, but never over the controls.
-   A later cinematic selector used to turn both the winner and the control bar
-   back into relative grid children. The winner shoved the race upward and then
-   sat above the buttons. Lock both layers to their intended jobs here. */
+/* Keep result presentation on an overlay plane, but never over the controls. */
 if (typeof document !== "undefined" && !document.getElementById("arena-novelty-overrides")) {
   const style = document.createElement("style");
   style.id = "arena-novelty-overrides";
@@ -35,17 +49,7 @@ if (typeof document !== "undefined" && !document.getElementById("arena-novelty-o
   document.head.appendChild(style);
 }
 
-/*
-  RUN THROUGH THE LINE.
-
-  Before the line, the simulation owns position. At the exact crossing we
-  immediately continue at a deliberately strong screen-readable run-out pace.
-  There is no ease, settle, parking, or finish-state brake.
-
-  7.5x is intentionally only a small step up from the previous 6x. The race
-  itself finally feels right, so this is not another physics rewrite; it just
-  shortens the visible moment a finished racer spends near the stripe.
-*/
+/* Run through the line without any finish-state brake. */
 export function presentFinish(racerFrame, elapsedMs, trajectory, celebrating = false) {
   if (!racerFrame) return racerFrame;
   if (!trajectory || elapsedMs < trajectory.finishMs) {
