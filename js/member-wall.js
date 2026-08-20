@@ -1,63 +1,16 @@
 // =====================================================================
 // member-wall.js - The Wall. Members post, everybody reads.
-// ---------------------------------------------------------------------
-// THE BYLINE IS THE IDENTITY SURFACE. A member's title and club sit on a
-// second line under their name, tinted with the accent colour they chose
-// on their profile. That is the answer to "where would this even show" -
-// identity is attached to what somebody says, not parked on a page.
-//
-// The accent is scoped to the post: it is set as --ident on the <article>
-// and only read by that post's own byline and left edge, so twelve
-// members with twelve colours produce a readable list rather than a
-// paint chart.
-//
-// THE STYLES LIVE IN css/home.css. They used to be a template string
-// injected into <head> on first render, which meant the Wall's layout
-// could not be themed, overridden or seen by anybody reading the
-// stylesheets - and it re-ran the same insert on every route change.
-//
-// DEGRADES WITHOUT ITS MIGRATIONS. loadWall() returns null when
-// member_wall_posts is absent and the section is simply not drawn. The
-// identity columns are newer still, so the select asks for them and
-// retries without them if the database has not caught up.
 // =====================================================================
 
-import { db } from "./supabase.js";
+import { db, isAdmin } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { shrinkToDataUri } from "./image-field.js";
 import { icon } from "./icons.js";
 import { identityByline, accentOf } from "./profile-identity.js";
 
-/*
-  TWO DIFFERENT FAILURES THAT BOTH SAY "does not exist".
-
-    relation "public.member_wall_posts" does not exist   -> no table
-    column members.accent_color does not exist           -> no column
-
-  So the table check has to name the table rather than match the phrase.
-  Testing the phrase alone treated a missing accent colour as a missing
-  Wall and hid the whole section on a database that was one migration
-  behind - which is every database in the minute after a release.
-*/
 const TABLE_GONE = /member_wall_posts|could not find the table/i;
 const COLUMN_GONE = /profile_title|favorite_team|featured_achievement|accent_color/i;
-
-/*
-  THREE SHAPES OF THE SAME READ, TRIED WIDEST FIRST.
-
-  The identity columns arrived in two separate migrations, so a league can
-  legitimately be at any of three points: everything, the identity columns
-  without the accent colour, or neither.
-
-  featured_achievement WAS MISSING FROM ALL THREE. identityByline() started
-  rendering it and this query never asked for it, so every wall post lost
-  its achievement silently - the field was simply undefined and the byline
-  dropped it without complaint. Falling straight from "everything" to
-  "neither" would silently drop every byline on a database that is only one
-  migration behind - which is the common case right after a release. Each
-  step down loses exactly the columns that are actually missing.
-*/
 const SELECTS = [
   "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)",
   "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement)",
@@ -65,21 +18,13 @@ const SELECTS = [
 ];
 
 export async function loadWall(limit = 12) {
-  const read = (columns) => db()
-    .from("member_wall_posts")
-    .select(columns)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
+  const read = (columns) => db().from("member_wall_posts").select(columns)
+    .order("created_at", { ascending: false }).limit(limit);
   let last = null;
   for (const columns of SELECTS) {
     const { data, error } = await read(columns);
     if (!error) return data || [];
     last = error;
-    /* A missing identity column is the ONLY thing worth retrying narrower,
-       and it is checked first because its message shares the "does not
-       exist" wording with a missing table. Anything else - no table, a
-       policy refusal, a network fault - stops the loop here. */
     if (!COLUMN_GONE.test(error.message || "")) break;
   }
   if (TABLE_GONE.test(last?.message || "")) return null;
@@ -93,11 +38,7 @@ export function wallCard(rows) {
     <h2 class="section-title">The Wall</h2>
     <div class="card wall-card">
       ${me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
-      <div class="wall-posts">${
-        rows.length
-          ? rows.map(postHtml).join("")
-          : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`
-      }</div>
+      <div class="wall-posts">${rows.length ? rows.map(postHtml).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
     </div>
   </section>`;
 }
@@ -117,18 +58,6 @@ function composer() {
   </form>`;
 }
 
-/*
-  A COMPACT STAMP, because the long one was taking a quarter of a phone.
-
-  "Aug 20, 11:57 AM" measured 94px of a 375px screen - metadata winning
-  more room than the author's title. A post's age is what a reader actually
-  wants ("4h", "2d"), and it is a third of the width. The exact time is
-  still on the element: datetime for machines, title for a hover or a long
-  press, so nothing is lost, only shortened.
-
-  Beyond a week the relative form stops meaning anything, so it becomes a
-  date - and a date in another year says which year.
-*/
 function stamp(iso, now = Date.now()) {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return "";
@@ -141,53 +70,59 @@ function stamp(iso, now = Date.now()) {
   const days = Math.round(hours / 24);
   if (days <= 7) return `${days}d`;
   const sameYear = at.getFullYear() === new Date(now).getFullYear();
-  return at.toLocaleDateString([], sameYear
-    ? { month: "short", day: "numeric" }
-    : { month: "short", day: "numeric", year: "numeric" });
+  return at.toLocaleDateString([], sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
 }
-
-/** The full date and time, for the title attribute. */
 function stampFull(iso) {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return "";
   return at.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
-
-const initials = (name) =>
-  String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
+const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
 function postHtml(r) {
   const m = r.members || {};
+  const me = currentMember();
+  const own = !!me && String(me.id) === String(r.member_id);
+  const canDelete = own || isAdmin();
   const name = m.display_name || "Member";
   const avatar = m.profile_image
     ? `<img class="wall-avatar" src="${esc(m.profile_image)}" alt="" loading="lazy" decoding="async">`
     : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
   const byline = identityByline(m);
+  const controls = own || canDelete ? `<div class="wall-manage row-end">
+    ${own ? `<button class="linkbtn tiny" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}
+    ${canDelete ? `<button class="linkbtn tiny danger" type="button" data-wall-delete="${esc(r.id)}">Delete</button>` : ""}
+  </div>` : "";
+  const editForm = own ? `<form class="wall-edit hidden" data-wall-edit-form="${esc(r.id)}" data-has-image="${r.image ? "1" : "0"}">
+    <textarea maxlength="500" rows="3" data-wall-edit-body>${esc(r.body || "")}</textarea>
+    <div class="row-end">
+      <button class="btn ghost small" type="button" data-wall-edit-cancel="${esc(r.id)}">Cancel</button>
+      <button class="btn small" type="submit">Save</button>
+    </div>
+  </form>` : "";
 
-  /*
-    THE BYLINE IS ITS OWN ROW, not a second line inside the name column.
-
-    On a 375px phone that column is 161px once the avatar and the timestamp
-    have taken theirs, and a title, a club and an achievement need about
-    213 - so every one of them truncated at once and the byline read
-    "DFL Ch… CHI 4 playo…". Given a row of its own it spans the name and
-    timestamp columns together, which is enough for all three, and it is
-    allowed to wrap if it still is not.
-  */
-  return `<article class="wall-post" style="--ident:${esc(accentOf(m))}">
+  return `<article class="wall-post" data-wall-post="${esc(r.id)}" data-wall-owner="${esc(r.member_id)}" style="--ident:${esc(accentOf(m))}">
     <div class="wall-head${byline ? " has-byline" : ""}">
       ${avatar}
       <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}">${esc(name)}</a>
-      <time class="wall-when muted tiny" datetime="${esc(r.created_at)}"
-        title="${esc(stampFull(r.created_at))}">${esc(stamp(r.created_at))}</time>
+      <time class="wall-when muted tiny" datetime="${esc(r.created_at)}" title="${esc(stampFull(r.created_at))}">${esc(stamp(r.created_at))}</time>
       ${byline}
     </div>
-    ${r.body ? `<p class="wall-body">${esc(r.body)}</p>` : ""}
-    ${r.image ? `<img class="wall-photo" src="${esc(r.image)}"
-        alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
-    ${r.image ? `<button class="wall-submit linkbtn" type="button" data-submit-broadcast="${esc(r.id)}">
-        ${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
+    ${r.body ? `<p class="wall-body" data-wall-body-display>${esc(r.body)}</p>` : `<p class="wall-body hidden" data-wall-body-display></p>`}
+    ${editForm}
+    ${r.image ? `<img class="wall-photo" src="${esc(r.image)}" alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
+    <div class="wall-post-actions">
+      ${r.image ? `<button class="wall-submit linkbtn" type="button" data-submit-broadcast="${esc(r.id)}">${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
+      ${controls}
+    </div>
   </article>`;
+}
+
+async function mutatePost(id, action) {
+  const q = action(db().from("member_wall_posts")).eq("id", id).select("id");
+  const { data, error } = await q;
+  if (error) throw error;
+  if (!data?.length) throw new Error("That Wall change was refused.");
 }
 
 export function wireWall(root, onChanged) {
@@ -220,17 +155,56 @@ export function wireWall(root, onChanged) {
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = "Posting…";
-    const { error } = await db()
-      .from("member_wall_posts")
-      .insert({ member_id: me.id, body, image: image || null });
-    if (error) {
-      btn.disabled = false;
-      btn.textContent = "Post";
-      toast(error.message, true);
-      return;
-    }
+    const { error } = await db().from("member_wall_posts").insert({ member_id: me.id, body, image: image || null });
+    if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
     toast("Posted");
     onChanged?.();
+  });
+
+  root.addEventListener("click", async (e) => {
+    const edit = e.target.closest("[data-wall-edit]");
+    if (edit) {
+      const id = edit.dataset.wallEdit;
+      const post = root.querySelector(`[data-wall-post="${CSS.escape(id)}"]`);
+      post?.querySelector("[data-wall-body-display]")?.classList.add("hidden");
+      post?.querySelector(`[data-wall-edit-form="${CSS.escape(id)}"]`)?.classList.remove("hidden");
+      return;
+    }
+    const cancel = e.target.closest("[data-wall-edit-cancel]");
+    if (cancel) {
+      const id = cancel.dataset.wallEditCancel;
+      const post = root.querySelector(`[data-wall-post="${CSS.escape(id)}"]`);
+      post?.querySelector("[data-wall-body-display]")?.classList.remove("hidden");
+      post?.querySelector(`[data-wall-edit-form="${CSS.escape(id)}"]`)?.classList.add("hidden");
+      return;
+    }
+    const del = e.target.closest("[data-wall-delete]");
+    if (del) {
+      if (!confirm("Delete this Wall post?")) return;
+      del.disabled = true;
+      try {
+        await mutatePost(Number(del.dataset.wallDelete), (q) => q.delete());
+        toast("Post deleted");
+        onChanged?.();
+      } catch (err) { del.disabled = false; toast(err.message || "Could not delete post", true); }
+      return;
+    }
+  });
+
+  root.addEventListener("submit", async (e) => {
+    const editForm = e.target.closest("[data-wall-edit-form]");
+    if (!editForm) return;
+    e.preventDefault();
+    const id = Number(editForm.dataset.wallEditForm);
+    const body = String(editForm.querySelector("[data-wall-edit-body]")?.value || "").trim();
+    if (!body && editForm.dataset.hasImage !== "1") { toast("A text-only post cannot be empty", true); return; }
+    const btn = editForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+      await mutatePost(id, (q) => q.update({ body }));
+      toast("Post updated");
+      onChanged?.();
+    } catch (err) { btn.disabled = false; toast(err.message || "Could not update post", true); }
   });
 
   root.querySelectorAll("[data-submit-broadcast]").forEach((btn) => {
@@ -239,23 +213,10 @@ export function wireWall(root, onChanged) {
       if (!me) return;
       btn.disabled = true;
       const id = Number(btn.dataset.submitBroadcast);
-      const { data, error } = await db()
-        .from("member_wall_posts").select("image,body").eq("id", id).single();
-      if (error || !data?.image) {
-        btn.disabled = false;
-        toast("Could not load that picture", true);
-        return;
-      }
-      const { error: submitError } = await db().from("broadcast_submissions").insert({
-        member_id: me.id,
-        image: data.image,
-        caption: String(data.body || "").slice(0, 180),
-      });
-      if (submitError) {
-        btn.disabled = false;
-        toast(submitError.message, true);
-        return;
-      }
+      const { data, error } = await db().from("member_wall_posts").select("image,body").eq("id", id).single();
+      if (error || !data?.image) { btn.disabled = false; toast("Could not load that picture", true); return; }
+      const { error: submitError } = await db().from("broadcast_submissions").insert({ member_id: me.id, image: data.image, caption: String(data.body || "").slice(0, 180) });
+      if (submitError) { btn.disabled = false; toast(submitError.message, true); return; }
       btn.classList.add("is-sent");
       btn.innerHTML = `${icon("check", { size: 14 })}<span>Submitted</span>`;
       toast("Sent to the Broadcast inbox");
