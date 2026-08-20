@@ -7,9 +7,17 @@
 // suddenly slowed down.
 //
 // Keep the runtime as the source for every other presentation decision, but
-// replace ONLY groundRatio with a constant-speed approach that reaches the
-// crossing point on the winner's actual finish frame. No racer progress,
+// replace ONLY the finish approach and course-stop timing. No racer progress,
 // finish time, order, or run-off geometry is touched.
+//
+// The visual rule is now whole-field, not winner-only:
+//   1. Before P1, the finish stripe and course travel together at constant speed.
+//   2. On P1's exact crossing frame, the stripe reaches the line and the course
+//      locks into a fixed finish camera.
+//   3. P2 through the final racer keep running through that same fixed line.
+//
+// That removes the optical "everyone slows at the line" effect for the entire
+// field: there is never a stationary stripe against a still-moving background.
 
 export * from "./pixi-runtime.js?finish-base=1";
 import { createFinishPresentation as createBaseFinishPresentation } from "./pixi-runtime.js?finish-base=1";
@@ -27,12 +35,18 @@ export function createFinishPresentation(input) {
 
   if (!Number.isFinite(firstFinishMs) || !Number.isFinite(elapsedMs)) return finish;
 
-  // Constant velocity all the way to the crossing. The line never eases into
-  // a parking spot and never sits in the middle of the screen waiting for P1.
+  // Constant velocity all the way to P1's actual crossing. The stripe never
+  // eases into a parking spot and never sits in the frame while the ground
+  // continues sliding underneath it.
   const startMs = firstFinishMs - FINISH_ROLL_MS;
   const arrival = clamp01((elapsedMs - startMs) / FINISH_ROLL_MS);
   finish.groundRatio = FINISH_ENTRY_RATIO
     + (FINISH_LINE_RATIO - FINISH_ENTRY_RATIO) * arrival;
+
+  // Whole-field finish camera. The instant P1 crosses, both the stripe and the
+  // world stop translating. Every later racer therefore crosses a stationary
+  // line against stationary course scenery while their own motion stays live.
+  finish.courseStopped = elapsedMs >= firstFinishMs;
 
   return finish;
 }
