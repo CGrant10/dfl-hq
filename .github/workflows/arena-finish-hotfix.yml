@@ -33,69 +33,60 @@ jobs:
           from pathlib import Path
           import json, re
 
-          # Arena: presets keep their exact current 900ms theatre close.
-          # Custom races longer than the long preset get a proportionally
-          # longer closing window so a 60s race does not spend its last beat
-          # visually parked near the stripe waiting for truth to catch up.
           p = Path('src/arena/theatre.ts')
           s = p.read_text()
-          old = '''export function closingEase(msToFinish: number): number {
-            if (msToFinish <= 0) return 0;
-            if (msToFinish >= CLOSE_MS) return 1;
-            return smoothstep(msToFinish / CLOSE_MS);
-          }'''
-          new = '''export function closingEase(msToFinish: number, windowMs = CLOSE_MS): number {
+          pattern = re.compile(
+              r'export function closingEase\(msToFinish: number\): number \{\s*'
+              r'if \(msToFinish <= 0\) return 0;\s*'
+              r'if \(msToFinish >= CLOSE_MS\) return 1;\s*'
+              r'return smoothstep\(msToFinish / CLOSE_MS\);\s*\}'
+          )
+          replacement = '''export function closingEase(msToFinish: number, windowMs = CLOSE_MS): number {
             const window = Math.max(1, windowMs);
             if (msToFinish <= 0) return 0;
             if (msToFinish >= window) return 1;
             return smoothstep(msToFinish / window);
           }
 
-          /**
-           * Keep the three shipped presets byte-for-byte on their established
-           * finish feel. A custom race longer than Long scales the theatre close
-           * with its duration instead of cramming the same correction into 900ms.
-           */
+          /** Custom races longer than the shipped presets get a proportionally
+           * longer theatre close. The three presets keep their existing feel. */
           export function closingWindowMs(ticks: number): number {
             const rounded = Math.round(Number(ticks) || 0);
             if (rounded === 300 || rounded === 550 || rounded === 900) return CLOSE_MS;
             return Math.max(CLOSE_MS, Math.min(2400, rounded));
           }'''
-          if old not in s:
-            raise SystemExit('closingEase anchor not found')
-          s = s.replace(old, new, 1)
+          s, n = pattern.subn(replacement, s, count=1)
+          if n != 1:
+              raise SystemExit('closingEase anchor not found')
+
+          finish_anchor = '  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));'
+          if finish_anchor not in s:
+              raise SystemExit('finish map anchor not found')
+          s = s.replace(finish_anchor, finish_anchor + '\n  const closeMs = closingWindowMs(sim.ticks);', 1)
 
           old_gate = 'const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS) * openEase(truth);'
-          new_gate = 'const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS, closeMs) * openEase(truth);'
           if old_gate not in s:
-            raise SystemExit('theatre gate anchor not found')
-          s = s.replace('  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));',
-                        '  const finishOf = new Map(sim.order.map((o) => [o.index, o.finishMs]));\n  const closeMs = closingWindowMs(sim.ticks);', 1)
-          s = s.replace(old_gate, new_gate, 1)
+              raise SystemExit('theatre gate anchor not found')
+          s = s.replace(old_gate,
+              'const gate = launchEase(truth) * closingEase(finishMs - t * TICK_MS, closeMs) * openEase(truth);', 1)
           p.write_text(s)
 
-          # Broadcast commissioner bar: preserve button tap targets; just stop
-          # the black pill padding/gap from ballooning on a large fullscreen view.
           p = Path('css/broadcast.css')
           s = p.read_text()
-          old = '''  gap: .6vw;
-            padding: .7vw .9vw;'''
-          new = '''  gap: clamp(4px, .35vw, 8px);
-            padding: clamp(4px, .35vw, 7px) clamp(6px, .5vw, 10px);'''
-          if old not in s:
-            raise SystemExit('broadcast bar spacing anchor not found')
-          s = s.replace(old, new, 1)
+          s, n = re.subn(
+              r'(\.bc-bar\s*\{.*?display:\s*flex;.*?align-items:\s*center;\s*)gap:\s*\.6vw;\s*padding:\s*\.7vw\s+\.9vw;',
+              r'\1gap: clamp(4px, .35vw, 8px);\n  padding: clamp(4px, .35vw, 7px) clamp(6px, .5vw, 10px);',
+              s, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('broadcast bar spacing anchor not found')
           p.write_text(s)
 
-          # Profile identity module is now imported by profile-dfl.js, so make
-          # sure the service worker knows about it on installed devices.
           p = Path('sw.js')
           s = p.read_text()
           if '"./js/profile-identity.js"' not in s:
-            s = s.replace('"./js/profile-share.js"', '"./js/profile-share.js","./js/profile-identity.js"')
+              s = s.replace('"./js/profile-share.js"', '"./js/profile-share.js","./js/profile-identity.js"')
           p.write_text(s)
 
-          # One synchronized release. Keep the release floor aligned too.
           v = '1.109.69'
           Path('version.txt').write_text(v + '\n')
 
