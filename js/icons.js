@@ -14,6 +14,8 @@
 // size and get the same optical weight.
 // =====================================================================
 
+import { esc } from "./ui.js";
+
 const PATHS = {
   /* A flame: presence, "somebody is lurking". */
   flame: `<path d="M12 2.5c2.6 3 3.4 5 2.4 6.6 1.2-.3 2-1.2 2.4-2.6C18.6 8.4 19.5 10.4 19.5 12a7.5 7.5 0 0 1-15 0c0-3.2 1.9-5.6 4.2-7.8-.4 1.9.1 3.2 1.1 3.9.6-2.4 1.3-4.2 2.2-5.6Z"/>
@@ -78,7 +80,13 @@ export function icon(name, { size = 16, className = "" } = {}) {
   const body = PATHS[name];
   if (!body) return "";
   const px = Number(size) || 16;
-  return `<svg class="ico${className ? ` ${className}` : ""}" width="${px}" height="${px}"
+  /*
+    THE GLYPH NAME IS A CLASS. Without it a stylesheet cannot say "a trophy
+    is always gold" - it can only say "an icon in this container is gold",
+    which means every new place a trophy appears has to be remembered
+    somewhere else. ico-trophy travels with the trophy.
+  */
+  return `<svg class="ico ico-${esc(name)}${className ? ` ${className}` : ""}" width="${px}" height="${px}"
     viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">${body}</svg>`;
 }
 

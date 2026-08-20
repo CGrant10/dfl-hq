@@ -282,10 +282,31 @@ a { color: var(--accent); }
   line-height: .85;
 }
 
-.brand-text span {
-  color: var(--accent-2);
-  text-shadow: 0 0 12px rgba(229,1,27,.45);
+/*
+  "DFL HQ" CARRIES THE GRADIENT.
+
+  The stops are the TEXT pair, not the fill pair: the topbar is near-black
+  in every palette, and a raw club colour there is unreadable for about a
+  third of the league - the Raiders' #101820 on #101823 is nothing at all.
+  --accent and --accent-2 are the same hues already lifted to clear the
+  contrast bar, so the wordmark reads for every club.
+
+  The gradient is clipped through the text, with a solid colour underneath
+  for anything without background-clip support.
+*/
+.brand-word { color: var(--accent); }
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .brand-word {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
 }
+/* The "HQ" half no longer takes its own colour - the gradient spans the
+   whole wordmark, which is the point. */
+.brand-text .brand-word span { color: inherit; text-shadow: none; }
 
 .brand-text small {
   display: block;
@@ -313,16 +334,23 @@ a { color: var(--accent); }
   letter-spacing: .14em;
   font-size: 8.5px;
 }
-/* Text colours, not the fill pair: at 8px the crest's own royal blue measures
-   1.7:1 on the bar and is simply not there. */
+/*
+  THREE STARS, THREE COLOURS: primary, white, secondary.
+
+  They already alternated, but from hardcoded crest hex - so they were the
+  only thing on the bar that ignored a club palette entirely. The text pair
+  rather than the fill pair, for the same reason as the wordmark above: at
+  8px on a near-black bar the crest's own royal blue measures 1.7:1 and is
+  simply not there, and a dark club primary would be worse.
+*/
 .brand-text .creed i {
   font-style: normal;
   font-size: 8px;
   line-height: 1;
-  color: #E67582;
+  color: var(--accent);
 }
-.brand-text .creed i:nth-of-type(2) { color: #f5f7fa; }
-.brand-text .creed i:nth-of-type(3) { color: #7098E6; }
+.brand-text .creed i:nth-of-type(2) { color: var(--chalk); }
+.brand-text .creed i:nth-of-type(3) { color: var(--accent-2); }
 
 /* On a narrow phone the stars give up their breathing room before the words
    give up a letter. */

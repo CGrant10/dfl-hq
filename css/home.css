@@ -514,6 +514,17 @@
 .dfl-ico-stop-a { stop-color: var(--accent-fill); }
 .dfl-ico-stop-b { stop-color: var(--accent-2-fill); }
 
+/*
+  A TROPHY IS ALWAYS GOLD, wherever it turns up - the profile, the Arena
+  winner card, the results table, a champion byline. Four stops rather than
+  two so it reads as metal: dark edge, bright face, a highlight across the
+  middle, dark edge again.
+*/
+.dfl-gold-a { stop-color: #8a6a1f; }
+.dfl-gold-b { stop-color: #f0d478; }
+.dfl-gold-c { stop-color: #fffbe8; }
+.dfl-gold-d { stop-color: #b8912c; }
+
 .ico { fill: url(#dfl-ico-grad); }
 .ico [stroke="currentColor"] { stroke: url(#dfl-ico-grad); }
 
@@ -548,6 +559,26 @@
 .ka-headline .ico [stroke="currentColor"],
 .mode-opt.is-on .ico [stroke="currentColor"],
 .tabs button.on .ico [stroke="currentColor"] { stroke: currentColor; }
+
+/*
+  AND THE TROPHY OVERRIDES ALL OF THAT. It is gold in every context,
+  including the ones that force currentColor for contrast - a trophy on a
+  filled button is still a trophy. Last in the file so it wins on order
+  without needing !important.
+*/
+.ico-trophy,
+.ico-trophy [stroke="currentColor"],
+.btn .ico-trophy,
+.pill .ico-trophy,
+.badge .ico-trophy,
+.is-champion .ico-trophy { fill: url(#dfl-gold-grad); }
+.ico-trophy [stroke="currentColor"],
+.btn .ico-trophy [stroke="currentColor"],
+.pill .ico-trophy [stroke="currentColor"],
+.badge .ico-trophy [stroke="currentColor"],
+.is-champion .ico-trophy [stroke="currentColor"] { stroke: url(#dfl-gold-grad); }
+/* The drop shadow is what makes it read as shiny rather than just yellow. */
+.ico-trophy { filter: drop-shadow(0 0 2px rgba(212, 175, 55, .45)); }
 .nfl-logo {
   display: inline-block;
   vertical-align: -0.2em;

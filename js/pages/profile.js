@@ -571,8 +571,17 @@ function othersCard(members, current) {
 
 // ------------------------------- bits ---------------------------------
 
+/*
+  A FIGURE, and a marker when there is not one.
+
+  The figures are painted with the palette gradient. An em-dash standing in
+  for "no data" is not a figure, so it is tagged and left muted - a blank
+  rendered in the same colour as a real number reads as a value.
+*/
+const EMPTY_FIGURE = /^(—|-|n\/a|)$/i;
 function stat(label, value) {
-  return `<div class="stat"><span class="stat-v">${esc(value)}</span><span class="stat-l">${esc(label)}</span></div>`;
+  const empty = EMPTY_FIGURE.test(String(value ?? "").trim());
+  return `<div class="stat"><span class="stat-v${empty ? " is-empty" : ""}">${esc(value)}</span><span class="stat-l">${esc(label)}</span></div>`;
 }
 
 function sum(rows, key) {
@@ -690,7 +699,7 @@ function recLine(label, value, holder, when) {
         ${esc(holder || "")}
         ${when ? `<span class="rec-when">${esc(when)}</span>` : ""}
       </span>` : ""}
-      <span class="rec-val">${esc(value)}</span>
+      <span class="rec-val${EMPTY_FIGURE.test(String(value ?? "").trim()) ? " is-empty" : ""}">${esc(value)}</span>
     </div>`;
 }
 

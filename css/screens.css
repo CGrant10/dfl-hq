@@ -45,6 +45,42 @@
   justify-items: center;
   text-align: center;
 }
+/* =====================================================================
+   THE FIGURES CARRY THE GRADIENT, THE BOXES DO NOT.
+
+   These used to sit inside a card whose whole outline was a gradient -
+   `border-image` with a slice of 1 paints ALL FOUR borders, and every one
+   of these cards also sets `border: 1px solid` on every side, so what was
+   meant to be a coloured left edge became a gradient frame. The outlines
+   are grey again and the colour moved to where the eye is already going:
+   the number itself.
+
+   Clipped through the text with a solid colour underneath, the same
+   mechanism as the champion title and the club badge.
+   ===================================================================== */
+.stat-v, .rec-val { color: var(--accent); }
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  .stat-v, .rec-val {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
+/* A figure that is not a figure - an em-dash for "no data" - must not be
+   painted as one, or a blank reads as a value. */
+.stat-v.is-empty, .rec-val.is-empty {
+  background: none;
+  -webkit-text-fill-color: var(--muted);
+  color: var(--muted);
+}
+/* Semantic figures keep their own meaning; good/bad is not decoration. */
+.stat-v.good, .stat-v.bad, .stat-v.warn {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
 /*
   A STATGRID FIGURE IS A REFERENCE NUMBER, NOT A HEADLINE.
 
@@ -158,15 +194,24 @@
    rows. A record reads as a record: the figure large and condensed, who
    and when quiet underneath.
    --------------------------------------------------------------------- */
+/*
+  A GREY LINE BETWEEN ENTRIES, rather than a gap and six outlined boxes.
+
+  With the gradient frames gone the cards were six grey rectangles with
+  space between them, which is a lot of border for a list. One hairline
+  between neighbours reads as a record book: the gap becomes the rule, and
+  a 1px grid background shows through it.
+*/
 .recbook {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--s-3);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
 }
 .rec {
-  border: 1px solid var(--line);
-  border-left: 2px solid transparent; border-image: var(--accent-sweep-v) 1;
-  border-radius: var(--r-md);
   background: var(--bg-2);
   padding: var(--s-4);
   display: grid;
@@ -179,9 +224,17 @@
   text-transform: uppercase;
   color: var(--muted);
 }
+/*
+  A RECORD FIGURE, NOT A HERO NUMBER.
+
+  --fs-stat is 36px - the size for the single figure a whole card is about.
+  There are six of these in a column on a profile, so "1st", "12th" and
+  "190" were all shouting at hero volume and the labels beside them
+  disappeared. 22px still lands first without taking the card over.
+*/
 .rec-val {
   font-family: var(--font-display);
-  font-size: var(--fs-stat);
+  font-size: var(--fs-stat-sm);
   font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
@@ -806,7 +859,7 @@ a.moment:hover { background: var(--hover-soft); }
   margin: 0 0 var(--s-5);
   padding: var(--s-3) var(--s-4);
   border: 1px solid var(--line);
-  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
+  border-left: 3px solid var(--accent-fill);
   border-radius: var(--r-md);
   background: var(--bg-2);
 }
@@ -874,7 +927,7 @@ a.moment:hover { background: var(--hover-soft); }
 .factcard {
   padding: var(--s-5);
   border: 1px solid var(--line);
-  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
+  border-left: 3px solid var(--accent-fill);
   border-radius: var(--r-lg);
   background:
     radial-gradient(120% 90% at 100% 0%, var(--hero-wash), transparent 60%),
@@ -2537,7 +2590,7 @@ a.moment:hover { background: var(--hover-soft); }
 .kr-preview {
   padding: var(--s-3);
   border: 1px solid var(--line);
-  border-left: 3px solid transparent; border-image: var(--accent-sweep-v) 1;
+  border-left: 3px solid var(--accent-fill);
   border-radius: var(--r-md);
   background: var(--bg-3);
 }
