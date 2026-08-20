@@ -1,37 +1,21 @@
 // =====================================================================
 // DFL Arena — equal-racer novelty race backbone
 // ---------------------------------------------------------------------
-// Every racer starts equal. Independent random pace PHASES create the race:
-// somebody can open a huge gap, get reeled in, or fly through the field.
-// There are no traits, handicaps, drafting, rubber-banding, comeback scripts,
-// or finish-order shaping before first place is decided. The visible crossing
-// is truth. Once P1 crosses, the remaining field gets a simple run-home boost
-// so the result completes promptly instead of turning into slow-mo theatre.
+// Every racer still enters equal. The seed chooses a fresh race personality:
+// most lanes run broad independent pace phases, while 2–4 randomly selected
+// lanes get temporary STORY ARCS (breakaway, comeback, fade, yo-yo). Nobody
+// owns a permanent trait and no role is tied to a member. A new seed reshuffles
+// all of it.
+//
+// Before P1: make the race readable, volatile and surprising — especially on
+// a phone. After P1: drama is over; the existing run-home gets everybody across
+// the frozen finish scene quickly.
 // =====================================================================
 
 export const DUCK_TICK_MS = 40;
 
-/*
-  THE HOME STRETCH IS NOT ALLOWED TO PRESERVE A CRAWL.
-
-  A pace phase can legitimately fall almost to a stop. That is funny in the
-  middle of the race, but it should not turn the final few feet into molasses.
-  Keep the floor late and modest so the field can still stretch, collapse and
-  trade places deep into the race. Once somebody actually wins, however, the
-  race has answered its main question and the separate post-win run-home takes
-  over.
-*/
 export const HOME_STRETCH_START = 0.90;
 export const HOME_STRETCH_MIN_MULTIPLIER = 1.75;
-/*
-  AFTER P1, THIS IS PRESENTATION PACE, NOT RACE DRAMA.
-
-  The winner is already decided. The remaining field should visibly charge
-  through a frozen finish scene rather than preserve a many-second simulated
-  spread while a stationary line sits in the middle of the shot. This floor is
-  intentionally strong and is paired with a higher post-win speed ceiling
-  below. Nothing before P1 is touched by these post-win values.
-*/
 export const POST_WIN_MIN_MULTIPLIER = 8.0;
 export const POST_WIN_MAX_MULTIPLIER = 9.0;
 
@@ -39,7 +23,15 @@ export function homeStretchFloor(base, currentSpeed) {
   return Math.max(Number(currentSpeed) || 0, Math.max(0, Number(base) || 0) * HOME_STRETCH_MIN_MULTIPLIER);
 }
 
-function seededFallback(seed) {
+/*
+  SEEDED, ALWAYS.
+
+  Broadcast and Arena both simulate locally from the same seed. Using crypto
+  here made that contract false: two viewers could receive the same seed and
+  draw different races. A race can be unpredictable to people without being
+  nondeterministic to the app.
+*/
+function randomSource(seed) {
   let a = (Number(seed) || 1) >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -50,35 +42,98 @@ function seededFallback(seed) {
   };
 }
 
-function randomSource(seed) {
-  const cryptoObj = globalThis.crypto;
-  if (cryptoObj?.getRandomValues) {
-    const word = new Uint32Array(1);
-    return () => {
-      cryptoObj.getRandomValues(word);
-      return word[0] / 4294967296;
-    };
+/* Normal lanes are still plenty unruly. These broad bands keep the whole pack
+   alive while the story racers create the giant, phone-readable swings. */
+function randomPace(base, rand) {
+  const roll = rand();
+  if (roll < 0.24) return base * (0.08 + rand() * 0.34);  // collapse
+  if (roll > 0.76) return base * (2.00 + rand() * 1.55);  // surge
+  return base * (0.42 + rand() * 1.42);                   // broad normal
+}
+
+const STORY_TYPES = ["breakaway", "comeback", "fade", "yoyo"];
+
+function pickStoryRacers(n, rand) {
+  if (n < 2) return new Map();
+  const ids = Array.from({ length: n }, (_, i) => i);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
   }
-  return seededFallback(seed);
+  const min = Math.min(n, n >= 8 ? 2 : 1);
+  const max = Math.min(n, n >= 10 ? 4 : 3);
+  const count = min + Math.floor(rand() * (max - min + 1));
+  const stories = new Map();
+  for (let k = 0; k < count; k++) {
+    const type = STORY_TYPES[Math.floor(rand() * STORY_TYPES.length)];
+    stories.set(ids[k], makeStory(type, rand));
+  }
+  return stories;
 }
 
 /*
-  PHONE-SIZED DRAMA.
+  A story is a TEMPORARY race shape, not a winner script.
 
-  The earlier bands were intentionally varied, but the middle band still held
-  nearly sixty percent of rolls and its range clustered too close to normal.
-  On a desktop that separation reads; compressed onto a phone it looks like a
-  pack moving together.
-
-  Give collapse and rocket phases equal weight, widen both ends, and leave a
-  narrower but still useful normal band between them. The racers remain equal:
-  every lane samples the exact same distribution, independently.
+  segment.end is fraction of the expected race duration, not progress. That is
+  deliberate: a comeback racer can genuinely be far behind when its recovery
+  begins, and a breakaway can build a visible lead before the field reacts.
+  Multipliers are randomized inside each archetype so two "comeback" races do
+  not look like copies of each other.
 */
-function randomPace(base, rand) {
-  const roll = rand();
-  if (roll < 0.27) return base * (0.05 + rand() * 0.28);   // deep crawl / collapse
-  if (roll > 0.73) return base * (2.20 + rand() * 1.45);   // rocket / breakaway
-  return base * (0.38 + rand() * 1.42);                    // normal but broad
+function makeStory(type, rand) {
+  const jitter = (lo, hi) => lo + rand() * (hi - lo);
+  if (type === "breakaway") {
+    const keepIt = rand() < 0.42;
+    return {
+      type,
+      segments: [
+        { end: jitter(0.18, 0.25), mult: jitter(3.15, 3.65) },
+        { end: jitter(0.42, 0.55), mult: keepIt ? jitter(2.05, 2.70) : jitter(0.45, 0.78) },
+        { end: 0.82, mult: keepIt ? jitter(1.55, 2.20) : jitter(0.82, 1.30) },
+      ],
+    };
+  }
+  if (type === "comeback") {
+    return {
+      type,
+      segments: [
+        { end: jitter(0.20, 0.30), mult: jitter(0.08, 0.28) },
+        { end: jitter(0.42, 0.53), mult: jitter(0.55, 1.05) },
+        { end: jitter(0.67, 0.78), mult: jitter(3.05, 3.65) },
+        { end: 0.90, mult: jitter(1.25, 2.15) },
+      ],
+    };
+  }
+  if (type === "fade") {
+    return {
+      type,
+      segments: [
+        { end: jitter(0.22, 0.32), mult: jitter(2.45, 3.25) },
+        { end: jitter(0.45, 0.58), mult: jitter(1.65, 2.25) },
+        { end: jitter(0.67, 0.76), mult: jitter(0.12, 0.38) },
+        { end: 0.90, mult: jitter(0.68, 1.18) },
+      ],
+    };
+  }
+  return {
+    type: "yoyo",
+    segments: [
+      { end: jitter(0.15, 0.22), mult: jitter(2.55, 3.55) },
+      { end: jitter(0.30, 0.38), mult: jitter(0.10, 0.34) },
+      { end: jitter(0.47, 0.58), mult: jitter(2.75, 3.65) },
+      { end: jitter(0.63, 0.72), mult: jitter(0.16, 0.46) },
+      { end: 0.90, mult: jitter(1.70, 2.80) },
+    ],
+  };
+}
+
+function storyPace(story, raceFraction, base, rand) {
+  if (!story) return null;
+  const segment = story.segments.find((s) => raceFraction <= s.end);
+  if (!segment) return null;
+  /* Tiny texture keeps an arc alive instead of making it look like a robot at
+     one exact speed, without erasing the shape of the arc. */
+  return base * segment.mult * (0.94 + rand() * 0.12);
 }
 
 export function simulateForwardRace(racers, ticks, seed) {
@@ -95,14 +150,14 @@ export function simulateForwardRace(racers, ticks, seed) {
   const homeSpeed = new Float64Array(n);
   const finishTick = new Float64Array(n).fill(-1);
   const samples = Array.from({ length: n }, () => new Float32Array(maxTicks + 1));
+  const stories = pickStoryRacers(n, rand);
 
   for (let i = 0; i < n; i++) {
-    const initial = randomPace(base, rand);
+    const scripted = storyPace(stories.get(i), 0, base, rand);
+    const initial = scripted ?? randomPace(base, rand);
     speed[i] = initial;
     target[i] = initial;
-    /* 0.32–1.28s. Long enough to visibly open a gap, short enough that a
-       twelve-racer field gets repeated chances to reverse itself. */
-    retargetAt[i] = 8 + Math.floor(rand() * 25);
+    retargetAt[i] = 7 + Math.floor(rand() * 23); // 0.28–1.16s
   }
 
   let done = 0;
@@ -110,20 +165,20 @@ export function simulateForwardRace(racers, ticks, seed) {
   let lastWritten = 0;
   for (let t = 0; t <= maxTicks && done < n; t++) {
     lastWritten = t;
+    const raceFraction = t / Math.max(1, Number(ticks) || 1);
+
     for (let i = 0; i < n; i++) {
       if (finishTick[i] >= 0) { samples[i][t] = 1; continue; }
 
       const winnerIsHome = winnerTick >= 0;
+      const story = stories.get(i);
 
-      /*
-        Pre-P1 phases are deliberately independent and moderately short. A
-        collapse should have time to drop somebody through the pack, and a
-        rocket should have time to rip back through it, but neither should own
-        the race for several seconds. After P1, stop inventing drama entirely.
-      */
       if (!winnerIsHome && t >= retargetAt[i]) {
-        target[i] = randomPace(base, rand);
-        retargetAt[i] = t + 8 + Math.floor(rand() * 25);
+        const scripted = storyPace(story, raceFraction, base, rand);
+        target[i] = scripted ?? randomPace(base, rand);
+        /* Story racers refresh a little faster so their collapse/recovery
+           transitions look decisive. Normal lanes breathe slightly longer. */
+        retargetAt[i] = t + (story ? 6 + Math.floor(rand() * 14) : 8 + Math.floor(rand() * 24));
       }
 
       if (progress[i] >= HOME_STRETCH_START && homeSpeed[i] === 0) {
@@ -131,17 +186,13 @@ export function simulateForwardRace(racers, ticks, seed) {
       }
       if (homeSpeed[i] > 0 && target[i] < homeSpeed[i]) target[i] = homeSpeed[i];
 
-      /* P1 owns the dramatic finish. Everybody else gets the hell home.
-         Position stays continuous and place order still comes from crossing;
-         only the already-decided run-home is deliberately compressed. */
+      /* Winner decided: kill the drama and clear the field. */
       if (winnerIsHome) {
         const runHome = Math.max(base * POST_WIN_MIN_MULTIPLIER, speed[i]);
         if (target[i] < runHome) target[i] = runHome;
       }
 
-      /* Sharper pre-P1 response makes pace changes readable on a narrow phone
-         instead of smearing every phase into the previous one. */
-      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.72 : 0.30);
+      speed[i] += (target[i] - speed[i]) * (winnerIsHome ? 0.72 : story ? 0.42 : 0.31);
       const maxSpeed = base * (winnerIsHome ? POST_WIN_MAX_MULTIPLIER : 3.65);
       speed[i] = Math.max(base * 0.04, Math.min(maxSpeed, speed[i]));
 
