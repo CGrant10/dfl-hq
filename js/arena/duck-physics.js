@@ -24,13 +24,13 @@ function randomSource(seed) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-// A racer should not pick a position in the opening seconds and keep it.
-// Build many alternating high/low phases that last nearly to the stripe.
-// Headline racers get violent swings; everybody else still moves enough to
-// pass and be passed several times over a normal race.
+// Mobile compresses the same race into fewer horizontal pixels, so subtle
+// pace differences disappear. Build genuinely large race gaps instead of a
+// device-only visual fake: every viewer still sees the exact same race, but
+// the field now has enough separation to read clearly on a phone.
 function makeBoomerangStory(rand, strength = 1) {
   const segments = [];
-  const segmentCount = 11 + Math.floor(rand() * 5); // 11-15 momentum phases
+  const segmentCount = 13 + Math.floor(rand() * 5); // 13-17 momentum phases
   let end = 0;
   let high = rand() < 0.5;
   const storyEnd = 0.985;
@@ -40,12 +40,14 @@ function makeBoomerangStory(rand, strength = 1) {
     const slotsLeft = segmentCount - i;
     const span = i === segmentCount - 1
       ? remaining
-      : clamp(remaining / slotsLeft * (0.72 + rand() * 0.56), 0.035, 0.105);
+      : clamp(remaining / slotsLeft * (0.72 + rand() * 0.56), 0.028, 0.09);
     end = Math.min(storyEnd, end + span);
 
+    // Deliberately exaggerated. A surge should visibly eat a gap and a fade
+    // should visibly lose one, even on a condensed landscape phone.
     const raw = high
-      ? 1.95 + rand() * 1.85
-      : 0.055 + rand() * 0.43;
+      ? 2.35 + rand() * 1.95
+      : 0.025 + rand() * 0.30;
     const mult = 1 + (raw - 1) * strength;
     segments.push({ end, mult });
     high = !high;
@@ -63,7 +65,9 @@ function pickStories(n, rand) {
   const headlineCount = Math.min(n, n >= 10 ? 4 : n >= 6 ? 3 : 2);
   const stories = new Map();
   ids.forEach((id, pos) => {
-    const strength = pos < headlineCount ? 1 : 0.82 + rand() * 0.13;
+    // The whole field participates now. Headline racers still get the biggest
+    // arcs, but the other eight are no longer softened enough to look static.
+    const strength = pos < headlineCount ? 1 : 0.92 + rand() * 0.07;
     stories.set(id, makeBoomerangStory(rand, strength));
   });
   return stories;
@@ -71,8 +75,8 @@ function pickStories(n, rand) {
 
 function storyPace(story, raceFraction, base, rand) {
   const segment = story?.segments?.find((s) => raceFraction <= s.end);
-  if (!segment) return base * (0.82 + rand() * 0.36);
-  return base * segment.mult * (0.96 + rand() * 0.08);
+  if (!segment) return base * (0.78 + rand() * 0.44);
+  return base * segment.mult * (0.97 + rand() * 0.06);
 }
 
 export function simulateForwardRace(racers, ticks, seed) {
@@ -95,7 +99,7 @@ export function simulateForwardRace(racers, ticks, seed) {
     const initial = storyPace(stories.get(i), 0, base, rand);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 4 + Math.floor(rand() * 8);
+    retargetAt[i] = 3 + Math.floor(rand() * 6);
   }
 
   let done = 0;
@@ -115,8 +119,10 @@ export function simulateForwardRace(racers, ticks, seed) {
         .filter((i) => finishTick[i] < 0);
       const farthestRemaining = unfinished.reduce(
         (max, i) => Math.max(max, Math.max(0, 1 - progress[i])), 0);
-      const clearTicks = Math.max(1, Math.round(1800 / DUCK_TICK_MS));
-      const commonSpeed = Math.max(base * 0.8, farthestRemaining / clearTicks);
+      // The finish logic is finally right; stop launching everybody through
+      // it. Roughly three seconds gives the eye time to read the preserved gaps.
+      const clearTicks = Math.max(1, Math.round(3000 / DUCK_TICK_MS));
+      const commonSpeed = Math.max(base * 0.45, farthestRemaining / clearTicks);
       unfinished.forEach((i) => { clearSpeed[i] = commonSpeed; });
       clearLocked = true;
     }
@@ -129,15 +135,15 @@ export function simulateForwardRace(racers, ticks, seed) {
         speed[i] = clearSpeed[i];
         target[i] = clearSpeed[i];
       } else {
-        // Change targets quickly enough for the alternating phases to become
-        // visible overtakes, not just subtle speed differences.
         if (t >= retargetAt[i]) {
           target[i] = storyPace(stories.get(i), raceFraction, base, rand);
-          retargetAt[i] = t + 3 + Math.floor(rand() * 5);
+          retargetAt[i] = t + 2 + Math.floor(rand() * 4);
         }
 
-        speed[i] += (target[i] - speed[i]) * 0.58;
-        speed[i] = clamp(speed[i], base * 0.025, base * 3.85);
+        // Snap harder toward each new phase so the boomerang actually reads as
+        // a surge/fallback instead of averaging into one long cruising speed.
+        speed[i] += (target[i] - speed[i]) * 0.68;
+        speed[i] = clamp(speed[i], base * 0.012, base * 4.35);
       }
 
       const before = progress[i];
