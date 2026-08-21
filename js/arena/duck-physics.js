@@ -2,14 +2,6 @@
 // DFL Arena — equal-racer novelty race backbone
 // =====================================================================
 export const DUCK_TICK_MS = 40;
-export const HOME_STRETCH_START = 0.90;
-export const HOME_STRETCH_MIN_MULTIPLIER = 1.75;
-export const POST_WIN_MIN_MULTIPLIER = 8.0;
-export const POST_WIN_MAX_MULTIPLIER = 9.0;
-
-export function homeStretchFloor(base, currentSpeed) {
-  return Math.max(Number(currentSpeed) || 0, Math.max(0, Number(base) || 0) * HOME_STRETCH_MIN_MULTIPLIER);
-}
 
 function randomSource(seed) {
   let a = (Number(seed) || 1) >>> 0;

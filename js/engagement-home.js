@@ -62,7 +62,7 @@ async function paintQuickActions() {
           ? db().from("finance_payments").select("season,amount_due,amount_paid").eq("sleeper_user_id", me.sleeper_user_id).order("season", { ascending: false }).limit(1)
           : Promise.resolve({ data: [] }),
       ]);
-      if (token !== quickToken || !section.isConnected) return;
+      if (token !== quickToken || !section.isConnected) { section.dataset.engagementLoading = "0"; return; }
       const voted = new Set((votes.data || []).map((v) => String(v.poll_id)));
       const poll = (polls.data || []).find((p) => !voted.has(String(p.id)));
       if (poll) actions.push(action("#/polls", "Vote in the open poll", poll.question || "Your vote is still missing", "polls", { priority: true, badge: "Needs you" }));
@@ -75,7 +75,7 @@ async function paintQuickActions() {
       db().from("arena_events").select("id,name,event_date,status,bc_state").gte("event_date", today).neq("status", "complete").order("event_date", { ascending: true }).limit(1),
       db().from("golf_outings").select("id,name,event_date,status").gte("event_date", today).neq("status", "final").order("event_date", { ascending: true }).limit(1),
     ]);
-    if (token !== quickToken || !section.isConnected) return;
+    if (token !== quickToken || !section.isConnected) { section.dataset.engagementLoading = "0"; return; }
     const race = (arena.data || [])[0];
     if (race && actions.length < 2) actions.push(action(`#/arena?id=${race.id}`, race.bc_state === "running" ? "Arena race is live" : "Arena race coming up", race.name || race.event_date || "Open Arena", "arena", { priority: race.bc_state === "running", badge: race.bc_state === "running" ? "Live" : "" }));
     const outing = (golf.data || [])[0];
@@ -111,7 +111,7 @@ async function paintSinceAway() {
     wallCount = Number(wall.count || 0);
     raceCount = Number(races.count || 0);
   } catch (err) { console.warn("engagement: since-away extras unavailable", err); }
-  if (token !== sinceToken || !home.isConnected) return;
+  if (token !== sinceToken || !home.isConnected) { home.dataset.engagementSinceLoading = "0"; return; }
 
   let strip = home.querySelector("[data-wn]");
   if (!strip && (wallCount || raceCount)) {
@@ -148,9 +148,15 @@ async function paintReactions(root = document) {
   if (!wall || wall.dataset.reactionSignature === signature || wall.dataset.reactionsLoading === "1") return;
   wall.dataset.reactionsLoading = "1";
   const token = ++reactionToken;
-  const { data, error } = await db().from("wall_reactions").select("post_id,member_id,reaction").in("post_id", ids);
+  let data, error;
+  try {
+    ({ data, error } = await db().from("wall_reactions").select("post_id,member_id,reaction").in("post_id", ids));
+  } catch (err) {
+    error = err;
+  } finally {
+    wall.dataset.reactionsLoading = "0";
+  }
   if (token !== reactionToken || !wall.isConnected) return;
-  wall.dataset.reactionsLoading = "0";
   if (error) {
     if (!REACTION_SCHEMA_MISSING.test(error.message || "")) console.warn("wall reactions unavailable", error);
     return;

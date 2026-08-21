@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.113.1";
+const CACHE_NAME = "dfl-hq-v1.113.2";
 /* a.espncdn.com serves the NFL club logos on the profile and the Wall.
    Caching it means a logo seen once still renders offline. */
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);

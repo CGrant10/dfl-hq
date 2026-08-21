@@ -20,15 +20,18 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = "js";
-/* The built Pixi runtime is generated from src/ and is not ours to lint. */
-const SKIP_DIR = /[\\/]arena$/;
+/* Vendored + generated bundles are not ours to lint: the hash-suffixed Pixi
+   chunks and the pixi-runtime.js built from src/. Everything else under
+   js/arena IS hand-written (race.js, the shims, duck-physics) and used to be
+   skipped along with them, which left the Arena import graph uncovered. */
+const VENDOR_FILE = /^(pixi-runtime\.js|[A-Za-z0-9]+-[A-Za-z0-9_-]{8}\.js)$/;
 
 function sourceFiles(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!SKIP_DIR.test(full) && entry.name !== "node_modules") sourceFiles(full, out);
-    } else if (entry.name.endsWith(".js") && !entry.name.endsWith(".spec.js")) {
+      if (entry.name !== "node_modules") sourceFiles(full, out);
+    } else if (entry.name.endsWith(".js") && !entry.name.endsWith(".spec.js") && !VENDOR_FILE.test(entry.name)) {
       out.push(full);
     }
   }
@@ -64,7 +67,10 @@ function namedImports(file) {
     const names = m[1].split(",")
       .map((p) => p.trim().split(/\s+as\s+/)[0].trim())
       .filter(Boolean);
-    out.push({ spec, names, target: path.normalize(path.join(path.dirname(file), spec)) });
+    /* The arena shims import "./race.js?legacy=1" to reach past the service
+       worker rewrite. The query is not part of the path on disk. */
+    const onDisk = spec.split("?")[0];
+    out.push({ spec, names, target: path.normalize(path.join(path.dirname(file), onDisk)) });
   }
   return out;
 }

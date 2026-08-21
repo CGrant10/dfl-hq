@@ -1,11 +1,11 @@
 {
   "name": "dfl-hq",
-  "version": "1.113.1",
+  "version": "1.113.2",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.19.0",
   "engines": {"node": ">=20.19.0"},
-  "scripts": {"typecheck": "tsc --noEmit","test": "vitest run","build": "vite build","check": "pnpm typecheck && pnpm test && pnpm build"},
+  "scripts": {"typecheck": "tsc --noEmit","names": "node tools/check-names.mjs","test": "vitest run","build": "vite build","check": "pnpm typecheck && pnpm names && pnpm test && pnpm build"},
   "dependencies": {"pixi.js": "^8.19.0"},
   "devDependencies": {"typescript": "^7.0.2","vite": "^8.1.5","vitest": "^4.0.0"}
 }

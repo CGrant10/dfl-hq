@@ -5,6 +5,9 @@
 // the race reaches its finished presentation, release the requirement so a
 // member can rotate normally and leave without fighting the phone.
 
+/* Loaded only via `import`; this keeps it a module, not a global script. */
+export {};
+
 const PHONE_MAX = 900;
 let overlay = null;
 let stateObserver = null;
@@ -97,14 +100,29 @@ window.addEventListener("hashchange", () => {
 // The Broadcast stage is inserted after this module loads, so watch the app
 // shell until it exists and then switch to the narrow state observer above.
 if (typeof MutationObserver === "function") {
+  // Stop as soon as the stage exists. This observer sees EVERY mutation in the
+  // document, and a running race mutates constantly - leaving it connected
+  // re-created the narrow state observer and repainted the gate on every
+  // ticker tick, on the one view whose phone performance matters most.
+  let mounted = false;
   const mountObserver = new MutationObserver(() => {
-    if (!isBroadcast()) return;
-    if (document.querySelector("#bc-stage")) {
-      watchRaceState();
-      paint();
-    }
+    if (mounted || !isBroadcast()) return;
+    if (!document.querySelector("#bc-stage")) return;
+    mounted = true;
+    mountObserver.disconnect();
+    watchRaceState();
+    paint();
   });
   mountObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+  // A hash change tears the stage down and builds a new one, so the mount
+  // watch has to come back for the next visit to Broadcast.
+  window.addEventListener("hashchange", () => {
+    if (mounted) {
+      mounted = false;
+      mountObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+  });
 }
 
 queueMicrotask(paint);

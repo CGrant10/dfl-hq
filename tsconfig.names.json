@@ -1,0 +1,34 @@
+{
+  // Resolution-only pass over the browser modules in js/.
+  //
+  // WHY THIS EXISTS. `teamInk(team?.color, team?.sort_order ?? i)` shipped in
+  // two golf side-builders with no `i` in scope. It is a ReferenceError the
+  // moment the left side of `??` is null, and nothing caught it: tsconfig.json
+  // only covers src/**/*.ts, `node --check` sees valid syntax, and no test
+  // opened a scorecard whose team had a null sort_order.
+  //
+  // Full checkJs on this codebase is hundreds of type complaints. This config
+  // exists only so tools/check-names.mjs can pull out the handful of codes
+  // that mean "this identifier does not exist" - real runtime bugs, not taste.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": false,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["js/**/*.js"],
+  "exclude": [
+    // Vendored + generated Pixi bundles, and the specs (node builtins, and
+    // vitest already runs them).
+    "js/arena/pixi-runtime.js",
+    "js/arena/*-????????.js",
+    "js/**/*.spec.js"
+  ]
+}

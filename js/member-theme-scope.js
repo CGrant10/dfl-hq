@@ -1,4 +1,5 @@
 // Member-switch theme reconciliation + permanent league chrome.
+import { APP_VERSION } from "./config.js";
 import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { applyTheme, isTeamMode, teamModeFor } from "./theme.js";
@@ -48,7 +49,7 @@ function loadPermanentChromeStyles() {
     const link = document.createElement("link");
     link.id = "dfl-profile-neutral-css";
     link.rel = "stylesheet";
-    link.href = "css/profile-neutral.css?v=1.109.98";
+    link.href = `css/profile-neutral.css?v=${APP_VERSION}`;
     document.head.appendChild(link);
   }
   if (document.getElementById("dfl-visual-polish-hardfix")) return;

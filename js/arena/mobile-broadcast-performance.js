@@ -8,6 +8,9 @@
 // This module now only owns the Safari-safe scenery blur path. Race timing,
 // physics and renderer scheduling remain untouched.
 
+/* Loaded only via `import`; this keeps it a module, not a global script. */
+export {};
+
 const PHONE_MAX = 900;
 const BLUR_POLL_MS = 120;
 const BLUR_EPSILON = 0.12;
