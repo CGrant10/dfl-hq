@@ -16,13 +16,16 @@ describe("Arena forward race", () => {
     }
   });
 
-  it("clears the field quickly only after P1 crosses, preserving race order", () => {
+  it("clears the field in the current post-winner window while preserving race order", () => {
     const racers = Array.from({ length: 12 }, (_, i) => ({ id: i + 1 }));
     const sim = simulateForwardRace(racers, 1500, 424242);
     const winnerMs = sim.order[0].finishMs;
     const lastMs = sim.order.at(-1).finishMs;
 
-    expect(lastMs - winnerMs).toBeLessThanOrEqual(1800);
+    // The visual clear was intentionally slowed from the old 1.8s target to
+    // roughly 3s so the field does not rocket through the finish line.
+    expect(lastMs - winnerMs).toBeLessThanOrEqual(3400);
+    expect(lastMs - winnerMs).toBeGreaterThan(1800);
     for (let i = 1; i < sim.order.length; i++) {
       expect(sim.order[i].finishMs).toBeGreaterThanOrEqual(sim.order[i - 1].finishMs);
     }
