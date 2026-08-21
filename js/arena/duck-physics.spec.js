@@ -1,30 +1,31 @@
 import { describe, expect, it } from "vitest";
-import {
-  DUCK_TICK_MS,
-  HOME_STRETCH_MIN_MULTIPLIER,
-  HOME_STRETCH_START,
-  homeStretchFloor,
-  simulateForwardRace,
-} from "./duck-physics.js";
+import { DUCK_TICK_MS, simulateForwardRace } from "./duck-physics.js";
 
-describe("Arena forward finish", () => {
-  it("does not preserve a crawl as the home-stretch floor", () => {
-    const base = 1 / 1500;
-    expect(homeStretchFloor(base, base * 0.1)).toBeCloseTo(base * HOME_STRETCH_MIN_MULTIPLIER, 12);
-    expect(homeStretchFloor(base, base * 3)).toBeCloseTo(base * 3, 12);
-  });
-
-  it("gets every racer through the last 14% promptly on a one-minute race", () => {
+describe("Arena forward race", () => {
+  it("gives the full field visible separation during a one-minute race", () => {
     const racers = Array.from({ length: 12 }, (_, i) => ({ id: i + 1 }));
     const sim = simulateForwardRace(racers, 1500, 90210);
+    const checkpoints = [0.2, 0.4, 0.6, 0.8];
 
-    for (const row of sim.order) {
-      const samples = sim.samples[row.index];
-      let homeTick = 0;
-      while (homeTick < samples.length && samples[homeTick] < HOME_STRETCH_START) homeTick++;
-      expect(homeTick).toBeLessThan(samples.length);
-      const homeMs = homeTick * DUCK_TICK_MS;
-      expect(row.finishMs - homeMs).toBeLessThanOrEqual(4000);
+    for (const frac of checkpoints) {
+      const tick = Math.min(sim.frames, Math.round(1500 * frac));
+      const positions = sim.samples.map((lane) => lane[tick]);
+      const spread = Math.max(...positions) - Math.min(...positions);
+      expect(spread).toBeGreaterThan(0.03);
     }
+  });
+
+  it("clears the field quickly only after P1 crosses, preserving race order", () => {
+    const racers = Array.from({ length: 12 }, (_, i) => ({ id: i + 1 }));
+    const sim = simulateForwardRace(racers, 1500, 424242);
+    const winnerMs = sim.order[0].finishMs;
+    const lastMs = sim.order.at(-1).finishMs;
+
+    expect(lastMs - winnerMs).toBeLessThanOrEqual(1800);
+    for (let i = 1; i < sim.order.length; i++) {
+      expect(sim.order[i].finishMs).toBeGreaterThanOrEqual(sim.order[i - 1].finishMs);
+    }
+    expect(winnerMs).toBeGreaterThan(0);
+    expect(DUCK_TICK_MS).toBe(40);
   });
 });
