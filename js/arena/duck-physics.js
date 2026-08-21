@@ -24,11 +24,9 @@ function randomSource(seed) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-// Every racer gets several momentum reversals. A few get headline-sized
-// swings; the rest still surge/fade enough to visibly trade places.
 function makeBoomerangStory(rand, strength = 1) {
   const segments = [];
-  const segmentCount = 7 + Math.floor(rand() * 3); // 7-9 distinct phases
+  const segmentCount = 7 + Math.floor(rand() * 3);
   let end = 0;
   let high = rand() < 0.5;
 
@@ -40,16 +38,11 @@ function makeBoomerangStory(rand, strength = 1) {
       : clamp(remaining / slotsLeft * (0.72 + rand() * 0.56), 0.055, 0.16);
     end = Math.min(0.91, end + span);
 
-    // Alternate strong/weak phases so a racer cannot simply pick a lane and
-    // stay there for the whole event.
-    const raw = high
-      ? 1.65 + rand() * 1.95
-      : 0.10 + rand() * 0.58;
+    const raw = high ? 1.65 + rand() * 1.95 : 0.10 + rand() * 0.58;
     const mult = 1 + (raw - 1) * strength;
     segments.push({ end, mult });
     high = !high;
   }
-
   return { type: "boomerang", segments };
 }
 
@@ -59,7 +52,6 @@ function pickStories(n, rand) {
     const j = Math.floor(rand() * (i + 1));
     [ids[i], ids[j]] = [ids[j], ids[i]];
   }
-
   const headlineCount = Math.min(n, n >= 10 ? 4 : n >= 6 ? 3 : 2);
   const stories = new Map();
   ids.forEach((id, pos) => {
@@ -107,25 +99,17 @@ export function simulateForwardRace(racers, ticks, seed) {
     lastWritten = t;
     const raceFraction = t / Math.max(1, Number(ticks) || 1);
 
-    // P1 is home. From this exact frame onward, stop changing the race story.
-    // Everyone keeps the gap and momentum relationship they had at P1.
-    // A SHARED multiplier clears the field instead of assigning target finish
-    // ticks per racer, which was the source of the accordion effect.
+    // Freeze the field shape when P1 crosses. Every unfinished racer receives
+    // the same ABSOLUTE clear speed, so their spacing cannot accordion closed
+    // and nobody can pass after the winner is home.
     if (winnerTick >= 0 && !clearLocked) {
       const unfinished = Array.from({ length: n }, (_, i) => i)
         .filter((i) => finishTick[i] < 0);
-
-      let sharedBoost = 1;
-      for (const i of unfinished) {
-        const remaining = Math.max(0.000001, 1 - progress[i]);
-        const liveSpeed = Math.max(base * 0.08, speed[i]);
-        // Aim to get even the farthest current racer through in ~1.8s,
-        // without changing relative spacing by giving lanes different clocks.
-        const needed = remaining / Math.max(1, Math.round(1800 / DUCK_TICK_MS));
-        sharedBoost = Math.max(sharedBoost, needed / liveSpeed);
-      }
-      sharedBoost = clamp(sharedBoost, 1, 12);
-      unfinished.forEach((i) => { clearSpeed[i] = Math.max(base * 0.08, speed[i]) * sharedBoost; });
+      const farthestRemaining = unfinished.reduce(
+        (max, i) => Math.max(max, Math.max(0, 1 - progress[i])), 0);
+      const clearTicks = Math.max(1, Math.round(1800 / DUCK_TICK_MS));
+      const commonSpeed = Math.max(base * 0.8, farthestRemaining / clearTicks);
+      unfinished.forEach((i) => { clearSpeed[i] = commonSpeed; });
       clearLocked = true;
     }
 
@@ -137,15 +121,11 @@ export function simulateForwardRace(racers, ticks, seed) {
         speed[i] = clearSpeed[i];
         target[i] = clearSpeed[i];
       } else {
-        // Re-target frequently enough that the alternating story phases are
-        // visible as real overtakes and fall-backs rather than long plateaus.
         if (t >= retargetAt[i]) {
           target[i] = storyPace(stories.get(i), raceFraction, base, rand);
           retargetAt[i] = t + 4 + Math.floor(rand() * 8);
         }
 
-        // No home-stretch convergence. The field keeps whatever separation it
-        // earned all the way until the winner actually crosses.
         speed[i] += (target[i] - speed[i]) * 0.46;
         speed[i] = clamp(speed[i], base * 0.035, base * 3.75);
       }
