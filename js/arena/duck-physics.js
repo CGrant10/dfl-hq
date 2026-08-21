@@ -24,21 +24,28 @@ function randomSource(seed) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+// A racer should not pick a position in the opening seconds and keep it.
+// Build many alternating high/low phases that last nearly to the stripe.
+// Headline racers get violent swings; everybody else still moves enough to
+// pass and be passed several times over a normal race.
 function makeBoomerangStory(rand, strength = 1) {
   const segments = [];
-  const segmentCount = 7 + Math.floor(rand() * 3);
+  const segmentCount = 11 + Math.floor(rand() * 5); // 11-15 momentum phases
   let end = 0;
   let high = rand() < 0.5;
+  const storyEnd = 0.985;
 
   for (let i = 0; i < segmentCount; i++) {
-    const remaining = 0.91 - end;
+    const remaining = storyEnd - end;
     const slotsLeft = segmentCount - i;
     const span = i === segmentCount - 1
       ? remaining
-      : clamp(remaining / slotsLeft * (0.72 + rand() * 0.56), 0.055, 0.16);
-    end = Math.min(0.91, end + span);
+      : clamp(remaining / slotsLeft * (0.72 + rand() * 0.56), 0.035, 0.105);
+    end = Math.min(storyEnd, end + span);
 
-    const raw = high ? 1.65 + rand() * 1.95 : 0.10 + rand() * 0.58;
+    const raw = high
+      ? 1.95 + rand() * 1.85
+      : 0.055 + rand() * 0.43;
     const mult = 1 + (raw - 1) * strength;
     segments.push({ end, mult });
     high = !high;
@@ -52,10 +59,11 @@ function pickStories(n, rand) {
     const j = Math.floor(rand() * (i + 1));
     [ids[i], ids[j]] = [ids[j], ids[i]];
   }
+
   const headlineCount = Math.min(n, n >= 10 ? 4 : n >= 6 ? 3 : 2);
   const stories = new Map();
   ids.forEach((id, pos) => {
-    const strength = pos < headlineCount ? 1 : 0.68 + rand() * 0.16;
+    const strength = pos < headlineCount ? 1 : 0.82 + rand() * 0.13;
     stories.set(id, makeBoomerangStory(rand, strength));
   });
   return stories;
@@ -63,8 +71,8 @@ function pickStories(n, rand) {
 
 function storyPace(story, raceFraction, base, rand) {
   const segment = story?.segments?.find((s) => raceFraction <= s.end);
-  if (!segment) return base * (0.88 + rand() * 0.28);
-  return base * segment.mult * (0.95 + rand() * 0.10);
+  if (!segment) return base * (0.82 + rand() * 0.36);
+  return base * segment.mult * (0.96 + rand() * 0.08);
 }
 
 export function simulateForwardRace(racers, ticks, seed) {
@@ -87,7 +95,7 @@ export function simulateForwardRace(racers, ticks, seed) {
     const initial = storyPace(stories.get(i), 0, base, rand);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 6 + Math.floor(rand() * 12);
+    retargetAt[i] = 4 + Math.floor(rand() * 8);
   }
 
   let done = 0;
@@ -99,9 +107,9 @@ export function simulateForwardRace(racers, ticks, seed) {
     lastWritten = t;
     const raceFraction = t / Math.max(1, Number(ticks) || 1);
 
-    // Freeze the field shape when P1 crosses. Every unfinished racer receives
-    // the same ABSOLUTE clear speed, so their spacing cannot accordion closed
-    // and nobody can pass after the winner is home.
+    // P1 is home. Freeze the exact field shape. Every unfinished racer gets
+    // the same absolute speed, so their current gaps and order are carried
+    // through the stripe instead of collapsing into a manufactured pack.
     if (winnerTick >= 0 && !clearLocked) {
       const unfinished = Array.from({ length: n }, (_, i) => i)
         .filter((i) => finishTick[i] < 0);
@@ -121,13 +129,15 @@ export function simulateForwardRace(racers, ticks, seed) {
         speed[i] = clearSpeed[i];
         target[i] = clearSpeed[i];
       } else {
+        // Change targets quickly enough for the alternating phases to become
+        // visible overtakes, not just subtle speed differences.
         if (t >= retargetAt[i]) {
           target[i] = storyPace(stories.get(i), raceFraction, base, rand);
-          retargetAt[i] = t + 4 + Math.floor(rand() * 8);
+          retargetAt[i] = t + 3 + Math.floor(rand() * 5);
         }
 
-        speed[i] += (target[i] - speed[i]) * 0.46;
-        speed[i] = clamp(speed[i], base * 0.035, base * 3.75);
+        speed[i] += (target[i] - speed[i]) * 0.58;
+        speed[i] = clamp(speed[i], base * 0.025, base * 3.85);
       }
 
       const before = progress[i];
