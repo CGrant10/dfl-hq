@@ -228,9 +228,32 @@ export function savedMode() {
   return DEFAULT_MODE;                 // no preference recorded at all
 }
 
+/*
+  A PAGE MAY PIN THE PALETTE, AND THAT IS NOT THE SAME AS CHOOSING ONE.
+
+  Golf is a branded surface: it is meant to look like Golf to everybody
+  standing on the same tee, not like whichever club each of them picked in
+  their profile. So the golf route pins the palette while it is open.
+
+  The pin is deliberately kept OUT of savedMode() and out of localStorage.
+  It changes what paints, never what the member asked for - so the profile
+  picker still shows their real choice, and leaving golf restores it with
+  nothing to undo. Anything that wrote the pin down would eventually leave
+  somebody permanently in a theme they never picked.
+*/
+let pinned = "";
+
+/** Pin the palette to one mode, or pass nothing to release it. */
+export function pinMode(mode) {
+  const next = mode && (PICKABLE.includes(mode) || isTeamMode(mode)) ? mode : "";
+  if (next === pinned) return;
+  pinned = next;
+  apply();
+}
+
 /** The mode that is actually painting right now - never "system". */
 export function activeMode() {
-  const want = savedMode();
+  const want = pinned || savedMode();
   if (want !== "system") return want;
   return media().matches ? "dark" : "light";
 }
