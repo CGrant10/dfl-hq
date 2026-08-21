@@ -4,26 +4,28 @@
 export * from "./race.js?legacy=1";
 
 import { simulateForwardRace } from "./duck-physics.js";
+import { normalizeRaceTime } from "./race-time-normalize.js";
 
 /*
   DURATION MEANS WATCH TIME.
 
-  The story-race model deliberately allows 2x-3.6x surges. Feeding the old
-  nominal tick count straight into that model made a 1500-tick (~60 second)
-  configuration finish in roughly ten seconds because the winner spent much
-  of the race above baseline pace. Keep the drama, but give it a longer
-  internal course so the configured duration once again approximates the time
-  a viewer watches before P1 crosses.
+  The dramatic story model needs a longer INTERNAL course so breakaways,
+  comebacks and fades have room to develop. The old fix used a hard-coded
+  multiplier of six and then treated that internal clock as real time, so a
+  requested 60-second race could run for roughly 100 seconds depending on the
+  seed.
 
-  Six is empirical calibration against the current story bands. It does not
-  change relative racer behavior, order, seed determinism, or post-P1 clear;
-  it only maps the human-facing duration onto the faster dramatic physics.
+  Keep the long internal simulation, then normalize the completed recording so
+  P1 crosses at the human-requested duration. That preserves the exact seeded
+  race story and finish order while making 60 seconds actually mean 60 seconds.
 */
-const STORY_TIME_CALIBRATION = 6;
+const STORY_INTERNAL_LENGTH = 6;
 
 export function simulate(racers, ticks, seed) {
-  const calibratedTicks = Math.max(1, Math.round((Number(ticks) || 1) * STORY_TIME_CALIBRATION));
-  return simulateForwardRace(racers, calibratedTicks, seed);
+  const requestedTicks = Math.max(1, Math.round(Number(ticks) || 1));
+  const internalTicks = Math.max(1, Math.round(requestedTicks * STORY_INTERNAL_LENGTH));
+  const internal = simulateForwardRace(racers, internalTicks, seed);
+  return normalizeRaceTime(internal, requestedTicks);
 }
 
 export function dramatize(sim) {
