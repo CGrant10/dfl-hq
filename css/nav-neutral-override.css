@@ -1,0 +1,24 @@
+/* Restore neutral shell navigation after the metallic experiment.
+   Keep active indicators themed, but make nav/More glyphs flat neutral ink. */
+.tabbar :is(a,.tabmore),
+.tabbar :is(a,.tabmore).on,
+.tabbar :is(a,.tabmore):hover { color:var(--text) !important; }
+
+.tabbar :is(a,.tabmore) svg,
+#more svg,
+.sheet-card svg {
+  color:var(--muted) !important;
+  filter:none !important;
+}
+.tabbar :is(a,.tabmore).on svg { color:var(--text) !important; }
+
+.tabbar :is(a,.tabmore) svg [stroke],
+#more svg [stroke],
+.sheet-card svg [stroke] { stroke:currentColor !important; }
+
+.tabbar :is(a,.tabmore) svg [fill]:not([fill="none"]),
+#more svg [fill]:not([fill="none"]),
+.sheet-card svg [fill]:not([fill="none"]) { fill:currentColor !important; }
+
+.tabbar :is(a,.tabmore).on::before,
+.tabbar :is(a,.tabmore).on::after { background:var(--accent-sweep) !important; }
