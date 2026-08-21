@@ -60,10 +60,6 @@ function loadPermanentChromeStyles() {
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
   -webkit-text-fill-color:#fff!important;color:#fff!important
 }
-.tabbar :is(a,.tabmore) svg,#more svg,.sheet-card svg{
-  filter:grayscale(1) saturate(0) brightness(1.7)!important;opacity:.9!important
-}
-.tabbar :is(a,.tabmore).on svg{opacity:1!important}
 
 #profile-wrap .dfl-career-card .card-title{
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;

@@ -29,6 +29,42 @@ body.broadcasting .install,
 body.broadcasting #update { display: none !important; }
 body.broadcasting .view { max-width: none; margin: 0; padding: 0; }
 
+/* =====================================================================
+   THE STAGE IS A DARK SURFACE IN EVERY MODE, SO IT CARRIES DARK-MODE INK
+   ---------------------------------------------------------------------
+   .bc-stage hardcodes its own background - a near-black broadcast
+   composition - but every rule inside it asks for --text, --muted and
+   --accent, and those INVERT with the member's palette. In light mode that
+   put #11161d text and a #B8001B accent onto #06090d: the race read as a
+   black rectangle and the admin bar's buttons were unreadable.
+
+   Rather than rewrite twenty rules, the palette is re-declared for this
+   subtree. Custom properties cascade, so every `var(--text)` below keeps
+   working and simply resolves to the value that belongs on this surface.
+
+   LIGHT MODE ONLY. Dark and the club palettes are already dark surfaces
+   with light ink, and pinning them here would throw away a member's club
+   colours on the one screen built to show them off.
+
+   .bc-bar is listed separately because it is position:fixed to the
+   viewport, not a child of the stage - see the comment above it.
+   ===================================================================== */
+[data-mode="light"] .bc-stage,
+[data-mode="light"] .bc-bar {
+  --bg: #0d1117;
+  --bg-2: #131a24;
+  --bg-3: #1b2432;
+  --line: #222b3a;
+  --line-soft: #1a222e;
+  --text: #e8edf5;
+  --body-text: #cdd6e2;
+  --muted: #8b98ab;
+  --chalk: #f5f7fa;
+  --accent: #E67582;
+  --accent-2: #7098E6;
+  --milestone: #d6b254;
+}
+
 .bc-stage {
   position: relative;
   width: 100vw;

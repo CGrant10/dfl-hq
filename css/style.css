@@ -1377,7 +1377,10 @@ textarea { min-height: 96px; resize: vertical; }
   bottom: 0; left: 0; right: 0;
   z-index: 20;
   display: flex;
-  background: #10161f;
+  /* A token, not #10161f - css/ui.css layers the real surface on top of
+     this and both have to follow the palette or they disagree in light
+     mode for however long ui.css takes to arrive. */
+  background: var(--bg-2);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left:  env(safe-area-inset-left);
@@ -1431,15 +1434,23 @@ textarea { min-height: 96px; resize: vertical; }
   transform: translateX(-50%);
   z-index: 50;
   background: var(--toast-bg);
+  /*
+    ONE colour, and it is --on-toast. A second `color: var(--text)` used to
+    follow the border line and win, which is fine in dark mode where --text
+    is near-white and catastrophic in light mode where it is #11161d - the
+    same value as --toast-bg. The toast is a deliberately dark pill in both
+    modes, which is exactly why --on-toast exists; letting --text near it
+    turned every toast into a solid black lozenge with invisible writing.
+  */
   color: var(--on-toast);
   border: 1px solid var(--line);
-  color: var(--text);
   padding: 10px 16px;
   border-radius: 999px;
   font-size: 14px;
   box-shadow: var(--shadow);
   max-width: 90vw;
 }
+/* Inherits --on-toast from .toast, which is what makes this readable. */
 .toast.bad { background: #3a1714; border-color: #6b2b23; }
 
 /* ========================= motion ==================================== */
@@ -1479,17 +1490,23 @@ textarea { min-height: 96px; resize: vertical; }
 .tabbar :is(a, .tabmore):active { transform: scale(.9); }
 
 /* ---------------------------------------------------------------------
-   CHROME IS ALWAYS DARK
+   THE TOP BAR IS ALWAYS DARK
 
-   The bar at the top and the bar at the bottom keep the crest's black
-   banner in light mode as well as dark. It is the one piece of the app the
-   logo genuinely dictates, and it means the wordmark reads the same
-   everywhere instead of being restyled twice.
+   The bar at the top keeps the crest's black banner in light mode as well
+   as dark. It is the one piece of the app the logo genuinely dictates, and
+   it means the wordmark reads the same everywhere instead of being
+   restyled twice.
 
-   The consequence has to be handled explicitly: everything inside those
-   bars is pinned light-on-dark rather than following --text and --muted,
-   which invert. Without this the header goes near-black on near-black the
-   moment a phone is in light mode.
+   The consequence has to be handled explicitly: everything inside it is
+   pinned light-on-dark rather than following --text and --muted, which
+   invert. Without this the header goes near-black on near-black the moment
+   a phone is in light mode.
+
+   THE BOTTOM BAR NO LONGER FOLLOWS THIS RULE. It carries no wordmark, so
+   nothing about the logo dictated it, and a black slab under a white page
+   was the single most obvious thing wrong with light mode. It takes the
+   palette; its glyphs are brushed steel that has a light-mode ramp of its
+   own. See css/ui.css and css/profile-neutral.css.
    ------------------------------------------------------------------- */
 .topbar { color: #f5f7fa; border-bottom-color: #222b3a; }
 .topbar .whoami {
@@ -1499,9 +1516,9 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .topbar .whoami:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.32); }
 .brand-text span { color: #E67582; }
-.tabbar { border-top-color: #222b3a; }
-.tabbar :is(a, .tabmore) { color: #8b98ab; }
-.tabbar :is(a, .tabmore).on, .tabbar :is(a, .tabmore):hover { color: #E67582; }
+.tabbar { border-top-color: var(--line); }
+.tabbar :is(a, .tabmore) { color: var(--muted); }
+.tabbar :is(a, .tabmore).on, .tabbar :is(a, .tabmore):hover { color: var(--accent); }
 
 /* ---------------------------------------------------------------------
    Rules that used to be injected by theme.js at runtime. There is one

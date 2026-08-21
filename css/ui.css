@@ -265,12 +265,11 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
 .brand-text { font-size: var(--fs-h1); letter-spacing: var(--ls-caps); }
 .brand-text .creed { letter-spacing: .06em; }
 
-/* CHROME IS ALWAYS DARK - see the block of that name in style.css. This
-   mixed from --bg, which inverts, so in light mode the bar went pale grey
-   while everything pinned inside it stayed light-on-dark: white labels on
-   a near-white bar. --topbar-b is the chrome black and does not invert, so
-   the top and bottom bars now match in both modes. */
-.tabbar { background: color-mix(in srgb, var(--topbar-b) 88%, #000); backdrop-filter: blur(8px); }
+/* The nav bar follows the palette: a raised surface a shade off the page in
+   both modes, with its ink and its glyphs following it (profile-neutral.css).
+   The TOP bar still keeps the crest's black banner - see "CHROME" in
+   style.css - because that one is the wordmark's own background. */
+.tabbar { background: color-mix(in srgb, var(--bg-2) 94%, var(--bg)); backdrop-filter: blur(8px); }
 .tabbar :is(a, .tabmore) {
   min-height: 52px;
   font-size: var(--fs-micro);

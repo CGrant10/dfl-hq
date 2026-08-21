@@ -559,6 +559,37 @@
 .dfl-gold-c { stop-color: #fffbe8; }
 .dfl-gold-d { stop-color: #b8912c; }
 
+/*
+  BRUSHED STEEL, for the shell glyphs - the tab bar and the More sheet.
+
+  Same four-stop recipe as the gold above and for the same reason: a dark
+  top edge, a bright band across the upper middle, a mid tone, a dark
+  bottom edge. Two stops read as a flat tint; four read as a lit surface.
+  The gradient runs vertically (y 0 -> 1 in the defs) rather than on the
+  diagonal, because a horizon-parallel highlight is what makes a small
+  glyph look like metal instead of like a colour wash.
+
+  These are the SHELL icons only. Content icons keep --accent-fill through
+  #dfl-ico-grad: the palette still belongs to the app, and turning every
+  glyph to metal would take the colour out of the parts that use it to
+  mean something.
+*/
+.dfl-steel-a { stop-color: #cfd8e6; }
+.dfl-steel-b { stop-color: #ffffff; }
+.dfl-steel-c { stop-color: #aab6c8; }
+.dfl-steel-d { stop-color: #76839a; }
+
+/*
+  A LIGHT BAR NEEDS DARK METAL. Polished silver on a white surface is the
+  same problem as white text on white: the highlight band disappears and
+  the glyph loses its shape. These are gunmetal - the same ramp, moved
+  down until the darkest stop reads on --bg-2.
+*/
+[data-mode="light"] .dfl-steel-a { stop-color: #63708a; }
+[data-mode="light"] .dfl-steel-b { stop-color: #98a6bd; }
+[data-mode="light"] .dfl-steel-c { stop-color: #55617a; }
+[data-mode="light"] .dfl-steel-d { stop-color: #333c4e; }
+
 .ico { fill: url(#dfl-ico-grad); }
 .ico [stroke="currentColor"] { stroke: url(#dfl-ico-grad); }
 
