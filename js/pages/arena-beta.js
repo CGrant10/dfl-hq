@@ -1,19 +1,20 @@
 // DFL Arena Beta — real UI composed from approved raster artwork.
 // Still isolated from live Arena/Broadcast and stores loadout locally only.
-const STORAGE_KEY="dfl.arenaBeta.loadout.v3";
+const STORAGE_KEY="dfl.arenaBeta.loadout.v4";
 const ART="assets/arena-beta/arena-beta-render.jpg";
+const SOURCE_W=1024;
 const VEHICLES=[
- {id:"kart",label:"Arcade Kart",crop:[1063,96,150,132]},
- {id:"stock",label:"Mini Stock",crop:[1217,96,150,132]},
- {id:"golf",label:"Golf Cart",crop:[1370,96,155,132]},
- {id:"pickup",label:"Tiny Pickup",crop:[1063,232,150,137]},
- {id:"open",label:"Open Wheel",crop:[1217,232,150,137]},
- {id:"beater",label:"Box Beater",crop:[1370,232,155,137]}
+ {id:"kart",label:"Arcade Kart",crop:[709,64,100,88]},
+ {id:"stock",label:"Mini Stock",crop:[811,64,100,88]},
+ {id:"golf",label:"Golf Cart",crop:[913,64,103,88]},
+ {id:"pickup",label:"Tiny Pickup",crop:[709,155,100,91]},
+ {id:"open",label:"Open Wheel",crop:[811,155,100,91]},
+ {id:"beater",label:"Box Beater",crop:[913,155,103,91]}
 ];
 const WHEELS=["Slicks","Chunky","Offroad","Rally","White Walls","Gold Rims","Steelies"];
 const ACCESSORIES=["None","Beacon","Trophy","Crown","Exhaust","Cooler","Toolbox","Engine Kit"];
 const PAINTS=["Red","Orange","Yellow","Green","Teal","Blue","Purple","Black","White"];
-const CROPS={garage:[205,56,854,734],wheels:[1062,382,464,129],accessories:[1062,669,464,118],speedway:[1062,793,464,194]};
+const CROPS={garage:[137,37,569,490],wheels:[708,255,309,86],accessories:[708,446,309,79],speedway:[708,529,309,129]};
 function ensureAssets(){
  if(!document.getElementById("arena-beta-render-css")){const l=document.createElement("link");l.id="arena-beta-render-css";l.rel="stylesheet";l.href="css/arena-beta-render.css";document.head.appendChild(l)}
  if(!document.getElementById("arena-beta-art-preload")){const l=document.createElement("link");l.id="arena-beta-art-preload";l.rel="preload";l.as="image";l.href=ART;document.head.appendChild(l)}
@@ -21,7 +22,7 @@ function ensureAssets(){
 function loadState(){const d={vehicle:"kart",wheels:"Slicks",paint:"Red",accessory:"Beacon",flag:"DFL"};try{return {...d,...JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}}catch{return d}}
 function saveState(s){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}catch{}}
 function vehicleById(id){return VEHICLES.find(v=>v.id===id)||VEHICLES[0]}
-function rasterCrop(crop,cls="",alt=""){const[x,y,w,h]=crop;const width=(1536/w*100).toFixed(3);const left=(-x/w*100).toFixed(3);const top=(-y/h*100).toFixed(3);return `<span class="abr-raster-crop ${cls}" style="--crop-ratio:${w}/${h};--img-width:${width}%;--img-left:${left}%;--img-top:${top}%"><img src="${ART}" alt="${alt}" decoding="async"></span>`}
+function rasterCrop(crop,cls="",alt=""){const[x,y,w,h]=crop;const width=(SOURCE_W/w*100).toFixed(3);const left=(-x/w*100).toFixed(3);const top=(-y/h*100).toFixed(3);return `<span class="abr-raster-crop ${cls}" style="--crop-ratio:${w}/${h};--img-width:${width}%;--img-left:${left}%;--img-top:${top}%"><img src="${ART}" alt="${alt}" decoding="async"></span>`}
 function vehicleCard(v,s){const on=s.vehicle===v.id;return `<button class="abr-vehicle-card${on?" is-selected":""}" data-choice="vehicle" data-value="${v.id}" aria-pressed="${on}">${rasterCrop(v.crop,"abr-vehicle-art",v.label)}<strong>${v.label}</strong></button>`}
 function choice(group,val,s){const on=s[group]===val;return `<button class="abr-chip${on?" is-selected":""}" data-choice="${group}" data-value="${val}" aria-pressed="${on}">${val}</button>`}
 function paintChoice(val,s){const on=s.paint===val;return `<button class="abr-paint${on?" is-selected":""}" data-choice="paint" data-value="${val}" data-paint="${val.toLowerCase()}" aria-label="${val}" aria-pressed="${on}"></button>`}
