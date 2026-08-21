@@ -2,7 +2,7 @@
 // Isolated from live Arena/Broadcast; loadout persists locally only.
 const STORAGE_KEY="dfl.arenaBeta.loadout.v7";
 const ASSET_VERSION="1.112.8";
-const ART_PARTS=Array.from({length:5},(_,i)=>`assets/arena-beta/render-part-${i}.txt?v=${ASSET_VERSION}`);
+const ART_PARTS=["render-prefix-a.txt","render-prefix-b.txt","render-part-1.txt","render-part-2.txt","render-part-3.txt","render-part-4.txt"].map(name=>`assets/arena-beta/${name}?v=${ASSET_VERSION}`);
 const DESIGN_W=1536, DESIGN_H=1024;
 const VEHICLES=[
  {id:"kart",label:"Arcade Kart",crop:[1063,96,150,132]},
