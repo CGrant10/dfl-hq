@@ -11,23 +11,9 @@ import { esc, toast } from "./ui.js";
 /*
   WHICH PERMISSION GOVERNS WHICH TABLE.
 
-  A table that is NOT in here falls through to isMasterAdmin() below - the
-  shared Admin password and nothing else. That default is the right way round
-  (deny, not allow) but it is also completely silent, and the Admin screen
-  offers TWELVE permission checkboxes without saying that some of them govern
-  no table at all.
-
-  That is how "a commissioner cannot edit a race" happened: `arena_events` was
-  missing, so canEdit("arena_events") returned isMasterAdmin(), the editor
-  refused with "You do not have permission to edit that", and it refused on the
-  CLIENT - before any policy was consulted. Adding the database policy changed
-  nothing, because the request was never sent.
-
-  STILL UNMAPPED, and therefore still master-admin-only however the checkbox is
-  set: golf, sportsbook, fees, sleeper. Those four permissions currently grant
-  nothing anywhere. `members` is mapped here but has no matching database
-  policy, so it passes this gate and is then refused by RLS - which at least
-  now reports itself, see updateRow() in supabase.js.
+  A table that is NOT in here falls through to isMasterAdmin() below. Keep
+  this map aligned with the matching Supabase commissioner policies so the
+  client never hides a control that the database already permits.
 */
 const TABLE_PERMISSION = {
   announcements: "announcements",
@@ -39,6 +25,26 @@ const TABLE_PERMISSION = {
   rule_categories: "rules",
   history: "history",
   members: "members",
+
+  /* Golf. These tables already carry has_commissioner_permission('golf')
+     policies in Supabase; mapping them here makes the owner/commissioner UI
+     agree with the database. */
+  golf_outings: "golf",
+  golf_participants: "golf",
+  golf_teams: "golf",
+  golf_rounds: "golf",
+  golf_matches: "golf",
+  golf_match_sides: "golf",
+  golf_match_players: "golf",
+  golf_match_scores: "golf",
+  golf_scores: "golf",
+  golf_courses: "golf",
+  golf_course_holes: "golf",
+  golf_event_codes: "golf",
+  golf_profiles: "golf",
+  golf_bag: "golf",
+  golf_bag_visibility: "golf",
+
   /* The Arena. arena_commissioner_policy.sql carries the matching policies. */
   arena_events: "broadcast",
   arena_participants: "broadcast",
