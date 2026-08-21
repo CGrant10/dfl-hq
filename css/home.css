@@ -290,9 +290,18 @@
   --gold-3: #d4af37;   /* 8.32:1 */
   color: var(--gold-3);
 }
+/*
+  :not(.idp-rings) BECAUSE THE PILL HAS TWO CHILD SPANS.
+
+  One holds the title text; the other is the trophy wrapper, which holds
+  glyphs and no text at all. Clipping a gradient to the text of an element
+  with no text paints nothing in dark mode - invisible, so nobody noticed -
+  but the moment the clip was lost in light mode it became a 12x12 gold
+  square sitting next to the title.
+*/
 @supports (-webkit-background-clip: text) or (background-clip: text) {
-  .ib-title.is-champion > span,
-  .idp.is-title.is-champion > span {
+  .ib-title.is-champion > span:not(.idp-rings),
+  .idp.is-title.is-champion > span:not(.idp-rings) {
     background: linear-gradient(100deg,
       var(--gold-1) 0%, var(--gold-3) 26%, var(--gold-2) 44%,
       #fffbe8 50%, var(--gold-2) 56%, var(--gold-3) 74%, var(--gold-1) 100%);
@@ -349,12 +358,22 @@
   color: var(--gold-3);
 }
 @supports (-webkit-background-clip: text) or (background-clip: text) {
-  [data-mode="light"] .ib-title.is-champion > span,
-  [data-mode="light"] .idp.is-title.is-champion > span {
+  [data-mode="light"] .ib-title.is-champion > span:not(.idp-rings),
+  [data-mode="light"] .idp.is-title.is-champion > span:not(.idp-rings) {
     background: linear-gradient(100deg,
       var(--gold-1) 0%, var(--gold-3) 26%, var(--gold-2) 44%,
       #8a6a1f 50%, var(--gold-2) 56%, var(--gold-3) 74%, var(--gold-1) 100%);
     background-size: 280% 100%;
+    /*
+      RE-DECLARED, AND IT HAS TO BE. `background` is the SHORTHAND, so the
+      line above resets background-clip to border-box - while
+      -webkit-text-fill-color: transparent survives from the rule this is
+      overriding. The result was invisible text on a painted box: the
+      champion title rendered as a solid gold block in light mode and only
+      in light mode. The team pill below re-declares it for the same reason.
+    */
+    -webkit-background-clip: text;
+    background-clip: text;
   }
 }
 [data-mode="light"] .ib-title.is-champion .ico,
@@ -375,8 +394,8 @@
    that has to stop when somebody has asked for less motion. The gold
    stays; only the travel goes. */
 @media (prefers-reduced-motion: reduce) {
-  .ib-title.is-champion > span,
-  .idp.is-title.is-champion > span {
+  .ib-title.is-champion > span:not(.idp-rings),
+  .idp.is-title.is-champion > span:not(.idp-rings) {
     animation: none;
     background-position: 50% 50%;
   }

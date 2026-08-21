@@ -2723,7 +2723,15 @@ input.masked {
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: #0c1119;
+  /*
+    A TOKEN, NOT #0c1119. Unlike the top and bottom bars this is NOT
+    always-dark chrome - it is a strip of league content sitting on the
+    page, and everything written on it (--body-text, --accent) inverts with
+    the palette. Hardcoding the surface meant light mode painted near-black
+    text and a #B8001B label onto a near-black bar, and the ticker simply
+    disappeared. --bg-3 keeps it a distinct strip in both modes.
+  */
+  background: var(--bg-3);
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line);
   padding-left:  env(safe-area-inset-left);
@@ -2755,13 +2763,8 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   padding: 0 14px;
   white-space: nowrap;
   text-decoration: none;
-  /* NOT --body-text. .bottomline hardcodes a dark bar (background:#0c1119)
-     and this inverts with the palette, so light mode put near-black text on
-     that near-black bar and the ticker vanished. Same contract as the top
-     and bottom bars: a pinned dark surface pins its own ink. */
-  color: #cfd6e2;
+  color: var(--body-text);
 }
-.bl-dot { background: rgba(255,255,255,.22) !important; }
 /*
   TICKER LABELS ALTERNATE: primary, secondary, primary, secondary.
 
@@ -2775,11 +2778,9 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   font-weight: 800;
   letter-spacing: .7px;
   text-transform: uppercase;
-  /* The dark-mode accent pair, pinned. --accent in light mode is #B8001B,
-     picked to clear 4.5:1 on WHITE - on this bar it is 1.7:1. */
-  color: #F08279;
+  color: var(--accent);
 }
-.bl-item[data-bl-alt] .bl-label { color: #7FA8FF; }
+.bl-item[data-bl-alt] .bl-label { color: var(--accent-2); }
 .bl-text { font-weight: 600; }
 .bl-dot { flex: 0 0 auto; width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
 
