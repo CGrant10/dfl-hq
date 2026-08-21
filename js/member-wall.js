@@ -111,10 +111,7 @@ function postHtml(r) {
     ${r.body ? `<p class="wall-body" data-wall-body-display>${esc(r.body)}</p>` : `<p class="wall-body hidden" data-wall-body-display></p>`}
     ${editForm}
     ${r.image ? `<img class="wall-photo" src="${esc(r.image)}" alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
-    <div class="wall-post-actions">
-      ${r.image ? `<button class="wall-submit btn ghost small" type="button" data-submit-broadcast="${esc(r.id)}">${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
-      ${controls}
-    </div>
+    ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
   </article>`;
 }
 
@@ -205,21 +202,5 @@ export function wireWall(root, onChanged) {
       toast("Post updated");
       onChanged?.();
     } catch (err) { btn.disabled = false; toast(err.message || "Could not update post", true); }
-  });
-
-  root.querySelectorAll("[data-submit-broadcast]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const me = currentMember();
-      if (!me) return;
-      btn.disabled = true;
-      const id = Number(btn.dataset.submitBroadcast);
-      const { data, error } = await db().from("member_wall_posts").select("image,body").eq("id", id).single();
-      if (error || !data?.image) { btn.disabled = false; toast("Could not load that picture", true); return; }
-      const { error: submitError } = await db().from("broadcast_submissions").insert({ member_id: me.id, image: data.image, caption: String(data.body || "").slice(0, 180) });
-      if (submitError) { btn.disabled = false; toast(submitError.message, true); return; }
-      btn.classList.add("is-sent");
-      btn.innerHTML = `${icon("check", { size: 14 })}<span>Submitted</span>`;
-      toast("Sent to the Broadcast inbox");
-    });
   });
 }
