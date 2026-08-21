@@ -3,6 +3,7 @@ import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { applyTheme, isTeamMode, teamModeFor } from "./theme.js";
 import "./arena-duration-ui.js";
+import "./league-photo-feature.js";
 
 const MODE_KEY = "dfl.mode";
 const PICKABLE = new Set(["dark", "light", "medicine", "system"]);
