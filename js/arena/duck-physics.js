@@ -33,16 +33,15 @@ function shuffle(values, rand) {
   return out;
 }
 
-// The old engine gave every racer an independent alternating story. That
-// created separation, but those stories averaged out and the field often
-// settled into a stable order halfway through the race. This schedule is
-// coordinated instead: every phase deliberately assigns attackers, faders
-// and chasers across the whole field so the LEAD itself keeps changing hands.
+// The field is deliberately re-dealt over and over. These are not gentle
+// endurance curves; they are visible race moments. A racer can suddenly get
+// hot, lose the motor, recover, or steal the lead late. Shorter phases plus
+// hard speed changes keep the order vulnerable all the way to the stripe.
 function pickStories(n, rand) {
   const stories = new Map(Array.from({ length: n }, (_, i) => [i, { type: "battle", segments: [] }]));
   const ids = Array.from({ length: n }, (_, i) => i);
-  const phaseCount = 18 + Math.floor(rand() * 4); // 18-21 contested phases
-  const storyEnd = 0.992;
+  const phaseCount = 21 + Math.floor(rand() * 4); // 21-24 abrupt battle phases
+  const storyEnd = 0.995;
   let end = 0;
 
   for (let phase = 0; phase < phaseCount; phase++) {
@@ -50,32 +49,32 @@ function pickStories(n, rand) {
     const slotsLeft = phaseCount - phase;
     const span = phase === phaseCount - 1
       ? remaining
-      : clamp(remaining / slotsLeft * (0.82 + rand() * 0.36), 0.034, 0.072);
+      : clamp(remaining / slotsLeft * (0.86 + rand() * 0.28), 0.024, 0.055);
     end = Math.min(storyEnd, end + span);
 
     const order = shuffle(ids, rand);
-    const late = end > 0.72;
-    const veryLate = end > 0.88;
+    const late = end > 0.68;
+    const veryLate = end > 0.86;
 
-    // Four attackers means there is always more than one racer capable of
-    // eating a big gap in the same phase. Deep in the race the boosts get
-    // stronger so a backmarker can still mount a real comeback.
-    const attackers = new Set(order.slice(0, Math.min(4, n)));
-    const faders = new Set(order.slice(Math.min(4, n), Math.min(8, n)));
+    // Three or four racers attack while a different three or four fade. This
+    // makes each phase a visible exchange of momentum instead of everybody
+    // changing together and preserving the same order.
+    const attackCount = Math.min(n, n >= 10 ? (rand() < 0.5 ? 3 : 4) : 3);
+    const fadeCount = Math.min(Math.max(0, n - attackCount), n >= 10 ? 4 : 3);
+    const attackers = new Set(order.slice(0, attackCount));
+    const faders = new Set(order.slice(attackCount, attackCount + fadeCount));
 
     for (const id of ids) {
       let mult;
       if (attackers.has(id)) {
-        mult = (late ? 3.15 : 2.75) + rand() * (veryLate ? 1.65 : 1.35);
+        mult = (late ? 3.35 : 2.95) + rand() * (veryLate ? 1.75 : 1.45);
       } else if (faders.has(id)) {
-        mult = (veryLate ? 0.015 : 0.035) + rand() * (late ? 0.20 : 0.28);
+        mult = (veryLate ? 0.008 : 0.025) + rand() * (late ? 0.16 : 0.24);
       } else {
-        // The middle pack still moves. Alternate between soft attack and soft
-        // fade so nobody can just cruise at one pace for half the race.
         const softAttack = ((phase + id) & 1) === 0;
         mult = softAttack
-          ? 1.45 + rand() * 0.85
-          : 0.38 + rand() * 0.42;
+          ? 1.55 + rand() * 0.95
+          : 0.28 + rand() * 0.44;
       }
       stories.get(id).segments.push({ end, mult });
     }
@@ -86,8 +85,8 @@ function pickStories(n, rand) {
 
 function storyPace(story, raceFraction, base, rand) {
   const segment = story?.segments?.find((s) => raceFraction <= s.end);
-  if (!segment) return base * (0.72 + rand() * 0.56);
-  return base * segment.mult * (0.98 + rand() * 0.04);
+  if (!segment) return base * (0.70 + rand() * 0.60);
+  return base * segment.mult * (0.985 + rand() * 0.03);
 }
 
 export function simulateForwardRace(racers, ticks, seed) {
@@ -110,7 +109,7 @@ export function simulateForwardRace(racers, ticks, seed) {
     const initial = storyPace(stories.get(i), 0, base, rand);
     speed[i] = initial;
     target[i] = initial;
-    retargetAt[i] = 2 + Math.floor(rand() * 5);
+    retargetAt[i] = 1 + Math.floor(rand() * 3);
   }
 
   let done = 0;
@@ -146,13 +145,18 @@ export function simulateForwardRace(racers, ticks, seed) {
       } else {
         if (t >= retargetAt[i]) {
           target[i] = storyPace(stories.get(i), raceFraction, base, rand);
-          retargetAt[i] = t + 2 + Math.floor(rand() * 4);
-        }
+          retargetAt[i] = t + 1 + Math.floor(rand() * 3);
 
-        // React quickly enough that a new battle phase visibly changes who is
-        // gaining and losing ground instead of averaging into cruising speed.
-        speed[i] += (target[i] - speed[i]) * 0.74;
-        speed[i] = clamp(speed[i], base * 0.008, base * 4.9);
+          // This is the feel change: hit the new phase NOW. Taking 94% of the
+          // target delta on the retarget frame turns a fade into a visible
+          // stumble and a surge into a visible launch instead of a slow glide.
+          speed[i] += (target[i] - speed[i]) * 0.94;
+        } else {
+          // Finish the transition almost immediately, but leave a hair of
+          // inertia so the sprite still reads as running rather than teleporting.
+          speed[i] += (target[i] - speed[i]) * 0.84;
+        }
+        speed[i] = clamp(speed[i], base * 0.005, base * 5.2);
       }
 
       const before = progress[i];
