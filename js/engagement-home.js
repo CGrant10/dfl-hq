@@ -30,9 +30,14 @@ function ensureStyles() {
 
 const homeNow = () => (location.hash || "#/home").split("?")[0] === "#/home";
 
+function actionGlyph(name) {
+  if (name === "camera") return icon("camera", { size: 22 });
+  return `<svg class="ico" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${esc(name)}"></use></svg>`;
+}
+
 function action(href, title, sub, iconName, { priority = false, badge = "" } = {}) {
   return `<a class="dfl-quick-action${priority ? " is-priority" : ""}" href="${esc(href)}">
-    <span class="dfl-quick-icon" aria-hidden="true">${icon(iconName, { size: 22 })}</span>
+    <span class="dfl-quick-icon" aria-hidden="true">${actionGlyph(iconName)}</span>
     <span class="dfl-quick-copy"><strong>${esc(title)}</strong><span>${esc(sub)}</span>${badge ? `<span class="dfl-quick-badge">${esc(badge)}</span>` : ""}</span>
     <span class="dfl-quick-arrow" aria-hidden="true">›</span>
   </a>`;
@@ -41,7 +46,7 @@ function action(href, title, sub, iconName, { priority = false, badge = "" } = {
 async function paintQuickActions() {
   if (!homeNow()) return;
   const section = document.querySelector("[data-dfl-quick-actions]");
-  if (!section || section.dataset.engagementLoading === "1") return;
+  if (!section || section.dataset.engagementLoading === "1" || section.dataset.engagementPainted === "1") return;
   section.dataset.engagementLoading = "1";
   const token = ++quickToken;
   const me = currentMember();
@@ -84,17 +89,18 @@ async function paintQuickActions() {
   const grid = section.querySelector(".dfl-quick-grid");
   if (grid) grid.innerHTML = actions.join("");
   section.dataset.engagementLoading = "0";
+  section.dataset.engagementPainted = "1";
 }
 
 async function paintSinceAway() {
   if (!homeNow()) return;
   const home = document.getElementById("home-wrap");
-  if (!home || home.dataset.engagementSinceLoading === "1") return;
+  if (!home || home.dataset.engagementSinceLoading === "1" || home.dataset.engagementSincePainted === "1") return;
   home.dataset.engagementSinceLoading = "1";
   const token = ++sinceToken;
   const raw = (() => { try { return localStorage.getItem("dfl.seenAt") || ""; } catch { return ""; } })();
   const seen = raw ? new Date(raw) : null;
-  if (!seen || Number.isNaN(seen.getTime())) { home.dataset.engagementSinceLoading = "0"; return; }
+  if (!seen || Number.isNaN(seen.getTime())) { home.dataset.engagementSinceLoading = "0"; home.dataset.engagementSincePainted = "1"; return; }
   const floor = new Date(Math.max(seen.getTime(), Date.now() - 14 * 86400000));
   let wallCount = 0, raceCount = 0;
   try {
@@ -117,20 +123,19 @@ async function paintSinceAway() {
     stage?.after(section);
     strip = section;
   }
-  if (!strip) { home.dataset.engagementSinceLoading = "0"; return; }
-
-  const title = strip.querySelector(".wn-title");
-  if (title) title.textContent = "Since You Were Gone";
-  if (!strip.querySelector(".dfl-since-sub")) {
-    title?.insertAdjacentHTML("afterend", `<p class="dfl-since-sub">Since ${esc(sinceLabel(floor))}</p>`);
+  if (strip) {
+    const title = strip.querySelector(".wn-title");
+    if (title) title.textContent = "Since You Were Gone";
+    if (!strip.querySelector(".dfl-since-sub")) title?.insertAdjacentHTML("afterend", `<p class="dfl-since-sub">Since ${esc(sinceLabel(floor))}</p>`);
+    const list = strip.querySelector(".wn-list");
+    const extras = [];
+    if (raceCount && !list?.querySelector('[data-engagement-kind="arena"]')) extras.push(`<li data-engagement-kind="arena"><a href="#/arena"><svg class="ico-sm" aria-hidden="true"><use href="#i-arena"></use></svg><span>${raceCount === 1 ? "An Arena race finished" : `${raceCount} Arena races finished`}</span></a></li>`);
+    if (wallCount && !list?.querySelector('[data-engagement-kind="wall"]')) extras.push(`<li data-engagement-kind="wall"><a href="#/home"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span>${wallCount === 1 ? "A new Wall post" : `${wallCount} new Wall posts`}</span></a></li>`);
+    if (list && extras.length) list.insertAdjacentHTML("beforeend", extras.join(""));
+    strip.querySelector("[data-engagement-dismiss]")?.addEventListener("click", () => { markSeen(new Date()); strip.remove(); }, { once: true });
   }
-  const list = strip.querySelector(".wn-list");
-  const extras = [];
-  if (raceCount && !list?.querySelector('[data-engagement-kind="arena"]')) extras.push(`<li data-engagement-kind="arena"><a href="#/arena"><svg class="ico-sm" aria-hidden="true"><use href="#i-arena"></use></svg><span>${raceCount === 1 ? "An Arena race finished" : `${raceCount} Arena races finished`}</span></a></li>`);
-  if (wallCount && !list?.querySelector('[data-engagement-kind="wall"]')) extras.push(`<li data-engagement-kind="wall"><a href="#/home"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span>${wallCount === 1 ? "A new Wall post" : `${wallCount} new Wall posts`}</span></a></li>`);
-  if (list && extras.length) list.insertAdjacentHTML("beforeend", extras.join(""));
-  strip.querySelector("[data-engagement-dismiss]")?.addEventListener("click", () => { markSeen(new Date()); strip.remove(); }, { once: true });
   home.dataset.engagementSinceLoading = "0";
+  home.dataset.engagementSincePainted = "1";
 }
 
 async function paintReactions(root = document) {
