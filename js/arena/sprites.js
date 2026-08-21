@@ -22,7 +22,7 @@
 
 import { CHARACTERS } from "./dfl-sprites.js";
 /* One composition step for every renderer - see src/arena/character.ts. */
-import { characterSvg } from "./pixi-runtime.js";
+import { characterSvg } from "./pixi-runtime-finish.js";
 
 export const SPRITE_ROOT = "assets/arena/sprites";
 

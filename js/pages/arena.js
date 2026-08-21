@@ -46,7 +46,7 @@ import { themeLabel, slotsFor, assignSprites, spriteMarkup,
   runtime, the racer-view emitter, dramatize/visualEvents/boardState and the
   camera helpers - went with runRace(); pages/broadcast.js imports them now.
 */
-import { simulate, newSeed, ticksFor, raceSeconds } from "../arena/race.js";
+import { simulate, newSeed, ticksFor, raceSeconds } from "../arena/race-forward-shim.js";
 import { persistResult } from "../arena/results.js";
 
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {

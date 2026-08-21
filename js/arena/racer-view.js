@@ -35,7 +35,7 @@ import { spriteMarkup } from "./sprites.js";
 /* The course band, from the same module Pixi reads it from. The DOM lanes
    and the canvas actors have to agree about where the ground is, or one of
    the two renderers puts racers in the sky. See src/arena/viewport.ts. */
-import { LANE_BAND_TOP, LANE_BAND_BOTTOM } from "./pixi-runtime.js";
+import { LANE_BAND_TOP, LANE_BAND_BOTTOM } from "./pixi-runtime-finish.js";
 
 /**
  * One lane, with its racer.

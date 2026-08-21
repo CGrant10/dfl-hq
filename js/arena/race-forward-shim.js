@@ -28,7 +28,21 @@ export function simulate(racers, ticks, seed) {
   return normalizeRaceTime(internal, requestedTicks);
 }
 
-export function dramatize(sim) {
+/*
+  DELIBERATELY A PASS-THROUGH.
+
+  The real dramatize() lives in src/arena/theatre.ts, takes (sim, seed) and is
+  covered by theatre.spec.ts - but it RESHAPES positions, and the whole point
+  of this shim is that the recorded simulation is truth. The story now comes
+  from the physics itself (pickStories in duck-physics.js), so the samples go
+  to the renderer untouched and the ticker gets its beats from visualEvents().
+
+  The seed is accepted and ignored so the signature matches the call in
+  pages/broadcast.js. It used to be declared with one parameter, which meant
+  the caller silently handed a seed to nothing - and made it look, to anyone
+  reading broadcast.js, as though the legacy theatre were still running.
+*/
+export function dramatize(sim, _seed) {
   return { shown: sim.samples, events: [] };
 }
 

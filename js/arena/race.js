@@ -250,7 +250,7 @@ export function simulate(racers, ticks, seed) {
 
    It is re-exported from here so callers do not care where it lives.
    ===================================================================== */
-export { dramatize, crossingSpeeds } from "./pixi-runtime.js";
+export { dramatize, crossingSpeeds } from "./pixi-runtime-finish.js";
 
 const VERB = {
   surge:     (n) => `🔥 ${n} surges`,
@@ -484,7 +484,7 @@ export function intensityAt(shown, t) {
 
 /* The finish trajectory lives in src/arena/theatre.ts with the rest of the
    theatre, precomputed once per race and covered by theatre.spec.ts. */
-export { finishTrajectories, presentFinish, coastProgress, settleOffset } from "./pixi-runtime.js";
+export { finishTrajectories, presentFinish, coastProgress, settleOffset } from "./pixi-runtime-finish.js";
 
 /* =====================================================================
    THE SHOT. A 2D camera, chosen once per frame.

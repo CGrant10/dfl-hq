@@ -20,14 +20,14 @@
 
 import { db, isAdmin } from "../supabase.js";
 import { esc, errorBox, toast } from "../ui.js";
-import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime.js";
+import { backgroundMotion, createArenaRenderer, createFinishPresentation, createReactionTimeline, presentationRacerFrame, presentationScreenRatio } from "../arena/pixi-runtime-finish.js";
 import { getReduceRaceMotion, onReduceRaceMotionChange, setReduceRaceMotion } from "../store.js";
 import { loadMembers } from "../members.js";
 import { spriteMarkup, themeLabel } from "../arena/sprites.js";
 /* The same emitter the Arena stage uses. */
 import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
-         finishTrajectories, presentFinish, raceShot } from "../arena/race.js";
+         finishTrajectories, presentFinish, raceShot } from "../arena/race-forward-shim.js";
 import { claimFinish, persistResult, finalOffsetMs } from "../arena/results.js";
 
 const LANE_COLORS = [
