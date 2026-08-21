@@ -1,5 +1,7 @@
 // Arena custom duration UI.
 // Database compatibility stays in ticks, but humans enter seconds.
+import "./arena/landscape-lock.js";
+
 const TICKS_PER_SECOND = 25;
 
 function wireDurationInput(root = document) {
