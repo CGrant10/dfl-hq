@@ -1,8 +1,8 @@
 // DFL Arena Beta — real UI composed from approved raster artwork.
 // Isolated from live Arena/Broadcast; loadout persists locally only.
-const STORAGE_KEY="dfl.arenaBeta.loadout.v6";
-const ASSET_VERSION="1.112.7";
-const ART=`assets/arena-beta/arena-beta-render.jpg?v=${ASSET_VERSION}`;
+const STORAGE_KEY="dfl.arenaBeta.loadout.v7";
+const ASSET_VERSION="1.112.8";
+const ART_PARTS=Array.from({length:5},(_,i)=>`assets/arena-beta/render-part-${i}.txt?v=${ASSET_VERSION}`);
 const DESIGN_W=1536, DESIGN_H=1024;
 const VEHICLES=[
  {id:"kart",label:"Arcade Kart",crop:[1063,96,150,132]},
@@ -17,7 +17,15 @@ const ACCESSORIES=["None","Beacon","Trophy","Crown","Exhaust","Cooler","Toolbox"
 const PAINTS=["Red","Orange","Yellow","Green","Teal","Blue","Purple","Black","White"];
 const CROPS={garage:[205,56,854,734],wheels:[1062,382,464,129],accessories:[1062,669,464,118],speedway:[1062,793,464,194]};
 let artImage=null;
+let artDataUrlPromise=null;
 function ensureAssets(){const old=document.getElementById("arena-beta-render-css");if(old)old.remove();const l=document.createElement("link");l.id="arena-beta-render-css";l.rel="stylesheet";l.href=`css/arena-beta-render.css?v=${ASSET_VERSION}`;document.head.appendChild(l)}
+async function getArtworkSrc(){
+ if(!artDataUrlPromise){
+  artDataUrlPromise=Promise.all(ART_PARTS.map(async url=>{const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error(`Arena Beta art ${r.status}`);return r.text()}))
+   .then(parts=>`data:image/jpeg;base64,${parts.join("").replace(/\s+/g,"")}`);
+ }
+ return artDataUrlPromise;
+}
 function loadState(){const d={vehicle:"kart",wheels:"Slicks",paint:"Red",accessory:"Beacon",flag:"DFL"};try{return {...d,...JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}}catch{return d}}
 function saveState(s){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}catch{}}
 function vehicleById(id){return VEHICLES.find(v=>v.id===id)||VEHICLES[0]}
@@ -25,7 +33,7 @@ function canvasCrop(crop,cls="",alt=""){const[, ,w,h]=crop;return `<span class="
 function drawCanvas(canvas,img){const vals=canvas.dataset.abrCrop?.split(",").map(Number);if(!vals||vals.length!==4)return;const[x,y,w,h]=vals;const sx=x/DESIGN_W*img.naturalWidth,sy=y/DESIGN_H*img.naturalHeight,sw=w/DESIGN_W*img.naturalWidth,sh=h/DESIGN_H*img.naturalHeight;const box=canvas.parentElement;const cssW=Math.max(1,box?.clientWidth||w);const cssH=cssW*(h/w);const dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);const ctx=canvas.getContext("2d");ctx?.clearRect(0,0,canvas.width,canvas.height);ctx?.drawImage(img,sx,sy,sw,sh,0,0,canvas.width,canvas.height)}
 function drawAll(root){if(!artImage?.complete||!artImage.naturalWidth)return;root.querySelectorAll("canvas[data-abr-crop]").forEach(c=>drawCanvas(c,artImage))}
 function markArtError(root){root.querySelectorAll(".abr-canvas-crop").forEach(box=>{box.classList.add("is-error");const msg=box.querySelector(".abr-art-error");if(msg)msg.hidden=false})}
-function loadArtwork(root){const img=new Image();artImage=img;img.decoding="async";img.onload=()=>{root.dataset.artSize=`${img.naturalWidth}×${img.naturalHeight}`;requestAnimationFrame(()=>drawAll(root))};img.onerror=()=>markArtError(root);img.src=ART}
+async function loadArtwork(root){try{const src=await getArtworkSrc();const img=new Image();artImage=img;img.decoding="async";img.onload=()=>{root.dataset.artSize=`${img.naturalWidth}×${img.naturalHeight}`;requestAnimationFrame(()=>drawAll(root))};img.onerror=()=>markArtError(root);img.src=src}catch(err){console.error("[arena-beta] artwork load failed",err);markArtError(root)}}
 function vehicleCard(v,s){const on=s.vehicle===v.id;return `<button class="abr-vehicle-card${on?" is-selected":""}" data-choice="vehicle" data-value="${v.id}" aria-pressed="${on}">${canvasCrop(v.crop,"abr-vehicle-art",v.label)}<strong>${v.label}</strong></button>`}
 function choice(group,val,s){const on=s[group]===val;return `<button class="abr-chip${on?" is-selected":""}" data-choice="${group}" data-value="${val}" aria-pressed="${on}">${val}</button>`}
 function paintChoice(val,s){const on=s.paint===val;return `<button class="abr-paint${on?" is-selected":""}" data-choice="paint" data-value="${val}" data-paint="${val.toLowerCase()}" aria-label="${val}" aria-pressed="${on}"></button>`}
