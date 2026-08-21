@@ -1,47 +1,17 @@
 /* Permanent neutral chrome + profile career polish.
    Theme colors belong to content accents and active indicators, not every shell glyph. */
 
-/*
-  BOTTOM NAVIGATION AND THE MORE SHEET.
-
-  The labels were pinned #fff because the bar was pinned dark. The bar
-  follows the palette now, so they follow --text with it - on a white bar
-  white writing is not neutral, it is missing.
-
-  The glyphs are BRUSHED STEEL rather than a flat grey. #dfl-steel-grad in
-  index.html is the four-stop ramp; its stops are declared per mode in
-  home.css, so the same reference is polished silver on the dark bar and
-  gunmetal on the light one. currentColor stays as the fallback underneath
-  for anything that cannot resolve the reference.
-*/
+/* Bottom navigation and More sheet: neutral ink. The active marker can still carry the member palette. */
 .tabbar :is(a,.tabmore),
 .tabbar :is(a,.tabmore).on,
-.tabbar :is(a,.tabmore):hover { color:var(--text) !important; }
-.tabbar :is(a,.tabmore) svg,
-#more svg,.sheet-card svg { color:var(--muted) !important; }
-.tabbar :is(a,.tabmore).on svg { color:var(--text) !important; }
-/*
-  THE GRADIENT IS NOT SET FROM HERE, and it cannot be. The sprite in
-  index.html bakes stroke="url(...)" onto each path as a presentation
-  attribute, and those live in <use> shadow content where a descendant
-  selector cannot reach them - and a presentation attribute beats an
-  inherited value anyway. So the shell glyphs point at their own symbols,
-  #i-home-steel and friends, which are twins carrying #dfl-steel-grad.
-  Content keeps the palette gradient through the originals.
-
-  What IS set here is the lit edge. A gradient alone is a painted glyph;
-  the highlight and the shadow a pixel either side are what make the eye
-  read a raised surface rather than a picture of one.
-*/
-.tabbar :is(a,.tabmore) svg,
-#more svg,.sheet-card svg {
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,.16)) drop-shadow(0 -1px 0 rgba(0,0,0,.28));
-}
-[data-mode="light"] .tabbar :is(a,.tabmore) svg,
-[data-mode="light"] #more svg,
-[data-mode="light"] .sheet-card svg {
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,.55)) drop-shadow(0 -1px 0 rgba(20,26,38,.22));
-}
+.tabbar :is(a,.tabmore):hover { color:#fff !important; }
+.tabbar :is(a,.tabmore) svg { color:#c7cfda !important; }
+.tabbar :is(a,.tabmore).on svg { color:#fff !important; }
+.tabbar :is(a,.tabmore) svg [stroke] { stroke:currentColor !important; }
+.tabbar :is(a,.tabmore) svg [fill]:not([fill="none"]) { fill:currentColor !important; }
+#more svg,.sheet-card svg { color:#c7cfda !important; }
+#more svg [stroke],.sheet-card svg [stroke] { stroke:currentColor !important; }
+#more svg [fill]:not([fill="none"]),.sheet-card svg [fill]:not([fill="none"]) { fill:currentColor !important; }
 .tabbar :is(a,.tabmore).on::before,
 .tabbar :is(a,.tabmore).on::after { background:var(--accent-sweep) !important; }
 
