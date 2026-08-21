@@ -18,6 +18,7 @@ const routes = {
   polls:    () => import("./pages/polls.js"),
   proposals:() => import("./pages/proposals.js"),
   arena:    () => import("./pages/arena.js"),
+  "arena-beta":() => import("./pages/arena-beta.js"),
   "arena-results":() => import("./pages/arena-results.js"),
   golf:     () => import("./pages/golf.js"),
   sportsbook:() => import("./pages/sportsbook.js"),
