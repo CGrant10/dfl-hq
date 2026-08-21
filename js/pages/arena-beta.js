@@ -10,6 +10,15 @@
 import { currentMember } from "../members.js";
 import { esc } from "../ui.js";
 
+function ensureStyles(){
+  if(document.getElementById("arena-beta-css"))return;
+  const link=document.createElement("link");
+  link.id="arena-beta-css";
+  link.rel="stylesheet";
+  link.href="css/arena-beta.css";
+  document.head.appendChild(link);
+}
+
 const VEHICLES = [
   ["kart", "Arcade Kart"],
   ["stock", "Mini Stock"],
@@ -72,6 +81,7 @@ function wire(root) {
 }
 
 export async function render(view) {
+  ensureStyles();
   const member = currentMember();
   view.innerHTML = `
     <div id="arena-beta-wrap" class="arena-beta-wrap">
