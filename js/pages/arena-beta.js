@@ -5,7 +5,7 @@ import { currentMember } from "../members.js";
 import { esc } from "../ui.js";
 import { BETA_VEHICLES, renderBetaVehicle } from "../arena-beta/vehicle-renderer.js";
 
-function ensureStyles(){if(document.getElementById("arena-beta-css"))return;const link=document.createElement("link");link.id="arena-beta-css";link.rel="stylesheet";link.href="css/arena-beta.css";document.head.appendChild(link)}
+function ensureStyles(){for(const [id,href] of [["arena-beta-css","css/arena-beta.css"],["arena-beta-production-css","css/arena-beta-production.css"]]){if(document.getElementById(id))continue;const link=document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;document.head.appendChild(link)}}
 
 const WHEELS=["Slicks","Chunky","Offroad","Whitewalls","Smalliez","Gold Rims"];
 const PAINTS=["DFL Red","Burnt Orange","Track Yellow","Pit Green","Teal","Royal Blue","Black","White","Championship Gold"];
