@@ -93,7 +93,8 @@ function styles() {
 .gm-who{min-width:0;display:grid;gap:1px}
 .gm-who b{font-size:15px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gm-who small{font-size:9.5px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gm-fig{font-size:20px;font-weight:950;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.gm-fig{display:grid;justify-items:end;gap:1px;font-size:20px;font-weight:950;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.gm-fig small{font-size:9.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .gm-side.is-up .gm-fig{color:var(--accent)}
 .gm-vs{font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-left:18px}
 .gm-stand{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:12.5px;font-weight:900;color:var(--muted)}
@@ -297,7 +298,9 @@ function matchState(card, names, r, scoring) {
       <div class="gm-side ${leader === i ? "is-up" : ""}" style="--racer:${esc(side.color || "")}">
         <i class="gm-dot"></i>
         <span class="gm-who"><b>${esc(names[i])}</b><small>${esc(side.teamName)}</small></span>
-        <span class="gm-fig">${esc(sideFigure(r, i, scoring))}</span>
+        <span class="gm-fig">${esc(sideFigure(r, i, scoring))}${
+          strokeAside(r, i, scoring) ? `<small>${esc(strokeAside(r, i, scoring))}</small>` : ""
+        }</span>
       </div>`).join(`<div class="gm-vs">vs</div>`)}</div>
     <div class="gm-stand ${r.complete ? "is-done" : ""}">${esc(standingLine(r, names[0], names[1]))}</div>`;
 }
@@ -305,9 +308,19 @@ function matchState(card, names, r, scoring) {
 /*
   WHAT NUMBER GOES BESIDE EACH SIDE.
 
-  Stroke play has two totals, so it shows them. Match play does not - a
-  match is 2 up, not 2-1 - so the leader carries the margin and the other
-  side carries a dash.
+  STROKE PLAY SHOWS THE STROKES, WHICH IT WAS NOT DOING. This read
+  r.postedA / r.postedB, and those are HOLE COUNTS - how many holes the
+  side has written down - not the score. Two pairs seven holes into a nine
+  both showed "7" while one of them was seven shots clear. r.a and r.b are
+  the totals, and they always were; nothing else on the card printed them.
+
+  MATCH PLAY SHOWS THE MARGIN, because a match is 2 up, not 2-1: taking a
+  hole is worth the same whether by one shot or by five, so the totals are
+  not the result. But they are still the numbers everybody standing there
+  just counted, so they go underneath in strokeAside() rather than nowhere
+  at all - the card used to print the margin against the leader and a bare
+  dash against the other side, so one of the two pairs had no number on it
+  anywhere on the screen.
 
   A LEVEL MATCH GIVES BOTH SIDES A DASH, not "AS". "AS" is one fact about
   the match, and printing it twice, once against each contestant, turned a
@@ -317,11 +330,26 @@ function matchState(card, names, r, scoring) {
   Reading r, never recomputing it.
 */
 function sideFigure(r, i, scoring) {
-  if (scoring !== "match") return (i === 0 ? r.postedA : r.postedB) || "—";
+  if (scoring !== "match") return (i === 0 ? r.a : r.b) || "—";
   const up = r.up || 0;
   if (!up) return "—";
   const leader = r.diff < 0 ? 0 : 1;
   return i === leader ? `${up}${r.complete && r.closedOut && r.remaining > 0 ? `&${r.remaining}` : " UP"}` : "—";
+}
+
+/*
+  The strokes, small, under the margin - match play only. In stroke play
+  the figure above IS the strokes and repeating them would be noise.
+
+  Deliberately silent until the side has posted something: "0" against a
+  pair that has not teed off reads as a score rather than as an absence.
+*/
+function strokeAside(r, i, scoring) {
+  if (scoring !== "match") return "";
+  const strokes = i === 0 ? r.a : r.b;
+  const holes = i === 0 ? r.postedA : r.postedB;
+  if (!holes || !strokes) return "";
+  return `${strokes} thru ${holes}`;
 }
 
 function statusLine(sides, editable, stale) {

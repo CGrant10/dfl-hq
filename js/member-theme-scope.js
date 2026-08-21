@@ -60,7 +60,6 @@ function loadPermanentChromeStyles() {
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
   -webkit-text-fill-color:#fff!important;color:#fff!important
 }
-.tabbar :is(a,.tabmore){color:#fff!important}
 .tabbar :is(a,.tabmore) svg,#more svg,.sheet-card svg{
   filter:grayscale(1) saturate(0) brightness(1.7)!important;opacity:.9!important
 }
@@ -78,22 +77,26 @@ function loadPermanentChromeStyles() {
   -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
 }
 
+/* TOKENS, NOT HEXES. These were written as dark-mode values - a #111419
+   card with #f4f6f8 ink - and applied unconditionally, so in light mode the
+   career card was a black box with white text sitting in a white page. The
+   palette already has a name for every one of them. */
 #profile-wrap .dfl-the-career-title{
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
-  -webkit-text-fill-color:#f4f6f8!important;color:#f4f6f8!important
+  -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
 }
 #profile-wrap .dfl-the-career-card{
-  background:#111419!important;border:1px solid #2a3038!important;
-  box-shadow:0 10px 28px rgba(0,0,0,.22)!important
+  background:var(--bg-2)!important;border:1px solid var(--line)!important;
+  box-shadow:var(--shadow)!important
 }
-#profile-wrap .dfl-the-career-card .rec{background:#15191f!important}
+#profile-wrap .dfl-the-career-card .rec{background:var(--bg-3)!important}
 #profile-wrap .dfl-the-career-card .rec-val{
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
-  -webkit-text-fill-color:#f6f7f9!important;color:#f6f7f9!important
+  -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
 }
 #profile-wrap .dfl-the-career-card .rec-label,
-#profile-wrap .dfl-the-career-card .rec-when{color:#98a2af!important}
-#profile-wrap .dfl-the-career-card .rec-who{color:#dbe1e8!important}
+#profile-wrap .dfl-the-career-card .rec-when{color:var(--muted)!important}
+#profile-wrap .dfl-the-career-card .rec-who{color:var(--text)!important}
 
 /* Trophy Cabinet: replace the theme-painted <use> pixels with the same kind
    of four-step metallic gold used by DFL championship hardware. */

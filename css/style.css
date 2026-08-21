@@ -2755,8 +2755,13 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   padding: 0 14px;
   white-space: nowrap;
   text-decoration: none;
-  color: var(--body-text);
+  /* NOT --body-text. .bottomline hardcodes a dark bar (background:#0c1119)
+     and this inverts with the palette, so light mode put near-black text on
+     that near-black bar and the ticker vanished. Same contract as the top
+     and bottom bars: a pinned dark surface pins its own ink. */
+  color: #cfd6e2;
 }
+.bl-dot { background: rgba(255,255,255,.22) !important; }
 /*
   TICKER LABELS ALTERNATE: primary, secondary, primary, secondary.
 
@@ -2770,9 +2775,11 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
   font-weight: 800;
   letter-spacing: .7px;
   text-transform: uppercase;
-  color: var(--accent);
+  /* The dark-mode accent pair, pinned. --accent in light mode is #B8001B,
+     picked to clear 4.5:1 on WHITE - on this bar it is 1.7:1. */
+  color: #F08279;
 }
-.bl-item[data-bl-alt] .bl-label { color: var(--accent-2); }
+.bl-item[data-bl-alt] .bl-label { color: #7FA8FF; }
 .bl-text { font-weight: 600; }
 .bl-dot { flex: 0 0 auto; width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
 

@@ -12,9 +12,7 @@
    golf_matches_schema.sql), so it is the unit everything below counts.
    ===================================================================== */
 import { roundHoles, pairName } from "./golf-battle.js";
-import { teamInk } from "./brand-ink.js";
 
-export const isSingles = (round) => round?.format === "singles";
 export const roundLabel = (round) => round?.name || `Round ${round?.round_number ?? "?"}`;
 export const roundShort = (round) => `R${round?.round_number ?? "?"}`;
 
@@ -49,14 +47,6 @@ export function toPar(strokes, holes, round) {
   return { diff: total - par, total, thru, of: last };
 }
 
-function accumulate(row, x) {
-  row.diff += x.diff;
-  row.total += x.total;
-  row.thru += x.thru;
-  row.of += x.of;
-  return row;
-}
-
 /*
   ONE SORT FOR BOTH UNITS. Best to-par first; a tie goes to whoever has
   played MORE holes, because -1 thru 9 is a better round than -1 thru 3.
@@ -77,84 +67,71 @@ export const tone = (row) => (!row.thru ? "none" : row.diff < 0 ? "under" : row.
 export const progress = (row) => (!row.thru ? "Not started" : row.thru >= row.of ? "Finished" : `Thru ${row.thru}`);
 export const strokeLine = (row) => (!row.thru ? "" : `${row.total} stroke${row.total === 1 ? "" : "s"}`);
 
-/** The rounds a selection covers. "all", or an unknown id, means every one. */
-export function selectedRounds(rounds, choice) {
-  if (!choice || choice === "all") return rounds;
-  const one = rounds.find((r) => String(r.id) === String(choice));
-  return one ? [one] : rounds;
-}
+/*
+  ONE ROUND, ONE BOARD, AND THE MATCH TYPE DECIDES WHAT A ROW IS.
 
-const ballsIn = (balls, rounds) => {
-  const ids = new Set(rounds.map((r) => String(r.id)));
-  return balls.filter((b) => b.round && ids.has(String(b.round.id)));
-};
+  The tournament points board already answers "which team is winning the
+  day", so this does not repeat it. The question left over is the one you
+  ask walking down a fairway: how is MY match going against everybody
+  else's - and the answer has a different shape per round.
 
-/** Every ball a team has out in these rounds, added into one row per team. */
-export function teamBoard({ teams, balls, holes }, rounds) {
-  const byTeam = new Map((teams || []).map((t, i) => [String(t.id), {
-    diff: 0, total: 0, thru: 0, of: 0, balls: 0,
-    key: String(t.id),
-    name: t.name || "Team",
-    color: teamInk(t.color, t.sort_order ?? i),
-    order: t.sort_order ?? i,
-  }]));
-  for (const ball of ballsIn(balls || [], rounds)) {
-    const row = byTeam.get(String(ball.teamId));
-    if (!row) continue;
-    accumulate(row, toPar(ball.strokes, holes, ball.round));
-    row.balls++;
+    a 2v2 nine   the ball belongs to a pair, so a row is a pair
+    a singles nine   the ball belongs to a person, so a row is a person
+
+  Grouped by what is actually on the ball rather than by the round's
+  format column, because those can disagree: a singles round with a seat
+  filled by two people, or a pairs round with somebody playing alone, is a
+  data state the board has to survive. A round whose balls all have the
+  same shape gets one ungrouped list; only a genuinely mixed round shows
+  two headed groups, each ranked on its own.
+
+  @returns {Array<{kind:"pairs"|"singles", rows:Array}>} in play order,
+           pairs first, and empty when the round has no matches at all.
+*/
+export function roundBoard({ balls, holes }, round) {
+  const mine = (balls || []).filter((b) => b.round && String(b.round.id) === String(round?.id));
+  const groups = new Map();
+
+  for (const ball of mine) {
+    const shared = ball.players.length > 1;
+    const kind = shared ? "pairs" : "singles";
+    if (!groups.has(kind)) groups.set(kind, []);
+    groups.get(kind).push({
+      ...toPar(ball.strokes, holes, ball.round),
+      key: `side:${ball.id}`,
+      shared,
+      name: shared ? pairName(ball.players.map((p) => p.name)) : (ball.players[0]?.name || "Open seat"),
+      teamName: ball.teamName,
+      color: ball.color,
+      /* Untouched, the board reads down the card in the order the matches
+         were built rather than in team order - the two sides of one match
+         belong next to each other before anybody has hit a shot. */
+      order: (ball.matchNumber ?? 0) * 10 + (ball.teamOrder ?? 0),
+      matchId: ball.matchId,
+    });
   }
-  return rank([...byTeam.values()]);
+
+  return ["pairs", "singles"]
+    .filter((kind) => groups.has(kind))
+    .map((kind) => ({ kind, rows: rank(groups.get(kind)) }));
 }
+
+/** What a group of rows is called, said only when a round has both. */
+export const groupLabel = (kind) => (kind === "pairs" ? "Pairs" : "Singles");
 
 /*
-  SINGLES, WHICH IS ONLY SINGLES WHERE THE FORMAT IS.
+  WHICH ROUND THE BOARD OPENS ON.
 
-  In a singles nine a side holds one player, so a side IS a person and the
-  row is that person. In a 2v2 nine a side holds two sharing one ball, so
-  the row is that pair and it says so. The unit follows the data, not the
-  label on the toggle - a shared ball reported as an individual score is
-  invented data, and it would be invented for four of the six players in
-  every 2v2 round.
-
-  Across a mixed selection there is no honest total either: a score you
-  made and a score you shared are different quantities. So when the
-  selection contains ANY singles round, only those count, and the caller
-  is handed the rounds that were dropped so it can say which. A day with
-  no singles round at all shows its pairs rather than an empty board.
-
-  @returns {{rows:Array, scope:Array, dropped:Array}}
+  The one being played: the last round anybody has posted a stroke in.
+  Opening on round 1 all day means everybody arriving at the board during
+  round 3 has to change it first, and opening on the last round in the
+  list shows an empty card before that round starts.
 */
-export function singlesBoard({ balls, holes }, rounds) {
-  const singles = rounds.filter(isSingles);
-  const scope = singles.length ? singles : rounds;
-  const dropped = rounds.filter((r) => !scope.includes(r));
-  const rows = new Map();
-
-  for (const ball of ballsIn(balls || [], scope)) {
-    const shared = ball.players.length > 1;
-    /* Keyed by WHO is on the ball, so one player's singles nines add into
-       a single row while a pair stays its own line - and so the same pair
-       playing two rounds together does not become two rows. */
-    const key = ball.players.map((p) => String(p.participantId)).sort().join("+") || `side:${ball.id}`;
-    if (!rows.has(key)) {
-      rows.set(key, {
-        diff: 0, total: 0, thru: 0, of: 0, key, shared,
-        name: shared ? pairName(ball.players.map((p) => p.name)) : (ball.players[0]?.name || "Open seat"),
-        teamName: ball.teamName,
-        color: ball.color,
-        /* Ties fall back to team then match order, so an untouched board
-           reads down the card in the order the matches were built. */
-        order: (ball.teamOrder ?? 0) * 1000 + (ball.matchNumber ?? 0),
-        matchId: ball.matchId,
-        matches: new Set(),
-      });
-    }
-    const row = rows.get(key);
-    accumulate(row, toPar(ball.strokes, holes, ball.round));
-    row.matches.add(String(ball.matchId));
-    row.shared = row.shared || shared;
+export function currentRound(rounds, balls) {
+  const played = new Set();
+  for (const ball of balls || []) {
+    if (ball.round && ball.strokes?.size) played.add(String(ball.round.id));
   }
-
-  return { rows: rank([...rows.values()]), scope, dropped };
+  const live = [...(rounds || [])].reverse().find((r) => played.has(String(r.id)));
+  return live || rounds?.[0] || null;
 }

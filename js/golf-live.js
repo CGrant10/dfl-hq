@@ -32,7 +32,7 @@
 import { db } from "./supabase.js";
 import { esc, empty } from "./ui.js";
 import { loadMembers } from "./members.js";
-import { isSingles, roundLabel, roundShort, selectedRounds, teamBoard, singlesBoard,
+import { roundLabel, roundShort, roundBoard, groupLabel, currentRound,
          label, tone, progress, strokeLine } from "./golf-board.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { pendingForSide, onQueueChange } from "./golf-offline.js";
@@ -44,24 +44,32 @@ let host = null, outingId = null, timer = 0, dropQueueWatch = null, data = null;
 
 /* ------------------------------------------------------------------ state
 
-   THE TOGGLES SURVIVE THE POLL, AND THAT IS THE WHOLE REASON THEY ARE
+   WHICH ROUND SURVIVES THE POLL, AND THAT IS THE WHOLE REASON IT IS
    STORED. A 15s tick that repaints the rows must not throw somebody back
-   to Team / All rounds while they are reading round 2's singles - and it
-   would, because the tick rebuilds the list from data, not from the DOM.
-   Per outing, because "round 2" means nothing on a different day.
+   to round 1 while they are reading round 3 - and it would, because the
+   tick rebuilds the list from data, not from the DOM. Per outing, because
+   "round 2" means nothing on a different day.
+
+   Empty means "not chosen yet", which is not the same as round 1: an
+   unchosen board opens on the round being played (currentRound), and only
+   a deliberate tap pins it.
 */
 const stateKey = (id) => `dfl.golfLive.${id}`;
 function readState(id) {
   try {
-    const raw = JSON.parse(localStorage.getItem(stateKey(id)) || "{}");
-    return {
-      unit: raw.unit === "singles" ? "singles" : "team",
-      round: raw.round ? String(raw.round) : "all",
-    };
-  } catch { return { unit: "team", round: "all" }; }
+    const raw = localStorage.getItem(stateKey(id)) || "";
+    /* Migrating past the first shape of this card, which stored
+       {unit, round} with round possibly "all". Neither exists now. */
+    const value = raw.startsWith("{") ? String(JSON.parse(raw).round || "") : raw;
+    const chosen = value && value !== "all" ? value : "";
+    if (chosen && data?.rounds?.some((r) => String(r.id) === chosen)) return chosen;
+    return data ? String(currentRound(data.rounds, data.balls)?.id ?? "") : chosen;
+  } catch {
+    return data ? String(currentRound(data.rounds, data.balls)?.id ?? "") : "";
+  }
 }
-function writeState(id, next) {
-  try { localStorage.setItem(stateKey(id), JSON.stringify(next)); } catch { /* private mode */ }
+function writeState(id, chosen) {
+  try { localStorage.setItem(stateKey(id), String(chosen)); } catch { /* private mode */ }
 }
 
 // ------------------------------------------------------------------- load
@@ -167,13 +175,11 @@ function withPending(sideId, rows) {
 
 // ----------------------------------------------------------------- render
 
-function rowMarkup(row, i, { href = "", flag = "" } = {}) {
+function rowMarkup(row, i, href) {
   const lead = i === 0 && !!row.thru;
   const inner = `
   <span class="gl-pos">${lead ? `<svg class="ico-sm" aria-hidden="true"><use href="#i-trophy"></use></svg>` : ""}<b>${i + 1}</b></span>
-  <span class="gl-team"><strong>${esc(row.name)}</strong>${
-    flag ? `<small class="glv-tag">${esc(flag)}</small>` : lead ? `<small class="gl-flag">Leader</small>` : ""
-  }</span>
+  <span class="gl-team"><strong>${esc(row.name)}</strong><small class="glv-team">${esc(row.teamName || "")}</small></span>
   <span class="gl-score" data-tone="${tone(row)}">${esc(label(row))}</span>
   <span class="gl-thru"><b>${esc(progress(row))}</b><small>${esc(strokeLine(row))}</small></span>`;
   const aria = `${row.name}, ${label(row)}, ${progress(row)}`;
@@ -182,106 +188,84 @@ function rowMarkup(row, i, { href = "", flag = "" } = {}) {
     : `<div class="gl-row${lead ? " is-leader" : ""}" style="--racer:${esc(row.color || "")}" aria-label="${esc(aria)}">${inner}</div>`;
 }
 
-function controls(state) {
-  const seg = (unit, text) =>
-    `<button type="button" class="glv-tab${state.unit === unit ? " on" : ""}" data-unit="${unit}" role="tab" aria-selected="${state.unit === unit}">${text}</button>`;
-  const pill = (value, text, title) =>
-    `<button type="button" class="glv-pill${state.round === value ? " on" : ""}" data-round="${esc(value)}" title="${esc(title)}" aria-pressed="${state.round === value}">${esc(text)}</button>`;
+/* One pill per round and nothing else. There is no unit toggle: what a row
+   means is a fact about the round, not a thing to choose. */
+function controls(chosen) {
   return `<div class="glv-controls">
-    <div class="glv-seg" role="tablist" aria-label="Leaderboard unit">${seg("team", "Team")}${seg("singles", "Singles")}</div>
-    <div class="glv-rounds" aria-label="Which round">
-      ${pill("all", "All", "Every round added up")}
-      ${data.rounds.map((r) => pill(String(r.id), roundShort(r), roundLabel(r))).join("")}
+    <div class="glv-rounds" aria-label="Which round">${data.rounds.map((r) => `
+      <button type="button" class="glv-pill${String(r.id) === chosen ? " on" : ""}" data-round="${esc(String(r.id))}"
+        title="${esc(roundLabel(r))}" aria-pressed="${String(r.id) === chosen}">${esc(roundShort(r))}</button>`).join("")}
     </div>
   </div>`;
 }
 
-function body(state) {
-  const rounds = selectedRounds(data.rounds, state.round);
-  if (!rounds.length) return { note: "", list: empty("No rounds yet.") };
+function round(chosen) {
+  return data.rounds.find((r) => String(r.id) === chosen) || data.rounds[0] || null;
+}
 
-  if (state.unit === "team") {
-    const rows = teamBoard(data, rounds);
-    if (!rows.length) return { note: "", list: empty("No teams yet.") };
-    const note = state.round === "all"
-      ? "Every ball each team has out, added up across all rounds."
-      : `${roundLabel(rounds[0])} only — every ball that team has in this round.`;
-    /* No link. A team's score comes from several matches at once, so there
-       is no one card this row could open; the rows below it each open theirs. */
-    return { note, list: rows.map((r, i) => rowMarkup(r, i)).join("") };
-  }
+function body(chosen) {
+  const r = round(chosen);
+  if (!r) return { note: "", list: empty("No rounds yet.") };
+  const groups = roundBoard(data, r);
+  if (!groups.length) return { note: "", list: empty(`${roundLabel(r)} has no matches yet.`) };
 
-  const { rows, scope, dropped } = singlesBoard(data, rounds);
-  if (!rows.length) return { note: "", list: empty("No matches yet.") };
-  const anySingles = scope.some(isSingles);
-  let note;
-  if (!anySingles) {
-    note = dropped.length || scope.length > 1
-      ? "These rounds score one ball per pair, so the rows are pairs."
-      : `${roundLabel(scope[0])} scores one ball per pair, so the rows are pairs.`;
-  } else if (dropped.length) {
-    note = `Individual scores only exist in ${scope.map(roundShort).join(" and ")} — ${
-      dropped.map(roundShort).join(" and ")} score one ball per pair and are not counted here.`;
-  } else {
-    note = `${roundLabel(scope[0])} is singles — one score per player.`;
-  }
-  const list = rows.map((row, i) => rowMarkup(row, i, {
-    /* One match means one card to open. A player whose singles rounds span
-       several matches has no single destination, so that row is not a link. */
-    href: row.matches.size === 1 ? `#/golf?id=${outingId}&match=${row.matchId}` : "",
-    flag: row.shared ? "Pair" : "",
-  })).join("");
+  /* Only a mixed round needs headings; a round that is all pairs or all
+     singles says so once in the note and lets the rows be the card. */
+  const mixed = groups.length > 1;
+  const note = mixed
+    ? `${roundLabel(r)} — pairs and singles ranked separately.`
+    : groups[0].kind === "pairs"
+      ? `${roundLabel(r)} is 2v2 — each pair shares one ball, ranked against par.`
+      : `${roundLabel(r)} is singles — each player ranked against par.`;
+
+  const list = groups.map(({ kind, rows }) => `${
+    mixed ? `<div class="glv-group">${esc(groupLabel(kind))}</div>` : ""
+  }${rows.map((row, i) => rowMarkup(row, i, `#/golf?id=${outingId}&match=${row.matchId}`)).join("")}`).join("");
   return { note, list };
 }
 
 /* Folded, the card is one line, so that line has to be the answer: who is
-   leading and by what. Same badge the tournament board carries. */
-function foldBadge(state) {
-  const rounds = selectedRounds(data.rounds, state.round);
-  const rows = state.unit === "team" ? teamBoard(data, rounds) : singlesBoard(data, rounds).rows;
-  const top = rows.find((r) => r.thru);
+   leading the round and by what. Same badge the tournament board carries. */
+function foldBadge(chosen) {
+  const groups = roundBoard(data, round(chosen));
+  const top = groups.flatMap((g) => g.rows).find((row) => row.thru);
   return top ? `${top.name} ${label(top)}` : "";
 }
 
 function paint() {
   if (!host || !data) return;
-  const state = readState(outingId);
-  const { note, list } = body(state);
-  host.innerHTML = `<section class="card golf-live ge-live" data-collapse="golf-live" data-collapse-title="Live leaderboard" data-collapse-badge="${esc(foldBadge(state))}">
+  const chosen = readState(outingId);
+  const { note, list } = body(chosen);
+  host.innerHTML = `<section class="card golf-live ge-live" data-collapse="golf-live" data-collapse-title="Live leaderboard" data-collapse-badge="${esc(foldBadge(chosen))}">
     <div class="gl-head">
-      <div><span class="gl-kicker">Live leaderboard</span><p class="muted tiny">Strokes against par — who is playing best right now.</p></div>
+      <div><span class="gl-kicker">Live leaderboard</span><p class="muted tiny">Against par, this round.</p></div>
       <span class="badge live">Live</span>
     </div>
-    ${controls(state)}
+    ${controls(chosen)}
     ${note ? `<p class="glv-note">${esc(note)}</p>` : ""}
     <div class="golf-leader-list" data-live-list>${list}</div>
   </section>`;
 }
 
-/* Only the rows and the note. Rebuilding the card would drop the toggles
-   under the thumb of anybody pressing one as the poll landed. */
+/* Only the rows and the note. Rebuilding the card would drop the round
+   pills out from under the thumb of anybody pressing one as the poll landed. */
 function repaintList() {
   if (!host || !data) return;
   const list = host.querySelector("[data-live-list]");
   if (!list) return paint();
-  const state = readState(outingId);
-  const built = body(state);
+  const chosen = readState(outingId);
+  const built = body(chosen);
   list.innerHTML = built.list;
   const note = host.querySelector(".glv-note");
   if (note) note.textContent = built.note;
-  else if (built.note) host.querySelector(".glv-controls")?.insertAdjacentHTML("afterend", `<p class="glv-note">${esc(built.note)}</p>`);
 }
 
 // ------------------------------------------------------------------- wire
 
 function onClick(event) {
-  const unit = event.target.closest("[data-unit]");
-  const round = event.target.closest("[data-round]");
-  if (!unit && !round) return;
-  const state = readState(outingId);
-  if (unit) state.unit = unit.dataset.unit === "singles" ? "singles" : "team";
-  if (round) state.round = round.dataset.round;
-  writeState(outingId, state);
+  const pill = event.target.closest("[data-round]");
+  if (!pill) return;
+  writeState(outingId, pill.dataset.round);
   paint();
 }
 
