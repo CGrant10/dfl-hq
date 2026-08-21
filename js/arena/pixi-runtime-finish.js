@@ -1,32 +1,34 @@
 // Finish-line presentation hotfix.
 //
-// The committed Pixi runtime currently eases the finish structure to a stop
-// and parks it on the line 420ms before P1 officially crosses. The race
-// physics are fine, but visually that stationary structure becomes an anchor
-// while the course is still moving, which makes the whole field look like it
-// suddenly slowed down.
+// The committed Pixi runtime contains two finish helpers that make races look
+// cleaner in a generic animation, but they are wrong for DFL's race model:
+//   1. the finish structure eases into place before P1 crosses; and
+//   2. presentationRacerFrame() rewrites each racer's final stretch so they
+//      are pulled toward their official finish time.
 //
-// Keep the runtime as the source for every other presentation decision, but
-// replace ONLY the finish approach and course-stop timing. No racer progress,
-// finish time, order, or run-off geometry is touched.
-//
-// The visual rule is now whole-field, not winner-only:
-//   1. Before P1, the finish stripe and course travel together at constant speed.
-//   2. On P1's exact crossing frame, the stripe reaches the line and the course
-//      locks into a fixed finish camera.
-//   3. P2 through the final racer keep running through that same fixed line.
-//
-// That removes the optical "everyone slows at the line" effect for the entire
-// field: there is never a stationary stripe against a still-moving background.
+// That second correction is the hidden accordion. Even when physics has real
+// gaps, the renderer visually drags every lane toward 1.0 before its finish.
+// DFL wants the opposite: show the recorded race exactly as simulated, then
+// let the post-P1 clear move that frozen field shape through the stripe.
 
 export * from "./pixi-runtime.js?finish-base=1";
-import { createFinishPresentation as createBaseFinishPresentation } from "./pixi-runtime.js?finish-base=1";
+import {
+  createFinishPresentation as createBaseFinishPresentation,
+  presentationRacerFrame as createBaseRacerFrame,
+} from "./pixi-runtime.js?finish-base=1";
 
 const FINISH_ENTRY_RATIO = 1.02;
 const FINISH_LINE_RATIO = 0.58;
 const FINISH_ROLL_MS = 3500;
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+export function presentationRacerFrame(input) {
+  // Passing no official finish disables the base runtime's late interpolation
+  // toward 1.0. The samples already contain the true deterministic crossing,
+  // and presentFinish() still handles the run-through after that crossing.
+  return createBaseRacerFrame({ ...input, officialFinishMs: null });
+}
 
 export function createFinishPresentation(input) {
   const finish = createBaseFinishPresentation(input);
