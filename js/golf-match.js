@@ -217,7 +217,7 @@ async function fetchMatch(matchId) {
     holes: holesRes.data || [],
     courseHoles,
     scores,
-    sides: sides.map((s) => {
+    sides: sides.map((s, i) => {
       const mine = (playersRes.data || []).filter((p) => String(p.side_id) === String(s.id));
       const team = teamById.get(String(s.team_id));
       return {

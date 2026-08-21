@@ -180,7 +180,7 @@ async function load(id) {
   const buildMatch = (m, round) => {
     const mine = sides.filter((s) => String(s.match_id) === String(m.id))
       .sort((a, b) => Number(a.slot) - Number(b.slot));
-    const built = mine.map((s) => {
+    const built = mine.map((s, i) => {
       const rows = (playersRes.data || []).filter((p) => String(p.side_id) === String(s.id));
       const team = (teamsRes.data || []).find((t) => String(t.id) === String(s.team_id));
       return {
