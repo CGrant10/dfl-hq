@@ -1,7 +1,7 @@
 // DFL Arena Beta — real UI composed from approved raster artwork.
 // Isolated from live Arena/Broadcast; loadout persists locally only.
-const STORAGE_KEY="dfl.arenaBeta.loadout.v6";
-const ASSET_VERSION="1.112.7";
+const STORAGE_KEY="dfl.arenaBeta.loadout.v7";
+const ASSET_VERSION="1.112.8";
 const ART=`assets/arena-beta/arena-beta-render.jpg?v=${ASSET_VERSION}`;
 const DESIGN_W=1536, DESIGN_H=1024;
 const VEHICLES=[
