@@ -90,8 +90,8 @@ function postHtml(r) {
     : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
   const byline = identityByline(m);
   const controls = own || canDelete ? `<div class="wall-manage row-end">
-    ${own ? `<button class="linkbtn tiny" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}
-    ${canDelete ? `<button class="linkbtn tiny danger" type="button" data-wall-delete="${esc(r.id)}">Delete</button>` : ""}
+    ${own ? `<button class="btn ghost small" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}
+    ${canDelete ? `<button class="btn ghost small danger" type="button" data-wall-delete="${esc(r.id)}">Delete</button>` : ""}
   </div>` : "";
   const editForm = own ? `<form class="wall-edit hidden" data-wall-edit-form="${esc(r.id)}" data-has-image="${r.image ? "1" : "0"}">
     <textarea maxlength="500" rows="3" data-wall-edit-body>${esc(r.body || "")}</textarea>
@@ -112,7 +112,7 @@ function postHtml(r) {
     ${editForm}
     ${r.image ? `<img class="wall-photo" src="${esc(r.image)}" alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
     <div class="wall-post-actions">
-      ${r.image ? `<button class="wall-submit linkbtn" type="button" data-submit-broadcast="${esc(r.id)}">${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
+      ${r.image ? `<button class="wall-submit btn ghost small" type="button" data-submit-broadcast="${esc(r.id)}">${icon("tv", { size: 14 })}<span>Submit to Broadcast</span></button>` : ""}
       ${controls}
     </div>
   </article>`;
