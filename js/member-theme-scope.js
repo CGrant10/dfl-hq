@@ -4,6 +4,7 @@ import { currentMember } from "./members.js";
 import { applyTheme, isTeamMode, teamModeFor } from "./theme.js";
 import "./arena-duration-ui.js";
 import "./league-photo-feature.js";
+import "./engagement-home.js";
 
 const MODE_KEY = "dfl.mode";
 const PICKABLE = new Set(["dark", "light", "medicine", "system"]);
@@ -47,7 +48,7 @@ function loadPermanentChromeStyles() {
     const link = document.createElement("link");
     link.id = "dfl-profile-neutral-css";
     link.rel = "stylesheet";
-    link.href = "css/profile-neutral.css?v=1.109.94";
+    link.href = "css/profile-neutral.css?v=1.109.98";
     document.head.appendChild(link);
   }
   if (document.getElementById("dfl-visual-polish-hardfix")) return;
