@@ -1,6 +1,7 @@
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
+import "./arena/mobile-broadcast-performance.js";
 import { APP_VERSION } from "./config.js";
 import { getUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
