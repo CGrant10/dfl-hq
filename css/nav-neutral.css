@@ -11,16 +11,14 @@
 .tabbar :is(a,.tabmore) svg,
 #more svg {
   color:#f5f7fa !important;
-  filter:grayscale(1) saturate(0) brightness(1.55) drop-shadow(0 0 5px rgba(255,255,255,.34)) !important;
+  filter:brightness(1.08) drop-shadow(0 0 5px rgba(255,255,255,.38)) !important;
   opacity:1 !important;
+  transition:filter .14s ease,transform .14s ease;
 }
 .tabbar :is(a,.tabmore).on {
   transform:translateY(-1px);
 }
 .tabbar :is(a,.tabmore).on .ico,
 .tabbar :is(a,.tabmore).on svg {
-  filter:grayscale(1) saturate(0) brightness(1.72) drop-shadow(0 0 6px rgba(255,255,255,.48)) !important;
+  filter:brightness(1.2) drop-shadow(0 0 7px rgba(255,255,255,.58)) !important;
 }
-/* Symbols use gradient strokes internally. Force those strokes to inherit the
-   neutral shell colour so a use[href] swap is not required. */
-.tabbar svg use { color:#f5f7fa !important; }
