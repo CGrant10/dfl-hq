@@ -167,4 +167,18 @@ describe("the supported golf GPS courses", () => {
     expect(new Set(targets.map((match) => `${match[2]},${match[3]}`)).size).toBe(9);
     expect(source).toMatch(/yards to Hole \$\{hole\} green|label:/);
   });
+
+  it("keeps the DFL app navigation visible during a Quick Round", () => {
+    const source = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    expect(source).toContain("body.gqm-focus .golf-event-head,body.gqm-focus .guest-strip");
+    expect(source).not.toMatch(/body\.gqm-focus \.topbar[^`]+display:none/);
+    expect(source).not.toMatch(/body\.gqm-focus \.tabbar[^`]+display:none/);
+    expect(source).not.toMatch(/body\.gqm-focus \.bottomline[^`]+display:none/);
+  });
+
+  it("shows only the current hole maximum in the Quick Round GPS badge", () => {
+    const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');
+    expect(source).not.toContain('value!=null?"YDS LIVE"');
+  });
 });
