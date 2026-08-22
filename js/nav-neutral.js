@@ -9,8 +9,12 @@ function ensureNeutralStyle(){
     .tabbar :is(a,.tabmore) svg,#more svg,.sheet-card svg{
       color:#c7cfda!important;
       filter:grayscale(1) saturate(0)!important;
+      transition:filter .18s ease,opacity .18s ease,transform .18s ease;
     }
-    .tabbar :is(a,.tabmore).on svg{color:#fff!important;filter:grayscale(1) saturate(0) brightness(1.35)!important}
+    .tabbar :is(a,.tabmore).on svg{
+      color:#fff!important;
+      filter:grayscale(1) saturate(0) brightness(1.35) drop-shadow(0 0 4px rgba(255,255,255,.26))!important;
+    }
     .tabbar :is(a,.tabmore).on::before,.tabbar :is(a,.tabmore).on::after{background:var(--accent-sweep)!important}
   `;
   document.head.appendChild(s);
