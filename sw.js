@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.116.9";
+const CACHE_NAME = "dfl-hq-v1.116.10";
 /* a.espncdn.com serves the NFL club logos on the profile and the Wall.
    Caching it means a logo seen once still renders offline. */
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
@@ -16,21 +16,6 @@ self.addEventListener("fetch",event=>{
   if(request.method!=="GET")return;
   const url=new URL(request.url);
   if(url.hostname.endsWith("supabase.co")||url.hostname.endsWith("sleeper.app")||url.pathname.endsWith("/version.txt"))return;
-
-  /* The Arena engine shims used to live HERE: this handler rewrote requests
-     for race.js and pixi-runtime.js to race-forward-shim.js and
-     pixi-runtime-finish.js. That made the patched race engine conditional on
-     a service worker being installed AND already in control - a first visit,
-     a cleared SW, or any context that never registers one silently ran the
-     unpatched engine. Since the simulation is seeded and the phone and the
-     OBS Broadcast view must compute the same race from that seed, one side
-     having the SW and the other not meant a desynced race.
-
-     The importers now name the shims directly. The shims are still the only
-     importers of the originals, via ?legacy=1 / ?finish-base=1 - keep those
-     queries: a stale SW from before this change still rewrites the bare
-     paths, and without the query it would rewrite a shim to itself. */
-
   event.respondWith(fetch(revalidating(request)).then(response=>{
     if(response.ok&&(url.origin===location.origin||CDN_HOSTS.has(url.hostname))){
       const copy=response.clone();caches.open(CACHE_NAME).then(c=>c.put(request,copy));
