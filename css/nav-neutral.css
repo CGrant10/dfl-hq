@@ -1,0 +1,26 @@
+/* Stable shell navigation: every tab uses the same white/steel treatment.
+   Selection is communicated by the existing moving top indicator and a tiny lift,
+   not by repainting one tab with the page theme. */
+.tabbar :is(a,.tabmore),
+.tabbar :is(a,.tabmore):hover,
+.tabbar :is(a,.tabmore).on {
+  color:#f5f7fa !important;
+  opacity:1;
+}
+.tabbar :is(a,.tabmore) .ico,
+.tabbar :is(a,.tabmore) svg,
+#more svg {
+  color:#f5f7fa !important;
+  filter:grayscale(1) saturate(0) brightness(1.55) drop-shadow(0 0 5px rgba(255,255,255,.34)) !important;
+  opacity:1 !important;
+}
+.tabbar :is(a,.tabmore).on {
+  transform:translateY(-1px);
+}
+.tabbar :is(a,.tabmore).on .ico,
+.tabbar :is(a,.tabmore).on svg {
+  filter:grayscale(1) saturate(0) brightness(1.72) drop-shadow(0 0 6px rgba(255,255,255,.48)) !important;
+}
+/* Symbols use gradient strokes internally. Force those strokes to inherit the
+   neutral shell colour so a use[href] swap is not required. */
+.tabbar svg use { color:#f5f7fa !important; }
