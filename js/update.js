@@ -11,7 +11,7 @@ async function appFiles(){
   const base=new URL(".",location.href).href;
   const loaded=performance.getEntriesByType("resource").map(e=>e.name.split("?")[0]).filter(n=>n.startsWith(location.origin)&&/\.(js|css|json|html)$/.test(n));
   const pages=(await routeList()).map(n=>`${base}js/pages/${n}.js`);
-  const shell=["","index.html","css/style.css","css/profile-neutral.css","manifest.json","sw.js","js/config.js","js/nav-neutral.js","js/golf-gps-course-map.js","js/golf-gps-beta.js","js/golf-gps-red-trail-beta.js","js/golf-event-course-picker.js","js/golf-live-to-par.js"].map(p=>base+p);
+  const shell=["","index.html","css/style.css","css/profile-neutral.css","manifest.json","sw.js","js/config.js","js/nav-neutral.js","js/golf-gps-course-map.js","js/golf-gps-beta.js","js/golf-gps-red-trail-beta.js","js/golf-gps-rolla-beta.js","js/golf-event-course-picker.js","js/golf-live-to-par.js"].map(p=>base+p);
   return [...new Set([...shell,...loaded,...pages])];
 }
 

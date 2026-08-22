@@ -4,6 +4,7 @@
 for (const modulePath of [
   "./golf-gps-beta.js",
   "./golf-gps-red-trail-beta.js",
+  "./golf-gps-rolla-beta.js",
   "./golf-event-course-picker.js",
   "./golf-event-modes.js",
   "./nav-neutral.js",
@@ -19,6 +20,6 @@ export const FIRST_SYNCED_SEASON = 2019;
 export const LEGACY_SEASONS = Math.max(0, FIRST_SYNCED_SEASON - LEAGUE_FOUNDED);
 export const dflSeasonCount = (syncedSeasons = 0) => Math.max(0, Number(syncedSeasons) || 0) + LEGACY_SEASONS;
 const META_VERSION = globalThis.document?.querySelector('meta[name="dfl-app-version"]')?.content || "0";
-const RELEASE_FLOOR = "1.118.8";
+const RELEASE_FLOOR = "1.118.9";
 const newer = (a,b) => { const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ const d=(x[i]||0)-(y[i]||0); if(d)return d>0?a:b; } return a; };
 export const APP_VERSION = newer(META_VERSION, RELEASE_FLOOR);

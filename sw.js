@@ -1,11 +1,11 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.118.8";
+const CACHE_NAME = "dfl-hq-v1.118.9";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/golf.css","./css/home.css","./css/nav-neutral.css",
   "./js/config.js","./js/app.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js",
-  "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/nav-neutral.js",
+  "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/golf-gps-rolla-beta.js","./js/nav-neutral.js",
   "./icons/app-192.png","./icons/app-512.png","./icons/apple-touch-icon.png"
 ];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(async c=>{
