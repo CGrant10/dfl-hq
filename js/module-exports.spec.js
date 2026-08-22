@@ -129,3 +129,42 @@ describe("the import graph", () => {
     }
   });
 });
+
+describe("the initial app shell", () => {
+  it("does not eagerly boot golf feature modules on every route", () => {
+    const html = fs.readFileSync("index.html", "utf8");
+    const config = fs.readFileSync("js/config.js", "utf8");
+    expect(html).not.toMatch(/<script[^>]+src=["']js\/golf-/);
+    expect(config).toContain("export function loadGolfFeatures()");
+  });
+
+  it("does not keep the Broadcast blur poll alive outside Broadcast", () => {
+    const source = fs.readFileSync("js/arena/mobile-broadcast-performance.js", "utf8");
+    expect(source).toMatch(/if \(isPhoneBroadcast\(\)\) blurTimer = window\.setInterval/);
+  });
+
+  it("keeps Pixi out of ordinary metadata consumers", () => {
+    const sections = fs.readFileSync("js/sections.js", "utf8");
+    const results = fs.readFileSync("js/pages/arena-results.js", "utf8");
+    expect(sections).toContain("arena/sprite-themes.js");
+    expect(results).toContain("arena/sprite-themes.js");
+    expect(sections).not.toMatch(/from ["'][^"']*arena\/sprites\.js["']/);
+    expect(results).not.toMatch(/from ["'][^"']*arena\/sprites\.js["']/);
+  });
+});
+
+describe("the supported golf GPS courses", () => {
+  const configs = [
+    "js/golf-gps-beta.js",
+    "js/golf-gps-red-trail-beta.js",
+    "js/golf-gps-rolla-beta.js",
+  ];
+
+  it.each(configs)("keeps nine explicit green targets in %s", (file) => {
+    const source = fs.readFileSync(file, "utf8");
+    const targets = [...source.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
+    expect(targets.map((match) => Number(match[1]))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(new Set(targets.map((match) => `${match[2]},${match[3]}`)).size).toBe(9);
+    expect(source).toMatch(/yards to Hole \$\{hole\} green|label:/);
+  });
+});

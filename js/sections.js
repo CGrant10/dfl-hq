@@ -22,7 +22,7 @@
 //   fields    see form.js
 // =====================================================================
 
-import { themeKeys, themeLabel } from "./arena/sprites.js";
+import { themeKeys, themeLabel } from "./arena/sprite-themes.js";
 
 /** Every Arena theme, for the event editor. */
 const themeOptions = () => themeKeys().map((k) => ({ value: k, label: themeLabel(k) }));
@@ -64,7 +64,7 @@ export const SECTIONS = [
       { name: "description", label: "What is this for", type: "textarea",
         placeholder: "Winner picks first. Loser brings the beer." },
       /* Read off the themes themselves rather than typed out again. This
-         list had already drifted from arena/sprites.js - a theme added
+         list had already drifted from arena/sprite-themes.js - a theme added
          there was invisible here, so nobody could choose it. */
       { name: "theme",       label: "Racer theme", type: "select",
         options: themeOptions() },

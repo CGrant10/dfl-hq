@@ -6,7 +6,7 @@
 import { loading, errorBox } from "./ui.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
 import { startMemberLock } from "./member-lock.js";
-import { dflSeasonCount } from "./config.js";
+import { dflSeasonCount, loadGolfFeatures } from "./config.js";
 import { canEdit } from "./inline.js";
 import { db } from "./supabase.js";
 
@@ -20,7 +20,10 @@ const routes = {
   arena:    () => import("./pages/arena.js"),
   "arena-beta":() => import("./pages/arena-beta.js"),
   "arena-results":() => import("./pages/arena-results.js"),
-  golf:     () => import("./pages/golf.js"),
+  golf:     async () => {
+    const [page] = await Promise.all([import("./pages/golf.js"), loadGolfFeatures()]);
+    return page;
+  },
   sportsbook:() => import("./pages/sportsbook.js"),
   broadcast:() => import("./pages/broadcast.js"),
   calendar: () => import("./pages/calendar.js"),

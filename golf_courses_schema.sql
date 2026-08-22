@@ -46,9 +46,9 @@ create policy "admin write golf course holes" on public.golf_course_holes for al
 insert into public.golf_courses
   (name, city, state, holes, par, yardage, course_rating, slope, website, source_url)
 values
-  ('Rolla Country Club', 'Rolla', 'ND', 9, 36, 3081, null, null,
+  ('Rolla Country Club', 'Rolla', 'ND', 9, 36, 2814, null, null,
    'https://www.rollacountryclub.com/',
-   'https://www.18birdies.com/golf-courses/club/b87a57c0-86ac-11e4-8c28-020000005b00/rolla-municipal-golf-club')
+   'https://www.hole19golf.com/courses/rolla-country-club')
 on conflict (name, city, state) do update set
   holes=excluded.holes,
   par=excluded.par,
@@ -60,15 +60,15 @@ insert into public.golf_course_holes (course_id, hole, par, handicap, yardage_me
 select c.id, v.hole, v.par, v.handicap, v.yardage_men, v.yardage_women
 from public.golf_courses c
 cross join (values
-  (1,4,8,315,290),
-  (2,4,4,301,227),
-  (3,5,3,401,336),
-  (4,3,2,181,172),
-  (5,4,1,354,345),
-  (6,3,7,158,151),
-  (7,4,5,292,281),
-  (8,5,6,408,402),
-  (9,4,9,277,255)
+  (1,4,8,321,null),
+  (2,4,4,330,null),
+  (3,5,3,413,null),
+  (4,3,2,188,null),
+  (5,4,1,359,null),
+  (6,3,7,179,null),
+  (7,4,5,298,null),
+  (8,5,6,430,null),
+  (9,4,9,296,null)
 ) as v(hole,par,handicap,yardage_men,yardage_women)
 where c.name='Rolla Country Club' and c.city='Rolla' and c.state='ND'
 on conflict (course_id, hole) do update set
@@ -83,6 +83,7 @@ create or replace function public.golf_apply_course_to_outing(p_outing_id bigint
 returns void
 language plpgsql
 security definer
+set search_path=public
 as $$
 begin
   if not public.is_admin() then raise exception 'Admin only'; end if;

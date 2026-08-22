@@ -20,7 +20,8 @@
 // register it and that one racer starts using it.
 // =====================================================================
 
-import { CHARACTERS } from "./dfl-sprites.js";
+import { slotsFor } from "./sprite-themes.js";
+export { THEMES, resolveTheme, themeKeys, themeLabel, slotsFor } from "./sprite-themes.js";
 /* One composition step for every renderer - see src/arena/character.ts. */
 import { characterSvg } from "./pixi-runtime-finish.js";
 
@@ -38,38 +39,6 @@ export const SPRITE_FILES = new Set([
   // "gen3/mudkip",
   // "dinosaurs/trex",
 ]);
-
-export const THEMES = {
-  /*
-    THE DFL. Twelve original characters, drawn as pixels and defined in
-    dfl-sprites.js - which is also where a thirteenth would go.
-
-    THIS REPLACED TWO THEMES. There was a "pokemon" one whose slots were
-    elemental types, and a "gen3" one that used real Hoenn names. The art was
-    always this app's own, but a theme named after somebody else's game is a
-    theme that invites their sprite sheets into the repo. Nothing in here
-    belongs to anybody but the league now.
-
-    The slots are READ from the roster rather than typed out a second time,
-    so adding a character is one edit in one file.
-  */
-  dfl: {
-    label: "DFL Originals",
-    slots: CHARACTERS.map((c) => ({ key: c.id, label: c.label, art: "pixel", blurb: c.blurb })),
-  },
-};
-
-/* Events created before the rename still hold these in arena_events.theme,
-   and participants still hold their old slot keys. Mapping the theme keeps
-   those rows drawing something deliberate instead of falling back to a duck. */
-const LEGACY_THEMES = {
-  pokemon: "dfl", gen3: "dfl", ducks: "dfl", dinosaurs: "dfl", cars: "dfl",
-};
-export const resolveTheme = (t) => (THEMES[t] ? t : (LEGACY_THEMES[t] || t));
-
-export function themeKeys() { return Object.keys(THEMES); }
-export function themeLabel(key) { return THEMES[resolveTheme(key)]?.label || key; }
-export function slotsFor(theme) { return THEMES[resolveTheme(theme)]?.slots || []; }
 
 /** Where a real image for this slot would live, if you add one. */
 export function spriteUrl(theme, key) {

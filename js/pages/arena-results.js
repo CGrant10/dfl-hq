@@ -10,7 +10,7 @@
 import { db } from "../supabase.js";
 import { esc, empty, errorBox, loading, fmtDate } from "../ui.js";
 import { loadMembers } from "../members.js";
-import { themeLabel } from "../arena/sprites.js";
+import { themeLabel } from "../arena/sprite-themes.js";
 import { icon } from "../icons.js";
 
 const ms = (value) => {

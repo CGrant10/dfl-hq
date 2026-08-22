@@ -61,11 +61,14 @@ function syncMobileScenery() {
 
 function startBlurSync() {
   clearInterval(blurTimer);
+  blurTimer = 0;
   syncMobileScenery();
-  blurTimer = window.setInterval(syncMobileScenery, BLUR_POLL_MS);
+  // There is nothing to measure outside a phone-sized Broadcast. Previously
+  // this woke the main thread eight times a second on every route forever.
+  if (isPhoneBroadcast()) blurTimer = window.setInterval(syncMobileScenery, BLUR_POLL_MS);
 }
 
 window.addEventListener("hashchange", startBlurSync);
-window.addEventListener("resize", syncMobileScenery, { passive: true });
-window.addEventListener("orientationchange", () => setTimeout(syncMobileScenery, 80));
+window.addEventListener("resize", startBlurSync, { passive: true });
+window.addEventListener("orientationchange", () => setTimeout(startBlurSync, 80));
 startBlurSync();
