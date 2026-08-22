@@ -219,7 +219,7 @@ return `<table class="dfl-strip-tbl"><tr class="row-h"><th class="lbl">Hole</th>
 <tr class="row-p"><th class="lbl">Par</th>${nums.map(h=>`<td>${holePar(holes,h)}</td>`).join("")}<td class="sub">${par}</td></tr>
 <tr class="row-s"><th class="lbl">Score</th>${nums.map(h=>{const v=num(map.get(h)?.strokes),r=holeResult(v,holePar(holes,h));return `<td data-ov-hole="${h}"><span class="ovm ${r.mark}" data-ov-mark="${h}">${v||"·"}</span></td>`}).join("")}<td class="sub" data-ov-sub="${start}">${score||"—"}</td></tr></table>`}
 
-function strip(holes,map){return `<section class="dfl-strip"><header class="dfl-strip-title"><span>Scorecard</span><span>Tap a hole to jump to it</span></header><div class="dfl-strip-scroll">${stripNine("OUT",1,holes,map)}${stripNine("IN",10,holes,map)}</div></section>`}
+function strip(holes,map,holeCount=18){return `<section class="dfl-strip"><header class="dfl-strip-title"><span>Scorecard</span><span>Tap a hole to jump to it</span></header><div class="dfl-strip-scroll">${stripNine("OUT",1,holes,map)}${holeCount>9?stripNine("IN",10,holes,map):""}</div></section>`}
 
 /*
   One hole, one row: hole and its yardage in one column, par, the strokes,
@@ -239,7 +239,7 @@ function nine(title,start,holes,courseHoles,map,editable){const holeNums=Array.f
    card says 12 while you are standing on the 3rd tee looking at the 3rd
    tee's yardage. Name the hole you are actually playing. */
 repeats=holes.length>0&&holes.length<=9,
-rows=holeNums.map(h=>{const p=holePar(holes,h),yards=holeYards(courseHoles,h),v=map.get(h)?.strokes??"",r=holeResult(v,p),again=repeats&&h>9?`<span class="hole-again">(${courseHole(holes,h)})</span>`:"";return `<div class="hole" id="hole-${h}"><span class="hole-n">${h}${again}</span><span class="yards">${yards?`${yards} yd`:"—"}</span></div><div class="par">${p}</div><div class="score">${editable?`<button type="button" class="sbtn" data-step="-1" data-hole="${h}" aria-label="One fewer on hole ${h}">−</button>`:""}<span class="mark ${r.mark}" data-mark="${h}"><input data-team-score data-hole="${h}" data-par="${p}" type="text" pattern="[0-9]*" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="${esc(v)}" maxlength="2" ${editable?"":"disabled"} aria-label="Team strokes hole ${h}"></span>${editable?`<button type="button" class="sbtn" data-step="1" data-hole="${h}" aria-label="One more on hole ${h}">+</button>`:""}</div><div class="result ${r.cls}" data-result="${h}">${r.label}</div>`}).join("");return `<section class="dfl-nine"><header class="dfl-nine-title"><strong>${title}</strong></header><div class="dfl-hole-grid"><div class="hdr">Hole</div><div class="hdr">Par</div><div class="hdr">Strokes</div><div class="hdr">Result</div>${rows}</div></section>`}
+rows=holeNums.map(h=>{const p=holePar(holes,h),yards=holeYards(courseHoles,h),v=map.get(h)?.strokes??"",r=holeResult(v,p),again=repeats&&h>9?`<span class="hole-again">(${courseHole(holes,h)})</span>`:"";return `<div class="hole" data-score-hole-row="${h}"><span class="hole-n">${h}${again}</span><span class="yards">${yards?`${yards} yd`:"—"}</span></div><div class="par">${p}</div><div class="score">${editable?`<button type="button" class="sbtn" data-step="-1" data-hole="${h}" aria-label="One fewer on hole ${h}">−</button>`:""}<span class="mark ${r.mark}" data-mark="${h}"><input data-team-score data-hole="${h}" data-par="${p}" type="text" pattern="[0-9]*" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="${esc(v)}" maxlength="2" ${editable?"":"disabled"} aria-label="Strokes hole ${h}"></span>${editable?`<button type="button" class="sbtn" data-step="1" data-hole="${h}" aria-label="One more on hole ${h}">+</button>`:""}</div><div class="result ${r.cls}" data-result="${h}">${r.label}</div>`}).join("");return `<section class="dfl-nine"><header class="dfl-nine-title"><strong>${title}</strong></header><div class="dfl-hole-grid"><div class="hdr">Hole</div><div class="hdr">Par</div><div class="hdr">Strokes</div><div class="hdr">Result</div>${rows}</div></section>`}
 
 /*
   Every number on the card recomputed from the inputs, in the DOM, without a
@@ -325,20 +325,22 @@ try{queueScore(outingId,teamId,hole,input.value.trim())}
    leave what was typed alone - it is still on screen to be corrected. */
 catch(err){alert(err.message||"Could not save team score")}},SAVE_DELAY))}
 
-function wire(root,outingId,teamId,editable){if(!editable||root.dataset.scoreWire==="1")return;root.dataset.scoreWire="1";
+export function wireScorecardControls(root,editable,onScoreChange){if(!editable||root.dataset.scoreWire==="1")return;root.dataset.scoreWire="1";
 // The strip is a jump list, not a second place to score.
-root.addEventListener("click",e=>{const jump=e.target.closest("[data-ov-hole]");if(!jump)return;const row=root.querySelector(`#hole-${jump.dataset.ovHole}`);if(!row)return;row.scrollIntoView({block:"center",behavior:"smooth"});root.querySelectorAll(".dfl-hole-grid .is-now").forEach(el=>el.classList.remove("is-now"));row.classList.add("is-now")});
+root.addEventListener("click",e=>{const jump=e.target.closest("[data-ov-hole]");if(!jump)return;const row=root.querySelector(`[data-score-hole-row="${jump.dataset.ovHole}"]`);if(!row)return;row.scrollIntoView({block:"center",behavior:"smooth"});root.querySelectorAll(".dfl-hole-grid .is-now").forEach(el=>el.classList.remove("is-now"));row.classList.add("is-now")});
 /*
   The first tap on an empty hole lands on PAR, not on 1. Par is the score
   entered most often, so it is one tap instead of four - and from there the
   buttons do exactly what they look like.
 */
-root.addEventListener("click",e=>{const btn=e.target.closest("[data-step]");if(!btn)return;const input=root.querySelector(`input[data-team-score][data-hole="${btn.dataset.hole}"]`);if(!input)return;const par=Number(input.dataset.par)||4,now=Number(input.value);input.value=String(!Number.isFinite(now)||now<1?par:Math.max(MIN_STROKES,Math.min(MAX_STROKES,now+Number(btn.dataset.step))));recalc(root);queueSave(root,outingId,teamId,input)});
+root.addEventListener("click",e=>{const btn=e.target.closest("[data-step]");if(!btn)return;const input=root.querySelector(`input[data-team-score][data-hole="${btn.dataset.hole}"]`);if(!input)return;const par=Number(input.dataset.par)||4,now=Number(input.value);input.value=String(!Number.isFinite(now)||now<1?par:Math.max(MIN_STROKES,Math.min(MAX_STROKES,now+Number(btn.dataset.step))));recalc(root);onScoreChange?.(input)});
 /* Typing: digits only, so a stray letter can never become a save that fails.
    Leading zeros go too - "0" is not a score, and stripping it here means a
    half-typed field clears the hole instead of becoming a value the queue has
    to reject. */
-root.addEventListener("input",e=>{const input=e.target.closest("input[data-team-score]");if(!input)return;const clean=input.value.replace(/\D/g,"").replace(/^0+/,"").slice(0,2);if(clean!==input.value)input.value=clean;if(Number(clean)>MAX_STROKES)input.value=String(MAX_STROKES);recalc(root);queueSave(root,outingId,teamId,input)});
+root.addEventListener("input",e=>{const input=e.target.closest("input[data-team-score]");if(!input)return;const clean=input.value.replace(/\D/g,"").replace(/^0+/,"").slice(0,2);if(clean!==input.value)input.value=clean;if(Number(clean)>MAX_STROKES)input.value=String(MAX_STROKES);recalc(root);onScoreChange?.(input)});
 root.addEventListener("keydown",e=>{const input=e.target.closest("input[data-team-score]");if(!input||e.key!=="Enter")return;e.preventDefault();input.blur()})}
+function wire(root,outingId,teamId,editable){wireScorecardControls(root,editable,input=>queueSave(root,outingId,teamId,input))}
+export {styles as ensureScorecardStyles,liveBar as scorecardLiveBar,strip as scorecardStrip,nine as scorecardNine,recalc as recalcScorecard};
 function boot(){styles();const run=()=>{const root=document.querySelector("#golf-outing"),q=new URLSearchParams(location.hash.split("?")[1]||""),outingId=q.get("id"),teamId=q.get("team");if(!root||!outingId||!teamId||!root.querySelector(".golf-scorecard-page"))return;render(root,outingId,teamId).catch(err=>{root.innerHTML=`<div class="card"><div class="card-body"><strong>Could not load team scorecard.</strong><p class="muted">${esc(err.message)}</p></div></div>`})};new MutationObserver(run).observe(document.body,{childList:true,subtree:true});run()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
