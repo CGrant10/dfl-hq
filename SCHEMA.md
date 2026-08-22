@@ -68,6 +68,7 @@ Dependencies are real: a file that adds a column to `members` needs
 | 19 | `golf_scores_policy_fix.sql` | Closes an anonymous-write hole on `golf_scores`. **Security fix — not optional.** |
 | 20 | `golf_bag_schema.sql` | Private club distances. |
 | 21 | `golf_time_schema.sql` | `golf_outings.event_time`. |
+| 21a | `golf_individual_matches_schema.sql` | Team-free singles fields, including 1v1v1 and larger shared individual matches. Needs 16. |
 
 ### Arena
 
