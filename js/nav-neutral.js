@@ -1,17 +1,28 @@
-// Restore the pre-metallic shell icons without disturbing Claude's unrelated fixes.
-// The metallic commit swapped the shell to separate *-steel SVG symbols. CSS cannot
-// reliably recolor those <use> shadow trees, so switch the references back to the
-// original symbols and let profile-neutral.css apply the established neutral ink.
+// Permanent neutral shell chrome. Keep member/theme colors in content, not nav icons.
+function ensureNeutralStyle(){
+  if(document.getElementById('dfl-nav-neutral-style')) return;
+  const s=document.createElement('style');
+  s.id='dfl-nav-neutral-style';
+  s.textContent=`
+    .tabbar :is(a,.tabmore){color:#c7cfda!important}
+    .tabbar :is(a,.tabmore).on{color:#fff!important}
+    .tabbar :is(a,.tabmore) svg,#more svg,.sheet-card svg{
+      color:#c7cfda!important;
+      filter:grayscale(1) saturate(0)!important;
+    }
+    .tabbar :is(a,.tabmore).on svg{color:#fff!important;filter:grayscale(1) saturate(0) brightness(1.35)!important}
+    .tabbar :is(a,.tabmore).on::before,.tabbar :is(a,.tabmore).on::after{background:var(--accent-sweep)!important}
+  `;
+  document.head.appendChild(s);
+}
+
 function neutralize(root=document){
-  root.querySelectorAll?.('#tabbar use[href$="-steel"], #more use[href$="-steel"]').forEach(use=>{
+  root.querySelectorAll?.('#tabbar use[href$="-steel"], #more use[href$="-steel"], .sheet-card use[href$="-steel"]').forEach(use=>{
     const href=use.getAttribute('href')||'';
-    if(href.endsWith('-steel'))use.setAttribute('href',href.slice(0,-6));
+    if(href.endsWith('-steel')) use.setAttribute('href',href.slice(0,-6));
   });
 }
 
-neutralize();
-
-const more=document.getElementById('more');
-if(more){
-  new MutationObserver(()=>neutralize(more)).observe(more,{childList:true,subtree:true});
-}
+function apply(){ensureNeutralStyle();neutralize();}
+apply();
+new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
