@@ -1,6 +1,6 @@
 {
   "name": "dfl-hq",
-  "version": "1.121.1",
+  "version": "1.122.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.19.0",

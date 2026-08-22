@@ -34,6 +34,7 @@ import { SCORING_NAMES, battleResult, standingLine, teamPoints, roundHoles,
 import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
 import { teamInk } from "./brand-ink.js";
+import { nextTeamPair } from "./golf-matchups.js";
 
 const POLL_MS = 15000;
 /*
@@ -64,7 +65,7 @@ function styles() {
 .golf-points{padding:0;overflow:hidden;border-color:var(--accent-dim)}
 .gp-kicker{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 13px 0;font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
 .gp-live{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 13px;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.golf-points-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 13px 17px}
+.golf-points-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));align-items:stretch;gap:8px;padding:12px 13px 17px}
 .gp-team{min-width:0;display:grid;gap:5px;justify-items:center;text-align:center}
 .gp-team b{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .gp-team span{font-size:clamp(52px,17vw,76px);font-weight:950;line-height:.9;font-variant-numeric:tabular-nums;color:var(--racer,var(--accent))}
@@ -120,7 +121,12 @@ function styles() {
 .gb-side-head i{flex:0 0 9px;width:9px;height:9px;border-radius:50%;background:var(--racer,var(--accent))}
 .gb-side-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gb-vs{padding:5px 0;text-align:center;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.gt-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}`;
+.gt-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.gm-add{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;align-items:center;margin-top:10px}
+.gm-add select{min-width:0;height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg-2);color:var(--text);font:inherit;font-size:12px;font-weight:800}
+.gm-add-vs{font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.gm-add .btn{grid-column:1/-1;justify-self:start}
+@media(max-width:420px){.gm-add{grid-template-columns:1fr}.gm-add-vs{display:none}.gm-add .btn{grid-column:auto;width:100%}}`;
   document.head.appendChild(s);
 }
 
@@ -232,7 +238,7 @@ async function load(id) {
 // ------------------------------------------------------------------ views
 
 function board(data) {
-  const teams = data.teams.length === 2 ? data.teams : [];
+  const teams = data.teams || [];
   if (!teams.length || !data.rounds.length) return "";
   const { total, per } = dayPoints(data.rounds);
   const values = teams.map((t) => total.get(String(t.id)) || 0);
@@ -243,16 +249,19 @@ function board(data) {
      anybody had teed off. The round cards below already say, per match,
      exactly what is unfinished. */
   const foot = halvedNote(allBattles);
-  const lead = values[0] === values[1]
-    ? (allBattles.some((b) => b.result?.complete) ? "All square" : "")
-    : `${esc(teams[values[0] > values[1] ? 0 : 1].name)} lead`;
+  const best = Math.max(...values);
+  const leaders = teams.filter((_, index) => values[index] === best);
+  const lead = !allBattles.some((b) => b.result?.complete) ? ""
+    : leaders.length === 1 ? `${esc(leaders[0].name)} lead`
+    : leaders.length === teams.length ? "All square"
+    : `${leaders.length} teams tied for the lead`;
 
   /* Each round's own tally, which is the history the day is played for -
      "we lost the first nine 2-1" survives the next two nines. */
   const chips = per.map(({ round, points }) => {
     const open = data.rounds.find((r) => String(r.round.id) === String(round.id))
       ?.battles.some((b) => !b.result?.complete);
-    return `<span class="gpr ${open ? "is-open" : ""}"><small>R${round.round_number}</small>${teams.map((t) => points.get(String(t.id)) || 0).join("–")}</span>`;
+    return `<span class="gpr ${open ? "is-open" : ""}"><small>R${round.round_number}</small>${teams.map((t) => `${esc(t.name)} ${points.get(String(t.id)) || 0}`).join(" · ")}</span>`;
   }).join("");
 
   const anyLive = data.rounds.some((r) => r.battles.some((b) => b.result && b.result.thru > 0 && !b.result.complete));
@@ -265,13 +274,12 @@ function board(data) {
     <div class="gp-kicker">Tournament</div>
     ${anyLive ? `<div class="gp-live"><span class="badge live">Live</span><span>A round is under way</span></div>` : ""}
     <div class="golf-points-grid">
-      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(teamInk(t.color, i))}"><span>${values[i]}</span><b>${esc(t.name)}</b>${caps[i] ? `<small>Captain ${esc(caps[i])}</small>` : ""}</div>`)
-        .join('<div class="gp-dash">—</div>')}
+      ${teams.map((t, i) => `<div class="gp-team" style="--racer:${esc(teamInk(t.color, i))}"><span>${values[i]}</span><b>${esc(t.name)}</b>${caps[i] ? `<small>Captain ${esc(caps[i])}</small>` : ""}</div>`).join("")}
     </div>
     ${chips ? `<div class="golf-points-rounds">${chips}</div>` : ""}
     ${foot ? `<div class="golf-points-foot">${esc(foot)}</div>` : ""}
     ${lead ? `<div class="golf-points-lead">${lead}</div>` : ""}
-    <div class="gp-share"><button class="btn ghost small" data-share-board>Share tournament</button></div>
+    ${teams.length === 2 ? `<div class="gp-share"><button class="btn ghost small" data-share-board>Share tournament</button></div>` : ""}
   </section>`;
 }
 
@@ -344,7 +352,7 @@ function roundCard(data, entry) {
   const singles = round.format === "singles";
   const scoring = scoringOf(round);
   const pts = teamPoints(battles.filter((b) => b.sides.length === 2));
-  const teams = data.teams.length === 2 ? data.teams : [];
+  const teams = data.teams || [];
   const scored = battles.some((b) => b.sides.some((s) => s.strokes.size));
   const label = round.name || `Round ${round.round_number}`;
 
@@ -370,18 +378,29 @@ function roundCard(data, entry) {
         <small>${n === 9 ? "a nine" : "the full round"}</small></button>`).join("")}
   </div>`;
 
+  const suggested = nextTeamPair(teams, battles);
+  const teamOptions = (selected) => teams.map((team) => `<option value="${team.id}" ${String(team.id) === String(selected) ? "selected" : ""}>${esc(team.name || "Team")}</option>`).join("");
+  const addMatch = teams.length < 2 ? `<p class="muted tiny">Create at least two teams before adding matches.</p>` : `<div class="gm-add">
+    <select data-match-team-a="${round.id}" aria-label="First team for the new match">${teamOptions(suggested[0])}</select>
+    <span class="gm-add-vs">versus</span>
+    <select data-match-team-b="${round.id}" aria-label="Second team for the new match">${teamOptions(suggested[1])}</select>
+    <button class="btn ghost small" data-add-match="${round.id}">Add ${singles ? "singles " : ""}match</button>
+  </div>`;
+
   const adminBlock = !admin ? "" : `<div class="gb-admin">
     ${holesSwitch}
     ${scoringSwitch}
     <div class="arena-admin">
-      ${singles ? "" : `<button class="btn small" data-build-pairs="${round.id}">${battles.length ? "Rebuild the pairs" : "Build the pairs"}</button>`}
-      <button class="btn ghost small" data-add-match="${round.id}">Add a match</button>
+      ${singles || teams.length !== 2 ? "" : `<button class="btn small" data-build-pairs="${round.id}">${battles.length ? "Rebuild the pairs" : "Build the pairs"}</button>`}
       ${scored ? `<button class="btn ghost small danger" data-clear-round="${round.id}">Clear this round's strokes</button>` : ""}
       <button class="btn ghost small danger" data-drop-round="${round.id}">Delete round</button>
     </div>
+    ${addMatch}
     <p class="muted tiny">${singles
-      ? "Add a match for each 1v1, then pick the two players."
-      : "“Build the pairs” pairs each team in draft order and puts pair 1 against pair 1. Or add matches and fill them in yourself — picking somebody already in this round swaps the two."}${scored ? " Rebuilding is blocked until this round's strokes are cleared." : ""}</p>
+      ? "Choose any two teams, add the 1v1, then pick one player from each side. The next matchup is suggested to keep every team involved evenly."
+      : teams.length === 2
+        ? "“Build the pairs” pairs each team in draft order and puts pair 1 against pair 1. Or add matches and fill them in yourself — picking somebody already in this round swaps the two."
+        : "Choose the two teams for each match, then fill two seats on each side. This keeps multi-team rounds explicit and avoids assigning the wrong opponent."}${scored ? " Rebuilding is blocked until this round's strokes are cleared." : ""}</p>
     ${battles.length ? `<div class="gb-seats">${seats(data, entry)}</div>` : ""}
   </div>`;
 
@@ -479,9 +498,67 @@ async function assignSeat(data, roundId, sideId, rowId, participantId) {
   if (error) throw error;
 }
 
+/* Add one two-sided match without the old RPC's exactly-two-teams rule.
+   The two teams are explicit, so a tournament can have any field size while
+   each match keeps the two-side shape the scorecard requires. Re-read the
+   next match number on a collision so two quick taps cannot corrupt a round. */
+async function createMatch(roundId, firstTeamId, secondTeamId) {
+  if (!firstTeamId || !secondTeamId) throw new Error("Choose two teams for this match.");
+  if (String(firstTeamId) === String(secondTeamId)) throw new Error("A team cannot play itself. Choose a different opponent.");
+  const client = db();
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const latest = await client.from("golf_matches").select("match_number")
+      .eq("round_id", roundId).order("match_number", { ascending: false }).limit(1);
+    if (latest.error) throw latest.error;
+    const matchNumber = Number(latest.data?.[0]?.match_number || 0) + 1;
+    const made = await client.from("golf_matches").insert({
+      outing_id: Number(outingId), round_id: Number(roundId), match_number: matchNumber,
+    }).select("id").single();
+    if (made.error?.code === "23505" && attempt < 2) continue;
+    if (made.error) throw made.error;
+    if (!made.data?.id) throw new Error("The match was not created. Sign in as admin and try again.");
+    const sides = await client.from("golf_match_sides").insert([
+      { match_id: made.data.id, team_id: Number(firstTeamId), slot: 1 },
+      { match_id: made.data.id, team_id: Number(secondTeamId), slot: 2 },
+    ]);
+    if (!sides.error) return made.data.id;
+    await client.from("golf_matches").delete().eq("id", made.data.id);
+    throw sides.error;
+  }
+  throw new Error("Another match was added at the same time. Try once more.");
+}
+
 // ---------------------------------------------------------------- lifecycle
 
 let data = null;
+
+function rememberPosition(target) {
+  const element = target instanceof Element ? target : document.activeElement;
+  const card = element?.closest?.("[data-collapse]");
+  const stable = ["data-seat", "data-add-match", "data-build-pairs", "data-drop-match", "data-scoring", "data-holes"]
+    .find((attr) => element?.hasAttribute?.(attr));
+  const value = stable ? element.getAttribute(stable) : "";
+  return {
+    scrollY: window.scrollY,
+    selector: stable ? `[${stable}="${String(value).replaceAll('"', '\\"')}"]` : "",
+    collapse: card?.dataset.collapse || "",
+    top: element?.getBoundingClientRect?.().top ?? card?.getBoundingClientRect?.().top ?? 0,
+    cardTop: card?.getBoundingClientRect?.().top ?? 0,
+  };
+}
+
+async function restorePosition(saved) {
+  if (!saved) return;
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const exact = saved.selector && host?.querySelector(saved.selector);
+  const anchor = exact || (saved.collapse && document.querySelector(`[data-collapse="${saved.collapse}"]`));
+  if (anchor) {
+    window.scrollBy(0, anchor.getBoundingClientRect().top - (exact ? saved.top : saved.cardTop));
+    if (saved.selector && anchor.matches("button,select,input")) anchor.focus({ preventScroll: true });
+  } else {
+    window.scrollTo(0, saved.scrollY);
+  }
+}
 
 /*
   WHAT THE EVENT PAGE SHOULD BE LEADING WITH.
@@ -514,7 +591,7 @@ function paintTeamShare() {
   if (slot.innerHTML !== want) slot.innerHTML = want;
 }
 
-async function draw() {
+async function draw(savedPosition = null) {
   if (!host) return;
   try {
     data = await load(outingId);
@@ -534,6 +611,7 @@ async function draw() {
   if (boardHost) boardHost.innerHTML = board(data);
   paintState(outingState(data.outing, data.rounds).state);
   paintTeamShare();
+  await restorePosition(savedPosition);
 }
 
 /*
@@ -566,8 +644,20 @@ function wireShare() {
 /* Every admin button on the card, and a redraw after each one. */
 function wire() {
   host.addEventListener("change", async (e) => {
+    const matchup = e.target.closest("[data-match-team-a],[data-match-team-b]");
+    if (matchup) {
+      const roundId = matchup.dataset.matchTeamA || matchup.dataset.matchTeamB;
+      const other = host.querySelector(matchup.hasAttribute("data-match-team-a")
+        ? `[data-match-team-b="${roundId}"]` : `[data-match-team-a="${roundId}"]`);
+      if (other?.value === matchup.value) {
+        const alternative = [...other.options].find((option) => option.value !== matchup.value);
+        if (alternative) other.value = alternative.value;
+      }
+      return;
+    }
     const select = e.target.closest("[data-seat]");
     if (!select) return;
+    const savedPosition = rememberPosition(select);
     const [roundId, sideId] = select.dataset.seat.split(":");
     select.disabled = true;
     try {
@@ -575,7 +665,7 @@ function wire() {
     } catch (err) {
       toast(err.message || "Could not move that player", true);
     }
-    await draw();
+    await draw(savedPosition);
   });
 
   host.addEventListener("click", async (e) => {
@@ -592,9 +682,10 @@ function wire() {
     if (!button) return;
 
     const run = async (fn) => {
+      const savedPosition = rememberPosition(button);
       button.disabled = true;
       try { await fn(); } catch (err) { toast(err.message || "That did not work", true); }
-      await draw();
+      await draw(savedPosition);
     };
 
     if (holes) {
@@ -658,8 +749,11 @@ function wire() {
 
     if (addMatch) {
       return run(async () => {
-        const { error } = await db().rpc("golf_add_match", { p_round_id: Number(addMatch.dataset.addMatch) });
-        if (error) throw error;
+        const roundId = addMatch.dataset.addMatch;
+        const first = host.querySelector(`[data-match-team-a="${roundId}"]`)?.value;
+        const second = host.querySelector(`[data-match-team-b="${roundId}"]`)?.value;
+        await createMatch(roundId, first, second);
+        toast("Match added — pick the players below");
       });
     }
 

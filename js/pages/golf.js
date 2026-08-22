@@ -28,7 +28,7 @@ const TEAM_NAMES=["Team Chaos","Team Bogey","Team Shank","Team Mulligan","Team S
   rewriting golf_teams.color. newTeamColor() is what a newly generated team
   gets written with. Nothing about teams, scoring or persistence changes.
 */
-export async function render(view){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"),qs.get("match"));return renderList(view);}
+export async function render(view,{quiet=false}={}){stopLeaderPoll();const qs=new URLSearchParams(location.hash.split("?")[1]||"");const id=qs.get("id");if(id)return renderOuting(view,id,qs.get("team"),qs.get("match"),quiet);return renderList(view);}
 async function renderList(view){view.innerHTML=loading();const [res,partRes,teamRes,roundRes]=await Promise.all([db().from("golf_outings").select("*").order("event_date",{ascending:false}),db().from("golf_participants").select("outing_id"),db().from("golf_teams").select("outing_id,name,captain_member_id"),db().from("golf_rounds").select("outing_id,holes").then(r=>r,()=>({data:[],error:null}))]);if(res.error){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(res.error)}<div class="card"><div class="card-body muted">If the golf tables are missing, run <strong>golf_schema.sql</strong> in Supabase.</div></div>`;return;}/* Real counts for the poster line. One extra read each, both tiny, and a
      failure just means the line says less rather than the page breaking. */
   const playerCount=new Map(),teamCount=new Map();
@@ -192,6 +192,28 @@ leaderTimer=setInterval(tick,LEADER_POLL_MS);
    skipped every tick. Refresh now rather than up to 15 seconds from now. */
 onLeaderVisible=()=>{if(!document.hidden)tick();};
 document.addEventListener("visibilitychange",onLeaderVisible);}
+
+/* Saves should feel like edits to the card in front of you, not navigation.
+   Keep the old page painted while fresh rows load, then put the same control
+   back at the same screen position. The queue also prevents two quick edits
+   from racing two whole-page paints against one another. */
+function stableRefresh(view,rerender){let queue=Promise.resolve();return(target=document.activeElement)=>{
+  const element=target instanceof Element?target:document.activeElement;
+  const card=element?.closest?.("[data-collapse]");
+  const attrs=["data-move","data-lock","data-team-name","data-save-name","data-drop-player","data-rename-player","data-team-mode"];
+  const attr=attrs.find(name=>element?.hasAttribute?.(name));
+  const value=attr?element.getAttribute(attr):"";
+  const selector=element?.id?`#${element.id}`:attr?`[${attr}="${String(value).replaceAll('"','\\"')}"]`:"";
+  const saved={selector,collapse:card?.dataset.collapse||"",top:element?.getBoundingClientRect?.().top??card?.getBoundingClientRect?.().top??0,cardTop:card?.getBoundingClientRect?.().top??0,scrollY:window.scrollY};
+  queue=queue.catch(()=>{}).then(async()=>{
+    await rerender();
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const exact=saved.selector&&view.querySelector(saved.selector);const anchor=exact||(saved.collapse&&view.querySelector(`[data-collapse="${saved.collapse}"]`));
+    if(anchor){window.scrollBy(0,anchor.getBoundingClientRect().top-(exact?saved.top:saved.cardTop));if(exact&&anchor.matches("button,select,input"))anchor.focus({preventScroll:true});}
+    else window.scrollTo(0,saved.scrollY);
+  });
+  return queue;
+};}
 /*
   HOW MANY HOLES THE DAY IS.
 
@@ -208,7 +230,7 @@ document.addEventListener("visibilitychange",onLeaderVisible);}
   The arithmetic is NOT here. tournamentHoles() in golf-battle.js owns it,
   the same file that owns every other fact derived from the rounds.
 */
-async function renderOuting(view,id,teamId,matchId){view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,roundsRes,matchCountRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),db().from("golf_rounds").select("id,holes").eq("outing_id",id).then(r=>r,()=>({data:[],error:null})),db().from("golf_matches").select("id",{count:"exact",head:true}).eq("outing_id",id).then(r=>r,()=>({count:0,error:null})),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));nameMap=memberNames(membersList);
+async function renderOuting(view,id,teamId,matchId,quiet=false){if(!quiet)view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,roundsRes,matchCountRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),db().from("golf_rounds").select("id,holes").eq("outing_id",id).then(r=>r,()=>({data:[],error:null})),db().from("golf_matches").select("id",{count:"exact",head:true}).eq("outing_id",id).then(r=>r,()=>({count:0,error:null})),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data,parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));nameMap=memberNames(membersList);
 /* The tournament's length, not the course's. A day of three nines is 27
    holes; golf_outings.holes says 9, because that is the nine they play. */
 const dayHoles=tournamentHoles(roundsRes?.error?[]:(roundsRes?.data||[]),outing.holes||18);
@@ -263,7 +285,7 @@ if(matchId){view.innerHTML=`${title}<div id="golf-outing"><div class="golf-match
   outing.status alone is exactly the disagreement that helper exists to
   stop. Until it answers, the active order stands.
 */
-view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing" class="golf-event"><div class="golf-board-page ge-board"></div>${hasTournament?`<div class="golf-live-page ge-live"></div>`:leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}<div class="golf-matches-page ge-matches"></div>${teamsCard(outing,parts,teams,byId)}<div class="golf-draft-page ge-draft"></div>${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length,dayHoles)}</div>`;if(!hasTournament)startLeaderPoll(view,outing);wireGuest(view,outing,()=>render(view));wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,()=>render(view));wireTeams(view,outing,parts,teams,rate,()=>render(view));wireTeamNames(view,outing,teams,()=>render(view));wireGolfNames(view,outing,parts,nameMap,()=>render(view));wireTeamMode(view,outing,parts,teams,()=>render(view));}}
+view.innerHTML=`${title}${guestStrip(outing)}<div id="golf-outing" class="golf-event"><div class="golf-board-page ge-board"></div>${hasTournament?`<div class="golf-live-page ge-live"></div>`:leaderboard(teams,scoresRes.data||[],holesRes.data||[],outing)}<div class="golf-matches-page ge-matches"></div>${teamsCard(outing,parts,teams,byId)}<div class="golf-draft-page ge-draft"></div>${outingOverview(outing,parts,teams,byId,(scoresRes.data||[]).length,dayHoles)}</div>`;if(!hasTournament)startLeaderPoll(view,outing);const refresh=stableRefresh(view,()=>render(view,{quiet:true}));wireGuest(view,outing,refresh);wireGuestCode(view,outing);if(canEdit()){wireLineup(view,outing,parts,membersList,refresh);wireTeams(view,outing,parts,teams,rate,refresh);wireTeamNames(view,outing,teams,refresh);wireGolfNames(view,outing,parts,nameMap,refresh);wireTeamMode(view,outing,parts,teams,refresh);}}
 /* =====================================================================
    THE TEAMS SECTION - a roster, and nothing else
    ---------------------------------------------------------------------
@@ -355,10 +377,10 @@ const modeSwitch=mode==="legacy"?"":`<div class="golf-mode" role="group" aria-la
   <button type="button" class="gm-opt ${mode==="draft"?"is-on":""}" data-team-mode="draft" aria-pressed="${mode==="draft"}">Captains draft<small>pick one at a time</small></button>
   <button type="button" class="gm-opt ${mode==="random"?"is-on":""}" data-team-mode="random" aria-pressed="${mode==="random"}">Random<small>deal them out</small></button>
 </div>`;
-const generator=`<div class="golf-generator"><label class="gcount">Teams <input type="number" id="golf-team-count" min="2" max="6" value="${teams.length||2}"></label><button class="btn small" id="golf-random" ${parts.length<2?"disabled":""}>Random teams</button><button class="btn small" id="golf-balanced" ${parts.length<2?"disabled":""}>Balanced teams</button><button class="btn ghost small" id="golf-clear" ${teams.length?"":"disabled"}>Clear teams</button></div>`;
+const generator=`<div class="golf-generator"><label class="gcount">Teams (2–6) <input type="number" id="golf-team-count" min="2" max="6" value="${teams.length||2}"></label><button class="btn small" id="golf-random" ${parts.length<2?"disabled":""}>Random teams</button><button class="btn small" id="golf-balanced" ${parts.length<2?"disabled":""}>Balanced teams</button><button class="btn ghost small" id="golf-clear" ${teams.length?"":"disabled"}>Clear teams</button></div>`;
 // In draft mode the empty teams still have to come from somewhere, so making
 // them stays - it is dealing the PLAYERS out that would trample the draft.
-const draftControls=`<div class="golf-generator"><label class="gcount">Teams <input type="number" id="golf-team-count" min="2" max="6" value="${teams.length||2}"></label><button class="btn small" id="golf-make-teams" ${teams.length?"disabled":""}>Create the teams</button><button class="btn ghost small" id="golf-clear" ${teams.length?"":"disabled"}>Clear teams</button></div><p class="muted tiny">Empty teams, then name the captains on the draft board above. Nobody is assigned for you.</p>`;
+const draftControls=`<div class="golf-generator"><label class="gcount">Teams (2–6) <input type="number" id="golf-team-count" min="2" max="6" value="${teams.length||2}"></label><button class="btn small" id="golf-make-teams" ${teams.length?"disabled":""}>Create the teams</button><button class="btn ghost small" id="golf-clear" ${teams.length?"":"disabled"}>Clear teams</button></div><p class="muted tiny">Create 2–6 empty teams, then name the captains on the draft board above. Nobody is assigned for you.</p>`;
 return modeSwitch+(mode==="draft"?draftControls:generator)+`<div class="golf-danger"><div class="golf-danger-text"><strong>Reset all scorecards</strong><p class="muted tiny">${scoreCount?`Deletes all ${scoreCount} stroke${scoreCount===1?"":"s"} for every team in this event. Teams, players and pars stay.`:"No strokes have been entered yet."}</p></div><button class="btn small danger" id="golf-reset-scores" ${scoreCount?"":"disabled"}>Reset all</button></div>`;}
 
 /* Rename a team and shuffle who is on it, in one place.
