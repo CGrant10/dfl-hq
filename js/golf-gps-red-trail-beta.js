@@ -1,19 +1,9 @@
-/* Red Trail Links / New Salem GPS Beta. Green centers calibrate locally on first lap. */
-const STORAGE_KEY="dfl.golfGpsBeta.redTrail.greens.v1";
-const COURSE_RE=/(red\s*trail|new\s*salem)/i;
-let watchId=null,pos=null,hole=1,timer=0;
-const load=()=>{try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")||{}}catch{return {}}};
-const save=x=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(x))}catch{}};
-const yards=m=>Math.round(m*1.0936133);
-function dist(a,b){const R=6371000,r=x=>x*Math.PI/180,dlat=r(b.lat-a.lat),dlon=r(b.lng-a.lng),x=Math.sin(dlat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dlon/2)**2;return yards(2*R*Math.asin(Math.sqrt(x)))}
-function next(card){for(const i of card.querySelectorAll("input[data-team-score]"))if(!String(i.value||"").trim())return ((Number(i.dataset.hole)||1)-1)%9+1;return 1}
-function course(view){return [...view.querySelectorAll(".golf-event-head .golf-meta span")].map(x=>x.textContent||"").find(x=>COURSE_RE.test(x))||""}
-function css(){if(document.getElementById("gps-redtrail-style"))return;const s=document.createElement("style");s.id="gps-redtrail-style";s.textContent=`.gpsrt{position:fixed;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:69;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:9px 12px;background:rgba(7,15,24,.94);color:var(--text);box-shadow:0 10px 28px rgba(0,0,0,.38);text-align:center}.gpsrt strong{display:block;font-size:24px;line-height:1}.gpsrt small{display:block;margin-top:3px;font-size:9px;color:var(--muted);font-weight:900;text-transform:uppercase}.gpsrt-panel{position:fixed;right:10px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:70;width:min(330px,calc(100vw - 20px));padding:13px;border-radius:16px;background:rgba(7,15,24,.98);color:var(--text);box-shadow:0 18px 44px rgba(0,0,0,.52)}.gpsrt-panel button{min-height:40px;border-radius:9px;border:1px solid var(--line);background:var(--bg-3);color:var(--text);font-weight:900}.gpsrt-nav{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center}.gpsrt-nav b{text-align:center}.gpsrt-set{width:100%;margin-top:9px}.gpsrt-reading{text-align:center;font-size:42px;font-weight:900;padding:10px}`;document.head.appendChild(s)}
-function reading(){const g=load()[hole];return pos&&g?dist({lat:pos.coords.latitude,lng:pos.coords.longitude},g):null}
-function paint(b){const g=load()[hole],r=reading();b.innerHTML=!pos?`<strong>GPS</strong><small>Beta · tap to start</small>`:!g?`<strong>H${hole}</strong><small>GPS Beta · set green</small>`:`<strong>${r}</strong><small>yd · H${hole} · ±${yards(pos.coords.accuracy)}</small>`}
-function panel(b){document.querySelector(".gpsrt-panel")?.remove();const p=document.createElement("div");p.className="gpsrt-panel";const draw=()=>{const g=load()[hole],r=reading();p.innerHTML=`<div style="display:flex;justify-content:space-between"><b>New Salem GPS Beta</b><button data-x>×</button></div><div class="gpsrt-reading">${r??"—"}</div><div class="gpsrt-nav"><button data-prev>‹</button><b>Hole ${hole}</b><button data-next>›</button></div><button class="gpsrt-set" data-set ${pos?"":"disabled"}>${g?"Update green to my location":"Set green at my location"}</button><small>${pos?`±${yards(pos.coords.accuracy)} yd GPS accuracy`:"Waiting for GPS…"}</small>`;p.querySelector("[data-x]").onclick=()=>p.remove();p.querySelector("[data-prev]").onclick=()=>{hole=hole<=1?9:hole-1;paint(b);draw()};p.querySelector("[data-next]").onclick=()=>{hole=hole>=9?1:hole+1;paint(b);draw()};p.querySelector("[data-set]").onclick=()=>{if(!pos)return;const x=load();x[hole]={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};save(x);paint(b);draw()}};draw();document.body.appendChild(p)}
-function stop(){clearTimeout(timer);if(watchId!=null)navigator.geolocation?.clearWatch(watchId);watchId=null;pos=null;document.querySelectorAll(".gpsrt,.gpsrt-panel").forEach(x=>x.remove())}
-function attach(card){if(document.querySelector(".gpsrt"))return;css();hole=next(card);const b=document.createElement("button");b.className="gpsrt";b.type="button";paint(b);document.body.appendChild(b);b.onclick=()=>{if(watchId==null&&navigator.geolocation)watchId=navigator.geolocation.watchPosition(p=>{pos=p;paint(b) },()=>{b.innerHTML=`<strong>GPS OFF</strong><small>Location needed</small>`},{enableHighAccuracy:true,maximumAge:2500,timeout:15000});panel(b)};card.addEventListener("input",()=>setTimeout(()=>{hole=next(card);paint(b)},80))}
-function mount(){const view=document.getElementById("view"),q=new URLSearchParams(location.hash.split("?")[1]||"");if(!view||!location.hash.startsWith("#/golf")){stop();return}const card=view.querySelector(".dfl-team-card"),quick=card?.matches("[data-quick-player-card]");if(!card||(!q.get("team")&&!quick)){stop();return}if(COURSE_RE.test(course(view)))attach(card);else stop()}
-function boot(){window.addEventListener("hashchange",()=>setTimeout(mount,0));new MutationObserver(()=>location.hash.startsWith("#/golf")&&mount()).observe(document.getElementById("view")||document.body,{childList:true,subtree:true});mount()}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
+import { setupCourseGps } from "./golf-gps-course-map.js";
+
+setupCourseGps({
+  key:"new-salem",
+  label:"Red Trail Links · New Salem, ND",
+  courseRe:/(red\s*trail|new\s*salem)/i,
+  mapQuery:"Red Trail Links Golf Course New Salem North Dakota",
+  storageKey:"dfl.golfGpsBeta.redTrail.greens.v1"
+});
