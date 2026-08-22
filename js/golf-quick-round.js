@@ -94,7 +94,7 @@ function paintRound(host,r,players,scores,holeRows,d){
   const info=holeRow(holeRows,hole)||{},par=parFor(parMap,hole)||"—",yard=Number(info.yardage_men)||null,hcp=info.handicap??null;
   const course=r.golf_courses?.name||"Quick Round",courseLoc=[r.golf_courses?.city,r.golf_courses?.state].filter(Boolean).join(", ");
   const elapsed=(()=>{const start=r.created_at?new Date(r.created_at).getTime():NaN;if(!Number.isFinite(start))return"";const mins=Math.max(0,Math.floor((Date.now()-start)/60000));return `${Math.floor(mins/60)}:${String(mins%60).padStart(2,"0")}`})();
-  host.innerHTML=`<div class="gq-play" data-gqm-entry data-active-hole="${hole}" data-quick-player-card data-quick-active="true">
+  host.innerHTML=`<div class="gq-play dfl-team-card" data-gqm-entry data-active-hole="${hole}" data-quick-player-card data-quick-active="true">
     <div class="gq-round-meta golf-event-head"><div class="golf-meta"><span>${esc(course)}</span><span>${esc(courseLoc)}</span></div></div>
     <div class="gq-hole-head"><button class="gq-navbtn" data-gq-prev aria-label="Previous hole">‹</button><div class="gq-hole-title"><strong>⚑ ${ordinal(hole)}</strong><span>Par ${esc(par)}${yard?` · ${yard} yds`:""}${hcp!=null?` · HCP ${esc(hcp)}`:""}</span></div><button class="gq-navbtn" data-gq-next aria-label="Next hole">›</button><button class="gq-yardage" data-gq-gps-top type="button"><span><small>Center</small><b>${yard||"GPS"}</b><small>${yard?"YDS":"tap"}</small></span></button></div>
     <div class="gq-timer">Hole ${hole}${elapsed?` · Round ${elapsed}`:""}</div>
