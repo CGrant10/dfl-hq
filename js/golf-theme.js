@@ -19,6 +19,25 @@ function sync() {
   pinMode(onGolf() ? wanted : "");
 }
 
+/*
+  Tournament controls predate commissioner roles and still call their access
+  badge "Admin only". That is no longer true: an authenticated commissioner
+  with Golf permission can use them, and Commissioner Owners inherit every
+  commissioner permission. Keep the existing class/style, but make the words
+  match the actual authorization model. Restrict this to Golf and to the exact
+  legacy label so LIVE/Complete/etc badges are never touched.
+*/
+function paintAccessLabels() {
+  if (!onGolf()) return;
+  for (const badge of document.querySelectorAll("#golf-outing .admin-badge")) {
+    if (badge.textContent?.trim() === "Admin only") {
+      badge.textContent = "Commissioner";
+      badge.title = "Commissioner access";
+      badge.setAttribute("aria-label", "Commissioner access");
+    }
+  }
+}
+
 async function readSetting() {
   try {
     const settings = await loadSettings();
@@ -56,7 +75,7 @@ async function choose(id) {
     await saveSetting(GOLF_THEME_KEY, id);
     const check = await loadSettings({ force: true });
     if (String(check.get(GOLF_THEME_KEY) || "") !== id) {
-      throw new Error("The database refused that. Sign in as admin and try again.");
+      throw new Error("The database refused that. Sign in as commissioner and try again.");
     }
     toast(`Golf now paints ${modeLabel(id)} for everybody`);
   } catch (err) {
@@ -71,6 +90,7 @@ function paintControls() {
   for (const slot of document.querySelectorAll(".golf-theme-page")) {
     slot.innerHTML = canEdit() ? markup() : "";
   }
+  paintAccessLabels();
 }
 
 document.addEventListener("click", (event) => {
@@ -78,10 +98,11 @@ document.addEventListener("click", (event) => {
   if (btn) void choose(btn.dataset.golfTheme);
 });
 
-window.addEventListener("hashchange", () => { sync(); paintControls(); });
+window.addEventListener("hashchange", () => { sync(); paintControls(); paintAccessLabels(); });
 sync();
-void readSetting().then(paintControls);
+void readSetting().then(() => { paintControls(); paintAccessLabels(); });
 
 new MutationObserver(() => {
   if (document.querySelector(".golf-theme-page:empty") && canEdit()) paintControls();
+  paintAccessLabels();
 }).observe(document.body, { childList: true, subtree: true });
