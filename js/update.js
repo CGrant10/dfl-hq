@@ -36,27 +36,37 @@ async function serverVersion(){
   return text;
 }
 
-function waitForWorkerChange(timeout=1800){
-  if(!("serviceWorker" in navigator))return Promise.resolve();
-  return new Promise(resolve=>{
-    let done=false;
-    const finish=()=>{if(done)return;done=true;navigator.serviceWorker.removeEventListener("controllerchange",finish);resolve()};
-    navigator.serviceWorker.addEventListener("controllerchange",finish,{once:true});
-    setTimeout(finish,timeout);
+function watchWorkerChange(timeout=5000){
+  if(!("serviceWorker" in navigator))return{promise:Promise.resolve(),cancel(){}};
+  let finish=()=>{};
+  const promise=new Promise(resolve=>{
+    let done=false,timer;
+    finish=()=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      navigator.serviceWorker.removeEventListener("controllerchange",finish);
+      resolve();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange",finish);
+    timer=setTimeout(finish,timeout);
   });
+  return{promise,cancel:finish};
 }
 
 export async function forceUpdate(){
   try{
-    // Important: do NOT delete Cache Storage first. Doing that creates a gap where
-    // the current shell is gone before the replacement worker has finished installing,
-    // which is what caused old-theme flashes and occasional black-screen reloads.
+    // Keep the current shell available until the replacement worker is ready.
     await refetchAll();
     if("serviceWorker" in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
-      const change=waitForWorkerChange();
+      const before=navigator.serviceWorker.controller;
+      const change=watchWorkerChange();
       await Promise.all(regs.map(r=>r.update().catch(()=>{})));
-      await change;
+      const replacement=regs.some(r=>r.installing||r.waiting);
+      const alreadyChanged=navigator.serviceWorker.controller!==before;
+      if(replacement&&!alreadyChanged)await change.promise;
+      else change.cancel();
       await navigator.serviceWorker.ready.catch(()=>{});
     }
   }catch(err){console.warn("Update refresh failed, reloading with cache buster",err)}
