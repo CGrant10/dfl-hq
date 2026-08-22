@@ -7,7 +7,7 @@ const esc=v=>String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 async function enhance(){
   if(busy)return;
-  const input=document.querySelector('dialog input[name="course"], .modal input[name="course"], .sheet input[name="course"]');
+  const input=document.querySelector('.overlay input[name="course"], dialog input[name="course"], .modal input[name="course"], .sheet input[name="course"]');
   if(!input||input.dataset.courseDbEnhanced)return;
   busy=true;
   try{
@@ -18,13 +18,21 @@ async function enhance(){
     const select=document.createElement("select");
     select.name="course";
     select.required=true;
-    select.innerHTML=`<option value="">— Select saved course —</option>${data.map(c=>`<option value="${esc(c.name)}" data-id="${c.id}" data-holes="${c.holes||9}" ${current===c.name?"selected":""}>${esc(c.name)} · ${esc(c.city||"")}${c.state?`, ${esc(c.state)}`:""}</option>`).join("")}`;
+    select.innerHTML=`<option value="">— Select saved course —</option>${data.map(c=>`<option value="${esc(c.name)}" data-id="${c.id}" data-holes="${c.holes||9}" ${current===c.name?"selected":""}>${esc(c.name)}${c.city?` · ${esc(c.city)}`:""}${c.state?`, ${esc(c.state)}`:""}</option>`).join("")}`;
     select.className=input.className;
     const courseId=document.createElement("input");
-    courseId.type="hidden";courseId.name="course_id";
-    const sync=()=>{const o=select.selectedOptions[0];courseId.value=o?.dataset.id||"";const holes=select.closest("form")?.querySelector('[name="holes"]')||document.querySelector('dialog [name="holes"], .modal [name="holes"], .sheet [name="holes"]');if(holes&&o?.dataset.holes)holes.value=o.dataset.holes};
+    courseId.type="hidden";
+    courseId.name="course_id";
+    const sync=()=>{
+      const o=select.selectedOptions[0];
+      courseId.value=o?.dataset.id||"";
+      const holes=select.closest("form")?.querySelector('[name="holes"]')||document.querySelector('dialog [name="holes"], .modal [name="holes"], .sheet [name="holes"]');
+      if(holes&&o?.dataset.holes)holes.value=o.dataset.holes;
+    };
     select.addEventListener("change",sync);
-    input.replaceWith(select);select.insertAdjacentElement("afterend",courseId);sync();
+    input.replaceWith(select);
+    select.insertAdjacentElement("afterend",courseId);
+    sync();
   }finally{busy=false}
 }
 
