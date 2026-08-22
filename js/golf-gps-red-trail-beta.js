@@ -5,5 +5,6 @@ setupCourseGps({
   label:"Red Trail Links · New Salem, ND",
   courseRe:/(red\s*trail|new\s*salem)/i,
   mapQuery:"Red Trail Links Golf Course New Salem North Dakota",
+  courseCenter:[46.849018,-101.42071],
   storageKey:"dfl.golfGpsBeta.redTrail.greens.v1"
 });
