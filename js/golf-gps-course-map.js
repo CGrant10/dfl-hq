@@ -5,6 +5,7 @@ const SATELLITE_TILES="https://server.arcgisonline.com/ArcGIS/rest/services/Worl
 let leafletPromise=null;
 const uiEsc=value=>String(value??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const toYards=meters=>Math.round(Number(meters||0)*1.0936133);
+const formatYards=value=>String(Math.round(Number(value)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,",");
 function distanceYards(a,b){const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(b.lat-a.lat),dLon=rad(b.lng-a.lng),la1=rad(a.lat),la2=rad(b.lat),x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return toYards(2*R*Math.asin(Math.sqrt(x)))}
 function load(key){try{return JSON.parse(localStorage.getItem(key)||"{}")||{}}catch{return {}}}
 function save(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
@@ -20,37 +21,42 @@ export function setupCourseGps(config){
   const selector=`[data-gps-course="${config.key}"]`;
   const greens=()=>load(config.storageKey);
   const green=()=>greens()[hole];
-  const reading=()=>position&&green()?distanceYards({lat:position.coords.latitude,lng:position.coords.longitude},green()):null;
+  const courseTarget=()=>({lat:Number(config.courseCenter[0]),lng:Number(config.courseCenter[1]),fallback:true});
+  const target=()=>green()||courseTarget();
+  const reading=()=>position?distanceYards({lat:position.coords.latitude,lng:position.coords.longitude},target()):null;
   function markerIcon(kind){const L=globalThis.L;return L.divIcon({className:"",html:`<div class="dfl-gps-map-${kind}"></div>`,iconSize:[24,24],iconAnchor:kind==="green"?[12,23]:[12,12]})}
-  function drawMap(fit=false){if(!map||!globalThis.L)return;const L=globalThis.L,saved=green(),here=position?{lat:position.coords.latitude,lng:position.coords.longitude}:null;playerMarker?.remove();greenMarker?.remove();distanceLine?.remove();playerMarker=greenMarker=distanceLine=null;if(here)playerMarker=L.marker([here.lat,here.lng],{icon:markerIcon("player"),zIndexOffset:1000}).addTo(map).bindTooltip("You",{direction:"top"});if(saved)greenMarker=L.marker([saved.lat,saved.lng],{icon:markerIcon("green"),zIndexOffset:900}).addTo(map).bindTooltip(`Hole ${hole} green`,{direction:"top"});if(here&&saved)distanceLine=L.polyline([[here.lat,here.lng],[saved.lat,saved.lng]],{color:"#ffd400",weight:4,opacity:.92,dashArray:"8 8"}).addTo(map);if(!fit)return;setTimeout(()=>{map?.invalidateSize();if(here&&saved)map.fitBounds([[here.lat,here.lng],[saved.lat,saved.lng]],{padding:[54,54],maxZoom:18});else if(saved)map.setView([saved.lat,saved.lng],18);else if(here)map.setView([here.lat,here.lng],18);else map.setView(config.courseCenter,17)},0)}
+  function drawMap(fit=false){if(!map||!globalThis.L)return;const L=globalThis.L,saved=green(),aim=target(),here=position?{lat:position.coords.latitude,lng:position.coords.longitude}:null;playerMarker?.remove();greenMarker?.remove();distanceLine?.remove();playerMarker=greenMarker=distanceLine=null;if(here)playerMarker=L.marker([here.lat,here.lng],{icon:markerIcon("player"),zIndexOffset:1000}).addTo(map).bindTooltip("You",{direction:"top"});greenMarker=L.marker([aim.lat,aim.lng],{icon:markerIcon("green"),zIndexOffset:900}).addTo(map).bindTooltip(saved?`Hole ${hole} green`:`${config.label} course target`,{direction:"top"});if(here)distanceLine=L.polyline([[here.lat,here.lng],[aim.lat,aim.lng]],{color:"#ffd400",weight:4,opacity:.92,dashArray:"8 8"}).addTo(map);if(!fit)return;setTimeout(()=>{map?.invalidateSize();if(here)map.fitBounds([[here.lat,here.lng],[aim.lat,aim.lng]],{padding:[54,54],maxZoom:18});else map.setView([aim.lat,aim.lng],saved?18:17)},0)}
   function refresh(){
     const bubble=document.querySelector(`.dfl-gps-bubble${selector}`),panel=document.querySelector(`.dfl-gps-panel${selector}`),value=reading(),saved=green();
-    if(bubble)bubble.innerHTML=value!=null?`<strong>${value}</strong><small>yd · H${hole} · ±${toYards(position.coords.accuracy)}</small>`:saved?`<strong>H${hole}</strong><small><em>GPS</em> · locating you</small>`:`<strong>H${hole}</strong><small><em>Map green</em> · tap</small>`;
+    if(bubble)bubble.innerHTML=value!=null?`<strong>${formatYards(value)}</strong><small>yd · ${saved?`H${hole}`:"to course"} · ±${toYards(position.coords.accuracy)}</small>`:`<strong>H${hole}</strong><small><em>GPS</em> · locating you</small>`;
     if(!panel)return;
     panel.querySelector("[data-gps-hole]").textContent=String(hole);
-    panel.querySelector("[data-gps-distance]").textContent=value??"—";
-    panel.querySelector("[data-gps-reading-label]").textContent=saved?`yards to Hole ${hole} center`:`Hole ${hole} green needs one tap`;
+    panel.querySelector("[data-gps-distance]").textContent=value==null?"—":formatYards(value);
+    panel.querySelector("[data-gps-reading-label]").textContent=saved?`yards to Hole ${hole} center`:`yards to course · map Hole ${hole} green for exact`;
     const prompt=panel.querySelector("[data-gps-map-prompt]");prompt.hidden=!mappingGreen;prompt.textContent=`Tap the center of Hole ${hole} green`;
-    const mapGreen=panel.querySelector("[data-map-green]");mapGreen.textContent=saved?(mappingGreen?"Cancel moving green":"Move green pin"):(mappingGreen?"Tap green on map":"Map this green");mapGreen.classList.toggle("is-mapping",mappingGreen);
-    panel.querySelector("[data-map-me]").disabled=!position;
-    panel.querySelector("[data-gps-meta]").textContent=errorText||(position?`Live GPS accuracy ±${toYards(position.coords.accuracy)} yd${saved?" · green saved on this device":""}`:saved?"Waiting for your live GPS position…":"Tap the green on the satellite map once, then live yardage starts.");
+    const mapGreen=panel.querySelector("[data-map-green]");mapGreen.textContent=saved?(mappingGreen?"Cancel moving green":"Move green pin"):(mappingGreen?"Cancel mapping":`Set Hole ${hole} green`);mapGreen.classList.toggle("is-mapping",mappingGreen);
+    panel.querySelector("[data-map-me]").textContent=position?"My location":"Start GPS";
+    const far=value!=null&&!saved?` · ${(value/1760).toFixed(1)} mi from course`:"";
+    panel.querySelector("[data-gps-meta]").textContent=errorText?`${errorText} Tap Start GPS to retry.`:(position?`Live GPS accuracy ±${toYards(position.coords.accuracy)} yd${far}${saved?" · exact green saved on this device":" · course target shown until this green is mapped"}`:"Waiting for your live GPS position…");
     drawMap(!hasFitted);hasFitted=true;
   }
   function startGps(){if(watchId!=null)return;if(!navigator.geolocation){errorText="This device did not provide GPS.";refresh();return}watchId=navigator.geolocation.watchPosition(next=>{const first=!position;position=next;errorText="";if(first)hasFitted=false;refresh()},err=>{errorText=err?.message||"Location permission is needed for live yardage.";refresh()},{enableHighAccuracy:true,maximumAge:1000,timeout:15000})}
+  function restartGps(){if(watchId!=null)navigator.geolocation?.clearWatch(watchId);watchId=null;errorText="";hasFitted=false;startGps();refresh()}
   function destroyMap(){map?.remove();map=null;playerMarker=greenMarker=distanceLine=null}
   function closePanel(){destroyMap();document.querySelector(`.dfl-gps-panel${selector}`)?.remove()}
-  async function initMap(panel){const host=panel.querySelector("[data-gps-map]");try{const L=await loadLeaflet();if(!host.isConnected)return;map=L.map(host,{zoomControl:false,attributionControl:true});L.control.zoom({position:"topright"}).addTo(map);L.tileLayer(SATELLITE_TILES,{maxZoom:20,attribution:"Imagery © Esri"}).addTo(map);map.on("click",event=>{if(!mappingGreen&&!green())mappingGreen=true;if(!mappingGreen)return;const all=greens();all[hole]={lat:event.latlng.lat,lng:event.latlng.lng,at:Date.now(),source:"map"};save(config.storageKey,all);mappingGreen=false;hasFitted=false;refresh()});drawMap(true)}catch(err){host.innerHTML=`<div class="dfl-gps-error"><span>${uiEsc(err.message||"Course map unavailable")}<br><a href="${fullMapUrl(config.mapQuery)}" target="_blank" rel="noopener">Open the course map</a></span></div>`}}
-  function changeHole(delta){hole=hole+delta;if(hole<1)hole=9;if(hole>9)hole=1;mappingGreen=!green();hasFitted=false;refresh()}
+  async function initMap(panel){const host=panel.querySelector("[data-gps-map]");try{const L=await loadLeaflet();if(!host.isConnected)return;map=L.map(host,{zoomControl:false,attributionControl:true});L.control.zoom({position:"topright"}).addTo(map);L.tileLayer(SATELLITE_TILES,{maxZoom:20,attribution:"Imagery © Esri"}).addTo(map);map.on("click",event=>{if(!mappingGreen)return;const all=greens();all[hole]={lat:event.latlng.lat,lng:event.latlng.lng,at:Date.now(),source:"map"};save(config.storageKey,all);mappingGreen=false;hasFitted=false;refresh()});drawMap(true)}catch(err){host.innerHTML=`<div class="dfl-gps-error"><span>${uiEsc(err.message||"Course map unavailable")}<br><a href="${fullMapUrl(config.mapQuery)}" target="_blank" rel="noopener">Open the course map</a></span></div>`}}
+  function changeHole(delta){hole=hole+delta;if(hole<1)hole=9;if(hole>9)hole=1;mappingGreen=false;hasFitted=false;refresh()}
   function openPanel(){
-    closePanel();startGps();mappingGreen=!green();hasFitted=false;
+    closePanel();startGps();mappingGreen=false;hasFitted=false;
     const panel=document.createElement("section");panel.className="dfl-gps-panel";panel.dataset.gpsCourse=config.key;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",`${config.label} hole GPS`);
-    panel.innerHTML=`<header class="dfl-gps-head"><button type="button" data-gps-prev aria-label="Previous hole">‹</button><div class="dfl-gps-head-title"><small>Hole <span data-gps-hole>${hole}</span> · Live GPS</small><strong>${uiEsc(config.label)}</strong></div><button type="button" class="dfl-gps-close" data-gps-close aria-label="Close hole GPS">×</button></header><div class="dfl-hole-map"><div data-gps-map></div><div class="dfl-gps-map-prompt" data-gps-map-prompt hidden></div><div class="dfl-gps-map-tools"><button type="button" data-map-hole>Center hole</button><button type="button" data-map-me disabled>My location</button><a href="${fullMapUrl(config.mapQuery)}" target="_blank" rel="noopener">Full course ↗</a></div></div><div class="dfl-gps-controls"><div class="dfl-gps-reading"><b data-gps-distance>—</b><span data-gps-reading-label>Hole ${hole}</span></div><div class="dfl-gps-actions"><button type="button" data-map-green>Map this green</button><button type="button" data-gps-next>Next hole ›</button></div><small class="dfl-gps-meta" data-gps-meta></small></div>`;
+    panel.innerHTML=`<header class="dfl-gps-head"><button type="button" data-gps-prev aria-label="Previous hole">‹</button><div class="dfl-gps-head-title"><small>Hole <span data-gps-hole>${hole}</span> · Live GPS</small><strong>${uiEsc(config.label)}</strong></div><button type="button" class="dfl-gps-close" data-gps-close aria-label="Close hole GPS">×</button></header><div class="dfl-hole-map"><div data-gps-map></div><div class="dfl-gps-map-prompt" data-gps-map-prompt hidden></div><div class="dfl-gps-map-tools"><button type="button" data-map-fit>Fit line</button><button type="button" data-map-hole>Hole</button><button type="button" data-map-me>Start GPS</button></div></div><div class="dfl-gps-controls"><div class="dfl-gps-reading"><b data-gps-distance>—</b><span data-gps-reading-label>Hole ${hole}</span></div><div class="dfl-gps-actions"><button type="button" data-map-green>Set Hole ${hole} green</button><button type="button" data-gps-next>Next hole ›</button></div><small class="dfl-gps-meta" data-gps-meta></small></div>`;
     document.body.appendChild(panel);
     panel.querySelector("[data-gps-close]").onclick=closePanel;
     panel.querySelector("[data-gps-prev]").onclick=()=>changeHole(-1);
     panel.querySelector("[data-gps-next]").onclick=()=>changeHole(1);
-    panel.querySelector("[data-map-hole]").onclick=()=>drawMap(true);
-    panel.querySelector("[data-map-me]").onclick=()=>{if(position)map?.setView([position.coords.latitude,position.coords.longitude],18)};
+    panel.querySelector("[data-map-fit]").onclick=()=>drawMap(true);
+    panel.querySelector("[data-map-hole]").onclick=()=>{const aim=target();map?.setView([aim.lat,aim.lng],green()?18:17)};
+    panel.querySelector("[data-map-me]").onclick=()=>{if(position)map?.setView([position.coords.latitude,position.coords.longitude],18);else restartGps()};
     panel.querySelector("[data-map-green]").onclick=()=>{mappingGreen=!mappingGreen;refresh()};
     refresh();void initMap(panel);
   }
