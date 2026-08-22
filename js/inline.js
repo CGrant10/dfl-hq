@@ -8,13 +8,6 @@ import { field, fieldSet, setValue, readForm, fillOptionsFrom } from "./form.js"
 import { hiddenCards, setCardHidden } from "./settings.js";
 import { esc, toast } from "./ui.js";
 
-/*
-  WHICH PERMISSION GOVERNS WHICH TABLE.
-
-  A table that is NOT in here falls through to isMasterAdmin() below. Keep
-  this map aligned with the matching Supabase commissioner policies so the
-  client never hides a control that the database already permits.
-*/
 const TABLE_PERMISSION = {
   announcements: "announcements",
   events: "calendar",
@@ -25,10 +18,6 @@ const TABLE_PERMISSION = {
   rule_categories: "rules",
   history: "history",
   members: "members",
-
-  /* Golf. These tables already carry has_commissioner_permission('golf')
-     policies in Supabase; mapping them here makes the owner/commissioner UI
-     agree with the database. */
   golf_outings: "golf",
   golf_participants: "golf",
   golf_teams: "golf",
@@ -44,16 +33,12 @@ const TABLE_PERMISSION = {
   golf_profiles: "golf",
   golf_bag: "golf",
   golf_bag_visibility: "golf",
-
-  /* The Arena. arena_commissioner_policy.sql carries the matching policies. */
   arena_events: "broadcast",
   arena_participants: "broadcast",
   arena_results: "broadcast",
   broadcast_items: "broadcast",
 };
 
-/** No table means "does this device have any privileged session?". A named
-    table means "may this commissioner edit THIS kind of league content?". */
 export function canEdit(table = null) {
   if (!table) return isAdmin();
   const permission = TABLE_PERMISSION[table];
@@ -231,6 +216,13 @@ export async function openEditor(table, id, preset, refresh) {
     btn.disabled = true;
     try {
       const payload = readForm(form, spec.fields);
+      /* The Golf course enhancer supplies the database id beside the legacy
+         course-name field. It is intentionally not a visible generic form
+         field, but it still belongs on the outing row when one was selected. */
+      if (table === "golf_outings") {
+        const courseId = form.querySelector('[name="course_id"]')?.value || "";
+        payload.course_id = courseId || null;
+      }
       if (id) await updateRow(table, id, payload);
       else await insertRow(table, payload);
       toast(id ? "Saved" : "Added");
