@@ -35,8 +35,10 @@ import { memberNames, playerName } from "./golf-people.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
 import { teamInk } from "./brand-ink.js";
 import { nextTeamPair } from "./golf-matchups.js";
+import { individualMatchLabel, individualResult, individualStanding } from "./golf-individual.js";
 
 const POLL_MS = 15000;
+const INDIVIDUAL_INK = ["#f4c430", "#c73a33", "#f3efe2", "#171717", "#5f7f55", "#d98935"];
 /*
   TWO HOSTS, one module.
 
@@ -189,15 +191,16 @@ async function load(id) {
     const built = mine.map((s, i) => {
       const rows = (playersRes.data || []).filter((p) => String(p.side_id) === String(s.id));
       const team = (teamsRes.data || []).find((t) => String(t.id) === String(s.team_id));
+      const players = rows.map((r) => ({
+        row_id: r.id,
+        participant_id: r.participant_id,
+        name: playerName(byPart.get(String(r.participant_id)), names),
+      }));
       return {
         ...s,
-        teamName: team?.name || "Team",
-        color: teamInk(team?.color, team?.sort_order ?? i),
-        players: rows.map((r) => ({
-          row_id: r.id,
-          participant_id: r.participant_id,
-          name: playerName(byPart.get(String(r.participant_id)), names),
-        })),
+        teamName: team?.name || (s.team_id == null ? "Individual" : "Team"),
+        color: team ? teamInk(team.color, team.sort_order ?? i) : INDIVIDUAL_INK[i % INDIVIDUAL_INK.length],
+        players,
         strokes: strokes.get(String(s.id)) || new Map(),
       };
     });
@@ -285,15 +288,23 @@ function board(data) {
 
 function matchRow(b, round) {
   const names = b.sides.map((s) => pairName(s.players.map((p) => p.name)));
-  if (b.sides.length !== 2) {
+  if (b.sides.length < 2) {
     return `<div class="gb-row"><span class="gb-n">${b.match_number}</span><div class="gb-mid"><div class="gb-stand">Sides not built yet</div></div><span class="gb-arrow"></span></div>`;
   }
-  const r = b.result;
   const totals = b.sides.map((s) => {
     let t = 0;
     for (let h = 1; h <= holesOf(round); h++) t += Number(s.strokes.get(h)) || 0;
     return t;
   });
+  if (b.sides.length > 2) {
+    const r = individualResult(b.sides.map((side) => side.strokes), holesOf(round));
+    return `<a class="gb-row" href="#/golf?id=${outingId}&match=${b.id}">
+      <span class="gb-n">${b.match_number}</span><div class="gb-mid">
+        ${b.sides.map((s, i) => `<div class="gb-pair ${r.leaders.includes(i) ? "is-low" : ""}" style="--racer:${esc(s.color || "")}"><i></i><span>${esc(names[i])}</span><em>${totals[i] || "—"}</em></div>`).join("")}
+        <div class="gb-stand ${r.complete ? "is-done" : ""}">${esc(individualStanding(r, names))}</div>
+      </div><span class="gb-arrow">›</span></a>`;
+  }
+  const r = b.result;
   const low = r.thru && r.diff !== 0 ? (r.diff < 0 ? 0 : 1) : -1;
   return `<a class="gb-row" href="#/golf?id=${outingId}&match=${b.id}">
     <span class="gb-n">${b.match_number}</span>
@@ -350,6 +361,7 @@ function roundCard(data, entry) {
   const { round, battles } = entry;
   const admin = isAdmin();
   const singles = round.format === "singles";
+  const individual = singles && battles.some((battle) => battle.sides.length > 2 || battle.sides.some((side) => side.team_id == null));
   const scoring = scoringOf(round);
   const pts = teamPoints(battles.filter((b) => b.sides.length === 2));
   const teams = data.teams || [];
@@ -361,7 +373,7 @@ function roundCard(data, entry) {
     Both are read off the same strokes, so flipping it re-reads the nine
     rather than editing anything, and switching back is free.
   */
-  const scoringSwitch = `<div class="gr-scoring" role="group" aria-label="How ${esc(label)} is won">
+  const scoringSwitch = individual ? `<p class="muted tiny">Individual fields use stroke play so every golfer can be ranked together.</p>` : `<div class="gr-scoring" role="group" aria-label="How ${esc(label)} is won">
     ${Object.entries(SCORING_NAMES).map(([key, name]) => `
       <button type="button" class="gs-opt ${scoring === key ? "is-on" : ""}" data-scoring="${round.id}:${key}" aria-pressed="${scoring === key}">${name}
         <small>${key === "match" ? "hole by hole" : "fewest strokes"}</small></button>`).join("")}
@@ -380,7 +392,7 @@ function roundCard(data, entry) {
 
   const suggested = nextTeamPair(teams, battles);
   const teamOptions = (selected) => teams.map((team) => `<option value="${team.id}" ${String(team.id) === String(selected) ? "selected" : ""}>${esc(team.name || "Team")}</option>`).join("");
-  const addMatch = teams.length < 2 ? `<p class="muted tiny">Create at least two teams before adding matches.</p>` : `<div class="gm-add">
+  const addMatch = singles ? `<div class="gm-add" style="grid-template-columns:1fr"><button class="btn small" data-sync-individual="${round.id}">${battles.length ? "Sync individual field" : "Build individual match"}</button></div>` : teams.length < 2 ? `<p class="muted tiny">Create at least two teams before adding matches.</p>` : `<div class="gm-add">
     <select data-match-team-a="${round.id}" aria-label="First team for the new match">${teamOptions(suggested[0])}</select>
     <span class="gm-add-vs">versus</span>
     <select data-match-team-b="${round.id}" aria-label="Second team for the new match">${teamOptions(suggested[1])}</select>
@@ -397,11 +409,11 @@ function roundCard(data, entry) {
     </div>
     ${addMatch}
     <p class="muted tiny">${singles
-      ? "Choose any two teams, add the 1v1, then pick one player from each side. The next matchup is suggested to keep every team involved evenly."
+      ? "Every golfer in the event gets one side in the same match — three golfers play 1v1v1. Add or remove people from the lineup, then sync the field. No teams are required."
       : teams.length === 2
         ? "“Build the pairs” pairs each team in draft order and puts pair 1 against pair 1. Or add matches and fill them in yourself — picking somebody already in this round swaps the two."
         : "Choose the two teams for each match, then fill two seats on each side. This keeps multi-team rounds explicit and avoids assigning the wrong opponent."}${scored ? " Rebuilding is blocked until this round's strokes are cleared." : ""}</p>
-    ${battles.length ? `<div class="gb-seats">${seats(data, entry)}</div>` : ""}
+    ${!singles && battles.length ? `<div class="gb-seats">${seats(data, entry)}</div>` : ""}
   </div>`;
 
   /* The badge rides on the fold bar, so a round folded away still shows what
@@ -419,13 +431,16 @@ function roundCard(data, entry) {
     Read off the results that are already computed here; nothing new is
     worked out and no round is ever folded on the reader's behalf twice.
   */
-  const playable = battles.filter((b) => b.sides.length === 2);
-  const decided = playable.length > 0 && playable.every((b) => b.result?.complete);
+  const playable = battles.filter((b) => b.sides.length >= 2);
+  const decided = playable.length > 0 && playable.every((b) => b.sides.length === 2
+    ? b.result?.complete
+    : individualResult(b.sides.map((side) => side.strokes), holesOf(round)).complete);
+  const field = individual && battles[0] ? individualMatchLabel(battles[0].sides.length) : "";
 
   return `<section class="card golf-round" data-collapse="golf-round-${round.round_number}" data-collapse-title="${esc(label)}" data-collapse-badge="${esc(badge)}"${decided ? ` data-collapse-default="folded"` : ""}>
     <div class="gr-head">
       <div class="gr-head-main"><strong>${esc(label)}</strong>
-        <small>${singles ? "Singles" : "2v2"} · ${esc(SCORING_NAMES[scoring])} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>
+        <small>${individual ? field : singles ? "Singles" : "2v2"} · ${esc(individual ? SCORING_NAMES.strokes : SCORING_NAMES[scoring])} · ${holesOf(round)} holes · ${battles.length} match${battles.length === 1 ? "" : "es"}</small></div>
     </div>
     <div class="gb-list">${battles.length ? battles.map((b) => matchRow(b, round)).join("") : empty(admin ? "No matches in this round yet." : "Not set up yet.")}</div>
     ${adminBlock}
@@ -678,7 +693,8 @@ function wire() {
     const clearRound = el("data-clear-round");
     const dropRound = el("data-drop-round");
     const dropMatch = el("data-drop-match");
-    const button = scoring || holes || addRound || build || addMatch || clearRound || dropRound || dropMatch;
+    const syncIndividual = el("data-sync-individual");
+    const button = scoring || holes || addRound || build || addMatch || syncIndividual || clearRound || dropRound || dropMatch;
     if (!button) return;
 
     const run = async (fn) => {
@@ -729,11 +745,26 @@ function wire() {
 
     if (addRound) {
       return run(async () => {
-        const { error } = await db().rpc("golf_add_round", {
+        const { data: roundId, error } = await db().rpc("golf_add_round", {
           p_outing_id: Number(outingId), p_format: addRound.dataset.addRound,
         });
         if (error) throw error;
-        toast(addRound.dataset.addRound === "singles" ? "Singles round added" : "2v2 round added");
+        if (addRound.dataset.addRound === "singles") {
+          const synced = await db().rpc("golf_sync_individual_match", { p_round_id: Number(roundId) });
+          if (synced.error) throw synced.error;
+          toast("Individual match ready");
+        } else toast("2v2 round added");
+      });
+    }
+
+    if (syncIndividual) {
+      const entry = data.rounds.find((r) => String(r.round.id) === String(syncIndividual.dataset.syncIndividual));
+      const scored = entry?.battles.some((battle) => battle.sides.some((side) => side.strokes.size));
+      if (scored) return void toast("Clear this round's strokes before changing the field", true);
+      return run(async () => {
+        const { error } = await db().rpc("golf_sync_individual_match", { p_round_id: Number(syncIndividual.dataset.syncIndividual) });
+        if (error) throw error;
+        toast(`${data.parts.length}-golfer individual match ready`);
       });
     }
 
