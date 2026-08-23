@@ -119,12 +119,10 @@
   max-width: none;
   display: grid;
   place-items: center;
-  background: #0d1117;
-  color: #f5f7fa;
+  background: var(--bg);
+  color: var(--text);
 }
-body.route-loading { background: #0d1117; }
-body.route-light-content.route-loading { background: #eef1f6; }
-body.route-light-content .view.is-route-loading { background: #eef1f6; color: #11161d; }
+body.route-loading { background: var(--bg); }
 .view.is-route-loading .state { width: min(100%, 860px); box-sizing: border-box; }
 
 /* A slightly tighter arrival keeps the second half of the transition from

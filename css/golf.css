@@ -295,31 +295,9 @@
 .gteam-captain .ico-sm { width: 16px; height: 16px; flex: none; }
 .gteam-captain.is-none { color: var(--muted); font-weight: 600; font-size: 13px; }
 
-/* ---- Golf and Polls use the app's clean light content palette. The shell
-   remains in the member's chosen theme, while the active page is consistent
-   from its loading canvas through its final content. ---- */
-body.route-light-content #view{
-  --bg:#eef1f6;--bg-2:#fff;--bg-3:#e6eaf1;
-  --line:#ccd4e0;--line-soft:#e3e8f0;
-  --text:#11161d;--muted:#5a6575;--chalk:#11161d;--body-text:#2a323d;
-  --hover:#e0e6ef;--hover-soft:rgba(16,24,40,.035);
-  --control-line:#7c8695;--control-bg:rgba(255,255,255,.82);
-  --accent:#B8001B;--accent-2:#003396;
-  --accent-fill:#E5011B;--accent-2-fill:#003396;
-  --accent-sweep:linear-gradient(90deg,#E5011B,#003396);
-  --accent-sweep-135:linear-gradient(135deg,#E5011B,#003396);
-  --accent-sweep-v:linear-gradient(180deg,#E5011B,#003396);
-  --accent-dim:#9db1d1;--on-accent:#fff;
-  --ok:#0f7a3d;--ok-bg:rgba(15,122,61,.1);--ok-line:#9fd3b4;
-  --warn-ink:#8a5200;--warn-bg:rgba(196,124,0,.12);--warn-line:#e0bd7e;
-  --danger-ink:#a3121a;--danger-bg:rgba(163,18,26,.09);--danger-line:#e2a9a5;
-  --sc-under:#0f7a3d;--sc-over:#c2371f;--sc-bad:#a3121a;
-  --hero-a:#fff;--hero-wash:rgba(16,24,40,.04);
-  --milestone:#8a6410;--shadow:0 1px 3px rgba(16,24,40,.1);
-  --theme-primary:#E5011B;--theme-secondary:#003396;
-  --theme-soft:color-mix(in srgb,#E5011B 9%,transparent);
-  --theme-soft-2:color-mix(in srgb,#003396 8%,transparent);
-  --theme-border:color-mix(in srgb,#003396 28%,#ccd4e0);
+/* ---- Golf uses the member's active app palette. This class only owns the
+   route's content geometry; it does not freeze or replace theme variables. ---- */
+body.golf-content #view{
   color:var(--text);
   background:var(--bg);
   min-height:calc(100dvh - 132px - env(safe-area-inset-top) - env(safe-area-inset-bottom));

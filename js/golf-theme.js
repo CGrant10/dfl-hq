@@ -1,16 +1,15 @@
 /* =====================================================================
-   golf-theme.js - Golf and Polls use a light content surface
+   golf-theme.js - Golf content follows the active app theme
    ===================================================================== */
 
-const LIGHT_ROUTE_CLASS = "route-light-content";
+const GOLF_CONTENT_CLASS = "golf-content";
 
 const onGolf = () => (location.hash || "#/home").split("?")[0] === "#/golf";
-const onLightRoute = () => ["#/golf", "#/polls"].includes((location.hash || "#/home").split("?")[0]);
 
-/* Mark the route instead of repainting :root. The content view switches to
-   light while the shell continues to follow the member's profile theme. */
+/* Mark the route without changing palette variables. Golf inherits the same
+   light, dark, Medicine Wheel, or team theme as the rest of the app. */
 export function syncGolfContentTheme() {
-  document.body?.classList.toggle(LIGHT_ROUTE_CLASS, onLightRoute());
+  document.body?.classList.toggle(GOLF_CONTENT_CLASS, onGolf());
 }
 
 /*

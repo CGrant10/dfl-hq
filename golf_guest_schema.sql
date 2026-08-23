@@ -199,7 +199,7 @@ grant execute on function public.golf_guest_signin(bigint, text) to anon, authen
 
 
 -- ---------------------------------------------------------------------
--- 4. Setting the code. Admin only.
+-- 4. Setting the code. Golf commissioners (legacy admins included).
 -- ---------------------------------------------------------------------
 create or replace function public.golf_set_event_code(p_outing_id bigint, p_code text)
 returns boolean
@@ -208,8 +208,8 @@ security definer
 set search_path = public, extensions
 as $$
 begin
-  if not public.is_admin() then
-    raise exception 'Admin only';
+  if not public.has_commissioner_permission('golf') then
+    raise exception 'Golf commissioner access required';
   end if;
 
   -- Clearing the code locks every guest out of the event immediately.
@@ -230,6 +230,7 @@ begin
 end;
 $$;
 
+revoke execute on function public.golf_set_event_code(bigint, text) from public;
 grant execute on function public.golf_set_event_code(bigint, text) to anon, authenticated;
 
 
