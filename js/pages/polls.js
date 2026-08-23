@@ -41,6 +41,7 @@ async function loadVotes() {
 }
 
 export async function render(view) {
+  document.body.classList.add("polls-focus");
   const me    = currentMember();
   const admin = isAdmin();
 
@@ -97,7 +98,7 @@ export async function render(view) {
     </section>`;
 
   view.innerHTML = `
-    <div id="poll-list">
+    <div id="poll-list" class="polls-page">
       <header class="page-head">
         <h1>Polls</h1>
         ${addControl("polls", "Add poll")}
@@ -135,6 +136,10 @@ export async function render(view) {
     if (toggleBtn) return togglePoll(view, toggleBtn);
     if (resetBtn)  return resetVotes(view, resetBtn);
   });
+}
+
+export function leave() {
+  document.body.classList.remove("polls-focus");
 }
 
 // ------------------------------- voting -------------------------------

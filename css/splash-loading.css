@@ -111,6 +111,20 @@
   will-change: opacity, transform;
 }
 
+/* Route modules can take a network round trip. Keep that whole interval on a
+   deliberate dark app surface so the browser's white canvas never flashes
+   through between the fixed header and navigation. */
+.view.is-route-loading {
+  min-height: calc(100dvh - 56px - 76px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  max-width: none;
+  display: grid;
+  place-items: center;
+  background: #0d1117;
+  color: #f5f7fa;
+}
+body.route-loading { background: #0d1117; }
+.view.is-route-loading .state { width: min(100%, 860px); box-sizing: border-box; }
+
 /* A slightly tighter arrival keeps the second half of the transition from
    feeling like it is still moving after the thumb has already left the bar. */
 .page-in { animation-duration: 190ms !important; }
