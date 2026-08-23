@@ -25,8 +25,25 @@ create table if not exists public.golf_course_holes (
   handicap int,
   yardage_men int,
   yardage_women int,
+  tee_lat double precision check (tee_lat is null or tee_lat between -90 and 90),
+  tee_lng double precision check (tee_lng is null or tee_lng between -180 and 180),
+  green_lat double precision check (green_lat is null or green_lat between -90 and 90),
+  green_lng double precision check (green_lng is null or green_lng between -180 and 180),
+  gps_updated_at timestamptz,
+  gps_updated_by bigint references public.members(id) on delete set null,
   unique(course_id, hole)
 );
+
+alter table public.golf_course_holes
+  add column if not exists tee_lat double precision,
+  add column if not exists tee_lng double precision,
+  add column if not exists green_lat double precision,
+  add column if not exists green_lng double precision,
+  add column if not exists gps_updated_at timestamptz,
+  add column if not exists gps_updated_by bigint references public.members(id) on delete set null;
+
+create index if not exists golf_course_holes_gps_updated_by_idx
+  on public.golf_course_holes (gps_updated_by);
 
 alter table public.golf_outings add column if not exists course_id bigint references public.golf_courses(id) on delete set null;
 create index if not exists idx_golf_course_holes_course on public.golf_course_holes(course_id, hole);

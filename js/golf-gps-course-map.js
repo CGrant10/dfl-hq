@@ -1,8 +1,9 @@
 /* Shared hole-aware GPS and satellite map for supported DFL courses. */
-import { db } from "./supabase.js";
+import { db, hasPermission } from "./supabase.js";
 import { currentMember } from "./members.js";
+import { toast } from "./ui.js";
 import { recommendClub } from "./golf-club-recommendation.js";
-import { capHoleDistance, holeZoom, isOutsideHole } from "./golf-gps-distance.js";
+import { capHoleDistance, distanceYards, holeZoom, isOutsideHole, nearestTeeHole } from "./golf-gps-distance.js";
 
 const LEAFLET_JS="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
 const LEAFLET_CSS="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
@@ -11,7 +12,6 @@ let leafletPromise=null;
 const uiEsc=value=>String(value??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const toYards=meters=>Math.round(Number(meters||0)*1.0936133);
 const formatYards=value=>String(Math.round(Number(value)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,",");
-function distanceYards(a,b){const R=6371000,rad=x=>x*Math.PI/180,dLat=rad(b.lat-a.lat),dLon=rad(b.lng-a.lng),la1=rad(a.lat),la2=rad(b.lat),x=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;return toYards(2*R*Math.asin(Math.sqrt(x)))}
 const fixPoint=p=>({lat:Number(p?.coords?.latitude),lng:Number(p?.coords?.longitude)});
 const fixQuality=accuracy=>accuracy<=10?"Excellent":accuracy<=25?"Good":accuracy<=55?"Fair":"Weak";
 function load(key){try{return JSON.parse(localStorage.getItem(key)||"{}")||{}}catch{return {}}}
@@ -73,6 +73,11 @@ function ensureHoleExperienceStyles(){
 .is-hole-experience .dfl-gps-player{min-width:0}.is-hole-experience .dfl-gps-player strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}.is-hole-experience .dfl-gps-player small{display:block;margin-top:3px;color:#a9b8c0;font-size:10px}
 .is-hole-experience .dfl-gps-score{min-width:106px;min-height:48px;border:1px solid rgba(255,255,255,.3);border-radius:13px;background:#119b57;color:#fff;font-weight:950}
 .is-hole-experience .dfl-gps-score[hidden]{display:none}
+.is-hole-experience .dfl-gps-adjust{width:100%;margin-top:9px;min-height:34px;border:1px solid rgba(255,255,255,.22);border-radius:10px;background:rgba(255,255,255,.07);color:#d7e6de;font:900 10px/1 inherit;letter-spacing:.06em;text-transform:uppercase}
+.is-hole-experience .dfl-gps-adjust[hidden],.is-hole-experience .dfl-gps-calibration[hidden]{display:none}
+.is-hole-experience .dfl-gps-calibration{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;padding:8px;border:1px solid rgba(157,204,69,.42);border-radius:12px;background:rgba(5,10,13,.82)}
+.is-hole-experience .dfl-gps-calibration button{min-height:38px;border:1px solid rgba(255,255,255,.25);border-radius:9px;background:#17324b;color:#fff;font:900 11px/1 inherit}
+.is-hole-experience .dfl-gps-calibration button.is-mapping{background:#119b57;border-color:#9dcc45}.is-hole-experience .dfl-gps-use-location{grid-column:1/-1}.is-hole-experience .dfl-gps-use-location[hidden]{display:none}
 .is-hole-experience .dfl-gps-reading{position:absolute;left:50%;bottom:calc(188px + env(safe-area-inset-bottom));transform:translateX(-50%);min-width:112px;padding:8px 12px;border:2px solid #fff;border-radius:28px;background:rgba(5,10,13,.9);box-shadow:0 4px 15px rgba(0,0,0,.3)}
 .is-hole-experience .dfl-gps-reading b{font-size:30px;color:#fff}.is-hole-experience .dfl-gps-reading span{color:#d7e6de}
 .is-hole-experience .dfl-gps-club{margin:9px 0 0;padding:7px 10px;border-color:rgba(157,204,69,.42);background:rgba(5,10,13,.72)}
@@ -82,25 +87,37 @@ function ensureHoleExperienceStyles(){
 .is-hole-experience .dfl-gps-map-status[hidden]{display:none}
 .is-hole-experience .dfl-gps-map-credit{position:absolute;z-index:610;left:10px;bottom:calc(142px + env(safe-area-inset-bottom));padding:4px 7px;border-radius:6px;background:rgba(5,10,13,.7);color:#fff;font-size:9px}
 .dfl-gps-distance-pill{min-width:58px;padding:5px 8px;border:2px solid #fff;border-radius:22px;background:rgba(5,10,13,.94);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);font:950 18px/1 inherit;text-align:center}
+body[data-mode="light"] .is-hole-experience .dfl-gps-controls{background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.99));color:var(--text);box-shadow:0 -10px 32px rgba(11,43,64,.2)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-player small,body[data-mode="light"] .is-hole-experience .dfl-gps-meta{color:var(--muted)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-adjust{border-color:var(--line);background:var(--bg-3);color:var(--text)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-calibration{border-color:var(--line);background:var(--bg-3)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-calibration button{border-color:var(--control-line);background:var(--bg-2);color:var(--text)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-calibration button.is-mapping{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
 @media(min-width:760px){.dfl-gps-panel.is-hole-experience{inset:3vh max(12px,calc((100vw - 520px)/2));border-radius:20px}.is-hole-experience .dfl-hole-map{min-height:0}}
 `;
   document.head.appendChild(style);
 }
 
 export function setupCourseGps(config){
-  let watchId=null,position=null,hole=1,attachedCard=null,cleanup=null,errorText="",map=null,tileLayer=null,fallbackOverlay=null,fallbackHole=0,imageryReady=false,playerMarker=null,teeMarker=null,accuracyCircle=null,greenMarker=null,distanceLine=null,distanceMarker=null,mappingGreen=false,hasFitted=false,refining=false,samples=[],memberBag=[],bagMemberId=null;
+  let watchId=null,position=null,hole=1,attachedCard=null,cleanup=null,errorText="",geometryError="",map=null,tileLayer=null,fallbackOverlay=null,fallbackHole=0,imageryReady=false,playerMarker=null,teeMarker=null,accuracyCircle=null,greenMarker=null,distanceLine=null,distanceMarker=null,mappingKind="",hasFitted=false,followMode=true,holeLocked=false,refining=false,samples=[],memberBag=[],bagMemberId=null,courseId=null,geometryLoading=false,sharedHoles=new Map();
   const selector=`[data-gps-course="${config.key}"]`;
   const greens=()=>load(config.storageKey);
-  const targetHole=()=>((hole-1)%9)+1;
-  const savedGreen=()=>greens()[targetHole()];
-  const green=()=>config.holeTargets?.[targetHole()]||savedGreen()||null;
-  const fairwayTarget=()=>config.fairwayTargets?.[targetHole()]||null;
+  const targetHoleFor=value=>((Number(value)||1)-1)%9+1;
+  const targetHole=()=>targetHoleFor(hole);
+  const sharedHoleFor=value=>sharedHoles.get(targetHoleFor(value))||{};
+  const pointFrom=(row,prefix)=>{const rawLat=row?.[`${prefix}_lat`],rawLng=row?.[`${prefix}_lng`];if(rawLat==null||rawLat===""||rawLng==null||rawLng==="")return null;const lat=Number(rawLat),lng=Number(rawLng);return Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng,shared:true}:null};
+  const savedGreenFor=value=>greens()[targetHoleFor(value)];
+  const greenFor=value=>pointFrom(sharedHoleFor(value),"green")||savedGreenFor(value)||config.holeTargets?.[targetHoleFor(value)]||null;
+  const green=()=>greenFor(hole);
+  const fairwayTargetFor=value=>config.fairwayTargets?.[targetHoleFor(value)]||null;
   const gpsSlot=()=>attachedCard?.querySelector("[data-tb-gps-slot]")||attachedCard?.closest("[data-gqm-root]")?.querySelector("[data-gqm-gps-slot]");
   const betaSlot=()=>attachedCard?.querySelector("[data-tb-gps-slot]");
-  const betaValue=(name,fallback)=>{const values=String(attachedCard?.dataset?.[name]||"").split(",");return Number(values[hole-1])||Number(fallback)||0};
-  const officialYards=()=>betaSlot()?betaValue("tbYardages",betaSlot()?.dataset.tbHoleYardage):Number(gpsSlot()?.dataset.gqmHoleYardage)||0;
+  const betaValue=(name,fallback,value=hole)=>{const values=String(attachedCard?.dataset?.[name]||"").split(",");return Number(values[Number(value)-1])||Number(fallback)||0};
+  const officialYardsFor=value=>betaSlot()?betaValue("tbYardages",targetHoleFor(value)===targetHole()?betaSlot()?.dataset.tbHoleYardage:0,value):targetHoleFor(value)===targetHole()?Number(gpsSlot()?.dataset.gqmHoleYardage)||0:Number(sharedHoleFor(value).yardage_men)||0;
+  const officialYards=()=>officialYardsFor(hole);
   const officialPar=()=>betaSlot()?betaValue("tbPars",betaSlot()?.dataset.tbHolePar):Number(gpsSlot()?.dataset.gqmHolePar)||0;
-  const tee=()=>{const aim=green(),landing=fairwayTarget(),yards=officialYards();if(!aim||!landing||!yards)return null;const remaining=distanceYards(landing,aim);if(!remaining)return null;const ratio=yards/remaining;return{lat:aim.lat+(landing.lat-aim.lat)*ratio,lng:aim.lng+(landing.lng-aim.lng)*ratio,inferred:true}}
+  const teeFor=value=>{const shared=pointFrom(sharedHoleFor(value),"tee");if(shared)return shared;const aim=greenFor(value),landing=fairwayTargetFor(value),yards=officialYardsFor(value);if(!aim||!landing||!yards)return null;const remaining=distanceYards(landing,aim);if(!remaining)return null;const ratio=yards/remaining;return{lat:aim.lat+(landing.lat-aim.lat)*ratio,lng:aim.lng+(landing.lng-aim.lng)*ratio,inferred:true}};
+  const tee=()=>teeFor(hole);
   const courseTarget=()=>({lat:Number(config.courseCenter[0]),lng:Number(config.courseCenter[1]),fallback:true});
   const target=()=>green()||courseTarget();
   const rawReading=()=>position?distanceYards({lat:position.coords.latitude,lng:position.coords.longitude},target()):null;
@@ -108,12 +125,42 @@ export function setupCourseGps(config){
   const outsideHole=()=>isOutsideHole(rawReading(),maximumYards());
   const reading=()=>capHoleDistance(rawReading(),maximumYards());
   const club=()=>outsideHole()?null:recommendClub(memberBag,reading());
-  const scoreContext=()=>{const trigger=attachedCard?.querySelector(".tb-quick-add[data-tb-open],[data-tb-open]");const name=attachedCard?.querySelector(".tb-quick-name,[data-tb-name]")?.textContent?.trim()||currentMember()?.golf_name||currentMember()?.display_name||"Your score";return{trigger,name,editing:/edit score/i.test(trigger?.textContent||"")}};
+  const scoreContext=()=>{const quickRoot=attachedCard?.closest("[data-gqm-root]"),trigger=attachedCard?.querySelector(".tb-quick-add[data-tb-open],[data-tb-open]")||quickRoot?.querySelector(".gqm-add-score[data-gqm-score-player]");const name=attachedCard?.querySelector(".tb-quick-name,[data-tb-name]")?.textContent?.trim()||quickRoot?.querySelector(".gqm-person-copy strong")?.textContent?.trim()||currentMember()?.golf_name||currentMember()?.display_name||"Your score";return{trigger,name,editing:/edit score|hole score/i.test(trigger?.textContent||"")}};
+  const canCalibrate=()=>hasPermission("golf");
   function setMapStatus(message=""){const status=document.querySelector(`.dfl-gps-panel${selector} [data-gps-map-status]`);if(!status)return;status.textContent=message;status.hidden=!message}
+  async function loadCourseGeometry(){
+    if(geometryLoading||courseId)return;
+    geometryLoading=true;geometryError="";
+    try{
+      const course=await db().from("golf_courses").select("id").eq("name",config.courseName||config.label.split(" · ")[0]).limit(1).maybeSingle();
+      if(course.error)throw course.error;if(!course.data?.id)throw Error("Saved course not found");const foundId=Number(course.data.id);
+      const holes=await db().from("golf_course_holes").select("hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at").eq("course_id",foundId).order("hole");
+      if(holes.error)throw holes.error;courseId=foundId;sharedHoles=new Map((holes.data||[]).map(row=>[Number(row.hole),row]));fallbackHole=0;hasFitted=false;holeLocked=false;if(position)detectHole(fixPoint(position));refresh(true);
+    }catch(err){geometryError=err?.message||"Shared hole calibration is unavailable.";console.warn("golf GPS geometry:",geometryError)}finally{geometryLoading=false}
+  }
+  async function saveEndpoint(kind,point){
+    if(!canCalibrate())return toast("Golf commissioner access is required",true);
+    if(!courseId)await loadCourseGeometry();
+    if(!courseId)return toast(geometryError||"Could not find this saved course",true);
+    const prefix=kind==="tee"?"tee":"green",patch={[`${prefix}_lat`]:point.lat,[`${prefix}_lng`]:point.lng,gps_updated_at:new Date().toISOString(),gps_updated_by:Number(currentMember()?.id)||null};
+    setMapStatus(`Saving Hole ${hole} ${prefix}…`);
+    const result=await db().from("golf_course_holes").update(patch).eq("course_id",courseId).eq("hole",targetHole()).select("hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at").maybeSingle();
+    if(result.error||!result.data){setMapStatus("");return toast(result.error?.message||"That GPS point was not saved",true)}
+    sharedHoles.set(targetHole(),result.data);if(prefix==="green"){const local=greens();local[targetHole()]={lat:point.lat,lng:point.lng,at:Date.now(),source:"shared"};save(config.storageKey,local)}
+    mappingKind="";fallbackHole=0;hasFitted=false;setMapStatus("");toast(`Hole ${hole} ${prefix} saved for everyone`);refresh(true);
+  }
+  function detectHole(point){
+    if(holeLocked||!point)return false;
+    const total=Number(attachedCard?.dataset.tbHoleCount)||Number(attachedCard?.closest("[data-gqm-root]")?.dataset.gqmHoleCount)||9,tees={};
+    for(let physical=1;physical<=Math.min(9,total);physical++){const start=teeFor(physical);if(start)tees[physical]=start}
+    const nearest=nearestTeeHole(point,tees,140);if(!nearest)return false;
+    const cycle=Math.floor((hole-1)/9),detected=Math.min(total,nearest.hole+cycle*9);if(detected!==hole){hole=detected;fallbackHole=0;hasFitted=false}
+    holeLocked=true;followMode=true;return true;
+  }
   function refreshFallback(){if(!map||!globalThis.L||fallbackHole===targetHole())return;fallbackOverlay?.remove();fallbackOverlay=null;fallbackHole=targetHole();imageryReady=false;setMapStatus("Loading satellite hole…");const bounds=satelliteBounds(tee(),target());if(!bounds)return;const L=globalThis.L,url=satelliteExportUrl(bounds);fallbackOverlay=L.imageOverlay(url,bounds,{pane:"dflFallbackPane",opacity:1,interactive:false}).addTo(map);fallbackOverlay.once("load",()=>{imageryReady=true;setMapStatus("")});fallbackOverlay.once("error",()=>{if(!imageryReady)setMapStatus("Satellite imagery is unavailable. Check your connection and retry.")})}
   async function loadMemberBag(){const me=currentMember(),id=me==null?null:String(me.id);if(id===bagMemberId)return;bagMemberId=id;memberBag=[];if(!me){refresh();return}const{data,error}=await db().from("golf_bag").select("club,yards").eq("member_id",me.id).order("sort_order");if(!error&&String(currentMember()?.id)===id)memberBag=data||[];refresh()}
   function acceptFix(next){const point=fixPoint(next),accuracy=Number(next?.coords?.accuracy),now=Date.now(),timestamp=Number(next?.timestamp)||now;if(!Number.isFinite(point.lat)||!Number.isFinite(point.lng)||!Number.isFinite(accuracy)||accuracy<=0||now-timestamp>30000)return false;const last=samples.at(-1);if(last){const seconds=Math.max(.1,(timestamp-last.timestamp)/1000),jumpMeters=distanceYards(point,last.point)/1.0936133,limit=Math.max(120,(accuracy+last.accuracy)*3,seconds*55);if(seconds<5&&jumpMeters>limit)return false}const sample={position:next,point,accuracy,timestamp};samples.push(sample);samples=samples.filter(item=>now-item.timestamp<=8000).slice(-10);const current=position?{point:fixPoint(position),accuracy:Number(position.coords.accuracy)||999}:null,moved=current&&distanceYards(point,current.point)/1.0936133>Math.max(12,current.accuracy+accuracy);const best=moved&&accuracy<=Math.max(55,current.accuracy*2)?sample:[...samples].sort((a,b)=>(a.accuracy+(now-a.timestamp)/1000*2.5)-(b.accuracy+(now-b.timestamp)/1000*2.5))[0];position={coords:{latitude:best.point.lat,longitude:best.point.lng,accuracy:best.accuracy,altitude:best.position.coords.altitude??null,altitudeAccuracy:best.position.coords.altitudeAccuracy??null,heading:best.position.coords.heading??null,speed:best.position.coords.speed??null},timestamp:best.timestamp};refining=false;errorText="";return true}
-  function handleFix(next){const first=!position;if(!acceptFix(next))return;if(first)hasFitted=false;refresh(true)}
+  function handleFix(next){const first=!position;if(!acceptFix(next))return;const detected=detectHole(fixPoint(position));if(first||detected)hasFitted=false;refresh(followMode)}
   function markerIcon(kind){const L=globalThis.L;return L.divIcon({className:"",html:`<div class="dfl-gps-map-${kind}"></div>`,iconSize:[24,24],iconAnchor:kind==="green"?[12,23]:[12,12]})}
   function drawMap(fit=false){
     if(!map||!globalThis.L)return;
@@ -133,28 +180,29 @@ export function setupCourseGps(config){
       const mid=[(lineStart.lat+aim.lat)/2,(lineStart.lng+aim.lng)/2],icon=L.divIcon({className:"",html:`<div class="dfl-gps-distance-pill">${formatYards(shown)}</div>`,iconSize:[78,38],iconAnchor:[39,19]});
       distanceMarker=L.marker(mid,{icon,zIndexOffset:1100,interactive:false}).addTo(map);
     }
-    if(!fit)return;
+    if(!fit||(onHole&&!followMode))return;
     setTimeout(()=>{
       map?.invalidateSize();
       const points=lineStart?[[lineStart.lat,lineStart.lng],[aim.lat,aim.lng]]:[[aim.lat,aim.lng]],options={paddingTopLeft:[54,128],paddingBottomRight:[54,190],maxZoom:holeZoom(onHole?rawReading():maximumYards())};
-      if(hasFitted&&onHole)map.flyToBounds(points,{...options,duration:1.1});else map.fitBounds(points,options);
+      if(hasFitted&&onHole)map.flyToBounds(points,{...options,duration:.7});else map.fitBounds(points,options);
     },0);
   }
   function refresh(fit=false){
-    const bubble=document.querySelector(`.dfl-gps-bubble${selector}`),panel=document.querySelector(`.dfl-gps-panel${selector}`),value=reading(),suggestion=club(),holeGreen=green(),custom=Boolean(savedGreen()&&!config.holeTargets?.[targetHole()]),outside=outsideHole();
+    const bubble=document.querySelector(`.dfl-gps-bubble${selector}`),panel=document.querySelector(`.dfl-gps-panel${selector}`),value=reading(),suggestion=club(),holeGreen=green(),outside=outsideHole();
     if(bubble){const quick=bubble.classList.contains("is-quick-round"),beta=bubble.classList.contains("is-beta"),fallback=officialYards(),shown=value??fallback,badgeLabel=String(config.key||"GPS").replace(/-/g," ").toUpperCase(),status=outside?"HOLE MAX":suggestion?uiEsc(suggestion.club):"LIVE GPS";bubble.innerHTML=quick?`<small class="dfl-gps-badge-label">${uiEsc(badgeLabel)}</small><strong>${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>`:beta?`<strong>${shown?formatYards(shown):"—"}<small>YDS</small></strong><span class="dfl-gps-beta-copy"><b>${value!=null?status:"OPEN HOLE MAP"}</b><small>${value!=null?(outside?`Hole ${hole} maximum until you reach the tee`:`To Hole ${hole} green · ${fixQuality(position.coords.accuracy)}`):"Satellite GPS · yardage · club"}</small></span>`:value!=null?`<strong>${formatYards(value)}</strong><small>yd · H${hole} · ${outside?"hole max":fixQuality(position.coords.accuracy)}</small>`:`<strong>H${hole}</strong><small><em>GPS</em> · ${refining?"refining":"locating you"}</small>`}
     if(!panel)return;
     panel.querySelector("[data-gps-hole]").textContent=String(hole);
     panel.querySelector("[data-gps-hole-par]").textContent=officialPar()||"—";
     panel.querySelector("[data-gps-hole-yards]").textContent=officialYards()||"—";
-    panel.querySelector("[data-gps-distance]").textContent=value==null?"—":formatYards(value);
-    panel.querySelector("[data-gps-reading-label]").textContent=holeGreen?`yards to Hole ${hole} green`:`yards to course · map Hole ${hole} green for exact`;
+    panel.querySelector("[data-gps-distance]").textContent=formatYards(value??maximumYards());
+    panel.querySelector("[data-gps-reading-label]").textContent=value==null?`Hole ${hole} tee to green`:holeGreen?`yards to Hole ${hole} green`:`yards to course · set Hole ${hole} green for exact`;
     const score=scoreContext(),playerName=panel.querySelector("[data-gps-player-name]"),scoreButton=panel.querySelector("[data-gps-score]");if(playerName)playerName.textContent=score.name;if(scoreButton){scoreButton.hidden=!score.trigger;scoreButton.textContent=score.editing?"Edit score":"Add score"}
     const clubLine=panel.querySelector("[data-gps-club]");clubLine.hidden=!suggestion;clubLine.innerHTML=suggestion?`Your club · <strong>${uiEsc(suggestion.club)}</strong><small>${formatYards(suggestion.yards)} yd personal carry</small>`:"";
-    const prompt=panel.querySelector("[data-gps-map-prompt]");prompt.hidden=!mappingGreen;prompt.textContent=`Tap the center of Hole ${hole} green`;
-    const mapGreen=panel.querySelector("[data-map-green]");if(mapGreen){mapGreen.hidden=Boolean(config.holeTargets?.[targetHole()]);mapGreen.textContent=mappingGreen?"Cancel moving green":custom?"Move custom green":`Set Hole ${hole} green`;mapGreen.classList.toggle("is-mapping",mappingGreen)}
-    panel.querySelector("[data-map-me]").textContent=position?"Refine GPS":"Start GPS";
-    panel.querySelector("[data-gps-meta]").textContent=errorText?`${errorText} Tap Start GPS to retry.`:(position?outside?`Outside Hole ${hole} view · yardage capped at ${formatYards(maximumYards())} yd until you reach the hole`:`GPS ${fixQuality(position.coords.accuracy)} · ±${toYards(position.coords.accuracy)} yd${refining?" · refining fix":""}${custom?" · custom green saved on this device":holeGreen?" · official hole target":" · course target"}`:refining?"Refining a high-accuracy GPS fix…":memberBag.length?"Waiting for your live GPS position…":"Add club carry distances under My Golf to receive a private club suggestion.");
+    const prompt=panel.querySelector("[data-gps-map-prompt]");prompt.hidden=!mappingKind;prompt.textContent=mappingKind?`Tap the center of Hole ${hole} ${mappingKind==="tee"?"tee box":"green"}`:"";
+    panel.querySelectorAll("[data-map-endpoint]").forEach(button=>{const active=button.dataset.mapEndpoint===mappingKind;button.classList.toggle("is-mapping",active);button.textContent=active?`Tap map for ${mappingKind}`:`Set ${button.dataset.mapEndpoint}`});
+    const adjust=panel.querySelector("[data-gps-adjust]"),calibration=panel.querySelector("[data-gps-calibration]"),useLocation=panel.querySelector("[data-gps-use-location]");if(adjust){adjust.hidden=!canCalibrate();adjust.textContent=calibration?.hidden?"Adjust tee & green":"Close hole adjustment"}if(useLocation){useLocation.hidden=!mappingKind||!position;useLocation.textContent=mappingKind?`Use my GPS for ${mappingKind}`:"Use my GPS"}
+    const follow=panel.querySelector("[data-map-me]");follow.textContent=position?(followMode?"Following":"Follow me"):"Start GPS";follow.setAttribute("aria-pressed",String(Boolean(position&&followMode)));
+    const shared=sharedHoleFor(hole),sharedLabel=shared.gps_updated_at?" · shared hole calibration":"";panel.querySelector("[data-gps-meta]").textContent=errorText?`${errorText} Tap Start GPS to retry.`:(position?outside?`Outside Hole ${hole} view · yardage capped at ${formatYards(maximumYards())} yd until you reach the hole`:`GPS ${fixQuality(position.coords.accuracy)} · ±${toYards(position.coords.accuracy)} yd · ${followMode?"following you":"map unlocked"}${sharedLabel}`:refining?"Refining a high-accuracy GPS fix…":geometryError&&canCalibrate()?geometryError:memberBag.length?"Waiting for your live GPS position…":"Add club carry distances under My Golf to receive a private club suggestion.");
     drawMap(fit||!hasFitted);hasFitted=true;
   }
   const gpsOptions={enableHighAccuracy:true,maximumAge:0,timeout:20000};
@@ -172,7 +220,8 @@ export function setupCourseGps(config){
       tileLayer=L.tileLayer(SATELLITE_TILES,{maxZoom:20,keepBuffer:3,updateWhenIdle:false,attribution:"Imagery © Esri"}).addTo(map);
       tileLayer.on("load",()=>{imageryReady=true;setMapStatus("")});
       tileLayer.on("tileerror",()=>{if(!imageryReady)setMapStatus("Loading the lightweight satellite view…")});
-      map.on("click",event=>{if(!mappingGreen)return;const all=greens();all[targetHole()]={lat:event.latlng.lat,lng:event.latlng.lng,at:Date.now(),source:"map"};save(config.storageKey,all);mappingGreen=false;hasFitted=false;fallbackHole=0;refresh()});
+      map.on("click",event=>{if(mappingKind)void saveEndpoint(mappingKind,{lat:event.latlng.lat,lng:event.latlng.lng})});
+      map.on("dragstart",()=>{if(!position)return;followMode=false;const follow=panel.querySelector("[data-map-me]");if(follow){follow.textContent="Follow me";follow.setAttribute("aria-pressed","false")}});
       drawMap(true);
     }catch(err){
       setMapStatus(err.message||"Course map unavailable");
@@ -180,9 +229,9 @@ export function setupCourseGps(config){
       host.style.backgroundPosition="center";host.style.backgroundSize="cover";
     }
   }
-  function changeHole(delta){const total=Number(attachedCard?.dataset.tbHoleCount)||9;hole=hole+delta;if(hole<1)hole=total;if(hole>total)hole=1;mappingGreen=false;hasFitted=false;fallbackHole=0;refresh()}
+  function changeHole(delta){const total=Number(attachedCard?.dataset.tbHoleCount)||Number(attachedCard?.closest("[data-gqm-root]")?.dataset.gqmHoleCount)||9;hole=hole+delta;if(hole<1)hole=total;if(hole>total)hole=1;mappingKind="";holeLocked=true;followMode=true;hasFitted=false;fallbackHole=0;refresh(true)}
   function openPanel(){
-    closePanel();startGps();mappingGreen=false;hasFitted=false;
+    closePanel();startGps();mappingKind="";followMode=true;holeLocked=false;hasFitted=false;
     const panel=document.createElement("section");panel.className="dfl-gps-panel is-hole-experience";panel.dataset.gpsCourse=config.key;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",`${config.label} hole GPS`);
     panel.innerHTML=`
       <div class="dfl-hole-map">
@@ -205,15 +254,18 @@ export function setupCourseGps(config){
         <div class="dfl-gps-reading"><b data-gps-distance>—</b><span data-gps-reading-label>yards to Hole ${hole}</span></div>
         <div class="dfl-gps-score-dock"><div class="dfl-gps-player"><strong data-gps-player-name>Your score</strong><small>${uiEsc(config.label)}</small></div><button type="button" class="dfl-gps-score" data-gps-score>Add score</button></div>
         <div class="dfl-gps-club" data-gps-club hidden></div>
-        <div class="dfl-gps-actions"><button type="button" data-map-green>Set Hole ${hole} green</button></div>
+        <button type="button" class="dfl-gps-adjust" data-gps-adjust hidden>Adjust tee & green</button>
+        <div class="dfl-gps-calibration" data-gps-calibration hidden><button type="button" data-map-endpoint="tee">Set tee</button><button type="button" data-map-endpoint="green">Set green</button><button type="button" class="dfl-gps-use-location" data-gps-use-location hidden>Use my GPS</button></div>
         <small class="dfl-gps-meta" data-gps-meta></small>
       </div>`;
     document.body.appendChild(panel);
     panel.querySelector("[data-gps-close]").onclick=closePanel;
     panel.querySelector("[data-gps-prev]").onclick=()=>changeHole(-1);
     panel.querySelector("[data-gps-next]").onclick=()=>changeHole(1);
-    panel.querySelector("[data-map-me]").onclick=()=>{if(position)requestFreshFix();else restartGps()};
-    panel.querySelector("[data-map-green]").onclick=()=>{mappingGreen=!mappingGreen;refresh()};
+    panel.querySelector("[data-map-me]").onclick=()=>{if(position){followMode=true;hasFitted=false;requestFreshFix();refresh(true)}else restartGps()};
+    panel.querySelector("[data-gps-adjust]").onclick=()=>{const calibration=panel.querySelector("[data-gps-calibration]");calibration.hidden=!calibration.hidden;if(calibration.hidden)mappingKind="";refresh()};
+    panel.querySelectorAll("[data-map-endpoint]").forEach(button=>button.onclick=()=>{const next=button.dataset.mapEndpoint;mappingKind=mappingKind===next?"":next;refresh()});
+    panel.querySelector("[data-gps-use-location]").onclick=()=>{if(mappingKind&&position)void saveEndpoint(mappingKind,fixPoint(position))};
     panel.querySelector("[data-gps-score]").onclick=()=>{const trigger=scoreContext().trigger;closePanel();requestAnimationFrame(()=>trigger?.click())};
     refresh();void initMap(panel);
   }
@@ -226,7 +278,7 @@ export function setupCourseGps(config){
   function attach(card){
     if(attachedCard===card&&document.querySelector(`.dfl-gps-bubble${selector}`))return;
     globalThis.__dflCourseGpsStop?.();globalThis.__dflCourseGpsStop=stop;
-    ensureStyles();ensureAssistantStyles();ensureHoleMarkerStyles();ensureHoleExperienceStyles();attachedCard=card;hole=scorecardHole(card);void loadMemberBag();
+    ensureStyles();ensureAssistantStyles();ensureHoleMarkerStyles();ensureHoleExperienceStyles();attachedCard=card;hole=scorecardHole(card);void loadMemberBag();void loadCourseGeometry();
     const bubble=document.createElement("button"),slot=gpsSlot(),beta=Boolean(betaSlot());bubble.type="button";bubble.className=`dfl-gps-bubble${beta?" is-beta":slot?" is-quick-round":""}`;bubble.dataset.gpsCourse=config.key;bubble.setAttribute("aria-label",`Open ${config.label} Hole ${hole} GPS`);bubble.addEventListener("click",openPanel);(slot||document.body).appendChild(bubble);if(slot&&!beta)startGps();refresh();
     const update=e=>{if(!e.target.closest?.("[data-team-score],[data-step],[data-gqm-hole-nav]"))return;setTimeout(()=>{hole=scorecardHole(card);hasFitted=false;refresh()},80)};
     card.addEventListener("input",update);card.addEventListener("click",update);cleanup=()=>{card.removeEventListener("input",update);card.removeEventListener("click",update)};
