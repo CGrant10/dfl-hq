@@ -1,5 +1,9 @@
 # DFL HQ — the database baseline
 
+## Quick Round advanced score details
+
+Run `golf_quick_round_details_schema.sql` after the existing Quick Round tables are present. It adds per-hole putts, tee result and club, first-putt distance, bunker flags, penalty counts, and drinks to `golf_quick_scores`. Existing row-level security continues to govern the same table.
+
 **What a correct current DFL HQ database looks like, and the order to build
 one in.** This exists because the repository has 47 `.sql` files (one base plus 46 additive) and the
 README's setup section still lists eleven of them, which is the state it was

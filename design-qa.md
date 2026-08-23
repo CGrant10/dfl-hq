@@ -1,42 +1,44 @@
-# Quick Round design QA
+# Quick Round scorecard and controls design QA
 
-- Source visual truth: `C:\Users\GUEST\Pictures\Codex Image Aug 22, 2026, 09_51_38 AM.png`
-- Supporting GPS source: `C:\Users\GUEST\Pictures\Codex Image Aug 22, 2026, 09_51_47 AM.png`
-- Implementation screenshot: `C:\Users\GUEST\Documents\Codex\2026-08-21\can\work\dfl-hq\qa\quick-round-nav-gps.png`
-- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-21\can\work\dfl-hq\qa\quick-round-nav-gps-comparison.png`
-- Viewport: 355 × 768 CSS pixels.
-- Density normalization: the 709 × 1536 source is approximately 2× density; the 355 × 768 implementation was scaled to 710 × 1536 for the combined comparison.
-- State: Square Butte Creek Quick Round, Hole 2, one golfer, standard DFL top bar, bottom ticker, and five-item navigation visible.
+- Source visual truth: `C:\Users\GUEST\Documents\Codex\2026-08-22\this\.codex-remote-attachments\01a02a28-03bc-7100-b90c-d17b7441ff40\67708fde-b847-4258-9a18-7990cc583a44\1-Photo-1.jpg` and `2-Photo-2.jpg`
+- Implementation screenshots: `qa/quick-round-scorecard-v124.png` and `qa/quick-round-controls-v124.png`
+- Combined comparisons: `qa/quick-round-scorecard-comparison-v124.png` and `qa/quick-round-controls-comparison-v124.png`
+- Browser surface: Codex in-app browser at the local Vite preview.
+- State: Square Butte Creek Quick Round, Hole 1 for detailed controls and Hole 2 for the group scorecard, one golfer, DFL top bar and five-item bottom navigation retained.
 
 ## Findings
 
-No actionable P0, P1, or P2 differences remain for the requested refinement.
+No actionable P0, P1, or P2 differences remain for the requested scope.
 
-- Fonts and typography: the implementation keeps the established DFL display font and hierarchy. The GPS circle matches the source structure with a small green course label, a large white yardage value, and a white `YDS` label.
-- Spacing and layout rhythm: the hole selector, par/yardage row, and circular GPS badge retain the reference's compact upper-header composition. The standard DFL navigation occupies its established fixed area and does not obscure scoring controls.
-- Colors and visual tokens: the GPS badge now uses a dark navy fill, pale double outline, green course label, and white value to align with the reference while preserving DFL tokens elsewhere.
-- Image quality and asset fidelity: the DFL logo and navigation icons use the app's existing assets. No reference imagery was replaced with placeholder art.
-- Copy and content: the GPS badge shows only the selected hole's official maximum yardage and the unit `YDS`; it does not substitute live distance or display locating/quality copy.
+- Structure: the scoring sheet matches the reference hierarchy: player header and Enter action, score and putt steppers, tee-shot direction, first-putt distance, club selection, bunkers, penalties, drinks, and Basic/Advanced modes.
+- Scorecard: the implementation uses the reference's white scorecard surface, sticky golfer column, hole/par header, score-result marks, blue legend band, and an explicit back arrow to `#/golf`.
+- Gesture: a horizontal finger-style drag moved the visible scorecard from Holes 1–4 to Holes 5–8 while the golfer column stayed pinned.
+- Navigation: the existing DFL application navigation remains visible; the scorecard's own back button returns directly to Golf home.
+- Theme: medicine-inspired red, yellow, white, green, and earth tones remain color-only. No medicine-wheel image or logo was introduced.
+- Responsive behavior: the detailed panel is vertically scrollable so all advanced fields remain reachable above the fixed bottom navigation.
 
 ## Full-view comparison evidence
 
-The combined image confirms that the reference and implementation share the same hole-selector/GPS/player hierarchy. The implementation intentionally retains the DFL top bar, ticker, and bottom navigation because the user reversed the earlier request to hide app navigation. Those controls remain fully visible at the 355 × 768 phone viewport.
+The scorecard comparison confirms the same primary reading order as the source: title and course, wide hole grid, player scores, then legend. The implementation intentionally retains DFL chrome and presents all golfers as rows in one swipeable group table.
 
 ## Focused comparison evidence
 
-The GPS badge was checked directly at Hole 2 (`343 YDS`) and after cycling to Hole 3 (`517 YDS`). In both states the badge exactly matched the official yardage shown beneath the hole title. The top bar, bottom navigation, and bottom ticker were each confirmed visible. Browser console errors: none.
+The control comparison confirms the same scoring actions and grouping. Existing DFL icons were reused for direction controls. Browser runtime errors: none; one pre-existing Supabase warning about multiple auth clients was observed and is unrelated to this change.
 
 ## Primary interactions tested
 
-- Previous/Next hole cycling updates the active hole and GPS maximum yardage together.
-- The Golf navigation item retains `#/golf`, providing a direct exit from the round.
-- Scorecard and scoring controls remain visible above the fixed navigation.
+- Scorecard toggle opens the dedicated scorecard page.
+- Back arrow targets `#/golf`.
+- Pointer/finger drag scans horizontally across holes.
+- Existing Hole 1 score opens in the score sheet without changing production data.
+- The Advanced section remains reachable by vertical scrolling.
+- Bottom application navigation remains visible.
 
 ## Comparison history
 
-1. Earlier pass: the focused-round body hid the DFL top bar, bottom navigation, and ticker. Fix: removed those chrome elements from the focused-mode hide rule. Post-fix evidence: all three are visible in `quick-round-nav-gps.png`.
-2. Earlier pass: the GPS badge could replace the official maximum with a live distance and displayed `YDS LIVE`/`YDS MAX`. Fix: the badge now always renders the active hole's official maximum plus `YDS`. Post-fix evidence: Hole 2 reads `343 YDS`, then Hole 3 reads `517 YDS`.
-3. Earlier pass: the GPS badge used a gold outline. Fix: changed it to the reference-like pale double outline with green course label. Post-fix evidence: combined comparison shows the corrected badge treatment.
+1. First scorecard pass left the scoring header visible above the dedicated scorecard. Fix: scorecard mode now hides the redundant round header while retaining app navigation. Post-fix comparison shows the scorecard title and back arrow at the top of the content area.
+2. First table pass used dark cells. Fix: the group table now uses the reference's white paper treatment and colored score marks.
+3. First scoring pass exposed only strokes. Fix: the panel now includes every requested control group and persists those per-hole details.
 
 ## Follow-up polish
 
