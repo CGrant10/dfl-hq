@@ -110,7 +110,7 @@ function decorateDflSeasonCounts(view, route) {
   Arena event page gets a chance to redirect. Commissioners still use the full
   event/control page; regular members get the read-only result.
 */
-async function redirectFinishedArenaSpectator(name) {
+async function redirectFinishedArenaSpectator(name, expectedHash) {
   if (name !== "arena" || canEdit()) return false;
   const id = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
   if (!id) return false;
@@ -119,6 +119,7 @@ async function redirectFinishedArenaSpectator(name) {
       .select("status,bc_state").eq("id", id).maybeSingle();
     if (error || !data) return false;
     if (data.status !== "complete" && data.bc_state !== "finished") return false;
+    if (location.hash !== expectedHash) return false;
     location.hash = `#/arena-results?id=${id}`;
     return true;
   } catch {
@@ -148,16 +149,33 @@ function spectatorArenaLinks(view, name) {
   }
 }
 
+let renderEpoch = 0;
+
+/*
+  A route renders into the view that existed when that navigation started.
+  Replacing #view for every navigation means a slow page can finish safely in
+  its now-detached view instead of painting over the page the user selected
+  afterward. The epoch also stops stale renders from moving the tab indicator,
+  scrolling the new page, or publishing a route-complete notification.
+*/
 export async function renderRoute() {
+  const epoch = ++renderEpoch;
   const name = currentRoute();
-  const view = document.getElementById("view");
+  const expectedHash = location.hash;
+  const previousView = document.getElementById("view");
+  if (!previousView) return;
   const changed = name !== lastAnimated;
-  if (changed) { view.classList.remove("page-in"); view.classList.add("page-switching"); }
+  if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
-  if (view._dflSeasonObserver) { view._dflSeasonObserver.disconnect(); view._dflSeasonObserver = null; }
+  if (previousView._dflSeasonObserver) { previousView._dflSeasonObserver.disconnect(); previousView._dflSeasonObserver = null; }
 
-  if (await redirectFinishedArenaSpectator(name)) return;
+  const view = previousView.cloneNode(false);
+  previousView.replaceWith(view);
+  const isCurrent = () => epoch === renderEpoch && currentRoute() === name && document.getElementById("view") === view;
+
+  if (await redirectFinishedArenaSpectator(name, expectedHash)) return;
+  if (!isCurrent()) return;
 
   let matched = false;
   document.querySelectorAll("#tabbar a").forEach((a) => {
@@ -171,8 +189,10 @@ export async function renderRoute() {
   view.innerHTML = loading();
   try {
     const mod = await routes[name]();
+    if (!isCurrent()) return;
     if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);
+    if (!isCurrent()) return;
     decorateDflSeasonCounts(view, name);
     spectatorArenaLinks(view, name);
     if (name === "profile") {
@@ -180,7 +200,9 @@ export async function renderRoute() {
         .then((m) => m.decorateCommissionerBadge(view))
         .catch(() => {});
     }
-  } catch (err) { view.innerHTML = errorBox(err); }
+  } catch (err) { if (isCurrent()) view.innerHTML = errorBox(err); }
+
+  if (!isCurrent()) return;
 
   window.scrollTo(0, 0);
   lastAnimated = name;
@@ -204,5 +226,5 @@ export function startRouter() {
   window.addEventListener("resize", syncTabIndicator);
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
-  renderRoute();
+  else renderRoute();
 }
