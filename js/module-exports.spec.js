@@ -263,8 +263,11 @@ describe("the supported golf GPS courses", () => {
     expect(team).toContain("<small>Total 18</small>");
     expect(beta).toContain("<th>Front 9</th>");
     expect(beta).toContain("<th>Back 9</th><th>+/−</th><th>Total ${count}</th>");
-    expect(beta).toContain(".tb-total,.tb-quick-add{border-color:#ccd2d6!important;background:#eef3f6!important;color:#263b49!important");
+    expect(beta).toContain(".tb-quick-add{border-color:var(--control-line)!important;background:var(--bg-3)!important;color:var(--text)!important");
     expect(beta).toContain('Number(row.strokes) ? `<span>${Number(row.strokes)}</span>Edit score');
+    expect(beta).toContain('function headToHead(entry, mine)');
+    expect(beta).toContain('matchPlay ? [result.wonA || 0, result.wonB || 0] : [result.a || 0, result.b || 0]');
+    expect(beta).toContain('${tabs}${gps}${quickMatch}${memberEntry}');
   });
 
   it("exposes guest setup, selected scoring, and no setup GPS bubble", () => {
