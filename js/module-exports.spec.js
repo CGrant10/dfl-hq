@@ -162,10 +162,18 @@ describe("the supported golf GPS courses", () => {
 
   it.each(configs)("keeps nine explicit green targets in %s", (file) => {
     const source = fs.readFileSync(file, "utf8");
-    const targets = [...source.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
+    const greenConfig = source.split("holeTargets:")[1];
+    const targets = [...greenConfig.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
     expect(targets.map((match) => Number(match[1]))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(new Set(targets.map((match) => `${match[2]},${match[3]}`)).size).toBe(9);
     expect(source).toMatch(/yards to Hole \$\{hole\} green|label:/);
+  });
+
+  it("keeps nine explicit Rolla tee targets for hole-only framing", () => {
+    const source = fs.readFileSync("js/golf-gps-rolla-beta.js", "utf8");
+    const teeConfig = source.split("teeTargets:")[1].split("holeTargets:")[0];
+    const targets = [...teeConfig.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
+    expect(targets.map((match) => Number(match[1]))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
   it("keeps the DFL app navigation visible during a Quick Round", () => {
@@ -176,14 +184,14 @@ describe("the supported golf GPS courses", () => {
     expect(source).not.toMatch(/body\.gqm-focus \.bottomline[^`]+display:none/);
   });
 
-  it("scopes the light palette to Golf and Polls content instead of the app shell", () => {
+  it("lets Golf inherit the active app theme without repainting the shell", () => {
     const source = fs.readFileSync("js/golf-theme.js", "utf8");
     const golfCss = fs.readFileSync("css/golf.css", "utf8");
     const navCss = fs.readFileSync("css/nav-neutral.css", "utf8");
     expect(source).not.toContain("pinMode(");
-    expect(source).toContain("classList.toggle(LIGHT_ROUTE_CLASS, onLightRoute())");
-    expect(golfCss).toContain("body.route-light-content #view");
-    expect(golfCss).not.toMatch(/body\.route-light-content\s+\.(?:topbar|tabbar|whoami)/);
+    expect(source).toContain("classList.toggle(GOLF_CONTENT_CLASS, onGolf())");
+    expect(golfCss).toContain("body.golf-content #view");
+    expect(golfCss).not.toMatch(/body\.golf-content\s+\.(?:topbar|tabbar|whoami)/);
     expect(navCss).toContain("color:var(--muted) !important");
     expect(navCss).not.toContain("color:#f5f7fa !important");
   });

@@ -150,7 +150,6 @@ function spectatorArenaLinks(view, name) {
 }
 
 let renderEpoch = 0;
-const lightRoute = name => name === "golf" || name === "polls";
 const setRouteCanvas = color => {
   document.documentElement.style.background = color;
   if (document.body) document.body.style.background = color;
@@ -166,7 +165,6 @@ const setRouteCanvas = color => {
 export async function renderRoute() {
   const epoch = ++renderEpoch;
   const name = currentRoute();
-  document.body.classList.toggle("route-light-content", lightRoute(name));
   const expectedHash = location.hash;
   const previousView = document.getElementById("view");
   if (!previousView) return;
@@ -180,7 +178,7 @@ export async function renderRoute() {
   view.classList.remove("page-in");
   view.classList.add("is-route-loading");
   document.body.classList.add("route-loading");
-  setRouteCanvas(lightRoute(name) ? "#eef1f6" : "#0d1117");
+  setRouteCanvas("var(--bg)");
   previousView.replaceWith(view);
   const isCurrent = () => epoch === renderEpoch && currentRoute() === name && document.getElementById("view") === view;
 
@@ -205,7 +203,7 @@ export async function renderRoute() {
     if (!isCurrent()) return;
     view.classList.remove("is-route-loading");
     document.body.classList.remove("route-loading");
-    setRouteCanvas(lightRoute(name) ? "#eef1f6" : "var(--bg)");
+    setRouteCanvas("var(--bg)");
     decorateDflSeasonCounts(view, name);
     spectatorArenaLinks(view, name);
     if (name === "profile") {
@@ -213,7 +211,7 @@ export async function renderRoute() {
         .then((m) => m.decorateCommissionerBadge(view))
         .catch(() => {});
     }
-  } catch (err) { if (isCurrent()) { view.classList.remove("is-route-loading"); document.body.classList.remove("route-loading"); setRouteCanvas(lightRoute(name) ? "#eef1f6" : "var(--bg)"); view.innerHTML = errorBox(err); } }
+  } catch (err) { if (isCurrent()) { view.classList.remove("is-route-loading"); document.body.classList.remove("route-loading"); setRouteCanvas("var(--bg)"); view.innerHTML = errorBox(err); } }
 
   if (!isCurrent()) return;
 
