@@ -295,31 +295,31 @@
 .gteam-captain .ico-sm { width: 16px; height: 16px; flex: none; }
 .gteam-captain.is-none { color: var(--muted); font-weight: 600; font-size: 13px; }
 
-/* ---- Golf content owns the Medicine Wheel palette, but only here.
-   #view inherits this frozen palette without repainting its siblings: the
-   top bar, identity ticket and navigation retain the member's profile theme. ---- */
-body.golf-medicine-content #view{
-  --bg:#0b0b0c;--bg-2:#141416;--bg-3:#1d1d20;
-  --line:#2f2f34;--line-soft:#212125;
-  --text:#f4f2ee;--muted:#a8a096;--chalk:#fff;--body-text:#ddd8d0;
-  --hover:#1d1d20;--hover-soft:rgba(255,255,255,.03);
-  --control-line:#736b60;--control-bg:rgba(24,24,27,.74);
-  --accent:#F08279;--accent-2:#EFC94C;
-  --accent-fill:#C8102E;--accent-2-fill:#EFC94C;
-  --accent-sweep:linear-gradient(90deg,#C8102E,#EFC94C);
-  --accent-sweep-135:linear-gradient(135deg,#C8102E,#EFC94C);
-  --accent-sweep-v:linear-gradient(180deg,#C8102E,#EFC94C);
-  --accent-dim:#EFC94C;--on-accent:#fff;
-  --ok:#8fd6a4;--ok-bg:rgba(96,176,123,.13);--ok-line:#3f7a52;
-  --warn-ink:#E8A33D;--warn-bg:rgba(232,163,61,.12);--warn-line:#7a5a20;
-  --danger-ink:#F5A39B;--danger-bg:rgba(200,16,46,.14);--danger-line:#7d2029;
-  --sc-under:#7fd39a;--sc-over:#f0897e;--sc-bad:#d93b3b;
-  --hero-a:#17171a;--hero-wash:rgba(255,255,255,.05);
-  --milestone:#EFC94C;--shadow:0 1px 3px rgba(0,0,0,.42);
-  --theme-primary:#C8102E;--theme-secondary:#EFC94C;
-  --theme-soft:color-mix(in srgb,#C8102E 12%,transparent);
-  --theme-soft-2:color-mix(in srgb,#EFC94C 10%,transparent);
-  --theme-border:color-mix(in srgb,#C8102E 34%,#2f2f34);
+/* ---- Golf and Polls use the app's clean light content palette. The shell
+   remains in the member's chosen theme, while the active page is consistent
+   from its loading canvas through its final content. ---- */
+body.route-light-content #view{
+  --bg:#eef1f6;--bg-2:#fff;--bg-3:#e6eaf1;
+  --line:#ccd4e0;--line-soft:#e3e8f0;
+  --text:#11161d;--muted:#5a6575;--chalk:#11161d;--body-text:#2a323d;
+  --hover:#e0e6ef;--hover-soft:rgba(16,24,40,.035);
+  --control-line:#7c8695;--control-bg:rgba(255,255,255,.82);
+  --accent:#B8001B;--accent-2:#003396;
+  --accent-fill:#E5011B;--accent-2-fill:#003396;
+  --accent-sweep:linear-gradient(90deg,#E5011B,#003396);
+  --accent-sweep-135:linear-gradient(135deg,#E5011B,#003396);
+  --accent-sweep-v:linear-gradient(180deg,#E5011B,#003396);
+  --accent-dim:#9db1d1;--on-accent:#fff;
+  --ok:#0f7a3d;--ok-bg:rgba(15,122,61,.1);--ok-line:#9fd3b4;
+  --warn-ink:#8a5200;--warn-bg:rgba(196,124,0,.12);--warn-line:#e0bd7e;
+  --danger-ink:#a3121a;--danger-bg:rgba(163,18,26,.09);--danger-line:#e2a9a5;
+  --sc-under:#0f7a3d;--sc-over:#c2371f;--sc-bad:#a3121a;
+  --hero-a:#fff;--hero-wash:rgba(16,24,40,.04);
+  --milestone:#8a6410;--shadow:0 1px 3px rgba(16,24,40,.1);
+  --theme-primary:#E5011B;--theme-secondary:#003396;
+  --theme-soft:color-mix(in srgb,#E5011B 9%,transparent);
+  --theme-soft-2:color-mix(in srgb,#003396 8%,transparent);
+  --theme-border:color-mix(in srgb,#003396 28%,#ccd4e0);
   color:var(--text);
   background:var(--bg);
   min-height:calc(100dvh - 132px - env(safe-area-inset-top) - env(safe-area-inset-bottom));

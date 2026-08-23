@@ -271,19 +271,9 @@
   margin: 0;
   padding: var(--pad) max(var(--pad), calc((100vw - 900px) / 2 + var(--pad)));
   box-sizing: border-box;
-  background:
-    radial-gradient(100% 55% at 50% 0%, rgba(65,115,165,.18), transparent 62%),
-    #0d1117;
-  color: #f5f7fa;
-  --bg-2: #131a24;
-  --bg-3: #1b2432;
-  --text: #f5f7fa;
-  --muted: #9aa8b7;
-  --line: rgba(255,255,255,.12);
-  --line-soft: rgba(255,255,255,.07);
-  --hover-soft: rgba(255,255,255,.045);
+  background: var(--bg);
+  color: var(--text);
 }
-body.polls-focus { background: #0d1117; }
 .poll-q {
   font-family: var(--font-display);
   font-size: var(--fs-h2);
