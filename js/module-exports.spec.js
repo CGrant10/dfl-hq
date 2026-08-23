@@ -245,10 +245,18 @@ describe("the supported golf GPS courses", () => {
 
   it("uses active theme tokens throughout Quick Round scoring", () => {
     const source = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    const personal = fs.readFileSync("js/golf-quick-round.js", "utf8");
+    const privacy = fs.readFileSync("golf_quick_round_privacy_schema.sql", "utf8");
     expect(source).toContain(".gqm-focus-shell{background:var(--bg);color:var(--text)");
     expect(source).toContain(".gqm-add-score{border-color:var(--control-line);background:var(--bg-2);color:var(--text)");
     expect(source).toContain(".gqm-scorecard-page{background:var(--bg);color:var(--text)");
     expect(source).toContain(".gqm-sheet{border:1px solid var(--line);background:var(--bg-2);color:var(--text)");
+    expect(source).toContain(".gqm-actions{padding-bottom:calc(82px + env(safe-area-inset-bottom))}");
+    expect(source).toContain(".gqm-focus-shell.is-scorecard{width:100%;max-width:none}");
+    expect(personal).toContain("Keep this round private");
+    expect(personal).toContain("My Quick Rounds");
+    expect(personal).toContain("is_private:isPrivate");
+    expect(privacy).toContain("not is_private or created_by = dfl_current_member()");
   });
 
   it("keeps score results on scorecards and shows complete nine totals", () => {
