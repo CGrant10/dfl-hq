@@ -104,7 +104,7 @@ function paintRound(host,r,players,scores,holeRows,d){
     <div class="gq-finish"><button class="btn primary" data-gq-finish ${r.status==="final"?"disabled":""}>${r.status==="final"?"Round finished":"Finish round"}</button></div>
     <nav class="gq-bottom" aria-label="Quick round tools"><button class="is-active" type="button"><b>▦</b>Scorecard</button><button type="button" data-gq-gps><b>◎</b>GPS</button></nav>
   </div>`;
-  const play=host.querySelector(".gq-play");
+  const play=host.querySelector(".gq-play");play.dataset.gpsCourseId=String(r.course_id||"");play.dataset.gpsCourseName=course;play.dataset.gpsCourseLabel=[course,courseLoc].filter(Boolean).join(" · ");
   const move=delta=>{host.dataset.gqHole=String(Math.max(1,Math.min(r.holes,hole+delta)));paintRound(host,r,players,scores,holeRows,d);window.dispatchEvent(new CustomEvent("dfl:quick-player-change"))};
   host.querySelector("[data-gq-prev]").onclick=()=>move(-1);host.querySelector("[data-gq-next]").onclick=()=>move(1);
   host.querySelectorAll("[data-gq-add]").forEach(btn=>btn.onclick=()=>showScoreSheet(host,r,players,scores,holeRows,d,Number(btn.dataset.player),hole,scoreMap.get(`${btn.dataset.player}:${hole}`)||par||4));

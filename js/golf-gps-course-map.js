@@ -17,7 +17,7 @@ const fixQuality=accuracy=>accuracy<=10?"Excellent":accuracy<=25?"Good":accuracy
 function load(key){try{return JSON.parse(localStorage.getItem(key)||"{}")||{}}catch{return {}}}
 function save(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
 function scorecardHole(card){const beta=Number(card?.dataset.tbHole);if(beta>0)return beta;const selected=Number(card.querySelector("[data-gqm-entry]")?.dataset.activeHole);if(selected>0)return selected;for(const input of card.querySelectorAll("input[data-team-score]")){if(!String(input.value||"").trim())return Number(input.dataset.hole)||1}return 1}
-function courseText(view){return [...view.querySelectorAll(".golf-event-head .golf-meta span,.tb-sub strong")].map(node=>node.textContent||"").join(" ")}
+function courseText(view){return [...view.querySelectorAll(".golf-event-head .golf-meta span,.tb-sub strong,.gqm-course strong")].map(node=>node.textContent||"").join(" ")}
 function fullMapUrl(query){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
 function loadLeaflet(){
   if(globalThis.L)return Promise.resolve(globalThis.L);
@@ -101,6 +101,9 @@ body[data-mode="light"] .is-hole-experience .dfl-gps-calibration button.is-mappi
 export function setupCourseGps(config){
   let watchId=null,position=null,hole=1,attachedCard=null,cleanup=null,errorText="",geometryError="",map=null,tileLayer=null,fallbackOverlay=null,fallbackHole=0,imageryReady=false,playerMarker=null,teeMarker=null,accuracyCircle=null,greenMarker=null,distanceLine=null,distanceMarker=null,mappingKind="",hasFitted=false,followMode=true,holeLocked=false,refining=false,samples=[],memberBag=[],bagMemberId=null,courseId=null,geometryLoading=false,sharedHoles=new Map();
   const selector=`[data-gps-course="${config.key}"]`;
+  const activeCourseId=()=>Number(attachedCard?.dataset.gpsCourseId||attachedCard?.closest("[data-gps-course-id]")?.dataset.gpsCourseId)||null;
+  const activeCourseName=()=>attachedCard?.dataset.gpsCourseName||attachedCard?.closest("[data-gps-course-name]")?.dataset.gpsCourseName||config.courseName||config.label.split(" · ")[0];
+  const activeLabel=()=>attachedCard?.dataset.gpsCourseLabel||attachedCard?.closest("[data-gps-course-label]")?.dataset.gpsCourseLabel||config.label;
   const greens=()=>load(config.storageKey);
   const targetHoleFor=value=>((Number(value)||1)-1)%9+1;
   const targetHole=()=>targetHoleFor(hole);
@@ -110,7 +113,7 @@ export function setupCourseGps(config){
   const greenFor=value=>pointFrom(sharedHoleFor(value),"green")||savedGreenFor(value)||config.holeTargets?.[targetHoleFor(value)]||null;
   const green=()=>greenFor(hole);
   const fairwayTargetFor=value=>config.fairwayTargets?.[targetHoleFor(value)]||null;
-  const gpsSlot=()=>attachedCard?.querySelector("[data-tb-gps-slot]")||attachedCard?.closest("[data-gqm-root]")?.querySelector("[data-gqm-gps-slot]");
+  const gpsSlot=()=>attachedCard?.querySelector("[data-tb-gps-slot],[data-gq-gps-slot]")||attachedCard?.closest("[data-gqm-root]")?.querySelector("[data-gqm-gps-slot]");
   const betaSlot=()=>attachedCard?.querySelector("[data-tb-gps-slot]");
   const betaValue=(name,fallback,value=hole)=>{const values=String(attachedCard?.dataset?.[name]||"").split(",");return Number(values[Number(value)-1])||Number(fallback)||0};
   const officialYardsFor=value=>betaSlot()?betaValue("tbYardages",targetHoleFor(value)===targetHole()?betaSlot()?.dataset.tbHoleYardage:0,value):targetHoleFor(value)===targetHole()?Number(gpsSlot()?.dataset.gqmHoleYardage)||0:Number(sharedHoleFor(value).yardage_men)||0;
@@ -118,7 +121,7 @@ export function setupCourseGps(config){
   const officialPar=()=>betaSlot()?betaValue("tbPars",betaSlot()?.dataset.tbHolePar):Number(gpsSlot()?.dataset.gqmHolePar)||0;
   const teeFor=value=>{const shared=pointFrom(sharedHoleFor(value),"tee");if(shared)return shared;const aim=greenFor(value),landing=fairwayTargetFor(value),yards=officialYardsFor(value);if(!aim||!landing||!yards)return null;const remaining=distanceYards(landing,aim);if(!remaining)return null;const ratio=yards/remaining;return{lat:aim.lat+(landing.lat-aim.lat)*ratio,lng:aim.lng+(landing.lng-aim.lng)*ratio,inferred:true}};
   const tee=()=>teeFor(hole);
-  const courseTarget=()=>({lat:Number(config.courseCenter[0]),lng:Number(config.courseCenter[1]),fallback:true});
+  const courseTarget=()=>{const center=config.courseCenter||[],lat=Number(center[0]),lng=Number(center[1]);if(Number.isFinite(lat)&&Number.isFinite(lng))return{lat,lng,fallback:true};const shared=[...sharedHoles.values()].map(row=>pointFrom(row,"green")||pointFrom(row,"tee")).find(Boolean);if(shared)return shared;if(position)return fixPoint(position);return{lat:0,lng:0,fallback:true}};
   const target=()=>green()||courseTarget();
   const rawReading=()=>position?distanceYards({lat:position.coords.latitude,lng:position.coords.longitude},target()):null;
   const maximumYards=()=>officialYards()||((tee()&&green())?distanceYards(tee(),green()):500);
@@ -132,8 +135,7 @@ export function setupCourseGps(config){
     if(geometryLoading||courseId)return;
     geometryLoading=true;geometryError="";
     try{
-      const course=await db().from("golf_courses").select("id").eq("name",config.courseName||config.label.split(" · ")[0]).limit(1).maybeSingle();
-      if(course.error)throw course.error;if(!course.data?.id)throw Error("Saved course not found");const foundId=Number(course.data.id);
+      let foundId=activeCourseId();if(!foundId){const course=await db().from("golf_courses").select("id").eq("name",activeCourseName()).limit(1).maybeSingle();if(course.error)throw course.error;if(!course.data?.id)throw Error("Saved course not found");foundId=Number(course.data.id)}
       const holes=await db().from("golf_course_holes").select("hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at").eq("course_id",foundId).order("hole");
       if(holes.error)throw holes.error;courseId=foundId;sharedHoles=new Map((holes.data||[]).map(row=>[Number(row.hole),row]));fallbackHole=0;hasFitted=false;holeLocked=false;if(position)detectHole(fixPoint(position));refresh(true);
     }catch(err){geometryError=err?.message||"Shared hole calibration is unavailable.";console.warn("golf GPS geometry:",geometryError)}finally{geometryLoading=false}
@@ -174,7 +176,7 @@ export function setupCourseGps(config){
     }else if(start){
       teeMarker=L.marker([start.lat,start.lng],{icon:markerIcon("tee"),zIndexOffset:850}).addTo(map).bindTooltip(`Hole ${hole} tee`,{direction:"top"});
     }
-    greenMarker=L.marker([aim.lat,aim.lng],{icon:markerIcon("green"),zIndexOffset:900}).addTo(map).bindTooltip(holeGreen?`Hole ${hole} green`:`${config.label} course target`,{direction:"top"});
+    greenMarker=L.marker([aim.lat,aim.lng],{icon:markerIcon("green"),zIndexOffset:900}).addTo(map).bindTooltip(holeGreen?`Hole ${hole} green`:`${activeLabel()} course target`,{direction:"top"});
     if(lineStart){
       distanceLine=L.polyline([[lineStart.lat,lineStart.lng],[aim.lat,aim.lng]],{color:"#fff",weight:3,opacity:.96}).addTo(map);
       const mid=[(lineStart.lat+aim.lat)/2,(lineStart.lng+aim.lng)/2],icon=L.divIcon({className:"",html:`<div class="dfl-gps-distance-pill">${formatYards(shown)}</div>`,iconSize:[78,38],iconAnchor:[39,19]});
@@ -232,7 +234,7 @@ export function setupCourseGps(config){
   function changeHole(delta){const total=Number(attachedCard?.dataset.tbHoleCount)||Number(attachedCard?.closest("[data-gqm-root]")?.dataset.gqmHoleCount)||9;hole=hole+delta;if(hole<1)hole=total;if(hole>total)hole=1;mappingKind="";holeLocked=true;followMode=true;hasFitted=false;fallbackHole=0;refresh(true)}
   function openPanel(){
     closePanel();startGps();mappingKind="";followMode=true;holeLocked=false;hasFitted=false;
-    const panel=document.createElement("section");panel.className="dfl-gps-panel is-hole-experience";panel.dataset.gpsCourse=config.key;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",`${config.label} hole GPS`);
+    const panel=document.createElement("section");panel.className="dfl-gps-panel is-hole-experience";panel.dataset.gpsCourse=config.key;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",`${activeLabel()} hole GPS`);
     panel.innerHTML=`
       <div class="dfl-hole-map">
         <div data-gps-map></div>
@@ -252,7 +254,7 @@ export function setupCourseGps(config){
       </header>
       <div class="dfl-gps-controls">
         <div class="dfl-gps-reading"><b data-gps-distance>—</b><span data-gps-reading-label>yards to Hole ${hole}</span></div>
-        <div class="dfl-gps-score-dock"><div class="dfl-gps-player"><strong data-gps-player-name>Your score</strong><small>${uiEsc(config.label)}</small></div><button type="button" class="dfl-gps-score" data-gps-score>Add score</button></div>
+        <div class="dfl-gps-score-dock"><div class="dfl-gps-player"><strong data-gps-player-name>Your score</strong><small>${uiEsc(activeLabel())}</small></div><button type="button" class="dfl-gps-score" data-gps-score>Add score</button></div>
         <div class="dfl-gps-club" data-gps-club hidden></div>
         <button type="button" class="dfl-gps-adjust" data-gps-adjust hidden>Adjust tee & green</button>
         <div class="dfl-gps-calibration" data-gps-calibration hidden><button type="button" data-map-endpoint="tee">Set tee</button><button type="button" data-map-endpoint="green">Set green</button><button type="button" class="dfl-gps-use-location" data-gps-use-location hidden>Use my GPS</button></div>
@@ -279,7 +281,7 @@ export function setupCourseGps(config){
     if(attachedCard===card&&document.querySelector(`.dfl-gps-bubble${selector}`))return;
     globalThis.__dflCourseGpsStop?.();globalThis.__dflCourseGpsStop=stop;
     ensureStyles();ensureAssistantStyles();ensureHoleMarkerStyles();ensureHoleExperienceStyles();attachedCard=card;hole=scorecardHole(card);void loadMemberBag();void loadCourseGeometry();
-    const bubble=document.createElement("button"),slot=gpsSlot(),beta=Boolean(betaSlot());bubble.type="button";bubble.className=`dfl-gps-bubble${beta?" is-beta":slot?" is-quick-round":""}`;bubble.dataset.gpsCourse=config.key;bubble.setAttribute("aria-label",`Open ${config.label} Hole ${hole} GPS`);bubble.addEventListener("click",openPanel);(slot||document.body).appendChild(bubble);if(slot&&!beta)startGps();refresh();
+    const bubble=document.createElement("button"),slot=gpsSlot(),beta=Boolean(betaSlot());bubble.type="button";bubble.className=`dfl-gps-bubble${beta?" is-beta":slot?" is-quick-round":""}`;bubble.dataset.gpsCourse=config.key;bubble.setAttribute("aria-label",`Open ${activeLabel()} Hole ${hole} GPS`);bubble.addEventListener("click",openPanel);slot?.querySelector("[data-gq-gps-top]")?.remove();(slot||document.body).appendChild(bubble);if(slot&&!beta)startGps();refresh();
     const update=e=>{if(!e.target.closest?.("[data-team-score],[data-step],[data-gqm-hole-nav]"))return;setTimeout(()=>{hole=scorecardHole(card);hasFitted=false;refresh()},80)};
     card.addEventListener("input",update);card.addEventListener("click",update);cleanup=()=>{card.removeEventListener("input",update);card.removeEventListener("click",update)};
   }

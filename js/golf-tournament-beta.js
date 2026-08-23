@@ -468,6 +468,7 @@ async function paint() {
       state.stale = true;
     }
     root.innerHTML = current.setup ? calmSetupMarkup(state) : focusedMatchMarkup(state);
+    const gpsRoot=root.querySelector("[data-tbeta-root]");if(gpsRoot){gpsRoot.dataset.gpsCourseId=String(state.outing.course_id||"");gpsRoot.dataset.gpsCourseName=state.outing.course||"Golf course";gpsRoot.dataset.gpsCourseLabel=state.outing.course||"Golf course"}
     document.body.classList.add("tb-focus");
     current.setup ? wireSetup(root, state) : wireMatch(root, state);
   } catch (e) {

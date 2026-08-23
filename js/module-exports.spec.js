@@ -177,6 +177,13 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain("projects the tee along that bearing");
   });
 
+  it("routes imported courses through stored hole geometry", () => {
+    const source = fs.readFileSync("js/golf-gps-imported.js", "utf8");
+    expect(source).toContain('key:"imported"');
+    expect(source).toContain("golf_course_holes");
+    expect(source).toContain("setupCourseGps");
+  });
+
   it("keeps the DFL app navigation visible during a Quick Round", () => {
     const source = fs.readFileSync("js/golf-event-modes.js", "utf8");
     expect(source).toContain("body.gqm-focus .golf-event-head,body.gqm-focus .guest-strip");
