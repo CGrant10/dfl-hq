@@ -165,7 +165,7 @@
    in the same weight and a chevron in the same colour.
    ===================================================================== */
 .golf-leaderboard{padding:0;overflow:hidden;border-color:var(--accent-dim)}
-.gl-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px 11px;border-bottom:1px solid var(--line)}
+.gl-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px 11px;border-bottom:1px solid var(--line);background:var(--bg-2);color:var(--text)}
 .gl-head p{margin:2px 0 0}
 .gl-kicker{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
 .golf-leader-list{display:grid}
