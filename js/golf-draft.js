@@ -197,7 +197,7 @@ function setup(d, admin) {
             ? "Name a captain for every team and put them in picking order."
             : `${named} of ${d.teams.length} captains named. The board opens when they all are.`}</p>
         </div>
-        ${admin ? `<span class="admin-badge">Admin only</span>` : ""}
+        ${admin ? `<span class="admin-badge">Organizer</span>` : ""}
       </div>
       <div class="gd-seats">${seats.map(row).join("")}</div>
       ${admin ? `<p class="muted tiny">Order one is the first pick of round one. The draft snakes, so they pick last in round two.</p>` : ""}
