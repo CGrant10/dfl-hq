@@ -7,6 +7,11 @@ describe("hole GPS distance handling", () => {
     expect(capHoleDistance(146, 352)).toBe(146);
   });
 
+  it("keeps a missing GPS fix missing instead of converting it to zero", () => {
+    expect(capHoleDistance(null, 352)).toBeNull();
+    expect(isOutsideHole(null, 352)).toBe(false);
+  });
+
   it("recognizes fixes well outside the hole corridor", () => {
     expect(isOutsideHole(500, 352)).toBe(true);
     expect(isOutsideHole(410, 352)).toBe(false);

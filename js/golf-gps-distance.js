@@ -1,4 +1,5 @@
 export function capHoleDistance(distance, holeYards) {
+  if (distance == null || distance === "") return null;
   const measured = Number(distance);
   const maximum = Number(holeYards);
   if (!Number.isFinite(measured) || measured < 0) return null;
@@ -6,6 +7,7 @@ export function capHoleDistance(distance, holeYards) {
 }
 
 export function isOutsideHole(distance, holeYards) {
+  if (distance == null || distance === "") return false;
   const measured = Number(distance);
   const maximum = Number(holeYards);
   return Number.isFinite(measured) && Number.isFinite(maximum) && maximum > 0 && measured > maximum * 1.35;
