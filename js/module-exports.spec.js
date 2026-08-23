@@ -258,6 +258,7 @@ describe("the supported golf GPS courses", () => {
     expect(team).toContain("<small>Total 18</small>");
     expect(beta).toContain("<th>Front 9</th>");
     expect(beta).toContain("<th>Back 9</th><th>+/−</th><th>Total ${count}</th>");
+    expect(beta).toContain(".tb-total{background:#eef3f6!important;color:#263b49!important");
     expect(beta).toContain('Number(row.strokes) ? `<span>${Number(row.strokes)}</span>Edit score');
   });
 
