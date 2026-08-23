@@ -253,10 +253,12 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain(".gqm-sheet{border:1px solid var(--line);background:var(--bg-2);color:var(--text)");
     expect(source).toContain(".gqm-actions{padding-bottom:calc(82px + env(safe-area-inset-bottom))}");
     expect(source).toContain(".gqm-focus-shell.is-scorecard{width:100%;max-width:none}");
+    expect(source).toContain(".gqm-focus-shell.is-scorecard .gqm-score-paper{overflow-y:auto;padding-bottom:calc(78px + env(safe-area-inset-bottom))}");
     expect(personal).toContain("Keep this round private");
     expect(personal).toContain("My Quick Rounds");
     expect(personal).toContain("is_private:isPrivate");
     expect(privacy).toContain("not is_private or created_by = dfl_current_member()");
+    expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain(".tb-scorecard{bottom:calc(68px + env(safe-area-inset-bottom))}");
   });
 
   it("keeps score results on scorecards and shows complete nine totals", () => {
