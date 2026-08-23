@@ -51,3 +51,38 @@ No P3 follow-up is required for this scoped change.
 ## Final result
 
 passed
+
+---
+
+# Full-hole satellite GPS design QA
+
+## Evidence
+
+- Source: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/.codex-remote-attachments/01a02fb4-48a5-7c92-8158-223b000a2851/719cbe15-e418-4ac4-93bb-a04e599a6e6b/1-Photo-1.jpg` (591 x 1280 px).
+- Implementation capture: `work-gps-implementation.jpg` (1280 x 720 CSS-pixel viewport at DPR 1.25; GPS panel 520 x 676.8 CSS px).
+- Combined comparison: `gps-design-comparison.jpg`; both views were normalized to 720 px high with aspect ratio preserved.
+- State: Rolla tournament beta, member view, Hole 1, no accepted live-location reading, Add score state.
+
+## Comparison
+
+The implementation matches the reference's primary composition: a full-height satellite hole image, compact translucent hole navigation, a solid player-to-green line, a centered yardage pill, player and green markers, a floating GPS action, imagery attribution, and a bottom score dock. The header, line, pill, and score dock remain legible over the imagery. The implementation intentionally retains DFL typography, team identity, navy surfaces, and green scoring action instead of copying TheGrint branding or phone chrome.
+
+The desktop panel is constrained while the mobile breakpoint fills the viewport. The implementation's course terrain differs from the reference because the two views depict different courses. Its pins also retain the existing DFL marker language. These are P3 differences only.
+
+## Interaction and runtime checks
+
+- Opened GPS from the member tournament screen.
+- Advanced through all nine physical Rolla holes and confirmed each loaded its own imagery, line, official yardage, and fallback image; repeated-nine event numbering uses the corresponding physical-hole geometry.
+- Tapped Add score inside GPS and confirmed the map closed and the existing score-entry sheet opened.
+- Confirmed normal map tiles loaded with a static Esri image underneath as a visible fallback.
+- Confirmed no new console errors after the final reload and interaction pass.
+
+## Comparison history
+
+1. Initial state — P0: a missing position was converted to zero yards, allowing the map to dereference nonexistent coordinates and remain an empty blue box. The external map loader also did not wait for both script and stylesheet readiness.
+2. First corrected state — P1: imagery rendered, but framed only the published landing-target segment because that coordinate had been treated as the tee.
+3. Final state: null-distance handling was corrected, the loader waits for both resources, a satellite fallback was added, and the tee is projected from the green through the published fairway target using the official hole yardage.
+
+No P0, P1, or P2 issues remain.
+
+final result: passed

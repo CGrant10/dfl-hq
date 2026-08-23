@@ -169,11 +169,12 @@ describe("the supported golf GPS courses", () => {
     expect(source).toMatch(/yards to Hole \$\{hole\} green|label:/);
   });
 
-  it("keeps nine explicit Rolla tee targets for hole-only framing", () => {
+  it("keeps nine explicit Rolla fairway targets for hole-only framing", () => {
     const source = fs.readFileSync("js/golf-gps-rolla-beta.js", "utf8");
-    const teeConfig = source.split("teeTargets:")[1].split("holeTargets:")[0];
-    const targets = [...teeConfig.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
+    const fairwayConfig = source.split("fairwayTargets:")[1].split("holeTargets:")[0];
+    const targets = [...fairwayConfig.matchAll(/^\s*(\d+):\{lat:([-\d.]+),lng:([-\d.]+)\}/gm)];
     expect(targets.map((match) => Number(match[1]))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(source).toContain("projects the tee along that bearing");
   });
 
   it("keeps the DFL app navigation visible during a Quick Round", () => {
@@ -212,5 +213,15 @@ describe("the supported golf GPS courses", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');
     expect(source).not.toContain('value!=null?"YDS LIVE"');
+  });
+
+  it("renders a full-hole satellite GPS experience with an imagery fallback", () => {
+    const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    expect(source).toContain("Promise.all([stylesheet,library])");
+    expect(source).toContain("World_Imagery/MapServer/export");
+    expect(source).toContain('className="dfl-gps-panel is-hole-experience"');
+    expect(source).toContain("dfl-gps-distance-pill");
+    expect(source).toContain("data-gps-score");
+    expect(source).toContain('color:"#fff",weight:3');
   });
 });

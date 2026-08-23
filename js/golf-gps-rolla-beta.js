@@ -6,8 +6,9 @@ setupCourseGps({
   courseRe:/(rolla\s*(country|municipal)?|rolla.*golf)/i,
   mapQuery:"Rolla Country Club Rolla North Dakota",
   courseCenter:[48.89628,-99.68236],
-  // Tee and green centers from the published Rolla hole maps.
-  teeTargets:{
+  // Published landing targets establish each fairway's bearing. The GPS
+  // projects the tee along that bearing using the event's official yardage.
+  fairwayTargets:{
     1:{lat:48.894550702551264,lng:-99.68332740495052},
     2:{lat:48.89722812388267,lng:-99.68126123911524},
     3:{lat:48.89824089778316,lng:-99.68205699039018},
