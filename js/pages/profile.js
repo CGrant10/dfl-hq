@@ -411,7 +411,8 @@ function duesCard(rows) {
 // ---------------------------- appearance -----------------------------
 
 /*
-  Light or dark, and by default neither - it follows the phone.
+  Light, Fairway Light, dark, or Medicine Wheel, with an option to follow
+  the phone.
 
   This replaced a "Team colours" card that could not work: it fed NFL team ids
   into a map that only ever held theme ids, so every pick collapsed to the
@@ -508,7 +509,7 @@ function modeNote() {
   they had just told the app which club they support. The top card's editor
   now offers "use these colours as my app theme" next to the club picker.
 
-  What is left here is the four base palettes, which are genuinely a
+  What is left here is the base palettes, which are genuinely a
   device-level choice and have nothing to do with identity.
 */
 function appearanceCard() {
