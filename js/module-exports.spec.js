@@ -196,6 +196,18 @@ describe("the supported golf GPS courses", () => {
     expect(navCss).not.toContain("color:#f5f7fa !important");
   });
 
+  it("offers a synchronized Fairway Light app palette", () => {
+    const theme = fs.readFileSync("js/theme.js", "utf8");
+    const memberScope = fs.readFileSync("js/member-theme-scope.js", "utf8");
+    const schema = fs.readFileSync("theme_sync_schema.sql", "utf8");
+    expect(theme).toContain('fairway: {');
+    expect(theme).toContain('{ id: "fairway", name: "Fairway Light" }');
+    expect(theme).toContain('name === "light" || name === "fairway"');
+    expect(theme).toContain('setAttribute("data-palette", name)');
+    expect(memberScope).toContain('"fairway"');
+    expect(schema).toContain("'system', 'dark', 'light', 'fairway', 'medicine'");
+  });
+
   it("shows only the current hole maximum in the Quick Round GPS badge", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');

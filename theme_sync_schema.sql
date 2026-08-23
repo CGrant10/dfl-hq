@@ -13,7 +13,7 @@
 -- app, and the app must paint immediately rather than wait for a query.
 --
 -- WHAT THE COLUMN HOLDS. The same strings the picker already stores:
--- "system", "dark", "light", "medicine", or "team:KC" for one of the 32
+-- "system", "dark", "light", "fairway", "medicine", or "team:KC" for one of the 32
 -- clubs. Validated with a regex rather than an enum so adding a palette
 -- stays a one-line change in theme.js, which is how that file is built.
 --
@@ -28,18 +28,14 @@
 alter table public.members
   add column if not exists theme_mode text;
 
-do $$
-begin
-  if not exists (select 1 from pg_constraint where conname = 'members_theme_mode_shape') then
-    alter table public.members
-      add constraint members_theme_mode_shape
-      check (
-        theme_mode is null
-        or theme_mode in ('system', 'dark', 'light', 'medicine')
-        or theme_mode ~ '^team:[A-Z]{2,3}$'
-      );
-  end if;
-end $$;
+alter table public.members drop constraint if exists members_theme_mode_shape;
+alter table public.members
+  add constraint members_theme_mode_shape
+  check (
+    theme_mode is null
+    or theme_mode in ('system', 'dark', 'light', 'fairway', 'medicine')
+    or theme_mode ~ '^team:[A-Z]{2,3}$'
+  );
 
 -- ---------------------------------------------------------------------
 -- One member-scoped write, the same shape as the rest of the app's RPCs.
@@ -65,7 +61,7 @@ begin
   -- rather than rejected: a newer client that learns a palette this schema
   -- has never heard of must not have its save fail outright.
   if clean is not null
-     and clean not in ('system', 'dark', 'light', 'medicine')
+     and clean not in ('system', 'dark', 'light', 'fairway', 'medicine')
      and clean !~ '^team:[A-Z]{2,3}$' then
     clean := null;
   end if;

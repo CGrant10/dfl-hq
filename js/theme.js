@@ -1,5 +1,5 @@
 // =====================================================================
-// DFL HQ - one crest, three palettes
+// DFL HQ - one crest, four base palettes
 // ---------------------------------------------------------------------
 // TEAM PALETTES ARE BACK, AND THIS TIME THEY WORK. The first attempt fed
 // NFL team ids into MODES, which only held theme ids, so every choice
@@ -10,7 +10,7 @@
 // have a primary that is effectively black); it is lifted along its own
 // hue until it clears the contrast bar below.
 //
-// So the picker has four fixed entries - three real palettes and one that
+// So the picker has five fixed entries - four real palettes and one that
 // is the absence of a choice - and a club palette is offered next to the
 // favourite-club picker on the profile instead of as a 36-entry list. See
 // MODES, PICKABLE and modeOptions() below; those are generated, so if they
@@ -21,6 +21,7 @@
 //   system              follow the OS, and keep following it if it changes
 //   dark                force dark
 //   light               force light
+//   fairway             force a golf-inspired blue/green light palette
 //
 // This header used to say "one palette, two modes" and that Medicine Wheel
 // was gone. It came back as the default; nobody updated the comment.
@@ -147,6 +148,35 @@ const MODES = {
   },
 
   /*
+    FAIRWAY LIGHT.
+
+    A golf-first light palette: bright scorecard surfaces, deep blue
+    structure, and green action/status accents. It deliberately keeps the
+    same token shape as Light so every screen remains accessible and native
+    controls still use their light appearance.
+  */
+  fairway: {
+    bg: "#f1f6f3", bg2: "#ffffff", bg3: "#e4efe9",
+    line: "#c4d8ce", lineSoft: "#deebe4",
+    text: "#0b2b40", muted: "#527080", chalk: "#0b2b40",
+    bodyText: "#244656",
+    hover: "#dcebe3", hoverSoft: "rgba(7,72,50,.04)",
+    controlLine: "#6f9182", controlBg: "rgba(255,255,255,.88)",
+    accent: "#056936", accent2: "#075077",
+    fill: "#119b57", fill2: "#0873a6",
+    onAccent: "#ffffff",
+    ok: "#056936", okBg: "rgba(5,105,54,.10)", okLine: "#8bc7a6",
+    warnInk: "#805200", warnBg: "rgba(180,119,0,.11)", warnLine: "#ddc483",
+    dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
+    scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
+    topbarA: "#07344d", topbarB: "#082c40",
+    heroA: "#ffffff", heroWash: "rgba(17,155,87,.055)",
+    toastBg: "#082c40", onToast: "#f7fffb",
+    milestone: "#765c0d",
+    shadow: "0 1px 3px rgba(11,43,64,.10)",
+  },
+
+  /*
     MEDICINE WHEEL.
 
     Built on the four directional colours - black, red, yellow, white - with
@@ -185,7 +215,7 @@ const MODES = {
 
 /* The modes somebody can actually choose. "system" is not one of them - it
    is the absence of a choice - and anything else in storage is ignored. */
-const PICKABLE = ["dark", "light", "medicine"];
+const PICKABLE = ["dark", "light", "fairway", "medicine"];
 
 /*
   ONE MediaQueryList, held at module scope for the life of the page.
@@ -304,7 +334,8 @@ function apply() {
     medicine is a dark palette, so it declares dark. This is a hint, not a
     repaint: it costs nothing and no other rule can achieve it.
   */
-  s.setProperty("color-scheme", name === "light" ? "light" : "dark");
+  const lightSurface = name === "light" || name === "fairway";
+  s.setProperty("color-scheme", lightSurface ? "light" : "dark");
 
   s.setProperty("--bg", m.bg);
   s.setProperty("--bg-2", m.bg2);
@@ -395,9 +426,11 @@ function apply() {
     club goes in its own attribute, where a rule can reach it if it ever
     needs to.
   */
-  const token = isTeamMode(name) ? "team" : name;
+  const token = isTeamMode(name) ? "team" : lightSurface ? "light" : name;
   document.documentElement.setAttribute("data-mode", token);
   document.body?.setAttribute("data-mode", token);
+  document.documentElement.setAttribute("data-palette", name);
+  document.body?.setAttribute("data-palette", name);
   const club = codeOfMode(name);
   for (const el of [document.documentElement, document.body]) {
     if (!el) continue;
@@ -443,6 +476,7 @@ export function modeOptions() {
     { id: "system", name: "Match my phone" },
     { id: "dark", name: "Dark" },
     { id: "light", name: "Light" },
+    { id: "fairway", name: "Fairway Light" },
     { id: "medicine", name: "Medicine Wheel" },
   ];
 }
