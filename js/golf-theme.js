@@ -1,15 +1,16 @@
 /* =====================================================================
-   golf-theme.js - Medicine Wheel belongs to Golf content, not app chrome
+   golf-theme.js - Golf and Polls use a light content surface
    ===================================================================== */
 
-const GOLF_CONTENT_CLASS = "golf-medicine-content";
+const LIGHT_ROUTE_CLASS = "route-light-content";
 
 const onGolf = () => (location.hash || "#/home").split("?")[0] === "#/golf";
+const onLightRoute = () => ["#/golf", "#/polls"].includes((location.hash || "#/home").split("?")[0]);
 
-/* Mark the route instead of repainting :root. The Golf stylesheet freezes
-   #view while the shell continues to follow the member's profile theme. */
+/* Mark the route instead of repainting :root. The content view switches to
+   light while the shell continues to follow the member's profile theme. */
 export function syncGolfContentTheme() {
-  document.body?.classList.toggle(GOLF_CONTENT_CLASS, onGolf());
+  document.body?.classList.toggle(LIGHT_ROUTE_CLASS, onLightRoute());
 }
 
 /*

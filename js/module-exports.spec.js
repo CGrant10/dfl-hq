@@ -176,14 +176,14 @@ describe("the supported golf GPS courses", () => {
     expect(source).not.toMatch(/body\.gqm-focus \.bottomline[^`]+display:none/);
   });
 
-  it("scopes the Medicine Wheel palette to Golf content instead of the app shell", () => {
+  it("scopes the light palette to Golf and Polls content instead of the app shell", () => {
     const source = fs.readFileSync("js/golf-theme.js", "utf8");
     const golfCss = fs.readFileSync("css/golf.css", "utf8");
     const navCss = fs.readFileSync("css/nav-neutral.css", "utf8");
     expect(source).not.toContain("pinMode(");
-    expect(source).toContain("classList.toggle(GOLF_CONTENT_CLASS, onGolf())");
-    expect(golfCss).toContain("body.golf-medicine-content #view");
-    expect(golfCss).not.toMatch(/body\.golf-medicine-content\s+\.(?:topbar|tabbar|whoami)/);
+    expect(source).toContain("classList.toggle(LIGHT_ROUTE_CLASS, onLightRoute())");
+    expect(golfCss).toContain("body.route-light-content #view");
+    expect(golfCss).not.toMatch(/body\.route-light-content\s+\.(?:topbar|tabbar|whoami)/);
     expect(navCss).toContain("color:var(--muted) !important");
     expect(navCss).not.toContain("color:#f5f7fa !important");
   });

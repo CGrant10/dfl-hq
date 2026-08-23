@@ -41,7 +41,6 @@ async function loadVotes() {
 }
 
 export async function render(view) {
-  document.body.classList.add("polls-focus");
   const me    = currentMember();
   const admin = isAdmin();
 
@@ -136,10 +135,6 @@ export async function render(view) {
     if (toggleBtn) return togglePoll(view, toggleBtn);
     if (resetBtn)  return resetVotes(view, resetBtn);
   });
-}
-
-export function leave() {
-  document.body.classList.remove("polls-focus");
 }
 
 // ------------------------------- voting -------------------------------
