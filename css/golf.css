@@ -303,3 +303,35 @@ body.golf-content #view{
   min-height:calc(100dvh - 132px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   border-radius:0 0 var(--radius) var(--radius);
 }
+
+/* A low-priority theme preview that lives with an opened event, away from
+   scoring controls. It is a text-sized utility instead of another CTA. */
+.golf-fairway-row{
+  display:flex;
+  flex:0 0 auto;
+  justify-content:flex-end;
+  padding:3px 14px 5px;
+  background:var(--bg);
+}
+.tb-shell>.golf-fairway-row,.gqm-focus-shell>.golf-fairway-row{
+  background:var(--bg-2);
+  border-bottom:1px solid var(--line-soft);
+}
+.golf-fairway-try{
+  min-height:26px;
+  padding:3px 5px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:700 10px/1 var(--font-display,inherit);
+  letter-spacing:.07em;
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  text-transform:uppercase;
+}
+.golf-fairway-try:hover,.golf-fairway-try:focus-visible{color:var(--accent-2)}
+.golf-fairway-try:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;border-radius:4px}
+.golf-fairway-try[aria-pressed="true"]{color:var(--accent-2)}
+.golf-fairway-try:disabled{cursor:default;opacity:.72}
+.gqm-focus-shell.is-scorecard>.golf-fairway-row{display:none}
