@@ -7,8 +7,10 @@ import { label as boardLabel, progress as boardProgress, roundBoard } from "./go
 import { betaCaptainChoices, betaFormatStatus, betaMatchCount, betaRoundName, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
 import { betaEditableSideIds, betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
 import { holeResult } from "./golf-score-result.js";
+import { flush, onQueueChange, pendingCountSides, pendingForSide, queueSideScore, refusals } from "./golf-offline.js";
 
-const activeHole = new Map(), activeFormat = new Map(), setupMode = new Map(), setupSection = new Map(), saveTimers = new Map();
+const activeHole = new Map(), activeFormat = new Map(), setupMode = new Map(), setupSection = new Map();
+let stopSyncWatch = () => {};
 const route = () => { const [path, raw = ""] = location.hash.split("?"); const q = new URLSearchParams(raw); return { golf: path === "#/golf", id: Number(q.get("id")) || 0, classic: q.get("classic") === "1", setup: q.get("setup") === "1" }; };
 const nameOf = m => m?.golf_name || m?.display_name || "Golfer";
 const playerName = (p, names) => p?.member_id ? names.get(String(p.member_id)) : p?.guest_name || "Golfer";
@@ -19,10 +21,64 @@ const scoreKey = (side, hole) => `${side}:${hole}`;
 const sideName = side => pairName(side.players.map(p => p.name));
 const scoringOf = round => round?.scoring === "match" ? "match" : "strokes";
 const captainName = (team, names) => team?.captain_member_id == null ? "" : names.get(String(team.captain_member_id)) || "";
+const betaCacheKey = outingId => `dfl.golf.beta.${outingId}`;
+const betaHoleKey = outingId => `dfl.golf.beta.hole.${outingId}`;
 const scoreMark = (score, par, empty = "—") => {
   const value = Number(score) || 0, result = holeResult(value, par);
   return `<span class="tb-card-mark ${result.mark}" aria-label="${value ? `${value} strokes, ${result.label.toLowerCase()}` : "No score"}">${value || empty}</span>`;
 };
+
+function rememberHole(outingId, hole) {
+  activeHole.set(outingId, hole);
+  try { localStorage.setItem(betaHoleKey(outingId), String(hole)); } catch {}
+}
+
+function rememberedHole(outingId) {
+  if (activeHole.has(outingId)) return Number(activeHole.get(outingId)) || 1;
+  try { return Number(localStorage.getItem(betaHoleKey(outingId))) || 1; } catch { return 1; }
+}
+
+function cacheBetaState(state) {
+  try {
+    localStorage.setItem(betaCacheKey(state.outing.id), JSON.stringify(state, (_, value) =>
+      value instanceof Map ? { __dflMap: [...value.entries()] } : value));
+  } catch {}
+}
+
+function cachedBetaState(outingId) {
+  try {
+    const raw = localStorage.getItem(betaCacheKey(outingId));
+    if (!raw) return null;
+    const state = JSON.parse(raw, (_, value) => value?.__dflMap ? new Map(value.__dflMap) : value);
+    const sides = new Map(state.sides.map(side => [String(side.id), side]));
+    for (const entry of state.rounds) for (const battle of entry.battles) {
+      battle.sides = battle.sides.map(side => sides.get(String(side.id)) || side);
+    }
+    for (const side of state.sides) for (const [hole, strokes] of pendingForSide(side.id)) {
+      const key = scoreKey(side.id, hole);
+      if (strokes == null) { side.strokes.delete(hole); state.scoreRows.delete(key); }
+      else { side.strokes.set(hole, Number(strokes)); state.scoreRows.set(key, { ...(state.scoreRows.get(key) || {}), side_id: side.id, hole, strokes, pending: true }); }
+    }
+    refreshBattleResults(state);
+    return state;
+  } catch { return null; }
+}
+
+function syncText(state) {
+  const sideIds = state.sides.map(side => side.id), pending = pendingCountSides(sideIds), failed = refusals(state.outing.id).length;
+  if (failed) return `${failed} score${failed === 1 ? "" : "s"} need attention`;
+  if (!navigator.onLine) return pending ? `Offline · ${pending} saved on this phone` : "Offline · ready to keep scoring";
+  if (pending) return `${pending} score${pending === 1 ? "" : "s"} waiting to sync`;
+  return state.stale ? "Offline copy · ready to score" : "Ready · all scores synced";
+}
+
+function refreshBattleResults(state) {
+  for (const entry of state.rounds) for (const battle of entry.battles) {
+    battle.result = battle.sides.length === 2
+      ? battleResult(battle.sides[0].strokes, battle.sides[1].strokes, roundHoles(entry.round), scoringOf(entry.round))
+      : null;
+  }
+}
 
 function injectPlayType() {
   const select = document.querySelector("#i_event_type");
@@ -36,22 +92,20 @@ function ensureStyles() {
   const style = document.createElement("style"); style.id = "golf-tournament-beta-style";
   style.textContent = `body.tb-focus{height:100dvh;overflow:hidden;background:#171717}body.tb-focus .golf-event-head,body.tb-focus .guest-strip{display:none!important}body.tb-focus #view,body.tb-focus #golf-outing{height:100%;overflow:hidden}body.tb-focus #view{max-width:none!important;padding:0!important}.tb-shell{display:flex;flex-direction:column;width:min(100%,760px);height:100%;margin:auto;overflow:hidden;background:linear-gradient(#24211d,#171717 65%);color:#f8f5ec}.tb-head{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;min-height:78px;padding:8px 12px;background:#171717;border-bottom:1px solid #f4c43055}.tb-circle{display:grid;place-items:center;width:42px;height:42px;border:1px solid #ffffff2d;border-radius:50%;background:#2a2722;color:#fff;font:900 22px/1 inherit;text-decoration:none}.tb-hole{text-align:center}.tb-hole strong{display:block;font-size:23px}.tb-hole small{display:block;margin-top:5px;color:#b9b2a6;font-size:9px;text-transform:uppercase}.tb-sub{display:flex;justify-content:space-between;gap:10px;padding:9px 13px;background:#211f1b;border-bottom:1px solid #ffffff18}.tb-sub small{display:block;color:#f4c430;font-size:9px;font-weight:900;text-transform:uppercase}.tb-sub strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.tb-link{color:#f4c430;font-size:10px;font-weight:900;text-decoration:none}.tb-play,.tb-setup{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}.tb-play{padding:10px 12px 90px}.tb-setup{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;align-content:start;gap:10px;padding:12px 12px 90px}.tb-box{padding:12px;border:1px solid #ffffff1e;border-radius:15px;background:#24211d}.tb-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.tb-title h2,.tb-title h3{margin:0;font-size:17px}.tb-title span{color:#f4c430;font-size:10px;font-weight:900}.tb-copy{margin:7px 0 0;color:#b9b2a6;font-size:10px;line-height:1.45}.tb-add{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:9px}.tb-add input,.tb-add select,.tb-select,.tb-team-name{min-height:40px;border:1px solid #ffffff28;border-radius:10px;background:#171717;color:#fff;padding:0 10px}.tb-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:9px}.tb-chip{display:flex;justify-content:space-between;min-width:0;padding:7px 8px;border-radius:9px;background:#171717;font-size:11px}.tb-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-chip button{border:0;background:transparent;color:#e8a39e}.tb-mode,.tb-round-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px}.tb-mode button,.tb-round-tabs button{min-height:40px;border:1px solid #ffffff26;border-radius:11px;background:#2a2722;color:#fff;font-weight:900}.tb-mode button.is-active,.tb-round-tabs button.is-active{border-color:#f4c430;background:#f4c430;color:#171717}.tb-panel[hidden],.tb-scorecard[hidden],.tb-sheet[hidden]{display:none!important}.tb-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.tb-actions .wide{grid-column:1/-1}.tb-team-edit{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:7px}.tb-place{display:grid;grid-template-columns:1fr minmax(120px,.8fr);align-items:center;gap:7px;padding:6px 0;border-top:1px solid #ffffff12;font-size:11px}.tb-ready{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}.tb-ready span{padding:7px;border-radius:8px;background:#171717;color:#d4938e;font-size:9px;text-align:center}.tb-ready .is-ready{color:#8fd18b}.tb-round-setup{margin-top:10px;padding-top:10px;border-top:1px solid #ffffff16}.tb-round-tools{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.tb-matchup{margin-top:9px;padding:9px;border:1px solid #ffffff18;border-radius:11px;background:#1b1a18}.tb-matchup-head{display:flex;justify-content:space-between;color:#f4c430;font-size:10px;font-weight:900}.tb-side{display:grid;grid-template-columns:90px 1fr;gap:7px;align-items:center;margin-top:7px}.tb-side b{overflow:hidden;text-overflow:ellipsis;font-size:10px}.tb-seats{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}.tb-seats.single{grid-template-columns:1fr}.tb-seats select{width:100%;min-height:36px;border:1px solid #ffffff22;border-radius:8px;background:#292622;color:#fff;font-size:10px}.tb-vs{text-align:center;color:#8f887e;font-size:8px;font-weight:900;text-transform:uppercase}.tb-status{min-height:16px;color:#f4c430;font-size:10px;text-align:center}.tb-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:13px;border:1px solid #f4c43055;border-radius:15px;background:#211f1b}.tb-score-team{text-align:center}.tb-score-team strong{display:block;color:#f4c430;font-size:42px}.tb-score-team span{font-size:12px;font-weight:900}.tb-score-vs{color:#8f887e;font-size:9px}.tb-round-tabs{margin-top:9px}.tb-leader,.tb-match-card{margin-top:9px;border:1px solid #ffffff18;border-radius:12px;background:#211f1b;overflow:hidden}.tb-leader-head{display:flex;justify-content:space-between;padding:7px 10px;color:#f4c430;font-size:9px;font-weight:900;text-transform:uppercase}.tb-leader-row{display:grid;grid-template-columns:24px 1fr auto;gap:7px;align-items:center;min-height:48px;padding:7px 9px;border-top:1px solid #ffffff12}.tb-leader-row strong,.tb-leader-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-leader-row small{color:#aaa196;font-size:8px}.tb-leader-row em{color:#f4c430;font-size:16px;font-style:normal;font-weight:950}.tb-match-card{padding:9px}.tb-match-title{display:flex;justify-content:space-between;gap:7px;font-size:10px}.tb-match-title span{color:#b9b2a6}.tb-score-side{display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center;margin-top:7px}.tb-score-side strong,.tb-score-side small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-score-side small{color:#aaa196;font-size:9px}.tb-score{display:grid;place-items:center;min-height:46px;border:1px solid #ffffff29;border-radius:11px;background:#28251f;color:#fff;font:900 10px inherit}.tb-score b{display:block;color:#f4c430;font-size:18px}.tb-score.is-readonly{opacity:.58}.tb-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.tb-bottom.is-member{grid-template-columns:1fr}.tb-empty{padding:14px;color:#b9b2a6;font-size:11px;text-align:center}.tb-scorecard{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;min-height:0;background:#f5f5f4;color:#263b49}.tb-card-head{display:flex;flex:0 0 auto;align-items:center;gap:10px;min-height:64px;padding:10px 12px;background:#fff;border-bottom:1px solid #dfe5e8}.tb-card-head h2{min-width:0;margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-card-back{min-height:42px;border:0;border-radius:9px;background:#477fbd;color:#fff;font-weight:900}.tb-scorecard-field{flex:0 1 auto;max-height:min(44dvh,370px);overflow-y:auto;overscroll-behavior:contain}.tb-table-wrap{flex:1 1 auto;min-height:180px;overflow:auto;overscroll-behavior:contain;background:#fff}.tb-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;background:#fff;color:#263b49}.tb-table th,.tb-table td{min-width:58px;height:46px;padding:6px;border:0;border-right:1px solid #ccd2d6;border-bottom:1px solid #ccd2d6;color:#263b49;text-align:center}.tb-table thead th{position:sticky;top:0;z-index:3;background:#eef3f6}.tb-table .sticky{position:sticky;left:0;z-index:2;min-width:120px;background:#fff;text-align:left}.tb-table thead .sticky{z-index:4;background:#eef3f6}.tb-sheet{position:fixed;left:50%;bottom:70px;z-index:85;width:min(calc(100% - 16px),730px);padding:10px 14px 14px;transform:translateX(-50%);border-radius:20px 20px 0 0;background:#f9fbfc;color:#27485a;box-shadow:0 0 0 100vmax #0008}.tb-sheet-head{display:grid;grid-template-columns:40px 1fr 64px;align-items:center;gap:9px}.tb-avatar{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#c73a33;color:#fff;font-size:11px;font-weight:950}.tb-done{min-height:40px;border:0;border-radius:9px;background:#477fbd;color:#fff;font-weight:900}.tb-controls{display:grid;grid-template-columns:repeat(2,minmax(120px,164px));justify-content:center;gap:10px;padding-top:10px}.tb-label{display:block;text-align:center;font-size:10px;font-weight:900}.tb-step{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;min-height:40px;border-radius:14px;background:#d8e8f3}.tb-step button{width:29px;height:29px;margin:auto;border:0;border-radius:50%;background:#fff;color:#17384f;font-size:20px;font-weight:950;line-height:1}.tb-step output{text-align:center;font-size:21px;font-weight:900}.tb-circle:focus-visible,.tb-link:focus-visible,.tb-fold summary:focus-visible,.tb-step button:focus-visible,.tb-card-back:focus-visible{outline:3px solid #f4c430;outline-offset:2px}.tb-classic-banner{margin:10px;padding:10px;border:1px solid #f4c43066;border-radius:10px}.tb-classic-banner a{color:#f4c430}`;
   style.textContent += `.tb-captain{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:7px;margin:10px 0}.tb-captain span{color:#f4c430;font-size:9px;font-weight:900;text-transform:uppercase}.tb-ready{grid-template-columns:repeat(2,1fr)}.tb-score-team small{display:block;margin-top:3px;color:#b9b2a6;font-size:9px}.tb-fold{border:1px solid #ffffff1e;border-radius:15px;background:#24211d;overflow:hidden}.tb-fold[open]{height:max-content}.tb-fold summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:60px;padding:10px 13px;cursor:pointer;list-style:none}.tb-fold summary::-webkit-details-marker{display:none}.tb-fold summary span{min-width:0}.tb-fold summary small,.tb-fold summary strong{display:block}.tb-fold summary small{color:#f4c430;font-size:8px;font-weight:900;letter-spacing:.1em}.tb-fold summary strong{margin-top:3px;font-size:15px}.tb-fold summary em{color:#b9b2a6;font-size:9px;font-style:normal;font-weight:900;text-align:right}.tb-fold summary em.is-ready{color:#8fd18b}.tb-fold summary:after{content:'+';color:#f4c430;font-size:20px;font-weight:900}.tb-fold[open] summary:after{content:'−'}.tb-fold[open] summary{border-bottom:1px solid #ffffff14}.tb-fold-body{padding:11px 12px 13px}.tb-team-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0 12px}.tb-team-actions .btn{min-height:42px;border-color:#ffffff24;background:#2a2722;color:#f8f5ec}.tb-team-actions .tb-reset{grid-column:1/-1;border-color:#a65b56;background:transparent;color:#e8a39e}.tb-team-card{margin-top:10px;padding:11px;border:1px solid #ffffff1c;border-left:3px solid var(--tb-team-color);border-radius:12px;background:#1b1a18}.tb-team-card-head{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px}.tb-team-dot{width:10px;height:10px;border-radius:50%;background:var(--tb-team-color)}.tb-team-card .tb-team-name{width:100%;min-width:0}.tb-team-save{min-height:40px;padding-inline:12px}.tb-roster-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:9px;border-top:1px solid #ffffff12}.tb-roster-head strong{color:#f4c430;font-size:9px;text-transform:uppercase}.tb-roster-head small{color:#aaa196;font-size:9px}.tb-roster-list .tb-place:first-child{border-top:0}.tb-roster-list .tb-place{grid-template-columns:minmax(0,1fr) minmax(125px,.8fr)}.tb-unassigned{margin-top:10px;padding:9px 11px;border:1px dashed #ffffff27;border-radius:11px;background:#171717}.tb-unassigned>strong{display:block;margin-bottom:4px;color:#b9b2a6;font-size:9px;text-transform:uppercase}.tb-matchup-grid{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);align-items:center;gap:7px;margin-top:8px}.tb-match-side{min-width:0}.tb-match-side>b{display:block;margin-bottom:5px;color:#f4c430;font-size:10px;text-align:center}.tb-match-side .tb-seats{grid-template-columns:1fr}.tb-seat{display:block;min-width:0}.tb-seat small{display:block;margin-bottom:3px;color:#aaa196;font-size:8px;font-weight:900;text-transform:uppercase}.tb-seat select{width:100%}.tb-matchup-grid .tb-vs{font-size:10px}.tb-member-entry{margin-top:10px;border:1px solid #ffffff1e;border-radius:14px;overflow:hidden;background:#211f1b}.tb-member-hint{padding:9px 12px;border-bottom:1px solid #ffffff12;color:#b9b2a6;font-size:10px}.tb-quick-player{display:grid;grid-template-columns:62px minmax(0,1fr) 112px;align-items:center;gap:10px;min-height:126px;padding:14px 12px}.tb-quick-player .tb-avatar{width:54px;height:54px;font-size:19px}.tb-quick-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;font-weight:900}.tb-quick-status{margin-top:6px;color:#f4c430;font-size:16px;font-weight:900}.tb-quick-status small{color:#aaa196;font-size:10px}.tb-quick-add{min-height:78px;border:1px solid #ffffff29;border-radius:12px;background:#28251f;color:#fff;font:900 15px/1.05 inherit}.tb-quick-add span,.tb-quick-add small{display:block}.tb-quick-add span{margin-bottom:4px;font-size:20px}.tb-quick-add small{margin-top:4px;color:#aaa196;font-size:9px}.tb-score-card-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px;background:#fff}.tb-score-card-tools button{min-height:40px}.tb-card-mark{display:inline-grid;place-items:center;width:28px;height:28px;font-weight:950;line-height:1}.tb-card-mark.m-birdie,.tb-card-mark.m-eagle{border:2px solid #23834b;border-radius:50%;background:#e9f7ef;color:#176338}.tb-card-mark.m-eagle{box-shadow:0 0 0 2px #fff,0 0 0 4px #23834b}.tb-card-mark.m-bogey,.tb-card-mark.m-dbl{border:2px solid #c73a33;border-radius:4px;background:#fff0ef;color:#a62f29}.tb-card-mark.m-dbl{box-shadow:0 0 0 2px #fff,0 0 0 4px #c73a33}.tb-score .tb-card-mark{width:27px;height:27px}.tb-score .tb-card-mark.m-birdie,.tb-score .tb-card-mark.m-eagle{background:#183d29;color:#8fe0ae}.tb-score .tb-card-mark.m-bogey,.tb-score .tb-card-mark.m-dbl{background:#4a201e;color:#ffaaa5}.tb-sheet.tb-quick-sheet{bottom:0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}.tb-quick-sheet .tb-sheet-head{display:block;text-align:center}.tb-quick-sheet .tb-sheet-head .tb-avatar{display:none}.tb-quick-sheet .tb-sheet-head small{display:block;margin-top:5px;color:#667985}.tb-quick-sheet .tb-controls{display:block}.tb-quick-sheet .tb-step{grid-template-columns:64px 1fr 64px;gap:12px;background:transparent}.tb-quick-sheet .tb-step button{width:100%;height:58px;border:1px solid #9eb4c2;border-radius:12px;background:#e4eef4;color:#17384f;font-size:32px;font-weight:950;line-height:1;box-shadow:0 1px 0 #fff inset}.tb-quick-sheet .tb-step button:active{background:#cbdde8;transform:scale(.98)}.tb-quick-sheet .tb-step output{display:grid;place-items:center;height:58px;border:1px solid #ccd2d6;border-radius:12px;background:#fff;color:#27485a;font-size:28px}.tb-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.tb-sheet-actions.has-clear{grid-template-columns:1fr 1fr 1fr}.tb-sheet-actions button{min-height:48px}.tb-clear-hole{border-color:#c98682!important;background:#fff0ef!important;color:#9f2f2a!important}@media(max-width:520px){.tb-matchup-grid{grid-template-columns:1fr}.tb-matchup-grid .tb-vs{padding:2px}.tb-quick-player{grid-template-columns:54px minmax(0,1fr) 104px}.tb-roster-head{align-items:flex-start;flex-direction:column;gap:2px}}`;
+  style.textContent += `.tb-sync{padding:6px 12px;border-bottom:1px solid #ffffff12;background:#171717;color:#8fd18b;font-size:9px;font-weight:900;text-align:center;text-transform:uppercase;letter-spacing:.06em}`;
   document.head.append(style);
 }
 
-async function persistScore(state, sideId, hole, strokes, putts) {
+function persistScore(state, sideId, hole, strokes, putts) {
   if (!canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: sideId })) return;
   const key = scoreKey(sideId, hole), previous = state.scoreRows.get(key);
-  if (strokes) state.scoreRows.set(key, { ...(previous || {}), side_id: sideId, hole, strokes, putts }); else state.scoreRows.delete(key);
-  clearTimeout(saveTimers.get(key));
-  saveTimers.set(key, setTimeout(async () => {
-    let result;
-    if (!strokes) result = previous?.id ? await db().from("golf_match_scores").delete().eq("id", previous.id) : { error: null };
-    else if (previous?.id) result = await db().from("golf_match_scores").update({ strokes, putts, updated_at: new Date().toISOString() }).eq("id", previous.id).select().maybeSingle();
-    else result = await db().from("golf_match_scores").insert({ side_id: sideId, hole, strokes, putts, updated_at: new Date().toISOString() }).select().maybeSingle();
-    if (result.error?.code === "23505") result = await db().from("golf_match_scores").update({ strokes, putts, updated_at: new Date().toISOString() }).eq("side_id", sideId).eq("hole", hole).select().maybeSingle();
-    if (result.error) toast(result.error.message || "Score did not save", true); else if (result.data) state.scoreRows.set(key, result.data);
-  }, 350));
+  if (strokes) state.scoreRows.set(key, { ...(previous || {}), side_id: sideId, hole, strokes, putts, pending: true });
+  else state.scoreRows.delete(key);
+  const side = state.sides.find(item => String(item.id) === String(sideId));
+  if (side) { if (strokes) side.strokes.set(hole, strokes); else side.strokes.delete(hole); }
+  refreshBattleResults(state);
+  queueSideScore(state.outing.id, sideId, hole, strokes || null);
+  cacheBetaState(state);
 }
 
 const matchSides = (state, entry) => (entry?.battles || []).flatMap(b => b.sides);
@@ -116,7 +170,7 @@ function matchMarkup(state) {
   const playable = state.individual ? state.rounds.filter(e => e.individual) : state.rounds.filter(e => !e.individual && ["pairs", "singles"].includes(e.round.format));
   if (!playable.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf">‹</a><div class="tb-hole"><strong>MATCH</strong><small>Tournament Beta</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><div class="tb-empty">${state.organizer ? "Build the field in Setup to start scoring." : "Waiting for the commissioner to build the field."}</div></main>`;
   const wanted = activeFormat.get(state.outing.id), entry = playable.find(e => e.round.format === wanted) || playable[0]; activeFormat.set(state.outing.id, entry.round.format);
-  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, Number(activeHole.get(state.outing.id)) || 1)); activeHole.set(state.outing.id, hole);
+  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id))); rememberHole(state.outing.id, hole);
   const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot }));
   const leaders = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(g => g.rows);
   const leaderboard = `<section class="tb-leader"><div class="tb-leader-head"><span>${entry.round.format === "pairs" ? "Pairs" : "Singles"} live leaderboard</span><span>LIVE</span></div>${leaders.map((r, i) => `<div class="tb-leader-row"><span>${i + 1}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.teamName)} · ${boardProgress(r)}</small></div><em>${boardLabel(r)}</em></div>`).join("") || `<div class="tb-empty">No matchups yet.</div>`}</section>`;
@@ -130,8 +184,8 @@ function focusedMatchMarkup(state) {
   if (!playable.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back">‹</a><div class="tb-hole"><strong>MATCH</strong><small>Tournament Beta</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><div class="tb-empty">${state.organizer ? "Open Setup and build the two-team matchups." : "Waiting for the commissioner to assign the matchups."}</div></main>`;
   const wanted = activeFormat.get(state.outing.id), entry = playable.find(e => e.round.format === wanted) || playable[0];
   activeFormat.set(state.outing.id, entry.round.format);
-  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, Number(activeHole.get(state.outing.id)) || 1));
-  activeHole.set(state.outing.id, hole);
+  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id)));
+  rememberHole(state.outing.id, hole);
   const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot }));
   const leaders = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(g => g.rows);
   const tabs = playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.format}">${e.round.format === "pairs" ? "Pairs" : "Singles"}</button>`).join("")}</div>` : "";
@@ -151,7 +205,7 @@ function focusedMatchMarkup(state) {
   }).join("") : `<div class="tb-empty">You are not assigned to a ${entry.round.format === "pairs" ? "2v2" : "singles"} matchup yet.</div>`}</section>`;
   const table = `<table class="tb-table"><thead><tr><th class="sticky">Pair / golfer</th>${Array.from({ length: count }, (_, i) => i + 1).map(h => `<th>${h}<br><small>Par ${parFor(state.holes, h)}</small></th>`).join("")}<th>Total</th></tr></thead><tbody>${sides.map(s => { const total = [...s.strokes.values()].reduce((a, n) => a + n, 0); return `<tr><th class="sticky">${esc(sideName(s))}<br><small>${esc(s.teamName)}</small></th>${Array.from({ length: count }, (_, i) => i + 1).map(h => `<td>${scoreMark(s.strokes.get(h), parFor(state.holes, h))}</td>`).join("")}<td>${total || "—"}</td></tr>`; }).join("")}</tbody></table>`;
   const playBody = state.organizer ? `${scoreboard(state)}${tabs}${leaderboard}${matches}` : `${tabs}${memberEntry}`;
-  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><button class="tb-circle" data-tb-prev aria-label="Previous hole">‹</button><div class="tb-hole"><strong>HOLE ${hole}</strong><small>Par ${parFor(state.holes, hole)} · ${entry.round.format}</small></div><button class="tb-circle" data-tb-next aria-label="Next hole">›</button></header><div class="tb-sub"><div><small>${entry.round.name}</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : `<a class="tb-link" href="#/golf">GOLF HOME</a>`}</div><section class="tb-play">${playBody}<div class="tb-bottom ${state.organizer ? "" : "is-member"}"><button class="btn" data-tb-card>Scorecard</button>${state.organizer ? `<button class="btn primary" data-tb-finish ${state.outing.status === "final" ? "disabled" : ""}>${state.outing.status === "final" ? "Finished" : "Finish tournament"}</button>` : ""}</div></section><section class="tb-scorecard" hidden><header class="tb-card-head"><button class="tb-card-back" data-tb-card>‹ Back to scoring</button><h2>${entry.round.format.toUpperCase()} SCORECARD</h2></header><div class="tb-table-wrap">${table}</div></section><section class="tb-sheet tb-quick-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Enter strokes for hole ${hole}</small></div></div><div class="tb-controls"><div class="tb-step"><button data-tb-step="strokes:-1" aria-label="One fewer stroke">−</button><output data-tb-strokes>—</output><button data-tb-step="strokes:1" aria-label="One more stroke">+</button></div></div><div class="tb-sheet-actions ${state.organizer ? "has-clear" : ""}">${state.organizer ? `<button class="btn tb-clear-hole" data-tb-clear disabled>Clear hole</button>` : ""}<button class="btn" data-tb-cancel>Cancel</button><button class="btn primary" data-tb-save>Save score</button></div></section></main>`;
+  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><button class="tb-circle" data-tb-prev aria-label="Previous hole">‹</button><div class="tb-hole"><strong>HOLE ${hole}</strong><small>Par ${parFor(state.holes, hole)} · ${entry.round.format}</small></div><button class="tb-circle" data-tb-next aria-label="Next hole">›</button></header><div class="tb-sub"><div><small>${entry.round.name}</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : `<a class="tb-link" href="#/golf">GOLF HOME</a>`}</div><div class="tb-sync" data-tb-sync>${syncText(state)}</div><section class="tb-play">${playBody}<div class="tb-bottom ${state.organizer ? "" : "is-member"}"><button class="btn" data-tb-card>Scorecard</button>${state.organizer ? `<button class="btn primary" data-tb-finish ${state.outing.status === "final" ? "disabled" : ""}>${state.outing.status === "final" ? "Finished" : "Finish tournament"}</button>` : ""}</div></section><section class="tb-scorecard" hidden><header class="tb-card-head"><button class="tb-card-back" data-tb-card>‹ Back to scoring</button><h2>${entry.round.format.toUpperCase()} SCORECARD</h2></header><div class="tb-table-wrap">${table}</div></section><section class="tb-sheet tb-quick-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Enter strokes for hole ${hole}</small></div></div><div class="tb-controls"><div class="tb-step"><button data-tb-step="strokes:-1" aria-label="One fewer stroke">−</button><output data-tb-strokes>—</output><button data-tb-step="strokes:1" aria-label="One more stroke">+</button></div></div><div class="tb-sheet-actions ${state.organizer ? "has-clear" : ""}">${state.organizer ? `<button class="btn tb-clear-hole" data-tb-clear disabled>Clear hole</button>` : ""}<button class="btn" data-tb-cancel>Cancel</button><button class="btn primary" data-tb-save>${hole < count ? "Save & next" : "Save score"}</button></div></section></main>`;
 }
 
 async function assignSeat(state, roundId, sideId, rowId, participantId) {
@@ -268,18 +322,25 @@ function wireSetup(root, state) {
 }
 
 function wireMatch(root, state) {
+  stopSyncWatch();
+  const updateSync = () => { const line = root.querySelector("[data-tb-sync]"); if (line) line.textContent = syncText(state); };
+  const stopQueue = onQueueChange(updateSync);
+  addEventListener("online", updateSync); addEventListener("offline", updateSync);
+  stopSyncWatch = () => { stopQueue(); removeEventListener("online", updateSync); removeEventListener("offline", updateSync); };
+  void flush();
   const playable = state.rounds.filter(e => !e.individual && ["pairs", "singles"].includes(e.round.format));
   const entry = playable.find(e => e.round.format === activeFormat.get(state.outing.id)) || playable[0];
   if (!entry) return;
   const count = roundHoles(entry.round);
-  const move = step => { const hole = Number(activeHole.get(state.outing.id)) || 1; activeHole.set(state.outing.id, Math.max(1, Math.min(count, hole + step))); paint(); };
+  const repaint = () => { root.innerHTML = focusedMatchMarkup(state); wireMatch(root, state); };
+  const move = step => { const hole = rememberedHole(state.outing.id); rememberHole(state.outing.id, Math.max(1, Math.min(count, hole + step))); repaint(); };
   root.querySelector("[data-tb-prev]")?.addEventListener("click", () => move(-1));
   root.querySelector("[data-tb-next]")?.addEventListener("click", () => move(1));
-  root.querySelectorAll("[data-tb-format]").forEach(b => b.addEventListener("click", () => { activeFormat.set(state.outing.id, b.dataset.tbFormat); activeHole.set(state.outing.id, 1); paint(); }));
+  root.querySelectorAll("[data-tb-format]").forEach(b => b.addEventListener("click", () => { activeFormat.set(state.outing.id, b.dataset.tbFormat); rememberHole(state.outing.id, 1); repaint(); }));
   root.querySelectorAll("[data-tb-card]").forEach(b => b.addEventListener("click", () => { const play = root.querySelector(".tb-play"), card = root.querySelector(".tb-scorecard"); play.hidden = !play.hidden; card.hidden = !card.hidden; }));
   const sheet = root.querySelector("[data-tb-sheet]");
   root.querySelectorAll("[data-tb-open]").forEach(b => b.addEventListener("click", () => {
-    const sideId = Number(b.dataset.tbOpen), side = matchSides(state, entry).find(s => Number(s.id) === sideId), hole = Number(activeHole.get(state.outing.id)) || 1, row = state.scoreRows.get(scoreKey(sideId, hole)) || {};
+    const sideId = Number(b.dataset.tbOpen), side = matchSides(state, entry).find(s => Number(s.id) === sideId), hole = rememberedHole(state.outing.id), row = state.scoreRows.get(scoreKey(sideId, hole)) || {};
     if (!side || !canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: sideId })) return;
     sheet.dataset.sideId = String(sideId); sheet.dataset.strokes = String(Number(row.strokes) || parFor(state.holes, hole)); sheet.dataset.putts = String(Number(row.putts) || 0);
     sheet.querySelector("[data-tb-name]").textContent = `${sideName(side)} · Hole ${hole}`;
@@ -294,23 +355,19 @@ function wireMatch(root, state) {
     sheet.dataset.strokes = String(value); sheet.querySelector("[data-tb-strokes]").textContent = String(value);
   }));
   root.querySelector("[data-tb-clear]")?.addEventListener("click", async e => {
-    const sideId = Number(sheet.dataset.sideId), hole = Number(activeHole.get(state.outing.id)) || 1, key = scoreKey(sideId, hole);
+    const sideId = Number(sheet.dataset.sideId), hole = rememberedHole(state.outing.id);
     e.currentTarget.disabled = true;
-    clearTimeout(saveTimers.get(key));
-    saveTimers.delete(key);
-    const result = await db().from("golf_match_scores").delete().eq("side_id", sideId).eq("hole", hole);
-    if (result.error) { toast(result.error.message || "Score did not clear", true); e.currentTarget.disabled = false; return; }
-    state.scoreRows.delete(key);
+    persistScore(state, sideId, hole, 0, 0);
     sheet.hidden = true;
     toast(`Hole ${hole} cleared`);
-    paint();
+    repaint();
   });
-  root.querySelector("[data-tb-save]")?.addEventListener("click", async () => {
-    const sideId = Number(sheet.dataset.sideId), hole = Number(activeHole.get(state.outing.id)) || 1;
+  root.querySelector("[data-tb-save]")?.addEventListener("click", () => {
+    const sideId = Number(sheet.dataset.sideId), hole = rememberedHole(state.outing.id);
     persistScore(state, sideId, hole, Number(sheet.dataset.strokes), Number(sheet.dataset.putts) || 0);
     sheet.hidden = true;
-    await new Promise(resolve => setTimeout(resolve, 650));
-    paint();
+    rememberHole(state.outing.id, Math.min(count, hole + 1));
+    repaint();
   });
   root.querySelector("[data-tb-finish]")?.addEventListener("click", async e => { e.currentTarget.disabled = true; const r = await db().from("golf_outings").update({ status: "final", finalized_at: new Date().toISOString() }).eq("id", state.outing.id); if (r.error) toast(r.error.message, true); else paint(); });
 }
@@ -322,22 +379,65 @@ async function loadState(outing, organizer) {
   const matches = mr.data || [], matchIds = matches.map(m => m.id), sr = matchIds.length ? await db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds).order("slot") : { data: [] }; if (sr.error) throw sr.error;
   const sides = sr.data || [], sideIds = sides.map(s => s.id), [mpr, scr] = sideIds.length ? await Promise.all([db().from("golf_match_players").select("id,side_id,participant_id,round_id").in("side_id", sideIds).order("id"), db().from("golf_match_scores").select("id,side_id,hole,strokes,putts").in("side_id", sideIds)]) : [{ data: [] }, { data: [] }]; if (mpr.error || scr.error) throw mpr.error || scr.error;
   const teams = tr.data || [], participants = pr.data || [], names = new Map(members.map(m => [String(m.id), nameOf(m)])), tm = new Map(teams.map(t => [String(t.id), t])), pm = new Map(participants.map(p => [String(p.id), p])), mm = new Map(matches.map(m => [String(m.id), m])), scoreRows = new Map(scr.data.map(r => [scoreKey(r.side_id, r.hole), r]));
-  const builtSides = sides.map(s => { const m = mm.get(String(s.match_id)), players = mpr.data.filter(p => String(p.side_id) === String(s.id)).map(p => ({ ...p, row_id: p.id, name: playerName(pm.get(String(p.participant_id)), names) })), strokes = new Map(scr.data.filter(r => String(r.side_id) === String(s.id) && Number(r.strokes) > 0).map(r => [Number(r.hole), Number(r.strokes)])), team = tm.get(String(s.team_id)); return { ...s, match_number: m?.match_number, players, strokes, teamName: team?.name || "Individual", color: team?.color || "#477fbd" }; });
+  for (const sideId of sideIds) for (const [hole, strokes] of pendingForSide(sideId)) {
+    const key = scoreKey(sideId, hole);
+    if (strokes == null) scoreRows.delete(key);
+    else scoreRows.set(key, { ...(scoreRows.get(key) || {}), side_id: sideId, hole, strokes, pending: true });
+  }
+  const builtSides = sides.map(s => { const m = mm.get(String(s.match_id)), players = mpr.data.filter(p => String(p.side_id) === String(s.id)).map(p => ({ ...p, row_id: p.id, name: playerName(pm.get(String(p.participant_id)), names) })), strokes = new Map(scr.data.filter(r => String(r.side_id) === String(s.id) && Number(r.strokes) > 0).map(r => [Number(r.hole), Number(r.strokes)])), team = tm.get(String(s.team_id)); for (const [hole, pending] of pendingForSide(s.id)) { if (pending == null) strokes.delete(hole); else strokes.set(hole, Number(pending)); } return { ...s, match_number: m?.match_number, players, strokes, teamName: team?.name || "Individual", color: team?.color || "#477fbd" }; });
   const rounds = rr.data.map(round => { const battles = matches.filter(m => String(m.round_id) === String(round.id)).map(m => { const bs = builtSides.filter(s => String(s.match_id) === String(m.id)); return { ...m, sides: bs, result: bs.length === 2 ? battleResult(bs[0].strokes, bs[1].strokes, roundHoles(round), scoringOf(round)) : null }; }); return { round, battles, individual: battles.some(b => b.sides.length > 2 || b.sides.some(s => s.team_id == null)) }; });
-  return { outing, organizer, teams, participants, holes, rounds, sides: builtSides, matchPlayers: mpr.data, scoreRows, members, names, individual: rounds.some(e => e.individual) };
+  return { outing, organizer, teams, participants, holes, rounds, sides: builtSides, matchPlayers: mpr.data, scoreRows, members, names, individual: rounds.some(e => e.individual), stale: false };
 }
 
 async function paint() {
+  stopSyncWatch();
   injectPlayType(); const current = route(); if (!current.golf || !current.id) { document.body.classList.remove("tb-focus"); return; }
-  const out = await db().from("golf_outings").select("*").eq("id", current.id).maybeSingle(); if (out.error || out.data?.event_type !== "tournament_beta") { document.body.classList.remove("tb-focus"); return; }
   const root = document.querySelector("#golf-outing"); if (!root) return; const organizer = canEdit("golf_participants");
   if (betaRouteForMember({ organizer, setup: current.setup, classic: current.classic }) === "match" && (current.setup || current.classic)) { location.replace(`#/golf?id=${current.id}`); return; }
   if (current.classic) { document.body.classList.remove("tb-focus"); if (!root.querySelector(".tb-classic-banner")) root.insertAdjacentHTML("afterbegin", `<div class="tb-classic-banner"><strong>Tournament Beta</strong> · <a href="#/golf?id=${current.id}">Open Beta match view</a></div>`); return; }
-  ensureStyles(); try { const state = await loadState(out.data, organizer); root.innerHTML = current.setup ? calmSetupMarkup(state) : focusedMatchMarkup(state); document.body.classList.add("tb-focus"); current.setup ? wireSetup(root, state) : wireMatch(root, state); } catch (e) { root.innerHTML = `<section class="card" data-tbeta-root><div class="card-title">Tournament Beta</div><div class="card-body muted">${esc(e.message || e)}</div></section>`; }
+  ensureStyles();
+  try {
+    let state;
+    try {
+      const out = await db().from("golf_outings").select("*").eq("id", current.id).maybeSingle();
+      if (out.error) throw out.error;
+      if (out.data?.event_type !== "tournament_beta") { document.body.classList.remove("tb-focus"); return; }
+      state = await loadState(out.data, organizer);
+      cacheBetaState(state);
+    } catch (networkError) {
+      state = cachedBetaState(current.id);
+      if (!state) throw networkError;
+      state.organizer = organizer;
+      state.stale = true;
+    }
+    root.innerHTML = current.setup ? calmSetupMarkup(state) : focusedMatchMarkup(state);
+    document.body.classList.add("tb-focus");
+    current.setup ? wireSetup(root, state) : wireMatch(root, state);
+  } catch (e) {
+    root.innerHTML = `<section class="card" data-tbeta-root><div class="card-title">Tournament Beta</div><div class="card-body muted">${esc(e.message || e)}</div></section>`;
+  }
 }
 
-let queued = false;
-function schedule() { if (queued) return; queued = true; queueMicrotask(async () => { try { await paint(); } finally { queued = false; } }); }
-new MutationObserver(() => { injectPlayType(); const c = route(), root = document.querySelector("#golf-outing"); if (c.golf && c.id && root && (c.classic ? !root.querySelector(".tb-classic-banner") : !root.querySelector("[data-tbeta-root]"))) schedule(); }).observe(document.documentElement, { childList: true, subtree: true });
+let queued = false, queuedAgain = false;
+function schedule() {
+  if (queued) { queuedAgain = true; return; }
+  queued = true;
+  queueMicrotask(async () => {
+    try { await paint(); }
+    finally { queued = false; if (queuedAgain) { queuedAgain = false; schedule(); } }
+  });
+}
+new MutationObserver(() => {
+  injectPlayType();
+  const c = route();
+  if (!c.golf || !c.id) return;
+  let root = document.querySelector("#golf-outing");
+  if (!root && cachedBetaState(c.id)) {
+    const view = document.querySelector("#view");
+    if (view) { view.innerHTML = `<div id="golf-outing" class="golf-event"><div class="tb-route-loading" aria-label="Opening saved Tournament Beta"></div></div>`; root = view.querySelector("#golf-outing"); }
+  }
+  if (root && (c.classic ? !root.querySelector(".tb-classic-banner") : !root.querySelector("[data-tbeta-root]"))) schedule();
+}).observe(document.documentElement, { childList: true, subtree: true });
 window.addEventListener("hashchange", schedule);
+window.addEventListener("dfl:tournament-beta-route", schedule);
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule); else schedule();
