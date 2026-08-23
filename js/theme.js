@@ -156,12 +156,12 @@ const MODES = {
     controls still use their light appearance.
   */
   fairway: {
-    bg: "#f1f6f3", bg2: "#ffffff", bg3: "#e4efe9",
-    line: "#c4d8ce", lineSoft: "#deebe4",
-    text: "#0b2b40", muted: "#527080", chalk: "#0b2b40",
-    bodyText: "#244656",
-    hover: "#dcebe3", hoverSoft: "rgba(7,72,50,.04)",
-    controlLine: "#6f9182", controlBg: "rgba(255,255,255,.88)",
+    bg: "#f4f6f7", bg2: "#ffffff", bg3: "#edf1f3",
+    line: "#b9c7cc", lineSoft: "#dce3e6",
+    text: "#0b2b40", muted: "#5b707a", chalk: "#0b2b40",
+    bodyText: "#294653",
+    hover: "#e8eef0", hoverSoft: "rgba(7,80,119,.045)",
+    controlLine: "#78909a", controlBg: "rgba(255,255,255,.94)",
     accent: "#056936", accent2: "#075077",
     fill: "#119b57", fill2: "#0873a6",
     onAccent: "#ffffff",
@@ -170,10 +170,10 @@ const MODES = {
     dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
     scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
     topbarA: "#07344d", topbarB: "#082c40",
-    heroA: "#ffffff", heroWash: "rgba(17,155,87,.055)",
+    heroA: "#ffffff", heroWash: "rgba(7,80,119,.035)",
     toastBg: "#082c40", onToast: "#f7fffb",
     milestone: "#765c0d",
-    shadow: "0 1px 3px rgba(11,43,64,.10)",
+    shadow: "0 1px 2px rgba(11,43,64,.06)",
   },
 
   /*

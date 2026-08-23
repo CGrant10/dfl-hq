@@ -245,4 +245,30 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain(".gqm-scorecard-page{background:var(--bg);color:var(--text)");
     expect(source).toContain(".gqm-sheet{border:1px solid var(--line);background:var(--bg-2);color:var(--text)");
   });
+
+  it("keeps score results on scorecards and shows complete nine totals", () => {
+    const quick = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    const team = fs.readFileSync("js/golf-scorecard.js", "utf8");
+    const beta = fs.readFileSync("js/golf-tournament-beta.js", "utf8");
+    expect(quick).not.toContain("data-gqm-entry-result");
+    expect(quick).toContain("data-gqm-table-front");
+    expect(quick).toContain("data-gqm-table-back");
+    expect(team).toContain("data-final-front");
+    expect(team).toContain("data-final-back");
+    expect(team).toContain("<small>Total 18</small>");
+    expect(beta).toContain("<th>Front 9</th>");
+    expect(beta).toContain("<th>Back 9</th><th>+/−</th><th>Total ${count}</th>");
+    expect(beta).toContain('Number(row.strokes) ? `<span>${Number(row.strokes)}</span>Edit score');
+  });
+
+  it("exposes guest setup, selected scoring, and no setup GPS bubble", () => {
+    const beta = fs.readFileSync("js/golf-tournament-beta.js", "utf8");
+    const gps = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    expect(beta).toContain("Guest access code");
+    expect(beta).toContain("data-tb-set-code");
+    expect(beta).toContain("eventHasCode(db(), id)");
+    expect(beta).toContain('aria-pressed="${selectedScoring === s}"');
+    expect(beta).toContain("ROUND SCORING");
+    expect(gps).toContain('(beta&&!card.querySelector("[data-tb-gps-slot]"))');
+  });
 });
