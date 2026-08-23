@@ -2,7 +2,7 @@ import { db } from "./supabase.js";
 import { getMemberId, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { canEdit } from "./inline.js";
-import { battleResult, dayPoints, pairName, roundHoles, scoringOf, standingLine } from "./golf-battle.js";
+import { battleResult, dayPoints, pairName, roundHoles, standingLine } from "./golf-battle.js";
 import { label as boardLabel, progress as boardProgress, roundBoard } from "./golf-board.js";
 import { betaFormatStatus, betaMatchCount, betaRoundName, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
 import { betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
@@ -16,6 +16,7 @@ const relative = n => n === 0 ? "E" : n > 0 ? `+${n}` : String(n);
 const parFor = (holes, hole) => Number(holes.find(x => Number(x.hole) === Number(hole))?.par) || 4;
 const scoreKey = (side, hole) => `${side}:${hole}`;
 const sideName = side => pairName(side.players.map(p => p.name));
+const scoringOf = round => round?.scoring === "match" ? "match" : "strokes";
 
 function injectPlayType() {
   const select = document.querySelector("#i_event_type");
