@@ -185,13 +185,18 @@ describe("the supported golf GPS courses", () => {
     expect(source).not.toMatch(/body\.gqm-focus \.bottomline[^`]+display:none/);
   });
 
-  it("lets Golf inherit the active app theme without repainting the shell", () => {
+  it("lets Golf inherit the app theme and offers a temporary Fairway preview", () => {
     const source = fs.readFileSync("js/golf-theme.js", "utf8");
     const golfCss = fs.readFileSync("css/golf.css", "utf8");
     const navCss = fs.readFileSync("css/nav-neutral.css", "utf8");
-    expect(source).not.toContain("pinMode(");
+    expect(source).toContain('pinMode(tryingFairway ? "fairway" : undefined)');
+    expect(source).toContain('pinMode();');
+    expect(source).toContain('"Try Fairway theme"');
+    expect(source).toContain('"Use previous theme"');
+    expect(source).not.toContain("localStorage.setItem");
     expect(source).toContain("classList.toggle(GOLF_CONTENT_CLASS, onGolf())");
     expect(golfCss).toContain("body.golf-content #view");
+    expect(golfCss).toContain(".golf-fairway-try");
     expect(golfCss).not.toMatch(/body\.golf-content\s+\.(?:topbar|tabbar|whoami)/);
     expect(navCss).toContain("color:var(--muted) !important");
     expect(navCss).not.toContain("color:#f5f7fa !important");
