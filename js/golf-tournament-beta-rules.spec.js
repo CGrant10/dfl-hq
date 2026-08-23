@@ -30,6 +30,21 @@ describe("Tournament Beta permissions", () => {
     expect(canScoreBetaCard({ ...base, cardId: 6 })).toBe(false);
   });
 
+  it("lets either partner score their shared 2v2 side, but not the opponent", () => {
+    const base = {
+      individual: true, participants,
+      sides: [{ id: 5 }, { id: 6 }],
+      matchPlayers: [
+        { side_id: 5, participant_id: 10 },
+        { side_id: 5, participant_id: 30 },
+        { side_id: 6, participant_id: 20 },
+      ],
+    };
+    expect(canScoreBetaCard({ ...base, memberId: 101, cardId: 5 })).toBe(true);
+    expect(canScoreBetaCard({ ...base, memberId: 101, cardId: 6 })).toBe(false);
+    expect(canScoreBetaCard({ ...base, memberId: 202, cardId: 6 })).toBe(true);
+  });
+
   it("lets commissioners score every card", () => {
     expect(canScoreBetaCard({ organizer: true, cardId: 99 })).toBe(true);
   });
