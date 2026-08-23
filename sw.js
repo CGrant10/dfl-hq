@@ -1,12 +1,12 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.136.0";
+const CACHE_NAME = "dfl-hq-v1.137.0";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/golf.css","./css/home.css","./css/nav-neutral.css",
   "./js/config.js","./js/app.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js",
   "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/golf-gps-rolla-beta.js","./js/nav-neutral.js",
-  "./js/golf-tournament-beta.js","./js/golf-tournament-beta-format.js","./js/golf-tournament-beta-rules.js","./js/golf-score-result.js","./js/golf-offline.js","./js/golf-battle.js","./js/golf-board.js",
+  "./js/golf-tournament-beta.js","./js/golf-tournament-beta-format.js","./js/golf-tournament-beta-rules.js","./js/golf-score-result.js","./js/golf-club-recommendation.js","./js/golf-offline.js","./js/golf-battle.js","./js/golf-board.js",
   "./icons/app-192.png","./icons/app-512.png","./icons/apple-touch-icon.png"
 ];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(async c=>{
