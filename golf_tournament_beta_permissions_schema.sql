@@ -7,7 +7,7 @@ create or replace function public.golf_can_write_match_side(p_side_id bigint)
 returns boolean
 language sql
 stable
-security definer
+security invoker
 set search_path = ''
 as $$
   select case

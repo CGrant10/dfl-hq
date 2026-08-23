@@ -73,6 +73,9 @@ Dependencies are real: a file that adds a column to `members` needs
 | 20 | `golf_bag_schema.sql` | Private club distances. |
 | 21 | `golf_time_schema.sql` | `golf_outings.event_time`. |
 | 21a | `golf_individual_matches_schema.sql` | Team-free singles fields, including 1v1v1 and larger shared individual matches. Needs 16. |
+| 21b | `golf_tournament_beta_schema.sql` | Tournament Beta event type and putt totals on team cards. |
+| 21c | `golf_tournament_beta_fast_setup_schema.sql` | Individual Beta match builder and putt totals on match cards. Needs 21a and 31. |
+| 21d | `golf_tournament_beta_permissions_schema.sql` | Members may score only their own Beta side; classic Tournament keeps its shared-card access. **Security fix — not optional.** Needs 21b and 21c. |
 
 ### Arena
 
@@ -232,6 +235,7 @@ up:
 | `sportsbook_auto_schema.sql` | The Sportsbook loads with whatever hand-written markets exist; the auto board simply never refills (`autoReady` false, caught and ignored). |
 | `sportsbook_golf_schema.sql` | The Sportsbook loads; the golf board is absent and a single note names the failure. Non-golf markets are untouched. |
 | `golf_profile_schema.sql` | Golf Bag loads without the profile form; golf lines keep their rating-only prices from 35. |
+| `golf_tournament_beta_permissions_schema.sql` | The Beta UI still limits each member to their own card, but the older database policy may accept a direct write to another side in the same Beta match. Run this security migration before using Tournament Beta. Classic Tournament is unaffected. |
 | `golf_bag_public_schema.sql` | The bag visibility toggle cannot save and says so; bags stay private, which is the safe direction. |
 | `sportsbook_claim_schema.sql` | The Claim button toasts "Run sportsbook_claim_schema.sql in Supabase" and no SIN is credited at all — `touch_wallet()` from 33 still drips it automatically, so nothing is lost, but the button does nothing. |
 | `keeper_self_entry_schema.sql` | The "Your keeper" card does not appear on the Keepers page at all, and the member-entry freeze is absent from Admin → Keeper rules. `keeper-self.js` treats the missing RPCs as "this league has not opted in" rather than as an error. Commissioner entry is unaffected. |
