@@ -21,3 +21,9 @@ export function canScoreBetaCard({ organizer = false, memberId = "", individual 
 export function betaRouteForMember({ organizer = false, setup = false, classic = false } = {}) {
   return !organizer && (setup || classic) ? "match" : setup ? "setup" : classic ? "classic" : "match";
 }
+
+export function betaEditableSideIds(state = {}) {
+  return (state.sides || [])
+    .filter(side => canScoreBetaCard({ ...state, individual: true, cardId: side.id }))
+    .map(side => String(side.id));
+}

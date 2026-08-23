@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
+import { betaEditableSideIds, betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
 
 const participants = [
   { id: 10, member_id: 101, team_id: 1 },
@@ -47,5 +47,13 @@ describe("Tournament Beta permissions", () => {
 
   it("lets commissioners score every card", () => {
     expect(canScoreBetaCard({ organizer: true, cardId: 99 })).toBe(true);
+  });
+
+  it("keeps a member's Match view focused on only the side they occupy", () => {
+    expect(betaEditableSideIds({
+      memberId: 101, participants,
+      sides: [{ id: 5 }, { id: 6 }],
+      matchPlayers: [{ side_id: 5, participant_id: 10 }, { side_id: 6, participant_id: 20 }],
+    })).toEqual(["5"]);
   });
 });
