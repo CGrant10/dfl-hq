@@ -1,17 +1,16 @@
-/* Stable shell navigation: every tab uses the same white/steel treatment.
-   Selection is communicated by the existing moving top indicator and a tiny lift,
-   not by repainting one tab with the page theme. */
+/* Stable shell navigation. Ink follows the member palette so it remains
+   readable on both light and dark profile-themed navigation surfaces. */
 .tabbar :is(a,.tabmore),
-.tabbar :is(a,.tabmore):hover,
-.tabbar :is(a,.tabmore).on {
-  color:#f5f7fa !important;
+.tabbar :is(a,.tabmore):hover {
+  color:var(--muted) !important;
   opacity:1;
 }
+.tabbar :is(a,.tabmore).on { color:var(--accent) !important; opacity:1; }
 .tabbar :is(a,.tabmore) .ico,
 .tabbar :is(a,.tabmore) svg,
 #more svg {
-  color:#f5f7fa !important;
-  filter:brightness(1.08) drop-shadow(0 0 5px rgba(255,255,255,.38)) !important;
+  color:var(--muted) !important;
+  filter:none !important;
   opacity:1 !important;
   transition:filter .14s ease,transform .14s ease;
 }
@@ -20,5 +19,6 @@
 }
 .tabbar :is(a,.tabmore).on .ico,
 .tabbar :is(a,.tabmore).on svg {
-  filter:brightness(1.2) drop-shadow(0 0 7px rgba(255,255,255,.58)) !important;
+  color:var(--accent) !important;
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 28%,transparent)) !important;
 }

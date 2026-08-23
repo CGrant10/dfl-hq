@@ -176,6 +176,18 @@ describe("the supported golf GPS courses", () => {
     expect(source).not.toMatch(/body\.gqm-focus \.bottomline[^`]+display:none/);
   });
 
+  it("scopes the Medicine Wheel palette to Golf content instead of the app shell", () => {
+    const source = fs.readFileSync("js/golf-theme.js", "utf8");
+    const golfCss = fs.readFileSync("css/golf.css", "utf8");
+    const navCss = fs.readFileSync("css/nav-neutral.css", "utf8");
+    expect(source).not.toContain("pinMode(");
+    expect(source).toContain("classList.toggle(GOLF_CONTENT_CLASS, onGolf())");
+    expect(golfCss).toContain("body.golf-medicine-content #view");
+    expect(golfCss).not.toMatch(/body\.golf-medicine-content\s+\.(?:topbar|tabbar|whoami)/);
+    expect(navCss).toContain("color:var(--muted) !important");
+    expect(navCss).not.toContain("color:#f5f7fa !important");
+  });
+
   it("shows only the current hole maximum in the Quick Round GPS badge", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');
