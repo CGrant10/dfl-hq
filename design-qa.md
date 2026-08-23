@@ -89,6 +89,49 @@ final result: passed
 
 ---
 
+# Fairway Light typography, cards, and golf scoring QA
+
+## Evidence
+
+- Source: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/.codex-remote-attachments/01a02fb4-48a5-7c92-8158-223b000a2851/91416fa3-59d7-42a4-acbe-b3dfe25467f2/1-Photo-1.jpg` (591 x 1280 px).
+- Fairway admin surface: `design-qa-assets/fairway-admin-v1.143.0.png`.
+- Combined source comparison: `design-qa-assets/fairway-admin-comparison-v1.143.0.jpg`.
+- Fairway profile and shared cards: `design-qa-assets/fairway-profile-v1.143.0.png`.
+- Tournament member scoring and scorecard: `design-qa-assets/fairway-beta-play-v1.143.0.png` and `design-qa-assets/fairway-beta-scorecard-v1.143.0.png`.
+- Quick Round: `design-qa-assets/fairway-quick-round-v1.143.0.png`.
+- Browser surface: Codex in-app browser at 591 x 1280, matching the reference screenshot dimensions. The user's original Medicine Wheel setting was restored after capture.
+
+## Comparison
+
+Fairway Light now carries the reference's Rajdhani-style condensed hierarchy, thin outlined white cards, generous spacing, and restrained shadows across shared page surfaces. The green wash was removed: page backgrounds and secondary surfaces are neutral cool gray, while green and blue remain purposeful action and structure colors. Existing component dimensions and layout tokens were preserved to avoid shifting page geometry.
+
+The live tournament view clearly labels `STROKE PLAY` in both the hole header and round header, retains separate Scorecard and Leaderboard controls for members, and shows a plain numeric add/edit score control without a hole-result shape. The scorecard keeps result circles and squares inside score cells and inserts Front 9 after hole 9, Back 9 after hole 18, then +/− and Total 18.
+
+Quick Round inherits Fairway Light cleanly: the formerly dark Add score card is light, the GPS medallion remains legible, and the hidden individual card reports Front 9, Back 9, +/−, and the round total. No half-white overlay or low-contrast copy appeared in the captured state.
+
+## Interaction and runtime checks
+
+- Switched from Medicine Wheel to Fairway Light through the visible Appearance control and verified the selected state.
+- Opened tournament event 12 as a member and confirmed the visible `STROKE PLAY` state, yardage, GPS action, Scorecard button, and Leaderboard button.
+- Opened the tournament scorecard and confirmed the exact summary-column order and all 18 yardage/par headings.
+- Opened Quick Round event 14 and confirmed its active theme, light Add score control, GPS medallion, and live nine-hole totals.
+- Verified through focused tests that Beta setup cannot mount the GPS bubble, organizer setup includes the guest-code setter, and score-entry result labels were removed.
+- Browser interactions were read-only except for the temporary theme selection, which was restored. No production score or setup record was changed.
+
+## Comparison history
+
+1. P1: Fairway Light covered the page with a green tint and retained generic card typography. Fix: neutralize page and secondary surfaces, set Fairway's body face to the existing display font, and apply thin bordered, shadowless cards.
+2. P1: add-score controls reused result markers that belong on the scorecard. Fix: render only the entered stroke number in add/edit controls; retain result shapes in scorecard cells.
+3. P1: scorecards ended with only a total and differential. Fix: add Front 9, Back 9, +/−, and round-total summaries in the requested reading order, including live recalculation.
+4. P1: Tournament Beta setup had no visible guest-code step and scoring format selection was ambiguous. Fix: add an open-by-default guest-access card when no code exists, plus selected-state copy and explicit play-format labels.
+5. P2: the GPS module treated a Beta setup shell as a playable card and appended a floating bubble to the document. Fix: require the Beta GPS slot before mounting.
+
+No actionable P0, P1, or P2 differences remain for the requested scope.
+
+final result: passed
+
+---
+
 # Shared GPS calibration and active-theme QA
 
 ## Evidence
