@@ -295,10 +295,33 @@
 .gteam-captain .ico-sm { width: 16px; height: 16px; flex: none; }
 .gteam-captain.is-none { color: var(--muted); font-weight: 600; font-size: 13px; }
 
-/* ---- The commissioner's control over the golf palette. Three swatches,
-   not a dropdown: there are exactly three and the choice is visual, so a
-   <select> would hide the thing being chosen behind its own label. ---- */
-.golf-theme-card .card-body{display:grid;gap:9px}
-.gt-picker{display:flex;flex-wrap:wrap;gap:8px}
-.gt-swatch{appearance:none;flex:1 1 auto;min-width:92px;min-height:40px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg-3);color:var(--muted);font:inherit;font-size:12px;font-weight:800;letter-spacing:.03em;cursor:pointer}
-.gt-swatch.on{border-color:var(--accent);color:var(--text);background:color-mix(in srgb,var(--accent) 14%,var(--bg-3));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+/* ---- Golf content owns the Medicine Wheel palette, but only here.
+   #view inherits this frozen palette without repainting its siblings: the
+   top bar, identity ticket and navigation retain the member's profile theme. ---- */
+body.golf-medicine-content #view{
+  --bg:#0b0b0c;--bg-2:#141416;--bg-3:#1d1d20;
+  --line:#2f2f34;--line-soft:#212125;
+  --text:#f4f2ee;--muted:#a8a096;--chalk:#fff;--body-text:#ddd8d0;
+  --hover:#1d1d20;--hover-soft:rgba(255,255,255,.03);
+  --control-line:#736b60;--control-bg:rgba(24,24,27,.74);
+  --accent:#F08279;--accent-2:#EFC94C;
+  --accent-fill:#C8102E;--accent-2-fill:#EFC94C;
+  --accent-sweep:linear-gradient(90deg,#C8102E,#EFC94C);
+  --accent-sweep-135:linear-gradient(135deg,#C8102E,#EFC94C);
+  --accent-sweep-v:linear-gradient(180deg,#C8102E,#EFC94C);
+  --accent-dim:#EFC94C;--on-accent:#fff;
+  --ok:#8fd6a4;--ok-bg:rgba(96,176,123,.13);--ok-line:#3f7a52;
+  --warn-ink:#E8A33D;--warn-bg:rgba(232,163,61,.12);--warn-line:#7a5a20;
+  --danger-ink:#F5A39B;--danger-bg:rgba(200,16,46,.14);--danger-line:#7d2029;
+  --sc-under:#7fd39a;--sc-over:#f0897e;--sc-bad:#d93b3b;
+  --hero-a:#17171a;--hero-wash:rgba(255,255,255,.05);
+  --milestone:#EFC94C;--shadow:0 1px 3px rgba(0,0,0,.42);
+  --theme-primary:#C8102E;--theme-secondary:#EFC94C;
+  --theme-soft:color-mix(in srgb,#C8102E 12%,transparent);
+  --theme-soft-2:color-mix(in srgb,#EFC94C 10%,transparent);
+  --theme-border:color-mix(in srgb,#C8102E 34%,#2f2f34);
+  color:var(--text);
+  background:var(--bg);
+  min-height:calc(100dvh - 132px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  border-radius:0 0 var(--radius) var(--radius);
+}
