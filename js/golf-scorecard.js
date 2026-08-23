@@ -34,6 +34,7 @@ import { passFor } from "./golf-guest.js";
 import { queueScore, pendingFor, pendingCount, dropPending, onQueueChange,
          cacheCard, cachedCard, dropCachedCard, flush, refusals,
          MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
+import { holeResult } from "./golf-score-result.js";
 const esc=v=>String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;","\>":"&gt;",'"':"&quot;"}[c]));
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 /* Long enough that + + + is one write, short enough that a save always
@@ -47,7 +48,7 @@ export const fmtToPar=(score,par)=>{if(!score)return"—";const d=score-par;retu
   One place decides what a score is called, what shape it wears and what
   colour it is, so the strip, the row and the label can never disagree.
 */
-export function holeResult(score,par){const s=Number(score);if(!s)return{mark:"m-none",cls:"result-empty",label:"—"};const d=s-Number(par);if(d<=-2)return{mark:"m-eagle",cls:"result-eagle",label:"EAGLE"};if(d===-1)return{mark:"m-birdie",cls:"result-birdie",label:"BIRDIE"};if(d===0)return{mark:"m-par",cls:"result-par",label:"PAR"};if(d===1)return{mark:"m-bogey",cls:"result-bogey",label:"BOGEY"};if(d===2)return{mark:"m-dbl",cls:"result-double",label:"DOUBLE"};return{mark:"m-dbl",cls:"result-double",label:`+${d}`};}
+export { holeResult };
 function styles(){if(document.getElementById("dfl-team-scorecard-style"))return;const s=document.createElement("style");s.id="dfl-team-scorecard-style";s.textContent=`
 /* overflow:clip, NOT hidden. Both clip the head's square corners, but
    'hidden' makes this card a scroll container and silently kills the sticky
