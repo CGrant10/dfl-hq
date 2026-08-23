@@ -86,3 +86,44 @@ The desktop panel is constrained while the mobile breakpoint fills the viewport.
 No P0, P1, or P2 issues remain.
 
 final result: passed
+
+---
+
+# Shared GPS calibration and active-theme QA
+
+## Evidence
+
+- Source visual truth: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/.codex-remote-attachments/01a02fb4-48a5-7c92-8158-223b000a2851/719cbe15-e418-4ac4-93bb-a04e599a6e6b/1-Photo-1.jpg`.
+- Rolla member GPS: `design-qa-assets/rolla-gps-light-v1.142.0.png`.
+- Quick Round light and dark: `design-qa-assets/quick-round-light-v1.142.0.png` and `design-qa-assets/quick-round-dark-v1.142.0.png`.
+- Quick Round GPS: `design-qa-assets/quick-round-gps-light-v1.142.0.png`.
+- Combined reference comparison: `design-qa-assets/gps-reference-comparison-v1.142.0.png`; both source and implementation were normalized to 720 px high with aspect ratio preserved.
+- Browser surface: Codex in-app browser at the live local preview, 1280 x 720 screenshot viewport.
+- States: Rolla tournament member view, Hole 1; Red Trail Links Quick Round, Hole 2; active Light and Dark themes. The user's original Medicine Wheel theme was restored after capture.
+
+## Comparison
+
+The calibrated Rolla map preserves the reference's full-hole satellite composition, player-to-green line, prominent distance pill, hole navigation, floating live-GPS control, attribution, and bottom scoring dock. The score dock now uses a light surface in Light mode and the primary Add score action remains green and legible. DFL identity and controls remain intentionally distinct from TheGrint branding.
+
+Quick Round now uses the app's semantic surface, text, border, accent, warning, and score-result tokens. Its hole header, player name, score summary, Scorecard action, Add score control, and bottom round actions remain readable in both captured themes. The same hole GPS opens from the yardage medallion and retains official yardage when browser geolocation is denied.
+
+## Calibration and interaction checks
+
+- Commissioner-only tee and green calibration is stored on the shared `golf_course_holes` record, not in one device's local storage.
+- A commissioner can select a hole, choose Set tee or Set green, then tap the satellite map or use the phone's current GPS position.
+- A good location fix within 140 yards of a calibrated tee automatically selects and locks that physical hole for the session.
+- Follow mode is on by default, recenters as accepted GPS fixes arrive, and can be resumed after a manual map drag.
+- Shared geometry overrides the original Rolla fallback coordinates for every member and for both tournament and Quick Round surfaces.
+- Browser geolocation was denied by the in-app browser, so the accepted-fix movement path was verified through focused distance/detection tests rather than fabricated browser coordinates.
+- Live database checks confirmed the new geometry columns, existing public-read and commissioner-write RLS coverage, and the calibration-editor foreign-key index.
+
+## Comparison history
+
+1. P0: nullable shared coordinates were initially converted with `Number(null)`, producing a valid-looking zero coordinate and a blank/incorrect map. Fix: reject null or empty latitude/longitude values before numeric conversion. The satellite map and Rolla hole geometry were rechecked afterward.
+2. P1: Quick Round's fixed workspace used hard-coded dark surfaces and low-contrast copy in Light mode. Fix: replace the active workspace, scoring sheet, scorecard, controls, and result markers with the app's theme tokens. Light and Dark captures are readable.
+3. P1: the GPS score dock stayed dark in Light mode. Fix: the dock, calibration sheet, and GPS controls now inherit the active theme while the satellite overlay retains high-contrast map controls.
+4. P2: the new `gps_updated_by` foreign key initially lacked a covering index. Fix: add `golf_course_holes_gps_updated_by_idx`; the Supabase performance advisor no longer reports that warning.
+
+No actionable P0, P1, or P2 differences remain for the requested scope.
+
+final result: passed

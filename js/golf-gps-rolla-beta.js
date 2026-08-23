@@ -2,6 +2,7 @@ import { setupCourseGps } from "./golf-gps-course-map.js";
 
 setupCourseGps({
   key:"rolla",
+  courseName:"Rolla Country Club",
   label:"Rolla Country Club · Rolla, ND",
   courseRe:/(rolla\s*(country|municipal)?|rolla.*golf)/i,
   mapQuery:"Rolla Country Club Rolla North Dakota",

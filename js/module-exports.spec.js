@@ -224,4 +224,25 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain("data-gps-score");
     expect(source).toContain('color:"#fff",weight:3');
   });
+
+  it("shares commissioner tee and green calibration and follows a player from the tee", () => {
+    const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    const schema = fs.readFileSync("golf_gps_geometry_schema.sql", "utf8");
+    expect(source).toContain('hasPermission("golf")');
+    expect(source).toContain('data-map-endpoint="tee"');
+    expect(source).toContain('data-map-endpoint="green"');
+    expect(source).toContain('nearestTeeHole(point,tees,140)');
+    expect(source).toContain('followMode=true');
+    expect(source).toContain('rawLat==null||rawLat===""||rawLng==null||rawLng===""');
+    expect(schema).toContain("tee_lat double precision");
+    expect(schema).toContain("green_lat double precision");
+  });
+
+  it("uses active theme tokens throughout Quick Round scoring", () => {
+    const source = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    expect(source).toContain(".gqm-focus-shell{background:var(--bg);color:var(--text)");
+    expect(source).toContain(".gqm-add-score{border-color:var(--control-line);background:var(--bg-2);color:var(--text)");
+    expect(source).toContain(".gqm-scorecard-page{background:var(--bg);color:var(--text)");
+    expect(source).toContain(".gqm-sheet{border:1px solid var(--line);background:var(--bg-2);color:var(--text)");
+  });
 });
