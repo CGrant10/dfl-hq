@@ -1,9 +1,11 @@
 import { db } from "./supabase.js";
-import { loadMembers } from "./members.js";
+import { getMemberId, loadMembers } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { canEdit } from "./inline.js";
+import { betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
 
 const activeHole = new Map();
+const setupMode = new Map();
 const saveTimers = new Map();
 const route = () => {
   const [path, raw = ""] = location.hash.split("?");
@@ -35,6 +37,7 @@ body.tb-focus{height:100dvh;overflow:hidden;overscroll-behavior:none;background:
   style.textContent += `.tb-setup{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;padding:12px;gap:10px}.tb-setup-card{padding:12px;border:1px solid #ffffff1e;border-radius:15px;background:#24211d}.tb-setup-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.tb-setup-title h2{margin:0;font-size:17px}.tb-setup-title span{color:#f4c430;font-size:10px;font-weight:900}.tb-add-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:9px}.tb-add-row input,.tb-add-row select,.tb-team-count{min-height:40px;border:1px solid #ffffff28;border-radius:10px;background:#171717;color:#fff;padding:0 10px}.tb-add-row button,.tb-setup-actions button{min-height:40px}.tb-player-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:9px}.tb-player-chip{display:flex;align-items:center;justify-content:space-between;min-width:0;padding:7px 8px;border-radius:9px;background:#171717}.tb-player-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.tb-player-chip button{border:0;background:transparent;color:#e8a39e;font-size:16px}.tb-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px}.tb-mode-tabs button{min-height:42px;border:1px solid #ffffff26;border-radius:11px;background:#2a2722;color:#fff;font-weight:900}.tb-mode-tabs button.is-active{border-color:#f4c430;background:#f4c430;color:#171717}.tb-setup-panel{display:grid;gap:9px}.tb-setup-panel p{margin:0;color:#b9b2a6;font-size:10px;line-height:1.45}.tb-setup-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.tb-setup-actions .wide{grid-column:1/-1}.tb-advanced{text-align:center;color:#b9b2a6;font-size:10px}.tb-advanced a{color:#f4c430}.tb-setup-status{min-height:16px;color:#f4c430;font-size:10px;text-align:center}`;
   style.textContent += `.tb-setup-panel[hidden]{display:none!important}.tb-live{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 13px 7px;border:1px solid #ffffff18;border-radius:12px;overflow:hidden;background:#211f1b}.tb-live-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;color:#f4c430;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.tb-live-head span:last-child{color:#8fd18b}.tb-live-row{display:grid;grid-template-columns:18px minmax(0,1fr) 34px;align-items:center;gap:5px;padding:5px 8px;border-top:1px solid #ffffff12;font-size:9px}.tb-live-row:nth-child(2n+1){border-left:1px solid #ffffff12}.tb-live-row strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-live-row small{display:none}.tb-live-score{text-align:right;color:#f4c430;font-size:14px;font-weight:950}.tb-roster .tb-row{min-height:55px;padding-top:4px;padding-bottom:4px}.tb-roster .tb-avatar{width:38px;height:38px;font-size:12px}.tb-total-cell strong,.tb-total-cell small{display:block}.tb-total-cell small{color:#667985;font-size:9px}`;
   style.textContent += `.tb-card-back{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 14px;border:0;border-radius:11px;background:#477fbd;color:#fff;font-weight:950}.tb-mark{display:grid;place-items:center;width:30px;height:30px;margin:auto;font-weight:950}.tb-mark.eagle{border:3px double #a4c43b;border-radius:50%}.tb-mark.birdie{border:2px solid #c73a33;border-radius:50%}.tb-mark.par{border:1px solid #cbd1d4}.tb-mark.bogey{border:2px solid #70518a;border-radius:3px}.tb-mark.double{border:4px double #426474;border-radius:3px}.tb-mark.triple{border:4px double #e5a64a;border-radius:3px}.tb-score-legend{display:grid;grid-template-columns:repeat(6,minmax(54px,1fr));gap:5px;padding:9px 10px;background:#fff;border-top:1px solid #d7dde0}.tb-score-legend span{display:grid;justify-items:center;gap:3px;color:#58656c;font-size:8px}.tb-score-legend .tb-mark{width:24px;height:24px}`;
+  style.textContent += `.tb-setup{overflow-y:auto}.tb-score{display:grid;place-items:center}.tb-score.is-readonly{opacity:.62}.tb-actions.is-member{grid-template-columns:1fr}.tb-team-name,.tb-team-place{min-height:40px;border:1px solid #ffffff28;border-radius:10px;background:#171717;color:#fff;padding:0 10px}.tb-team-editor,.tb-placement{display:grid;gap:7px}.tb-team-edit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.tb-team-edit button{min-height:40px}.tb-placement-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.8fr);align-items:center;gap:7px;padding:6px 0;border-top:1px solid #ffffff12}.tb-placement-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}`;
   document.head.append(style);
 }
 
@@ -54,6 +57,7 @@ const scoreMark = (strokes, par) => {
 };
 
 async function persistScore(state, cardId, hole, strokes, putts) {
+  if (!canScoreBetaCard({ ...state, memberId: getMemberId(), cardId })) return;
   const key = `${cardId}:${hole}`;
   const previous = state.scores.get(key);
   if (strokes) state.scores.set(key, { ...(previous || {}), strokes, putts }); else state.scores.delete(key);
@@ -93,12 +97,14 @@ function cardsFor(state) {
 }
 
 function setupMarkup(state) {
-  const organizer = canEdit("golf_participants");
+  const mode = setupMode.get(state.outing.id) || (state.teams.length && !state.individual ? "teams" : "singles");
   const have = new Set(state.participants.filter(p => p.member_id != null).map(p => String(p.member_id)));
   const available = state.members.filter(member => !have.has(String(member.id)));
   const playerName = person => person.member_id ? state.names.get(String(person.member_id)) : person.guest_name;
-  const chips = state.participants.map(person => `<div class="tb-player-chip"><span>${esc(playerName(person) || "Golfer")}</span>${organizer ? `<button type="button" data-tb-remove="${person.id}" aria-label="Remove golfer">×</button>` : ""}</div>`).join("");
-  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf?id=${state.outing.id}" aria-label="Back to tournament scoring">‹</a><div class="tb-hole"><strong>SETUP</strong><small>TOURNAMENT BETA</small></div><span></span></header><div class="tb-sub"><div><small>Fast tournament setup</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div><a class="tb-link" href="#/golf?id=${state.outing.id}">BACK TO MATCH →</a></div><section class="tb-setup"><div class="tb-setup-card"><div class="tb-setup-title"><h2>Golfers</h2><span>ADD SINGLES—NO TEAMS NEEDED</span></div>${canEdit("golf_participants") ? `<div class="tb-add-row"><select data-tb-member><option value="">Choose a DFL golfer…</option>${available.map(member => `<option value="${member.id}">${esc(nameOf(member))}</option>`).join("")}</select><button class="btn" type="button" data-tb-add-member>Add</button></div><div class="tb-add-row"><input type="text" maxlength="80" data-tb-guest placeholder="Guest golfer name"><button class="btn" type="button" data-tb-add-guest>Add guest</button></div>` : `<p class="muted tiny">Organizer access is required to change the field.</p>`}<div class="tb-player-chips">${chips || `<span class="muted tiny">Add at least two golfers.</span>`}</div></div><div class="tb-mode-tabs"><button class="is-active" type="button" data-tb-mode="singles">Singles</button><button type="button" data-tb-mode="teams">Teams</button></div><div class="tb-setup-card tb-setup-panel" data-tb-panel="singles"><div class="tb-setup-title"><h2>One field, individual cards</h2><span>${state.participants.length} PLAYERS</span></div><p>Every golfer gets an individual card and plays the same field. Add any number of golfers.</p><div class="tb-setup-actions"><button class="btn primary wide" type="button" data-tb-build-singles ${state.participants.length < 2 ? "disabled" : ""}>Start ${state.participants.length}-golfer singles match</button></div></div><div class="tb-setup-card tb-setup-panel" data-tb-panel="teams" hidden><div class="tb-setup-title"><h2>Deal quick teams</h2><select class="tb-team-count" data-tb-team-count aria-label="Team count">${[2,3,4,5,6].map(n => `<option value="${n}" ${n === Math.max(2, state.teams.length) ? "selected" : ""}>${n} teams</option>`).join("")}</select></div><p>Random shuffles the field. Even keeps team sizes as close as possible. Two-team setups also build the match round automatically.</p><div class="tb-setup-actions"><button class="btn" type="button" data-tb-build-teams="random" ${state.participants.length < 2 ? "disabled" : ""}>Random teams</button><button class="btn primary" type="button" data-tb-build-teams="even" ${state.participants.length < 2 ? "disabled" : ""}>Even teams</button></div></div><div class="tb-setup-status" data-tb-status></div><div class="tb-advanced">Need captains, draft order or custom rounds? <a href="#/golf?id=${state.outing.id}&classic=1">Open advanced setup</a></div></section></main>`;
+  const chips = state.participants.map(person => `<div class="tb-player-chip"><span>${esc(playerName(person) || "Golfer")}</span><button type="button" data-tb-remove="${person.id}" aria-label="Remove golfer">×</button></div>`).join("");
+  const teamOptions = person => `<option value="">Unassigned</option>${state.teams.map(team => `<option value="${team.id}" ${String(person.team_id) === String(team.id) ? "selected" : ""}>${esc(team.name || "Team")}</option>`).join("")}`;
+  const teamEditor = state.teams.length ? `<div class="tb-team-editor">${state.teams.map(team => `<div class="tb-team-edit"><input class="tb-team-name" value="${esc(team.name || "Team")}" maxlength="80" data-tb-team-name="${team.id}" aria-label="Team name"><button class="btn" type="button" data-tb-save-team="${team.id}">Save</button></div>`).join("")}</div><div class="tb-placement">${state.participants.map(person => `<label class="tb-placement-row"><span>${esc(playerName(person) || "Golfer")}</span><select class="tb-team-place" data-tb-place="${person.id}">${teamOptions(person)}</select></label>`).join("")}</div>` : `<p>Create empty teams, then place each golfer by hand.</p>`;
+  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf?id=${state.outing.id}" aria-label="Back to tournament scoring">‹</a><div class="tb-hole"><strong>SETUP</strong><small>TOURNAMENT BETA</small></div><span></span></header><div class="tb-sub"><div><small>Tournament setup</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div><a class="tb-link" href="#/golf?id=${state.outing.id}">BACK TO MATCH →</a></div><section class="tb-setup"><div class="tb-setup-card"><div class="tb-setup-title"><h2>Golfers</h2><span>${state.participants.length} PLAYERS</span></div><div class="tb-add-row"><select data-tb-member><option value="">Choose a DFL golfer…</option>${available.map(member => `<option value="${member.id}">${esc(nameOf(member))}</option>`).join("")}</select><button class="btn" type="button" data-tb-add-member>Add</button></div><div class="tb-add-row"><input type="text" maxlength="80" data-tb-guest placeholder="Guest golfer name"><button class="btn" type="button" data-tb-add-guest>Add guest</button></div><div class="tb-player-chips">${chips || `<span class="muted tiny">Add at least two golfers.</span>`}</div></div><div class="tb-mode-tabs"><button class="${mode === "singles" ? "is-active" : ""}" type="button" data-tb-mode="singles">Singles</button><button class="${mode === "teams" ? "is-active" : ""}" type="button" data-tb-mode="teams">Teams</button></div><div class="tb-setup-card tb-setup-panel" data-tb-panel="singles" ${mode === "singles" ? "" : "hidden"}><div class="tb-setup-title"><h2>One field, individual cards</h2><span>${state.participants.length} PLAYERS</span></div><p>Every golfer gets an individual card and plays the same field.</p><div class="tb-setup-actions"><button class="btn primary wide" type="button" data-tb-build-singles ${state.participants.length < 2 ? "disabled" : ""}>Start ${state.participants.length}-golfer singles match</button></div></div><div class="tb-setup-card tb-setup-panel" data-tb-panel="teams" ${mode === "teams" ? "" : "hidden"}><div class="tb-setup-title"><h2>Build and place teams</h2><select class="tb-team-count" data-tb-team-count aria-label="Team count">${[2,3,4,5,6].map(n => `<option value="${n}" ${n === Math.max(2, state.teams.length) ? "selected" : ""}>${n} teams</option>`).join("")}</select></div><p>Create the teams, name them, and place every golfer manually. Random and even placement remain available as commissioner shortcuts.</p><div class="tb-setup-actions"><button class="btn primary wide" type="button" data-tb-create-teams>Create empty teams</button><button class="btn" type="button" data-tb-deal="random" ${!state.teams.length ? "disabled" : ""}>Random placement</button><button class="btn" type="button" data-tb-deal="even" ${!state.teams.length ? "disabled" : ""}>Even placement</button></div>${teamEditor}<div class="tb-setup-actions"><button class="btn primary wide" type="button" data-tb-start-teams ${!state.teams.length || state.participants.some(person => person.team_id == null) ? "disabled" : ""}>Open team match</button></div></div><div class="tb-setup-status" data-tb-status></div><div class="tb-advanced">Need captains, draft order or custom rounds? <a href="#/golf?id=${state.outing.id}&classic=1">Open advanced setup</a></div></section></main>`;
 }
 
 function teamLabel(team, participants, names) {
@@ -109,7 +115,7 @@ function teamLabel(team, participants, names) {
 function markup(state) {
   const { outing, holes, scores } = state;
   const cards = cardsFor(state);
-  if (!cards.length) return `<section class="card" data-tbeta-root><div class="card-title-row"><div><div class="card-title">Tournament Beta</div><p class="muted tiny">Add golfers, then start singles or deal teams in the fast setup.</p></div><span class="pill">Beta</span></div><div class="card-body"><a class="btn primary" href="#/golf?id=${outing.id}&setup=1">Fast setup</a></div></section>`;
+  if (!cards.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back to Golf home">‹</a><div class="tb-hole"><strong>MATCH</strong><small>TOURNAMENT BETA</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(outing.course || outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${outing.id}&setup=1">SETUP</a>` : ""}</div><section class="tb-play"><section class="tb-live" aria-label="Live leaderboard"><div class="tb-live-head"><span>Live leaderboard</span><span>LIVE</span></div><div class="tb-live-row" style="grid-column:1/-1"><strong>${state.organizer ? "Set up Singles or Teams to start the match." : "Waiting for the commissioner to set the field."}</strong><span></span></div></section></section></main>`;
   const count = Number(outing.holes) || 18;
   const hole = Math.max(1, Math.min(count, Number(activeHole.get(outing.id)) || 1));
   activeHole.set(outing.id, hole);
@@ -118,10 +124,12 @@ function markup(state) {
   const rows = leaderboard + cards.map(card => {
     const row = scores.get(`${card.id}:${hole}`) || {};
     const stat = liveStat(scores, card.id, holes, count);
-    return `<article class="tb-row"><span class="tb-avatar">${esc(initials(card.primary))}</span><div class="tb-copy"><strong>${esc(card.primary)}</strong><small>${esc(card.secondary)} · ${stat.thru ? `${stat.strokes} (${relative(stat.toPar)})` : "No scores"}</small></div><button type="button" class="tb-score" data-tb-open="${card.id}">Hole ${hole}<b>${Number(row.strokes) || "+"}</b></button></article>`;
+    const editable = canScoreBetaCard({ ...state, memberId: getMemberId(), cardId: card.id });
+    const score = `Hole ${hole}<b>${Number(row.strokes) || (editable ? "+" : "—")}</b>`;
+    return `<article class="tb-row"><span class="tb-avatar">${esc(initials(card.primary))}</span><div class="tb-copy"><strong>${esc(card.primary)}</strong><small>${esc(card.secondary)} · ${stat.thru ? `${stat.strokes} (${relative(stat.toPar)})` : "No scores"}</small></div>${editable ? `<button type="button" class="tb-score" data-tb-open="${card.id}">${score}</button>` : `<span class="tb-score is-readonly">${score}</span>`}</article>`;
   }).join("");
   const table = `<table class="tb-table"><thead><tr><th class="sticky">Golfer / team</th>${Array.from({ length: count }, (_, i) => i + 1).map(h => `<th class="${h === hole ? "current" : ""}">${h}<br><small>Par ${parFor(holes, h)}</small></th>`).join("")}<th>Total</th></tr></thead><tbody>${cards.map(card => { const stat = liveStat(scores, card.id, holes, count); return `<tr><th class="sticky">${esc(card.primary)}</th>${Array.from({ length: count }, (_, i) => i + 1).map(h => `<td class="${h === hole ? "current" : ""}">${scoreMark(scores.get(`${card.id}:${h}`)?.strokes, parFor(holes, h))}</td>`).join("")}<td class="tb-total-cell">${stat.thru ? `<strong>${stat.strokes}</strong><small>${relative(stat.toPar)} · Thru ${stat.thru}</small>` : "—"}</td></tr>`; }).join("")}</tbody></table>`;
-  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back to Golf home">‹</a><div class="tb-hole"><strong>${ordinal(hole)}</strong><small>Par ${parFor(holes, hole)}</small></div><button class="tb-circle" type="button" data-tb-next="1" aria-label="Next hole">›</button></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(outing.course || outing.name)}</strong></div><a class="tb-link" href="#/golf?id=${outing.id}&setup=1">SETUP</a></div><section class="tb-play"><div class="tb-progress">Hole ${hole} of ${count} · ${cards.length} scorecard${cards.length === 1 ? "" : "s"}</div><div class="tb-roster">${rows}</div><div class="tb-actions"><button class="btn" type="button" data-tb-card>Scorecard</button><button class="btn primary" type="button" data-tb-finish ${outing.status === "final" ? "disabled" : ""}>${outing.status === "final" ? "Finished" : "Finish tournament"}</button></div></section><section class="tb-card" hidden><header class="tb-card-head"><button class="tb-card-back" type="button" data-tb-card>‹ Back to match</button><h2>SCORECARD</h2></header><div class="tb-hint">Drag left or right to scan every hole</div><div class="tb-table-wrap">${table}</div><div class="tb-score-legend"><span><i class="tb-mark eagle">3</i>Eagle</span><span><i class="tb-mark birdie">4</i>Birdie</span><span><i class="tb-mark par">5</i>Par</span><span><i class="tb-mark bogey">6</i>Bogey</span><span><i class="tb-mark double">7</i>D. Bogey</span><span><i class="tb-mark triple">8</i>T. Bogey</span></div></section><section class="tb-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Hole ${hole} · Par ${parFor(holes, hole)}</small></div><button class="tb-done" type="button" data-tb-done>Done</button></div><div class="tb-controls"><div><span class="tb-label">Shots</span><div class="tb-step"><button type="button" data-tb-step="strokes:-1">−</button><output data-tb-strokes>—</output><button type="button" data-tb-step="strokes:1">+</button></div></div><div><span class="tb-label">Putts</span><div class="tb-step"><button type="button" data-tb-step="putts:-1">−</button><output data-tb-putts>—</output><button type="button" data-tb-step="putts:1">+</button></div></div></div></section></main>`;
+  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back to Golf home">‹</a><div class="tb-hole"><strong>${ordinal(hole)}</strong><small>Par ${parFor(holes, hole)}</small></div><button class="tb-circle" type="button" data-tb-next="1" aria-label="Next hole">›</button></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(outing.course || outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${outing.id}&setup=1">SETUP</a>` : ""}</div><section class="tb-play"><div class="tb-progress">Hole ${hole} of ${count} · ${cards.length} scorecard${cards.length === 1 ? "" : "s"}</div><div class="tb-roster">${rows}</div><div class="tb-actions ${state.organizer ? "" : "is-member"}"><button class="btn" type="button" data-tb-card>Scorecard</button>${state.organizer ? `<button class="btn primary" type="button" data-tb-finish ${outing.status === "final" ? "disabled" : ""}>${outing.status === "final" ? "Finished" : "Finish tournament"}</button>` : ""}</div></section><section class="tb-card" hidden><header class="tb-card-head"><button class="tb-card-back" type="button" data-tb-card>‹ Back to match</button><h2>SCORECARD</h2></header><div class="tb-hint">Drag left or right to scan every hole</div><div class="tb-table-wrap">${table}</div><div class="tb-score-legend"><span><i class="tb-mark eagle">3</i>Eagle</span><span><i class="tb-mark birdie">4</i>Birdie</span><span><i class="tb-mark par">5</i>Par</span><span><i class="tb-mark bogey">6</i>Bogey</span><span><i class="tb-mark double">7</i>D. Bogey</span><span><i class="tb-mark triple">8</i>T. Bogey</span></div></section><section class="tb-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Hole ${hole} · Par ${parFor(holes, hole)}</small></div><button class="tb-done" type="button" data-tb-done>Done</button></div><div class="tb-controls"><div><span class="tb-label">Shots</span><div class="tb-step"><button type="button" data-tb-step="strokes:-1">−</button><output data-tb-strokes>—</output><button type="button" data-tb-step="strokes:1">+</button></div></div><div><span class="tb-label">Putts</span><div class="tb-step"><button type="button" data-tb-step="putts:-1">−</button><output data-tb-putts>—</output><button type="button" data-tb-step="putts:1">+</button></div></div></div></section></main>`;
 }
 
 function wire(root, state) {
@@ -131,6 +139,7 @@ function wire(root, state) {
   const sheet = root.querySelector("[data-tb-sheet]");
   root.querySelectorAll("[data-tb-open]").forEach(button => button.addEventListener("click", () => {
     const cardId = Number(button.dataset.tbOpen), label = cardsFor(state).find(item => Number(item.id) === cardId), hole = Number(activeHole.get(state.outing.id)) || 1, row = state.scores.get(`${cardId}:${hole}`) || {};
+    if (!canScoreBetaCard({ ...state, memberId: getMemberId(), cardId })) return;
     sheet.dataset.teamId = String(cardId); sheet.dataset.strokes = String(Number(row.strokes) || 0); sheet.dataset.putts = String(Number(row.putts) || 0); sheet.querySelector("[data-tb-avatar]").textContent = initials(label.primary); sheet.querySelector("[data-tb-name]").textContent = label.primary; sheet.querySelector("[data-tb-strokes]").textContent = Number(row.strokes) || "—"; sheet.querySelector("[data-tb-putts]").textContent = Number(row.putts) || "—"; sheet.hidden = false;
   }));
   root.querySelector("[data-tb-done]")?.addEventListener("click", async () => { sheet.hidden = true; await new Promise(resolve => setTimeout(resolve, 650)); paint(); });
@@ -140,34 +149,41 @@ function wire(root, state) {
     if (field === "putts" && !Number(sheet.dataset.strokes)) { const par = parFor(state.holes, hole); sheet.dataset.strokes = String(par); sheet.querySelector("[data-tb-strokes]").textContent = String(par); }
     persistScore(state, teamId, hole, Number(sheet.dataset.strokes) || 0, Number(sheet.dataset.putts) || 0);
   }));
-  root.querySelector("[data-tb-finish]")?.addEventListener("click", async event => { event.currentTarget.disabled = true; const result = await db().from("golf_outings").update({ status: "final", finalized_at: new Date().toISOString() }).eq("id", state.outing.id); if (result.error) { event.currentTarget.disabled = false; toast(result.error.message || "Could not finish tournament", true); } else { toast("Tournament finished"); paint(); } });
+  root.querySelector("[data-tb-finish]")?.addEventListener("click", async event => { if (!state.organizer) return; event.currentTarget.disabled = true; const result = await db().from("golf_outings").update({ status: "final", finalized_at: new Date().toISOString() }).eq("id", state.outing.id); if (result.error) { event.currentTarget.disabled = false; toast(result.error.message || "Could not finish tournament", true); } else { toast("Tournament finished"); paint(); } });
 }
 
-async function setupTeams(state, count, shuffle) {
-  if (state.teams.length && !confirm("Replace the current teams? Existing team scorecards and matches will be reset.")) return false;
+async function removeIndividualRound(state) {
+  const singles = state.rounds.find(round => round.format === "singles");
+  if (!singles) return;
+  const gone = await db().from("golf_rounds").delete().eq("id", singles.id);
+  if (gone.error) throw gone.error;
+}
+
+async function createTeams(state, count) {
+  if ((state.teams.length || state.individual) && !confirm("Replace the current setup? Existing Beta scorecards and matches will be reset.")) return false;
   const clear = await db().from("golf_participants").update({ team_id: null, pick_number: null, picked_at: null }).eq("outing_id", state.outing.id);
   if (clear.error) throw clear.error;
   const gone = await db().from("golf_teams").delete().eq("outing_id", state.outing.id);
   if (gone.error) throw gone.error;
+  if (state.individual) await removeIndividualRound(state);
   const rows = Array.from({ length: count }, (_, index) => ({ outing_id: state.outing.id, name: `Team ${index + 1}`, color: ["#c73a33", "#f4c430", "#426a7d", "#a4c43b", "#70518a", "#e5a64a"][index], sort_order: index, draft_order: index }));
   const made = await db().from("golf_teams").insert(rows).select("*").order("sort_order");
   if (made.error) throw made.error;
+  return true;
+}
+
+async function dealTeams(state, shuffle) {
+  if (!state.teams.length) throw new Error("Create the teams first");
   const players = [...state.participants];
   if (shuffle) for (let i = players.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [players[i], players[j]] = [players[j], players[i]]; }
-  const writes = await Promise.all(players.map((person, index) => db().from("golf_participants").update({ team_id: made.data[index % made.data.length].id }).eq("id", person.id)));
+  const writes = await Promise.all(players.map((person, index) => db().from("golf_participants").update({ team_id: state.teams[index % state.teams.length].id }).eq("id", person.id)));
   const failed = writes.find(result => result.error);
   if (failed) throw failed.error;
-  if (count === 2) {
-    let round = state.rounds.find(item => item.format === "pairs");
-    if (!round) { const added = await db().rpc("golf_add_round", { p_outing_id: state.outing.id, p_format: "pairs", p_scoring: "strokes" }); if (added.error) throw added.error; round = { id: added.data }; }
-    const built = await db().rpc("golf_build_pairs", { p_round_id: Number(round.id) });
-    if (built.error) throw built.error;
-  }
-  return true;
 }
 
 function wireSetup(root, state) {
   root.querySelectorAll("[data-tb-mode]").forEach(button => button.addEventListener("click", () => {
+    setupMode.set(state.outing.id, button.dataset.tbMode);
     root.querySelectorAll("[data-tb-mode]").forEach(item => item.classList.toggle("is-active", item === button));
     root.querySelectorAll("[data-tb-panel]").forEach(panel => { panel.hidden = panel.dataset.tbPanel !== button.dataset.tbMode; });
   }));
@@ -182,7 +198,11 @@ function wireSetup(root, state) {
     if (synced.error) throw synced.error;
     toast(`${state.participants.length}-golfer singles match ready`); location.hash = `#/golf?id=${state.outing.id}`;
   }));
-  root.querySelectorAll("[data-tb-build-teams]").forEach(button => button.addEventListener("click", event => busy(event.currentTarget, async () => { const count = Math.max(2, Math.min(6, Number(root.querySelector("[data-tb-team-count]")?.value) || 2)); const done = await setupTeams(state, count, button.dataset.tbBuildTeams === "random"); if (done) { toast(`${count} teams ready`); location.hash = `#/golf?id=${state.outing.id}`; } else { button.disabled = false; root.querySelector("[data-tb-status]").textContent = ""; } })));
+  root.querySelector("[data-tb-create-teams]")?.addEventListener("click", event => busy(event.currentTarget, async () => { const count = Math.max(2, Math.min(6, Number(root.querySelector("[data-tb-team-count]")?.value) || 2)); const done = await createTeams(state, count); if (done) { toast(`${count} empty teams ready`); await paint(); } else { event.currentTarget.disabled = false; root.querySelector("[data-tb-status]").textContent = ""; } }));
+  root.querySelectorAll("[data-tb-deal]").forEach(button => button.addEventListener("click", event => busy(event.currentTarget, async () => { await dealTeams(state, button.dataset.tbDeal === "random"); toast(button.dataset.tbDeal === "random" ? "Players placed randomly" : "Players placed evenly"); await paint(); })));
+  root.querySelectorAll("[data-tb-place]").forEach(select => select.addEventListener("change", event => busy(event.currentTarget, async () => { const result = await db().from("golf_participants").update({ team_id: select.value ? Number(select.value) : null, pick_number: null, picked_at: null }).eq("id", select.dataset.tbPlace); if (result.error) throw result.error; await paint(); })));
+  root.querySelectorAll("[data-tb-save-team]").forEach(button => button.addEventListener("click", event => busy(event.currentTarget, async () => { const input = root.querySelector(`[data-tb-team-name="${button.dataset.tbSaveTeam}"]`), name = input?.value.trim(); if (!name) throw new Error("Team name cannot be blank"); const result = await db().from("golf_teams").update({ name }).eq("id", button.dataset.tbSaveTeam); if (result.error) throw result.error; toast("Team name saved"); await paint(); })));
+  root.querySelector("[data-tb-start-teams]")?.addEventListener("click", event => busy(event.currentTarget, async () => { if (state.individual) await removeIndividualRound(state); toast("Team match ready"); location.hash = `#/golf?id=${state.outing.id}`; }));
 }
 
 async function paint() {
@@ -193,6 +213,11 @@ async function paint() {
   if (outingResult.error || outingResult.data?.event_type !== "tournament_beta") { document.body.classList.remove("tb-focus"); return; }
   const root = document.querySelector("#golf-outing");
   if (!root) return;
+  const organizer = canEdit("golf_participants");
+  if (betaRouteForMember({ organizer, setup: current.setup, classic: current.classic }) === "match" && (current.setup || current.classic)) {
+    location.replace(`#/golf?id=${current.id}`);
+    return;
+  }
   if (current.classic) {
     document.body.classList.remove("tb-focus");
     if (!root.querySelector(".tb-classic-banner")) root.insertAdjacentHTML("afterbegin", `<div class="tb-classic-banner"><strong>Tournament Beta setup</strong> · <a href="#/golf?id=${current.id}">Open beta scoring</a></div>`);
@@ -227,9 +252,9 @@ async function paint() {
     }
   }
   const individual = sides.length >= 2;
-  const state = { outing: outingResult.data, teams: teamsResult.data || [], participants: partsResult.data || [], scores: individual ? scoreMap(matchScores, "side_id") : scoreMap(scoresResult.data || []), holes, rounds, sides, matchPlayers, individual, members: members || [], names: new Map((members || []).map(member => [String(member.id), nameOf(member)])) };
+  const state = { outing: outingResult.data, teams: teamsResult.data || [], participants: partsResult.data || [], scores: individual ? scoreMap(matchScores, "side_id") : scoreMap(scoresResult.data || []), holes, rounds, sides, matchPlayers, individual, organizer, members: members || [], names: new Map((members || []).map(member => [String(member.id), nameOf(member)])) };
   root.innerHTML = current.setup ? setupMarkup(state) : markup(state);
-  document.body.classList.toggle("tb-focus", current.setup || cardsFor(state).length > 0);
+  document.body.classList.add("tb-focus");
   if (current.setup) wireSetup(root, state); else wire(root, state);
 }
 
