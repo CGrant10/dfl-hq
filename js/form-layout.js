@@ -17,7 +17,7 @@ import { esc } from "./ui.js";
  * Lay a field list out as essentials plus a folded "more options".
  *
  * A broadcast slide has SEVENTEEN fields. Every one is worth having and the
- * commissioner wants to keep them all, but meeting all seventeen before writing
+ * commissioner wants to keep them all, but meeting all twenty before writing
  * a headline is why making a slide felt like filling in a form rather than
  * writing a slide. Five are up front now; twelve are one tap away.
  *

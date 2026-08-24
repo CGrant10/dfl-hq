@@ -108,6 +108,7 @@ Dependencies are real: a file that adds a column to `members` needs
 | 28 | `broadcast_items_schema.sql` | Hand-written front-page slides. |
 | 29 | `broadcast_items_polish.sql` | Additive follow-up to 28. |
 | 30 | `broadcast_v2_schema.sql` | `members.broadcast_image` / `lookalike_image` / `chaos_image`, plus automatic-slide overrides. |
+| 30a | `broadcast_artwork_framing_schema.sql` | Custom-slide image fit and horizontal/vertical focal point controls. Existing artwork stays cover/center. |
 
 ### Commissioner roles and profile locks
 
@@ -173,7 +174,7 @@ Dependencies are real: a file that adds a column to `members` needs
 
 | # | File | What it establishes |
 |---|---|---|
-| 45 | `ticker_items_schema.sql` | `ticker_items` — label, text, route, weight, active and an optional showing window. Needs 2 and 31. The ticker was entirely **derived** (next event, golf day, open poll, newest announcement, reigning champion) with no row a commissioner could touch. Hand-written lines now sit **alongside** the derived ones, ahead of them — so an empty table is exactly the old behaviour and there is no "enabled" switch to get wrong. Deliberately five fields against `broadcast_items`' seventeen: a slide is a piece of design, a ticker line is a sentence. `route` is a route **name**, not a URL, so a typo cannot make a link out of the app. Written by `broadcast` — the same permission that owns the slides. Ends with a report of what is showing, scheduled, expired or off. |
+| 45 | `ticker_items_schema.sql` | `ticker_items` — label, text, route, weight, active and an optional showing window. Needs 2 and 31. The ticker was entirely **derived** (next event, golf day, open poll, newest announcement, reigning champion) with no row a commissioner could touch. Hand-written lines now sit **alongside** the derived ones, ahead of them — so an empty table is exactly the old behaviour and the only new choice is composition, not another source switch. Deliberately five fields against `broadcast_items`' twenty: a slide is a piece of design, a ticker line is a sentence. `route` is a route **name**, not a URL, so a typo cannot make a link out of the app. Written by `broadcast` — the same permission that owns the slides. Ends with a report of what is showing, scheduled, expired or off. |
 
 ### Not schema
 
