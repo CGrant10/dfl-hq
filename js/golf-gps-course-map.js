@@ -101,14 +101,43 @@ body[data-mode="light"] .is-hole-experience .dfl-gps-adjust{border-color:var(--l
 body[data-mode="light"] .is-hole-experience .dfl-gps-calibration{border-color:var(--line);background:var(--bg-3)}
 body[data-mode="light"] .is-hole-experience .dfl-gps-calibration button{border-color:var(--control-line);background:var(--bg-2);color:var(--text)}
 body[data-mode="light"] .is-hole-experience .dfl-gps-calibration button.is-mapping{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+/* The hole view. TheGrint's screen is not an overhead map: the hole is turned
+   so the green is always straight ahead and the ground is raked back toward the
+   horizon. Leaflet has no rotation, so the whole stage is a CSS transform and
+   the map inside it is oversized - at 190% the rotated corners never expose the
+   frame. Markers sit inside the same transform, so each one counter-rotates to
+   stay upright and readable. */
+.is-hole-experience .dfl-hole-map{perspective:1100px;perspective-origin:50% 78%}
+.dfl-hole-stage{position:absolute;inset:0;transition:transform .45s cubic-bezier(.22,.61,.36,1)}
+.dfl-hole-stage [data-gps-map]{position:absolute;left:-45%;top:-45%;width:190%;height:190%;min-height:0}
+.dfl-hole-stage.is-hole-view{transform:rotateX(56deg) rotate(var(--gps-rot,0deg));transform-origin:50% 66%}
+.dfl-hole-stage.is-hole-view .dfl-gps-map-player,.dfl-hole-stage.is-hole-view .dfl-gps-map-tee{transform:rotate(var(--gps-back,0deg)) rotateX(-56deg)}
+.dfl-hole-stage.is-hole-view .dfl-gps-map-green{transform:rotate(var(--gps-back,0deg)) rotateX(-56deg) rotate(-45deg)}
+.dfl-hole-stage.is-hole-view .dfl-gps-distance-pill,.dfl-hole-stage.is-hole-view .dfl-gps-arc-label{transform:rotate(var(--gps-back,0deg)) rotateX(-56deg)}
+.dfl-gps-arc-label{min-width:30px;padding:2px 5px;border-radius:9px;background:rgba(5,10,13,.72);color:#fff;font:900 10px/1 inherit;text-align:center}
+/* Front / centre / back, the three numbers TheGrint puts under the hole. */
+.is-hole-experience .dfl-gps-fcb{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}
+.is-hole-experience .dfl-gps-fcb[hidden]{display:none}
+.is-hole-experience .dfl-gps-fcb div{padding:6px 4px;border:1px solid rgba(255,255,255,.16);border-radius:11px;background:rgba(255,255,255,.06);text-align:center}
+.is-hole-experience .dfl-gps-fcb small{display:block;color:#a9b8c0;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:900}
+.is-hole-experience .dfl-gps-fcb b{display:block;margin-top:2px;font-size:19px;font-variant-numeric:tabular-nums}
+.is-hole-experience .dfl-gps-fcb div.is-center{border-color:rgba(255,212,0,.5);background:rgba(255,212,0,.12)}
+.is-hole-experience .dfl-gps-fcb div.is-center b{color:#ffd400}
+body[data-mode="light"] .is-hole-experience .dfl-gps-fcb div{border-color:var(--line);background:var(--bg-3)}
+body[data-mode="light"] .is-hole-experience .dfl-gps-fcb small{color:var(--muted)}
 @media(min-width:760px){.dfl-gps-panel.is-hole-experience{inset:3vh max(12px,calc((100vw - 520px)/2));border-radius:20px}.is-hole-experience .dfl-hole-map{min-height:0}}
 `;
   document.head.appendChild(style);
 }
 
 export function setupCourseGps(config){
-  let watchId=null,position=null,hole=1,attachedCard=null,cleanup=null,errorText="",geometryError="",map=null,tileLayer=null,fallbackOverlay=null,fallbackHole=0,imageryReady=false,playerMarker=null,teeMarker=null,accuracyCircle=null,greenMarker=null,distanceLine=null,distanceMarker=null,mappingKind="",hasFitted=false,followMode=true,holeLocked=false,refining=false,samples=[],memberBag=[],bagMemberId=null,courseId=null,geometryLoading=false,sharedHoles=new Map();
+  let watchId=null,position=null,hole=1,attachedCard=null,cleanup=null,errorText="",geometryError="",map=null,tileLayer=null,fallbackOverlay=null,fallbackHole=0,imageryReady=false,playerMarker=null,teeMarker=null,accuracyCircle=null,greenMarker=null,distanceLine=null,distanceMarker=null,mappingKind="",hasFitted=false,followMode=true,holeView=true,arcLayers=[],holeLocked=false,refining=false,samples=[],memberBag=[],bagMemberId=null,courseId=null,geometryLoading=false,sharedHoles=new Map();
   const selector=`[data-gps-course="${config.key}"]`;
+  const GEOMETRY_COLUMNS="hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at";
+  const GREEN_EDGE_COLUMNS="front_lat,front_lng,back_lat,back_lng";
+  const ENDPOINT_LABELS={tee:"tee",green:"green centre",front:"green front",back:"green back"};
+  const ENDPOINT_SHORT={tee:"tee",green:"center",front:"front",back:"back"};
+  const ENDPOINT_PROMPTS={tee:"tee box",green:"center of the green",front:"front edge of the green",back:"back edge of the green"};
   const activeCourseId=()=>Number(attachedCard?.dataset.gpsCourseId||attachedCard?.closest("[data-gps-course-id]")?.dataset.gpsCourseId)||null;
   const activeCourseName=()=>attachedCard?.dataset.gpsCourseName||attachedCard?.closest("[data-gps-course-name]")?.dataset.gpsCourseName||config.courseName||config.label.split(" · ")[0];
   const activeLabel=()=>attachedCard?.dataset.gpsCourseLabel||attachedCard?.closest("[data-gps-course-label]")?.dataset.gpsCourseLabel||config.label;
@@ -129,6 +158,49 @@ export function setupCourseGps(config){
   const officialPar=()=>betaSlot()?betaValue("tbPars",betaSlot()?.dataset.tbHolePar):Number(gpsSlot()?.dataset.gqmHolePar)||0;
   const teeFor=value=>{const shared=pointFrom(sharedHoleFor(value),"tee");if(shared)return shared;const aim=greenFor(value),landing=fairwayTargetFor(value),yards=officialYardsFor(value);if(!aim||!landing||!yards)return null;const remaining=distanceYards(landing,aim);if(!remaining)return null;const ratio=yards/remaining;return{lat:aim.lat+(landing.lat-aim.lat)*ratio,lng:aim.lng+(landing.lng-aim.lng)*ratio,inferred:true}};
   const tee=()=>teeFor(hole);
+  /* TheGrint maps three points on every green - front, centre and back - plus the
+     tee and the fairway landing zone. Commissioners can now calibrate all of
+     them. Where only the centre has been mapped, front and back are projected
+     along the approach line using a 32-yard-deep green, which is the depth
+     TheGrint's own mapping guide assumes, and the reading is labelled estimated
+     so nobody mistakes it for a surveyed point. */
+  const GREEN_HALF_DEPTH=16;
+  const radians=value=>value*Math.PI/180;
+  const degrees=value=>value*180/Math.PI;
+  function bearingBetween(from,to){
+    if(!from||!to)return null;
+    const lat1=radians(from.lat),lat2=radians(to.lat),dLng=radians(to.lng-from.lng);
+    const y=Math.sin(dLng)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+    const bearing=degrees(Math.atan2(y,x));
+    return Number.isFinite(bearing)?(bearing+360)%360:null;
+  }
+  function projectPoint(from,bearing,yards){
+    if(!from||bearing==null||!Number.isFinite(yards))return null;
+    const angular=(yards/1.0936133)/6371000,heading=radians(bearing),lat1=radians(from.lat),lng1=radians(from.lng);
+    const lat2=Math.asin(Math.sin(lat1)*Math.cos(angular)+Math.cos(lat1)*Math.sin(angular)*Math.cos(heading));
+    const lng2=lng1+Math.atan2(Math.sin(heading)*Math.sin(angular)*Math.cos(lat1),Math.cos(angular)-Math.sin(lat1)*Math.sin(lat2));
+    return{lat:degrees(lat2),lng:((degrees(lng2)+540)%360)-180,derived:true};
+  }
+  const approachOrigin=value=>(position?fixPoint(position):null)||teeFor(value);
+  const holeBearing=value=>bearingBetween(approachOrigin(value),greenFor(value));
+  function greenEdgeFor(value,edge){
+    const shared=pointFrom(sharedHoleFor(value),edge);
+    if(shared)return shared;
+    const centre=greenFor(value),bearing=holeBearing(value);
+    if(!centre||bearing==null)return null;
+    return projectPoint(centre,edge==="front"?(bearing+180)%360:bearing,GREEN_HALF_DEPTH);
+  }
+  function greenReadings(){
+    const here=position?fixPoint(position):null,centre=greenFor(hole);
+    if(!here||!centre)return null;
+    const front=greenEdgeFor(hole,"front"),back=greenEdgeFor(hole,"back"),limit=maximumYards();
+    return{
+      front:front?capHoleDistance(distanceYards(here,front),limit):null,
+      centre:capHoleDistance(distanceYards(here,centre),limit),
+      back:back?capHoleDistance(distanceYards(here,back),limit):null,
+      estimated:Boolean(front&&!front.shared)
+    };
+  }
   const courseTarget=()=>{const center=config.courseCenter||[],lat=Number(center[0]),lng=Number(center[1]);if(Number.isFinite(lat)&&Number.isFinite(lng))return{lat,lng,fallback:true};const shared=[...sharedHoles.values()].map(row=>pointFrom(row,"green")||pointFrom(row,"tee")).find(Boolean);if(shared)return shared;if(position)return fixPoint(position);return{lat:0,lng:0,fallback:true}};
   const target=()=>green()||courseTarget();
   const rawReading=()=>position?distanceYards({lat:position.coords.latitude,lng:position.coords.longitude},target()):null;
@@ -144,7 +216,12 @@ export function setupCourseGps(config){
     geometryLoading=true;geometryError="";
     try{
       let foundId=activeCourseId();if(!foundId){const course=await db().from("golf_courses").select("id").eq("name",activeCourseName()).limit(1).maybeSingle();if(course.error)throw course.error;if(!course.data?.id)throw Error("Saved course not found");foundId=Number(course.data.id)}
-      const holes=await db().from("golf_course_holes").select("hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at").eq("course_id",foundId).order("hole");
+      /* front_/back_ arrive with golf_gps_green_points_schema.sql. Selecting a
+         column Postgres does not have fails the whole request, so a database
+         that has not run the migration falls back to the original columns and
+         keeps working on projected green edges. */
+      let holes=await db().from("golf_course_holes").select(`${GEOMETRY_COLUMNS},${GREEN_EDGE_COLUMNS}`).eq("course_id",foundId).order("hole");
+      if(holes.error)holes=await db().from("golf_course_holes").select(GEOMETRY_COLUMNS).eq("course_id",foundId).order("hole");
       if(holes.error)throw holes.error;courseId=foundId;sharedHoles=new Map((holes.data||[]).map(row=>[Number(row.hole),row]));fallbackHole=0;hasFitted=false;holeLocked=false;if(position)detectHole(fixPoint(position));refresh(true);
     }catch(err){geometryError=err?.message||"Shared hole calibration is unavailable.";console.warn("golf GPS geometry:",geometryError)}finally{geometryLoading=false}
   }
@@ -152,18 +229,25 @@ export function setupCourseGps(config){
     if(!canCalibrate())return toast("Golf commissioner access is required",true);
     if(!courseId)await loadCourseGeometry();
     if(!courseId)return toast(geometryError||"Could not find this saved course",true);
-    const prefix=kind==="tee"?"tee":"green",patch={[`${prefix}_lat`]:point.lat,[`${prefix}_lng`]:point.lng,gps_updated_at:new Date().toISOString(),gps_updated_by:Number(currentMember()?.id)||null};
+    const prefix=kind,patch={[`${prefix}_lat`]:point.lat,[`${prefix}_lng`]:point.lng,gps_updated_at:new Date().toISOString(),gps_updated_by:Number(currentMember()?.id)||null};
     setMapStatus(`Saving Hole ${hole} ${prefix}…`);
-    const result=await db().from("golf_course_holes").update(patch).eq("course_id",courseId).eq("hole",targetHole()).select("hole,yardage_men,tee_lat,tee_lng,green_lat,green_lng,gps_updated_at").maybeSingle();
-    if(result.error||!result.data){setMapStatus("");return toast(result.error?.message||"That GPS point was not saved",true)}
+    let result=await db().from("golf_course_holes").update(patch).eq("course_id",courseId).eq("hole",targetHole()).select(`${GEOMETRY_COLUMNS},${GREEN_EDGE_COLUMNS}`).maybeSingle();
+    if(result.error)result=await db().from("golf_course_holes").update(patch).eq("course_id",courseId).eq("hole",targetHole()).select(GEOMETRY_COLUMNS).maybeSingle();
+    if(result.error||!result.data){setMapStatus("");const raw=String(result.error?.message||"");return toast(/front_|back_/.test(raw)?"Run golf_gps_green_points_schema.sql before mapping green edges":raw||"That GPS point was not saved",true)}
     sharedHoles.set(targetHole(),result.data);if(prefix==="green"){const local=greens();local[targetHole()]={lat:point.lat,lng:point.lng,at:Date.now(),source:"shared"};save(config.storageKey,local)}
-    mappingKind="";fallbackHole=0;hasFitted=false;setMapStatus("");toast(`Hole ${hole} ${prefix} saved for everyone`);refresh(true);
+    mappingKind="";fallbackHole=0;hasFitted=false;setMapStatus("");toast(`Hole ${hole} ${ENDPOINT_LABELS[prefix]||prefix} saved for everyone`);refresh(true);
   }
   function detectHole(point){
     if(holeLocked||!point)return false;
     const total=Number(attachedCard?.dataset.tbHoleCount)||Number(attachedCard?.closest("[data-gqm-root]")?.dataset.gqmHoleCount)||9,tees={};
     for(let physical=1;physical<=Math.min(9,total);physical++){const start=teeFor(physical);if(start)tees[physical]=start}
-    const nearest=nearestTeeHole(point,tees,140);if(!nearest)return false;
+    /* Courses whose tees have never been calibrated - Center and Red Trail both
+       ship greens only - used to fail hole detection outright, because the tee
+       list came back empty. Falling back to the greens still identifies the
+       hole: being inside 120 yards of a green means you are playing it. */
+    let nearest=nearestTeeHole(point,tees,140);
+    if(!nearest){const greenTargets={};for(let physical=1;physical<=Math.min(9,total);physical++){const centre=greenFor(physical);if(centre)greenTargets[physical]=centre}nearest=nearestTeeHole(point,greenTargets,120)}
+    if(!nearest)return false;
     const cycle=Math.floor((hole-1)/9),detected=Math.min(total,nearest.hole+cycle*9);if(detected!==hole){hole=detected;fallbackHole=0;hasFitted=false}
     holeLocked=true;followMode=true;return true;
   }
@@ -171,12 +255,26 @@ export function setupCourseGps(config){
   async function loadMemberBag(){const me=currentMember(),id=me==null?null:String(me.id);if(id===bagMemberId)return;bagMemberId=id;memberBag=[];if(!me){refresh();return}const{data,error}=await db().from("golf_bag").select("club,yards").eq("member_id",me.id).order("sort_order");if(!error&&String(currentMember()?.id)===id)memberBag=data||[];refresh()}
   function acceptFix(next){const point=fixPoint(next),accuracy=Number(next?.coords?.accuracy),now=Date.now(),timestamp=Number(next?.timestamp)||now;if(!Number.isFinite(point.lat)||!Number.isFinite(point.lng)||!Number.isFinite(accuracy)||accuracy<=0||now-timestamp>30000)return false;const last=samples.at(-1);if(last){const seconds=Math.max(.1,(timestamp-last.timestamp)/1000),jumpMeters=distanceYards(point,last.point)/1.0936133,limit=Math.max(120,(accuracy+last.accuracy)*3,seconds*55);if(seconds<5&&jumpMeters>limit)return false}const sample={position:next,point,accuracy,timestamp};samples.push(sample);samples=samples.filter(item=>now-item.timestamp<=8000).slice(-10);const current=position?{point:fixPoint(position),accuracy:Number(position.coords.accuracy)||999}:null,moved=current&&distanceYards(point,current.point)/1.0936133>Math.max(12,current.accuracy+accuracy);const best=moved&&accuracy<=Math.max(55,current.accuracy*2)?sample:[...samples].sort((a,b)=>(a.accuracy+(now-a.timestamp)/1000*2.5)-(b.accuracy+(now-b.timestamp)/1000*2.5))[0];position={coords:{latitude:best.point.lat,longitude:best.point.lng,accuracy:best.accuracy,altitude:best.position.coords.altitude??null,altitudeAccuracy:best.position.coords.altitudeAccuracy??null,heading:best.position.coords.heading??null,speed:best.position.coords.speed??null},timestamp:best.timestamp};refining=false;errorText="";return true}
   function handleFix(next){const first=!position;if(!acceptFix(next))return;const detected=detectHole(fixPoint(position));if(first||detected)hasFitted=false;refresh(followMode)}
+  /* Turn the stage so the green is straight ahead. Calibration taps have to
+     land on real coordinates, so the tilt is dropped flat whenever a tee or
+     green is being placed - a tap through a rotated element does not hit the
+     latitude you aimed at. */
+  function applyHoleView(){
+    const stage=document.querySelector(`.dfl-gps-panel${selector} [data-gps-stage]`);
+    if(!stage)return;
+    const bearing=holeBearing(hole),live=holeView&&!mappingKind&&bearing!=null;
+    stage.classList.toggle("is-hole-view",live);
+    stage.style.setProperty("--gps-rot",`${live?-bearing:0}deg`);
+    stage.style.setProperty("--gps-back",`${live?bearing:0}deg`);
+    const toggle=document.querySelector(`.dfl-gps-panel${selector} [data-gps-view]`);
+    if(toggle){toggle.textContent=live?"Overhead":"Hole view";toggle.setAttribute("aria-pressed",String(live))}
+  }
   function markerIcon(kind){const L=globalThis.L;return L.divIcon({className:"",html:`<div class="dfl-gps-map-${kind}"></div>`,iconSize:[24,24],iconAnchor:kind==="green"?[12,23]:[12,12]})}
   function drawMap(fit=false){
     if(!map||!globalThis.L)return;
     const L=globalThis.L,holeGreen=green(),aim=target(),start=tee(),here=position?{lat:position.coords.latitude,lng:position.coords.longitude}:null,onHole=Boolean(here&&!outsideHole()),lineStart=onHole?here:start,shown=reading()??maximumYards();
     refreshFallback();
-    playerMarker?.remove();teeMarker?.remove();accuracyCircle?.remove();greenMarker?.remove();distanceLine?.remove();distanceMarker?.remove();
+    playerMarker?.remove();teeMarker?.remove();accuracyCircle?.remove();greenMarker?.remove();distanceLine?.remove();distanceMarker?.remove();arcLayers.forEach(layer=>layer.remove());arcLayers=[];
     playerMarker=teeMarker=accuracyCircle=greenMarker=distanceLine=distanceMarker=null;
     if(onHole){
       accuracyCircle=L.circle([here.lat,here.lng],{radius:Number(position.coords.accuracy)||1,color:"#61adff",weight:1,opacity:.85,fillColor:"#228cff",fillOpacity:.14,interactive:false}).addTo(map);
@@ -190,36 +288,59 @@ export function setupCourseGps(config){
       const mid=[(lineStart.lat+aim.lat)/2,(lineStart.lng+aim.lng)/2],icon=L.divIcon({className:"",html:`<div class="dfl-gps-distance-pill">${formatYards(shown)}</div>`,iconSize:[78,38],iconAnchor:[39,19]});
       distanceMarker=L.marker(mid,{icon,zIndexOffset:1100,interactive:false,keyboard:false}).addTo(map);
     }
+    /* Layup arcs. TheGrint's Arcs widget rings you at 100/150/200/250; a ring
+       longer than what is left to the green is noise, so it is not drawn. */
+    if(onHole){
+      const remaining=rawReading(),lineBearing=bearingBetween(here,aim);
+      for(const ring of [100,150,200,250]){
+        if(!Number.isFinite(remaining)||ring>=remaining-10)continue;
+        arcLayers.push(L.circle([here.lat,here.lng],{radius:ring/1.0936133,color:"#fff",weight:1,opacity:.45,fill:false,dashArray:"4 8",interactive:false}).addTo(map));
+        const at=projectPoint(here,lineBearing,ring);
+        if(at)arcLayers.push(L.marker([at.lat,at.lng],{icon:L.divIcon({className:"",html:`<div class="dfl-gps-arc-label">${ring}</div>`,iconSize:[34,16],iconAnchor:[17,8]}),interactive:false,keyboard:false,zIndexOffset:600}).addTo(map));
+      }
+    }
+    applyHoleView();
     if(!fit||(onHole&&!followMode))return;
     setTimeout(()=>{
       map?.invalidateSize();
-      const points=lineStart?[[lineStart.lat,lineStart.lng],[aim.lat,aim.lng]]:[[aim.lat,aim.lng]],options={paddingTopLeft:[54,128],paddingBottomRight:[54,190],maxZoom:holeZoom(onHole?rawReading():maximumYards())};
+      /* The map element is 190% of its frame so the tilted view never shows a
+         corner, which means roughly 24% of it hangs outside the frame on every
+         side. Padding by that much keeps the hole inside what you can see. */
+      const size=map.getSize(),bleedX=Math.round(size.x*.237),bleedY=Math.round(size.y*.237);
+      const points=lineStart?[[lineStart.lat,lineStart.lng],[aim.lat,aim.lng]]:[[aim.lat,aim.lng]],options={paddingTopLeft:[54+bleedX,128+bleedY],paddingBottomRight:[54+bleedX,190+bleedY],maxZoom:holeZoom(onHole?rawReading():maximumYards())};
       if(hasFitted&&onHole)map.flyToBounds(points,{...options,duration:.7});else map.fitBounds(points,options);
     },0);
   }
   function refresh(fit=false){
     const bubble=document.querySelector(`.dfl-gps-bubble${selector}`),panel=document.querySelector(`.dfl-gps-panel${selector}`),value=reading(),suggestion=club(),holeGreen=green(),outside=outsideHole();
-    if(bubble){const quick=bubble.classList.contains("is-quick-round"),beta=bubble.classList.contains("is-beta"),fallback=officialYards(),shown=value??fallback,badgeLabel=String(config.key||"GPS").replace(/-/g," ").toUpperCase(),status=outside?"HOLE MAX":suggestion?uiEsc(suggestion.club):"LIVE GPS";bubble.innerHTML=quick?`<small class="dfl-gps-badge-label">${uiEsc(badgeLabel)}</small><strong>${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>`:beta?`<strong>${shown?formatYards(shown):"—"}<small>YDS</small></strong><span class="dfl-gps-beta-copy"><b>${value!=null?status:"OPEN HOLE MAP"}</b><small>${value!=null?(outside?`Hole ${hole} maximum until you reach the tee`:`To Hole ${hole} green · ${fixQuality(position.coords.accuracy)}`):"Satellite GPS · yardage · club"}</small></span>`:value!=null?`<strong>${formatYards(value)}</strong><small>yd · H${hole} · ${outside?"hole max":fixQuality(position.coords.accuracy)}</small>`:`<strong>H${hole}</strong><small><em>GPS</em> · ${refining?"refining":"locating you"}</small>`}
+    if(bubble){const quick=bubble.classList.contains("is-quick-round"),beta=bubble.classList.contains("is-beta"),fallback=officialYards(),shown=value??fallback,badgeLabel=String(config.key||"GPS").replace(/-/g," ").toUpperCase(),status=outside?"HOLE MAX":suggestion?uiEsc(suggestion.club):"LIVE GPS";bubble.innerHTML=quick?`<small class="dfl-gps-badge-label">${value!=null?"LIVE":uiEsc(badgeLabel)}</small><strong>${shown?formatYards(shown):"—"}</strong><small>${value!=null?(outside?"HOLE MAX":"TO PIN"):"YDS"}</small>`:beta?`<strong>${shown?formatYards(shown):"—"}<small>YDS</small></strong><span class="dfl-gps-beta-copy"><b>${value!=null?status:"OPEN HOLE MAP"}</b><small>${value!=null?(outside?`Hole ${hole} maximum until you reach the tee`:`To Hole ${hole} green · ${fixQuality(position.coords.accuracy)}`):"Satellite GPS · yardage · club"}</small></span>`:value!=null?`<strong>${formatYards(value)}</strong><small>yd · H${hole} · ${outside?"hole max":fixQuality(position.coords.accuracy)}</small>`:`<strong>H${hole}</strong><small><em>GPS</em> · ${refining?"refining":"locating you"}</small>`}
     if(!panel)return;
     panel.querySelector("[data-gps-hole]").textContent=String(hole);
     panel.querySelector("[data-gps-hole-par]").textContent=officialPar()||"—";
     panel.querySelector("[data-gps-hole-yards]").textContent=officialYards()||"—";
     panel.querySelector("[data-gps-distance]").textContent=formatYards(value??maximumYards());
     panel.querySelector("[data-gps-reading-label]").textContent=value==null?`Hole ${hole} tee to green`:holeGreen?`yards to Hole ${hole} green`:`yards to course · set Hole ${hole} green for exact`;
+    const edges=greenReadings(),fcb=panel.querySelector("[data-gps-fcb]");
+    fcb.hidden=!edges;
+    if(edges){
+      panel.querySelector("[data-gps-front]").textContent=edges.front!=null?formatYards(edges.front):"—";
+      panel.querySelector("[data-gps-center]").textContent=edges.centre!=null?formatYards(edges.centre):"—";
+      panel.querySelector("[data-gps-back]").textContent=edges.back!=null?formatYards(edges.back):"—";
+    }
     const score=scoreContext(),playerName=panel.querySelector("[data-gps-player-name]"),scoreButton=panel.querySelector("[data-gps-score]");if(playerName)playerName.textContent=score.name;if(scoreButton){scoreButton.hidden=!score.trigger;scoreButton.textContent=score.editing?"Edit score":"Add score"}
     const clubLine=panel.querySelector("[data-gps-club]");clubLine.hidden=!suggestion;clubLine.innerHTML=suggestion?`Your club · <strong>${uiEsc(suggestion.club)}</strong><small>${formatYards(suggestion.yards)} yd personal carry</small>`:"";
-    const prompt=panel.querySelector("[data-gps-map-prompt]");prompt.hidden=!mappingKind;prompt.textContent=mappingKind?`Tap the center of Hole ${hole} ${mappingKind==="tee"?"tee box":"green"}`:"";
-    panel.querySelectorAll("[data-map-endpoint]").forEach(button=>{const active=button.dataset.mapEndpoint===mappingKind;button.classList.toggle("is-mapping",active);button.textContent=active?`Tap map for ${mappingKind}`:`Set ${button.dataset.mapEndpoint}`});
+    const prompt=panel.querySelector("[data-gps-map-prompt]");prompt.hidden=!mappingKind;prompt.textContent=mappingKind?`Tap Hole ${hole} · ${ENDPOINT_PROMPTS[mappingKind]||mappingKind}`:"";
+    panel.querySelectorAll("[data-map-endpoint]").forEach(button=>{const kind=button.dataset.mapEndpoint,name=ENDPOINT_SHORT[kind]||kind,active=kind===mappingKind;button.classList.toggle("is-mapping",active);button.textContent=active?`Tap map for ${name}`:`Set ${name}`});
     const adjust=panel.querySelector("[data-gps-adjust]"),calibration=panel.querySelector("[data-gps-calibration]"),useLocation=panel.querySelector("[data-gps-use-location]");if(adjust){adjust.hidden=!canCalibrate();adjust.textContent=calibration?.hidden?"Adjust tee & green":"Close hole adjustment"}if(useLocation){useLocation.hidden=!mappingKind||!position;useLocation.textContent=mappingKind?`Use my GPS for ${mappingKind}`:"Use my GPS"}
     const follow=panel.querySelector("[data-map-me]");follow.textContent=position?(followMode?"Following":"Follow me"):"Start GPS";follow.setAttribute("aria-pressed",String(Boolean(position&&followMode)));
-    const shared=sharedHoleFor(hole),sharedLabel=shared.gps_updated_at?" · shared hole calibration":"";panel.querySelector("[data-gps-meta]").textContent=errorText?`${errorText} Tap Start GPS to retry.`:(position?outside?`Outside Hole ${hole} view · yardage capped at ${formatYards(maximumYards())} yd until you reach the hole`:`GPS ${fixQuality(position.coords.accuracy)} · ±${toYards(position.coords.accuracy)} yd · ${followMode?"following you":"map unlocked"}${sharedLabel}`:refining?"Refining a high-accuracy GPS fix…":geometryError&&canCalibrate()?geometryError:memberBag.length?"Waiting for your live GPS position…":"Add club carry distances under My Golf to receive a private club suggestion.");
+    const shared=sharedHoleFor(hole),edgeLabel=greenReadings()?.estimated?" · front/back estimated from a 32 yd green":"",sharedLabel=(shared.gps_updated_at?" · shared hole calibration":"")+edgeLabel;panel.querySelector("[data-gps-meta]").textContent=errorText?`${errorText} Tap Start GPS to retry.`:(position?outside?`Outside Hole ${hole} view · yardage capped at ${formatYards(maximumYards())} yd until you reach the hole`:`GPS ${fixQuality(position.coords.accuracy)} · ±${toYards(position.coords.accuracy)} yd · ${followMode?"following you":"map unlocked"}${sharedLabel}`:refining?"Refining a high-accuracy GPS fix…":geometryError&&canCalibrate()?geometryError:memberBag.length?"Waiting for your live GPS position…":"Add club carry distances under My Golf to receive a private club suggestion.");
     drawMap(fit||!hasFitted);hasFitted=true;
   }
   const gpsOptions={enableHighAccuracy:true,maximumAge:0,timeout:20000};
   function requestFreshFix(){if(!navigator.geolocation?.getCurrentPosition)return;refining=true;errorText="";refresh();navigator.geolocation.getCurrentPosition(next=>handleFix(next),err=>{refining=false;if(!position)errorText=err?.message||"Could not get a fresh GPS fix.";refresh()},gpsOptions)}
   function startGps(){if(watchId!=null)return;if(!navigator.geolocation){errorText="This device did not provide GPS.";refresh();return}refining=true;watchId=navigator.geolocation.watchPosition(next=>handleFix(next),err=>{refining=false;errorText=err?.message||"Location permission is needed for live yardage.";refresh()},gpsOptions);requestFreshFix()}
   function restartGps(){if(watchId!=null)navigator.geolocation?.clearWatch(watchId);watchId=null;position=null;samples=[];errorText="";hasFitted=false;startGps();refresh()}
-  function destroyMap(){map?.remove();map=null;tileLayer=fallbackOverlay=null;fallbackHole=0;playerMarker=teeMarker=accuracyCircle=greenMarker=distanceLine=distanceMarker=null}
+  function destroyMap(){map?.remove();map=null;tileLayer=fallbackOverlay=null;fallbackHole=0;arcLayers=[];playerMarker=teeMarker=accuracyCircle=greenMarker=distanceLine=distanceMarker=null}
   function closePanel(){destroyMap();document.querySelector(`.dfl-gps-panel${selector}`)?.remove();if(attachedCard){hole=scorecardHole(attachedCard);hasFitted=false;refresh()}}
   async function initMap(panel){
     const host=panel.querySelector("[data-gps-map]");
@@ -245,10 +366,10 @@ export function setupCourseGps(config){
     const panel=document.createElement("section");panel.className="dfl-gps-panel is-hole-experience";panel.dataset.gpsCourse=config.key;panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label",`${activeLabel()} hole GPS`);
     panel.innerHTML=`
       <div class="dfl-hole-map">
-        <div data-gps-map></div>
+        <div class="dfl-hole-stage" data-gps-stage><div data-gps-map></div></div>
         <div class="dfl-gps-map-status" data-gps-map-status>Loading satellite hole…</div>
         <div class="dfl-gps-map-prompt" data-gps-map-prompt hidden></div>
-        <div class="dfl-gps-map-tools"><button type="button" data-map-me>Refine GPS</button></div>
+        <div class="dfl-gps-map-tools"><button type="button" data-map-me>Refine GPS</button><button type="button" data-gps-view aria-pressed="true">Overhead</button></div>
         <span class="dfl-gps-map-credit">Imagery © Esri</span>
       </div>
       <header class="dfl-gps-head">
@@ -262,10 +383,11 @@ export function setupCourseGps(config){
       </header>
       <div class="dfl-gps-controls">
         <div class="dfl-gps-reading"><b data-gps-distance>—</b><span data-gps-reading-label>yards to Hole ${hole}</span></div>
+        <div class="dfl-gps-fcb" data-gps-fcb hidden><div><small>Front</small><b data-gps-front>—</b></div><div class="is-center"><small>Center</small><b data-gps-center>—</b></div><div><small>Back</small><b data-gps-back>—</b></div></div>
         <div class="dfl-gps-score-dock"><div class="dfl-gps-player"><strong data-gps-player-name>Your score</strong><small>${uiEsc(activeLabel())}</small></div><button type="button" class="dfl-gps-score" data-gps-score>Add score</button></div>
         <div class="dfl-gps-club" data-gps-club hidden></div>
         <button type="button" class="dfl-gps-adjust" data-gps-adjust hidden>Adjust tee & green</button>
-        <div class="dfl-gps-calibration" data-gps-calibration hidden><button type="button" data-map-endpoint="tee">Set tee</button><button type="button" data-map-endpoint="green">Set green</button><button type="button" class="dfl-gps-use-location" data-gps-use-location hidden>Use my GPS</button></div>
+        <div class="dfl-gps-calibration" data-gps-calibration hidden><button type="button" data-map-endpoint="tee">Set tee</button><button type="button" data-map-endpoint="green">Set center</button><button type="button" data-map-endpoint="front">Set front</button><button type="button" data-map-endpoint="back">Set back</button><button type="button" class="dfl-gps-use-location" data-gps-use-location hidden>Use my GPS</button></div>
         <small class="dfl-gps-meta" data-gps-meta></small>
       </div>`;
     document.body.appendChild(panel);
@@ -273,6 +395,7 @@ export function setupCourseGps(config){
     panel.querySelector("[data-gps-prev]").onclick=()=>changeHole(-1);
     panel.querySelector("[data-gps-next]").onclick=()=>changeHole(1);
     panel.querySelector("[data-map-me]").onclick=()=>{if(position){followMode=true;hasFitted=false;requestFreshFix();refresh(true)}else restartGps()};
+    panel.querySelector("[data-gps-view]").onclick=()=>{holeView=!holeView;hasFitted=false;refresh(true)};
     panel.querySelector("[data-gps-adjust]").onclick=()=>{const calibration=panel.querySelector("[data-gps-calibration]");calibration.hidden=!calibration.hidden;if(calibration.hidden)mappingKind="";refresh()};
     panel.querySelectorAll("[data-map-endpoint]").forEach(button=>button.onclick=()=>{const next=button.dataset.mapEndpoint;mappingKind=mappingKind===next?"":next;refresh()});
     panel.querySelector("[data-gps-use-location]").onclick=()=>{if(mappingKind&&position)void saveEndpoint(mappingKind,fixPoint(position))};

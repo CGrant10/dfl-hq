@@ -281,13 +281,41 @@ describe("the supported golf GPS courses", () => {
     expect(updater).toContain('localStorage.getItem("dfl.golf.pending")');
   });
 
-  it("shows only the current hole maximum in the Quick Round GPS badge", () => {
+  it("shows the live GPS reading in the Quick Round GPS badge", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
-    expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');
-    expect(source).not.toContain('value!=null?"YDS LIVE"');
+    // The badge used to render officialYards() - the yardage printed on the
+    // card - so it never counted down while you walked the hole. It now shows
+    // the live reading and falls back to the card only before the first fix.
+    expect(source).toContain('${shown?formatYards(shown):"—"}</strong>');
+    expect(source).toContain('value!=null?"LIVE":uiEsc(badgeLabel)');
     expect(source).not.toContain("if(slot&&!beta)startGps()");
     expect(source).toContain("watchGolfMount(mount)");
     expect(source).toContain('title:"Your GPS location"');
+  });
+
+  it("maps front, center and back of every green and rings the player with layup arcs", () => {
+    const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    const schema = fs.readFileSync("golf_gps_green_points_schema.sql", "utf8");
+    expect(source).toContain('data-map-endpoint="front"');
+    expect(source).toContain('data-map-endpoint="back"');
+    expect(source).toContain("function greenReadings()");
+    expect(source).toContain("GREEN_HALF_DEPTH=16");
+    expect(source).toContain("[100,150,200,250]");
+    expect(source).toContain("dfl-gps-arc-label");
+    // A database without the migration must still answer, on the original columns.
+    expect(source).toContain("if(holes.error)holes=await db().from(\"golf_course_holes\").select(GEOMETRY_COLUMNS)");
+    expect(schema).toContain("front_lat double precision");
+    expect(schema).toContain("back_lng double precision");
+  });
+
+  it("turns the hole to face the green and still detects holes with no mapped tees", () => {
+    const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
+    expect(source).toContain("function applyHoleView()");
+    expect(source).toContain("rotateX(56deg) rotate(var(--gps-rot,0deg))");
+    // Calibration taps have to land on real coordinates, so the tilt drops flat.
+    expect(source).toContain("holeView&&!mappingKind&&bearing!=null");
+    // Center and Red Trail ship greens only; detection falls back to them.
+    expect(source).toContain("nearest=nearestTeeHole(point,greenTargets,120)");
   });
 
   it("renders a full-hole satellite GPS experience with an imagery fallback", () => {
