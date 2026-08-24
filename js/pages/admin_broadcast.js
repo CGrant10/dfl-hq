@@ -138,7 +138,7 @@ async function renderOrder(host) {
   if (!host) return;
   const { data, error } = await db()
     .from("broadcast_items")
-    .select("id,headline,kicker,subtitle,body,figure,image,href,treatment,temporal,background,dwell_seconds,sort_order,featured,active")
+    .select("id,headline,kicker,subtitle,body,figure,image,href,treatment,temporal,background,logo_opacity,dwell_seconds,sort_order,featured,active")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
