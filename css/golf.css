@@ -283,6 +283,29 @@
 }
 .gposter-facts span { white-space: nowrap; }
 
+/* Quick events never paint the tournament page while their scorer loads. */
+.gqm-route-loading {
+  display: grid;
+  place-content: center;
+  gap: var(--s-1);
+  min-height: min(58dvh, 32rem);
+  text-align: center;
+  color: var(--muted);
+}
+.gqm-route-loading span {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+.gqm-route-loading strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  text-transform: uppercase;
+  color: var(--text);
+}
+
 /* The captain, named on the team card. Real column, real person - and the
    one name on the roster that is allowed to look different, because "who is
    running this team" is the question the card gets asked after "who is on
