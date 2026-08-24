@@ -88,10 +88,13 @@ function drawHeader(ctx, column, x, y, w, h) {
   ctx.fillRect(x, y, w, h);
   ctx.fillStyle = INK;
   ctx.textBaseline = "middle";
-  fitText(ctx, column.label, x + w / 2, y + (column.meta ? h * .38 : h / 2), w - 8, column.hole ? 24 : 18, 850);
-  if (column.meta) {
+  const metaLines = column.meta.split(/\s*[·•]\s*/).filter(Boolean);
+  fitText(ctx, column.label, x + w / 2, y + (metaLines.length ? h * .25 : h / 2), w - 8, column.hole ? 23 : 18, 850);
+  if (metaLines.length) {
     ctx.fillStyle = MUTED;
-    fitText(ctx, column.meta, x + w / 2, y + h * .69, w - 8, 14, 650);
+    metaLines.slice(0, 2).forEach((text, index) => {
+      fitText(ctx, text, x + w / 2, y + h * (.54 + index * .24), w - 8, 13, 700);
+    });
   }
 }
 
@@ -103,7 +106,7 @@ export function scorecardCanvas(model) {
 
   const margin = 38;
   const tableTop = model.context ? 125 : 105;
-  const footerH = 34, headerH = 72;
+  const footerH = 34, headerH = 86;
   const tableW = W - margin * 2;
   const nameW = Math.min(270, Math.max(205, tableW * .17));
   const dataW = (tableW - nameW) / Math.max(1, model.columns.length);
