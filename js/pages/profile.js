@@ -163,7 +163,7 @@ export async function render(view) {
       admin page, which is where editing somebody ELSE's row belongs.
     */
     actions: isMe
-      ? `<button class="btn ghost small" id="switch-member">Not you? Switch</button>`
+      ? `<button class="btn ghost small" id="switch-member">Sign out / Switch</button>`
       : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`,
     onRepaint: () => { void decorateChipEaters(view); },
   });
@@ -212,7 +212,7 @@ export async function render(view) {
   */
   view.addEventListener("click", (e) => {
     if (!e.target.closest("#switch-member")) return;
-    window.dispatchEvent(new CustomEvent("dfl:pick-member"));
+    window.dispatchEvent(new CustomEvent("dfl:pick-member", { detail: { forgetMemberId: member.id } }));
   });
 }
 

@@ -18,6 +18,7 @@ import { esc, toast } from "./ui.js";
 import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
 import { trapFocus } from "./focus-trap.js";
+import { forgetVerifiedPin } from "./member-lock.js";
 /* welcomeForm and welcomeInput used to be looked up here and have never
    existed in index.html - leftovers from the free-text name box that the
    member picker replaced. Every branch that touched them was dead. */
@@ -164,7 +165,7 @@ moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});
 moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore()});
 window.addEventListener("hashchange",closeMore);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMore()});
-if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;selectMember(member);await adoptSelectedMemberTheme();paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
+if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;const previous=currentMember();if(previous&&String(previous.id)!==String(member.id))forgetVerifiedPin(previous.id);selectMember(member);await adoptSelectedMemberTheme();paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
 welcomeCancel?.addEventListener("click",closeWelcome);
 welcomeGolf?.addEventListener("click",openGolfJoin);
 /* Escape closes the picker only when there is a way back in - trapping
@@ -188,7 +189,7 @@ document.getElementById("whoami")?.addEventListener("click",()=>{
   if(g)return void(location.hash=`#/golf?id=${g.outing}`);
   openPicker({cancellable:!!getUsername()});
 });
-window.addEventListener("dfl:pick-member",()=>openPicker({cancellable:true}));
+window.addEventListener("dfl:pick-member",event=>{if(event.detail?.forgetMemberId)forgetVerifiedPin(event.detail.forgetMemberId);openPicker({cancellable:true})});
 
 /*
   THE SLIDING TAB INDICATOR.

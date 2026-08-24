@@ -823,10 +823,16 @@
 .access-keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
 .access-keypad button { min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-3); color: var(--text); font: 800 19px/1 var(--font-body); cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 .access-keypad button:active { transform: scale(.97); background: var(--hover); }
-.access-keypad button:focus-visible,.access-keypad button.is-current { border-color: var(--accent-fill); outline: 2px solid var(--accent-fill); outline-offset: 2px; }
-.access-keypad button.is-pressed { animation: accessKeyPress 150ms ease-out; background: var(--danger-bg); color: var(--danger-ink); }
-@keyframes accessKeyPress { 0% { transform: scale(1); } 45% { transform: scale(.93); } 100% { transform: scale(1); } }
+.access-keypad button:focus-visible { border-color: var(--accent-fill); outline: 2px solid var(--accent-fill); outline-offset: 2px; }
+.access-keypad button.is-pressed { animation: accessKeyPress 280ms ease-out; }
+@keyframes accessKeyPress { 0% { transform: scale(.93); background: var(--danger-bg); color: var(--danger-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-ink) 35%, transparent); } 100% { transform: scale(1); background: var(--bg-3); color: var(--text); box-shadow: 0 0 0 0 transparent; } }
 .access-keypad button.is-command { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.access-trust { align-items: flex-start!important; margin-top: var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-3); cursor: pointer; }
+.access-trust input { margin-top: 2px; }
+.access-trust span,.access-trust strong,.access-trust small { display: block; }
+.access-trust span { min-width: 0; }
+.access-trust strong { font-size: 12px; }
+.access-trust small { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.35; }
 .access-card .row-end { margin-top: var(--s-4); padding-top: var(--s-3); }
 .access-card .row-end > .btn { flex: 1 1 0; min-height: 44px; }
 .access-card .row-end > .btn:only-child { flex-basis: 100%; }
