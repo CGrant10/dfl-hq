@@ -25,6 +25,7 @@
 import { selectAll } from "./supabase.js";
 import { layoutFields } from "./form-layout.js";
 import { imageFieldHtml, setImageValue, wireImageFields } from "./image-field.js";
+import { selectFormValue } from "./form-value.js";
 import { esc, toArray } from "./ui.js";
 
 /* Registered here rather than in each page, because every form in the app is
@@ -127,6 +128,11 @@ export function setValue(form, f, value) {
      NO timezone conversion here, deliberately - a `time` column is wall
      clock, so 7pm is 7pm for everybody reading it. */
   else if (f.type === "time")  el.value = value ? String(value).slice(0, 5) : "";
+  /* A legacy NULL in a select with a declared default must display and save
+     that default. Otherwise the browser submits an invisible empty string,
+     which violates enum-like database CHECK constraints such as a broadcast
+     slide's logo opacity. */
+  else if (f.type === "select") el.value = selectFormValue(f, value);
   else                         el.value = value ?? "";
 }
 
