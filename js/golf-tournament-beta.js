@@ -8,8 +8,9 @@ import { BETA_CUSTOM_MAX_SIDE, betaCaptainChoices, betaCustomBoardVisible, betaC
 import { betaEditableSideIds, betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
 import { holeResult } from "./golf-score-result.js";
 import { eventHasCode } from "./golf-guest.js";
-import { flush, onQueueChange, pendingCountSides, pendingForSide, queueSideScore, refusals } from "./golf-offline.js";
+import { flush, onQueueChange, pendingCountSides, pendingDetailsForSide, pendingForSide, queueSideScore, refusals } from "./golf-offline.js";
 import { shareScorecard } from "./golf-scorecard-share.js";
+import { averagePuttsLabel, roundDetailStats } from "./golf-round-stats.js";
 
 const activeHole = new Map(), activeFormat = new Map(), leaderboardOpen = new Map(), setupMode = new Map(), setupSection = new Map();
 let stopSyncWatch = () => {};
@@ -53,6 +54,13 @@ function scorecardTable(state, sides, count, showYards = false) {
 
 const scorecardLegend = () => `<section class="tb-legend" aria-label="Scorecard legend"><h3>Scorecard Legend</h3><div class="tb-legend-grid"><div class="tb-legend-item"><span class="tb-card-mark m-eagle">3</span>Eagle</div><div class="tb-legend-item"><span class="tb-card-mark m-birdie">4</span>Birdie</div><div class="tb-legend-item"><span class="tb-card-mark m-par">5</span>Par</div><div class="tb-legend-item"><span class="tb-card-mark m-bogey">6</span>Bogey</div><div class="tb-legend-item"><span class="tb-card-mark m-dbl">7</span>D. Bogey</div><div class="tb-legend-item"><span class="tb-card-mark m-dbl">8</span>T. Bogey</div><div class="tb-legend-item"><strong>FB</strong>Fairway bunker</div><div class="tb-legend-item"><strong>GB</strong>Greenside bunker</div><div class="tb-legend-item"><strong>H₂O</strong>Water hazard</div><div class="tb-legend-item"><strong>OB</strong>Out of bounds</div><div class="tb-legend-item"><strong>D</strong>Drop shot</div></div></section>`;
 const scorecardBody = table => `<div class="tb-scorecard-body"><div class="tb-table-wrap">${table}</div>${scorecardLegend()}</div>`;
+function scorecardStats(state, sides) {
+  return `<section class="tb-round-stats" aria-label="Round putting and drop statistics">${sides.map(side => {
+    const rows = [...state.scoreRows.values()].filter(row => String(row.side_id) === String(side.id));
+    const stats = roundDetailStats(rows);
+    return `<div class="tb-stat-summary"><strong>${esc(sideName(side))}</strong><span><b>${stats.tracked ? stats.putts : "—"}</b><small>Putts</small></span><span><b>${stats.tracked ? averagePuttsLabel(stats.averagePutts) : "—"}</b><small>Avg / hole</small></span><span><b>${stats.tracked ? stats.drops : "—"}</b><small>Drops</small></span></div>`;
+  }).join("")}</section>`;
+}
 
 function rememberHole(outingId, hole) {
   activeHole.set(outingId, hole);
@@ -80,10 +88,10 @@ function cachedBetaState(outingId) {
     for (const entry of state.rounds) for (const battle of entry.battles) {
       battle.sides = battle.sides.map(side => sides.get(String(side.id)) || side);
     }
-    for (const side of state.sides) for (const [hole, strokes] of pendingForSide(side.id)) {
+    for (const side of state.sides) for (const [hole, pending] of pendingDetailsForSide(side.id)) {
       const key = scoreKey(side.id, hole);
-      if (strokes == null) { side.strokes.delete(hole); state.scoreRows.delete(key); }
-      else { side.strokes.set(hole, Number(strokes)); state.scoreRows.set(key, { ...(state.scoreRows.get(key) || {}), side_id: side.id, hole, strokes, pending: true }); }
+      if (pending.strokes == null) { side.strokes.delete(hole); state.scoreRows.delete(key); }
+      else { side.strokes.set(hole, Number(pending.strokes)); state.scoreRows.set(key, { ...(state.scoreRows.get(key) || {}), side_id: side.id, hole, strokes: pending.strokes, putts: pending.putts || 0, drops: pending.drops || 0, pending: true }); }
     }
     refreshBattleResults(state);
     return state;
@@ -130,18 +138,19 @@ function ensureStyles() {
   style.textContent += `.tb-card-head h2{flex:1}.tb-share-card{min-height:40px;padding:0 12px;border:1px solid #477fbd;border-radius:9px;background:transparent;color:#477fbd;font-weight:900}`;
   style.textContent += `.tb-custom-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:9px;margin-top:12px}.tb-custom-grid label{display:grid;gap:5px}.tb-custom-grid label span{overflow:hidden;color:var(--accent-2);font-size:9px;font-weight:950;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase}.tb-custom-grid>strong{padding-bottom:13px;color:var(--muted);font-size:9px}.tb-board-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-board-setting span{min-width:0}.tb-board-setting strong,.tb-board-setting small{display:block}.tb-board-setting strong{font-size:11px}.tb-board-setting small{margin-top:2px;color:var(--muted);font-size:9px;line-height:1.35}.tb-board-setting input{flex:0 0 auto;width:22px;height:22px;accent-color:var(--accent-2-fill)}.tb-score{border-color:var(--control-line)!important;background:var(--bg-3)!important;color:var(--text)!important;box-shadow:var(--shadow)}.tb-score b{color:var(--accent-2)!important}`;
   style.textContent += `.tb-member-add{display:grid;gap:8px;margin-top:9px}.tb-member-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px;width:100%;height:min(42dvh,360px);min-height:240px;overflow-y:auto;padding:9px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-member-picker.is-empty{height:auto;min-height:0}.tb-member-picker label{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:7px 9px;border:1px solid var(--line-soft);border-radius:9px;background:var(--bg-2);font-size:11px;font-weight:800}.tb-member-picker input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent-2-fill)}.tb-member-picker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-member-add>.btn{min-height:46px}.tb-setup-guide{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--bg-2);box-shadow:var(--shadow)}.tb-guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.tb-guide-step{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:7px;min-width:0;min-height:52px;padding:7px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3);color:var(--text);text-align:left}.tb-guide-step>b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px}.tb-guide-step span,.tb-guide-step small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-guide-step span{font-size:10px;font-weight:950;text-transform:uppercase}.tb-guide-step small{margin-top:2px;color:var(--muted);font-size:8px}.tb-guide-step.is-done{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}.tb-guide-step.is-done>b{background:var(--ok);color:var(--bg)}.tb-guide-step.is-current{border-color:var(--accent-2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-2) 18%,transparent)}.tb-guide-step.is-current>b{background:var(--accent-2-fill);color:#fff}.tb-guide-next{margin:10px 2px 0;color:var(--muted);font-size:10px;line-height:1.45}.tb-guide-next strong{color:var(--accent-2)}@media(max-width:520px){.tb-guide-step{grid-template-columns:1fr;place-items:center;text-align:center}.tb-guide-step span{font-size:9px}.tb-guide-step small{display:none}}@media(max-width:440px){.tb-member-picker{grid-template-columns:1fr}}`;
+  style.textContent += `.tb-quick-sheet .tb-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tb-quick-sheet .tb-control{min-width:0}.tb-quick-sheet .tb-step{grid-template-columns:36px minmax(38px,1fr) 36px;gap:3px}.tb-quick-sheet .tb-step button{height:48px;font-size:25px}.tb-quick-sheet .tb-step output{height:48px;font-size:22px}.tb-round-stats{display:grid;gap:8px;padding:12px;background:#f5f5f4}.tb-stat-summary{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(3,minmax(60px,1fr));gap:7px;padding:9px;border:1px solid #d8dde0;border-radius:12px;background:#fff}.tb-stat-summary>strong{align-self:center;overflow:hidden;text-overflow:ellipsis}.tb-stat-summary span{display:grid;place-items:center;padding:6px 3px;border-radius:8px;background:#eaf1f5;text-align:center}.tb-stat-summary b,.tb-stat-summary small{display:block}.tb-stat-summary small{color:#55707f;font-size:8px;text-transform:uppercase}`;
   document.head.append(style);
 }
 
-function persistScore(state, sideId, hole, strokes, putts) {
+function persistScore(state, sideId, hole, strokes, putts, drops) {
   if (!canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: sideId })) return;
   const key = scoreKey(sideId, hole), previous = state.scoreRows.get(key);
-  if (strokes) state.scoreRows.set(key, { ...(previous || {}), side_id: sideId, hole, strokes, putts, pending: true });
+  if (strokes) state.scoreRows.set(key, { ...(previous || {}), side_id: sideId, hole, strokes, putts, drops, pending: true });
   else state.scoreRows.delete(key);
   const side = state.sides.find(item => String(item.id) === String(sideId));
   if (side) { if (strokes) side.strokes.set(hole, strokes); else side.strokes.delete(hole); }
   refreshBattleResults(state);
-  queueSideScore(state.outing.id, sideId, hole, strokes || null);
+  queueSideScore(state.outing.id, sideId, hole, strokes || null, putts, drops);
   cacheBetaState(state);
 }
 
@@ -508,32 +517,38 @@ function wireMatch(root, state) {
   root.querySelectorAll("[data-tb-card]").forEach(b => b.addEventListener("click", () => { const play = root.querySelector(".tb-play"), card = root.querySelector(".tb-scorecard"); play.hidden = !play.hidden; card.hidden = !card.hidden; }));
   root.querySelectorAll("[data-tb-leaderboard]").forEach(b => b.addEventListener("click", () => { const play = root.querySelector(".tb-play"), board = root.querySelector("[data-tb-leaderboard-view]"); if (!board) return; const opening = board.hidden; leaderboardOpen.set(state.outing.id, opening); play.hidden = opening; board.hidden = !opening; }));
   const sheet = root.querySelector("[data-tb-sheet]");
+  const controls = sheet?.querySelector(".tb-controls");
+  if (controls) controls.innerHTML = ["strokes", "putts", "drops"].map(field => `<div class="tb-control"><span class="tb-label">${field === "strokes" ? "Shots" : field[0].toUpperCase() + field.slice(1)}</span><div class="tb-step"><button data-tb-step="${field}:-1" aria-label="Remove one ${field === "strokes" ? "shot" : field.slice(0, -1)}">−</button><output data-tb-${field}>—</output><button data-tb-step="${field}:1" aria-label="Add one ${field === "strokes" ? "shot" : field.slice(0, -1)}">+</button></div></div>`).join("");
+  root.querySelectorAll(".tb-scorecard-body").forEach(body => body.querySelector(".tb-legend")?.before(Object.assign(document.createElement("div"), { innerHTML: scorecardStats(state, matchSides(state, entry)) }).firstElementChild));
   root.querySelectorAll("[data-tb-open]").forEach(b => b.addEventListener("click", () => {
     const sideId = Number(b.dataset.tbOpen), side = matchSides(state, entry).find(s => Number(s.id) === sideId), hole = rememberedHole(state.outing.id), row = state.scoreRows.get(scoreKey(sideId, hole)) || {};
     if (!side || !canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: sideId })) return;
-    sheet.dataset.sideId = String(sideId); sheet.dataset.strokes = String(Number(row.strokes) || parFor(state.holes, hole)); sheet.dataset.putts = String(Number(row.putts) || 0);
+    sheet.dataset.sideId = String(sideId); sheet.dataset.strokes = String(Number(row.strokes) || parFor(state.holes, hole)); sheet.dataset.putts = String(Number(row.putts) || 0); sheet.dataset.drops = String(Number(row.drops) || 0);
     sheet.querySelector("[data-tb-name]").textContent = `${sideName(side)} · Hole ${hole}`;
     sheet.querySelector("[data-tb-strokes]").textContent = sheet.dataset.strokes;
+    sheet.querySelector("[data-tb-putts]").textContent = Number(sheet.dataset.putts) || "—";
+    sheet.querySelector("[data-tb-drops]").textContent = Number(sheet.dataset.drops) || "—";
     const clear = sheet.querySelector("[data-tb-clear]");
     if (clear) clear.disabled = !Number(row.strokes);
     sheet.hidden = false;
   }));
   root.querySelector("[data-tb-cancel]")?.addEventListener("click", () => { sheet.hidden = true; });
   root.querySelectorAll("[data-tb-step]").forEach(b => b.addEventListener("click", () => {
-    const step = Number(b.dataset.tbStep.split(":")[1]), value = Math.max(1, Math.min(15, Number(sheet.dataset.strokes) + step));
-    sheet.dataset.strokes = String(value); sheet.querySelector("[data-tb-strokes]").textContent = String(value);
+    const [field, rawStep] = b.dataset.tbStep.split(":"), step = Number(rawStep), min = field === "strokes" ? 1 : 0, max = field === "drops" ? 9 : 15;
+    const value = Math.max(min, Math.min(max, (Number(sheet.dataset[field]) || 0) + step));
+    sheet.dataset[field] = String(value); sheet.querySelector(`[data-tb-${field}]`).textContent = value || "—";
   }));
   root.querySelector("[data-tb-clear]")?.addEventListener("click", async e => {
     const sideId = Number(sheet.dataset.sideId), hole = rememberedHole(state.outing.id);
     e.currentTarget.disabled = true;
-    persistScore(state, sideId, hole, 0, 0);
+    persistScore(state, sideId, hole, 0, 0, 0);
     sheet.hidden = true;
     toast(state.organizer ? `Hole ${hole} cleared` : `Hole ${hole} score removed`);
     repaint();
   });
   root.querySelector("[data-tb-save]")?.addEventListener("click", () => {
     const sideId = Number(sheet.dataset.sideId), hole = rememberedHole(state.outing.id);
-    persistScore(state, sideId, hole, Number(sheet.dataset.strokes), Number(sheet.dataset.putts) || 0);
+    persistScore(state, sideId, hole, Number(sheet.dataset.strokes), Number(sheet.dataset.putts) || 0, Number(sheet.dataset.drops) || 0);
     sheet.hidden = true;
     rememberHole(state.outing.id, Math.min(count, hole + 1));
     repaint();
@@ -547,12 +562,12 @@ async function loadState(outing, organizer) {
   const courseHoles = courseRes.error ? [] : courseRes.data || [];
   let holes = hr.data || []; if (!holes.length && courseHoles.length) holes = courseHoles.map(({ hole, par }) => ({ hole, par }));
   const matches = mr.data || [], matchIds = matches.map(m => m.id), sr = matchIds.length ? await db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds).order("slot") : { data: [] }; if (sr.error) throw sr.error;
-  const sides = sr.data || [], sideIds = sides.map(s => s.id), [mpr, scr] = sideIds.length ? await Promise.all([db().from("golf_match_players").select("id,side_id,participant_id,round_id").in("side_id", sideIds).order("id"), db().from("golf_match_scores").select("id,side_id,hole,strokes,putts").in("side_id", sideIds)]) : [{ data: [] }, { data: [] }]; if (mpr.error || scr.error) throw mpr.error || scr.error;
+  const sides = sr.data || [], sideIds = sides.map(s => s.id), [mpr, scr] = sideIds.length ? await Promise.all([db().from("golf_match_players").select("id,side_id,participant_id,round_id").in("side_id", sideIds).order("id"), db().from("golf_match_scores").select("id,side_id,hole,strokes,putts,drops").in("side_id", sideIds)]) : [{ data: [] }, { data: [] }]; if (mpr.error || scr.error) throw mpr.error || scr.error;
   const teams = tr.data || [], participants = pr.data || [], names = new Map(members.map(m => [String(m.id), nameOf(m)])), tm = new Map(teams.map(t => [String(t.id), t])), pm = new Map(participants.map(p => [String(p.id), p])), mm = new Map(matches.map(m => [String(m.id), m])), scoreRows = new Map(scr.data.map(r => [scoreKey(r.side_id, r.hole), r]));
-  for (const sideId of sideIds) for (const [hole, strokes] of pendingForSide(sideId)) {
+  for (const sideId of sideIds) for (const [hole, pending] of pendingDetailsForSide(sideId)) {
     const key = scoreKey(sideId, hole);
-    if (strokes == null) scoreRows.delete(key);
-    else scoreRows.set(key, { ...(scoreRows.get(key) || {}), side_id: sideId, hole, strokes, pending: true });
+    if (pending.strokes == null) scoreRows.delete(key);
+    else scoreRows.set(key, { ...(scoreRows.get(key) || {}), side_id: sideId, hole, strokes: pending.strokes, putts: pending.putts || 0, drops: pending.drops || 0, pending: true });
   }
   const builtSides = sides.map(s => { const m = mm.get(String(s.match_id)), players = mpr.data.filter(p => String(p.side_id) === String(s.id)).map(p => ({ ...p, row_id: p.id, name: playerName(pm.get(String(p.participant_id)), names) })), strokes = new Map(scr.data.filter(r => String(r.side_id) === String(s.id) && Number(r.strokes) > 0).map(r => [Number(r.hole), Number(r.strokes)])), team = tm.get(String(s.team_id)); for (const [hole, pending] of pendingForSide(s.id)) { if (pending == null) strokes.delete(hole); else strokes.set(hole, Number(pending)); } return { ...s, match_number: m?.match_number, players, strokes, teamName: team?.name || "Individual", color: team?.color || "#477fbd" }; });
   const rounds = rr.data.map(round => { const battles = matches.filter(m => String(m.round_id) === String(round.id)).map(m => { const bs = builtSides.filter(s => String(s.match_id) === String(m.id)); return { ...m, sides: bs, result: bs.length === 2 ? battleResult(bs[0].strokes, bs[1].strokes, roundHoles(round), scoringOf(round)) : null }; }); return { round, battles, individual: battles.some(b => b.sides.length > 2 || b.sides.some(s => s.team_id == null)) }; });

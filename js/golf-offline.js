@@ -164,12 +164,12 @@ export function queueScore(outingId, teamId, hole, value) {
  * The outing rides along on the entry so that resetting an event can drop
  * its queued strokes without having to look anything up.
  */
-export function queueSideScore(outingId, sideId, hole, value) {
+export function queueSideScore(outingId, sideId, hole, value, putts = 0, drops = 0) {
   const strokes = legal(value);
   const map = pendingMap();
   map[`side:${sideId}:${hole}`] = {
     outingId: String(outingId), sideId: String(sideId), hole: Number(hole),
-    strokes, tries: 0,
+    strokes, putts: Number(putts) || 0, drops: Number(drops) || 0, tries: 0,
   };
   savePending(map);
   flush();
@@ -180,6 +180,15 @@ export function pendingForSide(sideId) {
   const out = new Map();
   for (const entry of Object.values(pendingMap())) {
     if (entry.sideId === String(sideId)) out.set(Number(entry.hole), entry.strokes);
+  }
+  return out;
+}
+
+/** Hole -> the complete locally queued score details for a match side. */
+export function pendingDetailsForSide(sideId) {
+  const out = new Map();
+  for (const entry of Object.values(pendingMap())) {
+    if (entry.sideId === String(sideId)) out.set(Number(entry.hole), entry);
   }
   return out;
 }
@@ -285,7 +294,7 @@ function retryable(err) {
 
 /* A 2v2 side's card: same queue, different table, keyed by side and hole. */
 async function sendSide(entry) {
-  const { sideId, hole, strokes } = entry;
+  const { sideId, hole, strokes, putts = 0, drops = 0 } = entry;
   const client = db();
 
   if (strokes == null) {
@@ -295,7 +304,7 @@ async function sendSide(entry) {
     return;
   }
   const { error } = await client.from("golf_match_scores")
-    .upsert({ side_id: sideId, hole, strokes, updated_at: new Date().toISOString() },
+    .upsert({ side_id: sideId, hole, strokes, putts, drops, updated_at: new Date().toISOString() },
             { onConflict: "side_id,hole" });
   if (error) throw error;
 }
