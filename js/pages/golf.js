@@ -55,6 +55,7 @@ async function renderList(view){view.innerHTML=loading();const [res,partRes,team
 */
 function outingCard(o,count={players:0,teams:0,holes:0}){
   const state=o.status==="final"?["Final","grey"]:o.status==="active"?["Live now","green"]:["Upcoming","warn"];
+  const type=o.event_type==="quick"?"Quick Round":o.event_type==="tournament_beta"?"Tournament Beta":"Tournament";
   const when=o.event_date?fmtWhen(o.event_date,o.event_time):"";
   const facts=[
     count.players?`${count.players} player${count.players===1?"":"s"}`:"",
@@ -63,7 +64,7 @@ function outingCard(o,count={players:0,teams:0,holes:0}){
   ].filter(Boolean);
   return `<article class="card golf-card dfl-mark ${hiddenClass("golf_outings",o)}">
     <a class="golf-link gposter" href="#/golf?id=${o.id}">
-      <span class="gposter-kicker">DFL Golf${o.course?` · ${esc(o.course)}`:""}</span>
+      <span class="gposter-kicker" data-event-type="${esc(o.event_type||"tournament")}">${type}${o.course?` · ${esc(o.course)}`:""}</span>
       <h3 class="gposter-name">${esc(o.name)}</h3>
       ${when?`<span class="gposter-when">${esc(when)}</span>`:""}
       <span class="gposter-status pill ${state[1]}">${state[0]}</span>
@@ -232,9 +233,17 @@ function stableRefresh(view,rerender){let queue=Promise.resolve();return(target=
   The arithmetic is NOT here. tournamentHoles() in golf-battle.js owns it,
   the same file that owns every other fact derived from the rounds.
 */
-async function renderOuting(view,id,teamId,matchId,quiet=false){if(!quiet)view.innerHTML=loading();const [outRes,partsRes,teamsRes,ranksRes,scoresRes,holesRes,roundsRes,matchCountRes,members]=await Promise.all([db().from("golf_outings").select("*").eq("id",id).maybeSingle(),db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),db().from("golf_rounds").select("id,holes").eq("outing_id",id).then(r=>r,()=>({data:[],error:null})),db().from("golf_matches").select("id",{count:"exact",head:true}).eq("outing_id",id).then(r=>r,()=>({count:0,error:null})),loadMembers().catch(()=>[])]);if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}const outing=outRes.data;
+async function renderOuting(view,id,teamId,matchId,quiet=false){
+if(!quiet)view.innerHTML=loading();
+const outRes=await db().from("golf_outings").select("*").eq("id",id).maybeSingle();
+if(outRes.error||!outRes.data){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(outRes.error||new Error("Golf event not found"))}`;return;}
+const outing=outRes.data;
 const classic=new URLSearchParams((location.hash.split("?")[1]||"")).get("classic")==="1";
 if(outing.event_type==="tournament_beta"&&!classic){view.innerHTML=`<div id="golf-outing" class="golf-event"><div class="tb-route-loading" aria-label="Loading Tournament Beta"></div></div>`;window.dispatchEvent(new CustomEvent("dfl:tournament-beta-route"));return;}
+if(outing.event_type==="quick"){view.innerHTML=`<div id="golf-outing" class="golf-event"><div class="gqm-route-loading" role="status"><span>Quick Round</span><strong>Opening scorecard…</strong></div></div>`;window.dispatchEvent(new CustomEvent("dfl:quick-round-route"));return;}
+const [partsRes,teamsRes,ranksRes,scoresRes,holesRes,roundsRes,matchCountRes,members]=await Promise.all([db().from("golf_participants").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_teams").select("*").eq("outing_id",id).order("sort_order"),db().from("golf_rankings").select("member_id,rating"),db().from("golf_scores").select("*").eq("outing_id",id),db().from("golf_holes").select("hole,par").eq("outing_id",id).order("hole"),db().from("golf_rounds").select("id,holes").eq("outing_id",id).then(r=>r,()=>({data:[],error:null})),db().from("golf_matches").select("id",{count:"exact",head:true}).eq("outing_id",id).then(r=>r,()=>({count:0,error:null})),loadMembers().catch(()=>[])]);
+const supportError=partsRes.error||teamsRes.error||scoresRes.error||holesRes.error;
+if(supportError){view.innerHTML=`<h1>DFL Golf</h1>${errorBox(supportError)}<div class="card"><div class="card-body muted">The event loaded, but a golf supporting table could not be read. Check the golf schema and reload.</div></div>`;return;}
 const parts=partsRes.data||[],teams=teamsRes.data||[],membersList=members||[],byId=new Map(membersList.map(m=>[String(m.id),m])),rating=new Map((ranksRes.data||[]).map(r=>[String(r.member_id),Number(r.rating)])),rate=id=>rating.get(String(id))??DEFAULT_RATING,selected=teams.find(t=>String(t.id)===String(teamId));nameMap=memberNames(membersList);
 /* The tournament's length, not the course's. A day of three nines is 27
    holes; golf_outings.holes says 9, because that is the nine they play. */

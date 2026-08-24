@@ -315,6 +315,26 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('.gqm-hidden-engine button,.gqm-hidden-engine input,.gqm-hidden-engine select');
   });
 
+  it("opens each golf event in its own shell and keeps event creation concise", () => {
+    const golf = fs.readFileSync("js/pages/golf.js", "utf8");
+    const outingRoute = golf.slice(golf.indexOf("async function renderOuting"));
+    const modes = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    const courses = fs.readFileSync("js/golf-courses.js", "utf8");
+    const inline = fs.readFileSync("js/inline.js", "utf8");
+    expect(golf).toContain('data-event-type="${esc(o.event_type||"tournament")}"');
+    expect(golf).toContain('o.event_type==="quick"?"Quick Round":o.event_type==="tournament_beta"?"Tournament Beta":"Tournament"');
+    expect(golf).toContain('class="gqm-route-loading" role="status"');
+    expect(outingRoute.indexOf('if(outing.event_type==="quick")')).toBeLessThan(outingRoute.indexOf('db().from("golf_participants")'));
+    expect(inline).toContain('new Set(["name","event_date","event_time","notes"])');
+    expect(inline).toContain('label:"Notes (optional)"');
+    expect(inline).toContain('payload.holes=18;payload.status="setup"');
+    expect(modes).toContain("data-gqm-event-setup");
+    expect(modes).toContain("data-gqm-setup-course");
+    expect(modes).toContain("data-gqm-setup-holes");
+    expect(courses).toContain('root.querySelector(".tb-setup")');
+    expect(courses).toContain("scorecards, yardages and GPS");
+  });
+
   it("keeps score results on scorecards and shows complete nine totals", () => {
     const quick = fs.readFileSync("js/golf-event-modes.js", "utf8");
     const team = fs.readFileSync("js/golf-scorecard.js", "utf8");
