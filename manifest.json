@@ -14,7 +14,7 @@
   "background_color": "#0d1117",
   "theme_color": "#0d1117",
   "categories": ["sports", "utilities"],
-  "_comment_icons": "app-* is the simple DFL wordmark used on phone home screens. The detailed league crest remains available inside the app. The maskable artwork keeps the full wordmark inside the launcher safe zone.",
+  "_comment_icons": "app-* is the graphite DFL HQ feather shield used on phone home screens. The maskable artwork keeps the full shield and feathers inside the launcher safe zone.",
   "icons": [
     { "src": "icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
