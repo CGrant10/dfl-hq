@@ -89,6 +89,47 @@ final result: passed
 
 ---
 
+# Upper-left card gradient and Profile unlock QA
+
+## Evidence
+
+- Source visual truth: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/.codex-remote-attachments/01a02fb4-48a5-7c92-8158-223b000a2851/91416fa3-59d7-42a4-acbe-b3dfe25467f2/1-Photo-1.jpg`.
+- Browser-rendered implementation: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/card-gradient-profile-lock/gradient-fairway.png` and `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/card-gradient-profile-lock/profile-lock-pin-dark.png`.
+- Full-view combined comparison: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/card-gradient-profile-lock/source-vs-gradient.png`.
+- Focused card comparison: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/card-gradient-profile-lock/source-vs-gradient-focus.png`.
+- Source pixels: 591 x 1280, normalized to 390 x 843 for the combined comparison.
+- Implementation pixels and CSS viewport: 390 x 843 at device scale factor 1.
+- State: Fairway Light commissioner access and Dark locked Profile.
+
+## Findings
+
+No actionable P0, P1, or P2 differences remain for the requested refinement.
+
+- Fonts and typography: the existing Rajdhani display system remains unchanged, with the same uppercase hierarchy, weight, tracking, and readable PIN labels.
+- Spacing and layout rhythm: card dimensions, radii, padding, controls, and route layout remain unchanged. The focused comparison confirms that only surface paint moved.
+- Colors and visual tokens: the accent now originates at the exact upper-left corner, is strongest across the upper edge, and fades to the neutral card surface by roughly 70% of the elliptical wash and 58% of the vertical layer. The page itself remains neutral instead of inheriting a green cast.
+- Image quality and asset fidelity: the original crest and icon assets remain intact and sharp; no replacement or approximate artwork was introduced.
+- Copy and content: the Profile gate explicitly offers a PIN field, Back, Retry when lock status cannot be confirmed, and Unlock profile. No member data or settings copy was removed.
+
+## Interaction and runtime checks
+
+- Switched through the visible Appearance controls to Fairway Light and inspected the card system at a 390 x 844 phone viewport.
+- Opened a known locked member Profile directly and confirmed the PIN input autofocus, Back link, and Unlock profile action are all visible and usable in Dark mode.
+- Confirmed the interrupted lock-status path remains on the actionable PIN/retry screen instead of falling through to a red protected-data error.
+- Browser logs contained only Vite connection and DFL HQ v1.156.0 startup messages; no errors appeared.
+- Production build completed, and all 471 regression tests passed.
+
+## Comparison history
+
+1. Prior shared surface: the color wash began slightly inside the card and spread evenly enough to read as a general tint.
+2. Fix: anchor an elliptical accent wash at `0% 0%`, increase only its initial color concentration, and add a neutralizing top-to-bottom layer that reaches the base surface before the lower half dominates.
+3. Post-fix evidence: the focused comparison shows a clear upper-left light source with a neutral lower card, while the full view retains the reference's clean restrained card language.
+4. Profile failure path: a transient lock-status error previously fell through to protected Profile content. Fix: distinguish a genuinely missing schema from an interrupted status check, and present PIN entry plus Retry for the latter.
+
+final result: passed
+
+---
+
 # Fairway Light typography, cards, and golf scoring QA
 
 ## Evidence

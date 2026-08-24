@@ -230,12 +230,26 @@ describe("the supported golf GPS courses", () => {
     expect(tokens).toContain("--r-control: 10px");
     expect(tokens).toContain(":where(button, input, select, textarea)");
     expect(styles).toContain("--card-surface:");
+    expect(styles).toContain("radial-gradient(ellipse 88% 72% at 0% 0%");
+    expect(styles).toContain("transparent 70%)");
+    expect(styles).toContain("linear-gradient(180deg");
     expect(styles).toContain("--card-border:");
     expect(ui).toContain("background: var(--card-surface)");
     expect(ui).toContain("border: 1px solid var(--card-border)");
     expect(admin).toContain("background:var(--card-surface)");
     expect(ui).toContain("border-radius: var(--r-control)");
     expect(styles).not.toContain(':root[data-mode="fairway"] {\n  --font-body');
+  });
+
+  it("keeps a locked Profile actionable when its status check is interrupted", () => {
+    const profileLock = fs.readFileSync("js/pages/profile-locked.js", "utf8");
+    const screens = fs.readFileSync("css/screens.css", "utf8");
+    expect(profileLock).toContain('statusUnknown?"Unlock profile":"Profile locked"');
+    expect(profileLock).toContain('id="profile-lock-retry"');
+    expect(profileLock).toContain('profile_verify_pin');
+    expect(profileLock).toContain('else if(!unlocked(member.id)){gate(view,member,{statusUnknown:true});return;}');
+    expect(screens).toContain(".pin-panel {");
+    expect(screens).toContain("background: var(--card-surface);");
   });
 
   it("loads the app shell immediately from cache and protects active scores during updates", () => {
