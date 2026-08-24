@@ -221,6 +221,28 @@ describe("the supported golf GPS courses", () => {
     expect(schema).toContain("'system', 'dark', 'light', 'fairway', 'medicine'");
   });
 
+  it("keeps typography and component geometry consistent across app themes", () => {
+    const tokens = fs.readFileSync("css/tokens.css", "utf8");
+    const ui = fs.readFileSync("css/ui.css", "utf8");
+    const styles = fs.readFileSync("css/style.css", "utf8");
+    expect(tokens).toContain("--font-body: var(--font-display)");
+    expect(tokens).toContain("--r-control: 10px");
+    expect(tokens).toContain(":where(button, input, select, textarea)");
+    expect(ui).toContain("border-radius: var(--r-control)");
+    expect(styles).not.toContain(':root[data-mode="fairway"] {\n  --font-body');
+  });
+
+  it("loads the app shell immediately from cache and protects active scores during updates", () => {
+    const worker = fs.readFileSync("sw.js", "utf8");
+    const updater = fs.readFileSync("js/update.js", "utf8");
+    expect(worker).toContain("const SHELL_URLS = new Set");
+    expect(worker).toContain("event.waitUntil(refresh.then(()=>{}))");
+    expect(worker).toContain("if(cached)return cached");
+    expect(updater).toContain("const UPDATE_CHECK_MS=10*60*1000");
+    expect(updater).toContain("export function updateBlocked()");
+    expect(updater).toContain('localStorage.getItem("dfl.golf.pending")');
+  });
+
   it("shows only the current hole maximum in the Quick Round GPS badge", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');

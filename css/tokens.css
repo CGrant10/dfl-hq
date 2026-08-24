@@ -59,7 +59,9 @@
 :root {
   /* ---- families ------------------------------------------------------ */
   --font-display: "Rajdhani", "Segoe UI Semibold", system-ui, sans-serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* One voice across every route and palette. The previous Fairway-only
+     override made changing colour themes also change the app's typography. */
+  --font-body: var(--font-display);
 
   /* ---- type scale, 1.25 from a 14px body ----------------------------- */
   /* rem, not px, so a reader who sets a larger default text size gets one. */
@@ -107,6 +109,7 @@
 
   /* ---- radii --------------------------------------------------------- */
   --r-sm: 8px;
+  --r-control: 10px;
   --r-md: 12px;
   --r-lg: 16px;
   --r-pill: 999px;
@@ -130,9 +133,17 @@
 body {
   font-family: var(--font-body);
   font-size: var(--fs-body);
+  font-weight: var(--fw-semi);
   line-height: var(--lh-body);
+  letter-spacing: .01em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Native controls do not reliably inherit the body face. Keeping this here
+   prevents route-specific buttons and inputs from falling back to Arial. */
+:where(button, input, select, textarea) {
+  font-family: var(--font-display);
 }
 
 /* ---------------------------------------------------------------------

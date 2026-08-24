@@ -1689,24 +1689,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent-2-fill) !
 :root[data-mode="light"] .card { box-shadow: none; }
 :root[data-mode="light"] a.linkcard:hover { background: var(--hover); }
 
-/* FAIRWAY LIGHT borrows the admin screen's condensed type and quiet,
-   hairline cards without tinting the whole app green. Layout measurements
-   stay on the shared spacing/radius tokens; this changes only the face and
-   surface treatment. */
-:root[data-mode="fairway"] {
-  --font-body: var(--font-display);
-}
+/* FAIRWAY LIGHT uses the same typography and component geometry as every
+   other palette. Changing theme changes colour, never layout or type. */
 :root[data-mode="fairway"] :is(.card, .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card) {
   border-color: var(--line);
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   background: var(--bg-2);
   box-shadow: none;
 }
-:root[data-mode="fairway"] :is(.card-title, .card-kicker, .section-title, label, button, .btn, input, select, textarea) {
+:root :is(.card-title, .card-kicker, .section-title, label, button, .btn, input, select, textarea) {
   font-family: var(--font-display);
   letter-spacing: .045em;
 }
-:root[data-mode="fairway"] :is(.card-title, .card-kicker, .section-title, label) {
+:root :is(.card-title, .card-kicker, .section-title, label) {
   font-weight: 700;
 }
 

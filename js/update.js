@@ -1,6 +1,20 @@
 import { APP_VERSION } from "./config.js";
 
 const bar=()=>document.getElementById("update");
+const UPDATE_CHECK_MS=10*60*1000;
+
+function pendingGolfScores(){
+  try{
+    const value=JSON.parse(localStorage.getItem("dfl.golf.pending")||"{}");
+    return value&&typeof value==="object"&&Object.keys(value).length>0;
+  }catch{return false;}
+}
+
+function scoreEntryOpen(){
+  return Boolean(document.querySelector('[data-tb-sheet]:not([hidden]),[data-gqm-pop]:not([hidden])'));
+}
+
+export function updateBlocked(){return pendingGolfScores()||scoreEntryOpen();}
 
 async function routeList(){
   try{const r=await import("./router.js");if(typeof r.routeNames==="function")return r.routeNames()}catch{}
@@ -55,6 +69,7 @@ function watchWorkerChange(timeout=5000){
 }
 
 export async function forceUpdate(){
+  if(updateBlocked())return false;
   try{
     // Keep the current shell available until the replacement worker is ready.
     await refetchAll();
@@ -71,12 +86,14 @@ export async function forceUpdate(){
     }
   }catch(err){console.warn("Update refresh failed, reloading with cache buster",err)}
   location.replace(`${location.pathname}?u=${Date.now()}${location.hash}`);
+  return true;
 }
 
 export async function checkForUpdate(announce=false){
   const latest=await serverVersion(),stale=isNewer(latest,APP_VERSION),el=bar();
   if(stale&&el){
-    el.innerHTML=`<span class="install-text">Version ${latest} is available. You have ${APP_VERSION}.</span><button class="btn small" id="update-go">Update</button><button class="install-x" id="update-no" aria-label="Later">&times;</button>`;
+    const blocked=updateBlocked();
+    el.innerHTML=`<span class="install-text">${blocked?`Version ${latest} is ready. Finish or sync the current score first.`:`Version ${latest} is available. You have ${APP_VERSION}.`}</span><button class="btn small" id="update-go">${blocked?"Update when safe":"Update"}</button><button class="install-x" id="update-no" aria-label="Later">&times;</button>`;
     el.classList.remove("hidden");
   }else if(announce&&el){
     el.innerHTML=`<span class="install-text">You are up to date (v${APP_VERSION}).</span><button class="install-x" id="update-no" aria-label="Close">&times;</button>`;
@@ -89,9 +106,13 @@ export function setupUpdates(){
   const el=bar();if(!el)return;
   el.addEventListener("click",async e=>{
     const go=e.target.closest("#update-go");
-    if(go){go.disabled=true;go.textContent="Updating…";el.querySelector("#update-no")?.remove();await forceUpdate();return}
+    if(go){
+      if(updateBlocked()){el.querySelector(".install-text").textContent="Your score is still protected on this phone. Finish the entry or let it sync before updating.";return}
+      go.disabled=true;go.textContent="Updating…";el.querySelector("#update-no")?.remove();await forceUpdate();return;
+    }
     if(e.target.closest("#update-no"))el.classList.add("hidden");
   });
   checkForUpdate().catch(()=>{});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForUpdate().catch(()=>{})});
+  setInterval(()=>{if(!document.hidden)checkForUpdate().catch(()=>{})},UPDATE_CHECK_MS);
 }
