@@ -243,7 +243,7 @@ export const SECTIONS = [
     /*
       THE TICKER, and it is deliberately the smallest spec in this file.
 
-      broadcast_items has seventeen fields because a slide is a piece of design.
+      broadcast_items has twenty fields because a slide is a piece of design.
       A ticker line is a label, a sentence and somewhere to go - so this has five
       and nothing is marked `advanced`, because there is nothing here worth
       hiding. If it ever needs a sixth, that is the moment to ask whether it has
@@ -319,6 +319,23 @@ export const SECTIONS = [
       { name: "body",     label: "Body copy", type: "textarea", placeholder: "Bring your own excuses." },
       { name: "figure", advanced: true,   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
       { name: "image", advanced: true,    label: "Background picture (optional)", type: "image" },
+      { name: "image_fit", advanced: true, label: "Picture fit", type: "select", default: "cover",
+        options: [
+          { value: "cover", label: "Fill and crop — fills the whole frame" },
+          { value: "contain", label: "Show entire image — no cropping" },
+        ] },
+      { name: "image_position_x", advanced: true, label: "Picture focus — horizontal", type: "select", default: "center",
+        options: [
+          { value: "left", label: "Left" },
+          { value: "center", label: "Center" },
+          { value: "right", label: "Right" },
+        ] },
+      { name: "image_position_y", advanced: true, label: "Picture focus — vertical", type: "select", default: "center",
+        options: [
+          { value: "top", label: "Top" },
+          { value: "center", label: "Center" },
+          { value: "bottom", label: "Bottom" },
+        ] },
       { name: "href", advanced: true,     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
       /*
         TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.

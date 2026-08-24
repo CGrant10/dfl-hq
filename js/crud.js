@@ -32,7 +32,7 @@ export async function renderManager(host, spec) {
     THE FORM IS COLLAPSED UNTIL IT IS WANTED.
 
     It used to sit open above the list, which was tolerable when a spec had
-    four fields and is not now that a broadcast slide has sixteen: an admin
+    four fields and is not now that a broadcast slide has twenty: an admin
     arriving to reorder two slides had to scroll past a full-page form to
     reach the list they came for.
 

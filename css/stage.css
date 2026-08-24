@@ -289,6 +289,12 @@
   user-drag: none;
   pointer-events: none;
 }
+.bx-art[style*="object-fit:contain"] {
+  /* Letterboxing is intentional in this mode: the complete artwork is more
+     important than filling every pixel. The dark plate keeps empty bands
+     inside the broadcast package instead of exposing the page behind it. */
+  background: #06090d;
+}
 /*
   READABILITY IS NOT OPTIONAL. Any photograph can put white text on white
   sky, so an image background always carries a scrim. It is a gradient

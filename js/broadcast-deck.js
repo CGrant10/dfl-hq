@@ -45,6 +45,7 @@ import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lor
 import { dayMood } from "./marquee.js";
 import { factOfTheDay } from "./funfacts.js";
 import { memberImage } from "./members.js";
+import { artworkSettings } from "./broadcast-artwork.js";
 /* The 2022 floor lives with the card, which owns the rule. Importing it
    rather than restating it is what stopped these two disagreeing. */
 import { FIRST_SEASON as FIRST_CHIP_SEASON } from "./chip-eaters.js";
@@ -225,7 +226,7 @@ export async function loadBroadcastItems(now = new Date()) {
   try {
     const { data, error } = await db()
       .from("broadcast_items")
-      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at,logo_opacity")
+      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at,logo_opacity,image_fit,image_position_x,image_position_y")
       .eq("active", true)
       /* THE RUNNING ORDER, and it is this query that decides it - the
          ranking below only decides where the manual BLOCK sits against
@@ -295,6 +296,7 @@ function manualItem(r) {
     /* Presentation, carried through to the stage untouched. An unknown
        value degrades to the house look rather than to a blank slide. */
     background: BACKGROUNDS.has(r.background) ? r.background : "default",
+    ...artworkSettings(r),
     /* How strong the crest behind this slide should be. Unknown or absent
        means "default", so an install without the column behaves exactly as
        it did before. */

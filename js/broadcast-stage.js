@@ -29,6 +29,7 @@
 
 import { esc } from "./ui.js";
 import { marquee } from "./marquee.js";
+import { artworkStyle } from "./broadcast-artwork.js";
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -158,7 +159,7 @@ function backdrop(item) {
      swaps the mark: same layer, same opacity, a toilet instead of the crest. */
   const crest = bg === "logo" || item.treatment === "champion";
   return `
-    ${art ? `<img class="bx-art" src="${esc(item.image)}" alt="" draggable="false" decoding="async">
+    ${art ? `<img class="bx-art" src="${esc(item.image)}" alt="" draggable="false" decoding="async" style="${artworkStyle(item)}">
              <span class="bx-scrim"></span>` : ""}
     <span class="bx-fx bx-corners" aria-hidden="true">
       <span class="bx-weave"></span>
