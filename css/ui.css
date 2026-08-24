@@ -26,7 +26,7 @@
   border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--bg-2);
-  box-shadow: var(--e-1);
+  box-shadow: none;
 }
 .card { padding: var(--s-4); margin-bottom: var(--s-3); }
 
@@ -74,7 +74,7 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
    --------------------------------------------------------------------- */
 .btn {
   min-height: 44px;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-control);
   padding: 0 var(--s-4);
   font-family: var(--font-display);
   font-size: var(--fs-h3);
@@ -647,7 +647,7 @@ h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
    --------------------------------------------------------------------- */
 .linkbtn { min-height: 32px; }
 select, input[type="text"], input[type="number"], input[type="date"], textarea {
-  min-height: 42px; border-radius: var(--r-sm);
+  min-height: 42px; border-radius: var(--r-control);
 }
 
 /* =====================================================================
@@ -662,7 +662,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 /* Stacked cards lose their shadow: twelve floating panels down a phone
    screen reads as clutter, not depth. Depth is for things that genuinely
    sit above the page - the sheet, the toast, the hero. */
-.card { box-shadow: none; }
+.card, .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card { box-shadow: none; }
 .fp-hero { box-shadow: none; }
 .sheet-card, .overlay-card, .toast { box-shadow: var(--e-3); }
 
