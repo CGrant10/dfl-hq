@@ -647,6 +647,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Initial access uses an in-app keypad so opening DFL HQ does not immediately
+   hand half the screen to the phone keyboard. The hidden value still belongs
+   to the form, and hardware-keyboard digits, Backspace and Enter are wired in
+   member-lock.js for accessibility. */
+.access-card {
+  max-width: 360px;
+  padding: var(--s-5);
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--accent-fill) 16%, transparent), transparent 48%),
+    var(--bg-2);
+}
+.access-brand { display: flex; align-items: center; gap: var(--s-3); text-align: left; }
+.access-brand > span:last-child { min-width: 0; }
+.access-brand small,.access-brand strong { display: block; }
+.access-brand small { color: var(--accent-2); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.access-brand strong { margin-top: 2px; overflow: hidden; font-family: var(--font-display); font-size: 22px; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.access-card > p.muted { margin: var(--s-3) 0 0; text-align: left; font-size: 12px; line-height: 1.45; }
+.welcome-card h2:before { content: "DFL ACCESS"; display: block; margin-bottom: 4px; color: var(--accent-2); font-family: var(--font-body); font-size: 9px; font-weight: 900; letter-spacing: .15em; }
+.welcome-card .memberlist { margin-top: var(--s-3); }
+.access-pin { margin-top: var(--s-4); }
+.access-pin-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2); }
+.access-pin-head strong { color: var(--text); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.access-pin-head span { color: var(--muted); font-size: 9px; }
+.access-pin-dots { display: flex; justify-content: center; gap: 12px; min-height: 40px; margin: var(--s-2) 0; padding: 11px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-3); }
+.access-pin-dots span { width: 14px; height: 14px; border: 1px solid var(--control-line); border-radius: 50%; background: transparent; transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.access-pin-dots span.is-filled { border-color: var(--accent-2-fill); background: var(--accent-2-fill); transform: scale(1.08); }
+.access-keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+.access-keypad button { min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-3); color: var(--text); font: 800 19px/1 var(--font-body); cursor: pointer; touch-action: manipulation; }
+.access-keypad button:active { transform: scale(.97); background: var(--hover); }
+.access-keypad button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.access-keypad button.is-command { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.access-card .row-end { margin-top: var(--s-4); padding-top: var(--s-3); }
+.access-card .row-end > .btn { flex: 1 1 0; min-height: 44px; }
+.access-card .row-end > .btn:only-child { flex-basis: 100%; }
+.access-session-note { margin: var(--s-3) 0 0!important; text-align: center!important; }
+@media(max-height:640px){.access-card{padding:var(--s-4)}.access-brand .pin-mark{width:38px;height:38px}.access-keypad button{min-height:40px}.access-card>p.muted{margin-top:var(--s-2)}.access-pin{margin-top:var(--s-3)}}
+
 .overlay-card .row-end {
   margin-top: var(--s-6);
   padding-top: var(--s-4);

@@ -25,6 +25,8 @@ const welcome=document.getElementById("welcome"),welcomeCancel=document.getEleme
       welcomeJoin=document.getElementById("welcome-join"),welcomeGolf=document.getElementById("welcome-golf"),
       welcomeCard=welcome?.querySelector(".overlay-card"),
       memberList=document.getElementById("member-list"),whoamiName=document.getElementById("whoami-name");
+welcomeCard?.classList.add("access-card","welcome-card");
+if(welcomeCard){welcomeCard.querySelector("h2").textContent="Welcome to DFL HQ";welcomeCard.querySelector("h2 + p")?.replaceChildren("Choose your profile to continue.")}
 /* A golf guest is somebody, and the chip should say so. They have no member
    row and no username, so without this the top right read "Who are you?" at
    a person who had just told the app exactly who they were. */

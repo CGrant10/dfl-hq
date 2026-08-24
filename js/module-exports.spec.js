@@ -252,6 +252,16 @@ describe("the supported golf GPS courses", () => {
     expect(screens).toContain("background: var(--card-surface);");
   });
 
+  it("uses an in-app PIN keypad for initial member and commissioner access", () => {
+    const memberLock = fs.readFileSync("js/member-lock.js", "utf8");
+    const app = fs.readFileSync("js/app.js", "utf8");
+    expect(memberLock).toContain("data-pin-pad");
+    expect(memberLock).toContain('type="hidden"');
+    expect(memberLock).toContain("data-pin-key");
+    expect(memberLock).not.toContain('id="member-lock-pin" name="dfl-member-pin" type="text"');
+    expect(app).toContain('classList.add("access-card","welcome-card")');
+  });
+
   it("loads the app shell immediately from cache and protects active scores during updates", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
     const updater = fs.readFileSync("js/update.js", "utf8");
@@ -333,6 +343,8 @@ describe("the supported golf GPS courses", () => {
     expect(modes).toContain("data-gqm-setup-holes");
     expect(courses).toContain('root.querySelector(".tb-setup")');
     expect(courses).toContain("scorecards, yardages and GPS");
+    expect(courses).toContain('window.dispatchEvent(new HashChangeEvent("hashchange"))');
+    expect(courses).not.toContain("location.reload()");
   });
 
   it("keeps score results on scorecards and shows complete nine totals", () => {

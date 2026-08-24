@@ -26,6 +26,6 @@ async function enhance(){
   const select=wrap.querySelector("#golf-course-select"),apply=wrap.querySelector("#golf-course-apply"),meta=wrap.querySelector("#golf-course-meta");
   const showMeta=()=>{const c=list.find(x=>String(x.id)===String(select.value));apply.disabled=!c;if(c)meta.textContent=`${c.holes} holes · Par ${c.par??"—"} · ${c.yardage?`${c.yardage} yds`:"yardage not listed"}`;else meta.textContent=""};
   select.addEventListener("change",showMeta);showMeta();
-  apply.addEventListener("click",async()=>{if(!select.value)return;apply.disabled=true;try{const{error}=await db().rpc("golf_apply_course_to_outing",{p_outing_id:Number(outingId),p_course_id:Number(select.value)});if(error)throw error;toast("Course applied — scorecards and GPS updated");location.reload()}catch(err){toast(err.message||"Could not apply course",true);showMeta()}});
+  apply.addEventListener("click",async()=>{if(!select.value)return;apply.disabled=true;try{const{error}=await db().rpc("golf_apply_course_to_outing",{p_outing_id:Number(outingId),p_course_id:Number(select.value)});if(error)throw error;toast("Course applied — scorecards and GPS updated");lastKey="";window.dispatchEvent(new HashChangeEvent("hashchange"))}catch(err){toast(err.message||"Could not apply course",true);showMeta()}});
 }
 const observer=new MutationObserver(()=>enhance());function boot(){observer.observe(document.body,{childList:true,subtree:true});enhance()}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
