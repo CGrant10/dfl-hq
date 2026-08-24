@@ -14,7 +14,7 @@
   "background_color": "#0d1117",
   "theme_color": "#0d1117",
   "categories": ["sports", "utilities"],
-  "_comment_icons": "app-* is the graphite DFL HQ feather shield used on phone home screens. The maskable artwork keeps the full shield and feathers inside the launcher safe zone.",
+  "_comment_icons": "app-* uses an edge-to-edge graphite field so each launcher supplies its own mask without exposing an inset frame. The maskable artwork keeps the full shield and feathers inside the adaptive safe zone.",
   "icons": [
     { "src": "icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
