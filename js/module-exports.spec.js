@@ -324,6 +324,8 @@ describe("the supported golf GPS courses", () => {
     expect(privacy).toContain("not is_private or created_by = dfl_current_member()");
     expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain(".tb-scorecard{bottom:calc(68px + env(safe-area-inset-bottom))}");
     expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain(".tb-bottom.is-member{grid-template-columns:1fr 1fr;");
+    expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain("Scorecard Legend");
+    expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain("Fairway bunker");
     expect(source).toContain('.gqm-hidden-engine button,.gqm-hidden-engine input,.gqm-hidden-engine select');
   });
 
