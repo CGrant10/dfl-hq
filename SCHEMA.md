@@ -4,6 +4,8 @@
 
 Run `golf_quick_round_details_schema.sql` after the existing Quick Round tables are present. It adds per-hole putts, tee result and club, first-putt distance, bunker flags, penalty counts, and drinks to `golf_quick_scores`. Existing row-level security continues to govern the same table.
 
+Run `golf_quick_round_multi_course_schema.sql` to let an individual Quick Round golfer use a different saved course. A blank player course inherits the round course, so existing rounds do not change. Scorecard pars, yardages and GPS then follow each golfer's effective course.
+
 **What a correct current DFL HQ database looks like, and the order to build
 one in.** This exists because the repository has 64 root `.sql` files (one base plus 63 additive) and the
 README's setup section still lists eleven of them, which is the state it was
