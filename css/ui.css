@@ -25,10 +25,18 @@
 .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card {
   border-radius: var(--r-lg);
   border: 1px solid var(--card-border);
-  background: var(--card-surface);
+  background: var(--bg-2);
   box-shadow: var(--card-shadow);
 }
 .card { padding: var(--s-4); margin-bottom: var(--s-3); }
+
+/* The upper-left wash is emphasis, not wallpaper. Identity, a selected
+   state, or a major summary may opt in with .accent; ordinary content stays
+   on a quiet solid surface so the wash keeps meaning something. */
+.card.accent,
+.surface-identity {
+  background: var(--card-surface);
+}
 
 /* A card title is a LABEL, not a heading - small, tracked, quiet - so the
    number or the name underneath is the thing the eye lands on. */
@@ -672,7 +680,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .block .card.event, .block .card.linkcard {
   border: 1px solid var(--card-border);
   border-radius: var(--r-lg);
-  background: var(--card-surface);
+  background: var(--bg-2);
   box-shadow: var(--card-shadow);
   margin: 0 0 var(--s-3);
   padding: var(--s-4);
