@@ -225,6 +225,9 @@ describe("the supported golf GPS courses", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     expect(source).toContain('${fallback?formatYards(fallback):"—"}</strong><small>YDS</small>');
     expect(source).not.toContain('value!=null?"YDS LIVE"');
+    expect(source).not.toContain("if(slot&&!beta)startGps()");
+    expect(source).toContain("watchGolfMount(mount)");
+    expect(source).toContain('title:"Your GPS location"');
   });
 
   it("renders a full-hole satellite GPS experience with an imagery fallback", () => {
@@ -266,6 +269,8 @@ describe("the supported golf GPS courses", () => {
     expect(personal).toContain("is_private:isPrivate");
     expect(privacy).toContain("not is_private or created_by = dfl_current_member()");
     expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain(".tb-scorecard{bottom:calc(68px + env(safe-area-inset-bottom))}");
+    expect(fs.readFileSync("js/golf-tournament-beta.js", "utf8")).toContain(".tb-bottom.is-member{grid-template-columns:1fr 1fr;");
+    expect(source).toContain('.gqm-hidden-engine button,.gqm-hidden-engine input,.gqm-hidden-engine select');
   });
 
   it("keeps score results on scorecards and shows complete nine totals", () => {

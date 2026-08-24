@@ -9,6 +9,14 @@ const LEAFLET_JS="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
 const LEAFLET_CSS="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
 const SATELLITE_TILES="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 let leafletPromise=null;
+const gpsMountCallbacks=new Set();
+let gpsMountObserver=null,gpsMountQueued=false;
+function watchGolfMount(callback){
+  gpsMountCallbacks.add(callback);
+  if(gpsMountObserver)return;
+  const run=()=>{if(gpsMountQueued)return;gpsMountQueued=true;queueMicrotask(()=>{gpsMountQueued=false;if(!location.hash.startsWith("#/golf"))return;gpsMountCallbacks.forEach(mount=>mount())})};
+  gpsMountObserver=new MutationObserver(run);gpsMountObserver.observe(document.body,{childList:true,subtree:true});
+}
 const uiEsc=value=>String(value??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const toYards=meters=>Math.round(Number(meters||0)*1.0936133);
 const formatYards=value=>String(Math.round(Number(value)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,",");
@@ -172,15 +180,15 @@ export function setupCourseGps(config){
     playerMarker=teeMarker=accuracyCircle=greenMarker=distanceLine=distanceMarker=null;
     if(onHole){
       accuracyCircle=L.circle([here.lat,here.lng],{radius:Number(position.coords.accuracy)||1,color:"#61adff",weight:1,opacity:.85,fillColor:"#228cff",fillOpacity:.14,interactive:false}).addTo(map);
-      playerMarker=L.marker([here.lat,here.lng],{icon:markerIcon("player"),zIndexOffset:1000}).addTo(map).bindTooltip(`You · GPS ${fixQuality(position.coords.accuracy)}`,{direction:"top"});
+      playerMarker=L.marker([here.lat,here.lng],{icon:markerIcon("player"),zIndexOffset:1000,title:"Your GPS location",alt:"Your GPS location"}).addTo(map).bindTooltip(`You · GPS ${fixQuality(position.coords.accuracy)}`,{direction:"top"});
     }else if(start){
-      teeMarker=L.marker([start.lat,start.lng],{icon:markerIcon("tee"),zIndexOffset:850}).addTo(map).bindTooltip(`Hole ${hole} tee`,{direction:"top"});
+      teeMarker=L.marker([start.lat,start.lng],{icon:markerIcon("tee"),zIndexOffset:850,title:`Hole ${hole} tee`,alt:`Hole ${hole} tee`}).addTo(map).bindTooltip(`Hole ${hole} tee`,{direction:"top"});
     }
-    greenMarker=L.marker([aim.lat,aim.lng],{icon:markerIcon("green"),zIndexOffset:900}).addTo(map).bindTooltip(holeGreen?`Hole ${hole} green`:`${activeLabel()} course target`,{direction:"top"});
+    greenMarker=L.marker([aim.lat,aim.lng],{icon:markerIcon("green"),zIndexOffset:900,title:holeGreen?`Hole ${hole} green`:`${activeLabel()} course target`,alt:holeGreen?`Hole ${hole} green`:`${activeLabel()} course target`}).addTo(map).bindTooltip(holeGreen?`Hole ${hole} green`:`${activeLabel()} course target`,{direction:"top"});
     if(lineStart){
       distanceLine=L.polyline([[lineStart.lat,lineStart.lng],[aim.lat,aim.lng]],{color:"#fff",weight:3,opacity:.96}).addTo(map);
       const mid=[(lineStart.lat+aim.lat)/2,(lineStart.lng+aim.lng)/2],icon=L.divIcon({className:"",html:`<div class="dfl-gps-distance-pill">${formatYards(shown)}</div>`,iconSize:[78,38],iconAnchor:[39,19]});
-      distanceMarker=L.marker(mid,{icon,zIndexOffset:1100,interactive:false}).addTo(map);
+      distanceMarker=L.marker(mid,{icon,zIndexOffset:1100,interactive:false,keyboard:false}).addTo(map);
     }
     if(!fit||(onHole&&!followMode))return;
     setTimeout(()=>{
@@ -281,12 +289,12 @@ export function setupCourseGps(config){
     if(attachedCard===card&&document.querySelector(`.dfl-gps-bubble${selector}`))return;
     globalThis.__dflCourseGpsStop?.();globalThis.__dflCourseGpsStop=stop;
     ensureStyles();ensureAssistantStyles();ensureHoleMarkerStyles();ensureHoleExperienceStyles();attachedCard=card;hole=scorecardHole(card);void loadMemberBag();void loadCourseGeometry();
-    const bubble=document.createElement("button"),slot=gpsSlot(),beta=Boolean(betaSlot());bubble.type="button";bubble.className=`dfl-gps-bubble${beta?" is-beta":slot?" is-quick-round":""}`;bubble.dataset.gpsCourse=config.key;bubble.setAttribute("aria-label",`Open ${activeLabel()} Hole ${hole} GPS`);bubble.addEventListener("click",openPanel);slot?.querySelector("[data-gq-gps-top]")?.remove();(slot||document.body).appendChild(bubble);if(slot&&!beta)startGps();refresh();
+    const bubble=document.createElement("button"),slot=gpsSlot(),beta=Boolean(betaSlot());bubble.type="button";bubble.className=`dfl-gps-bubble${beta?" is-beta":slot?" is-quick-round":""}`;bubble.dataset.gpsCourse=config.key;bubble.setAttribute("aria-label",`Open ${activeLabel()} Hole ${hole} GPS`);bubble.addEventListener("click",openPanel);slot?.querySelector("[data-gq-gps-top]")?.remove();(slot||document.body).appendChild(bubble);refresh();
     const update=e=>{if(!e.target.closest?.("[data-team-score],[data-step],[data-gqm-hole-nav]"))return;setTimeout(()=>{hole=scorecardHole(card);hasFitted=false;refresh()},80)};
     card.addEventListener("input",update);card.addEventListener("click",update);cleanup=()=>{card.removeEventListener("input",update);card.removeEventListener("click",update)};
   }
   function mount(){const view=document.getElementById("view"),query=new URLSearchParams(location.hash.split("?")[1]||"");if(!view||!location.hash.startsWith("#/golf")){stop();return}const card=view.querySelector(".tb-shell[data-tbeta-root]")||view.querySelector('.dfl-team-card[data-quick-active="true"]')||view.querySelector(".dfl-team-card:not([hidden])")||view.querySelector(".dfl-team-card"),quick=card?.matches("[data-quick-player-card]"),beta=card?.matches(".tb-shell[data-tbeta-root]");if(!card||(!query.get("team")&&!quick&&!beta)||(beta&&!card.querySelector("[data-tb-gps-slot]"))||!config.courseRe.test(courseText(view))){stop();return}attach(card)}
-  function boot(){window.addEventListener("hashchange",()=>setTimeout(mount,0));window.addEventListener("dfl:quick-player-change",()=>setTimeout(mount,0));window.addEventListener("dfl:quick-hole-change",event=>{hole=((Number(event.detail?.hole)||1)-1)%9+1;hasFitted=false;setTimeout(refresh,0)});new MutationObserver(()=>location.hash.startsWith("#/golf")&&mount()).observe(document.body,{childList:true,subtree:true});mount()}
+  function boot(){window.addEventListener("hashchange",()=>setTimeout(mount,0));window.addEventListener("dfl:quick-player-change",()=>setTimeout(mount,0));window.addEventListener("dfl:quick-hole-change",event=>{hole=((Number(event.detail?.hole)||1)-1)%9+1;hasFitted=false;setTimeout(refresh,0)});watchGolfMount(mount);mount()}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
   return{mount,stop};
 }
