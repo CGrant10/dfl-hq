@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { betaCaptainChoices, betaFormatStatus, betaMatchCount, betaRoundName, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
+import { betaCaptainChoices, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaSeatsForSide, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
 
 const side = (team, players) => ({ team_id: team, players: Array.from({ length: players }, (_, id) => ({ id })) });
 const battle = (players) => ({ sides: [side(1, players), side(2, players)] });
@@ -36,5 +36,16 @@ describe("Tournament Beta team format", () => {
       { id: 3, member_id: 202, team_id: 2 },
     ];
     expect(betaCaptainChoices(team, participants)).toEqual([participants[0]]);
+  });
+
+  it("supports uneven custom matches without changing the stored pairs format", () => {
+    const round = { format: "pairs", name: "Custom Match · 2v1" };
+    const custom = { round, battles: [{ sides: [side(1, 2), side(2, 1)] }] };
+    expect(betaCustomSizes(round)).toEqual([2, 1]);
+    expect(betaIsCustomRound(round)).toBe(true);
+    expect(betaSeatsForSide(round, 0)).toBe(2);
+    expect(betaSeatsForSide(round, 1)).toBe(1);
+    expect(betaRoundLabel(round)).toBe("Custom 2 vs 1");
+    expect(betaFormatStatus({ rounds: [custom] })).toMatchObject({ custom, customReady: true, pairs: undefined, pairsReady: false });
   });
 });

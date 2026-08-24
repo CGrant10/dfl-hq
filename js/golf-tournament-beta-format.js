@@ -1,6 +1,18 @@
 export const BETA_TEAM_SIZE = 6;
 export const BETA_PAIRS_MATCHES = 3;
 export const BETA_SINGLES_MATCHES = 6;
+export const BETA_CUSTOM_MAX_SIDE = 4;
+
+export function betaCustomSizes(round) {
+  const match = String(round?.name || "").match(/^Custom Match · (\d+)v(\d+)$/i);
+  if (!match) return null;
+  const sizes = [Number(match[1]), Number(match[2])];
+  return sizes.every(size => size >= 1 && size <= BETA_CUSTOM_MAX_SIDE) ? sizes : null;
+}
+
+export const betaIsCustomRound = round => Boolean(betaCustomSizes(round));
+export const betaRoundLabel = round => betaIsCustomRound(round) ? `Custom ${betaCustomSizes(round).join(" vs ")}` : round?.format === "pairs" ? "Pairs" : "Singles";
+export const betaSeatsForSide = (round, sideIndex = 0) => betaCustomSizes(round)?.[sideIndex] || (round?.format === "pairs" ? 2 : 1);
 
 export function betaCaptainChoices(team, participants = []) {
   return participants.filter(person => person.member_id != null && String(person.team_id) === String(team?.id));
@@ -10,20 +22,27 @@ export function betaFormatStatus({ teams = [], participants = [], rounds = [] } 
   const counts = teams.map(team => participants.filter(person => String(person.team_id) === String(team.id)).length);
   const captainsReady = teams.length === 2 && teams.every(team => team.captain_member_id != null
     && betaCaptainChoices(team, participants).some(person => String(person.member_id) === String(team.captain_member_id)));
-  const pairs = rounds.find(entry => entry.round?.format === "pairs");
+  const custom = rounds.find(entry => betaIsCustomRound(entry.round));
+  const pairs = rounds.find(entry => entry.round?.format === "pairs" && !betaIsCustomRound(entry.round));
   const singles = rounds.find(entry => entry.round?.format === "singles" && entry.battles?.every(battle => battle.sides?.every(side => side.team_id != null)));
   const pairsReady = pairs?.battles?.length === BETA_PAIRS_MATCHES
     && pairs.battles.every(battle => battle.sides?.length === 2 && battle.sides.every(side => side.players?.length === 2));
   const singlesReady = singles?.battles?.length === BETA_SINGLES_MATCHES
     && singles.battles.every(battle => battle.sides?.length === 2 && battle.sides.every(side => side.players?.length === 1));
+  const customSizes = betaCustomSizes(custom?.round);
+  const customReady = customSizes && custom?.battles?.length === 1
+    && custom.battles[0].sides?.length === 2
+    && custom.battles[0].sides.every((side, index) => side.players?.length === customSizes[index]);
   return {
     teamsReady: teams.length === 2 && counts.length === 2 && counts.every(count => count === BETA_TEAM_SIZE),
     captainsReady,
     counts,
     pairs,
     singles,
+    custom,
     pairsReady: Boolean(pairsReady),
     singlesReady: Boolean(singlesReady),
+    customReady: Boolean(customReady),
     ready: teams.length === 2 && counts.every(count => count === BETA_TEAM_SIZE) && captainsReady && Boolean(pairsReady) && Boolean(singlesReady),
   };
 }
