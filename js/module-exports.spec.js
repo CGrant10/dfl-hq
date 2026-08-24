@@ -225,9 +225,15 @@ describe("the supported golf GPS courses", () => {
     const tokens = fs.readFileSync("css/tokens.css", "utf8");
     const ui = fs.readFileSync("css/ui.css", "utf8");
     const styles = fs.readFileSync("css/style.css", "utf8");
+    const admin = fs.readFileSync("css/admin.css", "utf8");
     expect(tokens).toContain("--font-body: var(--font-display)");
     expect(tokens).toContain("--r-control: 10px");
     expect(tokens).toContain(":where(button, input, select, textarea)");
+    expect(styles).toContain("--card-surface:");
+    expect(styles).toContain("--card-border:");
+    expect(ui).toContain("background: var(--card-surface)");
+    expect(ui).toContain("border: 1px solid var(--card-border)");
+    expect(admin).toContain("background:var(--card-surface)");
     expect(ui).toContain("border-radius: var(--r-control)");
     expect(styles).not.toContain(':root[data-mode="fairway"] {\n  --font-body');
   });

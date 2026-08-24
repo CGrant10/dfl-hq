@@ -24,9 +24,9 @@
 .card,
 .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card {
   border-radius: var(--r-lg);
-  border: 1px solid var(--line);
-  background: var(--bg-2);
-  box-shadow: none;
+  border: 1px solid var(--card-border);
+  background: var(--card-surface);
+  box-shadow: var(--card-shadow);
 }
 .card { padding: var(--s-4); margin-bottom: var(--s-3); }
 
@@ -43,8 +43,9 @@
   font-family: var(--font-display);
   font-size: var(--fs-h2);
   font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-tight);
+  letter-spacing: .025em;
   line-height: var(--lh-snug);
+  text-transform: uppercase;
 }
 
 /* ---------------------------------------------------------------------
@@ -662,21 +663,21 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 /* Stacked cards lose their shadow: twelve floating panels down a phone
    screen reads as clutter, not depth. Depth is for things that genuinely
    sit above the page - the sheet, the toast, the hero. */
-.card, .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card { box-shadow: none; }
+.card, .arena-card, .duecard, .keepcard, .rulecard, .results-card, .bag-card, .gd-card { box-shadow: var(--card-shadow); }
 .fp-hero { box-shadow: none; }
 .sheet-card, .overlay-card, .toast { box-shadow: var(--e-3); }
 
 /* An event or a poll in a list is a ROW, not a panel. Hairline between,
    nothing around. */
 .block .card.event, .block .card.linkcard {
-  border: 0;
-  border-top: 1px solid var(--line-soft);
-  border-radius: 0;
-  background: transparent;
-  margin: 0;
-  padding: var(--s-4) 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  background: var(--card-surface);
+  box-shadow: var(--card-shadow);
+  margin: 0 0 var(--s-3);
+  padding: var(--s-4);
 }
-.block .card.event:first-of-type, .block .card.linkcard:first-of-type { border-top: 0; }
+.block .card.event:first-of-type, .block .card.linkcard:first-of-type { border-top: 1px solid var(--card-border); }
 .block .card.linkcard { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
 .event-when { display: flex; align-items: center; gap: var(--s-2); margin-bottom: 2px; }
 .event-date { font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; color: var(--muted); }
@@ -872,7 +873,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 
 /* Inverted and slightly stronger on a light ground, where a faint white
    mark would be invisible. */
-:root[data-mode="light"] .dfl-mark::after { filter: invert(1) brightness(.4); opacity: .10; }
+:root:is([data-mode="light"],[data-mode="fairway"]) .dfl-mark::after { filter: invert(1) brightness(.4); opacity: .10; }
 
 /* Over artwork or a photograph there is already plenty going on. */
 .dfl-mark.on-image::after { opacity: .05; }
