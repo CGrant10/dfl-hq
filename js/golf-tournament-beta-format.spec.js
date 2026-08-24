@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { betaCaptainChoices, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaSeatsForSide, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
+import { betaCaptainChoices, betaCustomBoardVisible, betaCustomRoundName, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaRoundTitle, betaSeatsForSide, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
 
 const side = (team, players) => ({ team_id: team, players: Array.from({ length: players }, (_, id) => ({ id })) });
 const battle = (players) => ({ sides: [side(1, players), side(2, players)] });
@@ -47,5 +47,14 @@ describe("Tournament Beta team format", () => {
     expect(betaSeatsForSide(round, 1)).toBe(1);
     expect(betaRoundLabel(round)).toBe("Custom 2 vs 1");
     expect(betaFormatStatus({ rounds: [custom] })).toMatchObject({ custom, customReady: true, pairs: undefined, pairsReady: false });
+  });
+
+  it("keeps the custom tournament board on by default and stores an opt-out", () => {
+    expect(betaCustomBoardVisible({ name: "Custom Match · 1v2" })).toBe(true);
+    const name = betaCustomRoundName([1, 2], false);
+    expect(name).toBe("Custom Match · 1v2 · Board off");
+    expect(betaCustomSizes({ name })).toEqual([1, 2]);
+    expect(betaCustomBoardVisible({ name })).toBe(false);
+    expect(betaRoundTitle({ name })).toBe("Custom Match · 1v2");
   });
 });

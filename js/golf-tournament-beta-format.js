@@ -4,13 +4,16 @@ export const BETA_SINGLES_MATCHES = 6;
 export const BETA_CUSTOM_MAX_SIDE = 4;
 
 export function betaCustomSizes(round) {
-  const match = String(round?.name || "").match(/^Custom Match · (\d+)v(\d+)$/i);
+  const match = String(round?.name || "").match(/^Custom Match · (\d+)v(\d+)(?: · Board off)?$/i);
   if (!match) return null;
   const sizes = [Number(match[1]), Number(match[2])];
   return sizes.every(size => size >= 1 && size <= BETA_CUSTOM_MAX_SIDE) ? sizes : null;
 }
 
 export const betaIsCustomRound = round => Boolean(betaCustomSizes(round));
+export const betaCustomBoardVisible = round => !/ · Board off$/i.test(String(round?.name || ""));
+export const betaCustomRoundName = (sizes, showBoard = true) => `Custom Match · ${sizes[0]}v${sizes[1]}${showBoard ? "" : " · Board off"}`;
+export const betaRoundTitle = round => String(round?.name || "").replace(/ · Board off$/i, "");
 export const betaRoundLabel = round => betaIsCustomRound(round) ? `Custom ${betaCustomSizes(round).join(" vs ")}` : round?.format === "pairs" ? "Pairs" : "Singles";
 export const betaSeatsForSide = (round, sideIndex = 0) => betaCustomSizes(round)?.[sideIndex] || (round?.format === "pairs" ? 2 : 1);
 
