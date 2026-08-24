@@ -381,6 +381,58 @@
   color: var(--muted);
 }
 
+/* Profile arrival is identity first, then one fast way to another member.
+   Settings are a single destination at the end instead of three unrelated
+   cards interrupting the record. */
+.profile-member-switch {
+  margin: calc(var(--s-1) * -1) 0 var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.profile-member-switch-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-2);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+.profile-member-switch-head strong { font-size: var(--fs-label); letter-spacing: var(--ls-caps); }
+.profile-member-switch-head small { color: var(--muted); font-size: var(--fs-micro); }
+.profile-member-switch .chiprow { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.profile-member-switch .chip { flex: 0 0 auto; }
+.profile-settings {
+  margin-top: var(--s-5);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.profile-settings > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 66px;
+  padding: var(--s-3) var(--s-4);
+  cursor: pointer;
+  list-style: none;
+}
+.profile-settings > summary::-webkit-details-marker { display: none; }
+.profile-settings > summary span { display: grid; gap: 2px; }
+.profile-settings > summary small,
+.profile-settings > summary em { color: var(--muted); font-size: var(--fs-micro); font-style: normal; }
+.profile-settings > summary strong { font-family: var(--font-display); font-size: var(--fs-h3); text-transform: uppercase; }
+.profile-settings > summary::after { content: "+"; color: var(--accent); font-size: 22px; font-weight: 800; }
+.profile-settings[open] > summary::after { content: "−"; }
+.profile-settings-body { padding: 0 var(--s-3) var(--s-3); }
+.profile-settings-body > .card,
+.profile-settings-body > [data-profile-privacy-slot] > .card { margin-bottom: var(--s-2); box-shadow: none; }
+@media (max-width: 480px) {
+  .profile-settings > summary em { display: none; }
+}
+
 /* ---------------------------------------------------------------------
    GOLF - a live tournament interface
 

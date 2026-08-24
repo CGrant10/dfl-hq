@@ -133,6 +133,7 @@ export async function render(view) {
   view.innerHTML = `
     <div id="profile-wrap">
       <div data-dfl-host></div>
+      ${othersCard(members, member)}
       ${member.notes ? `<div class="card"><h3 class="card-heading">Notes</h3>
                           <div class="card-body">${esc(member.notes)}</div></div>` : ""}
       ${dfl ? cabinetCard(dfl) : ""}
@@ -140,8 +141,7 @@ export async function render(view) {
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
-      ${isMe ? `<h2 class="section-title">Settings</h2>${golfNameCard(member)}${appearanceCard()}` : ""}
-      ${othersCard(members, member)}
+      ${isMe ? `<details class="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-privacy-slot></div></div></details>` : ""}
     </div>
   `;
 
@@ -569,13 +569,13 @@ function othersCard(members, current) {
   const others = members.filter((m) => m.id !== current.id);
   if (!others.length) return "";
   return `
-    <div class="card">
-      <div class="card-title">Other members</div>
+    <nav class="profile-member-switch" aria-label="Browse member profiles">
+      <div class="profile-member-switch-head"><strong>Browse members</strong><small>${others.length} profiles</small></div>
       <div class="chiprow">
         ${others.map((m) =>
           `<a class="chip" href="#/profile?id=${m.id}">${esc(m.display_name)}</a>`).join("")}
       </div>
-    </div>`;
+    </nav>`;
 }
 
 // ------------------------------- bits ---------------------------------
