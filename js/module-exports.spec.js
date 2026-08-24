@@ -403,4 +403,17 @@ describe("the supported golf GPS courses", () => {
     expect(beta).toContain("ROUND SCORING");
     expect(gps).toContain('(beta&&!card.querySelector("[data-tb-gps-slot]"))');
   });
+
+  it("supports remote Tournament Beta golfers on different courses", () => {
+    const beta = fs.readFileSync("js/golf-tournament-beta.js", "utf8");
+    const board = fs.readFileSync("js/golf-board.js", "utf8");
+    const migration = fs.readFileSync("golf_tournament_beta_multi_course_schema.sql", "utf8");
+    expect(beta).toContain("data-tb-player-course");
+    expect(beta).toContain("OPTIONAL · REMOTE PLAY");
+    expect(beta).toContain("tb-course-divider");
+    expect(beta).toContain("courseHolesById");
+    expect(board).toContain("ball.holes || holes");
+    expect(migration).toContain("add column if not exists course_id bigint");
+    expect(migration).toContain("references public.golf_courses(id) on delete set null");
+  });
 });

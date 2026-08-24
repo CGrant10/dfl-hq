@@ -108,6 +108,18 @@ describe("a round's board", () => {
     expect(groups[0].rows.every((r) => r.shared)).toBe(false);
   });
 
+  it("ranks remote golfers against the par on their own course", () => {
+    const parThree = NINE.map((hole) => ({ ...hole, par: 3 }));
+    const ann = ball(R3, 1, ["Ann"], card(4, 4));
+    const eve = ball(R3, 2, ["Eve"], card(3, 3));
+    ann.holes = NINE; ann.courseName = "Center"; // level
+    eve.holes = parThree; eve.courseName = "Rolla"; // level
+    const rows = roundBoard({ holes: NINE, balls: [ann, eve] }, R3)[0].rows;
+    expect(rows.map((row) => [row.name, row.diff, row.courseName])).toEqual([
+      ["Ann", 0, "Center"], ["Eve", 0, "Rolla"],
+    ]);
+  });
+
   it("only shows the round it was asked for", () => {
     const data = {
       holes: NINE,

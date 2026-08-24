@@ -97,11 +97,12 @@ export function roundBoard({ balls, holes }, round) {
     const kind = shared ? "pairs" : "singles";
     if (!groups.has(kind)) groups.set(kind, []);
     groups.get(kind).push({
-      ...toPar(ball.strokes, holes, ball.round),
+      ...toPar(ball.strokes, ball.holes || holes, ball.round),
       key: `side:${ball.id}`,
       shared,
       name: shared ? pairName(ball.players.map((p) => p.name)) : (ball.players[0]?.name || "Open seat"),
       teamName: ball.teamName,
+      courseName: ball.courseName || "",
       color: ball.color,
       /* Untouched, the board reads down the card in the order the matches
          were built rather than in team order - the two sides of one match
