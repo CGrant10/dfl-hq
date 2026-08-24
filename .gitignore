@@ -14,3 +14,7 @@ node_modules/
 # repo has never carried them. The `//# sourceMappingURL=` comments in the
 # chunks are therefore unresolved by design; devtools 404s on them, nothing else.
 js/arena/*.js.map
+
+# One-off QA screenshots from agent design reviews. ~3.4MB of PNGs had been
+# committed here; nothing serves them and the service worker never cached them.
+qa/
