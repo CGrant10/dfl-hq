@@ -260,6 +260,11 @@ describe("the supported golf GPS courses", () => {
     expect(memberLock).toContain("data-pin-key");
     expect(memberLock).toContain('addEventListener("pointerdown",pointerdown)');
     expect(memberLock).toContain("lastTouchButton");
+    expect(memberLock).toContain("data-trust-device");
+    expect(memberLock).toContain("dfl.profile.trustedDevice");
+    expect(memberLock).toContain("localStorage.removeItem(trustedKey(memberId))");
+    expect(memberLock).not.toContain("localStorage.setItem(pinKey");
+    expect(memberLock).not.toContain("is-current");
     expect(memberLock).not.toContain("data-pin-key=\"1\"]')?.focus");
     expect(memberLock).not.toContain('id="member-lock-pin" name="dfl-member-pin" type="text"');
     expect(app).toContain('classList.add("access-card","welcome-card")');

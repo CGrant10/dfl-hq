@@ -9,15 +9,17 @@ import { esc, toast } from "./ui.js";
 import { icon } from "./icons.js";
 const key=id=>`dfl.profile.unlocked.${id}`;
 const pinKey=id=>`dfl.profile.pin.${id}`;
+const trustedKey=id=>`dfl.profile.trustedDevice.${id}`;
 const reminderKey=id=>`dfl.profile.lockReminder.${id}`;
 const REMINDER_MS=30*24*60*60*1000;
-const unlocked=id=>{try{return sessionStorage.getItem(key(id))==="1"}catch{return false}};
+const unlocked=id=>{try{if(sessionStorage.getItem(key(id))==="1")return true}catch{}try{return localStorage.getItem(trustedKey(id))==="1"}catch{return false}};
 const markUnlocked=id=>{try{sessionStorage.setItem(key(id),"1")}catch{}};
+const trustDevice=id=>{try{localStorage.setItem(trustedKey(id),"1")}catch{}};
 const rememberPin=(id,pin)=>{try{sessionStorage.setItem(pinKey(id),pin)}catch{}};
-export const markMemberUnlocked = (id, pin = null) => { markUnlocked(id); if (pin) rememberPin(id, pin); };
+export const markMemberUnlocked = (id, pin = null, { rememberDevice = false } = {}) => { markUnlocked(id); if (pin) rememberPin(id, pin); if (rememberDevice) trustDevice(id); };
 export const isMemberUnlocked = (id) => unlocked(id);
 export function verifiedPin(memberId){if(memberId==null)return null;try{return sessionStorage.getItem(pinKey(memberId))||null}catch{return null}}
-export function forgetVerifiedPin(memberId){try{sessionStorage.removeItem(pinKey(memberId));sessionStorage.removeItem(key(memberId))}catch{}}
+export function forgetVerifiedPin(memberId){try{sessionStorage.removeItem(pinKey(memberId));sessionStorage.removeItem(key(memberId))}catch{}try{localStorage.removeItem(trustedKey(memberId))}catch{}}
 
 let overlay=null,pendingButton=null,started=false,replaying=false,releasePinPad=()=>{};
 let commissionerIds=null;
@@ -44,15 +46,17 @@ function wirePinPad(host){
  const pad=host.querySelector("[data-pin-pad]");if(!pad)return null;
  const input=host.querySelector(`#${pad.dataset.pinInput}`),form=pad.closest("form"),submit=form?.querySelector('button[type="submit"]'),min=Number(pad.dataset.pinMin)||4,max=Number(pad.dataset.pinMax)||6,dots=[...pad.querySelectorAll("[data-pin-dots] span")],count=pad.querySelector("[data-pin-count]"),dotBox=pad.querySelector("[data-pin-dots]");
  const feedbackTimers=new Map();
- const feedback=button=>{if(!button)return;pad.querySelectorAll("[data-pin-key]").forEach(key=>key.classList.toggle("is-current",key===button));button.classList.remove("is-pressed");void button.offsetWidth;button.classList.add("is-pressed");clearTimeout(feedbackTimers.get(button));feedbackTimers.set(button,setTimeout(()=>button.classList.remove("is-pressed"),150));try{button.focus({preventScroll:true});navigator.vibrate?.(8)}catch{}};
+ const feedback=button=>{if(!button)return;button.classList.remove("is-pressed");void button.offsetWidth;button.classList.add("is-pressed");clearTimeout(feedbackTimers.get(button));feedbackTimers.set(button,setTimeout(()=>button.classList.remove("is-pressed"),280));try{button.focus({preventScroll:true});navigator.vibrate?.(8)}catch{}};
  const update=()=>{const length=input.value.length;dots.forEach((dot,index)=>{dot.classList.toggle("is-filled",index<Math.min(length,dots.length));dot.classList.toggle("is-next",index===length&&length<max)});count.textContent=length?`${length} digit${length===1?"":"s"} entered`:`Enter ${min}–${max} digits`;dotBox.setAttribute("aria-label",length?`${length} PIN digits entered`:"No PIN digits entered");if(submit)submit.disabled=length<min;};
  const press=(key,button=pad.querySelector(`[data-pin-key="${key}"]`))=>{feedback(button);if(key==="clear")input.value="";else if(key==="back")input.value=input.value.slice(0,-1);else if(/^\d$/.test(key)&&input.value.length<max)input.value+=key;update();};
  let lastTouchButton=null,lastTouchAt=0;
  const pointerdown=e=>{if(e.pointerType==="mouse")return;const button=e.target.closest?.("[data-pin-key]");if(!button)return;e.preventDefault();lastTouchButton=button;lastTouchAt=performance.now();press(button.dataset.pinKey,button)};
  const click=e=>{const button=e.target.closest?.("[data-pin-key]");if(!button)return;if(e.detail!==0&&button===lastTouchButton&&performance.now()-lastTouchAt<800)return;press(button.dataset.pinKey,button)};
  const keydown=e=>{if(!overlay||!host.isConnected||e.target?.matches?.('input:not([type="hidden"]),textarea'))return;if(/^\d$/.test(e.key)){e.preventDefault();press(e.key)}else if(e.key==="Backspace"){e.preventDefault();press("back")}else if(e.key==="Escape"){const back=host.querySelector("[data-member-lock-cancel],[data-mode-back]");if(back){e.preventDefault();back.click()}}else if(e.key==="Enter"&&input.value.length>=min){e.preventDefault();form?.requestSubmit()}};
- pad.addEventListener("pointerdown",pointerdown);pad.addEventListener("click",click);document.addEventListener("keydown",keydown);input.clearPin=()=>{input.value="";pad.querySelectorAll("[data-pin-key]").forEach(key=>key.classList.remove("is-current","is-pressed"));update()};releasePinPad=()=>{pad.removeEventListener("pointerdown",pointerdown);pad.removeEventListener("click",click);document.removeEventListener("keydown",keydown);feedbackTimers.forEach(timer=>clearTimeout(timer));feedbackTimers.clear()};update();return input;
+ pad.addEventListener("pointerdown",pointerdown);pad.addEventListener("click",click);document.addEventListener("keydown",keydown);input.clearPin=()=>{input.value="";pad.querySelectorAll("[data-pin-key]").forEach(key=>key.classList.remove("is-pressed"));update()};releasePinPad=()=>{pad.removeEventListener("pointerdown",pointerdown);pad.removeEventListener("click",click);document.removeEventListener("keydown",keydown);feedbackTimers.forEach(timer=>clearTimeout(timer));feedbackTimers.clear()};update();return input;
 }
+
+const trustedDeviceMarkup=()=>`<label class="access-trust"><input type="checkbox" data-trust-device><span><strong>Stay unlocked on this device</strong><small>Skip this PIN on this browser until you switch profiles. Use only on your own device.</small></span></label>`;
 
 function reminderDue(id){
  try{
@@ -165,8 +169,8 @@ async function continueMemberPick(btn,member){
 
 function showLock(member,{onSuccess=null,cancellable=true,afterUnlock=null}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay access-lock-overlay";document.body.classList.add("access-locked");overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`${member.display_name} locked`);
- overlay.innerHTML=`<div class="overlay-card access-card is-pin"><div class="access-brand"><span class="pin-mark">${icon("lock",{size:21})}</span><span><small>WELCOME BACK</small><strong>${esc(member.display_name)}</strong></span></div><p class="muted">Enter your profile PIN to open DFL HQ.</p><form data-member-lock-form autocomplete="off">${pinPadMarkup({id:"member-lock-pin",name:"dfl-member-pin",label:"Profile PIN",min:4,max:6})}<div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny access-session-note">Unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
- const input=wirePinPad(overlay);overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);input.clearPin?.();}});
+ overlay.innerHTML=`<div class="overlay-card access-card is-pin"><div class="access-brand"><span class="pin-mark">${icon("lock",{size:21})}</span><span><small>WELCOME BACK</small><strong>${esc(member.display_name)}</strong></span></div><p class="muted">Enter your profile PIN to open DFL HQ.</p><form data-member-lock-form autocomplete="off">${pinPadMarkup({id:"member-lock-pin",name:"dfl-member-pin",label:"Profile PIN",min:4,max:6})}${trustedDeviceMarkup()}<div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form></div>`;document.body.appendChild(overlay);
+ const input=wirePinPad(overlay);overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]'),rememberDevice=!!e.currentTarget.querySelector("[data-trust-device]")?.checked;submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markMemberUnlocked(member.id,input.value,{rememberDevice});const choice=pendingButton;pendingButton=null;closeOverlay();toast(rememberDevice?`Trusted this device for ${member.display_name}`:`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);input.clearPin?.();}});
 }
 
 function interceptMemberPick(event){
