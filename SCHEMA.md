@@ -5,7 +5,7 @@
 Run `golf_quick_round_details_schema.sql` after the existing Quick Round tables are present. It adds per-hole putts, tee result and club, first-putt distance, bunker flags, penalty counts, and drinks to `golf_quick_scores`. Existing row-level security continues to govern the same table.
 
 **What a correct current DFL HQ database looks like, and the order to build
-one in.** This exists because the repository has 47 `.sql` files (one base plus 46 additive) and the
+one in.** This exists because the repository has 64 root `.sql` files (one base plus 63 additive) and the
 README's setup section still lists eleven of them, which is the state it was
 in several features ago. If the two disagree, this file is the one being
 maintained.
@@ -112,6 +112,7 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 31 | `commissioner_roles_schema.sql` | `commissioner_access` (per-member PIN hash, scoped `permissions`, `is_owner`), `is_commissioner()`, `has_commissioner_permission()`, `my_commissioner_access()`, `save_commissioner()`, `disable_commissioner()`. Needs `pgcrypto`. The shared Admin password keeps working untouched — this adds a second, narrower way in, so screens can migrate one at a time. Without it Admin → Commissioner Access cannot load and only the master password grants privilege. |
+| 31a | `commissioner_access_editor_schema.sql` | Lets an Owner safely load current commissioner roles without exposing PIN hashes, and adjust permissions while leaving the existing PIN unchanged. Re-run this after 31 on an existing database. |
 | 32 | `profile_lock_schema.sql` | `profile_locks`, `profile_lock_status()`, `profile_verify_pin()`, `profile_set_pin()`, `profile_disable_pin()`, `profile_owner_reset_pin()`. Needs `pgcrypto`. A member claims their own first PIN; changing or clearing it afterwards needs the current PIN, and only a commissioner **Owner** can reset it — which is why this runs after 31. |
 
 ### Sportsbook — in this order
