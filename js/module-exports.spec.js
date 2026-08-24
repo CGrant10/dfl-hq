@@ -342,6 +342,7 @@ describe("the supported golf GPS courses", () => {
     expect(outingRoute.indexOf('if(outing.event_type==="quick")')).toBeLessThan(outingRoute.indexOf('db().from("golf_participants")'));
     expect(inline).toContain('new Set(["name","event_date","event_time","notes"])');
     expect(inline).toContain('label:"Notes (optional)"');
+    expect(inline).toContain('f.name==="event_time"?{...f,label:"Tee time (optional)",required:false}');
     expect(inline).toContain('payload.holes=18;payload.status="setup"');
     expect(modes).toContain("data-gqm-event-setup");
     expect(modes).toContain("data-gqm-setup-course");
@@ -369,6 +370,22 @@ describe("the supported golf GPS courses", () => {
     expect(beta).toContain('function headToHead(entry, mine)');
     expect(beta).toContain('matchPlay ? [result.cardWonA || 0, result.cardWonB || 0] : [result.a || 0, result.b || 0]');
     expect(beta).toContain('${tabs}${gps}${quickMatch}${memberEntry}');
+    expect(beta).toContain("data-tb-reset-scores");
+    expect(beta).toContain('dropPendingSides(sideIds)');
+    expect(beta).toContain('persistedScoreCount: scr.data.length');
+  });
+
+  it("loads current commissioner access and preserves an unchanged PIN", () => {
+    const panel = fs.readFileSync("js/pages/admin_commissioners.js", "utf8");
+    const migration = fs.readFileSync("commissioner_access_editor_schema.sql", "utf8");
+    expect(panel).toContain('rpc("list_commissioner_access")');
+    expect(panel).toContain('Leave blank to keep current PIN');
+    expect(panel).toContain('permissions.has(box.value)');
+    expect(panel).toContain('new_pin: pin.value');
+    expect(migration).toContain("returns table(member_id bigint, is_owner boolean, permissions jsonb, active boolean)");
+    expect(migration).toContain("elsif resolved_hash is null then");
+    expect(migration).toContain("set search_path = ''");
+    expect(migration).toContain("revoke execute on function public.list_commissioner_access() from public");
   });
 
   it("exposes guest setup, selected scoring, and no setup GPS bubble", () => {
