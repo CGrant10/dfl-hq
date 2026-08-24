@@ -23,6 +23,13 @@ const relative = n => n === 0 ? "E" : n > 0 ? `+${n}` : String(n);
 const courseHoleFor = (courseHoles, hole) => { const count = Math.max(1, courseHoles?.length || 9); return ((Number(hole) - 1) % count) + 1; };
 const parFor = (holes, hole) => Number(holes.find(x => Number(x.hole) === Number(hole))?.par) || Number(holes.find(x => Number(x.hole) === courseHoleFor(holes, hole))?.par) || 4;
 const yardageFor = (courseHoles, hole) => { const row = (courseHoles || []).find(x => Number(x.hole) === courseHoleFor(courseHoles, hole)); return Number(row?.yardage_men) || Number(row?.yardage_women) || 0; };
+const effectiveCourseId = (state, participant) => Number(participant?.course_id) || Number(state.outing.course_id) || 0;
+const courseById = (state, id) => state.courses?.find(course => String(course.id) === String(id));
+const courseHolesForId = (state, id) => state.courseHolesById?.get(String(id)) || state.courseHoles || state.holes || [];
+const sideCourseId = (state, side) => Number(side?.players?.find(player => player.course_id)?.course_id) || Number(state.outing.course_id) || 0;
+const sideCourseHoles = (state, side) => courseHolesForId(state, sideCourseId(state, side));
+const sideCourseName = (state, side) => courseById(state, sideCourseId(state, side))?.name || state.outing.course || "Event course";
+const memberCourseId = state => effectiveCourseId(state, state.participants.find(person => String(person.member_id) === String(getMemberId())));
 const scoreKey = (side, hole) => `${side}:${hole}`;
 const sideName = side => pairName(side.players.map(p => p.name));
 const scoringOf = round => round?.scoring === "match" ? "match" : "strokes";
@@ -45,12 +52,19 @@ const scoreRange = (strokes, holes, start, end) => {
 function scorecardTable(state, sides, count, showYards = false) {
   const frontHoles = Array.from({ length: Math.min(9, count) }, (_, i) => i + 1);
   const backHoles = Array.from({ length: Math.max(0, count - 9) }, (_, i) => i + 10);
-  const heading = h => { const yards = showYards ? yardageFor(state.courseHoles, h) : 0; return `<th>${h}<br><small>${yards ? `${yards} yd · ` : ""}Par ${parFor(state.holes, h)}</small></th>`; };
-  const cells = (side, list) => list.map(h => `<td>${scoreMark(side.strokes.get(h), parFor(state.holes, h))}</td>`).join("");
-  return `<table class="tb-table"><thead><tr><th class="sticky">Side / golfer</th>${frontHoles.map(heading).join("")}<th>Front 9</th>${backHoles.map(heading).join("")}<th>Back 9</th><th>+/−</th><th>Total ${count}</th></tr></thead><tbody>${sides.map(side => {
-    const front = scoreRange(side.strokes, state.holes, 1, Math.min(9, count)), back = scoreRange(side.strokes, state.holes, 10, count), all = scoreRange(side.strokes, state.holes, 1, count);
+  const groups = new Map();
+  for (const side of sides) { const id = sideCourseId(state, side); if (!groups.has(id)) groups.set(id, []); groups.get(id).push(side); }
+  return [...groups.entries()].map(([courseId, courseSides]) => {
+    const holes = courseHolesForId(state, courseId), course = courseById(state, courseId), label = course?.name || state.outing.course || "Event course";
+    const place = [course?.city, course?.state].filter(Boolean).join(", ");
+    const heading = h => { const yards = showYards ? yardageFor(holes, h) : 0; return `<th>${h}<br><small>${yards ? `${yards} yd · ` : ""}Par ${parFor(holes, h)}</small></th>`; };
+    const cells = (side, list) => list.map(h => `<td>${scoreMark(side.strokes.get(h), parFor(holes, h))}</td>`).join("");
+    const rows = courseSides.map(side => {
+    const front = scoreRange(side.strokes, holes, 1, Math.min(9, count)), back = scoreRange(side.strokes, holes, 10, count), all = scoreRange(side.strokes, holes, 1, count);
     return `<tr><th class="sticky">${esc(sideName(side))}<br><small>${esc(side.teamName)}</small></th>${cells(side, frontHoles)}<td class="tb-total">${front.total || "—"}</td>${cells(side, backHoles)}<td class="tb-total">${back.total || "—"}</td><td class="tb-total">${all.played ? relative(all.total - all.playedPar) : "—"}</td><td class="tb-total">${all.total || "—"}</td></tr>`;
-  }).join("")}</tbody></table>`;
+    }).join("");
+    return `<section class="tb-course-card"><div class="tb-course-divider"><strong>${esc(label)}</strong>${place ? `<small>${esc(place)}</small>` : ""}</div><table class="tb-table"><thead><tr><th class="sticky">Side / golfer</th>${frontHoles.map(heading).join("")}<th>Front 9</th>${backHoles.map(heading).join("")}<th>Back 9</th><th>+/−</th><th>Total ${count}</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  }).join("");
 }
 
 const scorecardLegend = () => `<section class="tb-legend" aria-label="Scorecard legend"><h3>Scorecard Legend</h3><div class="tb-legend-grid"><div class="tb-legend-item"><span class="tb-card-mark m-eagle">3</span>Eagle</div><div class="tb-legend-item"><span class="tb-card-mark m-birdie">4</span>Birdie</div><div class="tb-legend-item"><span class="tb-card-mark m-par">5</span>Par</div><div class="tb-legend-item"><span class="tb-card-mark m-bogey">6</span>Bogey</div><div class="tb-legend-item"><span class="tb-card-mark m-dbl">7</span>D. Bogey</div><div class="tb-legend-item"><span class="tb-card-mark m-dbl">8</span>T. Bogey</div><div class="tb-legend-item"><strong>FB</strong>Fairway bunker</div><div class="tb-legend-item"><strong>GB</strong>Greenside bunker</div><div class="tb-legend-item"><strong>H₂O</strong>Water hazard</div><div class="tb-legend-item"><strong>OB</strong>Out of bounds</div><div class="tb-legend-item"><strong>D</strong>Drop shot</div></div></section>`;
@@ -107,11 +121,21 @@ function syncText(state) {
   return state.stale ? "Offline copy · ready to score" : "Ready · all scores synced";
 }
 
+function betaBattleResult(state, sides, round) {
+  if (sides.length !== 2) return null;
+  const count = roundHoles(round), holesA = sideCourseHoles(state, sides[0]), holesB = sideCourseHoles(state, sides[1]);
+  const normalize = (strokes, holes) => new Map([...strokes.entries()].map(([hole, value]) => [hole, 20 + Number(value) - parFor(holes, hole)]));
+  const differentCourses = sideCourseId(state, sides[0]) !== sideCourseId(state, sides[1]);
+  if (!differentCourses) return battleResult(sides[0].strokes, sides[1].strokes, count, scoringOf(round));
+  const result = battleResult(normalize(sides[0].strokes, holesA), normalize(sides[1].strokes, holesB), count, scoringOf(round));
+  const rawTotal = strokes => [...strokes.entries()].filter(([hole, value]) => Number(hole) <= count && Number(value) > 0).reduce((sum, [, value]) => sum + Number(value), 0);
+  result.a = rawTotal(sides[0].strokes); result.b = rawTotal(sides[1].strokes); result.crossCourse = true;
+  return result;
+}
+
 function refreshBattleResults(state) {
   for (const entry of state.rounds) for (const battle of entry.battles) {
-    battle.result = battle.sides.length === 2
-      ? battleResult(battle.sides[0].strokes, battle.sides[1].strokes, roundHoles(entry.round), scoringOf(entry.round))
-      : null;
+    battle.result = betaBattleResult(state, battle.sides, entry.round);
   }
 }
 
@@ -141,6 +165,7 @@ function ensureStyles() {
   style.textContent += `.tb-custom-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:9px;margin-top:12px}.tb-custom-grid label{display:grid;gap:5px}.tb-custom-grid label span{overflow:hidden;color:var(--accent-2);font-size:9px;font-weight:950;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase}.tb-custom-grid>strong{padding-bottom:13px;color:var(--muted);font-size:9px}.tb-board-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-board-setting span{min-width:0}.tb-board-setting strong,.tb-board-setting small{display:block}.tb-board-setting strong{font-size:11px}.tb-board-setting small{margin-top:2px;color:var(--muted);font-size:9px;line-height:1.35}.tb-board-setting input{flex:0 0 auto;width:22px;height:22px;accent-color:var(--accent-2-fill)}.tb-score{border-color:var(--control-line)!important;background:var(--bg-3)!important;color:var(--text)!important;box-shadow:var(--shadow)}.tb-score b{color:var(--accent-2)!important}`;
   style.textContent += `.tb-member-add{display:grid;gap:8px;margin-top:9px}.tb-member-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px;width:100%;height:min(42dvh,360px);min-height:240px;overflow-y:auto;padding:9px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-member-picker.is-empty{height:auto;min-height:0}.tb-member-picker label{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:7px 9px;border:1px solid var(--line-soft);border-radius:9px;background:var(--bg-2);font-size:11px;font-weight:800}.tb-member-picker input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent-2-fill)}.tb-member-picker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-member-add>.btn{min-height:46px}.tb-setup-guide{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--bg-2);box-shadow:var(--shadow)}.tb-guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.tb-guide-step{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:7px;min-width:0;min-height:52px;padding:7px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3);color:var(--text);text-align:left}.tb-guide-step>b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px}.tb-guide-step span,.tb-guide-step small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-guide-step span{font-size:10px;font-weight:950;text-transform:uppercase}.tb-guide-step small{margin-top:2px;color:var(--muted);font-size:8px}.tb-guide-step.is-done{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}.tb-guide-step.is-done>b{background:var(--ok);color:var(--bg)}.tb-guide-step.is-current{border-color:var(--accent-2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-2) 18%,transparent)}.tb-guide-step.is-current>b{background:var(--accent-2-fill);color:#fff}.tb-guide-next{margin:10px 2px 0;color:var(--muted);font-size:10px;line-height:1.45}.tb-guide-next strong{color:var(--accent-2)}@media(max-width:520px){.tb-guide-step{grid-template-columns:1fr;place-items:center;text-align:center}.tb-guide-step span{font-size:9px}.tb-guide-step small{display:none}}@media(max-width:440px){.tb-member-picker{grid-template-columns:1fr}}`;
   style.textContent += `.tb-quick-sheet .tb-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tb-quick-sheet .tb-control{min-width:0}.tb-quick-sheet .tb-step{grid-template-columns:36px minmax(38px,1fr) 36px;gap:3px}.tb-quick-sheet .tb-step button{height:48px;font-size:25px}.tb-quick-sheet .tb-step output{height:48px;font-size:22px}.tb-round-stats{display:grid;gap:8px;padding:12px;background:#f5f5f4}.tb-stat-summary{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(3,minmax(60px,1fr));gap:7px;padding:9px;border:1px solid #d8dde0;border-radius:12px;background:#fff}.tb-stat-summary>strong{align-self:center;overflow:hidden;text-overflow:ellipsis}.tb-stat-summary span{display:grid;place-items:center;padding:6px 3px;border-radius:8px;background:#eaf1f5;text-align:center}.tb-stat-summary b,.tb-stat-summary small{display:block}.tb-stat-summary small{color:#55707f;font-size:8px;text-transform:uppercase}`;
+  style.textContent += `.tb-course-assignments{display:grid;gap:7px;margin-top:10px}.tb-course-person{display:grid;grid-template-columns:minmax(100px,1fr) minmax(145px,1.2fr);align-items:center;gap:9px;padding:8px 9px;border:1px solid var(--line-soft);border-radius:10px;background:var(--bg-3)}.tb-course-person>span{overflow:hidden;font-size:11px;font-weight:900;text-overflow:ellipsis;white-space:nowrap}.tb-course-divider{position:sticky;left:0;display:flex;align-items:baseline;gap:8px;min-height:42px;padding:9px 12px;border-top:3px solid #477fbd;background:#e5eef4;color:#27485a}.tb-course-divider strong{font-size:13px;text-transform:uppercase}.tb-course-divider small{color:#607b89;font-size:9px}.tb-course-card+.tb-course-card{margin-top:14px}.tb-course-card .tb-table{border-top:1px solid #ccd2d6}.tb-leader-course{color:var(--accent-2)}@media(max-width:480px){.tb-course-person{grid-template-columns:1fr}.tb-course-person .tb-select{width:100%}}`;
   document.head.append(style);
 }
 
@@ -207,6 +232,9 @@ function calmSetupMarkup(state) {
   const guideClass = step => step < currentGuideStep ? "is-done" : step === currentGuideStep ? "is-current" : "";
   const setupGuide = `<nav class="tb-setup-guide" aria-label="Tournament setup progress"><div class="tb-guide-steps"><button type="button" class="tb-guide-step ${guideClass(1)}" data-tb-jump="golfers" ${currentGuideStep === 1 ? `aria-current="step"` : ""}><b>${golfersReady ? "✓" : "1"}</b><span>Golfers<small>${state.participants.length} added</small></span></button><button type="button" class="tb-guide-step ${guideClass(2)}" data-tb-jump="teams" ${currentGuideStep === 2 ? `aria-current="step"` : ""}><b>${sidesReady ? "✓" : "2"}</b><span>Sides<small>${state.teams.length === 2 ? "Created" : "Not created"}</small></span></button><button type="button" class="tb-guide-step ${guideClass(3)}" data-tb-jump="${matchGuideTarget}" ${currentGuideStep === 3 ? `aria-current="step"` : ""}><b>${matchReady ? "✓" : "3"}</b><span>Match<small>${matchReady ? "Built" : "Choose format"}</small></span></button></div><p class="tb-guide-next"><strong>${currentGuideStep === 4 ? "Ready:" : `Step ${currentGuideStep}:`}</strong> ${guideMessage}</p></nav>`;
   const playerChips = state.participants.map(p => `<div class="tb-chip"><span>${esc(playerName(p, state.names))}</span><button data-tb-remove="${p.id}" aria-label="Remove ${esc(playerName(p, state.names))}">×</button></div>`).join("");
+  const eventCourse = courseById(state, state.outing.course_id);
+  const courseOptions = participant => `<option value="">Event course · ${esc(eventCourse?.name || state.outing.course || "Not selected")}</option>${state.courses.map(course => `<option value="${course.id}" ${String(participant.course_id) === String(course.id) ? "selected" : ""}>${esc(course.name)}${course.city ? ` · ${esc(course.city)}, ${esc(course.state || "")}` : ""}</option>`).join("")}`;
+  const courseAssignments = `<details class="tb-fold" data-tb-section="courses" ${openSection === "courses" ? "open" : ""}><summary><span><small>OPTIONAL · REMOTE PLAY</small><strong>Player courses</strong></span><em>${state.participants.filter(person => person.course_id).length ? `${state.participants.filter(person => person.course_id).length} custom` : "Everyone uses event course"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Assign a different course only to golfers playing remotely. Their GPS, pars, yardages and scorecard section will follow that course; the leaderboard compares everyone to par.</p><div class="tb-course-assignments">${state.participants.map(person => `<label class="tb-course-person"><span>${esc(playerName(person, state.names))}</span><select class="tb-select" data-tb-player-course="${person.id}">${courseOptions(person)}</select></label>`).join("") || `<p class="tb-copy">Add golfers first.</p>`}</div></div></details>`;
   const teamOptions = p => `<option value="">Unassigned</option>${state.teams.map(t => `<option value="${t.id}" ${String(p.team_id) === String(t.id) ? "selected" : ""}>${esc(t.name)}</option>`).join("")}`;
   const teamControls = state.teams.length === 2 ? `${state.teams.map(t => {
     const choices = betaCaptainChoices(t, state.participants);
@@ -237,6 +265,7 @@ function calmSetupMarkup(state) {
     <section class="tb-setup">
       ${setupGuide}
       <details class="tb-fold" data-tb-section="golfers" ${openSection === "golfers" || (!openSection && currentGuideStep === 1) ? "open" : ""}><summary><span><small>STEP 1</small><strong>Golfers</strong></span><em>${state.participants.length} added</em></summary><div class="tb-fold-body">${memberPicker(available)}<div class="tb-add"><input data-tb-guest placeholder="Guest golfer name"><button class="btn" data-tb-add-guest>Add guest</button></div><div class="tb-chips">${playerChips || "Add golfers to begin."}</div></div></details>
+      ${courseAssignments}
       <details class="tb-fold" data-tb-section="teams" ${openSection === "teams" || (!openSection && currentGuideStep === 2) ? "open" : ""}><summary><span><small>STEP 2</small><strong>Sides & captains</strong></span><em class="${state.teams.length === 2 ? "is-ready" : ""}">${status.counts.join("–") || "0–0"} · Captains optional for custom</em></summary><div class="tb-fold-body"><p class="tb-copy">Name each team and place every golfer on a side. Captains are only required for the traditional two-round schedule.</p><div class="tb-team-actions"><button class="btn" data-tb-deal="even" ${state.teams.length !== 2 ? "disabled" : ""}>Place evenly</button><button class="btn" data-tb-deal="random" ${state.teams.length !== 2 ? "disabled" : ""}>Shuffle teams</button><button class="btn tb-reset" data-tb-create-teams>${state.teams.length === 2 ? "Reset teams" : "Create two teams"}</button></div>${teamControls}</div></details>
       ${customSetup}${traditionalBuilder}${guestAccess}${traditionalRounds}${scoreReset}<div class="tb-status" data-tb-status></div>
     </section>
@@ -256,7 +285,7 @@ function headToHead(entry, mine) {
   const result = battle.result, matchPlay = scoringOf(entry.round) === "match";
   const names = battle.sides.map(sideName);
   const values = matchPlay ? [result.cardWonA || 0, result.cardWonB || 0] : [result.a || 0, result.b || 0];
-  const metric = matchPlay ? "holes won" : `strokes · thru ${result.thru || 0}`;
+  const metric = matchPlay ? (result.crossCourse ? "holes won vs par" : "holes won") : `strokes · thru ${result.thru || 0}${result.crossCourse ? " · ranked vs par" : ""}`;
   const sides = battle.sides.map((side, index) => `<div class="tb-h2h-side"><strong>${esc(names[index])}</strong><b>${values[index]}</b><small>${myIds.has(String(side.id)) ? `You · ${metric}` : metric}</small></div>`);
   return `<section class="tb-h2h"><div class="tb-h2h-head"><span>Your match</span><span>${matchPlay ? "Match play" : "Stroke play"}</span></div><div class="tb-h2h-grid">${sides[0]}<span class="tb-h2h-vs">VS</span>${sides[1]}</div><div class="tb-h2h-status">${esc(standingLine(result, names[0], names[1]))}</div></section>`;
 }
@@ -279,13 +308,13 @@ function focusedMatchMarkup(state) {
   if (!playable.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back">‹</a><div class="tb-hole"><strong>MATCH</strong><small>Tournament Beta</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><div class="tb-empty">${state.organizer ? "Open Setup and build the two-team matchups." : "Waiting for the commissioner to assign the matchups."}</div></main>`;
   const wanted = activeFormat.get(state.outing.id), entry = playable.find(e => e.round.format === wanted) || playable[0];
   activeFormat.set(state.outing.id, entry.round.format);
-  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id))), yards = yardageFor(state.courseHoles, hole);
-  const yardages = Array.from({ length: count }, (_, i) => yardageFor(state.courseHoles, i + 1)).join(","), pars = Array.from({ length: count }, (_, i) => parFor(state.holes, i + 1)).join(",");
+  const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id))), assignedCourseId = memberCourseId(state), assignedHoles = courseHolesForId(state, assignedCourseId), yards = yardageFor(assignedHoles, hole);
+  const yardages = Array.from({ length: count }, (_, i) => yardageFor(assignedHoles, i + 1)).join(","), pars = Array.from({ length: count }, (_, i) => parFor(assignedHoles, i + 1)).join(",");
   rememberHole(state.outing.id, hole);
-  const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot }));
+  const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot, holes: sideCourseHoles(state, s), courseName: sideCourseName(state, s) }));
   const leaders = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(g => g.rows);
   const tabs = playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.format}">${betaRoundLabel(e.round)}</button>`).join("")}</div>` : "";
-  const leaderboard = `<section class="tb-leader"><div class="tb-leader-head"><span>${betaRoundLabel(entry.round)} live leaderboard</span><span>LIVE</span></div>${leaders.map((r, i) => `<div class="tb-leader-row"><span>${i + 1}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.teamName)} · ${boardProgress(r)}</small></div><em>${boardLabel(r)}</em></div>`).join("") || `<div class="tb-empty">No matchups yet.</div>`}</section>`;
+  const leaderboard = `<section class="tb-leader"><div class="tb-leader-head"><span>${betaRoundLabel(entry.round)} live leaderboard</span><span>LIVE</span></div>${leaders.map((r, i) => `<div class="tb-leader-row"><span>${i + 1}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.teamName)} · <span class="tb-leader-course">${esc(r.courseName)}</span> · ${boardProgress(r)}</small></div><em>${boardLabel(r)}</em></div>`).join("") || `<div class="tb-empty">No matchups yet.</div>`}</section>`;
   const matches = entry.battles.map(b => {
     const names = b.sides.map(sideName);
     return `<article class="tb-match-card"><div class="tb-match-title"><strong>Match ${b.match_number}</strong><span>${b.result ? esc(standingLine(b.result, names[0], names[1])) : "Waiting for both sides"}</span></div>${b.sides.map(s => {
@@ -302,7 +331,7 @@ function focusedMatchMarkup(state) {
     return `<article class="tb-quick-player"><div class="tb-avatar">${esc(initials(sideName(s)))}</div><div><div class="tb-quick-name">${esc(sideName(s))}</div><div class="tb-quick-status">${s.strokes.size ? `${total} strokes` : `Hole ${hole}`} <small>· ${esc(s.teamName)} · Thru ${s.strokes.size}</small></div></div><button class="tb-quick-add" data-tb-open="${s.id}">${Number(row.strokes) ? `<span>${Number(row.strokes)}</span>Edit score<small>Hole ${hole}</small>` : `<span>+</span>Add score<small>Hole ${hole}</small>`}</button></article>`;
   }).join("") : `<div class="tb-empty">You are not assigned to this ${betaIsCustomRound(entry.round) ? "custom" : entry.round.format === "pairs" ? "2v2" : "singles"} matchup yet.</div>`}</section>`;
   const table = scorecardTable(state, sides, count, true);
-  const gps = `<div class="tb-gps-slot" data-tb-gps-slot data-tb-hole-yardage="${yards}" data-tb-hole-par="${parFor(state.holes, hole)}"></div>`;
+  const gps = `<div class="tb-gps-slot" data-tb-gps-slot data-tb-hole-yardage="${yards}" data-tb-hole-par="${parFor(assignedHoles, hole)}"></div>`;
   const tournamentBoard = betaCustomBoardVisible(entry.round) ? scoreboard(state) : "";
   const playBody = state.organizer ? `${tournamentBoard}${tabs}${gps}${leaderboard}${matches}` : `${tabs}${gps}${quickMatch}${memberEntry}`;
   const boardOpen = !state.organizer && leaderboardOpen.get(state.outing.id) === true;
@@ -461,6 +490,15 @@ function wireSetup(root, state) {
     });
   });
   root.querySelectorAll("[data-tb-remove]").forEach(b => b.addEventListener("click", () => busy(b, async () => { const r = await db().from("golf_participants").delete().eq("id", b.dataset.tbRemove); if (r.error) throw r.error; await paint(); })));
+  root.querySelectorAll("[data-tb-player-course]").forEach(select => select.addEventListener("change", e => busy(e.currentTarget, async () => {
+    const courseId = select.value ? Number(select.value) : null;
+    const result = await db().from("golf_participants").update({ course_id: courseId }).eq("id", Number(select.dataset.tbPlayerCourse)).select("id").maybeSingle();
+    if (result.error) throw result.error;
+    if (!result.data) throw new Error("Only a Golf commissioner can assign player courses.");
+    setupSection.set(state.outing.id, "courses");
+    toast(courseId ? "Player course assigned" : "Player now uses the event course");
+    await paint();
+  })));
   root.querySelector("[data-tb-build-singles]")?.addEventListener("click", e => busy(e.currentTarget, async () => { if (state.rounds.length && !confirm("Replace the current Beta schedule with an individual singles field?")) return; let r = await db().from("golf_rounds").delete().eq("outing_id", state.outing.id); if (r.error) throw r.error; const added = await db().rpc("golf_add_round", { p_outing_id: state.outing.id, p_format: "singles", p_scoring: "strokes" }); if (added.error) throw added.error; await db().from("golf_rounds").update({ name: "Individual Singles", holes: Number(state.outing.holes) || 18 }).eq("id", added.data); r = await db().rpc("golf_sync_individual_match", { p_round_id: Number(added.data) }); if (r.error) throw r.error; location.hash = `#/golf?id=${state.outing.id}`; }));
   root.querySelector("[data-tb-create-teams]")?.addEventListener("click", e => busy(e.currentTarget, async () => { if (await createTeams(state)) await paint(); else e.currentTarget.disabled = false; }));
   root.querySelectorAll("[data-tb-deal]").forEach(b => b.addEventListener("click", e => busy(e.currentTarget, async () => { await dealTeams(state, b.dataset.tbDeal === "random"); await paint(); })));
@@ -553,7 +591,7 @@ function wireMatch(root, state) {
   root.querySelectorAll("[data-tb-open]").forEach(b => b.addEventListener("click", () => {
     const sideId = Number(b.dataset.tbOpen), side = matchSides(state, entry).find(s => Number(s.id) === sideId), hole = rememberedHole(state.outing.id), row = state.scoreRows.get(scoreKey(sideId, hole)) || {};
     if (!side || !canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: sideId })) return;
-    sheet.dataset.sideId = String(sideId); sheet.dataset.strokes = String(Number(row.strokes) || parFor(state.holes, hole)); sheet.dataset.putts = String(Number(row.putts) || 0); sheet.dataset.drops = String(Number(row.drops) || 0);
+    sheet.dataset.sideId = String(sideId); sheet.dataset.strokes = String(Number(row.strokes) || parFor(sideCourseHoles(state, side), hole)); sheet.dataset.putts = String(Number(row.putts) || 0); sheet.dataset.drops = String(Number(row.drops) || 0);
     sheet.querySelector("[data-tb-name]").textContent = `${sideName(side)} · Hole ${hole}`;
     sheet.querySelector("[data-tb-strokes]").textContent = sheet.dataset.strokes;
     sheet.querySelector("[data-tb-putts]").textContent = Number(sheet.dataset.putts) || "—";
@@ -589,6 +627,11 @@ function wireMatch(root, state) {
 async function loadState(outing, organizer) {
   const id = outing.id, [tr, pr, hr, rr, mr, members, courseRes, guestCodeSet] = await Promise.all([db().from("golf_teams").select("*").eq("outing_id", id).order("sort_order"), db().from("golf_participants").select("*").eq("outing_id", id).order("sort_order"), db().from("golf_holes").select("hole,par").eq("outing_id", id).order("hole"), db().from("golf_rounds").select("*").eq("outing_id", id).order("round_number"), db().from("golf_matches").select("id,round_id,match_number").eq("outing_id", id).order("match_number"), loadMembers().catch(() => []), outing.course_id ? db().from("golf_course_holes").select("hole,par,yardage_men,yardage_women").eq("course_id", outing.course_id).order("hole") : { data: [], error: null }, organizer ? eventHasCode(db(), id) : Promise.resolve(false)]);
   const error = tr.error || pr.error || hr.error || rr.error || mr.error; if (error) throw error;
+  const relevantCourseIds = [...new Set([Number(outing.course_id), ...(pr.data || []).map(person => Number(person.course_id))].filter(Boolean))];
+  const [coursesResult, allCourseHolesResult] = await Promise.all([db().from("golf_courses").select("id,name,city,state,holes,par").order("name"), relevantCourseIds.length ? db().from("golf_course_holes").select("course_id,hole,par,yardage_men,yardage_women").in("course_id", relevantCourseIds).order("hole") : Promise.resolve({ data: [], error: null })]);
+  if (coursesResult.error || allCourseHolesResult.error) throw coursesResult.error || allCourseHolesResult.error;
+  const courses = coursesResult.data || [], courseHolesById = new Map();
+  for (const row of allCourseHolesResult.data || []) { const key = String(row.course_id); if (!courseHolesById.has(key)) courseHolesById.set(key, []); courseHolesById.get(key).push(row); }
   const courseHoles = courseRes.error ? [] : courseRes.data || [];
   let holes = hr.data || []; if (!holes.length && courseHoles.length) holes = courseHoles.map(({ hole, par }) => ({ hole, par }));
   const matches = mr.data || [], matchIds = matches.map(m => m.id), sr = matchIds.length ? await db().from("golf_match_sides").select("id,match_id,team_id,slot").in("match_id", matchIds).order("slot") : { data: [] }; if (sr.error) throw sr.error;
@@ -599,9 +642,10 @@ async function loadState(outing, organizer) {
     if (pending.strokes == null) scoreRows.delete(key);
     else scoreRows.set(key, { ...(scoreRows.get(key) || {}), side_id: sideId, hole, strokes: pending.strokes, putts: pending.putts || 0, drops: pending.drops || 0, pending: true });
   }
-  const builtSides = sides.map(s => { const m = mm.get(String(s.match_id)), players = mpr.data.filter(p => String(p.side_id) === String(s.id)).map(p => ({ ...p, row_id: p.id, name: playerName(pm.get(String(p.participant_id)), names) })), strokes = new Map(scr.data.filter(r => String(r.side_id) === String(s.id) && Number(r.strokes) > 0).map(r => [Number(r.hole), Number(r.strokes)])), team = tm.get(String(s.team_id)); for (const [hole, pending] of pendingForSide(s.id)) { if (pending == null) strokes.delete(hole); else strokes.set(hole, Number(pending)); } return { ...s, match_number: m?.match_number, players, strokes, teamName: team?.name || "Individual", color: team?.color || "#477fbd" }; });
-  const rounds = rr.data.map(round => { const battles = matches.filter(m => String(m.round_id) === String(round.id)).map(m => { const bs = builtSides.filter(s => String(s.match_id) === String(m.id)); return { ...m, sides: bs, result: bs.length === 2 ? battleResult(bs[0].strokes, bs[1].strokes, roundHoles(round), scoringOf(round)) : null }; }); return { round, battles, individual: battles.some(b => b.sides.length > 2 || b.sides.some(s => s.team_id == null)) }; });
-  return { outing, organizer, teams, participants, holes, courseHoles, rounds, sides: builtSides, matchPlayers: mpr.data, scoreRows, persistedScoreCount: scr.data.length, members, names, individual: rounds.some(e => e.individual), guestCodeSet, stale: false };
+  const builtSides = sides.map(s => { const m = mm.get(String(s.match_id)), players = mpr.data.filter(p => String(p.side_id) === String(s.id)).map(p => { const participant = pm.get(String(p.participant_id)); return { ...p, row_id: p.id, name: playerName(participant, names), member_id: participant?.member_id, course_id: Number(participant?.course_id) || Number(outing.course_id) || 0 }; }), strokes = new Map(scr.data.filter(r => String(r.side_id) === String(s.id) && Number(r.strokes) > 0).map(r => [Number(r.hole), Number(r.strokes)])), team = tm.get(String(s.team_id)); for (const [hole, pending] of pendingForSide(s.id)) { if (pending == null) strokes.delete(hole); else strokes.set(hole, Number(pending)); } return { ...s, match_number: m?.match_number, players, strokes, teamName: team?.name || "Individual", color: team?.color || "#477fbd" }; });
+  const battleState = { outing, holes, courseHoles, courses, courseHolesById };
+  const rounds = rr.data.map(round => { const battles = matches.filter(m => String(m.round_id) === String(round.id)).map(m => { const bs = builtSides.filter(s => String(s.match_id) === String(m.id)); return { ...m, sides: bs, result: betaBattleResult(battleState, bs, round) }; }); return { round, battles, individual: battles.some(b => b.sides.length > 2 || b.sides.some(s => s.team_id == null)) }; });
+  return { outing, organizer, teams, participants, holes, courseHoles, courses, courseHolesById, rounds, sides: builtSides, matchPlayers: mpr.data, scoreRows, persistedScoreCount: scr.data.length, members, names, individual: rounds.some(e => e.individual), guestCodeSet, stale: false };
 }
 
 async function paint() {
@@ -626,7 +670,14 @@ async function paint() {
       state.stale = true;
     }
     root.innerHTML = current.setup ? calmSetupMarkup(state) : focusedMatchMarkup(state);
-    const gpsRoot=root.querySelector("[data-tbeta-root]");if(gpsRoot){gpsRoot.dataset.gpsCourseId=String(state.outing.course_id||"");gpsRoot.dataset.gpsCourseName=state.outing.course||"Golf course";gpsRoot.dataset.gpsCourseLabel=state.outing.course||"Golf course"}
+    if (!current.setup) {
+      const courseId = memberCourseId(state), course = courseById(state, courseId), holes = courseHolesForId(state, courseId), hole = rememberedHole(state.outing.id);
+      const holeMeta = root.querySelector(".tb-hole small");
+      if (holeMeta) holeMeta.innerHTML = holeMeta.innerHTML.replace(/^Par \d+/, `Par ${parFor(holes, hole)}`);
+      const courseTitle = root.querySelector(".tb-sub strong");
+      if (courseTitle) courseTitle.textContent = course?.name || state.outing.course || state.outing.name;
+    }
+    const gpsRoot=root.querySelector("[data-tbeta-root]");if(gpsRoot){const courseId=memberCourseId(state),course=courseById(state,courseId);gpsRoot.dataset.gpsCourseId=String(courseId||"");gpsRoot.dataset.gpsCourseName=course?.name||state.outing.course||"Golf course";gpsRoot.dataset.gpsCourseLabel=course?.name||state.outing.course||"Golf course"}
     document.body.classList.add("tb-focus");
     current.setup ? wireSetup(root, state) : wireMatch(root, state);
   } catch (e) {
