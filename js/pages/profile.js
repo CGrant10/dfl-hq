@@ -258,44 +258,36 @@ function careerTotals(seasons, leagues, userId) {
   };
 }
 
-/*
-  THE CAREER CARD.
-
-  Three changes from the first version, all of them subtraction:
-
-  1. SIX CELLS IN A DELIBERATE GRID. .statgrid is auto-fit at minmax(84px,1fr),
-     which on a 375px phone fits four - so six stats wrapped 4 + 2 and left a
-     half-empty row under the numbers that are the point of the card. `.statgrid
-     is-3up` pins it to three columns, so it reads 3 + 3 on a phone and six
-     across on a desktop. Nothing is ragged at any width.
-
-  2. WIN % IS GONE. It sat immediately beside Record, from which it is exactly
-     derivable, and it was the sixth number competing for the same glance. The
-     record is the fact; the percentage was a restatement of it.
-
-  3. "N seasons on record" WAS A SENTENCE UNDER A GRID OF NUMBERS. It is a
-     number, so it is a cell - and the card loses its footer entirely.
-*/
+/* One answer first: the all-time record. The rest are supporting facts, not
+   six equal boxes competing for the same glance. */
 function careerCard(c, seasonCount) {
   if (!seasonCount) {
     return `<div class="card"><div class="card-title">Career</div>${empty(
       "No Sleeper history linked.")}</div>`;
   }
   return `
-    <div class="card">
+    <section class="card profile-career-card">
       <div class="card-title-row">
         <div class="card-title">Career</div>
         <button type="button" class="btn ghost small" data-share-profile>Share card</button>
       </div>
-      <div class="statgrid is-3up">
-        ${stat("Seasons", seasonCount)}
-        ${stat("Record", `${c.wins}-${c.losses}${c.ties ? "-" + c.ties : ""}`)}
-        ${stat("Points", Math.round(c.pointsFor).toLocaleString())}
-        ${stat("Avg finish", c.avgFinish ? c.avgFinish.toFixed(1) : "—")}
-        ${stat("Playoffs", c.playoffs)}
-        ${stat("Titles", c.titles)}
+      <div class="career-overview">
+        <div class="career-record">
+          <span>All-time record</span>
+          <strong>${c.wins}<i>–</i>${c.losses}${c.ties ? `<i>–</i>${c.ties}` : ""}</strong>
+          <small>${seasonCount} season${seasonCount === 1 ? "" : "s"} · ${(c.winPct * 100).toFixed(1)}% win rate</small>
+        </div>
+        <div class="career-outcomes" aria-label="Career accomplishments">
+          <div><strong>${c.titles}</strong><span>Titles</span></div>
+          <div><strong>${c.runnerUps}</strong><span>Runner-up</span></div>
+          <div><strong>${c.playoffs}</strong><span>Playoffs</span></div>
+        </div>
       </div>
-    </div>`;
+      <dl class="career-support">
+        <div><dt>Points scored</dt><dd>${Math.round(c.pointsFor).toLocaleString()}</dd></div>
+        <div><dt>Average finish</dt><dd>${c.avgFinish ? c.avgFinish.toFixed(1) : "—"}</dd></div>
+      </dl>
+    </section>`;
 }
 
 // ------------------------------- awards -------------------------------
@@ -580,18 +572,7 @@ function othersCard(members, current) {
 
 // ------------------------------- bits ---------------------------------
 
-/*
-  A FIGURE, and a marker when there is not one.
-
-  The figures are painted with the palette gradient. An em-dash standing in
-  for "no data" is not a figure, so it is tagged and left muted - a blank
-  rendered in the same colour as a real number reads as a value.
-*/
 const EMPTY_FIGURE = /^(—|-|n\/a|)$/i;
-function stat(label, value) {
-  const empty = EMPTY_FIGURE.test(String(value ?? "").trim());
-  return `<div class="stat"><span class="stat-v${empty ? " is-empty" : ""}">${esc(value)}</span><span class="stat-l">${esc(label)}</span></div>`;
-}
 
 function sum(rows, key) {
   return rows.reduce((t, r) => t + Number(r[key] || 0), 0);
@@ -647,7 +628,7 @@ function cabinetCard(c) {
   the season table below already tells.
 */
 function extremesCard(c, name) {
-  const rows = [];
+  const groups = { seasons: [], scoring: [], streaks: [] };
   /*
     ONLY THE NAME USED THAT YEAR, or none.
 
@@ -661,54 +642,52 @@ function extremesCard(c, name) {
   const seasonLabel = (s) => String(s.team_name || "").trim();
 
   if (c.bestSeason) {
-    rows.push(recLine("Best season", ordinalPlace(c.bestSeason.rank),
+    groups.seasons.push(careerMoment("Best season", ordinalPlace(c.bestSeason.rank),
       seasonLabel(c.bestSeason),
       `${c.bestSeason.season} · ${c.bestSeason.wins}-${c.bestSeason.losses}${c.bestSeason.ties ? "-" + c.bestSeason.ties : ""}`));
   }
   // Only worth printing when it is a DIFFERENT season from the best one.
   if (c.worstSeason && c.bestSeason && c.worstSeason.season !== c.bestSeason.season) {
-    rows.push(recLine("Worst season", ordinalPlace(c.worstSeason.rank),
+    groups.seasons.push(careerMoment("Worst season", ordinalPlace(c.worstSeason.rank),
       seasonLabel(c.worstSeason),
       `${c.worstSeason.season} · ${c.worstSeason.wins}-${c.worstSeason.losses}${c.worstSeason.ties ? "-" + c.worstSeason.ties : ""}`));
   }
   if (c.highWeek) {
-    rows.push(recLine("Highest week", c.highWeek.score.toFixed(2), "",
+    groups.scoring.push(careerMoment("Highest week", c.highWeek.score.toFixed(2), "",
       `${c.highWeek.season} · Week ${c.highWeek.week}`));
   }
   if (c.lowWeek && c.lowWeek !== c.highWeek) {
-    rows.push(recLine("Lowest week", c.lowWeek.score.toFixed(2), "",
+    groups.scoring.push(careerMoment("Lowest week", c.lowWeek.score.toFixed(2), "",
       `${c.lowWeek.season} · Week ${c.lowWeek.week}`));
   }
   if (c.streak.win && c.streak.win.run >= 3) {
-    rows.push(recLine("Longest win streak", `${c.streak.win.run} weeks`, "",
+    groups.streaks.push(careerMoment("Longest win streak", `${c.streak.win.run} weeks`, "",
       spanLabel(c.streak.win.from, c.streak.win.to)));
   }
   if (c.streak.loss && c.streak.loss.run >= 3) {
-    rows.push(recLine("Longest slide", `${c.streak.loss.run} weeks`, "",
+    groups.streaks.push(careerMoment("Longest slide", `${c.streak.loss.run} weeks`, "",
       spanLabel(c.streak.loss.from, c.streak.loss.to)));
   }
 
-  if (!rows.length) return "";
+  const sections = [
+    ["Seasons", groups.seasons],
+    ["Scoring", groups.scoring],
+    ["Streaks", groups.streaks],
+  ].filter(([, rows]) => rows.length);
+  if (!sections.length) return "";
   return `
-    <h2 class="section-title">The career</h2>
-    <div class="card recbook">${rows.join("")}</div>`;
+    <h2 class="section-title">Career highlights</h2>
+    <section class="card career-highlights">
+      ${sections.map(([label, rows]) => `<div class="career-highlight-group"><h3>${label}</h3>${rows.join("")}</div>`).join("")}
+    </section>`;
 }
 
-/* Same shape as the record book's row, so a career reads like the league's
-   record book rather than like a different app. */
-function recLine(label, value, holder, when) {
-  /* No "—" placeholder for the holder. On the league record book that column
-     answers "who?", which is a real question; on somebody's own page the
-     answer is the person whose page it is, so an em-dash there is a blank
-     where no question was asked. */
+function careerMoment(label, value, holder, when) {
+  const detail = [when, holder].filter(Boolean).join(" · ");
   return `
-    <div class="rec">
-      <span class="rec-label">${esc(label)}</span>
-      ${holder || when ? `<span class="rec-who">
-        ${esc(holder || "")}
-        ${when ? `<span class="rec-when">${esc(when)}</span>` : ""}
-      </span>` : ""}
-      <span class="rec-val${EMPTY_FIGURE.test(String(value ?? "").trim()) ? " is-empty" : ""}">${esc(value)}</span>
+    <div class="career-moment">
+      <span><b>${esc(label)}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</span>
+      <strong class="${EMPTY_FIGURE.test(String(value ?? "").trim()) ? "is-empty" : ""}">${esc(value)}</strong>
     </div>`;
 }
 
