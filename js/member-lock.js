@@ -45,9 +45,11 @@ function wirePinPad(host){
  const input=host.querySelector(`#${pad.dataset.pinInput}`),form=pad.closest("form"),submit=form?.querySelector('button[type="submit"]'),min=Number(pad.dataset.pinMin)||4,max=Number(pad.dataset.pinMax)||6,dots=[...pad.querySelectorAll("[data-pin-dots] span")],count=pad.querySelector("[data-pin-count]"),dotBox=pad.querySelector("[data-pin-dots]");
  const update=()=>{const length=input.value.length;dots.forEach((dot,index)=>dot.classList.toggle("is-filled",index<Math.min(length,dots.length)));count.textContent=length?`${length} digit${length===1?"":"s"} entered`:`Enter ${min}–${max} digits`;dotBox.setAttribute("aria-label",length?`${length} PIN digits entered`:"No PIN digits entered");if(submit)submit.disabled=length<min;};
  const press=key=>{if(key==="clear")input.value="";else if(key==="back")input.value=input.value.slice(0,-1);else if(/^\d$/.test(key)&&input.value.length<max)input.value+=key;update();};
- const click=e=>{const key=e.target.closest?.("[data-pin-key]")?.dataset.pinKey;if(key)press(key)};
+ let lastTouchButton=null,lastTouchAt=0;
+ const pointerdown=e=>{if(e.pointerType==="mouse")return;const button=e.target.closest?.("[data-pin-key]");if(!button)return;e.preventDefault();lastTouchButton=button;lastTouchAt=performance.now();press(button.dataset.pinKey)};
+ const click=e=>{const button=e.target.closest?.("[data-pin-key]");if(!button)return;if(e.detail!==0&&button===lastTouchButton&&performance.now()-lastTouchAt<800)return;press(button.dataset.pinKey)};
  const keydown=e=>{if(!overlay||!host.isConnected||e.target?.matches?.('input:not([type="hidden"]),textarea'))return;if(/^\d$/.test(e.key)){e.preventDefault();press(e.key)}else if(e.key==="Backspace"){e.preventDefault();press("back")}else if(e.key==="Escape"){const back=host.querySelector("[data-member-lock-cancel],[data-mode-back]");if(back){e.preventDefault();back.click()}}else if(e.key==="Enter"&&input.value.length>=min){e.preventDefault();form?.requestSubmit()}};
- pad.addEventListener("click",click);document.addEventListener("keydown",keydown);input.clearPin=()=>{input.value="";update()};releasePinPad=()=>{pad.removeEventListener("click",click);document.removeEventListener("keydown",keydown)};update();setTimeout(()=>pad.querySelector('[data-pin-key="1"]')?.focus(),0);return input;
+ pad.addEventListener("pointerdown",pointerdown);pad.addEventListener("click",click);document.addEventListener("keydown",keydown);input.clearPin=()=>{input.value="";update()};releasePinPad=()=>{pad.removeEventListener("pointerdown",pointerdown);pad.removeEventListener("click",click);document.removeEventListener("keydown",keydown)};update();setTimeout(()=>pad.querySelector('[data-pin-key="1"]')?.focus(),0);return input;
 }
 
 function reminderDue(id){

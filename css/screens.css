@@ -674,7 +674,7 @@
 .access-pin-dots span { width: 14px; height: 14px; border: 1px solid var(--control-line); border-radius: 50%; background: transparent; transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
 .access-pin-dots span.is-filled { border-color: var(--accent-2-fill); background: var(--accent-2-fill); transform: scale(1.08); }
 .access-keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
-.access-keypad button { min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-3); color: var(--text); font: 800 19px/1 var(--font-body); cursor: pointer; touch-action: manipulation; }
+.access-keypad button { min-height: 46px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-3); color: var(--text); font: 800 19px/1 var(--font-body); cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 .access-keypad button:active { transform: scale(.97); background: var(--hover); }
 .access-keypad button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .access-keypad button.is-command { color: var(--muted); font-size: 11px; text-transform: uppercase; }
