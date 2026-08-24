@@ -19,7 +19,7 @@ export const isMemberUnlocked = (id) => unlocked(id);
 export function verifiedPin(memberId){if(memberId==null)return null;try{return sessionStorage.getItem(pinKey(memberId))||null}catch{return null}}
 export function forgetVerifiedPin(memberId){try{sessionStorage.removeItem(pinKey(memberId));sessionStorage.removeItem(key(memberId))}catch{}}
 
-let overlay=null,pendingButton=null,started=false,replaying=false;
+let overlay=null,pendingButton=null,started=false,replaying=false,releasePinPad=()=>{};
 let commissionerIds=null;
 async function isLocked(memberId){try{const{data,error}=await db().rpc("profile_lock_status",{target_member_id:Number(memberId)});if(error)throw error;return!!data}catch{return false}}
 async function loadCommissionerIds(){
@@ -28,10 +28,27 @@ async function loadCommissionerIds(){
  catch{commissionerIds=new Set();}
  return commissionerIds;
 }
-function closeOverlay(){overlay?.remove();overlay=null}
+function closeOverlay(){releasePinPad();releasePinPad=()=>{};overlay?.remove();overlay=null}
 function replay(btn){replaying=true;try{btn?.click()}finally{replaying=false}}
 const waitForMember=async id=>{for(let i=0;i<30;i++){if(String(localStorage.getItem("dfl.memberId")||"")===String(id))return true;await new Promise(r=>setTimeout(r,20));}return false};
 const redraw=()=>window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+function pinPadMarkup({id,name,label="PIN",min=4,max=6}){
+ const dots=Array.from({length:Math.min(max,6)},()=>`<span></span>`).join("");
+ const keys=["1","2","3","4","5","6","7","8","9","clear","0","back"];
+ return `<div class="access-pin" data-pin-pad data-pin-input="${id}" data-pin-min="${min}" data-pin-max="${max}"><input id="${id}" name="${name}" type="hidden"><div class="access-pin-head"><strong>${esc(label)}</strong><span data-pin-count>Enter ${min}–${max} digits</span></div><div class="access-pin-dots" data-pin-dots aria-live="polite" aria-label="No PIN digits entered">${dots}</div><div class="access-keypad" role="group" aria-label="${esc(label)} keypad">${keys.map(key=>key==="clear"?`<button type="button" class="is-command" data-pin-key="clear">Clear</button>`:key==="back"?`<button type="button" class="is-command" data-pin-key="back" aria-label="Delete last digit">⌫</button>`:`<button type="button" data-pin-key="${key}" aria-label="${key}">${key}</button>`).join("")}</div></div>`;
+}
+
+function wirePinPad(host){
+ releasePinPad();
+ const pad=host.querySelector("[data-pin-pad]");if(!pad)return null;
+ const input=host.querySelector(`#${pad.dataset.pinInput}`),form=pad.closest("form"),submit=form?.querySelector('button[type="submit"]'),min=Number(pad.dataset.pinMin)||4,max=Number(pad.dataset.pinMax)||6,dots=[...pad.querySelectorAll("[data-pin-dots] span")],count=pad.querySelector("[data-pin-count]"),dotBox=pad.querySelector("[data-pin-dots]");
+ const update=()=>{const length=input.value.length;dots.forEach((dot,index)=>dot.classList.toggle("is-filled",index<Math.min(length,dots.length)));count.textContent=length?`${length} digit${length===1?"":"s"} entered`:`Enter ${min}–${max} digits`;dotBox.setAttribute("aria-label",length?`${length} PIN digits entered`:"No PIN digits entered");if(submit)submit.disabled=length<min;};
+ const press=key=>{if(key==="clear")input.value="";else if(key==="back")input.value=input.value.slice(0,-1);else if(/^\d$/.test(key)&&input.value.length<max)input.value+=key;update();};
+ const click=e=>{const key=e.target.closest?.("[data-pin-key]")?.dataset.pinKey;if(key)press(key)};
+ const keydown=e=>{if(!overlay||!host.isConnected||e.target?.matches?.('input:not([type="hidden"]),textarea'))return;if(/^\d$/.test(e.key)){e.preventDefault();press(e.key)}else if(e.key==="Backspace"){e.preventDefault();press("back")}else if(e.key==="Escape"){const back=host.querySelector("[data-member-lock-cancel],[data-mode-back]");if(back){e.preventDefault();back.click()}}else if(e.key==="Enter"&&input.value.length>=min){e.preventDefault();form?.requestSubmit()}};
+ pad.addEventListener("click",click);document.addEventListener("keydown",keydown);input.clearPin=()=>{input.value="";update()};releasePinPad=()=>{pad.removeEventListener("click",click);document.removeEventListener("keydown",keydown)};update();setTimeout(()=>pad.querySelector('[data-pin-key="1"]')?.focus(),0);return input;
+}
 
 function reminderDue(id){
  try{
@@ -83,15 +100,14 @@ async function activateSavedPrivilege(memberId){
 
 function showPrivilegeLogin(member,btn,{startup=false}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Commissioner access for ${member.display_name}`);
- overlay.innerHTML=`<div class="overlay-card"><h2>Commissioner View</h2><p class="muted">Unlock privileged tools as <strong>${esc(member.display_name)}</strong>.</p>
- <form data-commissioner-login autocomplete="off"><label for="pick-commissioner-pin">Commissioner PIN</label><input class="pin-input" id="pick-commissioner-pin" name="dfl-commissioner-pin" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
+ overlay.innerHTML=`<div class="overlay-card access-card"><div class="access-brand"><span class="pin-mark">${icon("shield",{size:21})}</span><span><small>DFL SECURE ACCESS</small><strong>Commissioner View</strong></span></div><p class="muted">Enter your commissioner PIN for <strong>${esc(member.display_name)}</strong>.</p>
+ <form data-commissioner-login autocomplete="off">${pinPadMarkup({id:"pick-commissioner-pin",name:"dfl-commissioner-pin",label:"Commissioner PIN",min:4,max:12})}<div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
  <details style="margin-top:12px"><summary class="muted tiny">Owner master access</summary><form data-master-login autocomplete="off" style="margin-top:10px"><label for="pick-master-key">Master password</label><input id="pick-master-key" name="dfl-admin-key" type="password" autocomplete="off" data-lpignore="true" data-1p-ignore><div class="row-end"><button type="submit" class="btn ghost">Open Owner View</button></div></form></details></div>`;
  document.body.appendChild(overlay);
- const pin=overlay.querySelector("#pick-commissioner-pin");pin?.addEventListener("input",()=>{pin.value=pin.value.replace(/\D/g,"").slice(0,12)});
+ const pin=wirePinPad(overlay);
  overlay.querySelector("[data-mode-back]")?.addEventListener("click",()=>showViewChoice(member,btn,{startup}));
- overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock commissioner access",true);submit.disabled=false;pin.select();}});
+ overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock commissioner access",true);pin.clearPin?.();}});
  overlay.querySelector("[data-master-login]")?.addEventListener("submit",async e=>{e.preventDefault();const input=e.currentTarget.querySelector("#pick-master-key"),submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await adminLogin(input.value,true)))throw new Error("Master password not accepted");closeOverlay();toast("Owner View on");if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock owner access",true);submit.disabled=false;input.select();}});
- setTimeout(()=>pin?.focus(),0);
 }
 
 function showViewChoice(member,btn,{startup=false}={}){
@@ -145,8 +161,8 @@ async function continueMemberPick(btn,member){
 
 function showLock(member,{onSuccess=null,cancellable=true,afterUnlock=null}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`${member.display_name} locked`);
- overlay.innerHTML=`<div class="overlay-card is-pin"><span class="pin-mark">${icon("lock",{size:22})}</span><h2>${esc(member.display_name)} is locked</h2><p class="muted">Enter this member's PIN to use DFL HQ as ${esc(member.display_name)}.</p><form data-member-lock-form autocomplete="off"><label for="member-lock-pin">PIN</label><input class="pin-input" id="member-lock-pin" name="dfl-member-pin" type="text" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="6" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required style="-webkit-text-security:disc"><div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny">The PIN stays unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
- const input=overlay.querySelector("#member-lock-pin");input?.addEventListener("input",()=>{input.value=input.value.replace(/\D/g,"").slice(0,6)});overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);submit.disabled=false;input.select();}});setTimeout(()=>input?.focus(),0);
+ overlay.innerHTML=`<div class="overlay-card access-card is-pin"><div class="access-brand"><span class="pin-mark">${icon("lock",{size:21})}</span><span><small>WELCOME BACK</small><strong>${esc(member.display_name)}</strong></span></div><p class="muted">Enter your profile PIN to open DFL HQ.</p><form data-member-lock-form autocomplete="off">${pinPadMarkup({id:"member-lock-pin",name:"dfl-member-pin",label:"Profile PIN",min:4,max:6})}<div class="row-end">${cancellable?`<button type="button" class="btn ghost" data-member-lock-cancel>Back</button>`:""}<button type="submit" class="btn">Unlock DFL HQ</button></div></form><p class="muted tiny access-session-note">Unlocked only for this app session.</p></div>`;document.body.appendChild(overlay);
+ const input=wirePinPad(overlay);overlay.querySelector("[data-member-lock-cancel]")?.addEventListener("click",()=>{pendingButton=null;closeOverlay()});overlay.querySelector("[data-member-lock-form]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{const{data,error}=await db().rpc("profile_verify_pin",{target_member_id:Number(member.id),attempted_pin:input.value});if(error)throw error;if(data!==true)throw new Error("Wrong profile PIN");markUnlocked(member.id);rememberPin(member.id,input.value);const choice=pendingButton;pendingButton=null;closeOverlay();toast(`Unlocked for ${member.display_name}`);if(afterUnlock&&choice)await afterUnlock(choice,member);else if(onSuccess)await onSuccess();else replay(choice);}catch(err){toast(err.message||"Could not unlock member",true);input.clearPin?.();}});
 }
 
 function interceptMemberPick(event){
