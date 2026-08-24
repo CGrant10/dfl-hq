@@ -416,4 +416,14 @@ describe("the supported golf GPS courses", () => {
     expect(migration).toContain("add column if not exists course_id bigint");
     expect(migration).toContain("references public.golf_courses(id) on delete set null");
   });
+
+  it("supports event Quick Round golfers on separate courses", () => {
+    const quickEvent = fs.readFileSync("js/golf-event-modes.js", "utf8");
+    expect(quickEvent).toContain("quickCourseGroups");
+    expect(quickEvent).toContain("quickHolesFor");
+    expect(quickEvent).toContain("data-gqm-member-course");
+    expect(quickEvent).toContain("data-gqm-player-course-edit");
+    expect(quickEvent).toContain("data-gqm-course-section");
+    expect(quickEvent).toContain('.in("course_id",courseIds)');
+  });
 });
