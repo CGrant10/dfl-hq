@@ -130,6 +130,19 @@
   --radius:      14px;
   --pad:         16px;
   --shadow:      0 1px 3px rgba(0,0,0,.28);
+
+  /* THE COMMISSIONER IDENTITY CARD IS THE SURFACE STANDARD.
+     These are deliberately derived from the active palette, so the quiet
+     wash, hairline edge and restrained depth survive every theme without
+     turning the whole screen green or changing the layout. */
+  --card-surface:
+    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 38%),
+    linear-gradient(145deg, color-mix(in srgb, var(--bg-2) 97%, var(--accent) 3%), var(--bg-2));
+  --card-surface-hover:
+    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--bg-2) 94%, var(--accent) 6%), var(--bg-2));
+  --card-border: color-mix(in srgb, var(--line) 82%, var(--accent) 18%);
+  --card-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 * { box-sizing: border-box; }
@@ -488,7 +501,7 @@ h3 { font-size: 15px; margin: 0 0 6px; font-weight: 700; }
 .card-cta { color: var(--accent); font-size: 13px; font-weight: 700; }
 
 a.linkcard { display: block; text-decoration: none; color: inherit; }
-a.linkcard:hover { border-color: var(--accent-dim); background: var(--hover); }
+a.linkcard:hover { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--card-surface-hover); }
 
 /* Small inline icon used next to a card title. */
 .ico-sm {

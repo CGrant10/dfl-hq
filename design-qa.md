@@ -170,3 +170,43 @@ Quick Round now uses the app's semantic surface, text, border, accent, warning, 
 No actionable P0, P1, or P2 differences remain for the requested scope.
 
 final result: passed
+
+---
+
+# Commissioner identity card system QA
+
+## Evidence
+
+- Source visual truth: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/.codex-remote-attachments/01a02fb4-48a5-7c92-8158-223b000a2851/91416fa3-59d7-42a4-acbe-b3dfe25467f2/1-Photo-1.jpg`.
+- Implementation screenshots: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/admin-card-standard/profile-fairway.png` and `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/admin-card-standard/golf-fairway-final.png`.
+- Combined comparison: `C:/Users/GUEST/Documents/Codex/2026-08-23/loo/outputs/admin-card-standard/comparison-final.png`.
+- Source pixels: 591 x 1280, normalized to 390 x 844.
+- Implementation pixels and CSS viewport: 390 x 844 at device scale factor 1.
+- State: signed-in member, Fairway Light, Profile and Golf card families.
+
+## Findings
+
+No actionable P0, P1, or P2 differences remain at the shared-component level.
+
+- Fonts and typography: Rajdhani, uppercase headings, tracked micro-labels, weights, and line height match the Commissioner identity card language.
+- Spacing and layout rhythm: the 16px radius, 16px inset, thin edge, restrained depth, and 12px stack gap reproduce the reference rhythm without changing route-specific layouts.
+- Colors and visual tokens: Fairway cards use the same pale wash, sage hairline, deep blue-green text, and low elevation as the reference. Other palettes derive the same treatment from their semantic tokens.
+- Image quality and asset fidelity: existing crest artwork remains the original raster asset. A Fairway watermark treatment issue found in the first capture was fixed and the clean reload is clear.
+- Copy and content: no app copy, score, event data, or control was changed.
+
+## Comparison and interaction evidence
+
+The normalized side-by-side view shows the source Commissioner card beside implemented Profile and Golf cards. Card edges, wash, type, capitalization, label tracking, button treatment, and depth are consistent. The Golf crest is an intentional feature-level identity layer over the shared surface. The full mobile view retained enough card detail that a separate focused crop was unnecessary.
+
+- Navigated Home, Keepers, Golf, and Profile through the mobile shell.
+- Switched to Fairway Light, captured the target states, and restored Medicine Wheel.
+- Reloaded Golf to verify the watermark fix after a clean paint.
+- Browser logs contained no errors. Repeated local reloads produced development-only Supabase multiple-client warnings; no interaction failed.
+
+## Comparison history
+
+1. Initial comparison: one P2 paint artifact appeared behind a Fairway Golf watermark.
+2. Fix: include Fairway in the light-surface watermark treatment and perform a clean reload.
+3. Post-fix comparison: the artifact is gone and the card surface remains consistent with the Commissioner reference.
+
+final result: passed
