@@ -560,7 +560,7 @@
   padding: var(--s-6) var(--s-5) var(--s-5);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  background: var(--bg-2);
+  background: var(--card-surface);
   box-shadow: var(--shadow);
   text-align: center;
 }

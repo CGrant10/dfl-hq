@@ -136,11 +136,11 @@
      wash, hairline edge and restrained depth survive every theme without
      turning the whole screen green or changing the layout. */
   --card-surface:
-    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 38%),
-    linear-gradient(145deg, color-mix(in srgb, var(--bg-2) 97%, var(--accent) 3%), var(--bg-2));
+    radial-gradient(ellipse 88% 72% at 0% 0%, color-mix(in srgb, var(--accent) 13%, transparent) 0%, color-mix(in srgb, var(--accent) 6%, transparent) 34%, transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 96%, var(--accent) 4%) 0%, var(--bg-2) 58%);
   --card-surface-hover:
-    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 42%),
-    linear-gradient(145deg, color-mix(in srgb, var(--bg-2) 94%, var(--accent) 6%), var(--bg-2));
+    radial-gradient(ellipse 92% 76% at 0% 0%, color-mix(in srgb, var(--accent) 17%, transparent) 0%, color-mix(in srgb, var(--accent) 8%, transparent) 36%, transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-2) 94%, var(--accent) 6%) 0%, var(--bg-2) 62%);
   --card-border: color-mix(in srgb, var(--line) 82%, var(--accent) 18%);
   --card-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent);
 }
