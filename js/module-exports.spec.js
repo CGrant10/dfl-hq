@@ -283,7 +283,7 @@ describe("the supported golf GPS courses", () => {
     expect(beta).toContain(".tb-quick-add{border-color:var(--control-line)!important;background:var(--bg-3)!important;color:var(--text)!important");
     expect(beta).toContain('Number(row.strokes) ? `<span>${Number(row.strokes)}</span>Edit score');
     expect(beta).toContain('function headToHead(entry, mine)');
-    expect(beta).toContain('matchPlay ? [result.wonA || 0, result.wonB || 0] : [result.a || 0, result.b || 0]');
+    expect(beta).toContain('matchPlay ? [result.cardWonA || 0, result.cardWonB || 0] : [result.a || 0, result.b || 0]');
     expect(beta).toContain('${tabs}${gps}${quickMatch}${memberEntry}');
   });
 

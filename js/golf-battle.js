@@ -133,6 +133,9 @@ function shared(a, b, holes) {
 */
 function matchPlay(a, b, holes, rows, allThru, postedA, postedB) {
   let wonA = 0, wonB = 0, halvedHoles = 0;
+  const cardWonA = rows.filter(r => r.x < r.y).length;
+  const cardWonB = rows.filter(r => r.y < r.x).length;
+  const cardHalvedHoles = rows.length - cardWonA - cardWonB;
   const running = [];
   let thru = 0, closedOut = false;
 
@@ -160,7 +163,7 @@ function matchPlay(a, b, holes, rows, allThru, postedA, postedB) {
   const complete = closedOut || thru >= holes;
   return {
     scoring: "match", holes, thru, postedA, postedB,
-    wonA, wonB, halvedHoles, running, up, remaining, closedOut,
+    wonA, wonB, halvedHoles, cardWonA, cardWonB, cardHalvedHoles, running, up, remaining, closedOut,
     /* Negative means slot 1 is ahead, the same convention stroke play uses,
        so every caller can pick the leader the same way for both. */
     diff: wonB - wonA,

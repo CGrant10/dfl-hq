@@ -204,7 +204,7 @@ function headToHead(entry, mine) {
   if (!battle || battle.sides.length !== 2 || !battle.result) return "";
   const result = battle.result, matchPlay = scoringOf(entry.round) === "match";
   const names = battle.sides.map(sideName);
-  const values = matchPlay ? [result.wonA || 0, result.wonB || 0] : [result.a || 0, result.b || 0];
+  const values = matchPlay ? [result.cardWonA || 0, result.cardWonB || 0] : [result.a || 0, result.b || 0];
   const metric = matchPlay ? "holes won" : `strokes · thru ${result.thru || 0}`;
   const sides = battle.sides.map((side, index) => `<div class="tb-h2h-side"><strong>${esc(names[index])}</strong><b>${values[index]}</b><small>${myIds.has(String(side.id)) ? `You · ${metric}` : metric}</small></div>`);
   return `<section class="tb-h2h"><div class="tb-h2h-head"><span>Your match</span><span>${matchPlay ? "Match play" : "Stroke play"}</span></div><div class="tb-h2h-grid">${sides[0]}<span class="tb-h2h-vs">VS</span>${sides[1]}</div><div class="tb-h2h-status">${esc(standingLine(result, names[0], names[1]))}</div></section>`;
