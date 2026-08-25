@@ -293,6 +293,28 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('title:"Your GPS location"');
   });
 
+  it("shows the member-view switch to any commissioner and names the view they are in", () => {
+    const ui = fs.readFileSync("js/member-preview.js", "utf8");
+    const lock = fs.readFileSync("js/member-lock.js", "utf8");
+    const worker = fs.readFileSync("sw.js", "utf8");
+    // Visibility follows being a commissioner, not holding credentials right now.
+    expect(ui).toContain("commissionerMember ? \"locked\" : \"none\"");
+    expect(lock).toContain("export async function isCommissionerMember");
+    // A commissioner who picked Member View at sign-in has no credentials to
+    // set aside, so the switch asks for the PIN before it can move.
+    expect(lock).toContain("export async function requestCommissionerAccess");
+    expect(ui).toContain("await requestCommissionerAccess()");
+    // The PIN prompt must not bounce the caller to #/home.
+    expect(lock).toContain("stayPut=false");
+    expect(lock).toContain("if(stayPut){onDone?.(true)}");
+    // The view is named in words at every width - dropping the label on narrow
+    // phones is what left the current view unidentified.
+    expect(ui).toContain("dfl-preview-word");
+    expect(ui).toContain("dfl-preview-short");
+    expect(ui).not.toContain(".dfl-preview-label{display:none}");
+    expect(worker).toContain("./js/member-lock.js");
+  });
+
   it("re-decides whether the member-view switch is on screen when access changes", () => {
     const gate = fs.readFileSync("js/supabase.js", "utf8");
     const ui = fs.readFileSync("js/member-preview.js", "utf8");
@@ -309,7 +331,7 @@ describe("the supported golf GPS courses", () => {
     expect(ui).toContain("onRoute(() => refreshMemberPreview())");
     // A second tap mid-transition would commit twice and leave the switch
     // disagreeing with the gates.
-    expect(ui).toContain("if (switching || !canPreviewAsMember()) return;");
+    expect(ui).toContain("if (switching) return;");
   });
 
   it("lets a commissioner view the app as a member without keeping write access", () => {

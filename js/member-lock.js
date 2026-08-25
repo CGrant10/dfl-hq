@@ -106,16 +106,16 @@ async function activateSavedPrivilege(memberId){
  try{return await restoreAdmin()}catch{return false}
 }
 
-function showPrivilegeLogin(member,btn,{startup=false}={}){
+function showPrivilegeLogin(member,btn,{startup=false,stayPut=false,onDone=null}={}){
  closeOverlay();overlay=document.createElement("div");overlay.className="overlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label",`Commissioner access for ${member.display_name}`);
  overlay.innerHTML=`<div class="overlay-card access-card"><div class="access-brand"><span class="pin-mark">${icon("shield",{size:21})}</span><span><small>DFL SECURE ACCESS</small><strong>Commissioner View</strong></span></div><p class="muted">Enter your commissioner PIN for <strong>${esc(member.display_name)}</strong>.</p>
  <form data-commissioner-login autocomplete="off">${pinPadMarkup({id:"pick-commissioner-pin",name:"dfl-commissioner-pin",label:"Commissioner PIN",min:4,max:12})}<div class="row-end"><button type="button" class="btn ghost" data-mode-back>Back</button><button type="submit" class="btn">Open Commissioner View</button></div></form>
  <details style="margin-top:12px"><summary class="muted tiny">Owner master access</summary><form data-master-login autocomplete="off" style="margin-top:10px"><label for="pick-master-key">Master password</label><input id="pick-master-key" name="dfl-admin-key" type="password" autocomplete="off" data-lpignore="true" data-1p-ignore><div class="row-end"><button type="submit" class="btn ghost">Open Owner View</button></div></form></details></div>`;
  document.body.appendChild(overlay);
  const pin=wirePinPad(overlay);
- overlay.querySelector("[data-mode-back]")?.addEventListener("click",()=>showViewChoice(member,btn,{startup}));
- overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock commissioner access",true);pin.clearPin?.();}});
- overlay.querySelector("[data-master-login]")?.addEventListener("submit",async e=>{e.preventDefault();const input=e.currentTarget.querySelector("#pick-master-key"),submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await adminLogin(input.value,true)))throw new Error("Master password not accepted");closeOverlay();toast("Owner View on");if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock owner access",true);submit.disabled=false;input.select();}});
+ overlay.querySelector("[data-mode-back]")?.addEventListener("click",()=>{if(stayPut){closeOverlay();onDone?.(false);return}showViewChoice(member,btn,{startup})});
+ overlay.querySelector("[data-commissioner-login]")?.addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await commissionerLogin(pin.value,true)))throw new Error("Commissioner PIN not accepted");closeOverlay();toast("Commissioner View on");if(stayPut){onDone?.(true)}else if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock commissioner access",true);pin.clearPin?.();}});
+ overlay.querySelector("[data-master-login]")?.addEventListener("submit",async e=>{e.preventDefault();const input=e.currentTarget.querySelector("#pick-master-key"),submit=e.currentTarget.querySelector('button[type="submit"]');submit.disabled=true;try{await waitForMember(member.id);if(!(await adminLogin(input.value,true)))throw new Error("Master password not accepted");closeOverlay();toast("Owner View on");if(stayPut){onDone?.(true)}else if(startup)redraw();else{location.hash="#/home";redraw();scheduleProfileLockReminder(member);}}catch(err){toast(err.message||"Could not unlock owner access",true);submit.disabled=false;input.select();}});
 }
 
 function showViewChoice(member,btn,{startup=false}={}){
@@ -195,6 +195,32 @@ async function enterRememberedIdentity(){
    return;
  }
  if(privileged)showViewChoice(member,null,{startup:true});
+}
+
+/* Whether a member holds commissioner access at all, which is a different
+   question from whether they have entered their PIN this session. Answered by
+   the public_commissioners RPC, so it needs no credentials. */
+export async function isCommissionerMember(memberId){
+  if(memberId==null)return false;
+  const ids=await loadCommissionerIds();
+  return ids.has(String(memberId));
+}
+
+/*
+  Ask for commissioner access without leaving the page. Resolves true once the
+  session is privileged and false if the member declines or is not a
+  commissioner. A saved PIN is tried first, so somebody who has already unlocked
+  on this device is not asked twice.
+*/
+export async function requestCommissionerAccess(){
+  const member=currentMember();
+  if(!member||!(await isCommissionerMember(member.id)))return false;
+  if(await activateSavedPrivilege(member.id))return true;
+  return await new Promise(resolve=>{
+    let settled=false;
+    const done=ok=>{if(settled)return;settled=true;resolve(!!ok)};
+    showPrivilegeLogin({id:member.id,display_name:member.display_name},null,{stayPut:true,onDone:done});
+  });
 }
 
 export function startMemberLock(){

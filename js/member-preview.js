@@ -18,6 +18,8 @@
 */
 import { ACCESS_EVENT, canPreviewAsMember, isMemberPreview, setMemberPreview } from "./supabase.js";
 import { onRoute, renderRoute } from "./router.js";
+import { currentMember } from "./members.js";
+import { isCommissionerMember, requestCommissionerAccess } from "./member-lock.js";
 
 const STYLE_ID = "dfl-member-preview-style";
 const GLITCH_MS = 620;
@@ -28,17 +30,48 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-/* The switch: a track, a travelling knob, and a lit state that only appears in
-   member view. Reads as off/on at a glance without shouting. */
-.dfl-preview-toggle{display:none;align-items:center;gap:7px;min-height:30px;margin-left:auto;padding:4px 9px 4px 7px;border:1px solid var(--control-line,rgba(255,255,255,.24));border-radius:999px;background:var(--control-bg,rgba(255,255,255,.06));color:var(--muted,#9fb0c0);font:900 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+/* The switch names the view you are in. A knob alone told you a switch had been
+   thrown but not which side you landed on - the transition said it, then the
+   words were gone. The label is always there now, at every width, and colour
+   backs it up rather than carrying it: gold for your own tools, cyan for
+   member view. */
+.dfl-preview-toggle{display:none;align-items:center;gap:7px;min-height:30px;margin-left:auto;padding:4px 10px 4px 7px;border:1px solid var(--control-line,rgba(255,255,255,.24));border-radius:999px;background:var(--control-bg,rgba(255,255,255,.06));color:var(--muted,#9fb0c0);font:900 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
 .dfl-preview-toggle.is-available{display:inline-flex}
 .dfl-preview-track{position:relative;flex:0 0 auto;width:24px;height:13px;border:1px solid var(--control-line,rgba(255,255,255,.3));border-radius:999px;background:rgba(0,0,0,.32);transition:background .22s,border-color .22s}
 .dfl-preview-knob{position:absolute;top:1px;left:1px;width:9px;height:9px;border-radius:50%;background:var(--muted,#8fa0b0);transition:transform .22s cubic-bezier(.34,1.4,.5,1),background .22s}
-.dfl-preview-toggle[aria-pressed="true"]{border-color:#5ad1a0;background:rgba(90,209,160,.12);color:#5ad1a0}
-.dfl-preview-toggle[aria-pressed="true"] .dfl-preview-track{border-color:#5ad1a0;background:rgba(90,209,160,.28)}
-.dfl-preview-toggle[aria-pressed="true"] .dfl-preview-knob{transform:translateX(11px);background:#5ad1a0;box-shadow:0 0 6px #5ad1a0}
+.dfl-preview-short{display:none}
 .dfl-preview-toggle:focus-visible{outline:2px solid var(--accent,#ffd400);outline-offset:2px}
-@media(max-width:420px){.dfl-preview-toggle{padding:4px 7px 4px 6px}.dfl-preview-label{display:none}}
+
+/* Holding your own tools. */
+.dfl-preview-toggle[data-mode="commissioner"]{border-color:rgba(255,212,0,.55);background:rgba(255,212,0,.1);color:#ffd400}
+.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-track{border-color:rgba(255,212,0,.55)}
+.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob{background:#ffd400;box-shadow:0 0 6px rgba(255,212,0,.8)}
+
+/* Looking as a member on purpose - knob thrown, filled rather than outlined so
+   it reads as the active, deliberate state. */
+.dfl-preview-toggle[data-mode="member"]{border-color:#3fc9ea;background:rgba(63,201,234,.22);color:#d6f6ff}
+.dfl-preview-toggle[data-mode="member"] .dfl-preview-track{border-color:#3fc9ea;background:rgba(63,201,234,.32)}
+.dfl-preview-toggle[data-mode="member"] .dfl-preview-knob{transform:translateX(11px);background:#3fc9ea;box-shadow:0 0 7px #3fc9ea}
+
+/* A commissioner who has not entered a PIN this session. Same side of the
+   switch as member view, because that is what they are seeing - but dashed and
+   quiet, because getting back needs the PIN. */
+.dfl-preview-toggle[data-mode="locked"]{border-style:dashed;border-color:rgba(255,255,255,.34);color:var(--muted,#9fb0c0)}
+.dfl-preview-toggle[data-mode="locked"] .dfl-preview-knob{transform:translateX(11px)}
+.dfl-preview-toggle[data-mode="locked"] .dfl-preview-label::after{content:"·PIN";margin-left:5px;opacity:.75}
+
+/* Narrow phones keep the word, just a shorter one. Dropping the label entirely
+   is what left the view unnamed in the first place. */
+@media(max-width:430px){
+  .dfl-preview-toggle{gap:6px;padding:4px 8px 4px 6px;letter-spacing:.06em}
+  .dfl-preview-word{display:none}
+  .dfl-preview-short{display:inline}
+}
+
+/* A second, quieter cue that does not depend on looking at the top right: a
+   hairline under the top bar while you are in member view. Two pixels, no
+   copy - the loud version of this was a full banner. */
+body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 #3fc9ea}
 
 /* THE GLITCH. A CRT losing sync for half a second: scanlines roll, the picture
    tears into offset slices, the colour channels separate, and a monospace
@@ -87,19 +120,80 @@ body.is-glitching #view,body.is-glitching .topbar{animation:dfl-glitch-shake ${G
 const button = () => document.querySelector("[data-dfl-preview-toggle]");
 const reducedMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
+/*
+  Three states, because there are three, and the switch used to admit only two:
+
+    commissioner  privileged now, seeing everything
+    member        privileged, deliberately looking as a member
+    locked        holds commissioner access but has not entered a PIN this
+                  session, so they are seeing member content already
+
+  The locked state is why the switch used to vanish for anybody who chose Member
+  View at sign-in: visibility was tied to holding credentials rather than to
+  being a commissioner at all.
+*/
+function modeNow() {
+  if (isMemberPreview()) return "member";
+  if (canPreviewAsMember()) return "commissioner";
+  return commissionerMember ? "locked" : "none";
+}
+
+const MODES = {
+  commissioner: {
+    word: "Commissioner",
+    short: "Commish",
+    title: "You have your commissioner tools. Tap to look at the app as a member.",
+  },
+  member: {
+    word: "Member view",
+    short: "Member",
+    title: "You are seeing the app as a member and nothing can be written. Tap to take your tools back.",
+  },
+  locked: {
+    word: "Member view",
+    short: "Member",
+    title: "You are seeing the app as a member. Tap and enter your commissioner PIN to switch.",
+  },
+};
+
 function paint() {
   const node = button();
   if (!node) return;
-  const available = canPreviewAsMember();
-  const on = isMemberPreview();
-  node.classList.toggle("is-available", available);
-  node.setAttribute("aria-pressed", String(on));
-  node.hidden = !available;
-  node.querySelector(".dfl-preview-label").textContent = on ? "Member" : "Commish";
-  node.title = on
-    ? "You are seeing the app as a member. Your access is intact - tap to take it back."
-    : "See the app the way a member sees it. Nothing can be written while it is on.";
-  document.body.classList.toggle("is-member-preview", on);
+  const mode = modeNow();
+  const copy = MODES[mode];
+  node.hidden = !copy;
+  node.classList.toggle("is-available", Boolean(copy));
+  node.dataset.mode = mode;
+  /* aria-pressed answers "am I looking as a member", which is true of the
+     locked state as well - it just cannot be turned off without a PIN. */
+  node.setAttribute("aria-pressed", String(mode === "member" || mode === "locked"));
+  if (copy) {
+    node.querySelector(".dfl-preview-word").textContent = copy.word;
+    node.querySelector(".dfl-preview-short").textContent = copy.short;
+    node.title = copy.title;
+    node.setAttribute("aria-label", `${copy.word}. ${copy.title}`);
+  }
+  document.body.classList.toggle("is-member-preview", mode === "member" || mode === "locked");
+}
+
+/* Whether this member is a commissioner at all - a different question from
+   whether they are one right now. Cached per member, and the switch repaints
+   when the answer lands. */
+let commissionerMember = false;
+let checkedMemberId = null;
+
+async function checkCommissionerMember() {
+  const id = currentMember()?.id ?? null;
+  const key = id == null ? null : String(id);
+  if (key === checkedMemberId) return;
+  checkedMemberId = key;
+  commissionerMember = false;
+  paint();
+  if (key == null) return;
+  const answer = await isCommissionerMember(key).catch(() => false);
+  if (String(currentMember()?.id ?? "") !== key) return;
+  commissionerMember = answer;
+  paint();
 }
 
 /* Plays over the top while the route repaints underneath. */
@@ -131,13 +225,11 @@ function glitch(landingOn) {
    with the gates, so the switch is deaf until the transition finishes. */
 let switching = false;
 
-function toggle() {
-  if (switching || !canPreviewAsMember()) return;
-  switching = true;
-  const landingOn = !isMemberPreview();
-  glitch(landingOn);
+/* Runs the transition and repaints the page underneath it. */
+function transitionTo(landingOnMemberView) {
+  glitch(landingOnMemberView);
   const commit = () => {
-    setMemberPreview(landingOn);
+    setMemberPreview(landingOnMemberView);
     paint();
     /* Every page reads the gates while it renders, so the current one has to be
        drawn again before any of this is visible. */
@@ -148,9 +240,38 @@ function toggle() {
   else setTimeout(commit, SWITCH_AT);
 }
 
+async function toggle() {
+  if (switching) return;
+  const mode = modeNow();
+  if (mode === "none") return;
+  switching = true;
+  try {
+    if (mode === "locked") {
+      /* Nothing to preview yet - they are already seeing member content and
+         have no credentials to set aside. Get the PIN first, then run the
+         transition into the commissioner side. */
+      const granted = await requestCommissionerAccess();
+      if (!granted) {
+        switching = false;
+        paint();
+        return;
+      }
+      setMemberPreview(false);
+      transitionTo(false);
+      return;
+    }
+    transitionTo(mode === "commissioner");
+  } catch (err) {
+    switching = false;
+    paint();
+    console.warn("member preview:", err);
+  }
+}
+
 export function refreshMemberPreview() {
   ensureStyles();
   paint();
+  void checkCommissionerMember();
 }
 
 export function mountMemberPreview() {
@@ -164,7 +285,7 @@ export function mountMemberPreview() {
   node.dataset.dflPreviewToggle = "";
   node.hidden = true;
   node.setAttribute("aria-pressed", "false");
-  node.innerHTML = `<span class="dfl-preview-track" aria-hidden="true"><span class="dfl-preview-knob"></span></span><span class="dfl-preview-label">Commish</span>`;
+  node.innerHTML = `<span class="dfl-preview-track" aria-hidden="true"><span class="dfl-preview-knob"></span></span><span class="dfl-preview-label"><span class="dfl-preview-word">Commissioner</span><span class="dfl-preview-short" aria-hidden="true">Commish</span></span>`;
   node.addEventListener("click", toggle);
   bar.insertBefore(node, whoami || null);
   /*
