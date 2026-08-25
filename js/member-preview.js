@@ -16,8 +16,8 @@
   a gold banner across the whole app, which was unmissable and far too loud for
   something you flip several times while checking one page.
 */
-import { canPreviewAsMember, isMemberPreview, setMemberPreview } from "./supabase.js";
-import { renderRoute } from "./router.js";
+import { ACCESS_EVENT, canPreviewAsMember, isMemberPreview, setMemberPreview } from "./supabase.js";
+import { onRoute, renderRoute } from "./router.js";
 
 const STYLE_ID = "dfl-member-preview-style";
 const GLITCH_MS = 620;
@@ -167,8 +167,22 @@ export function mountMemberPreview() {
   node.innerHTML = `<span class="dfl-preview-track" aria-hidden="true"><span class="dfl-preview-knob"></span></span><span class="dfl-preview-label">Commish</span>`;
   node.addEventListener("click", toggle);
   bar.insertBefore(node, whoami || null);
-  /* Selecting a different member can hand commissioner access over or take it
-     away, so the toggle has to re-decide whether it belongs on screen. */
+  /*
+    The switch has to re-decide whether it belongs on screen every time the
+    answer could have changed, or it does what it did on first release: decides
+    once at boot, finds no credentials because you had not entered your PIN yet,
+    and stays hidden for the rest of the session.
+
+    - ACCESS_EVENT covers the real path. Commissioner and owner access is granted
+      from a form submit in member-lock.js or on the Admin page, both long after
+      boot, and neither knows this switch exists.
+    - dfl:pick-member covers switching member, which can hand access over or take
+      it away.
+    - onRoute is the safety net for any path neither of those catches. Repainting
+      one button per navigation costs nothing.
+  */
+  window.addEventListener(ACCESS_EVENT, () => setTimeout(refreshMemberPreview, 0));
   window.addEventListener("dfl:pick-member", () => setTimeout(refreshMemberPreview, 0));
+  onRoute(() => refreshMemberPreview());
   refreshMemberPreview();
 }

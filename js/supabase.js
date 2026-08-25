@@ -117,6 +117,18 @@ function commissionerStillMatchesMember() {
   alternative is quietly handing your access back mid-test - but it should not
   outlive the tab, or you reopen the app tomorrow wondering what broke.
 */
+/*
+  Privileged access is granted and revoked long after boot - the profile-lock
+  overlay in member-lock.js and the Admin page both call adminLogin() or
+  commissionerLogin() from a form submit. Anything that renders based on those
+  answers has no way to know they changed, which is exactly how the member-view
+  switch shipped invisible: it decided once at boot and never looked again.
+*/
+export const ACCESS_EVENT = "dfl:access-change";
+function announceAccessChange() {
+  try { window.dispatchEvent(new CustomEvent(ACCESS_EVENT)); } catch {}
+}
+
 const MEMBER_PREVIEW_KEY = "dfl.memberPreview";
 let memberPreview = (() => {
   try { return sessionStorage.getItem(MEMBER_PREVIEW_KEY) === "1"; } catch { return false; }
@@ -134,6 +146,7 @@ export function setMemberPreview(on) {
     if (memberPreview) sessionStorage.setItem(MEMBER_PREVIEW_KEY, "1");
     else sessionStorage.removeItem(MEMBER_PREVIEW_KEY);
   } catch {}
+  announceAccessChange();
   return memberPreview;
 }
 
@@ -187,6 +200,7 @@ export async function adminLogin(password, remember = true) {
   commissionerMemberId = "";
   setCommissionerPin("");
   if (remember) setAdminToken(password);
+  announceAccessChange();
   return true;
 }
 
@@ -212,6 +226,7 @@ export async function commissionerLogin(pin, remember = true) {
   adminOn = false;
   setAdminToken("");
   if (remember) setCommissionerPin(pin);
+  announceAccessChange();
   return true;
 }
 
@@ -226,6 +241,7 @@ export function adminLogout() {
   setAdminToken("");
   setCommissionerPin("");
   setMemberPreview(false);
+  announceAccessChange();
 }
 
 export async function restoreAdmin() {

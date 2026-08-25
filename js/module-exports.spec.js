@@ -293,6 +293,25 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('title:"Your GPS location"');
   });
 
+  it("re-decides whether the member-view switch is on screen when access changes", () => {
+    const gate = fs.readFileSync("js/supabase.js", "utf8");
+    const ui = fs.readFileSync("js/member-preview.js", "utf8");
+    // The switch shipped invisible because it decided once at boot, before the
+    // commissioner PIN had been entered, and never looked again. Access is
+    // granted from a form submit in member-lock.js and on the Admin page, so
+    // supabase.js has to say when it changes.
+    expect(gate).toContain('export const ACCESS_EVENT = "dfl:access-change"');
+    for (const fn of ["adminLogin", "commissionerLogin", "adminLogout"]) {
+      expect(gate.slice(gate.indexOf(`function ${fn}`))).toContain("announceAccessChange()");
+    }
+    expect(ui).toContain("window.addEventListener(ACCESS_EVENT");
+    expect(ui).toContain('window.addEventListener("dfl:pick-member"');
+    expect(ui).toContain("onRoute(() => refreshMemberPreview())");
+    // A second tap mid-transition would commit twice and leave the switch
+    // disagreeing with the gates.
+    expect(ui).toContain("if (switching || !canPreviewAsMember()) return;");
+  });
+
   it("lets a commissioner view the app as a member without keeping write access", () => {
     const gate = fs.readFileSync("js/supabase.js", "utf8");
     const ui = fs.readFileSync("js/member-preview.js", "utf8");
