@@ -102,7 +102,44 @@ function commissionerStillMatchesMember() {
   return !!commissionerClient && !!commissionerAccess && String(memberIdNow()) === String(commissionerMemberId);
 }
 
+/*
+  VIEWING AS A MEMBER.
+
+  Commissioners need to see what everybody else sees without logging out and
+  back in. The credentials stay in memory - only the answers change: every gate
+  below reports false and db() hands back the public client, so Postgres refuses
+  a privileged write exactly as it would for a member. That last part is the
+  point. A preview that hides the buttons but keeps the commissioner client
+  underneath is a preview that lies: anything reached through a stale panel
+  still writes for real while you believe you are sandboxed.
+
+  Held in sessionStorage, not localStorage. Surviving a reload matters - the
+  alternative is quietly handing your access back mid-test - but it should not
+  outlive the tab, or you reopen the app tomorrow wondering what broke.
+*/
+const MEMBER_PREVIEW_KEY = "dfl.memberPreview";
+let memberPreview = (() => {
+  try { return sessionStorage.getItem(MEMBER_PREVIEW_KEY) === "1"; } catch { return false; }
+})();
+
+/* Whether real privileged access exists, ignoring the preview. This is what
+   decides if the toggle is offered at all, so it must not consult the gates. */
+export function canPreviewAsMember() {
+  return (adminOn && !!adminClient) || commissionerStillMatchesMember();
+}
+export function isMemberPreview() { return memberPreview && canPreviewAsMember(); }
+export function setMemberPreview(on) {
+  memberPreview = !!on && canPreviewAsMember();
+  try {
+    if (memberPreview) sessionStorage.setItem(MEMBER_PREVIEW_KEY, "1");
+    else sessionStorage.removeItem(MEMBER_PREVIEW_KEY);
+  } catch {}
+  return memberPreview;
+}
+
 export function db() {
+  /* Before the admin branch, or a master-admin preview would keep writing. */
+  if (isMemberPreview()) return makePublicClient();
   if (adminOn && adminClient) {
     /* Rebuild on a changed member so the identity header cannot go stale while
        the authorisation header stays valid. */
@@ -120,12 +157,13 @@ export function db() {
 // Compatibility: existing pages use isAdmin() to decide whether privileged
 // controls exist. It now means "an authenticated privileged session". Use
 // isMasterAdmin(), isCommissionerOwner(), or hasPermission() when scope matters.
-export function isAdmin() { return (adminOn && !!adminClient) || commissionerStillMatchesMember(); }
-export function isMasterAdmin() { return adminOn && !!adminClient; }
-export function isCommissioner() { return !isMasterAdmin() && commissionerStillMatchesMember(); }
-export function isCommissionerOwner() { return isMasterAdmin() || !!(commissionerStillMatchesMember() && commissionerAccess?.is_owner); }
-export function commissionerProfile() { return commissionerStillMatchesMember() ? commissionerAccess : null; }
+export function isAdmin() { return !isMemberPreview() && ((adminOn && !!adminClient) || commissionerStillMatchesMember()); }
+export function isMasterAdmin() { return !isMemberPreview() && adminOn && !!adminClient; }
+export function isCommissioner() { return !isMemberPreview() && !isMasterAdmin() && commissionerStillMatchesMember(); }
+export function isCommissionerOwner() { return !isMemberPreview() && (isMasterAdmin() || !!(commissionerStillMatchesMember() && commissionerAccess?.is_owner)); }
+export function commissionerProfile() { return !isMemberPreview() && commissionerStillMatchesMember() ? commissionerAccess : null; }
 export function hasPermission(permission) {
+  if (isMemberPreview()) return false;
   if (isMasterAdmin()) return true;
   if (!commissionerStillMatchesMember()) return false;
   if (commissionerAccess?.is_owner) return true;
@@ -187,6 +225,7 @@ export function adminLogout() {
   commissionerMemberId = "";
   setAdminToken("");
   setCommissionerPin("");
+  setMemberPreview(false);
 }
 
 export async function restoreAdmin() {

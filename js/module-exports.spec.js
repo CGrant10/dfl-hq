@@ -293,6 +293,28 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('title:"Your GPS location"');
   });
 
+  it("lets a commissioner view the app as a member without keeping write access", () => {
+    const gate = fs.readFileSync("js/supabase.js", "utf8");
+    const ui = fs.readFileSync("js/member-preview.js", "utf8");
+    const worker = fs.readFileSync("sw.js", "utf8");
+    // A preview that hides the buttons but keeps the commissioner client is a
+    // preview that lies, so db() must hand back the public client first.
+    expect(gate).toContain("if (isMemberPreview()) return makePublicClient();");
+    for (const accessor of ["isAdmin", "isMasterAdmin", "isCommissioner", "isCommissionerOwner"]) {
+      expect(gate).toContain(`export function ${accessor}() { return !isMemberPreview()`);
+    }
+    expect(gate).toContain("if (isMemberPreview()) return false;");
+    // canPreviewAsMember() decides whether the toggle exists at all, so it must
+    // read the raw credentials rather than the gates it turns off.
+    expect(gate).toContain("export function canPreviewAsMember()");
+    expect(gate).not.toContain("export function canPreviewAsMember() { return isAdmin()");
+    // Per tab, so it survives a reload without outliving the app.
+    expect(gate).toContain("sessionStorage.getItem(MEMBER_PREVIEW_KEY)");
+    expect(ui).toContain("void renderRoute()");
+    expect(ui).toContain("is-member-preview");
+    expect(worker).toContain("./js/member-preview.js");
+  });
+
   it("maps front, center and back of every green and rings the player with layup arcs", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     const schema = fs.readFileSync("golf_gps_green_points_schema.sql", "utf8");

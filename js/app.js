@@ -10,6 +10,7 @@ import { startPresence } from "./presence.js";
 import { initTheme, syncThemeFromMember } from "./theme.js";
 import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
+import { mountMemberPreview } from "./member-preview.js";
 import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
 import { paintBottomline, startBottomline } from "./bottomline.js";
 import { setupInstall } from "./install.js";
@@ -217,7 +218,7 @@ function moveTabIndicator(){
 window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */
