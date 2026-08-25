@@ -22,6 +22,50 @@ import { currentMember } from "./members.js";
 import { isCommissionerMember, requestCommissionerAccess } from "./member-lock.js";
 
 const STYLE_ID = "dfl-member-preview-style";
+const FILTER_ID = "dfl-glitch-filter";
+
+/*
+  THE PAGE TEARS, NOT A SHEET OVER IT.
+
+  The first version was an overlay and read like one: coloured rectangles and
+  scanlines floating above a page that was perfectly calm underneath. Nothing
+  the eye actually cared about - the text, the cards, the crest - was ever
+  distorted, so it looked stuck on.
+
+  An SVG filter operates on the element's own rendered pixels, so this is the
+  real UI coming apart:
+
+    feTurbulence + feDisplacementMap   pushes real pixels sideways in bands,
+                                       which is the tear
+    feOffset on separated channels     splits the actual artwork into red and
+                                       blue ghosts, the way a misaligned CRT
+                                       gun does - not a tinted pane on top
+
+  Both are driven from JS rather than SMIL, because animating baseFrequency
+  through <animate> is unreliable on mobile Safari and this has to work on a
+  phone or it is pointless.
+*/
+function ensureFilter() {
+  if (document.getElementById(FILTER_ID)) return;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("width", "0");
+  svg.setAttribute("height", "0");
+  svg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden";
+  svg.innerHTML = `
+    <filter id="${FILTER_ID}" x="-8%" y="-4%" width="116%" height="108%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.00001 0.28" numOctaves="1" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" result="torn"/>
+      <feOffset in="torn" dx="0" dy="0" result="ghostA"/>
+      <feColorMatrix in="ghostA" type="matrix" result="redOnly"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+      <feOffset in="torn" dx="0" dy="0" result="ghostB"/>
+      <feColorMatrix in="ghostB" type="matrix" result="blueOnly"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+      <feBlend in="redOnly" in2="blueOnly" mode="screen"/>
+    </filter>`;
+  document.body.appendChild(svg);
+}
 const GLITCH_MS = 620;
 const SWITCH_AT = 190;
 
@@ -108,16 +152,15 @@ body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 var(--accent-fill)}
 /* The two channels are the crest pair for whichever palette is on: red and
    blue in Dark and Light, red and yellow in Medicine, green and blue in
    Fairway. This is what "takes on the theme accents" means in practice. */
-.dfl-glitch-rgb{position:absolute;inset:0;mix-blend-mode:var(--dfl-glitch-blend);animation:dfl-glitch-rgb 110ms steps(2,end) infinite}
-.dfl-glitch-rgb.is-red{background:color-mix(in srgb,var(--accent-fill) 30%,transparent)}
-.dfl-glitch-rgb.is-cyan{background:color-mix(in srgb,var(--accent-2-fill) 30%,transparent);animation-direction:reverse}
+/* The channel split now happens on the real pixels, in the SVG filter. What
+   is left over the top is only what a screen genuinely adds: scanlines and a
+   faint accent wash in the tear bands. */
 /* The readout sits on a plate. Without one it lands on top of whatever the page
    was already showing - a headline, a photo - and turns into noise. */
 .dfl-glitch-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(340px,calc(100% - 32px));padding:13px 20px;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:4px;background:color-mix(in srgb,var(--bg) 88%,transparent);text-align:center;color:var(--accent);font:900 10px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;text-shadow:0 0 10px color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--accent) 22%,transparent);animation:dfl-glitch-flicker ${GLITCH_MS}ms steps(1,end)}
 .dfl-glitch-readout b{display:block;margin-top:3px;font-size:14px;letter-spacing:.18em;color:var(--text)}
 @keyframes dfl-glitch-roll{from{transform:translateY(-14%)}to{transform:translateY(14%)}}
 @keyframes dfl-glitch-tear{0%{transform:translateX(-3%) scaleY(1)}50%{transform:translateX(4%) scaleY(1.6)}100%{transform:translateX(-1%) scaleY(.7)}}
-@keyframes dfl-glitch-rgb{0%{transform:translate(-4px,1px)}50%{transform:translate(5px,-2px)}100%{transform:translate(-2px,2px)}}
 @keyframes dfl-glitch-flicker{0%{opacity:0}12%{opacity:1}22%{opacity:.15}34%{opacity:1}62%{opacity:.85}78%{opacity:1}100%{opacity:0}}
 @keyframes dfl-glitch-out{0%,86%{opacity:1}100%{opacity:0}}
 
@@ -129,14 +172,19 @@ body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 var(--accent-fill)}
    on body alone does nothing, and hidden would turn it into a scroll container
    and lose the vertical position. */
 :root:has(body.is-glitching),body.is-glitching{overflow-x:clip}
+/* The filter is the effect; the jolt is only what a knocked screen does on top
+   of it. Applying filter here also makes #view a containing block - the old
+   contrast()/invert() shake already did that, so this changes nothing. */
 body.is-glitching #view,body.is-glitching .topbar{animation:dfl-glitch-shake ${GLITCH_MS}ms steps(2,end)}
-@keyframes dfl-glitch-shake{0%{transform:none;filter:none}14%{transform:translate(-3px,1px) skewX(1.2deg);filter:contrast(1.5) hue-rotate(12deg)}30%{transform:translate(4px,-2px);filter:invert(.08) saturate(1.5)}46%{transform:translate(-2px,2px) skewX(-.8deg)}62%{transform:translate(2px,0);filter:contrast(1.2)}100%{transform:none;filter:none}}
+body.is-tearing #view,body.is-tearing .topbar{filter:url(#${FILTER_ID})}
+@keyframes dfl-glitch-shake{0%{transform:none}18%{transform:translate(-2px,1px)}34%{transform:translate(3px,-1px)}52%{transform:translate(-1px,1px)}70%{transform:translate(2px,0)}100%{transform:none}}
 
 /* Anyone who has asked the system to calm down gets the switch with none of the
    theatre - the mode still changes, it just does not lurch. */
 @media(prefers-reduced-motion:reduce){
   .dfl-glitch{animation:dfl-glitch-out 160ms steps(1,end) forwards}
-  .dfl-glitch-scan,.dfl-glitch-tear,.dfl-glitch-rgb{display:none}
+  .dfl-glitch-scan,.dfl-glitch-tear{display:none}
+  body.is-tearing #view,body.is-tearing .topbar{filter:none}
   .dfl-glitch-readout{animation:none;opacity:1}
   body.is-glitching #view,body.is-glitching .topbar{animation:none}
   .dfl-preview-knob{transition:none}
@@ -235,22 +283,109 @@ function glitch(landingOn) {
   overlay.innerHTML = `
     <div class="dfl-glitch-scan"></div>
     ${tears}
-    <div class="dfl-glitch-rgb is-red"></div>
-    <div class="dfl-glitch-rgb is-cyan"></div>
     <div class="dfl-glitch-readout">
       <span>reassigning session</span>
       <b>${landingOn ? "access :: member" : "access :: commissioner"}</b>
     </div>`;
   document.body.appendChild(overlay);
+  /* The tear rides on a class, so a device that failed the cost check simply
+     does not get it - the scanlines and the readout still play. */
   document.body.classList.add("is-glitching");
+  if (filterAllowed() && !reducedMotion()) document.body.classList.add("is-tearing");
+  driveFilter();
   setTimeout(() => {
     overlay.remove();
     document.body.classList.remove("is-glitching");
+    document.body.classList.remove("is-tearing");
   }, reducedMotion() ? 200 : GLITCH_MS);
 }
 
 /* A second tap mid-glitch would commit twice and leave the switch disagreeing
    with the gates, so the switch is deaf until the transition finishes. */
+/*
+  Animate the filter across the transition.
+
+  A displacement that never changes is a static smear - it has to move, and it
+  has to move in steps rather than smoothly, because a screen losing sync jumps
+  between bad frames rather than easing through them. So the values are re-rolled
+  on a coarse interval and held.
+
+  It settles to zero at the end rather than being switched off, so the page
+  reassembles instead of snapping back.
+*/
+/*
+  A full-page SVG filter is the right effect and the wrong thing to assume about
+  a phone. #view is 2295px tall on the home screen, and filtering that surface
+  every frame is real GPU work - I could not measure it on a device, so it
+  measures itself.
+
+  The first time it runs, frame times are sampled. If the median frame is worse
+  than 28ms - anything under about 35fps, where a glitch stops reading as a
+  glitch and starts reading as a stutter - the tear is switched off for good on
+  this device and the scanline overlay carries the transition alone. Stored per
+  device, not per session, because a phone does not get faster tomorrow.
+*/
+const HEAVY_KEY = "dfl.glitchHeavy";
+const filterAllowed = () => {
+  try { return localStorage.getItem(HEAVY_KEY) !== "no"; } catch { return true; }
+};
+
+function watchFilterCost() {
+  try { if (localStorage.getItem(HEAVY_KEY)) return; } catch { return; }
+  const times = [];
+  let last = performance.now();
+  const started = last;
+  const tick = now => {
+    times.push(now - last);
+    last = now;
+    if (now - started < GLITCH_MS) { requestAnimationFrame(tick); return; }
+    times.shift();
+    if (times.length < 6) return;
+    const sorted = [...times].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    try { localStorage.setItem(HEAVY_KEY, median > 28 ? "no" : "yes"); } catch {}
+  };
+  requestAnimationFrame(tick);
+}
+
+function driveFilter() {
+  const filter = document.getElementById(FILTER_ID);
+  if (!filter || reducedMotion()) return;
+  watchFilterCost();
+  const turbulence = filter.querySelector("feTurbulence");
+  const displace = filter.querySelector("feDisplacementMap");
+  const offsets = filter.querySelectorAll("feOffset");
+  const started = performance.now();
+  let lastStep = -1;
+
+  const frame = now => {
+    const elapsed = now - started;
+    const life = Math.min(1, elapsed / GLITCH_MS);
+    if (life >= 1) {
+      displace.setAttribute("scale", "0");
+      offsets.forEach(o => { o.setAttribute("dx", "0"); o.setAttribute("dy", "0"); });
+      return;
+    }
+    /* ~14 held frames across the transition, not 60 smooth ones. */
+    const step = Math.floor(life * 14);
+    if (step !== lastStep) {
+      lastStep = step;
+      /* Violent early, settling late - the screen recovers as the new view lands. */
+      const decay = Math.pow(1 - life, 1.6);
+      const jitter = (n) => (Math.sin(step * 12.9898 + n) * 43758.5453) % 1;
+      displace.setAttribute("scale", String(Math.round(46 * decay * (0.45 + Math.abs(jitter(1))))));
+      turbulence.setAttribute("baseFrequency", `0.00001 ${(0.16 + Math.abs(jitter(2)) * 0.5).toFixed(3)}`);
+      const split = 7 * decay;
+      offsets[0].setAttribute("dx", (-split * (0.5 + Math.abs(jitter(3)))).toFixed(1));
+      offsets[0].setAttribute("dy", (jitter(4) * 1.5).toFixed(1));
+      offsets[1].setAttribute("dx", (split * (0.5 + Math.abs(jitter(5)))).toFixed(1));
+      offsets[1].setAttribute("dy", (jitter(6) * -1.5).toFixed(1));
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
 let switching = false;
 
 /* Runs the transition and repaints the page underneath it. */
@@ -298,6 +433,7 @@ async function toggle() {
 
 export function refreshMemberPreview() {
   ensureStyles();
+  ensureFilter();
   paint();
   void checkCommissionerMember();
 }

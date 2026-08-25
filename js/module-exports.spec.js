@@ -293,6 +293,23 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('title:"Your GPS location"');
   });
 
+  it("tears the real page rather than laying a coloured sheet over it", () => {
+    const ui = fs.readFileSync("js/member-preview.js", "utf8");
+    // The overlay version distorted nothing the eye cared about - the text and
+    // cards underneath stayed perfectly still, which is what made it read as
+    // stuck on. An SVG filter works on the element's own rendered pixels.
+    expect(ui).toContain("feDisplacementMap");
+    expect(ui).toContain("feTurbulence");
+    expect(ui).toContain("body.is-tearing #view,body.is-tearing .topbar{filter:url(#${FILTER_ID})}");
+    // The coloured panes are gone; the split happens on real artwork now.
+    expect(ui).not.toContain("dfl-glitch-rgb");
+    // Full-page filters are real GPU work, so it measures itself once and
+    // stops tearing for good on a device that cannot keep up.
+    expect(ui).toContain("function watchFilterCost()");
+    expect(ui).toContain("median > 28");
+    expect(ui).toContain("const filterAllowed =");
+  });
+
   it("draws the switch and its CRT transition from the palette, not its own colours", () => {
     const ui = fs.readFileSync("js/member-preview.js", "utf8");
     // The channel split is the crest pair for whichever palette is on.
