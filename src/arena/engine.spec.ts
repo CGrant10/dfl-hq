@@ -62,9 +62,16 @@ describe("typed race engine legacy parity", () => {
 describe("engine.ts matches the js copy it was ported from", () => {
   for (const fixture of legacyFixtures) {
     it(`agrees with race.js on seed ${fixture.seed}`, async () => {
-      /* race.js is untyped by design - it is the copy the browser loads
-         directly - so the shape is asserted here rather than inferred. */
-      const legacy = (await import("../../js/arena/race.js")) as unknown as {
+      /* race-sim.js is untyped by design - it is the copy the browser loads
+         directly - so the shape is asserted here rather than inferred.
+
+         Imported from race-sim.js rather than race.js on purpose. race.js
+         re-exports finish helpers from pixi-runtime-finish.js, which does
+         `export * from pixi-runtime.js`, so importing it pulled the whole
+         PixiJS runtime in front of a 2ms arithmetic check - 3.5s of it under
+         full-suite load, against a 5s timeout. That is what made this spec
+         fail on the first seed and pass on the rest. */
+      const legacy = (await import("../../js/arena/race-sim.js")) as unknown as {
         simulate: (r: readonly RaceRacer[], t: number, s: number) =>
           { order: { racer: RaceRacer; finishMs: number }[] };
       };
