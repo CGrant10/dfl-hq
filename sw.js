@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.187.0";
+const CACHE_NAME = "dfl-hq-v1.188.0";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
@@ -7,7 +7,12 @@ const APP_SHELL = [
   "./js/config.js","./js/app.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-distance.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/golf-gps-rolla-beta.js","./js/golf-gps-imported.js","./js/nav-neutral.js",
   "./js/golf-tournament-beta.js","./js/golf-tournament-beta-format.js","./js/golf-tournament-beta-rules.js","./js/golf-score-result.js","./js/golf-club-recommendation.js","./js/golf-offline.js","./js/golf-battle.js","./js/golf-board.js",
-  "./icons/app-192.png","./icons/app-512.png","./icons/apple-touch-icon.png"
+  /* The rendering marks, not the launcher icons. app-512.png was 232KB of
+     precache for an image the page never draws - only the OS reads it, at
+     install time, when there is by definition a network. The splash mark and
+     brand mark ARE drawn on first paint and were not cached at all. */
+  "./icons/dfl-seal-512.webp","./icons/dfl-seal-64.webp",
+  "./icons/app-192.png","./icons/apple-touch-icon.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(async c=>{

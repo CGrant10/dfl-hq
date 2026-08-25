@@ -38,7 +38,8 @@ import { setUsername } from "./store.js";
 
 const KEY = "dfl.memberId";
 
-let cache = null;      // all active members, loaded once per page load
+let cache = null;
+let inFlight = null;      // all active members, loaded once per page load
 let current = null;    // the member using this device
 
 export function getMemberId() {
@@ -53,17 +54,34 @@ export function currentMember() {
 export async function loadMembers({ force = false } = {}) {
   if (cache && !force) return cache;
   if (!configured) return [];
+  /*
+    The cache was read before the request and written after it resolved, so
+    every caller that arrived while the first was still in flight fired its own.
+    boot() calls restoreMember() inside a Promise.all while page modules ask for
+    the same list, so that was a real duplicate request on every cold start.
+    Holding the promise makes them share one.
+  */
+  if (inFlight && !force) return inFlight;
 
-  const { data, error } = await db()
-    .from("members")
-    .select("*")
-    .eq("active", true)
-    .order("sort_order", { ascending: true })
-    .order("display_name", { ascending: true });
+  inFlight = (async () => {
+    const { data, error } = await db()
+      .from("members")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .order("display_name", { ascending: true });
 
-  if (error) throw error;
-  cache = data || [];
-  return cache;
+    if (error) throw error;
+    cache = data || [];
+    return cache;
+  })();
+
+  try {
+    return await inFlight;
+  } finally {
+    /* Cleared either way: a rejected fetch must not be cached as the answer. */
+    inFlight = null;
+  }
 }
 
 /** Work out who this device belongs to. Returns null if not chosen yet. */

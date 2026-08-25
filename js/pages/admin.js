@@ -15,6 +15,9 @@ import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { renderKeeperRulesPanel } from "./admin_keepers.js";
 import { esc, toast } from "../ui.js";
+import { ensureBroadcastStyles } from "../lazy-css.js";
+/* Admin screens are styled by admin.css, which broadcast.css @imports. */
+ensureBroadcastStyles();
 
 const TABLES = [
   { id: "members", tab: "Members", table: "members", permission: "members" },

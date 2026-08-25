@@ -42,7 +42,7 @@ const crest = typeof Image === "function" ? new Image() : null;
 let crestReady = false;
 if (crest) {
   crest.onload = () => { crestReady = true; };
-  crest.src = new URL("../icons/crest-512.png", import.meta.url).href;
+  crest.src = new URL("../icons/crest-512.webp", import.meta.url).href;
 }
 export const crestImage = () => (crestReady ? crest : null);
 

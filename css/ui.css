@@ -860,7 +860,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
    ::before on an accent rule, and quietly stealing it would delete their
    existing top edge.
 
-   LIGHT MODE IS NOT AN AFTERTHOUGHT. mark-512.png is a light-on-dark
+   LIGHT MODE IS NOT AN AFTERTHOUGHT. mark-512.webp is a light-on-dark
    asset, so on a light card it is inverted rather than merely faded -
    fading a white mark on white paper just deletes it.
    ===================================================================== */
@@ -871,7 +871,7 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
   top: 50%; right: -14%;
   width: 62%; aspect-ratio: 1 / 1;
   transform: translateY(-50%);
-  background: url("../icons/mark-512.png") center / contain no-repeat;
+  background: url("../icons/mark-512.webp") center / contain no-repeat;
   opacity: .07;
   pointer-events: none;                 /* never interactive, ever */
   z-index: 0;

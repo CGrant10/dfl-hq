@@ -48,6 +48,9 @@ import { themeLabel, slotsFor, assignSprites, spriteMarkup,
 */
 import { simulate, newSeed, ticksFor, raceSeconds } from "../arena/race-forward-shim.js";
 import { persistResult } from "../arena/results.js";
+import { ensureBroadcastStyles } from "../lazy-css.js";
+/* The Arena page draws the .bc-* console and board. */
+ensureBroadcastStyles();
 
 const applyRaceMotionClass = (element, reduced = getReduceRaceMotion()) => {
   element?.classList.toggle("race-motion-reduced", reduced);

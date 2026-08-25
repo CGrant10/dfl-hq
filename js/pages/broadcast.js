@@ -29,6 +29,9 @@ import { racerLanes } from "../arena/racer-view.js";
 import { simulate, dramatize, visualEvents, intensityAt, boardState, newSeed, ticksFor, TICK_MS,
          finishTrajectories, presentFinish, raceShot } from "../arena/race-forward-shim.js";
 import { claimFinish, persistResult, finalOffsetMs } from "../arena/results.js";
+import { ensureBroadcastStyles } from "../lazy-css.js";
+/* The OBS view is nothing but .bc-* furniture. */
+ensureBroadcastStyles();
 
 const LANE_COLORS = [
   "#2fbf5f", "#4aa3ff", "#f0a742", "#e0574a", "#b07cf0", "#3ecfcf",

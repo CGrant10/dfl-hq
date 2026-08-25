@@ -71,7 +71,10 @@ export async function render(view) {
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
     db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
-    db().from("members").select("*"),
+    /* Only the four columns this page reads. Not loadMembers(), which filters
+       to active members - the owner count and the historical champion lookup
+       both need people who have since left. */
+    db().from("members").select("id,display_name,team_name,sleeper_user_id"),
     db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
@@ -292,7 +295,7 @@ function newsList(allRows) {
 function identity(leagues, members, logo) {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   return `<section class="hero">
-    <img class="hero-crest ${logo ? "" : "is-crest"}" src="${esc(logo || "icons/crest-512.png")}" alt="DFL league crest" ${logo ? "" : `width="512" height="341"`}>
+    <img class="hero-crest ${logo ? "" : "is-crest"}" src="${esc(logo || "icons/crest-512.webp")}" alt="DFL league crest" ${logo ? "" : `width="512" height="341"`}>
     ${canEdit() ? `<div class="crest-tools"><input type="file" id="logo-file" accept="image/*" class="hidden"><button class="btn ghost small" id="logo-pick">Change crest</button>${logo ? `<button class="btn ghost small" id="logo-reset">Use default</button>` : ""}</div>` : ""}
     <p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p>
     <p class="hero-line">${esc(ordinal(number))} season${members.length ? ` · ${members.length} owners` : ""}</p>

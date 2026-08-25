@@ -30,6 +30,9 @@ import { imageFieldHtml, wireImageFields } from "../image-field.js";
 import { clearLore } from "../lore.js";
 import { refreshBottomlineNow } from "../bottomline.js";
 import { broadcastInboxHtml, wireBroadcastInbox } from "../broadcast-inbox.js";
+import { ensureBroadcastStyles } from "../lazy-css.js";
+/* Renders inside the Admin shell; asks in its own right so order never matters. */
+ensureBroadcastStyles();
 
 wireImageFields();
 
