@@ -30,11 +30,31 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
+/*
+  Two derived tokens the effect leans on, rather than colours of its own.
+
+  --dfl-scan   mixed from --text, so scanlines are light on a dark palette and
+               dark on a light one without branching on the mode.
+  --dfl-glitch-blend
+               screen brightens, which is how the channel split reads on a dark
+               ground - and on a near-white one it has almost no headroom, so
+               the whole effect washed out to nothing. Light grounds multiply
+               instead.
+
+               One selector covers every light palette: theme.js collapses any
+               light-surface mode to data-mode="light" and keeps the real name
+               in data-palette, so Fairway and any light club palette are
+               already caught here without being named.
+*/
+:root{--dfl-scan:color-mix(in srgb,var(--text) 14%,transparent);--dfl-glitch-blend:screen}
+:root[data-mode="light"]{--dfl-glitch-blend:multiply}
+
 /* The switch names the view you are in. A knob alone told you a switch had been
    thrown but not which side you landed on - the transition said it, then the
    words were gone. The label is always there now, at every width, and colour
-   backs it up rather than carrying it: gold for your own tools, cyan for
-   member view. */
+   backs it up rather than carrying it - the palette's second accent for your
+   own tools, its first for member view, so neither is a colour this file
+   invented. */
 .dfl-preview-toggle{display:none;align-items:center;gap:7px;min-height:30px;margin-left:auto;padding:4px 10px 4px 7px;border:1px solid var(--control-line,rgba(255,255,255,.24));border-radius:999px;background:var(--control-bg,rgba(255,255,255,.06));color:var(--muted,#9fb0c0);font:900 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
 .dfl-preview-toggle.is-available{display:inline-flex}
 .dfl-preview-track{position:relative;flex:0 0 auto;width:24px;height:13px;border:1px solid var(--control-line,rgba(255,255,255,.3));border-radius:999px;background:rgba(0,0,0,.32);transition:background .22s,border-color .22s}
@@ -42,21 +62,24 @@ function ensureStyles() {
 .dfl-preview-short{display:none}
 .dfl-preview-toggle:focus-visible{outline:2px solid var(--accent,#ffd400);outline-offset:2px}
 
-/* Holding your own tools. */
-.dfl-preview-toggle[data-mode="commissioner"]{border-color:rgba(255,212,0,.55);background:rgba(255,212,0,.1);color:#ffd400}
-.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-track{border-color:rgba(255,212,0,.55)}
-.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob{background:#ffd400;box-shadow:0 0 6px rgba(255,212,0,.8)}
+/* Holding your own tools. Drawn in the palette's second accent, so this is
+   the crest yellow in Medicine, the crest blue in Dark and Light, and the
+   fairway blue in Fairway - never a hardcoded gold. */
+.dfl-preview-toggle[data-mode="commissioner"]{border-color:color-mix(in srgb,var(--accent-2) 55%,transparent);background:color-mix(in srgb,var(--accent-2) 10%,transparent);color:var(--accent-2)}
+.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-track{border-color:color-mix(in srgb,var(--accent-2) 55%,transparent)}
+.dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob{background:var(--accent-2-fill);box-shadow:0 0 6px color-mix(in srgb,var(--accent-2-fill) 80%,transparent)}
 
 /* Looking as a member on purpose - knob thrown, filled rather than outlined so
-   it reads as the active, deliberate state. */
-.dfl-preview-toggle[data-mode="member"]{border-color:#3fc9ea;background:rgba(63,201,234,.22);color:#d6f6ff}
-.dfl-preview-toggle[data-mode="member"] .dfl-preview-track{border-color:#3fc9ea;background:rgba(63,201,234,.32)}
-.dfl-preview-toggle[data-mode="member"] .dfl-preview-knob{transform:translateX(11px);background:#3fc9ea;box-shadow:0 0 7px #3fc9ea}
+   it reads as the active, deliberate state. The palette's first accent, which
+   is the readable one, so the label holds up on a white ground too. */
+.dfl-preview-toggle[data-mode="member"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.dfl-preview-toggle[data-mode="member"] .dfl-preview-track{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 28%,transparent)}
+.dfl-preview-toggle[data-mode="member"] .dfl-preview-knob{transform:translateX(11px);background:var(--accent-fill);box-shadow:0 0 7px color-mix(in srgb,var(--accent-fill) 75%,transparent)}
 
 /* A commissioner who has not entered a PIN this session. Same side of the
    switch as member view, because that is what they are seeing - but dashed and
    quiet, because getting back needs the PIN. */
-.dfl-preview-toggle[data-mode="locked"]{border-style:dashed;border-color:rgba(255,255,255,.34);color:var(--muted,#9fb0c0)}
+.dfl-preview-toggle[data-mode="locked"]{border-style:dashed;border-color:var(--control-line,rgba(255,255,255,.34));color:var(--muted,#9fb0c0)}
 .dfl-preview-toggle[data-mode="locked"] .dfl-preview-knob{transform:translateX(11px)}
 .dfl-preview-toggle[data-mode="locked"] .dfl-preview-label::after{content:"·PIN";margin-left:5px;opacity:.75}
 
@@ -71,22 +94,27 @@ function ensureStyles() {
 /* A second, quieter cue that does not depend on looking at the top right: a
    hairline under the top bar while you are in member view. Two pixels, no
    copy - the loud version of this was a full banner. */
-body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 #3fc9ea}
+body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 var(--accent-fill)}
 
 /* THE GLITCH. A CRT losing sync for half a second: scanlines roll, the picture
    tears into offset slices, the colour channels separate, and a monospace
    readout names the mode you are landing in. The route repaints underneath at
    ${SWITCH_AT}ms, so the switch is covered rather than watched. */
 .dfl-glitch{position:fixed;inset:0;z-index:9500;overflow:hidden;pointer-events:none;animation:dfl-glitch-out ${GLITCH_MS}ms steps(1,end) forwards}
-.dfl-glitch-scan{position:absolute;inset:-10% 0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.14) 0,rgba(255,255,255,.14) 1px,transparent 1px,transparent 3px);animation:dfl-glitch-roll ${GLITCH_MS}ms linear}
-.dfl-glitch-tear{position:absolute;left:-6%;width:112%;background:rgba(120,255,220,.1);mix-blend-mode:screen;animation:dfl-glitch-tear 140ms steps(2,end) infinite}
-.dfl-glitch-rgb{position:absolute;inset:0;mix-blend-mode:screen;animation:dfl-glitch-rgb 110ms steps(2,end) infinite}
-.dfl-glitch-rgb.is-red{background:rgba(255,40,80,.16)}
-.dfl-glitch-rgb.is-cyan{background:rgba(40,220,255,.16);animation-direction:reverse}
+/* Scanlines are mixed from --text rather than hardcoded white, so they come
+   out light on a dark palette and dark on a light one with no branching. */
+.dfl-glitch-scan{position:absolute;inset:-10% 0;background:repeating-linear-gradient(0deg,var(--dfl-scan) 0,var(--dfl-scan) 1px,transparent 1px,transparent 3px);animation:dfl-glitch-roll ${GLITCH_MS}ms linear}
+.dfl-glitch-tear{position:absolute;left:-6%;width:112%;background:color-mix(in srgb,var(--accent) 14%,transparent);mix-blend-mode:var(--dfl-glitch-blend);animation:dfl-glitch-tear 140ms steps(2,end) infinite}
+/* The two channels are the crest pair for whichever palette is on: red and
+   blue in Dark and Light, red and yellow in Medicine, green and blue in
+   Fairway. This is what "takes on the theme accents" means in practice. */
+.dfl-glitch-rgb{position:absolute;inset:0;mix-blend-mode:var(--dfl-glitch-blend);animation:dfl-glitch-rgb 110ms steps(2,end) infinite}
+.dfl-glitch-rgb.is-red{background:color-mix(in srgb,var(--accent-fill) 30%,transparent)}
+.dfl-glitch-rgb.is-cyan{background:color-mix(in srgb,var(--accent-2-fill) 30%,transparent);animation-direction:reverse}
 /* The readout sits on a plate. Without one it lands on top of whatever the page
    was already showing - a headline, a photo - and turns into noise. */
-.dfl-glitch-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(340px,calc(100% - 32px));padding:13px 20px;border:1px solid rgba(138,255,216,.5);border-radius:4px;background:rgba(4,12,10,.86);text-align:center;color:#8affd8;font:900 10px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;text-shadow:0 0 10px rgba(138,255,216,.65);box-shadow:0 0 26px rgba(138,255,216,.22);animation:dfl-glitch-flicker ${GLITCH_MS}ms steps(1,end)}
-.dfl-glitch-readout b{display:block;margin-top:3px;font-size:14px;letter-spacing:.18em;color:#d8fff2}
+.dfl-glitch-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(340px,calc(100% - 32px));padding:13px 20px;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:4px;background:color-mix(in srgb,var(--bg) 88%,transparent);text-align:center;color:var(--accent);font:900 10px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;text-shadow:0 0 10px color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--accent) 22%,transparent);animation:dfl-glitch-flicker ${GLITCH_MS}ms steps(1,end)}
+.dfl-glitch-readout b{display:block;margin-top:3px;font-size:14px;letter-spacing:.18em;color:var(--text)}
 @keyframes dfl-glitch-roll{from{transform:translateY(-14%)}to{transform:translateY(14%)}}
 @keyframes dfl-glitch-tear{0%{transform:translateX(-3%) scaleY(1)}50%{transform:translateX(4%) scaleY(1.6)}100%{transform:translateX(-1%) scaleY(.7)}}
 @keyframes dfl-glitch-rgb{0%{transform:translate(-4px,1px)}50%{transform:translate(5px,-2px)}100%{transform:translate(-2px,2px)}}

@@ -293,6 +293,26 @@ describe("the supported golf GPS courses", () => {
     expect(source).toContain('title:"Your GPS location"');
   });
 
+  it("draws the switch and its CRT transition from the palette, not its own colours", () => {
+    const ui = fs.readFileSync("js/member-preview.js", "utf8");
+    // The channel split is the crest pair for whichever palette is on.
+    expect(ui).toContain("var(--accent-fill)");
+    expect(ui).toContain("var(--accent-2-fill)");
+    // No hardcoded cyan, magenta or gold left driving anything.
+    expect(ui).not.toContain("#3fc9ea");
+    expect(ui).not.toContain("#5ad1a0");
+    expect(ui).not.toContain("rgba(255,212,0,");
+    expect(ui).not.toContain("rgba(138,255,216,");
+    // screen has no headroom on a near-white ground, so light grounds multiply.
+    expect(ui).toContain("--dfl-glitch-blend:screen");
+    expect(ui).toContain('[data-mode="light"]{--dfl-glitch-blend:multiply}');
+    // theme.js collapses every light-surface palette to data-mode="light", so
+    // naming Fairway here would be dead code.
+    expect(ui).not.toContain('[data-mode="fairway"]');
+    // Scanlines mix from --text so they invert with the ground automatically.
+    expect(ui).toContain("--dfl-scan:color-mix(in srgb,var(--text)");
+  });
+
   it("shows the member-view switch to any commissioner and names the view they are in", () => {
     const ui = fs.readFileSync("js/member-preview.js", "utf8");
     const lock = fs.readFileSync("js/member-lock.js", "utf8");
