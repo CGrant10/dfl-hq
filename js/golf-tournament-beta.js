@@ -257,6 +257,22 @@ function calmSetupMarkup(state) {
   const customSetup = `<details class="tb-fold" data-tb-section="custom" ${openSection === "custom" || Boolean(status.custom) || (!openSection && currentGuideStep === 3 && matchGuideTarget === "custom") ? "open" : ""}><summary><span><small>STEP 3 · CUSTOM</small><strong>Custom match</strong></span><em class="${status.customReady ? "is-ready" : ""}">${status.custom ? `${currentCustomSizes[0]} vs ${currentCustomSizes[1]} · ${status.customReady ? "Ready" : "Needs players"}` : "1–4 players per side"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Best for 1v2, 2v2, or any single head-to-head match. Choose the size of each side, scoring style, and number of holes.</p><div class="tb-custom-grid"><label><span>${esc(state.teams[0]?.name || "Side 1")}</span><select class="tb-select" data-tb-custom-side="0">${sideSizeOptions(currentCustomSizes[0])}</select></label><strong>VS</strong><label><span>${esc(state.teams[1]?.name || "Side 2")}</span><select class="tb-select" data-tb-custom-side="1">${sideSizeOptions(currentCustomSizes[1])}</select></label></div><div class="tb-round-tools"><select class="tb-select" data-tb-custom-scoring aria-label="Custom match scoring"><option value="strokes" ${scoringOf(status.custom?.round) === "strokes" ? "selected" : ""}>Stroke play</option><option value="match" ${scoringOf(status.custom?.round) === "match" ? "selected" : ""}>Match play</option></select><select class="tb-select" data-tb-custom-holes aria-label="Custom match holes"><option value="9" ${roundHoles(status.custom?.round) === 9 ? "selected" : ""}>9 holes</option><option value="18" ${roundHoles(status.custom?.round) === 18 ? "selected" : ""}>18 holes</option></select></div><label class="tb-board-setting"><span><strong>Tournament points board</strong><small>Show the team-points board above scoring.</small></span><input type="checkbox" data-tb-custom-board aria-label="Show tournament points board" ${betaCustomBoardVisible(status.custom?.round) ? "checked" : ""}></label><div class="tb-actions"><button class="btn primary wide" data-tb-build-custom ${state.participants.length >= 2 ? "" : "disabled"}>${status.custom ? "Rebuild custom match" : "Build custom match"}</button></div>${status.custom ? matchupEditor(state, status.custom) : ""}</div></details>`;
   const traditionalBuilder = status.custom ? "" : `<details class="tb-fold" data-tb-section="traditional" ${openSection === "traditional" || (!openSection && currentGuideStep === 3 && matchGuideTarget === "traditional") ? "open" : ""}><summary><span><small>STEP 3 · TRADITIONAL</small><strong>Traditional team day</strong></span><em class="${status.pairsReady && status.singlesReady ? "is-ready" : ""}">${status.pairs || status.singles ? "Schedule built" : "6 vs 6 · captains required"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Use this for the full two-team format: three 2v2 matches followed by six singles matches.</p><div class="tb-actions"><button class="btn primary wide" data-tb-build-team-day ${status.teamsReady && status.captainsReady ? "" : "disabled"}>${status.pairs || status.singles ? "Reset traditional schedule" : "Build traditional schedule"}</button></div>${status.teamsReady && status.captainsReady ? "" : `<p class="tb-copy">Before building, place exactly six golfers on each team and choose both captains in Step 2.</p>`}</div></details>`;
   const traditionalRounds = status.custom ? "" : `${roundCard("pairs")}${roundCard("singles")}`;
+  /*
+    THE TWO SHARES THE CLASSIC TOURNAMENT PAGE HAD, and they were missing here.
+
+    Beta kept them behind "Share images" inside the SCORING view, which is a
+    screen a commissioner is on once the day has started. The team sheet and the
+    points card are wanted before that: the matchups image goes out the night
+    before, from the screen where the matchups were just built. Classic put
+    "Share teams" on the Teams card and "Share tournament" on the points board
+    for exactly that reason - see paintTeamShare() in golf-matches.js.
+
+    Same two functions the scoring view calls, so there is one team sheet and
+    one points card in this app and not a second pair drawn from setup state.
+  */
+  const shareReady = state.teams.length === 2;
+  const builtMatches = state.rounds.reduce((n, entry) => n + (entry.battles?.length || 0), 0);
+  const shareTools = `<details class="tb-fold" data-tb-section="share" ${openSection === "share" ? "open" : ""}><summary><span><small>ANY TIME</small><strong>Share images</strong></span><em class="${shareReady ? "is-ready" : ""}">${shareReady ? (builtMatches ? `${builtMatches} matchup${builtMatches === 1 ? "" : "s"} to post` : "Rosters ready") : "Create two sides first"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Ready-to-send images of what you have built so far. The matchups card fills in as rounds are built; the summary carries the points once they are being played for.</p><div class="tb-actions"><button class="btn primary wide" data-tb-setup-share="teams" ${shareReady ? "" : "disabled"}>Teams &amp; matchups</button><button class="btn wide" data-tb-setup-share="tournament" ${shareReady ? "" : "disabled"}>Tournament summary</button></div>${shareReady ? "" : `<p class="tb-copy">Both cards are drawn from the two sides, so there is nothing to draw until Step 2 is done.</p>`}</div></details>`;
   const scoreCount = state.scoreRows.size;
   const scoreReset = `<details class="tb-fold" data-tb-section="score-reset" ${openSection === "score-reset" ? "open" : ""}><summary><span><small>COMMISSIONER TOOL</small><strong>Clear scorecards</strong></span><em>${scoreCount ? `${scoreCount} scored hole${scoreCount === 1 ? "" : "s"}` : "No scores entered"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Remove every entered stroke from this Tournament Beta event without changing golfers, sides, matches, pars, or the course.</p><div class="tb-actions"><button class="btn tb-reset wide" data-tb-reset-scores ${scoreCount && !state.stale ? "" : "disabled"}>Clear all scorecards</button></div><p class="tb-copy">${state.stale ? "Reconnect before clearing scores." : "This cannot be undone."}</p></div></details>`;
   return `<main class="tb-shell" data-tbeta-root>
@@ -267,7 +283,7 @@ function calmSetupMarkup(state) {
       <details class="tb-fold" data-tb-section="golfers" ${openSection === "golfers" || (!openSection && currentGuideStep === 1) ? "open" : ""}><summary><span><small>STEP 1</small><strong>Golfers</strong></span><em>${state.participants.length} added</em></summary><div class="tb-fold-body">${memberPicker(available)}<div class="tb-add"><input data-tb-guest placeholder="Guest golfer name"><button class="btn" data-tb-add-guest>Add guest</button></div><div class="tb-chips">${playerChips || "Add golfers to begin."}</div></div></details>
       ${courseAssignments}
       <details class="tb-fold" data-tb-section="teams" ${openSection === "teams" || (!openSection && currentGuideStep === 2) ? "open" : ""}><summary><span><small>STEP 2</small><strong>Sides & captains</strong></span><em class="${state.teams.length === 2 ? "is-ready" : ""}">${status.counts.join("–") || "0–0"} · Captains optional for custom</em></summary><div class="tb-fold-body"><p class="tb-copy">Name each team and place every golfer on a side. Captains are only required for the traditional two-round schedule.</p><div class="tb-team-actions"><button class="btn" data-tb-deal="even" ${state.teams.length !== 2 ? "disabled" : ""}>Place evenly</button><button class="btn" data-tb-deal="random" ${state.teams.length !== 2 ? "disabled" : ""}>Shuffle teams</button><button class="btn tb-reset" data-tb-create-teams>${state.teams.length === 2 ? "Reset teams" : "Create two teams"}</button></div>${teamControls}</div></details>
-      ${customSetup}${traditionalBuilder}${guestAccess}${traditionalRounds}${scoreReset}<div class="tb-status" data-tb-status></div>
+      ${customSetup}${traditionalBuilder}${guestAccess}${traditionalRounds}${shareTools}${scoreReset}<div class="tb-status" data-tb-status></div>
     </section>
   </main>`;
 }
@@ -455,6 +471,17 @@ function wireSetup(root, state) {
       button.disabled = false;
     }
   };
+  /*
+    NOT through busy(), and deliberately not async. navigator.share has to be
+    called in the same task as the tap that asked for it, and awaiting anything
+    on the way there spends the gesture - on iOS that is the difference between
+    the share sheet opening and a NotAllowedError. See the note at the top of
+    share.js, and the same warning on wireShare() in golf-matches.js.
+  */
+  root.querySelectorAll("[data-tb-setup-share]").forEach(button => button.addEventListener("click", () => {
+    const result = button.dataset.tbSetupShare === "teams" ? shareBetaTeams(state) : shareBetaTournament(state);
+    toast(result === "failed" ? "That image could not be built" : (typeof result === "string" ? result : "Sharing…"), result === "failed");
+  }));
   root.querySelectorAll("[data-tb-section]").forEach(section => section.addEventListener("toggle", () => { if (section.open) setupSection.set(state.outing.id, section.dataset.tbSection); }));
   root.querySelectorAll("[data-tb-jump]").forEach(button => button.addEventListener("click", () => {
     const section = root.querySelector(`[data-tb-section="${button.dataset.tbJump}"]`);
