@@ -8,7 +8,7 @@ import "./league-photo-feature.js";
 import "./engagement-home.js";
 
 const MODE_KEY = "dfl.mode";
-const PICKABLE = new Set(["dark", "light", "fairway", "medicine", "system"]);
+const PICKABLE = new Set(["dark", "light", "fairway", "medicine", "medicine-light", "system"]);
 
 function validMode(value) {
   const v = String(value || "");

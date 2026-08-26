@@ -13,9 +13,14 @@
 -- app, and the app must paint immediately rather than wait for a query.
 --
 -- WHAT THE COLUMN HOLDS. The same strings the picker already stores:
--- "system", "dark", "light", "fairway", "medicine", or "team:KC" for one of the 32
--- clubs. Validated with a regex rather than an enum so adding a palette
--- stays a one-line change in theme.js, which is how that file is built.
+-- "system", "dark", "light", "fairway", "medicine", "medicine-light", or
+-- "team:KC" for one of the 32 clubs.
+--
+-- RE-RUN THIS FILE WHENEVER A PALETTE IS ADDED. The list below is a real
+-- CHECK, so a palette this database has not been told about is stored as
+-- "no preference" - the picker still works on the device that chose it, and
+-- the choice silently fails to follow the member to their other devices,
+-- which is the confusing half. It is additive and safe to re-run.
 --
 -- THE TRUST LEVEL IS UNCHANGED AND STATED PLAINLY: dfl_current_member()
 -- reads the x-member-id header, which comes from localStorage and is a
@@ -33,7 +38,7 @@ alter table public.members
   add constraint members_theme_mode_shape
   check (
     theme_mode is null
-    or theme_mode in ('system', 'dark', 'light', 'fairway', 'medicine')
+    or theme_mode in ('system', 'dark', 'light', 'fairway', 'medicine', 'medicine-light')
     or theme_mode ~ '^team:[A-Z]{2,3}$'
   );
 

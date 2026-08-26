@@ -355,15 +355,23 @@ a { color: var(--accent); }
   rather than the fill pair, for the same reason as the wordmark above: at
   8px on a near-black bar the crest's own royal blue measures 1.7:1 and is
   simply not there, and a dark club primary would be worse.
+
+  --bar-ink, NOT --accent, and that was the bug. --accent is chosen to be
+  read on the PAGE; on a light palette it is dark, and these three sit on
+  the black bar, where #B8001B measures 2.4:1. In Light and Fairway the
+  stars were simply not there. --bar-ink is the same pair chosen for the
+  bar's own ground, and on a dark palette it IS --accent - see THE BAR IS
+  ALWAYS DARK in js/theme.js. The middle star is pinned to white with the
+  words above it for the same reason they are: --chalk goes near-black.
 */
 .brand-text .creed i {
   font-style: normal;
   font-size: 8px;
   line-height: 1;
-  color: var(--accent);
+  color: var(--bar-ink);
 }
-.brand-text .creed i:nth-of-type(2) { color: var(--chalk); }
-.brand-text .creed i:nth-of-type(3) { color: var(--accent-2); }
+.brand-text .creed i:nth-of-type(2) { color: #f5f7fa; }
+.brand-text .creed i:nth-of-type(3) { color: var(--bar-ink-2); }
 
 /* On a narrow phone the stars give up their breathing room before the words
    give up a letter. */

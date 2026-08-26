@@ -22,6 +22,7 @@
 //   dark                force dark
 //   light               force light
 //   fairway             force a golf-inspired blue/green light palette
+//   medicine-light      Medicine Wheel on a bone ground, for daylight
 //
 // This header used to say "one palette, two modes" and that Medicine Wheel
 // was gone. It came back as the default; nobody updated the comment.
@@ -141,6 +142,10 @@ const MODES = {
     /* The bar keeps the crest's black banner in both modes - it is the one
        piece of chrome the logo actually dictates. */
     topbarA: "#101823", topbarB: "#0d1117",
+    /* ...which is exactly why it needs its own accents. See THE BAR IS ALWAYS
+       DARK below: these are the dark palette's text pair, because that is the
+       ground the bar actually has. */
+    barInk: "#E67582", barInk2: "#7098E6",
     heroA: "#ffffff", heroWash: "rgba(16,24,40,.04)",
     toastBg: "#11161d", onToast: "#f5f7fa",
     milestone: "#8a6410",
@@ -170,6 +175,7 @@ const MODES = {
     dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
     scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
     topbarA: "#07344d", topbarB: "#082c40",
+    barInk: "#63D69B", barInk2: "#7FC4F5",
     heroA: "#ffffff", heroWash: "rgba(7,80,119,.035)",
     toastBg: "#082c40", onToast: "#f7fffb",
     milestone: "#765c0d",
@@ -211,11 +217,84 @@ const MODES = {
     fill: "#C8102E", fill2: "#EFC94C",
     onAccent: "#FFFFFF",
   },
+
+  /*
+    MEDICINE WHEEL LIGHT.
+
+    The same four directions with the ground turned over: white is the
+    surface, black is the ink, and red and yellow are what move. That is a
+    translation rather than an inversion, and the difference is the yellow.
+
+    WHY THE YELLOW GOES DARK, which is the only interesting decision here.
+    #EFC94C is 11:1 on black and 1.6:1 on white - the same colour that
+    carries the dark palette is invisible on this one, as text and very
+    nearly as a fill. So the yellow direction is taken down its own hue
+    until it reads: #6E4B00 as a letter, #8A5A00 as a fill white sits on.
+    This is exactly what the Light palette does to the crest red, and for
+    the same reason.
+
+    The red goes the other way from the dark palette - deepened rather than
+    lifted - so the wheel's #C8102E stays the fill and #A50E26 does the
+    reading.
+
+    THE GROUND IS BONE, NOT THE GREY OF Light. Light is a cool blue-grey
+    because the crest is red and blue. The wheel is red, yellow, black and
+    white, so its paper is warm, and cards are true white against it.
+
+    EVERY INK BELOW CLEARS 6:1 ON ALL FOUR SURFACES - page, card, recessed
+    and hover - and every fill takes white at 4.5:1 or better. That is
+    stricter than this file's own rule, which only asks for the background a
+    colour actually sits on, and it is why the statuses are darker here than
+    in Light: they have to hold up on the recessed bone as well as on white.
+  */
+  "medicine-light": {
+    /* Bone page, white cards, a deeper bone for wells and rows. */
+    bg: "#F3EDE4", bg2: "#FFFFFF", bg3: "#E9E1D4",
+    line: "#D3C6B2", lineSoft: "#E6DDCE",
+    /* muted is darker than Light's equivalent on purpose: the accent here is
+       a deep red, and the cards that wash 10-12% of it over white - the
+       champions rows, a dues header - leave a pink plate that a lighter grey
+       cannot hold 4.5:1 against. Measured on that plate, not on the card. */
+    text: "#15110D", muted: "#5E5449", chalk: "#15110D",
+    bodyText: "#332B22",
+    hover: "#EBE3D6", hoverSoft: "rgba(21,17,13,.04)",
+    controlLine: "#8B7D6B", controlBg: "rgba(255,255,255,.90)",
+    /* text pair: the red deepened, the yellow taken down to a bronze */
+    accent: "#A50E26", accent2: "#6E4B00",
+    /* fill pair: the wheel's own red, and the yellow as far down as it has
+       to go for white to sit on it - the tabs and the hero rule run this
+       gradient with --on-accent over the top. */
+    fill: "#C8102E", fill2: "#8A5A00",
+    onAccent: "#FFFFFF",
+    /* Statuses stay semantic, same as the dark wheel: there is no green in
+       the four, but PAID and UNPAID have to be tellable apart at a glance. */
+    ok: "#0A5527", okBg: "rgba(10,85,39,.10)", okLine: "#A6C9B2",
+    /* An amber and not the wheel's yellow, so an OPEN badge and a CHAMPION
+       badge are not the same colour - the same split the dark wheel makes. */
+    warnInk: "#6B4300", warnBg: "rgba(138,90,0,.13)", warnLine: "#D9BE84",
+    dangerInk: "#A3121A", dangerBg: "rgba(163,18,26,.09)", dangerLine: "#E0A9A4",
+    scUnder: "#0A5527", scOver: "#8E2610", scBad: "#93101A",
+    /* Black is one of the four, so the banner is not borrowed from the
+       crest here the way it is in every other palette - it is the ground
+       the wheel was drawn on, kept as the one dark band on the page. */
+    topbarA: "#15110D", topbarB: "#0A0A0A",
+    /* On that black band the wheel is back on its own ground, so the bar
+       wears the DARK palette's inks - the lifted red and the full yellow. */
+    barInk: "#F08279", barInk2: "#EFC94C",
+    heroA: "#FFFFFF", heroWash: "rgba(21,17,13,.045)",
+    /* Toasts and sheets land on black with bone type: a pop-up over a light
+       page has to separate from it, and black is the wheel's own answer. */
+    toastBg: "#15110D", onToast: "#F7F2EA",
+    /* Gold is the occasion colour and stays gold - as far up its hue as it
+       can go and still be read on bone. */
+    milestone: "#684B06",
+    shadow: "0 1px 3px rgba(21,17,13,.12)",
+  },
 };
 
 /* The modes somebody can actually choose. "system" is not one of them - it
    is the absence of a choice - and anything else in storage is ignored. */
-const PICKABLE = ["dark", "light", "fairway", "medicine"];
+const PICKABLE = ["dark", "light", "fairway", "medicine", "medicine-light"];
 
 /*
   ONE MediaQueryList, held at module scope for the life of the page.
@@ -334,7 +413,17 @@ function apply() {
     medicine is a dark palette, so it declares dark. This is a hint, not a
     repaint: it costs nothing and no other rule can achieve it.
   */
-  const lightSurface = name === "light" || name === "fairway";
+  /*
+    A LIGHT SURFACE IS A LIST, NOT A GUESS.
+
+    This drives two things that cannot be derived from the palette: the
+    color-scheme hint, which is the only way to tell the browser what to do
+    with the things IT draws - a <select> popup, a date picker, scrollbars,
+    autofill - and the data-mode token every [data-mode="light"] rule in the
+    CSS already tests for. Medicine Wheel Light joining this list is what
+    makes those ~30 existing rules apply to it with nothing new written.
+  */
+  const lightSurface = name === "light" || name === "fairway" || name === "medicine-light";
   s.setProperty("color-scheme", lightSurface ? "light" : "dark");
 
   s.setProperty("--bg", m.bg);
@@ -405,6 +494,26 @@ function apply() {
   s.setProperty("--danger-line", m.dangerLine);
   s.setProperty("--topbar-a", m.topbarA);
   s.setProperty("--topbar-b", m.topbarB);
+  /*
+    THE BAR IS ALWAYS DARK, SO IT NEEDS ITS OWN ACCENTS.
+
+    Every palette in this file paints the top bar with the crest's black
+    banner - it is the one piece of chrome the logo dictates. That is fine
+    for the WORDS, which style.css pins to white for exactly this reason,
+    and it was quietly wrong for anything on the bar drawn in --accent:
+    those are chosen to be read on the PAGE, and on a light palette that
+    means they are dark, and a dark accent on a black band is not there.
+    The creed's three stars were the proof - #B8001B measures 2.4:1 up
+    there, and in Light and Fairway they had simply vanished.
+
+    A dark palette's accents already read on the bar, so it falls back to
+    them and nothing about those palettes changes. A light palette declares
+    the pair that reads on ITS bar - which for Medicine Wheel Light is the
+    dark wheel's own red and yellow, because that is the same black ground
+    the wheel was drawn on.
+  */
+  s.setProperty("--bar-ink", m.barInk || m.accent);
+  s.setProperty("--bar-ink-2", m.barInk2 || m.accent2);
   s.setProperty("--hero-a", m.heroA);
   s.setProperty("--hero-wash", m.heroWash);
   s.setProperty("--toast-bg", m.toastBg);
@@ -478,6 +587,7 @@ export function modeOptions() {
     { id: "light", name: "Light" },
     { id: "fairway", name: "Fairway Light" },
     { id: "medicine", name: "Medicine Wheel" },
+    { id: "medicine-light", name: "Medicine Wheel Light" },
   ];
 }
 

@@ -221,6 +221,32 @@ describe("the supported golf GPS courses", () => {
     expect(schema).toContain("'system', 'dark', 'light', 'fairway', 'medicine'");
   });
 
+  it("offers Medicine Wheel Light, and treats it as a light surface", () => {
+    const theme = fs.readFileSync("js/theme.js", "utf8");
+    const memberScope = fs.readFileSync("js/member-theme-scope.js", "utf8");
+    const styles = fs.readFileSync("css/style.css", "utf8");
+    const schema = fs.readFileSync("theme_sync_schema.sql", "utf8");
+    expect(theme).toContain('"medicine-light": {');
+    expect(theme).toContain('{ id: "medicine-light", name: "Medicine Wheel Light" }');
+    /*
+      THE THREE LISTS THAT HAVE TO AGREE, and every one of them fails quietly
+      rather than loudly. Out of PICKABLE and the palette cannot be chosen; out
+      of the lightSurface test and the browser draws dark <select> popups and
+      every [data-mode="light"] rule in the CSS stops applying to it; out of
+      the CHECK and the choice is stored as "no preference", so it works on the
+      device that picked it and never follows the member anywhere else.
+    */
+    expect(theme).toContain('const PICKABLE = ["dark", "light", "fairway", "medicine", "medicine-light"]');
+    expect(theme).toContain('name === "medicine-light"');
+    expect(memberScope).toContain('"medicine-light"');
+    expect(schema).toContain("'fairway', 'medicine', 'medicine-light'");
+    /* The bar is always dark, so it carries its own accents - see the note in
+       apply(). Without this the creed's stars are drawn in a dark ink on a
+       black band in every light palette, which is where they had been. */
+    expect(theme).toContain('s.setProperty("--bar-ink", m.barInk || m.accent)');
+    expect(styles).toContain("color: var(--bar-ink);");
+  });
+
   it("keeps typography and component geometry consistent across app themes", () => {
     const tokens = fs.readFileSync("css/tokens.css", "utf8");
     const ui = fs.readFileSync("css/ui.css", "utf8");
