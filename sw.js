@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.196.0";
+const CACHE_NAME = "dfl-hq-v1.196.1";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
@@ -11,7 +11,7 @@ const APP_SHELL = [
      precache for an image the page never draws - only the OS reads it, at
      install time, when there is by definition a network. The splash mark and
      brand mark ARE drawn on first paint and were not cached at all. */
-  "./icons/dfl-seal-512.webp","./icons/dfl-seal-64.webp",
+  "./icons/dfl-seal-heritage-512.webp","./icons/dfl-seal-heritage-64.webp",
   "./icons/app-192.png","./icons/apple-touch-icon.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));

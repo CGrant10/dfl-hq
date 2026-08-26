@@ -190,7 +190,8 @@
   width: 150%; max-width: 720px;
   aspect-ratio: 1 / 1;
   transform: translate(-50%, -50%);
-  background: url("../icons/mark-512.webp") center / contain no-repeat;
+  background: #000 url("../icons/dfl-seal-heritage-512.webp") center / contain no-repeat;
+  border-radius: 50%;
   opacity: .07;
 }
 .bx-bg-light .bx-crest { opacity: .10; }

@@ -19,7 +19,8 @@
   position:absolute;
   inset:-5% -2%;
   z-index:-1;
-  background:url("../icons/dfl-seal-512.webp") center/contain no-repeat;
+  background:#000 url("../icons/dfl-seal-heritage-512.webp") center/contain no-repeat;
+  border-radius:50%;
   opacity:.15;
   filter:grayscale(1) brightness(1.9);
   pointer-events:none;
