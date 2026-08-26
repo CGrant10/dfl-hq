@@ -9,12 +9,17 @@
 // Field shape:
 //   { name, label, type, options?, optionsFrom?, required?, placeholder?, default? }
 // Types: text | textarea | number | date | select | checkbox | list | image
+//         | framing
 //   list  -> one item per line in a textarea, saved as a JSON array
 //   image -> a file picker that shrinks on the device and stores the picture
 //            in the column itself; still accepts a pasted link. The value is
 //            carried by a hidden text input, so this file's read/set paths
 //            treat it as ordinary text. Set `preset` to "avatar" for a square
 //            headshot, otherwise it is sized for a backdrop.
+//   framing -> a column that the image control above it already drew an input
+//            for (see `framing` on an image field). It contributes no markup
+//            of its own; it is listed so that reading and prefilling a row
+//            still happen by name, exactly like every other column.
 //
 // A select can take its choices from another table instead of a fixed
 // list, which is how owner profiles pick a synced Sleeper user:
@@ -24,7 +29,7 @@
 
 import { selectAll } from "./supabase.js";
 import { layoutFields } from "./form-layout.js";
-import { imageFieldHtml, setImageValue, wireImageFields } from "./image-field.js";
+import { imageFieldHtml, setImageValue, setImageFraming, wireImageFields } from "./image-field.js";
 import { selectFormValue } from "./form-value.js";
 import { esc, toArray } from "./ui.js";
 
@@ -101,7 +106,11 @@ export function field(f, prefix = "f_") {
          validated by the browser anyway - its input is hidden, and a hidden
          required input blocks submit with an error nobody can see. */
       return `<label for="${id}">${esc(f.label)}</label>${
-        imageFieldHtml({ id, name: f.name, preset: f.preset || "backdrop" })}`;
+        imageFieldHtml({ id, name: f.name, preset: f.preset || "backdrop", framing: f.framing || null })}`;
+    /* Drawn by the image control, which owns the preview these values change.
+       Two inputs with one name is how a form starts saving the wrong one. */
+    case "framing":
+      return "";
     case "select":
       input = `<select id="${id}" name="${f.name}" ${req}>
                  ${f.options.map((o) => `<option value="${esc(o.value ?? o)}">${esc(o.label ?? o)}</option>`).join("")}
@@ -118,6 +127,9 @@ export function setValue(form, f, value) {
   /* The image control is a group, not an input, so it is set through its own
      module - which also redraws the preview and the Remove button. */
   if (f.type === "image") { setImageValue(form, f.name, value); return; }
+  /* Same reason: the nine-cell grid and the preview have to follow the value,
+     and only image-field.js knows they exist. */
+  if (f.type === "framing") { setImageFraming(form, f.name, value); return; }
   const el = form.elements[f.name];
   if (!el) return;
   if (f.type === "checkbox")   el.checked = value === undefined ? true : !!value;

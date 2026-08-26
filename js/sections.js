@@ -327,24 +327,20 @@ export const SECTIONS = [
         the second half - see manualBackground() in broadcast-deck.js - and
         this is the first half: choose a picture where you write the words.
       */
-      { name: "image", label: "Picture (optional — becomes the slide's artwork)", type: "image" },
-      { name: "image_fit", advanced: true, label: "Picture fit", type: "select", default: "cover",
-        options: [
-          { value: "cover", label: "Fill and crop — fills the whole frame" },
-          { value: "contain", label: "Show entire image — no cropping" },
-        ] },
-      { name: "image_position_x", advanced: true, label: "Picture focus — horizontal", type: "select", default: "center",
-        options: [
-          { value: "left", label: "Left" },
-          { value: "center", label: "Center" },
-          { value: "right", label: "Right" },
-        ] },
-      { name: "image_position_y", advanced: true, label: "Picture focus — vertical", type: "select", default: "center",
-        options: [
-          { value: "top", label: "Top" },
-          { value: "center", label: "Center" },
-          { value: "bottom", label: "Bottom" },
-        ] },
+      { name: "image", label: "Picture (optional — becomes the slide's artwork)", type: "image", framing: true },
+      /*
+        THE CROP IS PART OF CHOOSING THE PICTURE, so it is drawn by the control
+        above rather than asked for again down here. These three lines are what
+        keeps the columns real: readForm() and setValue() still work by name, so
+        a framing set on the preview saves and a saved one loads back onto it.
+
+        They were three dropdowns reading "cover / center / center", which is a
+        description of a crop and not a way to make one - the answer is always
+        "his face", and you can only point at that.
+      */
+      { name: "image_fit", type: "framing", default: "cover" },
+      { name: "image_position_x", type: "framing", default: "center" },
+      { name: "image_position_y", type: "framing", default: "center" },
       { name: "href", advanced: true,     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
       /*
         TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.

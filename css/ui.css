@@ -937,3 +937,81 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .imgf-url summary { cursor: pointer; margin-top: 8px; }
 .imgf-url input { margin-top: 6px; }
 .imgf-hint { margin-top: 6px; }
+
+/* =====================================================================
+   THE FRAMING CONTROL - a crop you make by pointing at the picture.
+   ---------------------------------------------------------------------
+   Only broadcast slides grow this (see `framing` in js/image-field.js); the
+   avatar picker is untouched.
+
+   THE PREVIEW IS 16/9 AND THE STAGE IS NOT. The real stage is 52svh of
+   full-bleed width, so its shape depends on the phone holding it - there is
+   no one aspect this could match. 16/9 is the honest middle, and the point of
+   the control is WHICH PART of the picture survives a crop, which is the same
+   answer at any width. The exact composition is on the Running order above,
+   drawn by the real renderer.
+
+   The grid is nine transparent buttons over the image rather than beside it,
+   because "keep his face" is a thing you point at.
+   ===================================================================== */
+
+.imgf-frame { margin-top: 12px; }
+.imgf-frame[hidden] { display: none; }
+
+.imgf-frame-top {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 8px;
+  margin-bottom: 6px;
+}
+.imgf-frame-title { font-size: var(--fs-micro); color: var(--muted); }
+
+.imgf-fits { display: flex; gap: 0; }
+.imgf-fit {
+  font: inherit; font-size: var(--fs-micro);
+  padding: 5px 10px;
+  color: var(--muted);
+  background: var(--bg-3);
+  border: 1px solid var(--control-line);
+  cursor: pointer;
+}
+.imgf-fit:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.imgf-fit:last-child  { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: 0; }
+.imgf-fit.is-on { color: var(--chalk); background: var(--accent); border-color: var(--accent); }
+
+.imgf-frame-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-sm);
+  /* Shows through wherever "Show all of it" letterboxes the picture, so the
+     empty space reads as part of the slide rather than as a broken image. */
+  background: var(--bg-3);
+}
+.imgf-frame-stage img { width: 100%; height: 100%; display: block; }
+
+.imgf-grid {
+  position: absolute; inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+.imgf-cell {
+  border: 0; padding: 0; margin: 0;
+  background: transparent;
+  cursor: pointer;
+  /* The cells are only outlined on hover or when chosen, so an untouched
+     preview is a picture and not a tic-tac-toe board. */
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: box-shadow .12s ease, background-color .12s ease;
+}
+.imgf-cell > span[aria-hidden] {
+  display: block; width: 100%; height: 100%;
+}
+.imgf-cell:hover { background: rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.imgf-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.imgf-cell.is-on {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: transparent;
+}
+.imgf-frame-hint { margin-top: 6px; }

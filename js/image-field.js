@@ -30,8 +30,91 @@ import {
   MAX_SOURCE_BYTES, PRESETS, QUALITY_LADDER,
   containBox, coverSquare, dataUriBytes, describeValue, fmtBytes,
 } from "./image-shrink.js";
+/* The allow-lists and the style string are the SAME ones the stage draws with,
+   so the control cannot offer a framing the renderer will not honour. That
+   module is pure constants with no imports of its own, which is why a generic
+   control can borrow from it without dragging the broadcast in. */
+import { IMAGE_FITS, IMAGE_X, IMAGE_Y, artworkStyle } from "./broadcast-artwork.js";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/avif";
+
+/* =====================================================================
+   FRAMING - "which part of this picture do you want kept?"
+   ---------------------------------------------------------------------
+   Opt-in, because only a broadcast slide has columns to put it in: pass
+   framing:true on the field and the control grows a preview, a fit toggle
+   and a 3x3 focus grid whose nine cells ARE the nine object-position values
+   the stage allows. Everything else - an avatar, the look-alike picture -
+   renders exactly as it did.
+
+   IT IS A PICTURE, NOT A FORM. Cropping is the one decision on a slide that
+   cannot be made from a dropdown reading "center / bottom", because the
+   answer is "his face, which is up and to the left". So you click the part
+   of the photo you want kept and the preview re-crops under your finger.
+
+   The values still land in three ordinary hidden inputs named for their
+   columns, so readForm() and setValue() in form.js treat this as three text
+   fields and nothing about how a form saves had to change - the same trick
+   that made the picture itself a drop-in.
+   ===================================================================== */
+
+const FRAME_FALLBACK = { fit: "cover", x: "center", y: "center" };
+
+/* Nine cells, written the way somebody would say them out loud. */
+const FOCUS_LABELS = {
+  "left top": "Top left",       "center top": "Top",       "right top": "Top right",
+  "left center": "Left",        "center center": "Middle", "right center": "Right",
+  "left bottom": "Bottom left", "center bottom": "Bottom", "right bottom": "Bottom right",
+};
+
+/** Which column each part of the framing is saved into. */
+function framingNames(framing) {
+  if (!framing) return null;
+  const f = framing === true ? {} : framing;
+  return {
+    fit: f.fit || "image_fit",
+    x:   f.x   || "image_position_x",
+    y:   f.y   || "image_position_y",
+  };
+}
+
+function framingHtml(names) {
+  const cells = ["top", "center", "bottom"].flatMap((y) =>
+    ["left", "center", "right"].map((x) => {
+      const key = `${x} ${y}`;
+      const on = x === FRAME_FALLBACK.x && y === FRAME_FALLBACK.y;
+      return `<button type="button" class="imgf-cell${on ? " is-on" : ""}"
+        data-imgf-focus="${esc(key)}" aria-pressed="${on ? "true" : "false"}"
+        title="${esc(FOCUS_LABELS[key])}"><span aria-hidden="true"></span>
+        <span class="sr-only">${esc(FOCUS_LABELS[key])}</span></button>`;
+    })).join("");
+  return `
+    <div class="imgf-frame" data-imgf-frame hidden>
+      <input type="hidden" name="${esc(names.fit)}" value="${FRAME_FALLBACK.fit}" data-imgf-fit>
+      <input type="hidden" name="${esc(names.x)}" value="${FRAME_FALLBACK.x}" data-imgf-x>
+      <input type="hidden" name="${esc(names.y)}" value="${FRAME_FALLBACK.y}" data-imgf-y>
+      <div class="imgf-frame-top">
+        <span class="imgf-frame-title">How it sits on the slide</span>
+        <span class="imgf-fits">
+          <button type="button" class="imgf-fit is-on" data-imgf-set-fit="cover">Fill the slide</button>
+          <button type="button" class="imgf-fit" data-imgf-set-fit="contain">Show all of it</button>
+        </span>
+      </div>
+      <div class="imgf-frame-stage">
+        <img alt="" decoding="async" draggable="false" data-imgf-frame-img>
+        <div class="imgf-grid" data-imgf-grid>${cells}</div>
+      </div>
+      <div class="muted tiny imgf-frame-hint" data-imgf-frame-hint></div>
+    </div>`;
+}
+
+/* What the grid is doing changes with the fit, so the line under it does too -
+   the same nine cells mean "keep this bit" when the picture is cropped and
+   "put it here" when the whole picture is shown inside the frame. */
+const FRAME_HINTS = {
+  cover: "Tap the part of the picture to keep. The rest is cropped off the edges of the slide.",
+  contain: "The whole picture is shown. Tap where it should sit inside the slide.",
+};
 
 /**
  * The control, as markup.
@@ -46,9 +129,10 @@ const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/avif";
  *                 rather than through a <form>, so it needs its own hooks on
  *                 the element that actually holds the value.
  */
-export function imageFieldHtml({ id, name, value = "", preset = "backdrop", attrs = "" }) {
+export function imageFieldHtml({ id, name, value = "", preset = "backdrop", attrs = "", framing = null }) {
   const v = String(value || "");
   const p = PRESETS[preset] || PRESETS.backdrop;
+  const names = framingNames(framing);
   return `
     <div class="imgf" data-imgf data-preset="${esc(preset)}">
       <input type="hidden" id="${esc(id)}" name="${esc(name)}" value="${esc(v)}" data-imgf-value ${attrs}>
@@ -65,6 +149,7 @@ export function imageFieldHtml({ id, name, value = "", preset = "backdrop", attr
           <span class="muted tiny" data-imgf-note>${esc(describeValue(v))}</span>
         </div>
       </div>
+      ${names ? framingHtml(names) : ""}
       <details class="imgf-url">
         <summary class="muted tiny">Or paste a link</summary>
         <input type="text" placeholder="https://…" value="${esc(v.startsWith("data:") ? "" : v)}" data-imgf-url>
@@ -162,6 +247,98 @@ function apply(box, value) {
     const caption = [...pick.childNodes].reverse().find((n) => n.nodeType === 3);
     if (caption) caption.textContent = ` ${v ? "Replace" : "Choose"} picture`;
   }
+  paintFrame(box);
+}
+
+// ------------------------------------------------------------- the framing
+
+/** Read the three hidden inputs back, through the same allow-lists the stage uses. */
+function frameState(frame) {
+  const val = (sel) => frame.querySelector(sel)?.value;
+  const fit = val("[data-imgf-fit]"), x = val("[data-imgf-x]"), y = val("[data-imgf-y]");
+  return {
+    fit: IMAGE_FITS.has(fit) ? fit : FRAME_FALLBACK.fit,
+    x: IMAGE_X.has(x) ? x : FRAME_FALLBACK.x,
+    y: IMAGE_Y.has(y) ? y : FRAME_FALLBACK.y,
+  };
+}
+
+/**
+ * Redraw the preview and the two sets of buttons from the hidden inputs.
+ *
+ * One direction only: the inputs are the truth and everything visible is
+ * derived from them, which is why a click, a prefill from a saved row and a
+ * newly chosen picture all end up here rather than each keeping their own idea
+ * of what is selected.
+ */
+function paintFrame(box) {
+  const frame = box?.querySelector?.("[data-imgf-frame]");
+  if (!frame) return;
+  const value = box.querySelector("[data-imgf-value]")?.value || "";
+  /* Nothing to frame until there is a picture, and an empty crop tool reads as
+     a broken one. It appears the moment a picture is chosen. */
+  frame.hidden = !value;
+  const img = frame.querySelector("[data-imgf-frame-img]");
+  if (img && value && img.getAttribute("src") !== value) img.setAttribute("src", value);
+  if (!value) return;
+
+  const state = frameState(frame);
+  if (img) img.style.cssText = artworkStyle({ imageFit: state.fit, imageX: state.x, imageY: state.y });
+
+  frame.querySelectorAll("[data-imgf-set-fit]").forEach((b) => {
+    b.classList.toggle("is-on", b.dataset.imgfSetFit === state.fit);
+  });
+  const chosen = `${state.x} ${state.y}`;
+  frame.querySelectorAll("[data-imgf-focus]").forEach((b) => {
+    const on = b.dataset.imgfFocus === chosen;
+    b.classList.toggle("is-on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  const hint = frame.querySelector("[data-imgf-frame-hint]");
+  if (hint) hint.textContent = FRAME_HINTS[state.fit] || "";
+}
+
+/**
+ * Write one part of the framing and redraw.
+ *
+ * The input/change pair is the same one apply() fires, and for the same reason:
+ * the inline dialog enables Save by watching for edits, and a crop the user can
+ * see but cannot save would be worse than no crop tool at all.
+ */
+function setFrame(frame, patch) {
+  const put = (sel, v) => {
+    const el = frame.querySelector(sel);
+    if (!el || v === undefined) return;
+    el.value = v;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+  put("[data-imgf-fit]", patch.fit);
+  put("[data-imgf-x]", patch.x);
+  put("[data-imgf-y]", patch.y);
+  paintFrame(frame.closest("[data-imgf]"));
+}
+
+/**
+ * Prefill one framing column from a saved row, by column name.
+ *
+ * Same contract as setImageValue(): form.js knows the column, this module knows
+ * which of the nine cells that lights up.
+ */
+export function setImageFraming(root, name, value) {
+  const input = root?.querySelector?.(`[data-imgf-frame] input[name="${CSS.escape(String(name))}"]`);
+  if (!input) return;
+  const frame = input.closest("[data-imgf-frame]");
+  const allow = input.hasAttribute("data-imgf-fit") ? IMAGE_FITS
+              : input.hasAttribute("data-imgf-x")   ? IMAGE_X
+              : IMAGE_Y;
+  const fallback = input.hasAttribute("data-imgf-fit") ? FRAME_FALLBACK.fit
+                 : input.hasAttribute("data-imgf-x")   ? FRAME_FALLBACK.x
+                 : FRAME_FALLBACK.y;
+  /* A legacy row saved before these columns existed holds null, and an empty
+     hidden input would be sent back as "" against a CHECK constraint. */
+  input.value = allow.has(value) ? value : fallback;
+  paintFrame(frame?.closest("[data-imgf]"));
 }
 
 /**
@@ -209,6 +386,22 @@ export function wireImageFields() {
     if (!btn) return;
     e.preventDefault();
     apply(btn.closest("[data-imgf]"), "");
+  });
+
+  /* The framing, and both handlers do the same thing: change one hidden input
+     and let paintFrame() work out what the control should now look like. */
+  document.addEventListener("click", (e) => {
+    const fit = e.target.closest?.("[data-imgf-set-fit]");
+    if (fit) {
+      e.preventDefault();
+      setFrame(fit.closest("[data-imgf-frame]"), { fit: fit.dataset.imgfSetFit });
+      return;
+    }
+    const cell = e.target.closest?.("[data-imgf-focus]");
+    if (!cell) return;
+    e.preventDefault();
+    const [x, y] = String(cell.dataset.imgfFocus).split(" ");
+    setFrame(cell.closest("[data-imgf-frame]"), { x, y });
   });
 
   /* The pasted-link path. Applied on input rather than on a button, because a
