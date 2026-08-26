@@ -19,7 +19,10 @@
 //   framing -> a column that the image control above it already drew an input
 //            for (see `framing` on an image field). It contributes no markup
 //            of its own; it is listed so that reading and prefilling a row
-//            still happen by name, exactly like every other column.
+//            still happen by name, exactly like every other column. Mark it
+//            `numeric` where the column is a number - the crop tool's focal
+//            percentages and zoom are numeric(5,2) and numeric(4,2), and a
+//            string there is a coercion nobody asked for.
 //
 // A select can take its choices from another table instead of a fixed
 // list, which is how owner profiles pick a synced Sleeper user:
@@ -189,6 +192,9 @@ export function readForm(form, fields) {
       out[f.name] = el.value.split("\n").map((s) => s.trim()).filter(Boolean);
     } else if (f.type === "number") {
       out[f.name] = el.value === "" ? null : Number(el.value);
+    } else if (f.type === "framing") {
+      const v = el.value.trim();
+      out[f.name] = f.numeric ? (v === "" ? null : Number(v)) : v;
     } else if (f.type === "date") {
       /*
         An empty date is null, NOT "".

@@ -226,7 +226,7 @@ export async function loadBroadcastItems(now = new Date()) {
   try {
     const { data, error } = await db()
       .from("broadcast_items")
-      .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at,sort_order,dwell_seconds,background,created_at,logo_opacity,image_fit,image_position_x,image_position_y")
+      .select(BROADCAST_COLUMNS)
       .eq("active", true)
       /* THE RUNNING ORDER, and it is this query that decides it - the
          ranking below only decides where the manual BLOCK sits against
@@ -240,7 +240,7 @@ export async function loadBroadcastItems(now = new Date()) {
       /* 42703 is "column does not exist" - this install has the table but
          not the 1.5 migration. Fall back to the columns that shipped with
          the table rather than showing nothing. */
-      if (error.code === "42703") return loadBroadcastItemsLegacy(now);
+      if (error.code === "42703") return loadBroadcastItemsAt(BROADCAST_COLUMNS_NO_ZOOM, now);
       return [];
     }
     const t = now.getTime();
@@ -254,16 +254,43 @@ export async function loadBroadcastItems(now = new Date()) {
   }
 }
 
+/*
+  THE COLUMN SETS, NEWEST FIRST.
+
+  Postgres answers 42703 - "column does not exist" - for the whole query when
+  one column is missing, so an install that is a migration behind gets nothing
+  at all rather than a slide without its zoom. Each entry below is what the
+  table looked like after one migration, and the loader walks down until one
+  answers. Adding a column to the front of this list is the whole cost of
+  shipping ahead of a migration.
+*/
+export const BROADCAST_COLUMNS =
+  "id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured," +
+  "starts_at,ends_at,sort_order,dwell_seconds,background,created_at,logo_opacity," +
+  "image_fit,image_position_x,image_position_y,image_zoom";
+
+/** The 1.5 set: everything above except the crop tool's zoom. */
+const BROADCAST_COLUMNS_NO_ZOOM = BROADCAST_COLUMNS.replace(",image_zoom", "");
+
 /** The pre-1.5 column set, for an install that has not run the migration. */
-async function loadBroadcastItemsLegacy(now) {
+const BROADCAST_COLUMNS_PRE_15 =
+  "id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at";
+
+/** One more try, a migration further back. Returns [] once there is nowhere left. */
+async function loadBroadcastItemsAt(columns, now) {
   const { data, error } = await db()
     .from("broadcast_items")
-    .select("id,treatment,kicker,headline,subtitle,body,figure,image,href,temporal,weight,featured,starts_at,ends_at")
+    .select(columns)
     .eq("active", true)
     .order("featured", { ascending: false })
     .order("created_at", { ascending: true })
     .limit(20);
-  if (error) return [];
+  if (error) {
+    if (error.code === "42703" && columns !== BROADCAST_COLUMNS_PRE_15) {
+      return loadBroadcastItemsAt(BROADCAST_COLUMNS_PRE_15, now);
+    }
+    return [];
+  }
   const t = now.getTime();
   return (data || [])
     .filter((r) => !r.starts_at || new Date(r.starts_at).getTime() <= t)

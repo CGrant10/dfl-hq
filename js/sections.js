@@ -330,17 +330,22 @@ export const SECTIONS = [
       { name: "image", label: "Picture (optional — becomes the slide's artwork)", type: "image", framing: true },
       /*
         THE CROP IS PART OF CHOOSING THE PICTURE, so it is drawn by the control
-        above rather than asked for again down here. These three lines are what
+        above rather than asked for again down here. These four lines are what
         keeps the columns real: readForm() and setValue() still work by name, so
-        a framing set on the preview saves and a saved one loads back onto it.
+        a framing dragged onto the picture saves, and a saved one loads back.
 
-        They were three dropdowns reading "cover / center / center", which is a
-        description of a crop and not a way to make one - the answer is always
-        "his face", and you can only point at that.
+        They were dropdowns reading "cover / center / center", which is a
+        description of a crop and not a way to make one. Then they were nine
+        buttons, which is nine crops out of all of them. Now the picture is
+        dragged and pinched and the numbers are a consequence - x and y are
+        percentages across the artwork, zoom is how far past the stage's own
+        crop it is pushed. See broadcast_artwork_zoom_schema.sql, which has to
+        have been run for a framing to save.
       */
       { name: "image_fit", type: "framing", default: "cover" },
-      { name: "image_position_x", type: "framing", default: "center" },
-      { name: "image_position_y", type: "framing", default: "center" },
+      { name: "image_position_x", type: "framing", numeric: true, default: 50 },
+      { name: "image_position_y", type: "framing", numeric: true, default: 50 },
+      { name: "image_zoom", type: "framing", numeric: true, default: 1 },
       { name: "href", advanced: true,     label: "Tapping it goes to (optional)", type: "text", placeholder: "#/calendar" },
       /*
         TEMPORAL HONESTY IS NOT OPTIONAL, INCLUDING FOR HUMANS.

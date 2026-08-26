@@ -273,6 +273,18 @@
   object-fit: cover;
   object-position: center;
   /*
+    THE COMMISSIONER'S ZOOM, and it arrives as a custom property rather than as
+    an inline transform because the drift below is an animation and an inline
+    transform would simply lose to it. Everything that scales the artwork
+    multiplies by this instead, so a slide framed in the crop tool is the slide
+    that plays. See artworkStyle() in js/broadcast-artwork.js.
+
+    transform-origin is set inline to the same focal point the picture is
+    positioned on, which is what makes pushing in tighten around the face
+    rather than around the middle of the frame.
+  */
+  transform: scale(var(--bx-zoom, 1));
+  /*
     The picture sits UNDER the broadcast rather than being the broadcast.
     At full strength a photograph competes with the headline for the eye
     and the slide stops reading as a lower-third. Dropping it back lets
@@ -564,7 +576,20 @@
 .bx-slide.bx-in .mq-status          { animation: bx-settle 320ms var(--ease) 110ms both; }
 /* Artwork drifts, very slightly, for as long as it is on screen. */
 .bx-slide.bx-in .bx-art             { animation: bx-drift 9s linear both; }
-@keyframes bx-drift { from { transform: scale(1.06); } to { transform: scale(1.12); } }
+@keyframes bx-drift {
+  from { transform: scale(calc(var(--bx-zoom, 1) * 1.06)); }
+  to   { transform: scale(calc(var(--bx-zoom, 1) * 1.12)); }
+}
+/*
+  A SLIDE SOMEBODY FRAMED DOES NOT DRIFT.
+
+  The drift is house style on a picture nobody composed - it stops a
+  photograph sitting dead on the plate. But it also pushes in another 6-12%,
+  and on a slide where a commissioner has zoomed to a face and placed it
+  exactly, that is the tool lying about what will play. So the moment the zoom
+  is touched the drift stops and the framing is what is on screen.
+*/
+.bx-slide.bx-in .bx-art.is-framed   { animation: none; }
 
 /*
   REDUCED MOTION. tokens.css already collapses every duration to ~0, which
@@ -575,7 +600,10 @@
 */
 @media (prefers-reduced-motion: reduce) {
   .bx-sweep, .bx-slide.bx-in .bx-art { animation: none !important; }
-  .bx-art { transform: none !important; }
+  /* The MOTION goes, not the framing - scale(var(--bx-zoom)) is where the
+     commissioner put the picture, and dropping it would recompose the slide
+     for the people who asked for less movement. */
+  .bx-art { transform: scale(var(--bx-zoom, 1)) !important; }
   /*
     And the entrance. Press is a scale overshoot, which is exactly the kind of
     motion this query exists to remove, and its hardcoded 380ms does not answer

@@ -23,7 +23,7 @@ import { esc, toast, errorBox } from "../ui.js";
 import { db } from "../supabase.js";
 import { renderManager } from "../crud.js";
 import { specFor } from "../sections.js";
-import { GENERATOR_LABELS, generatorStanding, weightToPass, renderItemFromRow, loadBroadcastOverrides } from "../broadcast-deck.js";
+import { GENERATOR_LABELS, generatorStanding, weightToPass, renderItemFromRow, loadBroadcastOverrides, BROADCAST_COLUMNS } from "../broadcast-deck.js";
 import { renderItem } from "../broadcast-stage.js";
 import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
 import { imageFieldHtml, wireImageFields } from "../image-field.js";
@@ -139,12 +139,23 @@ function wireRefresh(host, again) {
 
 async function renderOrder(host) {
   if (!host) return;
-  const { data, error } = await db()
+  /* The same column list the front page reads, so the preview cannot be
+     drawn from a different row shape than the one that will play. */
+  let { data, error } = await db()
     .from("broadcast_items")
-    .select("id,headline,kicker,subtitle,body,figure,image,href,treatment,temporal,background,logo_opacity,image_fit,image_position_x,image_position_y,dwell_seconds,sort_order,featured,active")
+    .select(`${BROADCAST_COLUMNS},active`)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
+  /* A commissioner who has not run broadcast_artwork_zoom_schema.sql yet still
+     gets their running order, minus the column that migration adds. */
+  if (error?.code === "42703") {
+    ({ data, error } = await db()
+      .from("broadcast_items")
+      .select(`${BROADCAST_COLUMNS.replace(",image_zoom", "")},active`)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }));
+  }
   if (error) { host.innerHTML = errorBox(error); return; }
   const rows = data || [];
   if (!rows.length) {

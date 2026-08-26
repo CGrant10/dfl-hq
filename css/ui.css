@@ -939,20 +939,20 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .imgf-hint { margin-top: 6px; }
 
 /* =====================================================================
-   THE FRAMING CONTROL - a crop you make by pointing at the picture.
+   THE CROP SURFACE - a picture you drag, not a setting you pick.
    ---------------------------------------------------------------------
    Only broadcast slides grow this (see `framing` in js/image-field.js); the
    avatar picker is untouched.
 
    THE PREVIEW IS 16/9 AND THE STAGE IS NOT. The real stage is 52svh of
    full-bleed width, so its shape depends on the phone holding it - there is
-   no one aspect this could match. 16/9 is the honest middle, and the point of
-   the control is WHICH PART of the picture survives a crop, which is the same
-   answer at any width. The exact composition is on the Running order above,
-   drawn by the real renderer.
+   no one aspect this could match. What the crop tool decides is WHICH PART of
+   the picture survives, and that is stored as a percentage rather than a pixel
+   offset precisely so it means the same thing on every shape. The exact
+   composition is on the Running order above, drawn by the real renderer.
 
-   The grid is nine transparent buttons over the image rather than beside it,
-   because "keep his face" is a thing you point at.
+   touch-action:none IS LOAD-BEARING. Without it a phone claims the first
+   finger for scrolling the admin page and the drag never starts.
    ===================================================================== */
 
 .imgf-frame { margin-top: 12px; }
@@ -987,31 +987,49 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
   /* Shows through wherever "Show all of it" letterboxes the picture, so the
      empty space reads as part of the slide rather than as a broken image. */
   background: var(--bg-3);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.imgf-frame-stage img { width: 100%; height: 100%; display: block; }
+.imgf-frame-stage.is-dragging { cursor: grabbing; }
+/* A picture with nothing to pan - it already fits the frame exactly - says so
+   rather than offering a grab that does nothing. */
+.imgf-frame-stage.is-static { cursor: default; }
+.imgf-frame-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.imgf-grid {
-  position: absolute; inset: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+.imgf-frame-stage img {
+  width: 100%; height: 100%; display: block;
+  pointer-events: none;                 /* the surface handles the gesture */
+  -webkit-user-drag: none;
 }
-.imgf-cell {
-  border: 0; padding: 0; margin: 0;
-  background: transparent;
-  cursor: pointer;
-  /* The cells are only outlined on hover or when chosen, so an untouched
-     preview is a picture and not a tic-tac-toe board. */
-  box-shadow: inset 0 0 0 1px transparent;
-  transition: box-shadow .12s ease, background-color .12s ease;
+
+/*
+  The one affordance. Two crossed arrows in a corner say "this moves" without
+  putting a grid over a photograph somebody is trying to judge.
+*/
+.imgf-frame-grip {
+  position: absolute; right: 8px; bottom: 8px;
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  background: rgba(6,9,13,.55);
+  pointer-events: none;
+  opacity: .9;
 }
-.imgf-cell > span[aria-hidden] {
-  display: block; width: 100%; height: 100%;
+.imgf-frame-grip::before,
+.imgf-frame-grip::after {
+  content: ""; position: absolute; background: rgba(255,255,255,.85);
 }
-.imgf-cell:hover { background: rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
-.imgf-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.imgf-cell.is-on {
-  box-shadow: inset 0 0 0 2px var(--accent);
-  background: transparent;
+.imgf-frame-grip::before { left: 4px; right: 4px; top: 10px; height: 2px; }
+.imgf-frame-grip::after  { top: 4px; bottom: 4px; left: 10px; width: 2px; }
+.imgf-frame-stage.is-static .imgf-frame-grip { display: none; }
+
+.imgf-frame-tools {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 8px;
 }
+.imgf-zoom { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.imgf-zoom input[type="range"] { flex: 1 1 auto; min-width: 0; margin: 0; accent-color: var(--accent); }
+.imgf-zoom-mark { color: var(--muted); font-size: var(--fs-micro); line-height: 1; }
+
 .imgf-frame-hint { margin-top: 6px; }

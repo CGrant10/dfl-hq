@@ -159,7 +159,7 @@ function backdrop(item) {
      swaps the mark: same layer, same opacity, a toilet instead of the crest. */
   const crest = bg === "logo" || item.treatment === "champion";
   return `
-    ${art ? `<img class="bx-art" src="${esc(item.image)}" alt="" draggable="false" decoding="async" style="${artworkStyle(item)}">
+    ${art ? `<img class="bx-art${Number(item.imageZoom) > 1 ? " is-framed" : ""}" src="${esc(item.image)}" alt="" draggable="false" decoding="async" style="${artworkStyle(item)}">
              <span class="bx-scrim"></span>` : ""}
     <span class="bx-fx bx-corners" aria-hidden="true">
       <span class="bx-weave"></span>
