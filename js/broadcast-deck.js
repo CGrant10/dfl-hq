@@ -45,7 +45,7 @@ import { namer, moments, titleGame, fantasyState, latestPlayedWeek } from "./lor
 import { dayMood } from "./marquee.js";
 import { factOfTheDay } from "./funfacts.js";
 import { memberImage } from "./members.js";
-import { artworkSettings } from "./broadcast-artwork.js";
+import { artworkSettings, slideBackground, BACKGROUNDS } from "./broadcast-artwork.js";
 /* The 2022 floor lives with the card, which owns the rule. Importing it
    rather than restating it is what stopped these two disagreeing. */
 import { FIRST_SEASON as FIRST_CHIP_SEASON } from "./chip-eaters.js";
@@ -295,7 +295,7 @@ function manualItem(r) {
     figure: r.figure || null, image: r.image || null, href: r.href || null,
     /* Presentation, carried through to the stage untouched. An unknown
        value degrades to the house look rather than to a blank slide. */
-    background: BACKGROUNDS.has(r.background) ? r.background : "default",
+    background: slideBackground(r),
     ...artworkSettings(r),
     /* How strong the crest behind this slide should be. Unknown or absent
        means "default", so an install without the column behaves exactly as
@@ -383,8 +383,10 @@ function applyOverride(it, ov) {
 /** Watermark strengths a slide may choose. Words, not numbers - see the SQL. */
 export const LOGO_STEPS = new Set(["default", "subtle", "faint", "hidden"]);
 
-/** The background modes the stage knows how to draw. */
-export const BACKGROUNDS = new Set(["default", "light", "dark", "image", "logo"]);
+/* BACKGROUNDS and the picture rule live in broadcast-artwork.js, which has
+   no database import and so can be tested. Re-exported because this module
+   is where the deck's vocabulary is documented. */
+export { BACKGROUNDS };
 
 export async function loadGolfDay(outingId) {
   const [roundsRes, matchesRes, teamsRes] = await Promise.all([

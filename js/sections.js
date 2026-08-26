@@ -318,7 +318,16 @@ export const SECTIONS = [
       { name: "subtitle", label: "Subtitle", type: "text", placeholder: "Saturday, 7pm" },
       { name: "body",     label: "Body copy", type: "textarea", placeholder: "Bring your own excuses." },
       { name: "figure", advanced: true,   label: "Big figure (stat slides only)", type: "text", placeholder: "10" },
-      { name: "image", advanced: true,    label: "Background picture (optional)", type: "image" },
+      /*
+        UP FRONT, BECAUSE A PICTURE IS THE POINT OF THE SLIDE.
+
+        It sat behind "More options" with fourteen other fields, so making a
+        picture slide meant knowing to open the disclosure AND knowing that
+        Background had to be switched to "Image" as well. The deck now infers
+        the second half - see manualBackground() in broadcast-deck.js - and
+        this is the first half: choose a picture where you write the words.
+      */
+      { name: "image", label: "Picture (optional — becomes the slide's artwork)", type: "image" },
       { name: "image_fit", advanced: true, label: "Picture fit", type: "select", default: "cover",
         options: [
           { value: "cover", label: "Fill and crop — fills the whole frame" },
@@ -362,7 +371,7 @@ export const SECTIONS = [
       */
       { name: "background", advanced: true, label: "Background", type: "select", default: "default",
         options: [
-          { value: "default", label: "DFL house — the usual broadcast look" },
+          { value: "default", label: "Automatic — your picture if you added one, otherwise the DFL house look" },
           { value: "dark",    label: "Dark — dramatic title card" },
           { value: "light",   label: "Light — light plate, dark type" },
           { value: "image",   label: "Image — use the image above as artwork" },
