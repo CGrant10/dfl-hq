@@ -162,6 +162,7 @@ function ensureStyles() {
   style.textContent += `.tb-scorecard-body{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;overflow:hidden}.tb-scorecard-body .tb-table-wrap{flex:1 1 auto}.tb-legend{flex:0 0 auto;margin:10px 12px 8px;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 1px 4px #0000000e}.tb-legend h3{margin:0;padding:9px 13px;background:#426a7d;color:#fff;font-size:14px}.tb-legend-grid{display:grid;grid-template-columns:repeat(11,minmax(58px,1fr));gap:8px;padding:10px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.tb-legend-item{display:grid;justify-items:center;gap:4px;min-width:58px;color:#444;font-size:9px;text-align:center}.tb-legend-item .tb-card-mark{width:28px;height:28px}.tb-legend-item>strong{display:grid;place-items:center;width:28px;height:28px;font-size:14px}`;
   style.textContent += `.tb-bottom.is-member{grid-template-columns:1fr 1fr;margin-top:0}.tb-bottom.is-member .btn{min-height:42px;padding-block:8px}.tb-play{padding-bottom:calc(90px + var(--bl-h,30px) + env(safe-area-inset-bottom))}`;
   style.textContent += `.tb-card-head h2{flex:1}.tb-share-card{min-height:40px;padding:0 12px;border:1px solid #477fbd;border-radius:9px;background:transparent;color:#477fbd;font-weight:900}`;
+  style.textContent += `.tb-card-head h2{min-width:0}.tb-share-card,.tb-clear-card{flex:0 0 auto;white-space:nowrap;font-size:11px}.tb-clear-card{min-height:40px;padding:0 12px;border:1px solid #a65b56;border-radius:9px;background:transparent;color:#a65b56;font-weight:900}.tb-clear-card:disabled{opacity:.5}`;
   style.textContent += `.tb-custom-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;gap:9px;margin-top:12px}.tb-custom-grid label{display:grid;gap:5px}.tb-custom-grid label span{overflow:hidden;color:var(--accent-2);font-size:9px;font-weight:950;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase}.tb-custom-grid>strong{padding-bottom:13px;color:var(--muted);font-size:9px}.tb-board-setting{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-board-setting span{min-width:0}.tb-board-setting strong,.tb-board-setting small{display:block}.tb-board-setting strong{font-size:11px}.tb-board-setting small{margin-top:2px;color:var(--muted);font-size:9px;line-height:1.35}.tb-board-setting input{flex:0 0 auto;width:22px;height:22px;accent-color:var(--accent-2-fill)}.tb-score{border-color:var(--control-line)!important;background:var(--bg-3)!important;color:var(--text)!important;box-shadow:var(--shadow)}.tb-score b{color:var(--accent-2)!important}`;
   style.textContent += `.tb-member-add{display:grid;gap:8px;margin-top:9px}.tb-member-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px;width:100%;height:min(42dvh,360px);min-height:240px;overflow-y:auto;padding:9px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3)}.tb-member-picker.is-empty{height:auto;min-height:0}.tb-member-picker label{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:7px 9px;border:1px solid var(--line-soft);border-radius:9px;background:var(--bg-2);font-size:11px;font-weight:800}.tb-member-picker input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent-2-fill)}.tb-member-picker span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-member-add>.btn{min-height:46px}.tb-setup-guide{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--bg-2);box-shadow:var(--shadow)}.tb-guide-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.tb-guide-step{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:7px;min-width:0;min-height:52px;padding:7px;border:1px solid var(--line);border-radius:11px;background:var(--bg-3);color:var(--text);text-align:left}.tb-guide-step>b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px}.tb-guide-step span,.tb-guide-step small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tb-guide-step span{font-size:10px;font-weight:950;text-transform:uppercase}.tb-guide-step small{margin-top:2px;color:var(--muted);font-size:8px}.tb-guide-step.is-done{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}.tb-guide-step.is-done>b{background:var(--ok);color:var(--bg)}.tb-guide-step.is-current{border-color:var(--accent-2);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent-2) 18%,transparent)}.tb-guide-step.is-current>b{background:var(--accent-2-fill);color:#fff}.tb-guide-next{margin:10px 2px 0;color:var(--muted);font-size:10px;line-height:1.45}.tb-guide-next strong{color:var(--accent-2)}@media(max-width:520px){.tb-guide-step{grid-template-columns:1fr;place-items:center;text-align:center}.tb-guide-step span{font-size:9px}.tb-guide-step small{display:none}}@media(max-width:440px){.tb-member-picker{grid-template-columns:1fr}}`;
   style.textContent += `.tb-quick-sheet .tb-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tb-quick-sheet .tb-control{min-width:0}.tb-quick-sheet .tb-step{grid-template-columns:36px minmax(38px,1fr) 36px;gap:3px}.tb-quick-sheet .tb-step button{height:48px;font-size:25px}.tb-quick-sheet .tb-step output{height:48px;font-size:22px}.tb-round-stats{display:grid;gap:8px;padding:12px;background:#f5f5f4}.tb-stat-summary{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(3,minmax(60px,1fr));gap:7px;padding:9px;border:1px solid #d8dde0;border-radius:12px;background:#fff}.tb-stat-summary>strong{align-self:center;overflow:hidden;text-overflow:ellipsis}.tb-stat-summary span{display:grid;place-items:center;padding:6px 3px;border-radius:8px;background:#eaf1f5;text-align:center}.tb-stat-summary b,.tb-stat-summary small{display:block}.tb-stat-summary small{color:#55707f;font-size:8px;text-transform:uppercase}`;
@@ -186,6 +187,26 @@ function persistScore(state, sideId, hole, strokes, putts, drops) {
   queueSideScore(state.outing.id, sideId, hole, strokes || null, putts, drops);
   cacheBetaState(state);
 }
+
+/*
+  ONE PRESS CLEARS THE WHOLE EVENT.
+
+  A golfer clearing their own hole is the sheet's "Clear hole" button and stays
+  hole by hole. A commissioner wiping a testing round is a different job, so this
+  takes every stroke of every side in the event at once. Setup carries it as a
+  section; the scorecard header carries the same button, because that is the
+  screen a commissioner is standing on when the test scores are in front of them.
+*/
+async function clearAllBetaScores(state) {
+  const sideIds = state.sides.map(side => Number(side.id)).filter(Boolean);
+  if (!sideIds.length) throw new Error("No Tournament Beta scorecards were found.");
+  const result = await db().from("golf_match_scores").delete().in("side_id", sideIds).select("id");
+  if (result.error) throw result.error;
+  if ((result.data || []).length < Number(state.persistedScoreCount || 0)) throw new Error("Some scores could not be cleared. Check commissioner Golf permission and try again.");
+  dropPendingSides(sideIds);
+}
+
+const clearAllPrompt = state => `Clear all ${state.scoreRows.size} scored hole${state.scoreRows.size === 1 ? "" : "s"} from this Tournament Beta event?\n\nGolfers, matches, course and setup will stay. This cannot be undone.`;
 
 const matchSides = (state, entry) => (entry?.battles || []).flatMap(b => b.sides);
 const memberPicker = available => `<div class="tb-member-add"><div class="tb-member-picker ${available.length ? "" : "is-empty"}" role="group" aria-label="Choose one or more DFL golfers">${available.map(member => `<label><input type="checkbox" value="${member.id}" data-tb-member><span>${esc(nameOf(member))}</span></label>`).join("") || `<span class="tb-copy">Every DFL golfer is already added.</span>`}</div><button class="btn" data-tb-add-member ${available.length ? "" : "disabled"}>Add selected golfers</button></div>`;
@@ -509,14 +530,9 @@ function wireSetup(root, state) {
   root.querySelector("[data-tb-set-code]")?.addEventListener("click", e => busy(e.currentTarget, async () => { const input = root.querySelector("[data-tb-guest-code]"), code = input?.value.trim() || ""; if (code.length < 4) throw new Error("Use at least four characters for the guest code."); const r = await db().rpc("golf_set_event_code", { p_outing_id: Number(state.outing.id), p_code: code }); if (r.error) throw r.error; toast("Guest access code set"); setupSection.set(state.outing.id, "guest-access"); await paint(); }));
   root.querySelector("[data-tb-clear-code]")?.addEventListener("click", e => { if (!confirm("Clear the guest access code? Guests will lose access immediately.")) return; busy(e.currentTarget, async () => { const r = await db().rpc("golf_set_event_code", { p_outing_id: Number(state.outing.id), p_code: "" }); if (r.error) throw r.error; toast("Guest access code cleared"); setupSection.set(state.outing.id, "guest-access"); await paint(); }); });
   root.querySelector("[data-tb-reset-scores]")?.addEventListener("click", e => {
-    if (!confirm(`Clear all ${state.scoreRows.size} scored hole${state.scoreRows.size === 1 ? "" : "s"} from this Tournament Beta event?\n\nGolfers, matches, course and setup will stay. This cannot be undone.`)) return;
+    if (!confirm(clearAllPrompt(state))) return;
     busy(e.currentTarget, async () => {
-      const sideIds = state.sides.map(side => Number(side.id)).filter(Boolean);
-      if (!sideIds.length) throw new Error("No Tournament Beta scorecards were found.");
-      const result = await db().from("golf_match_scores").delete().in("side_id", sideIds).select("id");
-      if (result.error) throw result.error;
-      if ((result.data || []).length < Number(state.persistedScoreCount || 0)) throw new Error("Some scores could not be cleared. Check commissioner Golf permission and try again.");
-      dropPendingSides(sideIds);
+      await clearAllBetaScores(state);
       toast("Tournament Beta scorecards cleared");
       setupSection.set(state.outing.id, "score-reset");
       await paint();
@@ -589,6 +605,20 @@ function wireSetup(root, state) {
 function wireMatch(root, state) {
   stopSyncWatch();
   const cardHead=root.querySelector(".tb-scorecard:not(.tb-leaderboard-view) .tb-card-head"),shareButton=document.createElement("button");shareButton.type="button";shareButton.className="tb-share-card";shareButton.textContent="Share";cardHead?.appendChild(shareButton);shareButton.addEventListener("click",()=>{const result=shareScorecard(shareButton.closest(".tb-scorecard"),"Tournament scorecard");toast(result==="copied"?"Scorecard copied":"Scorecard ready to share",result==="failed")});
+  if (state.organizer && cardHead) {
+    const clearAll = document.createElement("button");
+    clearAll.type = "button"; clearAll.className = "tb-clear-card"; clearAll.textContent = "Clear all";
+    clearAll.title = "Clear every score in this event";
+    cardHead.appendChild(clearAll);
+    clearAll.addEventListener("click", async () => {
+      if (!state.scoreRows.size) { toast("There are no scores to clear"); return; }
+      if (state.stale) { toast("Reconnect before clearing scores.", true); return; }
+      if (!confirm(clearAllPrompt(state))) return;
+      clearAll.disabled = true;
+      try { await clearAllBetaScores(state); toast("Every scorecard cleared"); await paint(); }
+      catch (error) { clearAll.disabled = false; toast(error?.message || "Scores could not be cleared", true); }
+    });
+  }
   const updateSync = () => { const line = root.querySelector("[data-tb-sync]"); if (line) line.textContent = syncText(state); };
   const stopQueue = onQueueChange(updateSync);
   addEventListener("online", updateSync); addEventListener("offline", updateSync);
