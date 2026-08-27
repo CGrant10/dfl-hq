@@ -1,17 +1,42 @@
 // =====================================================================
 // member-wall.js - The Wall. Members post, everybody reads.
+// ---------------------------------------------------------------------
+// A POSTED PICTURE IS FRAMED THE WAY A SLIDE IS. The photo box is a fixed
+// shape, so the browser used to centre-crop whatever was handed to it and
+// the crop cut faces out of half the phone photos on here. The composer now
+// draws the app's image field with the broadcast's crop surface on it: the
+// picture is dragged and pinched, and where it sits is saved beside it in
+// the four columns member_wall_framing_schema.sql adds.
+//
+// POSTS FROM BEFORE THAT ARE NOT TOUCHED. image_fit is NULL on them and
+// photoHtml() draws those exactly as it always did - natural shape, no
+// fixed box. Nothing already on the Wall moves.
 // =====================================================================
 
 import { db, isAdmin } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { esc, toast } from "./ui.js";
-import { shrinkToDataUri } from "./image-field.js";
+import { imageFieldHtml, wireImageFields } from "./image-field.js";
+/* The same arithmetic the broadcast stage draws a slide's artwork with, so a
+   framing made on the Wall's crop surface is rendered by the module that
+   defined it rather than by a second reading of the same four columns. */
+import { artworkStyle } from "./broadcast-artwork.js";
 import { icon } from "./icons.js";
 import { identityByline, accentOf } from "./profile-identity.js";
 
+/* The crop surface is drawn as a string into the card, and its listeners are
+   delegated on the document - so this has to be registered by whoever can draw
+   it, exactly as form.js does for the admin forms. Idempotent. */
+wireImageFields();
+
 const TABLE_GONE = /member_wall_posts|could not find the table/i;
-const COLUMN_GONE = /profile_title|favorite_team|featured_achievement|accent_color/i;
+const COLUMN_GONE = /profile_title|favorite_team|featured_achievement|accent_color|image_fit|image_position|image_zoom/i;
+/* The framing columns come off first, because member_wall_framing_schema.sql
+   may not have been run yet and the Wall is not allowed to go dark over a
+   presentation column. */
+const FRAMING_COLUMNS = "image_fit,image_position_x,image_position_y,image_zoom";
 const SELECTS = [
+  `id,member_id,body,image,${FRAMING_COLUMNS},created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)`,
   "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)",
   "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement)",
   "id,member_id,body,image,created_at,members(display_name,profile_image)",
@@ -43,16 +68,41 @@ export function wallCard(rows) {
   </section>`;
 }
 
+/*
+  The picture is the app's image field with the broadcast's crop surface turned
+  on - drag it, pinch it, zoom it - rather than a file input and a preview that
+  showed a shape the feed did not use.
+
+  WHY IT IS THE SHARED CONTROL AND NOT A SECOND ONE. The old composer shrank
+  the file itself and kept the result in a closure, which is why it could show
+  a picture but never say where it sat. imageFieldHtml() puts the value and the
+  framing in hidden inputs named for their columns, so submit reads them off
+  the form like any other field and the crop tool needs no wiring here.
+
+  WALL_PHOTO_ASPECT IS PASSED IN AND ALSO IN THE STYLESHEET. The crop is only
+  honest if the box the user drags in is the box the post is drawn in; the two
+  are the same number, named here so a change moves both.
+*/
+const WALL_PHOTO_ASPECT = "4 / 5";
+
+const WALL_FRAMING = {
+  title: "How it sits on the Wall",
+  fillLabel: "Fill the frame",
+  aspect: WALL_PHOTO_ASPECT,
+  hints: {
+    cover: "Drag to move it. Pinch, scroll or use the slider to zoom in. Nothing outside the frame is posted.",
+    contain: "The whole picture is shown. Drag to place it, and zoom in to crop instead.",
+  },
+};
+
 function composer() {
   return `<form class="wall-form" data-wall-form>
     <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…" data-wall-body></textarea>
-    <img data-wall-preview class="wall-preview hidden" alt="">
+    <div class="wall-picture">
+      <span class="wall-picture-label">${icon("camera", { size: 15 })}<span>Picture (optional)</span></span>
+      ${imageFieldHtml({ id: "wall-image", name: "image", preset: "backdrop", framing: WALL_FRAMING })}
+    </div>
     <div class="wall-actions">
-      <label class="btn ghost small wall-pick">
-        <input data-wall-image type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden>
-        ${icon("camera", { size: 15 })}<span>Picture</span>
-      </label>
-      <span class="muted tiny wall-note" data-wall-file></span>
       <button class="btn small wall-send" type="submit">Post</button>
     </div>
   </form>`;
@@ -110,9 +160,32 @@ function postHtml(r) {
     </div>
     ${r.body ? `<p class="wall-body" data-wall-body-display>${esc(r.body)}</p>` : `<p class="wall-body hidden" data-wall-body-display></p>`}
     ${editForm}
-    ${r.image ? `<img class="wall-photo" src="${esc(r.image)}" alt="Posted by ${esc(name)}" loading="lazy" decoding="async">` : ""}
+    ${photoHtml(r, name)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
   </article>`;
+}
+
+/**
+ * A post's picture, framed if whoever posted it framed one.
+ *
+ * TWO RENDERINGS, ON PURPOSE. image_fit is NULL on every post made before the
+ * crop tool existed, and cropping those to the new box would move ten years of
+ * pictures nobody asked to move - so an unframed post is drawn exactly as it
+ * always was, at its natural shape. A framed one gets the fixed box it was
+ * framed in and the style the broadcast stage draws with.
+ */
+function photoHtml(r, name) {
+  if (!r.image) return "";
+  const alt = `Posted by ${esc(name)}`;
+  const img = (cls, style) =>
+    `<img class="${cls}" ${style ? `style="${style}"` : ""} src="${esc(r.image)}" alt="${alt}" loading="lazy" decoding="async">`;
+  if (!r.image_fit) return img("wall-photo");
+  /* --bx-zoom is spent on a transform right here: the stage hands it to a drift
+     animation instead, and the Wall has no animation to hand it to. */
+  const style = `${artworkStyle({
+    imageFit: r.image_fit, imageX: r.image_position_x, imageY: r.image_position_y, imageZoom: r.image_zoom,
+  })};transform:scale(var(--bx-zoom))`;
+  return `<div class="wall-photo-frame">${img("wall-photo-framed", esc(style))}</div>`;
 }
 
 async function mutatePost(id, action) {
@@ -122,37 +195,46 @@ async function mutatePost(id, action) {
   if (!data?.length) throw new Error("That Wall change was refused.");
 }
 
-export function wireWall(root, onChanged) {
-  let image = "";
-  const form = root.querySelector("[data-wall-form]");
+/** Which parts of a post the framing columns are, once a picture exists. */
+function framingFrom(fd) {
+  const num = (key) => {
+    const n = Number(fd.get(key));
+    return Number.isFinite(n) ? n : null;
+  };
+  const fit = String(fd.get("image_fit") || "");
+  if (fit !== "cover" && fit !== "contain") return null;
+  const x = num("image_position_x"), y = num("image_position_y"), zoom = num("image_zoom");
+  if (x === null || y === null || zoom === null) return null;
+  return { image_fit: fit, image_position_x: x, image_position_y: y, image_zoom: zoom };
+}
 
-  root.querySelector("[data-wall-image]")?.addEventListener("change", async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const note = root.querySelector("[data-wall-file]");
-    const preview = root.querySelector("[data-wall-preview]");
-    try {
-      if (note) note.textContent = "Shrinking…";
-      image = await shrinkToDataUri(file, "backdrop");
-      if (note) note.textContent = "Picture ready";
-      if (preview) { preview.src = image; preview.classList.remove("hidden"); }
-    } catch (err) {
-      image = "";
-      if (note) note.textContent = err?.message || "Could not read that picture";
-      if (preview) { preview.removeAttribute("src"); preview.classList.add("hidden"); }
-    }
-  });
+export function wireWall(root, onChanged) {
+  const form = root.querySelector("[data-wall-form]");
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const me = currentMember();
     if (!me) return;
-    const body = String(new FormData(form).get("body") || "").trim();
+    const fd = new FormData(form);
+    const body = String(fd.get("body") || "").trim();
+    /* The image field's hidden input holds a data URI it shrank on this device,
+       or a pasted link. Either way it is just a value on the form now. */
+    const image = String(fd.get("image") || "").trim();
     if (!body && !image) { toast("Write something or add a picture", true); return; }
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = "Posting…";
-    const { error } = await db().from("member_wall_posts").insert({ member_id: me.id, body, image: image || null });
+    const post = { member_id: me.id, body, image: image || null };
+    const framing = image ? framingFrom(fd) : null;
+
+    /* The framing columns go up when they exist and are dropped when they do
+       not: member_wall_framing_schema.sql is a separate step, and a post that
+       fails because a presentation column is missing is a post lost over
+       nothing. The picture and the words are what matter. */
+    let error = (await db().from("member_wall_posts").insert(framing ? { ...post, ...framing } : post)).error;
+    if (error && framing && COLUMN_GONE.test(error.message || "")) {
+      error = (await db().from("member_wall_posts").insert(post)).error;
+    }
     if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
     toast("Posted");
     onChanged?.();

@@ -109,23 +109,24 @@
   resize: vertical;
   font: inherit;
 }
-.wall-preview {
-  display: block; width: 100%; height: auto;
-  max-height: 300px; object-fit: cover;
-  border-radius: var(--r-md); border: 1px solid var(--line);
+/* The picture is the shared image field with the broadcast's crop surface on
+   it (see WALL_FRAMING in js/member-wall.js), so there is nothing to style
+   here but the heading above it - and the frame it draws is the shape the
+   posted photo is drawn in below. */
+.wall-picture { display: grid; gap: 6px; }
+.wall-picture-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-micro); color: var(--muted);
 }
-.wall-preview.hidden { display: none; }
+/* The field's own "shrunk on your device" line already says what the old note
+   beside the button said, and twice is noise. */
+.wall-picture .imgf-hint { margin-top: 4px; }
 
 .wall-actions {
   display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;
 }
-.wall-pick { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.wall-note { min-width: 0; flex: 1 1 auto; }
-/* The send button is pinned right on one line and drops to full width when
-   the note above it has already forced a wrap. */
 .wall-send { margin-left: auto; }
 @media (max-width: 380px) {
-  .wall-note { flex-basis: 100%; order: 3; }
   .wall-send { margin-left: 0; flex: 1 1 auto; }
 }
 
@@ -202,12 +203,32 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* An UNFRAMED post - anything from before the crop tool. Untouched: it is
+   drawn at its natural shape the way it always was, and only the max-height
+   crops, which is exactly the behaviour the framed box below replaces. */
 .wall-photo {
   display: block; width: 100%; height: auto;
   max-height: 340px; object-fit: cover;
   border-radius: var(--r-md); border: 1px solid var(--line);
 }
 @media (min-width: 760px) { .wall-photo { max-height: 460px; } }
+
+/* A FRAMED post. The box is the one the picture was dragged in, so the aspect
+   here and WALL_PHOTO_ASPECT in js/member-wall.js are the same number - a crop
+   made in one shape and shown in another is not a crop, it is a surprise.
+   Capped and centred rather than stretched: a 4/5 box at the full width of a
+   desktop card would be 700px of photograph. */
+.wall-photo-frame {
+  overflow: hidden;
+  width: 100%; max-width: 340px; margin-inline: auto;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--r-md); border: 1px solid var(--line);
+  /* Shows through wherever "Show all of it" letterboxes the picture. */
+  background: var(--bg-3);
+}
+/* object-fit and object-position come from the row, inline, via artworkStyle();
+   the scale is the zoom, about that same point. */
+.wall-photo-framed { display: block; width: 100%; height: 100%; }
 
 .wall-submit {
   display: inline-flex; align-items: center; gap: 6px;

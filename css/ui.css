@@ -942,8 +942,8 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 /* =====================================================================
    THE CROP SURFACE - a picture you drag, not a setting you pick.
    ---------------------------------------------------------------------
-   Only broadcast slides grow this (see `framing` in js/image-field.js); the
-   avatar picker is untouched.
+   A broadcast slide and a Wall post grow this (see `framing` in
+   js/image-field.js); the avatar picker is untouched.
 
    THE PREVIEW IS 16/9 AND THE STAGE IS NOT. The real stage is 52svh of
    full-bleed width, so its shape depends on the phone holding it - there is
@@ -981,7 +981,11 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 
 .imgf-frame-stage {
   position: relative;
-  aspect-ratio: 16 / 9;
+  /* 16/9 unless the caller says otherwise. The Wall renders a post's picture
+     in a known shape and passes that shape in, so its crop tool and its feed
+     are the same box; the broadcast has no one shape to match and keeps the
+     default (see `aspect` in js/image-field.js). */
+  aspect-ratio: var(--imgf-aspect, 16 / 9);
   overflow: hidden;
   border: 1px solid var(--control-line);
   border-radius: var(--r-sm);

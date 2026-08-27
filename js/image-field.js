@@ -1,9 +1,9 @@
 // =====================================================================
 // image-field.js - "choose a picture" wherever the app used to say "URL".
 // ---------------------------------------------------------------------
-// One control, four places: the member's own DFL page, the Members admin
-// form (profile / broadcast / look-alike / chaos), and a broadcast slide's
-// backdrop. They all ended up asking for a URL, which meant every picture
+// One control, five places: the member's own DFL page, the Members admin
+// form (profile / broadcast / look-alike / chaos), a broadcast slide's
+// backdrop, and a Wall post's picture. They all ended up asking for a URL, which meant every picture
 // in this league lived on somebody else's server and half of them are gone.
 //
 // WHAT IT IS
@@ -44,9 +44,10 @@ const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/avif";
 /* =====================================================================
    FRAMING - drag it, pinch it, put it exactly where you want it.
    ---------------------------------------------------------------------
-   Opt-in, because only a broadcast slide has columns to put it in: pass
-   framing:true on the field and the control grows a crop surface. An avatar
-   and the look-alike picture render exactly as they did.
+   Opt-in, because not every picture has columns to put a framing in: pass
+   framing:true - or an object, to name the columns, the wording and the shape
+   of the preview - and the control grows a crop surface. A broadcast slide and
+   a Wall post do; an avatar and the look-alike picture render as they did.
 
    IT IS THE PICTURE THAT MOVES, NOT A SETTING. This was nine buttons over a
    preview, which is nine framings out of all of them, and "his face" is
@@ -79,24 +80,50 @@ function framingNames(framing) {
   };
 }
 
-function framingHtml(names) {
+/**
+ * What the surface is called and what shape it is.
+ *
+ * The broadcast is not the only place with a crop any more - the Wall frames a
+ * post's picture with the same control - so the words and the preview's shape
+ * are the caller's, not this module's. The hints ride on the element as data
+ * attributes because paintFrame() only ever reads the DOM: one direction, and
+ * a second surface on the page cannot pick up the first one's wording.
+ */
+function framingLook(framing) {
+  const f = framing === true || !framing ? {} : framing;
+  const hints = { ...FRAME_HINTS, ...(f.hints || {}) };
+  return {
+    title: f.title || "How it sits on the slide",
+    fillLabel: f.fillLabel || "Fill the slide",
+    hints,
+    /* The preview's shape. Left off, it is the 16/9 in the stylesheet - which
+       is what the broadcast stage has always used. A caller that renders the
+       saved picture in a known shape should pass that shape, so the crop the
+       user makes is the crop they get. */
+    aspect: f.aspect ? `style="--imgf-aspect:${esc(f.aspect)}"` : "",
+  };
+}
+
+function framingHtml(names, look) {
   return `
-    <div class="imgf-frame" data-imgf-frame hidden>
+    <div class="imgf-frame" data-imgf-frame hidden
+         data-imgf-hint-cover="${esc(look.hints.cover)}"
+         data-imgf-hint-contain="${esc(look.hints.contain)}">
       <input type="hidden" name="${esc(names.fit)}"  value="${FRAME_FALLBACK.fit}"  data-imgf-fit>
       <input type="hidden" name="${esc(names.x)}"    value="${FRAME_FALLBACK.x}"    data-imgf-x>
       <input type="hidden" name="${esc(names.y)}"    value="${FRAME_FALLBACK.y}"    data-imgf-y>
       <input type="hidden" name="${esc(names.zoom)}" value="${FRAME_FALLBACK.zoom}" data-imgf-zoom>
       <div class="imgf-frame-top">
-        <span class="imgf-frame-title">How it sits on the slide</span>
+        <span class="imgf-frame-title">${esc(look.title)}</span>
         <span class="imgf-fits">
-          <button type="button" class="imgf-fit is-on" data-imgf-set-fit="cover">Fill the slide</button>
+          <button type="button" class="imgf-fit is-on" data-imgf-set-fit="cover">${esc(look.fillLabel)}</button>
           <button type="button" class="imgf-fit" data-imgf-set-fit="contain">Show all of it</button>
         </span>
       </div>
       ${/* tabindex and the key handler are not decoration: this control is a
            drag surface, and a drag surface with no keyboard is a control some
            people simply cannot use. Arrows nudge, +/- zoom, 0 resets. */""}
-      <div class="imgf-frame-stage" data-imgf-frame-stage tabindex="0"
+      <div class="imgf-frame-stage" data-imgf-frame-stage tabindex="0" ${look.aspect}
            role="application" aria-label="Drag the picture to frame it. Arrow keys nudge, plus and minus zoom, 0 resets.">
         <img alt="" decoding="async" draggable="false" data-imgf-frame-img>
         <span class="imgf-frame-grip" aria-hidden="true"></span>
@@ -156,7 +183,7 @@ export function imageFieldHtml({ id, name, value = "", preset = "backdrop", attr
           <span class="muted tiny" data-imgf-note>${esc(describeValue(v))}</span>
         </div>
       </div>
-      ${names ? framingHtml(names) : ""}
+      ${names ? framingHtml(names, framingLook(framing)) : ""}
       <details class="imgf-url">
         <summary class="muted tiny">Or paste a link</summary>
         <input type="text" placeholder="https://…" value="${esc(v.startsWith("data:") ? "" : v)}" data-imgf-url>
@@ -319,7 +346,9 @@ function paintFrame(box) {
   const range = frame.querySelector("[data-imgf-zoom-range]");
   if (range && Number(range.value) !== state.zoom) range.value = String(state.zoom);
   const hint = frame.querySelector("[data-imgf-frame-hint]");
-  if (hint) hint.textContent = FRAME_HINTS[state.fit] || "";
+  /* The wording is the caller's - it rode in on the element - and the module's
+     own default is only the fallback. */
+  if (hint) hint.textContent = frame.dataset[state.fit === "contain" ? "imgfHintContain" : "imgfHintCover"] || FRAME_HINTS[state.fit] || "";
 
   /* An axis with nothing to pan cannot be dragged, and a grab cursor over a
      picture that will not move is a lie. Both axes flat means it fits exactly. */
