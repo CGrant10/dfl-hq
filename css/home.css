@@ -213,6 +213,13 @@
 }
 @media (min-width: 760px) { .wall-photo { max-height: 460px; } }
 
+/* The edit form. It was a textarea and two buttons with no styling of its own;
+   now it holds the same picture control the composer does, so it needs the same
+   gap or the crop surface sits on top of the words. */
+.wall-edit { display: grid; gap: var(--s-2); margin-bottom: var(--s-2); }
+.wall-edit.hidden { display: none; }
+.wall-edit textarea { width: 100%; resize: vertical; font: inherit; }
+
 /* A FRAMED post. The box is the one the picture was dragged in, so the aspect
    here and WALL_PHOTO_ASPECT in js/member-wall.js are the same number - a crop
    made in one shape and shown in another is not a crop, it is a surprise.

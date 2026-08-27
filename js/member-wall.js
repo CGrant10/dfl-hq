@@ -16,7 +16,7 @@
 import { db, isAdmin } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { esc, toast } from "./ui.js";
-import { imageFieldHtml, wireImageFields } from "./image-field.js";
+import { imageFieldHtml, setImageFraming, setImageValue, wireImageFields } from "./image-field.js";
 /* The same arithmetic the broadcast stage draws a slide's artwork with, so a
    framing made on the Wall's crop surface is rendered by the module that
    defined it rather than by a second reading of the same four columns. */
@@ -133,18 +133,44 @@ function postHtml(r) {
   const m = r.members || {};
   const me = currentMember();
   const own = !!me && String(me.id) === String(r.member_id);
+  /* A commissioner could always delete a post for moderation but not fix one,
+     which meant the only moderation move available was the destructive one.
+     Editing now matches deleting: the member who posted it, or a commissioner.
+     The policy in member_wall_commissioner_edit_schema.sql is the half that
+     actually enforces this - the button is only the half you can see. */
+  const canEdit = own || isAdmin();
   const canDelete = own || isAdmin();
   const name = m.display_name || "Member";
   const avatar = m.profile_image
     ? `<img class="wall-avatar" src="${esc(m.profile_image)}" alt="" loading="lazy" decoding="async">`
     : `<span class="wall-avatar wall-avatar-fallback" aria-hidden="true">${esc(initials(name))}</span>`;
   const byline = identityByline(m);
-  const controls = own || canDelete ? `<div class="wall-manage row-end">
-    ${own ? `<button class="btn ghost small" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}
+  const controls = canEdit || canDelete ? `<div class="wall-manage row-end">
+    ${canEdit ? `<button class="btn ghost small" type="button" data-wall-edit="${esc(r.id)}">Edit</button>` : ""}
     ${canDelete ? `<button class="btn ghost small danger" type="button" data-wall-delete="${esc(r.id)}">Delete</button>` : ""}
   </div>` : "";
-  const editForm = own ? `<form class="wall-edit hidden" data-wall-edit-form="${esc(r.id)}" data-has-image="${r.image ? "1" : "0"}">
+  /*
+    THE PICTURE IS EDITABLE, WHICH IS WHY THE FRAMING IS. Re-framing a post
+    meant deleting it and posting it again, and the same was true of a picture
+    picked in a hurry. The edit form now carries the same control the composer
+    does - replace it, remove it, or just drag the crop.
+
+    WHAT IT WAS SAVED AS RIDES ON THE FORM, not in a second copy of the picture:
+    the four framing values are small, and the picture itself is already in the
+    DOM as the post's <img>, so openEdit() reads it from there rather than
+    printing a second data URI into an attribute.
+  */
+  const editForm = canEdit ? `<form class="wall-edit hidden" data-wall-edit-form="${esc(r.id)}"
+      data-framed="${r.image_fit ? "1" : "0"}"
+      data-image-fit="${esc(r.image_fit || "")}"
+      data-image-x="${esc(r.image_position_x ?? "")}"
+      data-image-y="${esc(r.image_position_y ?? "")}"
+      data-image-zoom="${esc(r.image_zoom ?? "")}">
     <textarea maxlength="500" rows="3" data-wall-edit-body>${esc(r.body || "")}</textarea>
+    <div class="wall-picture">
+      <span class="wall-picture-label">${icon("camera", { size: 15 })}<span>Picture</span></span>
+      ${imageFieldHtml({ id: `wall-edit-image-${esc(r.id)}`, name: "image", preset: "backdrop", framing: WALL_FRAMING })}
+    </div>
     <div class="row-end">
       <button class="btn ghost small" type="button" data-wall-edit-cancel="${esc(r.id)}">Cancel</button>
       <button class="btn small" type="submit">Save</button>
@@ -208,6 +234,47 @@ function framingFrom(fd) {
   return { image_fit: fit, image_position_x: x, image_position_y: y, image_zoom: zoom };
 }
 
+/** The framing a post was saved with, all four nulls - it has none any more. */
+const NO_FRAMING = { image_fit: null, image_position_x: null, image_position_y: null, image_zoom: null };
+
+/**
+ * Fill an edit form's picture control from the post above it.
+ *
+ * The picture comes off the rendered <img> because it is already in the DOM and
+ * a data URI printed twice is a data URI paid for twice. The framing comes off
+ * the form's own data attributes. ORDER MATTERS: setImageValue() puts the
+ * framing back to untouched, so the saved framing is set after it.
+ */
+function openEdit(post, form) {
+  if (!form || form.dataset.filled === "1") return;
+  form.dataset.filled = "1";
+  const src = post?.querySelector(".wall-photo, .wall-photo-framed")?.getAttribute("src") || "";
+  setImageValue(form, "image", src);
+  if (!src || form.dataset.framed !== "1") return;
+  setImageFraming(form, "image_fit", form.dataset.imageFit);
+  setImageFraming(form, "image_position_x", form.dataset.imageX);
+  setImageFraming(form, "image_position_y", form.dataset.imageY);
+  setImageFraming(form, "image_zoom", form.dataset.imageZoom);
+}
+
+/**
+ * What an edit should write to the four framing columns, or null for "leave
+ * them alone".
+ *
+ * A POST NOBODY FRAMED IS NOT FRAMED BY BEING EDITED. The control always has a
+ * framing in it - cover, dead centre - so saving a typo fix on a ten-year-old
+ * picture would have quietly moved that picture into the cropped box. It only
+ * becomes framed if the picture changed, or if somebody actually dragged it.
+ */
+function editFraming(form, { imageChanged }) {
+  const framing = framingFrom(new FormData(form));
+  if (!framing) return null;
+  const untouched = framing.image_fit === "cover" && framing.image_position_x === 50
+    && framing.image_position_y === 50 && framing.image_zoom === 1;
+  if (form.dataset.framed !== "1" && !imageChanged && untouched) return null;
+  return framing;
+}
+
 export function wireWall(root, onChanged) {
   const form = root.querySelector("[data-wall-form]");
 
@@ -245,8 +312,12 @@ export function wireWall(root, onChanged) {
     if (edit) {
       const id = edit.dataset.wallEdit;
       const post = root.querySelector(`[data-wall-post="${CSS.escape(id)}"]`);
+      const form = post?.querySelector(`[data-wall-edit-form="${CSS.escape(id)}"]`);
       post?.querySelector("[data-wall-body-display]")?.classList.add("hidden");
-      post?.querySelector(`[data-wall-edit-form="${CSS.escape(id)}"]`)?.classList.remove("hidden");
+      form?.classList.remove("hidden");
+      /* Filled on open rather than on render: a screen of posts would otherwise
+         each hold a second copy of their picture in a hidden control. */
+      openEdit(post, form);
       return;
     }
     const cancel = e.target.closest("[data-wall-edit-cancel]");
@@ -275,12 +346,31 @@ export function wireWall(root, onChanged) {
     if (!editForm) return;
     e.preventDefault();
     const id = Number(editForm.dataset.wallEditForm);
+    const fd = new FormData(editForm);
     const body = String(editForm.querySelector("[data-wall-edit-body]")?.value || "").trim();
-    if (!body && editForm.dataset.hasImage !== "1") { toast("A text-only post cannot be empty", true); return; }
+    const image = String(fd.get("image") || "").trim();
+    if (!body && !image) { toast("A post needs words or a picture", true); return; }
+    const post = editForm.closest("[data-wall-post]");
+    const was = post?.querySelector(".wall-photo, .wall-photo-framed")?.getAttribute("src") || "";
+    const patch = { body, image: image || null };
+    /* Removing the picture takes its framing with it, so a later one cannot
+       inherit a crop made for a picture nobody can see any more. */
+    const framing = image
+      ? editFraming(editForm, { imageChanged: image !== was })
+      : (editForm.dataset.framed === "1" ? NO_FRAMING : null);
+
     const btn = editForm.querySelector('button[type="submit"]');
     btn.disabled = true;
     try {
-      await mutatePost(id, (q) => q.update({ body }));
+      try {
+        await mutatePost(id, (q) => q.update(framing ? { ...patch, ...framing } : patch));
+      } catch (err) {
+        /* Same bargain the composer makes: member_wall_framing_schema.sql is a
+           separate step, and losing an edit over a presentation column that is
+           not there yet would be the worse failure. */
+        if (!framing || !COLUMN_GONE.test(err?.message || "")) throw err;
+        await mutatePost(id, (q) => q.update(patch));
+      }
       toast("Post updated");
       onChanged?.();
     } catch (err) { btn.disabled = false; toast(err.message || "Could not update post", true); }

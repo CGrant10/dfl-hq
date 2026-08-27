@@ -281,10 +281,28 @@ function apply(box, value) {
     const caption = [...pick.childNodes].reverse().find((n) => n.nodeType === 3);
     if (caption) caption.textContent = ` ${v ? "Replace" : "Choose"} picture`;
   }
+  /* A DIFFERENT PICTURE IS NOT THE OLD PICTURE'S CROP. Choosing a second file,
+     or removing the picture and picking again, used to keep the framing dragged
+     onto the first one - so a new photo arrived pre-cropped to something about
+     a photo that is gone. Prefilling a saved row still works: setValue() sets
+     the picture first and the framing after, which is the order form.js and the
+     Wall's edit form both use. */
+  resetFrame(box);
   paintFrame(box);
 }
 
 // ------------------------------------------------------------- the framing
+
+/** Put the framing back to untouched. Called whenever the picture changes. */
+function resetFrame(box) {
+  const frame = box?.querySelector?.("[data-imgf-frame]");
+  if (!frame) return;
+  const put = (sel, v) => { const el = frame.querySelector(sel); if (el) el.value = v; };
+  put("[data-imgf-fit]", FRAME_FALLBACK.fit);
+  put("[data-imgf-x]", FRAME_FALLBACK.x);
+  put("[data-imgf-y]", FRAME_FALLBACK.y);
+  put("[data-imgf-zoom]", FRAME_FALLBACK.zoom);
+}
 
 /** Read the four hidden inputs back, through the same rules the stage uses. */
 function frameState(frame) {
