@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  draftCard, draftView, metaLine, ordinal, slotsFromOrder, slotsFromPicks, stillCurrent,
+  draftCard, draftView, metaLine, ordinal, pickNumbers,
+  slotsFromOrder, slotsFromPicks, stillCurrent,
 } from "./draft-order.js";
 
 const MEMBERS = [
@@ -135,30 +136,69 @@ describe("the meta line", () => {
   });
 });
 
+describe("when you are actually on the clock", () => {
+  /* The board turns around at the end of every round, so slot 7 of 12 picks
+     7th, then 6th-from-the-other-end (18th), then 7th again (31st). */
+  it("follows the snake back and forth", () => {
+    expect(pickNumbers({ slot: 7, teams: 12, rounds: 3, type: "snake" })).toEqual([7, 18, 31]);
+    expect(pickNumbers({ slot: 1, teams: 12, rounds: 3, type: "snake" })).toEqual([1, 24, 25]);
+    expect(pickNumbers({ slot: 12, teams: 12, rounds: 3, type: "snake" })).toEqual([12, 13, 36]);
+  });
+
+  it("runs straight down a linear board", () => {
+    expect(pickNumbers({ slot: 7, teams: 12, rounds: 3, type: "linear" })).toEqual([7, 19, 31]);
+  });
+
+  it("gives an auction nothing, because an auction has no board", () => {
+    expect(pickNumbers({ slot: 7, teams: 12, type: "auction" })).toEqual([]);
+  });
+
+  it("refuses nonsense rather than computing it", () => {
+    expect(pickNumbers({ slot: 13, teams: 12 })).toEqual([]);
+    expect(pickNumbers({ slot: null, teams: 12 })).toEqual([]);
+    expect(pickNumbers()).toEqual([]);
+  });
+});
+
 describe("the card", () => {
   const draft = { season: 2026, status: "pre_draft", draft_type: "snake", rounds: 15, start_time_ms: null };
+  const twelve = Array.from({ length: 12 }, (_, i) => ({ draft_slot: i + 1, sleeper_user_id: `u${i + 1}` }));
+  const roster = Array.from({ length: 12 }, (_, i) => ({ team_name: `Team ${i + 1}`, sleeper_user_id: `u${i + 1}` }));
 
-  it("leads with the reader's own pick", () => {
-    const html = draftCard(draftView({
-      draft, slots: [{ draft_slot: 1, sleeper_user_id: "u1" }, { draft_slot: 2, sleeper_user_id: "u2" }],
-      members: MEMBERS, meSleeperId: "u1",
-    }));
-    expect(html).toContain("1st");
-    expect(html).toContain("your pick, of 2");
+  it("leads with the reader's own pick and says when they are up", () => {
+    const html = draftCard(draftView({ draft, slots: twelve, members: roster, meSleeperId: "u7" }));
+    expect(html).toContain("7th");
+    expect(html).toContain("of 12");
     expect(html).toContain("is-me");
-    expect(html).toContain("The Hammer");
+    /* The snake, on the card: 7th, then 18th, then 31st. */
+    expect(html).toContain(">18<");
+    expect(html).toContain(">31<");
+  });
+
+  it("shows only as many rounds as the draft actually has", () => {
+    const html = draftCard(draftView({
+      draft: { ...draft, rounds: 2 }, slots: twelve, members: roster, meSleeperId: "u7",
+    }));
+    expect((html.match(/do-pick-round/g) || []).length).toBe(2);
+  });
+
+  it("draws no pick cells for an auction", () => {
+    const html = draftCard(draftView({
+      draft: { ...draft, draft_type: "auction" }, slots: twelve, members: roster, meSleeperId: "u7",
+    }));
+    expect(html).not.toContain("do-picks");
+    expect(html).toContain("is-me");
   });
 
   it("falls back to the board size for a reader it cannot place", () => {
-    const html = draftCard(draftView({
-      draft, slots: [{ draft_slot: 1, sleeper_user_id: "u1" }], members: MEMBERS, meSleeperId: null,
-    }));
-    expect(html).toContain("teams on the board");
+    const html = draftCard(draftView({ draft, slots: twelve, members: roster, meSleeperId: null }));
+    expect(html).toContain("Teams");
     expect(html).not.toContain("is-me");
+    expect(html).not.toContain("do-picks");
   });
 
   it("says so plainly when the order is not set", () => {
-    const html = draftCard(draftView({ draft, slots: [], members: MEMBERS }));
+    const html = draftCard(draftView({ draft, slots: [], members: roster }));
     expect(html).toContain("Order not set");
     expect(html).not.toContain("do-board");
   });
@@ -174,6 +214,14 @@ describe("the card", () => {
     }));
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
+  });
+
+  /* The card must never name a colour. Six themes plus a palette per team
+     mean anything hardcoded here is wrong on five of them. */
+  it("carries no colour of its own", () => {
+    const html = draftCard(draftView({ draft, slots: twelve, members: roster, meSleeperId: "u7" }));
+    expect(html).not.toMatch(/#[0-9a-f]{3,8}/i);
+    expect(html).not.toMatch(/style=/i);
   });
 });
 

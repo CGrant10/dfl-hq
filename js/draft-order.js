@@ -154,6 +154,10 @@ export function draftView({ draft = null, slots = [], members = [], meSleeperId 
     season: Number(draft.season) || null,
     status: draft.status || "",
     statusText: STATUS_TEXT[draft.status] || "",
+    /* The raw value as well as the label: pickNumbers() turns the board
+       around on a snake and does not on a linear, and "Snake" is a word for
+       a reader rather than something to branch on. */
+    type: draft.draft_type || "",
     typeText: TYPE_TEXT[draft.draft_type] || "",
     rounds: Number(draft.rounds) || null,
     startAt: Number.isFinite(startMs) && startMs > 0 ? new Date(startMs) : null,
@@ -162,6 +166,32 @@ export function draftView({ draft = null, slots = [], members = [], meSleeperId 
     board,
     mySlot: mine ? mine.slot : null,
   };
+}
+
+/**
+ * The overall pick numbers this slot owns, round by round.
+ *
+ * This is the fact a draft board is actually consulted for, and it is pure
+ * arithmetic the app already had everything it needed to do. On a twelve-team
+ * SNAKE, slot 7 picks 7th, then 18th, then 31st - the board turns around at
+ * the end of every round, so an odd round counts from the left and an even
+ * one from the right. A LINEAR draft never turns, so the same slot picks 7th,
+ * 19th, 31st.
+ *
+ * An auction has no board and no slots, so it gets nothing rather than three
+ * meaningless numbers.
+ */
+export function pickNumbers({ slot, teams, rounds = 3, type = "snake" } = {}) {
+  if (!slot || !teams || teams < 1 || slot > teams) return [];
+  if (type === "auction") return [];
+
+  const out = [];
+  for (let round = 1; round <= rounds; round += 1) {
+    const leftToRight = type !== "snake" || round % 2 === 1;
+    const inRound = leftToRight ? slot : teams - slot + 1;
+    out.push((round - 1) * teams + inRound);
+  }
+  return out;
 }
 
 /** "Snake - 15 rounds - Thu, Aug 27, 7:00 PM": only the parts we know. */
@@ -188,31 +218,74 @@ export function metaLine(view) {
 export function draftCard(view) {
   if (!view) return "";
 
-  const season = view.season ? ` <span class="do-season">${esc(String(view.season))}</span>` : "";
+  const season = view.season ? `<span class="do-season">${esc(String(view.season))}</span>` : "";
   const head = `<h2 class="section-title">The Draft${season}<a class="section-link" href="#/keepers">Keepers &rarr;</a></h2>`;
   const meta = metaLine(view);
 
   if (!view.orderKnown) {
     return `<section class="block draft-order">${head}
-      <div class="card"><div class="card-body">
+      <div class="card do-card"><div class="card-body">
         <div class="state"><span class="state-title">Order not set</span>
         <span>Sleeper has the draft${meta ? ` &mdash; ${esc(meta)}` : ""}, but the order has not been set yet.</span></div>
       </div></div></section>`;
   }
 
-  const hero = view.mySlot
-    ? `<div class="do-hero"><b>${esc(ordinal(view.mySlot))}</b><small>your pick, of ${view.teams}</small></div>`
-    : `<div class="do-hero"><b>${view.teams}</b><small>teams on the board</small></div>`;
+  return `<section class="block draft-order">${head}
+    <div class="card do-card"><div class="card-body">
+      ${hero(view)}
+      ${picks(view)}
+      <ol class="do-board">${view.board.map(row).join("")}</ol>
+    </div></div></section>`;
+}
 
-  const rows = view.board.map((r) => `<li class="do-row${r.mine ? " is-me" : ""}">
+/*
+  THE HERO. One figure, and it is the reader's own slot - the only reason
+  this card exists. Somebody with no team on the board gets the board's size
+  instead, which is a fact rather than a placeholder.
+*/
+function hero(view) {
+  const figure = view.mySlot ? ordinal(view.mySlot) : String(view.teams);
+  const label  = view.mySlot ? "Your pick" : "Teams";
+  const meta   = metaLine(view);
+  const of     = view.mySlot ? `of ${view.teams}` : "";
+
+  return `<div class="do-hero">
+    <b class="do-figure">${esc(figure)}</b>
+    <span class="do-hero-text">
+      <span class="do-label">${label}${of ? ` &middot; ${of}` : ""}</span>
+      ${meta ? `<span class="do-meta">${esc(meta)}</span>` : ""}
+    </span>
+  </div>`;
+}
+
+/*
+  WHEN YOU ARE ACTUALLY ON THE CLOCK, which is the question the hero raises
+  and does not answer. Three rounds is the useful horizon - far enough to see
+  the turn on a snake, short enough to stay one glance.
+
+  Drawn only for a reader with a slot, and only when the draft has the rounds
+  to fill it: a two-round draft gets two cells, not three with a fiction in
+  the third.
+*/
+function picks(view) {
+  if (!view.mySlot) return "";
+  const rounds = Math.min(3, view.rounds || 3);
+  const numbers = pickNumbers({
+    slot: view.mySlot, teams: view.teams, rounds, type: view.type,
+  });
+  if (!numbers.length) return "";
+
+  return `<div class="do-picks">${numbers.map((n, i) => `
+    <div class="do-pick">
+      <span class="do-pick-round">R${i + 1}</span>
+      <span class="do-pick-no">${n}</span>
+    </div>`).join("")}</div>`;
+}
+
+function row(r) {
+  return `<li class="do-row${r.mine ? " is-me" : ""}">
     <span class="do-slot">${r.slot}</span>
     <span class="do-team">${esc(r.name)}</span>
-  </li>`).join("");
-
-  return `<section class="block draft-order">${head}
-    <div class="card"><div class="card-body">
-      ${hero}
-      ${meta ? `<p class="do-meta">${esc(meta)}</p>` : ""}
-      <ol class="do-board">${rows}</ol>
-    </div></div></section>`;
+    ${r.mine ? `<span class="do-you">You</span>` : ""}
+  </li>`;
 }

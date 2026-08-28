@@ -710,81 +710,165 @@
 /* ---------------------------------------------------------------------
    THE DRAFT BOARD - where each team picks from this year.
 
-   One figure and one list. The figure is the reader's own slot, which is
-   the entire reason the card exists; the list is the rest of the board,
-   because "7th" means nothing without knowing who is 6th and 8th.
+   EVERY COLOUR HERE IS A TOKEN, and the reason is that there are six
+   themes plus a palette per team. --accent and --accent-2 are TEXT and are
+   already lifted or deepened to stay legible in whichever mode is on;
+   --accent-fill and --accent-sweep are the crest's true colours and are
+   for fills only, with --on-accent over the top. That is the rule at the
+   head of css/style.css, and it is what lets this card be red on the crest
+   theme, green on Fairway and the wheel's red on Medicine without a single
+   line of per-theme CSS.
 
-   Only ever drawn while there is a draft to care about - draftView() in
-   js/draft-order.js returns null the rest of the year, so none of this
-   needs a hiding rule.
+   Accent is spent in exactly three places - the figure, the reader's own
+   row, and that row's slot chip. Everything else is ink and ground, so the
+   one row that matters is the one thing the eye lands on.
    --------------------------------------------------------------------- */
+#home-wrap .do-card { padding-top: var(--s-3); }
+
 #home-wrap .draft-order .do-season {
+  margin-left: var(--s-2);
   font-size: var(--fs-label);
+  font-weight: var(--fw-semi);
   letter-spacing: var(--ls-wide);
   color: var(--muted);
 }
 
+/* ---- the figure ---------------------------------------------------- */
 #home-wrap .do-hero {
-  display: flex; align-items: baseline; gap: var(--s-3);
-  margin-bottom: var(--s-1);
+  display: flex; align-items: center; gap: var(--s-3);
+  min-width: 0;
 }
-#home-wrap .do-hero b {
+#home-wrap .do-figure {
   font-family: var(--font-display);
   font-size: var(--fs-stat);
   font-weight: var(--fw-bold);
   line-height: var(--lh-tight);
   letter-spacing: var(--ls-tight);
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
-#home-wrap .do-hero small {
+#home-wrap .do-hero-text {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+#home-wrap .do-label {
   font-size: var(--fs-label);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text);
+}
+#home-wrap .do-meta {
+  margin: 0;
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-wide);
+  color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ---- when you are on the clock ------------------------------------- */
+/* Three cells, evenly split. Equal columns rather than content width, so
+   pick 7 and pick 131 do not make the row lurch about. */
+/* Flex with an equal basis rather than a fixed three-column grid: a
+   two-round draft gets two cells that still fill the row, instead of two
+   cells and a dead third column. */
+#home-wrap .do-picks {
+  display: flex;
+  gap: var(--s-2);
+  margin: var(--s-3) 0;
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+#home-wrap .do-pick {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+#home-wrap .do-pick-round {
+  font-size: var(--fs-micro);
   letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--muted);
 }
-
-#home-wrap .do-meta {
-  margin: 0 0 var(--s-3);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--ls-wide);
-  color: var(--muted);
+#home-wrap .do-pick-no {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat-sm);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
-/* Two columns of six on anything but the narrowest phone: a twelve-team
-   board as one long list pushes the rest of the page off the screen. */
+/* ---- the board ------------------------------------------------------ */
+/* Two columns of six above 420px: twelve teams in one column pushes the
+   rest of the front page off the screen. */
 #home-wrap .do-board {
   list-style: none;
   margin: 0; padding: 0;
-  display: grid; gap: var(--s-1);
+  display: grid; gap: 2px;
   grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 420px) {
-  #home-wrap .do-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-1) var(--s-4); }
+  #home-wrap .do-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px var(--s-4);
+  }
 }
 
 #home-wrap .do-row {
   display: flex; align-items: center; gap: var(--s-2);
   min-width: 0;
-  padding: var(--s-1) var(--s-2);
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-1);
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
   font-size: var(--fs-body);
+  color: var(--body-text);
 }
 #home-wrap .do-slot {
-  flex: 0 0 1.75em;
-  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--bg-3);
+  font-size: var(--fs-micro);
   font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 #home-wrap .do-team {
   min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/*
+  THE READER'S OWN ROW. A wash of the fill rather than of --accent: the
+  text pair is a lightened or deepened colour chosen to be READ, and washing
+  it over a card gives a muddy plate. The crest's true colour at 12% is a
+  clean tint on every palette, and the slot chip carries the full gradient
+  with --on-accent over it - the one place on this card anything is filled.
+*/
 #home-wrap .do-row.is-me {
-  background: var(--hover-soft);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent-fill) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-fill) 34%, transparent);
 }
-#home-wrap .do-row.is-me .do-slot,
 #home-wrap .do-row.is-me .do-team {
   color: var(--text);
   font-weight: var(--fw-semi);
+}
+#home-wrap .do-row.is-me .do-slot {
+  background: var(--accent-sweep-135);
+  color: var(--on-accent);
+}
+#home-wrap .do-you {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+@media (max-width: 380px) {
+  #home-wrap .do-figure { font-size: var(--fs-stat-sm); }
+  #home-wrap .do-you { display: none; }
 }
