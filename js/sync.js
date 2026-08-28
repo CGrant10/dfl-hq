@@ -547,15 +547,64 @@ const readBracket = readWinners;
 // Plumbing
 // ---------------------------------------------------------------------
 
-/** Upsert in chunks so a big season does not blow up one request. */
+/*
+  UPSERT IN CHUNKS, AND SURVIVE A TIMEOUT RATHER THAN DIE ON ONE.
+
+  Supabase caps a statement at eight seconds for the anon role. Nothing here
+  comes close except sleeper_transactions, which stores the whole Sleeper
+  payload in a jsonb `details` column - two hundred of those in one statement
+  is the heaviest write the sync makes, and the FIRST run of the day was
+  reliably the one that lost the race, because a cold connection and a cold
+  cache pay for themselves out of the same eight seconds. Re-running always
+  worked, which is the signature of a size problem rather than a broken write.
+
+  So a timeout is not treated as failure. The chunk is halved and both halves
+  are tried - repeatedly, down to MIN_CHUNK - and only a chunk that is already
+  small and still times out waits and retries, then finally gives up. Every
+  other error is thrown immediately and untouched: a policy violation or a bad
+  column will not get better for being tried again in smaller pieces.
+*/
+const CHUNK = 200;
+const MIN_CHUNK = 20;
+const RETRIES = 2;
+
+/* Postgres 57014, which Supabase surfaces as a message rather than a code. */
+const TIMEOUT = /statement timeout|canceling statement|57014/i;
+
 async function upsert(table, rows, onConflict) {
-  const CHUNK = 200;
   for (let i = 0; i < rows.length; i += CHUNK) {
-    const { error } = await db()
-      .from(table)
-      .upsert(rows.slice(i, i + CHUNK), { onConflict });
-    if (error) throw new Error(`${table}: ${error.message}`);
+    await writeChunk(table, rows.slice(i, i + CHUNK), onConflict);
   }
+}
+
+async function writeChunk(table, rows, onConflict, attempt = 0) {
+  if (!rows.length) return;
+
+  const { error } = await db().from(table).upsert(rows, { onConflict });
+  if (!error) return;
+  if (!TIMEOUT.test(error.message || "")) throw new Error(`${table}: ${error.message}`);
+
+  /* Too big: split. Both halves go through the same path, so a chunk that is
+     still too big after one halving simply halves again. */
+  if (rows.length > MIN_CHUNK) {
+    const half = Math.ceil(rows.length / 2);
+    await writeChunk(table, rows.slice(0, half), onConflict);
+    await writeChunk(table, rows.slice(half), onConflict);
+    return;
+  }
+
+  /* Already small and still timing out: this is a slow database, not a big
+     write. Wait, and give it two more goes before admitting defeat. */
+  if (attempt < RETRIES) {
+    await wait(500 * (attempt + 1));
+    return writeChunk(table, rows, onConflict, attempt + 1);
+  }
+
+  throw new Error(`${table}: ${error.message}`);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Run an async job over a list, a few at a time. */
