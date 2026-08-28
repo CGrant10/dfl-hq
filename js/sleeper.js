@@ -43,6 +43,19 @@ export const sleeper = {
   */
   drafts:       (id)          => get(`/league/${id}/drafts`),
   draftPicks:   (draftId)     => get(`/draft/${draftId}/picks`),
+  /*
+    THE DRAFT ORDER, which lives on the draft object and NOT on the picks.
+    /draft/<id> returns draft_order ({sleeper_user_id: slot}) and
+    slot_to_roster_id ({slot: roster_id}) alongside type, settings.rounds,
+    status and start_time.
+
+    This is the only way to know where anyone picks BEFORE a draft happens:
+    a draft in pre_draft has zero picks, so draft_slot on a pick cannot
+    answer it. draft_order is null until the commissioner sets the order,
+    which is a real state rather than a failure - see js/sync.js
+    syncDraftOrder() and sleeper_draft_order_schema.sql.
+  */
+  draft:        (draftId)     => get(`/draft/${draftId}`),
 };
 
 // ---------------------------------------------------------------------

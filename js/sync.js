@@ -19,6 +19,7 @@
 import { db } from "./supabase.js";
 import { readWinners, readLastPlace } from "./sleeper-bracket.js";
 import { sleeper } from "./sleeper.js";
+import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
 
 const MAX_SEASONS = 20;   // stops a broken chain from looping forever
 const MAX_WEEK    = 18;
@@ -336,6 +337,12 @@ async function syncDraft(leagueId, season, log) {
   let written = 0;
   for (const draft of drafts) {
     const picks = await sleeper.draftPicks(draft.draft_id).catch(() => null);
+
+    /* THE ORDER FIRST, and outside the early exit below. A draft still in
+       pre_draft has zero picks but can perfectly well have an order, and
+       that is the one season anybody wants it for. */
+    await syncDraftOrder(draft, season, picks, log);
+
     if (!picks?.length) continue;
 
     const rows = picks
@@ -365,6 +372,72 @@ async function syncDraft(leagueId, season, log) {
 
   if (written) log(`   ${written} draft picks`);
   return written;
+}
+
+/*
+  WHERE EACH TEAM PICKS FROM.
+
+  Two facts, two tables. sleeper_drafts holds the event - type, rounds,
+  status, start time - and sleeper_draft_slots holds one row per column of
+  the board. Both keyed by season and written with upsert, so re-syncing a
+  season rewrites its own board and cannot touch another year, exactly like
+  every other table in this file.
+
+  THREE WAYS THE ORDER ARRIVES, in order of trust:
+
+    1. draft.draft_order on the object /league/<id>/drafts already returned.
+    2. /draft/<draft_id>, fetched only when (1) came back empty. The list
+       endpoint has been seen to omit the order that the single-draft
+       endpoint carries, and one extra request per season is cheap.
+    3. Round one of the picks. A completed draft IS its own order, so every
+       season drafted before this table existed fills itself in without a
+       request at all.
+
+  AND ONE WAY IT DOES NOT ARRIVE. Before the commissioner shuffles the
+  board, draft_order is null and there are no picks. That is a true state,
+  not a failure: the draft row is written with order_known = false, no slots
+  are stored, and the card says the order is not set. Nothing is guessed.
+*/
+async function syncDraftOrder(draft, season, picks, log) {
+  let slots = slotsFromOrder(draft);
+
+  if (!slots.length) {
+    const full = await sleeper.draft(draft.draft_id).catch(() => null);
+    if (full) slots = slotsFromOrder(full);
+    if (full) draft = { ...draft, ...full };
+  }
+  if (!slots.length) slots = slotsFromPicks(picks);
+
+  const now = new Date().toISOString();
+  await upsert("sleeper_drafts", [{
+    season,
+    draft_id:      String(draft.draft_id),
+    status:        draft.status || null,
+    draft_type:    draft.type || null,
+    rounds:        draft.settings?.rounds ?? null,
+    /* Sleeper's start_time is epoch MILLISECONDS, and is null on a draft
+       nobody has scheduled. */
+    start_time_ms: draft.start_time ?? null,
+    pick_timer_s:  draft.settings?.pick_timer ?? null,
+    order_known:   slots.length > 0,
+    synced_at:     now,
+  }], "season");
+
+  if (!slots.length) {
+    log(`   draft order for ${season} is not set yet`);
+    return 0;
+  }
+
+  await upsert("sleeper_draft_slots", slots.map((s) => ({
+    season,
+    draft_slot:      s.draft_slot,
+    roster_id:       s.roster_id ?? null,
+    sleeper_user_id: s.sleeper_user_id || null,
+    synced_at:       now,
+  })), "season,draft_slot");
+
+  log(`   ${slots.length} draft slots`);
+  return slots.length;
 }
 
 // ---------------------------------------------------------------------

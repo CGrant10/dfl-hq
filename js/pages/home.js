@@ -33,6 +33,8 @@ import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
+import { draftView, draftCard } from "../draft-order.js";
+import { loadDraftOrder } from "../draft-order-data.js";
 
 let stage = null;
 let generation = 0;
@@ -120,7 +122,7 @@ export async function render(view) {
      above for the same reason: each depends on a migration a league may not
      have run, and neither is allowed to take the front page down. Both
      resolve to null when their table is absent, and null draws nothing. */
-  const [activity, wall] = await Promise.all([
+  const [activity, wall, draft] = await Promise.all([
     (async () => {
       try {
         const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
@@ -133,13 +135,27 @@ export async function render(view) {
       }
     })(),
     loadWall().catch((err) => { console.warn("wall unavailable", err); return null; }),
+    /* The draft order. Same rule again: a league that has not run
+       sleeper_draft_order_schema.sql resolves to null and draws nothing. */
+    loadDraftOrder(),
   ]);
+
+  /* Null all the way through when there is no draft, no order, or a draft
+     that finished long enough ago to be history rather than news. */
+  const draftPanel = draftCard(draftView({
+    draft: draft?.draft || null,
+    slots: draft?.slots || [],
+    members: memberRows,
+    meSleeperId: myMember?.sleeper_user_id || null,
+  }));
 
   /*
     THE ORDER IS THE EDIT.
 
     Stage, then three figures, then the four doors: what is happening, where
-    the reader stands, where to go. The Wall sits directly under the doors
+    the reader stands, where to go. The draft board follows the doors, and
+    only while there is a draft to care about - see draftView() in
+    js/draft-order.js, which returns null the rest of the year. The Wall sits directly under the doors
     because it is the only part of this page that changes because somebody
     did something, and burying a posting surface under two static lists is
     how a wall dies. The commissioner and the activity feed follow; the
@@ -160,6 +176,7 @@ export async function render(view) {
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
+    ${draftPanel}
     <div data-wall-slot>${wallCard(wall)}</div>
     <div class="home-lower">
       <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>

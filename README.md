@@ -288,7 +288,11 @@ records, owner profiles and season history. Nothing is ever written back.
 2. Find your Sleeper league ID. Open the league on sleeper.app in a browser; the
    long number in the address bar is it:
    `sleeper.app/leagues/`**`1048291837465738240`**`/team`
-3. In the app: **Admin → Sleeper**, paste the ID, **Save league ID**, then press
+3. For the draft: run **`sleeper_draft_schema.sql`** (what round each player
+   went in) and **`sleeper_draft_order_schema.sql`** (where each team picks
+   from). Both are additive and both are optional — skip them and the sync
+   simply stores less.
+4. In the app: **Admin → Sleeper**, paste the ID, **Save league ID**, then press
    **Sync Sleeper Data**.
 
 Use the ID for the **current** season. Sleeper makes a new league every year and
@@ -305,6 +309,9 @@ picks up every past season in one go.
 | `sleeper_standings` | wins, losses, ties, points for/against, final rank, made playoffs |
 | `sleeper_matchups` | week by week: both teams, both scores, winner |
 | `sleeper_transactions` | trades, waivers and free agent pickups |
+| `sleeper_draft_picks` | every pick ever made: round, overall pick, board slot, who took it |
+| `sleeper_drafts` | one row per season's draft: snake or linear, rounds, status, start time |
+| `sleeper_draft_slots` | the board itself — which team picks from which slot |
 | `members` | **hand written**: nickname, team name, awards, notes (see below) |
 
 ### History is never overwritten
@@ -315,6 +322,10 @@ cannot touch a previous year. Run the sync as often as you like.
 
 ### Where the synced data shows up
 
+- **Home → The Draft** — where you pick this year, and the whole board.
+  Needs `sleeper_draft_order_schema.sql`; without it the card simply does not
+  appear. Sleeper returns no order at all until the commissioner sets one,
+  and the card says that rather than guessing.
 - **History → Hall of Fame** — champions and runners up per season, straight
   from the playoff brackets, plus your hand-written awards and moments.
 - **History → Seasons** — final standings for any season.

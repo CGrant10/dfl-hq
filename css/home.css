@@ -706,3 +706,85 @@
    above it that separates two lists of content. */
 #home-wrap .hero { margin-top: var(--s-2); }
 #home-wrap .version-line { margin-top: 0; }
+
+/* ---------------------------------------------------------------------
+   THE DRAFT BOARD - where each team picks from this year.
+
+   One figure and one list. The figure is the reader's own slot, which is
+   the entire reason the card exists; the list is the rest of the board,
+   because "7th" means nothing without knowing who is 6th and 8th.
+
+   Only ever drawn while there is a draft to care about - draftView() in
+   js/draft-order.js returns null the rest of the year, so none of this
+   needs a hiding rule.
+   --------------------------------------------------------------------- */
+#home-wrap .draft-order .do-season {
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
+  color: var(--muted);
+}
+
+#home-wrap .do-hero {
+  display: flex; align-items: baseline; gap: var(--s-3);
+  margin-bottom: var(--s-1);
+}
+#home-wrap .do-hero b {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  color: var(--accent);
+}
+#home-wrap .do-hero small {
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#home-wrap .do-meta {
+  margin: 0 0 var(--s-3);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-wide);
+  color: var(--muted);
+}
+
+/* Two columns of six on anything but the narrowest phone: a twelve-team
+   board as one long list pushes the rest of the page off the screen. */
+#home-wrap .do-board {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: grid; gap: var(--s-1);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 420px) {
+  #home-wrap .do-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-1) var(--s-4); }
+}
+
+#home-wrap .do-row {
+  display: flex; align-items: center; gap: var(--s-2);
+  min-width: 0;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+}
+#home-wrap .do-slot {
+  flex: 0 0 1.75em;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+}
+#home-wrap .do-team {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#home-wrap .do-row.is-me {
+  background: var(--hover-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+#home-wrap .do-row.is-me .do-slot,
+#home-wrap .do-row.is-me .do-team {
+  color: var(--text);
+  font-weight: var(--fw-semi);
+}
