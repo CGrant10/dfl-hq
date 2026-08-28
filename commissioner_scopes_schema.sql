@@ -61,6 +61,8 @@ begin
     ('sleeper_matchups',     'sleeper'),
     ('sleeper_transactions', 'sleeper'),
     ('sleeper_draft_picks',  'sleeper'),
+    ('sleeper_drafts',       'sleeper'),
+    ('sleeper_draft_slots',  'sleeper'),
     ('owner_profiles',       'sleeper'),
     -- ---- fees ----------------------------------------------------------
     ('finance_seasons',      'fees'),

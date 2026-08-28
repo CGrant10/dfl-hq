@@ -76,8 +76,21 @@ create index if not exists idx_draft_slots_owner  on public.sleeper_draft_slots(
 
 -- ---------------------------------------------------------------------
 -- 3. Row Level Security
---    Same shape as every other Sleeper table: the league reads it, only an
---    admin writes it, and the writer is sync.js under the admin client.
+--    Same shape as every other Sleeper table, and that means THREE policies,
+--    not two. The league reads; the admin password writes; and a commissioner
+--    holding the `sleeper` permission writes.
+--
+--    The third one is easy to miss and fails loudly when it is: leaving it out
+--    is what made the very first sync after this migration die with "new row
+--    violates row-level security policy for table sleeper_drafts" for anybody
+--    running the sync as a commissioner rather than as the admin. The same bug,
+--    on sleeper_users, is what commissioner_scopes_schema.sql was written to
+--    fix - see its header. Those two tables are listed there now as well, so
+--    re-running that file covers them too.
+--
+--    The commissioner policy is guarded on has_commissioner_permission()
+--    existing, because a league that has not run commissioner_scopes_schema.sql
+--    has no such function and should still get a working admin-only install.
 -- ---------------------------------------------------------------------
 
 alter table public.sleeper_drafts      enable row level security;
@@ -97,3 +110,26 @@ create policy "public read" on public.sleeper_draft_slots
   for select using (true);
 create policy "admin write" on public.sleeper_draft_slots
   for all using (public.is_admin()) with check (public.is_admin());
+
+
+-- The commissioner's write, added alongside rather than instead of the
+-- admin's: permissive policies are OR'd, so either route works.
+do $$
+declare t text;
+begin
+  if to_regprocedure('public.has_commissioner_permission(text)') is null then
+    raise notice 'has_commissioner_permission() absent - run commissioner_scopes_schema.sql to let commissioners sync';
+    return;
+  end if;
+
+  foreach t in array array['sleeper_drafts', 'sleeper_draft_slots'] loop
+    execute format('drop policy if exists "commissioner write" on public.%I', t);
+    execute format(
+      'create policy "commissioner write" on public.%I for all '
+      'using (public.has_commissioner_permission(%L)) '
+      'with check (public.has_commissioner_permission(%L))',
+      t, 'sleeper', 'sleeper');
+    raise notice 'commissioner write added to % via sleeper', t;
+  end loop;
+end;
+$$;
