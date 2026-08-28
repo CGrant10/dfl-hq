@@ -725,6 +725,25 @@
    --------------------------------------------------------------------- */
 #home-wrap .do-card { padding-top: var(--s-3); }
 
+/*
+  THE BODY IS A FLEX COLUMN, and that is a spacing fix rather than a layout
+  one. As a block container it stacked anonymous line boxes out of the
+  whitespace between the template's chunks - the newline and indentation
+  between ${hero} and ${picks} is a text node, and a text node in a block
+  context gets a line box with full leading. That was 37px of invisible type
+  on top of the 20px of margin actually asked for, which is why the card read
+  as three things adrift rather than one card.
+
+  A flex container drops whitespace-only children, so the gap below is the
+  whole story and every space on this card is now a number in this file.
+*/
+#home-wrap .do-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
 #home-wrap .draft-order .do-season {
   margin-left: var(--s-2);
   font-size: var(--fs-label);
@@ -774,7 +793,9 @@
 #home-wrap .do-picks {
   display: flex;
   gap: var(--s-2);
-  margin: var(--s-3) 0;
+  /* No margin: the body's gap owns the space between sections now. The
+     padding is the band's own, inside its two rules. */
+  margin: 0;
   padding: var(--s-2) 0;
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);
