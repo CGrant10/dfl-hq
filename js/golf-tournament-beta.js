@@ -4,7 +4,7 @@ import { esc, toast } from "./ui.js";
 import { canEdit } from "./inline.js";
 import { battleResult, dayPoints, pairName, roundHoles, standingLine } from "./golf-battle.js";
 import { label as boardLabel, progress as boardProgress, roundBoard } from "./golf-board.js";
-import { BETA_CUSTOM_MAX_SIDE, betaCaptainChoices, betaCustomBoardVisible, betaCustomRoundName, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaRoundTitle, betaSeatsForSide } from "./golf-tournament-beta-format.js";
+import { BETA_CUSTOM_MAX_SIDE, betaAddedRoundName, betaCaptainChoices, betaCustomBoardVisible, betaCustomRoundName, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaRoundTitle, betaSeatsForSide, betaSelectedRound } from "./golf-tournament-beta-format.js";
 import { betaEditableSideIds, betaRouteForMember, canScoreBetaCard } from "./golf-tournament-beta-rules.js";
 import { holeResult } from "./golf-score-result.js";
 import { eventHasCode } from "./golf-guest.js";
@@ -268,14 +268,19 @@ function calmSetupMarkup(state) {
     const roster = state.participants.filter(p => String(p.team_id) === String(t.id));
     return `<section class="tb-team-card" style="--tb-team-color:${esc(t.color || "#f4c430")}"><div class="tb-team-card-head"><span class="tb-team-dot" aria-hidden="true"></span><input class="tb-team-name" value="${esc(t.name)}" data-tb-team-name="${t.id}" aria-label="${esc(t.name)} team name"><button class="btn tb-team-save" data-tb-save-team="${t.id}">Save name</button></div><label class="tb-captain"><span>Captain</span><select class="tb-select" data-tb-captain="${t.id}"><option value="">Optional for custom matches</option>${choices.map(p => `<option value="${p.member_id}" ${String(p.member_id) === String(t.captain_member_id) ? "selected" : ""}>${esc(playerName(p, state.names))}</option>`).join("")}</select></label><div class="tb-roster-head"><strong>${roster.length} golfer${roster.length === 1 ? "" : "s"}</strong><small>Change a golfer's team below</small></div><div class="tb-roster-list">${roster.map(p => `<label class="tb-place"><span>${esc(playerName(p, state.names))}</span><select class="tb-select" data-tb-place="${p.id}">${teamOptions(p)}</select></label>`).join("")}</div></section>`;
   }).join("")}${state.participants.some(p => p.team_id == null) ? `<div class="tb-unassigned"><strong>Unassigned golfers</strong>${state.participants.filter(p => p.team_id == null).map(p => `<label class="tb-place"><span>${esc(playerName(p, state.names))}</span><select class="tb-select" data-tb-place="${p.id}">${teamOptions(p)}</select></label>`).join("")}</div>` : ""}` : `<p class="tb-copy">Create two teams, then place each golfer on a side.</p>`;
-  const roundCard = format => {
-    const entry = status[format === "pairs" ? "pairs" : "singles"];
-    const ready = format === "pairs" ? status.pairsReady : status.singlesReady;
+  const roundCard = (format, entry = status[format === "pairs" ? "pairs" : "singles"], extra = false) => {
+    const expectedMatches = betaIsCustomRound(entry?.round) ? 1 : betaMatchCount(format);
+    const ready = entry?.battles?.length === expectedMatches
+      && entry.battles.every(battle => battle.sides?.length === 2 && battle.sides.every((side, index) => side.players?.length === betaSeatsForSide(entry.round, index)));
     const selectedScoring = scoringOf(entry?.round), scoringName = selectedScoring === "match" ? "Match play" : "Stroke play";
-    const explainer = format === "pairs"
+    const explainer = betaIsCustomRound(entry?.round)
+      ? "Choose the golfers on each side for this custom round. You can adjust every seat without changing the earlier round."
+      : format === "pairs"
       ? "Choose both partners on each side. Each row is one specific pair against one specific opposing pair."
       : "Choose the player from each team for every head-to-head singles match.";
-    return `<details class="tb-fold" data-tb-section="${format}" ${openSection === format || (!openSection && entry && format === "pairs") ? "open" : ""}><summary><span><small>${format === "pairs" ? "ROUND 1" : "ROUND 2"}</small><strong>${format === "pairs" ? "Three 2v2 matchups" : "Six singles matchups"}</strong></span><em class="${ready ? "is-ready" : ""}">${entry ? `${roundHoles(entry.round)} holes · ${scoringName} · ${entry.battles.length}/${betaMatchCount(format)} built` : "Not built"}</em></summary><div class="tb-fold-body"><p class="tb-copy">${explainer}</p>${entry ? `<div class="tb-format-state"><small>ROUND SCORING</small><strong>${scoringName}</strong><span>${selectedScoring === "match" ? "Every hole is won, lost, or tied." : "The lowest total strokes wins."}</span></div><div class="tb-round-tools">${["strokes", "match"].map(s => `<button class="btn ${selectedScoring === s ? "primary" : ""}" data-tb-scoring="${entry.round.id}:${s}" aria-pressed="${selectedScoring === s}">${s === "strokes" ? "Stroke play" : "Match play"}<small>${selectedScoring === s ? "Selected" : s === "match" ? "Hole by hole" : "Fewest strokes"}</small></button>`).join("")}</div><div class="tb-round-tools">${[9,18].map(holes => `<button class="btn ${roundHoles(entry.round) === holes ? "primary" : ""}" data-tb-holes="${entry.round.id}:${holes}" aria-pressed="${roundHoles(entry.round) === holes}">${holes} holes<small>${roundHoles(entry.round) === holes ? "Selected" : "Set round length"}</small></button>`).join("")}</div>${matchupEditor(state, entry)}` : `<div class="tb-empty">Build the two-round schedule from Teams & Captains first.</div>`}</div></details>`;
+    const section = extra ? `round-${entry.round.id}` : format;
+    const heading = betaIsCustomRound(entry?.round) ? betaRoundTitle(entry.round) : format === "pairs" ? "Three 2v2 matchups" : "Six singles matchups";
+    return `<details class="tb-fold" data-tb-section="${section}" ${openSection === section || (!openSection && entry && format === "pairs" && !extra) ? "open" : ""}><summary><span><small>${extra ? `ADDED ROUND · ${betaRoundLabel(entry.round).toUpperCase()}` : format === "pairs" ? "ROUND 1" : "ROUND 2"}</small><strong>${heading}</strong></span><em class="${ready ? "is-ready" : ""}">${entry ? `${roundHoles(entry.round)} holes · ${scoringName} · ${entry.battles.length}/${expectedMatches} built` : "Not built"}</em></summary><div class="tb-fold-body"><p class="tb-copy">${explainer}</p>${entry ? `<div class="tb-format-state"><small>ROUND SCORING</small><strong>${scoringName}</strong><span>${selectedScoring === "match" ? "Every hole is won, lost, or tied." : "The lowest total strokes wins."}</span></div><div class="tb-round-tools">${["strokes", "match"].map(s => `<button class="btn ${selectedScoring === s ? "primary" : ""}" data-tb-scoring="${entry.round.id}:${s}" aria-pressed="${selectedScoring === s}">${s === "strokes" ? "Stroke play" : "Match play"}<small>${selectedScoring === s ? "Selected" : s === "match" ? "Hole by hole" : "Fewest strokes"}</small></button>`).join("")}</div><div class="tb-round-tools">${[9,18].map(holes => `<button class="btn ${roundHoles(entry.round) === holes ? "primary" : ""}" data-tb-holes="${entry.round.id}:${holes}" aria-pressed="${roundHoles(entry.round) === holes}">${holes} holes<small>${roundHoles(entry.round) === holes ? "Selected" : "Set round length"}</small></button>`).join("")}</div>${matchupEditor(state, entry)}` : `<div class="tb-empty">Build the two-round schedule from Teams & Captains first.</div>`}</div></details>`;
   };
   const hasGuests = state.participants.some(person => person.member_id == null);
   const guestAccess = `<details class="tb-fold" data-tb-section="guest-access" ${openSection === "guest-access" ? "open" : ""}><summary><span><small>OPTIONAL</small><strong>Guest access code</strong></span><em class="${state.guestCodeSet ? "is-ready" : ""}">${state.guestCodeSet ? "Code is set" : hasGuests ? "Set if guests score" : "Only needed for guests"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Only set this when a guest needs to open the event on their own phone and enter scores.</p><label class="tb-guest-code"><span>Event code</span><input type="text" minlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" data-tb-guest-code placeholder="e.g. ROLLA26"></label><div class="tb-actions"><button class="btn primary" data-tb-set-code>Set code</button><button class="btn tb-reset" data-tb-clear-code ${state.guestCodeSet ? "" : "disabled"}>Clear code</button></div><p class="tb-copy">Four characters or more. The code itself is never displayed again; set a new one if it is forgotten.</p></div></details>`;
@@ -283,7 +288,13 @@ function calmSetupMarkup(state) {
   const sideSizeOptions = selected => Array.from({ length: BETA_CUSTOM_MAX_SIDE }, (_, index) => index + 1).map(size => `<option value="${size}" ${size === selected ? "selected" : ""}>${size} golfer${size === 1 ? "" : "s"}</option>`).join("");
   const customSetup = `<details class="tb-fold" data-tb-section="custom" ${openSection === "custom" || Boolean(status.custom) || (!openSection && currentGuideStep === 3 && matchGuideTarget === "custom") ? "open" : ""}><summary><span><small>STEP 3 · CUSTOM</small><strong>Custom match</strong></span><em class="${status.customReady ? "is-ready" : ""}">${status.custom ? `${currentCustomSizes[0]} vs ${currentCustomSizes[1]} · ${status.customReady ? "Ready" : "Needs players"}` : "1–4 players per side"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Best for 1v2, 2v2, or any single head-to-head match. Choose the size of each side, scoring style, and number of holes.</p><div class="tb-custom-grid"><label><span>${esc(state.teams[0]?.name || "Side 1")}</span><select class="tb-select" data-tb-custom-side="0">${sideSizeOptions(currentCustomSizes[0])}</select></label><strong>VS</strong><label><span>${esc(state.teams[1]?.name || "Side 2")}</span><select class="tb-select" data-tb-custom-side="1">${sideSizeOptions(currentCustomSizes[1])}</select></label></div><div class="tb-round-tools"><select class="tb-select" data-tb-custom-scoring aria-label="Custom match scoring"><option value="strokes" ${scoringOf(status.custom?.round) === "strokes" ? "selected" : ""}>Stroke play</option><option value="match" ${scoringOf(status.custom?.round) === "match" ? "selected" : ""}>Match play</option></select><select class="tb-select" data-tb-custom-holes aria-label="Custom match holes"><option value="9" ${roundHoles(status.custom?.round) === 9 ? "selected" : ""}>9 holes</option><option value="18" ${roundHoles(status.custom?.round) === 18 ? "selected" : ""}>18 holes</option></select></div><label class="tb-board-setting"><span><strong>Tournament points board</strong><small>Show the team-points board above scoring.</small></span><input type="checkbox" data-tb-custom-board aria-label="Show tournament points board" ${betaCustomBoardVisible(status.custom?.round) ? "checked" : ""}></label><div class="tb-actions"><button class="btn primary wide" data-tb-build-custom ${state.participants.length >= 2 ? "" : "disabled"}>${status.custom ? "Rebuild custom match" : "Build custom match"}</button></div>${status.custom ? matchupEditor(state, status.custom) : ""}</div></details>`;
   const traditionalBuilder = status.custom ? "" : `<details class="tb-fold" data-tb-section="traditional" ${openSection === "traditional" || (!openSection && currentGuideStep === 3 && matchGuideTarget === "traditional") ? "open" : ""}><summary><span><small>STEP 3 · TRADITIONAL</small><strong>Traditional team day</strong></span><em class="${status.pairsReady && status.singlesReady ? "is-ready" : ""}">${status.pairs || status.singles ? "Schedule built" : "6 vs 6 · captains required"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Use this for the full two-team format: three 2v2 matches followed by six singles matches.</p><div class="tb-actions"><button class="btn primary wide" data-tb-build-team-day ${status.teamsReady && status.captainsReady ? "" : "disabled"}>${status.pairs || status.singles ? "Reset traditional schedule" : "Build traditional schedule"}</button></div>${status.teamsReady && status.captainsReady ? "" : `<p class="tb-copy">Before building, place exactly six golfers on each team and choose both captains in Step 2.</p>`}</div></details>`;
-  const traditionalRounds = status.custom ? "" : `${roundCard("pairs")}${roundCard("singles")}`;
+  const primaryRoundIds = new Set([status.pairs?.round?.id, status.singles?.round?.id, status.custom?.round?.id].filter(Boolean).map(String));
+  const extraRounds = state.rounds.filter(entry => !entry.individual && !primaryRoundIds.has(String(entry.round.id)));
+  const customSizesForAdd = betaCustomSizes(status.custom?.round);
+  const customReadyToAdd = customSizesForAdd && state.teams.length === 2 && state.teams.every((team, index) => state.participants.filter(person => String(person.team_id) === String(team.id)).length >= customSizesForAdd[index]);
+  const addRound = `<details class="tb-fold" data-tb-section="add-round" ${openSection === "add-round" ? "open" : ""}><summary><span><small>ANY TIME</small><strong>Add another round</strong></span><em>${extraRounds.length ? `${extraRounds.length} added` : status.custom ? "Repeat custom match" : "Pairs or singles"}</em></summary><div class="tb-fold-body"><p class="tb-copy">Add a complete round without replacing the schedule or scores already here. Matchups use the current team rosters and can be adjusted afterward.</p><div class="tb-actions">${status.custom ? `<button class="btn primary wide" data-tb-add-round="custom" ${customReadyToAdd ? "" : "disabled"}>Add another ${customSizesForAdd?.join("v") || "custom"} round</button>` : `<button class="btn primary" data-tb-add-round="pairs" ${status.teamsReady ? "" : "disabled"}>Add pairs round</button><button class="btn" data-tb-add-round="singles" ${status.teamsReady ? "" : "disabled"}>Add singles round</button>`}</div>${status.custom ? customReadyToAdd ? "" : `<p class="tb-copy">Place enough golfers on both sides before adding this custom round.</p>` : status.teamsReady ? "" : `<p class="tb-copy">Place exactly six golfers on each team before adding a traditional round.</p>`}</div></details>`;
+  const primaryCards = status.custom ? "" : `${roundCard("pairs")}${roundCard("singles")}`;
+  const traditionalRounds = `${primaryCards}${extraRounds.map(entry => roundCard(entry.round.format, entry, true)).join("")}${addRound}`;
   /*
     THE TWO SHARES THE CLASSIC TOURNAMENT PAGE HAD, and they were missing here.
 
@@ -336,27 +347,27 @@ function headToHead(entry, mine) {
 function matchMarkup(state) {
   const playable = state.individual ? state.rounds.filter(e => e.individual) : state.rounds.filter(e => !e.individual && ["pairs", "singles"].includes(e.round.format));
   if (!playable.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf">‹</a><div class="tb-hole"><strong>MATCH</strong><small>Tournament Beta</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><div class="tb-empty">${state.organizer ? "Build the field in Setup to start scoring." : "Waiting for the commissioner to build the field."}</div></main>`;
-  const wanted = activeFormat.get(state.outing.id), entry = playable.find(e => e.round.format === wanted) || playable[0]; activeFormat.set(state.outing.id, entry.round.format);
+  const wanted = activeFormat.get(state.outing.id), entry = betaSelectedRound(playable, wanted); activeFormat.set(state.outing.id, String(entry.round.id));
   const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id))); rememberHole(state.outing.id, hole);
   const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot }));
   const leaders = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(g => g.rows);
   const leaderboard = `<section class="tb-leader"><div class="tb-leader-head"><span>${entry.round.format === "pairs" ? "Pairs" : "Singles"} live leaderboard</span><span>LIVE</span></div>${leaders.map((r, i) => `<div class="tb-leader-row"><span>${i + 1}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.teamName)} · ${boardProgress(r)}</small></div><em>${boardLabel(r)}</em></div>`).join("") || `<div class="tb-empty">No matchups yet.</div>`}</section>`;
   const matches = entry.battles.map(b => { const names = b.sides.map(sideName); return `<article class="tb-match-card"><div class="tb-match-title"><strong>Match ${b.match_number}</strong><span>${b.result ? esc(standingLine(b.result, names[0], names[1])) : "Waiting for both sides"}</span></div>${b.sides.map(s => { const row = state.scoreRows.get(scoreKey(s.id, hole)) || {}, editable = canScoreBetaCard({ ...state, individual: true, memberId: getMemberId(), cardId: s.id }), total = [...s.strokes.values()].reduce((a, n) => a + Number(n || 0), 0), value = Number(row.strokes) || 0; return `<div class="tb-score-side"><div><strong>${esc(sideName(s))}</strong><small>${esc(s.teamName)} · ${s.strokes.size ? `${total} strokes · Thru ${s.strokes.size}` : "Not started"}</small></div>${editable ? `<button class="tb-score" data-tb-open="${s.id}">Hole ${hole}<b>${value || "+"}</b></button>` : `<span class="tb-score is-readonly">Hole ${hole}<b>${value || "—"}</b></span>`}</div>`; }).join("")}</article>`; }).join("");
   const table = scorecardTable(state, sides, count);
-  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf">‹</a><div class="tb-hole"><strong>HOLE ${hole}</strong><small>Par ${parFor(state.holes, hole)} · ${entry.round.format}</small></div><button class="tb-circle" data-tb-next>›</button></header><div class="tb-sub"><div><small>${betaRoundTitle(entry.round)}</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><section class="tb-play">${state.individual || !betaCustomBoardVisible(entry.round) ? "" : scoreboard(state)}${playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.format}">${e.round.format === "pairs" ? "Pairs" : "Singles"}</button>`).join("")}</div>` : ""}${leaderboard}${matches}<div class="tb-bottom ${state.organizer ? "" : "is-member"}"><button class="btn" data-tb-card>Scorecard</button>${state.organizer ? `<button class="btn primary" data-tb-finish ${state.outing.status === "final" ? "disabled" : ""}>${state.outing.status === "final" ? "Finished" : "Finish tournament"}</button>` : ""}</div></section><section class="tb-scorecard" hidden><header class="tb-card-head"><button class="tb-card-back" data-tb-card>‹ Back</button><h2>${entry.round.format.toUpperCase()} SCORECARD</h2></header>${scorecardBody(table)}</section><section class="tb-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Hole ${hole} · Par ${parFor(state.holes, hole)}</small></div><button class="tb-done" data-tb-done>Done</button></div><div class="tb-controls">${["strokes", "putts"].map(f => `<div><span class="tb-label">${f === "strokes" ? "Shots" : "Putts"}</span><div class="tb-step"><button data-tb-step="${f}:-1">−</button><output data-tb-${f}>—</output><button data-tb-step="${f}:1">+</button></div></div>`).join("")}</div></section></main>`;
+  return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf">‹</a><div class="tb-hole"><strong>HOLE ${hole}</strong><small>Par ${parFor(state.holes, hole)} · ${entry.round.format}</small></div><button class="tb-circle" data-tb-next>›</button></header><div class="tb-sub"><div><small>${betaRoundTitle(entry.round)}</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><section class="tb-play">${state.individual || !betaCustomBoardVisible(entry.round) ? "" : scoreboard(state)}${playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.id}">${betaRoundLabel(e.round)}</button>`).join("")}</div>` : ""}${leaderboard}${matches}<div class="tb-bottom ${state.organizer ? "" : "is-member"}"><button class="btn" data-tb-card>Scorecard</button>${state.organizer ? `<button class="btn primary" data-tb-finish ${state.outing.status === "final" ? "disabled" : ""}>${state.outing.status === "final" ? "Finished" : "Finish tournament"}</button>` : ""}</div></section><section class="tb-scorecard" hidden><header class="tb-card-head"><button class="tb-card-back" data-tb-card>‹ Back</button><h2>${entry.round.format.toUpperCase()} SCORECARD</h2></header>${scorecardBody(table)}</section><section class="tb-sheet" data-tb-sheet hidden><div class="tb-sheet-head"><span class="tb-avatar" data-tb-avatar>G</span><div><strong data-tb-name>Golfer</strong><small>Hole ${hole} · Par ${parFor(state.holes, hole)}</small></div><button class="tb-done" data-tb-done>Done</button></div><div class="tb-controls">${["strokes", "putts"].map(f => `<div><span class="tb-label">${f === "strokes" ? "Shots" : "Putts"}</span><div class="tb-step"><button data-tb-step="${f}:-1">−</button><output data-tb-${f}>—</output><button data-tb-step="${f}:1">+</button></div></div>`).join("")}</div></section></main>`;
 }
 
 function focusedMatchMarkup(state) {
   const playable = state.rounds.filter(e => !e.individual && ["pairs", "singles"].includes(e.round.format));
   if (!playable.length) return `<main class="tb-shell" data-tbeta-root><header class="tb-head"><a class="tb-circle" href="#/golf" aria-label="Back">‹</a><div class="tb-hole"><strong>MATCH</strong><small>Tournament Beta</small></div><span></span></header><div class="tb-sub"><div><small>Tournament Beta</small><strong>${esc(state.outing.course || state.outing.name)}</strong></div>${state.organizer ? `<a class="tb-link" href="#/golf?id=${state.outing.id}&setup=1">SETUP</a>` : ""}</div><div class="tb-empty">${state.organizer ? "Open Setup and build the two-team matchups." : "Waiting for the commissioner to assign the matchups."}</div></main>`;
-  const wanted = activeFormat.get(state.outing.id), entry = playable.find(e => e.round.format === wanted) || playable[0];
-  activeFormat.set(state.outing.id, entry.round.format);
+  const wanted = activeFormat.get(state.outing.id), entry = betaSelectedRound(playable, wanted);
+  activeFormat.set(state.outing.id, String(entry.round.id));
   const count = roundHoles(entry.round), hole = Math.max(1, Math.min(count, rememberedHole(state.outing.id))), assignedCourseId = memberCourseId(state), assignedHoles = courseHolesForId(state, assignedCourseId), yards = yardageFor(assignedHoles, hole);
   const yardages = Array.from({ length: count }, (_, i) => yardageFor(assignedHoles, i + 1)).join(","), pars = Array.from({ length: count }, (_, i) => parFor(assignedHoles, i + 1)).join(",");
   rememberHole(state.outing.id, hole);
   const sides = matchSides(state, entry), balls = sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot, holes: sideCourseHoles(state, s), courseName: sideCourseName(state, s) }));
   const leaders = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(g => g.rows);
-  const tabs = playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.format}">${betaRoundLabel(e.round)}</button>`).join("")}</div>` : "";
+  const tabs = playable.length > 1 ? `<div class="tb-round-tabs">${playable.map(e => `<button class="${e === entry ? "is-active" : ""}" data-tb-format="${e.round.id}">${betaRoundLabel(e.round)}</button>`).join("")}</div>` : "";
   const leaderboard = `<section class="tb-leader"><div class="tb-leader-head"><span>${betaRoundLabel(entry.round)} live leaderboard</span><span>LIVE</span></div>${leaders.map((r, i) => `<div class="tb-leader-row"><span>${i + 1}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.teamName)} · <span class="tb-leader-course">${esc(r.courseName)}</span> · ${boardProgress(r)}</small></div><em>${boardLabel(r)}</em></div>`).join("") || `<div class="tb-empty">No matchups yet.</div>`}</section>`;
   const matches = entry.battles.map(b => {
     const names = b.sides.map(sideName);
@@ -412,10 +423,74 @@ async function buildTeamDay(state) {
   if (state.rounds.length && !confirm("Reset both rounds and their scores, then build the schedule again?")) return false;
   let r = await db().from("golf_rounds").delete().eq("outing_id", state.outing.id); if (r.error) throw r.error;
   const addRound = async format => { const added = await db().rpc("golf_add_round", { p_outing_id: state.outing.id, p_format: format, p_scoring: "match" }); if (added.error) throw added.error; const changed = await db().from("golf_rounds").update({ name: betaRoundName(format), holes: format === "pairs" ? 18 : 9 }).eq("id", added.data); if (changed.error) throw changed.error; return Number(added.data); };
-  const pairsId = await addRound("pairs"); r = await db().rpc("golf_build_pairs", { p_round_id: pairsId }); if (r.error) throw r.error;
-  const singlesId = await addRound("singles"), pools = state.teams.map(t => state.participants.filter(p => String(p.team_id) === String(t.id)).sort((a, b) => Number(a.sort_order) - Number(b.sort_order)));
-  for (let i = 0; i < betaMatchCount("singles"); i++) { const made = await db().rpc("golf_add_match", { p_round_id: singlesId }); if (made.error) throw made.error; const sides = await db().from("golf_match_sides").select("id").eq("match_id", made.data).order("slot"); if (sides.error) throw sides.error; const seated = await db().from("golf_match_players").insert(sides.data.map((s, n) => ({ side_id: s.id, participant_id: pools[n][i].id }))); if (seated.error) throw seated.error; }
+  const pairsId = await addRound("pairs"); await buildStandardRoundMatches(state, pairsId, "pairs");
+  const singlesId = await addRound("singles"); await buildStandardRoundMatches(state, singlesId, "singles");
   return true;
+}
+
+async function buildStandardRoundMatches(state, roundId, format) {
+  if (format === "pairs") {
+    const built = await db().rpc("golf_build_pairs", { p_round_id: Number(roundId) });
+    if (built.error) throw built.error;
+    return;
+  }
+  const pools = state.teams.map(team => state.participants
+    .filter(person => String(person.team_id) === String(team.id))
+    .sort((a, b) => Number(a.sort_order) - Number(b.sort_order)));
+  if (pools.length !== 2 || pools.some(pool => pool.length < betaMatchCount("singles"))) throw new Error("Place exactly six golfers on each team first.");
+  for (let i = 0; i < betaMatchCount("singles"); i++) {
+    const made = await db().rpc("golf_add_match", { p_round_id: Number(roundId) });
+    if (made.error) throw made.error;
+    const sides = await db().from("golf_match_sides").select("id").eq("match_id", made.data).order("slot");
+    if (sides.error) throw sides.error;
+    const seated = await db().from("golf_match_players").insert(sides.data.map((side, index) => ({ side_id: side.id, participant_id: pools[index][i].id })));
+    if (seated.error) throw seated.error;
+  }
+}
+
+async function addBetaRound(state, format) {
+  const status = betaFormatStatus(state);
+  if (format === "custom") {
+    const source = status.custom;
+    const sizes = betaCustomSizes(source?.round);
+    if (!source || !sizes) throw new Error("Build the first custom match before adding another round.");
+    const rosters = state.teams.map(team => state.participants
+      .filter(person => String(person.team_id) === String(team.id))
+      .sort((a, b) => Number(a.sort_order) - Number(b.sort_order)));
+    if (rosters.length !== 2 || rosters.some((roster, index) => roster.length < sizes[index])) throw new Error("Place enough golfers on both sides first.");
+    const added = await db().rpc("golf_add_round", { p_outing_id: state.outing.id, p_format: source.round.format, p_scoring: scoringOf(source.round) });
+    if (added.error) throw added.error;
+    const roundId = Number(added.data);
+    try {
+      let result = await db().from("golf_rounds").update({ name: source.round.name, holes: roundHoles(source.round) }).eq("id", roundId);
+      if (result.error) throw result.error;
+      const made = await db().rpc("golf_add_match", { p_round_id: roundId });
+      if (made.error) throw made.error;
+      const sides = await db().from("golf_match_sides").select("id").eq("match_id", made.data).order("slot");
+      if (sides.error) throw sides.error;
+      const seats = sides.data.flatMap((side, index) => rosters[index].slice(0, sizes[index]).map(person => ({ side_id: side.id, participant_id: person.id })));
+      result = await db().from("golf_match_players").insert(seats);
+      if (result.error) throw result.error;
+      return roundId;
+    } catch (error) {
+      await db().from("golf_rounds").delete().eq("id", roundId);
+      throw error;
+    }
+  }
+  if (!status.teamsReady) throw new Error("Place exactly six golfers on each team first.");
+  const holes = format === "pairs" ? 18 : 9;
+  const added = await db().rpc("golf_add_round", { p_outing_id: state.outing.id, p_format: format, p_scoring: "match" });
+  if (added.error) throw added.error;
+  const roundId = Number(added.data);
+  try {
+    const changed = await db().from("golf_rounds").update({ name: betaAddedRoundName(state.rounds, format), holes }).eq("id", roundId);
+    if (changed.error) throw changed.error;
+    await buildStandardRoundMatches(state, roundId, format);
+    return roundId;
+  } catch (error) {
+    await db().from("golf_rounds").delete().eq("id", roundId);
+    throw error;
+  }
 }
 
 async function buildCustomMatch(state, sizes, holes, scoring, showBoard = true) {
@@ -573,6 +648,13 @@ function wireSetup(root, state) {
   })));
   root.querySelectorAll("[data-tb-save-team]").forEach(b => b.addEventListener("click", e => busy(e.currentTarget, async () => { const name = root.querySelector(`[data-tb-team-name="${b.dataset.tbSaveTeam}"]`).value.trim(); if (!name) throw new Error("Team name cannot be blank."); const r = await db().from("golf_teams").update({ name }).eq("id", b.dataset.tbSaveTeam); if (r.error) throw r.error; await paint(); })));
   root.querySelector("[data-tb-build-team-day]")?.addEventListener("click", e => busy(e.currentTarget, async () => { if (await buildTeamDay(state)) { setupSection.set(state.outing.id, "pairs"); await paint(); } else e.currentTarget.disabled = false; }));
+  root.querySelectorAll("[data-tb-add-round]").forEach(button => button.addEventListener("click", e => busy(e.currentTarget, async () => {
+    const format = ["pairs", "singles", "custom"].includes(button.dataset.tbAddRound) ? button.dataset.tbAddRound : "pairs";
+    const roundId = await addBetaRound(state, format);
+    setupSection.set(state.outing.id, `round-${roundId}`);
+    toast(`${format === "custom" ? "Custom" : format === "pairs" ? "Pairs" : "Singles"} round added`);
+    await paint();
+  })));
   root.querySelector("[data-tb-build-custom]")?.addEventListener("click", e => busy(e.currentTarget, async () => {
     const sizes = [0, 1].map(index => Number(root.querySelector(`[data-tb-custom-side="${index}"]`)?.value));
     const holes = Number(root.querySelector("[data-tb-custom-holes]")?.value) || 18;
@@ -625,7 +707,7 @@ function wireMatch(root, state) {
   stopSyncWatch = () => { stopQueue(); removeEventListener("online", updateSync); removeEventListener("offline", updateSync); };
   void flush();
   const playable = state.rounds.filter(e => !e.individual && ["pairs", "singles"].includes(e.round.format));
-  const entry = playable.find(e => e.round.format === activeFormat.get(state.outing.id)) || playable[0];
+  const entry = betaSelectedRound(playable, activeFormat.get(state.outing.id));
   if (!entry) return;
   const count = roundHoles(entry.round);
   const repaint = () => { root.innerHTML = focusedMatchMarkup(state); wireMatch(root, state); };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { betaCaptainChoices, betaCustomBoardVisible, betaCustomRoundName, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaRoundTitle, betaSeatsForSide, betaSeatsPerSide } from "./golf-tournament-beta-format.js";
+import { betaAddedRoundName, betaCaptainChoices, betaCustomBoardVisible, betaCustomRoundName, betaCustomSizes, betaFormatStatus, betaIsCustomRound, betaMatchCount, betaRoundLabel, betaRoundName, betaRoundTitle, betaSeatsForSide, betaSeatsPerSide, betaSelectedRound } from "./golf-tournament-beta-format.js";
 
 const side = (team, players) => ({ team_id: team, players: Array.from({ length: players }, (_, id) => ({ id })) });
 const battle = (players) => ({ sides: [side(1, players), side(2, players)] });
@@ -28,6 +28,18 @@ describe("Tournament Beta team format", () => {
     expect(betaSeatsPerSide("pairs")).toBe(2);
   });
 
+  it("names and selects additional rounds independently", () => {
+    const rounds = [
+      { round: { id: 10, format: "pairs", name: "Round 1 · 2v2" } },
+      { round: { id: 11, format: "singles", name: "Round 2 · Singles" } },
+      { round: { id: 12, format: "pairs", name: "Pairs 2" } },
+    ];
+    expect(betaAddedRoundName(rounds, "pairs")).toBe("Pairs 3");
+    expect(betaRoundLabel(rounds[2].round)).toBe("Pairs 2");
+    expect(betaSelectedRound(rounds, "12")).toBe(rounds[2]);
+    expect(betaSelectedRound(rounds, "singles")).toBe(rounds[1]);
+  });
+
   it("offers only rostered league members as captains", () => {
     const team = { id: 1 };
     const participants = [
@@ -46,6 +58,7 @@ describe("Tournament Beta team format", () => {
     expect(betaSeatsForSide(round, 0)).toBe(2);
     expect(betaSeatsForSide(round, 1)).toBe(1);
     expect(betaRoundLabel(round)).toBe("Custom 2 vs 1");
+    expect(betaRoundLabel({ ...round, round_number: 3 })).toBe("Custom 2 vs 1 · R3");
     expect(betaFormatStatus({ rounds: [custom] })).toMatchObject({ custom, customReady: true, pairs: undefined, pairsReady: false });
   });
 

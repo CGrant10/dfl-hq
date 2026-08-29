@@ -14,7 +14,11 @@ export const betaIsCustomRound = round => Boolean(betaCustomSizes(round));
 export const betaCustomBoardVisible = round => !/ · Board off$/i.test(String(round?.name || ""));
 export const betaCustomRoundName = (sizes, showBoard = true) => `Custom Match · ${sizes[0]}v${sizes[1]}${showBoard ? "" : " · Board off"}`;
 export const betaRoundTitle = round => String(round?.name || "").replace(/ · Board off$/i, "");
-export const betaRoundLabel = round => betaIsCustomRound(round) ? `Custom ${betaCustomSizes(round).join(" vs ")}` : round?.format === "pairs" ? "Pairs" : "Singles";
+export const betaRoundLabel = round => {
+  if (betaIsCustomRound(round)) return `Custom ${betaCustomSizes(round).join(" vs ")}${round?.round_number ? ` · R${round.round_number}` : ""}`;
+  const name = String(round?.name || "").trim();
+  return /^(Pairs|Singles) \d+$/i.test(name) ? name : round?.format === "pairs" ? "Pairs" : "Singles";
+};
 export const betaSeatsForSide = (round, sideIndex = 0) => betaCustomSizes(round)?.[sideIndex] || (round?.format === "pairs" ? 2 : 1);
 
 export function betaCaptainChoices(team, participants = []) {
@@ -51,5 +55,15 @@ export function betaFormatStatus({ teams = [], participants = [], rounds = [] } 
 }
 
 export const betaRoundName = format => format === "pairs" ? "Round 1 · 2v2" : "Round 2 · Singles";
+export function betaAddedRoundName(rounds = [], format) {
+  const count = rounds.filter(entry => entry?.round?.format === format && !betaIsCustomRound(entry.round)).length + 1;
+  return `${format === "pairs" ? "Pairs" : "Singles"} ${count}`;
+}
+
+export function betaSelectedRound(rounds = [], selected) {
+  return rounds.find(entry => String(entry?.round?.id) === String(selected))
+    || rounds.find(entry => entry?.round?.format === selected)
+    || rounds[0];
+}
 export const betaMatchCount = format => format === "pairs" ? BETA_PAIRS_MATCHES : BETA_SINGLES_MATCHES;
 export const betaSeatsPerSide = format => format === "pairs" ? 2 : 1;
