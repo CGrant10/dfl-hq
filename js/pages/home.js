@@ -33,7 +33,7 @@ import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
-import { draftView, draftCard } from "../draft-order.js";
+import { draftView, draftCard, seasonTeamsView, seasonTeamsCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 
 let stage = null;
@@ -72,7 +72,7 @@ export async function render(view) {
     db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
-    db().from("sleeper_leagues").select("season, champion_user_id").order("season", { ascending: false }),
+    db().from("sleeper_leagues").select("season,status,champion_user_id").order("season", { ascending: false }),
     /* Only the four columns this page reads. Not loadMembers(), which filters
        to active members - the owner count and the historical champion lookup
        both need people who have since left. */
@@ -142,12 +142,17 @@ export async function render(view) {
 
   /* Null all the way through when there is no draft, no order, or a draft
      that finished long enough ago to be history rather than news. */
-  const draftPanel = draftCard(draftView({
+  const leagueStatus = leagues.data?.[0]?.status || "";
+  const draftEvidence = {
     draft: draft?.draft || null,
     slots: draft?.slots || [],
+    picks: draft?.picks || [],
     members: memberRows,
     meSleeperId: myMember?.sleeper_user_id || null,
-  }));
+    leagueStatus,
+  };
+  const draftPanel = draftCard(draftView(draftEvidence));
+  const teamsPanel = draftPanel ? "" : seasonTeamsCard(seasonTeamsView(draftEvidence));
 
   /*
     THE ORDER IS THE EDIT.
@@ -177,6 +182,7 @@ export async function render(view) {
     ${strip}
     ${creedDoors(events.data, golfRow, polls.data, dues.data)}
     ${draftPanel}
+    ${teamsPanel}
     <div data-wall-slot>${wallCard(wall)}</div>
     <div class="home-lower">
       <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>

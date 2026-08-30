@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  draftCard, draftView, metaLine, ordinal, pickNumbers,
-  slotsFromOrder, slotsFromPicks, stillCurrent,
+  draftCard, draftFinished, draftView, metaLine, ordinal, pickNumbers,
+  seasonTeamsCard, seasonTeamsView, slotsFromOrder, slotsFromPicks, stillCurrent,
 } from "./draft-order.js";
 
 const MEMBERS = [
@@ -89,12 +89,62 @@ describe("what earns the front page", () => {
     expect(stillCurrent({ status: "complete", start_time_ms: null }, started)).toBe(false);
     expect(stillCurrent(null, started)).toBe(false);
   });
+
+  it("recognizes a full board even when the stored status is stale", () => {
+    const draft = { status: "pre_draft", rounds: 2 };
+    const slots = [{ roster_id: 1 }, { roster_id: 2 }];
+    const picks = Array.from({ length: 4 }, (_, i) => ({ pick_no: i + 1, roster_id: (i % 2) + 1 }));
+    expect(draftFinished(draft, { slots, picks })).toBe(true);
+    expect(stillCurrent(draft, started, { slots, picks })).toBe(false);
+  });
+
+  it("recognizes the in-season phase without waiting on draft status", () => {
+    expect(draftFinished({ status: "pre_draft", rounds: 15 }, { leagueStatus: "in_season" })).toBe(true);
+  });
+
+  it("retires a stale scheduled board after twelve hours but keeps an active draft", () => {
+    const later = started + 12 * 60 * 60 * 1000;
+    expect(stillCurrent({ status: "pre_draft", start_time_ms: started }, later)).toBe(false);
+    expect(stillCurrent({ status: "drafting", start_time_ms: started }, later + 86_400_000)).toBe(true);
+  });
+});
+
+describe("the post-draft league field", () => {
+  const draft = { season: 2026, status: "pre_draft", rounds: 2 };
+  const slots = [
+    { draft_slot: 1, roster_id: 11, sleeper_user_id: "u1" },
+    { draft_slot: 2, roster_id: 12, sleeper_user_id: "u2" },
+  ];
+  const picks = [
+    { pick_no: 1, roster_id: 11, sleeper_user_id: "u1" },
+    { pick_no: 2, roster_id: 12, sleeper_user_id: "u2" },
+    { pick_no: 3, roster_id: 12, sleeper_user_id: "u2" },
+    { pick_no: 4, roster_id: 11, sleeper_user_id: "u1" },
+  ];
+
+  it("replaces the order with named teams and roster counts", () => {
+    const view = seasonTeamsView({ draft, slots, picks, members: MEMBERS, meSleeperId: "u1" });
+    expect(view.pickCount).toBe(4);
+    expect(view.teams).toEqual([
+      expect.objectContaining({ id: "12", name: "Dave", players: 2, mine: false }),
+      expect.objectContaining({ id: "11", name: "The Hammer", players: 2, mine: true }),
+    ]);
+    const html = seasonTeamsCard(view);
+    expect(html).toContain("The League Is Set");
+    expect(html).toContain("#/analyzer?team=11");
+    expect(html).toContain("YOU");
+  });
+
+  it("does not show before the draft is actually finished", () => {
+    expect(seasonTeamsView({ draft, slots, picks: picks.slice(0, 3), members: MEMBERS })).toBe(null);
+    expect(seasonTeamsCard(null)).toBe("");
+  });
 });
 
 describe("the card's model", () => {
   const draft = {
     season: 2026, draft_id: "d1", status: "pre_draft", draft_type: "snake",
-    rounds: 15, start_time_ms: 1_756_339_200_000, order_known: true,
+    rounds: 15, start_time_ms: 4_000_000_000_000, order_known: true,
   };
   const slots = [
     { draft_slot: 2, sleeper_user_id: "u2" },

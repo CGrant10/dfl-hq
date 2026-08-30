@@ -92,7 +92,8 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
 
 function page(data) {
   const me = currentMember();
-  let selectedId = data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id || data.teams[0].id;
+  const requestedId = new URLSearchParams((location.hash.split("?")[1] || "")).get("team");
+  let selectedId = data.teams.find(team => String(team.id) === String(requestedId))?.id || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id || data.teams[0].id;
   let compareId = data.teams.find(team => team.id !== selectedId)?.id || selectedId;
   let playerId = "";
   return {

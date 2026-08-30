@@ -893,3 +893,109 @@
   #home-wrap .do-figure { font-size: var(--fs-stat-sm); }
   #home-wrap .do-you { display: none; }
 }
+
+/* ---------------------------------------------------------------------
+   POST-DRAFT ROSTER ROOM. The order disappears when the board is full and
+   this becomes the useful seasonal replacement: the teams, their owners and
+   a direct route into the analyzer. It deliberately shares the Admin card's
+   upper-left wash without repeating a full-page gradient.
+   --------------------------------------------------------------------- */
+#home-wrap .season-field .sf-season {
+  margin-left: var(--s-2);
+  font-size: var(--fs-label);
+  color: var(--muted);
+}
+#home-wrap .sf-card {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--accent-fill) 15%, transparent) 0, transparent 34%),
+    var(--card);
+}
+#home-wrap .sf-lead {
+  display: grid;
+  grid-template-columns: minmax(145px, .65fr) minmax(220px, 1.45fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+#home-wrap .sf-lead > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  gap: 0 var(--s-2);
+}
+#home-wrap .sf-lead small {
+  grid-column: 1 / -1;
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+}
+#home-wrap .sf-lead strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-stat);
+  line-height: .9;
+  color: var(--accent);
+}
+#home-wrap .sf-lead span,
+#home-wrap .sf-lead p {
+  margin: 0;
+  color: var(--body-text);
+  font-size: var(--fs-small);
+}
+#home-wrap .sf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-soft);
+}
+#home-wrap .sf-team {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+}
+#home-wrap .sf-team:hover { background: var(--bg-2); }
+#home-wrap .sf-team.is-me {
+  background: color-mix(in srgb, var(--accent-fill) 11%, var(--card));
+  box-shadow: inset 3px 0 var(--accent);
+}
+#home-wrap .sf-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  color: var(--accent);
+  background: var(--bg-2);
+}
+#home-wrap .sf-team > span:nth-child(2) { min-width: 0; display: grid; }
+#home-wrap .sf-team strong,
+#home-wrap .sf-team small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .sf-team strong { font-size: var(--fs-body); }
+#home-wrap .sf-team small { color: var(--muted); font-size: var(--fs-micro); }
+#home-wrap .sf-team b {
+  font-size: var(--fs-micro);
+  letter-spacing: var(--ls-caps);
+  color: var(--accent);
+}
+@media (max-width: 720px) {
+  #home-wrap .sf-lead { grid-template-columns: 1fr auto; }
+  #home-wrap .sf-lead > p { grid-column: 1 / -1; grid-row: 2; }
+  #home-wrap .sf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  #home-wrap .sf-lead { gap: var(--s-3); padding: var(--s-3); }
+  #home-wrap .sf-lead > p { display: none; }
+  #home-wrap .sf-grid { grid-template-columns: minmax(0, 1fr); }
+  #home-wrap .sf-team { padding: var(--s-2) var(--s-3); }
+}

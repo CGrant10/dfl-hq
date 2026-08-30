@@ -106,18 +106,34 @@ const STATUS_TEXT = {
 
 const TYPE_TEXT = { snake: "Snake", linear: "Linear", auction: "Auction" };
 
-/** Is this draft still worth the front page? */
-export function stillCurrent(draft, now = Date.now()) {
+/** Has the league moved beyond draft night, even if a sync left status stale? */
+export function draftFinished(draft, { slots = [], picks = [], leagueStatus = "", now = Date.now() } = {}) {
   if (!draft) return false;
-  return draft.status !== "complete";
+  if (draft.status === "complete") return true;
+  if (["in_season", "post_season", "complete"].includes(String(leagueStatus))) return true;
+  const rounds = Number(draft.rounds);
+  const teams = slots.length || new Set(picks.map(p => p?.roster_id).filter(v => v != null)).size;
+  const expected = rounds * teams;
+  if (Number.isFinite(expected) && expected > 0 && picks.length >= expected) return true;
+  /* A missed sync must not pin yesterday's order to Home forever. Twelve
+     hours leaves room for a long draft and overnight pauses. `drafting` is
+     deliberately exempt: an actually active room always wins over the clock. */
+  const start = Number(draft.start_time_ms);
+  return draft.status !== "drafting" && Number.isFinite(start) && start > 0 && now >= start + 12 * 60 * 60 * 1000;
+}
+
+/** Is this draft still worth the front page? */
+export function stillCurrent(draft, now = Date.now(), evidence = {}) {
+  if (!draft) return false;
+  return !draftFinished(draft, { ...evidence, now });
 }
 
 /**
  * Fold the two tables and the member list into what the card draws.
  * @returns {null|object} null when there is nothing worth showing.
  */
-export function draftView({ draft = null, slots = [], members = [], meSleeperId = null, now = Date.now() } = {}) {
-  if (!stillCurrent(draft, now)) return null;
+export function draftView({ draft = null, slots = [], picks = [], members = [], meSleeperId = null, leagueStatus = "", now = Date.now() } = {}) {
+  if (!stillCurrent(draft, now, { slots, picks, leagueStatus })) return null;
 
   const nameOf = (uid) => {
     if (!uid) return "";
@@ -157,6 +173,47 @@ export function draftView({ draft = null, slots = [], members = [], meSleeperId 
     board,
     mySlot: mine ? mine.slot : null,
   };
+}
+
+/** The post-draft league field that replaces the order on Home. */
+export function seasonTeamsView({ draft = null, slots = [], picks = [], members = [], meSleeperId = null, leagueStatus = "" } = {}) {
+  if (!draftFinished(draft, { slots, picks, leagueStatus })) return null;
+  const memberBySleeper = new Map(members.filter(m => m?.sleeper_user_id).map(m => [String(m.sleeper_user_id), m]));
+  const countsByRoster = new Map();
+  const countsBySleeper = new Map();
+  picks.forEach(pick => {
+    if (pick?.roster_id != null) countsByRoster.set(String(pick.roster_id), (countsByRoster.get(String(pick.roster_id)) || 0) + 1);
+    if (pick?.sleeper_user_id) countsBySleeper.set(String(pick.sleeper_user_id), (countsBySleeper.get(String(pick.sleeper_user_id)) || 0) + 1);
+  });
+  const source = slots.length ? slots : [...new Map(picks.filter(p => p?.roster_id != null).map(p => [String(p.roster_id), p])).values()];
+  const teams = source.map((slot, index) => {
+    const sleeperId = slot?.sleeper_user_id == null ? "" : String(slot.sleeper_user_id);
+    const member = memberBySleeper.get(sleeperId);
+    const rosterId = slot?.roster_id == null ? String(index + 1) : String(slot.roster_id);
+    return {
+      id: rosterId,
+      name: member?.team_name || member?.display_name || `Team ${index + 1}`,
+      owner: member?.display_name || "Unassigned owner",
+      players: countsByRoster.get(rosterId) || countsBySleeper.get(sleeperId) || 0,
+      mine: !!meSleeperId && sleeperId === String(meSleeperId),
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  return { season: Number(draft.season) || null, pickCount: picks.length, teams };
+}
+
+export function seasonTeamsCard(view) {
+  if (!view?.teams?.length) return "";
+  const season = view.season ? `<span class="sf-season">${esc(String(view.season))}</span>` : "";
+  return `<section class="block season-field">
+    <h2 class="section-title">The League Is Set${season}<a class="section-link" href="#/analyzer">Team Analyzer &rarr;</a></h2>
+    <div class="card sf-card"><div class="sf-lead">
+      <div><small>ROSTERS LOCKED</small><strong>${view.teams.length}</strong><span>${view.pickCount ? `${view.pickCount} players selected` : "Teams are ready for the season"}</span></div>
+      <p>Draft night is over. Compare every roster, find the strongest position groups and shop possible trades.</p>
+      <a class="btn primary small" href="#/analyzer">Open Analyzer</a>
+    </div><div class="sf-grid">${view.teams.map(team => `<a href="#/analyzer?team=${encodeURIComponent(team.id)}" class="sf-team ${team.mine ? "is-me" : ""}">
+      <span class="sf-avatar">${esc((Array.from(team.name.trim())[0] || "D").toUpperCase())}</span><span><strong>${esc(team.name)}</strong><small>${esc(team.owner)}${team.players ? ` · ${team.players} players` : ""}</small></span>${team.mine ? `<b>YOU</b>` : ""}
+    </a>`).join("")}</div></div>
+  </section>`;
 }
 
 /**

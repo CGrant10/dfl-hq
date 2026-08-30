@@ -12,11 +12,11 @@ import { db } from "./supabase.js";
 
 /* A migration a league has not run yet must not take the front page down.
    Same shape as ACTIVITY_MISSING in js/activity.js. */
-export const DRAFT_ORDER_MISSING = /sleeper_drafts|sleeper_draft_slots|schema cache|does not exist/i;
+export const DRAFT_ORDER_MISSING = /sleeper_drafts|sleeper_draft_slots|sleeper_draft_picks|schema cache|does not exist/i;
 
 /**
  * The newest season's draft and its board.
- * @returns {Promise<null|{draft:object, slots:object[]}>} null when there is
+ * @returns {Promise<null|{draft:object, slots:object[], picks:object[]}>} null when there is
  *          no draft on record or the migration has not been run - either way
  *          the card draws nothing.
  */
@@ -34,7 +34,16 @@ export async function loadDraftOrder() {
       .eq("season", draft.season).order("draft_slot", { ascending: true });
     if (slotErr) throw slotErr;
 
-    return { draft, slots: slots || [] };
+    /* Status can lag behind the actual Sleeper draft. The completed pick
+       count is independent evidence that lets Home retire the order as soon
+       as the board is full, even before another commissioner sync updates
+       sleeper_drafts.status. */
+    const { data: picks, error: pickErr } = await db()
+      .from("sleeper_draft_picks").select("pick_no,round,roster_id,sleeper_user_id")
+      .eq("season", draft.season).order("pick_no", { ascending: true });
+    if (pickErr && !DRAFT_ORDER_MISSING.test(pickErr.message || "")) throw pickErr;
+
+    return { draft, slots: slots || [], picks: pickErr ? [] : (picks || []) };
   } catch (err) {
     /* An absent migration is silent; anything else is worth a console note
        but still must not take the page down. */
