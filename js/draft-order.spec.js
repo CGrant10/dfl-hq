@@ -78,9 +78,10 @@ describe("what earns the front page", () => {
     expect(stillCurrent({ status: "drafting" }, started)).toBe(true);
   });
 
-  it("keeps a finished draft for a week and then lets it go", () => {
+  it("removes a finished draft immediately", () => {
     const done = { status: "complete", start_time_ms: started };
-    expect(stillCurrent(done, started + 6 * 86_400_000)).toBe(true);
+    expect(stillCurrent(done, started)).toBe(false);
+    expect(stillCurrent(done, started + 6 * 86_400_000)).toBe(false);
     expect(stillCurrent(done, started + 8 * 86_400_000)).toBe(false);
   });
 

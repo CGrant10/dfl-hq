@@ -26,12 +26,6 @@
 
 import { esc } from "./ui.js";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-/* How long a finished draft stays on the front page. The board is worth
-   looking at the week after it happens; a month later it is history, and
-   history has its own pages. */
-const COMPLETE_GRACE_MS = 7 * DAY_MS;
-
 export function ordinal(n) {
   /* Number(null) is 0, which would print "0th" for an absent slot. Nothing
      is an empty string here, not a rank. */
@@ -115,10 +109,7 @@ const TYPE_TEXT = { snake: "Snake", linear: "Linear", auction: "Auction" };
 /** Is this draft still worth the front page? */
 export function stillCurrent(draft, now = Date.now()) {
   if (!draft) return false;
-  if (draft.status !== "complete") return true;
-  const started = Number(draft.start_time_ms);
-  if (!Number.isFinite(started) || started <= 0) return false;
-  return now - started < COMPLETE_GRACE_MS;
+  return draft.status !== "complete";
 }
 
 /**
