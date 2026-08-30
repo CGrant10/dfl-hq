@@ -139,6 +139,14 @@ function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()
   a link inside it just changes the hash and the sheet closes itself.
 */
 const moreSheet=document.getElementById("more"),moreBtn=document.getElementById("more-btn");
+const moreNav=moreSheet?.querySelector(".quicknav");
+if(moreNav&&!moreNav.querySelector('a[href="#/analyzer"]')){
+  const admin=moreNav.querySelector('a[href="#/admin"]');
+  const analyzer=document.createElement("a");
+  analyzer.href="#/analyzer";
+  analyzer.innerHTML='<svg class="ico" aria-hidden="true"><use href="#i-record-steel"></use></svg><span class="qn-label">Team Analyzer</span>';
+  moreNav.insertBefore(analyzer,admin);
+}
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
 const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
