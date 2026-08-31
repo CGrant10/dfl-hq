@@ -138,6 +138,22 @@ export async function markRead(ids) {
   window.dispatchEvent(new CustomEvent(BADGE_EVENT));
 }
 
+/* Deleting a notice removes YOUR copy. The message is one row shared by the
+   whole league, so a real delete would clear it off everyone's phone. */
+export async function dismissNotifications(ids) {
+  const clean = [...new Set(ids.map(Number).filter(Number.isSafeInteger))];
+  if (!clean.length) return;
+  const { error } = await db().rpc("dismiss_notifications", { message_ids: clean });
+  if (error) throw error;
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+}
+
+export async function clearInbox() {
+  const { error } = await db().rpc("clear_notification_inbox");
+  if (error) throw error;
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+}
+
 async function unreadCount() {
   if (!currentMember()) return 0;
   const { data, error } = await db().rpc("notification_unread_count");

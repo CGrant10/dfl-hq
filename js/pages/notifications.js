@@ -1,7 +1,7 @@
 import { currentMember } from "../members.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { ALL_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
-import { disablePush, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription } from "../notifications.js";
+import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
 
 const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] || "League";
@@ -29,11 +29,14 @@ function settingsMarkup(state) {
 function inboxMarkup(rows) {
   if (!rows.length) return `<div class="notify-empty"><strong>You’re all caught up.</strong><span>Commissioner notes, trades, polls and reminders will collect here.</span></div>`;
   return `<div class="notification-list">${rows.map(row => `
-    <a class="notification-row ${row.is_read ? "" : "is-unread"}" href="${esc(row.target_url || "#/home")}" data-notification-id="${row.id}">
-      <span class="notification-dot" aria-hidden="true"></span>
-      <span class="notification-copy"><small>${esc(labelFor(row.category))} · ${esc(timeAgo(row.created_at))}</small><strong>${esc(row.title)}</strong><span>${esc(row.body)}</span></span>
-      <span class="notification-arrow" aria-hidden="true">›</span>
-    </a>`).join("")}</div>`;
+    <div class="notification-item">
+      <a class="notification-row ${row.is_read ? "" : "is-unread"}" href="${esc(row.target_url || "#/home")}" data-notification-id="${row.id}">
+        <span class="notification-dot" aria-hidden="true"></span>
+        <span class="notification-copy"><small>${esc(labelFor(row.category))} · ${esc(timeAgo(row.created_at))}</small><strong>${esc(row.title)}</strong><span>${esc(row.body)}</span></span>
+        <span class="notification-arrow" aria-hidden="true">›</span>
+      </a>
+      <button type="button" class="notification-delete" data-delete-notification="${row.id}" aria-label="Delete ${esc(row.title)}">&times;</button>
+    </div>`).join("")}</div>`;
 }
 
 export async function render(view) {
@@ -51,7 +54,7 @@ export async function render(view) {
     view.innerHTML = `<h1>Notifications</h1>${errorBox(err)}<div class="card"><div class="card-body muted">Run <strong>notifications_schema.sql</strong> in Supabase to finish notification setup.</div></div>`;
     return;
   }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div>${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}</header>${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
+  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
 
   view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
     const btn = e.currentTarget;
@@ -77,6 +80,21 @@ export async function render(view) {
     try { await markRead(rows.filter(r => !r.is_read).map(r => r.id)); render(view); }
     catch (err) { toast(err.message || "Could not mark notifications read", true); e.currentTarget.disabled = false; }
   });
+
+  view.querySelector("[data-clear-all]")?.addEventListener("click", async e => {
+    if (!confirm(`Clear all ${rows.length} notification${rows.length === 1 ? "" : "s"} from your inbox? This only clears your copy.`)) return;
+    e.currentTarget.disabled = true;
+    try { await clearInbox(); render(view); }
+    catch (err) { toast(err.message || "Could not clear your inbox", true); e.currentTarget.disabled = false; }
+  });
+
+  view.querySelectorAll("[data-delete-notification]").forEach(button => button.addEventListener("click", async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    button.disabled = true;
+    try { await dismissNotifications([Number(button.dataset.deleteNotification)]); render(view); }
+    catch (err) { toast(err.message || "Could not delete that notification", true); button.disabled = false; }
+  }));
 
   view.querySelectorAll("[data-notification-id]").forEach(link => link.addEventListener("click", () => {
     void markRead([Number(link.dataset.notificationId)]).catch(() => {});
