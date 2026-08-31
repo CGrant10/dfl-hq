@@ -145,6 +145,7 @@ export const SECTIONS = [
       { name: "player",     label: "Player",      type: "text",   required: true, placeholder: "Christian McCaffrey" },
       { name: "round_cost", label: "Round cost",  type: "number", placeholder: "2" },
       { name: "year",       label: "Season",      type: "number", required: true, default: THIS_YEAR },
+      { name: "keeper_year",label: "Keeper year",  type: "number", placeholder: "1" },
       { name: "notes",      label: "Notes",       type: "textarea" },
     ],
   },

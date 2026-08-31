@@ -1,7 +1,8 @@
 // =====================================================================
-// Keepers - who is keeping whom, and what round it costs.
+// Keepers - who is keeping whom, how long they have been held, and what
+// round it costs.
 //
-// Three columns, one row per keeper, one card for the whole league. The
+// Four columns, one row per keeper, one card for the whole league. The
 // team name is printed once and left blank on a team's later rows, the way
 // a printed table of contents does it - so the eye runs straight down the
 // player column without a header or a box interrupting it every line.
@@ -17,7 +18,7 @@ import { selfStatus, myKeepers, pickable, selfCard, wireSelfCard } from "../keep
 import { loadPlayers, loadSeasonStats, loadMarketAdp } from "../sleeper.js";
 import { advise, badgesFor, comparisonRow, factsFor, whyFor, marketFrom,
          CLASS, LABELS, NO_MARKET, NO_PRODUCTION } from "../keeper-advisor.js";
-import { configFor, decisionContext, describeRules } from "../keeper-rules.js";
+import { configFor, decisionContext, describeRules, DEFAULT_RULES } from "../keeper-rules.js";
 import { positionalFinish, scoringFormat, seasonTotals } from "../dfl-scoring.js";
 import { normalizeSleeperMarket } from "../keeper-market.js";
 import { openKeeperEntry } from "../keeper-entry.js";
@@ -28,6 +29,12 @@ let year = null;   // remembered while the app stays open
 
 export async function render(view) {
   const rows = await selectAll("keepers", { order: "team", asc: true });
+  /* The hold length is the league's own rule, not a 3 written into this page.
+     An un-migrated league has no keeper_rules table, which is not worth
+     failing the board over - the default is the same three seasons. */
+  const ruleRows = await db().from("keeper_rules")
+    .select("effective_season, max_keeper_seasons, cost_basis, round_adjustment, progression")
+    .then((r) => (r.error ? [] : (r.data || [])), () => []);
 
   if (!rows.length) {
     view.innerHTML = `
@@ -80,7 +87,10 @@ export async function render(view) {
       ? `${year} · ${mine.length} keeper${mine.length === 1 ? "" : "s"} across ${teams} team${teams === 1 ? "" : "s"}`
       : `${year} · nothing recorded`;
 
-    body.innerHTML = teamList(mine)
+    const maxYears = configFor(ruleRows, year)?.max_keeper_seasons
+                  ?? DEFAULT_RULES.max_keeper_seasons;
+
+    body.innerHTML = teamList(mine, maxYears)
       + `<div class="row-end ke-actions">
            <button type="button" class="btn ghost small" data-keeper-share>Share keeper board</button>
            ${canEdit() ? `<button type="button" class="btn" data-keeper-entry>Add keeper</button>
@@ -656,14 +666,19 @@ function compareTable(all, context) {
 }
 
 /**
- * The whole year as one three-column list, sorted by team.
+ * The whole year as one list, sorted by team.
  *
  * A row only draws its top hairline when it starts a new team, so the
  * grouping is legible without a header per team. The cost column is fixed
  * width with tabular digits, so the rounds line up as a column you can
  * scan on its own.
+ *
+ * `keeper_year` is which season of the hold this row is - 1 the first time a
+ * player is kept. The season he was first selected and the seasons still left
+ * are both arithmetic on it, so there is one stored fact and no second column
+ * to keep in step with it.
  */
-function teamList(allRows) {
+function teamList(allRows, maxYears) {
   const rows = visible("keepers", allRows);
   if (!rows.length) return empty("No keepers for this year.");
 
@@ -673,7 +688,7 @@ function teamList(allRows) {
   return `
     <div class="card keepcard">
       <div class="kp-head" aria-hidden="true">
-        <span>Team</span><span>Keeper</span><span class="kp-r">Round</span>
+        <span>Team</span><span>Keeper</span><span>Held</span><span class="kp-r">Round</span>
       </div>
       ${byTeam.map(([team, list]) => list.map((k, i) => `
         <div class="kp-row ${i === 0 ? "kp-new" : ""} ${hiddenClass("keepers", k)}">
@@ -682,9 +697,34 @@ function teamList(allRows) {
             ${esc(k.player)}
             ${k.notes ? `<span class="kp-note">${esc(k.notes)}</span>` : ""}
           </span>
+          ${heldCell(k, maxYears)}
           <span class="kp-cost ${k.round_cost == null ? "none" : ""}">${
             k.round_cost != null ? `${esc(k.round_cost)}` : "—"}</span>
           ${editControls("keepers", k, { compact: true })}
         </div>`).join("")).join("")}
     </div>`;
+}
+
+/*
+  THE SEASON HE WAS TAKEN, AND WHAT IS LEFT AFTER THIS ONE.
+
+  A row with no keeper year is not guessed at. Most of the legacy rows carry a
+  nickname and no player id, and inventing a tenure for one of those is how a
+  player becomes ineligible for a reason nobody can trace - so an unmarked row
+  reads "—" and waits for a commissioner to set it.
+*/
+function heldCell(k, maxYears) {
+  const yr = Number(k.keeper_year);
+  const season = Number(k.year);
+  if (!Number.isFinite(yr) || yr < 1) {
+    return `<span class="kp-held none">—</span>`;
+  }
+  const since = Number.isFinite(season) ? season - yr + 1 : null;
+  const left = Math.max(0, (maxYears ?? DEFAULT_RULES.max_keeper_seasons) - yr);
+  return `
+    <span class="kp-held">
+      ${since != null ? `<span class="kp-since">${esc(since)}</span>` : ""}
+      <span class="kp-left ${left === 0 ? "is-final" : ""}">${
+        left === 0 ? "final" : `${left} left`}</span>
+    </span>`;
 }

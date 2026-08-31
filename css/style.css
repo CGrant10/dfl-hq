@@ -786,11 +786,12 @@ textarea { min-height: 96px; resize: vertical; }
 .keepcard { padding: 0; overflow: hidden; }
 
 /* Column widths are declared once and inherited by both the heading and
-   every row, so the three columns cannot drift apart. */
+   every row, so the four columns cannot drift apart. The two figure columns
+   are fixed, so only the two text columns give way as the screen narrows. */
 .kp-head, .kp-row {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) 3.4rem;
-  gap: 12px;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) 2.7rem 2.2rem;
+  gap: 10px;
   align-items: baseline;
   padding: 10px 16px;
 }
@@ -847,6 +848,23 @@ textarea { min-height: 96px; resize: vertical; }
 /* "No cost" is muted in both, and must win over the alternation. */
 .kp-cost.none,
 .kp-row:nth-of-type(even) .kp-cost.none { color: var(--muted); font-weight: 500; }
+
+/*
+  HOW LONG HE HAS BEEN HELD: the season he was first taken, and how many
+  seasons are left after this one. Two lines in one column rather than two
+  columns, because at 375px a fifth column costs more than it tells anybody.
+*/
+.kp-held {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.kp-held.none { color: var(--muted); font-size: 13px; }
+.kp-since { font-size: 13px; font-weight: 600; }
+.kp-left  { font-size: 11px; color: var(--muted); }
+.kp-left.is-final { color: var(--accent-2); font-weight: 700; }
 
 /* ==================== finance season setup =========================== */
 
