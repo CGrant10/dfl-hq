@@ -3,11 +3,10 @@ import { esc, errorBox, toast } from "../ui.js";
 import { ALL_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
 import { disablePush, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
-import { db } from "../supabase.js";
 
 const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] || "League";
 
-function settingsMarkup(state, profileLocked) {
+function settingsMarkup(state) {
   const capability = pushCapability();
   const active = state?.enabled && !!state?.subscription;
   const selected = new Set(state?.categories || ALL_NOTIFICATION_CATEGORIES);
@@ -19,8 +18,7 @@ function settingsMarkup(state, profileLocked) {
     </div>
     ${capability.installRequired ? `<div class="notify-install"><strong>Install first</strong><span>Share <b>→</b> Add to Home Screen, then open DFL HQ from its icon.</span></div>` : ""}
     ${capability.supported ? `<div class="notify-actions">
-      ${!active && profileLocked ? `<label class="notify-pin">Profile PIN<input type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{4,6}" data-notification-pin placeholder="4–6 digits"></label>` : ""}
-      ${!active && !profileLocked ? `<div class="notify-install"><strong>Protect your identity first</strong><span>Add a Profile PIN so only you can connect a phone to your alerts.</span><a class="btn ghost small" href="#/profile">Set a Profile PIN</a></div>` : `<button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>`}
+      <button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>
     </div>` : ""}
     ${active ? `<fieldset class="notify-categories"><legend>What should reach this phone?</legend>
       ${NOTIFICATION_CATEGORIES.map(([id, label]) => `<label><input type="checkbox" value="${id}" ${selected.has(id) ? "checked" : ""}><span>${esc(label)}</span></label>`).join("")}
@@ -45,29 +43,22 @@ export async function render(view) {
     view.innerHTML = `<h1>Notifications</h1><div class="card"><div class="card-body">Pick your member identity first.</div></div>`;
     return;
   }
-  let rows = [], preferences = null, profileLocked = false;
+  let rows = [], preferences = null;
   try {
-    const [inboxRows, pushState, lockState] = await Promise.all([
-      inbox(), pushPreferences(), db().rpc("profile_lock_status", { target_member_id: Number(member.id) }),
-    ]);
-    if (lockState.error) throw lockState.error;
-    rows = inboxRows; preferences = pushState; profileLocked = !!lockState.data;
+    const [inboxRows, pushState] = await Promise.all([inbox(), pushPreferences()]);
+    rows = inboxRows; preferences = pushState;
   } catch (err) {
     view.innerHTML = `<h1>Notifications</h1>${errorBox(err)}<div class="card"><div class="card-body muted">Run <strong>notifications_schema.sql</strong> in Supabase to finish notification setup.</div></div>`;
     return;
   }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div>${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}</header>${settingsMarkup(preferences, profileLocked)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
+  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div>${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}</header>${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
 
   view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
     const btn = e.currentTarget;
     btn.disabled = true;
     try {
       if (btn.dataset.pushToggle === "off") await disablePush();
-      else {
-        const pin = view.querySelector("[data-notification-pin]")?.value || "";
-        if (!/^\d{4,6}$/.test(pin)) throw new Error("Enter your 4–6 digit Profile PIN");
-        await enablePush(pin);
-      }
+      else await enablePush();
       toast(btn.dataset.pushToggle === "off" ? "Notifications turned off on this device" : "Notifications enabled on this device");
       render(view);
     } catch (err) { toast(err.message || "Could not change notifications", true); btn.disabled = false; }

@@ -161,8 +161,29 @@ begin
 end;
 $$;
 
+/*
+  ENABLING NOTIFICATIONS ASKS FOR NOTHING.
+
+  This used to demand the member's Profile PIN, and the notifications page
+  refused to enable at all until a member had set one. That was too high a
+  price for turning on alerts: most of the league has no PIN, so the feature
+  they were being offered was really a link to a settings page.
+
+  The PIN is no longer required. Enrolment now trusts x-member-id the same way
+  the rest of the app already does, and the device token it returns is still
+  what every later call is checked against - the inbox, the unread count, the
+  read marks and the per-device categories are all unchanged.
+
+  WHAT THIS GIVES UP, PLAINLY. x-member-id is chosen by the browser and proves
+  nothing. Anyone who can reach this API can now enrol a device under another
+  member's id, receive that member's pushes and read their inbox. For a league
+  inbox holding announcements, trades, polls and fee reminders that is an
+  accepted trade, not an oversight. Do not extend this token to anything that
+  would matter more.
+*/
+drop function if exists public.enroll_push_subscription(text,text,text,text,jsonb,text,text);
+
 create or replace function public.enroll_push_subscription(
-  attempted_pin text,
   push_endpoint text, push_p256dh text, push_auth text,
   push_categories jsonb, push_device_label text default null,
   push_user_agent text default null
@@ -173,16 +194,9 @@ set search_path = public
 as $$
 declare
   mid bigint := public.notification_member_id();
-  stored_hash text;
   raw_token text;
 begin
   if mid is null then raise exception 'Pick your DFL member first'; end if;
-  select p.pin_hash into stored_hash from public.profile_locks p
-   where p.member_id = mid and p.active = true;
-  if stored_hash is null then raise exception 'Add a Profile PIN before enabling notifications'; end if;
-  if attempted_pin is null or stored_hash <> extensions.crypt(attempted_pin, stored_hash) then
-    raise exception 'Profile PIN is incorrect';
-  end if;
   if push_endpoint is null or push_endpoint !~ '^https://' then raise exception 'Invalid push endpoint'; end if;
   if coalesce(push_p256dh, '') = '' or coalesce(push_auth, '') = '' then raise exception 'Invalid push keys'; end if;
   if jsonb_typeof(coalesce(push_categories, '[]'::jsonb)) <> 'array' then raise exception 'Categories must be an array'; end if;
@@ -248,7 +262,7 @@ revoke all on function public.notification_authenticated_member_id() from public
 revoke all on function public.notification_inbox(integer) from public;
 revoke all on function public.notification_unread_count() from public;
 revoke all on function public.mark_notifications_read(bigint[]) from public;
-revoke all on function public.enroll_push_subscription(text,text,text,text,jsonb,text,text) from public;
+revoke all on function public.enroll_push_subscription(text,text,text,jsonb,text,text) from public;
 revoke all on function public.save_push_preferences(text,jsonb) from public;
 revoke all on function public.my_push_preferences(text) from public;
 revoke all on function public.disable_push_subscription(text) from public;
@@ -256,7 +270,7 @@ revoke all on function public.disable_push_subscription(text) from public;
 grant execute on function public.notification_inbox(integer) to anon, authenticated;
 grant execute on function public.notification_unread_count() to anon, authenticated;
 grant execute on function public.mark_notifications_read(bigint[]) to anon, authenticated;
-grant execute on function public.enroll_push_subscription(text,text,text,text,jsonb,text,text) to anon, authenticated;
+grant execute on function public.enroll_push_subscription(text,text,text,jsonb,text,text) to anon, authenticated;
 grant execute on function public.save_push_preferences(text,jsonb) to anon, authenticated;
 grant execute on function public.my_push_preferences(text) to anon, authenticated;
 grant execute on function public.disable_push_subscription(text) to anon, authenticated;

@@ -44,11 +44,10 @@ function deviceLabel() {
   return "Web browser";
 }
 
-export async function enrollSubscription(subscription, pin, categories = ALL_NOTIFICATION_CATEGORIES) {
+export async function enrollSubscription(subscription, categories = ALL_NOTIFICATION_CATEGORIES) {
   const json = subscription.toJSON();
   const member = currentMember();
   const { data, error } = await db().rpc("enroll_push_subscription", {
-    attempted_pin: pin,
     push_endpoint: json.endpoint,
     push_p256dh: json.keys?.p256dh,
     push_auth: json.keys?.auth,
@@ -73,7 +72,12 @@ export async function saveSubscription(subscription, categories = ALL_NOTIFICATI
   return data;
 }
 
-export async function enablePush(pin, categories = ALL_NOTIFICATION_CATEGORIES) {
+/*
+  Turning notifications on is one tap. It used to want a Profile PIN, which
+  meant the members most likely to want alerts - the ones who had never opened
+  the profile settings - could not turn them on at all.
+*/
+export async function enablePush(categories = ALL_NOTIFICATION_CATEGORIES) {
   if (!currentMember()) throw new Error("Pick your DFL member first");
   const capability = pushCapability();
   if (!capability.supported) throw new Error(capability.reason);
@@ -90,7 +94,7 @@ export async function enablePush(pin, categories = ALL_NOTIFICATION_CATEGORIES) 
       applicationServerKey: bytesFromBase64(publicKey),
     });
   }
-  try { await enrollSubscription(subscription, pin, categories); }
+  try { await enrollSubscription(subscription, categories); }
   catch (error) { if (!localStorage.getItem(tokenKey(currentMember()?.id))) await subscription.unsubscribe().catch(() => {}); throw error; }
   return subscription;
 }
