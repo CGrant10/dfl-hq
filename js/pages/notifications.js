@@ -1,7 +1,7 @@
 import { currentMember } from "../members.js";
 import { esc, errorBox, toast } from "../ui.js";
 import { ALL_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
-import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription } from "../notifications.js";
+import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription, testNotification } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
 
 const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] || "League";
@@ -19,7 +19,9 @@ function settingsMarkup(state) {
     ${capability.installRequired ? `<div class="notify-install"><strong>Install first</strong><span>Share <b>→</b> Add to Home Screen, then open DFL HQ from its icon.</span></div>` : ""}
     ${capability.supported ? `<div class="notify-actions">
       <button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>
-    </div>` : ""}
+      ${active ? `<button class="btn ghost" type="button" data-push-test>Send a test</button>` : ""}
+    </div>
+    ${active ? `<p class="muted tiny notify-test-hint">A test arrives after five seconds. Lock the phone or switch to another app before it does &mdash; Android will not interrupt you with a banner for the app you are already looking at.</p>` : ""}` : ""}
     ${active ? `<fieldset class="notify-categories"><legend>What should reach this phone?</legend>
       ${NOTIFICATION_CATEGORIES.map(([id, label]) => `<label><input type="checkbox" value="${id}" ${selected.has(id) ? "checked" : ""}><span>${esc(label)}</span></label>`).join("")}
     </fieldset>` : ""}
@@ -65,6 +67,19 @@ export async function render(view) {
       toast(btn.dataset.pushToggle === "off" ? "Notifications turned off on this device" : "Notifications enabled on this device");
       render(view);
     } catch (err) { toast(err.message || "Could not change notifications", true); btn.disabled = false; }
+  });
+
+  view.querySelector("[data-push-test]")?.addEventListener("click", async e => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    let left = 5;
+    btn.textContent = `Sending in ${left}…`;
+    const tick = setInterval(() => { left -= 1; if (left > 0) btn.textContent = `Sending in ${left}…`; }, 1000);
+    try {
+      await testNotification(5000);
+      toast("Test sent to this device");
+    } catch (err) { toast(err.message || "Could not send a test", true); }
+    finally { clearInterval(tick); btn.textContent = "Send a test"; btn.disabled = false; }
   });
 
   view.querySelector(".notify-categories")?.addEventListener("change", async e => {

@@ -99,6 +99,39 @@ export async function enablePush(categories = ALL_NOTIFICATION_CATEGORIES) {
   return subscription;
 }
 
+/*
+  A TEST NOTIFICATION THAT NEVER LEAVES THE PHONE.
+
+  Whether a notification drops down from the top of the screen is Android's
+  call, not ours - it comes from the notification channel's importance, and
+  there is no web API to set or even read it. So the only way to tell a broken
+  channel from a broken delivery is to take delivery out of the picture: this
+  draws a notification straight from the service worker registration, with the
+  exact options a real push uses.
+
+  It fires on a delay because the answer is worthless otherwise. Android does
+  not interrupt you with a banner for the app you are already looking at, and a
+  notification arriving while the screen is off goes to the lock screen rather
+  than dropping down - two ordinary behaviours that look exactly like the bug.
+  The delay is there so the phone can be put in the state where a heads-up
+  would actually happen.
+*/
+export async function testNotification(delayMs = 5000) {
+  if (!("serviceWorker" in navigator)) throw new Error("This browser cannot show notifications");
+  if (Notification.permission !== "granted") throw new Error("Turn notifications on for this device first");
+  const registration = await navigator.serviceWorker.ready;
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+  await registration.showNotification("Test notification", {
+    body: "If this dropped down from the top of the screen, alerts are working.",
+    icon: "icons/app-192.png",
+    badge: "icons/badge-96.png",
+    tag: `dfl-test-${Date.now()}`,
+    renotify: true,
+    vibrate: [90, 60, 90],
+    data: { url: "#/notifications", messageId: null },
+  });
+}
+
 export async function disablePush() {
   const subscription = await currentPushSubscription();
   if (!subscription) return;
