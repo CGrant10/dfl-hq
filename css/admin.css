@@ -71,6 +71,7 @@
 #admin-tabs > button[data-section="sleeper"]::before { content:"S"; }
 #admin-tabs > button[data-section="broadcast"]::before { content:"LIVE"; font-size:10px; }
 #admin-tabs > button[data-section="ticker_items"]::before { content:"T"; }
+#admin-tabs > button[data-section="notifications"]::before { content:"N"; }
 #admin-tabs > button[data-section="commissioners"]::before { content:"A"; }
 
 #admin-tabs > button:hover {

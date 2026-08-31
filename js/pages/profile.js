@@ -20,6 +20,7 @@ import { toast } from "../ui.js";
 import { FIRST_SYNCED_SEASON } from "../config.js";
 import { wireDflPage } from "./profile-dfl.js";
 import { decorateChipEaters } from "../chip-eaters.js";
+import { mountProfileNotifications } from "../profile-notifications.js";
 /* The same derivation the history page reads, so a career and the record
    book can never disagree about the same game. */
 import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
@@ -141,7 +142,7 @@ export async function render(view) {
       ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
-      ${isMe ? `<details class="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-privacy-slot></div></div></details>` : ""}
+      ${isMe ? `<details class="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance, notifications and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-notifications-slot></div><div data-profile-privacy-slot></div></div></details>` : ""}
     </div>
   `;
 
@@ -152,6 +153,10 @@ export async function render(view) {
     onRepaint re-runs the Chip Eater decoration, which appends to DOM the
     card replaces on every state change.
   */
+  /* Its own module: the switch needs the live per-device push state, which is
+     nothing to do with the rest of this page. */
+  if (isMe) void mountProfileNotifications(view);
+
   wireDflPage(view, member, isMe, () => render(view), {
     currentTeam,
     currentSeason: sleeperUser?.data?.current_season,
