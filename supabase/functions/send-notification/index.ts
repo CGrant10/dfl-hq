@@ -124,7 +124,11 @@ Deno.serve(async request => {
       webpush.setVapidDetails(subject, keys.publicKey, keys.privateKey);
       const payload = JSON.stringify({
         title, body, category, url: targetUrl, messageId: message.id,
-        icon: "icons/app-192.png", badge: "icons/app-192.png",
+        /* badge must be a transparent silhouette - Android keeps only its
+           alpha channel. The service worker pins this anyway; it is correct
+           here too so the payload does not carry a value that would be wrong
+           if anything ever honoured it. */
+        icon: "icons/app-192.png", badge: "icons/badge-96.png",
       });
       await Promise.all((subscriptions || []).filter(row => Array.isArray(row.categories) && row.categories.includes(category)).map(async row => {
         try {

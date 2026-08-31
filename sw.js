@@ -1,11 +1,11 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.211.0";
+const CACHE_NAME = "dfl-hq-v1.212.0";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/golf.css","./css/home.css","./css/nav-neutral.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
-  "./js/notifications.js","./js/notification-core.js","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css",
+  "./js/notifications.js","./js/notification-core.js","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
   "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-distance.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/golf-gps-rolla-beta.js","./js/golf-gps-imported.js","./js/nav-neutral.js",
   "./js/golf-tournament-beta.js","./js/golf-tournament-beta-format.js","./js/golf-tournament-beta-rules.js","./js/golf-score-result.js","./js/golf-club-recommendation.js","./js/golf-offline.js","./js/golf-battle.js","./js/golf-board.js",
   /* The rendering marks, not the launcher icons. app-512.png was 232KB of
@@ -66,11 +66,29 @@ self.addEventListener("push", event => {
   let data = {};
   try { data = event.data?.json() || {}; } catch { data = { body: event.data?.text() || "" }; }
   const url = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(data.url || "") ? data.url : "#/notifications";
+  /*
+    THE BADGE IS NOT THE APP ICON, AND USING THE APP ICON FOR IT IS WHY THE
+    STATUS BAR SHOWED A WHITE BOX.
+
+    Android throws away the badge's colour and keeps ONLY its alpha channel, so
+    every opaque pixel becomes solid white. app-192.png is a full-bleed seal
+    with no transparency, which is a perfect white square by the time Android
+    is done with it. badge-96.png is the shape drawn in transparency instead.
+
+    Fixed here rather than taken from the payload, so a sender cannot put a
+    colour icon back in this slot - and so the fix lands with the service
+    worker, without waiting on an Edge Function deploy.
+
+    renotify needs a tag, which is always set below. Without it a second
+    notification silently replaces the first: no sound, no buzz, no banner.
+  */
   event.waitUntil(self.registration.showNotification(data.title || "DFL HQ", {
     body: data.body || "You have a new league update.",
     icon: data.icon || "icons/app-192.png",
-    badge: data.badge || "icons/app-192.png",
+    badge: "icons/badge-96.png",
     tag: data.messageId ? `dfl-notification-${data.messageId}` : "dfl-notification",
+    renotify: true,
+    vibrate: [90, 60, 90],
     data: { url, messageId: data.messageId || null },
   }));
 });
