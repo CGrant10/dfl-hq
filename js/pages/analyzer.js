@@ -1,9 +1,7 @@
-import { db } from "../supabase.js";
 import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
-import { loadMarketAdp, loadPlayers, loadSeasonStats } from "../sleeper.js";
-import { scoringFormat } from "../dfl-scoring.js";
-import { ANALYZER_POSITIONS, analyzeLeague, buildPlayerPool, compareTeams, suggestTrades } from "../team-analyzer.js";
+import { ANALYZER_POSITIONS, compareTeams, suggestTrades } from "../team-analyzer.js";
+import { loadAnalyzerData } from "../team-analyzer-data.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -13,55 +11,6 @@ const ordinal = value => {
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || String(id)).join(" + ");
-
-async function analyzerData() {
-  const [leagueRes, rosterRes, memberRes] = await Promise.all([
-    db().from("sleeper_leagues").select("season,status,scoring_settings,synced_at").order("season", { ascending: false }).limit(1),
-    db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
-    db().from("members").select("id,display_name,team_name,sleeper_user_id,active"),
-  ]);
-  const error = leagueRes.error || rosterRes.error || memberRes.error;
-  if (error) throw error;
-  const league = leagueRes.data?.[0] || null;
-  const allRosters = rosterRes.data || [];
-  const seasons = [...new Set(allRosters.map(row => Number(row.season)).filter(Number.isFinite))].sort((a, b) => b - a);
-  const rosterSeason = seasons.find(season => allRosters.filter(row => Number(row.season) === season && row.players?.length).length >= 2);
-  const rosters = allRosters.filter(row => Number(row.season) === rosterSeason && row.players?.length);
-  if (!league || !rosters.length) return { state: "empty", league, rosterSeason };
-
-  const members = memberRes.data || [];
-  const bySleeper = new Map(members.filter(member => member.sleeper_user_id).map(member => [String(member.sleeper_user_id), member]));
-  const namedRosters = rosters.map(roster => {
-    const member = bySleeper.get(String(roster.sleeper_user_id));
-    return {
-      ...roster,
-      ownerName: roster.display_name || member?.display_name || "Unassigned owner",
-      team_name: roster.team_name || member?.team_name || roster.display_name || member?.display_name || `Team ${roster.roster_id}`,
-    };
-  });
-  const projectionSeason = Number(league.season) || rosterSeason;
-  const format = scoringFormat(league.scoring_settings);
-  const [players, statsRes, projectionRes] = await Promise.all([
-    loadPlayers(),
-    loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
-    loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0 })),
-  ]);
-  const pool = buildPlayerPool({
-    rosters: namedRosters,
-    players,
-    previousStats: statsRes.data || {},
-    projections: projectionRes.data || [],
-    scoringSettings: league.scoring_settings || {},
-    scoringFormat: format,
-  });
-  const teams = analyzeLeague({ rosters: namedRosters, pool });
-  return {
-    state: teams.length ? "ready" : "empty",
-    league, rosterSeason, projectionSeason, teams, pool,
-    projectionUpdatedAt: projectionRes.fetchedAt || 0,
-    productionUpdatedAt: statsRes.fetchedAt || 0,
-  };
-}
 
 const stat = (value, digits = 1) => value == null || !Number.isFinite(Number(value)) ? "—" : Number(value).toFixed(digits);
 const rankText = (rank, total) => rank ? `#${rank}${total ? ` / ${total}` : ""}` : "—";
@@ -153,7 +102,7 @@ function page(data) {
 export async function render(view) {
   view.innerHTML = `<header class="page-head"><h1>Team Analyzer</h1><p class="page-sub">Reading every roster, last season and current expectations…</p></header><div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
   try {
-    const data = await analyzerData();
+    const data = await loadAnalyzerData();
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Team Analyzer</h1></header><div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong><p class="muted">Run a Sleeper sync after the draft, then come back here.</p></div></div>`;
       return;

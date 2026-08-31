@@ -33,12 +33,30 @@ import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
-import { draftView, draftCard, seasonTeamsView, seasonTeamsCard } from "../draft-order.js";
+import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
+import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
 
 let stage = null;
 let generation = 0;
 let dropPresence = null;
+
+async function hydratePowerPulse(view, mine, { meSleeperId, standings }) {
+  const slot = view.querySelector("[data-power-pulse]");
+  if (!slot) return;
+  try {
+    const { loadAnalyzerData } = await import("../team-analyzer-data.js");
+    const analysis = await loadAnalyzerData();
+    if (mine !== generation || !slot.isConnected) return;
+    const pulse = powerPulseView({ analysis, meSleeperId, standings });
+    if (pulse) slot.innerHTML = powerPulseCard(pulse);
+    else slot.innerHTML = `<div class="card pp-card pp-empty"><strong>POWER PULSE</strong><p>Run a Sleeper sync to build this season's league outlook.</p><a class="btn ghost small" href="#/analyzer">Open Team Analyzer</a></div>`;
+  } catch (err) {
+    console.warn("power pulse unavailable", err);
+    if (mine !== generation || !slot.isConnected) return;
+    slot.innerHTML = `<div class="card pp-card pp-empty"><strong>POWER PULSE</strong><p>The model could not refresh right now.</p><a class="btn ghost small" href="#/analyzer">Open Team Analyzer</a></div>`;
+  }
+}
 
 export function leave() {
   try { stage?.stop(); } catch (err) { console.warn(err); }
@@ -152,7 +170,8 @@ export async function render(view) {
     leagueStatus,
   };
   const draftPanel = draftCard(draftView(draftEvidence));
-  const teamsPanel = draftPanel ? "" : seasonTeamsCard(seasonTeamsView(draftEvidence));
+  const teamsView = draftPanel ? null : seasonTeamsView(draftEvidence);
+  const teamsPanel = teamsView ? powerPulseShell(teamsView.season) : "";
 
   /*
     THE ORDER IS THE EDIT.
@@ -193,6 +212,13 @@ export async function render(view) {
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
+
+  /* Projection data is intentionally second paint. The stage, snapshot and
+     navigation stay instantly usable while the cached Sleeper model loads. */
+  if (teamsView) void hydratePowerPulse(view, mine, {
+    meSleeperId: myMember?.sleeper_user_id || null,
+    standings: standings.data || [],
+  });
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);

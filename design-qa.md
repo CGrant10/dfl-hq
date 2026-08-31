@@ -1,52 +1,50 @@
-# DFL heritage seal replacement — design QA
+# Power Pulse Design QA
 
 ## Evidence
 
-- Source visual truth: `icons/dfl-seal-heritage.jpg`
-- Source dimensions: 1280 × 1182 RGB.
-- Implementation screenshots:
-  - `design-qa-assets/brand-mobile-home.png`
-  - `design-qa-assets/brand-mobile-golf.png`
-- Combined comparison: `design-qa-assets/brand-comparison.png`
-- Browser: Codex in-app browser.
-- CSS viewport: 394 × 852 at device pixel ratio 1.
-- Captured implementation pixels: 378 × 820.
-- State: dark theme, signed-in member, home and golf event-list routes.
+- Source visual truth: `design-qa-assets/power-pulse-reference.png`
+- Browser implementation: `design-qa-assets/power-pulse-mobile.png`
+- Combined focused comparison: `design-qa-assets/power-pulse-comparison.png`
+- Source pixels: 853 × 1844
+- Implementation pixels: 375 × 811
+- CSS viewport requested: 390 × 844, device scale 1
+- State: Home, post-draft, member view, Power Pulse loaded from the live analyzer model
+- Theme: source is Light; implementation evidence is the same design mapped through the active dark member palette. Layout, hierarchy and semantic accent use were compared; the palette difference is intentional product behavior.
 
 ## Full-view comparison
 
-The combined comparison places the supplied seal beside the running golf page. The top-left brand mark uses the supplied artwork, remains circular, and does not change the topbar height. Golf event cards use the same supplied seal as a large, cropped, low-opacity watermark without a rectangular edge.
+The implemented Home keeps the existing stage, snapshot, season doors and fixed navigation, replaces the retired “The League Is Set” roster grid with one Power Pulse surface, and preserves the selected mock's location and visual priority. No old league-set heading or roster grid remains in the rendered page.
 
-## Focused-region comparison
+## Focused comparison
 
-The header and event-card regions are readable in the phone capture, so a separate crop was not required. The splash references the same image URL and retains the existing centered splash dimensions and animation; its timed state was verified from the rendered DOM and source binding rather than a stable screenshot.
-
-## Required fidelity surfaces
-
-- Fonts and typography: unchanged; the replacement introduces no live text or font changes.
-- Spacing and layout rhythm: unchanged. The header mark remains 36 × 36 CSS pixels; card watermark boxes retain their established dimensions and placement.
-- Colors and visual tokens: the supplied monochrome artwork is preserved. Existing opacity and light-theme inversion rules remain in effect.
-- Image quality and asset fidelity: the original 1280 × 1182 JPEG is retained as source truth, with 512px and 64px WebP derivatives used by the app for faster loading. Circular clipping prevents its black rectangular source canvas from appearing as a box. No generated or approximate substitute is used.
-- Copy and content: unchanged.
+The combined comparison checks the card at readable size. It confirms the same three-part hierarchy: personal power rank, top-five table and biggest riser, followed by one roster insight and a trade-analyzer action. The implementation uses real team names and honest model-versus-standings movement, so content differs from mock data by design.
 
 ## Findings
 
-No actionable P0, P1, or P2 differences remain. At 36px, the header version is intentionally a recognition mark rather than a detailed illustration; the full detail remains available in the splash and larger watermark treatment.
-
-## Comparison history
-
-- Initial implementation showed the supplied source correctly but retained a rectangular source canvas on watermark layers.
-- Fix: applied circular clipping and black image backing only within the circular mark boundary.
-- Post-fix evidence: `design-qa-assets/brand-mobile-golf.png` and `design-qa-assets/brand-comparison.png` show clean circular header and card treatments with no visible square edge.
+- No actionable P0, P1 or P2 differences remain.
+- Fonts and typography: the existing Rajdhani-based display system matches the source's condensed athletic headings; ranks, labels and numbers retain the intended optical hierarchy.
+- Spacing and layout rhythm: thin dividers, three compact columns, one footer row and mobile-safe truncation match the selected card. The card remains clear at 390px without horizontal overflow.
+- Colors and visual tokens: all colors use the app's theme tokens. The subtle upper-left surface wash, hairline border and restrained accent survive light, dark and member palettes.
+- Image and icon fidelity: no new raster assets were needed. Existing DFL sprite icons are used for the trend and insight marks; no placeholder or handcrafted icon art was introduced.
+- Copy and content: “Power Pulse,” personal rank, movement baseline, top five, biggest riser, roster strength/weakness and analyzer action are all present. Movement is labeled against synced standings or the prior season rather than fabricated as a weekly change.
 
 ## Interaction and runtime checks
 
-- Home and Golf navigation states loaded successfully.
-- Header/profile and bottom navigation remained visible and aligned.
-- Browser console: no logo or rendering errors. A pre-existing Supabase warning appeared because the QA session opened the app in multiple tabs under the same browser storage key.
-- Production build: passed.
-- Test suite: 515 of 515 tests passed. One slower Arena simulation required a 15-second timeout on the verification machine.
+- The Power Pulse loaded after the Home shell without blocking navigation.
+- “Open Trade Analyzer” opened the selected member's analyzer report.
+- Empty and refresh-failure states retain a working analyzer route.
+- Browser console contained no application errors during the final path. The only observed warning was the existing multiple Supabase-client warning caused by repeated local preview sessions.
+- Focused tests: 40 passed across Power Pulse, Team Analyzer and post-draft Home behavior.
+- Typecheck and production build passed.
 
-## Final result
+## Comparison history
+
+1. First mobile pass: P2 — the riser dropped below the ranking table and made the feature taller than the selected compact mock.
+   - Fix: changed the narrow layout to an 80px / flexible / 72px three-column grid, tightened row type and kept the insight/action footer horizontal above 350px.
+2. Final mobile pass: the riser remains in the third column, the card matches the reference's aspect and scan path, and no P0/P1/P2 issues remain.
+
+## Follow-up polish
+
+- None required for handoff.
 
 final result: passed
