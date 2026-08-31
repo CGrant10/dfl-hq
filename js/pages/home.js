@@ -20,7 +20,7 @@
 // =====================================================================
 import { db, configured } from "../supabase.js";
 import { activityCard, ACTIVITY_RPC, ACTIVITY_MISSING } from "../activity.js";
-import { esc, fmtDate, fmtWhen, relDate, fmtShort, money, errorBox, toast } from "../ui.js";
+import { esc, fmtDate, fmtWhen, fmtShort, money, errorBox, toast } from "../ui.js";
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
@@ -157,8 +157,8 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    Stage, then three figures, then the four doors: what is happening, where
-    the reader stands, where to go. The draft board follows the doors, and
+    Stage, then three figures, then the four IN-SEASON doors: what is happening,
+    where the reader stands, and the weekly football work. The draft board follows the doors, and
     only while there is a draft to care about - see draftView() in
     js/draft-order.js, which returns null the rest of the year. The Wall sits directly under the doors
     because it is the only part of this page that changes because somebody
@@ -180,7 +180,7 @@ export async function render(view) {
     ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
-    ${creedDoors(events.data, golfRow, polls.data, dues.data)}
+    ${seasonDoors(dues.data)}
     ${draftPanel}
     ${teamsPanel}
     <div data-wall-slot>${wallCard(wall)}</div>
@@ -329,18 +329,16 @@ const CREST_SIZE=256,MAX_UPLOAD=12*1024*1024;function wireCrest(view){const pick
 async function toSquarePng(fileObj,size){const bitmap=await createImageBitmap(fileObj);try{const side=Math.min(bitmap.width,bitmap.height),canvas=document.createElement("canvas");canvas.width=canvas.height=size;canvas.getContext("2d").drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,size,size);return canvas.toDataURL("image/png")}finally{bitmap.close?.()}}
 function ordinal(n){const r=n%100;if(r>=11&&r<=13)return `${n}th`;return n+(["th","st","nd","rd"][n%10]||"th")}
 
-function creedDoors(events,golfRow,polls,dues){
-  const draft=(events||[]).find(e=>/draft/i.test(e.title||e.name||""));
-  const open=(polls||[]).length;
+function seasonDoors(dues){
   const rows=dues||[];
   const season=rows.reduce((a,r)=>Math.max(a,Number(r.season)||0),0);
   const owed=rows.filter(r=>Number(r.season)===season)
     .reduce((t,r)=>t+Math.max(0,(Number(r.amount_due)||0)-(Number(r.amount_paid)||0)),0);
   const doors=[
-    ["DRAFT","keepers",draft?relDate(draft.event_date):"Keepers"],
-    ["GOLF","golf",golfRow?(golfRow.event_date?relDate(golfRow.event_date):"Set up"):"No event"],
-    ["SIN","polls",open?`${open} open`:"Quiet"],
-    ["FOLD","finances",owed?money(owed):"Settled"],
+    ["TRADE","analyzer","Analyze rosters"],
+    ["RULES","rules","League handbook"],
+    ["FACTS","facts","Records & rivalries"],
+    ["FEES","finances",owed?money(owed):"Settled"],
   ];
   return `<nav class="creed-doors">${doors.map(([word,route,sub],i)=>
     `<a class="cdoor cd-${i}" href="#/${route}"><span class="cd-word">${word}</span><span class="cd-sub">${esc(sub)}</span></a>`

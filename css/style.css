@@ -1424,6 +1424,21 @@ textarea { min-height: 96px; resize: vertical; }
 .tabbar :is(a, .tabmore).on { color: var(--accent); }
 /* Icons inherit the link colour, so the active tab turns green automatically. */
 
+/* Regular season has five weekly destinations plus More. Six still fit on a
+   phone without turning the bar into a horizontal guessing game. Trade sits
+   nearest the visual center and gets a quiet resting emphasis. */
+@media (max-width: 899px) {
+  .tabbar.is-in-season { overflow-x: hidden; }
+  .tabbar.is-in-season :is(a, .tabmore) {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 2px;
+  }
+  .tabbar.is-in-season .season-lead-tab:not(.on) {
+    color: color-mix(in srgb, var(--accent) 68%, var(--muted));
+  }
+}
+
 /* ------------------------------ overlay ------------------------------ */
 
 .overlay {

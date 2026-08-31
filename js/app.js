@@ -20,6 +20,11 @@ import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
 import { trapFocus } from "./focus-trap.js";
 import { forgetVerifiedPin } from "./member-lock.js";
+import { mountSeasonNavigation } from "./season-nav.js";
+
+/* Draft and golf are complete. Rebuild the shell before any navigation
+   handlers bind, so the fixed bar reflects what the league uses each week. */
+mountSeasonNavigation();
 /* welcomeForm and welcomeInput used to be looked up here and have never
    existed in index.html - leftovers from the free-text name box that the
    member picker replaced. Every branch that touched them was dead. */
@@ -134,19 +139,11 @@ function openGolfJoin(){
 
 function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()}
 /*
-  The More sheet. The tab bar is four doors now, so everything else lives
-  here. Opening it is the only new interaction; the routes are unchanged, so
+  The More sheet. Weekly football tools live in the fixed bar; completed-season
+  and occasional tools live here. The routes are unchanged, so
   a link inside it just changes the hash and the sheet closes itself.
 */
 const moreSheet=document.getElementById("more"),moreBtn=document.getElementById("more-btn");
-const moreNav=moreSheet?.querySelector(".quicknav");
-if(moreNav&&!moreNav.querySelector('a[href="#/analyzer"]')){
-  const admin=moreNav.querySelector('a[href="#/admin"]');
-  const analyzer=document.createElement("a");
-  analyzer.href="#/analyzer";
-  analyzer.innerHTML='<svg class="ico" aria-hidden="true"><use href="#i-record-steel"></use></svg><span class="qn-label">Team Analyzer</span>';
-  moreNav.insertBefore(analyzer,admin);
-}
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
 const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
