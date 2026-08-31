@@ -23,3 +23,4 @@ qa/
 # qa/ folder removed in 1.180.0: nothing serves them, and 1.6MB of PNG diffs
 # in git history is a cost every clone pays forever.
 design-qa-assets/
+supabase/.temp/
