@@ -32,6 +32,7 @@ const routes = {
   facts:    () => import("./pages/facts.js"),
   finances: () => import("./pages/finances.js"),
   profile:  () => import("./pages/profile-locked.js"),
+  notifications: () => import("./pages/notifications.js"),
   admin:    () => import("./pages/admin.js"),
 };
 

@@ -1,0 +1,5 @@
+[functions.send-notification]
+# DFL uses its existing member + commissioner headers rather than Supabase Auth.
+# The function verifies those headers with has_commissioner_permission() before
+# any send; config requests reveal only the public VAPID key.
+verify_jwt = false

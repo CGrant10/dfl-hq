@@ -1,0 +1,175 @@
+import { db } from "./supabase.js";
+import { currentMember } from "./members.js";
+import { ALL_NOTIFICATION_CATEGORIES } from "./notification-core.js";
+
+const BADGE_EVENT = "dfl:notifications-changed";
+const tokenKey = memberId => `dfl.notification.deviceToken.${memberId}`;
+
+function bytesFromBase64(value) {
+  const padded = value + "=".repeat((4 - value.length % 4) % 4);
+  const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, ch => ch.charCodeAt(0));
+}
+
+export function pushCapability() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return { supported: false, reason: "This browser does not support app notifications." };
+  }
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (ios && !standalone) {
+    return { supported: false, installRequired: true, reason: "On iPhone, add DFL HQ to your Home Screen first, then open the installed app." };
+  }
+  return { supported: true, permission: Notification.permission };
+}
+
+export async function currentPushSubscription() {
+  if (!("serviceWorker" in navigator)) return null;
+  const registration = await navigator.serviceWorker.ready;
+  return registration.pushManager?.getSubscription() || null;
+}
+
+async function pushPublicKey() {
+  const { data, error } = await db().functions.invoke("send-notification", { body: { action: "config" } });
+  if (error) throw error;
+  if (!data?.publicKey) throw new Error("Push delivery is not configured yet");
+  return data.publicKey;
+}
+
+function deviceLabel() {
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const android = /Android/.test(navigator.userAgent);
+  if (ios) return "iPhone / iPad";
+  if (android) return "Android phone";
+  return "Web browser";
+}
+
+export async function enrollSubscription(subscription, pin, categories = ALL_NOTIFICATION_CATEGORIES) {
+  const json = subscription.toJSON();
+  const member = currentMember();
+  const { data, error } = await db().rpc("enroll_push_subscription", {
+    attempted_pin: pin,
+    push_endpoint: json.endpoint,
+    push_p256dh: json.keys?.p256dh,
+    push_auth: json.keys?.auth,
+    push_categories: categories,
+    push_device_label: deviceLabel(),
+    push_user_agent: navigator.userAgent,
+  });
+  if (error) throw error;
+  if (!data || !member) throw new Error("This device could not be enrolled");
+  localStorage.setItem(tokenKey(member.id), data);
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+  return data;
+}
+
+export async function saveSubscription(subscription, categories = ALL_NOTIFICATION_CATEGORIES) {
+  const { data, error } = await db().rpc("save_push_preferences", {
+    push_endpoint: subscription.endpoint,
+    push_categories: categories,
+  });
+  if (error) throw error;
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+  return data;
+}
+
+export async function enablePush(pin, categories = ALL_NOTIFICATION_CATEGORIES) {
+  if (!currentMember()) throw new Error("Pick your DFL member first");
+  const capability = pushCapability();
+  if (!capability.supported) throw new Error(capability.reason);
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission();
+  if (permission !== "granted") throw new Error("Notifications were not allowed. You can change that in your phone settings.");
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    const publicKey = await pushPublicKey();
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: bytesFromBase64(publicKey),
+    });
+  }
+  try { await enrollSubscription(subscription, pin, categories); }
+  catch (error) { if (!localStorage.getItem(tokenKey(currentMember()?.id))) await subscription.unsubscribe().catch(() => {}); throw error; }
+  return subscription;
+}
+
+export async function disablePush() {
+  const subscription = await currentPushSubscription();
+  if (!subscription) return;
+  const { error } = await db().rpc("disable_push_subscription", { push_endpoint: subscription.endpoint });
+  if (error) throw error;
+  await subscription.unsubscribe();
+  const member = currentMember();
+  if (member) localStorage.removeItem(tokenKey(member.id));
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+}
+
+export async function pushPreferences() {
+  const subscription = await currentPushSubscription();
+  if (!subscription) return { subscription: null, enabled: false, categories: ALL_NOTIFICATION_CATEGORIES };
+  const { data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    subscription,
+    enabled: !!row?.enabled,
+    categories: Array.isArray(row?.categories) ? row.categories : ALL_NOTIFICATION_CATEGORIES,
+  };
+}
+
+export async function inbox(limit = 50) {
+  if (!currentMember()) return [];
+  const { data, error } = await db().rpc("notification_inbox", { max_rows: limit });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function markRead(ids) {
+  const clean = [...new Set(ids.map(Number).filter(Number.isSafeInteger))];
+  if (!clean.length) return;
+  const { error } = await db().rpc("mark_notifications_read", { message_ids: clean });
+  if (error) throw error;
+  window.dispatchEvent(new CustomEvent(BADGE_EVENT));
+}
+
+async function unreadCount() {
+  if (!currentMember()) return 0;
+  const { data, error } = await db().rpc("notification_unread_count");
+  if (error) throw error;
+  return Number(data) || 0;
+}
+
+export function mountNotificationBell() {
+  let button = document.getElementById("notification-bell");
+  if (!button) {
+    button = document.createElement("button");
+    button.id = "notification-bell";
+    button.className = "notification-bell";
+    button.type = "button";
+    button.setAttribute("aria-label", "Notifications");
+    button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 10.2a5.2 5.2 0 0 1 10.4 0v3.1l1.7 2.7H5.1l1.7-2.7zM9.7 18.1a2.5 2.5 0 0 0 4.6 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="notification-count" class="notification-count hidden">0</span>`;
+    document.getElementById("whoami")?.before(button);
+  }
+  const countNode = button.querySelector("#notification-count");
+  if (!button || !countNode) return;
+  let stopped = false;
+  const paint = async () => {
+    try {
+      const count = await unreadCount();
+      if (stopped) return;
+      countNode.textContent = count > 99 ? "99+" : String(count);
+      countNode.classList.toggle("hidden", count === 0);
+      button.setAttribute("aria-label", count ? `Notifications, ${count} unread` : "Notifications");
+    } catch {
+      countNode.classList.add("hidden");
+    }
+  };
+  button.addEventListener("click", () => { location.hash = "#/notifications"; });
+  window.addEventListener(BADGE_EVENT, paint);
+  window.addEventListener("focus", paint);
+  const timer = setInterval(paint, 60000);
+  void paint();
+  return () => { stopped = true; clearInterval(timer); window.removeEventListener(BADGE_EVENT, paint); window.removeEventListener("focus", paint); };
+}

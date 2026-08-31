@@ -21,15 +21,24 @@ let publicClient = null;
 let publicClientKey = null;
 
 function memberIdNow() { return localStorage.getItem("dfl.memberId") || ""; }
+function notificationDeviceToken(memberId = memberIdNow()) {
+  try { return memberId ? localStorage.getItem(`dfl.notification.deviceToken.${memberId}`) || "" : ""; }
+  catch { return ""; }
+}
+function notificationHeaders(memberId = memberIdNow()) {
+  const token = notificationDeviceToken(memberId);
+  return token ? { "x-device-token": token } : {};
+}
 
 function makePublicClient() {
   const memberId = memberIdNow();
-  const key = `${memberId}|${golfHeaderKey()}`;
+  const key = `${memberId}|${notificationDeviceToken(memberId)}|${golfHeaderKey()}`;
   if (publicClient && publicClientKey === key) return publicClient;
   publicClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
       headers: {
         ...(memberId ? { "x-member-id": memberId } : {}),
+        ...notificationHeaders(memberId),
         ...golfHeaders(),
       },
     },
@@ -80,6 +89,7 @@ function makeAdminClient(token) {
       headers: {
         "x-admin-token": token,
         ...(memberId ? { "x-member-id": memberId } : {}),
+        ...notificationHeaders(memberId),
         ...golfHeaders(),
       },
     },
@@ -91,6 +101,7 @@ function makeCommissionerClient(memberId, pin) {
     global: {
       headers: {
         "x-member-id": String(memberId),
+        ...notificationHeaders(memberId),
         "x-commissioner-pin": pin,
         ...golfHeaders(),
       },

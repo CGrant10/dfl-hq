@@ -21,6 +21,7 @@ import { mountJoin } from "./golf-join.js";
 import { trapFocus } from "./focus-trap.js";
 import { forgetVerifiedPin } from "./member-lock.js";
 import { mountSeasonNavigation } from "./season-nav.js";
+import { mountNotificationBell } from "./notifications.js";
 
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
@@ -224,6 +225,7 @@ window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+  mountNotificationBell();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */

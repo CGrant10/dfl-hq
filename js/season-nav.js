@@ -9,6 +9,7 @@ export const PRIMARY_SEASON_ROUTES = [
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
+  { route: "notifications", label: "Notifications", icon: "moment" },
   { route: "profile", label: "Profile", icon: "profile" },
   { route: "calendar", label: "Calendar", icon: "calendar" },
   { route: "history", label: "History", icon: "history" },
@@ -42,4 +43,3 @@ export function mountSeasonNavigation(root = document) {
   more.innerHTML = secondarySeasonNavMarkup();
   return true;
 }
-

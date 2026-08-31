@@ -2916,3 +2916,11 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
 @media (prefers-reduced-motion: reduce) {
   .tabbar::before { transition: opacity .18s ease; }
 }
+
+.notification-bell { position:relative; display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; margin-left:auto; padding:0; border:1px solid var(--control-line); border-radius:999px; background:color-mix(in srgb,var(--bg-2) 84%,transparent); color:var(--muted); cursor:pointer; }
+.notification-bell:hover,.notification-bell:focus-visible { color:var(--text); border-color:var(--accent); }
+.notification-bell svg { width:21px; height:21px; }
+.notification-count { position:absolute; right:-3px; top:-4px; display:grid; place-items:center; min-width:18px; height:18px; padding:0 4px; border:2px solid var(--bg); border-radius:999px; background:var(--accent); color:var(--accent-ink,#fff); font:800 10px/1 var(--display); }
+.notification-count.hidden { display:none; }
+.notification-bell + .whoami { margin-left:0; }
+.broadcast-mode .notification-bell { display:none; }

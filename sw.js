@@ -1,10 +1,11 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.207.0";
+const CACHE_NAME = "dfl-hq-v1.208.0";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/golf.css","./css/home.css","./css/nav-neutral.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
+  "./js/notifications.js","./js/notification-core.js","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css",
   "./js/pages/home.js","./js/pages/golf.js","./js/golf-theme.js","./js/golf-event-modes.js","./js/golf-gps-course-map.js","./js/golf-gps-distance.js","./js/golf-gps-beta.js","./js/golf-gps-red-trail-beta.js","./js/golf-gps-rolla-beta.js","./js/golf-gps-imported.js","./js/nav-neutral.js",
   "./js/golf-tournament-beta.js","./js/golf-tournament-beta-format.js","./js/golf-tournament-beta-rules.js","./js/golf-score-result.js","./js/golf-club-recommendation.js","./js/golf-offline.js","./js/golf-battle.js","./js/golf-board.js",
   /* The rendering marks, not the launcher icons. app-512.png was 232KB of
@@ -57,4 +58,29 @@ self.addEventListener("fetch",event=>{
     if(response.ok&&(url.origin===location.origin||CDN_HOSTS.has(url.hostname))){const copy=response.clone();caches.open(CACHE_NAME).then(c=>c.put(request,copy));}
     return response;
   }).catch(async()=>await caches.match(request)||Response.error()));
+});
+
+/* Web Push arrives here even while the installed app is closed. Payloads are
+   deliberately small and every destination is an internal hash route. */
+self.addEventListener("push", event => {
+  let data = {};
+  try { data = event.data?.json() || {}; } catch { data = { body: event.data?.text() || "" }; }
+  const url = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(data.url || "") ? data.url : "#/notifications";
+  event.waitUntil(self.registration.showNotification(data.title || "DFL HQ", {
+    body: data.body || "You have a new league update.",
+    icon: data.icon || "icons/app-192.png",
+    badge: data.badge || "icons/app-192.png",
+    tag: data.messageId ? `dfl-notification-${data.messageId}` : "dfl-notification",
+    data: { url, messageId: data.messageId || null },
+  }));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "#/notifications", self.registration.scope).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async clients => {
+    const existing = clients.find(client => new URL(client.url).origin === new URL(target).origin);
+    if (existing) { await existing.focus(); existing.navigate(target); return; }
+    return self.clients.openWindow(target);
+  }));
 });
