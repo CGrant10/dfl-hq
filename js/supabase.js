@@ -194,6 +194,28 @@ export function hasPermission(permission) {
   return (commissionerAccess?.permissions || []).includes(permission);
 }
 
+/* `functions.invoke()` does not consistently carry the Supabase client's
+   custom global headers into its Functions client. Pass the active app-level
+   credentials explicitly for privileged Edge Function calls. */
+export function privilegedFunctionHeaders() {
+  if (isMemberPreview()) return {};
+  const memberId = memberIdNow();
+  if (isMasterAdmin()) {
+    return {
+      "x-admin-token": adminToken,
+      ...(memberId ? { "x-member-id": memberId } : {}),
+    };
+  }
+  if (commissionerStillMatchesMember()) {
+    const pin = getCommissionerPin();
+    return {
+      "x-member-id": String(commissionerMemberId),
+      ...(pin ? { "x-commissioner-pin": pin } : {}),
+    };
+  }
+  return memberId ? { "x-member-id": memberId } : {};
+}
+
 export async function adminLogin(password, remember = true) {
   const client = makeAdminClient(password);
   const { data, error } = await client.rpc("is_admin");

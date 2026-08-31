@@ -1,4 +1,4 @@
-import { db } from "../supabase.js";
+import { db, privilegedFunctionHeaders } from "../supabase.js";
 import { loadMembers } from "../members.js";
 import { esc, toast } from "../ui.js";
 import { cleanNotificationDraft, NOTIFICATION_CATEGORIES } from "../notification-core.js";
@@ -33,8 +33,15 @@ export async function renderNotificationPanel(host) {
     if (form.elements.audience.value === "members" && !draft.targetMemberIds.length) return toast("Choose at least one member", true);
     btn.disabled = true;
     try {
-      const { data, error } = await db().functions.invoke("send-notification", { body: { action: "send", ...draft } });
-      if (error) throw error;
+      const { data, error } = await db().functions.invoke("send-notification", {
+        headers: privilegedFunctionHeaders(),
+        body: { action: "send", ...draft },
+      });
+      if (error) {
+        let detail = null;
+        try { detail = await error.context?.json(); } catch {}
+        throw new Error(detail?.error || detail?.message || error.message || "Could not send notification");
+      }
       if (!data?.ok) throw new Error(data?.error || "Notification could not be sent");
       const delivered = Number(data.delivered) || 0;
       host.querySelector("[data-notify-result]").innerHTML = `<div class="card note"><div class="card-body"><strong>Sent to the league inbox.</strong><br><span class="muted">${delivered} phone${delivered === 1 ? "" : "s"} received push delivery${data.pushConfigured ? "." : "; phone delivery needs its server keys configured."}</span></div></div>`;
