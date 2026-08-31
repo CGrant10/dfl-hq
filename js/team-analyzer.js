@@ -70,6 +70,12 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     for (const [id, value] of percentileMap(positional, player => player.expectedPoints)) productionPercentile.set(id, value);
   }
   const marketPercentile = percentileMap(list, player => player.adp, { lowerIsBetter: true });
+  const positionRanks = new Map();
+  for (const position of ANALYZER_POSITIONS) {
+    const ordered = list.filter(player => player.position === position)
+      .sort((a, b) => (b.expectedPoints || 0) - (a.expectedPoints || 0));
+    ordered.forEach((player, index) => positionRanks.set(player.id, { rank: index + 1, count: ordered.length }));
+  }
 
   const pool = new Map();
   for (const player of list) {
@@ -81,6 +87,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     pool.set(player.id, {
       ...player,
       expectedPoints: player.expectedPoints == null ? 0 : round(player.expectedPoints, 2),
+      expectedPerGame: round((player.expectedPoints || 0) / 17, 2),
+      lastPerGame: player.lastPoints == null ? null : round(player.lastPoints / Math.max(1, player.games || 17), 2),
+      positionRank: positionRanks.get(player.id)?.rank || null,
+      positionCount: positionRanks.get(player.id)?.count || null,
       tradeValue: Math.max(1, Math.min(100, Math.round(value * 99 + 1))),
       confidence: player.projectedPoints != null && player.lastPoints != null ? "high"
         : player.projectedPoints != null || player.lastPoints != null ? "medium" : "low",
@@ -158,6 +168,8 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
   return ordered.map((team, index) => {
     const positionGrades = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position, {
       score: team.positionScores[position],
+      leagueRank: 1 + base.filter(other => other.positionScores[position] > team.positionScores[position]).length,
+      leagueSize: base.length,
       grade: grade(percentileAt(positionDistributions[position], team.positionScores[position])),
       players: sortedPlayers(team.playerIds, pool, position).slice(0, STARTERS[position] + 1),
     }]));

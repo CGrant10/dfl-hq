@@ -192,6 +192,7 @@ export function seasonTeamsView({ draft = null, slots = [], picks = [], members 
     const rosterId = slot?.roster_id == null ? String(index + 1) : String(slot.roster_id);
     return {
       id: rosterId,
+      sleeperId,
       name: member?.team_name || member?.display_name || `Team ${index + 1}`,
       owner: member?.display_name || "Unassigned owner",
       players: countsByRoster.get(rosterId) || countsBySleeper.get(sleeperId) || 0,
@@ -210,7 +211,7 @@ export function seasonTeamsCard(view) {
       <div><small>ROSTERS LOCKED</small><strong>${view.teams.length}</strong><span>${view.pickCount ? `${view.pickCount} players selected` : "Teams are ready for the season"}</span></div>
       <p>Draft night is over. Compare every roster, find the strongest position groups and shop possible trades.</p>
       <a class="btn primary small" href="#/analyzer">Open Analyzer</a>
-    </div><div class="sf-grid">${view.teams.map(team => `<a href="#/analyzer?team=${encodeURIComponent(team.id)}" class="sf-team ${team.mine ? "is-me" : ""}">
+    </div><div class="sf-grid">${view.teams.map(team => `<a href="#/analyzer?${team.sleeperId ? `owner=${encodeURIComponent(team.sleeperId)}` : `team=${encodeURIComponent(team.id)}`}" class="sf-team ${team.mine ? "is-me" : ""}">
       <span class="sf-avatar">${esc((Array.from(team.name.trim())[0] || "D").toUpperCase())}</span><span><strong>${esc(team.name)}</strong><small>${esc(team.owner)}${team.players ? ` · ${team.players} players` : ""}</small></span>${team.mine ? `<b>YOU</b>` : ""}
     </a>`).join("")}</div></div>
   </section>`;

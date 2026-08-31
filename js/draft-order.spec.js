@@ -131,7 +131,7 @@ describe("the post-draft league field", () => {
     ]);
     const html = seasonTeamsCard(view);
     expect(html).toContain("The League Is Set");
-    expect(html).toContain("#/analyzer?team=11");
+    expect(html).toContain("#/analyzer?owner=u1");
     expect(html).toContain("YOU");
   });
 

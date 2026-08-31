@@ -38,12 +38,16 @@ describe("team analyzer", () => {
     expect(lineup.starters.filter(player => player.position === "TE")).toHaveLength(1);
     expect(lineup.score).toBeGreaterThanOrEqual(lineup.starterPoints);
     expect(lineup.depthPoints).toBeLessThan(pool.get("r3").expectedPoints);
+    expect(pool.get("r1")).toMatchObject({ positionRank: 1, positionCount: 5 });
+    expect(pool.get("r1").expectedPerGame).toBeGreaterThan(0);
   });
 
   it("ranks every team and explains its strongest and weakest position", () => {
     const teams = analyzeLeague({ rosters, pool });
     expect(teams.map(team => team.rank)).toEqual([1, 2]);
     expect(teams.every(team => team.grade && team.strength && team.weakness)).toBe(true);
+    expect(teams[0].positionGrades.QB.leagueRank).toBeGreaterThanOrEqual(1);
+    expect(teams[0].positionGrades.QB.leagueSize).toBe(2);
     expect(compareTeams(teams[0], teams[1]).positions).toHaveLength(4);
   });
 
