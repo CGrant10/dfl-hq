@@ -1,6 +1,6 @@
 // =====================================================================
 // Admin -> Sleeper tab
-// League ID, a manual sync button, last sync time, and a live log.
+// League ID, fast current-season sync, optional history repair, and a live log.
 // =====================================================================
 
 import { db } from "../supabase.js";
@@ -74,7 +74,12 @@ export async function renderSleeperPanel(host) {
         ${config.last_sync_note ? `<br>${esc(config.last_sync_note)}` : ""}
         <br>Stored now: ${seasonCount || 0} season(s), ${matchupCount || 0} matchups.
       </div>
-      <button class="btn block" id="sl-sync">Sync Sleeper Data</button>
+      <button class="btn primary block" id="sl-sync">Sync Current Season</button>
+      <button class="btn ghost block" id="sl-sync-history" style="margin-top:8px">Repair All Season History</button>
+      <div class="muted tiny" style="margin-top:8px">
+        Use the fast current-season sync after roster, matchup, waiver or trade changes.
+        History repair is only needed when older records are missing or corrected.
+      </div>
       <pre id="sl-log" class="synclog hidden"></pre>
     </div>
 
@@ -106,9 +111,8 @@ export async function renderSleeperPanel(host) {
     else       toast("League ID saved");
   });
 
-  // ---- run a sync ----
-  host.querySelector("#sl-sync").addEventListener("click", async () => {
-    const btn = host.querySelector("#sl-sync");
+  // ---- run a current-season sync or an explicit historical repair ----
+  async function runSync(includeHistory, btn) {
     const logEl = host.querySelector("#sl-log");
     const leagueId = host.querySelector("#sl-id").value.trim();
 
@@ -121,20 +125,30 @@ export async function renderSleeperPanel(host) {
       logEl.scrollTop = logEl.scrollHeight;
     };
 
-    btn.disabled = true;
-    btn.textContent = "Syncing…";
+    const buttons = [...host.querySelectorAll("#sl-sync, #sl-sync-history")];
+    buttons.forEach((button) => { button.disabled = true; });
+    const originalText = btn.textContent;
+    btn.textContent = includeHistory ? "Repairing history…" : "Syncing current season…";
     try {
       // Save the ID first so a successful sync always matches what is stored.
       await db().from("sleeper_config").update({ sleeper_league_id: leagueId }).eq("id", 1);
 
-      const { counts } = await syncSleeper(leagueId, log);
+      const { counts } = await syncSleeper(leagueId, log, { includeHistory });
       toast(`Synced ${counts.seasons} season(s)`);
       renderSleeperPanel(host);
     } catch (err) {
       log(`\nFAILED: ${err.message}`);
       toast(err.message, true);
-      btn.disabled = false;
-      btn.textContent = "Sync Sleeper Data";
+      buttons.forEach((button) => { button.disabled = false; });
+      btn.textContent = originalText;
     }
+  }
+
+  host.querySelector("#sl-sync").addEventListener("click", (event) =>
+    runSync(false, event.currentTarget));
+
+  host.querySelector("#sl-sync-history").addEventListener("click", (event) => {
+    if (!confirm("Repair every linked Sleeper season? Normal team changes only need the current-season sync.")) return;
+    runSync(true, event.currentTarget);
   });
 }

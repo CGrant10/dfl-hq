@@ -11,51 +11,39 @@
 //      where relevant) and written with upsert. Re-syncing 2026 updates
 //      2026 rows and cannot touch 2025.
 //
-//   2. Sleeper makes a new league id every season and links backwards
-//      with previous_league_id. Following that chain is how one click
-//      picks up every year the league has existed.
+//   2. NORMAL SYNCS TOUCH ONLY THE CURRENT SEASON. Sleeper makes a new
+//      league id every season, so repeatedly walking previous_league_id
+//      wastes dozens of requests on history that no longer changes. The
+//      chain remains available as an explicit history-repair operation.
 // =====================================================================
 
 import { db } from "./supabase.js";
 import { readWinners, readLastPlace } from "./sleeper-bracket.js";
 import { sleeper } from "./sleeper.js";
 import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
+import { collectLeagueChain } from "./sleeper-sync-scope.js";
 
-const MAX_SEASONS = 20;   // stops a broken chain from looping forever
 const MAX_WEEK    = 18;
 const CONCURRENCY = 4;    // parallel week requests; polite to the API
 
 /**
- * Sync the given league and every earlier season linked to it.
+ * Sync the configured current league, or explicitly repair linked history.
  * @param {string} leagueId  the most recent Sleeper league id
  * @param {(msg:string)=>void} log  progress callback for the UI
+ * @param {{includeHistory?:boolean}} options sync scope
  * @returns {Promise<{seasons:number[], counts:object}>}
  */
-export async function syncSleeper(leagueId, log = () => {}) {
+export async function syncSleeper(leagueId, log = () => {}, { includeHistory = false } = {}) {
   if (!leagueId) throw new Error("Enter a Sleeper league ID first.");
 
   const counts = { seasons: 0, users: 0, rosters: 0, matchups: 0, transactions: 0, draftPicks: 0 };
 
-  // ---- 1. Walk the chain and collect every league first ----
-  const chain = [];
-  let currentId = String(leagueId).trim();
-  let guard = 0;
-
-  while (currentId && guard++ < MAX_SEASONS) {
-    const league = await sleeper.league(currentId);
-    if (!league) {
-      if (guard === 1) throw new Error(`Sleeper has no league with ID ${currentId}. Double-check the ID.`);
-      log(`Chain ended at ${currentId}.`);
-      break;
-    }
-    chain.push(league);
-    log(`Found ${league.season}: ${league.name}`);
-    currentId = league.previous_league_id || null;
-  }
-
-  if (guard >= MAX_SEASONS) {
-    log(`Stopped after ${MAX_SEASONS} seasons — raise MAX_SEASONS if the league is older.`);
-  }
+  // ---- 1. Resolve the requested scope ----
+  const chain = await collectLeagueChain(leagueId, {
+    includeHistory,
+    getLeague: sleeper.league,
+    log,
+  });
 
   // ---- 2. Sync OLDEST FIRST ----
   // The order matters. sleeper_users holds one row per person with their
@@ -63,8 +51,6 @@ export async function syncSleeper(leagueId, log = () => {}) {
   // first meant the oldest season had the last word, so everybody's
   // "current" team was really their 2019 team. Oldest first means the
   // newest season wins, which is what "current" should mean.
-  chain.sort((a, b) => Number(a.season) - Number(b.season));
-
   const seasons = [];
   for (const league of chain) {
     const season = Number(league.season);
@@ -86,7 +72,7 @@ export async function syncSleeper(leagueId, log = () => {}) {
   await db().from("sleeper_config").update({
     sleeper_league_id: String(leagueId).trim(),
     last_synced_at:    new Date().toISOString(),
-    last_sync_note:    `${counts.seasons} season(s): ${seasons.join(", ")}`,
+    last_sync_note:    `${includeHistory ? "History repair" : "Current season"}: ${seasons.join(", ")}`,
   }).eq("id", 1);
 
   log(`Done. ${counts.seasons} season(s) synced.`);
