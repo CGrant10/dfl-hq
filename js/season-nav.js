@@ -3,13 +3,13 @@
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
   { route: "rules", label: "Rules", icon: "rules" },
-  { route: "analyzer", label: "Trade", icon: "record", lead: true },
+  { route: "analyzer", label: "Trade", icon: "trade", lead: true },
   { route: "facts", label: "Facts", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
-  { route: "notifications", label: "Notifications", icon: "moment" },
+  { route: "notifications", label: "Notifications", icon: "bell" },
   { route: "profile", label: "Profile", icon: "profile" },
   { route: "calendar", label: "Calendar", icon: "calendar" },
   { route: "history", label: "History", icon: "history" },

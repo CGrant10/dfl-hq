@@ -15,6 +15,7 @@ import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js
 import { paintBottomline, startBottomline } from "./bottomline.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
+import { setupNotifyNudge } from "./notify-nudge.js";
 import { esc, toast } from "./ui.js";
 import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
@@ -243,6 +244,10 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggre
   startBottomline(currentRoute);/* A broadcast/OBS URL is a public spectator surface. It must render without
    asking the viewer to identify themselves, including in a fresh browser. */
 if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicker();
-else if(getUsername())registerUser(getUsername());if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);setupInstall();setupUpdates()}
+else if(getUsername())registerUser(getUsername());if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);setupInstall();setupUpdates();
+  /* Not awaited: it waits on the profile picker, which can stay open for as
+     long as the member takes to find their name. */
+  void setupNotifyNudge();
+}
 onGolfPassChange(paintName);
 boot();
