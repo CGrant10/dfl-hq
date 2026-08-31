@@ -194,6 +194,50 @@ export function hasPermission(permission) {
   return (commissionerAccess?.permissions || []).includes(permission);
 }
 
+/*
+  EDGE FUNCTIONS GET A CLIENT WITH NO GOLF PASS ON IT.
+
+  golfHeaders() rides on EVERY request from a device holding a pass, by design
+  - the client is built once per identity and cannot vary per table, and no
+  policy outside the two golf score tables looks at those headers.
+
+  For PostgREST that is free. For an Edge Function it is not: the browser must
+  clear a CORS preflight first, and the function has to name every header it
+  will accept. x-golf-outing / x-golf-code / x-golf-participant were not on
+  send-notification's list, so the browser refused the POST before the function
+  ran and supabase-js reported the only thing it could see - an Edge Function
+  error, on a function that was healthy and never got the call. Enabling
+  notifications died there for anyone who had signed in to a golf outing, which
+  includes league members: the "Enter code" strip on the Golf page is drawn for
+  everyone, not only guests.
+
+  So Edge Function traffic goes out on its own client carrying identity and
+  nothing else. The function reads x-member-id and x-device-token; it has never
+  read a golf header, so none are lost. Privileged calls still pass
+  privilegedFunctionHeaders() per invoke, which merges on top of these.
+
+  The function's allow-list should be permissive too - it now echoes what the
+  browser asks for - but that fix only exists once it is deployed, and this one
+  ships with the app.
+*/
+let edgeClient = null;
+let edgeClientKey = null;
+export function edge() {
+  const memberId = memberIdNow();
+  const key = `${memberId}|${notificationDeviceToken(memberId)}`;
+  if (edgeClient && edgeClientKey === key) return edgeClient;
+  edgeClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: {
+      headers: {
+        ...(memberId ? { "x-member-id": memberId } : {}),
+        ...notificationHeaders(memberId),
+      },
+    },
+  });
+  edgeClientKey = key;
+  return edgeClient;
+}
+
 /* `functions.invoke()` does not consistently carry the Supabase client's
    custom global headers into its Functions client. Pass the active app-level
    credentials explicitly for privileged Edge Function calls. */

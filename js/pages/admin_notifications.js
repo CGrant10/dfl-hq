@@ -1,4 +1,4 @@
-import { db, privilegedFunctionHeaders } from "../supabase.js";
+import { edge, privilegedFunctionHeaders } from "../supabase.js";
 import { loadMembers } from "../members.js";
 import { esc, toast } from "../ui.js";
 import { cleanNotificationDraft, NOTIFICATION_CATEGORIES } from "../notification-core.js";
@@ -33,7 +33,7 @@ export async function renderNotificationPanel(host) {
     if (form.elements.audience.value === "members" && !draft.targetMemberIds.length) return toast("Choose at least one member", true);
     btn.disabled = true;
     try {
-      const { data, error } = await db().functions.invoke("send-notification", {
+      const { data, error } = await edge().functions.invoke("send-notification", {
         headers: privilegedFunctionHeaders(),
         body: { action: "send", ...draft },
       });

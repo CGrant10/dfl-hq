@@ -1,4 +1,4 @@
-import { db } from "./supabase.js";
+import { db, edge } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { ALL_NOTIFICATION_CATEGORIES } from "./notification-core.js";
 
@@ -30,7 +30,7 @@ export async function currentPushSubscription() {
 }
 
 async function pushPublicKey() {
-  const { data, error } = await db().functions.invoke("send-notification", { body: { action: "config" } });
+  const { data, error } = await edge().functions.invoke("send-notification", { body: { action: "config" } });
   if (error) throw error;
   if (!data?.publicKey) throw new Error("Push delivery is not configured yet");
   return data.publicKey;
