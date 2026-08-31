@@ -1,12 +1,33 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
 
-const CORS = {
+/*
+  THE PREFLIGHT HAS TO ECHO WHAT THE BROWSER ASKS FOR, NOT A LIST WE MAINTAIN.
+
+  db() attaches identity headers that vary by what the member is doing -
+  x-member-id, x-device-token, and the three x-golf-* pass headers a golf guest
+  carries on EVERY request. A fixed allow-list means each new header silently
+  kills the preflight for the people who send it, and the browser refuses the
+  POST before this function ever runs. supabase-js reports that as nothing more
+  than "Failed to send a request to the Edge Function", so the symptom is an
+  Edge Function error on a function that is healthy and never got the call.
+
+  That is exactly how enabling notifications broke for anyone holding a golf
+  pass: x-golf-outing / x-golf-code / x-golf-participant were not on the list.
+
+  Echoing is safe here. The origin is already "*", no credentials or cookies
+  ride along, and a header the caller invents grants nothing - authorisation is
+  decided by maySend() below, which re-checks the headers in Postgres.
+*/
+const ALLOWED_HEADERS = "authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-device-token, x-golf-outing, x-golf-code, x-golf-participant";
+const corsHeaders = (request?: Request) => ({
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin",
+  "Access-Control-Allow-Headers": request?.headers.get("access-control-request-headers") || ALLOWED_HEADERS,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (value: unknown, status = 200) => Response.json(value, { status, headers: CORS });
+  "Access-Control-Max-Age": "86400",
+  Vary: "Access-Control-Request-Headers",
+});
+const json = (value: unknown, status = 200) => Response.json(value, { status, headers: corsHeaders() });
 const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "events", "updates"]);
 
 function envKey(name: "SUPABASE_PUBLISHABLE_KEYS" | "SUPABASE_SECRET_KEYS", legacy: string) {
@@ -61,7 +82,7 @@ async function vapidKeys(admin: ReturnType<typeof createClient>) {
 }
 
 Deno.serve(async request => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   try {
     const input = await request.json().catch(() => ({}));
