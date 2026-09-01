@@ -689,6 +689,10 @@ export function advise(input) {
   return {
     state: "ready",
     member, sleeperUserId, roster, rules, targetSeason, maxKeepers,
+    /* The keeper history, forwarded rather than re-fetched. The self card
+       needs it to work out how long a hold has been running - see
+       keeperTenure() - and it is already in hand here. */
+    keeperRows,
     context: ctx,
     positions: ADVISOR_POSITIONS,
     data: levels,

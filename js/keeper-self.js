@@ -18,6 +18,7 @@
 // =====================================================================
 
 import { db } from "./supabase.js";
+import { keeperTenure } from "./keeper-rules.js";
 import { esc, toast } from "./ui.js";
 import { verifiedPin } from "./member-lock.js";
 
@@ -88,27 +89,63 @@ function costLine(c) {
   live. The commissioner's override is the season lock, not row ownership.
 */
 
-function currentList(mine, season) {
+/*
+  THE HOLD, AS A COUNTER RATHER THAN A SENTENCE.
+
+  A keeper is a three-season allowance and the thing a manager actually wants
+  to know is how much of it is gone. "Year 2 of 3" answers it in four words;
+  the pips answer it without reading. Both are shown, because the pips alone
+  are a puzzle and the words alone are easy to skim past.
+
+  The final season is called out. Running out of keeper years on a player is a
+  roster decision with a deadline, and finding out by counting is too late.
+*/
+function tenureBadge(tenure) {
+  if (!tenure || !tenure.max) return "";
+  const pips = Array.from({ length: tenure.max }, (_, index) =>
+    `<i class="${index < tenure.year ? "is-used" : ""}"></i>`).join("");
+  const left = tenure.left === 0
+    ? "final season"
+    : `${tenure.left} season${tenure.left === 1 ? "" : "s"} left`;
+  return `<span class="ks-tenure ${tenure.final ? "is-final" : ""}">
+    <span class="ks-pips" aria-hidden="true">${pips}</span>
+    <b>Year ${tenure.year}/${tenure.max}</b>
+    <em>${esc(left)}${tenure.firstSeason ? ` · kept since ${tenure.firstSeason}` : ""}</em>
+  </span>`;
+}
+
+function currentList(mine, season, { keeperRows = [], maxKeeperSeasons = null, memberId = null } = {}) {
   if (!mine.length) {
     return `<p class="ks-none">You have not chosen a keeper for ${season} yet.</p>`;
   }
-  return `<ul class="ks-mine">${mine.map((row) => `
+  return `<ul class="ks-mine">${mine.map((row) => {
+    const tenure = keeperTenure(keeperRows, {
+      playerId: row.player_id, memberId, season, max: maxKeeperSeasons,
+    });
+    return `
     <li>
-      <strong>${esc(row.player_name || row.player_id)}</strong>
-      ${row.player_pos ? `<span class="ks-pos">${esc(row.player_pos)}</span>` : ""}
-      <span class="ks-cost">${season} Keeper · R${row.round_cost ?? "—"}</span>
-      ${row.basis_season && row.basis_round
-        ? `<span class="ks-basis">from ${row.basis_season} R${row.basis_round}</span>` : ""}
-      ${row.self_submitted === false
-        ? `<span class="ks-basis">entered for you by the commissioner &middot; you can change it</span>` : ""}
-    </li>`).join("")}</ul>`;
+      <div class="ks-line">
+        <strong>${esc(row.player_name || row.player_id)}</strong>
+        ${row.player_pos ? `<span class="ks-pos">${esc(row.player_pos)}</span>` : ""}
+        <span class="ks-cost">R${row.round_cost ?? "—"}</span>
+      </div>
+      ${tenureBadge(tenure)}
+      <div class="ks-line ks-sub">
+        ${row.basis_season && row.basis_round
+          ? `<span class="ks-basis">from ${row.basis_season} R${row.basis_round}</span>` : ""}
+        ${row.self_submitted === false
+          ? `<span class="ks-basis">entered by the commissioner &middot; you can change it</span>` : ""}
+      </div>
+    </li>`;
+  }).join("")}</ul>`;
 }
 
 /**
  * The card. Draws one of three things and never a disabled button with no
  * explanation beside it.
  */
-export function selfCard({ season, status, mine = [], options = [] }) {
+export function selfCard({ season, status, mine = [], options = [],
+                           keeperRows = [], maxKeeperSeasons = null }) {
   if (!status) return "";
   /*
     ONLY ASK FOR WHAT WE DO NOT ALREADY HAVE.
@@ -140,7 +177,7 @@ export function selfCard({ season, status, mine = [], options = [] }) {
   if (status.locked) {
     return `<section class="card keeper-self is-locked"><div class="card-body">
       <h3 class="card-heading">Your ${season} keeper</h3>
-      ${currentList(mine, season)}
+      ${currentList(mine, season, { keeperRows, maxKeeperSeasons, memberId: status.member_id })}
       <p class="ks-locked">Keepers for ${season} are locked. Ask the commissioner if
         something is wrong.</p>
     </div></section>`;
@@ -151,7 +188,7 @@ export function selfCard({ season, status, mine = [], options = [] }) {
 
   return `<section class="card keeper-self"><div class="card-body">
     <h3 class="card-heading">Your ${season} keeper</h3>
-    ${currentList(mine, season)}
+    ${currentList(mine, season, { keeperRows, maxKeeperSeasons, memberId: status.member_id })}
 
     ${options.length ? `
       <form class="ks-form" data-keeper-self-form autocomplete="off">

@@ -246,7 +246,14 @@ async function mountSelfCard(host, data, member) {
     let mine = [];
     try { mine = await myKeepers(season, status.member_id); } catch { mine = []; }
     const options = pickable(data.candidates || []);
-    mount.innerHTML = selfCard({ season, status, mine, options });
+    mount.innerHTML = selfCard({
+      season, status, mine, options,
+      keeperRows: data.keeperRows || [],
+      /* data.rules is already the resolved config for this season - see
+         line 339 - so it is read directly rather than passed through
+         configFor() a second time. */
+      maxKeeperSeasons: data.rules?.max_keeper_seasons ?? DEFAULT_RULES.max_keeper_seasons,
+    });
     return options;
   };
 

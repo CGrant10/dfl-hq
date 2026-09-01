@@ -151,3 +151,35 @@ describe("the rule summary and the text fallback", () => {
     expect(boardText(null)).toBe("");
   });
 });
+
+describe("the hold on the shared board", () => {
+  const members = [{ id: 1, display_name: "Grant", team_name: "Team G" }];
+  const rows = [
+    { year: 2024, member_id: 1, player_id: "7", player_name: "Kept Guy", round_cost: 8, team: "Team G" },
+    { year: 2025, member_id: 1, player_id: "7", player_name: "Kept Guy", round_cost: 7, team: "Team G" },
+    { year: 2026, member_id: 1, player_id: "7", player_name: "Kept Guy", round_cost: 7, team: "Team G" },
+    { year: 2026, member_id: 1, player_id: null, player: "Legacy Name", round_cost: 5, team: "Team G" },
+  ];
+  const board = boardData({
+    season: 2026, members, keeperRows: rows, players: {},
+    rules: { max_keeper_seasons: 3 },
+  });
+  const kept = board.rows[0].keepers.find((k) => k.name === "Kept Guy");
+
+  it("counts the season being served and what started it", () => {
+    expect(kept.tenure.year).toBe(3);
+    expect(kept.tenure.max).toBe(3);
+    expect(kept.tenure.firstSeason).toBe(2024);
+    expect(kept.tenure.final).toBe(true);
+  });
+
+  it("gives a legacy row no counter rather than a wrong one", () => {
+    const legacy = [...board.rows[0].keepers, ...board.also]
+      .find((k) => k.name === "Legacy Name");
+    expect(legacy.tenure).toBeNull();
+  });
+
+  it("says the year in the text share too", () => {
+    expect(boardText(board)).toContain("yr 3/3");
+  });
+});

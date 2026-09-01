@@ -2332,14 +2332,52 @@ a.moment:hover { background: var(--hover-soft); }
 .keeper-self .card-heading { margin-bottom: .4rem; }
 .keeper-self.is-locked { opacity: .92; }
 .ks-none { color: var(--muted); font-size: .92rem; margin: .2rem 0 .7rem; }
-.ks-mine { list-style: none; margin: .2rem 0 .8rem; padding: 0; display: grid; gap: .35rem; }
+/*
+  THE ROW IS THREE STACKED LINES, NOT ONE WRAPPING ONE.
+
+  It was a single flex row with wrap, so the name, the position, the cost, the
+  basis and the commissioner note all competed for one line and then spilled
+  onto two or three ragged ones - which is where the empty space in this card
+  came from. Each part now has a line of its own and the gaps are tuned to the
+  content rather than to whatever wrapping produced.
+*/
+.ks-mine { list-style: none; margin: .2rem 0 .7rem; padding: 0; display: grid; gap: .4rem; }
 .ks-mine li {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem;
-  padding: .45rem .6rem; border: 1px solid var(--line); border-radius: .6rem;
+  display: grid; gap: .3rem;
+  padding: .55rem .65rem; border: 1px solid var(--line); border-radius: .6rem;
   background: rgba(255,255,255,.03);
 }
+.ks-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
+/* Empty whenever there is no basis and no commissioner note - it must not
+   reserve a line, which is the other half of the wasted space. */
+.ks-sub:empty { display: none; }
 .ks-pos, .ks-basis { color: var(--muted); font-size: .8rem; }
 .ks-cost { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ------------------------- the keeper hold -------------------------- */
+
+.ks-tenure {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .45rem;
+  padding: .3rem .5rem; border-radius: .45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.ks-tenure b { font-size: .8rem; font-weight: 800; letter-spacing: .02em; color: var(--accent); }
+.ks-tenure em { font-style: normal; font-size: .76rem; color: var(--muted); }
+/* One pip per allowed season, filled up to the season being served. */
+.ks-pips { display: inline-flex; gap: 3px; }
+.ks-pips i {
+  width: 13px; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+.ks-pips i.is-used { background: var(--accent); }
+/* The last year of a hold is a decision with a deadline. */
+.ks-tenure.is-final {
+  border-color: color-mix(in srgb, #d97706 55%, transparent);
+  background: color-mix(in srgb, #d97706 12%, transparent);
+}
+.ks-tenure.is-final b { color: #d97706; }
+.ks-tenure.is-final .ks-pips i.is-used { background: #d97706; }
 .ks-locked { color: var(--muted); font-size: .86rem; margin: .3rem 0 0; }
 .ks-form { display: grid; gap: .35rem; }
 .ks-form label { font-size: .82rem; color: var(--muted); }

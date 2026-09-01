@@ -40,7 +40,7 @@
 
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
-import { describeRules } from "./keeper-rules.js";
+import { describeRules, keeperTenure } from "./keeper-rules.js";
 
 const W = 1080, H = 1350;
 const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, CREST_RED, CREST_BLUE } = SHARE_INK;
@@ -113,6 +113,8 @@ export function boardData({ season, members = [], keeperRows = [], players = {},
     else orphans.push(row);
   }
 
+  const maxKeeperSeasons = rules?.max_keeper_seasons ?? null;
+
   const entryOf = (row) => {
     const meta = row.player_id != null ? players[String(row.player_id)] : null;
     /* The snapshot columns beat the live map: they are what the player was on
@@ -125,6 +127,15 @@ export function boardData({ season, members = [], keeperRows = [], players = {},
       round: row.round_cost == null ? null : Number(row.round_cost),
       legacy: row.player_id == null,
       overridden: row.round_overridden === true,
+      /* The hold, for the board. Computed from the same keeper rows the board
+         was built from, so a shared image and the page cannot disagree about
+         how long somebody has had a player. Legacy rows carry no player_id and
+         therefore no countable history - they get no counter rather than a
+         wrong one. */
+      tenure: row.player_id == null ? null : keeperTenure(keeperRows, {
+        playerId: row.player_id, memberId: row.member_id,
+        season: year, max: maxKeeperSeasons,
+      }),
     };
   };
 
@@ -152,8 +163,11 @@ export function boardText(board) {
   const lines = board.rows.map((r) => {
     const who = r.team || r.member;
     if (!r.keepers.length) return `${who}: no keeper submitted`;
-    return `${who}: ${r.keepers.map((k) =>
-      `${k.name}${k.round != null ? ` (R${k.round})` : ""}`).join(", ")}`;
+    return `${who}: ${r.keepers.map((k) => {
+      const cost = k.round != null ? ` (R${k.round})` : "";
+      const held = k.tenure?.max ? ` yr ${k.tenure.year}/${k.tenure.max}` : "";
+      return `${k.name}${cost}${held}`;
+    }).join(", ")}`;
   });
   return [head, ...lines].join("\n");
 }
@@ -302,6 +316,31 @@ export function boardCanvas(board) {
           ctx.letterSpacing = "2px";
           ctx.fillText(k.where.toUpperCase(), px, ky + 16);
           ctx.letterSpacing = "0px";
+        }
+        /*
+          THE HOLD, ON THE SHARED IMAGE.
+
+          A keeper board that shows only the cost answers half the question.
+          "R7" says what he costs; "YR 2/3" says how much longer he can be
+          held at all, which is the part that changes what anybody does about
+          it. Drawn as pips plus the numerals for the same reason the card
+          does both - the pips are read at a glance and the numerals survive
+          a screenshot being looked at on a small phone.
+        */
+        if (k.tenure?.max) {
+          const t = k.tenure;
+          const tx = k.where ? px + ctx.measureText(k.where.toUpperCase()).width + 24 : px;
+          const ty = ky + 16;
+          const pipW = 16, pipH = 6, pipGap = 4;
+          t.max > 0 && Array.from({ length: t.max }).forEach((_, i) => {
+            ctx.fillStyle = i < t.year ? (t.final ? CREST_RED : GOLD) : LINE;
+            roundRect(ctx, tx + i * (pipW + pipGap), ty - pipH / 2 - 2, pipW, pipH, 3);
+            ctx.fill();
+          });
+          ctx.fillStyle = t.final ? CREST_RED : MUTED;
+          ctx.font = `800 19px ${FONT}`;
+          ctx.textAlign = "left";
+          ctx.fillText(`YR ${t.year}/${t.max}`, tx + t.max * (pipW + pipGap) + 8, ty + 1);
         }
         // The round, as a column you can read straight down.
         ctx.textAlign = "right";
