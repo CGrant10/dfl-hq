@@ -9,8 +9,23 @@ import {
 describe("regular-season navigation", () => {
   it("puts the analyzer in the primary bar with the weekly league tools", () => {
     expect(PRIMARY_SEASON_ROUTES.map((item) => item.route))
-      .toEqual(["home", "rules", "analyzer", "facts", "finances"]);
+      .toEqual(["home", "trade", "analyzer", "facts", "finances"]);
     expect(PRIMARY_SEASON_ROUTES.find((item) => item.lead)?.route).toBe("analyzer");
+  });
+
+  /* Rules gave up its slot to the trade desk - a reference you read once a
+     season against a decision with a clock on it. It must still be reachable. */
+  it("moves Rules to More rather than losing it", () => {
+    expect(PRIMARY_SEASON_ROUTES.map((item) => item.route)).not.toContain("rules");
+    expect(SECONDARY_SEASON_ROUTES.map((item) => item.route)).toContain("rules");
+    expect(secondarySeasonNavMarkup()).toContain('href="#/rules"');
+  });
+
+  it("gives the trade desk and the analyzer distinct icons", () => {
+    const icons = PRIMARY_SEASON_ROUTES.map((item) => item.icon);
+    expect(new Set(icons).size).toBe(icons.length);
+    expect(PRIMARY_SEASON_ROUTES.find((i) => i.route === "trade").icon).toBe("trade");
+    expect(PRIMARY_SEASON_ROUTES.find((i) => i.route === "analyzer").icon).toBe("analyzer");
   });
 
   it("keeps completed-season and occasional tools in More", () => {

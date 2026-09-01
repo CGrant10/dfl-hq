@@ -2,13 +2,17 @@
 // fixed bar belongs to the things the league checks every week now.
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
-  { route: "rules", label: "Rules", icon: "rules" },
-  { route: "analyzer", label: "Analyzer", icon: "trade", lead: true },
+  /* The trade desk earned the slot Rules had. Rules is a reference you read
+     once a season; a trade is a decision with a clock on it, and it was two
+     taps deep inside another page. Rules keeps its place in More. */
+  { route: "trade", label: "Trade", icon: "trade" },
+  { route: "analyzer", label: "Analyzer", icon: "analyzer", lead: true },
   { route: "facts", label: "Facts", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
+  { route: "rules", label: "Rules", icon: "rules" },
   { route: "notifications", label: "Notifications", icon: "bell" },
   { route: "profile", label: "Profile", icon: "profile" },
   { route: "calendar", label: "Calendar", icon: "calendar" },

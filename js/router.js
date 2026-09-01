@@ -30,6 +30,7 @@ const routes = {
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
   facts:    () => import("./pages/facts.js"),
+  trade:    () => import("./pages/trade.js"),
   finances: () => import("./pages/finances.js"),
   profile:  () => import("./pages/profile-locked.js"),
   notifications: () => import("./pages/notifications.js"),

@@ -2,7 +2,6 @@ import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
 import { ANALYZER_UNITS, compareTeams, suggestTrades } from "../team-analyzer.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
-import { mountTradeDesk, tradeDeskMarkup } from "../trade-desk.js";
 import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
 
 const ordinal = value => {
@@ -106,12 +105,6 @@ function trendReport(team) {
     body: `<div data-trend-panel data-team="${esc(team.id)}"></div>` });
 }
 
-function tradeDesk(team, teams, pool, state) {
-  return section("TRADE DESK", "Build a trade", { open: true,
-    aside: `<span class="ta-inline-note">Tick players on both sides. Scored with the league's own full-PPR settings, by the same evaluator the suggestions below use.</span>`,
-    body: `<div data-trade-desk>${tradeDeskMarkup(team, teams, pool, state)}</div>` });
-}
-
 function tradeLab(team, teams, pool, selectedPlayerId) {
   const players = team.playerIds.map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
   const selected = players.find(player => player.id === selectedPlayerId) || players[0];
@@ -120,7 +113,7 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
   return section("TRADE LAB", "Possible deals", { open: false,
     hint: offers.length ? `${offers.length} balanced offer${offers.length === 1 ? "" : "s"}` : "no balanced offers",
     aside: picker,
-    body: `<p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result.</p>${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>` : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}` });
+    body: `<p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result. To build a deal by hand, use the <a href="#/trade">Trade Desk</a>.</p>${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>` : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}` });
 }
 
 function page(data) {
@@ -130,9 +123,6 @@ function page(data) {
   let selectedId = data.teams.find(team => requestedOwner && String(team.sleeper_user_id) === String(requestedOwner))?.id || data.teams.find(team => String(team.id) === String(requestedId))?.id || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id || data.teams[0].id;
   let compareId = data.teams.find(team => team.id !== selectedId)?.id || selectedId;
   let playerId = "";
-  /* Sets rather than arrays: a checkbox toggles membership, and the desk is
-     rebuilt from this whenever the report redraws. */
-  const trade = { partnerId: "", sendA: new Set(), sendB: new Set() };
   return {
     markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>One continuous report using current expectations, last season’s production and the league’s actual scoring.</p></div><main class="ta-report" data-ta-body></main>`,
     wire(view) {
@@ -143,24 +133,16 @@ function page(data) {
         compareId = opponent.id;
         const selected = team.playerIds.map(id => data.pool.get(id)).find(player => player?.id === playerId);
         if (!selected) playerId = team.playerIds.map(id => data.pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue)[0]?.id || "";
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}${tradeDesk(team, data.teams, data.pool, trade)}${tradeLab(team, data.teams, data.pool, playerId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}${tradeLab(team, data.teams, data.pool, playerId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,
           season: Number(data.projectionSeason),
           scoringSettings: data.league?.scoring_settings || null,
         });
-        mountTradeDesk(body.querySelector("[data-trade-desk]"), {
-          team, teams: data.teams, pool: data.pool, state: trade,
-          /* A new partner means a new roster to pick from, so the board is
-             rebuilt - but only the board, via draw(). */
-          onPartnerChange: draw,
-        });
       };
       view.querySelector("[data-ta-team-select]").addEventListener("change", event => {
         selectedId = event.currentTarget.value; playerId = "";
-        /* Both sides referred to rosters that are no longer on screen. */
-        trade.partnerId = ""; trade.sendA.clear(); trade.sendB.clear();
         draw();
       });
       body.addEventListener("click", event => { const button = event.target.closest("[data-ta-team]"); if (!button) return; selectedId = button.dataset.taTeam; playerId = ""; draw(); view.scrollTo?.({ top: 0, behavior: "smooth" }); });
