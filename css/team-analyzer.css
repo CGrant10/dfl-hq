@@ -99,7 +99,10 @@
 .ta-report-lead:after {
   content: ""; position: absolute; inset: auto 18px 0; height: 1px; background: var(--line);
 }
-.ta-lead-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; grid-column: 1 / -1; }
+/* Label and value read as one phrase, not as two things pinned to opposite
+   edges of an 830px card. The divider does the separating that 470px of empty
+   space used to do badly. */
+.ta-lead-top { display: flex; align-items: center; justify-content: flex-start; gap: 18px; grid-column: 1 / -1; }
 .ta-team-intro { min-width: 0; }
 .ta-team-intro h2 {
   overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap;
@@ -108,8 +111,8 @@
 .ta-team-intro p, .ta-top-asset span { margin: 4px 0 0; color: var(--muted); font-size: var(--ta-small); }
 
 .ta-finish {
-  display: grid; justify-items: end; flex: none;
-  padding-left: 18px; border-left: 1px solid var(--line-soft); text-align: right;
+  display: grid; justify-items: start; flex: none;
+  padding-left: 18px; border-left: 1px solid var(--line-soft); text-align: left;
 }
 .ta-finish strong { font-family: var(--font-display); font-size: 30px; line-height: .9; letter-spacing: -.04em; }
 .ta-finish span { margin-top: 4px; color: var(--muted); font-size: var(--ta-small); }
@@ -268,7 +271,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 
 .ta-compare-summary {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: baseline; justify-content: flex-start; gap: 10px;
   padding: 10px 12px; background: var(--bg-3); font-size: var(--ta-body);
 }
 .ta-compare-summary span { color: var(--muted); font-size: var(--ta-small); }
@@ -780,14 +783,14 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   background: var(--bg-2); box-shadow: var(--shadow);
 }
 .so-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  display: flex; align-items: center; justify-content: flex-start; gap: 16px;
   padding: 16px 20px; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
 }
 .so-head small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .so-head h2 { margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; letter-spacing: -.02em; }
 /* The record lives in the header - it is the headline, not a section. */
-.so-record { flex: none; text-align: right; }
+.so-record { flex: none; text-align: left; padding-left: 16px; border-left: 1px solid var(--line-soft); }
 .so-record strong { display: block; font-family: var(--font-display); font-size: 38px; line-height: .9; letter-spacing: -.04em; }
 .so-record strong i { font-style: normal; color: var(--muted); margin: 0 1px; }
 .so-record span { display: block; margin-top: 3px; color: var(--muted); font-size: var(--ta-micro); }
