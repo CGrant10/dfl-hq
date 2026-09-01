@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, optimalLineup, suggestTrades } from "./team-analyzer.js";
+import { ANALYZER_UNITS, analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, optimalLineup, suggestTrades } from "./team-analyzer.js";
 
 const scoring = { pass_yd: .04, pass_td: 4, rush_yd: .1, rush_td: 6, rec: 1, rec_yd: .1, rec_td: 6 };
 const players = {
@@ -48,7 +48,8 @@ describe("team analyzer", () => {
     expect(teams.every(team => team.grade && team.starterGrade && team.depthGrade && team.overallGrade && team.strength)).toBe(true);
     expect(teams[0].positionGrades.QB.leagueRank).toBeGreaterThanOrEqual(1);
     expect(teams[0].positionGrades.QB.leagueSize).toBe(2);
-    expect(compareTeams(teams[0], teams[1]).positions).toHaveLength(4);
+    expect(compareTeams(teams[0], teams[1]).positions).toHaveLength(5);
+    expect(teams.every(team => team.positionGrades.FLEX.starters.length === 1)).toBe(true);
     const strongTe = teams.find(team => team.positionGrades.TE.leagueRank === 1);
     expect(strongTe.need).not.toBe("TE");
   });
@@ -65,8 +66,43 @@ describe("team analyzer", () => {
   it("pace-adjusts proven production and gives rookies a new outlook", () => {
     const paced = buildPlayerPool({ rosters, players, projections, scoringSettings: scoring,
       previousStats: { r1: { gp: 17, rush_yd: 3400 }, j1: { gp: 0 } } });
-    expect(paced.get("r1")).toMatchObject({ priorPace: 340, trend: "down", confidence: "high" });
-    expect(paced.get("j1")).toMatchObject({ priorPace: null, trend: "new", confidence: "medium" });
+    expect(paced.get("r1")).toMatchObject({ priorPace: 340, trend: "down" });
+    expect(paced.get("j1")).toMatchObject({ priorPace: null, trend: "new" });
+    expect(paced.get("r1")).not.toHaveProperty("confidence");
+  });
+
+  it("derives the starter grade from the five visible unit grades", () => {
+    const teams = analyzeLeague({ rosters, pool });
+    for (const team of teams) {
+      const visibleAverage = ANALYZER_UNITS.reduce((sum, unit) => sum + team.positionGrades[unit].percentile, 0) / ANALYZER_UNITS.length;
+      expect(team.starterPercentile).toBeCloseTo(visibleAverage, 10);
+      expect(team.positionGrades.FLEX.starters).toHaveLength(1);
+    }
+  });
+
+  it("does not let one high-scoring unit overpower the visible starter grades", () => {
+    const unitPool = new Map();
+    const roster = (id, label, points) => {
+      const positions = ["QB", "RB", "RB", "WR", "WR", "TE", "WR"];
+      const ids = points.map((expectedPoints, index) => {
+        const playerId = `${id}-${index}`;
+        unitPool.set(playerId, { id: playerId, name: playerId, position: positions[index], expectedPoints, tradeValue: 50 });
+        return playerId;
+      });
+      return { roster_id: id, team_name: label, players: ids, starters: ids };
+    };
+    const sample = [
+      roster("balanced", "Balanced", [300, 200, 200, 230, 230, 180, 200]),
+      roster("spike", "RB Spike", [290, 300, 300, 180, 180, 150, 190]),
+      roster("baseline", "Baseline", [280, 190, 190, 170, 170, 140, 160]),
+    ];
+    const teams = analyzeLeague({ rosters: sample, pool: unitPool });
+    const balanced = teams.find(team => team.id === "balanced");
+    const spike = teams.find(team => team.id === "spike");
+    expect(spike.lineup.starterPoints).toBeGreaterThan(balanced.lineup.starterPoints);
+    expect(balanced.starterGrade).toBe("A");
+    expect(spike.starterGrade).toBe("B");
+    expect(balanced.starterPercentile).toBeGreaterThan(spike.starterPercentile);
   });
 
   it("values a trade by the lineup it changes", () => {

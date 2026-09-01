@@ -1,6 +1,7 @@
 import { scorePlayer } from "./dfl-scoring.js";
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
+export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
 const STARTERS = { QB: 1, RB: 2, WR: 2, TE: 1 };
 const FLEX_POSITIONS = new Set(["RB", "WR", "TE"]);
 const DEPTH_WEIGHTS = [1, .84, .68, .52, .36];
@@ -105,8 +106,6 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
       tradeValue: Math.max(1, Math.min(100, Math.round(value * 99 + 1))),
-      confidence: player.projectedPoints != null && player.hasPriorProduction && (player.games == null || player.games >= 10) ? "high"
-        : player.projectedPoints != null || player.hasPriorProduction ? "medium" : "low",
     });
   }
   return pool;
@@ -189,38 +188,45 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
   const base = rosters.map(roster => {
     const ids = Array.isArray(roster.players) ? roster.players.map(String) : [];
     const lineup = optimalLineup(ids, pool, { starterIds: Array.isArray(roster.starters) ? roster.starters : [] });
-    const positionScores = Object.fromEntries(ANALYZER_POSITIONS.map(position => {
+    const unitScores = Object.fromEntries(ANALYZER_POSITIONS.map(position => {
       const options = lineup.starters.filter(player => player.position === position)
         .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]);
       const score = options.reduce((sum, player) => sum + player.expectedPoints, 0);
       return [position, round(score)];
     }));
+    unitScores.FLEX = round(lineup.starters.find(player => player.id === lineup.flexId)?.expectedPoints || 0);
     const rosterValue = sortedPlayers(ids, pool).slice(0, 12).reduce((sum, player) => sum + player.tradeValue, 0);
-    return { ...roster, id: String(roster.roster_id ?? roster.id), playerIds: ids, lineup, positionScores, rosterValue };
+    return { ...roster, id: String(roster.roster_id ?? roster.id), playerIds: ids, lineup, positionScores: unitScores, rosterValue };
   });
-  const starterScores = base.map(team => team.lineup.starterPoints).sort((a, b) => a - b);
   const depthScores = base.map(team => team.lineup.depthScore).sort((a, b) => a - b);
   const rosterValues = base.map(team => team.rosterValue).sort((a, b) => a - b);
-  const positionDistributions = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position,
+  const positionDistributions = Object.fromEntries(ANALYZER_UNITS.map(position => [position,
     base.map(team => team.positionScores[position]).sort((a, b) => a - b)]));
   const rated = base.map(team => {
-    const starterPercentile = percentileAt(starterScores, team.lineup.starterPoints);
+    /* A starter grade summarizes the five units members can inspect below.
+       Equal unit weight prevents a high-scoring position such as RB or QB from
+       overpowering several weaker units simply because its raw scale is larger. */
+    const unitPercentiles = Object.fromEntries(ANALYZER_UNITS.map(position => [position,
+      percentileAt(positionDistributions[position], team.positionScores[position])]));
+    const starterPercentile = ANALYZER_UNITS.reduce((sum, position) => sum + unitPercentiles[position], 0) / ANALYZER_UNITS.length;
     const depthPercentile = percentileAt(depthScores, team.lineup.depthScore);
     const valuePercentile = percentileAt(rosterValues, team.rosterValue);
-    return { ...team, starterPercentile, depthPercentile, valuePercentile,
+    return { ...team, unitPercentiles, starterPercentile, depthPercentile, valuePercentile,
       overallPercentile: starterPercentile * .72 + depthPercentile * .18 + valuePercentile * .1 };
   });
   const ordered = [...rated].sort((a, b) => b.lineup.starterPoints - a.lineup.starterPoints || a.id.localeCompare(b.id));
   return ordered.map((team, index) => {
-    const positionGrades = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position, {
+    const positionGrades = Object.fromEntries(ANALYZER_UNITS.map(position => [position, {
       score: team.positionScores[position],
       leagueRank: 1 + base.filter(other => other.positionScores[position] > team.positionScores[position]).length,
       leagueSize: base.length,
-      percentile: percentileAt(positionDistributions[position], team.positionScores[position]),
-      grade: grade(percentileAt(positionDistributions[position], team.positionScores[position])),
-      starters: team.lineup.starters.filter(player => player.position === position)
-        .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]),
-      depth: team.lineup.bench.filter(player => player.position === position).slice(0, 2),
+      percentile: team.unitPercentiles[position],
+      grade: grade(team.unitPercentiles[position]),
+      starters: position === "FLEX"
+        ? team.lineup.starters.filter(player => player.id === team.lineup.flexId)
+        : team.lineup.starters.filter(player => player.position === position)
+          .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]),
+      depth: position === "FLEX" ? [] : team.lineup.bench.filter(player => player.position === position).slice(0, 2),
     }]));
     const rankedPositions = ANALYZER_POSITIONS.map(position => ({ position, ...positionGrades[position] }))
       .sort((a, b) => b.percentile - a.percentile || a.leagueRank - b.leagueRank);
@@ -319,7 +325,7 @@ export function compareTeams(teamA, teamB) {
     teamA, teamB,
     scoreEdge: round(teamA.lineup.score - teamB.lineup.score),
     weeklyEdge: round(teamA.lineup.weeklyPoints - teamB.lineup.weeklyPoints),
-    positions: ANALYZER_POSITIONS.map(position => ({
+    positions: ANALYZER_UNITS.map(position => ({
       position,
       a: teamA.positionGrades[position],
       b: teamB.positionGrades[position],
