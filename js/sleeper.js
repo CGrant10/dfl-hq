@@ -154,6 +154,84 @@ export function loadMarketAdp(season, format = "ppr") {
 }
 
 // ---------------------------------------------------------------------
+// This week
+// ---------------------------------------------------------------------
+// Everything above is season-shaped: season projections, season ADP, a
+// completed season's stats. None of it answers the question a manager
+// actually asks on a Saturday, which is who to start on Sunday.
+//
+// The weekly projection endpoint answers it, and carries more than points:
+// every row names the player's TEAM, their OPPONENT, the game_id and the
+// current injury_status. So one call per week buys the projection, the
+// matchup and the availability flag together - no second source, no
+// scraping, no key.
+// ---------------------------------------------------------------------
+
+const WEEKLY_CACHE  = "sleeper-weekly-v1";
+const TREND_CACHE   = "sleeper-trending-v1";
+const THIRTY_MIN_MS = 30 * 60 * 1000;
+const STATE_MS      = 15 * 60 * 1000;
+
+/**
+ * Where the NFL currently is: { week, season, season_type, season_start_date }.
+ * Everything weekly hangs off this rather than a hardcoded week.
+ * @returns {Promise<{data:Object, fetchedAt:number}>}
+ */
+export function loadNflState() {
+  return cachedJson(WEEKLY_CACHE, `${BASE}/state/nfl`, STATE_MS);
+}
+
+/**
+ * One week of projections for the four scoring positions.
+ *
+ * Cached for half an hour: these move during the week as injuries land, and
+ * a stale Sunday-morning projection is worse than no advice at all.
+ *
+ * @returns {Promise<{data:Object[], fetchedAt:number}>}
+ */
+export function loadWeeklyProjections(season, week) {
+  const year = Number(season), wk = Number(week);
+  if (!Number.isFinite(year) || !Number.isFinite(wk) || wk < 1) {
+    return Promise.resolve({ data: [], fetchedAt: 0 });
+  }
+  const positions = MARKET_POSITIONS.map((p) => `position[]=${p}`).join("&");
+  const url = `https://api.sleeper.app/projections/nfl/${year}/${wk}`
+            + `?season_type=regular&${positions}`;
+  return cachedJson(WEEKLY_CACHE, url, THIRTY_MIN_MS);
+}
+
+/**
+ * What the rest of the fantasy world is doing with a player, as raw add and
+ * drop counts across every Sleeper league.
+ *
+ * This is the one genuinely external opinion the app can see. It is NOT a
+ * projection and must never be scored like one - a hyped waiver add and a
+ * good start are different claims - but it is a real answer to "am I the
+ * only one who rates this guy".
+ *
+ * @returns {Promise<{adds:Map<string,number>, drops:Map<string,number>, fetchedAt:number}>}
+ */
+export async function loadTrendingPlayers({ hours = 24, limit = 200 } = {}) {
+  const url = (kind) => `${BASE}/players/nfl/trending/${kind}`
+                      + `?lookback_hours=${hours}&limit=${limit}`;
+  const toMap = (rows) => new Map((rows || [])
+    .map((row) => [String(row.player_id), Number(row.count) || 0]));
+  try {
+    const [addRes, dropRes] = await Promise.all([
+      cachedJson(TREND_CACHE, url("add"), THIRTY_MIN_MS),
+      cachedJson(TREND_CACHE, url("drop"), THIRTY_MIN_MS),
+    ]);
+    return {
+      adds: toMap(addRes.data), drops: toMap(dropRes.data),
+      fetchedAt: Math.max(addRes.fetchedAt || 0, dropRes.fetchedAt || 0),
+    };
+  } catch {
+    /* An opinion signal is a bonus. Losing it must not cost the advice. */
+    return { adds: new Map(), drops: new Map(), fetchedAt: 0 };
+  }
+}
+
+// ---------------------------------------------------------------------
 // Player names
 // ---------------------------------------------------------------------
 // Rosters come back as bare player ids ("4034"). The id -> name map is a
