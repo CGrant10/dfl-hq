@@ -67,9 +67,16 @@
   position: relative; display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, .8fr);
   gap: 16px; padding: 22px;
-  background:
-    radial-gradient(circle at 0 0, color-mix(in srgb, var(--accent-fill) 20%, transparent), transparent 42%),
-    linear-gradient(135deg, var(--bg-2), color-mix(in srgb, var(--bg-3) 84%, var(--accent-fill)));
+  /*
+    A NEUTRAL LIFT, NOT A RED WASH.
+
+    This was a radial of accent-fill in the top-left over a diagonal that also
+    ran to accent-fill, which in this theme is red - so the card carried a
+    lopsided red glow that belonged to no data. Elevation should say "this is
+    the top of the report", not imply a status nothing here has. A straight
+    vertical step from bg-3 to bg-2 does the lift with no hue of its own.
+  */
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
 }
 .ta-report-lead:after {
   content: ""; position: absolute; inset: auto 22px 0; height: 1px; background: var(--line);
@@ -368,6 +375,22 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   }
   .ta-table:not(.ta-comparison-table) td:first-child:before { display: none; }
   .ta-roster-divider td { grid-column: 1 / -1 !important; border-bottom: 0 !important; padding-bottom: 0 !important; }
+
+  /*
+    THE STARTER MARK MOVES TO THE CARD EDGE.
+
+    As a table it was an inset shadow on the first cell, sitting harmlessly in
+    that cell's padding. Stacked, the cells have no padding - so the bar was
+    painted straight over the first letter of every starter's name: "Josh
+    Allen" with a red stripe through the J. A card's status belongs on the
+    card's own edge, where there is nothing to collide with.
+  */
+  .ta-roster-table tr.is-starter td:first-child,
+  .ta-league-table tr.is-current td:first-child { box-shadow: none; }
+  .ta-roster-table tbody tr.is-starter,
+  .ta-league-table tbody tr.is-current {
+    border-left: 3px solid var(--accent); padding-left: 9px;
+  }
   /* Long prose cells earn the full width back. */
   .ta-position-table td:last-child,
   .ta-league-table td:nth-child(7), .ta-league-table td:last-child,
