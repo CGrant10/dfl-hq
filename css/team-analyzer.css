@@ -635,6 +635,10 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 
 .so-body { display: grid; gap: 10px; padding: 14px 20px 16px; }
 .so-summary { margin: 0; font-size: var(--ta-body); line-height: 1.45; }
+/* Sleeper's raw number next to the blended one this report actually uses.
+   Where they disagree is worth seeing rather than hiding behind a method note. */
+.so-source { margin: 0; color: var(--muted); font-size: var(--ta-small); line-height: 1.45; }
+.so-source b { color: var(--text); font-weight: 800; }
 
 .so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .so-odd { min-width: 0; padding: var(--card-pad); border-radius: var(--card-radius); border: 1px solid var(--card-line); background: var(--card-bg); }

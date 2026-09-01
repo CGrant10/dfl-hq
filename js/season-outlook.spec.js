@@ -39,10 +39,10 @@ describe("projectSeason", () => {
   it("hands an even league even odds, near .500", () => {
     const out = projectSeason({ teams: EVEN, runs: 1200 });
     for (const p of out.values()) {
-      /* 13 weeks cannot split evenly, so 6 or 7 is the honest answer. */
-      expect([6, 7]).toContain(p.wins);
-      expect(p.expectedWins).toBeGreaterThan(6);
-      expect(p.expectedWins).toBeLessThan(7);
+      /* 14 weeks splits evenly, so an even league sits on 7. */
+      expect(p.wins).toBe(7);
+      /* 14 splits evenly, so identical teams sit on exactly half. */
+      expect(p.expectedWins).toBeCloseTo(7, 0);
       /* Twelve identical teams, eight berths: two thirds each. */
       expect(p.playoffOdds).toBeGreaterThan(.5);
       expect(p.playoffOdds).toBeLessThan(.8);
@@ -98,11 +98,11 @@ describe("projectSeason", () => {
 describe("outlookSentence", () => {
   it("says something different at each tier", () => {
     const said = new Set([
-      outlookSentence({ wins: 10, losses: 3, playoffOdds: .97, titleOdds: .3 }),
-      outlookSentence({ wins: 9, losses: 4, playoffOdds: .85, titleOdds: .1 }),
-      outlookSentence({ wins: 7, losses: 6, playoffOdds: .6, titleOdds: .05 }),
-      outlookSentence({ wins: 6, losses: 7, playoffOdds: .3, titleOdds: .02 }),
-      outlookSentence({ wins: 4, losses: 9, playoffOdds: .05, titleOdds: 0 }),
+      outlookSentence({ wins: 11, losses: 3, playoffOdds: .97, titleOdds: .3 }),
+      outlookSentence({ wins: 9, losses: 5, playoffOdds: .85, titleOdds: .1 }),
+      outlookSentence({ wins: 8, losses: 6, playoffOdds: .6, titleOdds: .05 }),
+      outlookSentence({ wins: 6, losses: 8, playoffOdds: .3, titleOdds: .02 }),
+      outlookSentence({ wins: 4, losses: 10, playoffOdds: .05, titleOdds: 0 }),
     ]);
     expect(said.size).toBe(5);
   });

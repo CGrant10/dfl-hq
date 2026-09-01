@@ -151,6 +151,17 @@ export function optimalLineup(playerIds = [], pool = new Map(), { starterIds = [
   }
   const bench = sortedPlayers(playerIds, pool).filter(player => !used.has(player.id));
   const starterPoints = starters.reduce((sum, player) => sum + player.expectedPoints, 0);
+  /*
+    SLEEPER'S OWN NUMBER, CARRIED SEPARATELY.
+
+    expectedPoints is a blend - Sleeper's projection weighted against last
+    season's pace - and that blend is this app's opinion, not Sleeper's. Where
+    the two disagree is worth being able to see, so the unblended total rides
+    alongside rather than replacing anything. Null-safe: a lineup of players
+    Sleeper has not projected reports nothing rather than a hollow zero.
+  */
+  const projected = starters.map(player => player.projectedPoints).filter(value => value != null);
+  const sleeperPoints = projected.length ? projected.reduce((sum, value) => sum + value, 0) : null;
   const depthScore = bench.slice(0, 5).reduce((sum, player, index) => sum + player.expectedPoints * DEPTH_WEIGHTS[index], 0);
   return {
     starters,
@@ -158,6 +169,9 @@ export function optimalLineup(playerIds = [], pool = new Map(), { starterIds = [
     flexId,
     source: set ? "set" : "optimized",
     starterPoints: round(starterPoints),
+    sleeperStarterPoints: sleeperPoints == null ? null : round(sleeperPoints),
+    sleeperWeeklyPoints: sleeperPoints == null ? null : round(sleeperPoints / 17),
+    sleeperProjectedCount: projected.length,
     depthScore: round(depthScore),
     score: round(starterPoints),
     weeklyPoints: round(starterPoints / 17),

@@ -128,6 +128,11 @@ function seasonOutlook(team, projections, teams) {
     </header>
     <div class="so-body">
       <p class="so-summary">${esc(outlookSentence(projection, ordinal(team.rank), teams.length))}</p>
+      <p class="so-source">Sleeper projects <b>${stat(team.lineup.sleeperWeeklyPoints)}</b> a week from these starters${
+        team.lineup.sleeperWeeklyPoints != null && team.lineup.weeklyPoints != null
+          ? ` · this report uses <b>${stat(team.lineup.weeklyPoints)}</b>, blending that with last season's pace`
+          : ""}${team.lineup.sleeperProjectedCount < team.lineup.starters.length
+          ? ` · ${team.lineup.starters.length - team.lineup.sleeperProjectedCount} starter(s) unprojected` : ""}</p>
       <div class="so-odds">
         <div class="so-odd"><small>Playoffs</small><b>${pct(projection.playoffOdds)}</b><i>8 of ${teams.length}</i></div>
         <div class="so-odd is-title"><small>Championship</small><b>${pct(projection.titleOdds)}</b><i>${titleRank ? `${ordinal(titleRank)} best` : "—"}</i></div>

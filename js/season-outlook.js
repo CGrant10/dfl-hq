@@ -30,8 +30,8 @@
   median weekly SD 22.9, mean 22.7, range 13.5 to 33.1.
 */
 export const LEAGUE_WEEKLY_SD = 22.9;
-/* The DFL plays a 13-week regular season and a 3-week bracket. */
-export const REGULAR_SEASON_WEEKS = 13;
+/* The DFL plays a 14-week regular season and a 3-week bracket - 17 in all. */
+export const REGULAR_SEASON_WEEKS = 14;
 export const PLAYOFF_WEEKS = 3;
 export const DEFAULT_RUNS = 3000;
 
