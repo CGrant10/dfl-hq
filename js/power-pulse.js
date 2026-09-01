@@ -69,6 +69,6 @@ export function powerPulseCard(view) {
       <ol class="pp-ranks">${view.teams.map(team => `<li class="${team.id === view.focus.id ? "is-me" : ""}"><b>${esc(String(team.rank))}</b><span>${esc(teamName(team))}</span><strong>${esc(view.ratings?.[team.id] || "—")}</strong></li>`).join("")}</ol>
       <div class="pp-riser"><small>${riser ? "BIGGEST RISER" : "MODEL LEADER"}</small><svg class="ico" aria-hidden="true"><use href="#i-record"></use></svg><strong>${esc(teamName(riser?.team || view.teams[0]))}</strong><span>${riser ? `${signed(riser.movement)} ${view.movementLabel}` : `#1 · ${view.ratings?.[view.teams[0].id] || "—"} rating`}</span></div>
     </div>
-    <footer class="pp-foot"><p><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span><strong>Elite ${esc(view.focus.strength || "roster")} room</strong> · ${esc(view.focus.weakness || "depth")} depth is the next move</span></p><a class="btn ghost small" href="${focusHref}">Open Trade Analyzer</a></footer>
+    <footer class="pp-foot"><p><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span><strong>${esc(view.focus.strength || "Roster")} is the best unit</strong> · ${view.focus.need ? `${esc(view.focus.need)} is the clearest starting need` : "no urgent starting-lineup need"}</span></p><a class="btn ghost small" href="${focusHref}">Open Team Analyzer</a></footer>
   </div>`;
 }

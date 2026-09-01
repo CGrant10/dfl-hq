@@ -3,11 +3,12 @@ import { scorePlayer } from "./dfl-scoring.js";
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 const STARTERS = { QB: 1, RB: 2, WR: 2, TE: 1 };
 const FLEX_POSITIONS = new Set(["RB", "WR", "TE"]);
+const DEPTH_WEIGHTS = [1, .84, .68, .52, .36];
 const round = (value, digits = 1) => {
   const scale = 10 ** digits;
   return Math.round((Number(value) || 0) * scale) / scale;
 };
-const finite = value => Number.isFinite(Number(value)) ? Number(value) : null;
+const finite = value => value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const playerPosition = player => String(player?.p || player?.position || "").toUpperCase();
 const projectionId = row => row?.player_id == null ? "" : String(row.player_id);
 
@@ -48,19 +49,27 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const projection = projectionById.get(id) || null;
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
-    const expectedPoints = projectedPoints != null && lastPoints != null
-      ? projectedPoints * 0.72 + lastPoints * 0.28
-      : projectedPoints ?? lastPoints;
+    const games = finite(priorLine?.gp);
+    const seasonGames = games != null && games > 0 ? Math.min(17, games) : 17;
+    const hasPriorProduction = lastPoints != null && lastPoints > 0;
+    const priorPace = hasPriorProduction ? lastPoints / Math.max(1, seasonGames) * 17 : null;
+    const priorReliability = games == null ? 1 : Math.max(.25, Math.min(1, games / 17));
+    const projectionWeight = .74 + (1 - priorReliability) * .14;
+    const expectedPoints = projectedPoints != null && priorPace != null
+      ? projectedPoints * projectionWeight + priorPace * (1 - projectionWeight)
+      : projectedPoints ?? priorPace;
     return {
       id,
       name: meta?.n || meta?.full_name || id,
       position,
       nflTeam: meta?.t || meta?.team || "FA",
       lastPoints: finite(lastPoints),
+      priorPace: finite(priorPace),
       projectedPoints: finite(projectedPoints),
       expectedPoints: finite(expectedPoints),
       adp: adpFrom(projection, scoringFormat),
-      games: finite(priorLine?.gp),
+      games,
+      hasPriorProduction,
     };
   }).filter(player => ANALYZER_POSITIONS.includes(player.position));
 
@@ -84,16 +93,20 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const known = [production, market].filter(value => value != null);
     const value = known.length === 2 ? production * 0.68 + market * 0.32
       : known.length ? known[0] : 0;
+    const expectedPerGame = (player.expectedPoints || 0) / 17;
+    const lastPerGame = player.hasPriorProduction ? player.lastPoints / Math.max(1, player.games || 17) : null;
     pool.set(player.id, {
       ...player,
       expectedPoints: player.expectedPoints == null ? 0 : round(player.expectedPoints, 2),
-      expectedPerGame: round((player.expectedPoints || 0) / 17, 2),
-      lastPerGame: player.lastPoints == null ? null : round(player.lastPoints / Math.max(1, player.games || 17), 2),
+      expectedPerGame: round(expectedPerGame, 2),
+      lastPerGame: lastPerGame == null ? null : round(lastPerGame, 2),
+      trend: lastPerGame == null ? "new" : expectedPerGame - lastPerGame > 1.25 ? "up"
+        : lastPerGame - expectedPerGame > 1.25 ? "down" : "steady",
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
       tradeValue: Math.max(1, Math.min(100, Math.round(value * 99 + 1))),
-      confidence: player.projectedPoints != null && player.lastPoints != null ? "high"
-        : player.projectedPoints != null || player.lastPoints != null ? "medium" : "low",
+      confidence: player.projectedPoints != null && player.hasPriorProduction && (player.games == null || player.games >= 10) ? "high"
+        : player.projectedPoints != null || player.hasPriorProduction ? "medium" : "low",
     });
   }
   return pool;
@@ -105,26 +118,49 @@ function sortedPlayers(ids, pool, position = null) {
     .sort((a, b) => b.expectedPoints - a.expectedPoints || b.tradeValue - a.tradeValue || a.name.localeCompare(b.name));
 }
 
-export function optimalLineup(playerIds = [], pool = new Map()) {
-  const used = new Set();
-  const starters = [];
-  for (const position of ANALYZER_POSITIONS) {
-    sortedPlayers(playerIds, pool, position).slice(0, STARTERS[position]).forEach(player => {
-      used.add(player.id);
-      starters.push(player);
-    });
+function setLineup(playerIds, starterIds, pool) {
+  const roster = new Set((playerIds || []).map(String));
+  const starters = (starterIds || []).map(String).filter(id => roster.has(id)).map(id => pool.get(id)).filter(Boolean)
+    .filter(player => ANALYZER_POSITIONS.includes(player.position));
+  const counts = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position, starters.filter(player => player.position === position).length]));
+  const legal = starters.length === 7 && counts.QB === 1 && counts.TE === 1 && counts.RB >= 2 && counts.WR >= 2;
+  if (!legal) return null;
+  const baseCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
+  let flexId = null;
+  for (const player of starters) {
+    if (baseCounts[player.position] < STARTERS[player.position]) baseCounts[player.position]++;
+    else if (FLEX_POSITIONS.has(player.position)) flexId = player.id;
   }
-  const flex = sortedPlayers(playerIds, pool).filter(player => FLEX_POSITIONS.has(player.position) && !used.has(player.id))[0];
-  if (flex) { used.add(flex.id); starters.push(flex); }
+  return { starters, flexId };
+}
+
+export function optimalLineup(playerIds = [], pool = new Map(), { starterIds = [] } = {}) {
+  const used = new Set();
+  const set = setLineup(playerIds, starterIds, pool);
+  const starters = set?.starters || [];
+  let flexId = set?.flexId || null;
+  if (set) starters.forEach(player => used.add(player.id));
+  else {
+    for (const position of ANALYZER_POSITIONS) {
+      sortedPlayers(playerIds, pool, position).slice(0, STARTERS[position]).forEach(player => {
+        used.add(player.id);
+        starters.push(player);
+      });
+    }
+    const flex = sortedPlayers(playerIds, pool).filter(player => FLEX_POSITIONS.has(player.position) && !used.has(player.id))[0];
+    if (flex) { used.add(flex.id); starters.push(flex); flexId = flex.id; }
+  }
   const bench = sortedPlayers(playerIds, pool).filter(player => !used.has(player.id));
   const starterPoints = starters.reduce((sum, player) => sum + player.expectedPoints, 0);
-  const depthPoints = bench.slice(0, 5).reduce((sum, player, index) => sum + player.expectedPoints * [0.12, 0.1, 0.08, 0.06, 0.04][index], 0);
+  const depthScore = bench.slice(0, 5).reduce((sum, player, index) => sum + player.expectedPoints * DEPTH_WEIGHTS[index], 0);
   return {
     starters,
     bench,
+    flexId,
+    source: set ? "set" : "optimized",
     starterPoints: round(starterPoints),
-    depthPoints: round(depthPoints),
-    score: round(starterPoints + depthPoints),
+    depthScore: round(depthScore),
+    score: round(starterPoints),
     weeklyPoints: round(starterPoints / 17),
   };
 }
@@ -144,45 +180,64 @@ function grade(percentile) {
 
 function percentileAt(sorted, value) {
   if (sorted.length <= 1) return 1;
-  const below = sorted.filter(other => other <= value).length - 1;
-  return Math.max(0, below / (sorted.length - 1));
+  const below = sorted.filter(other => other < value).length;
+  const tied = sorted.filter(other => other === value).length;
+  return Math.max(0, Math.min(1, (below + Math.max(0, tied - 1) / 2) / (sorted.length - 1)));
 }
 
 export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
   const base = rosters.map(roster => {
     const ids = Array.isArray(roster.players) ? roster.players.map(String) : [];
-    const lineup = optimalLineup(ids, pool);
+    const lineup = optimalLineup(ids, pool, { starterIds: Array.isArray(roster.starters) ? roster.starters : [] });
     const positionScores = Object.fromEntries(ANALYZER_POSITIONS.map(position => {
-      const options = sortedPlayers(ids, pool, position);
-      const count = STARTERS[position];
-      const score = options.slice(0, count).reduce((sum, player) => sum + player.expectedPoints, 0)
-        + (options[count]?.expectedPoints || 0) * .15;
+      const options = lineup.starters.filter(player => player.position === position)
+        .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]);
+      const score = options.reduce((sum, player) => sum + player.expectedPoints, 0);
       return [position, round(score)];
     }));
-    return { ...roster, id: String(roster.roster_id ?? roster.id), playerIds: ids, lineup, positionScores };
+    const rosterValue = sortedPlayers(ids, pool).slice(0, 12).reduce((sum, player) => sum + player.tradeValue, 0);
+    return { ...roster, id: String(roster.roster_id ?? roster.id), playerIds: ids, lineup, positionScores, rosterValue };
   });
-  const teamScores = base.map(team => team.lineup.score).sort((a, b) => a - b);
+  const starterScores = base.map(team => team.lineup.starterPoints).sort((a, b) => a - b);
+  const depthScores = base.map(team => team.lineup.depthScore).sort((a, b) => a - b);
+  const rosterValues = base.map(team => team.rosterValue).sort((a, b) => a - b);
   const positionDistributions = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position,
     base.map(team => team.positionScores[position]).sort((a, b) => a - b)]));
-  const ordered = [...base].sort((a, b) => b.lineup.score - a.lineup.score || a.id.localeCompare(b.id));
+  const rated = base.map(team => {
+    const starterPercentile = percentileAt(starterScores, team.lineup.starterPoints);
+    const depthPercentile = percentileAt(depthScores, team.lineup.depthScore);
+    const valuePercentile = percentileAt(rosterValues, team.rosterValue);
+    return { ...team, starterPercentile, depthPercentile, valuePercentile,
+      overallPercentile: starterPercentile * .72 + depthPercentile * .18 + valuePercentile * .1 };
+  });
+  const ordered = [...rated].sort((a, b) => b.lineup.starterPoints - a.lineup.starterPoints || a.id.localeCompare(b.id));
   return ordered.map((team, index) => {
     const positionGrades = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position, {
       score: team.positionScores[position],
       leagueRank: 1 + base.filter(other => other.positionScores[position] > team.positionScores[position]).length,
       leagueSize: base.length,
+      percentile: percentileAt(positionDistributions[position], team.positionScores[position]),
       grade: grade(percentileAt(positionDistributions[position], team.positionScores[position])),
-      players: sortedPlayers(team.playerIds, pool, position).slice(0, STARTERS[position] + 1),
+      starters: team.lineup.starters.filter(player => player.position === position)
+        .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]),
+      depth: team.lineup.bench.filter(player => player.position === position).slice(0, 2),
     }]));
     const rankedPositions = ANALYZER_POSITIONS.map(position => ({ position, ...positionGrades[position] }))
-      .sort((a, b) => b.score - a.score);
-    const percentile = percentileAt(teamScores, team.lineup.score);
+      .sort((a, b) => b.percentile - a.percentile || a.leagueRank - b.leagueRank);
+    const need = [...rankedPositions].reverse().find(unit => unit.percentile < .32)?.position || null;
     return {
       ...team,
       rank: index + 1,
-      grade: grade(percentile),
+      overallRank: 1 + rated.filter(other => other.overallPercentile > team.overallPercentile).length,
+      grade: grade(team.starterPercentile),
+      starterGrade: grade(team.starterPercentile),
+      depthGrade: grade(team.depthPercentile),
+      overallGrade: grade(team.overallPercentile),
       positionGrades,
       strength: rankedPositions[0]?.position || null,
-      weakness: rankedPositions.at(-1)?.position || null,
+      lowestUnit: rankedPositions.at(-1)?.position || null,
+      weakness: need,
+      need,
     };
   });
 }

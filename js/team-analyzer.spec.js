@@ -32,12 +32,12 @@ const rosters = [
 const pool = buildPlayerPool({ rosters, players, projections, scoringSettings: scoring });
 
 describe("team analyzer", () => {
-  it("builds the best legal lineup and includes depth at a discount", () => {
+  it("builds the best legal lineup and reports depth separately", () => {
     const lineup = optimalLineup(rosters[0].players, pool);
     expect(lineup.starters.filter(player => player.position === "QB")).toHaveLength(1);
     expect(lineup.starters.filter(player => player.position === "TE")).toHaveLength(1);
-    expect(lineup.score).toBeGreaterThanOrEqual(lineup.starterPoints);
-    expect(lineup.depthPoints).toBeLessThan(pool.get("r3").expectedPoints);
+    expect(lineup.score).toBe(lineup.starterPoints);
+    expect(lineup.depthScore).toBe(0);
     expect(pool.get("r1")).toMatchObject({ positionRank: 1, positionCount: 5 });
     expect(pool.get("r1").expectedPerGame).toBeGreaterThan(0);
   });
@@ -45,10 +45,28 @@ describe("team analyzer", () => {
   it("ranks every team and explains its strongest and weakest position", () => {
     const teams = analyzeLeague({ rosters, pool });
     expect(teams.map(team => team.rank)).toEqual([1, 2]);
-    expect(teams.every(team => team.grade && team.strength && team.weakness)).toBe(true);
+    expect(teams.every(team => team.grade && team.starterGrade && team.depthGrade && team.overallGrade && team.strength)).toBe(true);
     expect(teams[0].positionGrades.QB.leagueRank).toBeGreaterThanOrEqual(1);
     expect(teams[0].positionGrades.QB.leagueSize).toBe(2);
     expect(compareTeams(teams[0], teams[1]).positions).toHaveLength(4);
+    const strongTe = teams.find(team => team.positionGrades.TE.leagueRank === 1);
+    expect(strongTe.need).not.toBe("TE");
+  });
+
+  it("uses the submitted offensive starters instead of letting a bench player inflate the grade", () => {
+    const roster = { roster_id: 3, players: ["q1", "r1", "r2", "r3", "w1", "w2", "w3", "t1"], starters: ["q1", "r2", "r3", "w2", "w3", "t1", "w1"] };
+    const lineup = optimalLineup(roster.players, pool, { starterIds: roster.starters });
+    expect(lineup.source).toBe("set");
+    expect(lineup.starters.map(player => player.id)).toContain("r3");
+    expect(lineup.bench.map(player => player.id)).toContain("r1");
+    expect(lineup.score).toBe(lineup.starterPoints);
+  });
+
+  it("pace-adjusts proven production and gives rookies a new outlook", () => {
+    const paced = buildPlayerPool({ rosters, players, projections, scoringSettings: scoring,
+      previousStats: { r1: { gp: 17, rush_yd: 3400 }, j1: { gp: 0 } } });
+    expect(paced.get("r1")).toMatchObject({ priorPace: 340, trend: "down", confidence: "high" });
+    expect(paced.get("j1")).toMatchObject({ priorPace: null, trend: "new", confidence: "medium" });
   });
 
   it("values a trade by the lineup it changes", () => {
