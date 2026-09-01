@@ -92,11 +92,26 @@ function comparison(team, opponent, teams) {
     body: `<div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
-function rankings(teams, selectedId) {
+/*
+  THE MARK ON A ROW IS A BADGE, NOT A STRIPE.
+
+  A 3px accent bar down the side of one card said "something is different
+  about this one" and left you to work out what. The row being read now
+  carries a labelled chip instead - YOU when it is your own team, READING
+  when you have clicked into somebody else's - so the highlight names itself
+  and the card only needs a quiet tint to sit behind it.
+*/
+function rowMark(team, selectedId, myTeamId) {
+  if (String(team.id) !== String(selectedId)) return "";
+  const mine = myTeamId != null && String(team.id) === String(myTeamId);
+  return `<span class="ta-mark ${mine ? "is-you" : ""}">${mine ? "YOU" : "READING"}</span>`;
+}
+
+function rankings(teams, selectedId, myTeamId) {
   return section("LEAGUE OUTLOOK", "Projected table", { open: true,
     hint: `${teams.length} teams`,
     aside: `<span class="ta-inline-note">Grades read starters · depth · overall</span>`,
-    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}"><strong><span class="ta-seed">${team.rank}</span>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}"><strong><span class="ta-seed">${team.rank}</span><span class="ta-name">${esc(teamName(team))}</span>${rowMark(team, selectedId, myTeamId)}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;
@@ -165,6 +180,9 @@ function page(data) {
   const requestedId = routeParams.get("team"), requestedOwner = routeParams.get("owner");
   let selectedId = data.teams.find(team => requestedOwner && String(team.sleeper_user_id) === String(requestedOwner))?.id || data.teams.find(team => String(team.id) === String(requestedId))?.id || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id || data.teams[0].id;
   let compareId = data.teams.find(team => team.id !== selectedId)?.id || selectedId;
+  /* Your own team, if you have one in this league - the projected table marks
+     it differently from whichever row you happen to be reading. */
+  const myTeamId = data.teams.find(team => me?.sleeper_user_id && String(team.sleeper_user_id) === String(me.sleeper_user_id))?.id ?? null;
   /* Once per page load. Seeded, so it is stable across redraws too. */
   const projections = projectSeason({
     teams: data.teams.map(team => ({ id: String(team.id), mean: team.lineup.weeklyPoints })),
@@ -178,7 +196,7 @@ function page(data) {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         const opponent = data.teams.find(item => item.id === compareId && item.id !== team.id) || data.teams.find(item => item.id !== team.id) || team;
         compareId = opponent.id;
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-outlook]").innerHTML = seasonOutlook(team, projections, data.teams);
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {

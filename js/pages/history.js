@@ -186,7 +186,7 @@ function fameView(data) {
             </tbody>
           </table>
         </div>
-        <div class="card-meta">Taken from the Sleeper playoff brackets.</div>
+        <div class="card-meta">Taken from the Sleeper playoff brackets, except where a season is marked <em>set by hand</em> — 2017 and 2018 were played on another app and 2019’s winner was removed from the league after winning it.</div>
       </div>` : ""}
 
     ${byYear.length

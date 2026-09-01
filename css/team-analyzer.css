@@ -279,10 +279,13 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 
 .ta-league-table { min-width: 700px; }
+/* is-compact was on the markup and meant nothing. It means this: a table of
+   fourteen one-line rows does not need the row height of a table of prose. */
+.ta-table.is-compact td { padding: 8px 11px; }
 /* The seed rides inside the team cell rather than owning a column. */
 .ta-seed {
   display: inline-grid; place-items: center; min-width: 22px; height: 20px;
-  margin-right: 7px; padding: 0 5px; border-radius: 6px;
+  flex: none; margin-right: 7px; padding: 0 5px; border-radius: 6px;
   background: color-mix(in srgb, var(--accent-fill) 14%, var(--bg-2));
   color: var(--accent-2); font-size: var(--ta-micro); font-weight: 800;
 }
@@ -290,10 +293,52 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   display: grid; min-width: 160px; padding: 0; border: 0; background: none;
   color: var(--text); font: inherit; text-align: left; cursor: pointer;
 }
-.ta-league-table button strong, .ta-league-table button small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The name truncates; the seed and the badge either side of it never do. */
+.ta-league-table button strong { display: flex; align-items: center; min-width: 0; }
+.ta-league-table .ta-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ta-league-table button small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ta-league-table button small { margin-top: 3px; color: var(--muted); font-size: var(--ta-small); }
-.ta-league-table tr.is-current td { background: color-mix(in srgb, var(--accent-fill) 10%, var(--bg-2)); }
-.ta-league-table tr.is-current td:first-child { box-shadow: inset 3px 0 var(--accent); }
+/*
+  THE ROW BEING READ, MARKED WITHOUT A STRIPE.
+
+  A flat 10% wash plus a hard 3px inset bar was the loudest thing on the page
+  and still said nothing about WHY that row differed. The tint is now a short
+  gradient that fades out across the row - present where the name is, gone by
+  the time it reaches the numbers - and the badge in the name cell carries the
+  meaning. The seed and the name lift with it so the row reads as promoted
+  rather than painted.
+*/
+/* The gradient goes on the ROW. On the cells it restarts inside each one, so
+   a five-column row drew five separate fades with a hard seam between each -
+   the exact banding a single wash was meant to avoid. */
+.ta-league-table tr.is-current {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--accent-fill) 15%, transparent), transparent 72%);
+}
+.ta-league-table tr.is-current:hover {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--accent-fill) 21%, transparent), transparent 72%);
+}
+.ta-league-table tr.is-current td,
+.ta-league-table tr.is-current:hover td { background: none; }
+.ta-league-table tr.is-current td:first-child { box-shadow: none; }
+.ta-league-table tr.is-current button strong { color: var(--text); font-weight: 800; }
+.ta-league-table tr.is-current .ta-seed {
+  background: var(--accent-fill); color: var(--on-accent);
+}
+
+/* The badge itself. Hairline, uppercase, tabular - a label, not a highlighter. */
+.ta-mark {
+  display: inline-block; flex: none; margin-left: 8px; padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 999px; background: color-mix(in srgb, var(--accent-fill) 14%, transparent);
+  color: var(--accent-2); font-size: 9px; font-weight: 800;
+  letter-spacing: .09em; line-height: 1.6; text-transform: uppercase;
+  vertical-align: 2px;
+}
+.ta-mark.is-you {
+  border-color: transparent; background: var(--accent-fill); color: var(--on-accent);
+}
 
 .ta-note { margin: -2px 0 9px; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
 .ta-trade-table { min-width: 660px; }
@@ -433,13 +478,11 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   */
   .ta-roster-table tr.is-starter td:first-child,
   .ta-league-table tr.is-current td:first-child { box-shadow: none; }
-  .ta-roster-table tbody tr.is-starter,
-  .ta-league-table tbody tr.is-current {
+  .ta-roster-table tbody tr.is-starter {
     border-left: 3px solid var(--accent); padding-left: 9px;
   }
   /* Long prose cells earn the full width back. */
   .ta-position-table td:last-child,
-  .ta-league-table td:nth-child(4), .ta-league-table td:last-child,
   .ta-trade-table td:nth-child(2), .ta-trade-table td:nth-child(3) {
     grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px;
   }
@@ -447,15 +490,60 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
      without it "You receive" sat right while "You send" sat left in the same
      card, which reads as a bug even though both were legible. */
   .ta-position-table td[data-label]:last-child > *,
-  .ta-league-table td[data-label]:nth-child(4) > *,
-  .ta-league-table td[data-label]:last-child > *,
   .ta-trade-table td[data-label]:nth-child(2) > *,
   .ta-trade-table td[data-label]:nth-child(3) > * { text-align: left; }
   /* Those cells put their label above the value, so the label must not also be
      pushed to the far side by the shared space-between rule. */
-  .ta-position-table td:last-child:before, .ta-league-table td:nth-child(4):before,
-  .ta-league-table td:last-child:before, .ta-trade-table td:nth-child(2):before,
+  .ta-position-table td:last-child:before, .ta-trade-table td:nth-child(2):before,
   .ta-trade-table td:nth-child(3):before { justify-self: start; }
+
+  /*
+    THE PROJECTED TABLE, HALF THE HEIGHT.
+
+    Fourteen cards of five stacked blocks ran the league outlook past 2,000px
+    on a phone, and four of those five lines were a label sitting on top of two
+    words. Every cell now reads label-left / value-right on ONE line, and "Best
+    unit" and "Need" - the two that had claimed the full width to stack - are
+    short enough to do the same. The header cell loses its rule and most of its
+    padding: the name is already bold and already first, so a hairline under it
+    was buying separation the card's own border had provided.
+
+    Nothing was removed. The same five facts per team, in four lines instead
+    of nine.
+  */
+  /* Best unit and Need are two words each. They pair off across the same two
+     tracks as Weekly and Grades rather than claiming a full row apiece. */
+  .ta-table.ta-league-table td:nth-child(4), .ta-table.ta-league-table td:last-child {
+    grid-column: auto; gap: 6px;
+  }
+  .ta-table.ta-league-table td:nth-child(4) { text-align: right; }
+  .ta-table.ta-league-table td:last-child { justify-content: flex-end; }
+  .ta-table.ta-league-table td:last-child:before { margin-right: auto; }
+  .ta-table.ta-league-table td:first-child {
+    padding: 0 0 4px; margin-bottom: 2px; border-bottom: 0;
+  }
+  .ta-table.ta-league-table tbody tr { gap: 1px 12px; padding: 9px 11px; }
+  .ta-league-table button { min-height: 0; }
+  .ta-league-table button small { margin-top: 1px; }
+
+  /*
+    AND THE CARD BEING READ IS A CARD, NOT A CARD WITH A BAR ON IT.
+
+    The 3px stripe and its 9px of compensating padding made the marked card a
+    different SHAPE from its neighbours, which is the reason it looked wrong
+    long before anyone looked at the colour. It now keeps the same geometry and
+    earns its accent honestly: a coloured border, a faint wash, and the badge
+    in the name row saying which team this is.
+  */
+  .ta-table.ta-league-table tbody tr.is-current {
+    border-color: color-mix(in srgb, var(--accent-fill) 55%, var(--card-line));
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--accent-fill) 9%, transparent), transparent 62%),
+      var(--card-bg);
+    box-shadow: 0 1px 10px color-mix(in srgb, var(--accent-fill) 12%, transparent);
+  }
+  .ta-table.ta-league-table tbody tr.is-current td,
+  .ta-table.ta-league-table tbody tr.is-current:hover td { background: none; }
 
   /*
     THE WEEKLY-CHANGE CELL HAD THREE THINGS IN IT.
