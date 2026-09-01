@@ -497,3 +497,56 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .td-board, .td-scales, .td-impact { grid-template-columns: minmax(0, 1fr); }
   .td-list { max-height: 260px; }
 }
+
+/* =====================================================================
+   TRENDS - the multi-season record
+   ---------------------------------------------------------------------
+   One row per player: who, the shape, the reading, the caveats. The
+   sparkline carries the shape and the numbers carry the detail, because
+   a sparkline alone cannot be read precisely and numbers alone cannot be
+   read at a glance.
+   ===================================================================== */
+
+.tp-intro, .tp-loading { margin: 0 0 12px; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
+.tp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.tp-row {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) 86px minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid var(--line-soft); border-radius: 11px; background: var(--bg-3);
+}
+.tp-who { min-width: 0; }
+.tp-who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); }
+.tp-who small { display: block; margin-top: 2px; color: var(--muted); font-size: var(--ta-micro); }
+
+.tp-spark-wrap { color: var(--muted); }
+.tp-spark { display: block; width: 78px; height: 26px; }
+/* The line takes the direction's colour; the words repeat it for anyone who
+   cannot separate these hues. */
+.tp-row.is-up .tp-spark-wrap, .tp-row.is-up .tp-dir { color: var(--ok); }
+.tp-row.is-down .tp-spark-wrap, .tp-row.is-down .tp-dir { color: var(--danger); }
+.tp-row.is-flat .tp-spark-wrap, .tp-row.is-flat .tp-dir { color: var(--accent-2); }
+.tp-row.is-unknown .tp-spark-wrap, .tp-row.is-unknown .tp-dir { color: var(--muted); }
+
+.tp-read { min-width: 0; }
+.tp-dir { font-size: var(--ta-body); font-weight: 800; }
+.tp-read small { display: block; margin-top: 2px; color: var(--muted); font-size: var(--ta-micro); overflow-wrap: anywhere; }
+
+.tp-tags { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; min-width: 0; }
+.tp-tag, .tp-latest {
+  display: inline-block; padding: 3px 7px; border-radius: 999px;
+  font-size: var(--ta-micro); font-weight: 800; white-space: nowrap;
+  border: 1px solid var(--line);
+}
+.tp-latest { color: var(--muted); }
+.tp-tag.is-swing { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.tp-tag.is-risk  { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.tp-tag.is-hot   { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.tp-tag.is-cold  { color: var(--muted); }
+.tp-tag.is-mixed { color: var(--muted); }
+
+@media (max-width: 680px) {
+  .tp-row { grid-template-columns: minmax(0, 1fr) 78px; gap: 8px 10px; }
+  .tp-read, .tp-tags { grid-column: 1 / -1; }
+  .tp-tags { justify-content: flex-start; }
+}
