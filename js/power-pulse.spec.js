@@ -42,3 +42,42 @@ describe("Home power pulse", () => {
     expect(html).not.toContain("<script>");
   });
 });
+
+describe("the projected record on the home panel", () => {
+  const teams = Array.from({ length: 12 }, (_, i) => ({
+    id: String(i + 1), roster_id: i + 1, sleeper_user_id: `u${i + 1}`,
+    team_name: `Team ${i + 1}`, rank: i + 1,
+    lineup: { score: 2000 - i * 40, weeklyPoints: 130 - i * 3 },
+    strength: "RB", need: "WR",
+  }));
+  const analysis = { state: "ready", projectionSeason: 2026, teams, league: { playoff_teams: 8 } };
+
+  it("projects a whole-game record for the viewer's own team", () => {
+    const view = powerPulseView({ analysis, meSleeperId: "u3", standings: [] });
+    expect(view.record).toBeTruthy();
+    expect(Number.isInteger(view.record.wins)).toBe(true);
+    expect(view.record.wins + view.record.losses).toBe(view.weeks);
+  });
+
+  it("gives the stronger roster the better projection", () => {
+    const top = powerPulseView({ analysis, meSleeperId: "u1", standings: [] }).record;
+    const bottom = powerPulseView({ analysis, meSleeperId: "u12", standings: [] }).record;
+    expect(top.wins).toBeGreaterThan(bottom.wins);
+    expect(top.titleOdds).toBeGreaterThan(bottom.titleOdds);
+  });
+
+  /* The block it replaced was about somebody else's team. */
+  it("no longer reports a biggest riser", () => {
+    const view = powerPulseView({ analysis, meSleeperId: "u3", standings: [] });
+    expect(view.riser).toBeUndefined();
+    expect(powerPulseCard(view)).not.toMatch(/riser/i);
+  });
+
+  it("renders the record and the odds on the card", () => {
+    const view = powerPulseView({ analysis, meSleeperId: "u3", standings: [] });
+    const html = powerPulseCard(view);
+    expect(html).toContain("PROJECTED RECORD");
+    expect(html).toContain(`${view.record.wins}-${view.record.losses}`);
+    expect(html).toMatch(/% playoffs/);
+  });
+});

@@ -140,7 +140,8 @@ export function tradeDeskMarkup(team, teams, pool, state) {
       ${sideList(team, pool, state.sendA, "a")}
       ${sideList(partner, pool, state.sendB, "b")}
     </div>
-    <div data-td-verdict>${verdictMarkup(null)}</div>
+    <p class="td-jump"><a href="#td-verdict">Jump to the verdict &darr;</a></p>
+    <div id="td-verdict" data-td-verdict>${verdictMarkup(null)}</div>
     <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>`;
 }
 

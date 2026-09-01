@@ -1,4 +1,5 @@
 import { esc } from "./ui.js";
+import { REGULAR_SEASON_WEEKS, projectSeason } from "./season-outlook.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "EVEN";
@@ -31,17 +32,27 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
     const oldRank = baseline.get(String(team.sleeper_user_id));
     return Number.isFinite(oldRank) ? oldRank - Number(team.rank) : null;
   };
-  const riser = [...teams]
-    .map(team => ({ team, movement: movement(team) }))
-    .filter(item => item.movement != null)
-    .sort((a, b) => b.movement - a.movement || a.team.rank - b.team.rank)[0] || null;
+  /*
+    A PROJECTED RECORD BEATS A BIGGEST MOVER.
+
+    "Biggest riser" answered a question nobody asked on the home page - it was
+    about somebody else's team, measured against last season's standings, and
+    it went stale the moment the model settled. What a manager wants at a
+    glance is where their own season is heading.
+  */
+  const projections = projectSeason({
+    teams: teams.map(team => ({ id: String(team.id), mean: team.lineup?.weeklyPoints })),
+    playoffTeams: Number(analysis.league?.playoff_teams) || 8,
+  });
+  const record = projections.get(String(focus.id)) || null;
   return {
+    record,
+    weeks: REGULAR_SEASON_WEEKS,
     season: analysis.projectionSeason,
     teams: teams.slice(0, 5),
     focus,
     movement: movement(focus),
     movementLabel: comparison.label,
-    riser: riser?.movement > 0 ? riser : null,
     ratings,
   };
 }
@@ -61,13 +72,19 @@ export function powerPulseCard(view) {
     ? `#/analyzer?owner=${encodeURIComponent(view.focus.sleeper_user_id)}`
     : `#/analyzer?team=${encodeURIComponent(view.focus.id)}`;
   const focusMovement = view.movement == null ? "NEW MODEL" : `${signed(view.movement)} ${view.movementLabel}`;
-  const riser = view.riser;
+  const record = view.record;
   return `<div class="card pp-card">
     <header class="pp-head"><div><svg class="ico-sm" aria-hidden="true"><use href="#i-record"></use></svg><strong>POWER PULSE</strong></div><span>${esc(String(view.season || "CURRENT"))} MODEL</span></header>
     <div class="pp-body">
       <div class="pp-focus"><small>YOUR POWER RANK</small><strong>#${esc(String(view.focus.rank))}</strong><span>${esc(focusMovement)}</span></div>
       <ol class="pp-ranks">${view.teams.map(team => `<li class="${team.id === view.focus.id ? "is-me" : ""}"><b>${esc(String(team.rank))}</b><span>${esc(teamName(team))}</span><strong>${esc(view.ratings?.[team.id] || "—")}</strong></li>`).join("")}</ol>
-      <div class="pp-riser"><small>${riser ? "BIGGEST RISER" : "MODEL LEADER"}</small><svg class="ico" aria-hidden="true"><use href="#i-record"></use></svg><strong>${esc(teamName(riser?.team || view.teams[0]))}</strong><span>${riser ? `${signed(riser.movement)} ${view.movementLabel}` : `#1 · ${view.ratings?.[view.teams[0].id] || "—"} rating`}</span></div>
+      <div class="pp-record">
+        <small>PROJECTED RECORD</small>
+        <strong>${record ? `${record.wins}-${record.losses}` : "—"}</strong>
+        <span>${record
+          ? `${Math.round(record.playoffOdds * 100)}% playoffs · ${Math.round(record.titleOdds * 100)}% title`
+          : `over ${view.weeks} weeks`}</span>
+      </div>
     </div>
     <footer class="pp-foot"><p><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span><strong>${esc(view.focus.strength || "Roster")} is the best unit</strong> · ${view.focus.need ? `${esc(view.focus.need)} is the clearest starting need` : "no urgent starting-lineup need"}</span></p><a class="btn ghost small" href="${focusHref}">Open Team Analyzer</a></footer>
   </div>`;
