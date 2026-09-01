@@ -22,13 +22,31 @@
    This now speaks it too rather than inventing a second one.
    ===================================================================== */
 
-/* ------------------------------ scale ------------------------------- */
+/* --------------------------- scale + card --------------------------- */
+/*
+  ONE INNER CARD, NOT SIX.
+
+  An audit of this page found five different corner radii on things that are
+  all "a small card" - 8, 10, 11, 12 and square - over four different
+  backgrounds and five padding values. Nobody chose that; it accumulated one
+  component at a time. Every inner surface now takes these tokens, so a stat
+  tile, a player row, a trend row and a lineup slot are visibly the same
+  object.
+*/
 .ta-report,
-.ta-toolbar {
+.ta-toolbar,
+.so-panel,
+.wo-panel {
   --ta-micro: 11px;   /* uppercase labels only, never a sentence */
   --ta-small: 12.5px; /* secondary lines under a name */
   --ta-body:  14px;   /* anything that is read rather than scanned */
   --ta-lead:  16px;
+
+  --card-radius: 10px;
+  --card-bg: var(--bg-3);
+  --card-line: var(--line-soft);
+  --card-pad: 8px 10px;
+  --panel-radius: 16px;
 }
 
 /* ----------------------------- header ------------------------------- */
@@ -60,13 +78,13 @@
 /* ------------------------------ lead -------------------------------- */
 
 .ta-report {
-  overflow: hidden; border: 1px solid var(--line); border-radius: 18px;
+  overflow: hidden; border: 1px solid var(--line); border-radius: var(--panel-radius);
   background: var(--bg-2); box-shadow: var(--shadow);
 }
 .ta-report-lead {
   position: relative; display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, .8fr);
-  gap: 16px; padding: 22px;
+  gap: 12px; padding: 16px 18px;
   /*
     A NEUTRAL LIFT, NOT A RED WASH.
 
@@ -79,13 +97,13 @@
   background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
 }
 .ta-report-lead:after {
-  content: ""; position: absolute; inset: auto 22px 0; height: 1px; background: var(--line);
+  content: ""; position: absolute; inset: auto 18px 0; height: 1px; background: var(--line);
 }
 .ta-lead-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; grid-column: 1 / -1; }
 .ta-team-intro { min-width: 0; }
 .ta-team-intro h2 {
-  overflow: hidden; margin: 4px 0 0; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 28px; letter-spacing: -.03em;
+  overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 23px; letter-spacing: -.03em;
 }
 .ta-team-intro p, .ta-top-asset span { margin: 4px 0 0; color: var(--muted); font-size: var(--ta-small); }
 
@@ -93,7 +111,7 @@
   display: grid; justify-items: end; flex: none;
   padding-left: 18px; border-left: 1px solid var(--line-soft); text-align: right;
 }
-.ta-finish strong { font-family: var(--font-display); font-size: 40px; line-height: .9; letter-spacing: -.04em; }
+.ta-finish strong { font-family: var(--font-display); font-size: 30px; line-height: .9; letter-spacing: -.04em; }
 .ta-finish span { margin-top: 4px; color: var(--muted); font-size: var(--ta-small); }
 
 /* Three grades, the first one leading. */
@@ -104,22 +122,22 @@
   being clipped by it. That is the "card design leaking into text": a 108px
   card holding 118px of content.
 */
-.ta-grade-stack { display: grid; grid-template-columns: 1.15fr minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+.ta-grade-stack { display: grid; grid-template-columns: 1.15fr minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
 /* min-width alone is not enough where justify-items is start: the track
    shrinks but the item is still sized to its content and hangs out of the
    card. max-width pins it to the track so the ellipsis can do its job. */
 .ta-grade-card > * { min-width: 0; max-width: 100%; }
 .ta-grade-card {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
-  min-width: 0; padding: 12px 13px;
-  border: 1px solid var(--line-soft); border-radius: 12px;
-  background: color-mix(in srgb, var(--bg-3) 88%, transparent);
+  min-width: 0; padding: var(--card-pad);
+  border: 1px solid var(--card-line); border-radius: var(--card-radius);
+  background: var(--card-bg);
 }
 .ta-grade-card small {
   color: var(--muted); font-size: var(--ta-micro); font-weight: 800;
   letter-spacing: .06em; text-transform: uppercase;
 }
-.ta-grade-card strong { grid-row: 1 / 3; grid-column: 2; font-family: var(--font-display); font-size: 30px; line-height: 1; }
+.ta-grade-card strong { grid-row: 1 / 3; grid-column: 2; font-family: var(--font-display); font-size: 24px; line-height: 1; }
 .ta-grade-card span {
   overflow: hidden; margin-top: 3px; color: var(--muted);
   font-size: var(--ta-small); text-overflow: ellipsis; white-space: nowrap;
@@ -137,7 +155,7 @@
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px; margin: 0; background: var(--line-soft);
 }
-.ta-kpis div { min-width: 0; padding: 10px 12px; background: var(--bg-3); }
+.ta-kpis div { min-width: 0; padding: 7px 10px; background: var(--bg-3); }
 .ta-kpis dt {
   overflow: hidden; color: var(--muted); font-size: var(--ta-micro);
   text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: .05em;
@@ -147,24 +165,24 @@
   text-overflow: ellipsis; white-space: nowrap;
 }
 .ta-top-asset {
-  display: grid; grid-column: 1 / -1; min-width: 0; padding: 11px 13px;
-  border: 1px solid var(--line-soft); border-radius: 10px;
-  background: color-mix(in srgb, var(--bg-3) 80%, transparent);
+  display: grid; grid-column: 1 / -1; min-width: 0; padding: var(--card-pad);
+  border: 1px solid var(--card-line); border-radius: var(--card-radius);
+  background: var(--card-bg);
 }
 .ta-top-asset strong { overflow: hidden; margin-top: 3px; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-lead); }
 
 /* ---------------------------- sections ------------------------------ */
 
-.ta-report-section { padding: 20px 22px; border-top: 1px solid var(--line); }
+.ta-report-section { padding: 14px 18px; border-top: 1px solid var(--line); }
 .ta-report-section:first-of-type { border-top: 0; }
 
 /* A section is a <details>; its title is the <summary>. */
 .ta-report-title {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; margin-bottom: 12px; cursor: pointer; list-style: none;
+  gap: 14px; margin-bottom: 9px; cursor: pointer; list-style: none;
 }
 .ta-report-title::-webkit-details-marker { display: none; }
-.ta-report-title h2 { margin: 3px 0 0; font-size: 20px; }
+.ta-report-title h2 { margin: 2px 0 0; font-size: 17px; }
 .ta-report-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 details[open] > .ta-report-title { margin-bottom: 12px; }
 /* Closed, the title is the whole section, so it owes no bottom margin. */
@@ -261,7 +279,13 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 
 .ta-league-table { min-width: 700px; }
-.ta-league-table td:first-child { width: 52px; color: var(--accent-2); font-weight: 800; }
+/* The seed rides inside the team cell rather than owning a column. */
+.ta-seed {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px;
+  margin-right: 7px; padding: 0 5px; border-radius: 6px;
+  background: color-mix(in srgb, var(--accent-fill) 14%, var(--bg-2));
+  color: var(--accent-2); font-size: var(--ta-micro); font-weight: 800;
+}
 .ta-league-table button {
   display: grid; min-width: 160px; padding: 0; border: 0; background: none;
   color: var(--text); font: inherit; text-align: left; cursor: pointer;
@@ -338,7 +362,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .ta-table-wrap { overflow-x: visible; border-block: 0; }
   .ta-table:not(.ta-comparison-table) { min-width: 0; display: block; }
   .ta-table:not(.ta-comparison-table) thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .ta-table:not(.ta-comparison-table) tbody { display: grid; gap: 10px; }
+  .ta-table:not(.ta-comparison-table) tbody { display: grid; gap: 6px; }
 
   /*
     A row is a card, and its cells are a two-column stat grid rather than one
@@ -353,25 +377,43 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
     enough for three tracks at 375px, which turns four stat rows into three
     and takes roughly a third off every card without hiding a single number.
   */
+  /*
+    THE LABEL SITS BESIDE THE VALUE, NOT ABOVE IT.
+
+    Stacking them put every statistic on two lines, and a player card came to
+    227px - fourteen of those is three thousand pixels of scrolling for one
+    table. On one line each, in two columns, the same card is about 140px and
+    not one number was removed to get there.
+  */
   .ta-table:not(.ta-comparison-table) tbody tr {
-    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px 10px; padding: 10px 11px;
-    border: 1px solid var(--line-soft); border-radius: 12px; background: var(--bg-3);
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 14px; padding: var(--card-pad);
+    border: 1px solid var(--card-line); border-radius: var(--card-radius); background: var(--card-bg);
   }
   .ta-table:not(.ta-comparison-table) tbody tr:hover td { background: none; }
   .ta-table:not(.ta-comparison-table) td {
-    display: grid; grid-template-columns: minmax(0, 1fr); align-content: start;
-    gap: 3px; padding: 0; border: 0; min-width: 0;
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 8px; padding: 2px 0; border: 0; min-width: 0;
+    line-height: 1.35;
   }
   .ta-table:not(.ta-comparison-table) td[data-label]:before {
     content: attr(data-label);
-    color: var(--muted); font-size: var(--ta-micro); font-weight: 800;
-    letter-spacing: .05em; text-transform: uppercase;
+    flex: none; color: var(--muted); font-size: var(--ta-micro); font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
   }
+  /* The value side keeps its own alignment and cannot be squeezed to nothing. */
+  .ta-table:not(.ta-comparison-table) td[data-label] > * { text-align: right; }
+  /* A 32px circle and a pill were setting the line height of every row they
+     sat in. Stacked, they are just the number and the word. */
+  .ta-table:not(.ta-comparison-table) .ta-value {
+    width: auto; height: auto; border-radius: 0; background: none; display: inline;
+  }
+  .ta-table:not(.ta-comparison-table) .ta-role,
+  .ta-table:not(.ta-comparison-table) .ta-trend { padding: 1px 6px; }
   /* The first cell names the row, so it spans and rules a line under itself. */
   .ta-table:not(.ta-comparison-table) td:first-child {
-    grid-column: 1 / -1; padding-bottom: 6px;
-    border-bottom: 1px solid var(--line-soft);
+    grid-column: 1 / -1; display: block; padding: 0 0 5px;
+    margin-bottom: 3px; border-bottom: 1px solid var(--line-soft);
   }
   .ta-table:not(.ta-comparison-table) td:first-child:before { display: none; }
   .ta-roster-divider td { grid-column: 1 / -1 !important; border-bottom: 0 !important; padding-bottom: 0 !important; }
@@ -393,8 +435,13 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   }
   /* Long prose cells earn the full width back. */
   .ta-position-table td:last-child,
-  .ta-league-table td:nth-child(7), .ta-league-table td:last-child,
-  .ta-trade-table td:nth-child(2), .ta-trade-table td:nth-child(3) { grid-column: 1 / -1; }
+  .ta-league-table td:nth-child(4), .ta-league-table td:last-child,
+  .ta-trade-table td:nth-child(2), .ta-trade-table td:nth-child(3) {
+    grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px;
+  }
+  .ta-position-table td:last-child > *, .ta-league-table td:nth-child(4) > *,
+  .ta-league-table td:last-child > *, .ta-trade-table td:nth-child(2) > *,
+  .ta-trade-table td:nth-child(3) > * { text-align: left; }
   /* Long values wrap rather than shove the card open. */
   .ta-table:not(.ta-comparison-table) td { overflow-wrap: anywhere; }
   .ta-table:not(.ta-comparison-table) td .ta-role,
@@ -417,8 +464,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .ta-grade-card { padding: 9px; }
   .ta-grade-card strong { font-size: 23px; }
   .ta-report-section { padding-inline: 12px; }
-  /* Three tracks hold to 375px; the gaps tighten instead of a column going. */
-  .ta-table:not(.ta-comparison-table) tbody tr { padding: 9px 10px; gap: 7px 8px; }
+  .ta-table:not(.ta-comparison-table) tbody tr { gap: 2px 10px; }
 }
 
 /* =====================================================================
@@ -507,13 +553,18 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
    read at a glance.
    ===================================================================== */
 
-.tp-intro, .tp-loading { margin: 0 0 12px; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
-.tp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+/* The host reserves its space before the fetch lands. An empty div has zero
+   height, which gave the IntersectionObserver nothing to observe, and it also
+   meant the section jumped when the rows arrived. */
+[data-trend-panel]:empty { display: block; min-height: 120px; }
+.tp-intro, .tp-loading { margin: 0 0 9px; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
+.tp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 
+/* One line per player: who, shape, reading, tags - not four stacked. */
 .tp-row {
-  display: grid; grid-template-columns: minmax(0, 1.1fr) 86px minmax(0, 1.3fr) minmax(0, 1fr);
-  align-items: center; gap: 12px; padding: 10px 12px;
-  border: 1px solid var(--line-soft); border-radius: 11px; background: var(--bg-3);
+  display: grid; grid-template-columns: minmax(0, 1.15fr) 74px auto minmax(0, 1fr);
+  align-items: center; gap: 10px; padding: var(--card-pad);
+  border: 1px solid var(--card-line); border-radius: var(--card-radius); background: var(--card-bg);
 }
 .tp-who { min-width: 0; }
 .tp-who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); }
@@ -546,9 +597,12 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tp-tag.is-mixed { color: var(--muted); }
 
 @media (max-width: 680px) {
-  .tp-row { grid-template-columns: minmax(0, 1fr) 78px; gap: 8px 10px; }
-  .tp-read, .tp-tags { grid-column: 1 / -1; }
-  .tp-tags { justify-content: flex-start; }
+  /* Name and sparkline share a line; the reading and the tags share the next.
+     Four stacked blocks was 141px a player for a list of thirteen. */
+  .tp-row { grid-template-columns: minmax(0, 1fr) 70px; gap: 4px 10px; }
+  .tp-read { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; }
+  .tp-read small { margin-top: 0; }
+  .tp-tags { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
 /* =====================================================================
@@ -562,9 +616,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
    ===================================================================== */
 
 .so-panel {
-  --ta-micro: 11px; --ta-small: 12.5px; --ta-body: 14px; --ta-lead: 16px;
   overflow: hidden; margin: 0 0 var(--s-4);
-  border: 1px solid var(--line); border-radius: 18px;
+  border: 1px solid var(--line); border-radius: var(--panel-radius);
   background: var(--bg-2); box-shadow: var(--shadow);
 }
 .so-head {
@@ -584,7 +637,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .so-summary { margin: 0; font-size: var(--ta-body); line-height: 1.45; }
 
 .so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.so-odd { min-width: 0; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line-soft); background: var(--bg-3); }
+.so-odd { min-width: 0; padding: var(--card-pad); border-radius: var(--card-radius); border: 1px solid var(--card-line); background: var(--card-bg); }
 .so-odd small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .04em; }
 .so-odd b { display: block; margin: 2px 0 0; font-family: var(--font-display); font-size: 24px; line-height: 1; }
 .so-odd i { font-style: normal; color: var(--muted); font-size: var(--ta-micro); }

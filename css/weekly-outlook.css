@@ -37,17 +37,17 @@
 .wo-head {
   position: relative;
   display: flex; align-items: center; justify-content: space-between;
-  gap: 20px; padding: 22px;
+  gap: 14px; padding: 16px 18px;
   background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
 }
 .wo-head:after {
-  content: ""; position: absolute; inset: auto 22px 0; height: 1px; background: var(--line);
+  content: ""; position: absolute; inset: auto 18px 0; height: 1px; background: var(--line);
 }
 .wo-head small {
   color: var(--accent-2); font-size: var(--ta-micro);
   font-weight: 900; letter-spacing: .1em; text-transform: uppercase;
 }
-.wo-head h2 { margin: 4px 0 0; font-size: 28px; letter-spacing: -.03em; }
+.wo-head h2 { margin: 2px 0 0; font-size: 23px; letter-spacing: -.03em; }
 
 /* The number you came for. */
 .wo-verdict {
@@ -55,16 +55,16 @@
   padding-left: 18px; border-left: 1px solid var(--line-soft);
 }
 .wo-verdict strong {
-  display: block; font-family: var(--font-display); font-size: 40px;
-  line-height: .9; letter-spacing: -.04em; color: var(--muted);
+  display: block; font-family: var(--font-display);
+  font-size: 30px; line-height: .9; letter-spacing: -.04em; color: var(--muted);
 }
 .wo-verdict.is-warn strong { color: var(--accent); }
 .wo-verdict.is-clean strong { font-size: 22px; color: var(--ok); }
 .wo-verdict span { display: block; margin-top: 4px; color: var(--muted); font-size: var(--ta-small); }
 
 /* Everything below the header lives in report sections. */
-.wo-alarms, .wo-clean, .wo-block, .wo-method { margin-inline: 22px; }
-.wo-alarms { list-style: none; margin: 18px 22px 0; padding: 0; display: grid; gap: 6px; }
+.wo-alarms, .wo-clean, .wo-block, .wo-method { margin-inline: 18px; }
+.wo-alarms { list-style: none; margin: 14px 18px 0; padding: 0; display: grid; gap: 6px; }
 .wo-alarms li {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 12px; border-radius: var(--r-md, 10px);
@@ -73,21 +73,21 @@
   font-size: var(--ta-small);
 }
 
-.wo-block { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--line); }
+.wo-block { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
 .wo-block:first-of-type { border-top: 0; }
-.wo-block-head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
-.wo-block-head h3 { margin: 0; font-size: 20px; }
+.wo-block-head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 9px; }
+.wo-block-head h3 { margin: 0; font-size: 17px; }
 .wo-block-head small { color: var(--muted); font-size: var(--ta-small); }
 
-.wo-clean { margin: 18px 22px 0; color: var(--muted); font-size: var(--ta-small); }
+.wo-clean { margin: 14px 18px 0; color: var(--muted); font-size: var(--ta-small); }
 
 /* ---------------------------- the changes --------------------------- */
 
-.wo-swaps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.wo-swaps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .wo-swap {
-  display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: center;
-  padding: 12px; border-radius: 12px;
-  border: 1px solid var(--line-soft); background: var(--bg-3);
+  display: grid; grid-template-columns: 66px 1fr; gap: 10px; align-items: center;
+  padding: var(--card-pad); border-radius: var(--card-radius);
+  border: 1px solid var(--card-line); background: var(--card-bg);
 }
 .wo-swap.is-urgent { border-color: var(--danger-line, var(--control-line)); background: var(--danger-bg, var(--bg-2)); }
 
@@ -111,13 +111,14 @@
 
 /* --------------------------- the lineup ----------------------------- */
 
-.wo-lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.wo-lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+/* Slots are rows in a list, not cards - one line each. */
 .wo-slot {
-  display: grid; grid-template-columns: 42px minmax(0, 1fr) 84px 46px;
-  align-items: center; gap: var(--s-3);
-  padding: 9px 10px; border-radius: 8px;
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) 76px 44px;
+  align-items: center; gap: 10px;
+  padding: 5px 8px; border-radius: var(--card-radius);
 }
-.wo-slot:nth-child(odd) { background: color-mix(in srgb, var(--bg-3) 55%, transparent); }
+.wo-slot { border: 1px solid var(--card-line); background: var(--card-bg); }
 .wo-pos {
   font: 800 var(--ta-micro)/1 var(--font-display); letter-spacing: .08em; color: var(--accent-2);
   text-align: center; padding: 5px 0; border: 1px solid var(--control-line); border-radius: 999px;
@@ -147,18 +148,18 @@
 .wo-tag.is-cold { color: var(--muted); border-color: var(--control-line); }
 
 .wo-method {
-  margin: 20px 0 0; padding: 14px 22px; border-top: 1px solid var(--line);
+  margin: 14px 0 0; padding: 11px 18px; border-top: 1px solid var(--line);
   background: var(--bg-3); color: var(--muted); font-size: var(--ta-small); line-height: 1.6;
 }
 
 @media (max-width: 680px) {
-  .wo-head { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; }
+  .wo-head { flex-direction: column; align-items: flex-start; gap: 9px; padding: 14px; }
   .wo-head:after { inset: auto 16px 0; }
   .wo-verdict {
     text-align: left; padding: 9px 0 0;
     border-left: 0; border-top: 1px solid var(--line-soft); width: 100%;
   }
-  .wo-verdict strong { font-size: 34px; }
+  .wo-verdict strong { font-size: 26px; }
   .wo-alarms, .wo-clean, .wo-block { margin-inline: 14px; }
   .wo-method { padding-inline: 14px; }
   .wo-swap { grid-template-columns: 60px 1fr; }

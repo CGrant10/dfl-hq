@@ -1,13 +1,13 @@
 // =====================================================================
 // trend-panel.js - the multi-season record, drawn
 // ---------------------------------------------------------------------
-// IT LOADS NOTHING UNTIL IT IS OPENED.
+// IT LOADS AFTER THE REPORT, NEVER DURING IT.
 //
 // Three completed seasons is three Sleeper stat maps at roughly 1.8MB
-// each. Paying 5.6MB on every visit to the analyzer - on a phone, on the
-// league's data - to fill a section most people scroll past would undo
-// the whole point of folding it. The fetch starts on the first open and
-// the result is kept for the session.
+// each - but loadSeasonStats caches for a week, so that is one fetch per
+// device per week rather than one per visit. The section is open like
+// every other one; the fetch just waits for an idle moment so the report
+// paints first.
 //
 // The sparkline is inline SVG rather than a chart library: three to five
 // points do not need one, and a 40KB dependency to draw four line
@@ -129,13 +129,22 @@ export async function renderTrendPanel(host, { team, pool, season, scoringSettin
   }
 }
 
-/** Fires the load the first time its <details> is opened, and only then. */
+/**
+ * Loads once the page has settled, not during it.
+ *
+ * Two earlier designs were worse. Hanging it off a <details> made folding the
+ * section load-bearing, and hiding information to avoid a download is solving
+ * the wrong problem. An IntersectionObserver then looked clever until it did
+ * not fire at all in a pane that was not compositing - and an observer that
+ * silently never fires leaves the section permanently blank.
+ *
+ * The bandwidth worry that drove both was overstated: loadSeasonStats caches
+ * for a week, so this is one fetch per device per week, not one per visit. So
+ * it simply loads, deferred off the critical path so the report paints first.
+ */
 export function wireTrendPanel(root, options) {
-  const details = root?.closest("details") || root?.parentElement?.closest("details");
-  const host = root;
-  if (!host) return;
-  if (details?.open) { void renderTrendPanel(host, options); return; }
-  details?.addEventListener("toggle", () => {
-    if (details.open) void renderTrendPanel(host, options);
-  }, { once: false });
+  if (!root || root.dataset.loaded === "1") return;
+  const start = () => renderTrendPanel(root, options).catch(() => {});
+  if (typeof requestIdleCallback === "function") requestIdleCallback(start, { timeout: 2500 });
+  else setTimeout(start, 600);
 }

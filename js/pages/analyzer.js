@@ -65,7 +65,7 @@ function rosterReport(team, pool) {
   const starters = new Set(team.lineup.starters.map(player => player.id));
   const flexId = team.lineup.flexId;
   const ordered = [...team.lineup.starters, ...team.lineup.bench];
-  return section("FULL ROSTER", "Player outlook", { open: false,
+  return section("FULL ROSTER", "Player outlook", { open: true,
     hint: `${ordered.length} players`,
     aside: `<span class="ta-inline-note">Projection leads · prior production is pace-adjusted for games played</span>`,
     body: `<div class="ta-table-wrap"><table class="ta-table ta-roster-table"><thead><tr><th>Player</th><th>Role</th><th>Expected</th><th>Per game</th><th>Trend</th><th>Projection</th><th>Prior pace</th><th>Pos rank</th><th>Value</th></tr></thead><tbody>${ordered.map((player, index) => {
@@ -93,10 +93,10 @@ function comparison(team, opponent, teams) {
 }
 
 function rankings(teams, selectedId) {
-  return section("LEAGUE OUTLOOK", "Projected table", { open: false,
+  return section("LEAGUE OUTLOOK", "Projected table", { open: true,
     hint: `${teams.length} teams`,
     aside: `<span class="ta-inline-note">Grades read starters · depth · overall</span>`,
-    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Rank</th><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><b>${team.rank}</b></td><td><button type="button" data-ta-team="${esc(team.id)}"><strong>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}"><strong><span class="ta-seed">${team.rank}</span>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;
@@ -149,7 +149,7 @@ const DEFAULT_RUNS_NOTE = `3,000 simulated ${REGULAR_SEASON_WEEKS}-week seasons 
 function trendReport(team) {
   /* Folded, and it loads nothing until opened - three seasons of Sleeper stats
      is about 5.6MB. See trend-panel.js. */
-  return section("MULTI-SEASON RECORD", "Trends", { open: false,
+  return section("MULTI-SEASON RECORD", "Trends", { open: true,
     hint: `${HISTORY_SEASONS} seasons`,
     body: `<div data-trend-panel data-team="${esc(team.id)}"></div>` });
 }
