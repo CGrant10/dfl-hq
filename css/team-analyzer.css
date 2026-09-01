@@ -420,3 +420,80 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   /* Three tracks hold to 375px; the gaps tighten instead of a column going. */
   .ta-table:not(.ta-comparison-table) tbody tr { padding: 9px 10px; gap: 7px 8px; }
 }
+
+/* =====================================================================
+   TRADE DESK - build a trade by hand
+   ---------------------------------------------------------------------
+   Two rosters side by side on a desk, stacked on a phone. The verdict
+   sits under them rather than above, because you build first and read
+   second, and a verdict that jumps around above the thing you are
+   editing is a verdict you stop trusting.
+   ===================================================================== */
+
+.td-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.td-side { min-width: 0; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--bg-3); overflow: hidden; }
+.td-side-head { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); background: color-mix(in srgb, var(--bg-2) 60%, transparent); }
+.td-side-head small { display: block; color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; }
+.td-side-head strong { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); }
+/* Capped so a fifteen-man roster does not push the verdict off the screen. */
+.td-list { max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+
+.td-player {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 9px; padding: 8px 11px; cursor: pointer;
+  border-bottom: 1px solid var(--line-soft);
+}
+.td-player:last-child { border-bottom: 0; }
+.td-player:hover { background: color-mix(in srgb, var(--accent-fill) 6%, transparent); }
+.td-player.is-picked { background: color-mix(in srgb, var(--accent-fill) 13%, transparent); }
+.td-player input { width: 17px; height: 17px; accent-color: var(--accent-fill); }
+.td-player-copy { min-width: 0; display: grid; }
+.td-player-copy b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); }
+.td-player-copy small { margin-top: 1px; color: var(--muted); font-size: var(--ta-micro); }
+.td-value {
+  flex: none; min-width: 30px; text-align: center; padding: 3px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-fill) 12%, var(--bg-2));
+  color: var(--accent-2); font-size: var(--ta-small); font-weight: 800;
+}
+.td-empty { padding: 14px; color: var(--muted); font-size: var(--ta-small); }
+
+.td-verdict { padding: 14px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--bg-3); }
+.td-verdict.is-idle { text-align: center; color: var(--muted); }
+.td-verdict.is-idle strong { display: block; color: var(--text); font-size: var(--ta-body); }
+.td-verdict.is-idle span { font-size: var(--ta-small); }
+.td-verdict.is-even { border-color: color-mix(in srgb, var(--ok) 42%, var(--line)); }
+.td-verdict.is-slight { border-color: color-mix(in srgb, var(--warn) 38%, var(--line)); }
+.td-verdict.is-clear, .td-verdict.is-lopsided { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+
+.td-verdict-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.td-verdict-head small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; }
+.td-verdict-head strong { display: block; margin-top: 3px; font-size: var(--ta-lead); }
+.td-fairness { flex: none; text-align: right; }
+.td-fairness b { display: block; font-family: var(--font-display); font-size: 26px; line-height: 1; }
+.td-fairness span { color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .06em; }
+.is-even .td-fairness b { color: var(--ok); }
+.is-slight .td-fairness b { color: var(--warn); }
+.is-clear .td-fairness b, .is-lopsided .td-fairness b { color: var(--danger); }
+
+.td-scales { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.td-scale { min-width: 0; padding: 10px; border-radius: 9px; background: var(--bg-2); }
+.td-scale small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
+.td-scale p { margin: 4px 0 6px; font-size: var(--ta-body); font-weight: 700; overflow-wrap: anywhere; }
+.td-metric { color: var(--muted); font-size: var(--ta-small); }
+.td-metric b { color: var(--text); }
+
+.td-impact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.td-impact-cell { min-width: 0; padding: 10px; border-radius: 9px; background: var(--bg-2); }
+.td-impact-cell small { display: block; overflow: hidden; color: var(--muted); font-size: var(--ta-micro); text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.td-impact-cell b { font-family: var(--font-display); font-size: 22px; }
+.td-impact-cell span { margin-left: 5px; color: var(--muted); font-size: var(--ta-small); }
+.td-impact-cell.is-up b { color: var(--ok); }
+.td-impact-cell.is-down b { color: var(--danger); }
+
+.td-note { margin: 11px 0 0; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
+.td-actions { margin-top: 11px; }
+
+@media (max-width: 680px) {
+  .td-board, .td-scales, .td-impact { grid-template-columns: minmax(0, 1fr); }
+  .td-list { max-height: 260px; }
+}
