@@ -136,7 +136,7 @@ function markup({ week, team, advice, trending, defense, stale }) {
       <ul class="wo-lineup">${advice.lineup.slots.map(slot => lineupRow(slot, max, trending, defense)).join("")}</ul>
     </div>
 
-    <p class="wo-method">Week ${esc(week)} projections, matchup and injury status from one Sleeper call, scored with the league's own settings. Matchup rates how much each defense is projected to concede this week. A player with no published projection is left out rather than counted as zero.${stale ? " Showing the last cached copy — the live fetch failed." : ""}</p>
+    <p class="wo-method">Week ${esc(week)} projections, matchup and injury status from one Sleeper call, scored with the league's own settings. Matchup rates how much each defense is projected to concede this week. A player with no published projection is left out rather than counted as zero. Players who cannot play are excluded; everyone else is ranked on the published number, with injury flags shown rather than quietly subtracted.${stale ? " Showing the last cached copy — the live fetch failed." : ""}</p>
   </section>`;
 }
 

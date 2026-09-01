@@ -426,6 +426,65 @@ export function priorKeeperSeasons(keeperRows = [], { playerId, memberId, before
 }
 
 /**
+ * The full hold on a player: which year of the allowance this is, when it
+ * started, and how much is left.
+ *
+ * NOTHING NEW IS STORED FOR THIS. priorKeeperSeasons() already counts the
+ * seasons a player has been kept, so the season the hold STARTED is simply
+ * the earliest of them - a column recording it would be a second copy of a
+ * fact the keeper rows already carry, and the two would eventually disagree.
+ *
+ * `season` is the season being looked at. A player kept in that season is in
+ * year prior+1; a player being CONSIDERED for it is in the same year, which
+ * is why the advisor and the card can share this.
+ *
+ * @param {Object[]} keeperRows every keeper row the page has loaded
+ * @param {Object} input
+ * @param {string|number} input.playerId
+ * @param {string|number} [input.memberId] scope to one manager's hold
+ * @param {number} input.season            the season in question
+ * @param {number} [input.max]             the league's max_keeper_seasons
+ * @returns {{year:number, max:number|null, left:number|null,
+ *            firstSeason:number|null, seasons:number[], final:boolean}}
+ */
+export function keeperTenure(keeperRows = [], { playerId, memberId, season, max = null } = {}) {
+  const pid = playerId == null ? null : String(playerId);
+  const mid = memberId == null ? null : String(memberId);
+  const target = Number(season);
+  /* Number(null) is 0 and Number("") is 0 - the same trap evaluate() documents
+     above. An unconfigured maximum became a limit of ZERO, which reports every
+     hold as final with nothing left. Not supplied has to be tested first. */
+  const limit = max !== null && max !== undefined && max !== "" && Number.isFinite(Number(max))
+    ? Number(max) : null;
+  if (!pid || !Number.isFinite(target)) {
+    return { year: 1, max: limit, left: limit == null ? null : limit - 1,
+             firstSeason: null, seasons: [], final: limit === 1 };
+  }
+
+  const seasons = new Set();
+  for (const row of keeperRows || []) {
+    if (!row || row.player_id == null) continue;                 // legacy row
+    if (String(row.player_id) !== pid) continue;
+    if (mid != null && row.member_id != null && String(row.member_id) !== mid) continue;
+    const year = Number(row.year ?? row.season);
+    if (Number.isFinite(year) && year <= target) seasons.add(year);
+  }
+
+  const kept = [...seasons].sort((a, b) => a - b);
+  const prior = kept.filter((year) => year < target).length;
+  const year = prior + 1;
+  /* The hold started at the earliest recorded season, or at this one if this
+     is where it begins. */
+  const firstSeason = kept.length ? kept[0] : target;
+  return {
+    year, max: limit,
+    left: limit == null ? null : Math.max(0, limit - year),
+    firstSeason, seasons: kept,
+    final: limit != null && year >= limit,
+  };
+}
+
+/**
  * Legacy rows that MIGHT be about this player, for an honest review prompt.
  *
  * Returns the stored nickname strings and nothing else - no matching, no

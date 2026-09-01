@@ -92,6 +92,18 @@ describe("bestWeeklyLineup", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  /* Regression: a 12% haircut on "Questionable" reordered the lineup silently
+     and started Juwan Johnson (10.43) over Tucker Kraft (10.86) in week 1. A
+     flag a human should weigh is not a number the tool may quietly move. */
+  it("does not demote a questionable player below a lower projection", () => {
+    const pool = poolOf([
+      row("kraft", "TE", { pts: 10.86, status: "Questionable" }),
+      row("juwan", "TE", { pts: 10.43 }),
+    ]);
+    const { slots } = bestWeeklyLineup(["kraft", "juwan"], pool);
+    expect(slots.find(s => s.position === "TE").player.id).toBe("kraft");
+  });
+
   it("leaves a slot empty rather than starting an out player", () => {
     const pool = poolOf([row("te1", "TE", { pts: 30, status: "Out" })]);
     const { slots } = bestWeeklyLineup(["te1"], pool);

@@ -3,8 +3,7 @@ import {
   COST_BASIS, DEFAULT_RULES, KEEPER_ROUND_FLOOR, LEGACY_COST_BASIS, LEGACY_PROGRESSION, PROGRESSION,
   auditSavedBasis, configFor, decisionContext, describeCostBasis, describeRules,
   evaluate, keeperCost, legacyKeeperNames, priorKeeperSeasons,
-  priorSeasonDraftRound, ruleExample, validateConfig,
-} from "./keeper-rules.js";
+  priorSeasonDraftRound, ruleExample, keeperTenure, validateConfig } from "./keeper-rules.js";
 
 const ok = (raw) => {
   const v = validateConfig(raw);
@@ -540,5 +539,50 @@ describe("rule summaries are derived, never hard-coded", () => {
     expect(ruleExample(DEFAULT, { basisRound: 8, targetSeason: 2028 }).text)
       .toBe("A player drafted in Round 8 in 2027 would cost Round 7 as a 2028 keeper.");
     expect(ruleExample(CHANGED, { basisRound: 8 }).cost).toBe(6);
+  });
+});
+
+describe("keeperTenure", () => {
+  const rows = [
+    { player_id: "7", member_id: "1", year: 2024 },
+    { player_id: "7", member_id: "1", year: 2025 },
+    { player_id: "9", member_id: "1", year: 2025 },
+    { player_id: "7", member_id: "2", year: 2023 },   // a different manager's hold
+    { player_id: null, member_id: "1", year: 2022 },  // legacy row, no player_id
+  ];
+
+  it("counts the year, the start and what is left", () => {
+    const t = keeperTenure(rows, { playerId: "7", memberId: "1", season: 2026, max: 3 });
+    expect(t.year).toBe(3);
+    expect(t.firstSeason).toBe(2024);
+    expect(t.left).toBe(0);
+    expect(t.final).toBe(true);
+  });
+
+  it("treats a first-time keeper as year 1 starting this season", () => {
+    const t = keeperTenure(rows, { playerId: "404", memberId: "1", season: 2026, max: 3 });
+    expect(t.year).toBe(1);
+    expect(t.firstSeason).toBe(2026);
+    expect(t.left).toBe(2);
+    expect(t.final).toBe(false);
+  });
+
+  it("does not count another manager's hold on the same player", () => {
+    const t = keeperTenure(rows, { playerId: "7", memberId: "2", season: 2026, max: 3 });
+    expect(t.year).toBe(2);
+    expect(t.firstSeason).toBe(2023);
+  });
+
+  it("ignores legacy rows that carry no player_id", () => {
+    const t = keeperTenure(rows, { playerId: "9", memberId: "1", season: 2026, max: 3 });
+    expect(t.seasons).toEqual([2025]);
+    expect(t.year).toBe(2);
+  });
+
+  it("survives an unconfigured maximum", () => {
+    const t = keeperTenure(rows, { playerId: "7", memberId: "1", season: 2026, max: null });
+    expect(t.max).toBeNull();
+    expect(t.left).toBeNull();
+    expect(t.final).toBe(false);
   });
 });

@@ -131,15 +131,28 @@ function playable(entry) {
 }
 
 /**
- * Score a candidate for a slot. Availability is applied here rather than in
- * the projection, so the raw number a manager sees stays Sleeper's.
+ * Score a candidate for a slot.
+ *
+ * THE PROJECTION IS THE PROJECTION. This used to haircut Questionable and
+ * Doubtful players by 12% before ranking them, which was wrong twice over:
+ * Sleeper's projection already prices expected availability, so the discount
+ * double-counted it with a cruder model than theirs - and it did so silently,
+ * reordering the lineup behind the manager's back.
+ *
+ * It produced exactly the nonsense you would expect. In week 1, Tucker Kraft
+ * projected 10.86 against Juwan Johnson's 10.43; the haircut took Kraft to
+ * 9.56 and started Johnson. Kraft's "Questionable" carried no injury start
+ * date at all - a soft preseason tag, not a gameday designation.
+ *
+ * So availability is now binary. A player who CANNOT play is excluded by
+ * playable(); everyone else is ranked on the published number, and the flag is
+ * surfaced next to them for a human to weigh. A tool that quietly moves a
+ * projection is harder to trust than one that shows it and says "he is
+ * questionable".
  */
 function effectivePoints(entry) {
   if (!playable(entry)) return null;
-  /* Doubtful/questionable players do play most weeks, but not all of them,
-     and a coin-flip start should lose a close call rather than win it. */
-  const risk = entry.isRisky ? .88 : 1;
-  return entry.points * risk;
+  return entry.points;
 }
 
 function slotCandidates(playerIds, weekly, position) {
