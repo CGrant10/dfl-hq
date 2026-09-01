@@ -1,0 +1,131 @@
+/* =====================================================================
+   weekly-outlook.css - the week view above the Team Analyzer report
+   ---------------------------------------------------------------------
+   Its own file, loaded on demand by weekly-outlook-panel.js, so it never
+   collides with team-analyzer.css while that file is being worked on.
+
+   The panel has one job on a phone at 11pm on a Saturday: say whether the
+   lineup is wrong before anything else is read. So the verdict is the
+   largest thing on it, the changes come before the board, and the board
+   is bars rather than a table - a column of numbers is not something you
+   scan in the dark.
+   ===================================================================== */
+
+.wo-panel {
+  margin: 0 0 var(--s-5);
+  padding: var(--s-4);
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, var(--bg-2)), var(--bg-2));
+}
+
+.wo-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-4); margin-bottom: var(--s-4);
+}
+.wo-head small {
+  color: var(--accent); font: 700 var(--fs-micro)/1 var(--font-display); letter-spacing: .14em;
+}
+.wo-head h2 { margin: 6px 0 0; font-size: var(--fs-h2); }
+
+/* The number you came for. */
+.wo-verdict { text-align: right; flex: 0 0 auto; }
+.wo-verdict strong {
+  display: block; font: 800 2rem/1 var(--font-display); color: var(--muted); letter-spacing: -.02em;
+}
+.wo-verdict.is-warn strong { color: var(--accent); }
+.wo-verdict.is-clean strong { font-size: var(--fs-h3); color: var(--accent-2, var(--accent)); }
+.wo-verdict span { display: block; margin-top: 3px; color: var(--muted); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .08em; }
+
+.wo-alarms { list-style: none; margin: 0 0 var(--s-4); padding: 0; display: grid; gap: 6px; }
+.wo-alarms li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r-md, 10px);
+  border: 1px solid var(--danger-line, var(--control-line));
+  background: var(--danger-bg, transparent);
+  font-size: var(--fs-small);
+}
+
+.wo-block { margin-top: var(--s-4); }
+.wo-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); margin-bottom: 9px; }
+.wo-block-head h3 { margin: 0; font-size: var(--fs-h3); }
+.wo-block-head small { color: var(--muted); font-size: var(--fs-micro); }
+
+.wo-clean { margin: var(--s-3) 0 0; color: var(--muted); font-size: var(--fs-small); }
+
+/* ---------------------------- the changes --------------------------- */
+
+.wo-swaps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.wo-swap {
+  display: grid; grid-template-columns: 76px 1fr; gap: var(--s-3); align-items: center;
+  padding: 12px; border-radius: var(--r-lg);
+  border: 1px solid var(--control-line); background: var(--bg-2);
+}
+.wo-swap.is-urgent { border-color: var(--danger-line, var(--control-line)); background: var(--danger-bg, var(--bg-2)); }
+
+.wo-swap-verdict { text-align: center; }
+.wo-swap-badge {
+  display: block; font: 800 1.05rem/1 var(--font-display); color: var(--accent);
+}
+.wo-swap.is-urgent .wo-swap-badge { color: var(--danger, var(--accent)); }
+.wo-swap-verdict small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+
+.wo-swap-move { display: grid; gap: 8px; min-width: 0; }
+.wo-side { min-width: 0; }
+.wo-side small {
+  display: block; font: 700 10px/1 var(--font-display); letter-spacing: .1em; margin-bottom: 2px;
+}
+.wo-side.is-in small { color: var(--accent); }
+.wo-side.is-out small { color: var(--muted); }
+.wo-side strong { display: block; font-size: var(--fs-body); }
+.wo-side.is-out strong { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.wo-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 3px; color: var(--muted); font-size: var(--fs-micro); }
+
+/* --------------------------- the lineup ----------------------------- */
+
+.wo-lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.wo-slot {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr) 84px 46px;
+  align-items: center; gap: var(--s-3);
+  padding: 9px 10px; border-radius: 8px;
+}
+.wo-slot:nth-child(odd) { background: color-mix(in srgb, var(--bg-3) 55%, transparent); }
+.wo-pos {
+  font: 800 10px/1 var(--font-display); letter-spacing: .08em; color: var(--accent);
+  text-align: center; padding: 5px 0; border: 1px solid var(--control-line); border-radius: 999px;
+}
+.wo-name { min-width: 0; font-size: var(--fs-small); }
+.wo-name small { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 2px; color: var(--muted); font-size: var(--fs-micro); }
+.wo-bar { display: block; height: 7px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
+.wo-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), var(--accent)); }
+.wo-pts { text-align: right; font: 700 var(--fs-body)/1 var(--font-display); }
+
+/* ----------------------------- tags --------------------------------- */
+
+.wo-chip, .wo-tag {
+  display: inline-block; padding: 2px 7px; border-radius: 999px;
+  font: 700 10px/1.5 var(--font-display); letter-spacing: .05em; white-space: nowrap;
+  border: 1px solid transparent;
+}
+/* Matchup, best to worst. Colour carries the meaning, the word repeats it. */
+.wo-chip.is-great  { color: #16a34a; border-color: color-mix(in srgb, #16a34a 45%, transparent); background: color-mix(in srgb, #16a34a 12%, transparent); }
+.wo-chip.is-good   { color: #65a30d; border-color: color-mix(in srgb, #65a30d 45%, transparent); background: color-mix(in srgb, #65a30d 12%, transparent); }
+.wo-chip.is-tough  { color: #d97706; border-color: color-mix(in srgb, #d97706 45%, transparent); background: color-mix(in srgb, #d97706 12%, transparent); }
+.wo-chip.is-brutal { color: #dc2626; border-color: color-mix(in srgb, #dc2626 45%, transparent); background: color-mix(in srgb, #dc2626 12%, transparent); }
+
+.wo-tag.is-out  { color: var(--danger, #dc2626); border-color: color-mix(in srgb, #dc2626 45%, transparent); background: color-mix(in srgb, #dc2626 12%, transparent); }
+.wo-tag.is-risk { color: #d97706; border-color: color-mix(in srgb, #d97706 45%, transparent); background: color-mix(in srgb, #d97706 12%, transparent); }
+.wo-tag.is-hot  { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.wo-tag.is-cold { color: var(--muted); border-color: var(--control-line); }
+
+.wo-method { margin: var(--s-4) 0 0; color: var(--muted); font-size: var(--fs-micro); line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .wo-panel { padding: var(--s-3); }
+  .wo-head { flex-direction: column; gap: var(--s-2); }
+  .wo-verdict { text-align: left; }
+  .wo-swap { grid-template-columns: 60px 1fr; }
+  /* The bar is decoration; the number is not. */
+  .wo-slot { grid-template-columns: 38px minmax(0, 1fr) 44px; }
+  .wo-bar { display: none; }
+}
