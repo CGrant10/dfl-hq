@@ -1,8 +1,9 @@
 import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
-import { ANALYZER_UNITS, compareTeams, suggestTrades } from "../team-analyzer.js";
+import { ANALYZER_UNITS, compareTeams } from "../team-analyzer.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
+import { LEAGUE_WEEKLY_SD, outlookSentence, projectSeason } from "../season-outlook.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -93,9 +94,53 @@ function comparison(team, opponent, teams) {
 function rankings(teams, selectedId) {
   return section("LEAGUE OUTLOOK", "Projected table", { open: false,
     hint: `${teams.length} teams`,
-    aside: `<span class="ta-inline-note">Finish follows weekly points · grades balance all units, depth and value</span>`,
-    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table"><thead><tr><th>Rank</th><th>Team</th><th>Weekly</th><th>Starters</th><th>Depth</th><th>Overall</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><b>${team.rank}</b></td><td><button type="button" data-ta-team="${esc(team.id)}"><strong>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Starters"><strong>${esc(team.starterGrade)}</strong></td><td data-label="Depth">${esc(team.depthGrade)}</td><td data-label="Overall"><strong>${esc(team.overallGrade)}</strong> · #${team.overallRank}</td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
+    aside: `<span class="ta-inline-note">Grades read starters · depth · overall</span>`,
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Rank</th><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><b>${team.rank}</b></td><td><button type="button" data-ta-team="${esc(team.id)}"><strong>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
 }
+
+const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;
+
+/*
+  WHAT THE ROSTER IS LIKELY TO BUY.
+
+  Grades say how good a team is; this says what that tends to be worth - a
+  record, a berth, a trophy, or the Chip Eater. Simulated rather than
+  formula'd, on this league's own measured weekly spread. See
+  season-outlook.js for why the schedule is random and the seed is fixed.
+*/
+function seasonOutlook(team, projections, teams) {
+  const projection = projections.get(String(team.id));
+  if (!projection) return "";
+  const ranked = [...projections.entries()].sort((a, b) => b[1].titleOdds - a[1].titleOdds);
+  const favourite = teams.find(t => String(t.id) === String(ranked[0]?.[0]));
+  const chip = [...projections.entries()].sort((a, b) => b[1].lastOdds - a[1].lastOdds)[0];
+  const chipTeam = teams.find(t => String(t.id) === String(chip?.[0]));
+  const titleRank = ranked.findIndex(([id]) => String(id) === String(team.id)) + 1;
+
+  return section("SEASON OUTLOOK", "What this roster buys", { open: true,
+    body: `<div class="so-card">
+      <div class="so-record">
+        <small>PROJECTED RECORD</small>
+        <strong>${projection.wins.toFixed(1)}<i>-</i>${projection.losses.toFixed(1)}</strong>
+        <span>average finish ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
+      </div>
+      <p class="so-summary">${esc(outlookSentence(projection, ordinal(team.rank), teams.length))}</p>
+      <div class="so-odds">
+        <div class="so-odd"><small>Playoffs</small><b>${pct(projection.playoffOdds)}</b><i>8 of ${teams.length} qualify</i></div>
+        <div class="so-odd is-title"><small>Championship</small><b>${pct(projection.titleOdds)}</b><i>${titleRank ? `${ordinal(titleRank)} best odds` : "—"}</i></div>
+        <div class="so-odd is-chip"><small>Chip Eater</small><b>${pct(projection.lastOdds)}</b><i>finishing last</i></div>
+      </div>
+      <dl class="so-field">
+        <div><dt>Title favourite</dt><dd>${esc(favourite ? teamName(favourite) : "—")} · ${pct(ranked[0]?.[1]?.titleOdds)}</dd></div>
+        <div><dt>Chip Eater favourite</dt><dd>${esc(chipTeam ? teamName(chipTeam) : "—")} · ${pct(chip?.[1]?.lastOdds)}</dd></div>
+      </dl>
+      <p class="ta-note">${DEFAULT_RUNS_NOTE}</p>
+    </div>` });
+}
+
+const DEFAULT_RUNS_NOTE = `3,000 simulated seasons on each roster's projected weekly points, with a `
+  + `${LEAGUE_WEEKLY_SD}-point weekly spread measured from 24 team-seasons of real DFL matchups. `
+  + `No 2026 schedule has been published, so each week draws a random opponent — the odds describe the roster, not a fixture list.`;
 
 function trendReport(team) {
   /* Folded, and it loads nothing until opened - three seasons of Sleeper stats
@@ -105,24 +150,17 @@ function trendReport(team) {
     body: `<div data-trend-panel data-team="${esc(team.id)}"></div>` });
 }
 
-function tradeLab(team, teams, pool, selectedPlayerId) {
-  const players = team.playerIds.map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const selected = players.find(player => player.id === selectedPlayerId) || players[0];
-  const offers = selected ? suggestTrades({ teams, teamId: team.id, playerId: selected.id, pool, limit: 8 }) : [];
-  const picker = `<label class="ta-inline-select"><span>Shop player</span><select data-ta-player aria-label="Player to shop">${players.map(player => `<option value="${esc(player.id)}" ${player.id === selected?.id ? "selected" : ""}>${esc(player.name)} · ${player.position} · value ${player.tradeValue}</option>`).join("")}</select></label>`;
-  return section("TRADE LAB", "Possible deals", { open: false,
-    hint: offers.length ? `${offers.length} balanced offer${offers.length === 1 ? "" : "s"}` : "no balanced offers",
-    aside: picker,
-    body: `<p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result. To build a deal by hand, use the <a href="#/trade">Trade Desk</a>.</p>${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>` : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}` });
-}
-
 function page(data) {
   const me = currentMember();
   const routeParams = new URLSearchParams((location.hash.split("?")[1] || ""));
   const requestedId = routeParams.get("team"), requestedOwner = routeParams.get("owner");
   let selectedId = data.teams.find(team => requestedOwner && String(team.sleeper_user_id) === String(requestedOwner))?.id || data.teams.find(team => String(team.id) === String(requestedId))?.id || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id || data.teams[0].id;
   let compareId = data.teams.find(team => team.id !== selectedId)?.id || selectedId;
-  let playerId = "";
+  /* Once per page load. Seeded, so it is stable across redraws too. */
+  const projections = projectSeason({
+    teams: data.teams.map(team => ({ id: String(team.id), mean: team.lineup.weeklyPoints })),
+    playoffTeams: Number(data.league?.playoff_teams) || 8,
+  });
   return {
     markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>One continuous report using current expectations, last season’s production and the league’s actual scoring.</p></div><main class="ta-report" data-ta-body></main>`,
     wire(view) {
@@ -131,9 +169,7 @@ function page(data) {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         const opponent = data.teams.find(item => item.id === compareId && item.id !== team.id) || data.teams.find(item => item.id !== team.id) || team;
         compareId = opponent.id;
-        const selected = team.playerIds.map(id => data.pool.get(id)).find(player => player?.id === playerId);
-        if (!selected) playerId = team.playerIds.map(id => data.pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue)[0]?.id || "";
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}${tradeLab(team, data.teams, data.pool, playerId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${seasonOutlook(team, projections, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,
@@ -142,13 +178,12 @@ function page(data) {
         });
       };
       view.querySelector("[data-ta-team-select]").addEventListener("change", event => {
-        selectedId = event.currentTarget.value; playerId = "";
+        selectedId = event.currentTarget.value;
         draw();
       });
-      body.addEventListener("click", event => { const button = event.target.closest("[data-ta-team]"); if (!button) return; selectedId = button.dataset.taTeam; playerId = ""; draw(); view.scrollTo?.({ top: 0, behavior: "smooth" }); });
+      body.addEventListener("click", event => { const button = event.target.closest("[data-ta-team]"); if (!button) return; selectedId = button.dataset.taTeam; draw(); view.scrollTo?.({ top: 0, behavior: "smooth" }); });
       body.addEventListener("change", event => {
         if (event.target.matches("[data-ta-compare]")) { compareId = event.target.value; draw(); }
-        if (event.target.matches("[data-ta-player]")) { playerId = event.target.value; draw(); }
       });
       draw();
     },

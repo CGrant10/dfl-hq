@@ -18,6 +18,7 @@ import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, tradeDeskMarkup } from "../trade-desk.js";
+import { suggestTrades } from "../team-analyzer.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const ordinal = value => {
@@ -50,6 +51,33 @@ function lead(team, count) {
   </header>`;
 }
 
+const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
+const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || String(id)).join(" + ");
+
+/*
+  THE LAB BELONGS BESIDE THE DESK.
+
+  It was the last thing on the analyzer report, which meant the two halves of
+  one job - "what could I trade" and "is this trade good" - sat on different
+  pages. They are the same question asked in either direction, so they are now
+  the same page: propose above, judge below.
+*/
+function tradeLab(team, teams, pool, selectedPlayerId) {
+  const players = team.playerIds.map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const selected = players.find(player => player.id === selectedPlayerId) || players[0];
+  const offers = selected ? suggestTrades({ teams, teamId: team.id, playerId: selected.id, pool, limit: 8 }) : [];
+  const picker = `<label class="ta-inline-select"><span>Shop player</span><select data-ta-player aria-label="Player to shop">${players.map(player => `<option value="${esc(player.id)}" ${player.id === selected?.id ? "selected" : ""}>${esc(player.name)} · ${player.position} · value ${player.tradeValue}</option>`).join("")}</select></label>`;
+  return `<section class="ta-report-section ta-trades">
+    <div class="ta-report-title"><div><small>TRADE LAB</small><h2>Suggested deals</h2></div></div>
+    <div class="ta-section-body">
+      ${picker}
+      <p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result.</p>
+      ${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>`
+        : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}
+    </div>
+  </section>`;
+}
+
 function page(data) {
   const me = currentMember();
   const routeTeam = new URLSearchParams((location.hash.split("?")[1] || "")).get("team");
@@ -57,6 +85,7 @@ function page(data) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { partnerId: "", sendA: new Set(), sendB: new Set() };
+  let shopId = "";
 
   return {
     markup: `<header class="page-head ta-page-head">
@@ -81,15 +110,21 @@ function page(data) {
           <section class="ta-report-section">
             <div class="ta-report-title"><div><small>BUILD IT</small><h2>The deal</h2></div></div>
             <div class="ta-section-body" data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
-          </section>`;
+          </section>
+          ${tradeLab(team, data.teams, data.pool, shopId)}`;
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
         });
       };
+      body.addEventListener("change", event => {
+        if (!event.target.matches("[data-ta-player]")) return;
+        shopId = event.target.value;
+        draw();
+      });
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
         /* Both sides referred to rosters that are no longer in play. */
-        trade.partnerId = ""; trade.sendA.clear(); trade.sendB.clear();
+        trade.partnerId = ""; trade.sendA.clear(); trade.sendB.clear(); shopId = "";
         draw();
       });
       draw();

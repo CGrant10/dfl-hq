@@ -13,7 +13,7 @@ import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
  */
 export async function loadAnalyzerData() {
   const [leagueRes, rosterRes, memberRes] = await Promise.all([
-    db().from("sleeper_leagues").select("season,status,scoring_settings,synced_at").order("season", { ascending: false }).limit(1),
+    db().from("sleeper_leagues").select("season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
     db().from("members").select("id,display_name,team_name,sleeper_user_id,active"),
   ]);

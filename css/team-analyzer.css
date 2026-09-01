@@ -550,3 +550,59 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .tp-read, .tp-tags { grid-column: 1 / -1; }
   .tp-tags { justify-content: flex-start; }
 }
+
+/* =====================================================================
+   SEASON OUTLOOK - what the roster is likely to buy
+   ---------------------------------------------------------------------
+   The record leads because it is the thing anyone repeats out loud. The
+   three odds sit under it as equals, and the Chip Eater gets the same
+   weight as the championship - in this league the punishment is as much
+   of a motivator as the trophy.
+   ===================================================================== */
+
+.so-card { display: grid; gap: 14px; }
+.so-record {
+  padding: 14px 16px; border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent-fill) 9%, var(--bg-3));
+}
+.so-record small { display: block; color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; }
+.so-record strong { display: block; margin: 4px 0 2px; font-family: var(--font-display); font-size: 42px; line-height: 1; letter-spacing: -.03em; }
+.so-record strong i { font-style: normal; color: var(--muted); margin: 0 2px; }
+.so-record span { color: var(--muted); font-size: var(--ta-small); }
+.so-summary { margin: 0; font-size: var(--ta-body); line-height: 1.5; }
+
+.so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.so-odd { min-width: 0; padding: 11px 12px; border-radius: 11px; border: 1px solid var(--line-soft); background: var(--bg-3); }
+.so-odd small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
+.so-odd b { display: block; margin: 3px 0 1px; font-family: var(--font-display); font-size: 26px; line-height: 1; }
+.so-odd i { font-style: normal; color: var(--muted); font-size: var(--ta-micro); }
+.so-odd.is-title { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.so-odd.is-title b { color: var(--ok); }
+.so-odd.is-chip { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.so-odd.is-chip b { color: var(--danger); }
+
+.so-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; background: var(--line-soft); border-radius: 10px; overflow: hidden; }
+.so-field div { min-width: 0; padding: 10px 12px; background: var(--bg-3); }
+.so-field dt { color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
+.so-field dd { margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); font-weight: 700; }
+
+/* Three grades in one cell, so the projected table loses two columns. */
+.ta-gradeset { display: inline-flex; gap: 5px; }
+.ta-gradeset b {
+  min-width: 30px; text-align: center; padding: 3px 6px; border-radius: 7px;
+  background: var(--bg-2); border: 1px solid var(--line-soft);
+  font-size: var(--ta-small); font-weight: 800;
+}
+.ta-gradeset b.is-elite { color: var(--ok); }
+.ta-gradeset b.is-good { color: var(--accent-2); }
+.ta-gradeset b.is-average { color: var(--warn); }
+.ta-gradeset b.is-weak { color: var(--danger); }
+
+@media (max-width: 680px) {
+  .so-odds { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .so-odd { padding: 9px 8px; }
+  .so-odd b { font-size: 21px; }
+  .so-field { grid-template-columns: minmax(0, 1fr); }
+  .so-record strong { font-size: 34px; }
+}
