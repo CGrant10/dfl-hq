@@ -482,20 +482,14 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
     border-left: 3px solid var(--accent); padding-left: 9px;
   }
   /* Long prose cells earn the full width back. */
-  .ta-position-table td:last-child,
-  .ta-trade-table td:nth-child(2), .ta-trade-table td:nth-child(3) {
+  .ta-position-table td:last-child {
     grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px;
   }
-  /* Prefixed to out-specify the shared `td[data-label] > *` right-align rule -
-     without it "You receive" sat right while "You send" sat left in the same
-     card, which reads as a bug even though both were legible. */
-  .ta-position-table td[data-label]:last-child > *,
-  .ta-trade-table td[data-label]:nth-child(2) > *,
-  .ta-trade-table td[data-label]:nth-child(3) > * { text-align: left; }
-  /* Those cells put their label above the value, so the label must not also be
+  /* Prefixed to out-specify the shared `td[data-label] > *` right-align rule. */
+  .ta-position-table td[data-label]:last-child > * { text-align: left; }
+  /* That cell puts its label above the value, so the label must not also be
      pushed to the far side by the shared space-between rule. */
-  .ta-position-table td:last-child:before, .ta-trade-table td:nth-child(2):before,
-  .ta-trade-table td:nth-child(3):before { justify-self: start; }
+  .ta-position-table td:last-child:before { justify-self: start; }
 
   /*
     THE PROJECTED TABLE, HALF THE HEIGHT.
@@ -553,17 +547,49 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
     line. A number that breaks across lines is unreadable, so the number and
     its footnote travel together on the right and neither may wrap.
   */
-  .ta-trade-table td:last-child {
+  .ta-table.ta-trade-table td:last-child {
     grid-column: 1 / -1; display: flex; align-items: baseline;
     justify-content: space-between; gap: 10px;
   }
-  .ta-trade-table td:last-child > b {
+  .ta-table.ta-trade-table td:last-child > b {
     margin-left: auto; white-space: nowrap; font-size: var(--ta-body);
   }
-  .ta-trade-table td:last-child > small { flex: none; white-space: nowrap; }
-  /* The partner cell is the card title; its qualifier sits beside the name. */
-  .ta-trade-table td:first-child { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-  .ta-trade-table td:first-child small { flex: none; }
+  .ta-table.ta-trade-table td:last-child > small { flex: none; white-space: nowrap; }
+
+  /*
+    THE TRADE CARD IS ONE COLUMN, AND NOTHING IS STRANDED IN THE SECOND.
+
+    An offer has four facts and a title. In the shared two-track grid, "You
+    send" and "You receive" each claimed a full row to stack a label over a
+    name, "Balance" sat alone in track one with the whole right half of the
+    card blank beside it, and "Weekly change" took another full row - seven
+    lines of card for four numbers, with a hole in the middle of it.
+
+    One track, every fact on its own line, label left and value hard against
+    the right edge: the same reading pattern as every other card in the app,
+    no empty track to explain, and two lines shorter.
+  */
+  .ta-table.ta-trade-table tbody tr { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .ta-table.ta-trade-table td { padding: 3px 0; }
+
+  /*
+    THE PARTNER CELL IS THE CARD TITLE.
+
+    It asked for flex and a 7px gap and got neither: the shared
+    `.ta-table:not(.ta-comparison-table) td:first-child` rule is a class more
+    specific and kept the cell `display: block`, so the name and its "Straight
+    up" qualifier ran together with only the text node's own space between
+    them. Matching that specificity is the whole fix.
+  */
+  .ta-table.ta-trade-table td:first-child {
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+    padding: 0 0 6px;
+  }
+  .ta-table.ta-trade-table td:first-child small { flex: none; }
+  /* The two name cells wrap against the right edge like every other value. */
+  .ta-table.ta-trade-table td:nth-child(2), .ta-table.ta-trade-table td:nth-child(3) {
+    text-align: right;
+  }
   /* Long values wrap rather than shove the card open. */
   .ta-table:not(.ta-comparison-table) td { overflow-wrap: anywhere; }
   .ta-table:not(.ta-comparison-table) td .ta-role,
