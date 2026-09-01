@@ -24,28 +24,53 @@ function reportHeader(team, count, pool) {
   return `<header class="ta-report-lead"><div class="ta-lead-top"><div class="ta-team-intro"><small>TEAM REPORT</small><h2>${esc(teamName(team))}</h2><p>${esc(team.ownerName)} · ${team.playerIds.length} rostered players · ${team.lineup.source === "set" ? "set lineup" : "optimized lineup"}</p></div><div class="ta-finish"><small>STARTER PROJECTION</small><strong>${ordinal(team.rank)}</strong><span>of ${count} · ${stat(team.lineup.weeklyPoints)} weekly</span></div></div><div class="ta-grade-stack">${gradeCard("Starter grade", team.starterGrade, "Average of five units", true)}${gradeCard("Depth grade", team.depthGrade, `${stat(team.lineup.depthScore)} depth score`)}${gradeCard("Overall roster", team.overallGrade, `${ordinal(team.overallRank)} roster profile`)}</div><dl class="ta-kpis"><div><dt>Season starter pts</dt><dd>${stat(team.lineup.starterPoints)}</dd></div><div><dt>Best starting unit</dt><dd>${esc(team.strength || "—")}</dd></div><div><dt>Starting need</dt><dd>${esc(team.need || "No urgent need")}</dd></div><div><dt>Avg. player value</dt><dd>${averageValue}</dd></div></dl><div class="ta-top-asset"><small>TOP ASSET</small><strong>${esc(assets[0]?.name || "—")}</strong><span>${assets[0] ? `${assets[0].position}${assets[0].positionRank ? ` · ${rankText(assets[0].positionRank, assets[0].positionCount)}` : ""} · value ${assets[0].tradeValue}` : "No rated player"}</span></div></header>`;
 }
 
-function sectionHead(kicker, title, aside = "") {
-  return `<div class="ta-report-title"><div><small>${kicker}</small><h2>${title}</h2></div>${aside}</div>`;
+/*
+  A SECTION IS A <details>, AND TWO OF THEM START CLOSED.
+
+  The report ran to eighteen screens on a phone. Density took a third off it;
+  the rest has to come from not rendering everything expanded at once. The
+  league table and the trade lab are the two longest and the two least often
+  read - you open the analyzer to look at YOUR team - so they arrive folded
+  with a one-line summary of what is inside. Everything else stays open,
+  because the point of the page is still to answer questions without clicking.
+
+  The aside sits in the BODY, never in the <summary>. A <select> inside a
+  summary toggles the disclosure when you try to use it, which would make the
+  compare and shop pickers unusable.
+*/
+function section(kicker, title, { aside = "", body = "", open = true, hint = "" } = {}) {
+  return `<details class="ta-report-section" ${open ? "open" : ""}>
+    <summary class="ta-report-title">
+      <div><small>${kicker}</small><h2>${title}</h2></div>
+      ${hint ? `<span class="ta-fold-hint">${hint}</span>` : ""}
+      <span class="ta-fold-chevron" aria-hidden="true"></span>
+    </summary>
+    <div class="ta-section-body">${aside}${body}</div>
+  </details>`;
 }
 
 function positionReport(team) {
-  return `<section class="ta-report-section">${sectionHead("STARTING UNIT GRADES", "Position report", `<span class="ta-inline-note">Five equally weighted starting units · depth shown separately</span>`)}<div class="ta-table-wrap"><table class="ta-table ta-position-table"><thead><tr><th>Pos</th><th>Grade</th><th>League</th><th>Starter score</th><th>Starting unit / depth</th></tr></thead><tbody>${ANALYZER_UNITS.map(position => {
+  return section("STARTING UNIT GRADES", "Position report", { open: true,
+    aside: `<span class="ta-inline-note">Five equally weighted starting units · depth shown separately</span>`,
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-position-table"><thead><tr><th>Pos</th><th>Grade</th><th>League</th><th>Starter score</th><th>Starting unit / depth</th></tr></thead><tbody>${ANALYZER_UNITS.map(position => {
     const group = team.positionGrades[position];
     const names = [...group.starters.map(player => ({ player, role: "Starts" })), ...group.depth.map(player => ({ player, role: "Depth" }))];
     return `<tr><td><b class="ta-pos">${position}</b></td><td data-label="Grade"><span class="ta-unit-grade is-${gradeTone(group.grade)}"><strong>${esc(group.grade)}</strong><i><span style="width:${Math.round(group.percentile * 100)}%"></span></i></span></td><td data-label="League">${rankText(group.leagueRank, group.leagueSize)}</td><td data-label="Starter score"><strong>${stat(group.score)}</strong></td><td data-label="Unit / depth"><div class="ta-player-run">${names.map(({ player, role }) => `<span class="${role === "Depth" ? "is-depth" : ""}"><b>${esc(player.name)}</b><small>${role} · ${stat(player.expectedPoints)} pts · ${rankText(player.positionRank, player.positionCount)}</small></span>`).join("") || `<span class="muted">No ${position}</span>`}</div></td></tr>`;
-  }).join("")}</tbody></table></div></section>`;
+  }).join("")}</tbody></table></div>` });
 }
 
 function rosterReport(team, pool) {
   const starters = new Set(team.lineup.starters.map(player => player.id));
   const flexId = team.lineup.flexId;
   const ordered = [...team.lineup.starters, ...team.lineup.bench];
-  return `<section class="ta-report-section">${sectionHead("FULL ROSTER", "Player outlook", `<span class="ta-inline-note">Projection leads · prior production is pace-adjusted for games played</span>`)}<div class="ta-table-wrap"><table class="ta-table ta-roster-table"><thead><tr><th>Player</th><th>Role</th><th>Expected</th><th>Per game</th><th>Trend</th><th>Projection</th><th>Prior pace</th><th>Pos rank</th><th>Value</th></tr></thead><tbody>${ordered.map((player, index) => {
+  return section("FULL ROSTER", "Player outlook", { open: true,
+    aside: `<span class="ta-inline-note">Projection leads · prior production is pace-adjusted for games played</span>`,
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-roster-table"><thead><tr><th>Player</th><th>Role</th><th>Expected</th><th>Per game</th><th>Trend</th><th>Projection</th><th>Prior pace</th><th>Pos rank</th><th>Value</th></tr></thead><tbody>${ordered.map((player, index) => {
     const starting = starters.has(player.id);
     const role = starting ? (player.id === flexId ? "Flex" : "Starter") : "Bench";
     const divider = index === team.lineup.starters.length && team.lineup.bench.length ? `<tr class="ta-roster-divider"><td colspan="9">DEPTH · GRADED SEPARATELY FROM THE STARTING LINEUP</td></tr>` : "";
     return `${divider}<tr class="${starting ? "is-starter" : "is-bench"}"><td><div class="ta-player"><b>${esc(player.name)}</b><small>${esc(player.position)} · ${esc(player.nflTeam)}</small></div></td><td data-label="Role"><span class="ta-role">${role}</span></td><td data-label="Expected"><strong class="ta-expected">${stat(player.expectedPoints)}</strong></td><td data-label="Per game">${stat(player.expectedPerGame, 2)}</td><td data-label="Trend"><span class="ta-trend is-${esc(player.trend)}">${esc(trendLabel(player.trend))}</span></td><td data-label="Projection">${stat(player.projectedPoints)}</td><td data-label="Prior pace">${stat(player.priorPace)}</td><td data-label="Pos rank"><strong>${rankText(player.positionRank, player.positionCount)}</strong></td><td data-label="Value"><b class="ta-value">${player.tradeValue}</b></td></tr>`;
-  }).join("")}</tbody></table></div></section>`;
+  }).join("")}</tbody></table></div>` });
 }
 
 function comparison(team, opponent, teams) {
@@ -60,11 +85,15 @@ function comparison(team, opponent, teams) {
     ...result.positions.map(row => [`${row.position} unit`, `${row.a.grade} · ${rankText(row.a.leagueRank)}`, `${row.b.grade} · ${rankText(row.b.leagueRank)}`, row.winner || ""]),
   ];
   const picker = `<label class="ta-inline-select"><span>Compare with</span><select data-ta-compare aria-label="Team to compare">${teams.filter(other => other.id !== team.id).map(other => `<option value="${esc(other.id)}" ${other.id === opponent.id ? "selected" : ""}>${esc(teamName(other))}</option>`).join("")}</select></label>`;
-  return `<section class="ta-report-section">${sectionHead("HEAD TO HEAD", "Team comparison", picker)}<div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div></section>`;
+  return section("HEAD TO HEAD", "Team comparison", { open: true, aside: picker,
+    body: `<div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 function rankings(teams, selectedId) {
-  return `<section class="ta-report-section">${sectionHead("LEAGUE OUTLOOK", "Projected table", `<span class="ta-inline-note">Finish follows weekly points · grades balance all units, depth and value</span>`)}<div class="ta-table-wrap"><table class="ta-table ta-league-table"><thead><tr><th>Rank</th><th>Team</th><th>Weekly</th><th>Starters</th><th>Depth</th><th>Overall</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><b>${team.rank}</b></td><td><button type="button" data-ta-team="${esc(team.id)}"><strong>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Starters"><strong>${esc(team.starterGrade)}</strong></td><td data-label="Depth">${esc(team.depthGrade)}</td><td data-label="Overall"><strong>${esc(team.overallGrade)}</strong> · #${team.overallRank}</td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div></section>`;
+  return section("LEAGUE OUTLOOK", "Projected table", { open: false,
+    hint: `${teams.length} teams`,
+    aside: `<span class="ta-inline-note">Finish follows weekly points · grades balance all units, depth and value</span>`,
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table"><thead><tr><th>Rank</th><th>Team</th><th>Weekly</th><th>Starters</th><th>Depth</th><th>Overall</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><b>${team.rank}</b></td><td><button type="button" data-ta-team="${esc(team.id)}"><strong>${esc(teamName(team))}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Starters"><strong>${esc(team.starterGrade)}</strong></td><td data-label="Depth">${esc(team.depthGrade)}</td><td data-label="Overall"><strong>${esc(team.overallGrade)}</strong> · #${team.overallRank}</td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 function tradeLab(team, teams, pool, selectedPlayerId) {
@@ -72,7 +101,10 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
   const selected = players.find(player => player.id === selectedPlayerId) || players[0];
   const offers = selected ? suggestTrades({ teams, teamId: team.id, playerId: selected.id, pool, limit: 8 }) : [];
   const picker = `<label class="ta-inline-select"><span>Shop player</span><select data-ta-player aria-label="Player to shop">${players.map(player => `<option value="${esc(player.id)}" ${player.id === selected?.id ? "selected" : ""}>${esc(player.name)} · ${player.position} · value ${player.tradeValue}</option>`).join("")}</select></label>`;
-  return `<section class="ta-report-section ta-trades">${sectionHead("TRADE LAB", "Possible deals", picker)}<p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result.</p>${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>` : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}</section>`;
+  return section("TRADE LAB", "Possible deals", { open: false,
+    hint: offers.length ? `${offers.length} balanced offer${offers.length === 1 ? "" : "s"}` : "no balanced offers",
+    aside: picker,
+    body: `<p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result.</p>${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>` : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}` });
 }
 
 function page(data) {
@@ -92,7 +124,7 @@ function page(data) {
         compareId = opponent.id;
         const selected = team.playerIds.map(id => data.pool.get(id)).find(player => player?.id === playerId);
         if (!selected) playerId = team.playerIds.map(id => data.pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue)[0]?.id || "";
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${rankings(data.teams, team.id)}${tradeLab(team, data.teams, data.pool, playerId)}<p class="ta-method">Method: projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p>`;
+        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${rankings(data.teams, team.id)}${tradeLab(team, data.teams, data.pool, playerId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-team-select]").value = team.id;
       };
       view.querySelector("[data-ta-team-select]").addEventListener("change", event => { selectedId = event.currentTarget.value; playerId = ""; draw(); });

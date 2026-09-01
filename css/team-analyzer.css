@@ -90,9 +90,20 @@
 .ta-finish span { margin-top: 4px; color: var(--muted); font-size: var(--ta-small); }
 
 /* Three grades, the first one leading. */
-.ta-grade-stack { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 9px; }
+/*
+  minmax(0, …), not 1fr. A bare 1fr track is min-width:auto, so it refuses to
+  shrink below its content and the card's own overflow:hidden/ellipsis never
+  gets a chance - the text pushes the border out from the inside instead of
+  being clipped by it. That is the "card design leaking into text": a 108px
+  card holding 118px of content.
+*/
+.ta-grade-stack { display: grid; grid-template-columns: 1.15fr minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+/* min-width alone is not enough where justify-items is start: the track
+   shrinks but the item is still sized to its content and hangs out of the
+   card. max-width pins it to the track so the ellipsis can do its job. */
+.ta-grade-card > * { min-width: 0; max-width: 100%; }
 .ta-grade-card {
-  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
   min-width: 0; padding: 12px 13px;
   border: 1px solid var(--line-soft); border-radius: 12px;
   background: color-mix(in srgb, var(--bg-3) 88%, transparent);
@@ -139,9 +150,37 @@
 
 .ta-report-section { padding: 20px 22px; border-top: 1px solid var(--line); }
 .ta-report-section:first-of-type { border-top: 0; }
-.ta-report-title { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+
+/* A section is a <details>; its title is the <summary>. */
+.ta-report-title {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-bottom: 12px; cursor: pointer; list-style: none;
+}
+.ta-report-title::-webkit-details-marker { display: none; }
 .ta-report-title h2 { margin: 3px 0 0; font-size: 20px; }
-.ta-inline-note { max-width: 420px; color: var(--muted); font-size: var(--ta-small); text-align: right; line-height: 1.45; }
+.ta-report-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+details[open] > .ta-report-title { margin-bottom: 12px; }
+/* Closed, the title is the whole section, so it owes no bottom margin. */
+details:not([open]) > .ta-report-title { margin-bottom: 0; }
+
+/* What is inside, said on the outside - a fold you cannot see into is a fold
+   nobody opens. */
+.ta-fold-hint {
+  margin-left: auto; color: var(--muted); font-size: var(--ta-small);
+  white-space: nowrap;
+}
+.ta-fold-chevron {
+  flex: none; width: 10px; height: 10px; margin-right: 2px;
+  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg); transition: transform .18s ease;
+}
+details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); }
+.ta-report-title:hover .ta-fold-chevron { border-color: var(--accent); }
+/* The aside had been in the head; in the body it needs its own breathing room. */
+.ta-section-body > .ta-inline-note,
+.ta-section-body > .ta-inline-select { display: block; margin-bottom: 10px; }
+.ta-section-body > .ta-inline-select { display: grid; }
+.ta-inline-note { max-width: 640px; color: var(--muted); font-size: var(--ta-small); line-height: 1.45; }
 .ta-inline-select { grid-template-columns: auto minmax(180px, 260px); align-items: center; }
 .ta-inline-select select { min-height: 40px; }
 
@@ -236,10 +275,22 @@
 .ta-trade-table .positive { color: var(--ok); }
 .ta-trade-table .negative { color: var(--danger); }
 .ta-empty { padding: 16px; border-block: 1px dashed var(--line); color: var(--muted); font-size: var(--ta-body); line-height: 1.55; }
+/* The method belongs on the page - a report that will not say how it decided
+   is worth less - but it is a footnote, not a chapter, and expanded it ran
+   longer than the section it explains. */
 .ta-method {
-  margin: 0; padding: 14px 22px; border-top: 1px solid var(--line);
+  margin: 0; padding: 12px 22px; border-top: 1px solid var(--line);
   background: var(--bg-3); color: var(--muted); font-size: var(--ta-small); line-height: 1.6;
 }
+.ta-method > summary {
+  cursor: pointer; list-style: none;
+  font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  font-size: var(--ta-micro); color: var(--accent-2);
+}
+.ta-method > summary::-webkit-details-marker { display: none; }
+.ta-method > summary:after { content: " +"; }
+.ta-method[open] > summary:after { content: " 2"; }
+.ta-method > p { margin: 9px 0 0; }
 
 /* --------------------------- responsive ----------------------------- */
 
@@ -256,12 +307,11 @@
   .ta-lead-top { align-items: flex-start; }
   .ta-team-intro h2 { font-size: 23px; }
   .ta-finish strong { font-size: 34px; }
-  .ta-grade-stack { grid-template-columns: 1fr 1fr 1fr; }
-  .ta-grade-card { grid-template-columns: 1fr; justify-items: start; padding: 10px; }
+  .ta-grade-stack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ta-grade-card { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: 10px; }
   .ta-grade-card strong { grid-row: auto; grid-column: auto; font-size: 26px; }
   .ta-report-section { padding: 16px 14px; }
-  .ta-report-title { align-items: stretch; flex-direction: column; }
-  .ta-inline-note { text-align: left; }
+  .ta-inline-note { font-size: var(--ta-small); }
   .ta-inline-select { grid-template-columns: 1fr; }
   .ta-compare-summary { align-items: flex-start; flex-direction: column; }
   .ta-method { padding-inline: 14px; }
@@ -289,8 +339,16 @@
     a page nobody scrolls to the end of; paired, the same card is half as tall
     and reads as a block of stats instead of a list of sentences.
   */
+  /*
+    THREE COLUMNS, NOT TWO, AND TIGHTER.
+
+    Two columns still ran fourteen players to 4,000px. These labels are short
+    enough for three tracks at 375px, which turns four stat rows into three
+    and takes roughly a third off every card without hiding a single number.
+  */
   .ta-table:not(.ta-comparison-table) tbody tr {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 13px 14px;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px 10px; padding: 10px 11px;
     border: 1px solid var(--line-soft); border-radius: 12px; background: var(--bg-3);
   }
   .ta-table:not(.ta-comparison-table) tbody tr:hover td { background: none; }
@@ -305,7 +363,7 @@
   }
   /* The first cell names the row, so it spans and rules a line under itself. */
   .ta-table:not(.ta-comparison-table) td:first-child {
-    grid-column: 1 / -1; padding-bottom: 8px;
+    grid-column: 1 / -1; padding-bottom: 6px;
     border-bottom: 1px solid var(--line-soft);
   }
   .ta-table:not(.ta-comparison-table) td:first-child:before { display: none; }
@@ -314,6 +372,10 @@
   .ta-position-table td:last-child,
   .ta-league-table td:nth-child(7), .ta-league-table td:last-child,
   .ta-trade-table td:nth-child(2), .ta-trade-table td:nth-child(3) { grid-column: 1 / -1; }
+  /* Long values wrap rather than shove the card open. */
+  .ta-table:not(.ta-comparison-table) td { overflow-wrap: anywhere; }
+  .ta-table:not(.ta-comparison-table) td .ta-role,
+  .ta-table:not(.ta-comparison-table) td .ta-trend { justify-self: start; }
   .ta-league-table button { min-width: 0; }
 }
 
@@ -332,5 +394,6 @@
   .ta-grade-card { padding: 9px; }
   .ta-grade-card strong { font-size: 23px; }
   .ta-report-section { padding-inline: 12px; }
-  .ta-table:not(.ta-comparison-table) tbody tr { padding: 11px 12px; gap: 9px 12px; }
+  /* Three tracks hold to 375px; the gaps tighten instead of a column going. */
+  .ta-table:not(.ta-comparison-table) tbody tr { padding: 9px 10px; gap: 7px 8px; }
 }
