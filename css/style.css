@@ -279,6 +279,21 @@ a { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
 }
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -388,12 +403,31 @@ a { color: var(--accent); }
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  max-width: 45vw;
+  flex: 0 1 150px;
+  min-width: 78px;
+  max-width: min(150px, 34vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .whoami:hover { background: var(--hover); }
+
+/* The controls share one deliberate cluster. Neither dynamically inserted
+   control gets to consume the profile's name space with an auto margin. */
+.topbar-actions .notification-bell,
+.topbar-actions .dfl-preview-toggle { margin-left: 0; }
+
+@media (max-width: 560px) {
+  .topbar-inner { gap: 7px; }
+  .brand-lockup { gap: 7px; }
+  .brand-text .creed { display: none; }
+  .whoami { min-width: 76px; max-width: 108px; padding-inline: 10px; font-size: 12px; }
+  .notification-bell { flex-basis: 34px; width: 34px; height: 34px; }
+}
+@media (max-width: 350px) {
+  .brand-text { display: none; }
+  .whoami { max-width: 96px; }
+}
 
 /* ------------------------------ content ------------------------------ */
 

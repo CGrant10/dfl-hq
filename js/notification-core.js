@@ -9,6 +9,9 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
 ]);
 
 export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) => id);
+/* App releases remain visible in What's New and behind Check for updates, but
+   should not buzz every member's phone unless they explicitly opt in. */
+export const DEFAULT_NOTIFICATION_CATEGORIES = ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates");
 
 export function safeNotificationUrl(value) {
   const url = String(value || "").trim();

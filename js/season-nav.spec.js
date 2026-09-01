@@ -7,7 +7,7 @@ import {
 } from "./season-nav.js";
 
 describe("regular-season navigation", () => {
-  it("puts trade analysis in the primary bar with the weekly league tools", () => {
+  it("puts the analyzer in the primary bar with the weekly league tools", () => {
     expect(PRIMARY_SEASON_ROUTES.map((item) => item.route))
       .toEqual(["home", "rules", "analyzer", "facts", "finances"]);
     expect(PRIMARY_SEASON_ROUTES.find((item) => item.lead)?.route).toBe("analyzer");
@@ -24,6 +24,7 @@ describe("regular-season navigation", () => {
     expect(new Set(routes).size).toBe(routes.length);
     expect(primarySeasonNavMarkup()).toContain('id="more-btn"');
     expect(primarySeasonNavMarkup()).toContain('data-route="analyzer"');
+    expect(primarySeasonNavMarkup()).toContain("Analyzer");
     expect(secondarySeasonNavMarkup()).toContain('href="#/golf"');
   });
 });

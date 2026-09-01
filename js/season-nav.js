@@ -3,7 +3,7 @@
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
   { route: "rules", label: "Rules", icon: "rules" },
-  { route: "analyzer", label: "Trade", icon: "trade", lead: true },
+  { route: "analyzer", label: "Analyzer", icon: "trade", lead: true },
   { route: "facts", label: "Facts", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
 ];

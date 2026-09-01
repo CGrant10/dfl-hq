@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cleanNotificationDraft, safeNotificationUrl, timeAgo } from "./notification-core.js";
+import { cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, safeNotificationUrl, timeAgo } from "./notification-core.js";
 
 describe("notification helpers", () => {
+  it("keeps app updates off by default while leaving them available", () => {
+    expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("updates");
+    expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("announcements");
+  });
   it("keeps only internal notification destinations", () => {
     expect(safeNotificationUrl("#/polls?id=4")).toBe("#/polls?id=4");
     expect(safeNotificationUrl("https://bad.example")).toBe("#/home");

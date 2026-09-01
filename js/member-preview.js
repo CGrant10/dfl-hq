@@ -439,7 +439,7 @@ export function refreshMemberPreview() {
 }
 
 export function mountMemberPreview() {
-  const bar = document.querySelector(".topbar-inner");
+  const bar = document.querySelector(".topbar-actions") || document.querySelector(".topbar-inner");
   const whoami = document.getElementById("whoami");
   if (!bar || button()) return refreshMemberPreview();
   ensureStyles();

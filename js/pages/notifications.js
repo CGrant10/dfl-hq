@@ -1,6 +1,6 @@
 import { currentMember } from "../members.js";
 import { esc, errorBox, toast } from "../ui.js";
-import { ALL_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
+import { DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
 import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription, testNotification } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
 
@@ -9,7 +9,7 @@ const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] 
 function settingsMarkup(state) {
   const capability = pushCapability();
   const active = state?.enabled && !!state?.subscription;
-  const selected = new Set(state?.categories || ALL_NOTIFICATION_CATEGORIES);
+  const selected = new Set(state?.categories || DEFAULT_NOTIFICATION_CATEGORIES);
   return `<section class="notify-setup">
     <div class="notify-setup-copy">
       <small>THIS DEVICE</small>
@@ -50,8 +50,10 @@ export async function render(view) {
   }
   let rows = [], preferences = null;
   try {
-    const [inboxRows, pushState] = await Promise.all([inbox(), pushPreferences()]);
-    rows = inboxRows; preferences = pushState;
+    /* Preferences may repair an older device enrollment, so load them before
+       the inbox request that relies on the same device token. */
+    preferences = await pushPreferences();
+    rows = await inbox();
   } catch (err) {
     view.innerHTML = `<h1>Notifications</h1>${errorBox(err)}<div class="card"><div class="card-body muted">Run <strong>notifications_schema.sql</strong> in Supabase to finish notification setup.</div></div>`;
     return;

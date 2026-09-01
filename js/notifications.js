@@ -1,6 +1,6 @@
 import { db, edge } from "./supabase.js";
 import { currentMember } from "./members.js";
-import { ALL_NOTIFICATION_CATEGORIES } from "./notification-core.js";
+import { DEFAULT_NOTIFICATION_CATEGORIES } from "./notification-core.js";
 
 const BADGE_EVENT = "dfl:notifications-changed";
 const tokenKey = memberId => `dfl.notification.deviceToken.${memberId}`;
@@ -44,7 +44,7 @@ function deviceLabel() {
   return "Web browser";
 }
 
-export async function enrollSubscription(subscription, categories = ALL_NOTIFICATION_CATEGORIES) {
+export async function enrollSubscription(subscription, categories = DEFAULT_NOTIFICATION_CATEGORIES) {
   const json = subscription.toJSON();
   const member = currentMember();
   const { data, error } = await db().rpc("enroll_push_subscription", {
@@ -62,7 +62,7 @@ export async function enrollSubscription(subscription, categories = ALL_NOTIFICA
   return data;
 }
 
-export async function saveSubscription(subscription, categories = ALL_NOTIFICATION_CATEGORIES) {
+export async function saveSubscription(subscription, categories = DEFAULT_NOTIFICATION_CATEGORIES) {
   const { data, error } = await db().rpc("save_push_preferences", {
     push_endpoint: subscription.endpoint,
     push_categories: categories,
@@ -77,7 +77,7 @@ export async function saveSubscription(subscription, categories = ALL_NOTIFICATI
   meant the members most likely to want alerts - the ones who had never opened
   the profile settings - could not turn them on at all.
 */
-export async function enablePush(categories = ALL_NOTIFICATION_CATEGORIES) {
+export async function enablePush(categories = DEFAULT_NOTIFICATION_CATEGORIES) {
   if (!currentMember()) throw new Error("Pick your DFL member first");
   const capability = pushCapability();
   if (!capability.supported) throw new Error(capability.reason);
@@ -145,14 +145,25 @@ export async function disablePush() {
 
 export async function pushPreferences() {
   const subscription = await currentPushSubscription();
-  if (!subscription) return { subscription: null, enabled: false, categories: ALL_NOTIFICATION_CATEGORIES };
-  const { data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint });
+  if (!subscription) return { subscription: null, enabled: false, categories: DEFAULT_NOTIFICATION_CATEGORIES };
+  let { data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint });
   if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
+  let row = Array.isArray(data) ? data[0] : data;
+  /* A browser push subscription survives normal app updates, while its local
+     device token can be lost during an older cache/storage migration. The old
+     UI called that device "off" and invited the member to enable it again on
+     every visit. Repair the backend enrollment once instead; the browser has
+     already granted permission, so no permission prompt is shown. */
+  if (!row && Notification.permission === "granted") {
+    await enrollSubscription(subscription, DEFAULT_NOTIFICATION_CATEGORIES);
+    ({ data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint }));
+    if (error) throw error;
+    row = Array.isArray(data) ? data[0] : data;
+  }
   return {
     subscription,
     enabled: !!row?.enabled,
-    categories: Array.isArray(row?.categories) ? row.categories : ALL_NOTIFICATION_CATEGORIES,
+    categories: Array.isArray(row?.categories) ? row.categories : DEFAULT_NOTIFICATION_CATEGORIES,
   };
 }
 

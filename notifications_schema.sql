@@ -58,7 +58,7 @@ create table if not exists public.push_subscriptions (
   p256dh text not null,
   auth text not null,
   categories jsonb not null default
-    '["announcements","trades","polls","fees","matchups","events","updates"]'::jsonb,
+    '["announcements","trades","polls","fees","matchups","events"]'::jsonb,
   device_label text,
   user_agent text,
   enabled boolean not null default true,
@@ -68,6 +68,15 @@ create table if not exists public.push_subscriptions (
   updated_at timestamptz not null default now(),
   constraint push_categories_array check (jsonb_typeof(categories) = 'array')
 );
+
+/* App updates stay available as an opt-in category. Existing devices that
+   still have the original untouched all-categories default move to the quieter
+   default; customized category lists are preserved exactly as chosen. */
+alter table public.push_subscriptions alter column categories set default
+  '["announcements","trades","polls","fees","matchups","events"]'::jsonb;
+update public.push_subscriptions
+   set categories = categories - 'updates', updated_at = now()
+ where categories = '["announcements","trades","polls","fees","matchups","events","updates"]'::jsonb;
 
 -- The Web Push signing key is created by the Edge Function on first use. It is
 -- never returned by an RPC, never granted to browser roles, and never enters
