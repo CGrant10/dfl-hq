@@ -18,8 +18,10 @@ describe("projectSeason", () => {
   it("spends a full season of games on each team", () => {
     const out = projectSeason({ teams: SPREAD, runs: 400 });
     for (const p of out.values()) {
-      /* A printed record must add up to the season it describes. */
-      expect(p.wins + p.losses).toBeCloseTo(REGULAR_SEASON_WEEKS, 5);
+      /* A record is whole games and must add up to the season it describes. */
+      expect(Number.isInteger(p.wins)).toBe(true);
+      expect(Number.isInteger(p.losses)).toBe(true);
+      expect(p.wins + p.losses).toBe(REGULAR_SEASON_WEEKS);
     }
   });
 
@@ -34,11 +36,13 @@ describe("projectSeason", () => {
     expect(worst.lastOdds).toBeGreaterThan(best.lastOdds);
   });
 
-  it("hands an even league even odds, near 7-7", () => {
+  it("hands an even league even odds, near .500", () => {
     const out = projectSeason({ teams: EVEN, runs: 1200 });
     for (const p of out.values()) {
-      expect(p.wins).toBeGreaterThan(6);
-      expect(p.wins).toBeLessThan(8);
+      /* 13 weeks cannot split evenly, so 6 or 7 is the honest answer. */
+      expect([6, 7]).toContain(p.wins);
+      expect(p.expectedWins).toBeGreaterThan(6);
+      expect(p.expectedWins).toBeLessThan(7);
       /* Twelve identical teams, eight berths: two thirds each. */
       expect(p.playoffOdds).toBeGreaterThan(.5);
       expect(p.playoffOdds).toBeLessThan(.8);
@@ -70,7 +74,7 @@ describe("projectSeason", () => {
     const before = projectSeason({ teams: SPREAD, runs: 800 }).get("t12");
     const improved = SPREAD.map(t => (t.id === "t12" ? { ...t, mean: 140 } : t));
     const after = projectSeason({ teams: improved, runs: 800 }).get("t12");
-    expect(after.wins).toBeGreaterThan(before.wins);
+    expect(after.expectedWins).toBeGreaterThan(before.expectedWins);
   });
 
   /* Variance is the whole reason a projection is not a ranking. */
@@ -94,11 +98,11 @@ describe("projectSeason", () => {
 describe("outlookSentence", () => {
   it("says something different at each tier", () => {
     const said = new Set([
-      outlookSentence({ wins: 11, losses: 3, playoffOdds: .97, titleOdds: .3 }),
-      outlookSentence({ wins: 9, losses: 5, playoffOdds: .85, titleOdds: .1 }),
-      outlookSentence({ wins: 7.5, losses: 6.5, playoffOdds: .6, titleOdds: .05 }),
-      outlookSentence({ wins: 6.5, losses: 7.5, playoffOdds: .3, titleOdds: .02 }),
-      outlookSentence({ wins: 4, losses: 10, playoffOdds: .05, titleOdds: 0 }),
+      outlookSentence({ wins: 10, losses: 3, playoffOdds: .97, titleOdds: .3 }),
+      outlookSentence({ wins: 9, losses: 4, playoffOdds: .85, titleOdds: .1 }),
+      outlookSentence({ wins: 7, losses: 6, playoffOdds: .6, titleOdds: .05 }),
+      outlookSentence({ wins: 6, losses: 7, playoffOdds: .3, titleOdds: .02 }),
+      outlookSentence({ wins: 4, losses: 9, playoffOdds: .05, titleOdds: 0 }),
     ]);
     expect(said.size).toBe(5);
   });

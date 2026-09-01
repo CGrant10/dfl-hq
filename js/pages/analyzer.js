@@ -3,7 +3,7 @@ import { currentMember } from "../members.js";
 import { ANALYZER_UNITS, compareTeams } from "../team-analyzer.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
-import { LEAGUE_WEEKLY_SD, outlookSentence, projectSeason } from "../season-outlook.js";
+import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason } from "../season-outlook.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -65,7 +65,8 @@ function rosterReport(team, pool) {
   const starters = new Set(team.lineup.starters.map(player => player.id));
   const flexId = team.lineup.flexId;
   const ordered = [...team.lineup.starters, ...team.lineup.bench];
-  return section("FULL ROSTER", "Player outlook", { open: true,
+  return section("FULL ROSTER", "Player outlook", { open: false,
+    hint: `${ordered.length} players`,
     aside: `<span class="ta-inline-note">Projection leads · prior production is pace-adjusted for games played</span>`,
     body: `<div class="ta-table-wrap"><table class="ta-table ta-roster-table"><thead><tr><th>Player</th><th>Role</th><th>Expected</th><th>Per game</th><th>Trend</th><th>Projection</th><th>Prior pace</th><th>Pos rank</th><th>Value</th></tr></thead><tbody>${ordered.map((player, index) => {
     const starting = starters.has(player.id);
@@ -117,28 +118,31 @@ function seasonOutlook(team, projections, teams) {
   const chipTeam = teams.find(t => String(t.id) === String(chip?.[0]));
   const titleRank = ranked.findIndex(([id]) => String(id) === String(team.id)) + 1;
 
-  return section("SEASON OUTLOOK", "What this roster buys", { open: true,
-    body: `<div class="so-card">
+  return `<section class="so-panel">
+    <header class="so-head">
+      <div><small>SEASON OUTLOOK</small><h2>${esc(teamName(team))}</h2></div>
       <div class="so-record">
-        <small>PROJECTED RECORD</small>
-        <strong>${projection.wins.toFixed(1)}<i>-</i>${projection.losses.toFixed(1)}</strong>
-        <span>average finish ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
+        <strong>${projection.wins}<i>-</i>${projection.losses}</strong>
+        <span>projected · ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
       </div>
+    </header>
+    <div class="so-body">
       <p class="so-summary">${esc(outlookSentence(projection, ordinal(team.rank), teams.length))}</p>
       <div class="so-odds">
-        <div class="so-odd"><small>Playoffs</small><b>${pct(projection.playoffOdds)}</b><i>8 of ${teams.length} qualify</i></div>
-        <div class="so-odd is-title"><small>Championship</small><b>${pct(projection.titleOdds)}</b><i>${titleRank ? `${ordinal(titleRank)} best odds` : "—"}</i></div>
+        <div class="so-odd"><small>Playoffs</small><b>${pct(projection.playoffOdds)}</b><i>8 of ${teams.length}</i></div>
+        <div class="so-odd is-title"><small>Championship</small><b>${pct(projection.titleOdds)}</b><i>${titleRank ? `${ordinal(titleRank)} best` : "—"}</i></div>
         <div class="so-odd is-chip"><small>Chip Eater</small><b>${pct(projection.lastOdds)}</b><i>finishing last</i></div>
       </div>
       <dl class="so-field">
         <div><dt>Title favourite</dt><dd>${esc(favourite ? teamName(favourite) : "—")} · ${pct(ranked[0]?.[1]?.titleOdds)}</dd></div>
         <div><dt>Chip Eater favourite</dt><dd>${esc(chipTeam ? teamName(chipTeam) : "—")} · ${pct(chip?.[1]?.lastOdds)}</dd></div>
       </dl>
-      <p class="ta-note">${DEFAULT_RUNS_NOTE}</p>
-    </div>` });
+      <details class="ta-method so-method"><summary>How this is calculated</summary><p>${DEFAULT_RUNS_NOTE}</p></details>
+    </div>
+  </section>`;
 }
 
-const DEFAULT_RUNS_NOTE = `3,000 simulated seasons on each roster's projected weekly points, with a `
+const DEFAULT_RUNS_NOTE = `3,000 simulated ${REGULAR_SEASON_WEEKS}-week seasons on each roster's projected weekly points, with a `
   + `${LEAGUE_WEEKLY_SD}-point weekly spread measured from 24 team-seasons of real DFL matchups. `
   + `No 2026 schedule has been published, so each week draws a random opponent — the odds describe the roster, not a fixture list.`;
 
@@ -162,14 +166,15 @@ function page(data) {
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>One continuous report using current expectations, last season’s production and the league’s actual scoring.</p></div><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>One continuous report using current expectations, last season’s production and the league’s actual scoring.</p></div><div data-ta-outlook></div><main class="ta-report" data-ta-body></main>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         const opponent = data.teams.find(item => item.id === compareId && item.id !== team.id) || data.teams.find(item => item.id !== team.id) || team;
         compareId = opponent.id;
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${seasonOutlook(team, projections, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        view.querySelector("[data-ta-outlook]").innerHTML = seasonOutlook(team, projections, data.teams);
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,

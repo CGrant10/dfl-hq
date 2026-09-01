@@ -30,8 +30,9 @@
   median weekly SD 22.9, mean 22.7, range 13.5 to 33.1.
 */
 export const LEAGUE_WEEKLY_SD = 22.9;
-/* Sleeper runs the DFL playoffs from week 15, so fourteen weeks decide seeding. */
-export const REGULAR_SEASON_WEEKS = 14;
+/* The DFL plays a 13-week regular season and a 3-week bracket. */
+export const REGULAR_SEASON_WEEKS = 13;
+export const PLAYOFF_WEEKS = 3;
 export const DEFAULT_RUNS = 3000;
 
 /* mulberry32 - small, fast, and good enough for counting outcomes. */
@@ -136,12 +137,22 @@ export function projectSeason({ teams = [], playoffTeams = 8, weeks = REGULAR_SE
   }
 
   for (const [id, record] of tally) {
-    /* Losses come off the ROUNDED wins, not the raw mean. Rounding both
-       independently let each go up and printed 10.2-3.9 in a 14-game season. */
-    const wins = Math.round((record.wins / runs) * 10) / 10;
+    /*
+      A RECORD IS WHOLE GAMES.
+
+      This reported the simulation's mean to one decimal - 6.8-7.2 - which is
+      not a record anybody can finish with. Nobody wins four fifths of a game.
+      The mean is still the honest centre of the distribution, so it is kept as
+      expectedWins for anything that needs the precision, but what gets shown
+      is the season it rounds to, and losses come off the rounded wins so the
+      two always add up to the weeks played.
+    */
+    const expectedWins = record.wins / runs;
+    const wins = Math.round(expectedWins);
     out.set(id, {
       wins,
-      losses: Math.round((weeks - wins) * 10) / 10,
+      losses: weeks - wins,
+      expectedWins: Math.round(expectedWins * 10) / 10,
       playoffOdds: record.playoff / runs,
       titleOdds: record.title / runs,
       lastOdds: record.last / runs,
@@ -158,7 +169,7 @@ export function outlookSentence(projection, rank, count) {
   /* Phrased to lead with the number rather than an article. "A 8.5-5.5 pace"
      was the first draft, and an article that has to agree with a numeral is a
      bug waiting on the one season somebody goes 8-6 or 11-3. */
-  const record = `${wins.toFixed(1)}-${losses.toFixed(1)}`;
+  const record = `${wins}-${losses}`;
   if (titleOdds >= .2) return `Projected ${record}, with the best title odds in the league — this roster is the one to beat.`;
   if (playoffOdds >= .8) return `Projected ${record}. The bracket is close to a formality; seeding is what is left to play for.`;
   if (playoffOdds >= .5) return `Projected ${record}, which makes the bracket more likely than not — but with little margin.`;

@@ -554,38 +554,62 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* =====================================================================
    SEASON OUTLOOK - what the roster is likely to buy
    ---------------------------------------------------------------------
-   The record leads because it is the thing anyone repeats out loud. The
-   three odds sit under it as equals, and the Chip Eater gets the same
-   weight as the championship - in this league the punishment is as much
-   of a motivator as the trophy.
+   The first card on the page, and deliberately the most compact one on
+   it. The record sits in the header beside the team name rather than in
+   a block of its own, and the three odds are one row. Everything the
+   card has to say fits on a phone screen without scrolling, which is the
+   whole point of putting it first.
    ===================================================================== */
 
-.so-card { display: grid; gap: 14px; }
-.so-record {
-  padding: 14px 16px; border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
-  background: color-mix(in srgb, var(--accent-fill) 9%, var(--bg-3));
+.so-panel {
+  --ta-micro: 11px; --ta-small: 12.5px; --ta-body: 14px; --ta-lead: 16px;
+  overflow: hidden; margin: 0 0 var(--s-4);
+  border: 1px solid var(--line); border-radius: 18px;
+  background: var(--bg-2); box-shadow: var(--shadow);
 }
-.so-record small { display: block; color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; }
-.so-record strong { display: block; margin: 4px 0 2px; font-family: var(--font-display); font-size: 42px; line-height: 1; letter-spacing: -.03em; }
-.so-record strong i { font-style: normal; color: var(--muted); margin: 0 2px; }
-.so-record span { color: var(--muted); font-size: var(--ta-small); }
-.so-summary { margin: 0; font-size: var(--ta-body); line-height: 1.5; }
+.so-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+}
+.so-head small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.so-head h2 { margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; letter-spacing: -.02em; }
+/* The record lives in the header - it is the headline, not a section. */
+.so-record { flex: none; text-align: right; }
+.so-record strong { display: block; font-family: var(--font-display); font-size: 38px; line-height: .9; letter-spacing: -.04em; }
+.so-record strong i { font-style: normal; color: var(--muted); margin: 0 1px; }
+.so-record span { display: block; margin-top: 3px; color: var(--muted); font-size: var(--ta-micro); }
 
-.so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.so-odd { min-width: 0; padding: 11px 12px; border-radius: 11px; border: 1px solid var(--line-soft); background: var(--bg-3); }
-.so-odd small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
-.so-odd b { display: block; margin: 3px 0 1px; font-family: var(--font-display); font-size: 26px; line-height: 1; }
+.so-body { display: grid; gap: 10px; padding: 14px 20px 16px; }
+.so-summary { margin: 0; font-size: var(--ta-body); line-height: 1.45; }
+
+.so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.so-odd { min-width: 0; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line-soft); background: var(--bg-3); }
+.so-odd small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .04em; }
+.so-odd b { display: block; margin: 2px 0 0; font-family: var(--font-display); font-size: 24px; line-height: 1; }
 .so-odd i { font-style: normal; color: var(--muted); font-size: var(--ta-micro); }
 .so-odd.is-title { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
 .so-odd.is-title b { color: var(--ok); }
 .so-odd.is-chip { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
 .so-odd.is-chip b { color: var(--danger); }
 
-.so-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; background: var(--line-soft); border-radius: 10px; overflow: hidden; }
-.so-field div { min-width: 0; padding: 10px 12px; background: var(--bg-3); }
-.so-field dt { color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
-.so-field dd { margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-body); font-weight: 700; }
+.so-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.so-field div { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
+.so-field dt { flex: none; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .04em; }
+.so-field dd { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-small); font-weight: 700; }
+
+/* The footnote is a footnote: no border, no bar, just a disclosure. */
+.so-method { padding: 0; border: 0; background: none; }
+
+@media (max-width: 680px) {
+  .so-head { padding: 14px; }
+  .so-head h2 { font-size: 19px; }
+  .so-record strong { font-size: 32px; }
+  .so-body { padding: 12px 14px 14px; }
+  .so-odd { padding: 8px 9px; }
+  .so-odd b { font-size: 20px; }
+  .so-field { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+}
 
 /* Three grades in one cell, so the projected table loses two columns. */
 .ta-gradeset { display: inline-flex; gap: 5px; }
