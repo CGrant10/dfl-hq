@@ -57,6 +57,8 @@ create table if not exists public.push_subscriptions (
   endpoint text not null unique,
   p256dh text not null,
   auth text not null,
+  /* "updates" is app release notes and is deliberately absent - see
+     DEFAULT_NOTIFICATION_CATEGORIES in js/notification-core.js. */
   categories jsonb not null default
     '["announcements","trades","polls","fees","matchups","events"]'::jsonb,
   device_label text,

@@ -2976,3 +2976,32 @@ body.has-bottomline .toast { bottom: calc(88px + var(--bl-h) + env(safe-area-ins
 .notification-count.hidden { display:none; }
 .notification-bell + .whoami { margin-left:0; }
 .broadcast-mode .notification-bell { display:none; }
+
+/* =====================================================================
+   TOPBAR DENSITY
+
+   The bar grew two controls - the commissioner switch and the notification
+   bell - and on a phone the thing that gave way was the member's own name,
+   squeezed to an ellipsis. Wrong casualty: the name is what tells you WHO the
+   app currently thinks you are, which is exactly what you check before acting
+   as a commissioner.
+
+   What gives way instead is the "DFL HQ" wordmark. The seal stays, so the bar
+   is still branded, and nobody needs to be told which app they have open on
+   their own phone. That is ~60px back - enough for the longest name in the
+   league next to both controls.
+
+   NOT the commissioner label: member-preview.js already shortens it to
+   "Commish" at 430px and warns, from experience, that dropping it entirely
+   leaves the view unnamed. Decoration goes before meaning.
+   ===================================================================== */
+.topbar-inner .brand-text { min-width: 0; }
+.topbar-inner .whoami { flex: 0 1 auto; min-width: 0; }
+.topbar-inner .dfl-preview-toggle { flex: 0 0 auto; }
+
+@media (max-width: 430px) {
+  .topbar-inner .brand-text { display: none; }
+  /* Now that it is not competing with the wordmark, the name holds its width
+     and truncates only when it is genuinely too long for the space. */
+  .topbar-inner .whoami { flex-shrink: 0; max-width: 48vw; }
+}

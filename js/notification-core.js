@@ -9,9 +9,22 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
 ]);
 
 export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) => id);
-/* App releases remain visible in What's New and behind Check for updates, but
-   should not buzz every member's phone unless they explicitly opt in. */
-export const DEFAULT_NOTIFICATION_CATEGORIES = ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates");
+/*
+  WHAT A NEW DEVICE GETS, which is not everything.
+
+  "App updates" is release notes - housekeeping the app says about itself, not
+  league business. It is the one category that fires without a commissioner
+  deciding anybody needed to know, so it is the one most likely to make a
+  member regret turning notifications on, and a member who turns them off
+  because of it loses the trades and the fee reminders too. Releases stay
+  visible in What's New and behind Check for updates either way.
+
+  Off by default, still one tap away in "What should reach this phone?".
+  Existing devices keep whatever they already chose - this is the default for
+  a NEW enrolment, not a migration.
+*/
+export const DEFAULT_NOTIFICATION_CATEGORIES =
+  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates");
 
 export function safeNotificationUrl(value) {
   const url = String(value || "").trim();

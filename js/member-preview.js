@@ -449,6 +449,9 @@ export function mountMemberPreview() {
   node.dataset.dflPreviewToggle = "";
   node.hidden = true;
   node.setAttribute("aria-pressed", "false");
+  /* The visible word is dropped on narrow screens, so the button carries its
+     own accessible name rather than relying on the label being rendered. */
+  node.setAttribute("aria-label", "Commissioner view");
   node.innerHTML = `<span class="dfl-preview-track" aria-hidden="true"><span class="dfl-preview-knob"></span></span><span class="dfl-preview-label"><span class="dfl-preview-word">Commissioner</span><span class="dfl-preview-short" aria-hidden="true">Commish</span></span>`;
   node.addEventListener("click", toggle);
   bar.insertBefore(node, whoami || null);
