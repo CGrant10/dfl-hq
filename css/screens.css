@@ -241,6 +241,30 @@
   font-variant-numeric: tabular-nums;
 }
 .rec-who { font-size: var(--fs-body); font-weight: var(--fw-bold); }
+
+.trade-fleece-shell { margin-bottom: var(--s-3); }
+.fleece-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.fleece-head > div { display:grid; gap:2px; }
+.fleece-head strong { font:800 18px/1 var(--display); text-transform:uppercase; letter-spacing:.04em; }
+.fleece-head span:not(.pill) { color:var(--muted); font-size:12px; }
+.fleece-list { display:grid; gap:10px; }
+.fleece-card { display:grid; grid-template-columns:44px 1fr 1fr; gap:10px; padding:14px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--bg-2); }
+.fleece-rank { grid-row:1 / span 2; display:grid; place-items:center; border-radius:10px; background:color-mix(in srgb,var(--accent) 13%,var(--bg-3)); color:var(--accent); font:900 20px/1 var(--display); }
+.fleece-meta { grid-column:2 / -1; display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+.fleece-meta b { color:var(--milestone); }
+.fleece-side { display:grid; gap:2px; min-width:0; padding:10px; border-radius:10px; background:var(--bg-3); }
+.fleece-side small { font-size:9px; font-weight:900; letter-spacing:.09em; }
+.fleece-side strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fleece-side span { color:var(--muted); font-size:12px; line-height:1.35; }
+.fleece-side.is-winner small { color:var(--ok); }
+.fleece-side.is-loser small { color:var(--danger); }
+.fleece-method { margin:9px 2px 0; color:var(--muted); font-size:11px; line-height:1.45; }
+@media (max-width:620px) {
+  .fleece-card { grid-template-columns:38px 1fr; }
+  .fleece-rank { grid-row:1; }
+  .fleece-meta { grid-column:2; }
+  .fleece-side { grid-column:1 / -1; }
+}
 .rec-when {
   font-size: var(--fs-micro);
   color: var(--muted);

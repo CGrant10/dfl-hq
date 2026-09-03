@@ -11,6 +11,8 @@
 // =====================================================================
 
 import { db } from "../supabase.js";
+import { loadPlayers, loadSeasonStats } from "../sleeper.js";
+import { rankTradeFleeces } from "../trade-fleeces.js";
 import { editableName, wireNamePick } from "../name-pick.js";
 import { setSeasonResult } from "../season-result.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
@@ -560,7 +562,8 @@ async function loadTrades() {
   if (tradeCache) return tradeCache;
   const { data, error } = await db()
     .from("sleeper_transactions")
-    .select("season, week, type, status, details").eq("type", "trade");
+    .select("season, week, type, status, details")
+    .eq("type", "trade").eq("status", "complete");
   tradeCache = { trades: data || [], error: error || null };
   return tradeCache;
 }
@@ -651,6 +654,16 @@ async function recordsView(body, data) {
 
     ${rec.error ? "" : tradeBoard(rec.trades, data)}
   `;
+
+  const fleeceHost = body.querySelector("[data-fleece-board]");
+  if (fleeceHost) {
+    loadTradeOutcomes(rec.trades, data).then(result => {
+      if (!fleeceHost.isConnected) return;
+      fleeceHost.innerHTML = result.error
+        ? `<p class="muted tiny">Historical trade outcomes could not be loaded.</p>`
+        : fleeceBoard(result.rankings, data, result.players);
+    });
+  }
 }
 
 /** One record: what it is, the number, who holds it, and when. */
@@ -682,10 +695,7 @@ function seasonRecords(standings) {
 
 /** Who trades. Counted per roster, since a trade names rosters, not users. */
 function tradeBoard(allTrades, data) {
-  // Every trade currently synced is "complete", but a vetoed or failed one
-  // must never pad somebody's count. An empty status is treated as complete,
-  // since that is what older synced rows look like.
-  const trades = allTrades.filter((t) => !t.status || t.status === "complete");
+  const trades = allTrades.filter((t) => t.status === "complete" && t.details?.status === "complete");
   if (!trades.length) return "";
 
   const perRoster = new Map();      // "season:rosterId" -> count
@@ -715,6 +725,7 @@ function tradeBoard(allTrades, data) {
 
   return `
     <h2 class="section-title">Trades<span class="count">${trades.length}</span></h2>
+    <div class="trade-fleece-shell" data-fleece-board>${loading("Grading the completed trades…")}</div>
     <div class="card recbook">
       ${rows.map((r, i) => `
         <div class="rec">
@@ -723,6 +734,50 @@ function tradeBoard(allTrades, data) {
           <span class="rec-val">${r.n}</span>
         </div>`).join("")}
     </div>`;
+}
+
+let tradeOutcomeCache = null;
+async function loadTradeOutcomes(trades, data) {
+  if (tradeOutcomeCache) return tradeOutcomeCache;
+  tradeOutcomeCache = (async () => {
+    try {
+      const completedSeasons = data.leagues.filter(row => row.status === "complete" && row.scoring_settings)
+        .map(row => Number(row.season)).filter(Number.isFinite);
+      const latestSeason = Math.max(0, ...completedSeasons);
+      const scoringBySeason = new Map(data.leagues.map(row => [Number(row.season), row.scoring_settings]));
+      const years = [...new Set(trades.flatMap(trade => {
+        const out = [];
+        for (let year = Number(trade.season) + 1; year <= Math.min(Number(trade.season) + 3, latestSeason); year++) {
+          if (scoringBySeason.get(year)) out.push(year);
+        }
+        return out;
+      }))].sort();
+      const [players, ...stats] = await Promise.all([loadPlayers(), ...years.map(loadSeasonStats)]);
+      const statsBySeason = new Map(years.map((year, index) => [year, stats[index]?.data || {}]));
+      return { players, rankings: rankTradeFleeces({ trades, latestSeason, statsBySeason, scoringBySeason }), error: null };
+    } catch (error) {
+      return { players: {}, rankings: [], error };
+    }
+  })();
+  return tradeOutcomeCache;
+}
+
+function fleeceBoard(rankings, data, players) {
+  if (!rankings.length) return `<p class="muted tiny">No completed trade has enough post-trade history to grade yet.</p>`;
+  const name = namer(data);
+  const owner = new Map(data.standings.map(row => [`${row.season}:${row.roster_id}`, row.sleeper_user_id]));
+  const team = (trade, side) => name(owner.get(`${trade.season}:${side.rosterId}`), trade.season, side.rosterId).label;
+  const assets = side => side.playerIds.map(id => players[id]?.n || `Player ${id}`).join(", ");
+
+  return `<div class="fleece-head"><div><strong>Biggest fleeces</strong><span>Best and worst sides of the most lopsided completed deals</span></div><span class="pill">TOP ${Math.min(5, rankings.length)}</span></div>
+    <div class="fleece-list">${rankings.slice(0, 5).map((row, index) => `
+      <article class="fleece-card">
+        <div class="fleece-rank">#${index + 1}</div>
+        <div class="fleece-meta">${esc(row.trade.season)} · Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} outcome pts</b></div>
+        <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><span>Received ${esc(assets(row.winner))}</span></div>
+        <div class="fleece-side is-loser"><small>WORST SIDE</small><strong>${esc(team(row.trade, row.loser))}</strong><span>Received ${esc(assets(row.loser))}</span></div>
+      </article>`).join("")}</div>
+    <p class="fleece-method">Outcome points are each package’s average DFL-scored production over the next one to three completed seasons. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
 }
 
 // -------------------------------- bits --------------------------------
