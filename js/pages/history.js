@@ -767,15 +767,16 @@ function fleeceBoard(rankings, data, players) {
   const name = namer(data);
   const owner = new Map(data.standings.map(row => [`${row.season}:${row.roster_id}`, row.sleeper_user_id]));
   const team = (trade, side) => name(owner.get(`${trade.season}:${side.rosterId}`), trade.season, side.rosterId).label;
-  const assets = side => side.playerIds.map(id => players[id]?.n || `Player ${id}`).join(", ");
+  const assets = side => side.playerIds.map(id =>
+    `<b class="fleece-player">${esc(players[id]?.n || `Player ${id}`)}</b>`).join("");
 
   return `<div class="fleece-head"><div><strong>Biggest fleeces</strong><span>Best and worst sides of the most lopsided completed deals</span></div><span class="pill">TOP ${Math.min(5, rankings.length)}</span></div>
     <div class="fleece-list">${rankings.slice(0, 5).map((row, index) => `
       <article class="fleece-card">
         <div class="fleece-rank">#${index + 1}</div>
         <div class="fleece-meta">${esc(row.trade.season)} · Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} outcome pts</b></div>
-        <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><span>Received ${esc(assets(row.winner))}</span></div>
-        <div class="fleece-side is-loser"><small>WORST SIDE</small><strong>${esc(team(row.trade, row.loser))}</strong><span>Received ${esc(assets(row.loser))}</span></div>
+        <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.winner)}</div></div>
+        <div class="fleece-side is-loser"><small>WORST SIDE</small><strong>${esc(team(row.trade, row.loser))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.loser)}</div></div>
       </article>`).join("")}</div>
     <p class="fleece-method">Outcome points are each package’s average DFL-scored production over the next one to three completed seasons. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
 }
