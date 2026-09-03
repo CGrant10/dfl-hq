@@ -2,6 +2,15 @@ import { APP_VERSION } from "./config.js";
 
 const bar=()=>document.getElementById("update");
 const UPDATE_CHECK_MS=10*60*1000;
+const DISMISSED_UPDATE_KEY="dfl.update.dismissedVersion";
+
+export function dismissedUpdate(version,storage=globalThis.localStorage){
+  try{return storage?.getItem(DISMISSED_UPDATE_KEY)===String(version)}catch{return false}
+}
+
+export function dismissUpdate(version,storage=globalThis.localStorage){
+  try{storage?.setItem(DISMISSED_UPDATE_KEY,String(version))}catch{}
+}
 
 function pendingGolfScores(){
   try{
@@ -36,7 +45,7 @@ async function refetchAll(){
   if(failed)console.warn(`Update: ${failed} of ${files.length} files could not be refreshed`);
 }
 
-function isNewer(remote,local){
+export function isNewer(remote,local){
   const a=String(remote).trim().split(".").map(Number),b=String(local).trim().split(".").map(Number);
   for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x>y)return true;if(x<y)return false}
   return false;
@@ -91,10 +100,13 @@ export async function forceUpdate(){
 
 export async function checkForUpdate(announce=false){
   const latest=await serverVersion(),stale=isNewer(latest,APP_VERSION),el=bar();
-  if(stale&&el){
+  if(stale&&el&&(announce||!dismissedUpdate(latest))){
     const blocked=updateBlocked();
+    el.dataset.version=latest;
     el.innerHTML=`<span class="install-text">${blocked?`Version ${latest} is ready. Finish or sync the current score first.`:`Version ${latest} is available. You have ${APP_VERSION}.`}</span><button class="btn small" id="update-go">${blocked?"Update when safe":"Update"}</button><button class="install-x" id="update-no" aria-label="Later">&times;</button>`;
     el.classList.remove("hidden");
+  }else if(stale&&el){
+    el.classList.add("hidden");
   }else if(announce&&el){
     el.innerHTML=`<span class="install-text">You are up to date (v${APP_VERSION}).</span><button class="install-x" id="update-no" aria-label="Close">&times;</button>`;
     el.classList.remove("hidden");setTimeout(()=>el.classList.add("hidden"),3500);
@@ -108,9 +120,9 @@ export function setupUpdates(){
     const go=e.target.closest("#update-go");
     if(go){
       if(updateBlocked()){el.querySelector(".install-text").textContent="Your score is still protected on this phone. Finish the entry or let it sync before updating.";return}
-      go.disabled=true;go.textContent="Updating…";el.querySelector("#update-no")?.remove();await forceUpdate();return;
+      dismissUpdate("");go.disabled=true;go.textContent="Updating…";el.querySelector("#update-no")?.remove();await forceUpdate();return;
     }
-    if(e.target.closest("#update-no"))el.classList.add("hidden");
+    if(e.target.closest("#update-no")){dismissUpdate(el.dataset.version||"");el.classList.add("hidden");}
   });
   checkForUpdate().catch(()=>{});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForUpdate().catch(()=>{})});

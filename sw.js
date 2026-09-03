@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.236.2";
+const CACHE_NAME = "dfl-hq-v1.237.0";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
@@ -46,6 +46,17 @@ self.addEventListener("fetch",event=>{
     const refreshRequest=request.mode==="navigate"?new Request(new URL("./index.html",self.registration.scope),{credentials:"same-origin"}):request;
     const refresh=refreshCached(refreshRequest);
     event.waitUntil(refresh.then(()=>{}));
+    /* The update button deliberately adds ?u=. That navigation must wait for
+       the network response instead of immediately handing the old shell back
+       from cache, otherwise the same update banner can loop forever. */
+    if(request.mode==="navigate"&&url.searchParams.has("u")){
+      event.respondWith((async()=>{
+        const fresh=await refresh;
+        if(usableCached(fresh,request))return fresh;
+        return await caches.match("./index.html")||Response.error();
+      })());
+      return;
+    }
     event.respondWith((async()=>{
       const candidate=await caches.match(request,{ignoreSearch:true})||request.mode==="navigate"&&await caches.match("./index.html");
       const cached=usableCached(candidate,request)?candidate:null;
