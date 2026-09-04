@@ -1,5 +1,12 @@
 import { scorePlayer } from "./dfl-scoring.js";
 
+// Back-to-back 2022 Week 14 joke swaps. Keep them in the league transaction
+// history, but do not let them distort the all-time fleece leaderboard.
+const FLEECE_RANKING_EXCLUDED_IDS = new Set([
+  "907844411101487104",
+  "907840843644805120",
+]);
+
 export function completedTrades(rows = []) {
   return rows.filter(row => row?.type === "trade" && row?.status === "complete" && row?.details?.status === "complete");
 }
@@ -32,7 +39,9 @@ function packageOutcome(playerIds, tradeSeason, latestSeason, statsBySeason, sco
 }
 
 export function rankTradeFleeces({ trades = [], latestSeason = 0, statsBySeason = new Map(), scoringBySeason = new Map() } = {}) {
-  return completedTrades(trades).map(trade => {
+  return completedTrades(trades).filter(trade =>
+    !FLEECE_RANKING_EXCLUDED_IDS.has(String(trade?.details?.transaction_id || ""))
+  ).map(trade => {
     const sides = tradeSides(trade).map(side => ({
       ...side,
       outcome: packageOutcome(side.playerIds, trade.season, latestSeason, statsBySeason, scoringBySeason),

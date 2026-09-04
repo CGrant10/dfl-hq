@@ -29,4 +29,16 @@ describe("historical trade fleeces", () => {
     expect(result.loser.outcome).toBe(15);
     expect(result.gap).toBe(75);
   });
+
+  it("keeps the two known prank reversals out of the fleece ranking", () => {
+    const prank = id => ({ ...trade, details: { ...trade.details, transaction_id: id } });
+    const results = rankTradeFleeces({
+      trades: [prank("907844411101487104"), prank("907840843644805120"), trade],
+      latestSeason: 2024,
+      statsBySeason: stats,
+      scoringBySeason: scoring,
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0].trade).toBe(trade);
+  });
 });
