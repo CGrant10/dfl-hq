@@ -47,7 +47,7 @@ function replacementLevels(year, statsBySeason, scoringBySeason, players) {
 
 function packageOutcome(playerIds, tradeSeason, latestSeason, statsBySeason, scoringBySeason, players, replacementsBySeason) {
   const seasons = [];
-  for (let year = Number(tradeSeason) + 1; year <= Math.min(Number(tradeSeason) + 3, latestSeason); year++) {
+  for (let year = Number(tradeSeason); year <= Math.min(Number(tradeSeason) + 2, latestSeason); year++) {
     if (statsBySeason.has(year) && scoringBySeason.has(year)) seasons.push(year);
   }
   if (!seasons.length) return null;

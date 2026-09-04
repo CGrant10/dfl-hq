@@ -31,6 +31,18 @@ describe("historical trade fleeces", () => {
     expect(result.gap).toBe(76.3);
   });
 
+  it("grades a trade from the latest completed season", () => {
+    const recentTrade = { ...trade, season: 2025 };
+    const [result] = rankTradeFleeces({
+      trades: [recentTrade], latestSeason: 2025,
+      statsBySeason: new Map([[2025, { star: { rec: 100 }, bench: { rec: 20 } }]]),
+      scoringBySeason: new Map([[2025, { rec: 1 }]]), players,
+    });
+    expect(result.trade.season).toBe(2025);
+    expect(result.winner.rosterId).toBe("1");
+    expect(result.gap).toBe(80);
+  });
+
   it("values one elite starter above three replacement-level package fillers", () => {
     const seasonStats = Object.fromEntries(Array.from({ length: 30 }, (_, index) => [`wr${index + 1}`, { rec: 200 - index * 4 }]));
     Object.assign(seasonStats, { elite: { rec: 280 }, filler1: { rec: 90 }, filler2: { rec: 70 }, filler3: { rec: 50 } });

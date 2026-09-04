@@ -745,13 +745,16 @@ async function loadTradeOutcomes(trades, data) {
   if (tradeOutcomeCache) return tradeOutcomeCache;
   tradeOutcomeCache = (async () => {
     try {
-      const completedSeasons = data.leagues.filter(row => row.status === "complete" && row.scoring_settings)
+      const lastCalendarSeason = new Date().getFullYear() - 1;
+      const completedSeasons = data.leagues.filter(row => row.scoring_settings && (
+        row.status === "complete" || Number(row.season) <= lastCalendarSeason
+      ))
         .map(row => Number(row.season)).filter(Number.isFinite);
       const latestSeason = Math.max(0, ...completedSeasons);
       const scoringBySeason = new Map(data.leagues.map(row => [Number(row.season), row.scoring_settings]));
       const years = [...new Set(trades.flatMap(trade => {
         const out = [];
-        for (let year = Number(trade.season) + 1; year <= Math.min(Number(trade.season) + 3, latestSeason); year++) {
+        for (let year = Number(trade.season); year <= Math.min(Number(trade.season) + 2, latestSeason); year++) {
           if (scoringBySeason.get(year)) out.push(year);
         }
         return out;
@@ -798,7 +801,7 @@ function fleeceBoard(rankings, data, players) {
                data-collapse-default="folded">
         <div class="fleece-list">${rows.slice(0, limit).map(card).join("")}</div>
       </section>`).join("")}</div>
-    <p class="fleece-method"><strong>Starter-impact gap</strong> measures each acquired player’s DFL points above a position-specific replacement starter over the next one to three completed seasons. The first three post-trade seasons count 50/30/20, while extra package pieces receive diminishing weight (100/50/25/10) so several bench players cannot outweigh one elite starter by volume alone. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
+    <p class="fleece-method"><strong>Starter-impact gap</strong> measures each acquired player’s DFL points above a position-specific replacement starter in the completed trade season and up to two seasons after it. Those seasons count 50/30/20, while extra package pieces receive diminishing weight (100/50/25/10) so several bench players cannot outweigh one elite starter by volume alone. The active season and pending trades are never graded, and only transactions marked complete count.</p>`;
 }
 
 // -------------------------------- bits --------------------------------
