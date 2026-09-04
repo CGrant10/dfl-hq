@@ -788,8 +788,10 @@ function fleeceBoard(rankings, data, players) {
 
   return `<div class="fleece-head"><div><strong>Biggest fleeces</strong><span>Each season ranked independently</span></div><span class="pill">TOP 5 / SEASON</span></div>
     <div class="fleece-seasons">${seasons.map(([season, rows]) => `
-      <section class="fleece-season">
-        <div class="fleece-season-head"><h3>${esc(season)}</h3><span>${Math.min(limit, rows.length)} ranked trade${Math.min(limit, rows.length) === 1 ? "" : "s"}</span></div>
+      <section class="card fleece-season" data-collapse="hist-fleeces-${esc(season)}"
+               data-collapse-title="${esc(season)}"
+               data-collapse-badge="${Math.min(limit, rows.length)} ranked trade${Math.min(limit, rows.length) === 1 ? "" : "s"}"
+               data-collapse-default="folded">
         <div class="fleece-list">${rows.slice(0, limit).map(card).join("")}</div>
       </section>`).join("")}</div>
     <p class="fleece-method"><strong>Production gap</strong> is the difference between the two received packages’ average DFL fantasy points over the next one to three completed seasons. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
