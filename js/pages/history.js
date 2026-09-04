@@ -764,23 +764,34 @@ async function loadTradeOutcomes(trades, data) {
 
 function fleeceBoard(rankings, data, players) {
   if (!rankings.length) return `<p class="muted tiny">No completed trade has enough post-trade history to grade yet.</p>`;
-  const limit = 10;
+  const limit = 5;
   const name = namer(data);
   const owner = new Map(data.standings.map(row => [`${row.season}:${row.roster_id}`, row.sleeper_user_id]));
   const team = (trade, side) => name(owner.get(`${trade.season}:${side.rosterId}`), trade.season, side.rosterId).label;
   const assets = side => side.playerIds.map(id =>
     `<b class="fleece-player">${esc(players[id]?.n || `Player ${id}`)}</b>`).join("");
+  const card = (row, index) => `<article class="fleece-card">
+    <div class="fleece-top"><div class="fleece-rank">#${index + 1}</div><div class="fleece-meta">Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} production gap</b></div></div>
+    <div class="fleece-compare">
+      <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.winner)}</div></div>
+      <span class="fleece-vs" aria-hidden="true">VS</span>
+      <div class="fleece-side is-loser"><small>WORST SIDE</small><strong>${esc(team(row.trade, row.loser))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.loser)}</div></div>
+    </div>
+  </article>`;
+  const bySeason = new Map();
+  for (const row of rankings) {
+    const season = Number(row.trade.season);
+    if (!bySeason.has(season)) bySeason.set(season, []);
+    bySeason.get(season).push(row);
+  }
+  const seasons = [...bySeason.entries()].sort((a, b) => b[0] - a[0]);
 
-  return `<div class="fleece-head"><div><strong>Biggest fleeces</strong><span>Best and worst sides of the most lopsided completed deals</span></div><span class="pill">TOP ${Math.min(limit, rankings.length)}</span></div>
-    <div class="fleece-list">${rankings.slice(0, limit).map((row, index) => `
-      <article class="fleece-card">
-        <div class="fleece-top"><div class="fleece-rank">#${index + 1}</div><div class="fleece-meta">${esc(row.trade.season)} · Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} production gap</b></div></div>
-        <div class="fleece-compare">
-          <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.winner)}</div></div>
-          <span class="fleece-vs" aria-hidden="true">VS</span>
-          <div class="fleece-side is-loser"><small>WORST SIDE</small><strong>${esc(team(row.trade, row.loser))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.loser)}</div></div>
-        </div>
-      </article>`).join("")}</div>
+  return `<div class="fleece-head"><div><strong>Biggest fleeces</strong><span>Each season ranked independently</span></div><span class="pill">TOP 5 / SEASON</span></div>
+    <div class="fleece-seasons">${seasons.map(([season, rows]) => `
+      <section class="fleece-season">
+        <div class="fleece-season-head"><h3>${esc(season)}</h3><span>${Math.min(limit, rows.length)} ranked trade${Math.min(limit, rows.length) === 1 ? "" : "s"}</span></div>
+        <div class="fleece-list">${rows.slice(0, limit).map(card).join("")}</div>
+      </section>`).join("")}</div>
     <p class="fleece-method"><strong>Production gap</strong> is the difference between the two received packages’ average DFL fantasy points over the next one to three completed seasons. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
 }
 

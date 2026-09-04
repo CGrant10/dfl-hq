@@ -247,6 +247,11 @@
 .fleece-head > div { display:grid; gap:2px; }
 .fleece-head strong { font:800 18px/1 var(--display); text-transform:uppercase; letter-spacing:.04em; }
 .fleece-head span:not(.pill) { color:var(--muted); font-size:12px; }
+.fleece-seasons { display:grid; gap:20px; }
+.fleece-season { display:grid; gap:8px; }
+.fleece-season-head { display:flex; align-items:end; justify-content:space-between; padding:0 2px 5px; border-bottom:2px solid color-mix(in srgb,var(--accent) 42%,var(--line)); }
+.fleece-season-head h3 { margin:0; color:var(--text); font:900 22px/1 var(--display); }
+.fleece-season-head span { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
 .fleece-list { display:grid; gap:10px; }
 .fleece-card { padding:14px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--bg-2); box-shadow:0 8px 24px rgba(16,24,40,.06); }
 .fleece-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
