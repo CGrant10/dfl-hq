@@ -248,25 +248,33 @@
 .fleece-head strong { font:800 18px/1 var(--display); text-transform:uppercase; letter-spacing:.04em; }
 .fleece-head span:not(.pill) { color:var(--muted); font-size:12px; }
 .fleece-list { display:grid; gap:10px; }
-.fleece-card { display:grid; grid-template-columns:44px 1fr 1fr; gap:10px; padding:14px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--bg-2); }
-.fleece-rank { grid-row:1 / span 2; display:grid; place-items:center; border-radius:10px; background:color-mix(in srgb,var(--accent) 13%,var(--bg-3)); color:var(--accent); font:900 20px/1 var(--display); }
-.fleece-meta { grid-column:2 / -1; display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+.fleece-card { padding:14px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--bg-2); box-shadow:0 8px 24px rgba(16,24,40,.06); }
+.fleece-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.fleece-rank { display:grid; flex:0 0 42px; height:34px; place-items:center; border-radius:10px; background:color-mix(in srgb,var(--accent) 13%,var(--bg-3)); color:var(--accent); font:900 18px/1 var(--display); }
+.fleece-meta { display:flex; flex:1; align-items:center; justify-content:space-between; gap:8px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
 .fleece-meta b { color:var(--milestone); }
-.fleece-side { display:grid; gap:2px; min-width:0; padding:10px; border-radius:10px; background:var(--bg-3); }
+.fleece-compare { display:grid; grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr); gap:0; }
+.fleece-side { display:grid; align-content:start; gap:3px; min-width:0; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--bg-3); }
 .fleece-side small { font-size:9px; font-weight:900; letter-spacing:.09em; }
-.fleece-side strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fleece-side strong { line-height:1.15; overflow-wrap:anywhere; }
 .fleece-assets { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
 .fleece-assets em { flex-basis:100%; color:var(--muted); font:800 9px/1 var(--display); letter-spacing:.09em; }
-.fleece-player { padding:5px 7px; border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line)); border-radius:7px; background:color-mix(in srgb,var(--accent) 8%,var(--bg-2)); color:var(--text); font:800 12px/1.15 var(--display); letter-spacing:.01em; }
+.fleece-player { width:100%; padding:6px 7px; border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line)); border-radius:7px; background:color-mix(in srgb,var(--accent) 8%,var(--bg-2)); color:var(--text); font:800 12px/1.15 var(--display); letter-spacing:.01em; }
+.fleece-side.is-winner { border-color:color-mix(in srgb,var(--ok) 55%,var(--line)); background:linear-gradient(145deg,color-mix(in srgb,var(--ok) 10%,var(--bg-2)),var(--bg-3)); box-shadow:inset 0 3px 0 color-mix(in srgb,var(--ok) 75%,transparent); }
 .fleece-side.is-loser .fleece-player { border-color:color-mix(in srgb,var(--danger) 28%,var(--line)); background:color-mix(in srgb,var(--danger) 7%,var(--bg-2)); }
 .fleece-side.is-winner small { color:var(--ok); }
 .fleece-side.is-loser small { color:var(--danger); }
+.fleece-vs { display:grid; width:26px; height:26px; margin-top:12px; place-items:center; justify-self:center; border:2px solid var(--bg-2); border-radius:50%; background:var(--text); color:var(--bg); font:900 9px/1 var(--display); }
 .fleece-method { margin:9px 2px 0; color:var(--muted); font-size:11px; line-height:1.45; }
 @media (max-width:620px) {
-  .fleece-card { grid-template-columns:38px 1fr; }
-  .fleece-rank { grid-row:1; }
-  .fleece-meta { grid-column:2; }
-  .fleece-side { grid-column:1 / -1; }
+  .fleece-card { padding:11px; }
+  .fleece-top { gap:8px; }
+  .fleece-rank { flex-basis:36px; height:30px; font-size:16px; }
+  .fleece-meta { align-items:flex-start; flex-direction:column; gap:2px; font-size:10px; }
+  .fleece-compare { grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr); }
+  .fleece-side { padding:10px 8px; }
+  .fleece-vs { width:22px; height:22px; margin-top:10px; font-size:8px; }
+  .fleece-player { padding:6px; font-size:11px; }
 }
 .rec-when {
   font-size: var(--fs-micro);
