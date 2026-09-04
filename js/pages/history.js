@@ -613,8 +613,9 @@ async function recordsView(body, data) {
       <span class="muted">· ${esc(FIRST_SYNCED_SEASON - LEAGUE_FOUNDED)} earlier seasons predate the records</span>
     </p>
 
-    <h2 class="section-title">Single week</h2>
-    <div class="card recbook">
+    <section class="card recbook records-fold" data-collapse="hist-records-week"
+             data-collapse-title="Single week" data-collapse-badge="6 records"
+             data-collapse-default="folded">
       ${recRow("Highest score", high && high.score.toFixed(2),
                high && who(high).label, high && `${high.season} · Week ${high.week}`)}
       ${recRow("Lowest score", low && low.score.toFixed(2),
@@ -631,10 +632,11 @@ async function recordsView(body, data) {
       ${recRow("Best losing score", hardLuck && hardLuck.score.toFixed(2),
                hardLuck && who(hardLuck).label,
                hardLuck && `lost ${hardLuck.against.toFixed(2)} · ${hardLuck.season} Wk ${hardLuck.week}`)}
-    </div>
+    </section>
 
-    <h2 class="section-title">Seasons and streaks</h2>
-    <div class="card recbook">
+    <section class="card recbook records-fold" data-collapse="hist-records-seasons"
+             data-collapse-title="Seasons &amp; streaks" data-collapse-badge="4 records"
+             data-collapse-default="folded">
       ${recRow("Most points, season", seasons.points && seasons.points.points_for.toFixed(2),
                seasons.points && name(seasons.points.sleeper_user_id, seasons.points.season,
                                       seasons.points.roster_id).label,
@@ -650,7 +652,7 @@ async function recordsView(body, data) {
       ${recRow("Longest losing streak", longestLoss && longestLoss.run + " weeks",
                longestLoss && name(longestLoss.user).label,
                longestLoss && spanLabel(longestLoss.from, longestLoss.to))}
-    </div>
+    </section>
 
     ${rec.error ? "" : tradeBoard(rec.trades, data)}
   `;
@@ -723,17 +725,19 @@ function tradeBoard(allTrades, data) {
 
   if (!rows.length) return "";
 
-  return `
-    <h2 class="section-title">Trades<span class="count">${trades.length}</span></h2>
+  return `<section class="card records-fold records-trades" data-collapse="hist-records-trades"
+                  data-collapse-title="Trades" data-collapse-badge="${trades.length} completed"
+                  data-collapse-default="folded">
     <div class="trade-fleece-shell" data-fleece-board>${loading("Grading the completed trades…")}</div>
-    <div class="card recbook">
+    <div class="recbook trade-leaders">
       ${rows.map((r, i) => `
         <div class="rec">
           <span class="rec-label">${i === 0 ? "Most trades" : ""}</span>
           <span class="rec-who">${esc(r.who.label)}</span>
           <span class="rec-val">${r.n}</span>
         </div>`).join("")}
-    </div>`;
+    </div>
+  </section>`;
 }
 
 let tradeOutcomeCache = null;
