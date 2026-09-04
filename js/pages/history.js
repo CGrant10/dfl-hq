@@ -758,7 +758,7 @@ async function loadTradeOutcomes(trades, data) {
       }))].sort();
       const [players, ...stats] = await Promise.all([loadPlayers(), ...years.map(loadSeasonStats)]);
       const statsBySeason = new Map(years.map((year, index) => [year, stats[index]?.data || {}]));
-      return { players, rankings: rankTradeFleeces({ trades, latestSeason, statsBySeason, scoringBySeason }), error: null };
+      return { players, rankings: rankTradeFleeces({ trades, latestSeason, statsBySeason, scoringBySeason, players }), error: null };
     } catch (error) {
       return { players: {}, rankings: [], error };
     }
@@ -775,7 +775,7 @@ function fleeceBoard(rankings, data, players) {
   const assets = side => side.playerIds.map(id =>
     `<b class="fleece-player">${esc(players[id]?.n || `Player ${id}`)}</b>`).join("");
   const card = (row, index) => `<article class="fleece-card">
-    <div class="fleece-top"><div class="fleece-rank">#${index + 1}</div><div class="fleece-meta">Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} production gap</b></div></div>
+    <div class="fleece-top"><div class="fleece-rank">#${index + 1}</div><div class="fleece-meta">Week ${esc(row.trade.week || "—")}<b>+${esc(row.gap.toFixed(1))} starter-impact gap</b></div></div>
     <div class="fleece-compare">
       <div class="fleece-side is-winner"><small>BEST SIDE</small><strong>${esc(team(row.trade, row.winner))}</strong><div class="fleece-assets"><em>RECEIVED</em>${assets(row.winner)}</div></div>
       <span class="fleece-vs" aria-hidden="true">VS</span>
@@ -798,7 +798,7 @@ function fleeceBoard(rankings, data, players) {
                data-collapse-default="folded">
         <div class="fleece-list">${rows.slice(0, limit).map(card).join("")}</div>
       </section>`).join("")}</div>
-    <p class="fleece-method"><strong>Production gap</strong> is the difference between the two received packages’ average DFL fantasy points over the next one to three completed seasons. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
+    <p class="fleece-method"><strong>Starter-impact gap</strong> measures each acquired player’s DFL points above a position-specific replacement starter over the next one to three completed seasons. The first three post-trade seasons count 50/30/20, while extra package pieces receive diminishing weight (100/50/25/10) so several bench players cannot outweigh one elite starter by volume alone. Current-season and pending trades are never graded, and only transactions marked complete count.</p>`;
 }
 
 // -------------------------------- bits --------------------------------
