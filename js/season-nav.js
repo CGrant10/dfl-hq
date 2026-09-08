@@ -12,6 +12,7 @@ export const PRIMARY_SEASON_ROUTES = [
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
+  { route: "chat", label: "Ask DFL", icon: "analyzer" },
   { route: "rules", label: "Rules", icon: "rules" },
   { route: "notifications", label: "Notifications", icon: "bell" },
   { route: "profile", label: "Profile", icon: "profile" },

@@ -30,8 +30,10 @@ describe("regular-season navigation", () => {
 
   it("keeps completed-season and occasional tools in More", () => {
     const secondary = SECONDARY_SEASON_ROUTES.map((item) => item.route);
-    expect(secondary).toEqual(expect.arrayContaining(["keepers", "golf", "polls", "admin"]));
+    expect(secondary).toEqual(expect.arrayContaining(["chat", "keepers", "golf", "polls", "admin"]));
     expect(secondary).not.toContain("analyzer");
+    expect(secondarySeasonNavMarkup()).toContain('href="#/chat"');
+    expect(secondarySeasonNavMarkup()).toContain("Ask DFL");
   });
 
   it("renders unique routes and a More control", () => {

@@ -3,3 +3,7 @@
 # The function verifies those headers with has_commissioner_permission() before
 # any send; config requests reveal only the public VAPID key.
 verify_jwt = false
+
+[functions.dfl-chat]
+# Chat requests use the app's member identity plus a verified profile PIN.
+verify_jwt = false
