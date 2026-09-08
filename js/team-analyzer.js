@@ -294,35 +294,38 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   };
 }
 
-export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], pool = new Map() } = {}) {
-  if (!teamA || !teamB || !teamC || !sendA.length || !sendB.length || !sendC.length) return null;
-  const teams = [teamA, teamB, teamC], sends = [sendA, sendB, sendC].map(ids => ids.map(String));
-  if (teams.some((team, index) => {
+export function evaluateMultiTeamTrade({ teams = [], sends = [], pool = new Map() } = {}) {
+  if (teams.length < 2 || teams.length !== sends.length || teams.some(team => !team || !Array.isArray(team.playerIds))
+    || new Set(teams.map(team => String(team.id))).size !== teams.length) return null;
+  const packages = sends.map(ids => (ids || []).map(String));
+  if (packages.some(ids => !ids.length) || teams.some((team, index) => {
     const owned = new Set(team.playerIds.map(String));
-    return sends[index].some(id => !owned.has(id));
+    return packages[index].some(id => !owned.has(id));
   })) return null;
-  const next = teams.map((team, index) => team.playerIds.filter(id => !sends[index].includes(String(id)))
-    .concat(sends[(index + 2) % 3]));
+  const count = teams.length;
+  const next = teams.map((team, index) => team.playerIds.filter(id => !packages[index].includes(String(id)))
+    .concat(packages[(index + count - 1) % count]));
   const before = teams.map(team => optimalLineup(team.playerIds, pool));
   const after = next.map(ids => optimalLineup(ids, pool));
-  /* A sends to B, B sends to C and C sends to A. Package value is measured
-     against the roster receiving it, including the players it displaces. */
-  const values = [
-    packageValue(sends[2], next[0], pool),
-    packageValue(sends[0], next[1], pool),
-    packageValue(sends[1], next[2], pool),
-  ];
+  const values = teams.map((_, index) => packageValue(packages[(index + count - 1) % count], next[index], pool));
   const high = Math.max(...values, 1), low = Math.min(...values);
   const weekly = teams.map((_, index) => round((after[index].starterPoints - before[index].starterPoints) / 17));
   return {
-    sendA: sends[0], sendB: sends[1], sendC: sends[2],
-    valueToA: values[0], valueToB: values[1], valueToC: values[2],
-    valueOutA: values[1],
-    weeklyDeltaA: weekly[0], weeklyDeltaB: weekly[1], weeklyDeltaC: weekly[2],
-    deltaA: round(after[0].score - before[0].score),
-    deltaB: round(after[1].score - before[1].score),
-    deltaC: round(after[2].score - before[2].score),
+    sends: packages, values, weeklyDeltas: weekly,
+    deltas: teams.map((_, index) => round(after[index].score - before[index].score)),
     fairness: Math.max(0, Math.round(low / high * 100)),
+  };
+}
+
+export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], pool = new Map() } = {}) {
+  const result = evaluateMultiTeamTrade({ teams: [teamA, teamB, teamC], sends: [sendA, sendB, sendC], pool });
+  if (!result) return null;
+  return {
+    ...result,
+    sendA: result.sends[0], sendB: result.sends[1], sendC: result.sends[2],
+    valueToA: result.values[0], valueToB: result.values[1], valueToC: result.values[2], valueOutA: result.values[1],
+    weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[1], weeklyDeltaC: result.weeklyDeltas[2],
+    deltaA: result.deltas[0], deltaB: result.deltas[1], deltaC: result.deltas[2],
   };
 }
 

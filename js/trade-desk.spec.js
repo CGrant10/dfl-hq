@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recommendationFor, verdictFor } from "./trade-desk.js";
-import { buildPlayerPool, evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
+import { buildPlayerPool, evaluateMultiTeamTrade, evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
 
 /* Full PPR, the league's own setting - see scoring_settings on sleeper_leagues.
    Points are expressed as receptions so the fixtures stay readable. */
@@ -139,5 +139,14 @@ describe("evaluating a hand-built trade", () => {
     expect(result.sendC).toEqual(["RB3_0"]);
     expect([result.weeklyDeltaA, result.weeklyDeltaB, result.weeklyDeltaC].every(Number.isFinite)).toBe(true);
     expect(result.fairness).toBeGreaterThan(0);
+  });
+
+  it("supports every added member without a fixed party limit", () => {
+    const parties = [teamA, teamB, team(rosters, pool, "3"), team(rosters, pool, "4")];
+    const result = evaluateMultiTeamTrade({ teams: parties, sends: [[aBestRb], [bBestRb], ["RB3_0"], ["RB4_0"]], pool });
+    expect(result.sends).toHaveLength(4);
+    expect(result.values).toHaveLength(4);
+    expect(result.weeklyDeltas).toHaveLength(4);
+    expect(result.weeklyDeltas.every(Number.isFinite)).toBe(true);
   });
 });

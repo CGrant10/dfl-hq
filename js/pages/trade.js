@@ -103,7 +103,7 @@ function page(data) {
   let selectedId = data.teams.find(team => String(team.id) === String(routeTeam))?.id
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
-  const trade = { partnerId: "", thirdId: "", threeWay: false, sendA: new Set(), sendB: new Set(), sendC: new Set() };
+  const trade = { memberIds: [], sends: [new Set(), new Set()] };
   const shop = { side: "mine", partnerId: "", playerA: "", playerB: "" };
 
   return {
@@ -148,17 +148,18 @@ function page(data) {
       body.addEventListener("click", event => {
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
-        trade.partnerId = button.dataset.partner;
-        trade.sendA = new Set((button.dataset.sendA || "").split(",").filter(Boolean));
-        trade.sendB = new Set((button.dataset.sendB || "").split(",").filter(Boolean));
-        trade.threeWay = false; trade.sendC.clear();
+        trade.memberIds = [button.dataset.partner];
+        trade.sends = [
+          new Set((button.dataset.sendA || "").split(",").filter(Boolean)),
+          new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
+        ];
         draw();
         body.querySelector("[data-trade-desk]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
         /* Both sides referred to rosters that are no longer in play. */
-        trade.partnerId = ""; trade.thirdId = ""; trade.threeWay = false; trade.sendA.clear(); trade.sendB.clear(); trade.sendC.clear();
+        trade.memberIds = []; trade.sends = [new Set(), new Set()];
         shop.side = "mine"; shop.partnerId = ""; shop.playerA = ""; shop.playerB = "";
         draw();
       });
