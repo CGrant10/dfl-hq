@@ -46,8 +46,24 @@ export function verdictFor(result) {
   return { tone: "lopsided", headline: "Lopsided", who };
 }
 
+/* The recommendation is from team A's point of view. Value carries a little
+   more weight than one projected week, while a material lineup swing can
+   still move a close deal. The thresholds deliberately leave a negotiation
+   band instead of pretending every small model difference is decisive. */
+export function recommendationFor(result) {
+  if (!result) return null;
+  const valueGap = num(result.valueToA) - num(result.valueToB);
+  const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
+  const valueEdge = valueGap / valueBase * 100;
+  const signal = valueEdge * .55 + num(result.weeklyDeltaA) * 8;
+  if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
+  if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
+  return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
+}
+
 function playerRow(player, side, checked) {
-  return `<label class="td-player ${checked ? "is-picked" : ""}">
+  const search = `${player.name} ${player.position} ${player.nflTeam}`.toLowerCase();
+  return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-search="${esc(search)}">
     <input type="checkbox" data-td-pick="${side}" value="${esc(player.id)}" ${checked ? "checked" : ""}>
     <span class="td-player-copy">
       <b>${esc(player.name)}</b>
@@ -62,9 +78,11 @@ function sideList(team, pool, picked, side) {
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   return `<div class="td-side">
     <div class="td-side-head">
-      <small>${side === "a" ? "YOU SEND" : "YOU GET"}</small>
-      <strong>${esc(teamName(team))}</strong>
+      <div><small>${side === "a" ? "YOU SEND" : "YOU GET"}</small>
+      <strong>${esc(teamName(team))}</strong></div>
+      <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
+    <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" placeholder="Search players" autocomplete="off"></label>
     <div class="td-list">${players.map(p => playerRow(p, side, picked.has(String(p.id)))).join("")
       || `<p class="td-empty">No rated players on this roster.</p>`}</div>
   </div>`;
@@ -75,6 +93,28 @@ function packageLine(ids, pool) {
   return ids.map(id => esc(pool.get(String(id))?.name || id)).join(" + ");
 }
 
+function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
+  const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
+  const outgoing = sendA.map(id => pool.get(String(id))).filter(Boolean);
+  const need = teamA?.need;
+  const fillsNeed = need && incoming.some(player => player.position === need);
+  const givesStrength = teamA?.strength && outgoing.some(player => player.position === teamA.strength);
+  const valueGap = num(result.valueToA) - num(result.valueToB);
+  const reasons = [];
+  if (Math.abs(valueGap) < 4) reasons.push({ tone: "neutral", title: "The asset value is close", copy: `Only ${Math.abs(valueGap).toFixed(1)} value points separate the packages.` });
+  else if (valueGap > 0) reasons.push({ tone: "good", title: "You gain asset value", copy: `The incoming package grades ${Math.abs(valueGap).toFixed(1)} value points higher after roster cuts.` });
+  else reasons.push({ tone: "bad", title: "You give up more value", copy: `Your outgoing package grades ${Math.abs(valueGap).toFixed(1)} value points higher after roster cuts.` });
+  if (result.weeklyDeltaA >= .25) reasons.push({ tone: "good", title: "Your starting lineup improves", copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points per week after the trade.` });
+  else if (result.weeklyDeltaA <= -.25) reasons.push({ tone: "bad", title: "Your starting lineup gets weaker", copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points per week after the trade.` });
+  else reasons.push({ tone: "neutral", title: "Your weekly lineup barely moves", copy: "The deal is mainly about asset shape and depth, not an immediate scoring jump." });
+  if (fillsNeed) reasons.push({ tone: "good", title: `It addresses your ${need} need`, copy: `The incoming side includes ${incoming.filter(player => player.position === need).map(player => player.name).join(" and ")}.` });
+  if (givesStrength) reasons.push({ tone: "warn", title: `You are trading from your best unit`, copy: `One of the outgoing players comes from ${teamA.strength}, currently your strongest position group.` });
+  if (sendB.length < sendA.length) reasons.push({ tone: "good", title: "You consolidate the package", copy: "Fewer incoming players can be easier to fit into a starting lineup and roster." });
+  else if (sendB.length > sendA.length) reasons.push({ tone: "warn", title: "The package needs roster room", copy: "Extra incoming pieces only count when they beat the players they would displace." });
+  if (result.weeklyDeltaB > .35) reasons.push({ tone: "neutral", title: `${teamName(teamB)} has a reason to listen`, copy: `Their lineup also gains ${signed(result.weeklyDeltaB)} projected points per week.` });
+  return reasons.slice(0, 4);
+}
+
 function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
   if (!result) {
     return `<div class="td-verdict is-idle">
@@ -83,15 +123,17 @@ function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
     </div>`;
   }
   const v = verdictFor(result);
+  const recommendation = recommendationFor(result);
   const winner = v.who === "a" ? teamA : v.who === "b" ? teamB : null;
+  const reasons = tradeReasons(result, teamA, teamB, pool, sendA, sendB);
   /* Value and lineup are reported separately and never averaged: a fair
      trade that helps only one starting lineup is a real and common shape,
      and blending the two into one score would hide exactly that. */
   return `<div class="td-verdict is-${v.tone}">
     <div class="td-verdict-head">
-      <div>
-        <small>VERDICT</small>
-        <strong>${esc(v.headline)}${winner ? ` · ${esc(teamName(winner))}` : ""}</strong>
+      <div class="td-call-copy">
+        <small>RECOMMENDATION FOR ${esc(teamName(teamA))}</small>
+        <div><span class="td-call is-${recommendation.tone}">${recommendation.action}</span><strong>${esc(v.headline)}${winner ? ` · ${esc(teamName(winner))}` : ""}</strong></div>
       </div>
       <div class="td-fairness" title="100% is an even split of package value">
         <b>${num(result.fairness)}%</b><span>balance</span>
@@ -122,9 +164,14 @@ function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
       </div>
     </div>
 
+    <div class="td-reasoning">
+      <h3>Why the model makes this call</h3>
+      <div class="td-reason-list">${reasons.map(reason => `<article class="td-reason is-${reason.tone}"><i aria-hidden="true"></i><div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div></article>`).join("")}</div>
+    </div>
+
     <p class="td-note">Balance compares what each side gives up in asset value. The lineup figures are
       what the deal does to each starting eleven per week, which can differ - value counts depth a
-      lineup cannot start.</p>
+      lineup cannot start. Current Sleeper projections lead the forecast, blended with pace-adjusted prior production.</p>
   </div>`;
 }
 
@@ -170,6 +217,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       const set = box.dataset.tdPick === "a" ? state.sendA : state.sendB;
       if (box.checked) set.add(box.value); else set.delete(box.value);
       box.closest(".td-player")?.classList.toggle("is-picked", box.checked);
+      const count = root.querySelector(`[data-td-count="${box.dataset.tdPick}"]`);
+      if (count) count.textContent = `${set.size} picked`;
       update();
       return;
     }
@@ -181,6 +230,16 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     }
   });
 
+  root.addEventListener("input", event => {
+    const filter = event.target.closest("[data-td-filter]");
+    if (!filter) return;
+    const term = filter.value.trim().toLowerCase();
+    const list = filter.closest(".td-side")?.querySelector(".td-list");
+    list?.querySelectorAll("[data-td-player-row]").forEach(row => {
+      row.hidden = Boolean(term) && !String(row.dataset.search || "").includes(term);
+    });
+  });
+
   root.addEventListener("click", event => {
     if (!event.target.closest("[data-td-clear]")) return;
     state.sendA.clear();
@@ -189,6 +248,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       box.checked = false;
       box.closest(".td-player")?.classList.remove("is-picked");
     });
+    root.querySelectorAll("[data-td-count]").forEach(count => { count.textContent = "0 picked"; });
     update();
   });
 

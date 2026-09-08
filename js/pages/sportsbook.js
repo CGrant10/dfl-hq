@@ -10,25 +10,17 @@ import { shareTicket } from "../sportsbook-ticket.js";
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
 const isOpen=m=>m.status==="open"&&(!m.closes_at||new Date(m.closes_at)>new Date());
-const isGolf=m=>m.category==="Golf"&&String(m.auto_key||"").startsWith("golf:");
-const golfKind=m=>String(m.auto_key||"").includes(":moneyline:")?"Moneyline":String(m.auto_key||"").includes(":spread:")?"Spread":String(m.auto_key||"").includes(":margin-total:")?"Total":String(m.auto_key||"").includes(":team-war:")?"Tournament":"Line";
-const golfSort=m=>({Tournament:0,Moneyline:1,Spread:2,Total:3,Line:4}[golfKind(m)]??9);
+const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
 
 export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets,autoState=null;
-  let autoReady=true,golfReady=true,golfError="";
+  let wallet,ledger,leaders,markets,outcomes,bets;
+  let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
-    try{
-      const g=await db().rpc("sportsbook_maintain_golf_board");
-      if(g.error)throw g.error;
-      const repr=await db().rpc("sportsbook_reprice_open_golf");
-      if(repr.error)golfError=repr.error.message||String(repr.error);
-    }catch(err){golfReady=false;golfError=err?.message||String(err||"Golf board refresh failed")}
-    try{const a=await db().rpc("sportsbook_maintain_auto_board",{target_open:6});if(a.error)throw a.error;autoState=a.data?.[0]||null}catch{autoReady=false}
+    try{const a=await db().rpc("sportsbook_maintain_auto_board",{target_open:6});if(a.error)throw a.error}catch{autoReady=false}
     const[lr,br,mr,or,btr]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
@@ -43,18 +35,15 @@ export async function render(view){
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
-  const open=markets.filter(isOpen),golf=open.filter(isGolf),other=open.filter(m=>!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"),canBook=hasPermission("sportsbook");
-  const golfNotice=!golfReady&&golf.length===0?`<div class="card note"><div class="card-body"><strong>Golf board refresh failed.</strong>${golfError?`<br><span class="muted tiny">${esc(golfError)}</span>`:""}</div></div>`:"";
+  const open=markets.filter(m=>isOpen(m)&&!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"&&!isGolf(m)),canBook=hasPermission("sportsbook");
 
   view.innerHTML=`<div id="sportsbook-wrap">
     <header class="sb-masthead"><img src="icons/dfl-seal-64.webp" alt="" width="40" height="40"><h1>DFL Sportsbook</h1><span class="sb-wallet" aria-label="Available SIN">${Number(wallet?.balance||0).toLocaleString()} <small>SIN</small></span></header>
-    ${bankrollCard(me,wallet,golf,open,autoReady,autoState)}
+    ${bankrollCard(me,wallet,open,autoReady)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${golfNotice}
-    ${categoryBoard(other.filter(m=>m.category==="Fantasy"),byMarket,bets,canBook)}
-    ${golf.length?golfBoard(golf,byMarket,bets,canBook):""}
-    ${categoryBoard(other.filter(m=>m.category!=="Fantasy"),byMarket,bets,canBook)}
+    ${categoryBoard(open.filter(m=>m.category==="Fantasy"),byMarket,bets,canBook)}
+    ${categoryBoard(open.filter(m=>m.category!=="Fantasy"),byMarket,bets,canBook)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -84,7 +73,7 @@ export async function render(view){
   rather than drawn disabled: a dead button invites a tap and then explains
   itself, which is the wrong order.
 */
-function bankrollCard(me,wallet,golf,open,autoReady,autoState){
+function bankrollCard(me,wallet,open,autoReady){
   const claimable=Number(wallet?.claimable||0),days=Number(wallet?.claimable_days||0);
   return `<section class="sb-bankroll">
     <div class="card-title-row">
@@ -98,23 +87,17 @@ function bankrollCard(me,wallet,golf,open,autoReady,autoState){
       ${claimable>0
         ? `<button type="button" class="btn sb-claim" id="sb-claim">Claim ${claimable} SIN${days>1?` &middot; ${days} days`:""}</button>`
         : `<span class="muted tiny">Next 50 SIN ${esc(fmtTime(wallet?.next_daily_at))}</span>`}
-      ${golf.length?`<span class="pill green">${golf.length} Golf lines</span>`
-        :autoReady?`<span class="pill">${Number(autoState?.open_auto??open.length)} live</span>`:""}
+      ${autoReady?`<span class="pill">${open.length} live</span>`:""}
     </div>
   </section>`;
 }
 
-function golfGroupKey(m){const k=String(m.auto_key||"");const match=k.match(/^golf:(\d+):match:(\d+):/);if(match)return`match:${match[2]}`;const team=k.match(/^golf:(\d+):team-war:/);if(team)return`outing:${team[1]}`;return`market:${m.id}`}
-function cleanGolfTitle(title){return String(title||"Golf").replace(/\s+\u2014\s+(Moneyline|DFL handicap|Winning margin O\/U.*|Tournament moneyline).*$/i,"").trim()}
-
 /*
   WHY THE BOARD WAS HARD TO READ, AND WHAT ACTUALLY CHANGED.
 
-  The grouping was already right - golf gathered per match, everything else per
-  category. The problem was that every group printed everything it had at the
-  same weight in one column: a dozen markets with two or three outcomes each is
-  fifty-odd interactive elements of identical size, and nothing says where to
-  start.
+  Every group used to print everything at the same weight in one column: a
+  dozen markets with two or three outcomes each is fifty-odd interactive
+  elements of identical size, and nothing says where to start.
 
   Three changes, all hierarchy rather than grouping:
 
@@ -138,31 +121,7 @@ function outcomeButtons(m,outcomes,bets){
     </button>`).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" \u00b7 ")} \u00b7 <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
-function marketLine(m,outcomes,bets,canBook){return `<div class="sb-line"><div class="sb-line-head">${esc(golfKind(m))}</div>${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</div>`}
 function marketCard(m,outcomes,bets,canBook){return `<article class="card sb-market"><div class="card-title-row"><h3 class="card-heading">${esc(m.title)}</h3>${m.closes_at?`<span class="pill">${esc(fmtTime(m.closes_at))}</span>`:""}</div>${m.lore_note?`<p class="muted tiny sb-note">${esc(m.lore_note)}</p>`:""}${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</article>`}
-
-/* A section with a top: first card open, the remainder behind one fold. */
-function foldedSection(title,count,openHtml,restHtml,key){
-  return `<section class="block sb-section">
-    <h2 class="section-title">${esc(title)}<span class="count">${count}</span></h2>
-    ${openHtml}
-    ${restHtml?`<div class="sb-more" data-collapse="${esc(key)}" data-collapse-default="folded"
-         data-collapse-title="Show the rest" data-collapse-badge="${count-1} more">${restHtml}</div>`:""}
-  </section>`;
-}
-
-function golfBoard(markets,byMarket,bets,canBook){
-  const groups=new Map();
-  for(const m of markets){const k=golfGroupKey(m);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(m)}
-  const cards=[...groups.values()].map(ms=>{
-    ms.sort((a,b)=>golfSort(a)-golfSort(b));
-    const title=cleanGolfTitle(ms.find(m=>golfKind(m)==="Moneyline")?.title||ms[0]?.title);
-    const close=ms.map(m=>m.closes_at).filter(Boolean).sort()[0];
-    return `<article class="card sportsbook-match sb-market"><div class="card-title-row"><h3 class="card-heading">${esc(title)}</h3>${close?`<span class="pill">${esc(fmtTime(close))}</span>`:""}</div>${ms.map(m=>marketLine(m,byMarket.get(String(m.id))||[],bets,canBook)).join("")}</article>`;
-  });
-  if(!cards.length)return "";
-  return foldedSection("Golf",cards.length,cards[0],cards.slice(1).join(""),"sb-golf");
-}
 
 function categoryBoard(markets,byMarket,bets,canBook){
   if(!markets.length)return "";
@@ -185,7 +144,7 @@ function rulingQueue(markets,byMarket){return `<details class="card"><summary cl
   feature had it all along. A commissioner is here to book. Nobody else ever
   sees it: canBook gates the whole thing.
 */
-function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>DFL Life</option><option>Fantasy</option><option>Golf</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
+function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 function ticketCard(b,mm,om){const m=mm.get(String(b.market_id)),o=om.get(String(b.outcome_id));return `<div class="card sb-ticket"><div class="card-title-row"><div><strong>${esc(o?.label||"Ticket")}</strong><div class="muted tiny">${esc(m?.title||"DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status==="won"?"green":b.status==="lost"?"grey":b.status==="void"?"warn":""}">${esc(b.status)}</span></div><div class="card-meta sb-ticket-foot"><span>${b.stake} SIN · ${b.potential_payout} return</span><button type="button" class="linkbtn" data-share-ticket="${b.id}">Share card</button></div></div>`}
 

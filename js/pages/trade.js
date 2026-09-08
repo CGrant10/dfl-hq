@@ -17,7 +17,7 @@
 import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
-import { mountTradeDesk, tradeDeskMarkup } from "../trade-desk.js";
+import { mountTradeDesk, recommendationFor, tradeDeskMarkup } from "../trade-desk.js";
 import { suggestTrades } from "../team-analyzer.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
@@ -32,7 +32,7 @@ function lead(team, count) {
   return `<header class="ta-report-lead">
     <div class="ta-lead-top">
       <div class="ta-team-intro">
-        <small>TRADE DESK</small>
+        <small>TRADE ANALYZER</small>
         <h2>${esc(teamName(team))}</h2>
         <p>${esc(team.ownerName)} · ${team.playerIds.length} rostered players</p>
       </div>
@@ -68,11 +68,19 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
   const offers = selected ? suggestTrades({ teams, teamId: team.id, playerId: selected.id, pool, limit: 8 }) : [];
   const picker = `<label class="ta-inline-select"><span>Shop player</span><select data-ta-player aria-label="Player to shop">${players.map(player => `<option value="${esc(player.id)}" ${player.id === selected?.id ? "selected" : ""}>${esc(player.name)} · ${player.position} · value ${player.tradeValue}</option>`).join("")}</select></label>`;
   return `<section class="ta-report-section ta-trades">
-    <div class="ta-report-title"><div><small>TRADE LAB</small><h2>Suggested deals</h2></div></div>
+    <div class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div></div>
     <div class="ta-section-body">
       ${picker}
-      <p class="ta-note">Packages only receive credit for players who improve the receiving roster. Extra names cannot inflate the result.</p>
-      ${offers.length ? `<div class="ta-table-wrap"><table class="ta-table ta-trade-table"><thead><tr><th>Partner</th><th>You send</th><th>You receive</th><th>Balance</th><th>Weekly change</th></tr></thead><tbody>${offers.map(offer => `<tr><td><b>${esc(teamName(offer.other))}</b><small>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight up" : "Package"}</small></td><td data-label="You send">${esc(playerNames(offer.sendA, pool))}</td><td data-label="You receive"><strong>${esc(playerNames(offer.sendB, pool))}</strong></td><td data-label="Balance"><span class="ta-balance">${offer.fairness}%</span></td><td data-label="Weekly change"><b class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)}</b><small>Other ${signed(offer.weeklyDeltaB)}</small></td></tr>`).join("")}</tbody></table></div>`
+      <p class="ta-note">These options account for who would actually start. Open one to see the full recommendation and reasoning.</p>
+      ${offers.length ? `<div class="ta-deal-grid">${offers.map(offer => {
+        const call = recommendationFor(offer);
+        return `<article class="ta-deal-card">
+          <header><div><small>${esc(teamName(offer.other))}</small><strong>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight-up deal" : "Package deal"}</strong></div><span class="td-call is-${call.tone}">${call.action}</span></header>
+          <div class="ta-deal-flow"><div><small>YOU SEND</small><b>${esc(playerNames(offer.sendA, pool))}</b></div><i aria-hidden="true">→</i><div><small>YOU GET</small><b>${esc(playerNames(offer.sendB, pool))}</b></div></div>
+          <dl><div><dt>Balance</dt><dd>${offer.fairness}%</dd></div><div><dt>Your lineup</dt><dd class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)} / wk</dd></div></dl>
+          <button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze this deal</button>
+        </article>`;
+      }).join("")}</div>`
         : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}
     </div>
   </section>`;
@@ -89,7 +97,7 @@ function page(data) {
 
   return {
     markup: `<header class="page-head ta-page-head">
-        <div><h1>Trade Desk</h1><p class="page-sub">${data.projectionSeason} outlook · DFL full-PPR scoring</p></div>
+        <div><h1>Trade Analyzer</h1><p class="page-sub">A clear call from current projections, roster value and team fit</p></div>
         <a class="btn ghost small" href="#/analyzer">Analyzer</a>
       </header>
       <div class="ta-toolbar">
@@ -97,8 +105,7 @@ function page(data) {
           <select data-td-team>${data.teams.map(team =>
             `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select>
         </label>
-        <p>Tick players on both sides. Balance compares what each side gives up; the lineup figures are what
-          the deal does to each starting eleven per week.</p>
+        <p>Build a deal or start from a suggestion. The result explains whether to accept, negotiate or pass.</p>
       </div>
       <main class="ta-report" data-td-body></main>`,
 
@@ -108,7 +115,7 @@ function page(data) {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         body.innerHTML = `${lead(team, data.teams.length)}
           <section class="ta-report-section">
-            <div class="ta-report-title"><div><small>BUILD IT</small><h2>The deal</h2></div></div>
+            <div class="ta-report-title"><div><small>BUILD A DEAL</small><h2>Choose both sides</h2></div></div>
             <div class="ta-section-body" data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
           </section>
           ${tradeLab(team, data.teams, data.pool, shopId)}`;
@@ -120,6 +127,15 @@ function page(data) {
         if (!event.target.matches("[data-ta-player]")) return;
         shopId = event.target.value;
         draw();
+      });
+      body.addEventListener("click", event => {
+        const button = event.target.closest("[data-td-load-offer]");
+        if (!button) return;
+        trade.partnerId = button.dataset.partner;
+        trade.sendA = new Set((button.dataset.sendA || "").split(",").filter(Boolean));
+        trade.sendB = new Set((button.dataset.sendB || "").split(",").filter(Boolean));
+        draw();
+        body.querySelector("[data-trade-desk]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
@@ -133,13 +149,13 @@ function page(data) {
 }
 
 export async function render(view) {
-  view.innerHTML = `<header class="page-head"><h1>Trade Desk</h1>
+  view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1>
     <p class="page-sub">Reading every roster…</p></header>
     <div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
   try {
     const data = await loadAnalyzerData();
     if (data.state !== "ready") {
-      view.innerHTML = `<header class="page-head"><h1>Trade Desk</h1></header>
+      view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1></header>
         <div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong>
         <p class="muted">Run a Sleeper sync after the draft, then come back here.</p></div></div>`;
       return;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { verdictFor } from "./trade-desk.js";
+import { recommendationFor, verdictFor } from "./trade-desk.js";
 import { buildPlayerPool, evaluateTrade } from "./team-analyzer.js";
 
 /* Full PPR, the league's own setting - see scoring_settings on sleeper_leagues.
@@ -48,6 +48,20 @@ describe("verdictFor", () => {
 
   it("has no verdict without a trade", () => {
     expect(verdictFor(null)).toBeNull();
+  });
+});
+
+describe("recommendationFor", () => {
+  it("accepts when value and weekly lineup both improve", () => {
+    expect(recommendationFor({ valueToA: 70, valueToB: 55, weeklyDeltaA: 1.2 }).action).toBe("ACCEPT");
+  });
+
+  it("passes when value and weekly lineup both decline", () => {
+    expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("PASS");
+  });
+
+  it("keeps mixed, marginal evidence in the negotiation band", () => {
+    expect(recommendationFor({ valueToA: 52, valueToB: 50, weeklyDeltaA: -0.1 }).action).toBe("NEGOTIATE");
   });
 });
 
