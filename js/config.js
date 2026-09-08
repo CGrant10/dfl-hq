@@ -9,9 +9,6 @@ void import("./nav-neutral.js").catch(err => console.warn("Optional module faile
 void import("./weekly-outlook-panel.js")
   .then(module => module.mountWeeklyOutlook())
   .catch(err => console.warn("Optional module failed: ./weekly-outlook-panel.js", err));
-void import("./chat-widget.js")
-  .then(module => module.mountChatWidget())
-  .catch(err => console.warn("Optional module failed: ./chat-widget.js", err));
 
 const GOLF_FEATURES = [
   "./golf-gps-beta.js",
