@@ -86,7 +86,30 @@ export async function render(view){
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
-  const open=markets.filter(m=>isOpen(m)&&m.category==="Fantasy"&&!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"&&m.category==="Fantasy"&&!isGolf(m)),canBook=hasPermission("sportsbook");
+  const canBook=hasPermission("sportsbook");
+  const open=markets.filter(m=>isOpen(m)&&m.category==="Fantasy"&&!isGolf(m));
+  const onBoard=new Set(open.map(m=>String(m.id)));
+  /*
+    OFF THE BOARD, AND WHY THAT USED TO TRAP MONEY.
+
+    The board shows Fantasy markets only - the golf sportsbook was removed
+    in 9119470 - and the ruling queue was given the SAME filter. So a golf
+    market that had already taken bets went to a place with no exit: it
+    could not be settled, because no commissioner screen listed it; it
+    could not be voided, for the same reason; the owner could not pull
+    their ticket, because a pull is refused once a market locks; and they
+    could not dismiss it, because dismissing an open ticket is refused on
+    purpose. The stake sat out of the bankroll permanently.
+
+    So the queue is now defined by what the BOARD cannot reach rather than
+    by category: anything locked, plus anything still open that the board
+    does not offer or whose clock has run out. Golf lands in it, and so
+    does any category filtered off the board in future.
+  */
+  const rulings=markets.filter(m=>
+    (m.status==="locked"||m.status==="open")
+    && !onBoard.has(String(m.id))
+    && (m.status==="locked"||isGolf(m)||m.category!=="Fantasy"||!isOpen(m)));
 
   /* A pick whose line closed while it sat in the slip is dropped here rather
      than at submit time, so the slip on screen is always placeable. */
@@ -354,6 +377,24 @@ function ticketCard(b,marketMap,outcomeMap){
      makes a cancel a free look at a result, and the RPC refuses it too - this
      just avoids offering a button that is going to say no. */
   const canPull=b.status==="open"&&legs.every(l=>{const m=marketMap.get(String(l.market_id));return !!m&&isOpen(m)});
+  /*
+    AN OPEN TICKET WITH NO ACTIONS HAS TO EXPLAIN ITSELF.
+
+    Pull is refused once a leg locks and dismiss is refused while a ticket
+    is open, so a locked ticket correctly offers neither button - and used
+    to say nothing at all about why, which reads as the app having lost
+    the ticket. Naming the blocking leg also tells the owner which of a
+    six-pick is holding the rest of it up.
+  */
+  const blocking=b.status==="open"&&!canPull
+    ? legs.map(l=>({leg:l,market:marketMap.get(String(l.market_id))})).find(({market})=>!market||!isOpen(market))
+    : null;
+  const stuck=!blocking?"" : (()=>{
+    const m=blocking.market;
+    if(!m)return "This line is gone from the board. The house has to void it to release your stake.";
+    if(isGolf(m)||m.category!=="Fantasy")return `${esc(blocking.leg.label)} is on a retired line. The house has to void it to release your stake.`;
+    return `${esc(blocking.leg.label)} has locked. Waiting on a ruling.`;
+  })();
   const won=legs.filter(l=>l.status==="won").length;
   const label=pulled?"pulled":multi&&(b.status==="won"||b.status==="lost")?`${won} of ${legs.length}`:b.status;
   return `<article class="card sb-ticket${multi?" is-entry":""}">
@@ -376,6 +417,7 @@ function ticketCard(b,marketMap,outcomeMap){
         <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${b.status==="won"?"Paid":b.status==="lost"?"Returned":b.status==="void"?"Void":"To return"}</b>${b.status==="lost"?"0":b.status==="void"?"—":num(b.potential_payout)}</span>
       </span>
       <span class="sb-ticket-actions">
+        ${stuck?`<span class="sb-ticket-stuck">${stuck}</span>`:""}
         ${canPull?`<button type="button" class="linkbtn sb-pull" data-cancel-bet="${b.id}">Pull ticket</button>`:""}
         ${b.status!=="open"?`<button type="button" class="linkbtn" data-dismiss-bet="${b.id}">Dismiss</button>`:""}
         <button type="button" class="linkbtn" data-share-ticket="${b.id}">Share card</button>
@@ -384,7 +426,24 @@ function ticketCard(b,marketMap,outcomeMap){
   </article>`;
 }
 
-function rulingQueue(markets,byMarket){return `<details class="card"><summary class="card-title">Needs a ruling · ${markets.length}</summary><div class="card-body">${markets.map(m=>{const os=byMarket.get(String(m.id))||[];return `<div style="padding:10px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.08))"><strong>${esc(m.title)}</strong><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">${os.map(o=>`<button type="button" class="btn small" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)} won</button>`).join("")}</div><button type="button" class="linkbtn" data-void-market="${m.id}">Void + refund</button></div>`}).join("")}</div></details>`}
+/*
+  The queue is open by default and says what each line is, because a market
+  the board no longer offers is not going to be found by browsing. Voiding
+  every retired line at once is offered as one button: the golf board was
+  removed wholesale, so clearing it one market at a time is busywork that
+  leaves other members' stakes stranded for however long it takes.
+*/
+function rulingQueue(markets,byMarket){
+  const retired=markets.filter(m=>isGolf(m)||m.category!=="Fantasy");
+  return `<details class="card sb-rulings" open><summary class="card-title">Needs a ruling · ${markets.length}</summary><div class="card-body">
+    ${retired.length?`<div class="sb-ruling-bulk"><p>${retired.length} line${retired.length===1?"":"s"} the board no longer offers${retired.some(isGolf)?", including golf":""}. Voiding refunds every open ticket on them.</p><button type="button" class="btn small" data-void-retired="${esc(retired.map(m=>m.id).join(","))}">Void all ${retired.length} &amp; refund</button></div>`:""}
+    ${markets.map(m=>{
+      const os=byMarket.get(String(m.id))||[];
+      const why=isGolf(m)?"Golf · off the board":m.category!=="Fantasy"?`${esc(m.category||"Other")} · off the board`:m.status==="locked"?"Locked · awaiting a ruling":"Closed · awaiting a ruling";
+      return `<div class="sb-ruling"><small class="sb-ruling-why">${why}</small><strong>${esc(m.title)}</strong><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">${os.map(o=>`<button type="button" class="btn small" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)} won</button>`).join("")}<button type="button" class="linkbtn" data-void-market="${m.id}">Void + refund</button></div></div>`;
+    }).join("")}
+  </div></details>`;
+}
 /*
   OPEN BY DEFAULT FOR THE PERSON WHO OWNS IT.
 
@@ -638,4 +697,31 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   });
 }
 
-function wireCommissioner(view){const form=view.querySelector("#sportsbook-market-form");form?.addEventListener("submit",async e=>{e.preventDefault();const os=[1,2,3].map(n=>({label:form.querySelector(`[data-book-label="${n}"]`)?.value.trim()||"",odds:Number(form.querySelector(`[data-book-odds="${n}"]`)?.value.trim()||0)})).filter(o=>o.label);if(os.length<2||os.some(o=>!(o.odds<=-100||o.odds>=100))){toast("Use American odds like -110 or +150",true);return}const closes=form.querySelector("#book-close").value,btn=form.querySelector('button[type="submit"]');btn.disabled=true;try{const{error}=await db().rpc("sportsbook_create_market",{market_title:form.querySelector("#book-title").value.trim(),market_category:form.querySelector("#book-category").value,market_source:"commissioner",market_closes_at:closes?new Date(closes).toISOString():null,market_lore_note:form.querySelector("#book-note").value.trim(),market_outcomes:os});if(error)throw error;toast("Market open");render(view)}catch(err){toast(err.message||"Could not open that market",true);btn.disabled=false}});view.querySelectorAll("[data-settle-market]").forEach(btn=>btn.addEventListener("click",async()=>{const label=btn.textContent.replace(/ won$/i,"").trim();if(!confirm(`Settle with ${label} as the winner?`))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_settle_market",{target_market_id:Number(btn.dataset.settleMarket),winning_outcome_id:Number(btn.dataset.settleOutcome)});if(error)throw error;toast("Market settled");render(view)}catch(err){toast(err.message||"Could not settle that market",true);btn.disabled=false}}));view.querySelectorAll("[data-void-market]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("Void this market and refund open tickets?"))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_void_market",{target_market_id:Number(btn.dataset.voidMarket)});if(error)throw error;toast("Market voided");render(view)}catch(err){toast(err.message||"Could not void that market",true);btn.disabled=false}}))}
+function wireCommissioner(view){const form=view.querySelector("#sportsbook-market-form");form?.addEventListener("submit",async e=>{e.preventDefault();const os=[1,2,3].map(n=>({label:form.querySelector(`[data-book-label="${n}"]`)?.value.trim()||"",odds:Number(form.querySelector(`[data-book-odds="${n}"]`)?.value.trim()||0)})).filter(o=>o.label);if(os.length<2||os.some(o=>!(o.odds<=-100||o.odds>=100))){toast("Use American odds like -110 or +150",true);return}const closes=form.querySelector("#book-close").value,btn=form.querySelector('button[type="submit"]');btn.disabled=true;try{const{error}=await db().rpc("sportsbook_create_market",{market_title:form.querySelector("#book-title").value.trim(),market_category:form.querySelector("#book-category").value,market_source:"commissioner",market_closes_at:closes?new Date(closes).toISOString():null,market_lore_note:form.querySelector("#book-note").value.trim(),market_outcomes:os});if(error)throw error;toast("Market open");render(view)}catch(err){toast(err.message||"Could not open that market",true);btn.disabled=false}});view.querySelectorAll("[data-settle-market]").forEach(btn=>btn.addEventListener("click",async()=>{const label=btn.textContent.replace(/ won$/i,"").trim();if(!confirm(`Settle with ${label} as the winner?`))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_settle_market",{target_market_id:Number(btn.dataset.settleMarket),winning_outcome_id:Number(btn.dataset.settleOutcome)});if(error)throw error;toast("Market settled");render(view)}catch(err){toast(err.message||"Could not settle that market",true);btn.disabled=false}}));view.querySelectorAll("[data-void-market]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("Void this market and refund open tickets?"))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_void_market",{target_market_id:Number(btn.dataset.voidMarket)});if(error)throw error;toast("Market voided");render(view)}catch(err){toast(err.message||"Could not void that market",true);btn.disabled=false}}));
+  /*
+    CLEARING A RETIRED BOARD, ONE CONFIRMATION.
+
+    Sequential rather than Promise.all: each void writes wallets and the
+    ledger for every open ticket on its market, and a failure halfway
+    through should stop and report how far it got rather than firing the
+    rest anyway. Voids are independent, so the ones that landed stay
+    landed and the button can simply be pressed again.
+  */
+  view.querySelectorAll("[data-void-retired]").forEach(btn=>btn.addEventListener("click",async()=>{
+    const ids=String(btn.dataset.voidRetired||"").split(",").filter(Boolean);
+    if(!ids.length)return;
+    if(!confirm(`Void ${ids.length} retired line${ids.length===1?"":"s"} and refund every open ticket on them?`))return;
+    btn.disabled=true;
+    let done=0;
+    try{
+      for(const id of ids){
+        const{error}=await db().rpc("sportsbook_void_market",{target_market_id:Number(id)});
+        if(error)throw error;
+        done+=1;
+      }
+      toast(`${done} line${done===1?"":"s"} voided and refunded`);
+    }catch(err){
+      toast(done?`${done} of ${ids.length} voided, then: ${err.message||"failed"}`:(err.message||"Could not void those lines"),true);
+    }
+    render(view);
+  }));}

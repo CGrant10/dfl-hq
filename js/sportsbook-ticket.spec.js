@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ticketData, ticketText } from './sportsbook-ticket.js';
+import { ticketData, ticketText, opponentLine } from './sportsbook-ticket.js';
 
 const leg = (label, odds, status = 'open') => ({ label, odds_american: odds, market: `${label} vs Someone`, status });
 const member = { display_name: 'GrantsTweaking' };
@@ -8,7 +8,9 @@ describe('ticketData', () => {
   it('folds a single into its own headline', () => {
     const t = ticketData({ bet: { stake: 50, potential_payout: 83, odds_american: -150, status: 'open' }, legs: [leg('Doberman Dynasty', -150)], member });
     expect(t.title).toBe('Doberman Dynasty');
-    expect(t.market).toBe('Doberman Dynasty vs Someone');
+    /* The market line is the OPPONENT, not the fixture - printing the full
+       title under a pick of the same name said the pick's name twice. */
+    expect(t.market).toBe('vs Someone');
     expect(t.odds).toBe('-150');
     expect(t.profit).toBe(33);
     expect(t.picks).toHaveLength(1);
@@ -74,5 +76,32 @@ describe('ticketText', () => {
     expect(of('void', { cancelled_at: 'now' })).toMatch(/^Pulled/);
     expect(of('void')).toMatch(/^Voided/);
     expect(ticketText(null)).toBe('');
+  });
+});
+
+describe('opponentLine', () => {
+  it('drops whichever half of the fixture is the pick', () => {
+    expect(opponentLine('Mad Dawgs vs Gengar Gang', 'Mad Dawgs')).toBe('vs Gengar Gang');
+    expect(opponentLine('Mad Dawgs vs Gengar Gang', 'Gengar Gang')).toBe('vs Mad Dawgs');
+    expect(opponentLine('Mad Dawgs @ Gengar Gang', 'Mad Dawgs')).toBe('vs Gengar Gang');
+    expect(opponentLine('Mad Dawgs at Gengar Gang', 'Gengar Gang')).toBe('vs Mad Dawgs');
+  });
+
+  it('is case-insensitive about the match but keeps the opponent as written', () => {
+    expect(opponentLine('MAD DAWGS vs Gengar Gang', 'mad dawgs')).toBe('vs Gengar Gang');
+  });
+
+  /* A prop has no side in its title, so there is nothing to drop - and the
+     question is the only thing that identifies a YES pick. */
+  it('keeps a prop question whole', () => {
+    const q = 'Will golf trash talk break out before this line closes?';
+    expect(opponentLine(q, 'YES')).toBe(q);
+    expect(opponentLine('Team A vs Team B', 'Somebody Else')).toBe('Team A vs Team B');
+  });
+
+  it('gives back what it was handed when either side is missing', () => {
+    expect(opponentLine('', 'A')).toBe('');
+    expect(opponentLine('A vs B', '')).toBe('A vs B');
+    expect(opponentLine(null, null)).toBe('');
   });
 });

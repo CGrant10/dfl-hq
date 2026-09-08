@@ -619,6 +619,38 @@
    here that is allowed to look like a warning. */
 #sportsbook-wrap .sb-pull { color: var(--warn-ink); }
 
+/* A stranded ticket's explanation. Quiet, but it sits where the buttons
+   would be, because its job is to answer "why is there nothing to press". */
+.sb-ticket-stuck {
+  flex: 1 1 100%;
+  color: var(--warn-ink);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semi);
+  line-height: 1.5;
+}
+
+/* THE RULING QUEUE. Open by default and labelled per line, because a
+   market the board no longer offers cannot be found by browsing to it. */
+#sportsbook-wrap .sb-ruling { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+#sportsbook-wrap .sb-ruling:last-child { border-bottom: 0; }
+#sportsbook-wrap .sb-ruling strong { display: block; margin-top: 2px; font-size: var(--fs-body); line-height: var(--lh-snug); }
+.sb-ruling-why {
+  display: block;
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+#sportsbook-wrap .sb-ruling-bulk {
+  margin-bottom: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--warn-line);
+  border-radius: var(--r-md);
+  background: var(--warn-bg);
+}
+#sportsbook-wrap .sb-ruling-bulk p { margin: 0 0 var(--s-3); color: var(--warn-ink); font-size: var(--fs-body); line-height: var(--lh-body); }
+
 /* THE LEGS OF AN ENTRY.
 
    Numbered, because "which one of my three broke it" is the only question

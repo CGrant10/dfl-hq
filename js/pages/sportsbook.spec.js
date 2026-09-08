@@ -1,5 +1,7 @@
 import { it, expect, vi } from 'vitest';
-const { markets, outcomes, bets } = vi.hoisted(() => ({
+const { markets, outcomes, bets, perms } = vi.hoisted(() => ({
+  /* Flipped by the commissioner test below. */
+  perms: { sportsbook: false },
   markets: [
     {id:1,category:'Fantasy',status:'open',title:'Team <A> vs B',auto_key:'matchup:2026:3:1'},
     {id:2,category:'Fantasy',status:'open',title:'C vs D',auto_key:'matchup:2026:3:2'}
@@ -12,7 +14,7 @@ const { markets, outcomes, bets } = vi.hoisted(() => ({
   /* Mutated by the entry test below; empty for the first one. */
   bets: []
 }));
-vi.mock('../supabase.js', () => ({hasPermission:()=>false, db:()=>({
+vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], db:()=>({
   rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
@@ -84,4 +86,49 @@ it('offers dismiss instead of pull once an entry is graded', async()=>{
   expect(view.innerHTML).toContain('data-dismiss-bet="11"');
   expect(view.innerHTML).not.toContain('data-cancel-bet="11"');
   bets.length=0;
+});
+
+/*
+  THE GOLF STRANDING.
+
+  9119470 removed the golf sportsbook by filtering golf off the board, and
+  gave the ruling queue the same filter - so a golf market that had already
+  taken bets could not be settled, voided, pulled or dismissed, and the
+  stake sat out of the bankroll for good. These two tests are that bug.
+*/
+const golfMarket = {id:9,category:'Golf',status:'open',title:'DFL Golf 2026 — Moneyline',auto_key:'golf:4:match:2:moneyline',closes_at:'2026-08-01T00:00:00Z'};
+const golfBet = {
+  id:21,stake:150,odds_american:-120,potential_payout:275,status:'open',pick_count:1,
+  legs:[{outcome_id:90,market_id:9,label:'DaGrapeApe',market:'DFL Golf 2026 — Moneyline',odds_american:-120,status:'open'}]
+};
+
+it('tells the owner why a golf ticket has no buttons instead of offering nothing', async()=>{
+  markets.push(golfMarket);
+  bets.length=0; bets.push(golfBet);
+  const view=fakeView();
+  await render(view);
+
+  // The board still does not offer golf, and the ticket still cannot be
+  // pulled (its line has closed) or dismissed (it is open) - but it says so.
+  expect(view.innerHTML).not.toContain('data-cancel-bet="21"');
+  expect(view.innerHTML).not.toContain('data-dismiss-bet="21"');
+  expect(view.innerHTML).toContain('sb-ticket-stuck');
+  expect(view.innerHTML).toContain('retired line');
+  bets.length=0;
+});
+
+it('puts an off-board market in the ruling queue so the house can release the stake', async()=>{
+  perms.sportsbook=true;
+  const view=fakeView();
+  await render(view);
+
+  // The queue reaches it, labels why, and offers both the single void and
+  // the bulk one - none of which existed for golf before.
+  expect(view.innerHTML).toContain('Needs a ruling');
+  expect(view.innerHTML).toContain('Golf · off the board');
+  expect(view.innerHTML).toContain('data-void-market="9"');
+  expect(view.innerHTML).toContain('data-void-retired="9"');
+
+  perms.sportsbook=false;
+  markets.pop();
 });
