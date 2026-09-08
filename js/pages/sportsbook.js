@@ -20,7 +20,7 @@ export async function render(view){
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
-    try{const a=await db().rpc("sportsbook_maintain_auto_board",{target_open:6});if(a.error)throw a.error}catch{autoReady=false}
+    autoReady=true;
     const[lr,br,mr,or,btr]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
@@ -35,15 +35,14 @@ export async function render(view){
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
-  const open=markets.filter(m=>isOpen(m)&&!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"&&!isGolf(m)),canBook=hasPermission("sportsbook");
+  const open=markets.filter(m=>isOpen(m)&&m.category==="Fantasy"&&!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"&&m.category==="Fantasy"&&!isGolf(m)),canBook=hasPermission("sportsbook");
 
   view.innerHTML=`<div id="sportsbook-wrap">
-    <header class="sb-masthead"><img src="icons/dfl-seal-64.webp" alt="" width="40" height="40"><h1>DFL Sportsbook</h1><span class="sb-wallet" aria-label="Available SIN">${Number(wallet?.balance||0).toLocaleString()} <small>SIN</small></span></header>
+    <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>WEEK 1 · MONEYLINE</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${Number(wallet?.balance||0).toLocaleString()}</strong><span>SIN</span></div></header>
     ${bankrollCard(me,wallet,open,autoReady)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard(open.filter(m=>m.category==="Fantasy"),byMarket,bets,canBook)}
-    ${categoryBoard(open.filter(m=>m.category!=="Fantasy"),byMarket,bets,canBook)}
+    ${categoryBoard(open,byMarket,bets,canBook)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -113,15 +112,17 @@ function bankrollCard(me,wallet,open,autoReady){
 */
 function outcomeButtons(m,outcomes,bets){
   const mine=new Set((bets||[]).filter(b=>String(b.market_id)===String(m.id)&&b.status==="open").map(b=>String(b.outcome_id)));
+  const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
   return `<div class="sb-outcomes">${outcomes.map(o=>`
     <button class="sb-outcome${mine.has(String(o.id))?" is-mine":""}" data-bet-outcome="${o.id}">
-      <span class="sb-outcome-label">${esc(o.label)}</span>
+      <span class="sb-team-mark">${esc(String(o.label||"?").trim().slice(0,1).toUpperCase())}</span>
+      <span class="sb-outcome-label">${esc(o.label)}<small>${projected[outcomes.indexOf(o)]?`${esc(projected[outcomes.indexOf(o)])} projected`:"Moneyline"}</small></span>
       ${mine.has(String(o.id))?`<span class="sb-held">held</span>`:""}
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
     </button>`).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" \u00b7 ")} \u00b7 <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
-function marketCard(m,outcomes,bets,canBook){return `<article class="card sb-market"><div class="card-title-row"><h3 class="card-heading">${esc(m.title)}</h3>${m.closes_at?`<span class="pill">${esc(fmtTime(m.closes_at))}</span>`:""}</div>${m.lore_note?`<p class="muted tiny sb-note">${esc(m.lore_note)}</p>`:""}${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</article>`}
+function marketCard(m,outcomes,bets,canBook){return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">WEEK 1 · MATCHUP</small><h3 class="card-heading">${esc(m.title)}</h3></div>${m.closes_at?`<span class="sb-locks">LOCKS ${esc(fmtTime(m.closes_at))}</span>`:""}</div>${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</article>`}
 
 function categoryBoard(markets,byMarket,bets,canBook){
   if(!markets.length)return "";
@@ -130,7 +131,7 @@ function categoryBoard(markets,byMarket,bets,canBook){
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const cards=groups.get(cat).map(m=>marketCard(m,byMarket.get(String(m.id))||[],bets,canBook));
-    return `<section class="block sb-section"><h2 class="section-title">${esc(cat)}<span class="count">${cards.length}</span></h2>${cards.join("")}</section>`;
+    return `<section class="block sb-section"><div class="sb-board-head"><div><small>WEEK 1</small><h2>Matchup moneylines</h2></div><span>${cards.length} games</span></div><div class="sb-market-grid">${cards.join("")}</div></section>`;
   }).join("");
 }
 
