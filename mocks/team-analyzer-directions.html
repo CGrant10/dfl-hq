@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Team Analyzer — three directions</title>
+
+<!--
+  =====================================================================
+  WHAT THIS FILE IS FOR
+
+  Three directions for the Team Analyzer page, drawn at phone width.
+  Pick one and it gets built; nothing here ships as-is.
+
+  THE PROBLEM WITH THE PAGE TODAY
+
+  js/pages/analyzer.js already admits it in a comment: "The report ran to
+  eighteen screens on a phone." Density took a third off and two sections
+  were folded, which helped - but the shape underneath is still one
+  continuous scroll of seven sections that all look equally important.
+
+    * THERE IS NO ANSWER AT THE TOP. The lead block prints three grade
+      cards, four KPIs and a top asset - eight numbers, all the same
+      size, none of them the headline. "Is my team good?" is answerable
+      only by reading all eight and doing the ranking yourself.
+    * EVERYTHING IS A TABLE. The roster table has NINE columns. On a
+      phone those stack into nine labelled rows per player, so fifteen
+      players is 135 label/value pairs.
+    * SEASON OUTLOOK IS A SEPARATE PANEL above the report, so the
+      simulated odds - the most interesting output on the page - are
+      visually unrelated to the grades that produced them.
+    * THE FIVE UNIT GRADES ARE THE MODEL'S CORE IDEA (starter grade is
+      their equal average) and they are a table column, not a picture.
+      A roster's SHAPE - elite WR, thin TE - never gets drawn.
+
+  NOTHING IS INVENTED. Grades, percentiles, league ranks, weekly points,
+  expected points, position ranks, trade values, trends, the strength and
+  need strings, and the playoff/title/last odds are all already produced
+  by team-analyzer.js and season-outlook.js.
+  =====================================================================
+-->
+
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/ui.css">
+<style>
+/* ---- the mock harness, not the design -------------------------------- */
+body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); }
+.mk-head { max-width: 74ch; margin: 0 auto 28px; }
+.mk-head h1 { font-family: var(--font-display); font-size: 30px; letter-spacing: -.02em; margin: 0 0 6px; }
+.mk-head p { color: var(--body-text); line-height: 1.6; margin: 0 0 10px; }
+.mk-head code { background: var(--bg-3); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+.mk-rail { display: flex; gap: 24px; align-items: flex-start; overflow-x: auto; padding-bottom: 24px; }
+.mk-col { flex: none; width: 390px; }
+.mk-label { margin: 0 0 10px; }
+.mk-label b { display: block; font-family: var(--font-display); font-size: 20px; letter-spacing: -.02em; }
+.mk-label small { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.mk-frame { width: 390px; padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--bg); overflow: hidden; }
+.mk-note { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.mk-note b { color: var(--body-text); }
+.mk-note ul { margin: 6px 0 0; padding-left: 18px; }
+.mk-note li { margin-bottom: 4px; }
+@media (max-width: 900px) { body { padding: 14px; } .mk-rail { display: block; } .mk-col { width: auto; max-width: 390px; margin: 0 auto 40px; } .mk-frame { width: auto; } }
+
+/* =====================================================================
+   SHARED VOCABULARY
+   Same reason as the trade mocks: the comparison is about LAYOUT, so all
+   three directions share one type scale and one idea of a grade chip.
+   ===================================================================== */
+.v-eyebrow { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.v-num { font-variant-numeric: tabular-nums; }
+.v-card { border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-surface); box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent); }
+
+/* GRADE TONES. gradeTone() already maps A/B/C/else to elite/good/average/
+   weak; these are those four, and nothing else gets to invent a fifth. */
+.g-elite   { --gc: var(--ok);        --gb: var(--ok-bg);     --gl: var(--ok-line); }
+.g-good    { --gc: var(--accent-2);  --gb: color-mix(in srgb, var(--accent-2) 14%, transparent); --gl: color-mix(in srgb, var(--accent-2) 40%, var(--line)); }
+.g-average { --gc: var(--warn-ink);  --gb: var(--warn-bg);   --gl: var(--warn-line); }
+.g-weak    { --gc: var(--danger-ink);--gb: var(--danger-bg); --gl: var(--danger-line); }
+.v-grade { display: inline-grid; place-items: center; min-width: 34px; padding: 3px 8px; border: 1px solid var(--gl); border-radius: 8px; background: var(--gb); color: var(--gc); font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+
+.v-pos { display: inline-grid; place-items: center; min-width: 30px; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+.is-QB { background: color-mix(in srgb, #c2410c 34%, var(--bg-3)); color: #ffd0b8; }
+.is-RB { background: color-mix(in srgb, #15803d 34%, var(--bg-3)); color: #c7f2d6; }
+.is-WR { background: color-mix(in srgb, #1d4ed8 40%, var(--bg-3)); color: #cddcff; }
+.is-TE { background: color-mix(in srgb, #7e22ce 36%, var(--bg-3)); color: #e6cdff; }
+.is-FLEX { background: var(--bg-3); color: var(--muted); }
+
+/* A unit bar. The fill is the percentile the model already computes, so
+   the picture and the letter cannot disagree. */
+.v-unit { display: grid; grid-template-columns: 42px 1fr 34px; align-items: center; gap: 10px; padding: 7px 0; }
+.v-unit-track { height: 8px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
+.v-unit-track span { display: block; height: 100%; border-radius: 999px; background: var(--gc); }
+.v-trend { font-size: 11px; font-weight: 700; }
+.v-trend.is-up { color: var(--ok); }
+.v-trend.is-down { color: var(--danger-ink); }
+.v-trend.is-steady { color: var(--muted); }
+
+/* =====================================================================
+   DIRECTION 1 - THE SCORECARD
+   One answer at the top, then tabs. The hero states the overall grade
+   once, at size, with the roster's SHAPE drawn beside it - and the
+   simulated odds move up to sit with the grades that produced them,
+   instead of floating in a panel above the report. Everything currently
+   in the long scroll becomes a tab, so no screen is eighteen long.
+   ===================================================================== */
+.d1-hero { position: relative; padding: 16px; overflow: hidden; }
+.d1-hero::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--accent-sweep); }
+.d1-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.d1-hero-top h2 { margin: 3px 0 2px; font-family: var(--font-display); font-size: 24px; letter-spacing: -.03em; line-height: 1.05; }
+.d1-hero-top p { margin: 0; color: var(--muted); font-size: 11px; }
+.d1-big { flex: none; text-align: center; }
+.d1-big b { display: block; font-family: var(--font-display); font-size: 60px; font-weight: 700; line-height: .9; letter-spacing: -.05em; color: var(--gc); }
+.d1-big small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.d1-subgrades { display: flex; gap: 14px; margin: 14px 0 4px; padding: 10px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.d1-subgrades > div { display: flex; align-items: center; gap: 7px; }
+.d1-subgrades small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.d1-shape { padding: 10px 0 2px; }
+.d1-shape > small { display: block; margin-bottom: 2px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.d1-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.d1-callout { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-2); }
+.d1-callout small { display: block; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.d1-callout b { display: block; margin-top: 2px; font-size: 14px; }
+.d1-callout.is-need { border-color: color-mix(in srgb, var(--accent) 34%, var(--line)); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.d1-callout.is-need b { color: var(--accent); }
+
+/* The odds, next to the grades at last. */
+.d1-odds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--line); }
+.d1-odd { padding: 10px 8px; background: var(--bg-2); text-align: center; }
+.d1-odd small { display: block; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.d1-odd b { display: block; font-family: var(--font-display); font-size: 24px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.d1-odd i { font-style: normal; color: var(--muted); font-size: 9px; }
+.d1-odd.is-title b { color: var(--ok); }
+.d1-odd.is-chip b { color: var(--danger-ink); }
+.d1-record { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 10px; }
+.d1-record b { font-family: var(--font-display); font-size: 30px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.d1-record span { color: var(--muted); font-size: 11px; }
+
+.d1-tabs { display: flex; gap: 4px; margin: 14px 0 0; overflow-x: auto; scrollbar-width: none; }
+.d1-tabs::-webkit-scrollbar { display: none; }
+.d1-tabs button { flex: none; min-height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-2); color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.d1-tabs button[aria-selected="true"] { border-color: transparent; background: var(--accent-2-fill); color: var(--on-accent); }
+.d1-panel { margin-top: 12px; padding: 14px; }
+.d1-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.d1-panel-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; letter-spacing: -.02em; }
+.d1-panel-head span { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+
+/* A player as a row, not as nine stacked label/value pairs. Four facts
+   carry it: who, expected points as a bar, position rank, trade value.
+   The other five columns move behind a tap. */
+.d1-prow { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line-soft); }
+.d1-prow-body { min-width: 0; }
+.d1-prow-body b { display: block; font-size: 14px; line-height: 1.25; }
+.d1-prow-meta { display: flex; align-items: center; gap: 7px; margin-top: 3px; }
+.d1-prow-meta small { color: var(--muted); font-size: 10px; }
+.d1-ppg { height: 5px; margin-top: 5px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
+.d1-ppg span { display: block; height: 100%; background: var(--accent-2); border-radius: 999px; }
+.d1-prow-right { text-align: right; }
+.d1-prow-right b { display: block; font-family: var(--font-display); font-size: 18px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.d1-prow-right small { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.d1-divider { margin: 10px 0 2px; padding-top: 10px; border-top: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+
+/* =====================================================================
+   DIRECTION 2 - THE DOSSIER
+   One scroll kept, because a report you read start to finish is a real
+   thing and tabs hide what you did not think to look for. What changes is
+   RHYTHM: a full-bleed masthead, then bands that alternate surface and
+   each open with an eyebrow and a rule, so scrolling has landmarks. The
+   nine-column table becomes a two-column card grid.
+   ===================================================================== */
+.d2-masthead { position: relative; padding: 20px 16px 16px; overflow: hidden; border-radius: var(--r-lg);
+  border: 1px solid var(--card-border);
+  background:
+    radial-gradient(ellipse 70% 90% at 88% 6%, color-mix(in srgb, var(--accent-2-fill) 32%, transparent), transparent 62%),
+    linear-gradient(168deg, color-mix(in srgb, var(--bg) 76%, var(--bg-2)), var(--bg-2) 78%);
+  box-shadow: var(--e-2); }
+.d2-masthead::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--accent-sweep); }
+.d2-masthead > .v-eyebrow { display: block; }
+.d2-masthead h2 { margin: 4px 0 10px; font-family: var(--font-display); font-size: 30px; letter-spacing: -.035em; line-height: .95; }
+.d2-mast-record { display: flex; align-items: flex-end; gap: 14px; }
+.d2-mast-record > div:first-child b { font-family: var(--font-display); font-size: 52px; letter-spacing: -.05em; line-height: .88; font-variant-numeric: tabular-nums; }
+.d2-mast-record > div:first-child small { display: block; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.d2-mast-grades { display: flex; gap: 6px; margin-left: auto; }
+.d2-sentence { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--text) 12%, transparent); color: var(--body-text); font-size: 13px; line-height: 1.55; }
+.d2-sentence b { color: var(--text); }
+
+.d2-band { margin-top: 20px; }
+.d2-band-head { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
+.d2-band-head h3 { margin: 0; font-family: var(--font-display); font-size: 19px; letter-spacing: -.02em; }
+/* order, because a ::after is the flex container's LAST item - without the
+   swap the rule expands to the right OF the count and parks it against the
+   heading. Same trap as the Sportsbook board head. */
+.d2-band-head::after { content: ""; order: 0; flex: 1; height: 1px; margin-bottom: 6px; background: linear-gradient(90deg, var(--line), transparent); }
+.d2-band-head > span { order: 1; flex: none; margin-bottom: 3px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.d2-band.is-inset { padding: 14px; border-radius: var(--r-lg); background: color-mix(in srgb, var(--bg-2) 70%, transparent); border: 1px solid var(--line-soft); }
+.d2-pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.d2-pcard { padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); }
+.d2-pcard-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.d2-pcard b { display: block; margin: 6px 0 1px; font-size: 13px; line-height: 1.25; }
+.d2-pcard small { display: block; color: var(--muted); font-size: 10px; }
+.d2-pcard-figs { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--line-soft); }
+.d2-pcard-figs i { font-style: normal; font-family: var(--font-display); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.d2-pcard-figs span { color: var(--muted); font-size: 10px; font-weight: 700; }
+.d2-pcard.is-bench { opacity: .72; }
+.d2-role { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+
+/* =====================================================================
+   DIRECTION 3 - THE BRIEFING
+   The most opinionated: the page opens by TELLING you what it found,
+   in sentences, and every claim is a link into the evidence below. The
+   model already writes prose (outlookSentence(), strength, need,
+   tradeReasons()) and the page currently buries all of it in tables.
+   ===================================================================== */
+.d3-brief { padding: 16px; }
+.d3-brief > .v-eyebrow { display: block; margin-bottom: 8px; }
+.d3-brief h2 { margin: 0 0 12px; font-family: var(--font-display); font-size: 23px; letter-spacing: -.03em; line-height: 1.1; }
+.d3-verdict { display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 14px; border: 1px solid var(--gl); border-radius: 12px; background: var(--gb); }
+.d3-verdict b { font-family: var(--font-display); font-size: 40px; line-height: 1; letter-spacing: -.05em; color: var(--gc); }
+.d3-verdict div small { display: block; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.d3-verdict div span { font-size: 13px; color: var(--body-text); line-height: 1.4; }
+.d3-findings { display: grid; gap: 0; }
+.d3-finding { display: grid; grid-template-columns: 20px 1fr; gap: 11px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.d3-finding i { width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700; }
+.d3-finding.is-good i { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-line); }
+.d3-finding.is-bad i { background: var(--danger-bg); color: var(--danger-ink); border: 1px solid var(--danger-line); }
+.d3-finding.is-warn i { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-line); }
+.d3-finding.is-neutral i { background: var(--bg-3); color: var(--muted); border: 1px solid var(--line); }
+.d3-finding strong { display: block; font-size: 14px; line-height: 1.35; }
+.d3-finding p { margin: 3px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.d3-finding a { color: var(--accent-2); font-size: 11px; font-weight: 700; text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 40%, transparent); }
+.d3-jump { display: flex; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.d3-jump::-webkit-scrollbar { display: none; }
+.d3-jump a { flex: none; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-2); color: var(--body-text); font-size: 11px; font-weight: 700; text-decoration: none; }
+.d3-evidence { margin-top: 12px; padding: 14px; }
+.d3-evidence > .v-eyebrow { display: block; margin-bottom: 8px; }
+.d3-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.d3-table th { padding: 0 0 7px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; text-align: left; }
+.d3-table th:not(:first-child), .d3-table td:not(:first-child) { text-align: right; }
+.d3-table td { padding: 8px 0; border-bottom: 1px solid var(--line-soft); font-variant-numeric: tabular-nums; }
+.d3-table td:first-child { font-weight: 700; }
+.d3-table tr.is-you td { background: color-mix(in srgb, var(--accent-2) 10%, transparent); }
+.d3-mark { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--accent-2-fill); color: var(--on-accent); font-size: 8px; font-weight: 700; letter-spacing: .1em; vertical-align: 1px; }
+</style>
+</head>
+<body>
+
+<div class="mk-head">
+  <h1>Team Analyzer — three directions</h1>
+  <p><b>The page already admits the problem.</b> A comment in <code>js/pages/analyzer.js</code> reads: <em>"The report ran to eighteen screens on a phone."</em> Density took a third off and two sections were folded — but the shape underneath is still one continuous scroll of seven sections that all look equally important.</p>
+  <p>Four things follow. <b>There is no answer at the top:</b> the lead prints three grade cards, four KPIs and a top asset — eight numbers at the same size, none of them a headline. <b>Everything is a table:</b> the roster table has nine columns, which at 390px becomes nine label/value pairs per player, so fifteen players is 135 of them. <b>Season Outlook is a separate panel</b> above the report, so the simulated odds sit visually apart from the grades that produced them. And <b>the five unit grades are the model's core idea</b> — starter grade is their equal average — yet they are a table column, never a picture, so a roster's <em>shape</em> is never drawn.</p>
+  <p><b>No number here is invented.</b> Grades, percentiles, league ranks, weekly and expected points, position ranks, trade values, trends, the strength/need strings and the playoff/title/Chip Eater odds all already come out of <code>team-analyzer.js</code> and <code>season-outlook.js</code>.</p>
+</div>
+
+<div class="mk-rail">
+
+  <!-- =============== DIRECTION 1 =============== -->
+  <div class="mk-col">
+    <div class="mk-label"><small>Direction 1</small><b>The Scorecard</b></div>
+    <div class="mk-frame">
+
+      <div class="v-card d1-hero g-good">
+        <div class="d1-hero-top">
+          <div>
+            <span class="v-eyebrow">Team report</span>
+            <h2>Bastards of the Realm</h2>
+            <p>GrantsTweaking · 15 rostered · set lineup</p>
+          </div>
+          <div class="d1-big">
+            <b>B+</b>
+            <small>4th of 12</small>
+          </div>
+        </div>
+
+        <div class="d1-subgrades">
+          <div><small>Starters</small><span class="v-grade g-elite">A−</span></div>
+          <div><small>Depth</small><span class="v-grade g-average">C+</span></div>
+          <div><small>Weekly</small><b class="v-num" style="font-family:var(--font-display);font-size:19px">118.4</b></div>
+        </div>
+
+        <div class="d1-shape">
+          <small>Starting units · league percentile</small>
+          <div class="v-unit g-elite"><span class="v-pos is-QB">QB</span><div class="v-unit-track"><span style="width:82%"></span></div><span class="v-grade g-elite">A−</span></div>
+          <div class="v-unit g-elite"><span class="v-pos is-RB">RB</span><div class="v-unit-track"><span style="width:91%"></span></div><span class="v-grade g-elite">A</span></div>
+          <div class="v-unit g-average"><span class="v-pos is-WR">WR</span><div class="v-unit-track"><span style="width:44%"></span></div><span class="v-grade g-average">C+</span></div>
+          <div class="v-unit g-good"><span class="v-pos is-TE">TE</span><div class="v-unit-track"><span style="width:68%"></span></div><span class="v-grade g-good">B</span></div>
+          <div class="v-unit g-weak"><span class="v-pos is-FLEX">FLX</span><div class="v-unit-track"><span style="width:28%"></span></div><span class="v-grade g-weak">D+</span></div>
+        </div>
+
+        <div class="d1-callouts">
+          <div class="d1-callout"><small>Best unit</small><b>RB</b></div>
+          <div class="d1-callout is-need"><small>Starting need</small><b>WR</b></div>
+        </div>
+
+        <div class="d1-record">
+          <b>9-5</b>
+          <span>projected · 3rd seed</span>
+        </div>
+
+        <div class="d1-odds">
+          <div class="d1-odd"><small>Playoffs</small><b>84%</b><i>8 of 12</i></div>
+          <div class="d1-odd is-title"><small>Title</small><b>19%</b><i>2nd best</i></div>
+          <div class="d1-odd is-chip"><small>Chip Eater</small><b>2%</b><i>finishing last</i></div>
+        </div>
+      </div>
+
+      <div class="d1-tabs" role="tablist">
+        <button aria-selected="true">Roster</button>
+        <button>Units</button>
+        <button>Compare</button>
+        <button>League</button>
+        <button>Trends</button>
+      </div>
+
+      <div class="v-card d1-panel">
+        <div class="d1-panel-head">
+          <h3>Player outlook</h3>
+          <span>15 players</span>
+        </div>
+
+        <div class="d1-prow">
+          <span class="v-pos is-RB">RB</span>
+          <div class="d1-prow-body">
+            <b>Bijan Robinson</b>
+            <div class="d1-prow-meta"><small>ATL · RB2 / 64</small><span class="v-trend is-up">↑ up</span></div>
+            <div class="d1-ppg"><span style="width:94%"></span></div>
+          </div>
+          <div class="d1-prow-right"><b>287</b><small>expected</small></div>
+        </div>
+        <div class="d1-prow">
+          <span class="v-pos is-QB">QB</span>
+          <div class="d1-prow-body">
+            <b>Jordan Love</b>
+            <div class="d1-prow-meta"><small>GB · QB8 / 32</small><span class="v-trend is-steady">steady</span></div>
+            <div class="d1-ppg"><span style="width:88%"></span></div>
+          </div>
+          <div class="d1-prow-right"><b>341</b><small>expected</small></div>
+        </div>
+        <div class="d1-prow">
+          <span class="v-pos is-TE">TE</span>
+          <div class="d1-prow-body">
+            <b>Trey McBride</b>
+            <div class="d1-prow-meta"><small>ARI · TE3 / 28</small><span class="v-trend is-up">↑ up</span></div>
+            <div class="d1-ppg"><span style="width:71%"></span></div>
+          </div>
+          <div class="d1-prow-right"><b>198</b><small>expected</small></div>
+        </div>
+        <div class="d1-prow">
+          <span class="v-pos is-WR">WR</span>
+          <div class="d1-prow-body">
+            <b>Jayden Reed</b>
+            <div class="d1-prow-meta"><small>GB · WR31 / 96</small><span class="v-trend is-down">↓ down</span></div>
+            <div class="d1-ppg"><span style="width:52%"></span></div>
+          </div>
+          <div class="d1-prow-right"><b>146</b><small>expected</small></div>
+        </div>
+
+        <div class="d1-divider">Depth · graded separately</div>
+
+        <div class="d1-prow">
+          <span class="v-pos is-RB">RB</span>
+          <div class="d1-prow-body">
+            <b>Kenneth Walker</b>
+            <div class="d1-prow-meta"><small>SEA · RB18 / 64</small><span class="v-trend is-steady">steady</span></div>
+            <div class="d1-ppg"><span style="width:48%"></span></div>
+          </div>
+          <div class="d1-prow-right"><b>139</b><small>expected</small></div>
+        </div>
+      </div>
+
+    </div>
+    <p class="mk-note">
+      <b>What changes:</b>
+      <ul>
+        <li>One headline grade at 60px answers "is my team good" before anything is read. The other two grades demote to a strip.</li>
+        <li><b>The roster's shape gets drawn.</b> Five bars, filled by the percentiles the model already computes — elite RB, thin flex, visible in one glance. This is the single biggest gain of any direction here.</li>
+        <li>The odds move up beside the grades that produced them; Season Outlook stops being a floating panel.</li>
+        <li>Nine table columns become four facts and a bar; the rest goes behind a tap.</li>
+        <li>Tabs cap the page at one screen of chrome instead of seven sections of scroll.</li>
+      </ul>
+      <b>Cost:</b> middling. Tabs mean the deep-link (<code>?team=</code>) should carry a tab too, and the folded-<code>details</code> pattern gets replaced.
+    </p>
+  </div>
+
+  <!-- =============== DIRECTION 2 =============== -->
+  <div class="mk-col">
+    <div class="mk-label"><small>Direction 2</small><b>The Dossier</b></div>
+    <div class="mk-frame">
+
+      <div class="d2-masthead">
+        <span class="v-eyebrow">2026 team report</span>
+        <h2>Bastards of the Realm</h2>
+        <div class="d2-mast-record">
+          <div>
+            <b>9-5</b>
+            <small>Projected · 3rd seed</small>
+          </div>
+          <div class="d2-mast-grades">
+            <span class="v-grade g-elite">A−</span>
+            <span class="v-grade g-average">C+</span>
+            <span class="v-grade g-good">B+</span>
+          </div>
+        </div>
+        <p class="d2-sentence">A <b>top-four roster</b> carried by its backs. The starting lineup projects <b>118.4</b> a week — second best in the league — but the flex is the <b>28th percentile</b>, and that is where a playoff run gets decided.</p>
+      </div>
+
+      <div class="d2-band">
+        <div class="d2-band-head"><h3>Where it wins and loses</h3><span>5 units</span></div>
+        <div class="d2-band is-inset" style="margin-top:0">
+          <div class="v-unit g-elite"><span class="v-pos is-QB">QB</span><div class="v-unit-track"><span style="width:82%"></span></div><span class="v-grade g-elite">A−</span></div>
+          <div class="v-unit g-elite"><span class="v-pos is-RB">RB</span><div class="v-unit-track"><span style="width:91%"></span></div><span class="v-grade g-elite">A</span></div>
+          <div class="v-unit g-average"><span class="v-pos is-WR">WR</span><div class="v-unit-track"><span style="width:44%"></span></div><span class="v-grade g-average">C+</span></div>
+          <div class="v-unit g-good"><span class="v-pos is-TE">TE</span><div class="v-unit-track"><span style="width:68%"></span></div><span class="v-grade g-good">B</span></div>
+          <div class="v-unit g-weak"><span class="v-pos is-FLEX">FLX</span><div class="v-unit-track"><span style="width:28%"></span></div><span class="v-grade g-weak">D+</span></div>
+        </div>
+      </div>
+
+      <div class="d2-band">
+        <div class="d2-band-head"><h3>The odds this buys</h3><span>3,000 sims</span></div>
+        <div class="d1-odds" style="margin-top:0">
+          <div class="d1-odd"><small>Playoffs</small><b>84%</b><i>8 of 12</i></div>
+          <div class="d1-odd is-title"><small>Title</small><b>19%</b><i>2nd best</i></div>
+          <div class="d1-odd is-chip"><small>Chip Eater</small><b>2%</b><i>finishing last</i></div>
+        </div>
+      </div>
+
+      <div class="d2-band">
+        <div class="d2-band-head"><h3>The starting lineup</h3><span>8 starters</span></div>
+        <div class="d2-pgrid">
+          <div class="d2-pcard">
+            <div class="d2-pcard-top"><span class="v-pos is-QB">QB</span><span class="d2-role">Starter</span></div>
+            <b>Jordan Love</b><small>GB · QB8 / 32</small>
+            <div class="d2-pcard-figs"><i>341</i><span class="v-trend is-steady">steady</span></div>
+          </div>
+          <div class="d2-pcard">
+            <div class="d2-pcard-top"><span class="v-pos is-RB">RB</span><span class="d2-role">Starter</span></div>
+            <b>Bijan Robinson</b><small>ATL · RB2 / 64</small>
+            <div class="d2-pcard-figs"><i>287</i><span class="v-trend is-up">↑ up</span></div>
+          </div>
+          <div class="d2-pcard">
+            <div class="d2-pcard-top"><span class="v-pos is-TE">TE</span><span class="d2-role">Starter</span></div>
+            <b>Trey McBride</b><small>ARI · TE3 / 28</small>
+            <div class="d2-pcard-figs"><i>198</i><span class="v-trend is-up">↑ up</span></div>
+          </div>
+          <div class="d2-pcard">
+            <div class="d2-pcard-top"><span class="v-pos is-WR">WR</span><span class="d2-role">Flex</span></div>
+            <b>Jayden Reed</b><small>GB · WR31 / 96</small>
+            <div class="d2-pcard-figs"><i>146</i><span class="v-trend is-down">↓ down</span></div>
+          </div>
+          <div class="d2-pcard is-bench">
+            <div class="d2-pcard-top"><span class="v-pos is-RB">RB</span><span class="d2-role">Depth</span></div>
+            <b>Kenneth Walker</b><small>SEA · RB18 / 64</small>
+            <div class="d2-pcard-figs"><i>139</i><span class="v-trend is-steady">steady</span></div>
+          </div>
+          <div class="d2-pcard is-bench">
+            <div class="d2-pcard-top"><span class="v-pos is-WR">WR</span><span class="d2-role">Depth</span></div>
+            <b>Rome Odunze</b><small>CHI · WR44 / 96</small>
+            <div class="d2-pcard-figs"><i>112</i><span class="v-trend is-up">↑ up</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <p class="mk-note">
+      <b>What changes:</b>
+      <ul>
+        <li>One scroll is kept — a report you read start to finish is a real use, and tabs hide what you did not think to look for.</li>
+        <li>What changes is <b>rhythm</b>: a full-bleed masthead with the projected record at 52px, then bands that alternate surface and each open with an eyebrow and a rule out to a count. Scrolling gets landmarks.</li>
+        <li>The lead's eight equal numbers become <b>one sentence</b> that names the finding, with the figures bolded inside it. <code>outlookSentence()</code> already writes this kind of prose.</li>
+        <li>The nine-column table becomes a two-column card grid; depth is the same card at 72% opacity, which is a quieter divider than a full-width caps row.</li>
+      </ul>
+      <b>Cost:</b> the least. No new navigation, no deep-link changes — this is a restyle plus turning one table into a grid. Also the safest for anyone who reads the report top to bottom today.
+    </p>
+  </div>
+
+  <!-- =============== DIRECTION 3 =============== -->
+  <div class="mk-col">
+    <div class="mk-label"><small>Direction 3</small><b>The Briefing</b></div>
+    <div class="mk-frame">
+
+      <div class="v-card d3-brief g-good">
+        <span class="v-eyebrow">Team report · 2026</span>
+        <h2>Bastards of the Realm</h2>
+
+        <div class="d3-verdict">
+          <b>B+</b>
+          <div>
+            <small>Overall roster · 4th of 12</small>
+            <span>Good enough to make the playoffs, one starter short of winning it.</span>
+          </div>
+        </div>
+
+        <div class="d3-findings">
+          <div class="d3-finding is-good">
+            <i>↑</i>
+            <div>
+              <strong>Your backs are the best in the league</strong>
+              <p>The RB unit grades A at the 91st percentile — Bijan Robinson is RB2 of 64 rated backs.</p>
+              <a href="#units">See the unit grades →</a>
+            </div>
+          </div>
+          <div class="d3-finding is-bad">
+            <i>↓</i>
+            <div>
+              <strong>The flex is the 28th percentile</strong>
+              <p>Grades D+. It is the one starting slot where the league is beating you, and it costs about 6 points a week.</p>
+              <a href="#trade">Shop for a WR →</a>
+            </div>
+          </div>
+          <div class="d3-finding is-warn">
+            <i>!</i>
+            <div>
+              <strong>Depth is C+ behind an A− starting lineup</strong>
+              <p>Fine while everyone plays. Two injuries and the projection moves more than most rosters in the league.</p>
+              <a href="#roster">See the full roster →</a>
+            </div>
+          </div>
+          <div class="d3-finding is-neutral">
+            <i>=</i>
+            <div>
+              <strong>19% to win it, second best odds</strong>
+              <p>3,000 simulated 14-week seasons on a 9-5 projected record and a 3rd seed. Klutch Sports Group leads at 24%.</p>
+              <a href="#league">See the projected table →</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="d3-jump">
+          <a href="#units">Units</a>
+          <a href="#roster">Roster</a>
+          <a href="#league">League</a>
+          <a href="#compare">Compare</a>
+          <a href="#trends">Trends</a>
+        </div>
+      </div>
+
+      <div class="v-card d3-evidence" id="league">
+        <span class="v-eyebrow">Evidence · projected table</span>
+        <table class="d3-table">
+          <thead><tr><th>Team</th><th>Weekly</th><th>Grades</th></tr></thead>
+          <tbody>
+            <tr><td>1 Klutch Sports Group</td><td>124.1</td><td><span class="v-grade g-elite" style="min-width:0;padding:1px 5px;font-size:12px">A</span></td></tr>
+            <tr><td>2 DaGrapeApes</td><td>121.7</td><td><span class="v-grade g-elite" style="min-width:0;padding:1px 5px;font-size:12px">A−</span></td></tr>
+            <tr><td>3 The Bear Jew</td><td>119.2</td><td><span class="v-grade g-good" style="min-width:0;padding:1px 5px;font-size:12px">B+</span></td></tr>
+            <tr class="is-you"><td>4 Bastards of the Realm<span class="d3-mark">YOU</span></td><td>118.4</td><td><span class="v-grade g-good" style="min-width:0;padding:1px 5px;font-size:12px">B+</span></td></tr>
+            <tr><td>5 Dream Enders</td><td>114.0</td><td><span class="v-grade g-good" style="min-width:0;padding:1px 5px;font-size:12px">B</span></td></tr>
+            <tr><td>6 Etienne Her Out</td><td>110.8</td><td><span class="v-grade g-average" style="min-width:0;padding:1px 5px;font-size:12px">C+</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+    <p class="mk-note">
+      <b>What changes:</b>
+      <ul>
+        <li>The page opens by <b>telling you what it found</b> — four ranked findings in sentences, each with the number that supports it and a link into the evidence.</li>
+        <li>The model already writes prose (<code>outlookSentence()</code>, the strength/need strings, and <code>tradeReasons()</code> produces exactly this tone-plus-title-plus-copy shape). Today all of it is buried in tables. This surfaces it.</li>
+        <li>The tables stay, unchanged and complete, as "evidence" below — so nothing is lost for anyone who wants the raw grid.</li>
+        <li>The findings link straight to the Trade Analyzer for the need, which is the action the page should provoke.</li>
+      </ul>
+      <b>Cost:</b> the most, and the most opinionated. Four findings have to be <em>generated and ranked</em> — new logic, though close to what <code>tradeReasons()</code> already does. Worth it if you want the analyzer to give advice rather than a spreadsheet.
+    </p>
+  </div>
+
+</div>
+</body></html>
