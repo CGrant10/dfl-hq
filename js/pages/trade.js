@@ -14,10 +14,11 @@
 // league's own full-PPR scoring.
 // =====================================================================
 
-import { esc, errorBox } from "../ui.js";
+import { esc, errorBox, toast } from "../ui.js";
 import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
-import { mountTradeDesk, recommendationFor, tradeDeskMarkup } from "../trade-desk.js";
+import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
+import { shareDeal } from "../trade-card.js";
 import { suggestTrades } from "../team-analyzer.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
@@ -27,27 +28,22 @@ const ordinal = value => {
   return `${n}${["th", "st", "nd", "rd"][n % 10] || "th"}`;
 };
 
+/*
+  WHAT THE LEAD BLOCK IS FOR NOW.
+
+  It used to print a projected finish and four KPIs above the desk - a second
+  summary of the roster on the one page that is not about the roster. The
+  ticket is the lead now, so this is one line: who is trading, and the single
+  fact that should steer which players get tapped.
+*/
 function lead(team, count) {
-  const need = team.need || "No urgent need";
-  return `<header class="ta-report-lead">
-    <div class="ta-lead-top">
-      <div class="ta-team-intro">
-        <small>TRADE ANALYZER</small>
-        <h2>${esc(teamName(team))}</h2>
-        <p>${esc(team.ownerName)} · ${team.playerIds.length} rostered players</p>
-      </div>
-      <div class="ta-finish">
-        <small>PROJECTED FINISH</small>
-        <strong>${ordinal(team.rank)}</strong>
-        <span>of ${count}</span>
-      </div>
+  return `<header class="td-who">
+    <div>
+      <small>Trading as</small>
+      <strong>${esc(teamName(team))}</strong>
+      <span>${esc(team.ownerName)} &middot; ${ordinal(team.rank)} of ${count} &middot; ${team.playerIds.length} rostered</span>
     </div>
-    <dl class="ta-kpis">
-      <div><dt>Starter grade</dt><dd>${esc(team.starterGrade)}</dd></div>
-      <div><dt>Depth grade</dt><dd>${esc(team.depthGrade)}</dd></div>
-      <div><dt>Best starting unit</dt><dd>${esc(team.strength || "—")}</dd></div>
-      <div><dt>Shopping for</dt><dd>${esc(need)}</dd></div>
-    </dl>
+    ${team.need ? `<div class="td-need"><small>Shopping for</small><b>${esc(team.need)}</b></div>` : ""}
   </header>`;
 }
 
@@ -97,6 +93,21 @@ function tradeLab(team, teams, pool, shop) {
   </section>`;
 }
 
+/*
+  A MULTI-TEAM RESULT REPORTED FROM THE FIRST PARTY'S POINT OF VIEW.
+
+  verdictFor() and recommendationFor() both read valueToA/valueToB and
+  weeklyDeltaA/B, which a three-way does not have - it has arrays. trade-desk
+  does exactly this remap for the ticket; the share card has to agree with the
+  ticket, so it uses the same one rather than a second interpretation.
+*/
+function perspectiveOf({ result, parties }) {
+  if (!Array.isArray(result?.values)) return result;
+  const last = parties.length - 1;
+  return { ...result, valueToA: result.values[0], valueToB: result.values[1],
+    weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last] };
+}
+
 function page(data) {
   const me = currentMember();
   const routeTeam = new URLSearchParams((location.hash.split("?")[1] || "")).get("team");
@@ -121,16 +132,27 @@ function page(data) {
 
     wire(view) {
       const body = view.querySelector("[data-td-body]");
+      /* Whatever the ticket is currently showing, so Share renders the same
+         deal the reader is looking at rather than re-deriving one. */
+      let deal = null;
+
       const draw = () => {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         body.innerHTML = `${lead(team, data.teams.length)}
-          <section class="ta-report-section">
-            <div class="ta-report-title"><div><small>BUILD A DEAL</small><h2>Choose both sides</h2></div></div>
+          <section class="ta-report-section td-deck">
             <div class="ta-section-body" data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
+            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div>
           </section>
           ${tradeLab(team, data.teams, data.pool, shop)}`;
+        const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
+          onDeal: current => {
+            deal = current;
+            /* Nothing to share until both sides have somebody on them, and a
+               disabled button says that better than an error would. */
+            if (share) share.disabled = !current;
+          },
         });
       };
       body.addEventListener("change", event => {
@@ -145,7 +167,28 @@ function page(data) {
         if (event.target.matches('[data-ta-player="a"]')) { shop.playerA = event.target.value; draw(); return; }
         if (event.target.matches('[data-ta-player="b"]')) { shop.playerB = event.target.value; draw(); }
       });
-      body.addEventListener("click", event => {
+      body.addEventListener("click", async event => {
+        const shareButton = event.target.closest("[data-td-share]");
+        if (shareButton) {
+          if (!deal) return;
+          shareButton.disabled = true;
+          try {
+            await shareDeal({
+              ...deal,
+              pool: data.pool,
+              verdict: verdictFor(perspectiveOf(deal)),
+              recommendation: recommendationFor(perspectiveOf(deal)),
+              remark: tradeReasons(perspectiveOf(deal), deal.parties[0], deal.parties.at(-1),
+                data.pool, deal.sends[0], deal.sends.at(-1))[0],
+              member: me,
+            });
+          } catch (error) {
+            toast(error?.message || "Could not build that card", true);
+          } finally {
+            shareButton.disabled = false;
+          }
+          return;
+        }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
         trade.memberIds = [button.dataset.partner];

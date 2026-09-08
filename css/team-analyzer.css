@@ -246,8 +246,7 @@
 .ta-toolbar label, .ta-inline-select { display: grid; gap: 5px; }
 .ta-toolbar label span,
 .ta-inline-select span,
-.ta-report-title small,
-.ta-report-lead small {
+.ta-report-title small {
   color: var(--accent-2); font-size: var(--ta-micro);
   font-weight: 900; letter-spacing: .1em; text-transform: uppercase;
 }
@@ -258,104 +257,29 @@
 }
 .ta-toolbar p { margin: 0; color: var(--muted); font-size: var(--ta-small); line-height: 1.45; }
 
-/* ------------------------------ lead -------------------------------- */
+/* ------------------------------ report ------------------------------ */
 
 .ta-report {
   overflow: hidden; border: 1px solid var(--line); border-radius: var(--panel-radius);
   background: var(--bg-2); box-shadow: var(--shadow);
 }
-.ta-report-lead {
-  position: relative; display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .8fr);
-  gap: 12px; padding: 16px 18px;
-  /*
-    A NEUTRAL LIFT, NOT A RED WASH.
 
-    This was a radial of accent-fill in the top-left over a diagonal that also
-    ran to accent-fill, which in this theme is red - so the card carried a
-    lopsided red glow that belonged to no data. Elevation should say "this is
-    the top of the report", not imply a status nothing here has. A straight
-    vertical step from bg-3 to bg-2 does the lift with no hue of its own.
-  */
-  background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
-}
-.ta-report-lead:after {
-  content: ""; position: absolute; inset: auto 18px 0; height: 1px; background: var(--line);
-}
-/* Label and value read as one phrase, not as two things pinned to opposite
-   edges of an 830px card. The divider does the separating that 470px of empty
-   space used to do badly. */
-.ta-lead-top { display: flex; align-items: center; justify-content: flex-start; gap: 18px; grid-column: 1 / -1; }
-.ta-team-intro { min-width: 0; }
-.ta-team-intro h2 {
-  overflow: hidden; margin: 2px 0 0; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 23px; letter-spacing: -.03em;
-}
-.ta-team-intro p, .ta-top-asset span { margin: 4px 0 0; color: var(--muted); font-size: var(--ta-small); }
-
-.ta-finish {
-  display: grid; justify-items: start; flex: none;
-  padding-left: 18px; border-left: 1px solid var(--line-soft); text-align: left;
-}
-.ta-finish strong { font-family: var(--font-display); font-size: 30px; line-height: .9; letter-spacing: -.04em; }
-.ta-finish span { margin-top: 4px; color: var(--muted); font-size: var(--ta-small); }
-
-/* Three grades, the first one leading. */
 /*
-  minmax(0, …), not 1fr. A bare 1fr track is min-width:auto, so it refuses to
-  shrink below its content and the card's own overflow:hidden/ellipsis never
-  gets a chance - the text pushes the border out from the inside instead of
-  being clipped by it. That is the "card design leaking into text": a 108px
-  card holding 118px of content.
-*/
-.ta-grade-stack { display: grid; grid-template-columns: 1.15fr minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
-/* min-width alone is not enough where justify-items is start: the track
-   shrinks but the item is still sized to its content and hangs out of the
-   card. max-width pins it to the track so the ellipsis can do its job. */
-.ta-grade-card > * { min-width: 0; max-width: 100%; }
-.ta-grade-card {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
-  min-width: 0; padding: var(--card-pad);
-  border: 1px solid var(--card-line); border-radius: var(--card-radius);
-  background: var(--card-bg);
-}
-.ta-grade-card small {
-  color: var(--muted); font-size: var(--ta-micro); font-weight: 800;
-  letter-spacing: .06em; text-transform: uppercase;
-}
-.ta-grade-card strong { grid-row: 1 / 3; grid-column: 2; font-family: var(--font-display); font-size: 24px; line-height: 1; }
-.ta-grade-card span {
-  overflow: hidden; margin-top: 3px; color: var(--muted);
-  font-size: var(--ta-small); text-overflow: ellipsis; white-space: nowrap;
-}
-.ta-grade-card.is-primary {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-  background: color-mix(in srgb, var(--accent-fill) 12%, var(--bg-3));
-}
-.ta-grade-card.is-elite strong,   .ta-unit-grade.is-elite strong   { color: var(--ok); }
-.ta-grade-card.is-good strong,    .ta-unit-grade.is-good strong    { color: var(--accent-2); }
-.ta-grade-card.is-average strong, .ta-unit-grade.is-average strong { color: var(--warn); }
-.ta-grade-card.is-weak strong,    .ta-unit-grade.is-weak strong    { color: var(--danger); }
+  THE LEAD BLOCK IS GONE.
 
-.ta-kpis {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px; margin: 0; background: var(--line-soft);
-}
-.ta-kpis div { min-width: 0; padding: 7px 10px; background: var(--bg-3); }
-.ta-kpis dt {
-  overflow: hidden; color: var(--muted); font-size: var(--ta-micro);
-  text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: .05em;
-}
-.ta-kpis dd {
-  overflow: hidden; margin: 3px 0 0; font-size: var(--ta-lead); font-weight: 800;
-  text-overflow: ellipsis; white-space: nowrap;
-}
-.ta-top-asset {
-  display: grid; grid-column: 1 / -1; min-width: 0; padding: var(--card-pad);
-  border: 1px solid var(--card-line); border-radius: var(--card-radius);
-  background: var(--card-bg);
-}
-.ta-top-asset strong { overflow: hidden; margin-top: 3px; text-overflow: ellipsis; white-space: nowrap; font-size: var(--ta-lead); }
+  .ta-report-lead, .ta-lead-top, .ta-team-intro, .ta-finish, .ta-kpis,
+  .ta-grade-stack, .ta-grade-card and .ta-top-asset drew the old eight-number
+  header on both analyzer routes. The Team Analyzer opens with .ta-brief now
+  and the Trade Analyzer with .td-who and the ticket, so all of it was dead -
+  about ninety lines, including three media queries' worth of overrides.
+
+  Only the four grade tones survived, because .ta-unit-grade shares them and
+  the position report still draws it.
+*/
+.ta-unit-grade.is-elite strong   { color: var(--ok); }
+.ta-unit-grade.is-good strong    { color: var(--accent-2); }
+.ta-unit-grade.is-average strong { color: var(--warn); }
+.ta-unit-grade.is-weak strong    { color: var(--danger); }
 
 /* ---------------------------- sections ------------------------------ */
 
@@ -561,21 +485,12 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* --------------------------- responsive ----------------------------- */
 
 @media (max-width: 900px) {
-  .ta-report-lead { grid-template-columns: 1fr; }
-  .ta-grade-stack, .ta-kpis, .ta-top-asset { grid-column: 1 / -1; }
   .ta-position-table td:last-child { width: auto; }
 }
 
 @media (max-width: 680px) {
   .ta-toolbar { grid-template-columns: 1fr; gap: 10px; }
   .ta-report { border-inline: 0; border-radius: 0; }
-  .ta-report-lead { padding: 16px; }
-  .ta-lead-top { align-items: flex-start; }
-  .ta-team-intro h2 { font-size: 23px; }
-  .ta-finish strong { font-size: 34px; }
-  .ta-grade-stack { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .ta-grade-card { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: 10px; }
-  .ta-grade-card strong { grid-row: auto; grid-column: auto; font-size: 26px; }
   .ta-report-section { padding: 16px 14px; }
   .ta-inline-note { font-size: var(--ta-small); }
   .ta-inline-select { grid-template-columns: 1fr; }
@@ -787,16 +702,6 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .ta-page-head { align-items: flex-start; }
   .ta-toolbar { margin-inline: -12px; padding-inline: 12px; }
   .ta-report { margin-inline: -12px; }
-  .ta-report-lead { gap: 12px; padding: 14px 12px; }
-  .ta-lead-top { display: grid; gap: 10px; }
-  .ta-finish {
-    justify-items: start; padding: 9px 0 0;
-    border-top: 1px solid var(--line-soft); border-left: 0; text-align: left;
-  }
-  .ta-finish strong { font-size: 32px; }
-  .ta-grade-stack { gap: 6px; }
-  .ta-grade-card { padding: 9px; }
-  .ta-grade-card strong { font-size: 23px; }
   .ta-report-section { padding-inline: 12px; }
   .ta-table:not(.ta-comparison-table) tbody tr { gap: 2px 10px; }
 }
@@ -860,56 +765,333 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 .td-empty { padding: 14px; color: var(--muted); font-size: var(--ta-small); }
 
-.td-verdict { padding: 14px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--bg-3); }
-.td-verdict.is-idle { text-align: center; color: var(--muted); }
-.td-verdict.is-idle strong { display: block; color: var(--text); font-size: var(--ta-body); }
-.td-verdict.is-idle span { font-size: var(--ta-small); }
-.td-verdict.is-even { border-color: color-mix(in srgb, var(--ok) 42%, var(--line)); }
-.td-verdict.is-slight { border-color: color-mix(in srgb, var(--warn) 38%, var(--line)); }
-.td-verdict.is-clear, .td-verdict.is-lopsided { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+/* =====================================================================
+   THE DEAL TICKET
+   ---------------------------------------------------------------------
+   What replaced .td-verdict. The trade is a document: two columns totalled
+   like an invoice so "who gave up more" is arithmetic you can see, the call
+   stamped across the middle because it is the answer to the only question
+   this page is asked, and the balance drawn against verdictFor()'s real
+   bands instead of printed as a bare percentage.
+   ===================================================================== */
+.td-who {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.td-who small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.td-who strong {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: -.025em;
+}
+.td-who > div:first-child span { color: var(--muted); font-size: var(--ta-small); }
+.td-need {
+  flex: none;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: var(--card-radius);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  text-align: right;
+}
+.td-need b { font-family: var(--font-display); font-size: 19px; color: var(--accent); }
 
-.td-verdict-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.td-verdict-head small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .1em; }
-.td-verdict-head strong { display: block; margin-top: 3px; font-size: var(--ta-lead); }
-.td-call-copy > div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:5px; }
-.td-call-copy > div strong { margin:0; }
-.td-call { display:inline-flex; align-items:center; min-height:24px; padding:4px 8px; border-radius:6px; font-size:var(--ta-micro); font-weight:950; letter-spacing:.08em; }
-.td-call.is-accept { color:var(--ok); background:color-mix(in srgb,var(--ok) 12%,var(--bg-2)); border:1px solid color-mix(in srgb,var(--ok) 42%,var(--line)); }
-.td-call.is-negotiate { color:var(--warn); background:color-mix(in srgb,var(--warn) 11%,var(--bg-2)); border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
-.td-call.is-pass { color:var(--danger); background:color-mix(in srgb,var(--danger) 10%,var(--bg-2)); border:1px solid color-mix(in srgb,var(--danger) 40%,var(--line)); }
-.td-fairness { flex: none; text-align: right; }
-.td-fairness b { display: block; font-family: var(--font-display); font-size: 26px; line-height: 1; }
-.td-fairness span { color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .06em; }
-.is-even .td-fairness b { color: var(--ok); }
-.is-slight .td-fairness b { color: var(--warn); }
-.is-clear .td-fairness b, .is-lopsided .td-fairness b { color: var(--danger); }
+.td-ticket {
+  position: relative;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: var(--panel-radius);
+  background: var(--card-surface);
+  box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
+}
+.td-ticket::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent-sweep);
+}
+.td-ticket-head {
+  padding: 4px 0 14px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--text) 18%, transparent);
+  text-align: center;
+}
+.td-ticket-head small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+.td-ticket-head h2 {
+  margin: 5px 0 3px;
+  font-family: var(--font-display);
+  font-size: clamp(17px, 4.4vw, 22px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+.td-ticket-head h2 i { color: var(--accent-2); font-style: normal; }
+.td-ticket-head > span { color: var(--muted); font-size: var(--ta-small); }
+.td-ticket.is-idle .td-ticket-head { border-bottom: 0; padding-bottom: 4px; }
 
-.td-scales { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
-.td-scales.is-multi,.td-impact.is-multi { grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); }
-.td-scale { min-width: 0; padding: 10px; border-radius: 9px; background: var(--bg-2); }
-.td-scale small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .05em; }
-.td-scale p { margin: 4px 0 6px; font-size: var(--ta-body); font-weight: 700; overflow-wrap: anywhere; }
-.td-metric { color: var(--muted); font-size: var(--ta-small); }
-.td-metric b { color: var(--text); }
+/* THE TWO COLUMNS. A dashed rule between them, because the whole point is
+   that it reads as one document rather than two panels. */
+.td-cols { display: grid; grid-template-columns: 1fr 1fr; }
+.td-col { padding: 12px 10px; min-width: 0; }
+.td-col + .td-col { border-left: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); }
+.td-col > small,
+.td-leg > small {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--accent);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.td-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  min-width: 0;
+}
+.td-item b { display: block; font-size: var(--ta-small); font-weight: 700; line-height: 1.3; }
+.td-item small { display: block; color: var(--muted); font-size: var(--ta-micro); }
+.td-item.is-empty b { color: var(--muted); font-weight: 400; font-style: italic; }
+.td-item-value {
+  flex: none;
+  color: var(--body-text);
+  font-size: var(--ta-small);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.td-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+.td-total small {
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.td-total b {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.td-total b.td-in { color: var(--ok); }
 
-.td-impact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.td-impact-cell { min-width: 0; padding: 10px; border-radius: 9px; background: var(--bg-2); }
-.td-impact-cell small { display: block; overflow: hidden; color: var(--muted); font-size: var(--ta-micro); text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
-.td-impact-cell b { font-family: var(--font-display); font-size: 22px; }
-.td-impact-cell span { margin-left: 5px; color: var(--muted); font-size: var(--ta-small); }
-.td-impact-cell.is-up b { color: var(--ok); }
-.td-impact-cell.is-down b { color: var(--danger); }
+.td-fine {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  line-height: 1.5;
+}
 
-.td-reasoning { margin-top:10px; padding:12px; border-radius:10px; background:var(--bg-2); }
-.td-reasoning h3 { margin:0 0 9px; font-size:var(--ta-body); }
-.td-reason-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.td-reason { display:grid; grid-template-columns:8px minmax(0,1fr); gap:9px; align-items:start; padding:9px; border:1px solid var(--line-soft); border-radius:9px; background:var(--bg-3); }
-.td-reason > i { width:7px; height:7px; margin-top:5px; border-radius:50%; background:var(--muted); }
-.td-reason.is-good > i { background:var(--ok); }
-.td-reason.is-bad > i { background:var(--danger); }
-.td-reason.is-warn > i { background:var(--warn); }
-.td-reason strong { display:block; font-size:var(--ta-small); }
-.td-reason p { margin:3px 0 0; color:var(--muted); font-size:var(--ta-micro); line-height:1.4; }
+/* Three or more parties stack, because two columns cannot hold a three-way. */
+.td-legs { display: grid; gap: 8px; padding: 12px 0; }
+.td-leg { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--bg-2); }
+
+/* The Trade Lab's suggestion cards still show the call at chip size, which
+   is the right scale for eight offers you are scanning rather than one you
+   are reading. The stamp below is that same word at deciding size. */
+.td-call { display:inline-flex; align-items:center; min-height:24px; padding:4px 8px; border-radius:6px; font-size:var(--ta-micro); font-weight:900; letter-spacing:.08em; }
+.td-call.is-accept { color:var(--ok); background:color-mix(in srgb,var(--ok) 12%,var(--bg-2)); border:1px solid var(--ok-line); }
+.td-call.is-negotiate { color:var(--warn-ink); background:color-mix(in srgb,var(--warn) 11%,var(--bg-2)); border:1px solid var(--warn-line); }
+.td-call.is-pass { color:var(--danger-ink); background:color-mix(in srgb,var(--danger) 10%,var(--bg-2)); border:1px solid var(--danger-line); }
+
+/* THE STAMP. The largest thing on the page, because it is the answer. */
+.td-stamp {
+  margin: 14px 0;
+  padding: 12px;
+  border: 2px solid var(--sl);
+  border-radius: var(--card-radius);
+  background: var(--sb);
+  text-align: center;
+}
+.td-stamp.is-accept    { --sl: var(--ok-line);     --sb: var(--ok-bg);     --sc: var(--ok); }
+.td-stamp.is-pass      { --sl: var(--danger-line); --sb: var(--danger-bg); --sc: var(--danger-ink); }
+.td-stamp.is-negotiate { --sl: var(--warn-line);   --sb: var(--warn-bg);   --sc: var(--warn-ink); }
+.td-stamp strong {
+  display: block;
+  color: var(--sc);
+  font-family: var(--font-display);
+  font-size: clamp(28px, 8vw, 36px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .07em;
+}
+.td-stamp span { display: block; margin-top: 5px; color: var(--body-text); font-size: var(--ta-small); }
+
+.td-lines { display: grid; margin-bottom: 14px; }
+.td-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--ta-body);
+}
+.td-line span { color: var(--muted); min-width: 0; }
+.td-line b {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--ta-lead);
+  font-variant-numeric: tabular-nums;
+}
+.td-line b.is-up { color: var(--ok); }
+.td-line b.is-down { color: var(--danger-ink); }
+
+/* THE BALANCE, AS A BAND. The stops are verdictFor()'s own thresholds -
+   lopsided below 55, clear winner to 72, slight edge to 88, balanced above -
+   so where the needle sits and what the headline calls it cannot disagree.
+   Only the ends are labelled; the band it landed in is already the headline. */
+.td-balance { display: grid; gap: 6px; padding-top: 20px; margin-bottom: 4px; }
+.td-balance-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    var(--danger-bg) 0 55%, var(--warn-bg) 55% 72%,
+    color-mix(in srgb, var(--accent-2) 16%, transparent) 72% 88%, var(--ok-bg) 88% 100%);
+}
+.td-balance-track i {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 16px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--text);
+  box-shadow: 0 0 0 2px var(--bg-2);
+}
+.td-balance-track i b {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.td-balance-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* THE BUILDER, folded. Reading a deal and building one are different jobs. */
+.td-builder { margin-top: 12px; border-top: 1px solid var(--line); }
+.td-builder > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  color: var(--body-text);
+  font-size: var(--ta-body);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.td-builder > summary::-webkit-details-marker { display: none; }
+.td-builder > summary i {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform var(--t-fast, 120ms) ease;
+}
+.td-builder[open] > summary i { transform: rotate(-135deg); }
+.td-builder-body { padding-bottom: 8px; }
+
+.td-share { margin-top: 12px; }
+.td-share .btn { width: 100%; min-height: 48px; }
+.td-share .btn:disabled { opacity: .5; }
+
+@media (max-width: 420px) {
+  .td-who { flex-wrap: wrap; }
+  .td-cols { grid-template-columns: 1fr; }
+  .td-col + .td-col { border-left: 0; border-top: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); }
+  .td-ticket { padding: 14px; }
+}
+
+/* THE DFLYZER. These are sentences with a citation in them, not labels, so
+   they read down one column at a readable size - the previous two-up grid of
+   11px copy was where the reasoning went to be ignored. */
+.td-reasoning { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+.td-reasoning h3 {
+  margin: 0 0 2px;
+  color: var(--accent);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.td-reason {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  padding: 11px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.td-reason > i {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rl);
+  border-radius: 50%;
+  background: var(--rb);
+  color: var(--rc);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+}
+.td-reason.is-good    { --rc: var(--ok);         --rb: var(--ok-bg);     --rl: var(--ok-line); }
+.td-reason.is-bad     { --rc: var(--danger-ink); --rb: var(--danger-bg); --rl: var(--danger-line); }
+.td-reason.is-warn    { --rc: var(--warn-ink);   --rb: var(--warn-bg);   --rl: var(--warn-line); }
+.td-reason.is-neutral { --rc: var(--muted);      --rb: var(--bg-3);      --rl: var(--line); }
+.td-reason strong { display: block; font-size: var(--ta-body); font-weight: 700; line-height: 1.3; }
+.td-reason p { margin: 3px 0 0; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
 
 .td-note { margin: 11px 0 0; color: var(--muted); font-size: var(--ta-small); line-height: 1.5; }
 .td-actions { margin-top: 11px; }
@@ -936,7 +1118,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .ta-deal-card .btn { justify-self:start; }
 
 @media (max-width: 680px) {
-  .td-board, .td-board.is-multi, .td-scales, .td-scales.is-multi, .td-impact, .td-impact.is-multi, .td-reason-list, .ta-deal-grid { grid-template-columns: minmax(0, 1fr); }
+  .td-board, .td-board.is-multi, .ta-deal-grid { grid-template-columns: minmax(0, 1fr); }
   .ta-shop-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 

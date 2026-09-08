@@ -1,0 +1,136 @@
+import { describe, it, expect } from 'vitest';
+import { tradeReasons } from './trade-desk.js';
+
+/*
+  THE DFLYZER IS ALLOWED TO BE RUDE. IT IS NOT ALLOWED TO BE WRONG.
+
+  The voice is the point of these remarks, and the voice is also the risk: the
+  first time it calls a fair trade a robbery, or shouts about a third of a
+  point a week, nobody believes the next one either. So these tests are about
+  the BANDS - which remark fires at which number - rather than the wording,
+  and every remark has to print the figure it is mocking you for.
+*/
+const P = (id, name, position, tradeValue) => ({ id, name, position, nflTeam: 'XXX', tradeValue, expectedPoints: 200 });
+const pool = new Map([
+  P('big', 'Bijan Robinson', 'RB', 72),
+  P('mid', 'Kenneth Walker', 'RB', 28),
+  P('small', 'Jayden Reed', 'WR', 20),
+  P('star', 'Nico Collins', 'WR', 60),
+  P('scrap', 'Tony Pollard', 'RB', 19),
+  /* Two near-identical TEs, so the DEFAULT read triggers no need, strength,
+     consolidation or roster-room remark and the band under test is not
+     crowded out of the top four by remarks that are also correct. */
+  P('teA', 'Some Tight End', 'TE', 40),
+  P('teB', 'Other Tight End', 'TE', 38),
+].map(p => [p.id, p]));
+
+const mine = { id: '4', team_name: 'Bastards of the Realm', need: 'WR', strength: 'RB' };
+const theirs = { id: '1', team_name: 'Klutch Sports Group', need: 'RB', strength: 'WR' };
+/* No need and no strength on the default team, for the same reason. */
+const plain = { id: '4', team_name: 'Bastards of the Realm' };
+const read = (result, sendA = ['teA'], sendB = ['teB'], teamA = plain) =>
+  tradeReasons({ weeklyDeltaA: 0, weeklyDeltaB: 0, ...result }, teamA, theirs, pool, sendA, sendB);
+const titles = reasons => reasons.map(r => r.title);
+
+describe('who is fleecing whom', () => {
+  it('calls a lopsided deal a fleecing, and puts the shears in the right hand', () => {
+    const mineToWin = read({ fairness: 48, valueToA: 60, valueToB: 28.7 });
+    expect(mineToWin[0].title).toContain('you are holding the shears');
+    expect(mineToWin[0].tone).toBe('good');
+
+    const theirsToWin = read({ fairness: 34, valueToA: 25, valueToB: 72 });
+    expect(theirsToWin[0].title).toBe('You are the one getting fleeced');
+    expect(theirsToWin[0].tone).toBe('bad');
+  });
+
+  it('does NOT call a fair trade a robbery', () => {
+    const even = read({ fairness: 93, valueToA: 38, valueToB: 41 });
+    expect(titles(even).join(" ")).not.toMatch(/fleec/i);
+    expect(titles(even)).toContain('Nobody is robbing anybody');
+  });
+
+  it('prints the balance and the value gap in the same sentence as the insult', () => {
+    const [top] = read({ fairness: 48, valueToA: 60, valueToB: 28.7 });
+    expect(top.copy).toContain('48%');
+    expect(top.copy).toContain('31.3');
+  });
+});
+
+describe('the lineup bands', () => {
+  /* This is the one that was wrong first time: −0.3 a week got the same
+     sentence as −6.0, which is how a tool loses its credibility. */
+  it('does not shout about a third of a point a week', () => {
+    const small = read({ fairness: 80, valueToA: 45, valueToB: 40, weeklyDeltaA: -.3 });
+    expect(titles(small)).toContain('Your lineup takes a small hit');
+    expect(titles(small)).not.toContain('You are paying to get worse on Sunday');
+  });
+
+  it('does shout about a real one', () => {
+    const big = read({ fairness: 80, valueToA: 45, valueToB: 40, weeklyDeltaA: -4.2 });
+    expect(titles(big)).toContain('You are paying to get worse on Sunday');
+    expect(big.find(r => r.title.includes('Sunday')).copy).toContain('−4.2');
+  });
+
+  it('says nothing happened when nothing happened', () => {
+    const flat = read({ fairness: 90, valueToA: 41, valueToB: 40, weeklyDeltaA: .05 });
+    expect(titles(flat)).toContain('Your lineup does not notice this happened');
+  });
+
+  it('never writes a double negative about the other side', () => {
+    const reasons = read({ fairness: 80, valueToA: 50, valueToB: 40, weeklyDeltaA: 1.2, weeklyDeltaB: -1.8 });
+    const theirLine = reasons.find(r => r.copy.includes('Their lineup drops'));
+    expect(theirLine.copy).toContain('drops 1.8');
+    expect(theirLine.copy).not.toContain('drops −');
+  });
+});
+
+describe('the roster remarks', () => {
+  it('spots parts turning into a player, and a player turning into change', () => {
+    const up = read({ fairness: 60, valueToA: 60, valueToB: 30 }, ['mid', 'small'], ['star']);
+    expect(titles(up)).toContain('You are turning parts into a player');
+
+    const down = read({ fairness: 60, valueToA: 25, valueToB: 72 }, ['big'], ['scrap']);
+    expect(titles(down)).toContain('You are breaking up a good player for change');
+  });
+
+  it('knows when the hole gets plugged and when the good unit gets sold', () => {
+    const reasons = read({ fairness: 62, valueToA: 60, valueToB: 30 }, ['mid'], ['star'], mine);
+    /* star is a WR and WR is the need; mid is an RB and RB is the strength. */
+    expect(titles(reasons)).toContain('It finally plugs the WR hole');
+    expect(titles(reasons)).toContain('You are selling out of your best unit');
+  });
+
+  it('counts bodies when the package is uneven', () => {
+    const reasons = read({ fairness: 80, valueToA: 50, valueToB: 45 }, ['teA'], ['teB', 'scrap']);
+    expect(titles(reasons).join(" ")).toContain('2 bodies in for 1 out');
+  });
+});
+
+describe('the shape of the read', () => {
+  it('always returns something, never more than four, and always with a figure', () => {
+    const cases = [
+      { fairness: 48, valueToA: 60, valueToB: 28.7, weeklyDeltaA: -2.6, weeklyDeltaB: 2.6 },
+      { fairness: 93, valueToA: 38, valueToB: 41, weeklyDeltaA: 0, weeklyDeltaB: 0 },
+      { fairness: 34, valueToA: 25, valueToB: 72, weeklyDeltaA: -5, weeklyDeltaB: 5 },
+      { fairness: 100, valueToA: 0, valueToB: 0, weeklyDeltaA: 0, weeklyDeltaB: 0 },
+    ];
+    for (const result of cases) {
+      const reasons = read(result);
+      expect(reasons.length).toBeGreaterThan(0);
+      expect(reasons.length).toBeLessThanOrEqual(4);
+      for (const reason of reasons) {
+        expect(reason.title).toBeTruthy();
+        expect(reason.copy).toBeTruthy();
+        expect(['good', 'bad', 'warn', 'neutral']).toContain(reason.tone);
+        /* A digit somewhere in the remark. Trash talk with a citation is
+           funny; trash talk without one is noise. */
+        expect(`${reason.title} ${reason.copy}`).toMatch(/\d/);
+      }
+    }
+  });
+
+  it('leads with the fleecing, not with the roster trivia', () => {
+    const reasons = read({ fairness: 34, valueToA: 25, valueToB: 72, weeklyDeltaA: -5 }, ['big'], ['scrap'], mine);
+    expect(reasons[0].title).toBe('You are the one getting fleeced');
+  });
+});

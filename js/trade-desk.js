@@ -88,104 +88,298 @@ function sideList(team, pool, picked, side, label) {
   </div>`;
 }
 
-function packageLine(ids, pool) {
-  if (!ids.length) return "<em>nobody yet</em>";
-  return ids.map(id => esc(pool.get(String(id))?.name || id)).join(" + ");
-}
+/*
+  THE DFLYZER.
 
-function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
+  "Why the model makes this call" over four politely-worded observations was
+  accurate and nobody read it. This is a league that keeps receipts; a tool
+  that tells you a trade is bad should say so in a voice somebody will
+  actually screenshot.
+
+  THE RULE, AND IT IS THE WHOLE RULE: the voice changes, the numbers do not.
+  Every remark below is welded to a figure evaluateTrade() computed - value
+  gap, fairness band, weekly lineup delta, package sizes, position need - and
+  the figure is printed in the same sentence that mocks you for it. Trash talk
+  with a citation is funny. Trash talk without one is just noise, and the
+  first time the DFLyzer calls a fair trade a robbery it stops being worth
+  reading.
+
+  Weighted rather than push-ordered: a genuine fleecing has to lead, and on a
+  boring even swap the interesting remark is whatever else is true.
+*/
+export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
   const outgoing = sendA.map(id => pool.get(String(id))).filter(Boolean);
   const need = teamA?.need;
   const fillsNeed = need && incoming.some(player => player.position === need);
   const givesStrength = teamA?.strength && outgoing.some(player => player.position === teamA.strength);
   const valueGap = num(result.valueToA) - num(result.valueToB);
+  const gap = Math.abs(valueGap).toFixed(1);
+  const fairness = num(result.fairness);
+  const bestIn = Math.max(0, ...incoming.map(player => num(player.tradeValue)));
+  const bestOut = Math.max(0, ...outgoing.map(player => num(player.tradeValue)));
+  const them = teamName(teamB);
   const reasons = [];
-  if (Math.abs(valueGap) < 4) reasons.push({ tone: "neutral", title: "The asset value is close", copy: `Only ${Math.abs(valueGap).toFixed(1)} value points separate the packages.` });
-  else if (valueGap > 0) reasons.push({ tone: "good", title: "You gain asset value", copy: `The incoming package grades ${Math.abs(valueGap).toFixed(1)} value points higher after roster cuts.` });
-  else reasons.push({ tone: "bad", title: "You give up more value", copy: `Your outgoing package grades ${Math.abs(valueGap).toFixed(1)} value points higher after roster cuts.` });
-  if (result.weeklyDeltaA >= .25) reasons.push({ tone: "good", title: "Your starting lineup improves", copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points per week after the trade.` });
-  else if (result.weeklyDeltaA <= -.25) reasons.push({ tone: "bad", title: "Your starting lineup gets weaker", copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points per week after the trade.` });
-  else reasons.push({ tone: "neutral", title: "Your weekly lineup barely moves", copy: "The deal is mainly about asset shape and depth, not an immediate scoring jump." });
-  if (fillsNeed) reasons.push({ tone: "good", title: `It addresses your ${need} need`, copy: `The incoming side includes ${incoming.filter(player => player.position === need).map(player => player.name).join(" and ")}.` });
-  if (givesStrength) reasons.push({ tone: "warn", title: `You are trading from your best unit`, copy: `One of the outgoing players comes from ${teamA.strength}, currently your strongest position group.` });
-  if (sendB.length < sendA.length) reasons.push({ tone: "good", title: "You consolidate the package", copy: "Fewer incoming players can be easier to fit into a starting lineup and roster." });
-  else if (sendB.length > sendA.length) reasons.push({ tone: "warn", title: "The package needs roster room", copy: "Extra incoming pieces only count when they beat the players they would displace." });
-  if (result.weeklyDeltaB > .35) reasons.push({ tone: "neutral", title: `${teamName(teamB)} has a reason to listen`, copy: `Their lineup also gains ${signed(result.weeklyDeltaB)} projected points per week.` });
-  return reasons.slice(0, 4);
+
+  /* ---- who is fleecing whom ------------------------------------------ */
+  if (fairness < 55 && valueGap > 0) {
+    reasons.push({ tone: "good", weight: 100,
+      title: "This is a fleecing, and you are holding the shears",
+      copy: `${fairness}% balance with ${gap} value points coming your way. Send it before they run the numbers themselves.` });
+  } else if (fairness < 55) {
+    reasons.push({ tone: "bad", weight: 100,
+      title: "You are the one getting fleeced",
+      copy: `${fairness}% balance and ${gap} value points walking out the door. ${them} is not your friend today.` });
+  } else if (Math.abs(valueGap) < 4) {
+    reasons.push({ tone: "neutral", weight: 70,
+      title: "Nobody is robbing anybody",
+      copy: `${gap} value points between the two packages at ${fairness}% balance. Depressingly fair. Shake hands.` });
+  } else if (valueGap > 0) {
+    reasons.push({ tone: "good", weight: 84,
+      title: "You come out ahead on assets",
+      copy: `The incoming side grades ${gap} points higher after roster cuts, at ${fairness}% balance. Quietly good business.` });
+  } else {
+    reasons.push({ tone: "bad", weight: 84,
+      title: "You are paying a premium and calling it a trade",
+      copy: `Your outgoing side grades ${gap} points higher after roster cuts, at ${fairness}% balance.` });
+  }
+
+  /* ---- what it does to the only lineup you can actually start -------- */
+  if (result.weeklyDeltaA >= .25) {
+    reasons.push({ tone: "good", weight: 76,
+      title: "Your starting lineup gets better this week",
+      copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points a week after this. That is a real number, not a vibe.` });
+  } else if (result.weeklyDeltaA <= -1.5) {
+    reasons.push({ tone: "bad", weight: 80,
+      title: "You are paying to get worse on Sunday",
+      copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points a week after this. Whatever the plan is, it is not winning games now.` });
+  } else if (result.weeklyDeltaA <= -.25) {
+    /* Banded, because the same sentence over −0.3 and over −6.0 makes the
+       DFLyzer sound like it cannot read its own numbers - and the moment it
+       oversells one of them, nobody believes the next one either. */
+    reasons.push({ tone: "warn", weight: 66,
+      title: "Your lineup takes a small hit",
+      copy: `${signed(result.weeklyDeltaA)} points a week. Survivable, and worth it only if the value coming back is the point.` });
+  } else {
+    reasons.push({ tone: "neutral", weight: 58,
+      title: "Your lineup does not notice this happened",
+      copy: `${signed(result.weeklyDeltaA)} points a week. This is a trade about roster shape, so at least have a shape in mind.` });
+  }
+
+  /* ---- a real player for spare parts --------------------------------- */
+  if (bestIn >= bestOut * 1.8 && bestOut > 0) {
+    reasons.push({ tone: "good", weight: 74,
+      title: "You are turning parts into a player",
+      copy: `Your best piece out is worth ${bestOut}; the best coming back is worth ${bestIn}. Consolidation is how rosters get scary.` });
+  } else if (bestOut >= bestIn * 1.8 && bestIn > 0) {
+    reasons.push({ tone: "bad", weight: 78,
+      title: "You are breaking up a good player for change",
+      copy: `Out goes a ${bestOut}; back comes a ${bestIn} as the headline piece. Depth you cannot start is not depth.` });
+  }
+
+  /* ---- the hole, and the thing you are selling to plug it ------------ */
+  if (fillsNeed) {
+    reasons.push({ tone: "good", weight: 72,
+      title: `It finally plugs the ${need} hole`,
+      copy: `${incoming.filter(player => player.position === need).map(player => `${player.name} (${num(player.tradeValue)})`).join(" and ")} lands in the worst unit on your roster.` });
+  }
+  if (givesStrength) {
+    reasons.push({ tone: "warn", weight: 68,
+      title: `You are selling out of your best unit`,
+      copy: `${outgoing.filter(player => player.position === teamA.strength).map(player => `${player.name} (${num(player.tradeValue)})`).join(" and ")} comes from ${teamA.strength}, currently the one thing you are good at.` });
+  }
+
+  /* ---- roster arithmetic --------------------------------------------- */
+  if (sendB.length > sendA.length) {
+    reasons.push({ tone: "warn", weight: 54,
+      title: `${sendB.length} bodies in for ${sendA.length} out`,
+      copy: "Extra pieces only count if they beat the players they displace. Otherwise you traded for roster spots you have to cut." });
+  }
+
+  /* ---- and the part nobody wants to hear ------------------------------ */
+  if (result.weeklyDeltaB > .35) {
+    reasons.push({ tone: "warn", weight: 62,
+      title: `${them} will say yes to this`,
+      copy: `Their lineup gains ${signed(result.weeklyDeltaB)} a week too. When both lineups improve, ask which one improved more.` });
+  } else if (result.weeklyDeltaB <= -.4 && result.weeklyDeltaA > 0) {
+    reasons.push({ tone: "neutral", weight: 60,
+      title: `${them} has no reason to take this`,
+      copy: `Their lineup drops ${Math.abs(num(result.weeklyDeltaB)).toFixed(1)} a week. Sending it is free; expecting a yes is optimistic.` });
+  }
+
+  return reasons.sort((a, b) => b.weight - a.weight).slice(0, 4);
 }
 
-function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
-  if (!result) {
-    return `<div class="td-verdict is-idle">
-      <strong>Pick at least one player from each side</strong>
-      <span>The verdict updates as you build the deal.</span>
-    </div>`;
-  }
+/*
+  THE DEAL TICKET.
+
+  This was .td-verdict: a recommendation chip beside a bigger word, a bare
+  fairness percentage, two "scales", two impact cells and the reasons. It
+  contained the right facts in the wrong order - the loudest thing on it was
+  "Balanced" or "Clear winner", not the actual advice, and 68% balance means
+  nothing to a reader who does not know that 88+ is even and under 55 is
+  lopsided.
+
+  It is a document now. Two columns totalled like an invoice, so "who gave up
+  more" is arithmetic you can see rather than a percentage you have to trust;
+  the call stamped across the middle at 34px, because it is the answer to the
+  only question this page is ever asked; and the balance drawn against
+  verdictFor()'s real bands instead of printed as a number.
+
+  It is also the same shape as the Sportsbook entry card, which is already the
+  app's idea of "a thing that records a wager" - and a trade is a wager on two
+  rosters. That is what makes it shareable, and a trade argument happens in the
+  group chat, not on this page.
+*/
+function packageRows(ids, pool) {
+  const players = ids.map(id => pool.get(String(id))).filter(Boolean)
+    .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
+  if (!players.length) return `<div class="td-item is-empty"><span><b>Nobody yet</b></span></div>`;
+  return players.map(player => `<div class="td-item">
+    <span><b>${esc(player.name)}</b><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
+    <span class="td-item-value">${Math.round(num(player.tradeValue))}</span>
+  </div>`).join("");
+}
+
+/* The marker's position IS the fairness number, and the bands behind it are
+   verdictFor()'s thresholds - so where the needle sits and what the headline
+   calls it cannot disagree. */
+function balanceMeter(fairness) {
+  const at = Math.max(0, Math.min(100, num(fairness)));
+  return `<div class="td-balance">
+    <div class="td-balance-track"><i style="left:${at}%"><b>${at}% balance</b></i></div>
+    <div class="td-balance-scale"><span>Lopsided</span><span>Even split</span></div>
+  </div>`;
+}
+
+function reasonList(reasons) {
+  return `<div class="td-reasoning">
+    <h3>What the DFLyzer thinks of this trade</h3>
+    ${reasons.map(reason => `<article class="td-reason is-${reason.tone}">
+      <i aria-hidden="true">${REASON_MARK[reason.tone] || "="}</i>
+      <div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div>
+    </article>`).join("")}
+  </div>`;
+}
+
+const REASON_MARK = { good: "↑", bad: "↓", warn: "!", neutral: "=" };
+
+function idleTicket() {
+  return `<div class="td-ticket is-idle">
+    <div class="td-ticket-head">
+      <small>DFL Trade Analyzer</small>
+      <h2>No deal yet</h2>
+      <span>Pick at least one player from each side and the ticket fills in.</span>
+    </div>
+  </div>`;
+}
+
+function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
+  if (!result) return idleTicket();
   const v = verdictFor(result);
   const recommendation = recommendationFor(result);
   const winner = v.who === "a" ? teamA : v.who === "b" ? teamB : null;
   const reasons = tradeReasons(result, teamA, teamB, pool, sendA, sendB);
-  /* Value and lineup are reported separately and never averaged: a fair
-     trade that helps only one starting lineup is a real and common shape,
-     and blending the two into one score would hide exactly that. */
-  return `<div class="td-verdict is-${v.tone}">
-    <div class="td-verdict-head">
-      <div class="td-call-copy">
-        <small>RECOMMENDATION FOR ${esc(teamName(teamA))}</small>
-        <div><span class="td-call is-${recommendation.tone}">${recommendation.action}</span><strong>${esc(v.headline)}${winner ? ` · ${esc(teamName(winner))}` : ""}</strong></div>
-      </div>
-      <div class="td-fairness" title="100% is an even split of package value">
-        <b>${num(result.fairness)}%</b><span>balance</span>
-      </div>
+  const need = teamA?.need;
+  const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
+  const fills = need ? incoming.filter(player => player.position === need) : [];
+  /* Value and lineup are reported separately and never averaged: a fair trade
+     that helps only one starting lineup is a real and common shape, and
+     blending the two into one score would hide exactly that. */
+  return `<div class="td-ticket is-${v.tone}">
+    <div class="td-ticket-head">
+      <small>DFL Trade Analyzer</small>
+      <h2>${esc(teamName(teamA))} <i aria-hidden="true">&rlarr;</i> ${esc(teamName(teamB))}</h2>
+      <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins it` : ""}</span>
     </div>
 
-    <div class="td-scales">
-      <div class="td-scale">
-        <small>${esc(teamName(teamA))} gives</small>
-        <p>${packageLine(sendA, pool)}</p>
-        <span class="td-metric">value out <b>${num(result.valueToB)}</b></span>
+    <div class="td-cols">
+      <div class="td-col">
+        <small>You send</small>
+        ${packageRows(sendA, pool)}
+        <div class="td-total"><small>Worth to them</small><b>${Math.round(num(result.valueToB))}</b></div>
       </div>
-      <div class="td-scale">
-        <small>${esc(teamName(teamB))} gives</small>
-        <p>${packageLine(sendB, pool)}</p>
-        <span class="td-metric">value out <b>${num(result.valueToA)}</b></span>
-      </div>
-    </div>
-
-    <div class="td-impact">
-      <div class="td-impact-cell ${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">
-        <small>${esc(teamName(teamA))} lineup</small>
-        <b>${signed(result.weeklyDeltaA)}</b><span>pts / week</span>
-      </div>
-      <div class="td-impact-cell ${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">
-        <small>${esc(teamName(teamB))} lineup</small>
-        <b>${signed(result.weeklyDeltaB)}</b><span>pts / week</span>
+      <div class="td-col">
+        <small>You get</small>
+        ${packageRows(sendB, pool)}
+        <div class="td-total"><small>Worth to you</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
+    <!--
+      THE TOTAL IS NOT THE SUM OF THE TAGS, AND THE CARD HAS TO SAY SO.
 
-    <div class="td-reasoning">
-      <h3>Why the model makes this call</h3>
-      <div class="td-reason-list">${reasons.map(reason => `<article class="td-reason is-${reason.tone}"><i aria-hidden="true"></i><div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div></article>`).join("")}</div>
+      packageValue() discounts every piece after the first against the player
+      it would displace, so two tags of 28 and 20 come out at 29 rather than
+      48 - which is right, because a second RB who only beats your own bench
+      is not worth his sticker to the side receiving him. Laid out as an
+      invoice that arithmetic looks like a mistake unless it is labelled, so
+      the totals say "worth to" rather than "out" and this line explains the
+      gap. An unexplained number on a card about fairness is worse than no
+      number.
+    -->
+    <p class="td-fine">Package value counts each extra piece only by what it beats on the receiving roster, so a total is not the sum of the tags.</p>
+
+    <div class="td-stamp is-${recommendation.tone}">
+      <strong>${recommendation.action}</strong>
+      <span>For ${esc(teamName(teamA))}</span>
     </div>
 
+    <div class="td-lines">
+      <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} / wk</b></div>
+      <div class="td-line"><span>${esc(teamName(teamB))} lineup</span><b class="${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaB)} / wk</b></div>
+      ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
+    </div>
+
+    ${balanceMeter(result.fairness)}
+    ${reasonList(reasons)}
   </div>`;
 }
 
-function multiTeamVerdictMarkup(result, parties, pool, sends) {
-  if (!result) return `<div class="td-verdict is-idle"><strong>Pick a player from each team</strong></div>`;
+/*
+  THREE OR MORE PARTIES.
+
+  Two columns cannot hold a three-way, so the packages become a run of
+  "from → to" rows and the stamp, the lines and the reasoning are unchanged -
+  they are all stated from the first party's point of view either way, which
+  is what "RECOMMENDATION FOR" always meant.
+*/
+function multiTicketMarkup(result, parties, pool, sends) {
+  if (!result) return idleTicket();
   const last = parties.length - 1;
   const perspective = { ...result, valueToA: result.values[0], valueToB: result.values[1], weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last] };
   const v = verdictFor(perspective), recommendation = recommendationFor(perspective);
   const winnerIndex = result.values.reduce((best, value, index, values) => value > values[best] ? index : best, 0);
   const winner = parties[winnerIndex];
   const reasons = tradeReasons(perspective, parties[0], parties[last], pool, sends[0], sends[last]);
-  const packages = parties.map((from, index) => ({ from, to: parties[(index + 1) % parties.length], ids: sends[index], value: result.values[(index + 1) % parties.length] }));
-  return `<div class="td-verdict is-${v.tone}">
-    <div class="td-verdict-head"><div class="td-call-copy"><small>RECOMMENDATION FOR ${esc(teamName(parties[0]))}</small><div><span class="td-call is-${recommendation.tone}">${recommendation.action}</span><strong>${esc(v.headline)} · ${esc(teamName(winner))}</strong></div></div><div class="td-fairness"><b>${num(result.fairness)}%</b><span>balance</span></div></div>
-    <div class="td-scales is-multi">${packages.map(item => `<div class="td-scale"><small>${esc(teamName(item.from))} → ${esc(teamName(item.to))}</small><p>${packageLine(item.ids, pool)}</p><span class="td-metric">value <b>${num(item.value)}</b></span></div>`).join("")}</div>
-    <div class="td-impact is-multi">${parties.map((party, index) => `<div class="td-impact-cell ${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}"><small>${esc(teamName(party))} lineup</small><b>${signed(result.weeklyDeltas[index])}</b><span>pts / week</span></div>`).join("")}</div>
-    <div class="td-reasoning"><h3>Why the model makes this call</h3><div class="td-reason-list">${reasons.map(reason => `<article class="td-reason is-${reason.tone}"><i aria-hidden="true"></i><div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div></article>`).join("")}</div></div>
+  return `<div class="td-ticket is-${v.tone}">
+    <div class="td-ticket-head">
+      <small>DFL Trade Analyzer</small>
+      <h2>${parties.length}-team deal</h2>
+      <span>${esc(v.headline)} &middot; ${esc(teamName(winner))}</span>
+    </div>
+
+    <div class="td-legs">
+      ${parties.map((from, index) => {
+        const to = parties[(index + 1) % parties.length];
+        return `<div class="td-leg">
+          <small>${esc(teamName(from))} &rarr; ${esc(teamName(to))}</small>
+          ${packageRows(sends[index], pool)}
+          <div class="td-total"><small>Value</small><b>${num(result.values[(index + 1) % parties.length])}</b></div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="td-stamp is-${recommendation.tone}">
+      <strong>${recommendation.action}</strong>
+      <span>For ${esc(teamName(parties[0]))}</span>
+    </div>
+
+    <div class="td-lines">
+      ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} / wk</b></div>`).join("")}
+    </div>
+
+    ${balanceMeter(result.fairness)}
+    ${reasonList(reasons)}
   </div>`;
 }
 
@@ -205,33 +399,58 @@ export function tradeDeskMarkup(team, teams, pool, state) {
   }).join("");
   const add = parties.length < teams.length ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
   const multi = parties.length > 2;
-  return `<div class="td-party-controls">${selectors}${add}</div>
-    <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
-      ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND")).join("")}
-    </div>
-    <p class="td-jump"><a href="#td-verdict">Jump to the verdict &darr;</a></p>
-    <div id="td-verdict" data-td-verdict>${multi ? multiTeamVerdictMarkup(null) : verdictMarkup(null)}</div>
-    <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>`;
+  /*
+    THE TICKET COMES FIRST AND THE BUILDER FOLDS.
+
+    It used to be the other way round, with a "Jump to the verdict ↓" link
+    between them - which is an admission that the answer was in the wrong
+    place. Reading a deal and building one are different jobs, so they are
+    different states: the ticket is what you land on, and the player lists
+    are behind one disclosure.
+
+    That link was also broken. The app is hash-routed, so <a href="#td-verdict">
+    did not scroll to the verdict, it set location.hash and sent the router
+    somewhere called "td-verdict".
+  */
+  return `<div data-td-verdict>${multi ? multiTicketMarkup(null) : ticketMarkup(null)}</div>
+    <details class="td-builder"${state.editing ? " open" : ""}>
+      <summary><span>Edit deal</span><i aria-hidden="true"></i></summary>
+      <div class="td-builder-body">
+        <div class="td-party-controls">${selectors}${add}</div>
+        <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
+          ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND")).join("")}
+        </div>
+        <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>
+      </div>
+    </details>`;
 }
 
 /**
  * Wire a rendered trade desk. Repaints only the verdict on each change, so
  * building a deal never redraws the report underneath it.
  */
-export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange }) {
+export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]");
   const partiesOf = () => [team, ...state.memberIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
 
+  /*
+    onDeal hands the page whatever the ticket is currently showing, so the
+    Share button can render a card from it. Passing the evaluated result
+    rather than re-deriving it is the point: a shared image that disagreed
+    with the ticket above it would be worse than no image.
+  */
   const update = () => {
     const parties = partiesOf(), sends = state.sends.map(set => [...set]);
     if (parties.length > 2) {
       const result = sends.every(ids => ids.length) ? evaluateMultiTeamTrade({ teams: parties, sends, pool }) : null;
-      verdictHost.innerHTML = multiTeamVerdictMarkup(result, parties, pool, sends);
+      verdictHost.innerHTML = multiTicketMarkup(result, parties, pool, sends);
+      onDeal?.(result ? { result, parties, sends } : null);
     } else {
       const [partner] = parties.slice(1), [sendA, sendB] = sends;
       const result = sendA.length && sendB.length ? evaluateTrade({ teamA: team, teamB: partner, sendA, sendB, pool }) : null;
-      verdictHost.innerHTML = verdictMarkup(result, team, partner, pool, sendA, sendB);
+      verdictHost.innerHTML = ticketMarkup(result, team, partner, pool, sendA, sendB);
+      onDeal?.(result ? { result, parties: [team, partner], sends: [sendA, sendB] } : null);
     }
   };
 
@@ -262,6 +481,11 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     list?.querySelectorAll("[data-td-player-row]").forEach(row => {
       row.hidden = Boolean(term) && !String(row.dataset.search || "").includes(term);
     });
+  });
+
+  /* A redraw rebuilds the whole desk, so the disclosure remembers itself. */
+  root.querySelector(".td-builder")?.addEventListener("toggle", event => {
+    state.editing = event.currentTarget.open;
   });
 
   root.addEventListener("click", event => {
