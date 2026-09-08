@@ -12,6 +12,32 @@ const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",ho
 const isOpen=m=>m.status==="open"&&(!m.closes_at||new Date(m.closes_at)>new Date());
 const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
 
+/*
+  WHERE "WEEK 1" COMES FROM NOW.
+
+  It was hardcoded in three places - the masthead caption, every card's
+  kicker and the board heading - which is fine for exactly as long as it is
+  week one and then quietly wrong for the rest of the season. The weekly
+  matchup lines are booked with an auto_key of matchup:<season>:<week>:<id>
+  (see tools/current-sportsbook-lines.mjs), so the board can just read it.
+
+  scopeOf() returns null rather than guessing when the markets on screen do
+  not agree on a week, and the caption falls back to a count. A board that
+  says nothing about the week beats a board that says the wrong one.
+*/
+const matchupKey=m=>String(m.auto_key||"").match(/^matchup:(\d+):(\d+):/);
+function scopeOf(markets){
+  const keys=(markets||[]).map(matchupKey).filter(Boolean);
+  if(!keys.length)return null;
+  const[,season,week]=keys[0];
+  return keys.every(k=>k[1]===season&&k[2]===week)?{season:Number(season),week:Number(week)}:null;
+}
+function mastheadCaption(open){
+  const scope=scopeOf(open);
+  if(scope)return `Week ${scope.week} &middot; ${scope.season} &middot; Moneyline`;
+  return open.length?`${open.length} open line${open.length===1?"":"s"}`:"The book is closed";
+}
+
 export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
@@ -38,7 +64,7 @@ export async function render(view){
   const open=markets.filter(m=>isOpen(m)&&m.category==="Fantasy"&&!isGolf(m)),rulings=markets.filter(m=>m.status==="locked"&&m.category==="Fantasy"&&!isGolf(m)),canBook=hasPermission("sportsbook");
 
   view.innerHTML=`<div id="sportsbook-wrap">
-    <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>WEEK 1 · MONEYLINE</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${Number(wallet?.balance||0).toLocaleString()}</strong><span>SIN</span></div></header>
+    <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${mastheadCaption(open)}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${Number(wallet?.balance||0).toLocaleString()}</strong><span>SIN</span></div></header>
     ${bankrollCard(me,wallet,open,autoReady)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
@@ -110,19 +136,31 @@ function bankrollCard(me,wallet,open,autoReady){
        tickets list, so "have I backed this" is answerable where the decision
        is being made.
 */
+/*
+  THE HELD CHIP MOVED INSIDE THE NAME, AND THAT WAS A BUG FIX.
+
+  It used to be its own grid child sitting between the label and the price -
+  in a three-column grid whose third column the price also claims by name
+  (.sb-price { grid-column: 3 }). Two items, one cell: on any line a member
+  actually held a ticket on, the chip drew straight through the odds. It
+  belongs beside the team name anyway, which is what it qualifies.
+*/
 function outcomeButtons(m,outcomes,bets){
   const mine=new Set((bets||[]).filter(b=>String(b.market_id)===String(m.id)&&b.status==="open").map(b=>String(b.outcome_id)));
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
-  return `<div class="sb-outcomes">${outcomes.map(o=>`
+  return `<div class="sb-outcomes">${outcomes.map((o,i)=>`
     <button class="sb-outcome${mine.has(String(o.id))?" is-mine":""}" data-bet-outcome="${o.id}">
-      <span class="sb-team-mark">${esc(String(o.label||"?").trim().slice(0,1).toUpperCase())}</span>
-      <span class="sb-outcome-label">${esc(o.label)}<small>${projected[outcomes.indexOf(o)]?`${esc(projected[outcomes.indexOf(o)])} projected`:"Moneyline"}</small></span>
-      ${mine.has(String(o.id))?`<span class="sb-held">held</span>`:""}
+      <span class="sb-team-mark" aria-hidden="true">${esc(String(o.label||"?").trim().slice(0,1).toUpperCase())}</span>
+      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${mine.has(String(o.id))?`<span class="sb-held">Held</span>`:""}</span><small>${projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
     </button>`).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" \u00b7 ")} \u00b7 <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
-function marketCard(m,outcomes,bets,canBook){return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">WEEK 1 · MATCHUP</small><h3 class="card-heading">${esc(m.title)}</h3></div>${m.closes_at?`<span class="sb-locks">LOCKS ${esc(fmtTime(m.closes_at))}</span>`:""}</div>${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</article>`}
+function marketCard(m,outcomes,bets,canBook){
+  const key=matchupKey(m);
+  const kicker=key?`Week ${key[2]} &middot; Matchup`:esc(m.category||"DFL");
+  return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div>${outcomeButtons(m,outcomes,bets)}${houseControls(m,outcomes,canBook)}</article>`;
+}
 
 function categoryBoard(markets,byMarket,bets,canBook){
   if(!markets.length)return "";
@@ -130,8 +168,15 @@ function categoryBoard(markets,byMarket,bets,canBook){
   const preferred=["Fantasy","DFL Life","DFL Disrespect","Marvel","Gaming","Other"];
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
-    const cards=groups.get(cat).map(m=>marketCard(m,byMarket.get(String(m.id))||[],bets,canBook));
-    return `<section class="block sb-section"><div class="sb-board-head"><div><small>WEEK 1</small><h2>Matchup moneylines</h2></div><span>${cards.length} games</span></div><div class="sb-market-grid">${cards.join("")}</div></section>`;
+    const group=groups.get(cat);
+    const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],bets,canBook));
+    /* A heading is only allowed to say "matchup" if every card under it is
+       one; a category that mixes props in gets called what it is. */
+    const scope=scopeOf(group),matchups=group.every(matchupKey);
+    const eyebrow=scope?`Week ${scope.week} &middot; ${scope.season}`:esc(cat);
+    const heading=matchups?"Matchup moneylines":`${esc(cat)} lines`;
+    const unit=matchups?"games":"lines";
+    return `<section class="block sb-section"><div class="sb-board-head"><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${cards.length} ${unit}</span></div><div class="sb-market-grid">${cards.join("")}</div></section>`;
   }).join("");
 }
 
@@ -147,7 +192,7 @@ function rulingQueue(markets,byMarket){return `<details class="card"><summary cl
 */
 function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
-function ticketCard(b,mm,om){const m=mm.get(String(b.market_id)),o=om.get(String(b.outcome_id));return `<div class="card sb-ticket"><div class="card-title-row"><div><strong>${esc(o?.label||"Ticket")}</strong><div class="muted tiny">${esc(m?.title||"DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status==="won"?"green":b.status==="lost"?"grey":b.status==="void"?"warn":""}">${esc(b.status)}</span></div><div class="card-meta sb-ticket-foot"><span>${b.stake} SIN · ${b.potential_payout} return</span><button type="button" class="linkbtn" data-share-ticket="${b.id}">Share card</button></div></div>`}
+function ticketCard(b,mm,om){const m=mm.get(String(b.market_id)),o=om.get(String(b.outcome_id));return `<div class="card sb-ticket"><div class="card-title-row"><div><strong>${esc(o?.label||"Ticket")}</strong><div class="muted tiny">${esc(m?.title||"DFL Sportsbook")} · ${fmtOdds(b.odds_american)}</div></div><span class="pill ${b.status==="won"?"green":b.status==="lost"?"grey":b.status==="void"?"warn":""}">${esc(b.status)}</span></div><div class="card-meta sb-ticket-foot"><span class="sb-ticket-figures"><span><b>Stake</b>${Number(b.stake).toLocaleString()}</span><span class="sb-ticket-return"><b>To return</b>${Number(b.potential_payout).toLocaleString()}</span></span><button type="button" class="linkbtn" data-share-ticket="${b.id}">Share card</button></div></div>`}
 
 /*
   THE CLAIM. One button, one RPC, and the page redraws from the wallet the
