@@ -62,15 +62,27 @@ const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || S
   pages. They are the same question asked in either direction, so they are now
   the same page: propose above, judge below.
 */
-function tradeLab(team, teams, pool, selectedPlayerId) {
-  const players = team.playerIds.map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const selected = players.find(player => player.id === selectedPlayerId) || players[0];
-  const offers = selected ? suggestTrades({ teams, teamId: team.id, playerId: selected.id, pool, limit: 8 }) : [];
-  const picker = `<label class="ta-inline-select"><span>Shop player</span><select data-ta-player aria-label="Player to shop">${players.map(player => `<option value="${esc(player.id)}" ${player.id === selected?.id ? "selected" : ""}>${esc(player.name)} · ${player.position} · value ${player.tradeValue}</option>`).join("")}</select></label>`;
+function tradeLab(team, teams, pool, shop) {
+  const otherTeams = teams.filter(item => item.id !== team.id);
+  const partner = otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
+  if (shop.side === "theirs" && !shop.partnerId) shop.partnerId = partner?.id || "";
+  const anchorTeam = shop.side === "theirs" ? partner : team;
+  const players = (anchorTeam?.playerIds || []).map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const first = players.find(player => player.id === shop.playerA) || players[0];
+  const second = players.find(player => player.id === shop.playerB && player.id !== first?.id);
+  const anchors = [first?.id, second?.id].filter(Boolean);
+  const offers = anchors.length ? suggestTrades({ teams, teamId: team.id, playerIds: anchors, partnerId: shop.partnerId || undefined, anchorTeamId: anchorTeam?.id, pool, limit: 8 }) : [];
+  const playerOptions = (selected, exclude, optional = false) => `${optional ? '<option value="">None</option>' : ""}${players.filter(player => player.id !== exclude).map(player => `<option value="${esc(player.id)}" ${player.id === selected ? "selected" : ""}>${esc(player.name)} · ${player.position} · ${player.tradeValue}</option>`).join("")}`;
+  const controls = `<div class="ta-shop-controls">
+    <label><span>Player from</span><select data-ta-shop-side><option value="mine" ${shop.side !== "theirs" ? "selected" : ""}>My team</option><option value="theirs" ${shop.side === "theirs" ? "selected" : ""}>Another team</option></select></label>
+    <label><span>Trade with</span><select data-ta-shop-partner>${shop.side === "theirs" ? "" : '<option value="">Any team</option>'}${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(shop.partnerId) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
+    <label><span>Player 1</span><select data-ta-player="a">${playerOptions(first?.id, second?.id)}</select></label>
+    <label><span>Player 2</span><select data-ta-player="b">${playerOptions(second?.id, first?.id, true)}</select></label>
+  </div>`;
   return `<section class="ta-report-section ta-trades">
     <div class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div></div>
     <div class="ta-section-body">
-      ${picker}
+      ${controls}
       ${offers.length ? `<div class="ta-deal-grid">${offers.map(offer => {
         const call = recommendationFor(offer);
         return `<article class="ta-deal-card">
@@ -80,7 +92,7 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
           <button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze this deal</button>
         </article>`;
       }).join("")}</div>`
-        : `<div class="ta-empty">No balanced offers cleared the roster-value checks for ${esc(selected?.name || "this player")}. Try another player instead of padding the deal with throw-ins.</div>`}
+        : `<div class="ta-empty">No balanced offers found for this package.</div>`}
     </div>
   </section>`;
 }
@@ -91,8 +103,8 @@ function page(data) {
   let selectedId = data.teams.find(team => String(team.id) === String(routeTeam))?.id
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
-  const trade = { partnerId: "", sendA: new Set(), sendB: new Set() };
-  let shopId = "";
+  const trade = { partnerId: "", thirdId: "", threeWay: false, sendA: new Set(), sendB: new Set(), sendC: new Set() };
+  const shop = { side: "mine", partnerId: "", playerA: "", playerB: "" };
 
   return {
     markup: `<header class="page-head ta-page-head">
@@ -116,15 +128,22 @@ function page(data) {
             <div class="ta-report-title"><div><small>BUILD A DEAL</small><h2>Choose both sides</h2></div></div>
             <div class="ta-section-body" data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
           </section>
-          ${tradeLab(team, data.teams, data.pool, shopId)}`;
+          ${tradeLab(team, data.teams, data.pool, shop)}`;
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
         });
       };
       body.addEventListener("change", event => {
-        if (!event.target.matches("[data-ta-player]")) return;
-        shopId = event.target.value;
-        draw();
+        if (event.target.matches("[data-ta-shop-side]")) {
+          shop.side = event.target.value; shop.playerA = ""; shop.playerB = "";
+          if (shop.side === "theirs" && !shop.partnerId) shop.partnerId = data.teams.find(item => item.id !== selectedId)?.id || "";
+          draw(); return;
+        }
+        if (event.target.matches("[data-ta-shop-partner]")) {
+          shop.partnerId = event.target.value; shop.playerA = ""; shop.playerB = ""; draw(); return;
+        }
+        if (event.target.matches('[data-ta-player="a"]')) { shop.playerA = event.target.value; draw(); return; }
+        if (event.target.matches('[data-ta-player="b"]')) { shop.playerB = event.target.value; draw(); }
       });
       body.addEventListener("click", event => {
         const button = event.target.closest("[data-td-load-offer]");
@@ -132,13 +151,15 @@ function page(data) {
         trade.partnerId = button.dataset.partner;
         trade.sendA = new Set((button.dataset.sendA || "").split(",").filter(Boolean));
         trade.sendB = new Set((button.dataset.sendB || "").split(",").filter(Boolean));
+        trade.threeWay = false; trade.sendC.clear();
         draw();
         body.querySelector("[data-trade-desk]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
         /* Both sides referred to rosters that are no longer in play. */
-        trade.partnerId = ""; trade.sendA.clear(); trade.sendB.clear(); shopId = "";
+        trade.partnerId = ""; trade.thirdId = ""; trade.threeWay = false; trade.sendA.clear(); trade.sendB.clear(); trade.sendC.clear();
+        shop.side = "mine"; shop.partnerId = ""; shop.playerA = ""; shop.playerB = "";
         draw();
       });
       draw();

@@ -294,26 +294,67 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   };
 }
 
+export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], pool = new Map() } = {}) {
+  if (!teamA || !teamB || !teamC || !sendA.length || !sendB.length || !sendC.length) return null;
+  const teams = [teamA, teamB, teamC], sends = [sendA, sendB, sendC].map(ids => ids.map(String));
+  if (teams.some((team, index) => {
+    const owned = new Set(team.playerIds.map(String));
+    return sends[index].some(id => !owned.has(id));
+  })) return null;
+  const next = teams.map((team, index) => team.playerIds.filter(id => !sends[index].includes(String(id)))
+    .concat(sends[(index + 2) % 3]));
+  const before = teams.map(team => optimalLineup(team.playerIds, pool));
+  const after = next.map(ids => optimalLineup(ids, pool));
+  /* A sends to B, B sends to C and C sends to A. Package value is measured
+     against the roster receiving it, including the players it displaces. */
+  const values = [
+    packageValue(sends[2], next[0], pool),
+    packageValue(sends[0], next[1], pool),
+    packageValue(sends[1], next[2], pool),
+  ];
+  const high = Math.max(...values, 1), low = Math.min(...values);
+  const weekly = teams.map((_, index) => round((after[index].starterPoints - before[index].starterPoints) / 17));
+  return {
+    sendA: sends[0], sendB: sends[1], sendC: sends[2],
+    valueToA: values[0], valueToB: values[1], valueToC: values[2],
+    valueOutA: values[1],
+    weeklyDeltaA: weekly[0], weeklyDeltaB: weekly[1], weeklyDeltaC: weekly[2],
+    deltaA: round(after[0].score - before[0].score),
+    deltaB: round(after[1].score - before[1].score),
+    deltaC: round(after[2].score - before[2].score),
+    fairness: Math.max(0, Math.round(low / high * 100)),
+  };
+}
+
 /**
  * Search realistic one-for-one, one-for-two and two-for-one structures. A
  * package is judged after roster cuts; extra names do not receive free value.
  */
-export function suggestTrades({ teams = [], teamId, playerId, pool = new Map(), limit = 6 } = {}) {
+export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, pool = new Map(), limit = 6 } = {}) {
   const mine = teams.find(team => String(team.id) === String(teamId));
-  if (!mine || !mine.playerIds.includes(String(playerId))) return [];
-  const myExtras = sortedPlayers(mine.playerIds.filter(id => String(id) !== String(playerId)), pool)
-    .sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 6);
+  if (!mine) return [];
+  const anchorId = String(anchorTeamId ?? teamId);
+  const anchorTeam = teams.find(team => String(team.id) === anchorId);
+  const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String).slice(0, 2);
+  if (!anchorTeam || !anchors.length || anchors.some(id => !anchorTeam.playerIds.map(String).includes(id))) return [];
+  if (anchorId !== String(mine.id) && partnerId && String(partnerId) !== anchorId) return [];
+  const partners = anchorId === String(mine.id)
+    ? teams.filter(team => String(team.id) !== String(mine.id) && (!partnerId || String(team.id) === String(partnerId)))
+    : [anchorTeam];
   const possibilities = [];
-  for (const other of teams.filter(team => String(team.id) !== String(mine.id))) {
+  for (const other of partners) {
     const targets = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
-    for (const target of targets) possibilities.push({ other, sendA: [String(playerId)], sendB: [target.id] });
-    for (let i = 0; i < Math.min(7, targets.length); i++) {
-      for (let j = i + 1; j < Math.min(7, targets.length); j++) {
-        possibilities.push({ other, sendA: [String(playerId)], sendB: [targets[i].id, targets[j].id] });
+    const mineTargets = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
+    if (anchorId === String(mine.id)) {
+      for (const target of targets) possibilities.push({ other, sendA: anchors, sendB: [target.id] });
+      for (let i = 0; i < Math.min(7, targets.length); i++) {
+        for (let j = i + 1; j < Math.min(7, targets.length); j++) possibilities.push({ other, sendA: anchors, sendB: [targets[i].id, targets[j].id] });
       }
-    }
-    for (const extra of myExtras) {
-      for (const target of targets.slice(0, 6)) possibilities.push({ other, sendA: [String(playerId), extra.id], sendB: [target.id] });
+    } else {
+      for (const target of mineTargets) possibilities.push({ other, sendA: [target.id], sendB: anchors });
+      for (let i = 0; i < Math.min(7, mineTargets.length); i++) {
+        for (let j = i + 1; j < Math.min(7, mineTargets.length); j++) possibilities.push({ other, sendA: [mineTargets[i].id, mineTargets[j].id], sendB: anchors });
+      }
     }
   }
   return possibilities.map(candidate => {

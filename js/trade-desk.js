@@ -26,7 +26,7 @@
 // repaints the verdict alone.
 // =====================================================================
 
-import { evaluateTrade } from "./team-analyzer.js";
+import { evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
 import { esc } from "./ui.js";
 
 const num = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -73,12 +73,12 @@ function playerRow(player, side, checked) {
   </label>`;
 }
 
-function sideList(team, pool, picked, side) {
+function sideList(team, pool, picked, side, label) {
   const players = (team?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   return `<div class="td-side">
     <div class="td-side-head">
-      <div><small>${side === "a" ? "YOU SEND" : "YOU GET"}</small>
+      <div><small>${esc(label || (side === "a" ? "YOU SEND" : "YOU GET"))}</small>
       <strong>${esc(teamName(team))}</strong></div>
       <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
@@ -172,20 +172,48 @@ function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
   </div>`;
 }
 
+function threeWayVerdictMarkup(result, teamA, teamB, teamC, pool, sendA, sendB, sendC) {
+  if (!result) return `<div class="td-verdict is-idle"><strong>Pick a player from each team</strong></div>`;
+  const perspective = { ...result, valueToB: result.valueOutA, weeklyDeltaB: result.weeklyDeltaC };
+  const v = verdictFor(perspective), recommendation = recommendationFor(perspective);
+  const winner = [
+    { team: teamA, value: result.valueToA }, { team: teamB, value: result.valueToB }, { team: teamC, value: result.valueToC },
+  ].sort((a, b) => b.value - a.value)[0]?.team;
+  const reasons = tradeReasons(perspective, teamA, teamC, pool, sendA, sendC);
+  const packages = [
+    { from: teamA, to: teamB, ids: sendA, value: result.valueToB },
+    { from: teamB, to: teamC, ids: sendB, value: result.valueToC },
+    { from: teamC, to: teamA, ids: sendC, value: result.valueToA },
+  ];
+  const impacts = [[teamA, result.weeklyDeltaA], [teamB, result.weeklyDeltaB], [teamC, result.weeklyDeltaC]];
+  return `<div class="td-verdict is-${v.tone}">
+    <div class="td-verdict-head"><div class="td-call-copy"><small>RECOMMENDATION FOR ${esc(teamName(teamA))}</small><div><span class="td-call is-${recommendation.tone}">${recommendation.action}</span><strong>${esc(v.headline)} · ${esc(teamName(winner))}</strong></div></div><div class="td-fairness"><b>${num(result.fairness)}%</b><span>balance</span></div></div>
+    <div class="td-scales is-three-way">${packages.map(item => `<div class="td-scale"><small>${esc(teamName(item.from))} → ${esc(teamName(item.to))}</small><p>${packageLine(item.ids, pool)}</p><span class="td-metric">value <b>${num(item.value)}</b></span></div>`).join("")}</div>
+    <div class="td-impact is-three-way">${impacts.map(([team, delta]) => `<div class="td-impact-cell ${delta >= 0 ? "is-up" : "is-down"}"><small>${esc(teamName(team))} lineup</small><b>${signed(delta)}</b><span>pts / week</span></div>`).join("")}</div>
+    <div class="td-reasoning"><h3>Why the model makes this call</h3><div class="td-reason-list">${reasons.map(reason => `<article class="td-reason is-${reason.tone}"><i aria-hidden="true"></i><div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div></article>`).join("")}</div></div>
+  </div>`;
+}
+
 export function tradeDeskMarkup(team, teams, pool, state) {
+  state.sendC ||= new Set();
   const partner = teams.find(t => String(t.id) === String(state.partnerId))
     || teams.find(t => t.id !== team.id) || team;
+  const third = teams.find(t => String(t.id) === String(state.thirdId) && t.id !== team.id && t.id !== partner.id)
+    || teams.find(t => t.id !== team.id && t.id !== partner.id) || team;
   const picker = `<label class="ta-inline-select"><span>Trade with</span>
     <select data-td-partner aria-label="Trade partner">${teams.filter(t => t.id !== team.id)
       .map(t => `<option value="${esc(t.id)}" ${String(t.id) === String(partner.id) ? "selected" : ""}>${esc(teamName(t))}</option>`).join("")}
     </select></label>`;
-  return `${picker}
-    <div class="td-board">
-      ${sideList(team, pool, state.sendA, "a")}
-      ${sideList(partner, pool, state.sendB, "b")}
+  const threeWay = Boolean(state.threeWay && teams.length > 2);
+  const thirdPicker = threeWay ? `<label class="ta-inline-select"><span>Third team</span><select data-td-third aria-label="Third team">${teams.filter(t => t.id !== team.id && t.id !== partner.id).map(t => `<option value="${esc(t.id)}" ${String(t.id) === String(third.id) ? "selected" : ""}>${esc(teamName(t))}</option>`).join("")}</select></label>` : "";
+  return `<div class="td-party-controls">${picker}<label class="td-three-toggle"><input type="checkbox" data-td-three-way ${threeWay ? "checked" : ""} ${teams.length < 3 ? "disabled" : ""}><span>3-way trade</span></label>${thirdPicker}</div>
+    <div class="td-board ${threeWay ? "is-three-way" : ""}">
+      ${sideList(team, pool, state.sendA, "a", threeWay ? `${teamName(team)} → ${teamName(partner)}` : "YOU SEND")}
+      ${sideList(partner, pool, state.sendB, "b", threeWay ? `${teamName(partner)} → ${teamName(third)}` : "YOU GET")}
+      ${threeWay ? sideList(third, pool, state.sendC, "c", `${teamName(third)} → ${teamName(team)}`) : ""}
     </div>
     <p class="td-jump"><a href="#td-verdict">Jump to the verdict &darr;</a></p>
-    <div id="td-verdict" data-td-verdict>${verdictMarkup(null)}</div>
+    <div id="td-verdict" data-td-verdict>${threeWay ? threeWayVerdictMarkup(null) : verdictMarkup(null)}</div>
     <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>`;
 }
 
@@ -198,20 +226,26 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   const verdictHost = root.querySelector("[data-td-verdict]");
   const partnerOf = () => teams.find(t => String(t.id) === String(state.partnerId))
     || teams.find(t => t.id !== team.id) || team;
+  const thirdOf = () => teams.find(t => String(t.id) === String(state.thirdId) && t.id !== team.id && t.id !== partnerOf().id)
+    || teams.find(t => t.id !== team.id && t.id !== partnerOf().id) || team;
 
   const update = () => {
     const partner = partnerOf();
-    const sendA = [...state.sendA], sendB = [...state.sendB];
-    const result = sendA.length && sendB.length
-      ? evaluateTrade({ teamA: team, teamB: partner, sendA, sendB, pool })
-      : null;
-    verdictHost.innerHTML = verdictMarkup(result, team, partner, pool, sendA, sendB);
+    const sendA = [...state.sendA], sendB = [...state.sendB], sendC = [...state.sendC];
+    if (state.threeWay) {
+      const third = thirdOf();
+      const result = sendA.length && sendB.length && sendC.length ? evaluateThreeWayTrade({ teamA: team, teamB: partner, teamC: third, sendA, sendB, sendC, pool }) : null;
+      verdictHost.innerHTML = threeWayVerdictMarkup(result, team, partner, third, pool, sendA, sendB, sendC);
+    } else {
+      const result = sendA.length && sendB.length ? evaluateTrade({ teamA: team, teamB: partner, sendA, sendB, pool }) : null;
+      verdictHost.innerHTML = verdictMarkup(result, team, partner, pool, sendA, sendB);
+    }
   };
 
   root.addEventListener("change", event => {
     const box = event.target.closest("[data-td-pick]");
     if (box) {
-      const set = box.dataset.tdPick === "a" ? state.sendA : state.sendB;
+      const set = box.dataset.tdPick === "a" ? state.sendA : box.dataset.tdPick === "b" ? state.sendB : state.sendC;
       if (box.checked) set.add(box.value); else set.delete(box.value);
       box.closest(".td-player")?.classList.toggle("is-picked", box.checked);
       const count = root.querySelector(`[data-td-count="${box.dataset.tdPick}"]`);
@@ -223,6 +257,18 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       state.partnerId = event.target.value;
       /* The other side's roster changed, so anything picked from it is gone. */
       state.sendB.clear();
+      onPartnerChange?.();
+      return;
+    }
+    if (event.target.matches("[data-td-third]")) {
+      state.thirdId = event.target.value;
+      state.sendC.clear();
+      onPartnerChange?.();
+      return;
+    }
+    if (event.target.matches("[data-td-three-way]")) {
+      state.threeWay = event.target.checked;
+      if (!state.threeWay) state.sendC.clear();
       onPartnerChange?.();
     }
   });
@@ -241,6 +287,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     if (!event.target.closest("[data-td-clear]")) return;
     state.sendA.clear();
     state.sendB.clear();
+    state.sendC.clear();
     root.querySelectorAll("[data-td-pick]").forEach(box => {
       box.checked = false;
       box.closest(".td-player")?.classList.remove("is-picked");

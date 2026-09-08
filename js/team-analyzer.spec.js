@@ -128,4 +128,14 @@ describe("team analyzer", () => {
     expect(offers.every(offer => offer.sendA.includes("r1") && offer.other.id === "2")).toBe(true);
     expect(offers.every(offer => offer.fairness >= 66)).toBe(true);
   });
+
+  it("shops a two-player package from either side", () => {
+    const teams = analyzeLeague({ rosters, pool });
+    const mine = suggestTrades({ teams, teamId: "1", playerIds: ["r1", "w2"], partnerId: "2", pool });
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every(offer => offer.sendA.includes("r1") && offer.sendA.includes("w2") && offer.other.id === "2")).toBe(true);
+    const theirs = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", playerIds: ["r2", "w4"], partnerId: "2", pool });
+    expect(theirs.length).toBeGreaterThan(0);
+    expect(theirs.every(offer => offer.sendB.includes("r2") && offer.sendB.includes("w4") && offer.other.id === "2")).toBe(true);
+  });
 });

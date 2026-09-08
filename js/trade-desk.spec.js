@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { recommendationFor, verdictFor } from "./trade-desk.js";
-import { buildPlayerPool, evaluateTrade } from "./team-analyzer.js";
+import { buildPlayerPool, evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
 
 /* Full PPR, the league's own setting - see scoring_settings on sleeper_leagues.
    Points are expressed as receptions so the fixtures stay readable. */
@@ -127,5 +127,17 @@ describe("evaluating a hand-built trade", () => {
     const one = evaluateTrade({ teamA, teamB, sendA: [aBestRb], sendB: [bBestRb], pool });
     const padded = evaluateTrade({ teamA, teamB, sendA: [aBestRb], sendB: [bBestRb, bWorstRb], pool });
     expect(padded.valueToA - one.valueToA).toBeLessThan(one.valueToA);
+  });
+
+  it("evaluates a circular three-team trade for every roster", () => {
+    const teamC = team(rosters, pool, "3");
+    const result = evaluateThreeWayTrade({
+      teamA, teamB, teamC,
+      sendA: [aBestRb], sendB: [bBestRb], sendC: ["RB3_0"], pool,
+    });
+    expect(result).not.toBeNull();
+    expect(result.sendC).toEqual(["RB3_0"]);
+    expect([result.weeklyDeltaA, result.weeklyDeltaB, result.weeklyDeltaC].every(Number.isFinite)).toBe(true);
+    expect(result.fairness).toBeGreaterThan(0);
   });
 });
