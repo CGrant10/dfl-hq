@@ -22,12 +22,23 @@ function withinLimit(memberId: string) {
   return current.count <= max;
 }
 
-function envKey(name: "SUPABASE_PUBLISHABLE_KEYS", legacy: string) {
+function envKey(name: "SUPABASE_PUBLISHABLE_KEYS" | "SUPABASE_SECRET_KEYS", legacy: string) {
   try {
     const map = JSON.parse(Deno.env.get(name) || "{}");
     if (map.default) return map.default as string;
   } catch { /* fall through */ }
   return Deno.env.get(legacy) || "";
+}
+
+async function openAIKey() {
+  const fromEnvironment = Deno.env.get("OPENAI_API_KEY") || "";
+  if (fromEnvironment) return fromEnvironment;
+  const url = Deno.env.get("SUPABASE_URL") || "";
+  const key = envKey("SUPABASE_SECRET_KEYS", "SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return "";
+  const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data, error } = await admin.rpc("dfl_chat_openai_key");
+  return error ? "" : String(data || "");
 }
 
 async function verifyMember(memberId: number, pin: string) {
@@ -76,7 +87,7 @@ Deno.serve(async request => {
   try {
     if (Number(request.headers.get("content-length") || 0) > 16000) return json(request, { error: "Message is too long" }, 413);
     const input = await request.json().catch(() => ({}));
-    if (input.action === "status") return json(request, { configured: Boolean(Deno.env.get("OPENAI_API_KEY")) });
+    if (input.action === "status") return json(request, { configured: Boolean(await openAIKey()) });
     const memberId = Number(request.headers.get("x-member-id"));
     const pin = String(request.headers.get("x-profile-pin") || "");
     if (!Number.isSafeInteger(memberId) || memberId < 1 || !/^[0-9]{4,6}$/.test(pin)) {
@@ -88,7 +99,7 @@ Deno.serve(async request => {
 
     const messages = cleanMessages(input.messages);
     if (!messages.length || messages.at(-1)?.role !== "user") return json(request, { error: "Ask a question first" }, 400);
-    const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
+    const apiKey = await openAIKey();
     if (!apiKey) return json(request, { error: "Ask DFL is not connected yet" }, 503);
 
     const openAIResponse = await fetch("https://api.openai.com/v1/responses", {
