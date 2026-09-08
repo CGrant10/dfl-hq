@@ -117,6 +117,9 @@ Deno.serve(async request => {
     const payload = await openAIResponse.json().catch(() => ({}));
     if (!openAIResponse.ok) {
       console.error("dfl-chat OpenAI", openAIResponse.status, payload?.error?.type || "request_failed");
+      if (payload?.error?.code === "credit_balance_exhausted") {
+        return json(request, { error: "Ask DFL is offline until API credits are added" }, 503);
+      }
       return json(request, { error: "Ask DFL could not answer that right now" }, 502);
     }
     const text = responseText(payload);
