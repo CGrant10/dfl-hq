@@ -4,6 +4,7 @@
 import { db, hasPermission } from "../supabase.js";
 import { currentMember } from "../members.js";
 import { esc, toast } from "../ui.js";
+import { parseStake, estimatedReturn } from "../sportsbook-slip.js";
 import { shareTicket } from "../sportsbook-ticket.js";
 
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
@@ -46,21 +47,29 @@ export async function render(view){
   const golfNotice=!golfReady&&golf.length===0?`<div class="card note"><div class="card-body"><strong>Golf board refresh failed.</strong>${golfError?`<br><span class="muted tiny">${esc(golfError)}</span>`:""}</div></div>`:"";
 
   view.innerHTML=`<div id="sportsbook-wrap">
-    <header class="page-head"><h1>DFL Sportsbook</h1></header>
+    <header class="sb-masthead"><img src="icons/dfl-seal-64.webp" alt="" width="40" height="40"><h1>DFL Sportsbook</h1><span class="sb-wallet" aria-label="Available SIN">${Number(wallet?.balance||0).toLocaleString()} <small>SIN</small></span></header>
     ${bankrollCard(me,wallet,golf,open,autoReady,autoState)}
+    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
+    <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${golfNotice}
+    ${categoryBoard(other.filter(m=>m.category==="Fantasy"),byMarket,bets,canBook)}
     ${golf.length?golfBoard(golf,byMarket,bets,canBook):""}
-    ${categoryBoard(other,byMarket,bets,canBook)}
+    ${categoryBoard(other.filter(m=>m.category!=="Fantasy"),byMarket,bets,canBook)}
+    ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
+    </div>
+    <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
     ${bets.length?`<section class="block"><h2 class="section-title">Your tickets</h2>${bets.slice(0,10).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}</section>`:""}
+    ${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to review your first bet.</p>':""}
+    </div>
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
     ${canBook?commissionerBook():""}
-    <section class="block"><h2 class="section-title">SIN leaderboard</h2><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${Number(r.balance).toLocaleString()} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section>
+    <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${Number(r.balance).toLocaleString()} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body">${ledger.length?ledger.map(r=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?"+":""}${r.amount} SIN</strong></div>`).join(""):`<span class="muted">No SIN has moved yet.</span>`}</div></details>
     <p class="muted tiny" style="text-align:center">SIN is play money only.</p>
   </div>`;
   /* The share handler needs the rows behind the buttons it just drew. */
   view.__bets=bets;
-  wireBets(view,outcomeMap);wireClaim(view);wireTicketShare(view,marketMap,outcomeMap,me);if(canBook)wireCommissioner(view);
+  wireBets(view,outcomeMap,marketMap,wallet);wireBookTabs(view);wireClaim(view);wireTicketShare(view,marketMap,outcomeMap,me);if(canBook)wireCommissioner(view);
 }
 
 /*
@@ -77,13 +86,13 @@ export async function render(view){
 */
 function bankrollCard(me,wallet,golf,open,autoReady,autoState){
   const claimable=Number(wallet?.claimable||0),days=Number(wallet?.claimable_days||0);
-  return `<section class="card sb-bankroll">
+  return `<section class="sb-bankroll">
     <div class="card-title-row">
       <div>
         <div class="card-title">${esc(me.display_name)}</div>
 
       </div>
-      <strong class="sb-balance">${Number(wallet?.balance||0).toLocaleString()} SIN</strong>
+
     </div>
     <div class="sb-claim-row">
       ${claimable>0
@@ -156,13 +165,13 @@ function golfBoard(markets,byMarket,bets,canBook){
 }
 
 function categoryBoard(markets,byMarket,bets,canBook){
-  if(!markets.length)return `<section class="block"><h2 class="section-title">Other lines</h2><div class="card"><div class="card-body muted">No other lines open.</div></div></section>`;
+  if(!markets.length)return "";
   const groups=new Map();for(const m of markets){const c=m.category||"Other";if(!groups.has(c))groups.set(c,[]);groups.get(c).push(m)}
   const preferred=["Fantasy","DFL Life","DFL Disrespect","Marvel","Gaming","Other"];
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const cards=groups.get(cat).map(m=>marketCard(m,byMarket.get(String(m.id))||[],bets,canBook));
-    return foldedSection(cat,cards.length,cards[0],cards.slice(1).join(""),`sb-cat-${cat.replace(/\W+/g,"-").toLowerCase()}`);
+    return `<section class="block sb-section"><h2 class="section-title">${esc(cat)}<span class="count">${cards.length}</span></h2>${cards.join("")}</section>`;
   }).join("");
 }
 
@@ -229,5 +238,48 @@ function wireTicketShare(view,marketMap,outcomeMap,me){
   }));
 }
 
-function wireBets(view,outcomeMap){view.querySelectorAll("[data-bet-outcome]").forEach(btn=>btn.addEventListener("click",async()=>{const o=outcomeMap.get(String(btn.dataset.betOutcome));if(!o)return;const raw=prompt(`How much SIN on ${o.label} (${fmtOdds(o.odds_american)})?`,"50");if(raw==null)return;const stake=Number(String(raw).replace(/\D/g,""));if(!Number.isInteger(stake)||stake<1){toast("Enter a valid SIN stake",true);return}btn.disabled=true;try{const{error}=await db().rpc("sportsbook_place_bet",{target_outcome_id:Number(o.id),sin_stake:stake});if(error)throw error;toast("Ticket punched");render(view)}catch(err){toast(err.message||"The house rejected that ticket",true);btn.disabled=false}}))}
+function wireBookTabs(view) {
+  const tabs=[...view.querySelectorAll('[data-sb-tab]')];
+  const select=tab=>{for(const button of tabs){const active=button===tab;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;view.querySelector('#sb-'+button.dataset.sbTab).hidden=!active;}};
+  tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus();});});
+}
+
+function wireBets(view,outcomeMap,marketMap,wallet) {
+  view.querySelectorAll('[data-bet-outcome]').forEach(button=>button.addEventListener('click',()=>{
+    let outcome=outcomeMap.get(String(button.dataset.betOutcome));
+    const market=marketMap.get(String(outcome?.market_id));
+    if(!outcome||!market||!isOpen(market)){toast('This market is closed',true);return;}
+    view.querySelector('.sb-slip')?.remove();
+    const dialog=document.createElement('dialog');dialog.className='sb-slip';dialog.setAttribute('aria-labelledby','sb-slip-title');
+    dialog.innerHTML=`<form novalidate><div class="sb-slip-head"><h2 id="sb-slip-title">Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div><p class="sb-slip-market">${esc(market.title)}</p><div class="sb-slip-pick"><strong>${esc(outcome.label)}</strong><strong data-price>${fmtOdds(outcome.odds_american)}</strong></div><div class="sb-slip-fields"><label>Stake <span>SIN</span><input name="stake" inputmode="numeric" autocomplete="off" value="${Math.min(50,Number(wallet?.balance||0))||''}" aria-describedby="sb-slip-error"></label><div><span>Estimated return</span><output data-return aria-live="polite">—</output></div></div><p class="sb-slip-available">${Number(wallet?.balance||0).toLocaleString()} SIN available · Return includes your stake</p><p id="sb-slip-error" role="status"></p><button type="submit" class="btn sb-slip-submit">Review bet</button></form>`;
+    view.append(dialog);
+    const form=dialog.querySelector('form'),input=form.elements.stake,submit=dialog.querySelector('[type="submit"]'),status=dialog.querySelector('#sb-slip-error');
+    let reviewed=false,busy=false,available=Number(wallet?.balance||0);
+    const close=()=>{if(busy)return;dialog.close();dialog.remove();button.focus();};
+    dialog.querySelector('[data-close]').addEventListener('click',close);
+    dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
+    const update=()=>{reviewed=false;submit.textContent='Review bet';const stake=parseStake(input.value,available);const payout=stake===null?null:estimatedReturn(stake,Number(outcome.odds_american));dialog.querySelector('[data-return]').textContent=payout===null?'—':payout.toLocaleString()+' SIN';status.textContent='';};
+    input.addEventListener('input',update);update();dialog.showModal();input.focus();input.select();
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();if(busy)return;
+      const stake=parseStake(input.value,available);
+      if(stake===null){status.textContent='Enter a whole SIN amount within your available balance.';input.focus();return;}
+      if(!reviewed){reviewed=true;status.textContent='Review your selection and stake, then confirm.';submit.textContent='Confirm '+stake.toLocaleString()+' SIN bet';return;}
+      busy=true;submit.disabled=true;input.disabled=true;status.textContent='Checking the latest line…';
+      try {
+        const [priceResult,marketResult]=await Promise.all([db().from('sportsbook_outcomes').select('*').eq('id',outcome.id).single(),db().from('sportsbook_markets').select('*').eq('id',market.id).single()]);
+        if(priceResult.error||marketResult.error)throw priceResult.error||marketResult.error;
+        if(!isOpen(marketResult.data))throw new Error('This market has closed. No bet was placed.');
+        const latest=priceResult.data;
+        if(Number(latest.odds_american)!==Number(outcome.odds_american)||latest.label!==outcome.label){outcome=latest;dialog.querySelector('[data-price]').textContent=fmtOdds(latest.odds_american);dialog.querySelector('.sb-slip-pick strong').textContent=latest.label;update();status.textContent='The line changed. Review the updated odds before confirming.';return;}
+        status.textContent='Placing your bet…';
+        const {error}=await db().rpc('sportsbook_place_bet',{target_outcome_id:Number(outcome.id),sin_stake:stake});
+        if(error)throw error;
+        dialog.close();dialog.remove();toast('Ticket confirmed');await render(view);
+      }catch(error){reviewed=false;submit.textContent='Review bet';status.textContent=error.message||'Could not confirm. Check My bets before trying again.';}
+      finally{busy=false;submit.disabled=false;input.disabled=false;}
+    });
+  }));
+}
+
 function wireCommissioner(view){const form=view.querySelector("#sportsbook-market-form");form?.addEventListener("submit",async e=>{e.preventDefault();const os=[1,2,3].map(n=>({label:form.querySelector(`[data-book-label="${n}"]`)?.value.trim()||"",odds:Number(form.querySelector(`[data-book-odds="${n}"]`)?.value.trim()||0)})).filter(o=>o.label);if(os.length<2||os.some(o=>!(o.odds<=-100||o.odds>=100))){toast("Use American odds like -110 or +150",true);return}const closes=form.querySelector("#book-close").value,btn=form.querySelector('button[type="submit"]');btn.disabled=true;try{const{error}=await db().rpc("sportsbook_create_market",{market_title:form.querySelector("#book-title").value.trim(),market_category:form.querySelector("#book-category").value,market_source:"commissioner",market_closes_at:closes?new Date(closes).toISOString():null,market_lore_note:form.querySelector("#book-note").value.trim(),market_outcomes:os});if(error)throw error;toast("Market open");render(view)}catch(err){toast(err.message||"Could not open that market",true);btn.disabled=false}});view.querySelectorAll("[data-settle-market]").forEach(btn=>btn.addEventListener("click",async()=>{const label=btn.textContent.replace(/ won$/i,"").trim();if(!confirm(`Settle with ${label} as the winner?`))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_settle_market",{target_market_id:Number(btn.dataset.settleMarket),winning_outcome_id:Number(btn.dataset.settleOutcome)});if(error)throw error;toast("Market settled");render(view)}catch(err){toast(err.message||"Could not settle that market",true);btn.disabled=false}}));view.querySelectorAll("[data-void-market]").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm("Void this market and refund open tickets?"))return;btn.disabled=true;try{const{error}=await db().rpc("sportsbook_void_market",{target_market_id:Number(btn.dataset.voidMarket)});if(error)throw error;toast("Market voided");render(view)}catch(err){toast(err.message||"Could not void that market",true);btn.disabled=false}}))}
