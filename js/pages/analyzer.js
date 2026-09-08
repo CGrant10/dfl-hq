@@ -4,26 +4,77 @@ import { ANALYZER_UNITS, compareTeams } from "../team-analyzer.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
 import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason } from "../season-outlook.js";
+import { buildFindings } from "../analyzer-findings.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
   return `${n}${["th", "st", "nd", "rd"][n % 10] || "th"}`;
 };
-const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
-const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || String(id)).join(" + ");
 
 const stat = (value, digits = 1) => value == null || !Number.isFinite(Number(value)) ? "—" : Number(value).toFixed(digits);
 const rankText = (rank, total) => rank ? `#${rank}${total ? ` / ${total}` : ""}` : "—";
 const gradeTone = value => String(value || "").startsWith("A") ? "elite" : String(value || "").startsWith("B") ? "good" : String(value || "").startsWith("C") ? "average" : "weak";
 const trendLabel = trend => ({ up: "Trending up", down: "Trending down", steady: "Steady", new: "New outlook" }[trend] || "Steady");
 
-function reportHeader(team, count, pool) {
-  const assets = team.playerIds.map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const averageValue = assets.length ? Math.round(assets.reduce((sum, player) => sum + player.tradeValue, 0) / assets.length) : 0;
-  const gradeCard = (label, value, note, primary = false) => `<div class="ta-grade-card ${primary ? "is-primary" : ""} is-${gradeTone(value)}"><small>${label}</small><strong>${esc(value)}</strong><span>${esc(note)}</span></div>`;
-  return `<header class="ta-report-lead"><div class="ta-lead-top"><div class="ta-team-intro"><small>TEAM REPORT</small><h2>${esc(teamName(team))}</h2><p>${esc(team.ownerName)} · ${team.playerIds.length} rostered players · ${team.lineup.source === "set" ? "set lineup" : "optimized lineup"}</p></div><div class="ta-finish"><small>STARTER PROJECTION</small><strong>${ordinal(team.rank)}</strong><span>of ${count} · ${stat(team.lineup.weeklyPoints)} weekly</span></div></div><div class="ta-grade-stack">${gradeCard("Starter grade", team.starterGrade, "Average of five units", true)}${gradeCard("Depth grade", team.depthGrade, `${stat(team.lineup.depthScore)} depth score`)}${gradeCard("Overall roster", team.overallGrade, `${ordinal(team.overallRank)} roster profile`)}</div><dl class="ta-kpis"><div><dt>Season starter pts</dt><dd>${stat(team.lineup.starterPoints)}</dd></div><div><dt>Best starting unit</dt><dd>${esc(team.strength || "—")}</dd></div><div><dt>Starting need</dt><dd>${esc(team.need || "No urgent need")}</dd></div><div><dt>Avg. player value</dt><dd>${averageValue}</dd></div></dl><div class="ta-top-asset"><small>TOP ASSET</small><strong>${esc(assets[0]?.name || "—")}</strong><span>${assets[0] ? `${assets[0].position}${assets[0].positionRank ? ` · ${rankText(assets[0].positionRank, assets[0].positionCount)}` : ""} · value ${assets[0].tradeValue}` : "No rated player"}</span></div></header>`;
+/*
+  THE BRIEFING.
+
+  This was reportHeader(): three grade cards, four KPIs and a top asset, at
+  eight numbers of identical size with no headline among them. It answered
+  "how good is my QB unit" fine and "is my team any good, and what is wrong
+  with it" not at all - the reader had to rank the eight themselves.
+
+  So the page opens by saying what it found. One grade at size, one sentence,
+  and the four findings analyzer-findings.js ranked, each carrying the figure
+  that supports it and a link to the table it came out of. The tables are all
+  still below, complete and unchanged: this is a route into the report, not a
+  replacement for it, and nothing here is a claim the evidence cannot back.
+*/
+const TONE_MARK = { good: "↑", bad: "↓", warn: "!", neutral: "=" };
+
+/*
+  A FINDING'S LINK IS A BUTTON WHEN IT STAYS ON THIS PAGE.
+
+  The app is hash-routed, so an <a href="#units"> would not scroll anywhere -
+  it would set location.hash and send the router to a route called "units".
+  Only the cross-route actions (#/trade) are real anchors; the rest are
+  buttons that scroll, and open the section first if it is folded.
+*/
+function findingAction(action) {
+  if (!action) return "";
+  if (action.href.startsWith("#/")) return `<a class="ta-finding-go" href="${esc(action.href)}">${esc(action.label)} &rarr;</a>`;
+  return `<button type="button" class="ta-finding-go" data-ta-jump="${esc(action.href.slice(1))}">${esc(action.label)} &rarr;</button>`;
+}
+
+function briefing(team, teams, projections, count) {
+  const { verdict, findings } = buildFindings({ team, teams, projections });
+  const jumps = [["units", "Units"], ["roster", "Roster"], ["outlook", "Outlook"], ["compare", "Compare"], ["trends", "Trends"], ["league", "League"]];
+  return `<section class="ta-brief">
+    <span class="ta-brief-eyebrow">Team report</span>
+    <h2>${esc(teamName(team))}</h2>
+    <div class="ta-brief-verdict is-${gradeTone(team.overallGrade)}">
+      <b>${esc(team.overallGrade)}</b>
+      <div>
+        <small>Overall roster &middot; ${ordinal(team.overallRank)} of ${count}</small>
+        <span>${esc(verdict)}</span>
+      </div>
+    </div>
+    ${findings.length ? `<div class="ta-findings">${findings.map(finding => `
+      <article class="ta-finding is-${esc(finding.tone)}">
+        <i aria-hidden="true">${TONE_MARK[finding.tone] || "="}</i>
+        <div>
+          <strong>${esc(finding.title)}</strong>
+          <p>${esc(finding.copy)}</p>
+          ${findingAction(finding.action)}
+        </div>
+      </article>`).join("")}</div>`
+      : `<p class="ta-inline-note">Not enough of the league has synced to report on this roster yet.</p>`}
+    <nav class="ta-jump" aria-label="Jump to the evidence">
+      ${jumps.map(([id, label]) => `<button type="button" data-ta-jump="${id}">${label}</button>`).join("")}
+    </nav>
+  </section>`;
 }
 
 /*
@@ -40,8 +91,8 @@ function reportHeader(team, count, pool) {
   summary toggles the disclosure when you try to use it, which would make the
   compare and shop pickers unusable.
 */
-function section(kicker, title, { aside = "", body = "", open = true, hint = "" } = {}) {
-  return `<details class="ta-report-section" ${open ? "open" : ""}>
+function section(kicker, title, { aside = "", body = "", open = true, hint = "", id = "" } = {}) {
+  return `<details class="ta-report-section"${id ? ` id="${id}"` : ""} ${open ? "open" : ""}>
     <summary class="ta-report-title">
       <div><small>${kicker}</small><h2>${title}</h2></div>
       ${hint ? `<span class="ta-fold-hint">${hint}</span>` : ""}
@@ -52,7 +103,7 @@ function section(kicker, title, { aside = "", body = "", open = true, hint = "" 
 }
 
 function positionReport(team) {
-  return section("STARTING UNIT GRADES", "Position report", { open: true,
+  return section("STARTING UNIT GRADES", "Position report", { open: true, id: "units",
     aside: `<span class="ta-inline-note">Five equally weighted starting units · depth shown separately</span>`,
     body: `<div class="ta-table-wrap"><table class="ta-table ta-position-table"><thead><tr><th>Pos</th><th>Grade</th><th>League</th><th>Starter score</th><th>Starting unit / depth</th></tr></thead><tbody>${ANALYZER_UNITS.map(position => {
     const group = team.positionGrades[position];
@@ -65,7 +116,7 @@ function rosterReport(team, pool) {
   const starters = new Set(team.lineup.starters.map(player => player.id));
   const flexId = team.lineup.flexId;
   const ordered = [...team.lineup.starters, ...team.lineup.bench];
-  return section("FULL ROSTER", "Player outlook", { open: true,
+  return section("FULL ROSTER", "Player outlook", { open: true, id: "roster",
     hint: `${ordered.length} players`,
     aside: `<span class="ta-inline-note">Projection leads · prior production is pace-adjusted for games played</span>`,
     body: `<div class="ta-table-wrap"><table class="ta-table ta-roster-table"><thead><tr><th>Player</th><th>Role</th><th>Expected</th><th>Per game</th><th>Trend</th><th>Projection</th><th>Prior pace</th><th>Pos rank</th><th>Value</th></tr></thead><tbody>${ordered.map((player, index) => {
@@ -88,7 +139,7 @@ function comparison(team, opponent, teams) {
     ...result.positions.map(row => [`${row.position} unit`, `${row.a.grade} · ${rankText(row.a.leagueRank)}`, `${row.b.grade} · ${rankText(row.b.leagueRank)}`, row.winner || ""]),
   ];
   const picker = `<label class="ta-inline-select"><span>Compare with</span><select data-ta-compare aria-label="Team to compare">${teams.filter(other => other.id !== team.id).map(other => `<option value="${esc(other.id)}" ${other.id === opponent.id ? "selected" : ""}>${esc(teamName(other))}</option>`).join("")}</select></label>`;
-  return section("HEAD TO HEAD", "Team comparison", { open: true, aside: picker,
+  return section("HEAD TO HEAD", "Team comparison", { open: true, id: "compare", aside: picker,
     body: `<div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
@@ -108,7 +159,7 @@ function rowMark(team, selectedId, myTeamId) {
 }
 
 function rankings(teams, selectedId, myTeamId) {
-  return section("LEAGUE OUTLOOK", "Projected table", { open: true,
+  return section("LEAGUE OUTLOOK", "Projected table", { open: true, id: "league",
     hint: `${teams.length} teams`,
     aside: `<span class="ta-inline-note">Grades read starters · depth · overall</span>`,
     body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}"><strong><span class="ta-seed">${team.rank}</span><span class="ta-name">${esc(teamName(team))}</span>${rowMark(team, selectedId, myTeamId)}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
@@ -133,7 +184,7 @@ function seasonOutlook(team, projections, teams) {
   const chipTeam = teams.find(t => String(t.id) === String(chip?.[0]));
   const titleRank = ranked.findIndex(([id]) => String(id) === String(team.id)) + 1;
 
-  return `<section class="so-panel">
+  return `<section class="so-panel" id="outlook">
     <header class="so-head">
       <div><small>SEASON OUTLOOK</small><h2>${esc(teamName(team))}</h2></div>
       <div class="so-record">
@@ -169,7 +220,7 @@ const DEFAULT_RUNS_NOTE = `3,000 simulated ${REGULAR_SEASON_WEEKS}-week seasons 
 function trendReport(team) {
   /* Folded, and it loads nothing until opened - three seasons of Sleeper stats
      is about 5.6MB. See trend-panel.js. */
-  return section("MULTI-SEASON RECORD", "Trends", { open: true,
+  return section("MULTI-SEASON RECORD", "Trends", { open: true, id: "trends",
     hint: `${HISTORY_SEASONS} seasons`,
     body: `<div data-trend-panel data-team="${esc(team.id)}"></div>` });
 }
@@ -189,15 +240,14 @@ function page(data) {
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>One continuous report using current expectations, last season’s production and the league’s actual scoring.</p></div><div data-ta-outlook></div><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>Current expectations, last season’s production and the league’s actual scoring.</p></div><main class="ta-report" data-ta-body></main>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         const opponent = data.teams.find(item => item.id === compareId && item.id !== team.id) || data.teams.find(item => item.id !== team.id) || team;
         compareId = opponent.id;
-        body.innerHTML = `${reportHeader(team, data.teams.length, data.pool)}${positionReport(team)}${rosterReport(team, data.pool)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
-        view.querySelector("[data-ta-outlook]").innerHTML = seasonOutlook(team, projections, data.teams);
+        body.innerHTML = `${briefing(team, data.teams, projections, data.teams.length)}${positionReport(team)}${rosterReport(team, data.pool)}${seasonOutlook(team, projections, data.teams)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,
@@ -209,7 +259,24 @@ function page(data) {
         selectedId = event.currentTarget.value;
         draw();
       });
-      body.addEventListener("click", event => { const button = event.target.closest("[data-ta-team]"); if (!button) return; selectedId = button.dataset.taTeam; draw(); view.scrollTo?.({ top: 0, behavior: "smooth" }); });
+      body.addEventListener("click", event => {
+        /* A finding or a jump chip: open the section if it is folded, then
+           scroll to it. Not an anchor, because the app is hash-routed. */
+        const jump = event.target.closest("[data-ta-jump]");
+        if (jump) {
+          const target = body.querySelector(`#${jump.dataset.taJump}`);
+          if (target) {
+            if (target.tagName === "DETAILS") target.open = true;
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          return;
+        }
+        const button = event.target.closest("[data-ta-team]");
+        if (!button) return;
+        selectedId = button.dataset.taTeam;
+        draw();
+        view.scrollTo?.({ top: 0, behavior: "smooth" });
+      });
       body.addEventListener("change", event => {
         if (event.target.matches("[data-ta-compare]")) { compareId = event.target.value; draw(); }
       });

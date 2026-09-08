@@ -49,6 +49,189 @@
   --panel-radius: 16px;
 }
 
+/* =====================================================================
+   THE BRIEFING
+   ---------------------------------------------------------------------
+   What replaced .ta-report-lead's eight equal numbers. One grade at size,
+   one sentence, four ranked findings, and a row of jumps into the tables -
+   which are all still below, complete and unchanged.
+
+   It uses the same tokens as everything else on the page, so a finding and
+   a table row are visibly the same product. The only thing it is allowed
+   to do louder than the rest of the report is the grade, because that is
+   the answer the page exists to give.
+   ===================================================================== */
+.ta-brief {
+  position: relative;
+  margin-bottom: 14px;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: var(--panel-radius);
+  background: var(--card-surface);
+  box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
+}
+/* The crest gradient, welded to the top edge - the same device the stage,
+   the marquee and the Sportsbook masthead use. */
+.ta-brief::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent-sweep);
+}
+.ta-brief-eyebrow {
+  display: block;
+  color: var(--accent);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.ta-brief h2 {
+  margin: 4px 0 12px;
+  font-family: var(--font-display);
+  font-size: clamp(21px, 5.2vw, 27px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -.03em;
+}
+
+/* THE VERDICT. The grade is the only 40px thing on the page. */
+.ta-brief-verdict {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--vl, var(--line));
+  border-radius: var(--card-radius);
+  background: var(--vb, var(--bg-3));
+}
+.ta-brief-verdict.is-elite   { --vc: var(--ok);         --vb: var(--ok-bg);     --vl: var(--ok-line); }
+.ta-brief-verdict.is-good    { --vc: var(--accent-2);   --vb: color-mix(in srgb, var(--accent-2) 12%, transparent); --vl: color-mix(in srgb, var(--accent-2) 38%, var(--line)); }
+.ta-brief-verdict.is-average { --vc: var(--warn-ink);   --vb: var(--warn-bg);   --vl: var(--warn-line); }
+.ta-brief-verdict.is-weak    { --vc: var(--danger-ink); --vb: var(--danger-bg); --vl: var(--danger-line); }
+.ta-brief-verdict b {
+  flex: none;
+  color: var(--vc);
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+.ta-brief-verdict small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--ta-micro);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.ta-brief-verdict span {
+  display: block;
+  margin-top: 2px;
+  color: var(--body-text);
+  font-size: var(--ta-body);
+  line-height: 1.4;
+}
+
+/* THE FINDINGS. A tone mark, a claim, the figure behind it, and the way in. */
+.ta-findings { margin-top: 4px; }
+.ta-finding {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 11px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.ta-finding i {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--fl);
+  border-radius: 50%;
+  background: var(--fb);
+  color: var(--fc);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+}
+.ta-finding.is-good    { --fc: var(--ok);         --fb: var(--ok-bg);     --fl: var(--ok-line); }
+.ta-finding.is-bad     { --fc: var(--danger-ink); --fb: var(--danger-bg); --fl: var(--danger-line); }
+.ta-finding.is-warn    { --fc: var(--warn-ink);   --fb: var(--warn-bg);   --fl: var(--warn-line); }
+.ta-finding.is-neutral { --fc: var(--muted);      --fb: var(--bg-3);      --fl: var(--line); }
+.ta-finding strong {
+  display: block;
+  font-size: var(--ta-lead);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+}
+.ta-finding p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: var(--ta-body);
+  line-height: 1.55;
+}
+/* The way into the evidence. A button on this page, an anchor off it - see
+   findingAction() for why. Both have to look like the same thing. */
+.ta-finding-go,
+.ta-jump button {
+  font: inherit;
+  cursor: pointer;
+}
+.ta-finding-go {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 40%, transparent);
+  background: none;
+  color: var(--accent-2);
+  font-size: var(--ta-small);
+  font-weight: 700;
+  text-decoration: none;
+}
+.ta-finding-go:hover { border-bottom-color: var(--accent-2); }
+
+.ta-jump {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ta-jump::-webkit-scrollbar { display: none; }
+.ta-jump button {
+  flex: none;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--body-text);
+  font-size: var(--ta-small);
+  font-weight: 700;
+}
+.ta-jump button:hover { border-color: color-mix(in srgb, var(--accent-2) 45%, var(--line)); color: var(--text); }
+
+/* The season outlook joined the evidence flow instead of floating above the
+   report, so it needs the same top margin the folded sections have. */
+#outlook.so-panel { margin-top: 14px; }
+
+@media (max-width: 480px) {
+  .ta-brief { padding: 14px; }
+  .ta-brief-verdict { gap: 12px; padding: 11px 12px; }
+  .ta-brief-verdict b { font-size: 34px; }
+  .ta-finding strong { font-size: var(--ta-body); }
+}
+
 /* ----------------------------- header ------------------------------- */
 
 .ta-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
