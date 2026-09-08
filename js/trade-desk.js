@@ -169,9 +169,6 @@ function verdictMarkup(result, teamA, teamB, pool, sendA, sendB) {
       <div class="td-reason-list">${reasons.map(reason => `<article class="td-reason is-${reason.tone}"><i aria-hidden="true"></i><div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div></article>`).join("")}</div>
     </div>
 
-    <p class="td-note">Balance compares what each side gives up in asset value. The lineup figures are
-      what the deal does to each starting eleven per week, which can differ - value counts depth a
-      lineup cannot start. Current Sleeper projections lead the forecast, blended with pace-adjusted prior production.</p>
   </div>`;
 }
 

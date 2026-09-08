@@ -71,7 +71,6 @@ function tradeLab(team, teams, pool, selectedPlayerId) {
     <div class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div></div>
     <div class="ta-section-body">
       ${picker}
-      <p class="ta-note">These options account for who would actually start. Open one to see the full recommendation and reasoning.</p>
       ${offers.length ? `<div class="ta-deal-grid">${offers.map(offer => {
         const call = recommendationFor(offer);
         return `<article class="ta-deal-card">
@@ -97,7 +96,7 @@ function page(data) {
 
   return {
     markup: `<header class="page-head ta-page-head">
-        <div><h1>Trade Analyzer</h1><p class="page-sub">A clear call from current projections, roster value and team fit</p></div>
+        <div><h1>Trade Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · DFL full-PPR scoring</p></div>
         <a class="btn ghost small" href="#/analyzer">Analyzer</a>
       </header>
       <div class="ta-toolbar">
@@ -105,7 +104,6 @@ function page(data) {
           <select data-td-team>${data.teams.map(team =>
             `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select>
         </label>
-        <p>Build a deal or start from a suggestion. The result explains whether to accept, negotiate or pass.</p>
       </div>
       <main class="ta-report" data-td-body></main>`,
 
