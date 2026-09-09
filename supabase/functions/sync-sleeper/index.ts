@@ -104,6 +104,22 @@ async function upsert(admin: ReturnType<typeof createClient>, table: string, row
   if (error) throw new Error(`${table}: ${error.message}`);
 }
 
+async function notifyCommissioners(url: string, token: string, body: string) {
+  const response = await fetch(`${url}/functions/v1/send-notification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-dfl-cron-token": token },
+    body: JSON.stringify({
+      title: "Sleeper sync complete",
+      body,
+      category: "announcements",
+      targetUrl: "#/admin",
+      audience: "commissioners",
+    }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`Commissioner notification failed (${response.status})`);
+}
+
 async function refreshMemberTeamNames(admin: ReturnType<typeof createClient>) {
   const [members, currentUsers, historicalRosters] = await Promise.all([
     admin.from("members").select("id,team_name,sleeper_user_id"),
@@ -130,6 +146,7 @@ async function refreshMemberTeamNames(admin: ReturnType<typeof createClient>) {
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+  const cronToken = request.headers.get("x-dfl-cron-token") || "";
   if (!await authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = Deno.env.get("SUPABASE_URL") || "";
@@ -165,6 +182,7 @@ Deno.serve(async (request) => {
         last_auto_error: "",
       }).eq("id", 1);
       if (error) throw error;
+      await notifyCommissioners(url, cronToken, `Checked ${season} Week ${week}. No Sleeper changes found.`);
       return Response.json({ ok: true, changed: false, season, week });
     }
 
@@ -234,6 +252,9 @@ Deno.serve(async (request) => {
       last_auto_error: "",
     }).eq("id", 1);
     if (updateError) throw updateError;
+
+    await notifyCommissioners(url, cronToken,
+      `Updated ${season} Week ${week}: ${rosters?.length || 0} rosters and ${transactionRows.length} transactions checked.`);
 
     return Response.json({
       ok: true,

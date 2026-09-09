@@ -19,7 +19,8 @@ import webpush from "npm:web-push@3.6.7";
   ride along, and a header the caller invents grants nothing - authorisation is
   decided by maySend() below, which re-checks the headers in Postgres.
 */
-const ALLOWED_HEADERS = "authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-device-token, x-golf-outing, x-golf-code, x-golf-participant";
+const ALLOWED_HEADERS = "authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-device-token, x-golf-outing, x-golf-code, x-golf-participant, x-dfl-cron-token";
+const SLEEPER_SYNC_TOKEN_HASH = "c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091";
 const corsHeaders = (request?: Request) => ({
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": request?.headers.get("access-control-request-headers") || ALLOWED_HEADERS,
@@ -29,6 +30,14 @@ const corsHeaders = (request?: Request) => ({
 });
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: corsHeaders() });
 const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "events", "updates"]);
+
+async function internalSyncRequest(request: Request) {
+  const token = request.headers.get("x-dfl-cron-token") || "";
+  if (token.length < 32) return false;
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  const hash = Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, "0")).join("");
+  return hash === SLEEPER_SYNC_TOKEN_HASH;
+}
 
 function envKey(name: "SUPABASE_PUBLISHABLE_KEYS" | "SUPABASE_SECRET_KEYS", legacy: string) {
   try {
@@ -94,15 +103,24 @@ Deno.serve(async request => {
     const keys = await vapidKeys(admin);
     if (input.action === "config") return json({ publicKey: keys.publicKey, configured: true });
 
-    if (!await maySend(request, url, publishableKey)) return json({ error: "Commissioner broadcast access required" }, 403);
+    const internalSync = await internalSyncRequest(request);
+    if (!internalSync && !await maySend(request, url, publishableKey)) return json({ error: "Commissioner broadcast access required" }, 403);
 
     const title = String(input.title || "").trim().slice(0, 80);
     const body = String(input.body || "").trim().slice(0, 240);
     const category = categories.has(input.category) ? input.category : "announcements";
     const targetUrl = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(input.targetUrl || "") ? input.targetUrl : "#/home";
-    const targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
+    let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];
-    const audience = input.audience === "members" && targetIds.length ? "members" : "all";
+    if (internalSync && input.audience === "commissioners") {
+      const { data: commissioners, error } = await admin.from("commissioner_access")
+        .select("member_id").eq("active", true);
+      if (error) throw error;
+      targetIds = (commissioners || []).map(row => Number(row.member_id)).filter(Number.isSafeInteger);
+    }
+    const targeted = input.audience === "members" || (internalSync && input.audience === "commissioners");
+    const audience = targeted && targetIds.length ? "members" : "all";
+    if (targeted && !targetIds.length) return json({ error: "No notification recipients are configured" }, 422);
     if (!title || !body) return json({ error: "A title and message are required" }, 400);
 
     const sender = Number(request.headers.get("x-member-id")) || null;
