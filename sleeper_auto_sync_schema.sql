@@ -63,6 +63,6 @@ $cron$;
 
 select cron.schedule(
   'dfl-sleeper-auto-sync',
-  '*/2 * * * *',
+  '0 1,13 * * *',
   'select private.sync_sleeper_if_changed();'
 );
