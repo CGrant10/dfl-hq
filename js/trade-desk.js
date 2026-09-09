@@ -118,6 +118,9 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   const fairness = num(result.fairness);
   const bestIn = Math.max(0, ...incoming.map(player => num(player.tradeValue)));
   const bestOut = Math.max(0, ...outgoing.map(player => num(player.tradeValue)));
+  const weakIncoming = incoming.filter(player => num(player.tradeValue) < bestOut * .5).length;
+  const quantityTrap = sendA.length === 1 && sendB.length >= 2
+    && weakIncoming >= 2 && valueGap < 0 && fairness < 75;
   const them = teamName(teamB);
   const reasons = [];
 
@@ -167,7 +170,15 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   }
 
   /* ---- a real player for spare parts --------------------------------- */
-  if (bestIn >= bestOut * 1.8 && bestOut > 0) {
+  if (quantityTrap) {
+    const title = sendB.length >= 4
+      ? "They emptied the junk drawer and called it a package"
+      : sendB.length === 3
+        ? "Three bench players in a trench coat are not a star"
+        : "Two nickels still do not make a dollar";
+    reasons.push({ tone: "bad", weight: 92, title,
+      copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. After cuts, you still lose ${gap} value points.` });
+  } else if (bestIn >= bestOut * 1.8 && bestOut > 0) {
     reasons.push({ tone: "good", weight: 74,
       title: "You are turning parts into a player",
       copy: `Your best piece out is worth ${bestOut}; the best coming back is worth ${bestIn}. Consolidation is how rosters get scary.` });
@@ -190,7 +201,7 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   }
 
   /* ---- roster arithmetic --------------------------------------------- */
-  if (sendB.length > sendA.length) {
+  if (sendB.length > sendA.length && !quantityTrap) {
     reasons.push({ tone: "warn", weight: 54,
       title: `${sendB.length} bodies in for ${sendA.length} out`,
       copy: "Extra pieces only count if they beat the players they displace. Otherwise you traded for roster spots you have to cut." });
