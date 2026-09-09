@@ -90,9 +90,9 @@ function drawMark(ctx, kind, cx, cy, size, colour) {
 /*
   STATUS DRIVES THE COLOUR AND NOTHING ELSE DOES.
 
-  An open ticket is gold because it is still alive; won is green, lost is muted,
-  void is the accent. The words come from the row, so a status this file has
-  never heard of still prints rather than falling through to a blank chip.
+  Settled tickets keep their result colour: won is green, lost is muted, and
+  void is the accent. Open tickets do not need a chip repeating that they are
+  open; the potential return already makes their state clear.
 */
 const STATUS_INK = { open: GOLD, won: OK, lost: MUTED, void: ACCENT };
 
@@ -215,8 +215,8 @@ function frame(t) {
   const open = t.status === "open";
   const disclaimer = H - 40;
   const who = H - 96;
-  const chipTop = H - 222;
-  const profit = open ? chipTop - 32 : null;
+  const chipTop = open ? null : H - 222;
+  const profit = open ? who - 72 : null;
   const boxesTop = (profit ? profit - 30 : chipTop - 28) - 168;
   /* The combined price: 104px on a multi so the picks above it keep their
      room, 150px on a single where it is the only figure on the card. */
@@ -289,7 +289,8 @@ export function ticketCanvas(t) {
 
   // ---- the headline: the pick, or the entry that holds them -------------
   ctx.fillStyle = INK;
-  fitText(ctx, t.title.toUpperCase(), W / 2, y + 58, W - 140, 74, 900, "center");
+  const titleSize = f.multi ? (t.picks.length >= 5 ? 48 : 58) : 74;
+  fitText(ctx, t.title.toUpperCase(), W / 2, y + 58, W - 140, titleSize, 900, "center");
   y += 92;
 
   if (marketH) {
@@ -347,23 +348,25 @@ export function ticketCanvas(t) {
     ctx.fillText(`${num(t.profit)} SIN profit if ${f.multi ? "they all land" : "it lands"}`, W / 2, f.profit);
   }
 
-  // ---- the status chip ------------------------------------------------
-  const ink = STATUS_INK[t.status] || GOLD;
-  /* A settled multi says how it went - "1 OF 3" is the story, "LOST" is not. */
-  const label = (t.pulled ? "PULLED"
-    : f.multi && (t.status === "won" || t.status === "lost") ? `${t.won} OF ${t.picks.length}`
-    : t.status).toUpperCase();
-  ctx.font = `900 40px ${FONT}`;
-  const chipW = Math.min(W - 200, ctx.measureText(label).width + 96);
-  const chipX = (W - chipW) / 2;
-  ctx.fillStyle = CARD;
-  roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
-  ctx.fill();
-  ctx.strokeStyle = ink; ctx.lineWidth = 5;
-  roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
-  ctx.stroke();
-  ctx.fillStyle = ink;
-  ctx.fillText(label, W / 2, f.chipTop + 57);
+  // ---- settled result chip --------------------------------------------
+  if (!f.open) {
+    const ink = STATUS_INK[t.status] || GOLD;
+    /* A settled multi says how it went - "1 OF 3" is the story, "LOST" is not. */
+    const label = (t.pulled ? "PULLED"
+      : f.multi && (t.status === "won" || t.status === "lost") ? `${t.won} OF ${t.picks.length}`
+      : t.status).toUpperCase();
+    ctx.font = `900 40px ${FONT}`;
+    const chipW = Math.min(W - 200, ctx.measureText(label).width + 96);
+    const chipX = (W - chipW) / 2;
+    ctx.fillStyle = CARD;
+    roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
+    ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 5;
+    roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
+    ctx.stroke();
+    ctx.fillStyle = ink;
+    ctx.fillText(label, W / 2, f.chipTop + 57);
+  }
 
   // ---- who, and the disclaimer that keeps this a joke -----------------
   ctx.fillStyle = INK;
