@@ -43,7 +43,7 @@ export function verdictFor(result) {
   const who = gap > 0 ? "a" : "b";
   if (fairness >= 72) return { tone: "slight", headline: "Slight edge", who };
   if (fairness >= 55) return { tone: "clear", headline: "Clear winner", who };
-  return { tone: "lopsided", headline: "Lopsided", who };
+  return { tone: "lopsided", headline: "FLEECE", who };
 }
 
 /* The recommendation is from team A's point of view. Value carries a little
@@ -56,6 +56,9 @@ export function recommendationFor(result) {
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
   const signal = valueEdge * .55 + num(result.weeklyDeltaA) * 8;
+  if (Number.isFinite(Number(result.fairness)) && num(result.fairness) < 55 && valueGap < 0) {
+    return { action: "FLEECE", tone: "pass", signal, valueEdge };
+  }
   if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
   if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
   return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
@@ -127,12 +130,12 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   /* ---- who is fleecing whom ------------------------------------------ */
   if (fairness < 55 && valueGap > 0) {
     reasons.push({ tone: "good", weight: 100,
-      title: "This trade is filthy. Hit accept.",
-      copy: `${fairness}% balance with ${gap} value points coming your way. This deal is filthy in the fun way—send it before they sober up and run the numbers.` });
+      title: "You are committing the robbery. Hit accept.",
+      copy: `${fairness}% balance with ${gap} value points coming your way. Take the money, kill the headlights, and get the hell out before they realize what they signed.` });
   } else if (fairness < 55) {
     reasons.push({ tone: "bad", weight: 100,
-      title: "Hell no. You are getting screwed.",
-      copy: `${fairness}% balance and ${gap} value points walking out the door. ${them} brought dinner because you are the one getting screwed.` });
+      title: "FLEECE. They are robbing your ass blind.",
+      copy: `${fairness}% balance and ${gap} value points walking out the door. ${them} is trying to leave with your best shit while you thank them for the privilege. Reject this garbage.` });
   } else if (Math.abs(valueGap) < 4) {
     reasons.push({ tone: "neutral", weight: 70,
       title: "Fair as hell. Weird, but fine.",
@@ -143,8 +146,8 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
       copy: `The incoming side grades ${gap} points higher after roster cuts, at ${fairness}% balance. A sexy little piece of business without getting reckless.` });
   } else {
     reasons.push({ tone: "bad", weight: 84,
-      title: "You are paying the dumbass tax.",
-      copy: `Your outgoing side grades ${gap} points higher after roster cuts, at ${fairness}% balance. That is a hangover purchase dressed up as roster strategy.` });
+      title: "This deal is dogshit. Stop negotiating.",
+      copy: `Your outgoing side grades ${gap} points higher after roster cuts, at ${fairness}% balance. You are paying the dumbass tax so ${them} can upgrade for free.` });
   }
 
   /* ---- what it does to the only lineup you can actually start -------- */
@@ -318,7 +321,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     </div>
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
-      <span>For ${esc(teamName(teamA))}</span>
+      <span>${recommendation.action === "FLEECE" ? `${esc(teamName(teamA))} is getting robbed` : `For ${esc(teamName(teamA))}`}</span>
     </div>
 
     <div class="td-lines">
@@ -368,7 +371,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
 
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
-      <span>For ${esc(teamName(parties[0]))}</span>
+      <span>${recommendation.action === "FLEECE" ? `${esc(teamName(parties[0]))} is getting robbed` : `For ${esc(teamName(parties[0]))}`}</span>
     </div>
 
     <div class="td-lines">

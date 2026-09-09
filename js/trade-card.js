@@ -31,9 +31,16 @@ const num = value => (Number.isFinite(Number(value)) ? Math.round(Number(value))
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 
-/* The three calls recommendationFor() can return, and nothing else gets a
-   colour here - a card that invented a fourth verdict would be lying. */
+/* recommendationFor() owns the call and its tone. FLEECE deliberately uses
+   the same red as PASS: the word is louder, the direction is identical. */
 const CALL_INK = { accept: OK, pass: ACCENT, negotiate: GOLD };
+
+function savageFallback(recommendation) {
+  if (recommendation?.action === "FLEECE") return "FLEECE. They are robbing your ass blind.";
+  if (recommendation?.action === "ACCEPT") return "You are committing the robbery. Hit accept.";
+  if (recommendation?.action === "PASS") return "This deal is dogshit. Stop negotiating.";
+  return "Fair as hell. Weird, but fine.";
+}
 
 /**
  * Fold a deal into exactly what the card draws.
@@ -79,8 +86,11 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
     })),
     /* The DFLyzer's top remark rides along, because the card is what reaches
        the group chat and "ACCEPT" alone starts no arguments. */
-    remark: remark?.title ? String(remark.title) : "",
-    remarkTone: String(remark?.tone || "neutral"),
+    /* Never let the share path wash the DFLyzer's voice out. The page passes
+       the top evidence-backed reason; this fallback keeps direct callers and
+       future share buttons just as savage. */
+    remark: remark?.title ? String(remark.title) : savageFallback(recommendation),
+    remarkTone: String(remark?.tone || (recommendation.tone === "pass" ? "bad" : recommendation.tone === "accept" ? "good" : "neutral")),
     forWhom: teamName(parties[0]),
     against: teamName(parties[multi ? last : 1]),
   };

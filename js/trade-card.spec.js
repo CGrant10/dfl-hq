@@ -41,11 +41,24 @@ describe('dealCardData', () => {
     const t = card({ remark: tradeReasons(result, mine, theirs, pool, ['2', '3'], ['11'])[0] });
     expect(t.call).toBe('ACCEPT');
     expect(t.callTone).toBe('accept');
-    expect(t.headline).toBe('Lopsided');
+    expect(t.headline).toBe('FLEECE');
     expect(t.winner).toBe('Bastards of the Realm');
     expect(t.fairness).toBe(48);
-    expect(t.remark).toContain('filthy');
+    expect(t.remark).toContain('robbery');
     expect(t.remarkTone).toBe('good');
+  });
+
+  it('always puts savage wording on the shared image even without a supplied remark', () => {
+    expect(card().remark).toBe('You are committing the robbery. Hit accept.');
+    const bad = { fairness: 34, valueToA: 25, valueToB: 72, weeklyDeltaA: -3, weeklyDeltaB: 2 };
+    const t = card({
+      result: bad,
+      verdict: verdictFor(bad),
+      recommendation: recommendationFor(bad),
+    });
+    expect(t.call).toBe('FLEECE');
+    expect(t.remark).toBe('FLEECE. They are robbing your ass blind.');
+    expect(t.remarkTone).toBe('bad');
   });
 
   it('clamps a nonsense fairness rather than drawing a marker off the card', () => {
@@ -95,7 +108,7 @@ describe('dealCardText', () => {
     expect(text).toContain('Kenneth Walker + Jayden Reed');
     expect(text).toContain('Nico Collins');
     expect(text).toContain('48% balance');
-    expect(text).toContain('filthy');
+    expect(text).toContain('robbery');
     expect(text).not.toContain('accept..');
     expect(dealCardText(null)).toBe('');
   });

@@ -36,14 +36,14 @@ const titles = reasons => reasons.map(r => r.title);
 describe('who is fleecing whom', () => {
   it('calls a lopsided deal a fleecing, and puts the shears in the right hand', () => {
     const mineToWin = read({ fairness: 48, valueToA: 60, valueToB: 28.7 });
-    expect(mineToWin[0].title).toBe('This trade is filthy. Hit accept.');
+    expect(mineToWin[0].title).toBe('You are committing the robbery. Hit accept.');
     expect(mineToWin[0].tone).toBe('good');
-    expect(mineToWin[0].copy).toMatch(/filthy|sober up/i);
+    expect(mineToWin[0].copy).toMatch(/money|headlights/i);
 
     const theirsToWin = read({ fairness: 34, valueToA: 25, valueToB: 72 });
-    expect(theirsToWin[0].title).toBe('Hell no. You are getting screwed.');
+    expect(theirsToWin[0].title).toBe('FLEECE. They are robbing your ass blind.');
     expect(theirsToWin[0].tone).toBe('bad');
-    expect(theirsToWin[0].copy).toMatch(/getting screwed/i);
+    expect(theirsToWin[0].copy).toMatch(/best shit|reject this garbage/i);
   });
 
   it('does NOT call a fair trade a robbery', () => {
@@ -149,6 +149,6 @@ describe('the shape of the read', () => {
 
   it('leads with the fleecing, not with the roster trivia', () => {
     const reasons = read({ fairness: 34, valueToA: 25, valueToB: 72, weeklyDeltaA: -5 }, ['big'], ['scrap'], mine);
-    expect(reasons[0].title).toBe('Hell no. You are getting screwed.');
+    expect(reasons[0].title).toBe('FLEECE. They are robbing your ass blind.');
   });
 });
