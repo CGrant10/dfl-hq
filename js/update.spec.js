@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dismissedUpdate, dismissUpdate, isNewer } from "./update.js";
-
-function memoryStorage(){
-  const values=new Map();
-  return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
-}
+import { isNewer, updateGateMarkup } from "./update.js";
 
 describe("app updates",()=>{
   it("compares multi-part release versions",()=>{
@@ -12,10 +7,12 @@ describe("app updates",()=>{
     expect(isNewer("1.236.2","1.236.2")).toBe(false);
   });
 
-  it("keeps a dismissed release hidden without hiding the next release",()=>{
-    const storage=memoryStorage();
-    dismissUpdate("1.236.2",storage);
-    expect(dismissedUpdate("1.236.2",storage)).toBe(true);
-    expect(dismissedUpdate("1.237.0",storage)).toBe(false);
+  it("renders a required update without a dismiss action",()=>{
+    const markup=updateGateMarkup("1.245.0");
+    expect(markup).toContain("The league just got better.");
+    expect(markup).toContain("UPDATE NOW");
+    expect(markup).toContain("Version 1.245.0");
+    expect(markup).not.toContain("<small>");
+    expect(markup).not.toContain("update-no");
   });
 });

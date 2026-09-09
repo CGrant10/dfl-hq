@@ -2,15 +2,6 @@ import { APP_VERSION } from "./config.js";
 
 const bar=()=>document.getElementById("update");
 const UPDATE_CHECK_MS=10*60*1000;
-const DISMISSED_UPDATE_KEY="dfl.update.dismissedVersion";
-
-export function dismissedUpdate(version,storage=globalThis.localStorage){
-  try{return storage?.getItem(DISMISSED_UPDATE_KEY)===String(version)}catch{return false}
-}
-
-export function dismissUpdate(version,storage=globalThis.localStorage){
-  try{storage?.setItem(DISMISSED_UPDATE_KEY,String(version))}catch{}
-}
 
 function pendingGolfScores(){
   try{
@@ -49,6 +40,38 @@ export function isNewer(remote,local){
   const a=String(remote).trim().split(".").map(Number),b=String(local).trim().split(".").map(Number);
   for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x>y)return true;if(x<y)return false}
   return false;
+}
+
+export function updateGateMarkup(version){
+  const safeVersion=String(version).replace(/[^0-9.]/g,"");
+  return `<div class="update-gate__content">
+    <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
+    <h1>The league just got better.</h1>
+    <p class="update-gate__intro">Quality and performance improvements are ready. Update to continue.</p>
+    <img class="update-gate__mark" src="icons/app-update-512.png" alt="DFL HQ" width="512" height="512">
+    <div class="update-gate__features" aria-label="What is improved">
+      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-arena"></use></svg></span><strong>Faster loading</strong></div>
+      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-analyzer-steel"></use></svg></span><strong>Sharper analysis</strong></div>
+      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-versus"></use></svg></span><strong>Smoother game day</strong></div>
+    </div>
+    <div class="update-gate__action">
+      <button class="update-gate__button" id="update-go" type="button">UPDATE NOW</button>
+      <p class="update-gate__version">Version ${safeVersion}</p>
+      <p class="update-gate__status" role="status" aria-live="polite"></p>
+    </div>
+  </div>`;
+}
+
+function showGate(el,version){
+  el.dataset.version=version;
+  el.setAttribute("role","dialog");
+  el.setAttribute("aria-modal","true");
+  el.setAttribute("aria-labelledby","update-gate-title");
+  el.innerHTML=updateGateMarkup(version).replace("<h1>",'<h1 id="update-gate-title">');
+  el.classList.remove("hidden");
+  el.classList.add("update-gate");
+  document.body.classList.add("update-required");
+  requestAnimationFrame(()=>el.querySelector("#update-go")?.focus());
 }
 
 async function serverVersion(){
@@ -100,17 +123,7 @@ export async function forceUpdate(){
 
 export async function checkForUpdate(announce=false){
   const latest=await serverVersion(),stale=isNewer(latest,APP_VERSION),el=bar();
-  if(stale&&el&&(announce||!dismissedUpdate(latest))){
-    const blocked=updateBlocked();
-    el.dataset.version=latest;
-    el.innerHTML=`<span class="install-text">${blocked?`Version ${latest} is ready. Finish or sync the current score first.`:`Version ${latest} is available. You have ${APP_VERSION}.`}</span><button class="btn small" id="update-go">${blocked?"Update when safe":"Update"}</button><button class="install-x" id="update-no" aria-label="Later">&times;</button>`;
-    el.classList.remove("hidden");
-  }else if(stale&&el){
-    el.classList.add("hidden");
-  }else if(announce&&el){
-    el.innerHTML=`<span class="install-text">You are up to date (v${APP_VERSION}).</span><button class="install-x" id="update-no" aria-label="Close">&times;</button>`;
-    el.classList.remove("hidden");setTimeout(()=>el.classList.add("hidden"),3500);
-  }
+  if(stale&&el&&!updateBlocked())showGate(el,latest);
   return{current:APP_VERSION,latest,stale};
 }
 
@@ -119,10 +132,12 @@ export function setupUpdates(){
   el.addEventListener("click",async e=>{
     const go=e.target.closest("#update-go");
     if(go){
-      if(updateBlocked()){el.querySelector(".install-text").textContent="Your score is still protected on this phone. Finish the entry or let it sync before updating.";return}
-      dismissUpdate("");go.disabled=true;go.textContent="Updating…";el.querySelector("#update-no")?.remove();await forceUpdate();return;
+      if(updateBlocked()){el.querySelector(".update-gate__status").textContent="Finish or sync the current score, then update.";return}
+      go.disabled=true;go.textContent="UPDATING…";
+      el.classList.add("is-updating");
+      el.querySelector(".update-gate__status").textContent="Refreshing DFL HQ…";
+      await forceUpdate();return;
     }
-    if(e.target.closest("#update-no")){dismissUpdate(el.dataset.version||"");el.classList.add("hidden");}
   });
   checkForUpdate().catch(()=>{});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForUpdate().catch(()=>{})});

@@ -1,50 +1,50 @@
-# Power Pulse Design QA
+**Comparison Target**
 
-## Evidence
+- Source visual truth: `design-qa-assets/update-option-1-source.png`
+- Implementation: `design-qa-assets/update-gate-390-final.png`
+- Combined comparison: `design-qa-assets/update-comparison.png`
+- State: required update available, before pressing Update Now
+- Viewport: 390 × 844 CSS pixels at device scale factor 1
+- Source pixels: 853 × 1844, normalized to 390 × 844 in the combined comparison
+- Implementation pixels: 390 × 844
 
-- Source visual truth: `design-qa-assets/power-pulse-reference.png`
-- Browser implementation: `design-qa-assets/power-pulse-mobile.png`
-- Combined focused comparison: `design-qa-assets/power-pulse-comparison.png`
-- Source pixels: 853 × 1844
-- Implementation pixels: 375 × 811
-- CSS viewport requested: 390 × 844, device scale 1
-- State: Home, post-draft, member view, Power Pulse loaded from the live analyzer model
-- Theme: source is Light; implementation evidence is the same design mapped through the active dark member palette. Layout, hierarchy and semantic accent use were compared; the palette difference is intentional product behavior.
+**Findings**
 
-## Full-view comparison
+- No actionable P0, P1, or P2 differences remain.
+- Typography preserves the mock's condensed sports-display hierarchy, strong headline wrapping, compact eyebrow, and readable supporting text.
+- Spacing follows the same top-to-bottom rhythm: announcement, headline, explanation, shield, improvements, primary action, and version.
+- The dark stadium, white type, red accents, and restrained gold details preserve the selected palette and contrast.
+- The stadium artwork and transparent DFL HQ shield are sharp at the tested mobile size with no placeholder imagery or transparency halo.
+- Copy matches the selected direction. The three improvement cards intentionally omit supporting descriptions per the user's revision.
 
-The implemented Home keeps the existing stage, snapshot, season doors and fixed navigation, replaces the retired “The League Is Set” roster grid with one Power Pulse surface, and preserves the selected mock's location and visual priority. No old league-set heading or roster grid remains in the rendered page.
+**Comparison History**
 
-## Focused comparison
+- Iteration 1 — P2: a full-page capture could expose dashboard content below the fixed gate. Fixed by locking the document height and removing underlying app surfaces from layout while an update is required. The revised 390 × 844 capture contains only the update experience.
+- Iteration 1 — P2: the launcher artwork showed an opaque square around the shield. Fixed by producing a transparent, edge-cleaned update mark from the supplied DFL HQ brand asset. The revised capture shows the shield directly over the stadium.
+- Iteration 2 — P2: the shield was materially smaller than the selected mock. Increased its responsive size while preserving room for all three improvement cards and the persistent update action. The final combined comparison confirms the corrected hierarchy.
 
-The combined comparison checks the card at readable size. It confirms the same three-part hierarchy: personal power rank, top-five table and biggest riser, followed by one roster insight and a trade-analyzer action. The implementation uses real team names and honest model-versus-standings movement, so content differs from mock data by design.
+**Interaction and Runtime Evidence**
 
-## Findings
+- Browser-rendered in Chromium at 390 × 844.
+- Confirmed the update gate owns the viewport, body scrolling is locked, and no dismiss control or card subtext is present.
+- Pressed Update Now and confirmed navigation to the cache-busted `?u=` URL.
+- Checked page and browser console errors during the primary interaction: none.
 
-- No actionable P0, P1 or P2 differences remain.
-- Fonts and typography: the existing Rajdhani-based display system matches the source's condensed athletic headings; ranks, labels and numbers retain the intended optical hierarchy.
-- Spacing and layout rhythm: thin dividers, three compact columns, one footer row and mobile-safe truncation match the selected card. The card remains clear at 390px without horizontal overflow.
-- Colors and visual tokens: all colors use the app's theme tokens. The subtle upper-left surface wash, hairline border and restrained accent survive light, dark and member palettes.
-- Image and icon fidelity: no new raster assets were needed. Existing DFL sprite icons are used for the trend and insight marks; no placeholder or handcrafted icon art was introduced.
-- Copy and content: “Power Pulse,” personal rank, movement baseline, top five, biggest riser, roster strength/weakness and analyzer action are all present. Movement is labeled against synced standings or the prior season rather than fabricated as a weekly change.
+**Focused Region Comparison**
 
-## Interaction and runtime checks
+- A separate crop was unnecessary because the normalized combined comparison keeps the headline, logo edges, card labels, button, and version text readable at their actual implementation size.
 
-- The Power Pulse loaded after the Home shell without blocking navigation.
-- “Open Trade Analyzer” opened the selected member's analyzer report.
-- Empty and refresh-failure states retain a working analyzer route.
-- Browser console contained no application errors during the final path. The only observed warning was the existing multiple Supabase-client warning caused by repeated local preview sessions.
-- Focused tests: 40 passed across Power Pulse, Team Analyzer and post-draft Home behavior.
-- Typecheck and production build passed.
+**Implementation Checklist**
 
-## Comparison history
+- [x] Full-screen required-update gate
+- [x] Selected stadium art direction
+- [x] Transparent DFL HQ shield
+- [x] No secondary descriptions under update items
+- [x] Working Update Now refresh flow
+- [x] Mobile overflow and safe-area handling
 
-1. First mobile pass: P2 — the riser dropped below the ranking table and made the feature taller than the selected compact mock.
-   - Fix: changed the narrow layout to an 80px / flexible / 72px three-column grid, tightened row type and kept the insight/action footer horizontal above 350px.
-2. Final mobile pass: the riser remains in the third column, the card matches the reference's aspect and scan path, and no P0/P1/P2 issues remain.
+**Follow-up Polish**
 
-## Follow-up polish
-
-- None required for handoff.
+- The implementation uses DFL HQ's existing card language for the three improvements instead of the mock's divider-only rows. This is an intentional P3 adaptation to the app's established visual system.
 
 final result: passed

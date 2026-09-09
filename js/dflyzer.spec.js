@@ -38,10 +38,12 @@ describe('who is fleecing whom', () => {
     const mineToWin = read({ fairness: 48, valueToA: 60, valueToB: 28.7 });
     expect(mineToWin[0].title).toContain('you are holding the shears');
     expect(mineToWin[0].tone).toBe('good');
+    expect(mineToWin[0].copy).toMatch(/filthy|sober up/i);
 
     const theirsToWin = read({ fairness: 34, valueToA: 25, valueToB: 72 });
     expect(theirsToWin[0].title).toBe('You are the one getting fleeced');
     expect(theirsToWin[0].tone).toBe('bad');
+    expect(theirsToWin[0].copy).toMatch(/getting screwed/i);
   });
 
   it('does NOT call a fair trade a robbery', () => {
