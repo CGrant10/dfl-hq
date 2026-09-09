@@ -24,7 +24,7 @@
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
-const W = 1080, H = 1350;
+const W = 1080;
 const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, CREST_RED, CREST_BLUE } = SHARE_INK;
 
 const num = value => (Number.isFinite(Number(value)) ? Math.round(Number(value)) : 0);
@@ -33,7 +33,7 @@ const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.ros
 
 /* recommendationFor() owns the call and its tone. FLEECE deliberately uses
    the same red as PASS: the word is louder, the direction is identical. */
-const CALL_INK = { accept: OK, pass: ACCENT, negotiate: GOLD };
+const CALL_INK = { accept: GOLD, pass: CREST_RED, negotiate: CREST_BLUE };
 
 function savageFallback(recommendation) {
   if (recommendation?.action === "FLEECE") return "FLEECE. They are robbing your ass blind.";
@@ -49,7 +49,7 @@ function savageFallback(recommendation) {
  * a shared image that disagreed with the ticket it was shared from would be
  * worse than no image at all.
  */
-export function dealCardData({ result, parties = [], sends = [], pool = new Map(), verdict, recommendation, remark, member } = {}) {
+export function dealCardData({ result, parties = [], sends = [], pool = new Map(), verdict, recommendation, remarks, remark, member } = {}) {
   if (!result || parties.length < 2 || !recommendation) return null;
   const named = ids => (ids || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => Number(b.tradeValue) - Number(a.tradeValue))
@@ -60,6 +60,14 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
     }));
   const multi = parties.length > 2;
   const last = parties.length - 1;
+  const supplied = Array.isArray(remarks) && remarks.length ? remarks : remark ? [remark] : [];
+  const fullRemarks = supplied.length ? supplied.map(item => ({
+    title: String(item?.title || ""),
+    copy: String(item?.copy || ""),
+    tone: String(item?.tone || "neutral"),
+  })).filter(item => item.title || item.copy) : [{
+    title: savageFallback(recommendation), copy: "", tone: recommendation.tone === "pass" ? "bad" : recommendation.tone === "accept" ? "good" : "neutral",
+  }];
   return {
     multi,
     who: member?.display_name || teamName(parties[0]),
@@ -86,11 +94,10 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
     })),
     /* The DFLyzer's top remark rides along, because the card is what reaches
        the group chat and "ACCEPT" alone starts no arguments. */
-    /* Never let the share path wash the DFLyzer's voice out. The page passes
-       the top evidence-backed reason; this fallback keeps direct callers and
-       future share buttons just as savage. */
-    remark: remark?.title ? String(remark.title) : savageFallback(recommendation),
-    remarkTone: String(remark?.tone || (recommendation.tone === "pass" ? "bad" : recommendation.tone === "accept" ? "good" : "neutral")),
+    /* Every evidence-backed description belongs on the shared receipt. */
+    remarks: fullRemarks,
+    remark: fullRemarks[0]?.title || "",
+    remarkTone: fullRemarks[0]?.tone || "neutral",
     forWhom: teamName(parties[0]),
     against: teamName(parties[multi ? last : 1]),
   };
@@ -101,26 +108,40 @@ export function dealCardText(t) {
   if (!t) return "";
   const out = t.columns[0]?.players.map(p => p.name).join(" + ") || "nobody";
   const back = t.columns[1]?.players.map(p => p.name).join(" + ") || "nobody";
-  const remark = t.remark ? `${t.remark}${/[.!?]$/.test(t.remark) ? "" : "."} ` : "";
+  const remark = (t.remarks || []).map(item => [item.title, item.copy].filter(Boolean).join(" ")).join(" ");
   return `${t.call} — ${t.forWhom} sends ${out} for ${back}. `
-    + remark
+    + `${remark}${remark && !/[.!?]$/.test(remark) ? "." : ""} `
     + `${t.fairness}% balance, ${signed(t.deltas[0]?.delta)} a week to my lineup. `
     + `DFLyzer, which is a model and not a promise.`;
 }
 
 /* Where every band sits. Measured up from the bottom, packages flex above. */
-function frame(t) {
-  const disclaimer = H - 40;
-  const who = H - 92;
-  const meterY = H - 168;
+function packageMetrics(t) {
+  const rowsIn = column => Math.max(1, column.players.length);
+  const packH = Math.max(...t.columns.map(column => 92 + rowsIn(column) * 58 + 62));
+  return { packH, packsH: t.columns.length <= 2 ? packH : t.columns.length * (packH + 12) - 12 };
+}
+
+function canvasHeight(t) {
+  const { packsH } = packageMetrics(t);
+  const reasonCount = Math.max(1, t.remarks?.length || 0);
+  const needed = 300 + packsH + 468 + t.deltas.length * 44 + 44 + reasonCount * 128;
+  return Math.max(1800, Math.ceil(needed / 20) * 20);
+}
+
+function frame(t, height) {
+  const disclaimer = height - 40;
+  const who = height - 92;
+  const meterY = height - 168;
   const linesBottom = meterY - 56;
   const lineH = 44;
   const linesTop = linesBottom - t.deltas.length * lineH;
   const stampH = 132;
-  const remarkY = linesTop - 30;
-  const stampTop = remarkY - 34 - stampH;
+  const reasonsH = 44 + Math.max(1, t.remarks?.length || 0) * 128;
+  const reasonsTop = linesTop - 26 - reasonsH;
+  const stampTop = reasonsTop - 26 - stampH;
   const ceiling = stampTop - 26;
-  return { disclaimer, who, meterY, linesTop, lineH, stampTop, stampH, remarkY, ceiling };
+  return { disclaimer, who, meterY, linesTop, lineH, stampTop, stampH, reasonsTop, reasonsH, ceiling };
 }
 
 function drawPackage(ctx, column, x, y, w, h, accent) {
@@ -180,11 +201,34 @@ function drawPackage(ctx, column, x, y, w, h, accent) {
   ctx.textAlign = "center";
 }
 
+function wrappedLines(ctx, text, maxWidth, maxLines = 3) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line);
+      line = word;
+      if (lines.length === maxLines - 1) break;
+    } else line = next;
+  }
+  if (line && lines.length < maxLines) {
+    const used = lines.join(" ").split(/\s+/).filter(Boolean).length;
+    const remaining = words.slice(used).join(" ");
+    let final = remaining || line;
+    while (ctx.measureText(final).width > maxWidth && final.length > 1) final = `${final.slice(0, -2).trim()}…`;
+    lines.push(final);
+  }
+  return lines;
+}
+
 export function dealCanvas(t) {
+  const H = canvasHeight(t);
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  const f = frame(t);
+  const f = frame(t, H);
 
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
@@ -192,10 +236,10 @@ export function dealCanvas(t) {
   ctx.lineWidth = 6;
   ctx.strokeRect(3, 3, W - 6, H - 6);
 
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, CREST_RED); grad.addColorStop(1, CREST_BLUE);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 10);
+  [CREST_RED, GOLD, INK, CREST_BLUE].forEach((colour, index) => {
+    ctx.fillStyle = colour;
+    ctx.fillRect(index * W / 4, 0, W / 4, 12);
+  });
 
   const img = t.columns.length <= 2 ? crestImage() : null;
   const cw = 260;
@@ -210,10 +254,7 @@ export function dealCanvas(t) {
      columns take the TALLER of the two, because two side-by-side boxes of
      different heights read as a layout bug rather than as a short package. */
   const side = t.columns.length <= 2;
-  const rowsIn = column => Math.max(1, column.players.length);
-  const boxFor = column => 92 + rowsIn(column) * 58 + 62;
-  const packH = Math.max(...t.columns.map(boxFor));
-  const packsH = side ? packH : t.columns.length * (packH + 12) - 12;
+  const { packH, packsH } = packageMetrics(t);
   const groupH = headH + 18 + packsH;
   const slack = Math.max(0, f.ceiling - 34 - groupH);
   let y = 34 + slack - Math.min(slack / 2, 50);
@@ -268,12 +309,32 @@ export function dealCanvas(t) {
   fitText(ctx, `${t.headline}${t.winner ? ` · ${t.winner} wins it` : ""}`,
     W / 2, f.stampTop + 108, W - 200, 24, 700, "center");
 
-  // ---- the DFLyzer's headline remark ----------------------------------
-  if (t.remark) {
-    ctx.textAlign = "center";
-    ctx.fillStyle = t.remarkTone === "bad" ? ACCENT : t.remarkTone === "good" ? OK : t.remarkTone === "warn" ? GOLD : MUTED;
-    fitText(ctx, t.remark, W / 2, f.remarkY, W - 140, 34, 800, "center");
-  }
+  // ---- every DFLyzer description, with room to read it ----------------
+  ctx.textAlign = "left";
+  ctx.fillStyle = MUTED;
+  ctx.font = `800 20px ${FONT}`;
+  ctx.letterSpacing = "3px";
+  ctx.fillText("THE FULL DFLYZER READ", 80, f.reasonsTop + 24);
+  ctx.letterSpacing = "0px";
+  const reasonInk = tone => tone === "bad" ? CREST_RED : tone === "good" ? GOLD : tone === "warn" ? CREST_BLUE : MUTED;
+  (t.remarks || []).forEach((reason, index) => {
+    const top = f.reasonsTop + 44 + index * 128;
+    ctx.fillStyle = CARD_2;
+    roundRect(ctx, 80, top, W - 160, 116, 18);
+    ctx.fill();
+    ctx.fillStyle = reasonInk(reason.tone);
+    roundRect(ctx, 80, top, 7, 116, 4);
+    ctx.fill();
+    ctx.fillStyle = reasonInk(reason.tone);
+    fitText(ctx, reason.title, 108, top + 34, W - 216, 27, 900, "left");
+    if (reason.copy) {
+      ctx.fillStyle = INK;
+      ctx.font = `600 20px ${FONT}`;
+      wrappedLines(ctx, reason.copy, W - 216, 3).forEach((line, lineIndex) => {
+        ctx.fillText(line, 108, top + 63 + lineIndex * 23);
+      });
+    }
+  });
 
   // ---- what it does to each lineup ------------------------------------
   t.deltas.forEach((row, index) => {
@@ -288,7 +349,7 @@ export function dealCanvas(t) {
     ctx.font = `700 24px ${FONT}`;
     fitText(ctx, `${row.team} lineup`, 80, lineY + 32, W - 400, 24, 700, "left");
     ctx.textAlign = "right";
-    ctx.fillStyle = row.delta >= 0 ? OK : ACCENT;
+    ctx.fillStyle = row.delta >= 0 ? GOLD : CREST_RED;
     ctx.font = `900 30px ${FONT}`;
     ctx.fillText(`${signed(row.delta)} / wk`, W - 80, lineY + 33);
   });
@@ -302,10 +363,10 @@ export function dealCanvas(t) {
   ctx.save();
   roundRect(ctx, barX, f.meterY, barW, barH, 7);
   ctx.clip();
-  band(0, .55, `${ACCENT}33`);
+  band(0, .55, `${CREST_RED}66`);
   band(.55, .72, `${GOLD}33`);
   band(.72, .88, `${CREST_BLUE}66`);
-  band(.88, 1, `${OK}33`);
+  band(.88, 1, `${INK}33`);
   ctx.restore();
   const markX = barX + barW * (t.fairness / 100);
   ctx.fillStyle = INK;

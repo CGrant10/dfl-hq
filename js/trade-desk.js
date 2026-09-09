@@ -42,7 +42,7 @@ export function verdictFor(result) {
   if (fairness >= 88) return { tone: "even", headline: "Balanced", who: null };
   const who = gap > 0 ? "a" : "b";
   if (fairness >= 72) return { tone: "slight", headline: "Slight edge", who };
-  if (fairness >= 55) return { tone: "clear", headline: "Clear winner", who };
+  if (fairness >= 55) return { tone: "clear", headline: gap < 0 ? "FLEECE" : "Clear winner", who };
   return { tone: "lopsided", headline: "FLEECE", who };
 }
 
@@ -56,11 +56,8 @@ export function recommendationFor(result) {
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
   const signal = valueEdge * .55 + num(result.weeklyDeltaA) * 8;
-  if (Number.isFinite(Number(result.fairness)) && num(result.fairness) < 55 && valueGap < 0) {
-    return { action: "FLEECE", tone: "pass", signal, valueEdge };
-  }
   if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
-  if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
+  if (signal <= -7) return { action: "FLEECE", tone: "pass", signal, valueEdge };
   return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
 }
 

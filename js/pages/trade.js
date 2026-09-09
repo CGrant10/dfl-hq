@@ -181,8 +181,8 @@ function page(data) {
               pool: data.pool,
               verdict: verdictFor(perspectiveOf(deal)),
               recommendation: recommendationFor(perspectiveOf(deal)),
-              remark: tradeReasons(perspectiveOf(deal), deal.parties[0], deal.parties.at(-1),
-                data.pool, deal.sends[0], deal.sends.at(-1))[0],
+              remarks: tradeReasons(perspectiveOf(deal), deal.parties[0], deal.parties.at(-1),
+                data.pool, deal.sends[0], deal.sends.at(-1)),
               member: me,
             });
           } catch (error) {

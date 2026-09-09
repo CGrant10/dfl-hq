@@ -57,7 +57,11 @@ describe("recommendationFor", () => {
   });
 
   it("passes when value and weekly lineup both decline", () => {
-    expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("PASS");
+    expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("FLEECE");
+  });
+
+  it("shows fleece on a clear losing value gap before it becomes fully lopsided", () => {
+    expect(verdictFor({ fairness: 64, valueToA: 40, valueToB: 63 }).headline).toBe("FLEECE");
   });
 
   it("calls a severely lopsided loss a fleece", () => {

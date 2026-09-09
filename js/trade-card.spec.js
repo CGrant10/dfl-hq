@@ -61,6 +61,14 @@ describe('dealCardData', () => {
     expect(t.remarkTone).toBe('bad');
   });
 
+  it('keeps every DFLyzer title and full description for the shared image', () => {
+    const reasons = tradeReasons(result, mine, theirs, pool, ['2', '3'], ['11']);
+    const t = card({ remarks: reasons });
+    expect(t.remarks).toHaveLength(reasons.length);
+    expect(t.remarks.map(item => item.title)).toEqual(reasons.map(item => item.title));
+    expect(t.remarks.map(item => item.copy)).toEqual(reasons.map(item => item.copy));
+  });
+
   it('clamps a nonsense fairness rather than drawing a marker off the card', () => {
     expect(card({ result: { ...result, fairness: 140 } }).fairness).toBe(100);
     expect(card({ result: { ...result, fairness: -20 } }).fairness).toBe(0);
@@ -102,13 +110,15 @@ describe('dealCardData', () => {
 
 describe('dealCardText', () => {
   it('names both packages and the remark, because the image may not arrive', () => {
-    const t = card({ remark: tradeReasons(result, mine, theirs, pool, ['2', '3'], ['11'])[0] });
+    const reasons = tradeReasons(result, mine, theirs, pool, ['2', '3'], ['11']);
+    const t = card({ remarks: reasons });
     const text = dealCardText(t);
     expect(text).toContain('ACCEPT');
     expect(text).toContain('Kenneth Walker + Jayden Reed');
     expect(text).toContain('Nico Collins');
     expect(text).toContain('48% balance');
     expect(text).toContain('robbery');
+    for (const reason of reasons) expect(text).toContain(reason.copy);
     expect(text).not.toContain('accept..');
     expect(dealCardText(null)).toBe('');
   });
