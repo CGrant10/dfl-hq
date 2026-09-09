@@ -171,6 +171,8 @@
 /* How many lines are live: a fact, not a call to action, so it is a hairline
    pill rather than a second coloured thing beside the claim button. */
 #sportsbook-wrap .sb-claim-row .pill {
+  min-width: 58px;
+  padding: 5px 11px;
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg-2) 70%, transparent);
   color: var(--muted);
@@ -178,6 +180,8 @@
   font-weight: var(--fw-bold);
   letter-spacing: .12em;
   text-transform: uppercase;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------------
