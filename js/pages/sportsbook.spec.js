@@ -1,5 +1,5 @@
 import { it, expect, vi } from 'vitest';
-const { markets, outcomes, bets, perms } = vi.hoisted(() => ({
+const { markets, outcomes, bets, perms, trends } = vi.hoisted(() => ({
   /* Flipped by the commissioner test below. */
   perms: { sportsbook: false },
   markets: [
@@ -12,10 +12,14 @@ const { markets, outcomes, bets, perms } = vi.hoisted(() => ({
     {id:4,market_id:2,label:'C',odds_american:110}
   ],
   /* Mutated by the entry test below; empty for the first one. */
-  bets: []
+  bets: [],
+  trends: [
+    {outcome_id:2,market_id:1,outcome_label:'Team <A>',market_title:'Team <A> vs B',ticket_count:3,bettor_count:2,pick_share:60},
+    {outcome_id:4,market_id:2,outcome_label:'C',market_title:'C vs D',ticket_count:2,bettor_count:2,pick_share:40}
+  ]
 }));
 vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], db:()=>({
-  rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:[],error:null}),
+  rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({currentMember:()=>({display_name:'Preview'})}));
@@ -32,6 +36,9 @@ it('renders the real markets and wallet with separate accessible ticket panel', 
   expect(view.innerHTML).toContain('data-bet-outcome="2"');
   expect(view.innerHTML).toContain('id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden');
   expect(view.innerHTML).toContain('No tickets yet');
+  expect(view.innerHTML).toContain('Trending picks');
+  expect(view.innerHTML).toContain('3 tickets');
+  expect(view.innerHTML).toContain('2 bettors &middot; 60% of picks');
   expect(view.innerHTML).not.toContain('Projected');
 });
 

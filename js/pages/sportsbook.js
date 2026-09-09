@@ -67,20 +67,21 @@ export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets;
+  let wallet,ledger,leaders,markets,outcomes,bets,trends;
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
-    const[lr,br,mr,or,btr]=await Promise.all([
+    const[lr,br,mr,or,btr,tr]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
       db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100),
       db().from("sportsbook_outcomes").select("*").order("sort_order"),
-      db().rpc("sportsbook_my_bets",{row_limit:30})
+      db().rpc("sportsbook_my_bets",{row_limit:30}),
+      db().rpc("sportsbook_trending_picks",{row_limit:3})
     ]);
     const err=lr.error||br.error||mr.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];
+    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
@@ -120,6 +121,7 @@ export async function render(view){
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
     <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${mastheadCaption(open)}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
     ${bankrollCard(me,wallet,open,autoReady)}
+    ${trendingPicks(trends)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap)}
@@ -141,6 +143,18 @@ export async function render(view){
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);
   if(canBook)wireCommissioner(view);
+}
+
+function trendingPicks(rows){
+  const picks=(rows||[]).slice(0,3);
+  return `<section class="sb-trending" aria-labelledby="sb-trending-title">
+    <div class="sb-board-head"><div><small>Action report</small><h2 id="sb-trending-title">Trending picks</h2></div><span>Top 3</span></div>
+    ${picks.length?`<ol class="sb-trend-grid">${picks.map((pick,index)=>`<li class="sb-trend-card">
+      <span class="sb-trend-rank">${index+1}</span>
+      <span class="sb-trend-copy"><strong>${esc(pick.outcome_label)}</strong><small>${esc(pick.market_title)}</small></span>
+      <span class="sb-trend-count"><b>${num(pick.ticket_count)} ticket${Number(pick.ticket_count)===1?"":"s"}</b><small>${num(pick.bettor_count)} bettor${Number(pick.bettor_count)===1?"":"s"} &middot; ${Math.round(Number(pick.pick_share)||0)}% of picks</small></span>
+    </li>`).join("")}</ol>`:`<p class="sb-trending-empty">No picks on the board yet.</p>`}
+  </section>`;
 }
 
 /*
