@@ -3,3 +3,7 @@
 # The function verifies those headers with has_commissioner_permission() before
 # any send; config requests reveal only the public VAPID key.
 verify_jwt = false
+
+[functions.sync-sleeper]
+# The scheduled request carries a dedicated secret header stored in Vault.
+verify_jwt = false
