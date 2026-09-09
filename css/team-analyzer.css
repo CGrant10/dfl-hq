@@ -816,6 +816,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   background: var(--card-surface);
   box-shadow: var(--card-shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
 }
+[data-td-verdict] { scroll-margin-top: calc(72px + env(safe-area-inset-top)); }
 .td-ticket::before {
   content: "";
   position: absolute;

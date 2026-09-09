@@ -22,4 +22,11 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('<details class="ta-report-section ta-trades"${shop.expanded ? " open" : ""}>');
     expect(source).toContain('expanded: false');
   });
+
+  it("scrolls a loaded suggestion to its analysis result", () => {
+    const source = readFileSync(new URL("./pages/trade.js", import.meta.url), "utf8");
+
+    expect(source).toContain('body.querySelector("[data-td-verdict]")?.scrollIntoView');
+    expect(source).not.toContain('body.querySelector("[data-trade-desk]")?.scrollIntoView');
+  });
 });

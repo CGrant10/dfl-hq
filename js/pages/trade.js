@@ -200,7 +200,7 @@ function page(data) {
           new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
         ];
         draw();
-        body.querySelector("[data-trade-desk]")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
