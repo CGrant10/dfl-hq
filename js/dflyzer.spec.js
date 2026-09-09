@@ -108,17 +108,17 @@ describe('the roster remarks', () => {
 
   it('calls out weak-player piles without mistaking quantity for quality', () => {
     const two = read({ fairness: 44, valueToA: 32, valueToB: 72, weeklyDeltaA: -3 }, ['big'], ['small', 'scrap']);
-    expect(titles(two)).toContain('Two nickels still do not make a dollar');
-    expect(two.find(r => r.title.includes('nickels')).copy).toContain('2 names');
-    expect(two.find(r => r.title.includes('nickels')).copy).toContain('40.0 value points');
+    expect(titles(two)).toContain('Two pieces of shit still do not make a star');
+    expect(two.find(r => r.title.includes('pieces of shit')).copy).toContain('2 names');
+    expect(two.find(r => r.title.includes('pieces of shit')).copy).toContain('40.0 value points');
 
     const three = read({ fairness: 51, valueToA: 37, valueToB: 72, weeklyDeltaA: -2 }, ['big'], ['small', 'scrap', 'dust']);
-    expect(titles(three)).toContain('Three bench players in a trench coat are not a star');
+    expect(titles(three)).toContain('Three bench turds in a trench coat are not a starter');
   });
 
   it('does not roast a legitimate two-for-one just because it has two names', () => {
     const fair = read({ fairness: 90, valueToA: 66, valueToB: 72 }, ['big'], ['star', 'teB']);
-    expect(titles(fair).join(' ')).not.toMatch(/nickels|trench coat|junk drawer/i);
+    expect(titles(fair).join(' ')).not.toMatch(/pieces of shit|trench coat|roster toilet/i);
   });
 });
 

@@ -172,12 +172,12 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   /* ---- a real player for spare parts --------------------------------- */
   if (quantityTrap) {
     const title = sendB.length >= 4
-      ? "They emptied the junk drawer and called it a package"
+      ? "They emptied the roster toilet and called it a package"
       : sendB.length === 3
-        ? "Three bench players in a trench coat are not a star"
-        : "Two nickels still do not make a dollar";
+        ? "Three bench turds in a trench coat are not a starter"
+        : "Two pieces of shit still do not make a star";
     reasons.push({ tone: "bad", weight: 92, title,
-      copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. After cuts, you still lose ${gap} value points.` });
+      copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. After cuts, this shit sandwich still costs you ${gap} value points.` });
   } else if (bestIn >= bestOut * 1.8 && bestOut > 0) {
     reasons.push({ tone: "good", weight: 74,
       title: "You are turning parts into a player",
