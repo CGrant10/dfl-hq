@@ -905,14 +905,6 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 .td-total b.td-in { color: var(--ok); }
 
-.td-fine {
-  margin: 0 0 4px;
-  padding: 0 10px;
-  color: var(--muted);
-  font-size: var(--ta-micro);
-  line-height: 1.5;
-}
-
 /* Three or more parties stack, because two columns cannot hold a three-way. */
 .td-legs { display: grid; gap: 8px; padding: 12px 0; }
 .td-leg { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--bg-2); }

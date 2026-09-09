@@ -127,45 +127,45 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   /* ---- who is fleecing whom ------------------------------------------ */
   if (fairness < 55 && valueGap > 0) {
     reasons.push({ tone: "good", weight: 100,
-      title: "This is a fleecing, and you are holding the shears",
+      title: "This trade is filthy. Hit accept.",
       copy: `${fairness}% balance with ${gap} value points coming your way. This deal is filthy in the fun way—send it before they sober up and run the numbers.` });
   } else if (fairness < 55) {
     reasons.push({ tone: "bad", weight: 100,
-      title: "You are the one getting fleeced",
+      title: "Hell no. You are getting screwed.",
       copy: `${fairness}% balance and ${gap} value points walking out the door. ${them} brought dinner because you are the one getting screwed.` });
   } else if (Math.abs(valueGap) < 4) {
     reasons.push({ tone: "neutral", weight: 70,
-      title: "Nobody is robbing anybody",
+      title: "Fair as hell. Weird, but fine.",
       copy: `${gap} value points between the packages at ${fairness}% balance. Boring as hell, annoyingly responsible, and perfectly fine. Shake hands.` });
   } else if (valueGap > 0) {
     reasons.push({ tone: "good", weight: 84,
-      title: "You come out ahead on assets",
+      title: "Damn, you actually won this one.",
       copy: `The incoming side grades ${gap} points higher after roster cuts, at ${fairness}% balance. A sexy little piece of business without getting reckless.` });
   } else {
     reasons.push({ tone: "bad", weight: 84,
-      title: "You are paying a premium and calling it a trade",
+      title: "You are paying the dumbass tax.",
       copy: `Your outgoing side grades ${gap} points higher after roster cuts, at ${fairness}% balance. That is a hangover purchase dressed up as roster strategy.` });
   }
 
   /* ---- what it does to the only lineup you can actually start -------- */
   if (result.weeklyDeltaA >= .25) {
     reasons.push({ tone: "good", weight: 76,
-      title: "Your starting lineup gets better this week",
+      title: "Your Sundays just got sexier.",
       copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points a week after this. That is real production, not horny spreadsheet math.` });
   } else if (result.weeklyDeltaA <= -1.5) {
     reasons.push({ tone: "bad", weight: 80,
-      title: "You are paying to get worse on Sunday",
+      title: "Congrats, you paid to suck more.",
       copy: `The best legal lineup projects ${signed(result.weeklyDeltaA)} points a week after this. That is competitive self-harm with paperwork.` });
   } else if (result.weeklyDeltaA <= -.25) {
     /* Banded, because the same sentence over −0.3 and over −6.0 makes the
        DFLyzer sound like it cannot read its own numbers - and the moment it
        oversells one of them, nobody believes the next one either. */
     reasons.push({ tone: "warn", weight: 66,
-      title: "Your lineup takes a small hit",
+      title: "A small kick in the ass.",
       copy: `${signed(result.weeklyDeltaA)} points a week. A bruise, not a funeral—but you had better be getting long-term value for the pain.` });
   } else {
     reasons.push({ tone: "neutral", weight: 58,
-      title: "Your lineup does not notice this happened",
+      title: "All that work for jack shit.",
       copy: `${signed(result.weeklyDeltaA)} points a week. All that tapping for jack shit on Sunday, so make sure the roster shape is actually the point.` });
   }
 
@@ -180,41 +180,41 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
       copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. After cuts, this shit sandwich still costs you ${gap} value points.` });
   } else if (bestIn >= bestOut * 1.8 && bestOut > 0) {
     reasons.push({ tone: "good", weight: 74,
-      title: "You are turning parts into a player",
+      title: "Less crap, more star power.",
       copy: `Your best piece out is worth ${bestOut}; the best coming back is worth ${bestIn}. That is grown-ass roster construction: turn clutter into someone opponents fear.` });
   } else if (bestOut >= bestIn * 1.8 && bestIn > 0) {
     reasons.push({ tone: "bad", weight: 78,
-      title: "You are breaking up a good player for change",
+      title: "You are selling a stud for spare change.",
       copy: `Out goes a ${bestOut}; back comes a ${bestIn} as the headline piece. That is how you wake up with regret and three waiver-wire chores.` });
   }
 
   /* ---- the hole, and the thing you are selling to plug it ------------ */
   if (fillsNeed) {
     reasons.push({ tone: "good", weight: 72,
-      title: `It finally plugs the ${need} hole`,
+      title: `Your ${need} room finally stops sucking.`,
       copy: `${incoming.filter(player => player.position === need).map(player => `${player.name} (${num(player.tradeValue)})`).join(" and ")} lands in the worst unit on your roster. Your ugly-ass ${need} room finally looks playable.` });
   }
   if (givesStrength) {
     reasons.push({ tone: "warn", weight: 68,
-      title: `You are selling out of your best unit`,
+      title: `You fixed one hole by opening another dumb one.`,
       copy: `${outgoing.filter(player => player.position === teamA.strength).map(player => `${player.name} (${num(player.tradeValue)})`).join(" and ")} comes from ${teamA.strength}, currently the one damn thing your roster does well.` });
   }
 
   /* ---- roster arithmetic --------------------------------------------- */
   if (sendB.length > sendA.length && !quantityTrap) {
     reasons.push({ tone: "warn", weight: 54,
-      title: `${sendB.length} bodies in for ${sendA.length} out`,
+      title: `${sendB.length} bodies in. Check the damn quality.`,
       copy: `Those ${sendB.length} incoming pieces count only if they beat the players they displace. Otherwise you traded for extra asses and a cut-day headache.` });
   }
 
   /* ---- and the part nobody wants to hear ------------------------------ */
   if (result.weeklyDeltaB > .35) {
     reasons.push({ tone: "warn", weight: 62,
-      title: `${them} will say yes to this`,
+      title: `${them} is getting off on this too.`,
       copy: `Their lineup gains ${signed(result.weeklyDeltaB)} a week too. Everybody can leave happy—just make sure they are not getting the better orgasm.` });
   } else if (result.weeklyDeltaB <= -.4 && result.weeklyDeltaA > 0) {
     reasons.push({ tone: "neutral", weight: 60,
-      title: `${them} has no reason to take this`,
+      title: `${them} would have to be drunk.`,
       copy: `Their lineup drops ${Math.abs(num(result.weeklyDeltaB)).toFixed(1)} a week. Sending it is free; expecting a yes is drunk-text confidence.` });
   }
 
@@ -316,20 +316,6 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
         <div class="td-total"><small>Worth to you</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
-    <!--
-      THE TOTAL IS NOT THE SUM OF THE TAGS, AND THE CARD HAS TO SAY SO.
-
-      packageValue() discounts every piece after the first against the player
-      it would displace, so two tags of 28 and 20 come out at 29 rather than
-      48 - which is right, because a second RB who only beats your own bench
-      is not worth his sticker to the side receiving him. Laid out as an
-      invoice that arithmetic looks like a mistake unless it is labelled, so
-      the totals say "worth to" rather than "out" and this line explains the
-      gap. An unexplained number on a card about fairness is worse than no
-      number.
-    -->
-    <p class="td-fine">Package value counts each extra piece only by what it beats on the receiving roster, so a total is not the sum of the tags.</p>
-
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
       <span>For ${esc(teamName(teamA))}</span>

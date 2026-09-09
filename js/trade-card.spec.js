@@ -44,7 +44,7 @@ describe('dealCardData', () => {
     expect(t.headline).toBe('Lopsided');
     expect(t.winner).toBe('Bastards of the Realm');
     expect(t.fairness).toBe(48);
-    expect(t.remark).toContain('fleecing');
+    expect(t.remark).toContain('filthy');
     expect(t.remarkTone).toBe('good');
   });
 
@@ -95,7 +95,8 @@ describe('dealCardText', () => {
     expect(text).toContain('Kenneth Walker + Jayden Reed');
     expect(text).toContain('Nico Collins');
     expect(text).toContain('48% balance');
-    expect(text).toContain('fleecing');
+    expect(text).toContain('filthy');
+    expect(text).not.toContain('accept..');
     expect(dealCardText(null)).toBe('');
   });
 });

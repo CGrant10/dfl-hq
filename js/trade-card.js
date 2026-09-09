@@ -91,8 +91,9 @@ export function dealCardText(t) {
   if (!t) return "";
   const out = t.columns[0]?.players.map(p => p.name).join(" + ") || "nobody";
   const back = t.columns[1]?.players.map(p => p.name).join(" + ") || "nobody";
+  const remark = t.remark ? `${t.remark}${/[.!?]$/.test(t.remark) ? "" : "."} ` : "";
   return `${t.call} — ${t.forWhom} sends ${out} for ${back}. `
-    + `${t.remark ? `${t.remark}. ` : ""}`
+    + remark
     + `${t.fairness}% balance, ${signed(t.deltas[0]?.delta)} a week to my lineup. `
     + `DFLyzer, which is a model and not a promise.`;
 }

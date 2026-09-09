@@ -36,12 +36,12 @@ const titles = reasons => reasons.map(r => r.title);
 describe('who is fleecing whom', () => {
   it('calls a lopsided deal a fleecing, and puts the shears in the right hand', () => {
     const mineToWin = read({ fairness: 48, valueToA: 60, valueToB: 28.7 });
-    expect(mineToWin[0].title).toContain('you are holding the shears');
+    expect(mineToWin[0].title).toBe('This trade is filthy. Hit accept.');
     expect(mineToWin[0].tone).toBe('good');
     expect(mineToWin[0].copy).toMatch(/filthy|sober up/i);
 
     const theirsToWin = read({ fairness: 34, valueToA: 25, valueToB: 72 });
-    expect(theirsToWin[0].title).toBe('You are the one getting fleeced');
+    expect(theirsToWin[0].title).toBe('Hell no. You are getting screwed.');
     expect(theirsToWin[0].tone).toBe('bad');
     expect(theirsToWin[0].copy).toMatch(/getting screwed/i);
   });
@@ -49,7 +49,7 @@ describe('who is fleecing whom', () => {
   it('does NOT call a fair trade a robbery', () => {
     const even = read({ fairness: 93, valueToA: 38, valueToB: 41 });
     expect(titles(even).join(" ")).not.toMatch(/fleec/i);
-    expect(titles(even)).toContain('Nobody is robbing anybody');
+    expect(titles(even)).toContain('Fair as hell. Weird, but fine.');
   });
 
   it('prints the balance and the value gap in the same sentence as the insult', () => {
@@ -64,19 +64,19 @@ describe('the lineup bands', () => {
      sentence as −6.0, which is how a tool loses its credibility. */
   it('does not shout about a third of a point a week', () => {
     const small = read({ fairness: 80, valueToA: 45, valueToB: 40, weeklyDeltaA: -.3 });
-    expect(titles(small)).toContain('Your lineup takes a small hit');
-    expect(titles(small)).not.toContain('You are paying to get worse on Sunday');
+    expect(titles(small)).toContain('A small kick in the ass.');
+    expect(titles(small)).not.toContain('Congrats, you paid to suck more.');
   });
 
   it('does shout about a real one', () => {
     const big = read({ fairness: 80, valueToA: 45, valueToB: 40, weeklyDeltaA: -4.2 });
-    expect(titles(big)).toContain('You are paying to get worse on Sunday');
-    expect(big.find(r => r.title.includes('Sunday')).copy).toContain('−4.2');
+    expect(titles(big)).toContain('Congrats, you paid to suck more.');
+    expect(big.find(r => r.title.includes('suck more')).copy).toContain('−4.2');
   });
 
   it('says nothing happened when nothing happened', () => {
     const flat = read({ fairness: 90, valueToA: 41, valueToB: 40, weeklyDeltaA: .05 });
-    expect(titles(flat)).toContain('Your lineup does not notice this happened');
+    expect(titles(flat)).toContain('All that work for jack shit.');
   });
 
   it('never writes a double negative about the other side', () => {
@@ -90,22 +90,22 @@ describe('the lineup bands', () => {
 describe('the roster remarks', () => {
   it('spots parts turning into a player, and a player turning into change', () => {
     const up = read({ fairness: 60, valueToA: 60, valueToB: 30 }, ['mid', 'small'], ['star']);
-    expect(titles(up)).toContain('You are turning parts into a player');
+    expect(titles(up)).toContain('Less crap, more star power.');
 
     const down = read({ fairness: 60, valueToA: 25, valueToB: 72 }, ['big'], ['scrap']);
-    expect(titles(down)).toContain('You are breaking up a good player for change');
+    expect(titles(down)).toContain('You are selling a stud for spare change.');
   });
 
   it('knows when the hole gets plugged and when the good unit gets sold', () => {
     const reasons = read({ fairness: 62, valueToA: 60, valueToB: 30 }, ['mid'], ['star'], mine);
     /* star is a WR and WR is the need; mid is an RB and RB is the strength. */
-    expect(titles(reasons)).toContain('It finally plugs the WR hole');
-    expect(titles(reasons)).toContain('You are selling out of your best unit');
+    expect(titles(reasons)).toContain('Your WR room finally stops sucking.');
+    expect(titles(reasons)).toContain('You fixed one hole by opening another dumb one.');
   });
 
   it('counts bodies when the package is uneven', () => {
     const reasons = read({ fairness: 80, valueToA: 50, valueToB: 45 }, ['teA'], ['teB', 'scrap']);
-    expect(titles(reasons).join(" ")).toContain('2 bodies in for 1 out');
+    expect(titles(reasons).join(" ")).toContain('2 bodies in. Check the damn quality.');
   });
 
   it('calls out weak-player piles without mistaking quantity for quality', () => {
@@ -149,6 +149,6 @@ describe('the shape of the read', () => {
 
   it('leads with the fleecing, not with the roster trivia', () => {
     const reasons = read({ fairness: 34, valueToA: 25, valueToB: 72, weeklyDeltaA: -5 }, ['big'], ['scrap'], mine);
-    expect(reasons[0].title).toBe('You are the one getting fleeced');
+    expect(reasons[0].title).toBe('Hell no. You are getting screwed.');
   });
 });
