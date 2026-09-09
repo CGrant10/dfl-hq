@@ -1015,8 +1015,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   text-transform: uppercase;
 }
 
-/* THE BUILDER, folded. Reading a deal and building one are different jobs. */
-.td-builder { margin-top: 12px; border-top: 1px solid var(--line); }
+/* The builder leads the workflow; its ticket is rendered directly below it. */
+.td-builder { margin: 0 0 14px; border-bottom: 1px solid var(--line); }
 .td-builder > summary {
   display: flex;
   align-items: center;

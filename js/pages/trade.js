@@ -75,8 +75,8 @@ function tradeLab(team, teams, pool, shop) {
     <label><span>Player 1</span><select data-ta-player="a">${playerOptions(first?.id, second?.id)}</select></label>
     <label><span>Player 2</span><select data-ta-player="b">${playerOptions(second?.id, first?.id, true)}</select></label>
   </div>`;
-  return `<section class="ta-report-section ta-trades">
-    <div class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div></div>
+  return `<details class="ta-report-section ta-trades"${shop.expanded ? " open" : ""}>
+    <summary class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div><span class="ta-fold-hint">Optional</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
     <div class="ta-section-body">
       ${controls}
       ${offers.length ? `<div class="ta-deal-grid">${offers.map(offer => {
@@ -90,7 +90,7 @@ function tradeLab(team, teams, pool, shop) {
       }).join("")}</div>`
         : `<div class="ta-empty">No balanced offers found for this package.</div>`}
     </div>
-  </section>`;
+  </details>`;
 }
 
 /*
@@ -114,8 +114,8 @@ function page(data) {
   let selectedId = data.teams.find(team => String(team.id) === String(routeTeam))?.id
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
-  const trade = { memberIds: [], sends: [new Set(), new Set()] };
-  const shop = { side: "mine", partnerId: "", playerA: "", playerB: "" };
+  const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
+  const shop = { side: "mine", partnerId: "", playerA: "", playerB: "", expanded: false };
 
   return {
     markup: `<header class="page-head ta-page-head">
@@ -153,6 +153,9 @@ function page(data) {
                disabled button says that better than an error would. */
             if (share) share.disabled = !current;
           },
+        });
+        body.querySelector(".ta-trades")?.addEventListener("toggle", event => {
+          shop.expanded = event.currentTarget.open;
         });
       };
       body.addEventListener("change", event => {
@@ -202,8 +205,8 @@ function page(data) {
       view.querySelector("[data-td-team]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
         /* Both sides referred to rosters that are no longer in play. */
-        trade.memberIds = []; trade.sends = [new Set(), new Set()];
-        shop.side = "mine"; shop.partnerId = ""; shop.playerA = ""; shop.playerB = "";
+        trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
+        shop.side = "mine"; shop.partnerId = ""; shop.playerA = ""; shop.playerB = ""; shop.expanded = false;
         draw();
       });
       draw();

@@ -386,6 +386,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
 export function tradeDeskMarkup(team, teams, pool, state) {
   state.memberIds ||= state.partnerId ? [state.partnerId] : [];
   state.sends ||= [state.sendA || new Set(), state.sendB || new Set()];
+  if (state.editing == null) state.editing = true;
   const available = teams.filter(item => item.id !== team.id);
   const validIds = state.memberIds.filter((id, index, ids) => available.some(item => String(item.id) === String(id)) && ids.findIndex(other => String(other) === String(id)) === index);
   if (!validIds.length && available[0]) validIds.push(available[0].id);
@@ -399,22 +400,8 @@ export function tradeDeskMarkup(team, teams, pool, state) {
   }).join("");
   const add = parties.length < teams.length ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
   const multi = parties.length > 2;
-  /*
-    THE TICKET COMES FIRST AND THE BUILDER FOLDS.
-
-    It used to be the other way round, with a "Jump to the verdict ↓" link
-    between them - which is an admission that the answer was in the wrong
-    place. Reading a deal and building one are different jobs, so they are
-    different states: the ticket is what you land on, and the player lists
-    are behind one disclosure.
-
-    That link was also broken. The app is hash-routed, so <a href="#td-verdict">
-    did not scroll to the verdict, it set location.hash and sent the router
-    somewhere called "td-verdict".
-  */
-  return `<div data-td-verdict>${multi ? multiTicketMarkup(null) : ticketMarkup(null)}</div>
-    <details class="td-builder"${state.editing ? " open" : ""}>
-      <summary><span>Edit deal</span><i aria-hidden="true"></i></summary>
+  return `<details class="td-builder"${state.editing ? " open" : ""}>
+      <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
@@ -422,7 +409,8 @@ export function tradeDeskMarkup(team, teams, pool, state) {
         </div>
         <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>
       </div>
-    </details>`;
+    </details>
+    <div data-td-verdict>${multi ? multiTicketMarkup(null) : ticketMarkup(null)}</div>`;
 }
 
 /**
@@ -432,6 +420,9 @@ export function tradeDeskMarkup(team, teams, pool, state) {
 export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]");
+  root.querySelector(".td-builder")?.addEventListener("toggle", event => {
+    state.editing = event.currentTarget.open;
+  });
   const partiesOf = () => [team, ...state.memberIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
 
   /*
