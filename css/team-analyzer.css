@@ -779,7 +779,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  padding: 14px 18px;
 }
 .td-who small {
   display: block;
@@ -1045,7 +1045,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .td-share .btn:disabled { opacity: .5; }
 
 @media (max-width: 420px) {
-  .td-who { flex-wrap: wrap; }
+  .td-who { flex-wrap: wrap; padding-inline: 16px; }
   .td-cols { grid-template-columns: 1fr; }
   .td-col + .td-col { border-left: 0; border-top: 1px dashed color-mix(in srgb, var(--text) 18%, transparent); }
   .td-ticket { padding: 14px; }
