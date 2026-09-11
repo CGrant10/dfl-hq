@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { clubhouseCard, clubhouseView } from "./home-clubhouse.js";
+import { buildClubhouseWeekly, clubhouseCard, clubhouseView } from "./home-clubhouse.js";
 
 const player = (name, expectedPoints) => ({ name, expectedPoints });
 const analysis = {
@@ -54,5 +54,42 @@ describe("Home clubhouse", () => {
     const view = clubhouseView({ analysis, lore, members, meSleeperId: "u1", now: new Date("2026-09-13T12:00:00") });
     expect(view.gameDay).toBe(true);
     expect(clubhouseCard(view)).toContain("SUNDAY · GAME DAY");
+  });
+
+  it("uses current Sleeper weekly projections to rank the league", () => {
+    const weeklyAnalysis = {
+      ...analysis, league: { scoring_settings: { pass_yd: .04 } },
+      teams: analysis.teams.map((team, index) => ({
+        ...team, playerIds: [`p${index + 1}`], starters: [`p${index + 1}`],
+      })),
+    };
+    const weekly = buildClubhouseWeekly({
+      analysis: weeklyAnalysis, season: 2026, week: 1,
+      rows: [
+        { player_id: "p1", player: { position: "QB", first_name: "One" }, opponent: "A", stats: { gp: 1, pass_yd: 200 } },
+        { player_id: "p2", player: { position: "QB", first_name: "Two" }, opponent: "B", stats: { gp: 1, pass_yd: 300 } },
+        { player_id: "p3", player: { position: "QB", first_name: "Three" }, opponent: "C", stats: { gp: 1, pass_yd: 250 } },
+      ],
+    });
+    const view = clubhouseView({ analysis: weeklyAnalysis, lore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-09T12:00:00Z") });
+    const hot = view.stories.find(story => story.label === "LEAGUE TEMPERATURE · HOT");
+    expect(hot.headline).toContain("Beta");
+    expect(hot.detail).toContain("highest current Sleeper projection for Week 1");
+  });
+
+  it("never calls an in-progress current-week score a loss", () => {
+    const liveLore = {
+      leagues: [{ season: 2026, status: "in_season" }],
+      matchups: [{ season: 2026, week: 1, user1: "u1", score1: 7, user2: "u2", score2: 14, winner_roster_id: 2 }],
+    };
+    const weekly = { season: 2026, week: 1, teams: [
+      { sleeper_user_id: "u1", projection: 108 }, { sleeper_user_id: "u2", projection: 111 },
+    ] };
+    const view = clubhouseView({ analysis, lore: liveLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-09T12:00:00Z") });
+    const matchup = view.stories.find(story => story.key === "matchup");
+    expect(matchup.label).toContain("LIVE");
+    expect(matchup.headline).toContain("week is still alive");
+    expect(matchup.detail).toContain("Sleeper projects 108-111");
+    expect(`${matchup.headline} ${matchup.detail}`).not.toMatch(/you lost/i);
   });
 });

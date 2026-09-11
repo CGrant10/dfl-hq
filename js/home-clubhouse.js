@@ -1,4 +1,5 @@
 import { esc } from "./ui.js";
+import { buildWeeklyPool, startSitAdvice } from "./weekly-outlook.js";
 
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
 const num = value => Number(value) || 0;
@@ -25,8 +26,13 @@ function memberName(members, uid, fallback = "Unknown") {
   return member?.team_name || member?.display_name || fallback;
 }
 
-function matchupStory({ lore, uid, members }) {
-  const row = latestMatchup(lore, uid);
+function matchupStory({ lore, uid, members, weekly }) {
+  const current = weekly?.season && weekly?.week
+    ? (lore?.matchups || []).find(row => Number(row.season) === Number(weekly.season)
+      && Number(row.week) === Number(weekly.week)
+      && (String(row.user1) === String(uid) || String(row.user2) === String(uid)))
+    : null;
+  const row = current || latestMatchup(lore, uid);
   if (!row) return null;
   const left = String(row.user1) === String(uid);
   const mine = num(left ? row.score1 : row.score2);
@@ -36,15 +42,29 @@ function matchupStory({ lore, uid, members }) {
   const margin = round(Math.abs(mine - theirs));
   const won = mine > theirs;
   const tied = mine === theirs;
+  const league = [...(lore?.leagues || [])].sort((a, b) => num(b.season) - num(a.season))[0];
+  const live = Boolean(current && String(league?.status || "").toLowerCase() === "in_season");
+  const mineProjection = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(uid))?.projection;
+  const theirProjection = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(opponentId))?.projection;
+  const projectionLine = Number.isFinite(mineProjection) && Number.isFinite(theirProjection)
+    ? `Sleeper projects ${round(mineProjection)}-${round(theirProjection)} this week.` : null;
   return {
     key: "matchup",
-    label: `${row.season} · WEEK ${row.week}`,
-    headline: tied
-      ? `You and ${opponent} settled absolutely nothing.`
-      : won
-        ? `${opponent} is still looking for the license plate.`
-        : `${opponent} got you by ${margin}. Keep the excuses short.`,
-    detail: tied ? `${mine.toFixed(2)} apiece` : `${won ? "You won" : "You lost"} by ${margin}`,
+    label: `${row.season} · WEEK ${row.week}${live ? " · LIVE" : " · FINAL"}`,
+    headline: live
+      ? tied
+        ? `You and ${opponent} are dead even. Somebody blink.`
+        : won
+          ? `You're up ${margin} on ${opponent}. Keep your foot on their throat.`
+          : `${opponent} is up ${margin}. The week is still alive—fix your face.`
+      : tied
+        ? `You and ${opponent} settled absolutely nothing.`
+        : won
+          ? `${opponent} is still looking for the license plate.`
+          : `${opponent} got you by ${margin}. Keep the excuses short.`,
+    detail: live
+      ? [`Current score ${mine.toFixed(2)}-${theirs.toFixed(2)}.`, projectionLine].filter(Boolean).join(" ")
+      : tied ? `${mine.toFixed(2)} apiece` : `${won ? "You won" : "You lost"} by ${margin}`,
     sides: [
       { name: "YOU", score: mine.toFixed(2), winner: mine > theirs },
       { name: opponent, score: theirs.toFixed(2), winner: theirs > mine },
@@ -53,7 +73,21 @@ function matchupStory({ lore, uid, members }) {
   };
 }
 
-function hotSeatStory(teams) {
+function hotSeatStory(teams, weekly) {
+  const weeklySeat = [...(weekly?.teams || [])]
+    .filter(team => team.lineupIsSet && team.pointsOnBench > 0)
+    .sort((a, b) => b.pointsOnBench - a.pointsOnBench)[0];
+  if (weeklySeat) {
+    const swap = weeklySeat.swap;
+    return {
+      key: "hot-seat", label: `WEEK ${weekly.week} · LINEUP HOT SEAT`,
+      headline: swap
+        ? `${weeklySeat.name} has ${swap.in} on the bench while ${swap.out} burns the furniture.`
+        : `${weeklySeat.name} left points sitting on the damn bench.`,
+      detail: `${round(weeklySeat.pointsOnBench)} projected points are being wasted this week.`,
+      href: weeklySeat.sleeper_user_id ? `#/analyzer?owner=${encodeURIComponent(weeklySeat.sleeper_user_id)}` : "#/analyzer",
+    };
+  }
   let hottest = null;
   for (const team of teams) {
     if (team.lineup?.source !== "set") continue;
@@ -79,19 +113,26 @@ function hotSeatStory(teams) {
   };
 }
 
-function temperatureStories(teams, standings, season) {
+function temperatureStories(teams, standings, season, weekly) {
   if (!teams.length) return [];
-  const hot = teams[0];
-  const cold = teams.at(-1);
+  const weeklyRanked = [...(weekly?.teams || [])].filter(team => Number.isFinite(team.projection))
+    .sort((a, b) => b.projection - a.projection);
+  const hot = weeklyRanked[0] || teams[0];
+  const cold = weeklyRanked.at(-1) || teams.at(-1);
+  const usingWeekly = weeklyRanked.length >= 2;
   const stories = [{
     key: "temperature", label: "LEAGUE TEMPERATURE · HOT",
     headline: `${nameOf(hot)} owns the room right now. Annoying, but the math checks out.`,
-    detail: `#1 roster model · ${round(num(hot.lineup?.weeklyPoints))} projected points per week.`, href: "#/analyzer",
+    detail: usingWeekly
+      ? `${round(hot.projection)} points · highest current Sleeper projection for Week ${weekly.week}.`
+      : `#1 roster model · ${round(num(hot.lineup?.weeklyPoints))} projected points per week.`, href: "#/analyzer",
   }];
   if (cold && cold.id !== hot.id) stories.push({
     key: "temperature", label: "LEAGUE TEMPERATURE · COLD",
     headline: `${nameOf(cold)} is currently refrigerating the power rankings.`,
-    detail: `#${cold.rank} roster model · somebody check for a pulse.`, href: "#/analyzer",
+    detail: usingWeekly
+      ? `${round(cold.projection)} points · lowest current Sleeper projection for Week ${weekly.week}.`
+      : `#${cold.rank} roster model · somebody check for a pulse.`, href: "#/analyzer",
   });
 
   const current = (standings || []).filter(row => Number(row.season) === Number(season) && Number(row.rank) > 0);
@@ -159,14 +200,32 @@ function personalStory(teams, uid) {
   };
 }
 
-export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], now = new Date() } = {}) {
+export function buildClubhouseWeekly({ analysis, rows = [], season, week, fetchedAt = 0 } = {}) {
+  if (analysis?.state !== "ready" || !rows.length || !season || !week) return null;
+  const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null);
+  const teams = analysis.teams.map(team => {
+    const advice = startSitAdvice({
+      playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: pool,
+    });
+    const firstSwap = advice.swaps[0];
+    return {
+      id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: nameOf(team),
+      projection: advice.lineupIsSet ? round(advice.submittedTotal) : round(advice.bestTotal),
+      pointsOnBench: round(advice.pointsOnBench), lineupIsSet: advice.lineupIsSet,
+      swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
+    };
+  }).filter(team => Number.isFinite(team.projection));
+  return { season: Number(season), week: Number(week), fetchedAt, teams };
+}
+
+export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, now = new Date() } = {}) {
   if (analysis?.state !== "ready" || !analysis.teams?.length || !meSleeperId) return null;
   const teams = analysis.teams;
   const stories = [
     personalStory(teams, meSleeperId),
-    matchupStory({ lore, uid: meSleeperId, members }),
-    hotSeatStory(teams),
-    ...temperatureStories(teams, standings, analysis.projectionSeason),
+    matchupStory({ lore, uid: meSleeperId, members, weekly }),
+    hotSeatStory(teams, weekly),
+    ...temperatureStories(teams, standings, analysis.projectionSeason, weekly),
     rivalryStory({ lore, uid: meSleeperId, members }),
   ].filter(Boolean);
   if (!stories.length) return null;

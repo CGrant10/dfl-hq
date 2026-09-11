@@ -36,7 +36,7 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
-import { clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
+import { buildClubhouseWeekly, clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
 
 let stage = null;
 let generation = 0;
@@ -218,6 +218,18 @@ export async function render(view) {
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
+  const weeklyPromise = analysisPromise.then(async analysis => {
+    if (analysis?.state !== "ready") return null;
+    const { loadNflState, loadWeeklyProjections } = await import("../sleeper.js");
+    const state = await loadNflState();
+    const season = Number(state?.data?.season) || analysis.projectionSeason;
+    const week = Number(state?.data?.week) || 1;
+    const projections = await loadWeeklyProjections(season, week);
+    return buildClubhouseWeekly({
+      analysis, rows: projections?.data || [], season, week,
+      fetchedAt: projections?.fetchedAt || 0,
+    });
+  }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
   if (teamsView) void hydratePowerPulse(view, mine, {
     meSleeperId: myMember?.sleeper_user_id || null,
     standings: standings.data || [],
@@ -278,7 +290,7 @@ export async function render(view) {
     stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
 
-  Promise.all([analysisPromise, lorePromise]).then(([analysis, got]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise]).then(([analysis, got, weekly]) => {
     if (mine !== generation) return;
     const slot = view.querySelector("[data-clubhouse]");
     if (!slot?.isConnected) return;
@@ -286,6 +298,7 @@ export async function render(view) {
       analysis, lore: got?.error ? null : got, members: memberRows,
       meSleeperId: myMember?.sleeper_user_id || null,
       standings: standings.data || [],
+      weekly,
     });
     if (clubhouse) wireClubhouse(slot, clubhouse);
     else slot.remove();
