@@ -36,17 +36,17 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
+import { clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
 
 let stage = null;
 let generation = 0;
 let dropPresence = null;
 
-async function hydratePowerPulse(view, mine, { meSleeperId, standings }) {
+async function hydratePowerPulse(view, mine, { meSleeperId, standings, analysisPromise }) {
   const slot = view.querySelector("[data-power-pulse]");
   if (!slot) return;
   try {
-    const { loadAnalyzerData } = await import("../team-analyzer-data.js");
-    const analysis = await loadAnalyzerData();
+    const analysis = await analysisPromise;
     if (mine !== generation || !slot.isConnected) return;
     const pulse = powerPulseView({ analysis, meSleeperId, standings });
     if (pulse) slot.innerHTML = powerPulseCard(pulse);
@@ -196,6 +196,7 @@ export async function render(view) {
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
+    ${clubhouseShell()}
     ${renderStage(deck1)}
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
@@ -213,11 +214,14 @@ export async function render(view) {
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
 
-  /* Projection data is intentionally second paint. The stage, snapshot and
-     navigation stay instantly usable while the cached Sleeper model loads. */
+  /* Projection data is intentionally second paint. One shared request feeds
+     both the cold open and Power Pulse, so making Home livelier does not make
+     it fetch the entire Sleeper model twice. */
+  const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
   if (teamsView) void hydratePowerPulse(view, mine, {
     meSleeperId: myMember?.sleeper_user_id || null,
     standings: standings.data || [],
+    analysisPromise,
   });
 
   wireInline(view.querySelector("#home-wrap"), () => render(view));
@@ -265,13 +269,30 @@ export async function render(view) {
   const root = view.querySelector("[data-bx-stage]");
   if (root) stage = startStage(root, deck1, { refresh });
 
-  loadLore().then((got) => {
+  const lorePromise = loadLore();
+  lorePromise.then((got) => {
     if (got?.error || !got) return;
     lore = got;
     if (mine !== generation) return;
     if (!view.querySelector("[data-bx-stage]")) return;
     stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
+
+  Promise.all([analysisPromise, lorePromise]).then(([analysis, got]) => {
+    if (mine !== generation) return;
+    const slot = view.querySelector("[data-clubhouse]");
+    if (!slot?.isConnected) return;
+    const clubhouse = clubhouseView({
+      analysis, lore: got?.error ? null : got, members: memberRows,
+      meSleeperId: myMember?.sleeper_user_id || null,
+      standings: standings.data || [],
+    });
+    if (clubhouse) wireClubhouse(slot, clubhouse);
+    else slot.remove();
+  }).catch((err) => {
+    console.warn("clubhouse unavailable", err);
+    view.querySelector("[data-clubhouse]")?.remove();
+  });
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
     if (outcome === "unavailable") toast(installHelp(), true);

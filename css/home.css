@@ -36,6 +36,74 @@
 #home-wrap .home-lower > * { margin-top: 0; margin-bottom: 0; }
 
 /* ---------------------------------------------------------------------
+   THE COLD OPEN - one changing league take, not another dashboard stack.
+   --------------------------------------------------------------------- */
+.clubhouse {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--accent) 30%);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(60% 120% at 5% 0%, color-mix(in srgb, var(--accent-fill) 25%, transparent), transparent 72%),
+    radial-gradient(60% 120% at 100% 100%, color-mix(in srgb, var(--accent-2-fill) 28%, transparent), transparent 74%),
+    linear-gradient(135deg, color-mix(in srgb, var(--bg-2) 95%, white 5%), var(--bg));
+  box-shadow: var(--e-2);
+  isolation: isolate;
+}
+.clubhouse::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, white 7%, transparent) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: clubhouse-sheen 8s 1.2s infinite var(--ease);
+}
+.clubhouse-load { min-height: 190px; display: grid; place-content: center; justify-items: center; gap: var(--s-3); color: var(--muted); letter-spacing: var(--ls-caps); font-size: var(--fs-label); }
+.clubhouse-load span { width: 42px; height: 3px; border-radius: var(--r-pill); background: var(--accent-sweep); animation: clubhouse-load 1s infinite alternate var(--ease); }
+.clubhouse-frame { min-height: 190px; display: flex; flex-direction: column; animation: clubhouse-in var(--t-slow) both var(--ease); }
+.clubhouse-frame > header {
+  min-height: 39px; display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
+  padding: 0 var(--s-4); border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+.clubhouse-frame > header > span { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); color: var(--body-text); }
+.clubhouse-frame > header i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 13%, transparent); }
+.clubhouse-frame.is-gameday > header i { animation: clubhouse-pulse 1.6s infinite; }
+.clubhouse-frame > header button {
+  min-height: 36px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
+}
+.clubhouse-frame > header button:hover { color: var(--text); }
+.clubhouse-frame > header button b { color: var(--accent); font-size: var(--fs-body); }
+.clubhouse-story {
+  position: relative; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4);
+  align-items: center; padding: var(--s-5) var(--s-4); color: var(--text); text-decoration: none;
+}
+.clubhouse-story:hover { color: var(--text); }
+.clubhouse-copy { min-width: 0; }
+.clubhouse-kicker { display: block; margin-bottom: 6px; color: var(--accent); font-size: var(--fs-label); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
+.clubhouse-copy h2 { max-width: 650px; margin: 0; font-size: clamp(1.45rem, 5.6vw, 2.2rem); line-height: .98; letter-spacing: var(--ls-tight); text-wrap: balance; }
+.clubhouse-copy p { margin: var(--s-2) 0 0; max-width: 640px; color: var(--body-text); font-size: var(--fs-body); line-height: var(--lh-snug); }
+.clubhouse-count { position: absolute; right: var(--s-3); bottom: var(--s-2); color: var(--muted); font-size: var(--fs-micro); font-variant-numeric: tabular-nums; }
+.clubhouse-matchup { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--s-2); align-items: center; }
+.clubhouse-side { min-width: 0; text-align: center; opacity: .72; }
+.clubhouse-side.is-winner { opacity: 1; }
+.clubhouse-side small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--body-text); font-size: var(--fs-micro); letter-spacing: var(--ls-wide); }
+.clubhouse-side strong { display: block; font-size: clamp(1.6rem, 7vw, 2.6rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.clubhouse-side.is-winner strong { color: var(--accent-2); }
+.clubhouse-vs { color: var(--muted); font-size: var(--fs-label); }
+@media (min-width: 660px) {
+  .clubhouse-story { grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); padding: var(--s-6); }
+  .clubhouse-copy h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+}
+@keyframes clubhouse-in { from { opacity: 0; transform: translateY(8px) scale(.995); } to { opacity: 1; transform: none; } }
+@keyframes clubhouse-load { to { width: 70px; filter: brightness(1.25); } }
+@keyframes clubhouse-sheen { 0%, 76% { transform: translateX(-120%); } 92%, 100% { transform: translateX(120%); } }
+@keyframes clubhouse-pulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 4%, transparent); } }
+@media (prefers-reduced-motion: reduce) {
+  .clubhouse::after, .clubhouse-load span, .clubhouse-frame.is-gameday > header i { animation: none; }
+  .clubhouse-frame { animation: none; }
+}
+
+/* ---------------------------------------------------------------------
    THE SNAPSHOT - four figures, and all four survive now.
 
    The old override hid the fourth cell and forced three columns, because
