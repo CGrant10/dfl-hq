@@ -155,10 +155,26 @@ export async function pushPreferences() {
      every visit. Repair the backend enrollment once instead; the browser has
      already granted permission, so no permission prompt is shown. */
   if (!row && Notification.permission === "granted") {
-    await enrollSubscription(subscription, DEFAULT_NOTIFICATION_CATEGORIES);
-    ({ data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint }));
+    const known = await db().rpc("known_push_preferences", { push_endpoint: subscription.endpoint });
+    if (known.error) throw known.error;
+    const previous = Array.isArray(known.data) ? known.data[0] : known.data;
+    const categories = Array.isArray(previous?.categories) ? previous.categories : DEFAULT_NOTIFICATION_CATEGORIES;
+    let active = subscription;
+    /* Re-enabling an endpoint the push service already rejected only makes
+       the next delivery fail again. Rotate the subscription and keys first. */
+    if (previous && previous.enabled === false) {
+      await subscription.unsubscribe().catch(() => {});
+      const registration = await navigator.serviceWorker.ready;
+      active = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: bytesFromBase64(await pushPublicKey()),
+      });
+    }
+    await enrollSubscription(active, categories);
+    ({ data, error } = await db().rpc("my_push_preferences", { push_endpoint: active.endpoint }));
     if (error) throw error;
     row = Array.isArray(data) ? data[0] : data;
+    return { subscription: active, enabled: !!row?.enabled, categories };
   }
   return {
     subscription,
@@ -234,6 +250,8 @@ export function mountNotificationBell() {
   window.addEventListener(BADGE_EVENT, paint);
   window.addEventListener("focus", paint);
   const timer = setInterval(paint, 60000);
-  void paint();
+  /* Repair an expired endpoint when the app opens, after permission was
+     already granted. No notification permission prompt is shown here. */
+  void pushPreferences().catch(() => {}).finally(paint);
   return () => { stopped = true; clearInterval(timer); window.removeEventListener(BADGE_EVENT, paint); window.removeEventListener("focus", paint); };
 }

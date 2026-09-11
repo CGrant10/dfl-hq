@@ -317,6 +317,22 @@ as $$
    where p.endpoint = push_endpoint and p.member_id = public.notification_authenticated_member_id();
 $$;
 
+/* A recovery-only lookup for a phone whose push endpoint was rejected and
+   disabled. It uses the same member, endpoint, and device-token proof, but may
+   see the disabled row so the browser can replace that dead subscription. */
+create or replace function public.known_push_preferences(push_endpoint text)
+returns table(enabled boolean, categories jsonb, device_label text)
+language sql stable security definer
+set search_path = public, extensions
+as $$
+  select p.enabled, p.categories, p.device_label
+    from public.push_subscriptions p
+   where p.endpoint = push_endpoint
+     and p.member_id = public.notification_member_id()
+     and p.device_token_hash = extensions.digest(public.notification_device_token(), 'sha256')
+   limit 1;
+$$;
+
 create or replace function public.disable_push_subscription(push_endpoint text)
 returns boolean
 language plpgsql security definer
@@ -341,6 +357,7 @@ revoke all on function public.clear_notification_inbox() from public;
 revoke all on function public.enroll_push_subscription(text,text,text,jsonb,text,text) from public;
 revoke all on function public.save_push_preferences(text,jsonb) from public;
 revoke all on function public.my_push_preferences(text) from public;
+revoke all on function public.known_push_preferences(text) from public;
 revoke all on function public.disable_push_subscription(text) from public;
 
 grant execute on function public.notification_inbox(integer) to anon, authenticated;
@@ -351,4 +368,5 @@ grant execute on function public.clear_notification_inbox() to anon, authenticat
 grant execute on function public.enroll_push_subscription(text,text,text,jsonb,text,text) to anon, authenticated;
 grant execute on function public.save_push_preferences(text,jsonb) to anon, authenticated;
 grant execute on function public.my_push_preferences(text) to anon, authenticated;
+grant execute on function public.known_push_preferences(text) to anon, authenticated;
 grant execute on function public.disable_push_subscription(text) to anon, authenticated;
