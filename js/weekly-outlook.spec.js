@@ -109,6 +109,14 @@ describe("bestWeeklyLineup", () => {
     const { slots } = bestWeeklyLineup(["te1"], pool);
     expect(slots.find(s => s.position === "TE").player).toBeNull();
   });
+
+  it("includes the DFL kicker and defense in the weekly lineup", () => {
+    const rows = [row("k1", "K", { pts: 8 }), row("SEA", "DEF", { pts: 9 })];
+    const { slots, total } = bestWeeklyLineup(rows.map(item => item.player_id), poolOf(rows));
+    expect(slots.find(slot => slot.position === "K").player.id).toBe("k1");
+    expect(slots.find(slot => slot.position === "DEF").player.id).toBe("SEA");
+    expect(total).toBe(17);
+  });
 });
 
 describe("startSitAdvice", () => {

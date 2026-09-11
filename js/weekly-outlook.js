@@ -30,7 +30,7 @@ import { scorePlayer } from "./dfl-scoring.js";
 
 /* The lineup this league actually submits. Mirrors team-analyzer.js so the
    two cannot disagree about what a legal lineup is. */
-export const WEEKLY_STARTERS = { QB: 1, RB: 2, WR: 2, TE: 1 };
+export const WEEKLY_STARTERS = { QB: 1, RB: 2, WR: 2, TE: 1, K: 1, DEF: 1 };
 export const FLEX_ELIGIBLE = new Set(["RB", "WR", "TE"]);
 
 /* Below this, the projections are not telling us anything we should act on. */
@@ -97,6 +97,9 @@ export function buildWeeklyPool(rows = [], scoringSettings = null) {
 export function defenseDifficulty(pool = new Map()) {
   const totals = new Map();
   for (const player of pool.values()) {
+    /* Kicker and team-defense rows are needed for the nine-slot lineup total,
+       but they must not change how a skill player's defensive matchup rates. */
+    if (player.position === "K" || player.position === "DEF") continue;
     if (!player.opponent || player.points == null || !player.hasGame) continue;
     const entry = totals.get(player.opponent)
       || { points: 0, byPosition: {}, opponent: player.opponent };

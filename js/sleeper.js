@@ -94,6 +94,11 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
    requested at all, which is both a smaller download and one less way for one
    to reach a surface that must not mention them. */
 const MARKET_POSITIONS = ["QB", "RB", "WR", "TE"];
+/* Weekly lineup totals are a different job from keeper valuation. DFL starts
+   a kicker and a team defense, so leaving those two positions out makes every
+   matchup projection roughly 15-25 points light even though the skill-player
+   advice itself looks plausible. */
+const WEEKLY_POSITIONS = [...MARKET_POSITIONS, "K", "DEF"];
 
 /**
  * Fetch-and-cache JSON that is too big to pull on every page view.
@@ -170,6 +175,7 @@ export function loadMarketAdp(season, format = "ppr") {
 const WEEKLY_CACHE  = "sleeper-weekly-v1";
 const TREND_CACHE   = "sleeper-trending-v1";
 const THIRTY_MIN_MS = 30 * 60 * 1000;
+const FIVE_MIN_MS   = 5 * 60 * 1000;
 const STATE_MS      = 15 * 60 * 1000;
 
 /**
@@ -182,7 +188,7 @@ export function loadNflState() {
 }
 
 /**
- * One week of projections for the four scoring positions.
+ * One week of projections for every DFL starting position.
  *
  * Cached for half an hour: these move during the week as injuries land, and
  * a stale Sunday-morning projection is worse than no advice at all.
@@ -194,10 +200,26 @@ export function loadWeeklyProjections(season, week) {
   if (!Number.isFinite(year) || !Number.isFinite(wk) || wk < 1) {
     return Promise.resolve({ data: [], fetchedAt: 0 });
   }
-  const positions = MARKET_POSITIONS.map((p) => `position[]=${p}`).join("&");
+  const positions = WEEKLY_POSITIONS.map((p) => `position[]=${p}`).join("&");
   const url = `https://api.sleeper.app/projections/nfl/${year}/${wk}`
             + `?season_type=regular&${positions}`;
   return cachedJson(WEEKLY_CACHE, url, THIRTY_MIN_MS);
+}
+
+/**
+ * Actual stats already recorded this week. Sleeper's live projected finish is
+ * actual points for players whose games have started plus projections for the
+ * starters still waiting to play. A short cache keeps Sunday totals useful.
+ */
+export function loadWeeklyStats(season, week) {
+  const year = Number(season), wk = Number(week);
+  if (!Number.isFinite(year) || !Number.isFinite(wk) || wk < 1) {
+    return Promise.resolve({ data: [], fetchedAt: 0 });
+  }
+  const positions = WEEKLY_POSITIONS.map((p) => `position[]=${p}`).join("&");
+  const url = `https://api.sleeper.app/stats/nfl/${year}/${wk}`
+            + `?season_type=regular&${positions}`;
+  return cachedJson(WEEKLY_CACHE, url, FIVE_MIN_MS);
 }
 
 /**

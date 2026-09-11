@@ -200,17 +200,24 @@ function personalStory(teams, uid) {
   };
 }
 
-export function buildClubhouseWeekly({ analysis, rows = [], season, week, fetchedAt = 0 } = {}) {
+export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], season, week, fetchedAt = 0 } = {}) {
   if (analysis?.state !== "ready" || !rows.length || !season || !week) return null;
   const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null);
+  const actual = buildWeeklyPool(actualRows, analysis.league?.scoring_settings || null);
   const teams = analysis.teams.map(team => {
     const advice = startSitAdvice({
       playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: pool,
     });
     const firstSwap = advice.swaps[0];
+    const submitted = (team.starters || []).map(String);
+    const liveProjection = submitted.reduce((total, id) => {
+      const played = actual.get(id);
+      const projected = pool.get(id);
+      return total + num(played?.points ?? projected?.points);
+    }, 0);
     return {
       id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: nameOf(team),
-      projection: advice.lineupIsSet ? round(advice.submittedTotal) : round(advice.bestTotal),
+      projection: advice.lineupIsSet ? round(liveProjection) : round(advice.bestTotal),
       pointsOnBench: round(advice.pointsOnBench), lineupIsSet: advice.lineupIsSet,
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
     };

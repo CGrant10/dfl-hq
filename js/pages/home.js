@@ -220,14 +220,16 @@ export async function render(view) {
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
   const weeklyPromise = analysisPromise.then(async analysis => {
     if (analysis?.state !== "ready") return null;
-    const { loadNflState, loadWeeklyProjections } = await import("../sleeper.js");
+    const { loadNflState, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
     const state = await loadNflState();
     const season = Number(state?.data?.season) || analysis.projectionSeason;
     const week = Number(state?.data?.week) || 1;
-    const projections = await loadWeeklyProjections(season, week);
+    const [projections, actual] = await Promise.all([
+      loadWeeklyProjections(season, week), loadWeeklyStats(season, week),
+    ]);
     return buildClubhouseWeekly({
-      analysis, rows: projections?.data || [], season, week,
-      fetchedAt: projections?.fetchedAt || 0,
+      analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,
+      fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0),
     });
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
   if (teamsView) void hydratePowerPulse(view, mine, {

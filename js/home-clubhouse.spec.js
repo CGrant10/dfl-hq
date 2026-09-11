@@ -92,4 +92,25 @@ describe("Home clubhouse", () => {
     expect(matchup.detail).toContain("Sleeper projects 108-111");
     expect(`${matchup.headline} ${matchup.detail}`).not.toMatch(/you lost/i);
   });
+
+  it("matches Sleeper's live projection by replacing a played projection with actual points", () => {
+    const liveAnalysis = {
+      state: "ready", projectionSeason: 2026, league: { scoring_settings: { rec: 1 } },
+      teams: [{
+        id: "7", rank: 1, sleeper_user_id: "u2", team_name: "Jack-HAMMER",
+        playerIds: ["qb", "k", "SEA"], starters: ["qb", "k", "SEA"],
+        lineup: { source: "set", weeklyPoints: 100, starters: [], bench: [] },
+      }],
+    };
+    const rows = [
+      { player_id: "qb", player: { position: "QB" }, opponent: "A", stats: { gp: 1, rec: 110 } },
+      { player_id: "k", player: { position: "K" }, opponent: "B", stats: { gp: 1, rec: 7 } },
+      { player_id: "SEA", player: { position: "DEF" }, opponent: "C", stats: { gp: 1, rec: 8.5 } },
+    ];
+    const actualRows = [
+      { player_id: "SEA", player: { position: "DEF" }, stats: { gp: 1, rec: 13 } },
+    ];
+    const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
+    expect(weekly.teams[0].projection).toBe(130);
+  });
 });
