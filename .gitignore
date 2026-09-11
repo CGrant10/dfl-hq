@@ -24,3 +24,4 @@ qa/
 # in git history is a cost every clone pays forever.
 design-qa-assets/
 supabase/.temp/
+dist/
