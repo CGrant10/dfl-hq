@@ -82,8 +82,8 @@ function hotSeatStory(teams, weekly) {
     return {
       key: "hot-seat", label: `WEEK ${weekly.week} · LINEUP HOT SEAT`,
       headline: swap
-        ? `${weeklySeat.name} has ${swap.in} on the bench while ${swap.out} burns the furniture.`
-        : `${weeklySeat.name} left points sitting on the damn bench.`,
+        ? `${nameOf(weeklySeat)} has ${swap.in} on the bench while ${swap.out} burns the furniture.`
+        : `${nameOf(weeklySeat)} left points sitting on the damn bench.`,
       detail: `${round(weeklySeat.pointsOnBench)} projected points are being wasted this week.`,
       href: weeklySeat.sleeper_user_id ? `#/analyzer?owner=${encodeURIComponent(weeklySeat.sleeper_user_id)}` : "#/analyzer",
     };

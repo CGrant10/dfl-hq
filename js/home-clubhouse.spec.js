@@ -113,4 +113,16 @@ describe("Home clubhouse", () => {
     const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
     expect(weekly.teams[0].projection).toBe(130);
   });
+
+  it("never renders an undefined team name in a weekly Hot Seat take", () => {
+    const weekly = { season: 2026, week: 1, teams: [{
+      id: "1", sleeper_user_id: "u1", team_name: "Alpha", projection: 120,
+      lineupIsSet: true, pointsOnBench: 9.4,
+      swap: { in: "Bench Heat", out: "Cold Starter", gain: 9.4 },
+    }] };
+    const view = clubhouseView({ analysis, lore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-09T12:00:00Z") });
+    const hotSeat = view.stories.find(story => story.key === "hot-seat");
+    expect(hotSeat.headline).toContain("Alpha has Bench Heat");
+    expect(view.stories.map((_, index) => clubhouseCard(view, index)).join(" ")).not.toContain("undefined");
+  });
 });
