@@ -38,15 +38,17 @@ export async function loadAnalyzerData() {
   });
   const projectionSeason = Number(league.season) || rosterSeason;
   const format = scoringFormat(league.scoring_settings);
-  const [players, statsRes, projectionRes] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes] = await Promise.all([
     loadPlayers(),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
+    loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0 })),
   ]);
   const pool = buildPlayerPool({
     rosters: namedRosters,
     players,
     previousStats: statsRes.data || {},
+    currentStats: currentStatsRes.data || {},
     projections: projectionRes.data || [],
     scoringSettings: league.scoring_settings || {},
     scoringFormat: format,
@@ -56,6 +58,6 @@ export async function loadAnalyzerData() {
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool,
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
-    productionUpdatedAt: statsRes.fetchedAt || 0,
+    productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
   };
 }

@@ -36,23 +36,33 @@ function matchupStory({ lore, uid, members, weekly }) {
   const row = current || latestMatchup(lore, uid);
   if (!row) return null;
   const left = String(row.user1) === String(uid);
-  const mine = num(left ? row.score1 : row.score2);
-  const theirs = num(left ? row.score2 : row.score1);
   const opponentId = left ? row.user2 : row.user1;
   const opponent = memberName(members, opponentId, "the other sideline");
+  const mineTeam = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(uid));
+  const theirTeam = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(opponentId));
+  const currentComplete = Boolean(current && mineTeam?.complete && theirTeam?.complete);
+  const mine = current && Number.isFinite(mineTeam?.actual)
+    ? mineTeam.actual : num(left ? row.score1 : row.score2);
+  const theirs = current && Number.isFinite(theirTeam?.actual)
+    ? theirTeam.actual : num(left ? row.score2 : row.score1);
   const margin = round(Math.abs(mine - theirs));
   const won = mine > theirs;
   const tied = mine === theirs;
-  const league = [...(lore?.leagues || [])].sort((a, b) => num(b.season) - num(a.season))[0];
-  const live = Boolean(current && String(league?.status || "").toLowerCase() === "in_season");
-  const mineProjection = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(uid))?.projection;
-  const theirProjection = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(opponentId))?.projection;
+  const live = Boolean(current && !currentComplete);
+  const mineProjection = mineTeam?.projection;
+  const theirProjection = theirTeam?.projection;
   const projectionLine = Number.isFinite(mineProjection) && Number.isFinite(theirProjection)
     ? `Sleeper projects ${round(mineProjection)}-${round(theirProjection)} this week.` : null;
   return {
     key: "matchup",
     label: `${row.season} · WEEK ${row.week}${live ? " · LIVE" : " · FINAL"}`,
-    headline: live
+    headline: currentComplete
+      ? tied
+        ? `You and ${opponent} finished dead even.`
+        : won
+          ? `Your win over ${opponent} is secured.`
+          : `${opponent} locked this one down.`
+      : live
       ? tied
         ? `You and ${opponent} are dead even. Somebody blink.`
         : won
@@ -63,7 +73,9 @@ function matchupStory({ lore, uid, members, weekly }) {
         : won
           ? `${opponent} is still looking for the license plate.`
           : `${opponent} got you by ${margin}. Keep the excuses short.`,
-    detail: live
+    detail: currentComplete
+      ? `Final score ${mine.toFixed(2)}-${theirs.toFixed(2)}.`
+      : live
       ? [`Current score ${mine.toFixed(2)}-${theirs.toFixed(2)}.`, projectionLine].filter(Boolean).join(" ")
       : tied ? `${mine.toFixed(2)} apiece` : `${won ? "You won" : "You lost"} by ${margin}`,
     sides: [
@@ -85,7 +97,7 @@ function hotSeatStory(teams, weekly) {
       headline: swap
         ? `${nameOf(weeklySeat)} has ${swap.in} on the bench while ${swap.out} burns the furniture.`
         : `${nameOf(weeklySeat)} left points sitting on the damn bench.`,
-      detail: `${round(weeklySeat.pointsOnBench)} projected points are being wasted this week.`,
+      detail: `${round(weeklySeat.pointsOnBench)} current points are sitting outside the best lineup.`,
       href: weeklySeat.sleeper_user_id ? `#/analyzer?owner=${encodeURIComponent(weeklySeat.sleeper_user_id)}` : "#/analyzer",
     };
   }
@@ -205,25 +217,37 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
   if (analysis?.state !== "ready" || !rows.length || !season || !week) return null;
   const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null);
   const actual = buildWeeklyPool(actualRows, analysis.league?.scoring_settings || null);
+  const livePool = new Map(pool);
+  for (const [id, played] of actual) {
+    if (!played.hasGame) continue;
+    livePool.set(id, { ...(pool.get(id) || {}), ...played, points: played.points });
+  }
   const teams = analysis.teams.map(team => {
     const advice = startSitAdvice({
-      playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: pool,
+      playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: livePool,
     });
     const firstSwap = advice.swaps[0];
     const submitted = (team.starters || []).map(String);
+    const actualPoints = submitted.reduce((total, id) => {
+      const played = actual.get(id);
+      return total + (played?.hasGame ? num(played.points) : 0);
+    }, 0);
+    const remaining = submitted.filter(id => pool.get(id)?.hasGame && !actual.get(id)?.hasGame).length;
     const liveProjection = submitted.reduce((total, id) => {
       const played = actual.get(id);
       const projected = pool.get(id);
-      return total + num(played?.points ?? projected?.points);
+      return total + num(played?.hasGame ? played.points : projected?.points);
     }, 0);
     return {
       id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: nameOf(team),
       projection: advice.lineupIsSet ? round(liveProjection) : round(advice.bestTotal),
+      actual: round(actualPoints), remaining,
+      complete: submitted.length > 0 && remaining === 0,
       pointsOnBench: round(advice.pointsOnBench), lineupIsSet: advice.lineupIsSet,
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
     };
   }).filter(team => Number.isFinite(team.projection));
-  return { season: Number(season), week: Number(week), fetchedAt, teams, pool };
+  return { season: Number(season), week: Number(week), fetchedAt, teams, pool: livePool };
 }
 
 export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, now = new Date() } = {}) {

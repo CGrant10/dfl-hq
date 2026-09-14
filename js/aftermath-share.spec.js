@@ -8,10 +8,10 @@ const members = [
   { sleeper_user_id: "u4", team_name: "Delta" },
 ];
 const weekly = { season: 2026, week: 1, teams: [
-  { sleeper_user_id: "u1", team_name: "Alpha", projection: 164.82, pointsOnBench: 4 },
-  { sleeper_user_id: "u2", team_name: "Beta", projection: 122.66, pointsOnBench: 8 },
-  { sleeper_user_id: "u3", team_name: "Gamma", projection: 148.22, pointsOnBench: 31.4 },
-  { sleeper_user_id: "u4", team_name: "Delta", projection: 150.1, pointsOnBench: 2 },
+  { sleeper_user_id: "u1", team_name: "Alpha", projection: 164.82, actual: 120, complete: true, pointsOnBench: 4 },
+  { sleeper_user_id: "u2", team_name: "Beta", projection: 122.66, actual: 99, complete: true, pointsOnBench: 8 },
+  { sleeper_user_id: "u3", team_name: "Gamma", projection: 148.22, actual: 140, complete: true, pointsOnBench: 31.4 },
+  { sleeper_user_id: "u4", team_name: "Delta", projection: 150.1, actual: 142, complete: true, pointsOnBench: 2 },
 ] };
 const lore = { matchups: [
   { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 120, score2: 99 },
@@ -20,24 +20,27 @@ const lore = { matchups: [
 ] };
 
 describe("weekly aftermath", () => {
-  it("builds a Sunday live card from current projections", () => {
-    const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-13T20:00:00") });
+  it("builds Monday's Sunday aftermath card from current projections", () => {
+    const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") });
     expect(card.label).toBe("SUNDAY AFTERMATH");
-    expect(card.status).toBe("SUNDAY SLATE · LIVE");
+    expect(card.status).toBe("PRE-MNF · LIVE");
     expect(card.king).toEqual({ name: "Alpha", value: 164.82 });
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 42.2 });
     expect(card.pain).toEqual({ name: "Gamma", value: 148.22 });
     expect(card.bench).toEqual({ name: "Gamma", value: 31.4 });
   });
 
-  it("labels Monday as pre-MNF instead of falsely calling it final", () => {
-    const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") });
+  it("builds Tuesday's Monday aftermath from final actual scores", () => {
+    const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-15T08:00:00") });
     expect(card.label).toBe("MONDAY AFTERMATH");
-    expect(card.status).toBe("PRE-MNF · LIVE");
-    expect(aftermathText(card)).toContain("PRE-MNF · LIVE");
+    expect(card.status).toBe("FINAL");
+    expect(card.king).toEqual({ name: "Delta", value: 142 });
+    expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 21 });
+    expect(aftermathText(card)).toContain("scoring at 142.00");
   });
 
   it("stays out of the clubhouse on other days", () => {
-    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-15T08:00:00") })).toBeNull();
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-16T08:00:00") })).toBeNull();
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-13T20:00:00") })).toBeNull();
   });
 });

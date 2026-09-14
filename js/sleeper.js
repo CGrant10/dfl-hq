@@ -136,10 +136,10 @@ async function cachedJson(cacheName, url, maxAgeMs) {
  * One completed season's stats for every player, keyed by Sleeper player id.
  * @returns {Promise<{data:Object, fetchedAt:number}>}
  */
-export function loadSeasonStats(season) {
+export function loadSeasonStats(season, { maxAgeMs = WEEK_MS } = {}) {
   const year = Number(season);
   if (!Number.isFinite(year)) return Promise.resolve({ data: {}, fetchedAt: 0 });
-  return cachedJson(STATS_CACHE, `${BASE}/stats/nfl/regular/${year}`, WEEK_MS);
+  return cachedJson(STATS_CACHE, `${BASE}/stats/nfl/regular/${year}`, maxAgeMs);
 }
 
 /**

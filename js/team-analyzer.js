@@ -38,7 +38,7 @@ function percentileMap(entries, valueOf, { lowerIsBetter = false } = {}) {
  * One shared player model for every roster. Current projections lead, while
  * the completed season keeps one hot forecast from erasing proven production.
  */
-export function buildPlayerPool({ rosters = [], players = {}, previousStats = {},
+export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}, currentStats = {},
                                   projections = [], scoringSettings = null,
                                   scoringFormat = "ppr" } = {}) {
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
@@ -47,6 +47,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const meta = players[id] || projectionById.get(id)?.player || {};
     const position = playerPosition(meta);
     const priorLine = previousStats[id] || null;
+    const currentLine = currentStats[id] || null;
     const projection = projectionById.get(id) || null;
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
@@ -56,9 +57,25 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const priorPace = hasPriorProduction ? lastPoints / Math.max(1, seasonGames) * 17 : null;
     const priorReliability = games == null ? 1 : Math.max(.25, Math.min(1, games / 17));
     const projectionWeight = .74 + (1 - priorReliability) * .14;
-    const expectedPoints = projectedPoints != null && priorPace != null
+    const baselinePoints = projectedPoints != null && priorPace != null
       ? projectedPoints * projectionWeight + priorPace * (1 - projectionWeight)
       : projectedPoints ?? priorPace;
+    const currentPoints = currentLine ? scorePlayer(currentLine, scoringSettings) : null;
+    const currentGames = Math.max(0, Math.min(17, finite(currentLine?.gp) || 0));
+    const currentPace = currentGames > 0 ? currentPoints / currentGames * 17 : null;
+    /* Current production earns influence gradually: one wild Sunday cannot
+       rewrite a season, but by midseason the model should reflect this year
+       more than its preseason priors. Actual points already earned are never
+       projected away; only the unplayed games use the blended forward pace. */
+    const currentWeight = Math.min(.55, currentGames / 8 * .55);
+    const baselinePerGame = baselinePoints == null ? null : baselinePoints / 17;
+    const currentPerGame = currentGames > 0 ? currentPoints / currentGames : null;
+    const forwardPerGame = baselinePerGame != null && currentPerGame != null
+      ? baselinePerGame * (1 - currentWeight) + currentPerGame * currentWeight
+      : baselinePerGame ?? currentPerGame;
+    const expectedPoints = currentGames > 0 && forwardPerGame != null
+      ? currentPoints + forwardPerGame * Math.max(0, 17 - currentGames)
+      : baselinePoints;
     return {
       id,
       name: meta?.n || meta?.full_name || id,
@@ -67,6 +84,9 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       lastPoints: finite(lastPoints),
       priorPace: finite(priorPace),
       projectedPoints: finite(projectedPoints),
+      currentPoints: finite(currentPoints),
+      currentGames,
+      currentPace: finite(currentPace),
       expectedPoints: finite(expectedPoints),
       adp: adpFrom(projection, scoringFormat),
       games,

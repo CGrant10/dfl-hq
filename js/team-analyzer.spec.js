@@ -71,6 +71,16 @@ describe("team analyzer", () => {
     expect(paced.get("r1")).not.toHaveProperty("confidence");
   });
 
+  it("lets current-season production progressively update Power Pulse", () => {
+    const baseline = buildPlayerPool({ rosters, players, projections, scoringSettings: scoring,
+      previousStats: { r1: { gp: 17, rush_yd: 1020 } } });
+    const live = buildPlayerPool({ rosters, players, projections, scoringSettings: scoring,
+      previousStats: { r1: { gp: 17, rush_yd: 1020 } },
+      currentStats: { r1: { gp: 4, rush_yd: 800 } } });
+    expect(live.get("r1")).toMatchObject({ currentGames: 4, currentPoints: 80, currentPace: 340 });
+    expect(live.get("r1").expectedPoints).toBeGreaterThan(baseline.get("r1").expectedPoints);
+  });
+
   it("derives the starter grade from the five visible unit grades", () => {
     const teams = analyzeLeague({ rosters, pool });
     for (const team of teams) {

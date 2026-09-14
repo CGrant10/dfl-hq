@@ -64,7 +64,7 @@ describe("Home clubhouse", () => {
     const currentLore = { matchups: [
       { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 80, score2: 72 },
     ] };
-    const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-13T20:00:00") });
+    const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-14T08:00:00") });
     const html = clubhouseCard(view);
     expect(html).toContain("SUNDAY AFTERMATH");
     expect(html).toContain("data-clubhouse-share");
@@ -126,6 +126,37 @@ describe("Home clubhouse", () => {
     ];
     const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
     expect(weekly.teams[0].projection).toBe(130);
+    expect(weekly.teams[0]).toMatchObject({ actual: 13, remaining: 2, complete: false });
+  });
+
+  it("uses finished player results for comparisons and secures a completed win", () => {
+    const finishedAnalysis = {
+      state: "ready", projectionSeason: 2026, league: { scoring_settings: { rec: 1 } },
+      teams: [
+        { id: "1", rank: 1, sleeper_user_id: "u1", team_name: "Alpha", playerIds: ["zay"], starters: ["zay"], lineup: { source: "set", starters: [], bench: [] } },
+        { id: "2", rank: 2, sleeper_user_id: "u2", team_name: "Beta", playerIds: ["evans"], starters: ["evans"], lineup: { source: "set", starters: [], bench: [] } },
+      ],
+    };
+    const rows = [
+      { player_id: "zay", player: { position: "WR", first_name: "Zay", last_name: "Flowers" }, opponent: "A", stats: { gp: 1, rec: 8 } },
+      { player_id: "evans", player: { position: "WR", first_name: "Mike", last_name: "Evans" }, opponent: "B", stats: { gp: 1, rec: 14 } },
+    ];
+    const actualRows = [
+      { player_id: "zay", player: { position: "WR", first_name: "Zay", last_name: "Flowers" }, stats: { gp: 1, rec: 20 } },
+      { player_id: "evans", player: { position: "WR", first_name: "Mike", last_name: "Evans" }, stats: { gp: 1, rec: 10 } },
+    ];
+    const weekly = buildClubhouseWeekly({ analysis: finishedAnalysis, rows, actualRows, season: 2026, week: 1 });
+    expect(weekly.pool.get("zay").points).toBe(20);
+    expect(weekly.pool.get("evans").points).toBe(10);
+    expect(weekly.teams.every(team => team.complete)).toBe(true);
+    const currentLore = { leagues: [{ season: 2026, status: "in_season" }], matchups: [
+      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 0, score2: 0 },
+    ] };
+    const story = clubhouseView({ analysis: finishedAnalysis, lore: currentLore, members, meSleeperId: "u1", weekly }).stories
+      .find(item => item.key === "matchup");
+    expect(story.label).toContain("FINAL");
+    expect(story.headline).toBe("Your win over Beta is secured.");
+    expect(story.detail).toContain("20.00-10.00");
   });
 
   it("never renders an undefined team name in a weekly Hot Seat take", () => {
