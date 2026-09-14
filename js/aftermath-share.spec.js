@@ -28,6 +28,8 @@ describe("weekly aftermath", () => {
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 42.2 });
     expect(card.pain).toEqual({ name: "Gamma", value: 148.22 });
     expect(card.bench).toEqual({ name: "Gamma", value: 31.4 });
+    expect(card.takes).toHaveLength(4);
+    expect(new Set(card.takes.map(take => take.headline)).size).toBe(4);
   });
 
   it("builds Tuesday's Monday aftermath from final actual scores", () => {
@@ -37,6 +39,9 @@ describe("weekly aftermath", () => {
     expect(card.king).toEqual({ name: "Delta", value: 142 });
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 21 });
     expect(aftermathText(card)).toContain("scoring at 142.00");
+    expect(card.takes.some(take => take.kicker === "PUBLIC EXECUTION")).toBe(true);
+    expect(card.takes.some(take => take.kicker === "BENCH CRIME DIVISION")).toBe(true);
+    expect(aftermathText({ ...card, takeIndex: 1 })).toContain(card.takes[1].headline);
   });
 
   it("stays out of the clubhouse on other days", () => {

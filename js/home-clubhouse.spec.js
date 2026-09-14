@@ -68,6 +68,23 @@ describe("Home clubhouse", () => {
     const html = clubhouseCard(view);
     expect(html).toContain("SUNDAY AFTERMATH");
     expect(html).toContain("data-clubhouse-share");
+    expect(html).toContain("aftermath-dashboard");
+    expect(html).toContain("PROJECTED KING");
+    expect(html).toContain("BENCH CRIME");
+  });
+
+  it("escapes team names inside the expanded aftermath dashboard", () => {
+    const weekly = { season: 2026, week: 1, teams: [
+      { sleeper_user_id: "u1", team_name: "<img onerror=alert(1)>", projection: 120, pointsOnBench: 8 },
+      { sleeper_user_id: "u2", team_name: "Beta", projection: 110, pointsOnBench: 2 },
+    ] };
+    const currentLore = { matchups: [
+      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 80, score2: 72 },
+    ] };
+    const changed = { ...analysis, teams: analysis.teams.map((team, index) => index ? team : { ...team, team_name: "<img onerror=alert(1)>" }) };
+    const html = clubhouseCard(clubhouseView({ analysis: changed, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-14T08:00:00") }));
+    expect(html).toContain("&lt;img onerror=alert(1)&gt;");
+    expect(html).not.toContain("<img onerror=alert(1)>");
   });
 
   it("uses current Sleeper weekly projections to rank the league", () => {
