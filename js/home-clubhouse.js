@@ -223,7 +223,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
     };
   }).filter(team => Number.isFinite(team.projection));
-  return { season: Number(season), week: Number(week), fetchedAt, teams };
+  return { season: Number(season), week: Number(week), fetchedAt, teams, pool };
 }
 
 export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, now = new Date() } = {}) {

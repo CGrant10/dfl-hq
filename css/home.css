@@ -116,6 +116,34 @@
 }
 
 /* ---------------------------------------------------------------------
+   NEXT MOVE - one diagnosis, then trade and waiver lanes kept distinct.
+   --------------------------------------------------------------------- */
+.next-move {
+  overflow: hidden; border: 1px solid color-mix(in srgb, var(--line) 72%, var(--accent-2) 28%);
+  border-radius: var(--r-lg); background: var(--bg-2); box-shadow: var(--e-1);
+}
+.next-move.is-loading { min-height: 120px; display: grid; place-items: center; color: var(--muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
+.nm-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-4); border-bottom: 1px solid var(--line-soft); }
+.nm-head small, .nm-option small { display: block; color: var(--accent-2); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
+.nm-head h2 { margin: 2px 0 0; font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1; text-transform: uppercase; }
+.nm-head > span { flex: 0 0 auto; padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--accent-2) 48%, transparent); border-radius: var(--r-pill); color: var(--text); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-wide); }
+.nm-read { padding: var(--s-4); }
+.nm-read strong { display: block; font-family: var(--font-display); font-size: var(--fs-title-sm); }
+.nm-read p, .nm-option p { margin: 5px 0 0; color: var(--body-text); font-size: var(--fs-small); line-height: var(--lh-snug); }
+.nm-grid { display: grid; gap: 1px; background: var(--line-soft); border-block: 1px solid var(--line-soft); }
+.nm-option { min-width: 0; padding: var(--s-4); background: var(--bg); }
+.nm-option.is-trade { box-shadow: inset 3px 0 var(--accent); }
+.nm-option.is-waiver { box-shadow: inset 3px 0 var(--accent-2); }
+.nm-option strong { display: block; margin-top: 7px; font-family: var(--font-display); font-size: var(--fs-h3); line-height: 1.08; }
+.next-move footer { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); }
+.next-move footer > span { color: var(--muted); font-size: var(--fs-micro); }
+@media (min-width: 680px) { .nm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) {
+  .next-move footer { align-items: stretch; flex-direction: column; }
+  .next-move footer .btn { justify-content: center; }
+}
+
+/* ---------------------------------------------------------------------
    THE SNAPSHOT - four figures, and all four survive now.
 
    The old override hid the fourth cell and forced three columns, because

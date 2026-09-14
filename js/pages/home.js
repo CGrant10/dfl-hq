@@ -37,6 +37,7 @@ import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
 import { buildClubhouseWeekly, clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
+import { buildNextMove, nextMoveCard, nextMoveShell } from "../next-move.js";
 
 let stage = null;
 let generation = 0;
@@ -203,6 +204,7 @@ export async function render(view) {
     ${seasonDoors(dues.data)}
     ${draftPanel}
     ${teamsPanel}
+    ${nextMoveShell()}
     <div data-wall-slot>${wallCard(wall)}</div>
     <div class="home-lower">
       <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>
@@ -220,17 +222,18 @@ export async function render(view) {
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
   const weeklyPromise = analysisPromise.then(async analysis => {
     if (analysis?.state !== "ready") return null;
-    const { loadNflState, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
+    const { loadNflState, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
     const state = await loadNflState();
     const season = Number(state?.data?.season) || analysis.projectionSeason;
     const week = Number(state?.data?.week) || 1;
-    const [projections, actual] = await Promise.all([
-      loadWeeklyProjections(season, week), loadWeeklyStats(season, week),
+    const [projections, actual, trending] = await Promise.all([
+      loadWeeklyProjections(season, week), loadWeeklyStats(season, week), loadTrendingPlayers(),
     ]);
-    return buildClubhouseWeekly({
+    const built = buildClubhouseWeekly({
       analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,
       fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0),
     });
+    return built ? { ...built, trending } : null;
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
   if (teamsView) void hydratePowerPulse(view, mine, {
     meSleeperId: myMember?.sleeper_user_id || null,
@@ -304,9 +307,16 @@ export async function render(view) {
     });
     if (clubhouse) wireClubhouse(slot, clubhouse);
     else slot.remove();
+    const moveSlot = view.querySelector("[data-next-move]");
+    if (moveSlot?.isConnected) {
+      const move = buildNextMove({ analysis, weekly, trending: weekly?.trending,
+        meSleeperId: myMember?.sleeper_user_id || null });
+      if (move) moveSlot.outerHTML = nextMoveCard(move); else moveSlot.remove();
+    }
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
     view.querySelector("[data-clubhouse]")?.remove();
+    view.querySelector("[data-next-move]")?.remove();
   });
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
