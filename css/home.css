@@ -73,6 +73,18 @@
 }
 .clubhouse-frame > header button:hover { color: var(--text); }
 .clubhouse-frame > header button b { color: var(--accent); font-size: var(--fs-body); }
+.clubhouse-actions { display: inline-flex; align-items: center; gap: var(--s-3); }
+.clubhouse-actions [data-clubhouse-share] {
+  color: var(--accent-2); padding: 0 var(--s-2); border: 1px solid color-mix(in srgb, var(--accent-2) 45%, transparent);
+  border-radius: var(--r-pill);
+}
+.clubhouse-actions [data-clubhouse-share]:hover { border-color: var(--accent-2); color: var(--text); }
+@media (max-width: 430px) {
+  .clubhouse-frame > header { padding-inline: var(--s-3); }
+  .clubhouse-actions { gap: var(--s-2); }
+  .clubhouse-actions [data-clubhouse-share] { padding-inline: 7px; }
+  .clubhouse-frame > header button { font-size: 9px; }
+}
 .clubhouse-story {
   position: relative; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4);
   align-items: center; padding: var(--s-5) var(--s-4); color: var(--text); text-decoration: none;

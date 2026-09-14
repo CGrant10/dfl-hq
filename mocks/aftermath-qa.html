@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Aftermath share QA</title>
+  <style>
+    @font-face{font-family:Rajdhani;src:url(../fonts/rajdhani-700.woff2) format("woff2");font-weight:700;font-display:swap}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#222}body{display:grid;place-items:start center;padding:24px}
+    canvas{display:block;width:min(1024px,calc(100vw - 48px));height:auto;box-shadow:0 18px 60px #0008}
+  </style>
+</head>
+<body>
+<script type="module">
+  import { aftermathCanvas } from "../js/aftermath-share.js";
+  await document.fonts.ready;
+  document.body.append(aftermathCanvas({
+    label:"MONDAY AFTERMATH",status:"PRE-MNF · LIVE",season:2026,week:1,
+    king:{name:"KLUTCH SPORTS GROUP",value:164.82},
+    blowout:{winner:"DEADLY",loser:"DREAM ENDERS",margin:42.16},
+    pain:{name:"DAGRAPEAPES",value:148.22},
+    bench:{name:"OUT OF ORDER",value:31.4}
+  }));
+</script>
+</body>
+</html>

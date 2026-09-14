@@ -1,50 +1,53 @@
-**Comparison Target**
+# Aftermath Share Card — Design QA
 
-- Source visual truth: `design-qa-assets/update-option-1-source.png`
-- Implementation: `design-qa-assets/update-gate-390-final.png`
-- Combined comparison: `design-qa-assets/update-comparison.png`
-- State: required update available, before pressing Update Now
-- Viewport: 390 × 844 CSS pixels at device scale factor 1
-- Source pixels: 853 × 1844, normalized to 390 × 844 in the combined comparison
-- Implementation pixels: 390 × 844
+## Evidence
 
-**Findings**
+- Source visual truth: `design-qa-assets/aftermath-option-2-source.png`
+- Implementation route: `mocks/aftermath-qa.html`
+- Implementation screenshot: unavailable; no browser surface was exposed to the workspace
+- Target viewport: 1080 × 1080 canvas, displayed at a 1024 × 1024 comparison viewport
+- Source pixels: 1024 × 1024
+- Implementation pixels: 1080 × 1080; intended CSS display size 1024 × 1024; device scale factor 1
+- State: Monday Aftermath, Week 1, PRE-MNF · LIVE
 
-- No actionable P0, P1, or P2 differences remain.
-- Typography preserves the mock's condensed sports-display hierarchy, strong headline wrapping, compact eyebrow, and readable supporting text.
-- Spacing follows the same top-to-bottom rhythm: announcement, headline, explanation, shield, improvements, primary action, and version.
-- The dark stadium, white type, red accents, and restrained gold details preserve the selected palette and contrast.
-- The stadium artwork and transparent DFL HQ shield are sharp at the tested mobile size with no placeholder imagery or transparency halo.
-- Copy matches the selected direction. The three improvement cards intentionally omit supporting descriptions per the user's revision.
+## Findings
 
-**Comparison History**
+- [P1] Browser-rendered comparison unavailable
+  - Location: full share card.
+  - Evidence: the selected source image is available, and the deterministic browser fixture is implemented, but the workspace returned no available browser and rejected the in-app browser target.
+  - Impact: typography, watermark opacity, exact spacing, and final canvas raster quality cannot be verified from visible browser evidence.
+  - Fix: open `mocks/aftermath-qa.html` in an available browser, capture the square canvas, combine it beside the source image, and perform the required visual comparison.
 
-- Iteration 1 — P2: a full-page capture could expose dashboard content below the fixed gate. Fixed by locking the document height and removing underlying app surfaces from layout while an update is required. The revised 390 × 844 capture contains only the update experience.
-- Iteration 1 — P2: the launcher artwork showed an opaque square around the shield. Fixed by producing a transparent, edge-cleaned update mark from the supplied DFL HQ brand asset. The revised capture shows the shield directly over the stadium.
-- Iteration 2 — P2: the shield was materially smaller than the selected mock. Increased its responsive size while preserving room for all three improvement cards and the persistent update action. The final combined comparison confirms the corrected hierarchy.
+## Required fidelity surfaces
 
-**Interaction and Runtime Evidence**
+- Fonts and typography: implemented with the app's Rajdhani display face and narrow/system fallbacks; browser-rendered weight, wrapping, and antialiasing remain unverified.
+- Spacing and layout rhythm: implemented as the selected centered hierarchy with 70 px outer margins, a dominant score, two equal award columns, and a bottom bench strip; visual measurement remains unverified.
+- Colors and visual tokens: implemented from `SHARE_INK` using Medicine black, warm white, gold, crest red, and crest blue. No new palette was introduced.
+- Image quality and asset fidelity: uses the supplied `dfl-seal-heritage-512.webp` at 4.5% opacity as the background watermark; browser raster sharpness and opacity remain unverified.
+- Copy and content: Sunday and Monday labels, season/week, live status, projected king, projected gap, pain watch, bench warrant, and league creed are generated from current weekly data. Monday is deliberately labeled PRE-MNF · LIVE rather than FINAL.
 
-- Browser-rendered in Chromium at 390 × 844.
-- Confirmed the update gate owns the viewport, body scrolling is locked, and no dismiss control or card subtext is present.
-- Pressed Update Now and confirmed navigation to the cache-busted `?u=` URL.
-- Checked page and browser console errors during the primary interaction: none.
+## Full-view comparison evidence
 
-**Focused Region Comparison**
+Blocked because a browser-rendered implementation screenshot could not be captured.
 
-- A separate crop was unnecessary because the normalized combined comparison keeps the headline, logo edges, card labels, button, and version text readable at their actual implementation size.
+## Focused region comparison evidence
 
-**Implementation Checklist**
+Blocked for the same reason. The hero score and lower award grid require focused visual inspection once browser capture is available.
 
-- [x] Full-screen required-update gate
-- [x] Selected stadium art direction
-- [x] Transparent DFL HQ shield
-- [x] No secondary descriptions under update items
-- [x] Working Update Now refresh flow
-- [x] Mobile overflow and safe-area handling
+## Interaction checks
 
-**Follow-up Polish**
+- Automated tests cover Sunday/Monday state switching and data selection.
+- The share handler is attached directly to the click event and calls the synchronous canvas share path, preserving iOS user-gesture behavior.
+- Browser share-sheet behavior and console output could not be checked without a browser surface.
 
-- The implementation uses DFL HQ's existing card language for the three improvements instead of the mock's divider-only rows. This is an intentional P3 adaptation to the app's established visual system.
+## Comparison history
 
-final result: passed
+- Initial pass: blocked before comparison because no browser target was available. No source-to-render visual fixes were claimed.
+
+## Implementation checklist
+
+- Capture `mocks/aftermath-qa.html` at the target viewport when a browser is available.
+- Compare the full card and focused hero/lower-grid regions against the selected source.
+- Fix any P0/P1/P2 visual drift, recapture, and update this report.
+
+final result: blocked

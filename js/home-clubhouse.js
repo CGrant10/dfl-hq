@@ -1,5 +1,6 @@
-import { esc } from "./ui.js";
+import { esc, toast } from "./ui.js";
 import { buildWeeklyPool, startSitAdvice } from "./weekly-outlook.js";
+import { buildAftermath, shareAftermath } from "./aftermath-share.js";
 
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
 const num = value => Number(value) || 0;
@@ -244,7 +245,11 @@ export function clubhouseView({ analysis, lore, members = [], meSleeperId = null
     detail: `${teams.length} rosters, one trophy, and several deeply questionable decisions.`, href: "#/analyzer",
   });
   const start = hash(`${Date.now()}:${meSleeperId}`) % stories.length;
-  return { stories, start, gameDay: now instanceof Date && now.getDay() === 0 };
+  return {
+    stories, start,
+    gameDay: now instanceof Date && now.getDay() === 0,
+    aftermath: buildAftermath({ lore, members, weekly, now }),
+  };
 }
 
 export function clubhouseShell() {
@@ -262,8 +267,10 @@ function storyHtml(story, index, total) {
 export function clubhouseCard(view, index = view?.start || 0) {
   if (!view?.stories?.length) return "";
   const safeIndex = ((index % view.stories.length) + view.stories.length) % view.stories.length;
+  const billing = view.aftermath?.label || (view.gameDay ? "SUNDAY · GAME DAY" : "DFL COLD OPEN");
+  const share = view.aftermath ? `<button type="button" data-clubhouse-share>SHARE IMAGE</button>` : "";
   return `<div class="clubhouse-frame ${view.gameDay ? "is-gameday" : ""}" data-clubhouse-index="${safeIndex}">
-    <header><span><i></i>${view.gameDay ? "SUNDAY · GAME DAY" : "DFL COLD OPEN"}</span><button type="button" data-clubhouse-next aria-label="Show another league take">NEXT TAKE <b>→</b></button></header>
+    <header><span><i></i>${billing}</span><span class="clubhouse-actions">${share}<button type="button" data-clubhouse-next aria-label="Show another league take">NEXT TAKE <b>→</b></button></span></header>
     ${storyHtml(view.stories[safeIndex], safeIndex, view.stories.length)}
   </div>`;
 }
@@ -277,6 +284,12 @@ export function wireClubhouse(root, view) {
     root.querySelector("[data-clubhouse-next]")?.addEventListener("click", event => {
       event.preventDefault(); event.stopPropagation();
       draw(num(frame?.dataset.clubhouseIndex) + 1);
+    });
+    root.querySelector("[data-clubhouse-share]")?.addEventListener("click", event => {
+      event.preventDefault(); event.stopPropagation();
+      const outcome = shareAftermath(view.aftermath);
+      if (outcome === "saved") toast("Aftermath image saved to your downloads");
+      if (outcome === "failed") toast("Could not share the aftermath image", true);
     });
   };
   draw(view.start);

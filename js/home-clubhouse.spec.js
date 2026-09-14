@@ -56,6 +56,20 @@ describe("Home clubhouse", () => {
     expect(clubhouseCard(view)).toContain("SUNDAY · GAME DAY");
   });
 
+  it("offers the Sunday aftermath share when weekly data is ready", () => {
+    const weekly = { season: 2026, week: 1, teams: [
+      { sleeper_user_id: "u1", team_name: "Alpha", projection: 120, pointsOnBench: 8 },
+      { sleeper_user_id: "u2", team_name: "Beta", projection: 110, pointsOnBench: 2 },
+    ] };
+    const currentLore = { matchups: [
+      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 80, score2: 72 },
+    ] };
+    const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-13T20:00:00") });
+    const html = clubhouseCard(view);
+    expect(html).toContain("SUNDAY AFTERMATH");
+    expect(html).toContain("data-clubhouse-share");
+  });
+
   it("uses current Sleeper weekly projections to rank the league", () => {
     const weeklyAnalysis = {
       ...analysis, league: { scoring_settings: { pass_yd: .04 } },

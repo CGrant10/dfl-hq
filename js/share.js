@@ -46,6 +46,17 @@ if (crest) {
 }
 export const crestImage = () => (crestReady ? crest : null);
 
+/* The round heritage seal is the quieter mark used behind editorial cards.
+   It is preloaded for the same reason as the crest: a share tap cannot wait
+   for an image request without losing Safari's user gesture. */
+const seal = typeof Image === "function" ? new Image() : null;
+let sealReady = false;
+if (seal) {
+  seal.onload = () => { sealReady = true; };
+  seal.src = new URL("../icons/dfl-seal-heritage-512.webp", import.meta.url).href;
+}
+export const sealImage = () => (sealReady ? seal : null);
+
 /** A rounded rectangle path, since canvas has no such primitive everywhere. */
 export function roundRect(ctx, x, y, w, h, r) {
   const rad = Math.min(r, w / 2, h / 2);
