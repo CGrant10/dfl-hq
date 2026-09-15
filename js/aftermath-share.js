@@ -15,6 +15,7 @@ const W = 1080, H = 1080;
 const DISPLAY = '"Rajdhani", "Arial Narrow", system-ui, sans-serif';
 const num = value => Number(value) || 0;
 const one = value => Math.round(num(value) * 10) / 10;
+const two = value => Math.round(num(value) * 100) / 100;
 const score = value => num(value).toFixed(2);
 const key = value => String(value ?? "");
 
@@ -32,20 +33,21 @@ function pick(lines, seed) {
 }
 
 function weeklyStory({ king, blowout, closest, bench }, seed) {
+  const team = value => String(value || "Unknown").toUpperCase();
   const openings = [
-    `${king.name} walked out with the weekly crown after dropping ${score(king.value)} points.`,
-    `${king.name} owned the week with ${score(king.value)} points and will now be impossible to talk to.`,
-    `${king.name} posted ${score(king.value)} points, grabbed first-class bragging rights, and left the rest of the league in coach.`,
+    `${team(king.name)} walked out with the weekly crown after dropping ${score(king.value)} points.`,
+    `${team(king.name)} owned the week with ${score(king.value)} points and will now be impossible to talk to.`,
+    `${team(king.name)} posted ${score(king.value)} points, grabbed first-class bragging rights, and left the rest of the league in coach.`,
   ];
   const beatings = blowout ? [
-    `${blowout.winner.name} beat the brakes off ${blowout.loser.name} by ${score(blowout.margin)}.`,
-    `${blowout.winner.name} turned ${blowout.loser.name}'s matchup into a public ass-whipping by ${score(blowout.margin)}.`,
-    `${blowout.loser.name} lost to ${blowout.winner.name} by ${score(blowout.margin)} and should avoid the group chat until Thursday.`,
+    `${team(blowout.winner.name)} beat the brakes off ${team(blowout.loser.name)} by ${score(blowout.margin)}.`,
+    `${team(blowout.winner.name)} turned ${team(blowout.loser.name)}'s matchup into a public ass-whipping by ${score(blowout.margin)}.`,
+    `${team(blowout.loser.name)} lost to ${team(blowout.winner.name)} by ${score(blowout.margin)} and should avoid the group chat until Thursday.`,
   ] : [];
   const endings = closest ? [
-    `${closest.winner.name} escaped ${closest.loser.name} by ${score(closest.margin)}; meanwhile ${bench.name} left ${score(bench.value)} points rotting on the bench.`,
-    `${closest.loser.name} came within ${score(closest.margin)} of talking reckless, while ${bench.name} committed ${score(bench.value)} points of bench malpractice.`,
-    `${closest.winner.name} survived the week's closest mess by ${score(closest.margin)}. ${bench.name}'s bench then filed a grievance over ${score(bench.value)} unused points.`,
+    `${team(closest.winner.name)} escaped ${team(closest.loser.name)} by ${score(closest.margin)}; meanwhile ${team(bench.name)} left ${score(bench.value)} points rotting on the bench.`,
+    `${team(closest.loser.name)} came within ${score(closest.margin)} of talking reckless, while ${team(bench.name)} committed ${score(bench.value)} points of bench malpractice.`,
+    `${team(closest.winner.name)} survived the week's closest mess by ${score(closest.margin)}. ${team(bench.name)}'s bench then filed a grievance over ${score(bench.value)} unused points.`,
   ] : [];
   return [pick(openings, `${seed}:open`), pick(beatings, `${seed}:beat`), pick(endings, `${seed}:end`)].filter(Boolean).join(" ");
 }
@@ -60,16 +62,20 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
   const day = now instanceof Date ? now.getDay() : -1;
   if (day !== 2 || !weekly?.teams?.length || !weekly.season || !weekly.week) return null;
 
-  const values = new Map(weekly.teams.map(team => [key(team.sleeper_user_id),
-    Number.isFinite(team?.actual) ? num(team.actual) : num(team?.projection)]));
+  const values = new Map(weekly.teams.map(team => [key(team.sleeper_user_id), team]));
   const current = (lore?.matchups || []).filter(row => Number(row.season) === Number(weekly.season)
     && Number(row.week) === Number(weekly.week));
   const pairs = current.map(row => {
     const leftName = teamName(members, row.user1, `Team ${row.roster1 || ""}`.trim());
     const rightName = teamName(members, row.user2, `Team ${row.roster2 || ""}`.trim());
+    const leftTeam = values.get(key(row.user1)), rightTeam = values.get(key(row.user2));
     const leftScore = Number(row.score1), rightScore = Number(row.score2);
-    const left = Number.isFinite(leftScore) ? leftScore : values.get(key(row.user1)) || 0;
-    const right = Number.isFinite(rightScore) ? rightScore : values.get(key(row.user2)) || 0;
+    /* The synced matchup table can lag a late Sleeper scoring adjustment.
+       A completed weekly bundle is fresher and therefore authoritative. */
+    const left = leftTeam?.complete && Number.isFinite(leftTeam.actual) ? num(leftTeam.actual)
+      : Number.isFinite(leftScore) ? leftScore : num(leftTeam?.projection);
+    const right = rightTeam?.complete && Number.isFinite(rightTeam.actual) ? num(rightTeam.actual)
+      : Number.isFinite(rightScore) ? rightScore : num(rightTeam?.projection);
     const winner = left >= right ? { uid: row.user1, name: leftName, value: left } : { uid: row.user2, name: rightName, value: right };
     const loser = left >= right ? { uid: row.user2, name: rightName, value: right } : { uid: row.user1, name: leftName, value: left };
     return { winner, loser, margin: Math.abs(left - right) };
@@ -94,15 +100,15 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
       detail: bench ? `${score(benchStar.value)} POINTS LEFT TO ROT` : `${score(low?.value)} PTS · WEEK'S LOW`, tone: "red" },
   ].filter(Boolean);
   const story = weeklyStory({ king, blowout, closest, bench: benchStar }, `${weekly.season}:${weekly.week}`);
-  const games = pairs.map(game => ({ winner: game.winner, loser: game.loser, margin: one(game.margin) }));
+  const games = pairs.map(game => ({ winner: game.winner, loser: game.loser, margin: two(game.margin) }));
 
   return {
     label: "WEEK RECAP", status: "FINAL", season: Number(weekly.season), week: Number(weekly.week),
     title: `WEEK ${Number(weekly.week)} RECAP`,
     king: { name: king.name, value: king.value },
     final: true, story, highlights: highlightRows, games,
-    blowout: blowout ? { winner: blowout.winner.name, loser: blowout.loser.name, margin: one(blowout.margin) } : null,
-    closest: closest ? { winner: closest.winner.name, loser: closest.loser.name, margin: one(closest.margin) } : null,
+    blowout: blowout ? { winner: blowout.winner.name, loser: blowout.loser.name, margin: two(blowout.margin) } : null,
+    closest: closest ? { winner: closest.winner.name, loser: closest.loser.name, margin: two(closest.margin) } : null,
     bench: bench ? benchStar : null,
   };
 }
@@ -130,25 +136,35 @@ function rule(ctx, x1, y, x2, color = SHARE_INK.LINE, width = 2) {
   ctx.fillRect(x1, y, x2 - x1, width);
 }
 
-function wrapLeft(ctx, text, x, y, maxWidth, size = 30, lineHeight = 39, maxLines = 5) {
+function wrapStory(ctx, text, x, y, maxWidth, size = 30, lineHeight = 39, maxLines = 5) {
   ctx.font = `700 ${size}px ${DISPLAY}`;
   ctx.textAlign = "left";
   const words = String(text).split(/\s+/), lines = [];
-  let line = "";
+  let line = [];
   for (const word of words) {
-    const trial = line ? `${line} ${word}` : word;
-    if (ctx.measureText(trial).width <= maxWidth || !line) line = trial;
-    else { lines.push(line); line = word; }
+    const trial = [...line, word].join(" ");
+    if (ctx.measureText(trial).width <= maxWidth || !line.length) line.push(word);
+    else { lines.push(line); line = [word]; }
   }
-  if (line) lines.push(line);
+  if (line.length) lines.push(line);
   if (lines.length > maxLines) {
-    lines[maxLines - 1] = `${lines.slice(maxLines - 1).join(" ").replace(/[.?!,;:]?$/, "")}…`;
+    lines[maxLines - 1] = [...lines.slice(maxLines - 1).flat(), "…"];
     lines.length = maxLines;
-    while (ctx.measureText(lines[maxLines - 1]).width > maxWidth && lines[maxLines - 1].length > 4) {
-      lines[maxLines - 1] = `${lines[maxLines - 1].slice(0, -2).trimEnd()}…`;
+    while (ctx.measureText(lines[maxLines - 1].join(" ")).width > maxWidth && lines[maxLines - 1].length > 2) {
+      lines[maxLines - 1].splice(-2, 1);
     }
   }
-  lines.forEach((row, index) => ctx.fillText(row, x, y + index * lineHeight));
+  const space = ctx.measureText(" ").width;
+  lines.forEach((row, index) => {
+    let cursor = x;
+    row.forEach(word => {
+      const letters = word.replace(/[^A-Za-z]/g, "");
+      const isTeamName = letters.length > 1 && letters === letters.toUpperCase();
+      ctx.fillStyle = isTeamName ? SHARE_INK.GOLD : SHARE_INK.INK;
+      ctx.fillText(word, cursor, y + index * lineHeight);
+      cursor += ctx.measureText(word).width + space;
+    });
+  });
 }
 
 export function aftermathCanvas(card) {
@@ -185,7 +201,7 @@ export function aftermathCanvas(card) {
 
   caps(ctx, "THE WEEK, IN ONE QUESTIONABLE PARAGRAPH", 70, 268, SHARE_INK.ACCENT, 18, "left");
   ctx.fillStyle = SHARE_INK.INK;
-  wrapLeft(ctx, card.story || "The league survived another week. Barely.", 70, 310, 940, 30, 39, 5);
+  wrapStory(ctx, card.story || "The league survived another week. Barely.", 70, 310, 940, 30, 39, 5);
 
   const highlights = (card.highlights || []).slice(0, 4);
   highlights.forEach((item, index) => {
@@ -199,8 +215,8 @@ export function aftermathCanvas(card) {
     caps(ctx, item.label, x + 28, y + 38, tone, 18, "left");
     ctx.fillStyle = SHARE_INK.INK;
     fitDisplay(ctx, String(item.title).toUpperCase(), x + 28, y + 91, width - 56, 35, 800, "left");
-    ctx.fillStyle = SHARE_INK.MUTED;
-    fitDisplay(ctx, String(item.detail).toUpperCase(), x + 28, y + 139, width - 56, 16, 700, "left");
+    ctx.fillStyle = SHARE_INK.INK;
+    fitDisplay(ctx, String(item.detail).toUpperCase(), x + 28, y + 143, width - 56, 20, 700, "left");
   });
 
   caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1022, SHARE_INK.MUTED, 21);

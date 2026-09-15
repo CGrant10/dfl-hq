@@ -35,11 +35,32 @@ describe("weekly aftermath", () => {
       { label: "HEARTBREAKER", title: "Gamma", detail: "LOST BY 2.00 TO Delta", tone: "ink" },
       { label: "BENCH FELONY", title: "Gamma", detail: "31.40 POINTS LEFT TO ROT", tone: "red" },
     ]);
-    expect(card.story).toContain("Delta");
-    expect(card.story).toContain("Alpha");
-    expect(card.story).toContain("Gamma");
+    expect(card.story).toContain("DELTA");
+    expect(card.story).toContain("ALPHA");
+    expect(card.story).toContain("GAMMA");
     expect(aftermathText(card)).toContain(card.story);
     expect(aftermathText(card)).not.toContain("Alpha 120.00 beat Beta 99.00");
+  });
+
+  it("uses fresh completed totals when the synced matchup score is stale", () => {
+    const dreamMembers = [
+      { sleeper_user_id: "dream", team_name: "Dream Enders" },
+      { sleeper_user_id: "opp", team_name: "Sunday Scaries" },
+    ];
+    const freshWeekly = { season: 2026, week: 1, teams: [
+      { sleeper_user_id: "dream", team_name: "Dream Enders", actual: 117.06, complete: true, pointsOnBench: 5 },
+      { sleeper_user_id: "opp", team_name: "Sunday Scaries", actual: 117.20, complete: true, pointsOnBench: 2 },
+    ] };
+    const staleLore = { matchups: [
+      { season: 2026, week: 1, user1: "dream", user2: "opp", score1: 117.06, score2: 113.60 },
+    ] };
+    const card = buildAftermath({ lore: staleLore, members: dreamMembers, weekly: freshWeekly,
+      now: new Date("2026-09-15T08:00:00") });
+    expect(card.closest).toEqual({ winner: "Sunday Scaries", loser: "Dream Enders", margin: 0.14 });
+    expect(card.highlights.find(item => item.label === "HEARTBREAKER")).toMatchObject({
+      title: "Dream Enders", detail: "LOST BY 0.14 TO Sunday Scaries",
+    });
+    expect(card.story).toContain("DREAM ENDERS");
   });
 
   it("only offers the completed recap on Tuesday", () => {

@@ -5,6 +5,7 @@ import { buildAftermath, shareAftermath } from "./aftermath-share.js";
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
 const num = value => Number(value) || 0;
 const round = value => Math.round(value * 10) / 10;
+const scoreRound = value => Math.round(value * 100) / 100;
 
 function hash(text) {
   let value = 2166136261;
@@ -241,7 +242,9 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
     return {
       id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: nameOf(team),
       projection: advice.lineupIsSet ? round(liveProjection) : round(advice.bestTotal),
-      actual: round(actualPoints), remaining,
+      /* Final fantasy scores settle to hundredths. Keeping only one decimal
+         could turn a sub-point loss into the wrong-looking margin. */
+      actual: scoreRound(actualPoints), remaining,
       complete: submitted.length > 0 && remaining === 0,
       pointsOnBench: round(advice.pointsOnBench), lineupIsSet: advice.lineupIsSet,
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,

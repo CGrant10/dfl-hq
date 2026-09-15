@@ -153,11 +153,11 @@ describe("Home clubhouse", () => {
       { player_id: "SEA", player: { position: "DEF" }, opponent: "C", stats: { gp: 1, rec: 8.5 } },
     ];
     const actualRows = [
-      { player_id: "SEA", player: { position: "DEF" }, stats: { gp: 1, rec: 13 } },
+      { player_id: "SEA", player: { position: "DEF" }, stats: { gp: 1, rec: 13.37 } },
     ];
     const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
-    expect(weekly.teams[0].projection).toBe(130);
-    expect(weekly.teams[0]).toMatchObject({ actual: 13, remaining: 2, complete: false });
+    expect(weekly.teams[0].projection).toBe(130.4);
+    expect(weekly.teams[0]).toMatchObject({ actual: 13.37, remaining: 2, complete: false });
   });
 
   it("uses finished player results for comparisons and secures a completed win", () => {
