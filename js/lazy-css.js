@@ -19,7 +19,9 @@
   follow it.
 */
 
-const ORDER_ANCHOR = 'link[rel="stylesheet"][href*="css/golf.css"]';
+/* Golf is route-loaded now. If it exists, Broadcast still belongs before it;
+   otherwise UI is the stable marker immediately after both original slots. */
+const ORDER_ANCHOR = 'link[rel="stylesheet"][href*="css/golf.css"],link[rel="stylesheet"][href*="css/ui.css"]';
 const pending = new Map();
 
 /**

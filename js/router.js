@@ -9,6 +9,7 @@ import { startMemberLock } from "./member-lock.js";
 import { dflSeasonCount, loadGolfFeatures } from "./config.js";
 import { canEdit } from "./inline.js";
 import { db } from "./supabase.js";
+import { ensureStylesheet } from "./lazy-css.js";
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -44,6 +45,19 @@ const routes = {
   notifications: () => import("./pages/notifications.js"),
   admin:    () => import("./pages/admin.js"),
 };
+
+/* Large, page-specific styles used to block every first paint. Load them with
+   the route that owns them instead; the shared shell and Home remain in the
+   document so the default screen still paints without a style flash. */
+const routeStyles = {
+  golf: [{ href: "css/golf.css", anchor: 'link[rel="stylesheet"][href*="css/ui.css"]' }],
+  sportsbook: [{ href: "css/sportsbook.css", anchor: 'link[rel="stylesheet"][href*="css/marquee.css"]' }],
+  analyzer: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
+  trade: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
+};
+function loadRouteStyles(name) {
+  return Promise.all((routeStyles[name] || []).map(({ href, anchor }) => ensureStylesheet(href, { anchor })));
+}
 
 /** Every page module name. Used by the updater to refresh unvisited pages. */
 export function routeNames() { return Object.keys(routes); }
@@ -213,7 +227,7 @@ export async function renderRoute() {
 
   view.innerHTML = loading();
   try {
-    const mod = await routes[name]();
+    const [mod] = await Promise.all([routes[name](), loadRouteStyles(name)]);
     if (!isCurrent()) return;
     if (typeof mod.leave === "function") leaving = mod.leave;
     await mod.render(view);

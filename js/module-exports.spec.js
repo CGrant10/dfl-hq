@@ -147,12 +147,30 @@ describe("the initial app shell", () => {
     expect(router).toContain('import("./arena/mobile-broadcast-performance.js")');
   });
 
+  it("keeps page-specific CSS out of the render-blocking shell", () => {
+    const html = fs.readFileSync("index.html", "utf8");
+    const router = fs.readFileSync("js/router.js", "utf8");
+    for (const file of ["golf.css", "sportsbook.css", "team-analyzer.css"]) {
+      expect(html).not.toContain(`href="css/${file}"`);
+      expect(router).toContain(`"css/${file}"`);
+    }
+  });
+
   it("releases the splash when the first route is ready", () => {
     const html = fs.readFileSync("index.html", "utf8");
     const router = fs.readFileSync("js/router.js", "utf8");
     expect(html).toContain('window.addEventListener("dfl:app-ready", finish');
     expect(html).toContain("setTimeout(finish, 1200)");
     expect(router).toContain('new Event("dfl:app-ready")');
+  });
+
+  it("starts network background work after the first route", () => {
+    const app = fs.readFileSync("js/app.js", "utf8");
+    const ready = app.indexOf('window.addEventListener("dfl:app-ready"');
+    expect(ready).toBeGreaterThan(0);
+    for (const work of ["startPresence()", "startBottomline(currentRoute)", "setupUpdates()", 'serviceWorker.register("sw.js"']) {
+      expect(app.indexOf(work)).toBeGreaterThan(ready);
+    }
   });
 
   it("does not precache the update-only stadium artwork", () => {

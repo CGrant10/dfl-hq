@@ -87,6 +87,21 @@ export async function render(view) {
   const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
+  /* These reads do not depend on the core dashboard rows. Starting them now
+     removes an entire network waterfall from Home without changing its data. */
+  const manualPromise = loadBroadcastItems();
+  const overridesPromise = loadBroadcastOverrides();
+  const activityPromise = (async () => {
+    try {
+      const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
+    }
+  })();
+  const wallPromise = loadWall().catch((err) => { console.warn("wall unavailable", err); return null; });
+  const draftPromise = loadDraftOrder();
   const [events, announcements, polls, leagues, members, golf, dues, standings, golfDone] = await Promise.all([
     db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
@@ -111,10 +126,13 @@ export async function render(view) {
   const me = currentMember();
   const myMember = me ? memberRows.find((m) => String(m.id) === String(me.id)) : null;
 
-  const [golfDay, manual, overrides] = await Promise.all([
+  const [golfDay, manual, overrides, activity, wall, draft] = await Promise.all([
     golfRow ? loadGolfDay(golfRow.id) : null,
-    loadBroadcastItems(),
-    loadBroadcastOverrides(),
+    manualPromise,
+    overridesPromise,
+    activityPromise,
+    wallPromise,
+    draftPromise,
   ]);
   const homeData = {
     events: events.data || [], announcements: announcements.data || [],
@@ -141,24 +159,6 @@ export async function render(view) {
      above for the same reason: each depends on a migration a league may not
      have run, and neither is allowed to take the front page down. Both
      resolve to null when their table is absent, and null draws nothing. */
-  const [activity, wall, draft] = await Promise.all([
-    (async () => {
-      try {
-        const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        /* Absent migration draws nothing; any other failure draws an empty
-           section rather than taking the front page down with it. */
-        return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
-      }
-    })(),
-    loadWall().catch((err) => { console.warn("wall unavailable", err); return null; }),
-    /* The draft order. Same rule again: a league that has not run
-       sleeper_draft_order_schema.sql resolves to null and draws nothing. */
-    loadDraftOrder(),
-  ]);
-
   /* Null all the way through when there is no draft, no order, or a draft
      that finished long enough ago to be history rather than news. */
   const leagueStatus = leagues.data?.[0]?.status || "";

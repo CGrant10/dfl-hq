@@ -224,7 +224,7 @@ function moveTabIndicator(){
 window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   mountNotificationBell();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
@@ -237,16 +237,25 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give 
     tap because the router handles all three identically.
   */
   onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); });
+  /* Background conveniences used to compete with Home for the same Supabase
+     connection: the ticker alone repeats five dashboard reads. Let the first
+     route settle, then start presence, updates, notifications and PWA caching. */
+  window.addEventListener("dfl:app-ready", () => {
+    startPresence();
+    void startBottomline(currentRoute);
+    setupUpdates();
+    void setupNotifyNudge();
+    if("serviceWorker"in navigator&&location.protocol.startsWith("http")){
+      const register=()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);
+      if("requestIdleCallback"in window)window.requestIdleCallback(register,{timeout:4000});
+      else setTimeout(register,1000);
+    }
+  }, { once: true });
   startRouter();
-  /* Off the critical path on purpose: the first paint of the app does not wait
-     for a ticker, and a failure means no ticker rather than no app. */
-  startBottomline(currentRoute);/* A broadcast/OBS URL is a public spectator surface. It must render without
+  /* A broadcast/OBS URL is a public spectator surface. It must render without
    asking the viewer to identify themselves, including in a fresh browser. */
 if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicker();
-else if(getUsername())registerUser(getUsername());if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);setupInstall();setupUpdates();
-  /* Not awaited: it waits on the profile picker, which can stay open for as
-     long as the member takes to find their name. */
-  void setupNotifyNudge();
+else if(getUsername())registerUser(getUsername());setupInstall();
 }
 onGolfPassChange(paintName);
 boot();
