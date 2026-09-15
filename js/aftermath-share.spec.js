@@ -20,33 +20,29 @@ const lore = { matchups: [
 ] };
 
 describe("weekly aftermath", () => {
-  it("builds Monday's Sunday aftermath card from current projections", () => {
-    const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") });
-    expect(card.label).toBe("SUNDAY AFTERMATH");
-    expect(card.status).toBe("PRE-MNF · LIVE");
-    expect(card.king).toEqual({ name: "Alpha", value: 164.82 });
-    expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 42.2 });
-    expect(card.pain).toEqual({ name: "Gamma", value: 148.22 });
-    expect(card.bench).toEqual({ name: "Gamma", value: 31.4 });
-    expect(card.takes).toHaveLength(4);
-    expect(new Set(card.takes.map(take => take.headline)).size).toBe(4);
-  });
-
-  it("builds Tuesday's Monday aftermath from final actual scores", () => {
+  it("builds Tuesday's shareable recap from every final matchup", () => {
     const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-15T08:00:00") });
-    expect(card.label).toBe("MONDAY AFTERMATH");
-    expect(card.title).toBe("WEEK 1 REPORT CARD");
+    expect(card.label).toBe("WEEK RECAP");
+    expect(card.title).toBe("WEEK 1 RECAP");
     expect(card.status).toBe("FINAL");
     expect(card.king).toEqual({ name: "Delta", value: 142 });
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 21 });
-    expect(aftermathText(card)).toContain("WEEK 1 REPORT CARD");
-    expect(aftermathText(card)).toContain("scoring at 142.00");
-    expect(card.takes.some(take => take.kicker === "PUBLIC EXECUTION")).toBe(true);
-    expect(card.takes.some(take => take.kicker === "BENCH CRIME DIVISION")).toBe(true);
-    expect(aftermathText({ ...card, takeIndex: 1 })).toContain(card.takes[1].headline);
+    expect(card.games).toHaveLength(2);
+    expect(card.games[0]).toMatchObject({
+      winner: { name: "Alpha", value: 120 }, loser: { name: "Beta", value: 99 },
+      winnerLabels: ["ASS KICKING"], loserLabels: ["BODY BAG", "SEE ME AFTER CLASS"],
+    });
+    expect(card.games[1]).toMatchObject({
+      winner: { name: "Delta", value: 142 }, loser: { name: "Gamma", value: 140 },
+      winnerLabels: ["HONOR ROLL"], loserLabels: ["ROBBED", "BENCH CRIMINAL"],
+    });
+    expect(card.games.every(game => game.roast.length > 20)).toBe(true);
+    expect(aftermathText(card)).toContain("Alpha 120.00 beat Beta 99.00");
+    expect(aftermathText(card)).toContain("Delta 142.00 beat Gamma 140.00");
   });
 
-  it("stays out of the clubhouse on other days", () => {
+  it("only offers the completed recap on Tuesday", () => {
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") })).toBeNull();
     expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-16T08:00:00") })).toBeNull();
     expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-13T20:00:00") })).toBeNull();
   });

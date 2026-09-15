@@ -293,33 +293,14 @@ function storyHtml(story, index, total) {
   </a>`;
 }
 
-function aftermathHtml(card, index) {
-  const takes = card?.takes || [];
-  const safeIndex = takes.length ? ((index % takes.length) + takes.length) % takes.length : 0;
-  const take = takes[safeIndex] || {
-    kicker: card.label, headline: `${card.king.name} leads at ${card.king.value}.`, detail: card.status,
-  };
-  const tiles = [
-    { label: card.final ? "HONOR ROLL" : "PROJECTED KING", value: Number(card.king.value).toFixed(2), name: card.king.name, tone: "king" },
-    card.blowout ? { label: card.final ? "ASS KICKING" : "PROJECTED BURIAL", value: `+${Number(card.blowout.margin).toFixed(2)}`, name: `${card.blowout.winner} over ${card.blowout.loser}`, tone: "gap" } : null,
-    card.bench ? { label: card.final ? "DETENTION" : "BENCH CRIME", value: Number(card.bench.value).toFixed(2), name: `${card.bench.name} left behind`, tone: "bench" } : null,
-  ].filter(Boolean);
-  return `<section class="aftermath-dashboard" aria-label="${esc(card.title || card.label)}">
-    <div class="aftermath-lead"><span class="aftermath-edition">${esc(card.title || card.label)}</span><span class="clubhouse-kicker">${esc(take.kicker)}</span><h2>${esc(take.headline)}</h2><p>${esc(take.detail)}</p></div>
-    <div class="aftermath-grid">${tiles.map(tile => `<div class="aftermath-stat is-${tile.tone}"><small>${esc(tile.label)}</small><strong>${esc(tile.value)}</strong><span>${esc(tile.name)}</span></div>`).join("")}</div>
-    <span class="clubhouse-count">${safeIndex + 1} / ${Math.max(1, takes.length)}</span>
-  </section>`;
-}
-
 export function clubhouseCard(view, index = view?.start || 0) {
   if (!view?.stories?.length) return "";
-  const total = view.aftermath?.takes?.length || view.stories.length;
-  const safeIndex = ((index % total) + total) % total;
-  const billing = view.aftermath?.label || (view.gameDay ? "SUNDAY · GAME DAY" : "DFL COLD OPEN");
-  const share = view.aftermath ? `<button type="button" data-clubhouse-share>SHARE IMAGE</button>` : "";
-  return `<div class="clubhouse-frame ${view.gameDay ? "is-gameday" : ""} ${view.aftermath ? "is-aftermath" : ""}" data-clubhouse-index="${safeIndex}">
+  const safeIndex = ((index % view.stories.length) + view.stories.length) % view.stories.length;
+  const billing = view.gameDay ? "SUNDAY · GAME DAY" : "DFL COLD OPEN";
+  const share = view.aftermath?.final ? `<button type="button" data-clubhouse-share>GENERATE WEEK RECAP</button>` : "";
+  return `<div class="clubhouse-frame ${view.gameDay ? "is-gameday" : ""}" data-clubhouse-index="${safeIndex}">
     <header><span><i></i>${billing}</span><span class="clubhouse-actions">${share}<button type="button" data-clubhouse-next aria-label="Show another league take">NEXT TAKE <b>→</b></button></span></header>
-    ${view.aftermath ? aftermathHtml(view.aftermath, safeIndex) : storyHtml(view.stories[safeIndex], safeIndex, view.stories.length)}
+    ${storyHtml(view.stories[safeIndex], safeIndex, view.stories.length)}
   </div>`;
 }
 
@@ -329,16 +310,15 @@ export function wireClubhouse(root, view) {
     const frame = root.querySelector("[data-clubhouse-index]");
     root.classList.remove("is-loading");
     root.classList.toggle("is-gameday", Boolean(view.gameDay));
-    root.classList.toggle("has-aftermath", Boolean(view.aftermath));
     root.querySelector("[data-clubhouse-next]")?.addEventListener("click", event => {
       event.preventDefault(); event.stopPropagation();
       draw(num(frame?.dataset.clubhouseIndex) + 1);
     });
     root.querySelector("[data-clubhouse-share]")?.addEventListener("click", event => {
       event.preventDefault(); event.stopPropagation();
-      const outcome = shareAftermath({ ...view.aftermath, takeIndex: num(frame?.dataset.clubhouseIndex) });
-      if (outcome === "saved") toast("Aftermath image saved to your downloads");
-      if (outcome === "failed") toast("Could not share the aftermath image", true);
+      const outcome = shareAftermath(view.aftermath);
+      if (outcome === "saved") toast("Week recap saved to your downloads");
+      if (outcome === "failed") toast("Could not share the week recap", true);
     });
   };
   draw(view.start);

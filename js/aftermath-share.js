@@ -1,10 +1,9 @@
 /* =====================================================================
-   aftermath-share.js - Sunday and Monday's league argument, as a picture.
+   aftermath-share.js - the completed week, as one group-chat picture.
    ---------------------------------------------------------------------
-   Monday recaps Sunday's slate while Monday Night Football is still live.
-   Tuesday closes the week with actual totals. The numbers below come from
-   the same current Sleeper bundle as Home's cold open, so the card and the
-   app cannot disagree.
+   This is deliberately not a dashboard panel. On Tuesday it becomes a
+   small action in the cold open and produces a full six-game recap using
+   actual totals from the week Sleeper just closed.
 
    The canvas is square because this belongs in a group chat, and drawing is
    synchronous because iOS only allows the share sheet during the tap itself.
@@ -32,64 +31,25 @@ function pick(lines, seed) {
   return lines[hash(seed) % lines.length];
 }
 
-const activeTake = card => {
-  const takes = card?.takes || [];
-  if (!takes.length) return null;
-  const index = ((Number(card.takeIndex) || 0) % takes.length + takes.length) % takes.length;
-  return takes[index];
-};
-
-function savageTakes({ season, week, final, king, blowout, pain, bench }) {
-  const phase = final ? "finished" : "is currently projected to finish";
-  const takes = [{
-    kicker: "THE WEEK'S BIG SWING",
-    headline: pick([
-      `${king.name} kicked the door in with ${score(king.value)}. Everybody else can use the side entrance.`,
-      `${king.name} put up ${score(king.value)} and made the rest of the league look underdressed.`,
-      `${king.name} brought ${score(king.value)} to a knife fight. Completely unnecessary. Deeply appreciated.`,
-      `${king.name} owns the room at ${score(king.value)}. Try not to make eye contact.`,
-      `${king.name} dropped ${score(king.value)} and left the group chat suspiciously quiet.`,
-      `${king.name} ${phase} on ${score(king.value)}—a vulgar amount of competence for this league.`,
-    ], `${season}:${week}:king:${king.name}`),
-    detail: final ? "Top score. No projection talk, no asterisk, no damn debate." : "The throne is rented until Monday night finishes, so start the bickering now.",
-  }];
-  if (blowout) takes.push({
-    kicker: "PUBLIC EXECUTION",
-    headline: pick([
-      `${blowout.loser} got folded by ${blowout.winner} like a gas-station lawn chair.`,
-      `${blowout.winner} beat ${blowout.loser} by ${score(blowout.margin)}. That's less a matchup than an HR incident.`,
-      `${blowout.loser}'s safe word was “waivers.” ${blowout.winner} apparently never heard it.`,
-      `${blowout.winner} left ${blowout.loser} on read—and ${score(blowout.margin)} points in the ditch.`,
-      `${blowout.loser} brought hope. ${blowout.winner} brought a shovel.`,
-      `${blowout.winner} won by ${score(blowout.margin)} and should at least offer cab fare home.`,
-    ], `${season}:${week}:gap:${blowout.winner}:${blowout.loser}`),
-    detail: `${blowout.winner} over ${blowout.loser} by ${score(blowout.margin)}${final ? ". Final and legally admissible." : " if the current projection holds."}`,
-  });
-  if (pain) takes.push({
-    kicker: "PAIN WITH RECEIPTS",
-    headline: pick([
-      `${pain.name} put up ${score(pain.value)} and still lost. Premium effort, store-brand ending.`,
-      `${pain.name} scored ${score(pain.value)} just to become somebody else's character development.`,
-      `${pain.name} did enough to win in a respectable league. Unfortunately, this is the DFL.`,
-      `${pain.name} brought ${score(pain.value)} points to the altar and the fantasy gods laughed anyway.`,
-      `${pain.name} had a good week everywhere except the one column that matters.`,
-      `${pain.name} scored ${score(pain.value)} and got nothing but trauma and a Tuesday notification.`,
-    ], `${season}:${week}:pain:${pain.name}`),
-    detail: final ? "Highest score among the losers. Frame it next to the participation ribbon." : "Currently the highest-scoring projected loser. Misery with excellent production value.",
-  });
-  if (bench) takes.push({
-    kicker: "BENCH CRIME DIVISION",
-    headline: pick([
-      `${bench.name} left ${score(bench.value)} points on the bench. Elite points-per-ass decision-making.`,
-      `${bench.name}'s bench scored ${score(bench.value)} points too many. Beautiful roster, terrible seating chart.`,
-      `${bench.name} hid ${score(bench.value)} points on the bench like the league charges taxes on touchdowns.`,
-      `${bench.name} paid full price for ${score(bench.value)} points and left them in the damn parking lot.`,
-      `${bench.name}'s bench had ${score(bench.value)} reasons to file a grievance.`,
-      `${bench.name} turned ${score(bench.value)} usable points into expensive furniture.`,
-    ], `${season}:${week}:bench:${bench.name}`),
-    detail: "The lineup optimizer has entered the chat with screenshots.",
-  });
-  return takes;
+function gameRoast(game, seed) {
+  const winner = game.winner.name, loser = game.loser.name, margin = score(game.margin);
+  const lines = game.margin >= 35 ? [
+    `${loser} got folded like a gas-station lawn chair.`,
+    `${winner} won by ${margin}. Somebody check ${loser} for a pulse.`,
+    `${loser} brought a lineup. ${winner} brought a burial permit.`,
+    "This stopped being competitive before the snacks came out.",
+  ] : game.margin <= 6 ? [
+    `${winner} escaped by ${margin} and absolutely does not need to explain how.`,
+    `${loser} was ${margin} points short of being unbearable all week.`,
+    `A ${margin}-point loss: premium pain with no refund policy.`,
+    `${winner} survived. “Dominated” would be perjury.`,
+  ] : [
+    `${winner} handled business; ${loser} handled excuses.`,
+    `${loser} spent all week cooking and still served the L.`,
+    `${winner} gets the receipt. ${loser} gets character development.`,
+    "Clean win, dirty group chat, exactly as the league intended.",
+  ];
+  return pick(lines, seed);
 }
 
 function teamName(members, uid, fallback) {
@@ -97,47 +57,65 @@ function teamName(members, uid, fallback) {
   return member?.team_name || member?.display_name || fallback || "Unknown";
 }
 
-/** Build the one truthful snapshot shared by the Sunday and Monday cards. */
+/** Build Tuesday's truthful recap of the completed week. */
 export function buildAftermath({ lore, members = [], weekly, now = new Date() } = {}) {
   const day = now instanceof Date ? now.getDay() : -1;
-  if ((day !== 1 && day !== 2) || !weekly?.teams?.length || !weekly.season || !weekly.week) return null;
+  if (day !== 2 || !weekly?.teams?.length || !weekly.season || !weekly.week) return null;
 
-  const final = day === 2;
-  const valueOf = team => final && Number.isFinite(team?.actual) ? num(team.actual) : num(team?.projection);
-  const values = new Map(weekly.teams.map(team => [key(team.sleeper_user_id), valueOf(team)]));
+  const values = new Map(weekly.teams.map(team => [key(team.sleeper_user_id),
+    Number.isFinite(team?.actual) ? num(team.actual) : num(team?.projection)]));
   const current = (lore?.matchups || []).filter(row => Number(row.season) === Number(weekly.season)
     && Number(row.week) === Number(weekly.week));
   const pairs = current.map(row => {
     const leftName = teamName(members, row.user1, `Team ${row.roster1 || ""}`.trim());
     const rightName = teamName(members, row.user2, `Team ${row.roster2 || ""}`.trim());
-    const left = values.has(key(row.user1)) ? values.get(key(row.user1)) : num(row.score1);
-    const right = values.has(key(row.user2)) ? values.get(key(row.user2)) : num(row.score2);
+    const leftScore = Number(row.score1), rightScore = Number(row.score2);
+    const left = Number.isFinite(leftScore) ? leftScore : values.get(key(row.user1)) || 0;
+    const right = Number.isFinite(rightScore) ? rightScore : values.get(key(row.user2)) || 0;
     const winner = left >= right ? { uid: row.user1, name: leftName, value: left } : { uid: row.user2, name: rightName, value: right };
     const loser = left >= right ? { uid: row.user2, name: rightName, value: right } : { uid: row.user1, name: leftName, value: left };
     return { winner, loser, margin: Math.abs(left - right) };
   });
+  if (!pairs.length) return null;
 
-  const ranked = [...weekly.teams].sort((a, b) => valueOf(b) - valueOf(a));
+  const ranked = pairs.flatMap(game => [game.winner, game.loser]).sort((a, b) => b.value - a.value);
   const king = ranked[0];
   if (!king) return null;
   const blowout = [...pairs].sort((a, b) => b.margin - a.margin)[0] || null;
   const pain = [...pairs].sort((a, b) => b.loser.value - a.loser.value)[0]?.loser || null;
   const bench = [...weekly.teams].filter(team => num(team.pointsOnBench) > 0)
     .sort((a, b) => num(b.pointsOnBench) - num(a.pointsOnBench))[0] || null;
-  const label = final ? "MONDAY AFTERMATH" : "SUNDAY AFTERMATH";
-  const status = final ? "FINAL" : "PRE-MNF · LIVE";
+  const low = ranked.at(-1) || null;
+  const labels = new Map();
+  const tag = (uid, label) => {
+    if (uid == null) return;
+    const id = key(uid), list = labels.get(id) || [];
+    if (!list.includes(label)) list.push(label);
+    labels.set(id, list);
+  };
+  tag(king?.uid, "HONOR ROLL");
+  tag(blowout?.winner.uid, "ASS KICKING");
+  tag(blowout?.loser.uid, "BODY BAG");
+  tag(pain?.uid, "ROBBED");
+  tag(low?.uid, "SEE ME AFTER CLASS");
+  tag(bench?.sleeper_user_id, "BENCH CRIMINAL");
 
-  const card = {
-    label, status, season: Number(weekly.season), week: Number(weekly.week),
-    title: final ? `WEEK ${Number(weekly.week)} REPORT CARD` : label,
-    king: { name: king.team_name || teamName(members, king.sleeper_user_id), value: valueOf(king) },
-    final,
+  const games = pairs.map((game, index) => ({
+    winner: game.winner, loser: game.loser, margin: one(game.margin),
+    winnerLabels: labels.get(key(game.winner.uid)) || [],
+    loserLabels: labels.get(key(game.loser.uid)) || [],
+    roast: gameRoast(game, `${weekly.season}:${weekly.week}:${index}:${game.winner.uid}:${game.loser.uid}`),
+  }));
+
+  return {
+    label: "WEEK RECAP", status: "FINAL", season: Number(weekly.season), week: Number(weekly.week),
+    title: `WEEK ${Number(weekly.week)} RECAP`,
+    king: { name: king.name, value: king.value },
+    final: true, games,
     blowout: blowout ? { winner: blowout.winner.name, loser: blowout.loser.name, margin: one(blowout.margin) } : null,
     pain: pain ? { name: pain.name, value: pain.value } : null,
     bench: bench ? { name: bench.team_name || teamName(members, bench.sleeper_user_id), value: one(bench.pointsOnBench) } : null,
   };
-  card.takes = savageTakes(card);
-  return card;
 }
 
 function caps(ctx, text, x, y, color = SHARE_INK.MUTED, size = 25, align = "center") {
@@ -147,9 +125,9 @@ function caps(ctx, text, x, y, color = SHARE_INK.MUTED, size = 25, align = "cent
   ctx.fillText(String(text).toUpperCase(), x, y);
 }
 
-function fitDisplay(ctx, text, x, y, maxWidth, size, weight = 800) {
+function fitDisplay(ctx, text, x, y, maxWidth, size, weight = 800, align = "center") {
   let px = size;
-  ctx.textAlign = "center";
+  ctx.textAlign = align;
   do {
     ctx.font = `${weight} ${px}px ${DISPLAY}`;
     if (ctx.measureText(text).width <= maxWidth || px <= 12) break;
@@ -185,16 +163,6 @@ function wrapCentered(ctx, text, x, y, maxWidth, size = 27, lineHeight = 31, max
   lines.forEach((row, index) => ctx.fillText(row, x, y + index * lineHeight));
 }
 
-function award(ctx, { x, y, w, label, name, value, detail, accent }) {
-  rule(ctx, x, y, x + w, accent, 4);
-  caps(ctx, label, x + w / 2, y + 48, SHARE_INK.MUTED, 23);
-  ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, String(name).toUpperCase(), x + w / 2, y + 105, w - 30, 42, 800);
-  ctx.fillStyle = SHARE_INK.GOLD;
-  fitDisplay(ctx, value, x + w / 2, y + 184, w - 30, 74, 800);
-  caps(ctx, detail, x + w / 2, y + 226, SHARE_INK.MUTED, 20);
-}
-
 export function aftermathCanvas(card) {
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -220,49 +188,51 @@ export function aftermathCanvas(card) {
 
   rule(ctx, 100, 69, 250, SHARE_INK.CREST_RED, 3);
   rule(ctx, 830, 69, 980, SHARE_INK.CREST_BLUE, 3);
-  caps(ctx, `DFL HQ · ${card.label} · ${card.status}`, W / 2, 80, SHARE_INK.INK, 23);
+  caps(ctx, `DFL HQ · ${card.season} SEASON · FINAL`, W / 2, 75, SHARE_INK.INK, 22);
 
   ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, card.title || card.label, W / 2, 195, 960, 94, 800);
-  rule(ctx, 420, 235, 660, SHARE_INK.GOLD, 5);
+  fitDisplay(ctx, card.title || card.label, W / 2, 158, 960, 80, 800);
+  caps(ctx, "EVERY GAME · SELECTIVE DISRESPECT", W / 2, 198, SHARE_INK.MUTED, 20);
+  rule(ctx, 70, 220, 1010, SHARE_INK.GOLD, 4);
 
-  caps(ctx, card.final ? "HONOR ROLL · TOP SCORE" : "WEEK'S PROJECTED KING", W / 2, 292, SHARE_INK.INK, 30);
-  ctx.fillStyle = SHARE_INK.GOLD;
-  fitDisplay(ctx, score(card.king.value), W / 2, 485, 820, 182, 800);
-  ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, String(card.king.name).toUpperCase(), W / 2, 560, 900, 62, 800);
+  const games = (card.games || []).slice(0, 6);
+  const rowHeight = 124;
+  games.forEach((game, index) => {
+    const top = 232 + index * rowHeight;
+    if (index) rule(ctx, 70, top - 7, 1010, SHARE_INK.LINE, 2);
+    caps(ctx, `GAME ${index + 1}`, 70, top + 22, SHARE_INK.MUTED, 17, "left");
+    const winnerTags = game.winnerLabels?.join(" · ") || "W";
+    const loserTags = game.loserLabels?.join(" · ") || "L";
+    caps(ctx, winnerTags, 180, top + 22, SHARE_INK.CREST_RED, 16, "left");
+    caps(ctx, loserTags, 610, top + 22, SHARE_INK.CREST_BLUE, 16, "left");
 
-  ctx.fillStyle = SHARE_INK.MUTED;
-  wrapCentered(ctx, activeTake(card)?.headline || "THE GROUP CHAT WILL HANDLE THE REST.", W / 2, 603, 900, 25, 29, 2);
-
-  const left = card.blowout || { winner: "NO MATCHUP DATA", loser: "", margin: 0 };
-  const right = card.pain || { name: "NO MATCHUP DATA", value: 0 };
-  award(ctx, {
-    x: 70, y: 672, w: 440, label: card.final ? "ASS-KICKING OF THE WEEK" : "BIGGEST PROJECTED GAP", name: left.winner,
-    value: `+${score(left.margin)}`, detail: left.loser ? `OVER ${left.loser}` : "WAITING ON SCORES", accent: SHARE_INK.CREST_RED,
+    ctx.fillStyle = SHARE_INK.INK;
+    fitDisplay(ctx, String(game.winner.name).toUpperCase(), 70, top + 58, 315, 31, 800, "left");
+    ctx.fillStyle = SHARE_INK.GOLD;
+    fitDisplay(ctx, score(game.winner.value), 485, top + 58, 92, 34, 800, "right");
+    caps(ctx, "BEAT", 540, top + 55, SHARE_INK.MUTED, 15);
+    ctx.fillStyle = SHARE_INK.INK;
+    fitDisplay(ctx, String(game.loser.name).toUpperCase(), 610, top + 58, 285, 31, 800, "left");
+    ctx.fillStyle = SHARE_INK.MUTED;
+    fitDisplay(ctx, score(game.loser.value), 1010, top + 58, 92, 34, 800, "right");
+    ctx.fillStyle = SHARE_INK.MUTED;
+    wrapCentered(ctx, game.roast, W / 2, top + 94, 900, 19, 22, 1);
   });
-  award(ctx, {
-    x: 570, y: 672, w: 440, label: card.final ? "WASTED EFFORT AWARD" : "PAIN WATCH", name: right.name,
-    value: score(right.value), detail: card.pain ? (card.final ? "LOST WITH THIS SCORE" : "PROJECTED TO LOSE") : "WAITING ON SCORES", accent: SHARE_INK.CREST_BLUE,
-  });
 
-  rule(ctx, 70, 925, 1010, SHARE_INK.GOLD, 2);
-  const benchName = card.bench?.name || "NO BENCH WARRANT YET";
-  const benchValue = card.bench ? `${score(card.bench.value)} LEFT BEHIND` : "LINEUPS LOOK CLEAN";
-  caps(ctx, `${card.final ? "DETENTION" : "BENCH WARRANT"} · ${benchName} · ${benchValue}`, W / 2, 968, SHARE_INK.INK, 24);
+  if (!games.length) caps(ctx, "NO COMPLETED MATCHUPS FOUND", W / 2, 560, SHARE_INK.MUTED, 28);
   caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1022, SHARE_INK.MUTED, 21);
   return canvas;
 }
 
 export function aftermathText(card) {
-  const measure = card.final ? "scoring" : "projection";
-  return `${card.title || card.label}: ${card.king.name} leads Week ${card.week} ${measure} at ${score(card.king.value)}. ${activeTake(card)?.headline || ""} ${card.status}.`.replace(/\s+/g, " ").trim();
+  const games = (card.games || []).map(game => `${game.winner.name} ${score(game.winner.value)} beat ${game.loser.name} ${score(game.loser.value)}`);
+  return `${card.title || card.label}: ${games.join("; ")}.`.replace(/\s+/g, " ").trim();
 }
 
 export function shareAftermath(card) {
   if (!card) return "failed";
   try {
-    return shareCanvas(aftermathCanvas(card), `dfl-${card.label.toLowerCase().replace(/\s+/g, "-")}-week-${card.week}.png`, {
+    return shareCanvas(aftermathCanvas(card), `dfl-week-${card.week}-recap.png`, {
       title: `DFL HQ — ${card.title || card.label}`,
       text: aftermathText(card),
     });

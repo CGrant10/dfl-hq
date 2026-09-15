@@ -62,7 +62,7 @@ describe("Home clubhouse", () => {
     expect(clubhouseCard(view)).toContain("SUNDAY · GAME DAY");
   });
 
-  it("offers the Sunday aftermath share when weekly data is ready", () => {
+  it("keeps Monday's cold open clean without forcing an aftermath panel", () => {
     const weekly = { season: 2026, week: 1, teams: [
       { sleeper_user_id: "u1", team_name: "Alpha", projection: 120, pointsOnBench: 8 },
       { sleeper_user_id: "u2", team_name: "Beta", projection: 110, pointsOnBench: 2 },
@@ -72,11 +72,11 @@ describe("Home clubhouse", () => {
     ] };
     const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-14T08:00:00") });
     const html = clubhouseCard(view);
-    expect(html).toContain("SUNDAY AFTERMATH");
-    expect(html).toContain("data-clubhouse-share");
-    expect(html).toContain("aftermath-dashboard");
-    expect(html).toContain("PROJECTED KING");
-    expect(html).toContain("BENCH CRIME");
+    expect(view.aftermath).toBeNull();
+    expect(html).toContain("DFL COLD OPEN");
+    expect(html).toContain("clubhouse-story");
+    expect(html).not.toContain("data-clubhouse-share");
+    expect(html).not.toContain("aftermath-dashboard");
   });
 
   it("renders Tuesday's completed-week report card while current tools stay on the new week", () => {
@@ -93,26 +93,12 @@ describe("Home clubhouse", () => {
     ] };
     const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly: current,
       aftermathWeekly: report, now: new Date("2026-09-15T08:00:00") });
-    expect(view.aftermath).toMatchObject({ week: 1, title: "WEEK 1 REPORT CARD", final: true });
+    expect(view.aftermath).toMatchObject({ week: 1, title: "WEEK 1 RECAP", final: true });
     const html = clubhouseCard(view);
-    expect(html).toContain("WEEK 1 REPORT CARD");
-    expect(html).toContain("HONOR ROLL");
-    expect(html).toContain("ASS KICKING");
-    expect(html).toContain("DETENTION");
-  });
-
-  it("escapes team names inside the expanded aftermath dashboard", () => {
-    const weekly = { season: 2026, week: 1, teams: [
-      { sleeper_user_id: "u1", team_name: "<img onerror=alert(1)>", projection: 120, pointsOnBench: 8 },
-      { sleeper_user_id: "u2", team_name: "Beta", projection: 110, pointsOnBench: 2 },
-    ] };
-    const currentLore = { matchups: [
-      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 80, score2: 72 },
-    ] };
-    const changed = { ...analysis, teams: analysis.teams.map((team, index) => index ? team : { ...team, team_name: "<img onerror=alert(1)>" }) };
-    const html = clubhouseCard(clubhouseView({ analysis: changed, lore: currentLore, members, meSleeperId: "u1", weekly, now: new Date("2026-09-14T08:00:00") }));
-    expect(html).toContain("&lt;img onerror=alert(1)&gt;");
-    expect(html).not.toContain("<img onerror=alert(1)>");
+    expect(html).toContain("DFL COLD OPEN");
+    expect(html).toContain("GENERATE WEEK RECAP");
+    expect(html).toContain("clubhouse-story");
+    expect(html).not.toContain("aftermath-dashboard");
   });
 
   it("uses current Sleeper weekly projections to rank the league", () => {

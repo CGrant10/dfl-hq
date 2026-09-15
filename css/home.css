@@ -57,28 +57,9 @@
   transform: translateX(-120%);
   animation: clubhouse-sheen 8s 1.2s infinite var(--ease);
 }
-.clubhouse.has-aftermath {
-  min-height: 390px;
-  border-color: color-mix(in srgb, var(--accent-2) 44%, var(--line));
-  background:
-    radial-gradient(70% 130% at 0% 0%, color-mix(in srgb, var(--accent-fill) 34%, transparent), transparent 70%),
-    radial-gradient(70% 140% at 100% 100%, color-mix(in srgb, var(--accent-2-fill) 36%, transparent), transparent 72%),
-    linear-gradient(140deg, color-mix(in srgb, var(--bg-2) 96%, white 4%), var(--bg));
-  box-shadow: var(--e-3, var(--e-2));
-}
-.clubhouse.has-aftermath::before {
-  content: ""; position: absolute; z-index: -1; inset: 34px 0 0 48%; pointer-events: none;
-  background: url("../icons/dfl-seal-heritage-512.webp") center / min(72vw, 430px) no-repeat;
-  opacity: .035;
-}
-.clubhouse.has-aftermath::after {
-  inset: 0 0 auto; height: 5px; transform: none; animation: none;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2) 34%, var(--text) 67%, var(--bg-3));
-}
 .clubhouse-load { min-height: 190px; display: grid; place-content: center; justify-items: center; gap: var(--s-3); color: var(--muted); letter-spacing: var(--ls-caps); font-size: var(--fs-label); }
 .clubhouse-load span { width: 42px; height: 3px; border-radius: var(--r-pill); background: var(--accent-sweep); animation: clubhouse-load 1s infinite alternate var(--ease); }
 .clubhouse-frame { min-height: 190px; display: flex; flex-direction: column; animation: clubhouse-in var(--t-slow) both var(--ease); }
-.clubhouse-frame.is-aftermath { min-height: 390px; }
 .clubhouse-frame > header {
   min-height: 39px; display: flex; align-items: center; justify-content: space-between; gap: var(--s-2);
   padding: 0 var(--s-4); border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
@@ -121,44 +102,6 @@
 .clubhouse-side strong { display: block; font-size: clamp(1.6rem, 7vw, 2.6rem); line-height: 1; font-variant-numeric: tabular-nums; }
 .clubhouse-side.is-winner strong { color: var(--accent-2); }
 .clubhouse-vs { color: var(--muted); font-size: var(--fs-label); }
-.aftermath-dashboard {
-  position: relative; flex: 1; display: grid; align-content: center; gap: var(--s-5);
-  padding: var(--s-5) var(--s-4) var(--s-6);
-}
-.aftermath-lead { max-width: 820px; }
-.aftermath-edition {
-  display: block; width: max-content; margin-bottom: var(--s-3); padding: 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--accent-2) 48%, transparent); border-radius: var(--r-pill);
-  color: var(--accent-2); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
-}
-.aftermath-lead h2 {
-  max-width: 800px; margin: 0; font-family: var(--font-display); font-size: clamp(2rem, 7vw, 4.35rem);
-  line-height: .9; letter-spacing: var(--ls-tight); text-transform: uppercase; text-wrap: balance;
-}
-.aftermath-lead p { max-width: 720px; margin: var(--s-3) 0 0; color: var(--body-text); line-height: var(--lh-snug); }
-.aftermath-grid {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; overflow: hidden;
-  border: 1px solid var(--line-soft); border-radius: var(--r-md); background: var(--line-soft);
-}
-.aftermath-stat { min-width: 0; padding: var(--s-3) var(--s-4); background: color-mix(in srgb, var(--bg-2) 92%, transparent); box-shadow: inset 0 3px var(--line); }
-.aftermath-stat.is-king { box-shadow: inset 0 3px var(--accent-2); }
-.aftermath-stat.is-gap { box-shadow: inset 0 3px var(--accent); }
-.aftermath-stat.is-bench { box-shadow: inset 0 3px var(--body-text); }
-.aftermath-stat small { display: block; color: var(--muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
-.aftermath-stat strong { display: block; margin-top: 5px; color: var(--text); font-family: var(--font-display); font-size: clamp(1.55rem, 5vw, 2.7rem); line-height: 1; font-variant-numeric: tabular-nums; }
-.aftermath-stat.is-king strong { color: var(--accent-2); }
-.aftermath-stat span { display: block; overflow: hidden; margin-top: 4px; color: var(--body-text); font-size: var(--fs-micro); font-weight: var(--fw-bold); text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 560px) {
-  .clubhouse.has-aftermath, .clubhouse-frame.is-aftermath { min-height: 440px; }
-  .aftermath-dashboard { gap: var(--s-4); }
-  .aftermath-grid { grid-template-columns: 1fr; }
-  .aftermath-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: var(--s-3); padding: var(--s-2) var(--s-3); box-shadow: inset 3px 0 var(--line); }
-  .aftermath-stat.is-king { box-shadow: inset 3px 0 var(--accent-2); }
-  .aftermath-stat.is-gap { box-shadow: inset 3px 0 var(--accent); }
-  .aftermath-stat.is-bench { box-shadow: inset 3px 0 var(--body-text); }
-  .aftermath-stat strong { grid-row: 1 / span 2; grid-column: 2; margin: 0; }
-  .aftermath-stat span { grid-column: 1; }
-}
 @media (min-width: 660px) {
   .clubhouse-story { grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); padding: var(--s-6); }
   .clubhouse-copy h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
