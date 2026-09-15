@@ -15,6 +15,7 @@ import { renderSleeperPanel } from "./admin_sleeper.js";
 import { renderFinancePanel } from "./admin_finance.js";
 import { renderKeeperRulesPanel } from "./admin_keepers.js";
 import { renderNotificationPanel } from "./admin_notifications.js";
+import { renderPerformancePanel } from "./admin_performance.js";
 import { esc, toast } from "../ui.js";
 import { ensureBroadcastStyles } from "../lazy-css.js";
 /* Admin screens are styled by admin.css, which broadcast.css @imports. */
@@ -29,6 +30,7 @@ const PANELS = [
   { id: "finances", tab: "Fees", permission: "fees", render: renderFinancePanel },
   { id: "keepers", tab: "Keeper rules", permission: "keepers", render: renderKeeperRulesPanel },
   { id: "sleeper", tab: "Sleeper", permission: "sleeper", render: renderSleeperPanel },
+  { id: "performance", tab: "Performance", permission: "sleeper", render: renderPerformancePanel },
   { id: "broadcast", tab: "Broadcast", permission: "broadcast", render: renderBroadcastPanel },
   { id: "notifications", tab: "Notifications", permission: "broadcast", render: renderNotificationPanel },
   /* The ticker is the same job as the slides, so it answers to the same

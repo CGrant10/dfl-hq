@@ -194,6 +194,7 @@ const setRouteCanvas = color => {
   scrolling the new page, or publishing a route-complete notification.
 */
 export async function renderRoute() {
+  const routeStarted = performance.now();
   const epoch = ++renderEpoch;
   const name = currentRoute();
   const expectedHash = location.hash;
@@ -254,6 +255,7 @@ export async function renderRoute() {
     view.classList.add("page-in");
   }
   for (const fn of listeners) { try { fn(name); } catch (err) { console.warn(err); } }
+  window.dispatchEvent(new CustomEvent("dfl:route-performance", { detail: { route: name, duration: performance.now() - routeStarted } }));
   announceReady();
 }
 

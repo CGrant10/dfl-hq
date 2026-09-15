@@ -241,6 +241,8 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give 
      connection: the ticker alone repeats five dashboard reads. Let the first
      route settle, then start presence, updates, notifications and PWA caching. */
   window.addEventListener("dfl:app-ready", () => {
+    const readyAt=performance.now();
+    void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});
     startPresence();
     void startBottomline(currentRoute);
     setupUpdates();

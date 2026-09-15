@@ -173,6 +173,16 @@ describe("the initial app shell", () => {
     }
   });
 
+  it("keeps anonymous performance tracking off the critical path", () => {
+    const app = fs.readFileSync("js/app.js", "utf8");
+    const tracker = fs.readFileSync("js/performance.js", "utf8");
+    expect(app).toContain('import("./performance.js")');
+    expect(app).not.toMatch(/^import .*performance\.js/m);
+    expect(tracker).not.toContain("currentMember");
+    expect(tracker).not.toContain("member_id");
+    expect(tracker).toContain('rpc("record_app_performance"');
+  });
+
   it("does not precache the update-only stadium artwork", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
     const shell = worker.slice(worker.indexOf("const APP_SHELL"), worker.indexOf("const SHELL_URLS"));
