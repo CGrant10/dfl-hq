@@ -323,7 +323,7 @@ export async function render(view) {
       standings: standings.data || [],
       weekly, aftermathWeekly,
     });
-    if (clubhouse) wireClubhouse(slot, clubhouse);
+    if (clubhouse?.aftermath?.final) wireClubhouse(slot, clubhouse);
     else slot.remove();
     const moveSlot = view.querySelector("[data-next-move]");
     if (moveSlot?.isConnected) {

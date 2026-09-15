@@ -36,7 +36,7 @@
 #home-wrap .home-lower > * { margin-top: 0; margin-bottom: 0; }
 
 /* ---------------------------------------------------------------------
-   THE COLD OPEN - one changing league take, not another dashboard stack.
+   THE WEEKLY REPORT - one completed-week story, no rotating cold open.
    --------------------------------------------------------------------- */
 .clubhouse {
   position: relative;
@@ -79,11 +79,53 @@
   border-radius: var(--r-pill);
 }
 .clubhouse-actions [data-clubhouse-share]:hover { border-color: var(--accent-2); color: var(--text); }
+.weekly-report > header [data-clubhouse-share] {
+  min-height: 30px; padding: 0 var(--s-3);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 58%, transparent);
+  border-radius: var(--r-pill); color: var(--accent-2);
+}
+.weekly-report-body { padding: var(--s-5); }
+.weekly-report-kicker {
+  display: block; color: var(--accent); font-size: var(--fs-micro);
+  font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
+}
+.weekly-report-body h2 {
+  margin: 5px 0 0; font-family: var(--font-display);
+  font-size: clamp(1.8rem, 7vw, 3rem); line-height: .95; letter-spacing: var(--ls-tight);
+}
+.weekly-report-story {
+  max-width: 850px; margin: var(--s-3) 0 var(--s-5); color: var(--text);
+  font-size: clamp(1rem, 2.5vw, 1.14rem); font-weight: var(--fw-medium); line-height: 1.5;
+}
+.weekly-report-story strong { color: var(--accent-2); font-weight: var(--fw-bold); }
+.weekly-report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.weekly-report-highlight {
+  min-width: 0; padding: var(--s-3) var(--s-4); border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--text); border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--bg-2) 92%, white 8%);
+}
+.weekly-report-highlight.is-gold { border-left-color: var(--accent-2); }
+.weekly-report-highlight.is-red { border-left-color: var(--accent); }
+.weekly-report-highlight small {
+  display: block; color: var(--body-text); font-size: var(--fs-micro);
+  font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
+}
+.weekly-report-highlight > strong {
+  display: block; margin-top: 4px; overflow: hidden; color: var(--text);
+  font-family: var(--font-display); font-size: var(--fs-h3); line-height: 1.05;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.weekly-report-highlight > span {
+  display: block; margin-top: 6px; color: var(--text); font-size: var(--fs-small);
+  font-weight: var(--fw-semi); line-height: var(--lh-snug);
+}
 @media (max-width: 430px) {
   .clubhouse-frame > header { padding-inline: var(--s-3); }
   .clubhouse-actions { gap: var(--s-2); }
   .clubhouse-actions [data-clubhouse-share] { padding-inline: 7px; }
   .clubhouse-frame > header button { font-size: 9px; }
+  .weekly-report-body { padding: var(--s-4); }
+  .weekly-report-grid { grid-template-columns: 1fr; gap: var(--s-2); }
 }
 .clubhouse-story {
   position: relative; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4);

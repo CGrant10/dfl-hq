@@ -285,44 +285,54 @@ export function clubhouseView({ analysis, lore, members = [], meSleeperId = null
 }
 
 export function clubhouseShell() {
-  return `<section class="clubhouse is-loading" data-clubhouse aria-live="polite"><div class="clubhouse-load"><span></span><strong>OPENING THE CLUBHOUSE</strong></div></section>`;
+  return `<section class="clubhouse is-loading" data-clubhouse aria-live="polite"><div class="clubhouse-load"><span></span><strong>BUILDING THE WEEKLY REPORT</strong></div></section>`;
 }
 
-function storyHtml(story, index, total) {
-  const sides = story.sides ? `<div class="clubhouse-matchup">${story.sides.map((side, sideIndex) => `<div class="clubhouse-side ${side.winner ? "is-winner" : ""}"><small>${esc(side.name)}</small><strong>${esc(side.score)}</strong></div>${sideIndex === 0 ? `<b class="clubhouse-vs">VS</b>` : ""}`).join("")}</div>` : "";
-  return `<a class="clubhouse-story" href="${story.href || "#/analyzer"}" data-clubhouse-story>
-    <div class="clubhouse-copy"><span class="clubhouse-kicker">${esc(story.label)}</span><h2>${esc(story.headline)}</h2><p>${esc(story.detail)}</p></div>${sides}
-    <span class="clubhouse-count">${index + 1} / ${total}</span>
-  </a>`;
+function storyWithTeamNames(story, teamNames = []) {
+  const names = [...new Set(teamNames.map(name => String(name || "").trim()).filter(Boolean))]
+    .sort((a, b) => b.length - a.length);
+  if (!names.length) return esc(story);
+  const upper = String(story).toUpperCase();
+  let cursor = 0, html = "";
+  while (cursor < story.length) {
+    let hit = null;
+    for (const name of names) {
+      const at = upper.indexOf(name.toUpperCase(), cursor);
+      if (at >= 0 && (!hit || at < hit.at || (at === hit.at && name.length > hit.name.length))) hit = { at, name };
+    }
+    if (!hit) { html += esc(story.slice(cursor)); break; }
+    html += esc(story.slice(cursor, hit.at));
+    html += `<strong>${esc(story.slice(hit.at, hit.at + hit.name.length))}</strong>`;
+    cursor = hit.at + hit.name.length;
+  }
+  return html;
 }
 
-export function clubhouseCard(view, index = view?.start || 0) {
-  if (!view?.stories?.length) return "";
-  const safeIndex = ((index % view.stories.length) + view.stories.length) % view.stories.length;
-  const billing = view.gameDay ? "SUNDAY · GAME DAY" : "DFL COLD OPEN";
-  const share = view.aftermath?.final ? `<button type="button" data-clubhouse-share>GENERATE WEEK RECAP</button>` : "";
-  return `<div class="clubhouse-frame ${view.gameDay ? "is-gameday" : ""}" data-clubhouse-index="${safeIndex}">
-    <header><span><i></i>${billing}</span><span class="clubhouse-actions">${share}<button type="button" data-clubhouse-next aria-label="Show another league take">NEXT TAKE <b>→</b></button></span></header>
-    ${storyHtml(view.stories[safeIndex], safeIndex, view.stories.length)}
+export function clubhouseCard(view) {
+  const report = view?.aftermath;
+  if (!report?.final) return "";
+  const highlights = (report.highlights || []).slice(0, 4);
+  const teamNames = (report.games || []).flatMap(game => [game.winner?.name, game.loser?.name]);
+  return `<div class="clubhouse-frame weekly-report">
+    <header><span><i></i>WEEK ${esc(report.week)} · FINAL REPORT</span><button type="button" data-clubhouse-share>SHARE REPORT</button></header>
+    <section class="weekly-report-body">
+      <span class="weekly-report-kicker">THE HIGHS · THE LOWS · THE BAD DECISIONS</span>
+      <h2>${esc(report.title || `WEEK ${report.week} RECAP`)}</h2>
+      <p class="weekly-report-story">${storyWithTeamNames(report.story || "The league survived another week. Barely.", teamNames)}</p>
+      <div class="weekly-report-grid">${highlights.map(item => `<article class="weekly-report-highlight is-${esc(item.tone || "ink")}">
+        <small>${esc(item.label)}</small><strong>${esc(item.title)}</strong><span>${esc(item.detail)}</span>
+      </article>`).join("")}</div>
+    </section>
   </div>`;
 }
 
 export function wireClubhouse(root, view) {
-  const draw = next => {
-    root.innerHTML = clubhouseCard(view, next);
-    const frame = root.querySelector("[data-clubhouse-index]");
-    root.classList.remove("is-loading");
-    root.classList.toggle("is-gameday", Boolean(view.gameDay));
-    root.querySelector("[data-clubhouse-next]")?.addEventListener("click", event => {
-      event.preventDefault(); event.stopPropagation();
-      draw(num(frame?.dataset.clubhouseIndex) + 1);
-    });
-    root.querySelector("[data-clubhouse-share]")?.addEventListener("click", event => {
-      event.preventDefault(); event.stopPropagation();
-      const outcome = shareAftermath(view.aftermath);
-      if (outcome === "saved") toast("Week recap saved to your downloads");
-      if (outcome === "failed") toast("Could not share the week recap", true);
-    });
-  };
-  draw(view.start);
+  root.innerHTML = clubhouseCard(view);
+  root.classList.remove("is-loading", "is-gameday");
+  root.querySelector("[data-clubhouse-share]")?.addEventListener("click", event => {
+    event.preventDefault(); event.stopPropagation();
+    const outcome = shareAftermath(view.aftermath);
+    if (outcome === "saved") toast("Week recap saved to your downloads");
+    if (outcome === "failed") toast("Could not share the week recap", true);
+  });
 }
