@@ -20,25 +20,26 @@ const lore = { matchups: [
 ] };
 
 describe("weekly aftermath", () => {
-  it("builds Tuesday's shareable recap from every final matchup", () => {
+  it("turns Tuesday's completed slate into a story and four strong highlights", () => {
     const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-15T08:00:00") });
     expect(card.label).toBe("WEEK RECAP");
     expect(card.title).toBe("WEEK 1 RECAP");
     expect(card.status).toBe("FINAL");
     expect(card.king).toEqual({ name: "Delta", value: 142 });
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 21 });
+    expect(card.closest).toEqual({ winner: "Delta", loser: "Gamma", margin: 2 });
     expect(card.games).toHaveLength(2);
-    expect(card.games[0]).toMatchObject({
-      winner: { name: "Alpha", value: 120 }, loser: { name: "Beta", value: 99 },
-      winnerLabels: ["ASS KICKING"], loserLabels: ["BODY BAG", "SEE ME AFTER CLASS"],
-    });
-    expect(card.games[1]).toMatchObject({
-      winner: { name: "Delta", value: 142 }, loser: { name: "Gamma", value: 140 },
-      winnerLabels: ["HONOR ROLL"], loserLabels: ["ROBBED", "BENCH CRIMINAL"],
-    });
-    expect(card.games.every(game => game.roast.length > 20)).toBe(true);
-    expect(aftermathText(card)).toContain("Alpha 120.00 beat Beta 99.00");
-    expect(aftermathText(card)).toContain("Delta 142.00 beat Gamma 140.00");
+    expect(card.highlights).toEqual([
+      { label: "TOP DOG", title: "Delta", detail: "142.00 PTS · WEEK'S HIGH", tone: "gold" },
+      { label: "CRIME SCENE", title: "Alpha", detail: "21.00-POINT WIN OVER Beta", tone: "red" },
+      { label: "HEARTBREAKER", title: "Gamma", detail: "LOST BY 2.00 TO Delta", tone: "ink" },
+      { label: "BENCH FELONY", title: "Gamma", detail: "31.40 POINTS LEFT TO ROT", tone: "red" },
+    ]);
+    expect(card.story).toContain("Delta");
+    expect(card.story).toContain("Alpha");
+    expect(card.story).toContain("Gamma");
+    expect(aftermathText(card)).toContain(card.story);
+    expect(aftermathText(card)).not.toContain("Alpha 120.00 beat Beta 99.00");
   });
 
   it("only offers the completed recap on Tuesday", () => {
