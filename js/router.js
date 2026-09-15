@@ -26,7 +26,15 @@ const routes = {
     return page;
   },
   sportsbook:() => import("./pages/sportsbook.js"),
-  broadcast:() => import("./pages/broadcast.js"),
+  /* The Safari scenery helper installs global resize/hash listeners. Only a
+     Broadcast viewer needs it, so keep it out of every ordinary launch. */
+  broadcast:async () => {
+    const [page] = await Promise.all([
+      import("./pages/broadcast.js"),
+      import("./arena/mobile-broadcast-performance.js"),
+    ]);
+    return page;
+  },
   calendar: () => import("./pages/calendar.js"),
   history:  () => import("./pages/history.js"),
   facts:    () => import("./pages/facts.js"),
@@ -153,6 +161,12 @@ function spectatorArenaLinks(view, name) {
 }
 
 let renderEpoch = 0;
+let announcedReady = false;
+function announceReady() {
+  if (announcedReady) return;
+  announcedReady = true;
+  requestAnimationFrame(() => window.dispatchEvent(new Event("dfl:app-ready")));
+}
 const setRouteCanvas = color => {
   document.documentElement.style.background = color;
   if (document.body) document.body.style.background = color;
@@ -226,6 +240,7 @@ export async function renderRoute() {
     view.classList.add("page-in");
   }
   for (const fn of listeners) { try { fn(name); } catch (err) { console.warn(err); } }
+  announceReady();
 }
 
 let lastAnimated = null;

@@ -1,7 +1,6 @@
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
-import "./arena/mobile-broadcast-performance.js";
 import { APP_VERSION } from "./config.js";
 import { getUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
@@ -16,7 +15,7 @@ import { paintBottomline, startBottomline } from "./bottomline.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { setupNotifyNudge } from "./notify-nudge.js";
-import { esc, toast } from "./ui.js";
+import { esc, toast, loading } from "./ui.js";
 import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
 import { trapFocus } from "./focus-trap.js";
@@ -225,7 +224,7 @@ function moveTabIndicator(){
 window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();/* Aggregate only - presence.js never learns who anybody is. */startPresence();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   mountNotificationBell();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any

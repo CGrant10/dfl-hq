@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.246.15";
+const CACHE_NAME = "dfl-hq-v1.246.16";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./","./index.html","./manifest.json",
@@ -12,7 +12,10 @@ const APP_SHELL = [
      precache for an image the page never draws - only the OS reads it, at
      install time, when there is by definition a network. The splash mark and
      brand mark ARE drawn on first paint and were not cached at all. */
-  "./icons/dfl-seal-heritage-512.webp","./icons/dfl-seal-heritage-64.webp","./assets/dfl-update-stadium.png",
+  /* The 1.9MB update artwork is fetched and cached only if an update gate is
+     actually shown. Making every service-worker install download it delayed
+     normal releases and first visits for an image absent from the app shell. */
+  "./icons/dfl-seal-heritage-512.webp","./icons/dfl-seal-heritage-64.webp",
   "./icons/app-192.png","./icons/app-update-512.png","./icons/apple-touch-icon.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));

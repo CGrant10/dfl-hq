@@ -140,7 +140,25 @@ describe("the initial app shell", () => {
 
   it("does not keep the Broadcast blur poll alive outside Broadcast", () => {
     const source = fs.readFileSync("js/arena/mobile-broadcast-performance.js", "utf8");
+    const app = fs.readFileSync("js/app.js", "utf8");
+    const router = fs.readFileSync("js/router.js", "utf8");
     expect(source).toMatch(/if \(isPhoneBroadcast\(\)\) blurTimer = window\.setInterval/);
+    expect(app).not.toContain('import "./arena/mobile-broadcast-performance.js"');
+    expect(router).toContain('import("./arena/mobile-broadcast-performance.js")');
+  });
+
+  it("releases the splash when the first route is ready", () => {
+    const html = fs.readFileSync("index.html", "utf8");
+    const router = fs.readFileSync("js/router.js", "utf8");
+    expect(html).toContain('window.addEventListener("dfl:app-ready", finish');
+    expect(html).toContain("setTimeout(finish, 1200)");
+    expect(router).toContain('new Event("dfl:app-ready")');
+  });
+
+  it("does not precache the update-only stadium artwork", () => {
+    const worker = fs.readFileSync("sw.js", "utf8");
+    const shell = worker.slice(worker.indexOf("const APP_SHELL"), worker.indexOf("const SHELL_URLS"));
+    expect(shell).not.toContain("dfl-update-stadium.png");
   });
 
   it("keeps Pixi out of ordinary metadata consumers", () => {

@@ -21,6 +21,12 @@
   animation: dfl-splash-out 220ms var(--ease) 2.72s forwards;
 }
 
+/* JavaScript releases the splash as soon as the first route is actually
+   ready. This wins over the old theatrical timer, while keeping a clean fade. */
+#splash.is-ready {
+  animation: dfl-splash-out 160ms var(--ease) forwards !important;
+}
+
 #splash.is-full.is-hq .sp-rule {
   width: min(64vw, 330px);
   height: 5px;
