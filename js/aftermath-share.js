@@ -35,19 +35,28 @@ function pick(lines, seed) {
 function weeklyStory({ king, blowout, closest, bench }, seed) {
   const team = value => String(value || "Unknown").toUpperCase();
   const openings = [
-    `${team(king.name)} walked out with the weekly crown after dropping ${score(king.value)} points.`,
-    `${team(king.name)} owned the week with ${score(king.value)} points and will now be impossible to talk to.`,
-    `${team(king.name)} posted ${score(king.value)} points, grabbed first-class bragging rights, and left the rest of the league in coach.`,
+    `${team(king.name)} kicked the league's teeth in with ${score(king.value)} points. Everybody else can shut the hell up until waivers.`,
+    `${team(king.name)} dragged ${score(king.value)} points onto the scoreboard and made the rest of the league look like it drafted drunk.`,
+    `${team(king.name)} owned the week with ${score(king.value)} points. No notes—just a polite request for everyone else to get their shit together.`,
+    `${team(king.name)} dropped ${score(king.value)} points, and the scoreboard now legally qualifies as their bitch.`,
+    `${team(king.name)} posted ${score(king.value)} while the rest of the league managed lineups like unpaid dumbasses.`,
+    `${team(king.name)} was the week's final boss at ${score(king.value)}. Everybody else brought starter weapons and bullshit confidence.`,
   ];
   const beatings = blowout ? [
-    `${team(blowout.winner.name)} beat the brakes off ${team(blowout.loser.name)} by ${score(blowout.margin)}.`,
-    `${team(blowout.winner.name)} turned ${team(blowout.loser.name)}'s matchup into a public ass-whipping by ${score(blowout.margin)}.`,
-    `${team(blowout.loser.name)} lost to ${team(blowout.winner.name)} by ${score(blowout.margin)} and should avoid the group chat until Thursday.`,
+    `${team(blowout.winner.name)} beat the dogshit out of ${team(blowout.loser.name)} by ${score(blowout.margin)}.`,
+    `${team(blowout.winner.name)} turned ${team(blowout.loser.name)}'s matchup into a nationally televised ass-whipping by ${score(blowout.margin)}.`,
+    `${team(blowout.loser.name)} got waxed by ${team(blowout.winner.name)} by ${score(blowout.margin)} and should mute the damn group chat.`,
+    `${team(blowout.winner.name)} won by ${score(blowout.margin)} while ${team(blowout.loser.name)} submitted a lineup-shaped cry for help.`,
+    `${team(blowout.loser.name)} brought hope; ${team(blowout.winner.name)} brought a ${score(blowout.margin)}-point funeral. Holy shit.`,
+    `${team(blowout.winner.name)} slapped ${team(blowout.loser.name)} around by ${score(blowout.margin)} like the matchup owed them money.`,
   ] : [];
   const endings = closest ? [
-    `${team(closest.winner.name)} escaped ${team(closest.loser.name)} by ${score(closest.margin)}; meanwhile ${team(bench.name)} left ${score(bench.value)} points rotting on the bench.`,
-    `${team(closest.loser.name)} came within ${score(closest.margin)} of talking reckless, while ${team(bench.name)} committed ${score(bench.value)} points of bench malpractice.`,
-    `${team(closest.winner.name)} survived the week's closest mess by ${score(closest.margin)}. ${team(bench.name)}'s bench then filed a grievance over ${score(bench.value)} unused points.`,
+    `${team(closest.winner.name)} escaped ${team(closest.loser.name)} by ${score(closest.margin)}—the kind of loss that makes a grown ass man stare at stat corrections. ${team(bench.name)} also left ${score(bench.value)} points rotting on the bench like a dumbass.`,
+    `${team(closest.loser.name)} came within ${score(closest.margin)} of talking reckless and instead ate the most painful shit sandwich of the week. ${team(bench.name)} committed ${score(bench.value)} points of bench malpractice.`,
+    `${team(closest.winner.name)} survived by ${score(closest.margin)} while ${team(closest.loser.name)} got kicked directly in the fantasy nuts. ${team(bench.name)}'s bench filed a grievance over ${score(bench.value)} wasted points.`,
+    `${team(closest.loser.name)} lost by ${score(closest.margin)}, which is not a margin—it's a goddamn personal attack. Meanwhile ${team(bench.name)} wasted ${score(bench.value)} points on the bench.`,
+    `${team(closest.winner.name)} stole one by ${score(closest.margin)} and left ${team(closest.loser.name)} checking decimals like a conspiracy theorist. ${team(bench.name)} pissed away ${score(bench.value)} bench points.`,
+    `${team(closest.loser.name)} missed glory by ${score(closest.margin)}. That shit will haunt a lineup. ${team(bench.name)} then left ${score(bench.value)} points on the bench for absolutely no damn reason.`,
   ] : [];
   return [pick(openings, `${seed}:open`), pick(beatings, `${seed}:beat`), pick(endings, `${seed}:end`)].filter(Boolean).join(" ");
 }
@@ -93,11 +102,11 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
   const benchStar = bench ? { name: bench.team_name || teamName(members, bench.sleeper_user_id), value: one(bench.pointsOnBench) }
     : { name: low?.name || "Nobody", value: 0 };
   const highlightRows = [
-    { label: "TOP DOG", title: king.name, detail: `${score(king.value)} PTS · WEEK'S HIGH`, tone: "gold" },
-    blowout && { label: "CRIME SCENE", title: blowout.winner.name, detail: `${score(blowout.margin)}-POINT WIN OVER ${blowout.loser.name}`, tone: "red" },
-    closest && { label: "HEARTBREAKER", title: closest.loser.name, detail: `LOST BY ${score(closest.margin)} TO ${closest.winner.name}`, tone: "ink" },
-    { label: bench ? "BENCH FELONY" : "DETENTION", title: benchStar.name,
-      detail: bench ? `${score(benchStar.value)} POINTS LEFT TO ROT` : `${score(low?.value)} PTS · WEEK'S LOW`, tone: "red" },
+    { label: "WEEK'S FINAL BOSS", title: king.name, detail: `${score(king.value)} PTS · EAT SHIT, LEAGUE`, tone: "gold" },
+    blowout && { label: "PUBLIC EXECUTION", title: blowout.winner.name, detail: `${score(blowout.margin)}-PT ASS-WHIPPING · ${blowout.loser.name}`, tone: "red" },
+    closest && { label: "FUCKING BRUTAL", title: closest.loser.name, detail: `LOST BY ${score(closest.margin)} · ${closest.winner.name}`, tone: "ink" },
+    { label: bench ? "BENCH DUMBASS" : "WEEK'S DUMPSTER FIRE", title: benchStar.name,
+      detail: bench ? `${score(benchStar.value)} PTS WASTED · DUMBASS TAX` : `${score(low?.value)} PTS · ABSOLUTE SHITSHOW`, tone: "red" },
   ].filter(Boolean);
   const story = weeklyStory({ king, blowout, closest, bench: benchStar }, `${weekly.season}:${weekly.week}`);
   const games = pairs.map(game => ({ winner: game.winner, loser: game.loser, margin: two(game.margin) }));
@@ -196,10 +205,10 @@ export function aftermathCanvas(card) {
 
   ctx.fillStyle = SHARE_INK.INK;
   fitDisplay(ctx, card.title || card.label, W / 2, 158, 960, 80, 800);
-  caps(ctx, "THE HIGHS · THE LOWS · THE BAD DECISIONS", W / 2, 198, SHARE_INK.MUTED, 20);
+  caps(ctx, "NO MERCY · NO EXCUSES · JUST RECEIPTS", W / 2, 198, SHARE_INK.MUTED, 20);
   rule(ctx, 70, 220, 1010, SHARE_INK.GOLD, 4);
 
-  caps(ctx, "THE WEEK, IN ONE QUESTIONABLE PARAGRAPH", 70, 268, SHARE_INK.ACCENT, 18, "left");
+  caps(ctx, "THE WEEK, WITHOUT THE BULLSHIT", 70, 268, SHARE_INK.ACCENT, 18, "left");
   ctx.fillStyle = SHARE_INK.INK;
   wrapStory(ctx, card.story || "The league survived another week. Barely.", 70, 310, 940, 30, 39, 5);
 

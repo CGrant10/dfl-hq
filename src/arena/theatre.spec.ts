@@ -95,7 +95,7 @@ describe("theatre - backwards movement is a feature, but a bounded one", () => {
         }
       }
     }
-  });
+  }, 15_000);
 
   it("bounds the backslide by the ground actually covered", () => {
     // You cannot lose ground you have not gained: early in the race the

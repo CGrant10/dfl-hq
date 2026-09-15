@@ -30,14 +30,15 @@ describe("weekly aftermath", () => {
     expect(card.closest).toEqual({ winner: "Delta", loser: "Gamma", margin: 2 });
     expect(card.games).toHaveLength(2);
     expect(card.highlights).toEqual([
-      { label: "TOP DOG", title: "Delta", detail: "142.00 PTS · WEEK'S HIGH", tone: "gold" },
-      { label: "CRIME SCENE", title: "Alpha", detail: "21.00-POINT WIN OVER Beta", tone: "red" },
-      { label: "HEARTBREAKER", title: "Gamma", detail: "LOST BY 2.00 TO Delta", tone: "ink" },
-      { label: "BENCH FELONY", title: "Gamma", detail: "31.40 POINTS LEFT TO ROT", tone: "red" },
+      { label: "WEEK'S FINAL BOSS", title: "Delta", detail: "142.00 PTS · EAT SHIT, LEAGUE", tone: "gold" },
+      { label: "PUBLIC EXECUTION", title: "Alpha", detail: "21.00-PT ASS-WHIPPING · Beta", tone: "red" },
+      { label: "FUCKING BRUTAL", title: "Gamma", detail: "LOST BY 2.00 · Delta", tone: "ink" },
+      { label: "BENCH DUMBASS", title: "Gamma", detail: "31.40 PTS WASTED · DUMBASS TAX", tone: "red" },
     ]);
     expect(card.story).toContain("DELTA");
     expect(card.story).toContain("ALPHA");
     expect(card.story).toContain("GAMMA");
+    expect(card.story).toMatch(/ass|bitch|bullshit|damn|dogshit|dumbass|hell|shit/i);
     expect(aftermathText(card)).toContain(card.story);
     expect(aftermathText(card)).not.toContain("Alpha 120.00 beat Beta 99.00");
   });
@@ -57,8 +58,8 @@ describe("weekly aftermath", () => {
     const card = buildAftermath({ lore: staleLore, members: dreamMembers, weekly: freshWeekly,
       now: new Date("2026-09-15T08:00:00") });
     expect(card.closest).toEqual({ winner: "Sunday Scaries", loser: "Dream Enders", margin: 0.14 });
-    expect(card.highlights.find(item => item.label === "HEARTBREAKER")).toMatchObject({
-      title: "Dream Enders", detail: "LOST BY 0.14 TO Sunday Scaries",
+    expect(card.highlights.find(item => item.label === "FUCKING BRUTAL")).toMatchObject({
+      title: "Dream Enders", detail: "LOST BY 0.14 · Sunday Scaries",
     });
     expect(card.story).toContain("DREAM ENDERS");
   });

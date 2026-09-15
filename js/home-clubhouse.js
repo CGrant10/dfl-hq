@@ -316,7 +316,7 @@ export function clubhouseCard(view) {
   return `<div class="clubhouse-frame weekly-report">
     <header><span><i></i>WEEK ${esc(report.week)} · FINAL REPORT</span><button type="button" data-clubhouse-share>SHARE REPORT</button></header>
     <section class="weekly-report-body">
-      <span class="weekly-report-kicker">THE HIGHS · THE LOWS · THE BAD DECISIONS</span>
+      <span class="weekly-report-kicker">NO MERCY · NO EXCUSES · JUST RECEIPTS</span>
       <h2>${esc(report.title || `WEEK ${report.week} RECAP`)}</h2>
       <p class="weekly-report-story">${storyWithTeamNames(report.story || "The league survived another week. Barely.", teamNames)}</p>
       <div class="weekly-report-grid">${highlights.map(item => `<article class="weekly-report-highlight is-${esc(item.tone || "ink")}">
