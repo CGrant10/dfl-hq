@@ -8,10 +8,18 @@ const members = [
   { sleeper_user_id: "u4", team_name: "Delta" },
 ];
 const weekly = { season: 2026, week: 1, teams: [
-  { sleeper_user_id: "u1", team_name: "Alpha", projection: 164.82, actual: 120, complete: true, pointsOnBench: 4 },
-  { sleeper_user_id: "u2", team_name: "Beta", projection: 122.66, actual: 99, complete: true, pointsOnBench: 8 },
-  { sleeper_user_id: "u3", team_name: "Gamma", projection: 148.22, actual: 140, complete: true, pointsOnBench: 31.4 },
-  { sleeper_user_id: "u4", team_name: "Delta", projection: 150.1, actual: 142, complete: true, pointsOnBench: 2 },
+  { sleeper_user_id: "u1", team_name: "Alpha", projection: 164.82, actual: 120, complete: true, pointsOnBench: 4,
+    starterScores: [{ name: "Alpha Ace", position: "WR", nflTeam: "MIN", owner: "Alpha", points: 28 }],
+    benchScores: [{ name: "Wrong Choice", position: "RB", nflTeam: "BUF", owner: "Alpha", points: 12 }] },
+  { sleeper_user_id: "u2", team_name: "Beta", projection: 122.66, actual: 99, complete: true, pointsOnBench: 8,
+    starterScores: [{ name: "Beta Back", position: "RB", nflTeam: "GB", owner: "Beta", points: 21 }],
+    benchScores: [{ name: "Bench Dust", position: "WR", nflTeam: "NYJ", owner: "Beta", points: 3 }] },
+  { sleeper_user_id: "u3", team_name: "Gamma", projection: 148.22, actual: 140, complete: true, pointsOnBench: 31.4,
+    starterScores: [{ name: "Gamma Gun", position: "QB", nflTeam: "DET", owner: "Gamma", points: 29 }],
+    benchScores: [{ name: "Pain Machine", position: "WR", nflTeam: "DAL", owner: "Gamma", points: 18 }] },
+  { sleeper_user_id: "u4", team_name: "Delta", projection: 150.1, actual: 142, complete: true, pointsOnBench: 2,
+    starterScores: [{ name: "Delta Dawg", position: "TE", nflTeam: "KC", owner: "Delta", points: 32 }],
+    benchScores: [{ name: "Free Points", position: "QB", nflTeam: "LAR", owner: "Delta", points: 9 }] },
 ] };
 const lore = { matchups: [
   { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 120, score2: 99 },
@@ -33,8 +41,10 @@ describe("weekly aftermath", () => {
       { label: "WEEK'S FINAL BOSS", title: "Delta", detail: "142.00 PTS · EAT SHIT, LEAGUE", tone: "gold" },
       { label: "PUBLIC EXECUTION", title: "Alpha", detail: "21.00-PT ASS-WHIPPING · Beta", tone: "red" },
       { label: "FUCKING BRUTAL", title: "Gamma", detail: "LOST BY 2.00 · Delta", tone: "ink" },
-      { label: "BENCH DUMBASS", title: "Gamma", detail: "31.40 PTS WASTED · DUMBASS TAX", tone: "red" },
+      { label: "BENCH DUMBASS", title: "Gamma", detail: "18.00 PTS WASTED · DUMBASS TAX", tone: "red" },
     ]);
+    expect(card.players.starters.map(player => player.name)).toEqual(["Delta Dawg", "Gamma Gun", "Alpha Ace"]);
+    expect(card.players.bench.map(player => player.name)).toEqual(["Pain Machine", "Wrong Choice", "Free Points"]);
     expect(card.story).toContain("DELTA");
     expect(card.story).toContain("ALPHA");
     expect(card.story).toContain("GAMMA");

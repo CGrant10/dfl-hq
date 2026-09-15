@@ -224,6 +224,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
     livePool.set(id, { ...(pool.get(id) || {}), ...played, points: played.points });
   }
   const teams = analysis.teams.map(team => {
+    const owner = nameOf(team);
     const advice = startSitAdvice({
       playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: livePool,
     });
@@ -239,14 +240,27 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
       const projected = pool.get(id);
       return total + num(played?.hasGame ? played.points : projected?.points);
     }, 0);
+    const starterSet = new Set(submitted);
+    const performance = id => {
+      const played = actual.get(String(id));
+      if (!played?.hasGame || !Number.isFinite(played.points)) return null;
+      return {
+        id: String(id), name: played.name, position: played.position, nflTeam: played.team,
+        points: scoreRound(played.points), owner, sleeper_user_id: team.sleeper_user_id,
+      };
+    };
+    const starterScores = submitted.map(performance).filter(Boolean);
+    const benchScores = (team.playerIds || []).map(String).filter(id => !starterSet.has(id))
+      .map(performance).filter(Boolean);
     return {
-      id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: nameOf(team),
+      id: team.id, sleeper_user_id: team.sleeper_user_id, team_name: owner,
       projection: advice.lineupIsSet ? round(liveProjection) : round(advice.bestTotal),
       /* Final fantasy scores settle to hundredths. Keeping only one decimal
          could turn a sub-point loss into the wrong-looking margin. */
       actual: scoreRound(actualPoints), remaining,
       complete: submitted.length > 0 && remaining === 0,
-      pointsOnBench: round(advice.pointsOnBench), lineupIsSet: advice.lineupIsSet,
+      pointsOnBench: round(advice.pointsOnBench), starterScores, benchScores,
+      lineupIsSet: advice.lineupIsSet,
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
     };
   }).filter(team => Number.isFinite(team.projection));
@@ -308,6 +322,17 @@ function storyWithTeamNames(story, teamNames = []) {
   return html;
 }
 
+function playerPodium(title, subtitle, players = [], tone = "gold") {
+  if (!players.length) return "";
+  return `<section class="weekly-player-podium is-${tone}">
+    <header><span>${esc(subtitle)}</span><h3>${esc(title)}</h3></header>
+    <ol>${players.slice(0, 3).map((player, index) => `<li>
+      <b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam, player.owner].filter(Boolean).join(" · "))}</small></span>
+      <em>${Number(player.points).toFixed(2)}</em>
+    </li>`).join("")}</ol>
+  </section>`;
+}
+
 export function clubhouseCard(view) {
   const report = view?.aftermath;
   if (!report?.final) return "";
@@ -322,6 +347,10 @@ export function clubhouseCard(view) {
       <div class="weekly-report-grid">${highlights.map(item => `<article class="weekly-report-highlight is-${esc(item.tone || "ink")}">
         <small>${esc(item.label)}</small><strong>${esc(item.title)}</strong><span>${esc(item.detail)}</span>
       </article>`).join("")}</div>
+      <div class="weekly-player-grid">
+        ${playerPodium("STARTED & SHOWED OUT", "TOP 3 STARTERS", report.players?.starters, "gold")}
+        ${playerPodium("WASTED ON THE BENCH", "TOP 3 BENCH", report.players?.bench, "red")}
+      </div>
     </section>
   </div>`;
 }

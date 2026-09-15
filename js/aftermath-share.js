@@ -5,13 +5,15 @@
    small action in the cold open and produces a full six-game recap using
    actual totals from the week Sleeper just closed.
 
-   The canvas is square because this belongs in a group chat, and drawing is
-   synchronous because iOS only allows the share sheet during the tap itself.
+   The canvas is a share-friendly 4:5 report card, and drawing is synchronous
+   because iOS only allows the share sheet during the tap itself.
    ===================================================================== */
 import { sealImage, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
-const W = 1080, H = 1080;
+/* 4:5 gives the report room for the story, awards, and both player podiums
+   while remaining a standard share-friendly social image. */
+const W = 1080, H = 1350;
 const DISPLAY = '"Rajdhani", "Arial Narrow", system-ui, sans-serif';
 const num = value => Number(value) || 0;
 const one = value => Math.round(num(value) * 10) / 10;
@@ -96,10 +98,19 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
   if (!king) return null;
   const blowout = [...pairs].sort((a, b) => b.margin - a.margin)[0] || null;
   const closest = [...pairs].sort((a, b) => a.margin - b.margin)[0] || null;
-  const bench = [...weekly.teams].filter(team => num(team.pointsOnBench) > 0)
+  const playerLeaders = field => weekly.teams.flatMap(team => team?.[field] || [])
+    .filter(player => Number.isFinite(player?.points))
+    .sort((a, b) => num(b.points) - num(a.points) || String(a.name).localeCompare(String(b.name)))
+    .slice(0, 3);
+  const starters = playerLeaders("starterScores"), benched = playerLeaders("benchScores");
+  const actualBench = weekly.teams.map(team => ({ ...team,
+    actualBenchPoints: (team.benchScores || []).reduce((total, player) => total + num(player.points), 0),
+  })).filter(team => team.actualBenchPoints > 0).sort((a, b) => b.actualBenchPoints - a.actualBenchPoints)[0] || null;
+  const bench = actualBench || [...weekly.teams].filter(team => num(team.pointsOnBench) > 0)
     .sort((a, b) => num(b.pointsOnBench) - num(a.pointsOnBench))[0] || null;
   const low = ranked.at(-1) || null;
-  const benchStar = bench ? { name: bench.team_name || teamName(members, bench.sleeper_user_id), value: one(bench.pointsOnBench) }
+  const benchStar = bench ? { name: bench.team_name || teamName(members, bench.sleeper_user_id),
+    value: two(bench.actualBenchPoints || bench.pointsOnBench) }
     : { name: low?.name || "Nobody", value: 0 };
   const highlightRows = [
     { label: "WEEK'S FINAL BOSS", title: king.name, detail: `${score(king.value)} PTS · EAT SHIT, LEAGUE`, tone: "gold" },
@@ -115,7 +126,7 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
     label: "WEEK RECAP", status: "FINAL", season: Number(weekly.season), week: Number(weekly.week),
     title: `WEEK ${Number(weekly.week)} RECAP`,
     king: { name: king.name, value: king.value },
-    final: true, story, highlights: highlightRows, games,
+    final: true, story, highlights: highlightRows, games, players: { starters, bench: benched },
     blowout: blowout ? { winner: blowout.winner.name, loser: blowout.loser.name, margin: two(blowout.margin) } : null,
     closest: closest ? { winner: closest.winner.name, loser: closest.loser.name, margin: two(closest.margin) } : null,
     bench: bench ? benchStar : null,
@@ -176,6 +187,33 @@ function wrapStory(ctx, text, x, y, maxWidth, size = 30, lineHeight = 39, maxLin
   });
 }
 
+function drawPlayerPodium(ctx, { x, y, title, kicker, players = [], tone }) {
+  const width = 460, height = 305;
+  ctx.fillStyle = SHARE_INK.CARD_2;
+  ctx.fillRect(x, y, width, height);
+  ctx.fillStyle = tone;
+  ctx.fillRect(x, y, width, 5);
+  caps(ctx, kicker, x + 25, y + 39, tone, 16, "left");
+  ctx.fillStyle = SHARE_INK.INK;
+  fitDisplay(ctx, title, x + 25, y + 80, width - 50, 28, 800, "left");
+  rule(ctx, x + 25, y + 98, x + width - 25, SHARE_INK.LINE, 2);
+  players.slice(0, 3).forEach((player, index) => {
+    const rowY = y + 137 + index * 56;
+    ctx.fillStyle = tone;
+    ctx.textAlign = "left";
+    ctx.font = `800 20px ${DISPLAY}`;
+    ctx.fillText(String(index + 1).padStart(2, "0"), x + 25, rowY);
+    ctx.fillStyle = SHARE_INK.INK;
+    fitDisplay(ctx, String(player.name).toUpperCase(), x + 68, rowY, 245, 23, 800, "left");
+    ctx.fillStyle = index === 0 ? tone : SHARE_INK.INK;
+    fitDisplay(ctx, score(player.points), x + width - 25, rowY, 82, 26, 800, "right");
+    const meta = [player.position, player.nflTeam, player.owner].filter(Boolean).join(" · ");
+    ctx.fillStyle = SHARE_INK.MUTED;
+    fitDisplay(ctx, meta.toUpperCase(), x + 68, rowY + 22, 340, 13, 700, "left");
+  });
+  if (!players.length) caps(ctx, "NO COMPLETED PLAYER DATA", x + width / 2, y + 178, SHARE_INK.MUTED, 18);
+}
+
 export function aftermathCanvas(card) {
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -228,7 +266,12 @@ export function aftermathCanvas(card) {
     fitDisplay(ctx, String(item.detail).toUpperCase(), x + 28, y + 143, width - 56, 20, 700, "left");
   });
 
-  caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1022, SHARE_INK.MUTED, 21);
+  drawPlayerPodium(ctx, { x: 70, y: 930, title: "STARTED & SHOWED OUT", kicker: "TOP 3 STARTERS",
+    players: card.players?.starters, tone: SHARE_INK.GOLD });
+  drawPlayerPodium(ctx, { x: 550, y: 930, title: "WASTED ON THE BENCH", kicker: "TOP 3 BENCH",
+    players: card.players?.bench, tone: SHARE_INK.ACCENT });
+
+  caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1318, SHARE_INK.MUTED, 21);
   return canvas;
 }
 

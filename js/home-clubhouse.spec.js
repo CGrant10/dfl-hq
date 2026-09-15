@@ -74,8 +74,12 @@ describe("Home weekly report", () => {
       { sleeper_user_id: "u2", team_name: "Beta", projection: 119, pointsOnBench: 4 },
     ] };
     const report = { season: 2026, week: 1, teams: [
-      { sleeper_user_id: "u1", team_name: "Alpha", projection: 143, actual: 143, complete: true, pointsOnBench: 12 },
-      { sleeper_user_id: "u2", team_name: "Beta", projection: 101, actual: 101, complete: true, pointsOnBench: 4 },
+      { sleeper_user_id: "u1", team_name: "Alpha", projection: 143, actual: 143, complete: true, pointsOnBench: 12,
+        starterScores: [{ name: "Starter Stud", position: "WR", nflTeam: "MIN", owner: "Alpha", points: 31.2 }],
+        benchScores: [{ name: "Bench Pain", position: "RB", nflTeam: "BUF", owner: "Alpha", points: 22.4 }] },
+      { sleeper_user_id: "u2", team_name: "Beta", projection: 101, actual: 101, complete: true, pointsOnBench: 4,
+        starterScores: [{ name: "Other Starter", position: "QB", nflTeam: "KC", owner: "Beta", points: 25 }],
+        benchScores: [{ name: "Bench Dust", position: "TE", nflTeam: "NYJ", owner: "Beta", points: 4 }] },
     ] };
     const currentLore = { matchups: [
       { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 143, score2: 101, winner_roster_id: 1 },
@@ -88,6 +92,11 @@ describe("Home weekly report", () => {
     expect(html).toContain("SHARE REPORT");
     expect(html).toContain("weekly-report-story");
     expect(html).toContain("weekly-report-grid");
+    expect(html).toContain("TOP 3 STARTERS");
+    expect(html).toContain("STARTED &amp; SHOWED OUT");
+    expect(html).toContain("Starter Stud");
+    expect(html).toContain("TOP 3 BENCH");
+    expect(html).toContain("Bench Pain");
     expect(html).toContain("<strong>ALPHA</strong>");
     expect(html).toContain("<strong>BETA</strong>");
     expect(html).not.toContain("DFL COLD OPEN");
@@ -136,7 +145,7 @@ describe("Home weekly report", () => {
       state: "ready", projectionSeason: 2026, league: { scoring_settings: { rec: 1 } },
       teams: [{
         id: "7", rank: 1, sleeper_user_id: "u2", team_name: "Jack-HAMMER",
-        playerIds: ["qb", "k", "SEA"], starters: ["qb", "k", "SEA"],
+        playerIds: ["qb", "k", "SEA", "rb"], starters: ["qb", "k", "SEA"],
         lineup: { source: "set", weeklyPoints: 100, starters: [], bench: [] },
       }],
     };
@@ -144,13 +153,17 @@ describe("Home weekly report", () => {
       { player_id: "qb", player: { position: "QB" }, opponent: "A", stats: { gp: 1, rec: 110 } },
       { player_id: "k", player: { position: "K" }, opponent: "B", stats: { gp: 1, rec: 7 } },
       { player_id: "SEA", player: { position: "DEF" }, opponent: "C", stats: { gp: 1, rec: 8.5 } },
+      { player_id: "rb", player: { position: "RB", first_name: "Bench", last_name: "Blast" }, opponent: "D", stats: { gp: 1, rec: 8 } },
     ];
     const actualRows = [
       { player_id: "SEA", player: { position: "DEF" }, stats: { gp: 1, rec: 13.37 } },
+      { player_id: "rb", player: { position: "RB", first_name: "Bench", last_name: "Blast" }, team: "BUF", stats: { gp: 1, rec: 15.25 } },
     ];
     const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
     expect(weekly.teams[0].projection).toBe(130.4);
     expect(weekly.teams[0]).toMatchObject({ actual: 13.37, remaining: 2, complete: false });
+    expect(weekly.teams[0].starterScores).toEqual([expect.objectContaining({ name: "SEA", points: 13.37 })]);
+    expect(weekly.teams[0].benchScores).toEqual([expect.objectContaining({ name: "Bench Blast", points: 15.25, nflTeam: "BUF" })]);
   });
 
   it("uses finished player results for comparisons and secures a completed win", () => {
