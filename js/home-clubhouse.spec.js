@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildClubhouseWeekly, clubhouseCard, clubhouseView } from "./home-clubhouse.js";
+import { aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView } from "./home-clubhouse.js";
 
 const player = (name, expectedPoints) => ({ name, expectedPoints });
 const analysis = {
@@ -21,6 +21,12 @@ const lore = { matchups: [
 ] };
 
 describe("Home clubhouse", () => {
+  it("keeps Monday on the current week and grades the previous week on Tuesday", () => {
+    expect(aftermathReportWeek(2, new Date("2026-09-14T08:00:00"))).toBe(2);
+    expect(aftermathReportWeek(2, new Date("2026-09-15T08:00:00"))).toBe(1);
+    expect(aftermathReportWeek(1, new Date("2026-09-15T08:00:00"))).toBe(1);
+  });
+
   it("builds truthful matchup, hot-seat, temperature, and rivalry takes", () => {
     vi.spyOn(Date, "now").mockReturnValue(1);
     const view = clubhouseView({ analysis, lore, members, meSleeperId: "u1", now: new Date("2026-09-09T12:00:00Z") });
@@ -71,6 +77,28 @@ describe("Home clubhouse", () => {
     expect(html).toContain("aftermath-dashboard");
     expect(html).toContain("PROJECTED KING");
     expect(html).toContain("BENCH CRIME");
+  });
+
+  it("renders Tuesday's completed-week report card while current tools stay on the new week", () => {
+    const current = { season: 2026, week: 2, teams: [
+      { sleeper_user_id: "u1", team_name: "Alpha", projection: 125, pointsOnBench: 3 },
+      { sleeper_user_id: "u2", team_name: "Beta", projection: 119, pointsOnBench: 4 },
+    ] };
+    const report = { season: 2026, week: 1, teams: [
+      { sleeper_user_id: "u1", team_name: "Alpha", projection: 143, actual: 143, complete: true, pointsOnBench: 12 },
+      { sleeper_user_id: "u2", team_name: "Beta", projection: 101, actual: 101, complete: true, pointsOnBench: 4 },
+    ] };
+    const currentLore = { matchups: [
+      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 143, score2: 101, winner_roster_id: 1 },
+    ] };
+    const view = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly: current,
+      aftermathWeekly: report, now: new Date("2026-09-15T08:00:00") });
+    expect(view.aftermath).toMatchObject({ week: 1, title: "WEEK 1 REPORT CARD", final: true });
+    const html = clubhouseCard(view);
+    expect(html).toContain("WEEK 1 REPORT CARD");
+    expect(html).toContain("HONOR ROLL");
+    expect(html).toContain("ASS KICKING");
+    expect(html).toContain("DETENTION");
   });
 
   it("escapes team names inside the expanded aftermath dashboard", () => {

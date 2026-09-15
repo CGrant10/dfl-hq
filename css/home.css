@@ -126,6 +126,11 @@
   padding: var(--s-5) var(--s-4) var(--s-6);
 }
 .aftermath-lead { max-width: 820px; }
+.aftermath-edition {
+  display: block; width: max-content; margin-bottom: var(--s-3); padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent-2) 48%, transparent); border-radius: var(--r-pill);
+  color: var(--accent-2); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps);
+}
 .aftermath-lead h2 {
   max-width: 800px; margin: 0; font-family: var(--font-display); font-size: clamp(2rem, 7vw, 4.35rem);
   line-height: .9; letter-spacing: var(--ls-tight); text-transform: uppercase; text-wrap: balance;

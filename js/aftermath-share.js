@@ -129,6 +129,7 @@ export function buildAftermath({ lore, members = [], weekly, now = new Date() } 
 
   const card = {
     label, status, season: Number(weekly.season), week: Number(weekly.week),
+    title: final ? `WEEK ${Number(weekly.week)} REPORT CARD` : label,
     king: { name: king.team_name || teamName(members, king.sleeper_user_id), value: valueOf(king) },
     final,
     blowout: blowout ? { winner: blowout.winner.name, loser: blowout.loser.name, margin: one(blowout.margin) } : null,
@@ -219,13 +220,13 @@ export function aftermathCanvas(card) {
 
   rule(ctx, 100, 69, 250, SHARE_INK.CREST_RED, 3);
   rule(ctx, 830, 69, 980, SHARE_INK.CREST_BLUE, 3);
-  caps(ctx, `DFL HQ · ${card.season} WEEK ${card.week} · ${card.status}`, W / 2, 80, SHARE_INK.INK, 23);
+  caps(ctx, `DFL HQ · ${card.label} · ${card.status}`, W / 2, 80, SHARE_INK.INK, 23);
 
   ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, card.label, W / 2, 195, 960, 94, 800);
+  fitDisplay(ctx, card.title || card.label, W / 2, 195, 960, 94, 800);
   rule(ctx, 420, 235, 660, SHARE_INK.GOLD, 5);
 
-  caps(ctx, card.final ? "WEEK'S SCORING KING" : "WEEK'S PROJECTED KING", W / 2, 292, SHARE_INK.INK, 30);
+  caps(ctx, card.final ? "HONOR ROLL · TOP SCORE" : "WEEK'S PROJECTED KING", W / 2, 292, SHARE_INK.INK, 30);
   ctx.fillStyle = SHARE_INK.GOLD;
   fitDisplay(ctx, score(card.king.value), W / 2, 485, 820, 182, 800);
   ctx.fillStyle = SHARE_INK.INK;
@@ -237,36 +238,36 @@ export function aftermathCanvas(card) {
   const left = card.blowout || { winner: "NO MATCHUP DATA", loser: "", margin: 0 };
   const right = card.pain || { name: "NO MATCHUP DATA", value: 0 };
   award(ctx, {
-    x: 70, y: 672, w: 440, label: card.final ? "BIGGEST FINAL GAP" : "BIGGEST PROJECTED GAP", name: left.winner,
+    x: 70, y: 672, w: 440, label: card.final ? "ASS-KICKING OF THE WEEK" : "BIGGEST PROJECTED GAP", name: left.winner,
     value: `+${score(left.margin)}`, detail: left.loser ? `OVER ${left.loser}` : "WAITING ON SCORES", accent: SHARE_INK.CREST_RED,
   });
   award(ctx, {
-    x: 570, y: 672, w: 440, label: "PAIN WATCH", name: right.name,
+    x: 570, y: 672, w: 440, label: card.final ? "WASTED EFFORT AWARD" : "PAIN WATCH", name: right.name,
     value: score(right.value), detail: card.pain ? (card.final ? "LOST WITH THIS SCORE" : "PROJECTED TO LOSE") : "WAITING ON SCORES", accent: SHARE_INK.CREST_BLUE,
   });
 
   rule(ctx, 70, 925, 1010, SHARE_INK.GOLD, 2);
   const benchName = card.bench?.name || "NO BENCH WARRANT YET";
   const benchValue = card.bench ? `${score(card.bench.value)} LEFT BEHIND` : "LINEUPS LOOK CLEAN";
-  caps(ctx, `BENCH WARRANT · ${benchName} · ${benchValue}`, W / 2, 968, SHARE_INK.INK, 24);
+  caps(ctx, `${card.final ? "DETENTION" : "BENCH WARRANT"} · ${benchName} · ${benchValue}`, W / 2, 968, SHARE_INK.INK, 24);
   caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1022, SHARE_INK.MUTED, 21);
   return canvas;
 }
 
 export function aftermathText(card) {
   const measure = card.final ? "scoring" : "projection";
-  return `${card.label}: ${card.king.name} leads Week ${card.week} ${measure} at ${score(card.king.value)}. ${activeTake(card)?.headline || ""} ${card.status}.`.replace(/\s+/g, " ").trim();
+  return `${card.title || card.label}: ${card.king.name} leads Week ${card.week} ${measure} at ${score(card.king.value)}. ${activeTake(card)?.headline || ""} ${card.status}.`.replace(/\s+/g, " ").trim();
 }
 
 export function shareAftermath(card) {
   if (!card) return "failed";
   try {
     return shareCanvas(aftermathCanvas(card), `dfl-${card.label.toLowerCase().replace(/\s+/g, "-")}-week-${card.week}.png`, {
-      title: `DFL HQ — ${card.label}`,
+      title: `DFL HQ — ${card.title || card.label}`,
       text: aftermathText(card),
     });
   } catch (err) {
     console.warn("aftermath share: falling back to text", err);
-    return shareText({ title: `DFL HQ — ${card.label}`, text: aftermathText(card) });
+    return shareText({ title: `DFL HQ — ${card.title || card.label}`, text: aftermathText(card) });
   }
 }

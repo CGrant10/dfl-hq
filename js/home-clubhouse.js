@@ -250,7 +250,12 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
   return { season: Number(season), week: Number(week), fetchedAt, teams, pool: livePool };
 }
 
-export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, now = new Date() } = {}) {
+export function aftermathReportWeek(week, now = new Date()) {
+  const current = Math.max(1, Number(week) || 1);
+  return now instanceof Date && now.getDay() === 2 ? Math.max(1, current - 1) : current;
+}
+
+export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, aftermathWeekly = weekly, now = new Date() } = {}) {
   if (analysis?.state !== "ready" || !analysis.teams?.length || !meSleeperId) return null;
   const teams = analysis.teams;
   const stories = [
@@ -272,7 +277,7 @@ export function clubhouseView({ analysis, lore, members = [], meSleeperId = null
   return {
     stories, start,
     gameDay: now instanceof Date && now.getDay() === 0,
-    aftermath: buildAftermath({ lore, members, weekly, now }),
+    aftermath: buildAftermath({ lore, members, weekly: aftermathWeekly, now }),
   };
 }
 
@@ -295,12 +300,12 @@ function aftermathHtml(card, index) {
     kicker: card.label, headline: `${card.king.name} leads at ${card.king.value}.`, detail: card.status,
   };
   const tiles = [
-    { label: card.final ? "TOP SCORE" : "PROJECTED KING", value: Number(card.king.value).toFixed(2), name: card.king.name, tone: "king" },
-    card.blowout ? { label: card.final ? "BIGGEST BURIAL" : "PROJECTED BURIAL", value: `+${Number(card.blowout.margin).toFixed(2)}`, name: `${card.blowout.winner} over ${card.blowout.loser}`, tone: "gap" } : null,
-    card.bench ? { label: "BENCH CRIME", value: Number(card.bench.value).toFixed(2), name: `${card.bench.name} left behind`, tone: "bench" } : null,
+    { label: card.final ? "HONOR ROLL" : "PROJECTED KING", value: Number(card.king.value).toFixed(2), name: card.king.name, tone: "king" },
+    card.blowout ? { label: card.final ? "ASS KICKING" : "PROJECTED BURIAL", value: `+${Number(card.blowout.margin).toFixed(2)}`, name: `${card.blowout.winner} over ${card.blowout.loser}`, tone: "gap" } : null,
+    card.bench ? { label: card.final ? "DETENTION" : "BENCH CRIME", value: Number(card.bench.value).toFixed(2), name: `${card.bench.name} left behind`, tone: "bench" } : null,
   ].filter(Boolean);
-  return `<section class="aftermath-dashboard" aria-label="${esc(card.label)}">
-    <div class="aftermath-lead"><span class="clubhouse-kicker">${esc(take.kicker)}</span><h2>${esc(take.headline)}</h2><p>${esc(take.detail)}</p></div>
+  return `<section class="aftermath-dashboard" aria-label="${esc(card.title || card.label)}">
+    <div class="aftermath-lead"><span class="aftermath-edition">${esc(card.title || card.label)}</span><span class="clubhouse-kicker">${esc(take.kicker)}</span><h2>${esc(take.headline)}</h2><p>${esc(take.detail)}</p></div>
     <div class="aftermath-grid">${tiles.map(tile => `<div class="aftermath-stat is-${tile.tone}"><small>${esc(tile.label)}</small><strong>${esc(tile.value)}</strong><span>${esc(tile.name)}</span></div>`).join("")}</div>
     <span class="clubhouse-count">${safeIndex + 1} / ${Math.max(1, takes.length)}</span>
   </section>`;

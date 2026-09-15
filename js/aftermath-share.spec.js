@@ -35,9 +35,11 @@ describe("weekly aftermath", () => {
   it("builds Tuesday's Monday aftermath from final actual scores", () => {
     const card = buildAftermath({ lore, members, weekly, now: new Date("2026-09-15T08:00:00") });
     expect(card.label).toBe("MONDAY AFTERMATH");
+    expect(card.title).toBe("WEEK 1 REPORT CARD");
     expect(card.status).toBe("FINAL");
     expect(card.king).toEqual({ name: "Delta", value: 142 });
     expect(card.blowout).toEqual({ winner: "Alpha", loser: "Beta", margin: 21 });
+    expect(aftermathText(card)).toContain("WEEK 1 REPORT CARD");
     expect(aftermathText(card)).toContain("scoring at 142.00");
     expect(card.takes.some(take => take.kicker === "PUBLIC EXECUTION")).toBe(true);
     expect(card.takes.some(take => take.kicker === "BENCH CRIME DIVISION")).toBe(true);

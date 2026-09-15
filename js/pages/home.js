@@ -36,7 +36,7 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
-import { buildClubhouseWeekly, clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
+import { aftermathReportWeek, buildClubhouseWeekly, clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
 import { buildNextMove, nextMoveCard, nextMoveShell } from "../next-move.js";
 
 let stage = null;
@@ -235,6 +235,24 @@ export async function render(view) {
     });
     return built ? { ...built, trending } : null;
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
+  /* Sleeper rolls its state into the new week after Monday Night Football.
+     Tuesday's report card must look backward without dragging the lineup and
+     waiver tools backward with it, so Aftermath gets its own completed-week
+     bundle while every other dashboard feature keeps the current week. */
+  const aftermathWeeklyPromise = Promise.all([analysisPromise, weeklyPromise]).then(async ([analysis, current]) => {
+    if (!current) return current;
+    const reportWeek = aftermathReportWeek(current.week);
+    if (reportWeek === current.week) return current;
+    const { loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
+    const [projections, actual] = await Promise.all([
+      loadWeeklyProjections(current.season, reportWeek), loadWeeklyStats(current.season, reportWeek),
+    ]);
+    return buildClubhouseWeekly({
+      analysis, rows: projections?.data || [], actualRows: actual?.data || [],
+      season: current.season, week: reportWeek,
+      fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0),
+    });
+  }).catch(err => { console.warn("aftermath report week unavailable", err); return null; });
   if (teamsView) void hydratePowerPulse(view, mine, {
     meSleeperId: myMember?.sleeper_user_id || null,
     standings: standings.data || [],
@@ -295,7 +313,7 @@ export async function render(view) {
     stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise]).then(([analysis, got, weekly]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise]).then(([analysis, got, weekly, aftermathWeekly]) => {
     if (mine !== generation) return;
     const slot = view.querySelector("[data-clubhouse]");
     if (!slot?.isConnected) return;
@@ -303,7 +321,7 @@ export async function render(view) {
       analysis, lore: got?.error ? null : got, members: memberRows,
       meSleeperId: myMember?.sleeper_user_id || null,
       standings: standings.data || [],
-      weekly,
+      weekly, aftermathWeekly,
     });
     if (clubhouse) wireClubhouse(slot, clubhouse);
     else slot.remove();
