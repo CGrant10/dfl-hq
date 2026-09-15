@@ -299,12 +299,18 @@ describe("the supported golf GPS courses", () => {
   it("loads the app shell immediately from cache and protects active scores during updates", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
     const updater = fs.readFileSync("js/update.js", "utf8");
+    const html = fs.readFileSync("index.html", "utf8");
     expect(worker).toContain("const SHELL_URLS = new Set");
     expect(worker).toContain("event.waitUntil(refresh.then(()=>{}))");
     expect(worker).toContain("if(cached)return cached");
     expect(updater).toContain("const UPDATE_CHECK_MS=10*60*1000");
     expect(updater).toContain("export function updateBlocked()");
     expect(updater).toContain('localStorage.getItem("dfl.golf.pending")');
+    expect(html).toContain('var key = "dfl.shell.release"');
+    expect(html).toContain('navigator.serviceWorker.addEventListener("controllerchange", finish)');
+    expect(html).toContain("await navigator.serviceWorker.getRegistrations()");
+    expect(html).toContain('location.replace(location.pathname + "?u=" + encodeURIComponent(version) + location.hash)');
+    expect(html.indexOf('var key = "dfl.shell.release"')).toBeLessThan(html.indexOf('src="js/app.js"'));
   });
 
   it("shows the live GPS reading in the Quick Round GPS badge", () => {
