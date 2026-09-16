@@ -61,7 +61,9 @@ export const SHARE_INK = {
   TEAM INKS - the Medicine Wheel, not a rainbow.
   ---------------------------------------------------------------------
   A team colour has a real job: telling one team from another at a glance, on
-  a dot, a card edge and a shared image. So this cannot collapse to a single
+  a dot, a card edge and a shared-image marker. It is never body or display
+  text: even a lifted blue is less readable than the fixed white ink once the
+  image is compressed inside a dark group chat. So this cannot collapse to a single
   red - it has to stay DISTINGUISHABLE. What it does not have to be is a
   different colour scheme from the rest of the app.
 

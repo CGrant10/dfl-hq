@@ -193,10 +193,16 @@ function drawScore(ctx, s, top) {
   s.teams.forEach((team, i) => {
     const cx = i === 0 ? W * 0.27 : W * 0.73;
     const colour = teamInk(team.color, i);
-    ctx.fillStyle = colour;
+    /* Team colours are identification marks, not text inks. Blue and other
+       user-picked dark colours disappear once this image reaches a black
+       chat background, so the score stays in the house white and the small
+       rule beneath it carries the team's colour. */
+    ctx.fillStyle = INK;
     ctx.font = `950 150px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(String(s.values[i]), cx, top + 120);
+    ctx.fillStyle = colour;
+    ctx.fillRect(cx - 46, top + 136, 92, 6);
     ctx.fillStyle = INK;
     fitText(ctx, team.name.toUpperCase(), cx, top + 176, W * 0.42, 40, 900);
     /* Who leads this team, under its name. Nothing is drawn when the team
@@ -460,7 +466,7 @@ export function teamSheetCanvas(data, outing) {
     ctx.fillStyle = colour; roundRect(ctx, x, top, 7, h, 4); ctx.fill();
 
     ctx.textAlign = "left";
-    ctx.fillStyle = colour;
+    ctx.fillStyle = INK;
     fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 900, "left");
     ctx.fillStyle = MUTED; ctx.font = `800 20px ${FONT}`;
     /*
@@ -486,7 +492,7 @@ export function teamSheetCanvas(data, outing) {
          off. The name's width is reduced to match, so they cannot collide. */
       fitText(ctx, n, x + 26, rowY, colW - (isCap ? 78 : 52), 28, 700, "left");
       if (isCap) {
-        ctx.fillStyle = colour;
+        ctx.fillStyle = GOLD;
         ctx.font = `900 20px ${FONT}`;
         ctx.textAlign = "right";
         ctx.fillText("C", x + colW - 24, rowY);
@@ -556,7 +562,7 @@ export function teamSheetCanvas(data, outing) {
     const nameY = y + 66, teamY = y + 92;
     sheet.showdown.forEach((r, i) => {
       const left = i === 0;
-      ctx.fillStyle = colours[i];
+      ctx.fillStyle = INK;
       fitText(ctx, r.captain.toUpperCase(), left ? CX - 70 : CX + 70, nameY,
               CX - 70 - EDGE, 44, 900, left ? "right" : "left");
       ctx.fillStyle = MUTED;
@@ -608,7 +614,7 @@ export function teamSheetCanvas(data, outing) {
   if (sheet.rounds.length) {
     sheet.rosters.forEach((roster, i) => {
       const left = i === 0;
-      ctx.fillStyle = colours[i];
+      ctx.fillStyle = INK;
       fitText(ctx, roster.team.name.toUpperCase(), left ? CX - VS_GAP : CX + VS_GAP,
               y + 26, SIDE_W, 26, 900, left ? "right" : "left");
     });

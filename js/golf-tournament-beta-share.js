@@ -1,5 +1,5 @@
 import { FONT, fitText, roundRect, shareCanvas } from "./share.js";
-import { SHARE_INK, teamInk } from "./brand-ink.js";
+import { SHARE_INK } from "./brand-ink.js";
 import { memberNames } from "./golf-people.js";
 import { progress as boardProgress, label as boardLabel, roundBoard } from "./golf-board.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
@@ -32,7 +32,9 @@ export function leaderboardCanvas(state, entry) {
     const y = top + index * (rowH + gap); ctx.fillStyle = index === 0 ? "#20242a" : CARD; roundRect(ctx, 50, y, W - 100, rowH, 18); ctx.fill(); ctx.strokeStyle = index === 0 ? GOLD : LINE; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = index === 0 ? GOLD : MUTED; ctx.font = `950 28px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(index + 1), 92, y + rowH / 2);
     ctx.textAlign = "left"; ctx.fillStyle = INK; fitText(ctx, row.name, 135, y + rowH * .44, 570, Math.min(34, rowH * .38), 900, "left");
-    ctx.fillStyle = teamInk(row.color, index); fitText(ctx, `${row.teamName || "Individual"} · ${boardProgress(row)}`, 135, y + rowH * .76, 590, Math.min(20, rowH * .22), 750, "left");
+    /* Keep team colour in markers and borders. Shared-image lettering uses
+       the fixed high-contrast ink so blue never disappears into the black. */
+    ctx.fillStyle = MUTED; fitText(ctx, `${row.teamName || "Individual"} · ${boardProgress(row)}`, 135, y + rowH * .76, 590, Math.min(20, rowH * .22), 750, "left");
     ctx.fillStyle = index === 0 ? GOLD : INK; fitText(ctx, boardLabel(row), W - 92, y + rowH * .60, 225, Math.min(38, rowH * .44), 950, "right");
   });
   if (!rows.length) { ctx.fillStyle = MUTED; ctx.font = `800 30px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("No scores have been entered yet.", W / 2, 420); }
