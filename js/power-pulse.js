@@ -1,5 +1,6 @@
 import { esc } from "./ui.js";
 import { REGULAR_SEASON_WEEKS, projectSeason } from "./season-outlook.js";
+import { buildLeagueTrajectory, leagueTrajectoryChart } from "./league-trajectory.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "EVEN";
@@ -45,6 +46,11 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
     playoffTeams: Number(analysis.league?.playoff_teams) || 8,
   });
   const record = projections.get(String(focus.id)) || null;
+  const trajectory = buildLeagueTrajectory({
+    teams,
+    matchups: analysis.matchups || [],
+    weeks: REGULAR_SEASON_WEEKS,
+  });
   return {
     record,
     weeks: REGULAR_SEASON_WEEKS,
@@ -54,6 +60,7 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
     movement: movement(focus),
     movementLabel: comparison.label,
     ratings,
+    trajectory,
   };
 }
 
@@ -86,6 +93,7 @@ export function powerPulseCard(view) {
           : `over ${view.weeks} weeks`}</span>
       </div>
     </div>
+    ${leagueTrajectoryChart(view.trajectory, view.focus.id)}
     <footer class="pp-foot"><p><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span><strong>${esc(view.focus.strength || "Roster")} is the best unit</strong> · ${view.focus.need ? `${esc(view.focus.need)} is the clearest starting need` : "no urgent starting-lineup need"}</span></p><a class="btn ghost small" href="${focusHref}">Open Team Analyzer</a></footer>
   </div>`;
 }

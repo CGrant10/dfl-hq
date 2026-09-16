@@ -1295,6 +1295,134 @@
 #home-wrap .pp-record { align-items: center; padding-left: var(--s-4); text-align: center; }
 #home-wrap .pp-record .ico { width: 38px; height: 38px; margin: var(--s-2) 0; color: var(--accent); }
 #home-wrap .pp-record > strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* LEAGUE TRAJECTORY. This belongs to Power Pulse rather than becoming one
+   more dashboard card: rank, record and the path that produced them are one
+   answer. The plot is deliberately honest about its seam. Completed weeks
+   are solid, the unplayed half is shaded, and forecasts are dashed. */
+#home-wrap .pp-trajectory {
+  margin: 0 var(--s-4);
+  padding: var(--s-4) 0;
+  border-top: 1px solid var(--line-soft);
+}
+#home-wrap .pp-trajectory > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+#home-wrap .pp-trajectory > header > div { display: grid; }
+#home-wrap .pp-trajectory > header small {
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+}
+#home-wrap .pp-trajectory > header strong {
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  line-height: 1;
+}
+#home-wrap .pp-trajectory > header p {
+  margin: 0;
+  color: var(--body-text);
+  font-size: var(--fs-small);
+  text-align: right;
+}
+#home-wrap .pp-trajectory > header p b { color: var(--text); }
+#home-wrap .pp-traj-key {
+  display: flex;
+  gap: var(--s-4);
+  margin: var(--s-3) 0 var(--s-2);
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+}
+#home-wrap .pp-traj-key span { display: flex; align-items: center; gap: 6px; }
+#home-wrap .pp-traj-key i {
+  width: 24px;
+  border-top: 2px solid var(--body-text);
+}
+#home-wrap .pp-traj-key i.is-dashed { border-top-style: dashed; opacity: .7; }
+#home-wrap .pp-traj-frame {
+  overflow-x: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--bg-2) 80%, transparent);
+  scrollbar-width: thin;
+}
+#home-wrap .pp-traj-frame svg {
+  display: block;
+  width: 100%;
+  min-width: 610px;
+  height: auto;
+}
+#home-wrap .pp-traj-future { fill: color-mix(in srgb, var(--accent-fill) 5%, transparent); }
+#home-wrap .pp-traj-grid line { stroke: var(--line-soft); stroke-width: 1; }
+#home-wrap .pp-traj-grid text,
+#home-wrap .pp-traj-tick,
+#home-wrap .pp-traj-now-label {
+  fill: var(--muted);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+}
+#home-wrap .pp-traj-grid text { text-anchor: end; }
+#home-wrap .pp-traj-tick { text-anchor: middle; }
+#home-wrap .pp-traj-now { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .72; }
+#home-wrap .pp-traj-now-label { fill: var(--accent); letter-spacing: .08em; }
+#home-wrap .pp-traj-team { opacity: .53; }
+#home-wrap .pp-traj-team.is-focus { opacity: 1; }
+#home-wrap .pp-traj-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+#home-wrap .pp-traj-team.is-focus .pp-traj-line { stroke-width: 4; }
+#home-wrap .pp-traj-line.is-projected { stroke-dasharray: 7 6; opacity: .78; }
+#home-wrap .pp-traj-dot { fill: currentColor; stroke: var(--card); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+#home-wrap .pp-traj-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px var(--s-4);
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+#home-wrap .pp-traj-legend li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 27px;
+  color: var(--muted);
+  font-size: var(--fs-micro);
+}
+#home-wrap .pp-traj-legend li.is-focus {
+  color: var(--text);
+  font-weight: var(--fw-bold);
+}
+#home-wrap .pp-traj-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pp-team);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pp-team) 20%, transparent);
+}
+#home-wrap .pp-traj-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .pp-traj-legend b { color: inherit; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#home-wrap .pp-traj-legend em { color: var(--accent); font-style: normal; }
+#home-wrap .pp-traj-note {
+  margin: var(--s-2) 0 0;
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  line-height: 1.45;
+}
 #home-wrap .pp-foot {
   display: flex;
   align-items: center;
@@ -1337,11 +1465,23 @@
   #home-wrap .pp-record .ico { width: 24px; height: 24px; margin: 0; }
   #home-wrap .pp-record > strong { font-size: var(--fs-micro); white-space: normal; }
   #home-wrap .pp-record > span { font-size: .58rem; }
+  #home-wrap .pp-trajectory { margin-inline: var(--s-3); padding-block: var(--s-3); }
+  #home-wrap .pp-trajectory > header { align-items: start; flex-direction: column; gap: var(--s-2); }
+  #home-wrap .pp-trajectory > header p { text-align: left; }
+  #home-wrap .pp-traj-key { margin-top: var(--s-2); }
+  #home-wrap .pp-traj-key::after {
+    content: "Swipe weeks →";
+    margin-left: auto;
+    color: var(--accent);
+    font-weight: var(--fw-bold);
+  }
+  #home-wrap .pp-traj-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); gap-inline: var(--s-3); }
   #home-wrap .pp-foot { margin: 0 var(--s-3); padding-bottom: var(--s-3); }
   #home-wrap .pp-foot p { font-size: var(--fs-micro); }
   #home-wrap .pp-foot .btn { padding-inline: var(--s-2); font-size: var(--fs-micro); }
 }
 @media (max-width: 350px) {
+  #home-wrap .pp-traj-legend { grid-template-columns: minmax(0, 1fr); }
   #home-wrap .pp-foot { align-items: stretch; flex-direction: column; }
   #home-wrap .pp-foot .btn { width: 100%; justify-content: center; }
 }

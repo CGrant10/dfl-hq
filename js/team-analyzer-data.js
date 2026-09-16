@@ -38,11 +38,17 @@ export async function loadAnalyzerData() {
   });
   const projectionSeason = Number(league.season) || rosterSeason;
   const format = scoringFormat(league.scoring_settings);
-  const [players, statsRes, currentStatsRes, projectionRes] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes] = await Promise.all([
     loadPlayers(),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0 })),
+    /* Power Pulse draws a season trajectory from final weekly scores. Keep
+       this season-scoped and column-scoped: the graph needs at most 84 small
+       matchup rows, not the full multi-season history payload. */
+    db().from("sleeper_matchups")
+      .select("season,week,roster1,user1,score1,roster2,user2,score2")
+      .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
   ]);
   const pool = buildPlayerPool({
     rosters: namedRosters,
@@ -57,6 +63,7 @@ export async function loadAnalyzerData() {
   return {
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool,
+    matchups: matchupRes?.error ? [] : (matchupRes?.data || []),
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
   };
