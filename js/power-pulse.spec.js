@@ -79,5 +79,7 @@ describe("the projected record on the home panel", () => {
     expect(html).toContain("PROJECTED RECORD");
     expect(html).toContain(`${view.record.wins}-${view.record.losses}`);
     expect(html).toMatch(/% playoffs/);
+    expect(html).toContain("League ranks");
+    expect(html).toContain("data-pp-deck");
   });
 });

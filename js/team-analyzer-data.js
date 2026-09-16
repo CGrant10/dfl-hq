@@ -43,8 +43,8 @@ export async function loadAnalyzerData() {
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0 })),
-    /* Power Pulse draws a season trajectory from final weekly scores. Keep
-       this season-scoped and column-scoped: the graph needs at most 84 small
+    /* Power Pulse builds its weekly ranking boards from final scores. Keep
+       this season-scoped and column-scoped: the board needs at most 84 small
        matchup rows, not the full multi-season history payload. */
     db().from("sleeper_matchups")
       .select("season,week,roster1,user1,score1,roster2,user2,score2")

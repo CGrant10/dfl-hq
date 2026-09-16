@@ -35,13 +35,14 @@ import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard, seasonTeamsView } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
-import { powerPulseCard, powerPulseShell, powerPulseView } from "../power-pulse.js";
+import { powerPulseCard, powerPulseShell, powerPulseView, wirePowerPulse } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseShell, clubhouseView, wireClubhouse } from "../home-clubhouse.js";
 import { buildNextMove, nextMoveCard, nextMoveShell } from "../next-move.js";
 
 let stage = null;
 let generation = 0;
 let dropPresence = null;
+let dropPowerPulse = null;
 
 async function hydratePowerPulse(view, mine, { meSleeperId, standings, analysisPromise }) {
   const slot = view.querySelector("[data-power-pulse]");
@@ -49,8 +50,13 @@ async function hydratePowerPulse(view, mine, { meSleeperId, standings, analysisP
   try {
     const analysis = await analysisPromise;
     if (mine !== generation || !slot.isConnected) return;
+    dropPowerPulse?.();
+    dropPowerPulse = null;
     const pulse = powerPulseView({ analysis, meSleeperId, standings });
-    if (pulse) slot.innerHTML = powerPulseCard(pulse);
+    if (pulse) {
+      slot.innerHTML = powerPulseCard(pulse);
+      dropPowerPulse = wirePowerPulse(slot);
+    }
     else slot.innerHTML = `<div class="card pp-card pp-empty"><strong>POWER PULSE</strong><p>Run a Sleeper sync to build this season's league outlook.</p><a class="btn ghost small" href="#/analyzer">Open Team Analyzer</a></div>`;
   } catch (err) {
     console.warn("power pulse unavailable", err);
@@ -64,6 +70,8 @@ export function leave() {
   stage = null;
   try { dropPresence?.(); } catch { }
   dropPresence = null;
+  try { dropPowerPulse?.(); } catch { }
+  dropPowerPulse = null;
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
