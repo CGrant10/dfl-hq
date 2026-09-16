@@ -3,12 +3,18 @@
 // config.js made every visit (including Home) download and start their DOM
 // observers. Keep the global navigation enhancement eager, but start the golf
 // bundle only when the router actually enters Golf.
-void import("./nav-neutral.js").catch(err => console.warn("Optional module failed: ./nav-neutral.js", err));
-/* The week view above the Team Analyzer report. Self-mounting and route-gated,
-   so it costs one module on boot and nothing until Analyzer is opened. */
-void import("./weekly-outlook-panel.js")
-  .then(module => module.mountWeeklyOutlook())
-  .catch(err => console.warn("Optional module failed: ./weekly-outlook-panel.js", err));
+/* Browser-only presentation modules must not start while config is imported
+   by Vitest, a build tool or another document-less runtime. The old eager
+   import caught nav-neutral's `document is not defined`, but its rejected
+   promise could outlive the test worker and fail an otherwise clean CI run. */
+if (globalThis.document) {
+  void import("./nav-neutral.js").catch(err => console.warn("Optional module failed: ./nav-neutral.js", err));
+  /* The week view above the Team Analyzer report. Self-mounting and route-gated,
+     so it costs one module on boot and nothing until Analyzer is opened. */
+  void import("./weekly-outlook-panel.js")
+    .then(module => module.mountWeeklyOutlook())
+    .catch(err => console.warn("Optional module failed: ./weekly-outlook-panel.js", err));
+}
 
 const GOLF_FEATURES = [
   "./golf-gps-beta.js",
