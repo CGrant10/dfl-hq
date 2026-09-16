@@ -9,18 +9,18 @@
 .view[data-pulse-system="1"] {
   --pulse-surface:
     radial-gradient(circle at 0 0,
-      color-mix(in srgb, var(--accent-fill) 18%, transparent) 0,
-      color-mix(in srgb, var(--accent-fill) 7%, transparent) 22%,
-      transparent 42%),
+      color-mix(in srgb, var(--accent-fill) 9%, transparent) 0,
+      color-mix(in srgb, var(--accent-fill) 3%, transparent) 22%,
+      transparent 38%),
     radial-gradient(circle at 100% 100%,
-      color-mix(in srgb, var(--accent-2-fill) 8%, transparent) 0,
+      color-mix(in srgb, var(--accent-2-fill) 6%, transparent) 0,
       transparent 36%),
     linear-gradient(145deg,
       color-mix(in srgb, var(--bg-2) 97%, var(--text) 3%),
       var(--bg-2) 58%,
       color-mix(in srgb, var(--bg-2) 96%, var(--accent-2-fill) 4%));
-  --pulse-edge: color-mix(in srgb, var(--accent) 30%, var(--line));
-  --pulse-edge-hot: color-mix(in srgb, var(--accent) 52%, var(--line));
+  --pulse-edge: color-mix(in srgb, var(--accent) 20%, var(--line));
+  --pulse-edge-hot: color-mix(in srgb, var(--accent) 38%, var(--line));
   --pulse-shadow:
     inset 0 1px color-mix(in srgb, var(--text) 8%, transparent),
     0 1px 2px color-mix(in srgb, var(--bg) 48%, transparent),
@@ -49,8 +49,8 @@
   box-shadow: var(--pulse-shadow);
   transition:
     transform .5s var(--pulse-spring),
-    box-shadow .38s ease,
     border-color .38s ease;
+  backface-visibility: hidden;
 }
 
 /* Page heads are no longer plain text floating over the canvas. */
@@ -159,12 +159,23 @@
 .view[data-pulse-system="1"] :is(.btn,button,select,input,textarea,summary) {
   transition:
     transform .3s var(--pulse-spring),
-    box-shadow .3s ease,
     border-color .3s ease,
     background-color .3s ease,
-    color .3s ease,
-    filter .3s ease;
+    color .3s ease;
 }
+
+/* The app cannot choose the display's refresh rate. Keeping the moving layer
+   to transforms and opacity lets 90/120 Hz devices use every frame they offer. */
+.topbar,
+.tabbar {
+  position: fixed !important;
+  transform: translate3d(0,0,0);
+  backface-visibility: hidden;
+  will-change: transform;
+  contain: layout paint;
+}
+.topbar { inset: 0 0 auto; z-index: 30; }
+.tabbar { inset: auto 0 0; z-index: 30; }
 .view[data-pulse-system="1"] :is(input,select,textarea):focus {
   border-color: color-mix(in srgb, var(--accent) 62%, var(--control-line));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 13%, transparent);
