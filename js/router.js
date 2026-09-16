@@ -181,6 +181,35 @@ function announceReady() {
   announcedReady = true;
   requestAnimationFrame(() => window.dispatchEvent(new Event("dfl:app-ready")));
 }
+
+/*
+  THE POWER PULSE LANGUAGE, WITHOUT TURNING EVERY SCREEN INTO POWER PULSE.
+
+  Shared primitives already give the routes one visual system. This small
+  presentation pass adds sequencing information to the top-level pieces so
+  CSS can reveal a page like a broadcast package instead of making every
+  card animate at the same instant. It never watches scroll and never keeps a
+  timer alive: one compositor-only entrance per navigation, then it is done.
+
+  Broadcast and Arena Beta own full-screen motion systems of their own. Mixing
+  this layer into either would make both weaker, so they deliberately opt out.
+*/
+const pulseMotionRoutes = new Set(["broadcast", "arena-beta"]);
+function decoratePulseSystem(view, name) {
+  view.dataset.route = name;
+  if (pulseMotionRoutes.has(name)) return;
+  view.dataset.pulseSystem = "1";
+  const bareTitle = view.querySelector(":scope > h1:first-of-type");
+  bareTitle?.classList.add("dfl-page-title");
+  const candidates = [...view.querySelectorAll(".page-head,.notification-head,.dfl-page-title,.tabs,.section-title,.tblwrap,.card")]
+    .filter(node => !node.closest(".pp-card") && (node.matches(".card")
+      ? !node.parentElement?.closest(".card")
+      : !node.closest(".card")));
+  [...new Set(candidates)].slice(0, 18).forEach((node, index) => {
+    node.classList.add("dfl-pulse-surface");
+    node.style.setProperty("--pulse-order", String(Math.min(index, 7)));
+  });
+}
 const setRouteCanvas = color => {
   document.documentElement.style.background = color;
   if (document.body) document.body.style.background = color;
@@ -238,6 +267,7 @@ export async function renderRoute() {
     setRouteCanvas("var(--bg)");
     decorateDflSeasonCounts(view, name);
     spectatorArenaLinks(view, name);
+    decoratePulseSystem(view, name);
     if (name === "profile") {
       import("./profile-commissioner.js")
         .then((m) => m.decorateCommissionerBadge(view))
