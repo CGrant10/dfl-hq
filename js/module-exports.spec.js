@@ -192,7 +192,8 @@ describe("the initial app shell", () => {
     expect(router).toContain('new Set(["broadcast", "arena-beta"])');
     expect(screens).toContain("dfl-pulse-surface-in");
     expect(screens).toContain("prefers-reduced-motion: reduce");
-    expect(screens).toContain("translate3d(28px,0,0) scale(.992)");
+    expect(screens).toContain("translate3d(0,8px,0)");
+    expect(screens).not.toContain("scale(.992)");
     expect(screens).toContain("details::details-content");
     expect(screens).not.toContain("animation: dfl-pulse-surface-in 340ms linear");
   });

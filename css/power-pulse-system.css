@@ -208,8 +208,8 @@
 
 /* Route changes use Power Pulse's actual 28px deck-slide motion. */
 @keyframes dfl-pulse-surface-in {
-  from { opacity: 0; transform: translate3d(28px,0,0) scale(.992); }
-  to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+  from { opacity: 0; transform: translate3d(0,8px,0); }
+  to { opacity: 1; transform: translate3d(0,0,0); }
 }
 @keyframes dfl-pulse-rail-in {
   from { transform: scaleX(0); opacity: .25; }
@@ -219,8 +219,8 @@
 .view.page-in[data-pulse-system="1"] > .card,
 .view.page-in[data-pulse-system="1"] > div > .card { animation: none !important; }
 .view.page-in[data-pulse-system="1"] .dfl-pulse-surface {
-  animation: dfl-pulse-surface-in .5s var(--pulse-spring) both;
-  animation-delay: calc(var(--pulse-order, 0) * 42ms);
+  animation: dfl-pulse-surface-in .28s var(--pulse-spring) both;
+  animation-delay: calc(var(--pulse-order, 0) * 12ms);
 }
 .view.page-in[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title)::before,
 .view.page-in[data-pulse-system="1"] .section-title::after {
@@ -252,7 +252,7 @@
   }
   .view.page-in[data-pulse-system="1"] .dfl-pulse-surface {
     animation-name: dfl-pulse-surface-in;
-    animation-duration: .44s;
+    animation-duration: .24s;
   }
 }
 
