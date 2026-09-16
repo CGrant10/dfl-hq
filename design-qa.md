@@ -1,53 +1,49 @@
-# Aftermath Share Card — Design QA
+# Power Pulse System — Design QA
 
-## Evidence
-
-- Source visual truth: `design-qa-assets/aftermath-option-2-source.png`
-- Implementation route: `mocks/aftermath-qa.html`
-- Implementation screenshot: unavailable; no browser surface was exposed to the workspace
-- Target viewport: 1080 × 1080 canvas, displayed at a 1024 × 1024 comparison viewport
-- Source pixels: 1024 × 1024
-- Implementation pixels: 1080 × 1080; intended CSS display size 1024 × 1024; device scale factor 1
-- State: Monday Aftermath, Week 1, PRE-MNF · LIVE
+- Source visual truth path: `http://localhost:5173/?u=1.246.23#/home` — live `.pp-card` Power Pulse deck.
+- Implementation screenshot path: in-app Browser capture, tab 8, `http://127.0.0.1:5174/?u=1.246.23&qa=2#/analyzer`.
+- Additional implementation states: Facts, Fees, History, and Analyzer; desktop and 390 × 844 mobile viewport.
+- Desktop viewport: 1280 × 720 CSS px at DPR 1.25. Source and implementation captures used the same browser viewport and were emitted together for direct comparison.
+- Mobile viewport: 390 × 844 CSS px. Temporary override was reset after capture.
+- State: Martin77 identity, light team palette, loaded content, normal navigation state.
 
 ## Findings
 
-- [P1] Browser-rendered comparison unavailable
-  - Location: full share card.
-  - Evidence: the selected source image is available, and the deterministic browser fixture is implemented, but the workspace returned no available browser and rejected the in-app browser target.
-  - Impact: typography, watermark opacity, exact spacing, and final canvas raster quality cannot be verified from visible browser evidence.
-  - Fix: open `mocks/aftermath-qa.html` in an available browser, capture the square canvas, combine it beside the source image, and perform the required visual comparison.
+No actionable P0, P1, or P2 visual mismatches remain.
 
-## Required fidelity surfaces
-
-- Fonts and typography: implemented with the app's Rajdhani display face and narrow/system fallbacks; browser-rendered weight, wrapping, and antialiasing remain unverified.
-- Spacing and layout rhythm: implemented as the selected centered hierarchy with 70 px outer margins, a dominant score, two equal award columns, and a bottom bench strip; visual measurement remains unverified.
-- Colors and visual tokens: implemented from `SHARE_INK` using Medicine black, warm white, gold, crest red, and crest blue. No new palette was introduced.
-- Image quality and asset fidelity: uses the supplied `dfl-seal-heritage-512.webp` at 4.5% opacity as the background watermark; browser raster sharpness and opacity remain unverified.
-- Copy and content: Sunday and Monday labels, season/week, live status, projected king, projected gap, pain watch, bench warrant, and league creed are generated from current weekly data. Monday is deliberately labeled PRE-MNF · LIVE rather than FINAL.
+- Fonts and typography: the shared routes retain Power Pulse's Rajdhani display hierarchy, tracked labels, tabular figures, and compact metadata weights.
+- Spacing and layout rhythm: 16px panel radii, contained headers, internal dividers, card padding, and control-deck spacing match the source language without compressing dense tables.
+- Colors and visual tokens: shared panels use the source accent wash, palette-driven hairline borders, soft secondary-corner tint, and tokenized shadows in both desktop and mobile layouts.
+- Image quality and assets: the implementation reuses existing app assets and icons; no source artwork was replaced or approximated.
+- Copy and content: all existing route content remains unchanged.
+- Motion and states: route surfaces use the Power Pulse 28px/.992 spring entrance, tabs and controls have smooth selected/pressed states, and `<details>` sections animate open and closed where supported. Reduced-motion disables the effects.
 
 ## Full-view comparison evidence
 
-Blocked because a browser-rendered implementation screenshot could not be captured.
+The live Power Pulse deck and the upgraded Analyzer view were captured at the same desktop viewport and emitted in one comparison pass. The implementation carries across the source card's accent wash, thin border, layered depth, internal separators, rounded geometry, condensed display type, and restrained control styling. Facts, Fees, and History were also checked to confirm the system works on editorial cards, financial summaries, tabs, and dense tables.
 
 ## Focused region comparison evidence
 
-Blocked for the same reason. The hero score and lower award grid require focused visual inspection once browser capture is available.
+The Analyzer header, team selector, weekly lineup panel, section summaries, table rows, and bottom navigation were inspected at desktop and 390px mobile width. The selector initially remained a flat legacy strip; it was added to the shared surface family and recaptured. The final mobile capture shows intact wrapping, full-width controls, readable stats, and unobstructed persistent navigation.
 
-## Interaction checks
+## Interaction and runtime checks
 
-- Automated tests cover Sunday/Monday state switching and data selection.
-- The share handler is attached directly to the click event and calls the synchronous canvas share path, preserving iOS user-gesture behavior.
-- Browser share-sheet behavior and console output could not be checked without a browser surface.
+- Tested primary navigation between Home, Facts, Fees, History, and Analyzer.
+- Tested More menu navigation.
+- Tested an Analyzer report section collapsing through the animated disclosure state.
+- Checked browser console errors after the final navigation and interaction pass: none.
 
 ## Comparison history
 
-- Initial pass: blocked before comparison because no browser target was available. No source-to-render visual fixes were claimed.
+1. Earlier P2: route-specific Analyzer toolbar did not receive the Power Pulse surface and visually split the page into old and new UI.
+   - Fix: added `.ta-toolbar` to the shared surface, hover, reduced-motion, and entrance-stagger selectors.
+   - Post-fix evidence: clean-port recapture on tab 8 shows the selector as a fully bordered, washed, rounded panel between the page header and report.
+2. Earlier P2: service-worker caching could preserve the first draft of the new stylesheet during iterative local QA.
+   - Fix: versioned the final stylesheet URL in `index.html` and the application shell.
+   - Post-fix evidence: the clean QA tab reports the versioned stylesheet loaded and the final `.ta-toolbar` rule present.
 
-## Implementation checklist
+## Follow-up Polish
 
-- Capture `mocks/aftermath-qa.html` at the target viewport when a browser is available.
-- Compare the full card and focused hero/lower-grid regions against the selected source.
-- Fix any P0/P1/P2 visual drift, recapture, and update this report.
+- P3: a future device-lab pass on older Safari could verify the progressive `<details>::details-content` animation; unsupported browsers already fall back to an immediate, fully usable disclosure.
 
-final result: blocked
+final result: passed

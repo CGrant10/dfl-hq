@@ -201,7 +201,7 @@ function decoratePulseSystem(view, name) {
   view.dataset.pulseSystem = "1";
   const bareTitle = view.querySelector(":scope > h1:first-of-type");
   bareTitle?.classList.add("dfl-page-title");
-  const candidates = [...view.querySelectorAll(".page-head,.notification-head,.dfl-page-title,.tabs,.section-title,.tblwrap,.card")]
+  const candidates = [...view.querySelectorAll(".page-head,.notification-head,.dfl-page-title,.tabs,.section-title,.tblwrap,.ta-table-wrap,.table-wrap,.card,.ta-report-section,.so-panel,.wo-panel,.factcard,.fleece-card,.profile-settings,.notification-item,.ta-toolbar,.bag-card,.gd-card")]
     .filter(node => !node.closest(".pp-card") && (node.matches(".card")
       ? !node.parentElement?.closest(".card")
       : !node.closest(".card")));

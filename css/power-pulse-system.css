@@ -1,0 +1,257 @@
+/* =====================================================================
+   THE POWER PULSE SYSTEM
+   ---------------------------------------------------------------------
+   Loaded last so the app's defining card — Power Pulse — can lend its
+   depth, accent wash, spacing and motion to every ordinary route. Full-screen
+   Broadcast and Arena Beta keep their purpose-built art direction.
+   ===================================================================== */
+
+.view[data-pulse-system="1"] {
+  --pulse-surface:
+    radial-gradient(circle at 0 0,
+      color-mix(in srgb, var(--accent-fill) 18%, transparent) 0,
+      color-mix(in srgb, var(--accent-fill) 7%, transparent) 22%,
+      transparent 42%),
+    radial-gradient(circle at 100% 100%,
+      color-mix(in srgb, var(--accent-2-fill) 8%, transparent) 0,
+      transparent 36%),
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--bg-2) 97%, var(--text) 3%),
+      var(--bg-2) 58%,
+      color-mix(in srgb, var(--bg-2) 96%, var(--accent-2-fill) 4%));
+  --pulse-edge: color-mix(in srgb, var(--accent) 30%, var(--line));
+  --pulse-edge-hot: color-mix(in srgb, var(--accent) 52%, var(--line));
+  --pulse-shadow:
+    inset 0 1px color-mix(in srgb, var(--text) 8%, transparent),
+    0 1px 2px color-mix(in srgb, var(--bg) 48%, transparent),
+    0 14px 34px color-mix(in srgb, var(--bg) 18%, transparent);
+  --pulse-spring: cubic-bezier(.2,.75,.2,1);
+}
+
+/* The same layered surface as Power Pulse, on every primary content panel. */
+.view[data-pulse-system="1"] :is(
+  .card,
+  .ta-report-section,
+  .so-panel,
+  .wo-panel,
+  .factcard,
+  .fleece-card,
+  .profile-settings,
+  .notification-item,
+  .subcard,
+  .ovbox,
+  .ta-toolbar,
+  .bag-card,
+  .gd-card
+) {
+  border-color: var(--pulse-edge);
+  background: var(--pulse-surface);
+  box-shadow: var(--pulse-shadow);
+  transition:
+    transform .5s var(--pulse-spring),
+    box-shadow .38s ease,
+    border-color .38s ease;
+}
+
+/* Page heads are no longer plain text floating over the canvas. */
+.view[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title) {
+  position: relative;
+  min-height: 82px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--s-5);
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  overflow: hidden;
+  border: 1px solid var(--pulse-edge);
+  border-radius: var(--r-lg);
+  background: var(--pulse-surface);
+  box-shadow: var(--pulse-shadow);
+}
+.view[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title)::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent-sweep);
+  transform-origin: left;
+}
+.view[data-pulse-system="1"] :is(.page-head,.notification-head) h1 { margin-bottom: 3px; }
+.view[data-pulse-system="1"] h1.dfl-page-title { width: 100%; }
+.view[data-pulse-system="1"] :is(.page-head,.notification-head) :is(p,.page-sub) {
+  max-width: 62ch;
+  color: var(--body-text);
+}
+.view[data-pulse-system="1"] .ta-toolbar {
+  margin-bottom: var(--s-3);
+  padding: var(--s-4);
+  border: 1px solid var(--pulse-edge);
+  border-radius: var(--r-lg);
+}
+
+/* Card anatomy uses the same label → divider → content rhythm. */
+.view[data-pulse-system="1"] .card-title-row {
+  padding-bottom: var(--s-3);
+  margin-bottom: var(--s-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--line-soft) 74%, var(--accent) 26%);
+}
+.view[data-pulse-system="1"] .card-title {
+  color: color-mix(in srgb, var(--text) 86%, var(--accent));
+}
+.view[data-pulse-system="1"] .card-meta { color: var(--body-text); }
+
+/* Broadcast section labels: strong typography, a lit rule and a real count. */
+.view[data-pulse-system="1"] .section-title {
+  color: var(--text);
+  min-height: 30px;
+}
+.view[data-pulse-system="1"] .section-title::after {
+  height: 2px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--accent-fill) 90%, transparent),
+    color-mix(in srgb, var(--accent-2-fill) 56%, transparent) 46%,
+    transparent 92%);
+  transform-origin: left;
+}
+.view[data-pulse-system="1"] .section-title .count {
+  min-width: 28px;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: color-mix(in srgb, var(--accent-fill) 13%, var(--bg-3));
+  box-shadow: inset 0 1px color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+}
+
+/* Tabs become the Power Pulse deck control strip, including the selected glow. */
+.view[data-pulse-system="1"] .tabs {
+  gap: 5px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--pulse-edge);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--bg-2) 78%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--text) 7%, transparent), var(--e-1);
+}
+.view[data-pulse-system="1"] .tabs > * {
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition: color .28s ease, background .28s ease, border-color .28s ease, transform .28s var(--pulse-spring);
+}
+.view[data-pulse-system="1"] .tabs > :is(.on,.active,[aria-selected="true"]) {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--line));
+  background: color-mix(in srgb, var(--accent-fill) 13%, var(--bg-2));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--bg) 22%, transparent);
+  color: var(--text);
+}
+
+/* Tables read like the Power Pulse ranking board instead of a spreadsheet. */
+.view[data-pulse-system="1"] :is(.tbl,.ta-table,.table-wrap table) tbody tr {
+  transition: background .28s ease, transform .32s var(--pulse-spring), border-color .28s ease;
+}
+.view[data-pulse-system="1"] :is(.tbl,.ta-table,.table-wrap table) tbody tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--bg-2) 68%, transparent);
+}
+.view[data-pulse-system="1"] :is(.tblwrap,.ta-table-wrap,.table-wrap) {
+  border-radius: var(--r-md);
+}
+
+/* Forms and action controls receive the same responsive, physical feel. */
+.view[data-pulse-system="1"] :is(.btn,button,select,input,textarea,summary) {
+  transition:
+    transform .3s var(--pulse-spring),
+    box-shadow .3s ease,
+    border-color .3s ease,
+    background-color .3s ease,
+    color .3s ease,
+    filter .3s ease;
+}
+.view[data-pulse-system="1"] :is(input,select,textarea):focus {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--control-line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 13%, transparent);
+}
+
+/* Details panels now open like a deck changing slides. */
+.view[data-pulse-system="1"] details > summary {
+  border-radius: inherit;
+}
+.view[data-pulse-system="1"] details[open] > summary {
+  border-bottom-color: color-mix(in srgb, var(--line-soft) 72%, var(--accent) 28%);
+  background: color-mix(in srgb, var(--accent-fill) 7%, transparent);
+}
+@supports (interpolate-size: allow-keywords) {
+  .view[data-pulse-system="1"] details { interpolate-size: allow-keywords; }
+  .view[data-pulse-system="1"] details::details-content {
+    block-size: 0;
+    overflow: clip;
+    opacity: 0;
+    transition:
+      block-size .5s var(--pulse-spring),
+      opacity .32s ease,
+      content-visibility .5s allow-discrete;
+  }
+  .view[data-pulse-system="1"] details[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+}
+
+/* Route changes use Power Pulse's actual 28px deck-slide motion. */
+@keyframes dfl-pulse-surface-in {
+  from { opacity: 0; transform: translate3d(28px,0,0) scale(.992); }
+  to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+}
+@keyframes dfl-pulse-rail-in {
+  from { transform: scaleX(0); opacity: .25; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+.view.page-in[data-pulse-system="1"] { animation: none; }
+.view.page-in[data-pulse-system="1"] > .card,
+.view.page-in[data-pulse-system="1"] > div > .card { animation: none !important; }
+.view.page-in[data-pulse-system="1"] .dfl-pulse-surface {
+  animation: dfl-pulse-surface-in .5s var(--pulse-spring) both;
+  animation-delay: calc(var(--pulse-order, 0) * 42ms);
+}
+.view.page-in[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title)::before,
+.view.page-in[data-pulse-system="1"] .section-title::after {
+  animation: dfl-pulse-rail-in .7s var(--pulse-spring) both;
+  animation-delay: calc(90ms + var(--pulse-order, 0) * 42ms);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .view[data-pulse-system="1"] :is(.card,.ta-report-section,.so-panel,.wo-panel,.factcard,.fleece-card,.profile-settings,.notification-item,.subcard,.ta-toolbar,.bag-card,.gd-card):hover {
+    transform: translateY(-3px);
+    border-color: var(--pulse-edge-hot);
+    box-shadow:
+      inset 0 1px color-mix(in srgb, var(--text) 10%, transparent),
+      0 18px 42px color-mix(in srgb, var(--bg) 30%, transparent);
+  }
+  .view[data-pulse-system="1"] :is(.tbl,.ta-table,.table-wrap table) tbody tr:hover {
+    transform: translateX(4px);
+    background: color-mix(in srgb, var(--accent-fill) 10%, var(--bg-2));
+  }
+  .view[data-pulse-system="1"] :is(.btn,button,summary):hover { transform: translateY(-1px); }
+}
+.view[data-pulse-system="1"] :is(.btn,button,summary):active { transform: scale(.97); }
+
+@media (max-width: 620px) {
+  .view[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title) {
+    min-height: 72px;
+    padding: var(--s-4);
+    border-radius: var(--r-md);
+  }
+  .view.page-in[data-pulse-system="1"] .dfl-pulse-surface {
+    animation-name: dfl-pulse-surface-in;
+    animation-duration: .44s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view.page-in[data-pulse-system="1"] .dfl-pulse-surface,
+  .view.page-in[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title)::before,
+  .view.page-in[data-pulse-system="1"] .section-title::after {
+    animation: none;
+  }
+  .view[data-pulse-system="1"] :is(.card,.ta-report-section,.so-panel,.wo-panel,.factcard,.fleece-card,.profile-settings,.notification-item,.subcard,.ta-toolbar,.bag-card,.gd-card,.tbl tbody tr,.ta-table tbody tr,.btn,button,summary) {
+    transform: none !important;
+  }
+}

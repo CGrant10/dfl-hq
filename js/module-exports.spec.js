@@ -185,13 +185,15 @@ describe("the initial app shell", () => {
 
   it("applies the Power Pulse system once per route without adding runtime observers", () => {
     const router = fs.readFileSync("js/router.js", "utf8");
-    const screens = fs.readFileSync("css/screens.css", "utf8");
+    const screens = fs.readFileSync("css/power-pulse-system.css", "utf8");
     expect(router).toContain("decoratePulseSystem(view, name)");
     expect(router).toContain('view.dataset.pulseSystem = "1"');
     expect(router).toContain('bareTitle?.classList.add("dfl-page-title")');
     expect(router).toContain('new Set(["broadcast", "arena-beta"])');
     expect(screens).toContain("dfl-pulse-surface-in");
     expect(screens).toContain("prefers-reduced-motion: reduce");
+    expect(screens).toContain("translate3d(28px,0,0) scale(.992)");
+    expect(screens).toContain("details::details-content");
     expect(screens).not.toContain("animation: dfl-pulse-surface-in 340ms linear");
   });
 
