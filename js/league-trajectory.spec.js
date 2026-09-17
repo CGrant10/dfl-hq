@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLeaguePowerRankings, leaguePowerRankingsCard } from "./league-trajectory.js";
+import { boardWeekLabel, buildLeaguePowerRankings, leaguePowerRankingsCard } from "./league-trajectory.js";
 
 const teams = [
   { id: "1", roster_id: 1, sleeper_user_id: "u1", team_name: "Alpha", rank: 1, lineup: { weeklyPoints: 130 } },
@@ -53,5 +53,24 @@ describe("weekly league power rankings", () => {
     ] });
     expect(result.latestWeek).toBe(0);
     expect(result.boards).toHaveLength(1);
+  });
+});
+
+describe("the week named on the Power Rankings header", () => {
+  /* A board only exists for a week with final scores, so the newest board is
+     always the week just finished. The header names the week being played. */
+  it("names the live week instead of the last one scored", () => {
+    expect(boardWeekLabel({ label: "Week 1" }, 2)).toBe("Week 2");
+    expect(boardWeekLabel({ label: "Week 1" }, 5)).toBe("Week 5");
+  });
+
+  it("keeps the board's own label when the live week is unknown", () => {
+    expect(boardWeekLabel({ label: "Week 1" }, null)).toBe("Week 1");
+    expect(boardWeekLabel({ label: "Week 1" }, 0)).toBe("Week 1");
+    expect(boardWeekLabel({ label: "Week 1" }, "nonsense")).toBe("Week 1");
+  });
+
+  it("leaves the preseason board alone - it is not a week", () => {
+    expect(boardWeekLabel({ label: "Roster model" }, 2)).toBe("Roster model");
   });
 });

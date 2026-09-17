@@ -152,3 +152,25 @@ export function leaguePowerRankingsCard(rankings, focusId = null) {
     <p class="pp-board-note">Rank blends current starters (50%), scoring pace through that week (35%) and record (15%). Movement is against the previous completed week.</p>
   </section>`;
 }
+
+/*
+  THE HEADER NAMES THE WEEK BEING PLAYED, NOT THE LAST ONE SCORED.
+
+  buildLeaguePowerRankings() only makes a board for a week that has final
+  scores, so its newest board is always the week just finished - the header
+  read "WEEK 1 OF 14" for the whole of week 2. That is how power rankings are
+  built everywhere (this week's ranking is last week's results), but it is not
+  how they are labelled: a ranking published during week 2 is the week 2
+  ranking.
+
+  So the number comes from Sleeper's own league week, which rolls over once
+  Monday Night Football ends - the Tuesday advance. The board's own label is
+  the fallback for a Home that has not resolved the live week yet, and for
+  the preseason "Roster model" board, which is not a week at all.
+*/
+export function boardWeekLabel(board, currentWeek) {
+  const week = Number(currentWeek);
+  if (!Number.isFinite(week) || week < 1) return board.label;
+  if (!/^week\s/i.test(board.label || "")) return board.label;
+  return `Week ${week}`;
+}
