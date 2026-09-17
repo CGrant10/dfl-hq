@@ -35,27 +35,15 @@ import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
-import { powerPulsePanel, powerPulseView } from "../power-pulse.js";
-import { aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView, clubhouseWeekCard, wireClubhouse } from "../home-clubhouse.js";
-import { buildNextMove, nextMovePanel } from "../next-move.js";
+import { powerPulseView } from "../power-pulse.js";
+import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
+import { buildNextMove } from "../next-move.js";
+import { nextMoveSlide, tradeAlertSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
 let stage = null;
 let generation = 0;
 let dropPresence = null;
-let dropDashboard = null;
-
-export function homeDashboardShell() {
-  const tabs = ["My Week", "Power Ranks", "Next Move", "Report"];
-  return `<section class="home-dashboard" data-home-dashboard aria-label="League dashboard">
-    <nav class="hd-tabs" role="tablist" aria-label="Dashboard cards">${tabs.map((label, index) => `<button type="button" role="tab" aria-selected="${index === 0}" tabindex="${index === 0 ? 0 : -1}" data-hd-go="${index}">${label}</button>`).join("")}</nav>
-    <div class="hd-viewport">
-      ${tabs.map((label, index) => `<section class="hd-panel ${index === 0 ? "is-active" : ""}" role="tabpanel" data-hd-panel="${index}" aria-label="${label}" aria-hidden="${index !== 0}" ${index ? "inert" : ""}><div class="hd-loading"><span></span><strong>${index === 0 ? "READING YOUR WEEK" : `BUILDING ${label.toUpperCase()}`}</strong></div></section>`).join("")}
-    </div>
-    <footer class="hd-controls"><div class="hd-dots" aria-hidden="true">${tabs.map((_, index) => `<i class="${index === 0 ? "is-active" : ""}"></i>`).join("")}</div><button type="button" data-hd-pause aria-label="Pause rotating dashboard"><svg class="ico-sm" aria-hidden="true"><use href="#i-pause"></use></svg><span class="sr-only" data-hd-pause-label>Pause</span></button></footer>
-    <div class="hd-progress" aria-hidden="true"><i></i></div>
-  </section>`;
-}
 
 function rankMove(value) {
   const move = Number(value) || 0;
@@ -140,123 +128,11 @@ export function homeWeeklyDigest(view) {
   </section>`;
 }
 
-function signed(value) {
-  const number = Number(value) || 0;
-  return `${number > 0 ? "+" : number < 0 ? "−" : ""}${Math.abs(number).toFixed(1)}`;
-}
-
-function tradeAlertPanel(alert) {
-  if (!alert) return "";
-  const packageRows = (alert.packages || []).map(pkg => `<section class="hd-trade-side">
-    <small>${esc(pkg.teamName)} SENT</small>
-    ${(pkg.players || []).map(player => `<div><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam].filter(Boolean).join(" · "))}</small></span><b>${Math.round(Number(player.value) || 0)}</b></div>`).join("") || `<p>No rated players</p>`}
-  </section>`).join("");
-  const call = alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED";
-  const reason = alert.reason?.title || alert.limitations?.[0] || "The completed trade is ready for league review.";
-  return `<article class="hd-trade-alert">
-    <header><span>DFL TRADE ALERT</span><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small></header>
-    <h2>${esc(call)}</h2>
-    <div class="hd-trade-packages">${packageRows}</div>
-    <div class="hd-trade-verdict">
-      <p><strong>${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% BALANCE`}</strong><span>${esc(reason)}</span></p>
-      ${(alert.lineupDeltas || []).slice(0, 2).map(delta => `<small>${esc(delta.teamName)} <b>${signed(delta.weekly)} / wk</b></small>`).join("")}
-    </div>
-    <a class="btn ghost small" href="${esc(alert.href)}">View the full receipt</a>
-  </article>`;
-}
-
-function wireHomeDashboard(root) {
-  if (!root) return () => {};
-  const panels = [...root.querySelectorAll("[data-hd-panel]")];
-  const tabs = [...root.querySelectorAll("[data-hd-go]")];
-  const dots = [...root.querySelectorAll(".hd-dots i")];
-  const pause = root.querySelector("[data-hd-pause]");
-  const pauseLabel = root.querySelector("[data-hd-pause-label]");
-  const pauseIcon = pause?.querySelector("use");
-  const progress = root.querySelector(".hd-progress i");
-  const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
-  let active = 0, timer = null, hover = false, focus = false, manual = reduced, touchX = null;
-  const stopped = () => manual || hover || focus || globalThis.document?.hidden;
-  const resetProgress = () => {
-    if (!progress) return;
-    progress.style.animation = "none";
-    void progress.offsetWidth;
-    progress.style.animation = "";
-  };
-  const paintPause = () => {
-    root.classList.toggle("is-paused", stopped());
-    if (pauseLabel) pauseLabel.textContent = manual ? "Play" : "Pause";
-    if (pause) pause.setAttribute("aria-label", manual ? "Play rotating dashboard" : "Pause rotating dashboard");
-    if (pauseIcon) pauseIcon.setAttribute("href", manual ? "#i-play" : "#i-pause");
-  };
-  const show = next => {
-    active = (Number(next) + panels.length) % panels.length;
-    panels.forEach((panel, index) => {
-      const selected = index === active;
-      panel.classList.toggle("is-active", selected);
-      panel.setAttribute("aria-hidden", String(!selected));
-      panel.inert = !selected;
-    });
-    tabs.forEach((tab, index) => {
-      const selected = index === active;
-      tab.setAttribute("aria-selected", String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-    });
-    dots.forEach((dot, index) => dot.classList.toggle("is-active", index === active));
-    resetProgress();
-  };
-  const schedule = () => {
-    clearTimeout(timer); timer = null; paintPause();
-    if (reduced || stopped() || panels.length < 2) return;
-    timer = setTimeout(() => { show(active + 1); schedule(); }, 9000);
-  };
-  const click = event => {
-    const tab = event.target.closest("[data-hd-go]");
-    if (tab) { show(tab.dataset.hdGo); schedule(); return; }
-    if (event.target.closest("[data-hd-pause]")) { manual = !manual; schedule(); return; }
-    const rankings = event.target.closest("[data-pp-rankings]");
-    const direction = event.target.closest("[data-pp-week-prev]") ? -1 : event.target.closest("[data-pp-week-next]") ? 1 : 0;
-    if (!rankings || !direction) return;
-    const boards = [...rankings.querySelectorAll("[data-pp-week-board]")];
-    const index = Math.max(0, Math.min(boards.length - 1, (Number(rankings.dataset.weekIndex) || 0) + direction));
-    rankings.dataset.weekIndex = String(index);
-    boards.forEach((board, boardIndex) => { board.hidden = boardIndex !== index; });
-    const board = boards[index];
-    const label = rankings.querySelector("[data-pp-week-label]");
-    const comparison = rankings.querySelector("[data-pp-week-comparison]");
-    if (label) label.textContent = board?.dataset.weekLabel || "Roster model";
-    if (comparison) comparison.textContent = board?.dataset.weekComparison || "current roster baseline";
-    const prev = rankings.querySelector("[data-pp-week-prev]");
-    const nextButton = rankings.querySelector("[data-pp-week-next]");
-    if (prev) prev.disabled = index === 0;
-    if (nextButton) nextButton.disabled = index === boards.length - 1;
-    manual = true; schedule();
-  };
-  const visibility = () => schedule();
-  root.addEventListener("click", click);
-  root.addEventListener("mouseenter", () => { hover = true; schedule(); });
-  root.addEventListener("mouseleave", () => { hover = false; schedule(); });
-  root.addEventListener("focusin", () => { focus = true; schedule(); });
-  root.addEventListener("focusout", event => { if (!root.contains(event.relatedTarget)) { focus = false; schedule(); } });
-  root.addEventListener("touchstart", event => { touchX = event.touches?.[0]?.clientX ?? null; }, { passive: true });
-  root.addEventListener("touchend", event => {
-    if (touchX == null) return;
-    const delta = (event.changedTouches?.[0]?.clientX ?? touchX) - touchX;
-    touchX = null;
-    if (Math.abs(delta) > 45) { show(active + (delta < 0 ? 1 : -1)); schedule(); }
-  }, { passive: true });
-  globalThis.document?.addEventListener("visibilitychange", visibility);
-  show(0); schedule();
-  return () => { clearTimeout(timer); root.removeEventListener("click", click); globalThis.document?.removeEventListener("visibilitychange", visibility); };
-}
-
 export function leave() {
   try { stage?.stop(); } catch (err) { console.warn(err); }
   stage = null;
   try { dropPresence?.(); } catch { }
   dropPresence = null;
-  try { dropDashboard?.(); } catch { }
-  dropDashboard = null;
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
@@ -265,10 +141,14 @@ const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
 function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
   const ranked = buildDeck(ctx, { custom, off, overrides, max: 20 });
   const picked = ranked.filter((it) => {
-    if (it.source === "manual") return true;
+    if (it.source === "manual" || it.pinned) return true;
     if (STAGE_UTILITY.has(it.generator)) return false;
     if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
-    if (it.generator === "myMatchup" && it.temporal !== "live") return false;
+    /* myMatchup used to be held back unless the game was LIVE. That made
+       sense when the tabbed dashboard carried a permanent "My Week" card and
+       a second copy on the stage would have been the same fact twice. The
+       dashboard is gone, so this is now the only place the reader's own game
+       appears - and a finished game is still the thing they came to see. */
     return true;
   }).slice(0, 8);
   if (picked.length) return picked;
@@ -388,7 +268,7 @@ export async function render(view) {
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
-    ${homeDashboardShell()}
+    <section class="home-broadcast" aria-label="League broadcast">${renderStage(deck1)}</section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
@@ -401,12 +281,10 @@ export async function render(view) {
         ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
       ${activityCard(activity)}
     </div>
-    <section class="home-broadcast-secondary" aria-label="League broadcast">${renderStage(deck1)}</section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
   </div>`;
-  dropDashboard = wireHomeDashboard(view.querySelector("[data-home-dashboard]"));
 
   /* Projection data is intentionally second paint. One shared request feeds
      both the cold open and Power Pulse, so making Home livelier does not make
@@ -480,14 +358,21 @@ export async function render(view) {
 
   let lore = null;
   let custom = manual;
+  /* Slides built from data that only arrives after the first paint - the
+     trade alert and the auto-scout. Kept beside `custom` rather than mixed
+     into it so a refresh() that reloads the commissioner's hand-written
+     items cannot drop them. */
+  let liveSlides = [];
+  let golfDayNow = golfDay;
   const off = broadcastOff();
-  const build = (day) => editorialStage(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom, off, overrides });
+  const build = (day) => editorialStage(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom: [...custom, ...liveSlides], off, overrides });
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
       loadBroadcastItems(),
     ]);
     custom = fresh;
+    golfDayNow = day;
     return build(day);
   };
 
@@ -505,8 +390,7 @@ export async function render(view) {
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
     if (mine !== generation) return;
-    const dashboard = view.querySelector("[data-home-dashboard]");
-    if (!dashboard?.isConnected) return;
+    if (!view.isConnected) return;
     const clubhouse = clubhouseView({
       analysis, lore: got?.error ? null : got, members: memberRows,
       meSleeperId: myMember?.sleeper_user_id || null,
@@ -515,33 +399,28 @@ export async function render(view) {
     });
     const pulse = powerPulseView({ analysis, meSleeperId: myMember?.sleeper_user_id || null, standings: standings.data || [] });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
-    const weekSlot = dashboard.querySelector('[data-hd-panel="0"]');
-    const pulseSlot = dashboard.querySelector('[data-hd-panel="1"]');
-    const moveSlot = dashboard.querySelector('[data-hd-panel="2"]');
-    const reportSlot = dashboard.querySelector('[data-hd-panel="3"]');
+
+    /* The two standing sections. POWER RANKINGS and WEEKLY REPORT each own
+       their own place on the page, which is exactly why the retired
+       dashboard's "Power Ranks" and "Report" tabs were removed: they drew
+       the same two views from the same two objects, one scroll apart. */
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
-    if (weekSlot) weekSlot.innerHTML = clubhouseWeekCard(clubhouse) || `<div class="hd-empty"><strong>YOUR WEEK</strong><p>Your matchup will appear after the next Sleeper sync.</p></div>`;
-    if (pulseSlot) pulseSlot.innerHTML = powerPulsePanel(pulse) || `<div class="hd-empty"><strong>POWER RANKS</strong><p>Run a Sleeper sync to build the league board.</p></div>`;
-    if (moveSlot) {
-      moveSlot.innerHTML = tradeAlertPanel(tradeAlert) || nextMovePanel(move) || `<div class="hd-empty"><strong>NEXT MOVE</strong><p>No urgent starting-lineup move surfaced this week.</p><a class="btn ghost small" href="#/analyzer">Open Team Analyzer</a></div>`;
-      if (tradeAlert) {
-        const tab = dashboard.querySelector('[data-hd-go="2"]');
-        if (tab) tab.textContent = "Trade Alert";
-      }
-    }
-    if (reportSlot) {
-      reportSlot.innerHTML = clubhouseCard(clubhouse) || `<div class="hd-empty"><strong>WEEKLY REPORT</strong><p>The full report unlocks when every matchup is final.</p></div>`;
-      if (clubhouse?.aftermath?.final) wireClubhouse(reportSlot, clubhouse);
-    }
     if (homeRankingsSlot) {
       homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
+
+    /* What the dashboard carried that nothing else does: the completed-trade
+       verdict and the auto-scout. Both go to the stage as slides. */
+    const extras = [tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    if (extras.length && view.querySelector("[data-bx-stage]")) {
+      liveSlides = extras;
+      stage?.update(build(golfDayNow));
+    }
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
-    view.querySelector("[data-home-dashboard]")?.classList.add("has-error");
   });
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();
@@ -560,7 +439,7 @@ export function anniversary() {
   if (number < 2 || number % 10 !== 0) return "";
   return `<aside class="dfl-anniv" role="note">
     <img src="icons/crest-512.webp" alt="" aria-hidden="true">
-    <span class="dfl-anniv-copy"><img class="dfl-anniv-laurels" src="assets/anniversary-laurels.webp" alt="" aria-hidden="true"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span>
+    <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
     <span class="dfl-anniv-tag">Same guys.<br>Higher stakes.<br>Bigger bragging rights.</span>
   </aside>`;
 }

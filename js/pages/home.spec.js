@@ -4,11 +4,16 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(new URL("./home.js", import.meta.url), "utf8");
 
 describe("Home redesign wiring", () => {
-  it("keeps the four dashboard stories in one stable rotating shell", () => {
-    expect(source).toContain('const tabs = ["My Week", "Power Ranks", "Next Move", "Report"]');
-    expect(source).toContain("data-hd-pause");
-    expect(source).toContain("data-hd-panel");
-    expect(source).toContain("wireHomeDashboard");
+  it("carries the retired dashboard's unique stories as stage slides", () => {
+    /* The tabbed dashboard is gone. Its "Power Ranks" and "Report" tabs drew
+       the same two views as the standing sections below them, so they were
+       dropped outright; the trade alert and the auto-scout had nowhere else
+       to live, so they became deck items on the stage instead. */
+    expect(source).not.toContain("homeDashboardShell");
+    expect(source).not.toContain("data-hd-panel");
+    expect(source).toContain("tradeAlertSlide");
+    expect(source).toContain("nextMoveSlide");
+    expect(source).toContain("home-slides.js");
   });
 
   it("uses the existing crest for the tenth-anniversary treatment", () => {
@@ -17,9 +22,13 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("LEAGUE_FOUNDED");
   });
 
-  it("demotes the older broadcast below the dashboard and league utility", () => {
-    expect(source.indexOf("${homeDashboardShell()}")).toBeLessThan(source.indexOf("${renderStage(deck1)}"));
-    expect(source.indexOf("home-lower")).toBeLessThan(source.indexOf("home-broadcast-secondary"));
+  it("promotes the broadcast stage into the slot the dashboard held", () => {
+    expect(source).toContain('<section class="home-broadcast"');
+    expect(source).not.toContain("home-broadcast-secondary");
+    /* One stage, above the standing sections and the league utility. */
+    expect(source.match(/\$\{renderStage\(deck1\)\}/g)).toHaveLength(1);
+    expect(source.indexOf("${renderStage(deck1)}")).toBeLessThan(source.indexOf("data-home-rankings-slot"));
+    expect(source.indexOf("${renderStage(deck1)}")).toBeLessThan(source.indexOf("home-lower"));
   });
 
   it("renders the approved always-visible power rankings composition", () => {

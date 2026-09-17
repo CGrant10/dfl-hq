@@ -611,17 +611,30 @@
     to the token durations - so it is switched off here rather than shortened.
   */
   .bx-slide.bx-in * { animation-name: none !important; text-shadow: none !important; }
+  /* The inherited glide is travel, so it goes too - the swap becomes the
+     instant cut the stage's paint() already assumes under this query. */
+  .bx-slide, .bx-slide.bx-enter { transform: none; transition: none; }
 }
 
 /* =====================================================================
    CONTROLS
    ===================================================================== */
 
+/*
+  THE ENTRANCE, INHERITED FROM THE RETIRED HOME DASHBOARD.
+
+  The tabbed dashboard that used to sit at the top of Home moved its panels
+  with a short fade against a longer horizontal glide - the fade lands first
+  and the travel keeps easing after it, which is what stopped a swap from
+  reading as a hard cut. The stage took that slot, so it takes that motion:
+  the numbers below are the old .hd-panel transition verbatim.
+*/
 .bx-slide {
   opacity: 1;
-  transition: opacity var(--t-mid) var(--ease);
+  transform: translate3d(0, 0, 0);
+  transition: opacity 320ms ease, transform 480ms cubic-bezier(.2, .75, .2, 1);
 }
-.bx-slide.bx-enter { opacity: 0; }
+.bx-slide.bx-enter { opacity: 0; transform: translate3d(28px, 0, 0); }
 
 .bx-controls {
   position: absolute;
