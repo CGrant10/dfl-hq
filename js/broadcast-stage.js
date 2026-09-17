@@ -525,6 +525,11 @@ export function startStage(root, deck, { refresh } = {}) {
          getBoundingClientRect() report the wrong width. */
       fitHeadlines(slide);
       slide.classList.add("bx-enter");
+      /* Commit the entrance state before anything can release it. .bx-enter
+         carries transition:none, so this reflow makes opacity 0 and the 28px
+         offset the element's actual current values rather than a target it is
+         still animating towards. */
+      void slide.offsetWidth;
       /*
         RELEASED BY WHICHEVER COMES FIRST, two frames or a timer.
 

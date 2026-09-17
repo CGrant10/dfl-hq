@@ -634,7 +634,20 @@
   transform: translate3d(0, 0, 0);
   transition: opacity 320ms ease, transform 480ms cubic-bezier(.2, .75, .2, 1);
 }
-.bx-slide.bx-enter { opacity: 0; transform: translate3d(28px, 0, 0); }
+/*
+  transition:none IS THE WHOLE TRICK.
+
+  The entrance state has to be applied INSTANTLY, not transitioned into.
+  paint() calls fitHeadlines() on the new slide first, and measuring forces a
+  style flush that commits opacity:1 as the element's current value - so
+  without this, adding .bx-enter started a 320ms fade DOWN from 1 to 0, which
+  was then cancelled two frames later when the class came off. The slide
+  dipped a few percent and came back: the incoming card appeared to pop in at
+  full strength while only the outgoing one animated. Suppressing the
+  transition here makes 0/28px the committed starting point, and removing the
+  class is what animates.
+*/
+.bx-slide.bx-enter { opacity: 0; transform: translate3d(28px, 0, 0); transition: none; }
 /* The other half of the cross-fade: the outgoing slide travels the opposite
    way as the incoming one arrives, so the two overlap instead of cutting.
    pointer-events:none keeps a leaving slide from swallowing the tap that
