@@ -38,11 +38,12 @@ import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
-import { nextMoveSlide, tradeAlertSlide } from "../home-slides.js";
+import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
 let stage = null;
 let generation = 0;
+let suppressMyMatchup = false;
 let dropPresence = null;
 
 function rankMove(value) {
@@ -148,15 +149,66 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
        sense when the tabbed dashboard carried a permanent "My Week" card and
        a second copy on the stage would have been the same fact twice. The
        dashboard is gone, so this is now the only place the reader's own game
-       appears - and a finished game is still the thing they came to see. */
+       appears - and a finished game is still the thing they came to see.
+
+       The exception is a week-ahead preview: that is the same fixture looking
+       forward, so the backward-looking generator stands down rather than
+       putting last week's final beside this week's projection. */
+    if (it.generator === "myMatchup" && suppressMyMatchup) return false;
     return true;
   }).slice(0, 8);
   if (picked.length) return picked;
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
 }
 
+/*
+  THE PAIRING FOR A WEEK NOBODY HAS PLAYED YET.
+
+  sync.js will not write a week into sleeper_matchups until somebody has
+  points in it, so the fixture for the week ahead is not in the database at
+  the moment it matters most. It comes from Sleeper directly here, mapped
+  roster -> owner through the analyzer's teams, and is only asked for when a
+  preview is actually wanted: a network call on every Home paint to render
+  nothing would be a poor trade.
+*/
+async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
+  if (!weekly?.week || !meSleeperId || analysis?.state !== "ready") return null;
+  const week = currentMatchupWeek(weekly.week);
+  /* Tuesday and Wednesday belong to the week just played, and that week has
+     a real row with real scores - the myMatchup generator is the right voice
+     for it. Only look ahead when the week on the slide is the live one. */
+  if (week !== Number(weekly.week)) return null;
+  const leagueId = analysis.league?.sleeper_league_id;
+  if (!leagueId) return null;
+  /* Already played: the generator has a scored row and says it better. */
+  if ((analysis.matchups || []).some(row => Number(row.week) === week
+    && (Number(row.score1) > 0 || Number(row.score2) > 0))) return null;
+
+  let raw;
+  try {
+    const { sleeper } = await import("../sleeper.js");
+    raw = await sleeper.matchups(leagueId, week);
+  } catch (err) { console.warn("matchup preview unavailable", err); return null; }
+  if (!Array.isArray(raw) || !raw.length) return null;
+
+  const teamFor = rosterId => analysis.teams.find(team => String(team.roster_id) === String(rosterId));
+  const meRow = raw.find(row => String(teamFor(row.roster_id)?.sleeper_user_id) === String(meSleeperId));
+  if (meRow?.matchup_id == null) return null;
+  const themRow = raw.find(row => row !== meRow && String(row.matchup_id) === String(meRow.matchup_id));
+  if (!themRow) return null;
+
+  const side = row => {
+    const team = teamFor(row.roster_id);
+    return team ? { sleeper_user_id: team.sleeper_user_id, name: team.team_name || team.ownerName || "Unnamed" } : null;
+  };
+  const mine = side(meRow), theirs = side(themRow);
+  if (!mine || !theirs) return null;
+  return matchupPreviewSlide({ pairing: { mine, theirs }, weekly, meSleeperId, season: weekly.season, week });
+}
+
 export async function render(view) {
   leave();
+  suppressMyMatchup = false;
   const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
@@ -388,7 +440,7 @@ export async function render(view) {
     stage?.update(build(golfDay));
   }).catch((err) => console.warn("broadcast: lore unavailable", err));
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
     const clubhouse = clubhouseView({
@@ -414,9 +466,15 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const extras = [tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const preview = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null });
+    const extras = [preview, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length && view.querySelector("[data-bx-stage]")) {
       liveSlides = extras;
+      /* A preview and the myMatchup generator are the same fixture from two
+         directions - one looking forward, one looking back. Showing both puts
+         last week's result next to this week's projection on the same stage,
+         so the generator stands down while a preview exists. */
+      suppressMyMatchup = Boolean(preview);
       stage?.update(build(golfDayNow));
     }
   }).catch((err) => {
@@ -438,7 +496,7 @@ export function anniversary() {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   if (number < 2 || number % 10 !== 0) return "";
   return `<aside class="dfl-anniv" role="note">
-    <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
+    <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary<br>Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
     <span class="dfl-anniv-tag">Same guys.<br>Higher stakes.<br>Bigger bragging rights.</span>
   </aside>`;
 }

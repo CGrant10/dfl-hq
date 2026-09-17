@@ -69,3 +69,65 @@ export function nextMoveSlide(move) {
       ? `#/analyzer?owner=${encodeURIComponent(move.mine.sleeper_user_id)}` : "#/analyzer",
   };
 }
+
+/*
+  WHICH WEEK THE MATCHUP SLIDE IS ABOUT.
+
+  Sleeper rolls its own state into the new week as soon as Monday Night
+  Football ends, so state.week is already "next week" while the league is
+  still reading Tuesday's box scores. home-clubhouse's aftermathReportWeek()
+  holds the REPORT back for that reason, but only on Tuesday.
+
+  The matchup wants a slightly longer tail: Tuesday and Wednesday still
+  belong to the week just played - that is when people argue about it - and
+  from Thursday, when the first game kicks off, the slide should be about the
+  week ahead instead of the week behind.
+*/
+export function currentMatchupWeek(week, now = new Date()) {
+  const current = Math.max(1, Number(week) || 1);
+  const day = now instanceof Date ? now.getDay() : -1;
+  return (day === 2 || day === 3) ? Math.max(1, current - 1) : current;
+}
+
+/*
+  THE WEEK AHEAD, BEFORE ANYBODY HAS SCORED.
+
+  The myMatchup generator reads sleeper_matchups, and sync.js refuses to write
+  a week until somebody has points in it ("not played yet"), so between
+  Thursday and the first whistle there is no row for the game about to be
+  played - which is exactly when the reader most wants to see it. The pairing
+  therefore comes straight from Sleeper and the numbers from the weekly
+  projection bundle Home already loads for the auto-scout.
+
+  Scores here are PROJECTIONS, and the slide says so rather than dressing
+  them up as a result: the kicker reads PREVIEW and the margin line is
+  phrased as an expectation.
+*/
+export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week } = {}) {
+  if (!pairing?.mine || !pairing?.theirs || !meSleeperId) return null;
+  const projectionOf = id => {
+    const team = (weekly?.teams || []).find(row => String(row.sleeper_user_id) === String(id));
+    return Number.isFinite(Number(team?.projection)) ? Number(team.projection) : null;
+  };
+  const mine = projectionOf(pairing.mine.sleeper_user_id);
+  const theirs = projectionOf(pairing.theirs.sleeper_user_id);
+  if (mine == null || theirs == null) return null;
+  const spread = Math.abs(mine - theirs);
+  const favoured = mine === theirs ? null : (mine > theirs ? pairing.mine : pairing.theirs);
+  return {
+    source: "auto", pinned: true, id: "matchup-preview", generator: "matchupPreview",
+    kind: "mine", treatment: "scoreboard", temporal: "upcoming",
+    priority: P.MINE + 20, dwell: 8000,
+    kicker: `${season} · Week ${week} · Preview`,
+    headline: "Your matchup",
+    moodText: "",
+    whereText: favoured
+      ? `${favoured === pairing.mine ? "You" : favoured.name} projected by ${spread.toFixed(2)}`
+      : "Projected dead even",
+    href: "#/analyzer",
+    sides: [
+      { name: pairing.mine.name, score: mine.toFixed(2), up: mine > theirs, down: mine < theirs },
+      { name: pairing.theirs.name, score: theirs.toFixed(2), up: theirs > mine, down: theirs < mine },
+    ],
+  };
+}

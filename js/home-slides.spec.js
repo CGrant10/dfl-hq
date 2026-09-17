@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextMoveSlide, tradeAlertSlide } from "./home-slides.js";
+import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide } from "./home-slides.js";
 
 describe("trade alert as a stage slide", () => {
   const alert = {
@@ -76,5 +76,71 @@ describe("next move as a stage slide", () => {
 
   it("calls it an upgrade rather than a need when nothing is urgent", () => {
     expect(nextMoveSlide({ ...move, need: { position: "TE", urgent: false } }).subtitle).toBe("TE upgrade");
+  });
+});
+
+describe("which week the matchup slide is about", () => {
+  const on = day => new Date(Date.UTC(2026, 8, 6 + day, 12, 0, 0));
+  /* Sleeper rolls state.week forward once Monday night ends, so on Tuesday
+     "week 5" already means the week nobody has played. */
+  it("holds Tuesday and Wednesday back to the week just played", () => {
+    expect(currentMatchupWeek(5, on(2))).toBe(4);
+    expect(currentMatchupWeek(5, on(3))).toBe(4);
+  });
+
+  it("looks ahead from Thursday through Monday", () => {
+    for (const day of [4, 5, 6, 0, 1]) expect(currentMatchupWeek(5, on(day))).toBe(5);
+  });
+
+  it("never goes below week 1", () => {
+    expect(currentMatchupWeek(1, on(2))).toBe(1);
+    expect(currentMatchupWeek(0, on(3))).toBe(1);
+  });
+});
+
+describe("the week-ahead matchup preview", () => {
+  const pairing = {
+    mine: { sleeper_user_id: "me", name: "Da Nickers" },
+    theirs: { sleeper_user_id: "them", name: "Dream Enders" },
+  };
+  const weekly = { teams: [
+    { sleeper_user_id: "me", projection: 118.4 },
+    { sleeper_user_id: "them", projection: 104.25 },
+  ] };
+  const base = { pairing, weekly, meSleeperId: "me", season: 2026, week: 5 };
+
+  it("returns nothing without a pairing or a signed-in member", () => {
+    expect(matchupPreviewSlide({ ...base, pairing: null })).toBeNull();
+    expect(matchupPreviewSlide({ ...base, meSleeperId: null })).toBeNull();
+  });
+
+  it("returns nothing when either side has no projection to show", () => {
+    expect(matchupPreviewSlide({ ...base, weekly: { teams: [{ sleeper_user_id: "me", projection: 118.4 }] } })).toBeNull();
+  });
+
+  it("puts both projections on a scoreboard and names the favourite", () => {
+    const slide = matchupPreviewSlide(base);
+    expect(slide.treatment).toBe("scoreboard");
+    expect(slide.kicker).toBe("2026 · Week 5 · Preview");
+    expect(slide.sides.map(s => s.score)).toEqual(["118.40", "104.25"]);
+    expect(slide.whereText).toBe("You projected by 14.15");
+    expect(slide.sides[0].up).toBe(true);
+    expect(slide.sides[1].down).toBe(true);
+  });
+
+  it("names the opponent when they are favoured", () => {
+    const slide = matchupPreviewSlide({ ...base, meSleeperId: "me",
+      weekly: { teams: [{ sleeper_user_id: "me", projection: 90 }, { sleeper_user_id: "them", projection: 101.5 }] } });
+    expect(slide.whereText).toBe("Dream Enders projected by 11.50");
+  });
+
+  it("says dead even rather than picking a side", () => {
+    const slide = matchupPreviewSlide({ ...base,
+      weekly: { teams: [{ sleeper_user_id: "me", projection: 100 }, { sleeper_user_id: "them", projection: 100 }] } });
+    expect(slide.whereText).toBe("Projected dead even");
+  });
+
+  it("is pinned so the editorial filter keeps it", () => {
+    expect(matchupPreviewSlide(base).pinned).toBe(true);
   });
 });

@@ -23,7 +23,9 @@ describe("Home redesign wiring", () => {
     expect(source).not.toContain('src="icons/crest-512.webp"');
     expect(source).toContain("dfl-anniv-branch is-left");
     expect(source).toContain("dfl-anniv-branch is-right");
-    expect(source).toContain("Anniversary Season");
+    /* The break is explicit so the words box can shrink-wrap to its widest
+       line and the laurels hug the letters rather than an empty box. */
+    expect(source).toContain("Anniversary<br>Season");
     expect(source).toContain("LEAGUE_FOUNDED");
   });
 

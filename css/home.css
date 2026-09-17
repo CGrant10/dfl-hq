@@ -1824,7 +1824,7 @@
      and the headline measures 341px on one line - nowrap is what pushed it
      under the right branch and into the tagline. It wraps to two lines and
      the branches move with it. */
-  #home-wrap > .dfl-anniv > .dfl-anniv-copy strong { font-size: clamp(.92rem, 3.6vw, 1.12rem); white-space: normal; text-wrap: balance; }
+  #home-wrap > .dfl-anniv > .dfl-anniv-copy strong { font-size: clamp(.92rem, 3.6vw, 1.12rem); white-space: normal; }
   #home-wrap > .dfl-anniv > .dfl-anniv-copy small { margin-top: 5px; font-size: .61rem; }
   #home-wrap > .dfl-anniv > .dfl-anniv-copy::before,
   #home-wrap > .dfl-anniv > .dfl-anniv-copy::after { width: 20px; }
@@ -1902,7 +1902,27 @@
   min-height: 72px;
   isolation: isolate;
 }
-#home-wrap .dfl-anniv-words { display: grid; justify-items: center; min-width: 0; }
+/*
+  fit-content IS WHAT MAKES THE LAURELS HUG THE WORDS.
+
+  As a plain flex item this box stretched to whatever the middle track left
+  over - 260px at 592px wide - while the headline only drew 147px of it. The
+  branches sat 5px off the BOX and 61px off the visible text, which read as
+  two ornaments parked either side of the words rather than a wreath around
+  them. fit-content shrinks the box to its widest line, so the 5px is 5px
+  from the letters.
+
+  That only works because the line break is explicit in the markup: with
+  text-wrap:balance the browser chose its own split, the box stayed full
+  width, and there was nothing for fit-content to shrink to.
+*/
+#home-wrap .dfl-anniv-words {
+  display: grid;
+  justify-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+}
 #home-wrap .dfl-anniv-branch {
   flex: 0 0 auto;
   width: 48px;
@@ -1952,9 +1972,13 @@ span) { overflow-wrap: anywhere; }
   #home-wrap .dfl-anniv-words > strong {
     box-sizing: border-box;
     max-width: 100%;
-    padding-inline: 36px;
+    /* NO padding-inline. The 36px here was clearance for laurels that used to
+       sit BEHIND the headline; with them flanking it, that padding was just
+       72px of empty box for the branches to hug instead of the letters. */
     font-size: clamp(1.02rem, 3.45vw, 1.28rem);
-    white-space: nowrap;
+    /* normal, not nowrap: the break between "Anniversary" and "Season" is in
+       the markup, and a narrower phone must still be able to break again. */
+    white-space: normal;
     text-align: center;
     line-height: 1.05;
   }
