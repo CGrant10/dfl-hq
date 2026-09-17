@@ -28,6 +28,8 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("LEAGUE LEADER");
     expect(source).toContain("home-rank-ellipsis");
     expect(source).toContain("data-home-rankings-slot");
+    expect(source).toContain("data-home-rank-toggle");
+    expect(source).toContain("wireHomeRankings");
   });
 
   it("renders a compact three-column weekly report rail", () => {

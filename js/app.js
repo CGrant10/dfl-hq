@@ -42,6 +42,11 @@ function paintName(){
   const m=currentMember(),g=golfPass();
   if(!whoamiName)return;
   whoamiName.textContent=m?m.display_name:(g?g.name:(getUsername()||"Who are you?"));
+  const button=document.getElementById("whoami");
+  let photo=button?.querySelector(".whoami-photo");
+  if(button&&!photo){photo=document.createElement("img");photo.className="whoami-photo";photo.alt="";photo.hidden=true;button.insertBefore(photo,whoamiName)}
+  const source=m?.profile_image||"";
+  if(photo){photo.hidden=!source;if(source)photo.src=source;else photo.removeAttribute("src")}
 }
 /*
   FOCUS, FOR THE TWO THINGS THAT COVER THE PAGE.

@@ -78,7 +78,7 @@ export function homeRankingsCard(view, members = []) {
   const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
   const visible = board.rows.slice(0, 3);
   const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
-  const row = (item, mine = false) => `<li class="${mine ? "is-me" : ""}">
+  const row = (item, index, mine = false) => `<li class="${mine ? "is-me" : ""} ${index >= 3 && !mine ? "is-rank-collapsed" : ""}">
     <b>${esc(String(item.rank))}</b><img src="${esc(memberPhoto(teamFor(item), members))}" alt="" aria-hidden="true">
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
@@ -89,9 +89,21 @@ export function homeRankingsCard(view, members = []) {
       <div class="home-rank-leader"><img src="${esc(memberPhoto(teamFor(leader), members))}" alt="" aria-hidden="true"><span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
     </div>
     <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
-    <ol>${visible.map(item => row(item, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>${row(focus, true)}` : ""}</ol>
-    <a class="home-rank-all" href="#/analyzer">View all ${board.rows.length}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a>
+    <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
+    <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></button>
   </section>`;
+}
+
+function wireHomeRankings(root) {
+  const card = root?.querySelector?.(".home-rankings-card");
+  const toggle = card?.querySelector?.("[data-home-rank-toggle]");
+  if (!card || !toggle) return;
+  toggle.addEventListener("click", () => {
+    const expanded = !card.classList.contains("is-expanded");
+    card.classList.toggle("is-expanded", expanded);
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.querySelector("span").textContent = expanded ? "Show top teams" : `View all ${card.querySelectorAll("ol > li:not(.home-rank-ellipsis)").length}`;
+  });
 }
 
 function digestItem(label, title, detail, icon) {
@@ -522,7 +534,10 @@ export async function render(view) {
       reportSlot.innerHTML = clubhouseCard(clubhouse) || `<div class="hd-empty"><strong>WEEKLY REPORT</strong><p>The full report unlocks when every matchup is final.</p></div>`;
       if (clubhouse?.aftermath?.final) wireClubhouse(reportSlot, clubhouse);
     }
-    if (homeRankingsSlot) homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
+    if (homeRankingsSlot) {
+      homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
+      wireHomeRankings(homeRankingsSlot);
+    }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
@@ -545,7 +560,7 @@ export function anniversary() {
   if (number < 2 || number % 10 !== 0) return "";
   return `<aside class="dfl-anniv" role="note">
     <img src="icons/crest-512.webp" alt="" aria-hidden="true">
-    <span class="dfl-anniv-copy"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span>
+    <span class="dfl-anniv-copy"><img class="dfl-anniv-laurels" src="assets/anniversary-laurels.webp" alt="" aria-hidden="true"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span>
     <span class="dfl-anniv-tag">Same guys.<br>Higher stakes.<br>Bigger bragging rights.</span>
   </aside>`;
 }

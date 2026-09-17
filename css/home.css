@@ -2074,3 +2074,165 @@
   #home-wrap .home-weekly-digest article { display: block; }
   #home-wrap .home-weekly-digest article > .ico { margin-bottom: 7px; }
 }
+
+/* ---------------------------------------------------------------------
+   FIDELITY PASS 2 — text-safe chrome, real laurels and expandable ranks.
+   --------------------------------------------------------------------- */
+#home-wrap > .dfl-anniv > .dfl-anniv-copy::before,
+#home-wrap > .dfl-anniv > .dfl-anniv-copy::after { display: none; }
+#home-wrap .dfl-anniv-copy { position: relative; min-height: 72px; display: grid; place-content: center; isolation: isolate; }
+#home-wrap .dfl-anniv-copy > strong,
+#home-wrap .dfl-anniv-copy > small { position: relative; z-index: 2; }
+#home-wrap .dfl-anniv-laurels {
+  position: absolute;
+  z-index: 1;
+  inset: 50% auto auto 50%;
+  width: min(420px, 135%);
+  height: 82px;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#home-wrap .home-rankings-card:not(.is-expanded) .is-rank-collapsed { display: none; }
+#home-wrap .home-rankings-card.is-expanded .home-rank-ellipsis { display: none !important; }
+#home-wrap .home-rankings-card.is-expanded ol > li.is-me { margin-top: 0; }
+#home-wrap .home-rank-all {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+#home-wrap .home-rank-all .ico-sm { transition: transform 220ms ease; }
+#home-wrap .home-rankings-card.is-expanded .home-rank-all .ico-sm { transform: rotate(-90deg); }
+
+#home-wrap .hd-score-side strong,
+#home-wrap .home-rank-leader strong,
+#home-wrap .home-rankings-card ol > li > span strong,
+#home-wrap .home-weekly-digest article :is(small, strong, span) { overflow-wrap: anywhere; }
+#home-wrap .hd-week-copy,
+#home-wrap .hd-scoreboard,
+#home-wrap .home-rank-summary,
+#home-wrap .home-weekly-digest article { min-width: 0; }
+
+.whoami-photo {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.whoami-photo[hidden] { display: none; }
+
+@media (max-width: 620px) {
+  body:has(.view[data-route="home"]) .topbar-inner { gap: 0; padding-inline: 16px; }
+  body:has(.view[data-route="home"]) .brand-lockup { min-width: 185px; gap: 10px; }
+  body:has(.view[data-route="home"]) .brand-mark { width: 58px; height: 58px; }
+  body:has(.view[data-route="home"]) .brand-word { font-size: 30px; letter-spacing: .1em; }
+  body:has(.view[data-route="home"]) .brand-text .creed { margin-top: 7px; font-size: 7px; letter-spacing: .12em; }
+  body:has(.view[data-route="home"]) .topbar-actions { align-self: stretch; gap: 0; }
+  body:has(.view[data-route="home"]) .notification-bell {
+    width: 52px;
+    height: 100%;
+    flex-basis: 52px;
+    border: 0;
+    border-left: 1px solid rgba(255,255,255,.18);
+    border-radius: 0;
+    background: transparent;
+    color: #f3efe4;
+  }
+  body:has(.view[data-route="home"]) .notification-bell::after {
+    content: "";
+    position: absolute;
+    top: 27px;
+    right: 10px;
+    width: 7px;
+    height: 7px;
+    border: 2px solid #061216;
+    border-radius: 50%;
+    background: #62e5ac;
+  }
+  body:has(.view[data-route="home"]) .topbar-actions .dfl-preview-toggle.is-available {
+    width: 76px;
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: auto auto;
+    place-content: center;
+    justify-items: center;
+    gap: 7px;
+    padding: 0 8px;
+    border: 0;
+    border-left: 1px solid rgba(255,255,255,.18);
+    border-radius: 0;
+    background: transparent;
+  }
+  body:has(.view[data-route="home"]) .dfl-preview-toggle .dfl-preview-label { grid-row: 1; color: #f3efe4; font-size: 10px; }
+  body:has(.view[data-route="home"]) .dfl-preview-toggle .dfl-preview-track { grid-row: 2; width: 46px; height: 24px; }
+  body:has(.view[data-route="home"]) .dfl-preview-toggle .dfl-preview-knob { width: 18px; height: 18px; top: 2px; left: 2px; }
+  body:has(.view[data-route="home"]) .dfl-preview-toggle[data-mode="member"] .dfl-preview-knob,
+  body:has(.view[data-route="home"]) .dfl-preview-toggle[data-mode="locked"] .dfl-preview-knob { transform: translateX(21px); }
+  body:has(.view[data-route="home"]) .whoami {
+    min-width: 118px;
+    max-width: 148px;
+    height: 54px;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 0;
+    padding: 5px 12px 5px 6px;
+    border-color: rgba(255,255,255,.28);
+    background: transparent;
+    color: #f3efe4;
+    font-size: 14px;
+  }
+  body:has(.view[data-route="home"]) .whoami #whoami-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  body:has(.view[data-route="home"]) .whoami-photo { width: 40px; height: 40px; }
+
+  #home-wrap > .dfl-anniv { grid-template-columns: 104px minmax(0, 1fr) 112px; padding-inline: 14px; }
+  #home-wrap .dfl-anniv-copy { min-height: 76px; }
+  #home-wrap .dfl-anniv-copy > strong {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding-inline: 36px;
+    font-size: clamp(1.02rem, 3.45vw, 1.28rem);
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.05;
+  }
+  #home-wrap .dfl-anniv-copy > small { margin-top: 7px; }
+  #home-wrap .dfl-anniv-laurels { width: 330px; height: 78px; }
+
+  #home-wrap .hd-week-copy { padding-right: 8px; }
+  #home-wrap .hd-week-copy h2 { max-width: 100%; font-size: clamp(2.65rem, 11.8vw, 4.15rem); overflow-wrap: normal; }
+  #home-wrap .hd-scoreboard { grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr); gap: 8px; }
+  #home-wrap .hd-score-side strong { min-height: 2.15em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.05; }
+  #home-wrap .hd-score-side b { font-size: clamp(2.35rem, 10.4vw, 3.55rem); white-space: nowrap; }
+  #home-wrap .home-rank-leader { align-items: center; }
+  #home-wrap .home-rank-leader strong { white-space: normal; line-height: 1.05; }
+  #home-wrap .home-weekly-digest article strong { -webkit-line-clamp: 2; }
+  #home-wrap .home-weekly-digest article span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  #home-wrap .home-weekly-digest article :is(strong, span) { hyphens: none; word-break: normal; overflow-wrap: break-word; }
+}
+
+@media (max-width: 500px) {
+  body:has(.view[data-route="home"]) .brand-text { display: none; }
+  body:has(.view[data-route="home"]) .brand-lockup { min-width: 62px; flex: 0 0 62px; }
+  body:has(.view[data-route="home"]) .topbar-actions { margin-left: auto; }
+  body:has(.view[data-route="home"]) .whoami { min-width: 104px; max-width: 128px; }
+  #home-wrap .dfl-anniv-copy > strong { padding-inline: 34px; }
+  #home-wrap .dfl-anniv-laurels { width: 270px; }
+}
+
+@media (max-width: 410px) {
+  body:has(.view[data-route="home"]) .topbar-inner { padding-inline: 10px; }
+  body:has(.view[data-route="home"]) .brand-lockup { min-width: 50px; flex-basis: 50px; }
+  body:has(.view[data-route="home"]) .brand-mark { width: 46px; height: 46px; }
+  body:has(.view[data-route="home"]) .notification-bell { width: 44px; flex-basis: 44px; }
+  body:has(.view[data-route="home"]) .topbar-actions .dfl-preview-toggle.is-available { width: 68px; }
+  body:has(.view[data-route="home"]) .whoami { min-width: 98px; max-width: 116px; padding-right: 8px; }
+  body:has(.view[data-route="home"]) .whoami-photo { width: 36px; height: 36px; }
+  #home-wrap .dfl-anniv-copy > strong { padding-inline: 20px; }
+  #home-wrap .dfl-anniv-laurels { width: 235px; }
+}
