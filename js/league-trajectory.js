@@ -174,3 +174,23 @@ export function boardWeekLabel(board, currentWeek) {
   if (!/^week\s/i.test(board.label || "")) return board.label;
   return `Week ${week}`;
 }
+
+/*
+  Two letters, and a word boundary beats the first two characters: "Da
+  Nickers" is DN, not DA. A single-word name keeps its first two.
+
+  Emoji are stripped first, and that is not cosmetic: team names in this
+  league genuinely start with them, and an emoji is a surrogate PAIR - taking
+  [0] of one splits it and renders a broken glyph. Array.from walks code
+  points rather than code units for the same reason.
+*/
+export function teamInitials(name) {
+  const words = String(name || "?")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  const letters = words.length >= 2
+    ? Array.from(words[0])[0] + Array.from(words[1])[0]
+    : Array.from(words[0]).slice(0, 2).join("");
+  return letters.toUpperCase();
+}

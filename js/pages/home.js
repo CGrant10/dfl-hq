@@ -38,7 +38,7 @@ import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
-import { boardWeekLabel } from "../league-trajectory.js";
+import { boardWeekLabel, teamInitials } from "../league-trajectory.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
@@ -53,10 +53,29 @@ function rankMove(value) {
   return `<span class="${move > 0 ? "is-up" : "is-down"}"><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>${Math.abs(move)}</span>`;
 }
 
-function memberPhoto(team, members) {
+/*
+  A FACE, OR THE NEXT BEST THING.
+
+  This used to fall back to the DFL mark, which meant that until somebody
+  uploaded a photo every row on the board carried the identical crest - an
+  avatar column that told the reader nothing and cost twelve image requests
+  to say it. Initials at least distinguish one row from the next, and they
+  are what the profile chooser and the wall already draw for a member with
+  no picture.
+
+  Uploaded photos are public by design: members carries a `public read`
+  policy, so one member's picture shows on everybody's board, and only the
+  member themselves can set it (dfl_update_profile resolves the row from the
+  request, not from an argument).
+*/
+function memberAvatar(team, members, cls) {
   const member = (members || []).find(row => String(row.sleeper_user_id) === String(team?.sleeper_user_id));
-  return member?.profile_image || "icons/mark-512.webp";
+  const photo = member?.profile_image;
+  if (photo) return `<img class="${cls}" src="${esc(photo)}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
+  const name = member?.team_name || member?.display_name || team?.team_name || "?";
+  return `<span class="${cls} home-rank-initials" aria-hidden="true">${esc(teamInitials(name))}</span>`;
 }
+
 
 /** The always-visible standings board from the approved Home composition. */
 export function homeRankingsCard(view, members = [], currentWeek = null) {
@@ -69,14 +88,14 @@ export function homeRankingsCard(view, members = [], currentWeek = null) {
   const visible = board.rows.slice(0, 3);
   const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
   const row = (item, index, mine = false) => `<li class="${mine ? "is-me" : ""} ${index >= 3 && !mine ? "is-rank-collapsed" : ""}">
-    <b>${esc(String(item.rank))}</b><img src="${esc(memberPhoto(teamFor(item), members))}" alt="" aria-hidden="true">
+    <b>${esc(String(item.rank))}</b>${memberAvatar(teamFor(item), members, "home-rank-face")}
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
   return `<section class="home-rankings-card">
     <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(boardWeekLabel(board, currentWeek))} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
     <div class="home-rank-summary">
       <div><small>YOUR RANK</small><strong>#${esc(String(focus.rank))}</strong>${rankMove(focus.movement)}</div>
-      <div class="home-rank-leader"><img src="${esc(memberPhoto(teamFor(leader), members))}" alt="" aria-hidden="true"><span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
+      <div class="home-rank-leader">${memberAvatar(teamFor(leader), members, "home-rank-face")}<span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
     </div>
     <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
     <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
@@ -172,7 +191,7 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
   preview is actually wanted: a network call on every Home paint to render
   nothing would be a poor trade.
 */
-async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
+async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   if (!weekly?.week || !meSleeperId || analysis?.state !== "ready") return null;
   const week = currentMatchupWeek(weekly.week);
   /* Tuesday and Wednesday belong to the week just played, and that week has
@@ -204,7 +223,12 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
   };
   const mine = side(meRow), theirs = side(themRow);
   if (!mine || !theirs) return null;
-  return matchupPreviewSlide({ pairing: { mine, theirs }, weekly, meSleeperId, season: weekly.season, week });
+  return matchupPreviewSlide({
+    pairing: { mine, theirs }, weekly, meSleeperId, season: weekly.season, week,
+    /* The head-to-head is all-time, so it comes from lore's full matchup
+       history rather than the analyzer's season-scoped slice. */
+    matchups: lore?.matchups || [],
+  });
 }
 
 export async function render(view) {
@@ -467,7 +491,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const preview = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null });
+    const preview = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null, lore: got?.error ? null : got });
     const extras = [preview, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length && view.querySelector("[data-bx-stage]")) {
       liveSlides = extras;

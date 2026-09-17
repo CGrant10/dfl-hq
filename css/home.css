@@ -1740,7 +1740,7 @@
 #home-wrap .home-rankings-card .is-down { color: #ff8585; }
 #home-wrap .home-rankings-card .is-up .ico-sm { transform: rotate(-90deg); }
 #home-wrap .home-rankings-card .is-down .ico-sm { transform: rotate(90deg); }
-#home-wrap .home-rank-leader > img { width: 54px; height: 54px; object-fit: cover; border-radius: 50%; }
+#home-wrap .home-rank-leader > .home-rank-face { width: 54px; height: 54px; object-fit: cover; border-radius: 50%; font-size: 1.05rem; }
 #home-wrap .home-rank-leader > span { min-width: 0; display: grid; }
 #home-wrap .home-rank-leader strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: var(--fs-title-sm); }
 #home-wrap .home-rank-leader em { color: var(--home-program-muted); font-size: var(--fs-small); font-style: normal; }
@@ -1760,7 +1760,23 @@
   padding: 2px 9px;
 }
 #home-wrap .home-rankings-card ol > li > b { font-family: var(--font-display); font-size: var(--fs-title-sm); }
-#home-wrap .home-rankings-card ol > li > img { width: 29px; height: 29px; object-fit: cover; border-radius: 50%; }
+#home-wrap .home-rankings-card ol > li > .home-rank-face { width: 29px; height: 29px; object-fit: cover; border-radius: 50%; font-size: .68rem; }
+/* The initials plate. Same footprint as the photo it stands in for, so a
+   board with a mix of the two keeps one column edge. flex rather than grid
+   because the element is sized by the rules above and only has to centre two
+   letters inside it. */
+#home-wrap .home-rank-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-weight: var(--fw-bold);
+  letter-spacing: .02em;
+  color: var(--home-program-ink, #f3efe4);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 70%, transparent) 0 50%,
+    color-mix(in srgb, var(--accent-2, var(--accent)) 70%, transparent) 50% 100%);
+}
 #home-wrap .home-rankings-card ol > li > span { min-width: 0; }
 #home-wrap .home-rankings-card ol > li > span strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #home-wrap .home-rankings-card ol > li > em { color: var(--home-program-muted); font-style: normal; }
@@ -1840,12 +1856,12 @@
   #home-wrap .home-rank-summary { min-height: 90px; }
   #home-wrap .home-rank-summary > div { gap: 8px; padding: 11px 12px; }
   #home-wrap .home-rank-summary > div:first-child > strong { font-size: clamp(2.75rem, 11vw, 3.6rem); }
-  #home-wrap .home-rank-leader > img { width: 45px; height: 45px; }
+  #home-wrap .home-rank-leader > .home-rank-face { width: 45px; height: 45px; font-size: .92rem; }
   #home-wrap .home-rank-leader strong { font-size: var(--fs-body); }
   #home-wrap .home-rank-head,
   #home-wrap .home-rankings-card ol > li { grid-template-columns: 30px 29px minmax(0, 1fr) 51px 42px; gap: 6px; }
   #home-wrap .home-rankings-card ol > li { min-height: 38px; padding-inline: 4px; }
-  #home-wrap .home-rankings-card ol > li > img { width: 25px; height: 25px; }
+  #home-wrap .home-rankings-card ol > li > .home-rank-face { width: 25px; height: 25px; font-size: .6rem; }
   #home-wrap .home-rankings-card ol > li > span strong,
   #home-wrap .home-rankings-card ol > li > em,
   #home-wrap .home-rankings-card ol > li > span:last-child { font-size: var(--fs-small); }
@@ -1865,7 +1881,7 @@
   #home-wrap > .dfl-anniv { grid-template-columns: minmax(96px, 1fr) minmax(0, auto) minmax(96px, 1fr); }
   #home-wrap > .dfl-anniv > .dfl-anniv-tag { display: none; }
   #home-wrap .home-rank-summary { grid-template-columns: .8fr 1.2fr; }
-  #home-wrap .home-rank-leader > img { display: none; }
+  #home-wrap .home-rank-leader > .home-rank-face { display: none; }
   #home-wrap .home-weekly-digest article { display: block; }
   #home-wrap .home-weekly-digest article > .ico { margin-bottom: 7px; }
 }

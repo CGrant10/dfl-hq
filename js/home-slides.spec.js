@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide } from "./home-slides.js";
+import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, tradeAlertSlide } from "./home-slides.js";
 
 describe("trade alert as a stage slide", () => {
   const alert = {
@@ -142,5 +142,92 @@ describe("the week-ahead matchup preview", () => {
 
   it("is pinned so the editorial filter keeps it", () => {
     expect(matchupPreviewSlide(base).pinned).toBe(true);
+  });
+});
+
+describe("the all-time ledger between two teams", () => {
+  const rows = [
+    { season: 2024, week: 3, user1: "me", user2: "them", score1: 120, score2: 100 },
+    { season: 2024, week: 9, user1: "them", user2: "me", score1: 130, score2: 90 },
+    { season: 2025, week: 2, user1: "me", user2: "them", score1: 80, score2: 111 },
+    { season: 2025, week: 11, user1: "them", user2: "me", score1: 140, score2: 99 },
+    { season: 2026, week: 1, user1: "me", user2: "other", score1: 100, score2: 90 },
+  ];
+  const h = () => headToHead({ matchups: rows, meSleeperId: "me", oppSleeperId: "them" });
+
+  it("counts only games between these two", () => {
+    expect(h().meetings).toBe(4);
+  });
+
+  it("reads the result from whichever side each team was on", () => {
+    expect(h().wins).toBe(1);
+    expect(h().losses).toBe(3);
+  });
+
+  /* A fixture row can exist before it is played; counting it would hand
+     everybody a phantom tie. */
+  it("ignores a fixture with no score on either side", () => {
+    const withUnplayed = [...rows, { season: 2026, week: 2, user1: "me", user2: "them", score1: 0, score2: 0 }];
+    expect(headToHead({ matchups: withUnplayed, meSleeperId: "me", oppSleeperId: "them" }).meetings).toBe(4);
+  });
+
+  it("finds the current streak in chronological order", () => {
+    /* Chronologically they won 2024 w9, 2025 w2 and 2025 w11 - the run
+       reaches back past the season boundary. */
+    expect(h().streak).toEqual({ holder: "them", count: 3 });
+  });
+
+  it("reports no meetings rather than failing", () => {
+    expect(headToHead({ matchups: rows, meSleeperId: "me", oppSleeperId: "nobody" }).meetings).toBe(0);
+  });
+});
+
+describe("the matchup story line", () => {
+  it("says so plainly when they have never met", () => {
+    expect(matchupStory({ h2h: { meetings: 0 }, theirsName: "Dream Enders" })).toBe("First time you have met.");
+  });
+
+  it("leads with a streak when there is one", () => {
+    expect(matchupStory({ h2h: { meetings: 4, wins: 1, losses: 3, ties: 0, streak: { holder: "them", count: 2 } }, theirsName: "Dream Enders" }))
+      .toBe("Dream Enders has taken the last 2. Series 1-3.");
+    expect(matchupStory({ h2h: { meetings: 4, wins: 3, losses: 1, ties: 0, streak: { holder: "me", count: 3 } }, theirsName: "Dream Enders" }))
+      .toBe("You have taken the last 3. Series 3-1.");
+  });
+
+  it("falls back to the series when a single win is not a run", () => {
+    expect(matchupStory({ h2h: { meetings: 3, wins: 2, losses: 1, ties: 0, streak: { holder: "me", count: 1 } }, theirsName: "Dream Enders" }))
+      .toBe("You lead the series 2-1.");
+    expect(matchupStory({ h2h: { meetings: 3, wins: 1, losses: 2, ties: 0, streak: { holder: "them", count: 1 } }, theirsName: "Dream Enders" }))
+      .toBe("Dream Enders leads the series 2-1.");
+  });
+
+  it("calls an even series even", () => {
+    expect(matchupStory({ h2h: { meetings: 2, wins: 1, losses: 1, ties: 0, streak: { holder: "me", count: 1 } }, theirsName: "X" }))
+      .toBe("All square at 1-1.");
+  });
+});
+
+describe("the preview carries the story", () => {
+  it("puts the history in the mood slot and the margin in the where slot", () => {
+    const slide = matchupPreviewSlide({
+      pairing: { mine: { sleeper_user_id: "me", name: "Da Nickers" }, theirs: { sleeper_user_id: "them", name: "Dream Enders" } },
+      weekly: { teams: [{ sleeper_user_id: "me", projection: 110 }, { sleeper_user_id: "them", projection: 100 }] },
+      meSleeperId: "me", season: 2026, week: 5,
+      matchups: [
+        { season: 2025, week: 1, user1: "me", user2: "them", score1: 120, score2: 100 },
+        { season: 2025, week: 8, user1: "me", user2: "them", score1: 115, score2: 90 },
+      ],
+    });
+    expect(slide.moodText).toBe("You have taken the last 2. Series 2-0.");
+    expect(slide.whereText).toBe("You projected by 10.00");
+  });
+
+  it("still builds when there is no history to tell", () => {
+    const slide = matchupPreviewSlide({
+      pairing: { mine: { sleeper_user_id: "me", name: "A" }, theirs: { sleeper_user_id: "them", name: "B" } },
+      weekly: { teams: [{ sleeper_user_id: "me", projection: 110 }, { sleeper_user_id: "them", projection: 100 }] },
+      meSleeperId: "me", season: 2026, week: 1,
+    });
+    expect(slide.moodText).toBe("First time you have met.");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardWeekLabel, buildLeaguePowerRankings, leaguePowerRankingsCard } from "./league-trajectory.js";
+import { boardWeekLabel, buildLeaguePowerRankings, leaguePowerRankingsCard, teamInitials } from "./league-trajectory.js";
 
 const teams = [
   { id: "1", roster_id: 1, sleeper_user_id: "u1", team_name: "Alpha", rank: 1, lineup: { weeklyPoints: 130 } },
@@ -72,5 +72,30 @@ describe("the week named on the Power Rankings header", () => {
 
   it("leaves the preseason board alone - it is not a week", () => {
     expect(boardWeekLabel({ label: "Roster model" }, 2)).toBe("Roster model");
+  });
+});
+
+describe("the initials shown when a member has no photo", () => {
+  it("takes a letter from each of the first two words", () => {
+    expect(teamInitials("Da Nickers")).toBe("DN");
+    expect(teamInitials("Bastards of the Realm")).toBe("BO");
+  });
+
+  it("keeps two letters of a single-word name", () => {
+    expect(teamInitials("Jack-HAMMER")).toBe("JH");
+    expect(teamInitials("Deadly")).toBe("DE");
+  });
+
+  /* Team names in this league really do start with emoji, and an emoji is a
+     surrogate pair - slicing it by code unit renders a broken glyph. */
+  it("steps over emoji instead of splitting one in half", () => {
+    expect(teamInitials("\u{1F3C6} DaGrapeApes \u{1F3C6}")).toBe("DA");
+    expect(teamInitials("Deadly \u{1F480}")).toBe("DE");
+  });
+
+  it("falls back rather than returning nothing", () => {
+    expect(teamInitials("")).toBe("?");
+    expect(teamInitials(null)).toBe("?");
+    expect(teamInitials("\u{1F3C6}")).toBe("?");
   });
 });

@@ -103,7 +103,7 @@ export function currentMatchupWeek(week, now = new Date()) {
   them up as a result: the kicker reads PREVIEW and the margin line is
   phrased as an expectation.
 */
-export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week } = {}) {
+export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week, matchups = [] } = {}) {
   if (!pairing?.mine || !pairing?.theirs || !meSleeperId) return null;
   const projectionOf = id => {
     const team = (weekly?.teams || []).find(row => String(row.sleeper_user_id) === String(id));
@@ -120,7 +120,13 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
     priority: P.MINE + 20, dwell: 8000,
     kicker: `${season} · Week ${week} · Preview`,
     headline: "Your matchup",
-    moodText: "",
+    /* The story goes in the mood slot and the arithmetic in the where slot -
+       the stage gives a scoreboard exactly those two lines, and the history
+       is the reason to care about the fixture. */
+    moodText: matchupStory({
+      h2h: headToHead({ matchups, meSleeperId, oppSleeperId: pairing.theirs.sleeper_user_id }),
+      theirsName: pairing.theirs.name,
+    }),
     whereText: favoured
       ? `${favoured === pairing.mine ? "You" : favoured.name} projected by ${spread.toFixed(2)}`
       : "Projected dead even",
@@ -130,4 +136,81 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
       { name: pairing.theirs.name, score: theirs.toFixed(2), up: theirs > mine, down: theirs < mine },
     ],
   };
+}
+
+/*
+  THE ALL-TIME LEDGER BETWEEN TWO TEAMS.
+
+  sleeper_matchups is the only record of who has beaten whom, and it stores a
+  row per fixture per week, so the head-to-head is a filter rather than a
+  stored total. Rows with no score on either side are skipped: a fixture that
+  exists but has not been played is not a result, and counting it would give
+  everybody a phantom tie.
+
+  Chronological order matters for the streak, and season/week is the only
+  ordering available - sleeper_matchups has no timestamp.
+*/
+export function headToHead({ matchups = [], meSleeperId, oppSleeperId } = {}) {
+  if (!meSleeperId || !oppSleeperId) return null;
+  const games = [];
+  for (const row of matchups) {
+    const left = String(row.user1) === String(meSleeperId) && String(row.user2) === String(oppSleeperId);
+    const right = String(row.user2) === String(meSleeperId) && String(row.user1) === String(oppSleeperId);
+    if (!left && !right) continue;
+    const mine = Number(left ? row.score1 : row.score2) || 0;
+    const theirs = Number(left ? row.score2 : row.score1) || 0;
+    if (!mine && !theirs) continue;
+    games.push({ season: Number(row.season) || 0, week: Number(row.week) || 0, mine, theirs });
+  }
+  if (!games.length) return { meetings: 0, wins: 0, losses: 0, ties: 0, streak: null };
+  games.sort((a, b) => a.season - b.season || a.week - b.week);
+  let wins = 0, losses = 0, ties = 0;
+  for (const g of games) {
+    if (g.mine > g.theirs) wins++; else if (g.mine < g.theirs) losses++; else ties++;
+  }
+  /* Walk back from the most recent result while the winner stays the same. A
+     tie ends a streak rather than extending it - nobody is "on a run" of
+     draws. */
+  const last = games.at(-1);
+  let streak = null;
+  if (last.mine !== last.theirs) {
+    const holder = last.mine > last.theirs ? "me" : "them";
+    let count = 0;
+    for (let i = games.length - 1; i >= 0; i--) {
+      const g = games[i];
+      if (g.mine === g.theirs) break;
+      if ((g.mine > g.theirs ? "me" : "them") !== holder) break;
+      count++;
+    }
+    streak = { holder, count };
+  }
+  return { meetings: games.length, wins, losses, ties, streak, last };
+}
+
+/*
+  ONE LINE OF HISTORY FOR THE PREVIEW.
+
+  The stage gives a scoreboard two slots under the scores: the mood line and
+  the "where" line. The projection margin already owns the second, so this is
+  what goes in the first - the reason to care about the fixture rather than
+  the arithmetic of it.
+
+  A streak is the better story when there is one, because it is about the
+  fixture's direction; the series total is the fallback, and a first meeting
+  says so plainly rather than printing 0-0.
+*/
+export function matchupStory({ h2h, theirsName = "They" } = {}) {
+  if (!h2h || !h2h.meetings) return "First time you have met.";
+  const { wins, losses, ties, streak } = h2h;
+  const series = ties
+    ? `${wins}-${losses}-${ties}`
+    : `${wins}-${losses}`;
+  if (streak && streak.count >= 2) {
+    return streak.holder === "me"
+      ? `You have taken the last ${streak.count}. Series ${series}.`
+      : `${theirsName} has taken the last ${streak.count}. Series ${series}.`;
+  }
+  if (wins > losses) return `You lead the series ${series}.`;
+  if (losses > wins) return `${theirsName} leads the series ${losses}-${wins}${ties ? `-${ties}` : ""}.`;
+  return `All square at ${series}.`;
 }
