@@ -21,4 +21,20 @@ describe("Home redesign wiring", () => {
     expect(source.indexOf("${homeDashboardShell()}")).toBeLessThan(source.indexOf("${renderStage(deck1)}"));
     expect(source.indexOf("home-lower")).toBeLessThan(source.indexOf("home-broadcast-secondary"));
   });
+
+  it("renders the approved always-visible power rankings composition", () => {
+    expect(source).toContain("export function homeRankingsCard");
+    expect(source).toContain("YOUR RANK");
+    expect(source).toContain("LEAGUE LEADER");
+    expect(source).toContain("home-rank-ellipsis");
+    expect(source).toContain("data-home-rankings-slot");
+  });
+
+  it("renders a compact three-column weekly report rail", () => {
+    expect(source).toContain("export function homeWeeklyDigest");
+    expect(source).toContain("BENCH CRIME");
+    expect(source).toContain("CLOSEST ESCAPE");
+    expect(source).toContain("TOP STARTER");
+    expect(source).toContain("data-home-report-slot");
+  });
 });

@@ -57,6 +57,77 @@ export function homeDashboardShell() {
   </section>`;
 }
 
+function rankMove(value) {
+  const move = Number(value) || 0;
+  if (!move) return `<span class="is-even">—</span>`;
+  return `<span class="${move > 0 ? "is-up" : "is-down"}"><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>${Math.abs(move)}</span>`;
+}
+
+function memberPhoto(team, members) {
+  const member = (members || []).find(row => String(row.sleeper_user_id) === String(team?.sleeper_user_id));
+  return member?.profile_image || "icons/mark-512.webp";
+}
+
+/** The always-visible standings board from the approved Home composition. */
+export function homeRankingsCard(view, members = []) {
+  const rankings = view?.powerRankings;
+  const board = rankings?.boards?.at(-1);
+  if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>POWER RANKINGS</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
+  const focus = board.rows.find(row => String(row.id) === String(view.focus?.id)) || board.rows[0];
+  const leader = board.rows[0];
+  const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
+  const visible = board.rows.slice(0, 3);
+  const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
+  const row = (item, mine = false) => `<li class="${mine ? "is-me" : ""}">
+    <b>${esc(String(item.rank))}</b><img src="${esc(memberPhoto(teamFor(item), members))}" alt="" aria-hidden="true">
+    <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
+  </li>`;
+  return `<section class="home-rankings-card">
+    <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(board.label)} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    <div class="home-rank-summary">
+      <div><small>YOUR RANK</small><strong>#${esc(String(focus.rank))}</strong>${rankMove(focus.movement)}</div>
+      <div class="home-rank-leader"><img src="${esc(memberPhoto(teamFor(leader), members))}" alt="" aria-hidden="true"><span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
+    </div>
+    <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
+    <ol>${visible.map(item => row(item, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>${row(focus, true)}` : ""}</ol>
+    <a class="home-rank-all" href="#/analyzer">View all ${board.rows.length}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a>
+  </section>`;
+}
+
+function digestItem(label, title, detail, icon) {
+  return `<article><svg class="ico" aria-hidden="true"><use href="#${icon}"></use></svg><div><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></div></article>`;
+}
+
+/** The compact three-hit weekly report shown directly on Home. */
+export function homeWeeklyDigest(view) {
+  const report = view?.aftermath;
+  let items = [];
+  if (report?.final) {
+    const bench = report.bench;
+    const close = report.closest;
+    const starter = report.players?.starters?.[0];
+    if (bench) items.push(["BENCH CRIME", bench.name, `${Number(bench.value).toFixed(1)} pts wasted on the bench.`, "i-keepers"]);
+    if (close) items.push(["CLOSEST ESCAPE", close.winner, `Won by ${Number(close.margin).toFixed(1)}. No room to breathe.`, "i-moment"]);
+    if (starter) items.push(["TOP STARTER", starter.name, `${Number(starter.points).toFixed(1)} pts. Carried the squad.`, "i-record"]);
+  }
+  if (items.length < 3) {
+    const fallbacks = (view?.stories || []).filter(story => story?.headline).slice(0, 3);
+    items = fallbacks.map((story, index) => {
+      const sides = story.sides || [];
+      const matchup = sides.length > 1
+        ? `${view?.focusName || sides[0].name} ${sides[0].score}–${sides[1].score} ${sides[1].name}` : null;
+      const power = story.key === "power" ? String(story.detail || "").replace(/ in the current roster model\.?/i, "") : null;
+      return [story.label, matchup || power || story.headline, matchup ? story.headline : story.detail,
+        ["i-keepers", "i-moment", "i-record"][index]];
+    });
+  }
+  if (!items.length) return `<section class="home-weekly-digest is-loading"><header><h2>WEEKLY REPORT</h2></header><p>Your report appears after the next Sleeper sync.</p></section>`;
+  return `<section class="home-weekly-digest">
+    <header><h2>WEEKLY REPORT</h2><small>SAME STORIES. DIFFERENT VICTIMS.</small></header>
+    <div>${items.slice(0, 3).map(item => digestItem(...item)).join("")}</div>
+  </section>`;
+}
+
 function signed(value) {
   const number = Number(value) || 0;
   return `${number > 0 ? "+" : number < 0 ? "−" : ""}${Math.abs(number).toFixed(1)}`;
@@ -220,7 +291,7 @@ export async function render(view) {
     /* Only the four columns this page reads. Not loadMembers(), which filters
        to active members - the owner count and the historical champion lookup
        both need people who have since left. */
-    db().from("members").select("id,display_name,team_name,sleeper_user_id"),
+    db().from("members").select("id,display_name,team_name,sleeper_user_id,profile_image"),
     db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
@@ -306,6 +377,8 @@ export async function render(view) {
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
     ${homeDashboardShell()}
+    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
     ${seasonDoors(dues.data)}
@@ -434,6 +507,8 @@ export async function render(view) {
     const pulseSlot = dashboard.querySelector('[data-hd-panel="1"]');
     const moveSlot = dashboard.querySelector('[data-hd-panel="2"]');
     const reportSlot = dashboard.querySelector('[data-hd-panel="3"]');
+    const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
+    const homeReportSlot = view.querySelector("[data-home-report-slot]");
     if (weekSlot) weekSlot.innerHTML = clubhouseWeekCard(clubhouse) || `<div class="hd-empty"><strong>YOUR WEEK</strong><p>Your matchup will appear after the next Sleeper sync.</p></div>`;
     if (pulseSlot) pulseSlot.innerHTML = powerPulsePanel(pulse) || `<div class="hd-empty"><strong>POWER RANKS</strong><p>Run a Sleeper sync to build the league board.</p></div>`;
     if (moveSlot) {
@@ -447,6 +522,8 @@ export async function render(view) {
       reportSlot.innerHTML = clubhouseCard(clubhouse) || `<div class="hd-empty"><strong>WEEKLY REPORT</strong><p>The full report unlocks when every matchup is final.</p></div>`;
       if (clubhouse?.aftermath?.final) wireClubhouse(reportSlot, clubhouse);
     }
+    if (homeRankingsSlot) homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
+    if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
     view.querySelector("[data-home-dashboard]")?.classList.add("has-error");

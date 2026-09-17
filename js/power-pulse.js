@@ -56,6 +56,7 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
     weeks: REGULAR_SEASON_WEEKS,
     season: analysis.projectionSeason,
     teams: teams.slice(0, 5),
+    allTeams: teams,
     focus,
     movement: movement(focus),
     movementLabel: comparison.label,

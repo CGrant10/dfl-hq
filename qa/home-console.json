@@ -1,0 +1,83 @@
+{
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "failedResources": [
+    {
+      "status": 404,
+      "url": "https://rqavvpdbfdrwzalikkjg.supabase.co/rest/v1/trade_alerts?select=*&occurred_at=gte.2026-09-14T19%3A05%3A07.560Z&order=occurred_at.desc&limit=1"
+    },
+    {
+      "status": 404,
+      "url": "https://rqavvpdbfdrwzalikkjg.supabase.co/rest/v1/trade_alerts?select=*&occurred_at=gte.2026-09-14T19%3A05%3A13.291Z&order=occurred_at.desc&limit=1"
+    }
+  ],
+  "metrics": {
+    "viewport": {
+      "width": 592,
+      "height": 1280,
+      "dpr": 1
+    },
+    "scrollHeight": 4555,
+    "anniversary": {
+      "x": 0,
+      "y": 101,
+      "width": 592,
+      "height": 93
+    },
+    "anniversaryTag": {
+      "box": {
+        "x": 466,
+        "y": 129,
+        "width": 112,
+        "height": 36
+      },
+      "display": "block",
+      "color": "rgb(169, 175, 176)",
+      "text": "Same guys.Higher stakes.Bigger bragging rights."
+    },
+    "dashboard": {
+      "x": 26,
+      "y": 194,
+      "width": 540,
+      "height": 361
+    },
+    "rankings": {
+      "x": 16,
+      "y": 569,
+      "width": 560,
+      "height": 413.71875
+    },
+    "report": {
+      "x": 16,
+      "y": 982.71875,
+      "width": 560,
+      "height": 186
+    },
+    "activeTab": "My Week",
+    "headline": "TOUGH LOSS"
+  },
+  "interactions": [
+    {
+      "label": "Power Ranks",
+      "selected": "true"
+    },
+    {
+      "label": "Next Move",
+      "selected": "true"
+    },
+    {
+      "label": "Report",
+      "selected": "true"
+    },
+    {
+      "label": "My Week",
+      "selected": "true"
+    },
+    {
+      "label": "Pause control",
+      "ariaLabel": "Play rotating dashboard"
+    }
+  ]
+}

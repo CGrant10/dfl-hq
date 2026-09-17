@@ -293,6 +293,7 @@ export function clubhouseView({ analysis, lore, members = [], meSleeperId = null
   const start = hash(`${dateKey}:${meSleeperId}:start`) % stories.length;
   return {
     stories, start,
+    focusName: memberName(members, meSleeperId, "YOU"),
     gameDay: now instanceof Date && now.getDay() === 0,
     aftermath: buildAftermath({ lore, members, weekly: aftermathWeekly, now }),
   };
@@ -360,7 +361,8 @@ export function clubhouseWeekCard(view) {
   const story = view?.stories?.find(item => item.key === "matchup") || view?.stories?.[0];
   if (!story) return "";
   const sides = story.sides || [];
-  const mine = sides[0], opponent = sides[1];
+  const mine = sides[0] ? { ...sides[0], name: view?.focusName || sides[0].name } : null;
+  const opponent = sides[1];
   const final = /FINAL/i.test(story.label || "");
   const title = !mine || !opponent
     ? "YOUR WEEK"
