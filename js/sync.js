@@ -22,6 +22,7 @@ import { readWinners, readLastPlace } from "./sleeper-bracket.js";
 import { sleeper } from "./sleeper.js";
 import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
 import { collectLeagueChain } from "./sleeper-sync-scope.js";
+import { captureCompletedTradeAlerts } from "./trade-alerts.js";
 
 const MAX_WEEK    = 18;
 const CONCURRENCY = 4;    // parallel week requests; polite to the API
@@ -56,7 +57,7 @@ export async function syncSleeper(leagueId, log = () => {}, { includeHistory = f
     const season = Number(league.season);
     log(`— syncing ${season}…`);
 
-    const seasonCounts = await syncSeason(league, season, log);
+    const seasonCounts = await syncSeason(league, season, log, { detectTradeAlerts: !includeHistory });
     counts.users        += seasonCounts.users;
     counts.rosters      += seasonCounts.rosters;
     counts.matchups     += seasonCounts.matchups;
@@ -134,7 +135,7 @@ async function refreshMemberTeamNames(log) {
 // One season
 // ---------------------------------------------------------------------
 
-async function syncSeason(league, season, log) {
+async function syncSeason(league, season, log, { detectTradeAlerts = false } = {}) {
   const leagueId = league.league_id;
   const counts = { users: 0, rosters: 0, matchups: 0, transactions: 0 };
 
@@ -146,6 +147,16 @@ async function syncSeason(league, season, log) {
        league - last place is then simply unknown rather than guessed. */
     sleeper.losersBracket(leagueId).catch(() => null),
   ]);
+
+  /* Preserve the last synced ownership before the roster upsert below. A
+     completed trade must be graded against what both teams owned BEFORE the
+     deal, not against Sleeper's already-updated roster response. */
+  let previousRosters = [];
+  if (detectTradeAlerts) {
+    const { data, error } = await db().from("sleeper_rosters")
+      .select("roster_id,players").eq("season", season);
+    if (!error) previousRosters = data || [];
+  }
 
   // roster_id -> owner user id, needed all over the place below
   const ownerOf = new Map((rosters || []).map((r) => [r.roster_id, r.owner_id]));
@@ -271,10 +282,12 @@ async function syncSeason(league, season, log) {
   }
 
   const txRows = [];
+  const rawTransactions = [];
   await inBatches(weeks, CONCURRENCY, async (week) => {
     const raw = await sleeper.transactions(leagueId, week);
     for (const t of raw || []) {
       if (t.status === "failed") continue;         // rejected waiver claims
+      rawTransactions.push(t);
       txRows.push({
         sleeper_transaction_id: String(t.transaction_id),
         season,
@@ -287,9 +300,31 @@ async function syncSeason(league, season, log) {
     }
   });
   if (txRows.length) {
+    let priorTransactions = [];
+    if (detectTradeAlerts) {
+      const tradeIds = rawTransactions.filter(t => t.status === "complete")
+        .map(t => String(t.transaction_id));
+      if (tradeIds.length) {
+        const { data, error } = await db().from("sleeper_transactions")
+          .select("sleeper_transaction_id,status").in("sleeper_transaction_id", tradeIds);
+        if (!error) priorTransactions = data || [];
+      }
+    }
     await upsert("sleeper_transactions", txRows, "sleeper_transaction_id");
     counts.transactions = txRows.length;
     log(`   ${txRows.length} transactions`);
+    if (detectTradeAlerts) {
+      await captureCompletedTradeAlerts({
+        transactions: rawTransactions,
+        priorTransactions,
+        previousRosters,
+        currentRosters: rosters || [],
+        season,
+        week: Number(league.settings?.leg) || 1,
+        database: db(),
+        log,
+      });
+    }
   }
 
   counts.draftPicks = await syncDraft(leagueId, season, log);

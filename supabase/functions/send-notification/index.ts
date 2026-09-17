@@ -110,6 +110,8 @@ Deno.serve(async request => {
     const body = String(input.body || "").trim().slice(0, 240);
     const category = categories.has(input.category) ? input.category : "announcements";
     const targetUrl = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(input.targetUrl || "") ? input.targetUrl : "#/home";
+    const sourceKey = /^trade:[a-z0-9_-]{1,120}$/i.test(String(input.sourceKey || ""))
+      ? String(input.sourceKey) : null;
     let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];
     if (internalSync && input.audience === "commissioners") {
@@ -123,11 +125,28 @@ Deno.serve(async request => {
     if (targeted && !targetIds.length) return json({ error: "No notification recipients are configured" }, 422);
     if (!title || !body) return json({ error: "A title and message are required" }, 400);
 
+    if (sourceKey) {
+      const { data: existing, error } = await admin.from("notification_messages")
+        .select("id").eq("source_key", sourceKey).maybeSingle();
+      if (error) throw error;
+      if (existing) return json({ ok: true, messageId: existing.id, delivered: 0, failed: 0, pushConfigured: true, duplicate: true });
+    }
+
     const sender = Number(request.headers.get("x-member-id")) || null;
-    const { data: message, error: insertError } = await admin.from("notification_messages").insert({
+    const messageRow = {
       title, body, category, target_url: targetUrl, audience,
       target_member_ids: audience === "members" ? targetIds : [], sent_by_member_id: sender,
-    }).select("id").single();
+      ...(sourceKey ? { source_key: sourceKey } : {}),
+    };
+    let { data: message, error: insertError } = await admin.from("notification_messages").insert(messageRow).select("id").single();
+    /* Two sync tabs can discover the same trade together. The unique source
+       key picks one sender; the loser returns the canonical inbox message and
+       deliberately does not deliver a second push. */
+    if (insertError?.code === "23505" && sourceKey) {
+      const winner = await admin.from("notification_messages").select("id").eq("source_key", sourceKey).single();
+      if (winner.error) throw winner.error;
+      return json({ ok: true, messageId: winner.data.id, delivered: 0, failed: 0, pushConfigured: true, duplicate: true });
+    }
     if (insertError) throw insertError;
 
     let query = admin.from("push_subscriptions").select("id,member_id,endpoint,p256dh,auth,categories").eq("enabled", true);

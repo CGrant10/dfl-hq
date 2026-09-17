@@ -119,6 +119,17 @@ export function powerPulseCard(view) {
   </div>`;
 }
 
+/** The rankings-only slide used inside Home's primary dashboard deck. */
+export function powerPulsePanel(view) {
+  if (!view?.teams?.length) return "";
+  const rankings = leaguePowerRankingsCard(view.powerRankings, view.focus.id);
+  if (rankings) return rankings;
+  return `<section class="pp-power-board pp-power-fallback">
+    <header class="pp-board-head"><div><small>POWER RANKINGS</small><strong>${esc(String(view.season || "CURRENT"))} MODEL</strong></div></header>
+    <ol class="pp-ranks">${view.teams.map(team => `<li class="${team.id === view.focus.id ? "is-me" : ""}"><b>${esc(String(team.rank))}</b><span>${esc(teamName(team))}</span><strong>${esc(view.ratings?.[team.id] || "—")}</strong></li>`).join("")}</ol>
+  </section>`;
+}
+
 /** Mount the two-card Power Pulse deck and the historical week picker. */
 export function wirePowerPulse(root) {
   const deck = root?.querySelector?.("[data-pp-deck]");

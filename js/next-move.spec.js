@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNextMove, nextMoveCard } from "./next-move.js";
+import { buildNextMove, nextMoveCard, nextMovePanel } from "./next-move.js";
 
 const player = (id, name, position, expectedPerGame, tradeValue) => ({ id, name, position, expectedPerGame, tradeValue });
 const mine = {
@@ -28,6 +28,7 @@ describe("dashboard next move", () => {
     expect(view.trade.player.name).toBe("Bench Target");
     expect(view.waiver.player.name).toBe("Waiver Rocket");
     expect(nextMoveCard(view)).toContain("1.2k adds today");
+    expect(nextMovePanel(view)).toContain("hd-next-move");
   });
 
   it("does not call a solid lowest-ranked unit an urgent need", () => {

@@ -355,6 +355,35 @@ export function clubhouseCard(view) {
   </div>`;
 }
 
+/** The personal scoreboard used by Home's four-panel dashboard deck. */
+export function clubhouseWeekCard(view) {
+  const story = view?.stories?.find(item => item.key === "matchup") || view?.stories?.[0];
+  if (!story) return "";
+  const sides = story.sides || [];
+  const mine = sides[0], opponent = sides[1];
+  const final = /FINAL/i.test(story.label || "");
+  const title = !mine || !opponent
+    ? "YOUR WEEK"
+    : mine.score === opponent.score
+      ? (final ? "DEAD EVEN" : "TOO CLOSE")
+      : mine.winner
+        ? (final ? "WIN SECURED" : "IN CONTROL")
+        : (final ? "TOUGH LOSS" : "WORK TO DO");
+  return `<article class="hd-week-card">
+    <img class="hd-ghost-crest" src="icons/crest-512.webp" alt="" aria-hidden="true">
+    <div class="hd-week-copy">
+      <small>${esc(story.label || "YOUR WEEK")}</small>
+      <h2>${esc(title)}</h2>
+      <p>${esc(story.detail || story.headline)}</p>
+    </div>
+    ${mine && opponent ? `<div class="hd-scoreboard">
+      <div class="hd-score-side ${mine.winner ? "is-winner" : ""}"><strong>${esc(mine.name)}</strong><b>${esc(mine.score)}</b><span>${final ? "All players final" : "Live score"}</span></div>
+      <span class="hd-versus">VS</span>
+      <div class="hd-score-side ${opponent.winner ? "is-winner" : ""}"><strong>${esc(opponent.name)}</strong><b>${esc(opponent.score)}</b><span>${final ? "All players final" : "Live score"}</span></div>
+    </div>` : `<a class="hd-story-link" href="${esc(story.href || "#/analyzer")}">${esc(story.headline)} <span aria-hidden="true">→</span></a>`}
+  </article>`;
+}
+
 export function wireClubhouse(root, view) {
   root.innerHTML = clubhouseCard(view);
   root.classList.remove("is-loading", "is-gameday");

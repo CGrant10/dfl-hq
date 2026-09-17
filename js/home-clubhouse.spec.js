@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView } from "./home-clubhouse.js";
+import { aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView, clubhouseWeekCard } from "./home-clubhouse.js";
 
 const player = (name, expectedPoints) => ({ name, expectedPoints });
 const analysis = {
@@ -194,6 +194,10 @@ describe("Home weekly report", () => {
     expect(story.label).toContain("FINAL");
     expect(story.headline).toBe("Your win over Beta is secured.");
     expect(story.detail).toContain("20.00-10.00");
+    const dashboard = clubhouseWeekCard(clubhouseView({ analysis: finishedAnalysis, lore: currentLore, members, meSleeperId: "u1", weekly }));
+    expect(dashboard).toContain("WIN SECURED");
+    expect(dashboard).toContain("20.00");
+    expect(dashboard).toContain("icons/crest-512.webp");
   });
 
   it("never renders an undefined team name in a weekly Hot Seat take", () => {

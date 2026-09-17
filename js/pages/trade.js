@@ -20,6 +20,7 @@ import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
 import { shareDeal } from "../trade-card.js";
 import { suggestTrades } from "../team-analyzer.js";
+import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const ordinal = value => {
@@ -108,9 +109,31 @@ function perspectiveOf({ result, parties }) {
     weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last] };
 }
 
-function page(data) {
+const alertSigned = value => `${Number(value) > 0 ? "+" : Number(value) < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
+
+export function completedTradeMarkup(alerts = [], selectedTransactionId = "") {
+  const views = alerts.map(tradeAlertViewModel).filter(Boolean);
+  if (!views.length) return "";
+  views.sort((a, b) => (String(a.transactionId) === String(selectedTransactionId) ? -1 : 0)
+    - (String(b.transactionId) === String(selectedTransactionId) ? -1 : 0));
+  return `<details class="ta-report-section td-completed" ${selectedTransactionId ? "open" : ""}>
+    <summary class="ta-report-title"><div><small>COMPLETED DEALS</small><h2>DFLyzer trade receipts</h2></div><span class="ta-fold-hint">${views.length} saved</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
+    <div class="ta-section-body td-alert-list">${views.map(alert => {
+      const call = alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED";
+      return `<article class="td-alert-receipt" id="trade-${esc(alert.transactionId)}">
+        <header><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3></div><span>${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% balance`}</span></header>
+        <div class="td-alert-packages">${alert.packages.map(pkg => `<section><small>${esc(pkg.teamName)} SENT</small>${pkg.players.map(player => `<div><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam].filter(Boolean).join(" · "))}</small></span><b>${Math.round(player.value)}</b></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
+        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.lineupDeltas.slice(0, 2).map(delta => `<small>${esc(delta.teamName)} <b>${alertSigned(delta.weekly)} / wk</b></small>`).join("")}</footer>
+      </article>`;
+    }).join("")}</div>
+  </details>`;
+}
+
+function page(data, tradeAlerts = []) {
   const me = currentMember();
-  const routeTeam = new URLSearchParams((location.hash.split("?")[1] || "")).get("team");
+  const params = new URLSearchParams((location.hash.split("?")[1] || ""));
+  const routeTeam = params.get("team");
+  const selectedTransactionId = params.get("tx") || "";
   let selectedId = data.teams.find(team => String(team.id) === String(routeTeam))?.id
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
@@ -122,6 +145,7 @@ function page(data) {
         <div><h1>Trade Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · DFL full-PPR scoring</p></div>
         <a class="btn ghost small" href="#/analyzer">Analyzer</a>
       </header>
+      ${completedTradeMarkup(tradeAlerts, selectedTransactionId)}
       <div class="ta-toolbar">
         <label><span>Your team</span>
           <select data-td-team>${data.teams.map(team =>
@@ -219,14 +243,17 @@ export async function render(view) {
     <p class="page-sub">Reading every roster…</p></header>
     <div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
   try {
-    const data = await loadAnalyzerData();
+    const [data, tradeAlerts] = await Promise.all([
+      loadAnalyzerData(),
+      loadTradeAlerts({ limit: 12 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),
+    ]);
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1></header>
         <div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong>
         <p class="muted">Run a Sleeper sync after the draft, then come back here.</p></div></div>`;
       return;
     }
-    const built = page(data);
+    const built = page(data, tradeAlerts);
     view.innerHTML = built.markup;
     built.wire(view);
   } catch (error) {

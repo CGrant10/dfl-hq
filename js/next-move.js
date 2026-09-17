@@ -114,3 +114,9 @@ export function nextMoveCard(view) {
     <footer><span>Live projections + roster ownership + Sleeper add trends</span><a class="btn ghost small" href="${route}">Open Team Analyzer</a></footer>
   </section>`;
 }
+
+/** Compact wrapper for the rotating Home dashboard. */
+export function nextMovePanel(view) {
+  const html = nextMoveCard(view);
+  return html ? `<div class="hd-next-move">${html}</div>` : "";
+}

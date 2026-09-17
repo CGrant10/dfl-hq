@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { powerPulseCard, powerPulseView } from "./power-pulse.js";
+import { powerPulseCard, powerPulsePanel, powerPulseView } from "./power-pulse.js";
 
 const analysis = {
   state: "ready", projectionSeason: 2026,
@@ -81,5 +81,6 @@ describe("the projected record on the home panel", () => {
     expect(html).toMatch(/% playoffs/);
     expect(html).toContain("League ranks");
     expect(html).toContain("data-pp-deck");
+    expect(powerPulsePanel(view)).toMatch(/POWER RANKINGS|WEEKLY POWER RANKINGS/);
   });
 });
