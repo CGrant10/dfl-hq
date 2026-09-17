@@ -16,8 +16,13 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("home-slides.js");
   });
 
-  it("uses the existing crest for the tenth-anniversary treatment", () => {
-    expect(source).toContain('src="icons/crest-512.webp"');
+  it("gives the anniversary band to the laurels alone", () => {
+    /* The crest was dropped from this band: the masthead above it already
+       carries the mark, and it was taking the left grid track that the
+       headline needed in order to centre. */
+    expect(source).not.toContain('src="icons/crest-512.webp"');
+    expect(source).toContain("dfl-anniv-branch is-left");
+    expect(source).toContain("dfl-anniv-branch is-right");
     expect(source).toContain("Anniversary Season");
     expect(source).toContain("LEAGUE_FOUNDED");
   });

@@ -438,7 +438,6 @@ export function anniversary() {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   if (number < 2 || number % 10 !== 0) return "";
   return `<aside class="dfl-anniv" role="note">
-    <img src="icons/crest-512.webp" alt="" aria-hidden="true">
     <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
     <span class="dfl-anniv-tag">Same guys.<br>Higher stakes.<br>Bigger bragging rights.</span>
   </aside>`;

@@ -613,7 +613,7 @@
   .bx-slide.bx-in * { animation-name: none !important; text-shadow: none !important; }
   /* The inherited glide is travel, so it goes too - the swap becomes the
      instant cut the stage's paint() already assumes under this query. */
-  .bx-slide, .bx-slide.bx-enter { transform: none; transition: none; }
+  .bx-slide, .bx-slide.bx-enter, .bx-slide.bx-leaving { transform: none; transition: none; }
 }
 
 /* =====================================================================
@@ -635,6 +635,11 @@
   transition: opacity 320ms ease, transform 480ms cubic-bezier(.2, .75, .2, 1);
 }
 .bx-slide.bx-enter { opacity: 0; transform: translate3d(28px, 0, 0); }
+/* The other half of the cross-fade: the outgoing slide travels the opposite
+   way as the incoming one arrives, so the two overlap instead of cutting.
+   pointer-events:none keeps a leaving slide from swallowing the tap that
+   started the swap - it is still a link for another 480ms. */
+.bx-slide.bx-leaving { opacity: 0; transform: translate3d(-28px, 0, 0); pointer-events: none; }
 
 .bx-controls {
   position: absolute;

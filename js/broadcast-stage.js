@@ -395,6 +395,16 @@ function controls(items) {
    without a dwell. */
 export const DWELL_FALLBACK = 3600;
 
+/* How long an outgoing slide is kept in the layer before it is dropped, as a
+   backstop for a transitionend that never fires. Must outlast the longest
+   half of the cross-fade in css/stage.css (transform, 480ms). */
+const LEAVE_MS = 600;
+
+/* Backstop for the entrance when requestAnimationFrame is not running (a
+   hidden or occluded page). Long enough that the two frames win under normal
+   conditions, short enough that a stranded slide is never visible as one. */
+const ENTER_MS = 60;
+
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /*
@@ -477,25 +487,69 @@ export function startStage(root, deck, { refresh } = {}) {
 
   function paint() {
     if (!layer) return;
-    layer.innerHTML = renderItem(items[i]);
-    /* Enter on the next tick so the browser has a frame with the old
-       opacity to transition from. Under reduced motion the transition
-       duration is 0ms and this is an instant cut, which is the point. */
-    const slide = layer.firstElementChild;
+    /*
+      A CROSS-FADE, NOT A REPLACEMENT.
+
+      This used to set layer.innerHTML, which destroyed the outgoing slide in
+      the same frame the incoming one appeared: only half a transition, so the
+      old content blinked out and the new one faded in over nothing. The
+      retired Home dashboard overlapped its panels - the outgoing one travelled
+      and faded WHILE the incoming one arrived - and that overlap is the part
+      that reads as expensive.
+
+      So the old slide stays in the layer for the length of the transition,
+      marked .bx-leaving, and is removed on transitionend. .bx-slide is
+      already position:absolute;inset:0, so the two simply stack. Any slide
+      still leaving from an earlier swap is dropped immediately rather than
+      queued - a fast double-tap on the arrows should land on the newest
+      slide, not play a backlog.
+    */
+    for (const stale of layer.querySelectorAll(".bx-leaving")) stale.remove();
+    const outgoing = layer.firstElementChild;
+    layer.insertAdjacentHTML("beforeend", renderItem(items[i]));
+    const slide = layer.lastElementChild;
+    if (outgoing && outgoing !== slide) {
+      outgoing.classList.remove("bx-in", "bx-enter");
+      outgoing.classList.add("bx-leaving");
+      /* transitionend is the truth, but it never fires when the tab is
+         hidden or the user asked for reduced motion - so a timer backs it
+         up and whichever lands first wins. */
+      let done = false;
+      const drop = () => { if (done) return; done = true; outgoing.remove(); };
+      outgoing.addEventListener("transitionend", drop, { once: true });
+      setTimeout(drop, LEAVE_MS);
+    }
     if (slide) {
       /* BEFORE bx-enter, so the measurement happens on a slide that is in the
          document but not yet animating - a mid-animation scale() would make
          getBoundingClientRect() report the wrong width. */
       fitHeadlines(slide);
       slide.classList.add("bx-enter");
-      setTimeout(() => {
+      /*
+        RELEASED BY WHICHEVER COMES FIRST, two frames or a timer.
+
+        Two frames is the correct signal - the first commits bx-enter's
+        opacity and offset, the second releases them, and a bare 20ms
+        setTimeout can land inside the same frame on a 120Hz display and skip
+        the transition entirely. But rAF does not run at all while the page is
+        hidden or the surface is occluded, and a slide left holding bx-enter
+        is a slide at opacity 0. So the timer backs it up: rAF wins in the
+        normal case, the timer guarantees the slide is never stranded
+        invisible.
+      */
+      let entered = false;
+      const enter = () => {
+        if (entered || !slide.isConnected) return;
+        entered = true;
         slide.classList.remove("bx-enter");
         /* bx-in drives the staggered entrance - kicker, then headline,
            then detail. Added AFTER the element is in the document so the
            animations actually run; added as a class rather than left on
            the markup so a repaint of the same slide replays it. */
         slide.classList.add("bx-in");
-      }, 20);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(enter));
+      setTimeout(enter, ENTER_MS);
     }
     /* The light plate needs light-plate controls, and the controls are not
        inside the slide, so the stage carries the flag. */

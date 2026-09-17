@@ -50,7 +50,10 @@
    changed in stage.css, which the other routes share.
    --------------------------------------------------------------------- */
 #home-wrap > .home-broadcast { display: block; }
-#home-wrap > .home-broadcast .bx-stage { margin-bottom: 0; }
+/* #home-wrap is full-bleed now, so the stage's own negative side margins -
+   which existed to escape that same gutter from inside the old layout -
+   would push it past the screen edge and cause a sideways scroll. */
+#home-wrap > .home-broadcast .bx-stage { margin: 0; }
 
 /* ---------------------------------------------------------------------
    HOME COMMAND DECK. The selected redesign turns the four most useful
@@ -60,7 +63,13 @@
 #home-wrap .dfl-anniv {
   min-height: 84px;
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) auto;
+  /* 1fr on BOTH sides so the copy centres on the band itself. The crest
+     used to hold the left column and the tagline the right, which meant the
+     centre column's midpoint was wherever those two happened to balance -
+     the headline sat right of true centre. Equal side tracks fix that
+     whatever the tagline says; the tagline lives in the right track and the
+     left one stays empty. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--s-4);
   padding: 8px var(--s-5);
@@ -71,8 +80,14 @@
   box-shadow: var(--e-1);
 }
 #home-wrap .dfl-anniv::after { opacity: .36; }
-#home-wrap .dfl-anniv > img { width: 92px; height: 68px; object-fit: contain; }
 #home-wrap .dfl-anniv-copy { min-width: 0; display: grid; justify-items: center; text-align: center; }
+#home-wrap .dfl-anniv-copy { grid-column: 2; }
+/* The side tracks are 1fr each so the copy centres; that means the tagline
+   gets whatever the headline leaves and must be able to live in it. Without
+   min-width:0 a grid item refuses to go below its min-content width and
+   spills past the band's padding (it was clipping the last letters of
+   "BIGGER BRAGGING RIGHTS."). */
+#home-wrap .dfl-anniv-tag { grid-column: 3; min-width: 0; overflow-wrap: anywhere; }
 #home-wrap .dfl-anniv-copy strong {
   color: var(--text); font-family: var(--font-display); font-size: clamp(1.4rem, 4vw, 2.15rem);
   line-height: 1; letter-spacing: .035em; text-transform: uppercase;
@@ -84,8 +99,7 @@
 @keyframes hd-breathe { to { width: 82px; opacity: .55; } }
 
 @media (max-width: 620px) {
-  #home-wrap .dfl-anniv { grid-template-columns: 70px minmax(0, 1fr); min-height: 72px; gap: var(--s-2); padding: 6px var(--s-3); }
-  #home-wrap .dfl-anniv > img { width: 70px; height: 58px; }
+  #home-wrap .dfl-anniv { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); min-height: 72px; gap: var(--s-2); padding: 6px var(--s-3); }
   #home-wrap .dfl-anniv-copy { justify-items: start; text-align: left; }
   #home-wrap .dfl-anniv-copy strong { font-size: clamp(1.1rem, 5.3vw, 1.55rem); }
   #home-wrap .dfl-anniv-tag { display: none; }
@@ -1634,7 +1648,7 @@
 
 #home-wrap > .dfl-anniv {
   min-height: 98px;
-  grid-template-columns: 118px minmax(0, 1fr) minmax(150px, .62fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: var(--s-4);
   padding: 12px var(--s-5);
   border: 0;
@@ -1645,7 +1659,6 @@
     url("../assets/dfl-update-stadium.png") center 23% / cover no-repeat;
   box-shadow: none;
 }
-#home-wrap > .dfl-anniv > img { width: 112px; height: 78px; }
 #home-wrap > .dfl-anniv > .dfl-anniv-copy { position: relative; }
 #home-wrap > .dfl-anniv > .dfl-anniv-copy::before,
 #home-wrap > .dfl-anniv > .dfl-anniv-copy::after {
@@ -1774,20 +1787,38 @@
 #home-wrap .home-weekly-digest.is-loading > p,
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
 
+/*
+  FULL BLEED, CANCELLING THE VIEW'S OWN GUTTER.
+
+  .view carries `padding-left/right: max(var(--pad), env(safe-area-inset-*))`,
+  so every band on Home stopped 16px short of the screen while the stage and
+  the anniversary - which set their own negative margins - ran edge to edge.
+  The page read as two different widths stacked on each other.
+
+  The rule that was meant to do this referenced `--page-pad`, which is
+  declared nowhere in the app, so `var(--page-pad, 0px)` fell back to 0 and
+  the margin was always zero. It is the same max() expression as the view's
+  padding, negated, so the cancellation stays exact when a notch widens the
+  safe-area inset.
+*/
+#home-wrap {
+  margin-left: calc(-1 * max(var(--pad), env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(var(--pad), env(safe-area-inset-right)));
+}
+
 /* Existing league utilities remain available below the approved composition,
    with their original spacing restored after the report rail. */
 #home-wrap > [data-home-report-slot] ~ * { margin: var(--home-gap) var(--s-4) 0; }
 #home-wrap > [data-home-report-slot] ~ .version-line { margin-bottom: var(--s-5); }
 
 @media (max-width: 620px) {
-  #home-wrap { margin-inline: calc(-1 * var(--page-pad, 0px)); border-inline: 0; border-radius: 0; }
+  #home-wrap { border-inline: 0; border-radius: 0; }
   #home-wrap > .dfl-anniv {
     min-height: 93px;
-    grid-template-columns: 104px minmax(0, 1fr) 112px;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     gap: 7px;
     padding: 9px 14px;
   }
-  #home-wrap > .dfl-anniv > img { width: 100px; height: 72px; }
   #home-wrap > .dfl-anniv > .dfl-anniv-copy { justify-items: center; text-align: center; }
   /* NOT nowrap. The words column between the two branches is ~214px here,
      and the headline measures 341px on one line - nowrap is what pushed it
@@ -1831,8 +1862,7 @@
 }
 
 @media (max-width: 410px) {
-  #home-wrap > .dfl-anniv { grid-template-columns: 78px minmax(0, 1fr); }
-  #home-wrap > .dfl-anniv > img { width: 76px; }
+  #home-wrap > .dfl-anniv { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   #home-wrap > .dfl-anniv > .dfl-anniv-tag { display: none; }
   #home-wrap .home-rank-summary { grid-template-columns: .8fr 1.2fr; }
   #home-wrap .home-rank-leader > img { display: none; }
@@ -1915,7 +1945,7 @@ span) { overflow-wrap: anywhere; }
 .whoami-photo[hidden] { display: none; }
 
 @media (max-width: 620px) {
-  #home-wrap > .dfl-anniv { grid-template-columns: 104px minmax(0, 1fr) 112px; padding-inline: 14px; }
+  #home-wrap > .dfl-anniv { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding-inline: 14px; }
   #home-wrap .dfl-anniv-copy { min-height: 76px; }
   #home-wrap .dfl-anniv-words > strong {
     box-sizing: border-box;
