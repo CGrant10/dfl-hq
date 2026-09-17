@@ -39,7 +39,7 @@ import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
 import { boardWeekLabel, teamInitials } from "../league-trajectory.js";
-import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide } from "../home-slides.js";
+import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
 let stage = null;
@@ -218,23 +218,55 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   if (!Array.isArray(raw) || !raw.length) return null;
 
   const teamFor = rosterId => analysis.teams.find(team => String(team.roster_id) === String(rosterId));
-  const meRow = raw.find(row => String(teamFor(row.roster_id)?.sleeper_user_id) === String(meSleeperId));
-  if (meRow?.matchup_id == null) return null;
-  const themRow = raw.find(row => row !== meRow && String(row.matchup_id) === String(meRow.matchup_id));
-  if (!themRow) return null;
-
+  const projectionOf = uid => {
+    const row = (weekly.teams || []).find(team => String(team.sleeper_user_id) === String(uid));
+    return Number.isFinite(Number(row?.projection)) ? Number(row.projection) : null;
+  };
   const side = row => {
     const team = teamFor(row.roster_id);
-    return team ? { sleeper_user_id: team.sleeper_user_id, name: team.team_name || team.ownerName || "Unnamed" } : null;
+    if (!team) return null;
+    return {
+      sleeper_user_id: team.sleeper_user_id,
+      name: team.team_name || team.ownerName || "Unnamed",
+      projection: projectionOf(team.sleeper_user_id),
+    };
   };
-  const mine = side(meRow), theirs = side(themRow);
-  if (!mine || !theirs) return null;
-  return matchupPreviewSlide({
-    pairing: { mine, theirs }, weekly, meSleeperId, season: weekly.season, week,
-    /* The head-to-head is all-time, so it comes from lore's full matchup
-       history rather than the analyzer's season-scoped slice. */
-    matchups: lore?.matchups || [],
-  });
+
+  /* Sleeper returns one row per ROSTER; a fixture is the two rows sharing a
+     matchup_id. Grouping once means the slate and the personal preview can
+     never disagree about who is playing whom. */
+  const fixtures = [];
+  const byMatchup = new Map();
+  for (const row of raw) {
+    if (row?.matchup_id == null) continue;            // bye / unmatched
+    const key = String(row.matchup_id);
+    if (!byMatchup.has(key)) byMatchup.set(key, []);
+    byMatchup.get(key).push(row);
+  }
+  for (const [, pair] of byMatchup) {
+    if (pair.length !== 2) continue;
+    const a = side(pair[0]), b = side(pair[1]);
+    if (a && b) fixtures.push({ a, b });
+  }
+  if (!fixtures.length) return null;
+
+  const mineFixture = fixtures.find(fixture =>
+    String(fixture.a.sleeper_user_id) === String(meSleeperId)
+    || String(fixture.b.sleeper_user_id) === String(meSleeperId));
+
+  const slides = [];
+  if (mineFixture) {
+    const iAmA = String(mineFixture.a.sleeper_user_id) === String(meSleeperId);
+    slides.push(matchupPreviewSlide({
+      pairing: { mine: iAmA ? mineFixture.a : mineFixture.b, theirs: iAmA ? mineFixture.b : mineFixture.a },
+      weekly, meSleeperId, season: weekly.season, week,
+      /* The head-to-head is all-time, so it comes from lore's full matchup
+         history rather than the analyzer's season-scoped slice. */
+      matchups: lore?.matchups || [],
+    }));
+  }
+  slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId }));
+  return slides.filter(Boolean);
 }
 
 export async function render(view) {
@@ -497,15 +529,15 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const preview = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null, lore: got?.error ? null : got });
-    const extras = [preview, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const ahead = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null, lore: got?.error ? null : got }) || [];
+    const extras = [...ahead, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length && view.querySelector("[data-bx-stage]")) {
       liveSlides = extras;
       /* A preview and the myMatchup generator are the same fixture from two
          directions - one looking forward, one looking back. Showing both puts
          last week's result next to this week's projection on the same stage,
          so the generator stands down while a preview exists. */
-      suppressMyMatchup = Boolean(preview);
+      suppressMyMatchup = ahead.some(slide => slide?.generator === "matchupPreview");
       stage?.update(build(golfDayNow));
     }
   }).catch((err) => {

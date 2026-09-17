@@ -967,3 +967,93 @@
    down to match what the eye actually sees. */
 :root[data-mode="light"] .bx-logo-subtle .bx-crest { opacity: .07; }
 :root[data-mode="light"] .bx-logo-faint  .bx-crest { opacity: .045; }
+
+/* =====================================================================
+   SLATE. The whole week's fixtures on one card.
+   ===================================================================== */
+
+/*
+  Sized to fit SIX rows in the shortest stage (min-height 300px) without
+  scrolling, because a card that rotates away cannot be scrolled in time.
+  The row type is clamped against the viewport rather than fixed so the same
+  six rows fit a phone and a desktop.
+*/
+.bx-slate {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(6px, 1.4vh, 12px);
+  width: 100%;
+  min-width: 0;
+}
+.bx-slate-note {
+  color: var(--muted);
+  font-size: clamp(.58rem, 1.6vw, .72rem);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.bx-slate-list {
+  display: grid;
+  gap: clamp(2px, .7vh, 7px);
+  width: 100%;
+  max-width: 460px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bx-slate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(4px, 1.4vw, 10px);
+  padding: clamp(3px, .8vh, 7px) clamp(6px, 2vw, 12px);
+  border-radius: 8px;
+}
+/* The reader's own game is marked in place rather than moved to the top: a
+   row that jumps is a row nobody can find twice. */
+.bx-slate-row.is-mine {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.bx-slate-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: clamp(4px, 1.2vw, 9px);
+  min-width: 0;
+}
+/* The right-hand team mirrors so both scores sit against the middle. */
+.bx-slate-side:last-child { grid-template-columns: auto minmax(0, 1fr); }
+.bx-slate-side:last-child > b { order: 2; text-align: left; }
+.bx-slate-side:last-child > i { order: 1; }
+.bx-slate-side > b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: clamp(.62rem, 2.1vw, .88rem);
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.bx-slate-side > i {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(.68rem, 2.3vw, .95rem);
+  font-weight: 800;
+  color: var(--muted);
+}
+/* Only the projected winner is lit, so the favourite is readable at a glance
+   without colouring half the card. */
+.bx-slate-side.is-up > i { color: var(--accent-2, var(--accent)); }
+.bx-slate-side.is-up > b { color: var(--text); }
+.bx-slate-v {
+  font-size: clamp(.5rem, 1.5vw, .62rem);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: .7;
+}

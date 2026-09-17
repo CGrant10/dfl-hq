@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, tradeAlertSlide } from "./home-slides.js";
+import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "./home-slides.js";
 
 describe("trade alert as a stage slide", () => {
   const alert = {
@@ -229,5 +229,61 @@ describe("the preview carries the story", () => {
       meSleeperId: "me", season: 2026, week: 1,
     });
     expect(slide.moodText).toBe("First time you have met.");
+  });
+});
+
+describe("the week's slate", () => {
+  const fixture = (an, ap, bn, bp, aid = an, bid = bn) => ({
+    a: { sleeper_user_id: aid, name: an, projection: ap },
+    b: { sleeper_user_id: bid, name: bn, projection: bp },
+  });
+  const three = [
+    fixture("Da Nickers", 102.4, "Jack-HAMMER", 113.7, "me", "them"),
+    fixture("Fuck you", 120.1, "Dream Enders", 99.55),
+    fixture("Bastards", 88, "Klutch", 88),
+  ];
+
+  it("puts every fixture on one card", () => {
+    const slide = weekSlateSlide({ fixtures: three, season: 2026, week: 2, meSleeperId: "me" });
+    expect(slide.treatment).toBe("slate");
+    expect(slide.fixtures).toHaveLength(3);
+    expect(slide.kicker).toBe("2026 · Week 2");
+  });
+
+  it("marks the reader's own game in place rather than moving it", () => {
+    const slide = weekSlateSlide({ fixtures: three, season: 2026, week: 2, meSleeperId: "me" });
+    expect(slide.fixtures.map(f => f.mine)).toEqual([true, false, false]);
+  });
+
+  it("lights only the projected winner", () => {
+    const [first, , even] = weekSlateSlide({ fixtures: three, season: 2026, week: 2, meSleeperId: "me" }).fixtures;
+    expect(first.a.up).toBe(false);
+    expect(first.b.up).toBe(true);
+    /* A dead-even projection lights neither side rather than picking one. */
+    expect(even.a.up).toBe(false);
+    expect(even.b.up).toBe(false);
+  });
+
+  it("rounds the scores for a dense list", () => {
+    const [first] = weekSlateSlide({ fixtures: three, season: 2026, week: 2, meSleeperId: "me" }).fixtures;
+    expect(first.a.score).toBe("102.4");
+    expect(first.b.score).toBe("113.7");
+  });
+
+  it("drops a fixture that has no projection to show", () => {
+    const withGap = [...three, { a: { sleeper_user_id: "x", name: "X", projection: null }, b: { sleeper_user_id: "y", name: "Y", projection: 100 } }];
+    expect(weekSlateSlide({ fixtures: withGap, season: 2026, week: 2, meSleeperId: "me" }).fixtures).toHaveLength(3);
+  });
+
+  /* One fixture is the reader's own game with extra steps, and the preview
+     slide already says it better. */
+  it("does not bother with fewer than two fixtures", () => {
+    expect(weekSlateSlide({ fixtures: three.slice(0, 1), season: 2026, week: 2, meSleeperId: "me" })).toBeNull();
+    expect(weekSlateSlide({ fixtures: [], season: 2026, week: 2, meSleeperId: "me" })).toBeNull();
+  });
+
+  it("still builds for a reader who is not in the league", () => {
+    const slide = weekSlateSlide({ fixtures: three, season: 2026, week: 2, meSleeperId: "nobody" });
+    expect(slide.fixtures.every(f => f.mine === false)).toBe(true);
   });
 });

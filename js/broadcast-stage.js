@@ -76,6 +76,38 @@ function scoreboard(item) {
   });
 }
 
+/*
+  THE WHOLE WEEK ON ONE CARD.
+
+  Every other treatment is about a single thing - one game, one champion, one
+  number. This one is a list, because the question it answers is "what is
+  everybody else doing" and six fixtures is the answer.
+
+  The reader's own game is marked rather than moved: keeping the slate in
+  league order means the card reads the same every week, and a row that jumps
+  to the top is a row nobody can find twice. It carries no .bx-head, so
+  fitHeadlines() has nothing to shrink here - the rows are sized by CSS and
+  clamp their own names.
+*/
+function slate(item) {
+  const rows = (item.fixtures || []).map((fixture) => `
+    <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}">
+      <span class="bx-slate-side${fixture.a.up ? " is-up" : ""}">
+        <b>${esc(fixture.a.name)}</b><i>${esc(fixture.a.score)}</i>
+      </span>
+      <span class="bx-slate-v" aria-hidden="true">v</span>
+      <span class="bx-slate-side${fixture.b.up ? " is-up" : ""}">
+        <b>${esc(fixture.b.name)}</b><i>${esc(fixture.b.score)}</i>
+      </span>
+    </li>`).join("");
+  return `
+    <div class="bx-slate">
+      ${item.kicker ? `<span class="bx-kicker">${esc(item.kicker)}</span>` : ""}
+      ${item.subtitle ? `<span class="bx-slate-note">${esc(item.subtitle)}</span>` : ""}
+      <ul class="bx-slate-list">${rows}</ul>
+    </div>`;
+}
+
 function champion(item) {
   /* One layout, two meanings. The Chip Eater borrows the champion's
      composition - big name, centred, kicker above - and passes a variant so
@@ -140,7 +172,7 @@ function hero(item) {
     </div>`;
 }
 
-const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero };
+const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero, slate };
 
 /*
   THE PLATE A SLIDE SITS ON.

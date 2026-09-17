@@ -214,3 +214,40 @@ export function matchupStory({ h2h, theirsName = "They" } = {}) {
   if (losses > wins) return `${theirsName} leads the series ${losses}-${wins}${ties ? `-${ties}` : ""}.`;
   return `All square at ${series}.`;
 }
+
+/*
+  EVERY FIXTURE IN THE WEEK, NOT JUST YOURS.
+
+  The preview above answers "who am I playing"; this answers "what is
+  everybody else doing", which is the other half of a Thursday. Same data,
+  same projections - the difference is only that this one does not filter to
+  the reader.
+
+  League order is kept as Sleeper returns it and the reader's own game is
+  flagged rather than promoted, so the card reads the same shape every week.
+*/
+export function weekSlateSlide({ fixtures = [], season, week, meSleeperId } = {}) {
+  const rows = fixtures.map(fixture => {
+    const a = fixture.a, b = fixture.b;
+    if (!a || !b || a.projection == null || b.projection == null) return null;
+    return {
+      mine: String(a.sleeper_user_id) === String(meSleeperId)
+        || String(b.sleeper_user_id) === String(meSleeperId),
+      a: { name: a.name, score: a.projection.toFixed(1), up: a.projection > b.projection },
+      b: { name: b.name, score: b.projection.toFixed(1), up: b.projection > a.projection },
+    };
+  }).filter(Boolean);
+  /* One fixture is the reader's own game with extra steps - the preview slide
+     already says it better. Two is the smallest number that reads as a slate. */
+  if (rows.length < 2) return null;
+  return {
+    source: "auto", pinned: true, id: "week-slate", generator: "weekSlate",
+    kind: "league", treatment: "slate", temporal: "upcoming",
+    priority: P.MINE + 10, dwell: 9000,
+    kicker: `${season} · Week ${week}`,
+    headline: "Around the league",
+    subtitle: "Projected",
+    href: "#/analyzer",
+    fixtures: rows,
+  };
+}
