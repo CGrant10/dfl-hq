@@ -115,8 +115,15 @@ function wireHomeRankings(root) {
   });
 }
 
-function digestItem(label, title, detail, icon) {
-  return `<article><svg class="ico" aria-hidden="true"><use href="#${icon}"></use></svg><div><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></div></article>`;
+/*
+  NO ICON. Each column used to open with a 34px glyph in its own grid track,
+  which bought nothing - three different marks that all read as "a fact about
+  the week" - and cost a third of the narrowest column's width. Losing it
+  gives the words the whole column, which is the only thing in here anybody
+  reads.
+*/
+function digestItem(label, title, detail) {
+  return `<article><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></article>`;
 }
 
 /** The compact three-hit weekly report shown directly on Home. */
@@ -127,19 +134,18 @@ export function homeWeeklyDigest(view) {
     const bench = report.bench;
     const close = report.closest;
     const starter = report.players?.starters?.[0];
-    if (bench) items.push(["BENCH CRIME", bench.name, `${Number(bench.value).toFixed(1)} pts wasted on the bench.`, "i-keepers"]);
-    if (close) items.push(["CLOSEST ESCAPE", close.winner, `Won by ${Number(close.margin).toFixed(1)}. No room to breathe.`, "i-moment"]);
-    if (starter) items.push(["TOP STARTER", starter.name, `${Number(starter.points).toFixed(1)} pts. Carried the squad.`, "i-record"]);
+    if (bench) items.push(["BENCH CRIME", bench.name, `${Number(bench.value).toFixed(1)} pts wasted on the bench.`]);
+    if (close) items.push(["CLOSEST ESCAPE", close.winner, `Won by ${Number(close.margin).toFixed(1)}. No room to breathe.`]);
+    if (starter) items.push(["TOP STARTER", starter.name, `${Number(starter.points).toFixed(1)} pts. Carried the squad.`]);
   }
   if (items.length < 3) {
     const fallbacks = (view?.stories || []).filter(story => story?.headline).slice(0, 3);
-    items = fallbacks.map((story, index) => {
+    items = fallbacks.map((story) => {
       const sides = story.sides || [];
       const matchup = sides.length > 1
         ? `${view?.focusName || sides[0].name} ${sides[0].score}–${sides[1].score} ${sides[1].name}` : null;
       const power = story.key === "power" ? String(story.detail || "").replace(/ in the current roster model\.?/i, "") : null;
-      return [story.label, matchup || power || story.headline, matchup ? story.headline : story.detail,
-        ["i-keepers", "i-moment", "i-record"][index]];
+      return [story.label, matchup || power || story.headline, matchup ? story.headline : story.detail];
     });
   }
   if (!items.length) return `<section class="home-weekly-digest is-loading"><header><h2>WEEKLY REPORT</h2></header><p>Your report appears after the next Sleeper sync.</p></section>`;
