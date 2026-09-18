@@ -99,3 +99,43 @@ describe("the initials shown when a member has no photo", () => {
     expect(teamInitials("\u{1F3C6}")).toBe("?");
   });
 });
+
+describe("a week still being played", () => {
+  const teams = [
+    { id: "1", roster_id: 1, sleeper_user_id: "u1", team_name: "Alpha", rank: 1, lineup: { weeklyPoints: 130 } },
+    { id: "2", roster_id: 2, sleeper_user_id: "u2", team_name: "Bravo", rank: 2, lineup: { weeklyPoints: 120 } },
+    { id: "3", roster_id: 3, sleeper_user_id: "u3", team_name: "Charlie", rank: 3, lineup: { weeklyPoints: 110 } },
+    { id: "4", roster_id: 4, sleeper_user_id: "u4", team_name: "Delta", rank: 4, lineup: { weeklyPoints: 100 } },
+  ];
+  const week1 = [
+    { season: 2026, week: 1, user1: "u1", score1: 120, user2: "u2", score2: 100 },
+    { season: 2026, week: 1, user1: "u3", score1: 90, user2: "u4", score2: 111 },
+  ];
+  /* Thursday night: one fixture has kicked off, the other has not. */
+  const week2Partial = [
+    { season: 2026, week: 2, user1: "u1", score1: 23.3, user2: "u2", score2: 0 },
+    { season: 2026, week: 2, user1: "u3", score1: 0, user2: "u4", score2: 0 },
+  ];
+
+  it("does not count a half-played week as played", () => {
+    const built = buildLeaguePowerRankings({ teams, matchups: [...week1, ...week2Partial] });
+    expect(built.latestWeek).toBe(1);
+    expect(built.boards.map(b => b.label)).toEqual(["Roster model", "Week 1"]);
+  });
+
+  it("leaves every record on one game while week 2 is in progress", () => {
+    const built = buildLeaguePowerRankings({ teams, matchups: [...week1, ...week2Partial] });
+    const rows = built.boards.at(-1).rows;
+    expect(rows.every(row => /^[01]-[01]$/.test(row.record))).toBe(true);
+  });
+
+  it("counts the week once every fixture has both sides scored", () => {
+    const week2Done = [
+      { season: 2026, week: 2, user1: "u1", score1: 23.3, user2: "u2", score2: 118 },
+      { season: 2026, week: 2, user1: "u3", score1: 96, user2: "u4", score2: 101 },
+    ];
+    const built = buildLeaguePowerRankings({ teams, matchups: [...week1, ...week2Done] });
+    expect(built.latestWeek).toBe(2);
+    expect(built.boards.at(-1).rows.every(row => /^[012]-[012]$/.test(row.record))).toBe(true);
+  });
+});

@@ -287,3 +287,36 @@ describe("the week's slate", () => {
     expect(slide.fixtures.every(f => f.mine === false)).toBe(true);
   });
 });
+
+describe("the slate during a week in progress", () => {
+  const fixtures = [
+    { a: { sleeper_user_id: "me", name: "Da Nickers", projection: 102.4, actual: 16.2 },
+      b: { sleeper_user_id: "them", name: "Jack-HAMMER", projection: 110.4, actual: 0 } },
+    { a: { sleeper_user_id: "c", name: "Charlie", projection: 120.1, actual: 0 },
+      b: { sleeper_user_id: "d", name: "Delta", projection: 99.5, actual: 0 } },
+  ];
+
+  /* Friday: one game has been played and five have not. A card that switched
+     wholesale to live showed one result and a column of 0.0. */
+  it("shows actuals only for the fixture that has started", () => {
+    const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
+    expect([rows[0].a.score, rows[0].b.score]).toEqual(["16.2", "0.0"]);
+    expect([rows[1].a.score, rows[1].b.score]).toEqual(["120.1", "99.5"]);
+  });
+
+  it("re-reads the favourite from whichever numbers a row is showing", () => {
+    const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
+    expect(rows[0].a.up).toBe(true);    // 16.2 leads 0.0 live
+    expect(rows[1].a.up).toBe(true);    // 120.1 leads 99.5 on projection
+  });
+
+  it("keeps projections everywhere before the week starts", () => {
+    const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).fixtures;
+    expect([rows[0].a.score, rows[0].b.score]).toEqual(["102.4", "110.4"]);
+  });
+
+  it("says which kind of number the card is showing", () => {
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).subtitle).toBe("Live");
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).subtitle).toBe("Projected");
+  });
+});

@@ -206,9 +206,27 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   if (week !== Number(weekly.week)) return null;
   const leagueId = analysis.league?.sleeper_league_id;
   if (!leagueId) return null;
-  /* Already played: the generator has a scored row and says it better. */
-  if ((analysis.matchups || []).some(row => Number(row.week) === week
-    && (Number(row.score1) > 0 || Number(row.score2) > 0))) return null;
+  /*
+    THE WEEK BEING PLAYED IS STILL THIS WEEK'S CARD.
+
+    This used to bail the moment any row for the week had a score, which
+    meant one Thursday-night kickoff deleted the whole surface - the slate
+    and the preview both vanished on the Friday, and all that was left was a
+    personal scoreboard reading 16.20 to 0.00. The league slate is wanted
+    MORE once the week is under way, not less.
+
+    So nothing is skipped here. What changes is what the cards say: the slate
+    switches from projections to live scores (see `live` below), and the
+    personal preview stands down for its own fixture once that fixture has
+    started, because from then on the myMatchup generator has real numbers
+    and says it better.
+  */
+  const weekRows = (analysis.matchups || []).filter(row => Number(row.week) === week);
+  const weekStarted = weekRows.some(row => Number(row.score1) > 0 || Number(row.score2) > 0);
+  const weekFinished = weekRows.length > 0
+    && weekRows.every(row => Number(row.score1) > 0 && Number(row.score2) > 0);
+  /* Finished: the generator owns it, with finals rather than projections. */
+  if (weekFinished) return null;
 
   let raw;
   try {
@@ -222,6 +240,10 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     const row = (weekly.teams || []).find(team => String(team.sleeper_user_id) === String(uid));
     return Number.isFinite(Number(row?.projection)) ? Number(row.projection) : null;
   };
+  const actualOf = uid => {
+    const row = (weekly.teams || []).find(team => String(team.sleeper_user_id) === String(uid));
+    return Number.isFinite(Number(row?.actual)) ? Number(row.actual) : null;
+  };
   const side = row => {
     const team = teamFor(row.roster_id);
     if (!team) return null;
@@ -229,6 +251,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
       sleeper_user_id: team.sleeper_user_id,
       name: team.team_name || team.ownerName || "Unnamed",
       projection: projectionOf(team.sleeper_user_id),
+      actual: actualOf(team.sleeper_user_id),
     };
   };
 
@@ -255,7 +278,14 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     || String(fixture.b.sleeper_user_id) === String(meSleeperId));
 
   const slides = [];
-  if (mineFixture) {
+  /* Has the reader's own game started? Their fixture's rows are the only
+     ones that decide it - another matchup kicking off on Thursday says
+     nothing about theirs. */
+  const mineStarted = mineFixture && weekRows.some(row =>
+    [row.user1, row.user2].some(uid => String(uid) === String(mineFixture.a.sleeper_user_id)
+      || String(uid) === String(mineFixture.b.sleeper_user_id))
+    && (Number(row.score1) > 0 || Number(row.score2) > 0));
+  if (mineFixture && !mineStarted) {
     const iAmA = String(mineFixture.a.sleeper_user_id) === String(meSleeperId);
     slides.push(matchupPreviewSlide({
       pairing: { mine: iAmA ? mineFixture.a : mineFixture.b, theirs: iAmA ? mineFixture.b : mineFixture.a },
@@ -265,7 +295,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
       matchups: lore?.matchups || [],
     }));
   }
-  slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId }));
+  slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId, live: weekStarted }));
   return slides.filter(Boolean);
 }
 

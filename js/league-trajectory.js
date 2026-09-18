@@ -69,7 +69,36 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
   const rows = matchups.filter(row => row?.score1 != null && row?.score2 != null
     && Number(row?.week) > 0 && Number(row?.week) <= weeks
     && Number.isFinite(Number(row.score1)) && Number.isFinite(Number(row.score2)));
-  const playedWeeks = [...new Set(rows.map(row => Number(row.week)))].sort((a, b) => a - b);
+
+  /*
+    A WEEK IN PROGRESS IS NOT A WEEK PLAYED.
+
+    sync.js writes a week as soon as ANYBODY has points in it, so from the
+    first Thursday-night kickoff the current week is in the table with five
+    of its six fixtures sitting at something-to-zero. Counting that as a
+    played week gave every team a second W or L off a game that had not
+    happened: the board read 2-0 on the Friday of week 2.
+
+    A week counts once every fixture in it has a score on BOTH sides. That
+    needs no clock and no league calendar - the rows say it themselves - and
+    it settles the moment the last game ends.
+
+    The one thing it cannot tell apart is a real 0.00, which would hold a
+    finished week out of the board. A fantasy lineup scoring exactly zero
+    across every starter does not happen; a forfeit recorded as 0-0 would,
+    and would need its own handling if the league ever books one.
+  */
+  const weekRows = new Map();
+  for (const row of rows) {
+    const week = Number(row.week);
+    if (!weekRows.has(week)) weekRows.set(week, []);
+    weekRows.get(week).push(row);
+  }
+  const playedWeeks = [...weekRows.entries()]
+    .filter(([, group]) => group.length
+      && group.every(row => Number(row.score1) > 0 && Number(row.score2) > 0))
+    .map(([week]) => week)
+    .sort((a, b) => a - b);
   const rosterOrder = ranked(live, team => num(team.lineup.weeklyPoints));
   const rosterRanks = new Map(rosterOrder.map((team, index) => [key(team.id), index + 1]));
   const rosterStrength = team => 1 - ((rosterRanks.get(key(team.id)) - 1) / Math.max(1, live.length - 1));

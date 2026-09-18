@@ -226,15 +226,32 @@ export function matchupStory({ h2h, theirsName = "They" } = {}) {
   League order is kept as Sleeper returns it and the reader's own game is
   flagged rather than promoted, so the card reads the same shape every week.
 */
-export function weekSlateSlide({ fixtures = [], season, week, meSleeperId } = {}) {
+export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live = false } = {}) {
+  /*
+    LIVE PER FIXTURE, NOT PER CARD.
+
+    On the Friday of a week exactly one game has been played, so a card that
+    switched wholesale to live scores showed one real result and five rows of
+    0.0 - less use than the projections it replaced. A fixture shows its
+    actual scores once THAT fixture has started and its projection until
+    then, which is the only reading where every row on the card is worth
+    something.
+  */
+  const started = fixture => (Number(fixture.a?.actual) || 0) !== 0
+    || (Number(fixture.b?.actual) || 0) !== 0;
   const rows = fixtures.map(fixture => {
     const a = fixture.a, b = fixture.b;
-    if (!a || !b || a.projection == null || b.projection == null) return null;
+    if (!a || !b) return null;
+    const useActual = live && started(fixture);
+    if (!useActual && (a.projection == null || b.projection == null)) return null;
+    const av = useActual ? Number(a.actual) || 0 : a.projection;
+    const bv = useActual ? Number(b.actual) || 0 : b.projection;
+    if (av == null || bv == null) return null;
     return {
       mine: String(a.sleeper_user_id) === String(meSleeperId)
         || String(b.sleeper_user_id) === String(meSleeperId),
-      a: { name: a.name, score: a.projection.toFixed(1), up: a.projection > b.projection },
-      b: { name: b.name, score: b.projection.toFixed(1), up: b.projection > a.projection },
+      a: { name: a.name, score: av.toFixed(1), up: av > bv },
+      b: { name: b.name, score: bv.toFixed(1), up: bv > av },
     };
   }).filter(Boolean);
   /* One fixture is the reader's own game with extra steps - the preview slide
@@ -246,7 +263,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId } = {}
     priority: P.MINE + 10, dwell: 9000,
     kicker: `${season} · Week ${week}`,
     headline: "Around the league",
-    subtitle: "Projected",
+    subtitle: live ? "Live" : "Projected",
     href: "#/analyzer",
     fixtures: rows,
   };

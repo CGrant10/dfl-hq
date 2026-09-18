@@ -1967,9 +1967,29 @@ span) { overflow-wrap: anywhere; }
 #home-wrap .home-rank-summary,
 #home-wrap .home-weekly-digest article { min-width: 0; }
 
+/*
+  THE PROFILE PHOTO IN THE TOP BAR.
+
+  34px inside a 31px-tall pill: the image was taller than the button holding
+  it, so it broke out of the rounded edge and shoved the name sideways. The
+  size dated from Home's own oversized chrome (a 100px top bar), which is
+  gone - the shared 56px bar is all there is now, and the pill is sized by
+  its text.
+
+  The button also needed to become a flex row. It never was one; the <img>
+  app.js inserts before the name was an inline replaced element sitting on
+  the text baseline, which is the other half of why it sat oddly.
+*/
+.whoami {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+/* Tighter on the photo side so the picture, not the padding, meets the edge. */
+.whoami:has(.whoami-photo:not([hidden])) { padding-left: 4px; }
 .whoami-photo {
-  width: 34px;
-  height: 34px;
+  width: 23px;
+  height: 23px;
   flex: 0 0 auto;
   border: 1px solid rgba(255,255,255,.55);
   border-radius: 50%;
