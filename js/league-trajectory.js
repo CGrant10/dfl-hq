@@ -95,8 +95,7 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
     weekRows.get(week).push(row);
   }
   const playedWeeks = [...weekRows.entries()]
-    .filter(([, group]) => group.length
-      && group.every(row => Number(row.score1) > 0 && Number(row.score2) > 0))
+    .filter(([, group]) => weekIsFinal(group))
     .map(([week]) => week)
     .sort((a, b) => a - b);
   const rosterOrder = ranked(live, team => num(team.lineup.weeklyPoints));
@@ -197,6 +196,36 @@ export function leaguePowerRankingsCard(rankings, focusId = null) {
   the fallback for a Home that has not resolved the live week yet, and for
   the preseason "Roster model" board, which is not a week at all.
 */
+/*
+  IS THIS WEEK OVER? ONE DEFINITION, FOR EVERY READER.
+
+  sync.js writes a week into sleeper_matchups the moment ANYBODY has points
+  in it, so the table cannot be read as "these are the weeks that happened".
+  From the first Thursday kickoff the live week is present with most of its
+  fixtures at something-to-zero, and a reader that treats a row's existence
+  as a result gets a week that has not been played.
+
+  The rule lives here because it was briefly written twice - once for the
+  rankings board and once for the Home matchup cards - and two readers
+  inferring the same thing separately is how they end up disagreeing. A sync
+  should only ever add to what the app knows; the app is what has to be
+  careful about when a week is finished, and this is where it decides.
+
+  Finished means every fixture has a score on BOTH sides. It needs no clock
+  and no league calendar - the rows say it themselves - and it settles the
+  moment the last game ends.
+*/
+export function weekIsFinal(rows) {
+  const group = rows || [];
+  return group.length > 0
+    && group.every(row => Number(row.score1) > 0 && Number(row.score2) > 0);
+}
+
+/** Has anybody in this week kicked off? Started is not the same as finished. */
+export function weekHasStarted(rows) {
+  return (rows || []).some(row => Number(row.score1) > 0 || Number(row.score2) > 0);
+}
+
 export function boardWeekLabel(board, currentWeek) {
   const week = Number(currentWeek);
   if (!Number.isFinite(week) || week < 1) return board.label;

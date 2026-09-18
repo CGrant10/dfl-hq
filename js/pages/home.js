@@ -38,7 +38,7 @@ import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
-import { boardWeekLabel, teamInitials } from "../league-trajectory.js";
+import { boardWeekLabel, teamInitials, weekHasStarted, weekIsFinal } from "../league-trajectory.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
@@ -222,11 +222,11 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     and says it better.
   */
   const weekRows = (analysis.matchups || []).filter(row => Number(row.week) === week);
-  const weekStarted = weekRows.some(row => Number(row.score1) > 0 || Number(row.score2) > 0);
-  const weekFinished = weekRows.length > 0
-    && weekRows.every(row => Number(row.score1) > 0 && Number(row.score2) > 0);
-  /* Finished: the generator owns it, with finals rather than projections. */
-  if (weekFinished) return null;
+  const weekStarted = weekHasStarted(weekRows);
+  /* Finished: the generator owns it, with finals rather than projections.
+     weekIsFinal() is shared with the rankings board on purpose - these two
+     asked the same question separately once, and disagreed. */
+  if (weekIsFinal(weekRows)) return null;
 
   let raw;
   try {

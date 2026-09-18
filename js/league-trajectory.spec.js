@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardWeekLabel, buildLeaguePowerRankings, leaguePowerRankingsCard, teamInitials } from "./league-trajectory.js";
+import { boardWeekLabel, buildLeaguePowerRankings, leaguePowerRankingsCard, teamInitials, weekHasStarted, weekIsFinal } from "./league-trajectory.js";
 
 const teams = [
   { id: "1", roster_id: 1, sleeper_user_id: "u1", team_name: "Alpha", rank: 1, lineup: { weeklyPoints: 130 } },
@@ -137,5 +137,50 @@ describe("a week still being played", () => {
     const built = buildLeaguePowerRankings({ teams, matchups: [...week1, ...week2Done] });
     expect(built.latestWeek).toBe(2);
     expect(built.boards.at(-1).rows.every(row => /^[012]-[012]$/.test(row.record))).toBe(true);
+  });
+});
+
+describe("when a week counts as finished", () => {
+  const full = [
+    { week: 2, score1: 110, score2: 98 },
+    { week: 2, score1: 120, score2: 131 },
+  ];
+  const partial = [
+    { week: 2, score1: 23.3, score2: 0 },
+    { week: 2, score1: 0, score2: 0 },
+  ];
+
+  /* A sync writes the live week as soon as anybody has points, so the rows
+     existing is not the same as the week having happened. */
+  it("needs a score on both sides of every fixture", () => {
+    expect(weekIsFinal(full)).toBe(true);
+    expect(weekIsFinal(partial)).toBe(false);
+  });
+
+  it("is not fooled by one finished fixture among unfinished ones", () => {
+    expect(weekIsFinal([{ week: 2, score1: 110, score2: 98 }, { week: 2, score1: 20, score2: 0 }])).toBe(false);
+  });
+
+  it("treats no rows as not finished rather than vacuously true", () => {
+    expect(weekIsFinal([])).toBe(false);
+    expect(weekIsFinal(null)).toBe(false);
+  });
+
+  it("separates started from finished", () => {
+    expect(weekHasStarted(partial)).toBe(true);
+    expect(weekIsFinal(partial)).toBe(false);
+    expect(weekHasStarted([{ week: 3, score1: 0, score2: 0 }])).toBe(false);
+  });
+
+  /* The board and the Home matchup cards must not answer this differently;
+     they did once, and the board showed 2-0 records on a Friday. */
+  it("is the same rule the rankings board uses", () => {
+    const teams = [
+      { id: "1", roster_id: 1, sleeper_user_id: "u1", team_name: "A", rank: 1, lineup: { weeklyPoints: 130 } },
+      { id: "2", roster_id: 2, sleeper_user_id: "u2", team_name: "B", rank: 2, lineup: { weeklyPoints: 120 } },
+    ];
+    const live = [{ season: 2026, week: 1, user1: "u1", score1: 23.3, user2: "u2", score2: 0 }];
+    expect(weekIsFinal(live)).toBe(false);
+    expect(buildLeaguePowerRankings({ teams, matchups: live }).latestWeek).toBe(0);
   });
 });
