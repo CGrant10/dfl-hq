@@ -59,16 +59,48 @@
 /* ---------------------------------------------------------------------
    PAGE + SECTION HEADS
    --------------------------------------------------------------------- */
+/*
+  ONE HEADING VOICE, TAKEN FROM THE ANNIVERSARY BAND.
+
+  h1 was already Rajdhani and uppercase, so the two should have matched - but
+  it was tracked at --ls-tight (-0.015em) while the anniversary sets +0.035em,
+  and the same face pulled in opposite directions reads as two typefaces. The
+  sizes were fixed while that headline was fluid, which did the rest.
+
+  Everything structural now shares the band's family, its OPEN tracking and
+  its fluid scale. h3 keeps sentence case: it titles cards whose headings are
+  written as phrases, and setting those in capitals shouts rather than
+  labels - the case is the one thing that still varies, by rank.
+
+  These element selectors also have to beat the fixed pixel sizes left in
+  style.css (h1 25px / h2 18px / h3 15px). Same specificity, so this wins on
+  order - ui.css is loaded after style.css in index.html.
+*/
 h1, .page-head h1 {
   font-family: var(--font-display);
   font-size: var(--fs-display);
   font-weight: var(--fw-bold);
-  letter-spacing: var(--ls-tight);
+  letter-spacing: var(--ls-display);
   line-height: var(--lh-tight);
   text-transform: uppercase;
 }
-h2, h3 { font-family: var(--font-display); letter-spacing: var(--ls-tight); }
+h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+}
+h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+}
 .section-title {
+  font-family: var(--font-display);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-caps);
   margin: var(--s-7) 0 var(--s-3);

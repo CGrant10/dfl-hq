@@ -68,10 +68,20 @@
   --fs-micro:  0.6875rem;   /* 11px - timestamps, the quietest metadata   */
   --fs-label:  0.75rem;     /* 12px - column heads, badges, form labels   */
   --fs-body:   0.875rem;    /* 14px - card copy                          */
-  --fs-h3:     1rem;        /* 16px - card titles                        */
-  --fs-h2:     1.25rem;     /* 20px - section heads                      */
-  --fs-h1:     1.5rem;      /* 24px - page titles                        */
-  --fs-display: 2rem;       /* 32px - hero headlines                     */
+  /*
+    FLUID, AND SET FROM THE ANNIVERSARY HEADLINE.
+
+    These were fixed rem values while the one headline everybody liked - the
+    anniversary band - was fluid: clamp(1.45rem, 4.2vw, 2.25rem). A heading
+    that grows with the screen next to headings that do not is most of why
+    the rest of the app read as a different typeface even where it was the
+    same one. --fs-display IS that headline's scale, and the rest step down
+    from it on the same ratio.
+  */
+  --fs-h3:     clamp(0.95rem, 2.2vw, 1.12rem);   /* card titles    */
+  --fs-h2:     clamp(1.12rem, 3.2vw, 1.45rem);   /* section heads  */
+  --fs-h1:     clamp(1.3rem,  3.8vw, 1.8rem);    /* page titles    */
+  --fs-display: clamp(1.45rem, 4.2vw, 2.25rem);  /* hero headlines */
 
   /* ---- the stat ramp -------------------------------------------------
      Separate from the text scale because a score is not a heading. This is
@@ -96,6 +106,10 @@
   --ls-tight: -0.015em;     /* large display type, which sets too loose   */
   --ls-wide: 0.04em;
   --ls-caps: 0.1em;         /* the small-caps label look                  */
+  /* The anniversary headline's tracking. Display type in this app is set
+     OPEN, not tight - it is broadcast lettering, and --ls-tight pulling the
+     other way is what made the same face read as two. */
+  --ls-display: 0.035em;
 
   /* ---- space, a 4px grid --------------------------------------------- */
   --s-1: 4px;
