@@ -93,6 +93,33 @@ export async function syncSleeper(leagueId, log = () => {}, { includeHistory = f
  * A name an admin typed by hand matches nothing historical and is left
  * alone, so custom names are never clobbered by a sync.
  */
+/*
+  SHOULD THE SYNC ADOPT SLEEPER'S TEAM NAME FOR THIS MEMBER?
+
+  members.team_name is the name the whole app shows when it is not talking
+  about a specific season - the career fun facts, the wall, the profile. It
+  has to follow a rename, but it must NOT flatten a name an admin typed by
+  hand, so the test is whether the stored value is one the sync itself
+  imported earlier: if the member has ever carried it on a roster, it came
+  from Sleeper and may be replaced.
+
+  EVERYTHING IS TRIMMED FIRST, and that is the whole bug this was written
+  for. Sleeper hands back names with trailing spaces - several DFL teams
+  carry one, which lore.js also has to clean for display - so the stored
+  "Team Lafountain" never matched the roster's "Team Lafountain ", the name
+  read as admin-authored, and a member who had renamed to Quontom Leap kept
+  showing as Team Lafountain everywhere the app used the current name.
+*/
+export function adoptTeamName({ current, stored, everUsed = [] } = {}) {
+  const clean = value => String(value ?? "").trim();
+  const next = clean(current);
+  const have = clean(stored);
+  if (!next || next === have) return null;          // nothing to change
+  const imported = new Set([...everUsed].map(clean).filter(Boolean));
+  const stale = !have || imported.has(have);
+  return stale ? next : null;                        // an admin typed it: leave it
+}
+
 async function refreshMemberTeamNames(log) {
   const [membersRes, usersRes, rostersRes] = await Promise.all([
     db().from("members").select("id, display_name, team_name, sleeper_user_id"),
@@ -117,14 +144,15 @@ async function refreshMemberTeamNames(log) {
   for (const m of membersRes.data || []) {
     if (!m.sleeper_user_id) continue;
 
-    const current = currentName.get(m.sleeper_user_id);
-    if (!current || current === m.team_name) continue;
-
-    const stale = !m.team_name || (usedBefore.get(m.sleeper_user_id)?.has(m.team_name) ?? false);
-    if (!stale) continue;                      // admin typed it: leave it
+    const next = adoptTeamName({
+      current: currentName.get(m.sleeper_user_id),
+      stored: m.team_name,
+      everUsed: usedBefore.get(m.sleeper_user_id) || [],
+    });
+    if (!next) continue;
 
     const { error } = await db().from("members")
-      .update({ team_name: current }).eq("id", m.id);
+      .update({ team_name: next }).eq("id", m.id);
     if (!error) changed++;
   }
 

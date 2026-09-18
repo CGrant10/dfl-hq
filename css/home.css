@@ -63,13 +63,17 @@
 #home-wrap .dfl-anniv {
   min-height: 84px;
   display: grid;
-  /* 1fr on BOTH sides so the copy centres on the band itself. The crest
-     used to hold the left column and the tagline the right, which meant the
-     centre column's midpoint was wherever those two happened to balance -
-     the headline sat right of true centre. Equal side tracks fix that
-     whatever the tagline says; the tagline lives in the right track and the
-     left one stays empty. */
-  grid-template-columns: minmax(112px, 1fr) minmax(0, auto) minmax(112px, 1fr);
+  /*
+     ONE CENTRED COLUMN, not three.
+
+     Equal 1fr side tracks did centre the copy, but only by reserving a
+     matching EMPTY track on the left to counterweight the tagline on the
+     right - so the band read as text shoved to one side against a hole. The
+     tagline sits under the copy now and both centre on the band, which needs
+     no counterweight to look level.
+  */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   align-items: center;
   gap: var(--s-4);
   padding: 8px var(--s-5);
@@ -81,13 +85,13 @@
 }
 #home-wrap .dfl-anniv::after { opacity: .36; }
 #home-wrap .dfl-anniv-copy { min-width: 0; display: grid; justify-items: center; text-align: center; }
-#home-wrap .dfl-anniv-copy { grid-column: 2; }
+#home-wrap .dfl-anniv-copy { grid-column: 1; }
 /* The side tracks are 1fr each so the copy centres; that means the tagline
    gets whatever the headline leaves and must be able to live in it. Without
    min-width:0 a grid item refuses to go below its min-content width and
    spills past the band's padding (it was clipping the last letters of
    "BIGGER BRAGGING RIGHTS."). */
-#home-wrap .dfl-anniv-tag { grid-column: 3; min-width: 0; overflow-wrap: anywhere; }
+#home-wrap .dfl-anniv-tag { grid-column: 1; min-width: 0; max-width: 100%; text-align: center; }
 #home-wrap .dfl-anniv-copy strong {
   color: var(--text); font-family: var(--font-display); font-size: clamp(1.4rem, 4vw, 2.15rem);
   line-height: 1; letter-spacing: .035em; text-transform: uppercase;
@@ -99,7 +103,7 @@
 @keyframes hd-breathe { to { width: 82px; opacity: .55; } }
 
 @media (max-width: 620px) {
-  #home-wrap .dfl-anniv { grid-template-columns: minmax(96px, 1fr) minmax(0, auto) minmax(96px, 1fr); min-height: 72px; gap: var(--s-2); padding: 6px var(--s-3); }
+  #home-wrap .dfl-anniv { grid-template-columns: minmax(0, 1fr); min-height: 72px; gap: var(--s-2); padding: 6px var(--s-3); }
   #home-wrap .dfl-anniv-copy { justify-items: start; text-align: left; }
   #home-wrap .dfl-anniv-copy strong { font-size: clamp(1.1rem, 5.3vw, 1.55rem); }
   #home-wrap .dfl-anniv-tag { display: none; }
@@ -1648,8 +1652,8 @@
 
 #home-wrap > .dfl-anniv {
   min-height: 98px;
-  grid-template-columns: minmax(112px, 1fr) minmax(0, auto) minmax(112px, 1fr);
-  gap: var(--s-4);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
   padding: 12px var(--s-5);
   border: 0;
   border-bottom: 1px solid var(--home-program-line);
@@ -1833,8 +1837,8 @@
   #home-wrap { border-inline: 0; border-radius: 0; }
   #home-wrap > .dfl-anniv {
     min-height: 93px;
-    grid-template-columns: minmax(112px, 1fr) minmax(0, auto) minmax(112px, 1fr);
-    gap: 7px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
     padding: 9px 14px;
   }
   #home-wrap > .dfl-anniv > .dfl-anniv-copy { justify-items: center; text-align: center; }
@@ -1879,7 +1883,7 @@
 }
 
 @media (max-width: 410px) {
-  #home-wrap > .dfl-anniv { grid-template-columns: minmax(96px, 1fr) minmax(0, auto) minmax(96px, 1fr); }
+  #home-wrap > .dfl-anniv { grid-template-columns: minmax(0, 1fr); }
   #home-wrap > .dfl-anniv > .dfl-anniv-tag { display: none; }
   #home-wrap .home-rank-summary { grid-template-columns: .8fr 1.2fr; }
   #home-wrap .home-rank-leader > .home-rank-face { display: none; }
@@ -2002,7 +2006,7 @@ span) { overflow-wrap: anywhere; }
 .whoami-photo[hidden] { display: none; }
 
 @media (max-width: 620px) {
-  #home-wrap > .dfl-anniv { grid-template-columns: minmax(112px, 1fr) minmax(0, auto) minmax(112px, 1fr); padding-inline: 14px; }
+  #home-wrap > .dfl-anniv { grid-template-columns: minmax(0, 1fr); padding-inline: 14px; }
   #home-wrap .dfl-anniv-copy { min-height: 76px; }
   #home-wrap .dfl-anniv-words > strong {
     box-sizing: border-box;
