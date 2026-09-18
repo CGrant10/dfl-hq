@@ -1796,7 +1796,11 @@
 #home-wrap .home-weekly-digest article:first-child { padding-left: 0; }
 #home-wrap .home-weekly-digest article + article { border-left: 1px solid var(--home-program-line); }
 #home-wrap .home-weekly-digest article small { color: var(--home-program-muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .08em; }
-#home-wrap .home-weekly-digest article strong { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--fs-body); line-height: 1.08; }
+/* NO line-clamp. These three columns are the whole report, and a report
+   that ends in "..." is a report nobody can read - the clamp was cutting
+   team names in half and dropping the end of every detail line. The column
+   grows to its text instead. */
+#home-wrap .home-weekly-digest article strong { font-size: var(--fs-body); line-height: 1.12; }
 #home-wrap .home-weekly-digest article span { color: var(--home-program-ink); font-size: var(--fs-small); line-height: 1.25; }
 #home-wrap .home-weekly-digest.is-loading > p,
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
@@ -1866,7 +1870,7 @@
   #home-wrap .home-weekly-digest > header small { max-width: 140px; text-align: right; }
   #home-wrap .home-weekly-digest > div { padding-top: 14px; }
   #home-wrap .home-weekly-digest { min-height: 186px; }
-  #home-wrap .home-weekly-digest > div { align-items: center; min-height: 98px; }
+  #home-wrap .home-weekly-digest > div { align-items: start; min-height: 98px; }
   #home-wrap .home-weekly-digest article { padding: 0 12px; }
   #home-wrap .home-weekly-digest article small { font-size: .59rem; }
   #home-wrap .home-weekly-digest article strong { font-size: .84rem; }
@@ -2018,8 +2022,6 @@ span) { overflow-wrap: anywhere; }
 
   #home-wrap .home-rank-leader { align-items: center; }
   #home-wrap .home-rank-leader strong { white-space: normal; line-height: 1.05; }
-  #home-wrap .home-weekly-digest article strong { -webkit-line-clamp: 2; }
-  #home-wrap .home-weekly-digest article span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
   #home-wrap .home-weekly-digest article :is(strong, span) { hyphens: none; word-break: normal; overflow-wrap: break-word; }
 }
 
