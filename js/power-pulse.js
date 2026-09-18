@@ -49,6 +49,8 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
   const powerRankings = buildLeaguePowerRankings({
     teams,
     matchups: analysis.matchups || [],
+    standings,
+    season: analysis.projectionSeason,
     weeks: REGULAR_SEASON_WEEKS,
   });
   return {

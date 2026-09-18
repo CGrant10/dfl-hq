@@ -74,8 +74,8 @@ function standings(rosters: Json[], season: number, league: Json, leagueId: stri
   return rows;
 }
 
-function matchups(raw: Json[], season: number, week: number, leagueId: string, owners: Map<number, string>) {
-  if (!raw?.length || !raw.some((item) => Number(item.points) > 0)) return [];
+function matchups(raw: Json[], season: number, week: number, leagueId: string, owners: Map<number, string>, settled = false) {
+  if (!raw?.length) return [];
   const groups = new Map<number, Json[]>();
   for (const item of raw) {
     if (item.matchup_id == null) continue;
@@ -88,7 +88,7 @@ function matchups(raw: Json[], season: number, week: number, leagueId: string, o
     const scoreA = a ? Number(a.points) : null;
     const scoreB = b ? Number(b.points) : null;
     let winner = null;
-    if (scoreA != null && scoreB != null && scoreA !== scoreB) winner = scoreA > scoreB ? a.roster_id : b.roster_id;
+    if (settled && scoreA != null && scoreB != null && scoreA !== scoreB) winner = scoreA > scoreB ? a.roster_id : b.roster_id;
     return {
       season, week, matchup_id: matchupId, league_id: leagueId,
       roster1: a?.roster_id ?? null, user1: a ? owners.get(a.roster_id) ?? null : null, score1: scoreA,
@@ -167,7 +167,7 @@ Deno.serve(async (request) => {
     if (!league) throw new Error("Configured Sleeper league was not found");
     const season = Number(league.season);
     const nflState = await sleeper("/state/nfl");
-    const week = Math.max(1, Math.min(18, Number(league.settings?.leg || nflState?.week || 1)));
+    const week = Math.max(1, Math.min(18, Math.max(Number(league.settings?.leg) || 1, Number(nflState?.week) || 1)));
     const [users, rosters, weeklyMatchups, weeklyTransactions] = await Promise.all([
       sleeper(`/league/${leagueId}/users`),
       sleeper(`/league/${leagueId}/rosters`),
@@ -228,7 +228,7 @@ Deno.serve(async (request) => {
       synced_at: now,
     }], "sleeper_league_id");
 
-    const matchupRows = matchups(weeklyMatchups || [], season, week, leagueId, owners);
+    const matchupRows = matchups(weeklyMatchups || [], season, week, leagueId, owners, false);
     await upsert(admin, "sleeper_matchups", matchupRows, "season,week,matchup_id");
     const transactionRows = (weeklyTransactions || [])
       .filter((transaction: Json) => transaction.status !== "failed")

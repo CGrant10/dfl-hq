@@ -22,10 +22,13 @@ function ranked(teams, valueOf) {
   return [...teams].sort((a, b) => valueOf(b) - valueOf(a) || num(a.rank) - num(b.rank));
 }
 
-function boardRows(ordered, previous, state, weeklyScores) {
+function boardRows(ordered, previous, state, weeklyScores, officialRecords = null) {
   return ordered.map((team, index) => {
     const id = key(team.id), rank = index + 1;
-    const record = state.get(id) || { wins: 0, losses: 0, ties: 0, points: 0, games: 0 };
+    const tracked = state.get(id) || { wins: 0, losses: 0, ties: 0, points: 0, games: 0 };
+    const official = officialRecords?.get(`u:${key(team.sleeper_user_id)}`)
+      ?? officialRecords?.get(`r:${key(team.roster_id)}`);
+    const record = official ? { ...tracked, ...official } : tracked;
     const oldRank = previous.get(id) || rank;
     return {
       id,
@@ -50,13 +53,23 @@ function boardRows(ordered, previous, state, weeklyScores) {
  * strength stays in the model because one lucky weekly score should not turn
  * the worst roster into #1; completed results still move teams immediately.
  */
-export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DEFAULT_WEEKS } = {}) {
+export function buildLeaguePowerRankings({ teams = [], matchups = [], standings = [], season = null, weeks = DEFAULT_WEEKS } = {}) {
   const live = teams.filter(team => team?.id != null && Number.isFinite(Number(team?.lineup?.weeklyPoints)));
   if (live.length < 2) return null;
 
   const byUser = new Map(live.filter(team => team.sleeper_user_id != null).map(team => [key(team.sleeper_user_id), team]));
   const byRoster = new Map(live.filter(team => team.roster_id != null).map(team => [key(team.roster_id), team]));
   const state = new Map(live.map(team => [key(team.id), { wins: 0, losses: 0, ties: 0, points: 0, games: 0 }]));
+  const officialRecords = new Map();
+  for (const row of standings || []) {
+    if (season != null && Number(row.season) !== Number(season)) continue;
+    const record = { wins: num(row.wins), losses: num(row.losses), ties: num(row.ties) };
+    record.games = record.wins + record.losses + record.ties;
+    if (row.sleeper_user_id != null) officialRecords.set(`u:${key(row.sleeper_user_id)}`, record);
+    if (row.roster_id != null) officialRecords.set(`r:${key(row.roster_id)}`, record);
+  }
+  const completedGames = team => officialRecords.get(`u:${key(team.sleeper_user_id)}`)?.games
+    ?? officialRecords.get(`r:${key(team.roster_id)}`)?.games ?? Infinity;
   const initial = [...live].sort((a, b) => num(a.rank) - num(b.rank));
   let previous = new Map(initial.map((team, index) => [key(team.id), index + 1]));
   const boards = [{
@@ -83,6 +96,9 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
       const sa = num(row.score1), sb = num(row.score2);
       const aa = state.get(key(a.id)), bb = state.get(key(b.id));
       weeklyScores.set(key(a.id), sa); weeklyScores.set(key(b.id), sb);
+      /* A Thursday score belongs on the current-week board, but it is not a
+         completed win. Standings are Sleeper's official completed-game count. */
+      if (aa.games >= completedGames(a) || bb.games >= completedGames(b)) continue;
       aa.points += sa; aa.games += 1;
       bb.points += sb; bb.games += 1;
       if (sa > sb) { aa.wins += 1; bb.losses += 1; }
@@ -103,7 +119,10 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
       return rosterStrength(team) * .5 + scoring * .35 + result * .15;
     };
     const order = ranked(live, power);
-    const currentRows = boardRows(order, previous, state, weeklyScores);
+    /* The newest board may include Thursday's partial points. Its displayed
+       record must come from Sleeper standings, never from that live score. */
+    const currentRows = boardRows(order, previous, state, weeklyScores,
+      week === playedWeeks.at(-1) ? officialRecords : null);
     boards.push({
       week,
       label: `Week ${week}`,
@@ -120,8 +139,8 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
 const moveLabel = movement => movement > 0 ? `+${movement}` : movement < 0 ? `−${Math.abs(movement)}` : "—";
 const moveTone = movement => movement > 0 ? "up" : movement < 0 ? "down" : "even";
 
-function rankingBoard(board, focusId, index) {
-  return `<ol class="pp-board-grid" data-pp-week-board="${index}" data-week-label="${esc(board.label)}" data-week-comparison="${esc(board.comparison)}" ${index ? "hidden" : ""}>
+function rankingBoard(board, focusId, index, activeIndex = 0) {
+  return `<ol class="pp-board-grid" data-pp-week-board="${index}" data-week-label="${esc(board.label)}" data-week-comparison="${esc(board.comparison)}" ${index === activeIndex ? "" : "hidden"}>
     ${board.rows.map((row, rowIndex) => `<li class="pp-board-row ${key(row.id) === key(focusId) ? "is-me" : ""}" style="--pp-row:${rowIndex}">
       <b class="pp-board-rank">${row.rank}</b>
       <span class="pp-board-team"><strong>${esc(row.name)}</strong><small>${esc(row.record)}${row.pointsPerGame == null ? "" : ` · ${row.pointsPerGame.toFixed(1)} PPG`}</small></span>
@@ -147,7 +166,7 @@ export function leaguePowerRankingsCard(rankings, focusId = null) {
       <button type="button" data-pp-week-next aria-label="Next ranking week" disabled>›</button>
     </div>
     <div class="pp-board-viewport" data-pp-board-viewport>
-      ${rankings.boards.map((board, index) => rankingBoard(board, focusId, index)).join("")}
+      ${rankings.boards.map((board, index) => rankingBoard(board, focusId, index, latestIndex)).join("")}
     </div>
     <p class="pp-board-note">Rank blends current starters (50%), scoring pace through that week (35%) and record (15%). Movement is against the previous completed week.</p>
   </section>`;

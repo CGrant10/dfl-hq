@@ -23,6 +23,7 @@ import { sleeper } from "./sleeper.js";
 import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
 import { collectLeagueChain } from "./sleeper-sync-scope.js";
 import { captureCompletedTradeAlerts } from "./trade-alerts.js";
+import { clearLoreCache } from "./lore.js";
 
 const MAX_WEEK    = 18;
 const CONCURRENCY = 4;    // parallel week requests; polite to the API
@@ -75,6 +76,7 @@ export async function syncSleeper(leagueId, log = () => {}, { includeHistory = f
     last_synced_at:    new Date().toISOString(),
     last_sync_note:    `${includeHistory ? "History repair" : "Current season"}: ${seasons.join(", ")}`,
   }).eq("id", 1);
+  clearLoreCache();
 
   log(`Done. ${counts.seasons} season(s) synced.`);
   return { seasons, counts };
@@ -268,11 +270,15 @@ async function syncSeason(league, season, log, { detectTradeAlerts = false } = {
 
   // ---- weekly matchups and transactions ----
   const weeks = range(1, MAX_WEEK);
+  const currentWeek = Math.max(1, Number(league.settings?.leg) || 1);
 
   const matchupRows = [];
   await inBatches(weeks, CONCURRENCY, async (week) => {
     const raw = await sleeper.matchups(leagueId, week);
-    const rows = pairMatchups(raw, season, week, ownerOf, leagueId);
+    const rows = pairMatchups(raw, season, week, ownerOf, leagueId, {
+      includeZero: week === currentWeek,
+      settled: week < currentWeek || String(league.status || "").toLowerCase() === "complete",
+    });
     if (rows.length) matchupRows.push(...rows);
   });
   if (matchupRows.length) {
@@ -517,9 +523,9 @@ function points(whole, decimal) {
  * Weeks that have not been played yet (everyone on 0) are skipped, so we
  * do not fill the table with empty future weeks.
  */
-function pairMatchups(raw, season, week, ownerOf, leagueId) {
+function pairMatchups(raw, season, week, ownerOf, leagueId, { includeZero = false, settled = true } = {}) {
   if (!raw?.length) return [];
-  if (!raw.some((m) => Number(m.points) > 0)) return [];   // not played yet
+  if (!includeZero && !raw.some((m) => Number(m.points) !== 0)) return [];   // not played yet
 
   const byMatchup = new Map();
   for (const m of raw) {
@@ -535,7 +541,7 @@ function pairMatchups(raw, season, week, ownerOf, leagueId) {
     const scoreB = b ? Number(b.points) : null;
 
     let winner = null;
-    if (scoreA != null && scoreB != null && scoreA !== scoreB) {
+    if (settled && scoreA != null && scoreB != null && scoreA !== scoreB) {
       winner = scoreA > scoreB ? a.roster_id : b.roster_id;
     }
 

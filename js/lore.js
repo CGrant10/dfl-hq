@@ -133,6 +133,9 @@ export function withOwner(named) {
 */
 let cache = null;
 
+/** A commissioner sync changes standings and matchups underneath this module. */
+export function clearLoreCache() { cache = null; }
+
 export async function loadLore({ force = false } = {}) {
   if (cache && !force) return cache;
 
@@ -146,7 +149,7 @@ export async function loadLore({ force = false } = {}) {
       db().from("sleeper_users").select("sleeper_user_id,display_name,team_name,hidden"),
       db().from("members").select("id,display_name,team_name,sleeper_user_id,championships,joined_year"),
       db().from("sleeper_matchups")
-          .select("season,week,roster1,user1,score1,roster2,user2,score2,winner_roster_id")
+          .select("season,week,matchup_id,roster1,user1,score1,roster2,user2,score2,winner_roster_id")
           .order("season", { ascending: true }).order("week", { ascending: true }),
       db().from("history").select("id,year,category,winner,notes").order("year", { ascending: false }),
       db().from("arena_events").select("id,name,theme,status,event_date"),

@@ -414,7 +414,11 @@ export async function render(view) {
     const { loadNflState, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
     const state = await loadNflState();
     const season = Number(state?.data?.season) || analysis.projectionSeason;
-    const week = Number(state?.data?.week) || 1;
+    /* A manual sync can have the new slate before this device's cached NFL
+       state expires. Never let that older response send Home back a week. */
+    const syncedWeek = Math.max(0, ...(analysis.matchups || [])
+      .filter(row => Number(row.season) === Number(season)).map(row => Number(row.week) || 0));
+    const week = Math.max(1, Number(state?.data?.week) || 0, syncedWeek);
     const [projections, actual, trending] = await Promise.all([
       loadWeeklyProjections(season, week), loadWeeklyStats(season, week), loadTrendingPlayers(),
     ]);
@@ -506,13 +510,16 @@ export async function render(view) {
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
+    /* These delayed cards must use the same post-sync snapshot as the slate,
+       not an older first-paint standings response. */
+    const liveStandings = got?.error ? (standings.data || []) : (got?.standings || standings.data || []);
     const clubhouse = clubhouseView({
       analysis, lore: got?.error ? null : got, members: memberRows,
       meSleeperId: myMember?.sleeper_user_id || null,
-      standings: standings.data || [],
+      standings: liveStandings,
       weekly, aftermathWeekly,
     });
-    const pulse = powerPulseView({ analysis, meSleeperId: myMember?.sleeper_user_id || null, standings: standings.data || [] });
+    const pulse = powerPulseView({ analysis, meSleeperId: myMember?.sleeper_user_id || null, standings: liveStandings });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
 
     /* The two standing sections. POWER RANKINGS and WEEKLY REPORT each own

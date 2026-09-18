@@ -45,6 +45,9 @@ describe("weekly league power rankings", () => {
     expect(html).toContain("data-pp-week-prev");
     expect(html).toContain("&lt;Alpha&gt;");
     expect(html).not.toContain("<Alpha>");
+    expect(html).toMatch(/data-pp-week-board="0"[^>]*hidden/);
+    expect(html).toMatch(/data-pp-week-board="1"[^>]*>/);
+    expect(html).not.toMatch(/data-pp-week-board="1"[^>]*hidden/);
   });
 
   it("ignores future matchup rows without scores", () => {
@@ -53,6 +56,23 @@ describe("weekly league power rankings", () => {
     ] });
     expect(result.latestWeek).toBe(0);
     expect(result.boards).toHaveLength(1);
+  });
+
+  it("shows the live week without counting a partial Thursday score as a completed win", () => {
+    const standings = teams.map((team, index) => ({
+      season: 2026, roster_id: team.roster_id, sleeper_user_id: team.sleeper_user_id,
+      wins: index < 2 ? 1 : 0, losses: index < 2 ? 0 : 1, ties: 0,
+    }));
+    const result = buildLeaguePowerRankings({ teams, standings, season: 2026, matchups: [
+      { week: 1, user1: "u1", score1: 130, user2: "u3", score2: 100 },
+      { week: 1, user1: "u2", score1: 120, user2: "u4", score2: 90 },
+      { week: 2, user1: "u1", score1: 23.3, user2: "u4", score2: 0 },
+      { week: 2, user1: "u2", score1: 0, user2: "u3", score2: 36.2 },
+    ] });
+    expect(result.latestWeek).toBe(2);
+    expect(result.boards.at(-1).label).toBe("Week 2");
+    expect(result.boards.at(-1).rows.find(row => row.id === "1").record).toBe("1-0");
+    expect(result.boards.at(-1).rows.find(row => row.id === "3").record).toBe("0-1");
   });
 });
 
