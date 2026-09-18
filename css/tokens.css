@@ -111,6 +111,22 @@
      other way is what made the same face read as two. */
   --ls-display: 0.035em;
 
+  /*
+    SCROLL ASSEMBLY. How far a band's parts sit from their resting place
+    while they are still on their way up the screen. js/scroll-assembly.js
+    writes --a (1 scattered, 0 in place) and css/home.css multiplies these by
+    it, so the whole effect tunes from here rather than from keyframes.
+
+    These are the "playful" values from the scroll study - the loud setting,
+    chosen deliberately. They are only ever applied to Home's bands; a list
+    page with forty rows converging would be a chore rather than a moment.
+  */
+  --asm-spread: 130px;   /* sideways travel                      */
+  --asm-rise:   34px;    /* vertical travel                      */
+  --asm-turn:   5deg;    /* rotation out of true                 */
+  --asm-zoom:   .88;     /* starting scale                       */
+  --asm-dim:    .12;     /* starting opacity                     */
+
   /* ---- space, a 4px grid --------------------------------------------- */
   --s-1: 4px;
   --s-2: 8px;

@@ -39,11 +39,13 @@ import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
 import { boardWeekLabel, teamInitials, weekHasStarted, weekIsFinal } from "../league-trajectory.js";
+import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
 
 let stage = null;
 let generation = 0;
+let dropAssembly = null;
 let suppressMyMatchup = false;
 let dropPresence = null;
 
@@ -87,7 +89,7 @@ export function homeRankingsCard(view, members = [], currentWeek = null) {
   const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
   const visible = board.rows.slice(0, 3);
   const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
-  const row = (item, index, mine = false) => `<li class="${mine ? "is-me" : ""} ${index >= 3 && !mine ? "is-rank-collapsed" : ""}">
+  const row = (item, index, mine = false) => `<li class="${mine ? "is-me" : ""} ${index >= 3 && !mine ? "is-rank-collapsed" : ""}" data-assemble>
     <b>${esc(String(item.rank))}</b>${memberAvatar(teamFor(item), members, "home-rank-face")}
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
@@ -123,7 +125,7 @@ function wireHomeRankings(root) {
   reads.
 */
 function digestItem(label, title, detail) {
-  return `<article><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></article>`;
+  return `<article data-assemble><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></article>`;
 }
 
 /** The compact three-hit weekly report shown directly on Home. */
@@ -160,6 +162,8 @@ export function leave() {
   stage = null;
   try { dropPresence?.(); } catch { }
   dropPresence = null;
+  try { dropAssembly?.(); } catch { }
+  dropAssembly = null;
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
@@ -500,6 +504,9 @@ export async function render(view) {
     dropPresence = onPresence((p) => { alive.innerHTML = presenceHtml(p); });
   }
   wireCrest(view);
+  /* The band is on the page from the first paint; the rows and the report
+     arrive with the async fill below and re-bind there. */
+  dropAssembly = startAssembly(view);
 
   let lore = null;
   let custom = manual;
@@ -556,6 +563,10 @@ export async function render(view) {
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
+    /* Both slots just replaced their contents, so the parts the driver was
+       holding are detached. Re-bind against what is actually on the page. */
+    try { dropAssembly?.(); } catch { }
+    dropAssembly = startAssembly(view);
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
@@ -588,7 +599,7 @@ export async function render(view) {
 export function anniversary() {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   if (number < 2 || number % 10 !== 0) return "";
-  return `<aside class="dfl-anniv" role="note">
+  return `<aside class="dfl-anniv" role="note" data-assemble>
     <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary<br>Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
     <span class="dfl-anniv-tag">Same guys. Higher stakes. Bigger bragging rights.</span>
   </aside>`;
