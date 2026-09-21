@@ -549,7 +549,10 @@ export async function render(view) {
       standings: standings.data || [],
       weekly, aftermathWeekly,
     });
-    const pulse = powerPulseView({ analysis, meSleeperId: myMember?.sleeper_user_id || null, standings: standings.data || [] });
+    const pulse = powerPulseView({
+      analysis, meSleeperId: myMember?.sleeper_user_id || null,
+      standings: standings.data || [], currentWeek: weekly?.week || null,
+    });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
 
     /* The two standing sections. POWER RANKINGS and WEEKLY REPORT each own

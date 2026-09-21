@@ -38,4 +38,24 @@ describe("dashboard next move", () => {
     expect(view.need.urgent).toBe(false);
     expect(nextMoveCard(view)).toContain("No starting unit grades as an urgent need");
   });
+
+  it("skips a position when an active bench player is already comparable to the market", () => {
+    const covered = {
+      ...mine,
+      playerIds: [...mine.playerIds, "bench-te"],
+      positionGrades: {
+        ...mine.positionGrades,
+        RB: { percentile: .7, grade: "A−", leagueRank: 3 },
+        TE: { percentile: .2, grade: "C", leagueRank: 9 },
+      },
+      lineup: { bench: [player("bench-te", "Good Enough TE", "TE", 10, 35)] },
+    };
+    const tePartner = { ...partner, playerIds: ["market-te"], lineup: { bench: [player("market-te", "Market TE", "TE", 10.5, 40)] } };
+    const teWeekly = { ...weekly, pool: new Map([
+      ["bench-te", { id: "bench-te", position: "TE", points: 10, hasGame: true, isOut: false }],
+      ["market-te", { id: "market-te", position: "TE", points: 10.5, hasGame: true, isOut: false }],
+      ["free-te", { id: "free-te", position: "TE", points: 10.2, hasGame: true, isOut: false }],
+    ]) };
+    expect(buildNextMove({ analysis: { state: "ready", teams: [covered, tePartner] }, weekly: teWeekly, meSleeperId: "u1" })).toBeNull();
+  });
 });

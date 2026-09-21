@@ -15,12 +15,10 @@ const num = value => Number(value) || 0;
 const nameOf = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
 const pts = value => Number.isFinite(Number(value)) ? Number(value).toFixed(1) : "—";
 
-function needOf(team) {
-  const ranked = ANALYZER_POSITIONS.map(position => ({ position, ...(team?.positionGrades?.[position] || {}) }))
+function needsOf(team) {
+  return ANALYZER_POSITIONS.map(position => ({ position, ...(team?.positionGrades?.[position] || {}) }))
     .filter(row => Number.isFinite(Number(row.percentile)))
     .sort((a, b) => num(a.percentile) - num(b.percentile) || num(b.leagueRank) - num(a.leagueRank));
-  const weakest = ranked[0] || null;
-  return weakest ? { ...weakest, urgent: num(weakest.percentile) < .42 } : null;
 }
 
 function weeklyPlayer(weekly, id) {
@@ -59,22 +57,35 @@ function waiverCandidate(analysis, need, weekly, trending) {
     .sort((a, b) => num(b.player.points) - num(a.player.points) || b.adds - a.adds)[0] || null;
 }
 
+function internalCandidate(mine, need, weekly) {
+  return (mine?.lineup?.bench || [])
+    .filter(player => player.position === need.position)
+    .map(player => ({ player, week: projectedWeek(weekly, player), current: weeklyPlayer(weekly, player.id) }))
+    .filter(option => option.week > 0 && !option.current?.isOut && (!option.current || option.current.hasGame))
+    .sort((a, b) => b.week - a.week || num(b.player.tradeValue) - num(a.player.tradeValue))[0] || null;
+}
+
 export function buildNextMove({ analysis, weekly, trending, meSleeperId = null } = {}) {
   if (analysis?.state !== "ready" || !analysis.teams?.length || !weekly?.teams?.length || !meSleeperId) return null;
   const mine = analysis.teams.find(team => String(team.sleeper_user_id) === String(meSleeperId));
   if (!mine) return null;
-  const need = needOf(mine);
-  if (!need) return null;
   const live = weekly.teams.find(team => String(team.sleeper_user_id) === String(meSleeperId));
   const weekRank = [...weekly.teams].sort((a, b) => num(b.projection) - num(a.projection))
     .findIndex(team => String(team.sleeper_user_id) === String(meSleeperId)) + 1;
-  const trade = tradeCandidate(analysis, mine, need, weekly);
-  const waiver = waiverCandidate(analysis, need, weekly, trending);
-  if (!trade && !waiver) return null;
-  return {
-    season: weekly.season, week: weekly.week, mine, need, live, weekRank,
-    leagueSize: weekly.teams.length, trade, waiver,
-  };
+  for (const weakest of needsOf(mine)) {
+    const need = { ...weakest, urgent: num(weakest.percentile) < .42 };
+    const trade = tradeCandidate(analysis, mine, need, weekly);
+    const waiver = waiverCandidate(analysis, need, weekly, trending);
+    if (!trade && !waiver) continue;
+    const internal = internalCandidate(mine, need, weekly);
+    const marketBest = Math.max(num(trade?.week), num(waiver?.player?.points));
+    if (internal && internal.week >= marketBest * .9) continue;
+    return {
+      season: weekly.season, week: weekly.week, mine, need, live, weekRank,
+      leagueSize: weekly.teams.length, trade, waiver,
+    };
+  }
+  return null;
 }
 
 function trend(adds) {

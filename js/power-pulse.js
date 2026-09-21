@@ -16,7 +16,7 @@ function comparisonRows(standings, season) {
 }
 
 /** Turn the Analyzer's ranking into the small, honest Home summary. */
-export function powerPulseView({ analysis, meSleeperId = null, standings = [] } = {}) {
+export function powerPulseView({ analysis, meSleeperId = null, standings = [], currentWeek = null } = {}) {
   if (analysis?.state !== "ready" || !analysis.teams?.length) return null;
   const teams = analysis.teams;
   const focus = teams.find(team => meSleeperId && String(team.sleeper_user_id) === String(meSleeperId)) || teams[0];
@@ -49,6 +49,7 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [] } 
   const powerRankings = buildLeaguePowerRankings({
     teams,
     matchups: analysis.matchups || [],
+    currentWeek,
     weeks: REGULAR_SEASON_WEEKS,
   });
   return {

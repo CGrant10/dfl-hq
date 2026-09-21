@@ -50,7 +50,7 @@ function boardRows(ordered, previous, state, weeklyScores) {
  * strength stays in the model because one lucky weekly score should not turn
  * the worst roster into #1; completed results still move teams immediately.
  */
-export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DEFAULT_WEEKS } = {}) {
+export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, weeks = DEFAULT_WEEKS } = {}) {
   const live = teams.filter(team => team?.id != null && Number.isFinite(Number(team?.lineup?.weeklyPoints)));
   if (live.length < 2) return null;
 
@@ -95,7 +95,11 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], weeks = DE
     weekRows.get(week).push(row);
   }
   const playedWeeks = [...weekRows.entries()]
-    .filter(([, group]) => weekIsFinal(group))
+    /* Scores can be non-zero on every side by Sunday night even though
+       Monday players remain. Sleeper advancing to the next week is the
+       authoritative boundary: the live week can never create a W/L. */
+    .filter(([week, group]) => weekIsFinal(group)
+      && (!Number.isFinite(Number(currentWeek)) || Number(currentWeek) < 1 || week < Number(currentWeek)))
     .map(([week]) => week)
     .sort((a, b) => a - b);
   const rosterOrder = ranked(live, team => num(team.lineup.weeklyPoints));

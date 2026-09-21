@@ -138,6 +138,16 @@ describe("a week still being played", () => {
     expect(built.latestWeek).toBe(2);
     expect(built.boards.at(-1).rows.every(row => /^[012]-[012]$/.test(row.record))).toBe(true);
   });
+
+  it("never counts the live week before Sleeper advances after Monday", () => {
+    const sundayScores = [
+      { season: 2026, week: 2, user1: "u1", score1: 123, user2: "u2", score2: 118 },
+      { season: 2026, week: 2, user1: "u3", score1: 96, user2: "u4", score2: 101 },
+    ];
+    const built = buildLeaguePowerRankings({ teams, matchups: [...week1, ...sundayScores], currentWeek: 2 });
+    expect(built.latestWeek).toBe(1);
+    expect(built.boards.at(-1).rows.every(row => /^[01]-[01]$/.test(row.record))).toBe(true);
+  });
 });
 
 describe("when a week counts as finished", () => {
