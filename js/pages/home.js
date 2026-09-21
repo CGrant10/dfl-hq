@@ -38,7 +38,7 @@ import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
-import { boardWeekLabel, teamInitials, weekHasStarted, weekIsFinal } from "../league-trajectory.js";
+import { boardWeekLabel, teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
@@ -227,10 +227,9 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   */
   const weekRows = (analysis.matchups || []).filter(row => Number(row.week) === week);
   const weekStarted = weekHasStarted(weekRows);
-  /* Finished: the generator owns it, with finals rather than projections.
-     weekIsFinal() is shared with the rankings board on purpose - these two
-     asked the same question separately once, and disagreed. */
-  if (weekIsFinal(weekRows)) return null;
+  /* This function only runs for Sleeper's current week. Non-zero scores on
+     every side Sunday night do not make it final while Monday players remain;
+     keep the league slate until Sleeper advances the week. */
 
   let raw;
   try {
@@ -244,7 +243,15 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     const row = (weekly.teams || []).find(team => String(team.sleeper_user_id) === String(uid));
     return Number.isFinite(Number(row?.projection)) ? Number(row.projection) : null;
   };
+  const syncedScoreOf = uid => {
+    const row = weekRows.find(item => String(item.user1) === String(uid) || String(item.user2) === String(uid));
+    if (!row) return null;
+    const value = String(row.user1) === String(uid) ? row.score1 : row.score2;
+    return Number.isFinite(Number(value)) ? Number(value) : null;
+  };
   const actualOf = uid => {
+    const synced = syncedScoreOf(uid);
+    if (synced != null) return synced;
     const row = (weekly.teams || []).find(team => String(team.sleeper_user_id) === String(uid));
     return Number.isFinite(Number(row?.actual)) ? Number(row.actual) : null;
   };
@@ -551,7 +558,7 @@ export async function render(view) {
     });
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
-      standings: standings.data || [], currentWeek: weekly?.week || null,
+      standings: standings.data || [], currentWeek: weekly?.week || null, weekly,
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
 

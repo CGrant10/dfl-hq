@@ -50,7 +50,7 @@ function boardRows(ordered, previous, state, weeklyScores) {
  * strength stays in the model because one lucky weekly score should not turn
  * the worst roster into #1; completed results still move teams immediately.
  */
-export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, weeks = DEFAULT_WEEKS } = {}) {
+export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, currentTeams = [], weeks = DEFAULT_WEEKS } = {}) {
   const live = teams.filter(team => team?.id != null && Number.isFinite(Number(team?.lineup?.weeklyPoints)));
   if (live.length < 2) return null;
 
@@ -144,6 +144,45 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
     });
     previous = new Map(currentRows.map(row => [row.id, row.rank]));
     previousWeek = week;
+  }
+
+  /* Keep the record frozen until Sleeper advances the week, but let the
+     ranking itself react to the game currently being played. A projected
+     2-0 team should not sink solely because the newest information was
+     ignored; equally, it must not be printed as 2-0 before Monday is final. */
+  const liveWeek = Number(currentWeek);
+  const outlookByUser = new Map((currentTeams || [])
+    .filter(team => team?.sleeper_user_id != null && Number.isFinite(Number(team?.projection)))
+    .map(team => [key(team.sleeper_user_id), Number(team.projection)]));
+  const outlookValues = live.map(team => outlookByUser.get(key(team.sleeper_user_id))).filter(Number.isFinite);
+  const lastCompleted = playedWeeks.at(-1) || 0;
+  if (Number.isFinite(liveWeek) && liveWeek > lastCompleted && outlookValues.length >= 2) {
+    const paces = live.map(team => {
+      const record = state.get(key(team.id));
+      return record.games ? record.points / record.games : 0;
+    });
+    const paceLow = Math.min(...paces), paceHigh = Math.max(...paces);
+    const outlookLow = Math.min(...outlookValues), outlookHigh = Math.max(...outlookValues);
+    const power = team => {
+      const record = state.get(key(team.id));
+      const pace = record.games ? record.points / record.games : 0;
+      const scoring = paceHigh === paceLow ? .5 : (pace - paceLow) / (paceHigh - paceLow);
+      const result = record.games ? (record.wins + record.ties * .5) / record.games : .5;
+      const projection = outlookByUser.get(key(team.sleeper_user_id));
+      const outlook = !Number.isFinite(projection) || outlookHigh === outlookLow
+        ? .5 : (projection - outlookLow) / (outlookHigh - outlookLow);
+      return rosterStrength(team) * .4 + scoring * .25 + result * .15 + outlook * .2;
+    };
+    const order = ranked(live, power);
+    const currentRows = boardRows(order, previous, state, new Map(live.map(team => [
+      key(team.id), outlookByUser.get(key(team.sleeper_user_id)) ?? null,
+    ])));
+    boards.push({
+      week: liveWeek,
+      label: `Week ${liveWeek}`,
+      comparison: lastCompleted ? `live outlook vs Week ${lastCompleted}` : "live outlook vs roster model",
+      rows: currentRows,
+    });
   }
 
   return { latestWeek: playedWeeks.at(-1) || 0, boards };

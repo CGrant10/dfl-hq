@@ -31,12 +31,33 @@ describe("dashboard next move", () => {
     expect(nextMovePanel(view)).toContain("hd-next-move");
   });
 
-  it("does not call a solid lowest-ranked unit an urgent need", () => {
+  it("does not manufacture a move when every starting unit is league average", () => {
     const solid = { ...mine, positionGrades: Object.fromEntries(Object.entries(mine.positionGrades)
       .map(([position, grade]) => [position, { ...grade, percentile: Math.max(.55, grade.percentile) }])) };
     const view = buildNextMove({ analysis: { state: "ready", teams: [solid, partner] }, weekly, meSleeperId: "u1" });
-    expect(view.need.urgent).toBe(false);
-    expect(nextMoveCard(view)).toContain("No starting unit grades as an urgent need");
+    expect(view).toBeNull();
+  });
+
+  it("does not shop for a position already covered by a playable bench option", () => {
+    const covered = {
+      ...mine,
+      playerIds: ["herbert", "young"], starters: ["herbert"],
+      positionGrades: {
+        QB: { percentile: .2, grade: "D", leagueRank: 11,
+          starters: [player("herbert", "Justin Herbert", "QB", 7.88, 80)] },
+        RB: { percentile: .7, grade: "B+", leagueRank: 4 },
+        WR: { percentile: .7, grade: "B+", leagueRank: 4 },
+        TE: { percentile: .6, grade: "B", leagueRank: 5 },
+      },
+      lineup: { bench: [player("young", "Bryce Young", "QB", 24.08, 30)] },
+    };
+    const qbMarket = { ...partner, playerIds: ["goff"], lineup: { bench: [player("goff", "Jared Goff", "QB", 30.78, 55)] } };
+    const live = { ...weekly, pool: new Map([
+      ["herbert", { id: "herbert", position: "QB", points: 7.88, hasGame: true, isOut: false }],
+      ["young", { id: "young", position: "QB", points: 24.08, hasGame: true, isOut: false }],
+      ["goff", { id: "goff", position: "QB", points: 30.78, hasGame: true, isOut: false }],
+    ]) };
+    expect(buildNextMove({ analysis: { state: "ready", teams: [covered, qbMarket] }, weekly: live, meSleeperId: "u1" })).toBeNull();
   });
 
   it("skips a position when an active bench player is already comparable to the market", () => {

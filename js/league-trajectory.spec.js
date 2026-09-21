@@ -148,6 +148,21 @@ describe("a week still being played", () => {
     expect(built.latestWeek).toBe(1);
     expect(built.boards.at(-1).rows.every(row => /^[01]-[01]$/.test(row.record))).toBe(true);
   });
+
+  it("lets a live projection move the current board without awarding a result", () => {
+    const currentTeams = [
+      { sleeper_user_id: "u1", projection: 90 },
+      { sleeper_user_id: "u2", projection: 100 },
+      { sleeper_user_id: "u3", projection: 110 },
+      { sleeper_user_id: "u4", projection: 180 },
+    ];
+    const built = buildLeaguePowerRankings({ teams, matchups: week1, currentWeek: 2, currentTeams });
+    expect(built.boards.at(-1).label).toBe("Week 2");
+    const delta = built.boards.at(-1).rows.find(row => row.id === "4");
+    expect(delta.movement).toBeGreaterThan(0);
+    expect(delta.record).toBe("1-0");
+    expect(built.latestWeek).toBe(1);
+  });
 });
 
 describe("when a week counts as finished", () => {

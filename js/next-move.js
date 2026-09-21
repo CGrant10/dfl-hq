@@ -65,6 +65,12 @@ function internalCandidate(mine, need, weekly) {
     .sort((a, b) => b.week - a.week || num(b.player.tradeValue) - num(a.player.tradeValue))[0] || null;
 }
 
+function weakestStarterWeek(mine, need, weekly) {
+  const starters = mine?.positionGrades?.[need.position]?.starters || [];
+  if (!starters.length) return 0;
+  return Math.min(...starters.map(player => projectedWeek(weekly, player)).filter(value => value > 0));
+}
+
 export function buildNextMove({ analysis, weekly, trending, meSleeperId = null } = {}) {
   if (analysis?.state !== "ready" || !analysis.teams?.length || !weekly?.teams?.length || !meSleeperId) return null;
   const mine = analysis.teams.find(team => String(team.sleeper_user_id) === String(meSleeperId));
@@ -74,10 +80,17 @@ export function buildNextMove({ analysis, weekly, trending, meSleeperId = null }
     .findIndex(team => String(team.sleeper_user_id) === String(meSleeperId)) + 1;
   for (const weakest of needsOf(mine)) {
     const need = { ...weakest, urgent: num(weakest.percentile) < .42 };
+    /* Auto-scout is for actual holes, not endless shopping. A league-average
+       or better unit can still be upgraded, but it is not a "next move." */
+    if (!need.urgent) continue;
+    const internal = internalCandidate(mine, need, weekly);
+    const starterFloor = weakestStarterWeek(mine, need, weekly);
+    /* If an active reserve is already as playable as the weakest starter,
+       the roster has an internal answer and does not need another player. */
+    if (internal && starterFloor > 0 && internal.week >= starterFloor) continue;
     const trade = tradeCandidate(analysis, mine, need, weekly);
     const waiver = waiverCandidate(analysis, need, weekly, trending);
     if (!trade && !waiver) continue;
-    const internal = internalCandidate(mine, need, weekly);
     const marketBest = Math.max(num(trade?.week), num(waiver?.player?.points));
     if (internal && internal.week >= marketBest * .9) continue;
     return {

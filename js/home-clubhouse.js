@@ -42,10 +42,13 @@ function matchupStory({ lore, uid, members, weekly }) {
   const mineTeam = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(uid));
   const theirTeam = weekly?.teams?.find(team => String(team.sleeper_user_id) === String(opponentId));
   const currentComplete = Boolean(current && mineTeam?.complete && theirTeam?.complete);
-  const mine = current && Number.isFinite(mineTeam?.actual)
-    ? mineTeam.actual : num(left ? row.score1 : row.score2);
-  const theirs = current && Number.isFinite(theirTeam?.actual)
-    ? theirTeam.actual : num(left ? row.score2 : row.score1);
+  /* The synced matchup total is Sleeper's official live scoreboard. Summing
+     player stats is useful for lineup analysis, but can lag or miss scoring
+     adjustments and must not disagree with the score shown elsewhere. */
+  const officialMine = left ? row.score1 : row.score2;
+  const officialTheirs = left ? row.score2 : row.score1;
+  const mine = Number.isFinite(Number(officialMine)) ? Number(officialMine) : num(mineTeam?.actual);
+  const theirs = Number.isFinite(Number(officialTheirs)) ? Number(officialTheirs) : num(theirTeam?.actual);
   const margin = round(Math.abs(mine - theirs));
   const won = mine > theirs;
   const tied = mine === theirs;

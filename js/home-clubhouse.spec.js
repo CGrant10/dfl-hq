@@ -187,7 +187,7 @@ describe("Home weekly report", () => {
     expect(weekly.pool.get("evans").points).toBe(10);
     expect(weekly.teams.every(team => team.complete)).toBe(true);
     const currentLore = { leagues: [{ season: 2026, status: "in_season" }], matchups: [
-      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 0, score2: 0 },
+      { season: 2026, week: 1, user1: "u1", user2: "u2", score1: 20, score2: 10 },
     ] };
     const story = clubhouseView({ analysis: finishedAnalysis, lore: currentLore, members, meSleeperId: "u1", weekly }).stories
       .find(item => item.key === "matchup");
@@ -198,6 +198,19 @@ describe("Home weekly report", () => {
     expect(dashboard).toContain("WIN SECURED");
     expect(dashboard).toContain("20.00");
     expect(dashboard).toContain("icons/crest-512.webp");
+  });
+
+  it("uses the synced Sleeper scoreboard as the weekly report score", () => {
+    const weekly = { season: 2026, week: 2, teams: [
+      { sleeper_user_id: "u1", projection: 108, actual: 19, remaining: 4 },
+      { sleeper_user_id: "u2", projection: 101, actual: 11, remaining: 5 },
+    ] };
+    const currentLore = { leagues: [{ season: 2026, status: "in_season" }], matchups: [
+      { season: 2026, week: 2, user1: "u1", user2: "u2", score1: 20.5, score2: 10.25 },
+    ] };
+    const matchup = clubhouseView({ analysis, lore: currentLore, members, meSleeperId: "u1", weekly }).stories
+      .find(item => item.key === "matchup");
+    expect(matchup.detail).toContain("20.50-10.25");
   });
 
   it("never renders an undefined team name in a weekly Hot Seat take", () => {

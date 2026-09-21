@@ -133,6 +133,9 @@ export function withOwner(named) {
 */
 let cache = null;
 
+/** A commissioner sync changes standings and matchups underneath this module. */
+export function clearLoreCache() { cache = null; }
+
 export async function loadLore({ force = false } = {}) {
   if (cache && !force) return cache;
 
