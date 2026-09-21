@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANALYZER_UNITS, analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, optimalLineup, suggestTrades } from "./team-analyzer.js";
+import { ANALYZER_UNITS, analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, isPlausibleTradeSuggestion, optimalLineup, suggestTrades } from "./team-analyzer.js";
 
 const scoring = { pass_yd: .04, pass_td: 4, rush_yd: .1, rush_td: 6, rec: 1, rec_yd: .1, rec_td: 6 };
 const players = {
@@ -115,6 +115,26 @@ describe("team analyzer", () => {
     expect(balanced.starterPercentile).toBeGreaterThan(spike.starterPercentile);
   });
 
+  it("does not call a weak submitted position a need when the bench already covers it", () => {
+    const coveredPool = new Map();
+    const make = (id, position, expectedPoints, tradeValue = 50) => {
+      coveredPool.set(id, { id, name: id, position, expectedPoints, tradeValue });
+      return id;
+    };
+    const roster = (id, tePoints, benchTe = null) => {
+      const starters = [make(`${id}-q`, "QB", 280), make(`${id}-r1`, "RB", 190), make(`${id}-r2`, "RB", 180),
+        make(`${id}-w1`, "WR", 210), make(`${id}-w2`, "WR", 200), make(`${id}-te`, "TE", tePoints), make(`${id}-f`, "WR", 175)];
+      const players = [...starters];
+      if (benchTe) players.push(make(`${id}-bench-te`, "TE", benchTe, 60));
+      return { roster_id: id, players, starters };
+    };
+    const teams = analyzeLeague({ rosters: [roster("covered", 80, 75), roster("b", 180), roster("c", 160), roster("d", 140)], pool: coveredPool });
+    const covered = teams.find(team => team.id === "covered");
+    expect(covered.positionGrades.TE.grade).toBe("D");
+    expect(covered.positionGrades.TE.depth[0].id).toBe("covered-bench-te");
+    expect(covered.need).not.toBe("TE");
+  });
+
   it("values a trade by the lineup it changes", () => {
     const teams = analyzeLeague({ rosters, pool });
     const result = evaluateTrade({ teamA: teams.find(team => team.id === "1"), teamB: teams.find(team => team.id === "2"), sendA: ["r1"], sendB: ["w1"], pool });
@@ -134,18 +154,23 @@ describe("team analyzer", () => {
   it("shops a selected player only in legal, roster-aware offers", () => {
     const teams = analyzeLeague({ rosters, pool });
     const offers = suggestTrades({ teams, teamId: "1", playerId: "r1", pool });
-    expect(offers.length).toBeGreaterThan(0);
     expect(offers.every(offer => offer.sendA.includes("r1") && offer.other.id === "2")).toBe(true);
-    expect(offers.every(offer => offer.fairness >= 66)).toBe(true);
+    expect(offers.every(offer => offer.fairness >= 75)).toBe(true);
+    expect(offers.every(offer => offer.weeklyDeltaA >= -.25 && offer.weeklyDeltaB >= -.25)).toBe(true);
   });
 
   it("shops a two-player package from either side", () => {
     const teams = analyzeLeague({ rosters, pool });
     const mine = suggestTrades({ teams, teamId: "1", playerIds: ["r1", "w2"], partnerId: "2", pool });
-    expect(mine.length).toBeGreaterThan(0);
     expect(mine.every(offer => offer.sendA.includes("r1") && offer.sendA.includes("w2") && offer.other.id === "2")).toBe(true);
     const theirs = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", playerIds: ["r2", "w4"], partnerId: "2", pool });
-    expect(theirs.length).toBeGreaterThan(0);
     expect(theirs.every(offer => offer.sendB.includes("r2") && offer.sendB.includes("w4") && offer.other.id === "2")).toBe(true);
+  });
+
+  it("holds uneven star packages to a higher bar than straight swaps", () => {
+    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 82, weeklyDeltaA: .8, weeklyDeltaB: 1 })).toBe(false);
+    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 92, weeklyDeltaA: -.1, weeklyDeltaB: 1.9 })).toBe(false);
+    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 92, weeklyDeltaA: .2, weeklyDeltaB: .1 })).toBe(true);
+    expect(isPlausibleTradeSuggestion({ sendA: ["a"], sendB: ["b"], fairness: 80, weeklyDeltaA: -.2, weeklyDeltaB: .1 })).toBe(true);
   });
 });

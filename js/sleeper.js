@@ -178,6 +178,11 @@ const THIRTY_MIN_MS = 30 * 60 * 1000;
 const FIVE_MIN_MS   = 5 * 60 * 1000;
 const STATE_MS      = 15 * 60 * 1000;
 
+/** A manual league sync is an explicit request for a fresh analyzer model. */
+export async function clearSleeperAnalysisCache() {
+  await Promise.all([caches.delete(STATS_CACHE), caches.delete(MARKET_CACHE)]);
+}
+
 /**
  * Where the NFL currently is: { week, season, season_type, season_start_date }.
  * Everything weekly hangs off this rather than a hardcoded week.

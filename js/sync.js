@@ -19,7 +19,7 @@
 
 import { db } from "./supabase.js";
 import { readWinners, readLastPlace } from "./sleeper-bracket.js";
-import { sleeper } from "./sleeper.js";
+import { clearSleeperAnalysisCache, sleeper } from "./sleeper.js";
 import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
 import { collectLeagueChain } from "./sleeper-sync-scope.js";
 import { captureCompletedTradeAlerts } from "./trade-alerts.js";
@@ -77,6 +77,7 @@ export async function syncSleeper(leagueId, log = () => {}, { includeHistory = f
     last_sync_note:    `${includeHistory ? "History repair" : "Current season"}: ${seasons.join(", ")}`,
   }).eq("id", 1);
   clearLoreCache();
+  await clearSleeperAnalysisCache();
 
   log(`Done. ${counts.seasons} season(s) synced.`);
   return { seasons, counts };

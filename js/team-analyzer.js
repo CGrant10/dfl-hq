@@ -67,7 +67,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
        rewrite a season, but by midseason the model should reflect this year
        more than its preseason priors. Actual points already earned are never
        projected away; only the unplayed games use the blended forward pace. */
-    const currentWeight = Math.min(.55, currentGames / 8 * .55);
+    /* Two or three real games should matter without taking the wheel from a
+       full projection. Reach the in-season blend sooner, then cap it so a
+       short hot streak never becomes the whole forecast. */
+    const currentWeight = Math.min(.65, currentGames / 6 * .65);
     const baselinePerGame = baselinePoints == null ? null : baselinePoints / 17;
     const currentPerGame = currentGames > 0 ? currentPoints / currentGames : null;
     const forwardPerGame = baselinePerGame != null && currentPerGame != null
@@ -112,7 +115,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const production = productionPercentile.get(player.id);
     const market = marketPercentile.get(player.id);
     const known = [production, market].filter(value => value != null);
-    const value = known.length === 2 ? production * 0.68 + market * 0.32
+    /* ADP is useful before kickoff, but every completed game makes it less
+       relevant than what the player is doing now. */
+    const marketWeight = .32 * (1 - Math.min(.75, (player.currentGames || 0) / 10 * .75));
+    const value = known.length === 2 ? production * (1 - marketWeight) + market * marketWeight
       : known.length ? known[0] : 0;
     const expectedPerGame = (player.expectedPoints || 0) / 17;
     const lastPerGame = player.hasPriorProduction ? player.lastPoints / Math.max(1, player.games || 17) : null;
@@ -264,7 +270,15 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
     }]));
     const rankedPositions = ANALYZER_POSITIONS.map(position => ({ position, ...positionGrades[position] }))
       .sort((a, b) => b.percentile - a.percentile || a.leagueRank - b.leagueRank);
-    const need = [...rankedPositions].reverse().find(unit => unit.percentile < .32)?.position || null;
+    const internallyCovered = unit => {
+      const reserve = unit.depth?.[0];
+      const starter = [...(unit.starters || [])].sort((a, b) => a.expectedPoints - b.expectedPoints)[0];
+      if (!reserve || !starter) return false;
+      return reserve.expectedPoints >= starter.expectedPoints * .85
+        || reserve.tradeValue >= starter.tradeValue * .9;
+    };
+    const need = [...rankedPositions].reverse()
+      .find(unit => unit.percentile < .32 && !internallyCovered(unit))?.position || null;
     return {
       ...team,
       rank: index + 1,
@@ -390,11 +404,23 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     /* A seasonal delta of 30 points is under two points per week. Keep that
        much negotiating room; stricter filtering made positional swaps vanish
        even when both packages were fairly valued. */
-    .filter(result => result.fairness >= 66 && result.deltaA >= -30 && result.deltaB >= -30)
+    /* Suggestions are opening offers, not every mathematically possible
+       swap. Do not recommend a package unless both sides keep or improve
+       their modeled weekly lineup, and keep the value gap tight enough that
+       a manager could plausibly accept it. The manual desk remains free to
+       analyze riskier offers. */
+    .filter(isPlausibleTradeSuggestion)
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")))
     .slice(0, limit);
+}
+
+export function isPlausibleTradeSuggestion(result) {
+  const consolidation = result?.sendA?.length !== result?.sendB?.length;
+  return consolidation
+    ? result.fairness >= 90 && result.weeklyDeltaA >= 0 && result.weeklyDeltaB >= 0
+    : result.fairness >= 75 && result.weeklyDeltaA >= -.25 && result.weeklyDeltaB >= -.25;
 }
 
 export function compareTeams(teamA, teamB) {
