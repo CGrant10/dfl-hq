@@ -38,7 +38,7 @@ import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
 import { buildNextMove } from "../next-move.js";
-import { boardWeekLabel, teamInitials, weekHasStarted } from "../league-trajectory.js";
+import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadLatestTradeAlert } from "../trade-alerts.js";
@@ -80,7 +80,7 @@ function memberAvatar(team, members, cls) {
 
 
 /** The always-visible standings board from the approved Home composition. */
-export function homeRankingsCard(view, members = [], currentWeek = null) {
+export function homeRankingsCard(view, members = []) {
   const rankings = view?.powerRankings;
   const board = rankings?.boards?.at(-1);
   if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>POWER RANKINGS</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
@@ -94,7 +94,7 @@ export function homeRankingsCard(view, members = [], currentWeek = null) {
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
   return `<section class="home-rankings-card">
-    <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(boardWeekLabel(board, currentWeek))} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(board.label)} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
     <div class="home-rank-summary">
       <div><small>YOUR RANK</small><strong>#${esc(String(focus.rank))}</strong>${rankMove(focus.movement)}</div>
       <div class="home-rank-leader">${memberAvatar(teamFor(leader), members, "home-rank-face")}<span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
@@ -558,7 +558,7 @@ export async function render(view) {
     });
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
-      standings: standings.data || [], currentWeek: weekly?.week || null, weekly,
+      standings: standings.data || [], currentWeek: weekly?.week || null,
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
 
@@ -569,7 +569,7 @@ export async function render(view) {
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     if (homeRankingsSlot) {
-      homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows, weekly?.week || null);
+      homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);

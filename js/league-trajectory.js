@@ -45,12 +45,11 @@ function boardRows(ordered, previous, state, weeklyScores) {
  * completed week. The baseline deliberately is not called "preseason": the
  * analyzer sees today's rosters, so trades can change it during the year.
  *
- * Weekly power rank balances the current submitted lineup (50%), scoring
- * pace earned through that week (35%) and record (15%). Current roster
- * strength stays in the model because one lucky weekly score should not turn
- * the worst roster into #1; completed results still move teams immediately.
+ * Once games begin, weekly power rank uses completed results only: cumulative
+ * points scored (70%) and win percentage (30%). The live week is deliberately
+ * absent until Sleeper advances on Tuesday.
  */
-export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, currentTeams = [], weeks = DEFAULT_WEEKS } = {}) {
+export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, weeks = DEFAULT_WEEKS } = {}) {
   const live = teams.filter(team => team?.id != null && Number.isFinite(Number(team?.lineup?.weeklyPoints)));
   if (live.length < 2) return null;
 
@@ -102,10 +101,6 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
       && (!Number.isFinite(Number(currentWeek)) || Number(currentWeek) < 1 || week < Number(currentWeek)))
     .map(([week]) => week)
     .sort((a, b) => a - b);
-  const rosterOrder = ranked(live, team => num(team.lineup.weeklyPoints));
-  const rosterRanks = new Map(rosterOrder.map((team, index) => [key(team.id), index + 1]));
-  const rosterStrength = team => 1 - ((rosterRanks.get(key(team.id)) - 1) / Math.max(1, live.length - 1));
-
   let previousWeek = 0;
   for (const week of playedWeeks) {
     const weeklyScores = new Map();
@@ -122,17 +117,13 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
       else { aa.ties += 1; bb.ties += 1; }
     }
 
-    const paces = live.map(team => {
-      const record = state.get(key(team.id));
-      return record.games ? record.points / record.games : 0;
-    });
-    const low = Math.min(...paces), high = Math.max(...paces);
+    const totals = live.map(team => state.get(key(team.id)).points);
+    const low = Math.min(...totals), high = Math.max(...totals);
     const power = team => {
       const record = state.get(key(team.id));
-      const pace = record.games ? record.points / record.games : 0;
-      const scoring = high === low ? .5 : (pace - low) / (high - low);
+      const scoring = high === low ? .5 : (record.points - low) / (high - low);
       const result = record.games ? (record.wins + record.ties * .5) / record.games : .5;
-      return rosterStrength(team) * .5 + scoring * .35 + result * .15;
+      return scoring * .7 + result * .3;
     };
     const order = ranked(live, power);
     const currentRows = boardRows(order, previous, state, weeklyScores);
@@ -144,45 +135,6 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
     });
     previous = new Map(currentRows.map(row => [row.id, row.rank]));
     previousWeek = week;
-  }
-
-  /* Keep the record frozen until Sleeper advances the week, but let the
-     ranking itself react to the game currently being played. A projected
-     2-0 team should not sink solely because the newest information was
-     ignored; equally, it must not be printed as 2-0 before Monday is final. */
-  const liveWeek = Number(currentWeek);
-  const outlookByUser = new Map((currentTeams || [])
-    .filter(team => team?.sleeper_user_id != null && Number.isFinite(Number(team?.projection)))
-    .map(team => [key(team.sleeper_user_id), Number(team.projection)]));
-  const outlookValues = live.map(team => outlookByUser.get(key(team.sleeper_user_id))).filter(Number.isFinite);
-  const lastCompleted = playedWeeks.at(-1) || 0;
-  if (Number.isFinite(liveWeek) && liveWeek > lastCompleted && outlookValues.length >= 2) {
-    const paces = live.map(team => {
-      const record = state.get(key(team.id));
-      return record.games ? record.points / record.games : 0;
-    });
-    const paceLow = Math.min(...paces), paceHigh = Math.max(...paces);
-    const outlookLow = Math.min(...outlookValues), outlookHigh = Math.max(...outlookValues);
-    const power = team => {
-      const record = state.get(key(team.id));
-      const pace = record.games ? record.points / record.games : 0;
-      const scoring = paceHigh === paceLow ? .5 : (pace - paceLow) / (paceHigh - paceLow);
-      const result = record.games ? (record.wins + record.ties * .5) / record.games : .5;
-      const projection = outlookByUser.get(key(team.sleeper_user_id));
-      const outlook = !Number.isFinite(projection) || outlookHigh === outlookLow
-        ? .5 : (projection - outlookLow) / (outlookHigh - outlookLow);
-      return rosterStrength(team) * .4 + scoring * .25 + result * .15 + outlook * .2;
-    };
-    const order = ranked(live, power);
-    const currentRows = boardRows(order, previous, state, new Map(live.map(team => [
-      key(team.id), outlookByUser.get(key(team.sleeper_user_id)) ?? null,
-    ])));
-    boards.push({
-      week: liveWeek,
-      label: `Week ${liveWeek}`,
-      comparison: lastCompleted ? `live outlook vs Week ${lastCompleted}` : "live outlook vs roster model",
-      rows: currentRows,
-    });
   }
 
   return { latestWeek: playedWeeks.at(-1) || 0, boards };
@@ -220,25 +172,10 @@ export function leaguePowerRankingsCard(rankings, focusId = null) {
     <div class="pp-board-viewport" data-pp-board-viewport>
       ${rankings.boards.map((board, index) => rankingBoard(board, focusId, index)).join("")}
     </div>
-    <p class="pp-board-note">Rank blends current starters (50%), scoring pace through that week (35%) and record (15%). Movement is against the previous completed week.</p>
+    <p class="pp-board-note">Rank uses completed results only: total points (70%) and record (30%). It updates after Sleeper advances the week on Tuesday.</p>
   </section>`;
 }
 
-/*
-  THE HEADER NAMES THE WEEK BEING PLAYED, NOT THE LAST ONE SCORED.
-
-  buildLeaguePowerRankings() only makes a board for a week that has final
-  scores, so its newest board is always the week just finished - the header
-  read "WEEK 1 OF 14" for the whole of week 2. That is how power rankings are
-  built everywhere (this week's ranking is last week's results), but it is not
-  how they are labelled: a ranking published during week 2 is the week 2
-  ranking.
-
-  So the number comes from Sleeper's own league week, which rolls over once
-  Monday Night Football ends - the Tuesday advance. The board's own label is
-  the fallback for a Home that has not resolved the live week yet, and for
-  the preseason "Roster model" board, which is not a week at all.
-*/
 /*
   IS THIS WEEK OVER? ONE DEFINITION, FOR EVERY READER.
 
@@ -267,13 +204,6 @@ export function weekIsFinal(rows) {
 /** Has anybody in this week kicked off? Started is not the same as finished. */
 export function weekHasStarted(rows) {
   return (rows || []).some(row => Number(row.score1) > 0 || Number(row.score2) > 0);
-}
-
-export function boardWeekLabel(board, currentWeek) {
-  const week = Number(currentWeek);
-  if (!Number.isFinite(week) || week < 1) return board.label;
-  if (!/^week\s/i.test(board.label || "")) return board.label;
-  return `Week ${week}`;
 }
 
 /*
