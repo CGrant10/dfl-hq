@@ -121,6 +121,81 @@
   color: var(--text);
 }
 
+/* Profile/Facts section language for the older headings that still use
+   .section-head instead of .section-title. The label leads, the red brand
+   rule carries the eye across the row, and any count/action stays at the
+   far edge. This makes legacy screens feel related without rewriting their
+   working markup. */
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]) :is(
+  .section-head,
+  .notification-section-title
+) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--s-3);
+  min-height: 34px;
+  margin: var(--s-6) 0 var(--s-3);
+  color: var(--text);
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]) :is(
+  .section-head,
+  .notification-section-title
+) > :first-child { order: 0; flex: none; }
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]) :is(
+  .section-head,
+  .notification-section-title
+)::after {
+  content: "";
+  order: 1;
+  flex: 1;
+  min-width: 24px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--accent-fill) 82%, var(--text)),
+    color-mix(in srgb, var(--accent-fill) 28%, transparent) 52%,
+    transparent 100%);
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]) :is(
+  .section-head,
+  .notification-section-title
+) > :not(:first-child) { order: 2; flex: none; }
+
+/* Facts and Profile breathe because the cards do not touch. Use that same
+   steady beat on ordinary routes, while leaving Home and Golf's purpose-made
+   compositions alone. */
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card {
+  margin-bottom: var(--s-4);
+}
+
+/* Trade deliberately stays a flat workbench below the title, but its title
+   should still share the Profile/Facts page-header card. One framed header is
+   hierarchy; re-boxing every Trade control would restore the clutter the
+   flat-board redesign removed. */
+.view[data-route="trade"][data-pulse-system="1"] .tb-head-row {
+  position: relative;
+  min-height: 82px;
+  align-items: center;
+  margin: 0 0 var(--s-4);
+  padding: var(--s-4);
+  overflow: hidden;
+  border: 1px solid var(--pulse-edge);
+  border-radius: var(--r-lg);
+  background: var(--pulse-surface);
+  box-shadow: var(--pulse-shadow);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-head-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--accent-fill),
+    color-mix(in srgb, var(--accent-2-fill) 72%, var(--accent-fill)) 44%,
+    transparent 88%);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-head { margin-bottom: 0; }
+
 /* Tabs become the Power Pulse deck control strip, including the selected glow. */
 .view[data-pulse-system="1"] .tabs {
   gap: 5px;

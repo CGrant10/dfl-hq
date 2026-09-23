@@ -198,6 +198,15 @@ describe("the initial app shell", () => {
     expect(screens).not.toContain("animation: dfl-pulse-surface-in 340ms linear");
   });
 
+  it("shares the Profile and Facts framing across ordinary routes", () => {
+    const screens = fs.readFileSync("css/power-pulse-system.css", "utf8");
+    expect(screens).toContain('.notification-section-title');
+    expect(screens).toContain('.view[data-route="trade"][data-pulse-system="1"] .tb-head-row');
+    expect(screens).toContain('background: linear-gradient(90deg,');
+    expect(screens).toContain(':not([data-route="home"]):not([data-route="golf"])');
+    expect(screens).toContain(':not([data-route="facts"]):not([data-route="profile"]) .card');
+  });
+
   it("does not precache the update-only stadium artwork", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
     const updateCss = fs.readFileSync("css/update-gate.css", "utf8");

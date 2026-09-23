@@ -1,53 +1,57 @@
-# Trade page design QA
+# Shared Profile/Facts design language QA
 
 ## Evidence
 
-- Source visual truth: `C:\Users\GUEST\.codex\generated_images\01a05a88-a21b-7f51-8231-82aa8376e4e7\exec-a0c2383f-25c9-4252-b63d-f9dd8d5c56b5.png`
-- Browser-rendered implementation: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-full-live.png`
-- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\design-qa-comparison.png`
-- Actual fixed-navigation viewport: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-trade.png`
-- CSS viewport: 390 x 844 at device scale factor 1.
-- Source pixels: 724 x 2172. Implementation full-page pixels: 390 x 1365. The combined comparison normalizes both to 364 CSS px wide; heights remain proportional.
-- State: Light theme, Da Nickers trading with DaGrapeApes, Bijan Robinson required, package maximum 4, all offer tiers collapsed, manual mode collapsed.
+- Source visual truth:
+  - `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-profile.png`
+  - `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-facts.png`
+- Representative browser-rendered implementations:
+  - `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-trade.png`
+  - `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-admin.png`
+  - `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-notifications.png`
+- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\shared-style-comparison.png`
+- Dark-theme verification: corresponding `dark-trade.png`, `dark-facts.png`, `dark-admin.png`, `dark-notifications.png`, and `dark-profile.png` in the same screenshot folder.
+- Viewport: 390 x 844 CSS px at device scale factor 1. Every source and implementation screenshot is 390 x 844 pixels. The comparison board is 845 x 2687 pixels and displays each screen at 364 CSS px wide without changing aspect ratio.
+- State: authenticated member Martin77; representative normal, empty, and commissioner-login states.
 - Console/runtime errors checked during capture: none.
-- Primary interactions checked: package slider changes to 8, offer batch refresh indicator, Fair/Press/Swing highlight motion, tier expansion, generated-offer loading, manual builder lazy opening, and the eight-player cap.
+- Primary interactions retained: Trade team/player selectors, slider, offer tiers and manual builder; notification action; profile controls; Admin login forms.
 
 ## Full-view comparison
 
-The implementation matches the selected Flat Rules direction: one white reading surface, clear horizontal section rules, outlined form controls only where the user can interact, flat collapsed offer rows, and a rule-separated manual mode. The persistent navigation is fixed to the bottom in the real 390 x 844 viewport. Its mid-page position in the full-page capture is a Chrome `captureBeyondViewport` artifact, not the rendered viewport position.
-
-The pressure selector remains visible although the generated mock omitted it. That is an intentional product constraint: it preserves the existing Fair/Press/Swing behavior and the sliding selection motion the user explicitly requested.
+Profile and Facts establish the shared language: a framed page header with a thin red-led top rule, calm rounded content cards, clear horizontal section rules, and deliberate vertical space between sections. Trade now uses that same header card while preserving its intentionally flat workbench. Admin and Notifications use the same red-led divider for legacy section-heading markup. Standard cards receive the Profile/Facts spacing cadence. Home, Golf, Arena Beta, and Broadcast remain outside this shared styling pass.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: existing DFL display/body system is preserved; hierarchy, optical weight, wrapping, and small-label spacing track the mock closely.
-- Spacing and layout: major section rhythm and hairline separation match. The live page is slightly taller because it retains the functional pressure selector.
-- Colors and tokens: the page uses active palette tokens only. Light, Dark, Fairway, Medicine Wheel, and Medicine Wheel Light captures show no hardcoded page-surface leakage.
-- Image quality and assets: existing crest and interface icons are reused at native quality. The mock introduced no new product imagery that required replacement.
-- Copy and content: live labels, team names, package controls, offer counts, and manual-builder copy remain intact.
+- Fonts and typography: all pages retain the same Rajdhani display/body family, uppercase structural labels, weight hierarchy, line height, and tracking visible in Profile and Facts. No new wrapping or truncation appeared at 390px.
+- Spacing and layout rhythm: standard cards gain the source pages' 16px cadence. Header radius, padding, edge alignment, divider spacing, and mobile gutters visually match. Profile and Facts are explicitly excluded from the new spacing override so the source pages do not drift.
+- Colors and visual tokens: red-led rules and red/blue header accents use active palette tokens rather than fixed colors. Light and dark captures remain internally consistent.
+- Image quality and asset fidelity: existing crest, watermark, avatar, and icon assets are reused unchanged; no generated, placeholder, CSS-drawn, or replacement imagery was introduced.
+- Copy and content: route-specific copy and dynamic league content remain unchanged.
+- Icons and interactions: existing icon family, control states, focusable controls, collapsed rows, and tap targets remain intact.
 
 ## Focused-region comparison
 
-A separate crop was not needed: both columns in `design-qa-comparison.png` keep controls and labels readable at 364 CSS px. The actual fixed-navigation placement was verified separately in `light-trade.png`.
+Individual source and implementation screenshots were inspected at their original 390 x 844 resolution in addition to the combined board. This made the header edge, card radii, 2px dividers, label tracking, button outlines, and bottom-navigation alignment readable without a separate crop.
 
 ## Findings
 
 - No actionable P0, P1, or P2 differences remain.
-- P3: the implementation is taller than the mock because the retained pressure selector is an intentional functional addition.
+- P3: Sportsbook keeps its stronger branded masthead rather than becoming a literal copy of the plain Profile/Facts page header. This is an intentional page-identity exception that still uses the same radius, top rule, spacing, and palette tokens.
 
 ## Comparison history
 
-1. Initial rendered comparison found the selected flat-rule hierarchy was present, but the full-page screenshot placed the fixed navigation mid-document. A real 390 x 844 viewport capture confirmed the navigation remains at the bottom; no production CSS change was needed.
-2. Theme captures found no Trade-specific palette leakage after the cleanup. No post-comparison Trade fix was required.
-3. The first released flat layout left labels and rules too close to the phone edge. The Trade board and Manual Mode now use a consistent 12px horizontal gutter; the revised 390px capture confirms readable spacing with no horizontal overflow.
+1. Initial route inventory showed most standard cards already shared the correct surface tokens, but Trade lacked the framed page-header hierarchy and older `.section-head`/Notifications headings lacked the red divider.
+2. Added the shared legacy-heading divider, one framed Trade header, and a standard 16px card cadence. Post-fix light and dark captures show consistent hierarchy with no overflow, collision, or theme leakage.
+3. Excluded Profile and Facts from the new card-spacing override so the source pages remain the unchanged visual benchmark.
 
 ## Implementation checklist
 
-- [x] Flatten outer Trade board and nested section cards.
-- [x] Retain outlined boundaries for real controls.
-- [x] Keep all offer-generation and manual-builder behavior.
-- [x] Keep navigation fixed at the viewport bottom.
-- [x] Verify all five selectable palettes.
-- [x] Verify interactions and console output.
+- [x] Preserve Profile and Facts as the visual source.
+- [x] Add the red-led section rule to legacy heading patterns.
+- [x] Give Trade one source-matched title card without restoring nested control cards.
+- [x] Align standard card spacing outside Home and Golf.
+- [x] Preserve route functionality and page-specific identity.
+- [x] Verify representative light and dark routes at 390 x 844.
+- [x] Check console output and horizontal overflow.
 
 final result: passed
