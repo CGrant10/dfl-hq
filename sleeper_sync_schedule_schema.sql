@@ -105,7 +105,11 @@ begin
     raise exception 'Add at least one time before enabling automatic sync';
   end if;
 
-  delete from public.sleeper_sync_schedule;
+  -- pg-safeupdate protects PostgREST sessions from unbounded writes. Every
+  -- stored row is constrained to this weekday range, so this predicate still
+  -- replaces the full schedule while satisfying the production guard.
+  delete from public.sleeper_sync_schedule
+  where day_of_week between 0 and 6;
   insert into public.sleeper_sync_schedule(day_of_week, sync_time)
   select distinct
     (value ->> 'day')::smallint,

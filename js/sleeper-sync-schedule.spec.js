@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
 import {
   normalizeSleeperSchedule,
   sleeperScheduleByDay,
@@ -6,6 +7,12 @@ import {
 } from "./sleeper-sync-schedule.js";
 
 describe("commissioner Sleeper sync schedule", () => {
+  it("replaces the schedule through a bounded delete accepted by pg-safeupdate", () => {
+    const schema = fs.readFileSync("sleeper_sync_schedule_schema.sql", "utf8");
+    expect(schema).toContain("delete from public.sleeper_sync_schedule\n  where day_of_week between 0 and 6;");
+    expect(schema).not.toMatch(/delete from public\.sleeper_sync_schedule\s*;/);
+  });
+
   it("keeps valid unique slots in weekly order", () => {
     expect(normalizeSleeperSchedule([
       { day: 1, time: "00:00:00" },
