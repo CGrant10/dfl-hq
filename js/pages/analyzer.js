@@ -51,8 +51,9 @@ function findingAction(action) {
 function briefing(team, teams, projections, count) {
   const { verdict, findings } = buildFindings({ team, teams, projections });
   const jumps = [["units", "Units"], ["roster", "Roster"], ["outlook", "Outlook"], ["compare", "Compare"], ["trends", "Trends"], ["league", "League"]];
-  return `<section class="ta-brief">
-    <span class="ta-brief-eyebrow">Team report</span>
+  return `<section class="ta-layout-section">
+    <h2 class="section-title">Team report<span class="count">${ordinal(team.overallRank)} of ${count}</span></h2>
+    <section class="ta-brief">
     <h2>${esc(teamName(team))}</h2>
     <div class="ta-brief-verdict is-${gradeTone(team.overallGrade)}">
       <b>${esc(team.overallGrade)}</b>
@@ -74,6 +75,7 @@ function briefing(team, teams, projections, count) {
     <nav class="ta-jump" aria-label="Jump to the evidence">
       ${jumps.map(([id, label]) => `<button type="button" data-ta-jump="${id}">${label}</button>`).join("")}
     </nav>
+    </section>
   </section>`;
 }
 
@@ -185,9 +187,11 @@ function seasonOutlook(team, projections, teams) {
   const chipTeam = teams.find(t => String(t.id) === String(chip?.[0]));
   const titleRank = ranked.findIndex(([id]) => String(id) === String(team.id)) + 1;
 
-  return `<section class="so-panel" id="outlook">
+  return `<section class="ta-layout-section">
+    <h2 class="section-title">Season outlook<span class="count">${ordinal(Math.round(projection.seed))} of ${teams.length}</span></h2>
+    <section class="so-panel" id="outlook">
     <header class="so-head">
-      <div><small>SEASON OUTLOOK</small><h2>${esc(teamName(team))}</h2></div>
+      <div><h2>${esc(teamName(team))}</h2></div>
       <div class="so-record">
         <strong>${projection.wins}<i>-</i>${projection.losses}</strong>
         <span>projected · ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
@@ -211,6 +215,7 @@ function seasonOutlook(team, projections, teams) {
       </dl>
       <details class="ta-method so-method"><summary>How this is calculated</summary><p>${DEFAULT_RUNS_NOTE}</p></details>
     </div>
+    </section>
   </section>`;
 }
 
@@ -241,7 +246,7 @@ function page(data) {
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label><p>Current expectations, last season’s production and the league’s actual scoring.</p></div><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section"><h2 class="section-title">Read a roster<span class="count">${data.teams.length} teams</span></h2><p class="section-copy">Current expectations, last season’s production and the league’s actual scoring.</p><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {

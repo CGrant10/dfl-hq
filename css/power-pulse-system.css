@@ -100,45 +100,6 @@
 }
 .view[data-pulse-system="1"] .card-meta { color: var(--body-text); }
 
-/* The source pages do more than frame the outside of a card: their labels
-   create a clear pause before the content starts. Carry that rhythm into the
-   ordinary routes so the shared treatment is visible in the page, not only
-   around its title. Profile and Facts remain the untouched reference. */
-.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card-title-row {
-  position: relative;
-  padding-bottom: var(--s-3);
-  border-bottom: 0;
-}
-.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card-title-row::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 2px;
-  background: linear-gradient(90deg,
-    var(--theme-primary),
-    color-mix(in srgb, var(--theme-primary) 36%, transparent) 56%,
-    transparent 100%);
-}
-.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card > .card-title {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  width: 100%;
-  min-height: 28px;
-  margin: 0 0 var(--s-3);
-  padding: 0 0 var(--s-2);
-}
-.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card > .card-title::after {
-  content: "";
-  flex: 1;
-  min-width: 22px;
-  height: 2px;
-  background: linear-gradient(90deg,
-    var(--theme-primary),
-    color-mix(in srgb, var(--theme-primary) 24%, transparent) 58%,
-    transparent 100%);
-}
-
 /* Broadcast section labels: strong typography, a lit rule and a real count. */
 .view[data-pulse-system="1"] .section-title {
   color: var(--text);
@@ -382,6 +343,120 @@
   }
 }
 
+/* =====================================================================
+   OUTSIDE-HEADING LAYOUT
+   ---------------------------------------------------------------------
+   Profile and Facts establish one important rule: the label and its red rail
+   introduce a surface; they do not live inside that surface. Finance and the
+   two trade tools use custom markup, so state that rule explicitly here.
+   ===================================================================== */
+.view[data-pulse-system="1"] .section-copy {
+  margin: calc(var(--s-2) * -1) 0 var(--s-3);
+  color: color-mix(in srgb, var(--body-text) 82%, var(--text) 18%);
+  font-size: var(--fs-small);
+  line-height: 1.48;
+}
+
+.view[data-route="finances"][data-pulse-system="1"] #fin-body {
+  margin-top: var(--s-5);
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-section + .fin-section {
+  margin-top: var(--s-5);
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-section > .section-title {
+  margin: 0 0 var(--s-3);
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-section > .card {
+  margin-bottom: 0;
+}
+
+.view[data-route="trade"][data-pulse-system="1"] :is(.tb-workbench-card,.tb-offers-card),
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-section-body {
+  border: 1px solid var(--pulse-edge);
+  border-radius: var(--r-lg);
+  background: var(--pulse-surface);
+  box-shadow: var(--pulse-shadow);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-layout-section + .tb-layout-section,
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-layout-section + .ta-layout-section {
+  margin-top: var(--s-5);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-layout-section > .section-title,
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-layout-section > .section-title,
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-toolbar-section > .section-title {
+  margin: 0 0 var(--s-3);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-workbench-card,
+.view[data-route="trade"][data-pulse-system="1"] .tb-offers-card {
+  padding: var(--s-3);
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-workbench-card > .tb-team-select:first-child {
+  border-top: 0;
+}
+.view[data-route="trade"][data-pulse-system="1"] .tb-board {
+  padding-bottom: var(--s-4);
+}
+
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-toolbar-section {
+  margin-bottom: var(--s-5);
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-toolbar {
+  grid-template-columns: minmax(0,1fr);
+  margin: 0;
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report,
+.view[data-route="trade"][data-pulse-system="1"] .ta-report {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report-section,
+.view[data-route="trade"][data-pulse-system="1"] .ta-report-section {
+  margin: 0 0 var(--s-5);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report-title,
+.view[data-route="trade"][data-pulse-system="1"] .ta-report-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 34px;
+  margin: 0 0 var(--s-3);
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report-title::after,
+.view[data-route="trade"][data-pulse-system="1"] .ta-report-title::after {
+  content: "";
+  order: 1;
+  flex: 1;
+  min-width: 22px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--theme-primary),
+    color-mix(in srgb, var(--theme-primary) 28%, transparent) 58%,
+    transparent 100%);
+}
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report-title > div,
+.view[data-route="trade"][data-pulse-system="1"] .ta-report-title > div { order: 0; flex: none; }
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-report-title > :is(.ta-fold-hint,.ta-fold-chevron),
+.view[data-route="trade"][data-pulse-system="1"] .ta-report-title > :is(.ta-fold-hint,.ta-fold-chevron) { order: 2; flex: none; }
+.view[data-route="analyzer"][data-pulse-system="1"] .ta-section-body,
+.view[data-route="trade"][data-pulse-system="1"] .ta-section-body {
+  padding: var(--s-4);
+}
+.view[data-route="analyzer"][data-pulse-system="1"] details[open] > .ta-report-title,
+.view[data-route="trade"][data-pulse-system="1"] details[open] > .ta-report-title {
+  margin-bottom: var(--s-3);
+}
+.view[data-route="analyzer"][data-pulse-system="1"] :is(.ta-brief,#outlook.so-panel) {
+  margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .view.page-in[data-pulse-system="1"] .dfl-pulse-surface,
   .view.page-in[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title)::before,
@@ -545,5 +620,13 @@
   }
   .view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > * {
     scroll-snap-align: start;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .view[data-route="analyzer"][data-pulse-system="1"] .ta-report-section:hover,
+  .view[data-route="trade"][data-pulse-system="1"] .ta-report-section:hover {
+    transform: none;
+    box-shadow: none;
   }
 }

@@ -200,13 +200,18 @@ describe("the initial app shell", () => {
 
   it("shares the Profile and Facts framing across ordinary routes", () => {
     const screens = fs.readFileSync("css/power-pulse-system.css", "utf8");
+    const finances = fs.readFileSync("js/pages/finances.js", "utf8");
     expect(screens).toContain('.notification-section-title');
     expect(screens).toContain('.view[data-route="trade"][data-pulse-system="1"] .tb-head-row');
     expect(screens).toContain('background: linear-gradient(90deg,');
     expect(screens).toContain(':not([data-route="home"]):not([data-route="golf"])');
     expect(screens).toContain(':not([data-route="facts"]):not([data-route="profile"]) .card');
-    expect(screens).toContain('.card > .card-title::after');
-    expect(screens).toContain('.card-title-row::after');
+    expect(screens).toContain('OUTSIDE-HEADING LAYOUT');
+    expect(screens).toContain('.tb-workbench-card,.tb-offers-card');
+    expect(screens).toContain('.ta-report-title::after');
+    expect(finances).toContain('function financeSection(title, card, count = "")');
+    expect(finances).toContain('<h2 class="section-title">');
+    expect(finances).not.toContain('<div class="card-title">Fees summary</div>');
   });
 
   it("does not precache the update-only stadium artwork", () => {

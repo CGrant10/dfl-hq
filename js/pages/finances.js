@@ -110,28 +110,35 @@ function seasonView(all, year) {
     ${payoutsCard(payouts, prizePool)}
     ${compsCard(comps)}
     ${expensesCard(expenses)}
-    ${cfg?.notes ? `<div class="card"><div class="card-title">Notes</div>
-                    <div class="card-body">${esc(cfg.notes)}</div></div>` : ""}
+    ${cfg?.notes ? financeSection("Notes", `<div class="card">
+                    <div class="card-body">${esc(cfg.notes)}</div></div>`) : ""}
   `;
 }
 
+/* The heading belongs to the page rhythm, not inside the surface it labels.
+   This is the same title -> red rail -> card order used by DFL Lore. */
+function financeSection(title, card, count = "") {
+  return `<section class="fin-section">
+    <h2 class="section-title">${esc(title)}${count ? `<span class="count">${esc(count)}</span>` : ""}</h2>
+    ${card}
+  </section>`;
+}
+
 function buyInCard(buyIn, teams, prizePool) {
-  return `
+  return financeSection("League buy-in", `
     <div class="card accent">
-      <div class="card-title">League buy-in</div>
       <div class="statgrid">
         ${stat("Buy-in", money(buyIn))}
         ${stat("Teams", teams)}
         ${stat("Prize pool", money(prizePool))}
       </div>
-    </div>`;
+    </div>`);
 }
 
 function summaryCard(t) {
   const negative = t.remaining < 0;
-  return `
+  return financeSection("Fees summary", `
     <div class="card">
-      <div class="card-title">Fees summary</div>
       <div class="statgrid">
         ${/* "Dues expected" needed 99px on one line in a 76px cell - no legible
              type size fits that. It sits beside Collected, Owed and Balance,
@@ -148,7 +155,7 @@ function summaryCard(t) {
       ${negative ? `<div class="card-meta">
         <strong class="warntext">More has been committed than collected.</strong>
       </div>` : ""}
-    </div>`;
+    </div>`);
 }
 
 // ------------------------------- dues --------------------------------
@@ -168,18 +175,15 @@ function summaryCard(t) {
  */
 function paymentsCard(rows) {
   if (!rows.length) {
-    return `<div class="card"><div class="card-title">Dues</div>${empty("Nobody added yet.")}</div>`;
+    return financeSection("Dues", `<div class="card">${empty("Nobody added yet.")}</div>`);
   }
 
   const paidCount = rows.filter((r) => statusOf(r).key === "paid").length;
 
-  return `
+  return financeSection("Dues", `
     <div class="card duecard">
-      <div class="card-title" style="padding:15px 16px 10px;margin:0">
-        Dues <span class="pill ${paidCount === rows.length ? "green" : "grey"}">${paidCount}/${rows.length} paid</span>
-      </div>
       ${rows.map(paymentRow).join("")}
-    </div>`;
+    </div>`, `${paidCount}/${rows.length} paid`);
 }
 
 function paymentRow(r) {
@@ -218,15 +222,14 @@ function statusOf(r) {
 
 function payoutsCard(rows, prizePool) {
   if (!rows.length) {
-    return `<div class="card"><div class="card-title">Prize structure</div>${empty("No payouts set.")}</div>`;
+    return financeSection("Prize structure", `<div class="card">${empty("No payouts set.")}</div>`);
   }
 
   const total = sum(rows, "amount");
   const left  = prizePool - total;
 
-  return `
+  return financeSection("Prize structure", `
     <div class="card">
-      <div class="card-title">Prize structure</div>
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr><th>Payout</th><th>Winner</th><th class="num">Amount</th></tr></thead>
@@ -253,19 +256,18 @@ function payoutsCard(rows, prizePool) {
         ${left > 0 ? `${money(left)} unallocated`
                    : `<span class="warntext">${money(-left)} over the prize pool</span>`}
       </div>` : ""}
-    </div>`;
+    </div>`);
 }
 
 // --------------------------- competitions ----------------------------
 
 function compsCard(rows) {
   if (!rows.length) {
-    return `<div class="card"><div class="card-title">Side competitions</div>${empty("None this season.")}</div>`;
+    return financeSection("Side competitions", `<div class="card">${empty("None this season.")}</div>`);
   }
 
-  return `
+  return financeSection("Side competitions", `
     <div class="card">
-      <div class="card-title">Side competitions</div>
       ${rows.map((c) => {
         const pool = c.prize_pool != null
           ? Number(c.prize_pool)
@@ -285,19 +287,18 @@ function compsCard(rows) {
             ${c.notes ? `<div class="muted tiny">${esc(c.notes)}</div>` : ""}
           </div>`;
       }).join("")}
-    </div>`;
+    </div>`);
 }
 
 // ------------------------------ expenses -----------------------------
 
 function expensesCard(rows) {
   if (!rows.length) {
-    return `<div class="card"><div class="card-title">Expenses</div>${empty("Nothing spent yet.")}</div>`;
+    return financeSection("Expenses", `<div class="card">${empty("Nothing spent yet.")}</div>`);
   }
 
-  return `
+  return financeSection("Expenses", `
     <div class="card">
-      <div class="card-title">Expenses</div>
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr><th>Item</th><th>Date</th><th class="num">Amount</th></tr></thead>
@@ -318,7 +319,7 @@ function expensesCard(rows) {
           </tbody>
         </table>
       </div>
-    </div>`;
+    </div>`);
 }
 
 // ------------------------------- bits --------------------------------
