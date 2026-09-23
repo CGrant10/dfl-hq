@@ -1126,7 +1126,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* =====================================================================
    TRADE BOARD - target first, then honest negotiation bands
    ===================================================================== */
-.tb-board { margin: 0 0 var(--s-4); padding: 14px 0 4px; border: 0; background: transparent; background-image: none; box-shadow: none; }
+.tb-board { margin: 0 0 var(--s-4); padding: 14px 12px 4px; border: 0; background: transparent; background-image: none; box-shadow: none; }
 .tb-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .tb-head { min-width: 0; margin-bottom: 15px; }
 .tb-head-row > .btn { flex: none; }
@@ -1223,13 +1223,13 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 @keyframes tb-refresh-spin { to { transform: rotate(360deg); } }
 @keyframes tb-refresh-pulse { 50% { transform: translateY(-1px); } }
 .tb-generate:hover { background: color-mix(in srgb, var(--ok) 16%, var(--bg-2)); }
-.td-custom { margin-top: 0; padding-inline: 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; background-image: none; box-shadow: none; }
+.td-custom { margin-top: 0; padding-inline: 12px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; background-image: none; box-shadow: none; }
 .td-page { margin-top: 0; }
 
 @media (max-width: 680px) {
   .td-board, .td-board.is-multi, .ta-deal-grid { grid-template-columns: minmax(0, 1fr); }
   .ta-shop-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .tb-board { margin-inline: 0; padding: 12px 0 4px; }
+  .tb-board { margin-inline: 0; padding: 12px 12px 4px; }
   .tb-head-row { align-items: center; }
   .tb-blueprint, .tb-package-controls { grid-template-columns: minmax(0, 1fr); }
   .tb-blueprint > section + section, .tb-package-controls > * + * { padding-left: 4px; border-left: 0; }

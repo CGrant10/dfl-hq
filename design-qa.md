@@ -39,6 +39,7 @@ A separate crop was not needed: both columns in `design-qa-comparison.png` keep 
 
 1. Initial rendered comparison found the selected flat-rule hierarchy was present, but the full-page screenshot placed the fixed navigation mid-document. A real 390 x 844 viewport capture confirmed the navigation remains at the bottom; no production CSS change was needed.
 2. Theme captures found no Trade-specific palette leakage after the cleanup. No post-comparison Trade fix was required.
+3. The first released flat layout left labels and rules too close to the phone edge. The Trade board and Manual Mode now use a consistent 12px horizontal gutter; the revised 390px capture confirms readable spacing with no horizontal overflow.
 
 ## Implementation checklist
 
