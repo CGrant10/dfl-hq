@@ -363,25 +363,79 @@ export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB =
   };
 }
 
-const TRADE_SHAPES = [[1, 1], [2, 1], [1, 2], [2, 2]];
+function tradeShapes(maxPlayers = 4, shapes = []) {
+  if (shapes.length) return shapes.map(shape => String(shape).split("-").map(Number))
+    .filter(([send, receive]) => send > 0 && receive > 0 && send + receive <= maxPlayers);
+  const result = [];
+  for (let send = 1; send < maxPlayers; send++) {
+    for (let receive = 1; receive + send <= maxPlayers; receive++) result.push([send, receive]);
+  }
+  return result;
+}
 
-function tradePackages(players, size, required = []) {
+function tradePackages(players, size, required = [], cap = 40) {
   const requiredIds = [...new Set(required.map(String))];
   if (requiredIds.length > size) return [];
   const available = players.map(player => String(player.id)).filter(id => !requiredIds.includes(id));
   if (size === requiredIds.length) return [requiredIds];
-  if (size - requiredIds.length === 1) return available.map(id => [...requiredIds, id]);
   const packages = [];
-  for (let i = 0; i < available.length; i++) {
-    for (let j = i + 1; j < available.length; j++) packages.push([...requiredIds, available[i], available[j]]);
+  const needed = size - requiredIds.length;
+  const visit = (start, chosen) => {
+    if (chosen.length === needed) { packages.push([...requiredIds, ...chosen]); return; }
+    for (let index = start; index <= available.length - (needed - chosen.length); index++) {
+      visit(index + 1, [...chosen, available[index]]);
+    }
+  };
+  visit(0, []);
+  if (packages.length <= cap) return packages;
+  const sampled = [];
+  for (let index = 0; index < cap; index++) sampled.push(packages[Math.round(index * (packages.length - 1) / (cap - 1))]);
+  return sampled.filter((pkg, index, all) => index === all.findIndex(other => other.join(",") === pkg.join(",")));
+}
+
+function rawPackageValue(ids, pool) {
+  return ids.reduce((sum, id) => sum + (Number(pool.get(String(id))?.tradeValue) || 0), 0);
+}
+
+function evaluationCandidates(possibilities, pool, cap = 900) {
+  if (possibilities.length <= cap) return possibilities;
+  const ordered = possibilities.map(candidate => {
+    const send = rawPackageValue(candidate.sendA, pool), receive = rawPackageValue(candidate.sendB, pool);
+    return { candidate, gap: Math.abs(send - receive) / Math.max(send, receive, 1) };
+  }).sort((a, b) => a.gap - b.gap);
+  const closeCount = Math.round(cap * .62), selected = ordered.slice(0, closeCount).map(item => item.candidate);
+  const remainder = ordered.slice(closeCount), spreadCount = cap - selected.length;
+  for (let index = 0; index < spreadCount; index++) {
+    selected.push(remainder[Math.round(index * (remainder.length - 1) / Math.max(1, spreadCount - 1))].candidate);
   }
-  return packages;
+  return selected;
+}
+
+function pairPackages(sendPackages, receivePackages, pool) {
+  if (!sendPackages.length || !receivePackages.length) return [];
+  if (sendPackages.length * receivePackages.length <= 320) {
+    return sendPackages.flatMap(sendA => receivePackages.map(sendB => ({ sendA, sendB })));
+  }
+  const right = receivePackages.map(ids => ({ ids, value: rawPackageValue(ids, pool) })).sort((a, b) => a.value - b.value);
+  const pairs = [];
+  for (const sendA of sendPackages) {
+    const target = rawPackageValue(sendA, pool);
+    let low = 0, high = right.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (right[mid].value < target) low = mid + 1; else high = mid;
+    }
+    const indices = new Set([0, right.length - 1]);
+    for (let offset = -2; offset <= 2; offset++) indices.add(Math.max(0, Math.min(right.length - 1, low + offset)));
+    for (const index of indices) pairs.push({ sendA, sendB: right[index].ids });
+  }
+  return pairs;
 }
 
 export function tradeSuggestionTier(result) {
   if (!result) return null;
-  if (result.fairness >= 88 && result.weeklyDeltaA >= -.25 && result.weeklyDeltaB >= -.25) return "fair";
-  if (result.fairness >= 67 && result.weeklyDeltaA >= -.65 && result.weeklyDeltaB >= -1.25) return "aggressive";
+  if (result.fairness >= 85) return "fair";
+  if (result.fairness >= 65) return "aggressive";
   return "steal";
 }
 
@@ -393,36 +447,44 @@ function suggestionScore(result, intent = "press") {
 }
 
 /**
- * Search all practical 1x1, 2x1, 1x2 and 2x2 structures around the selected
- * player(s). Uneven packages are opening negotiations, so they are ranked in
- * honest bands instead of disappearing behind a near-perfect balance gate.
+ * Search one- or two-sided packages up to eight total players around optional
+ * anchors. Large combinations are value-paired before evaluation so expanding
+ * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
-export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, pool = new Map(), limit = 12, shapes = [], intent = "press" } = {}) {
+export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 4, intent = "press" } = {}) {
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
-  const anchorId = String(anchorTeamId ?? teamId);
-  const anchorTeam = teams.find(team => String(team.id) === anchorId);
+  const anchorId = String(anchorTeamId ?? teamId), anchorTeam = teams.find(team => String(team.id) === anchorId);
   const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String).slice(0, 2);
-  if (!anchorTeam || !anchors.length || anchors.some(id => !anchorTeam.playerIds.map(String).includes(id))) return [];
-  if (anchorId !== String(mine.id) && partnerId && String(partnerId) !== anchorId) return [];
-  const partners = anchorId === String(mine.id)
-    ? teams.filter(team => String(team.id) !== String(mine.id) && (!partnerId || String(team.id) === String(partnerId)))
-    : [anchorTeam];
-  const allowedShapes = (shapes.length ? shapes : TRADE_SHAPES.map(([a, b]) => `${a}-${b}`));
+  const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
+  const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
+  if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
+  if (anchors.length && !anchorTeam) return [];
+  const partners = partnerId
+    ? teams.filter(team => String(team.id) === String(partnerId) && String(team.id) !== String(mine.id))
+    : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
+  const allowedShapes = tradeShapes(Math.max(2, Math.min(8, Number(maxPlayers) || 4)), shapes);
   const possibilities = [];
   for (const other of partners) {
-    const theirs = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
-    const minePlayers = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
-    for (const [sendCount, receiveCount] of TRADE_SHAPES) {
-      if (!allowedShapes.includes(`${sendCount}-${receiveCount}`)) continue;
-      const sendPackages = tradePackages(minePlayers, sendCount, anchorId === String(mine.id) ? anchors : []);
-      const receivePackages = tradePackages(theirs, receiveCount, anchorId === String(mine.id) ? [] : anchors);
-      for (const sendA of sendPackages) {
-        for (const sendB of receivePackages) possibilities.push({ other, sendA, sendB });
+    if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
+    const candidatePool = (team, required) => {
+      const ranked = sortedPlayers(team.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
+      const selected = ranked.slice(0, 11);
+      for (const id of required) if (!selected.some(player => String(player.id) === id)) {
+        const anchored = ranked.find(player => String(player.id) === id);
+        if (anchored) selected.push(anchored);
       }
+      return selected;
+    };
+    const theirs = candidatePool(other, receiveRequired), minePlayers = candidatePool(mine, sendRequired);
+    for (const [sendCount, receiveCount] of allowedShapes) {
+      const sendPackages = tradePackages(minePlayers, sendCount, sendRequired);
+      const receivePackages = tradePackages(theirs, receiveCount, receiveRequired);
+      for (const pair of pairPackages(sendPackages, receivePackages, pool)) possibilities.push({ other, ...pair });
     }
   }
-  return possibilities.map(candidate => {
+  const ranked = evaluationCandidates(possibilities, pool).map(candidate => {
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
@@ -432,8 +494,17 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   }).filter(Boolean)
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
-      && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")))
-    .slice(0, limit);
+      && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
+  const quota = Math.max(1, Math.floor(limit / 3));
+  const selected = ["fair", "aggressive", "steal"].flatMap(tier => ranked.filter(offer => offer.tier === tier).slice(0, quota));
+  if (selected.length < limit) {
+    for (const offer of ranked) {
+      if (selected.includes(offer)) continue;
+      selected.push(offer);
+      if (selected.length === limit) break;
+    }
+  }
+  return selected;
 }
 
 export function isPlausibleTradeSuggestion(result) {

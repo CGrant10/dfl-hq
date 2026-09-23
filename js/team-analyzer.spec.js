@@ -156,7 +156,7 @@ describe("team analyzer", () => {
     const offers = suggestTrades({ teams, teamId: "1", playerId: "r1", pool });
     expect(offers.every(offer => offer.sendA.includes("r1") && offer.other.id === "2")).toBe(true);
     expect(offers.every(offer => tradeSuggestionTier(offer))).toBe(true);
-    expect(offers.every(offer => ["1-1", "1-2", "2-1", "2-2"].includes(offer.shape))).toBe(true);
+    expect(offers.every(offer => offer.sendA.length + offer.sendB.length <= 4)).toBe(true);
   });
 
   it("shops a two-player package from either side", () => {
@@ -178,7 +178,17 @@ describe("team analyzer", () => {
     const teams = analyzeLeague({ rosters, pool });
     const offers = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", partnerId: "2", playerId: "w1", pool, limit: 100 });
     const shapes = new Set(offers.map(offer => offer.shape));
-    expect(shapes).toEqual(new Set(["1-1", "2-1", "1-2", "2-2"]));
+    expect(shapes).toEqual(new Set(["1-1", "1-2", "1-3", "2-1", "2-2", "3-1"]));
+    expect(offers.every(offer => offer.sendB.includes("w1"))).toBe(true);
+  });
+
+  it("builds anchored uneven packages beneath an eight-player ceiling", () => {
+    const teams = analyzeLeague({ rosters, pool });
+    const offers = suggestTrades({ teams, teamId: "1", partnerId: "2", pool, limit: 30,
+      sendAnchorIds: ["r1", "w2"], receiveAnchorIds: ["w1"], maxPlayers: 8, shapes: ["3-2"] });
+    expect(offers.length).toBeGreaterThan(0);
+    expect(offers.every(offer => offer.shape === "3-2")).toBe(true);
+    expect(offers.every(offer => offer.sendA.includes("r1") && offer.sendA.includes("w2"))).toBe(true);
     expect(offers.every(offer => offer.sendB.includes("w1"))).toBe(true);
   });
 });

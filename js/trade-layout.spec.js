@@ -22,7 +22,10 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('<section class="tb-board">');
     expect(source).toContain('class="ta-report-section td-custom"');
     expect(source.indexOf('${tradeLab(team, data.teams, data.pool, shop)}')).toBeLessThan(source.indexOf('class="ta-report-section td-custom"'));
-    expect(source).toContain('openTier: "aggressive"');
+    expect(source).toContain('openTiers: new Set()');
+    expect(source).toContain('data-tb-max');
+    expect(source).toContain('data-tb-add-anchor="send"');
+    expect(source).toContain('data-tb-add-anchor="receive"');
   });
 
   it("scrolls a loaded suggestion to its analysis result", () => {

@@ -52,12 +52,22 @@ function offerMarkup(offer, pool) {
   </article>`;
 }
 
-function tierMarkup(tier, offers, pool, open) {
+function tierMarkup(tier, offers, pool, open, total = offers.length) {
   const copy = tierCopy[tier];
   return `<details class="tb-tier is-${tier}" data-tb-tier="${tier}"${open ? " open" : ""}>
-    <summary><span class="tb-tier-mark" aria-hidden="true"></span><span><b>${copy.title} (${offers.length})</b><small>${copy.note}</small></span><svg class="ico tb-tier-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary>
+    <summary><span class="tb-tier-mark" aria-hidden="true"></span><span><b>${copy.title} (${total})</b><small>${copy.note}</small></span><svg class="ico tb-tier-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary>
     <div>${offers.length ? offers.map(offer => offerMarkup(offer, pool)).join("") : `<p class="tb-tier-empty">No ${copy.title.toLowerCase()} in this set.</p>`}</div>
   </details>`;
+}
+
+function anchorChips(ids, pool, side) {
+  if (!ids.length) return `<span class="tb-anchor-empty">Any player</span>`;
+  return ids.map(id => `<button type="button" data-tb-remove-anchor="${side}" data-player-id="${esc(id)}"><span>${esc(pool.get(String(id))?.name || id)}</span><i aria-hidden="true">×</i></button>`).join("");
+}
+
+function anchorOptions(players, selected, label) {
+  return `<option value="">${label}</option>${players.filter(player => !selected.includes(String(player.id)))
+    .map(player => `<option value="${esc(player.id)}">${esc(player.name)} · ${player.position} · ${Math.round(player.tradeValue)}</option>`).join("")}`;
 }
 
 /*
@@ -72,38 +82,64 @@ function tradeLab(team, teams, pool, shop) {
   const otherTeams = teams.filter(item => item.id !== team.id);
   const partner = otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
   shop.partnerId = partner?.id || "";
-  const players = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const target = players.find(player => String(player.id) === String(shop.targetId)) || players[0];
-  shop.targetId = target?.id || "";
-  const shape = shop.shape || "all", intent = shop.intent || "press";
+  const minePlayers = (team.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const theirPlayers = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  shop.sendAnchors = (shop.sendAnchors || []).filter(id => minePlayers.some(player => String(player.id) === String(id)));
+  if (String(shop.anchorPartnerId) !== String(partner?.id)) {
+    shop.receiveAnchors = theirPlayers[0] ? [String(theirPlayers[0].id)] : [];
+    shop.anchorPartnerId = partner?.id || "";
+  } else {
+    shop.receiveAnchors = (shop.receiveAnchors || []).filter(id => theirPlayers.some(player => String(player.id) === String(id)));
+  }
+  const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length);
+  const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
+  shop.maxPlayers = maxPlayers;
+  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "press";
+  const shapeKeys = [];
+  for (let send = 1; send < maxPlayers; send++) {
+    for (let receive = 1; send + receive <= maxPlayers; receive++) {
+      if (send < shop.sendAnchors.length || receive < shop.receiveAnchors.length) continue;
+      if (sendCount !== "any" && send !== Number(sendCount)) continue;
+      if (receiveCount !== "any" && receive !== Number(receiveCount)) continue;
+      shapeKeys.push(`${send}-${receive}`);
+    }
+  }
   shop.offerCache ||= new Map();
-  const cacheKey = [team.id, partner?.id, target?.id, shape, intent].map(String).join("|");
+  const cacheKey = [team.id, partner?.id, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
   let allOffers = shop.offerCache.get(cacheKey);
   if (!allOffers) {
-    allOffers = target ? suggestTrades({ teams, teamId: team.id, playerId: target.id, partnerId: partner.id,
-      anchorTeamId: partner.id, pool, limit: 48, shapes: shape === "all" ? [] : [shape], intent }) : [];
+    allOffers = partner ? suggestTrades({ teams, teamId: team.id, partnerId: partner.id,
+      sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, maxPlayers,
+      pool, limit: 96, shapes: shapeKeys, intent }) : [];
     shop.offerCache.set(cacheKey, allOffers);
   }
-  const pages = Math.max(1, Math.ceil(allOffers.length / 12));
-  shop.page = (shop.page || 0) % pages;
-  const offers = allOffers.slice(shop.page * 12, shop.page * 12 + 12);
-  const groups = Object.fromEntries(Object.keys(tierCopy).map(tier => [tier, offers.filter(offer => offer.tier === tier)]));
-  const openTier = groups[shop.openTier]?.length ? shop.openTier
-    : ["aggressive", "fair", "steal"].find(tier => groups[tier].length) || shop.openTier;
-  shop.openTier = openTier;
-  const targetName = target?.name || "Choose a player";
+  const fullGroups = Object.fromEntries(Object.keys(tierCopy).map(tier => [tier, allOffers.filter(offer => offer.tier === tier)]));
+  const page = shop.page || 0;
+  const groups = Object.fromEntries(Object.entries(fullGroups).map(([tier, offers]) => {
+    if (offers.length <= 4) return [tier, offers];
+    const start = page * 4 % offers.length;
+    return [tier, Array.from({ length: Math.min(4, offers.length) }, (_, index) => offers[(start + index) % offers.length])];
+  }));
+  shop.openTiers ||= new Set();
+  const countOptions = (side, selected, minimum) => `<option value="any" ${selected === "any" ? "selected" : ""}>Any</option>${Array.from({ length: 7 }, (_, index) => index + 1)
+    .filter(count => count >= minimum && count < maxPlayers)
+    .map(count => `<option value="${count}" ${String(selected) === String(count) ? "selected" : ""}>${count}</option>`).join("")}`;
   return `<section class="tb-board">
     <div class="tb-head-row"><header class="tb-head"><small>DFLYZER</small><h1>Trade Board</h1><p>Pick your pressure. Send something worth answering.</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div>
     <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
-    <details class="tb-target" data-tb-target${shop.targetOpen ? " open" : ""}>
-      <summary><span class="tb-target-avatar">${esc(targetName.split(/\s+/).map(part => part[0]).join("").slice(0, 2))}</span><span><small>TARGET</small><b>${esc(targetName)}</b><em>${esc([target?.position, teamName(partner)].filter(Boolean).join(" · "))}</em></span><i>CHANGE</i></summary>
-      <div class="tb-target-controls"><label><span>Team</span><select data-ta-shop-partner>${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label><label><span>Player</span><select data-ta-target>${players.map(player => `<option value="${esc(player.id)}" ${String(player.id) === String(target?.id) ? "selected" : ""}>${esc(player.name)} · ${player.position} · ${Math.round(player.tradeValue)}</option>`).join("")}</select></label></div>
-    </details>
-    <div class="tb-shapes" aria-label="Package shape">${[["all", "ALL"], ["1-1", "1↔1"], ["2-1", "2↔1"], ["1-2", "1↔2"], ["2-2", "2↔2"]].map(([value, label]) => `<button type="button" data-tb-shape="${value}" class="${shape === value ? "is-active" : ""}">${label}</button>`).join("")}</div>
-    <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, openTier === "fair")}${tierMarkup("aggressive", groups.aggressive, pool, openTier === "aggressive")}${tierMarkup("steal", groups.steal, pool, openTier === "steal")}</div>
-    ${offers.length ? "" : `<div class="ta-empty">No credible offers for this exact target and shape. Try All packages or another target.</div>`}
+    <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner>${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
+    <div class="tb-blueprint">
+      <section><header><small>YOU CAN SEND</small><span>Optional anchors</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
+      <section><header><small>YOU WANT</small><span>Must be included</span></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add one of their players…")}</select></section>
+    </div>
+    <div class="tb-package-controls">
+      <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
+      <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
+    </div>
     <div class="tb-intent" aria-label="Offer intent"><span>MY INTENT</span>${[["fair", "FAIR"], ["press", "PRESS"], ["swing", "SWING BIG"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div>
-    <button type="button" class="tb-generate" data-tb-generate>GENERATE ${allOffers.length > 12 ? "12 NEW" : "BEST"} OFFERS</button>
+    <button type="button" class="tb-generate" data-tb-generate>SHOW ANOTHER BATCH · ${allOffers.length} FOUND</button>
+    <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, shop.openTiers.has("fair"), fullGroups.fair.length)}${tierMarkup("aggressive", groups.aggressive, pool, shop.openTiers.has("aggressive"), fullGroups.aggressive.length)}${tierMarkup("steal", groups.steal, pool, shop.openTiers.has("steal"), fullGroups.steal.length)}</div>
+    ${allOffers.length ? "" : `<div class="ta-empty">No offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
   </section>`;
 }
 
@@ -151,8 +187,9 @@ function page(data, tradeAlerts = []) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
-  const shop = { partnerId: "", targetId: "", shape: "all", intent: "press", page: 0,
-    openTier: "aggressive", targetOpen: false, customOpen: false };
+  const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
+    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "press", page: 0,
+    openTiers: new Set(), customOpen: false };
 
   return {
     markup: `${completedTradeMarkup(tradeAlerts, selectedTransactionId)}<main class="ta-report td-page" data-td-body></main>`,
@@ -181,28 +218,73 @@ function page(data, tradeAlerts = []) {
             if (share) share.disabled = !current;
           },
         });
-        body.querySelector("[data-tb-target]")?.addEventListener("toggle", event => { shop.targetOpen = event.currentTarget.open; });
         body.querySelector(".td-custom")?.addEventListener("toggle", event => {
           const open = event.currentTarget.open;
           if (open && !shop.customOpen) { shop.customOpen = true; draw(); return; }
           shop.customOpen = open;
         });
         body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
-          if (event.currentTarget.open) shop.openTier = event.currentTarget.dataset.tbTier;
+          const tier = event.currentTarget.dataset.tbTier;
+          if (event.currentTarget.open) shop.openTiers.add(tier);
+          else shop.openTiers.delete(tier);
         }));
+      };
+      const resetBlueprint = () => {
+        shop.partnerId = ""; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
+        shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
+        shop.intent = "press"; shop.page = 0; shop.openTiers.clear(); shop.customOpen = false;
       };
       body.addEventListener("change", event => {
         if (event.target.matches("[data-td-team]")) {
           selectedId = event.target.value;
           trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
-          shop.partnerId = ""; shop.targetId = ""; shop.shape = "all"; shop.intent = "press"; shop.page = 0;
-          shop.openTier = "aggressive"; shop.targetOpen = false; shop.customOpen = false;
+          resetBlueprint();
           draw(); return;
         }
         if (event.target.matches("[data-ta-shop-partner]")) {
-          shop.partnerId = event.target.value; shop.targetId = ""; shop.page = 0; draw(); return;
+          shop.partnerId = event.target.value; shop.anchorPartnerId = ""; shop.receiveAnchors = [];
+          shop.page = 0; shop.openTiers.clear(); draw(); return;
         }
-        if (event.target.matches("[data-ta-target]")) { shop.targetId = event.target.value; shop.page = 0; draw(); }
+        const anchorSelect = event.target.closest("[data-tb-add-anchor]");
+        if (anchorSelect && anchorSelect.value) {
+          const side = anchorSelect.dataset.tbAddAnchor;
+          const list = side === "send" ? shop.sendAnchors : shop.receiveAnchors;
+          const nextSend = shop.sendAnchors.length + (side === "send" ? 1 : 0);
+          const nextReceive = shop.receiveAnchors.length + (side === "receive" ? 1 : 0);
+          if (Math.max(1, nextSend) + Math.max(1, nextReceive) > shop.maxPlayers) {
+            toast(`This package is capped at ${shop.maxPlayers} players. Raise the slider or remove an anchor.`, true);
+          } else if (!list.includes(anchorSelect.value)) {
+            list.push(anchorSelect.value);
+            const countKey = side === "send" ? "sendCount" : "receiveCount";
+            if (shop[countKey] !== "any" && Number(shop[countKey]) < list.length) shop[countKey] = "any";
+          }
+          shop.page = 0; draw(); return;
+        }
+        if (event.target.matches("[data-tb-send-count], [data-tb-receive-count]")) {
+          const isSend = event.target.matches("[data-tb-send-count]");
+          if (isSend) shop.sendCount = event.target.value;
+          else shop.receiveCount = event.target.value;
+          const other = isSend ? "receiveCount" : "sendCount";
+          if (shop.sendCount !== "any" && shop.receiveCount !== "any"
+            && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop[other] = "any";
+          shop.page = 0; draw(); return;
+        }
+        if (event.target.matches("[data-tb-max]")) {
+          shop.maxPlayers = Number(event.target.value);
+          if (shop.sendCount !== "any" && Number(shop.sendCount) >= shop.maxPlayers) shop.sendCount = "any";
+          if (shop.receiveCount !== "any" && Number(shop.receiveCount) >= shop.maxPlayers) shop.receiveCount = "any";
+          if (shop.sendCount !== "any" && shop.receiveCount !== "any"
+            && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop.receiveCount = "any";
+          shop.page = 0; draw();
+        }
+      });
+      body.addEventListener("input", event => {
+        if (!event.target.matches("[data-tb-max]")) return;
+        const value = event.target.value;
+        const output = body.querySelector("[data-tb-max-output]");
+        if (output) output.textContent = value;
+        const note = event.target.closest(".tb-max")?.querySelector("small");
+        if (note) note.textContent = `Up to ${value} total players—not a required total.`;
       });
       body.addEventListener("click", async event => {
         const shareButton = event.target.closest("[data-td-share]");
@@ -226,8 +308,13 @@ function page(data, tradeAlerts = []) {
           }
           return;
         }
-        const shape = event.target.closest("[data-tb-shape]");
-        if (shape) { shop.shape = shape.dataset.tbShape; shop.page = 0; draw(); return; }
+        const removeAnchor = event.target.closest("[data-tb-remove-anchor]");
+        if (removeAnchor) {
+          const side = removeAnchor.dataset.tbRemoveAnchor;
+          const key = side === "send" ? "sendAnchors" : "receiveAnchors";
+          shop[key] = shop[key].filter(id => String(id) !== String(removeAnchor.dataset.playerId));
+          shop.page = 0; draw(); return;
+        }
         const intent = event.target.closest("[data-tb-intent]");
         if (intent) { shop.intent = intent.dataset.tbIntent; shop.page = 0; draw(); return; }
         if (event.target.closest("[data-tb-generate]")) { shop.page += 1; draw(); return; }

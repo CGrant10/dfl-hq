@@ -1126,7 +1126,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* =====================================================================
    TRADE BOARD - target first, then honest negotiation bands
    ===================================================================== */
-.tb-board { margin: 0 0 var(--s-4); padding: 14px; border: 1px solid var(--card-border); border-radius: var(--panel-radius); background: var(--card-surface); box-shadow: var(--card-shadow); }
+.tb-board { margin: 0 0 var(--s-4); padding: 14px; border: 1px solid var(--card-border); border-radius: var(--panel-radius); background: var(--bg-2); background-image: none; box-shadow: 0 16px 40px rgba(0, 0, 0, .18), inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent); }
 .tb-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .tb-head { min-width: 0; margin-bottom: 10px; }
 .tb-head-row > .btn { flex: none; }
@@ -1136,7 +1136,30 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-team-select { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-3); }
 .tb-team-select > span { flex: none; color: var(--muted); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .tb-team-select select { min-width: 0; flex: 1; min-height: 34px; padding: 5px 28px 5px 8px; border: 0; border-left: 1px solid var(--line-soft); background: transparent; color: var(--text); font: 800 var(--ta-small) var(--font-body); }
-.tb-target, .tb-tier { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); }
+.tb-blueprint { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 9px; }
+.tb-blueprint > section { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
+.tb-blueprint header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.tb-blueprint header small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .09em; }
+.tb-blueprint header span { overflow: hidden; color: var(--muted); font-size: var(--ta-micro); text-overflow: ellipsis; white-space: nowrap; }
+.tb-anchor-chips { display: flex; min-height: 30px; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.tb-anchor-chips button { display: inline-flex; min-width: 0; align-items: center; gap: 5px; min-height: 28px; padding: 3px 7px; border: 1px solid var(--ok-line); border-radius: 7px; background: var(--ok-bg); color: var(--text); font: 800 var(--ta-micro) var(--font-body); cursor: pointer; }
+.tb-anchor-chips button span { overflow: hidden; max-width: 150px; text-overflow: ellipsis; white-space: nowrap; }
+.tb-anchor-chips button i { color: var(--muted); font-size: 15px; font-style: normal; line-height: 1; }
+.tb-anchor-empty { align-self: center; color: var(--muted); font-size: var(--ta-small); }
+.tb-blueprint select { width: 100%; min-width: 0; min-height: 38px; padding: 7px 28px 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: 700 var(--ta-small) var(--font-body); }
+.tb-package-controls { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(190px, 1fr); align-items: stretch; gap: 8px; margin-bottom: 9px; }
+.tb-package-controls > * { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
+.tb-max { display: grid; gap: 5px; }
+.tb-max > span { display: flex; justify-content: space-between; gap: 8px; color: var(--text); font-size: var(--ta-small); font-weight: 850; }
+.tb-max output { color: var(--ok); font-family: var(--font-display); font-size: var(--ta-lead); line-height: 1; }
+.tb-max input { width: 100%; accent-color: var(--ok); cursor: pointer; }
+.tb-max small { color: var(--muted); font-size: var(--ta-micro); }
+.tb-split { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: end; gap: 5px; }
+.tb-split label { display: grid; gap: 4px; min-width: 0; }
+.tb-split label span { color: var(--muted); font-size: var(--ta-micro); font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.tb-split select { width: 100%; min-width: 0; min-height: 36px; padding: 6px 24px 6px 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: 800 var(--ta-small) var(--font-body); }
+.tb-split > b { align-self: center; color: var(--accent-2); text-align: center; }
+.tb-target, .tb-tier { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
 .tb-target { margin-bottom: 9px; }
 .tb-target > summary { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 64px; padding: 9px 11px; cursor: pointer; list-style: none; }
 .tb-target > summary::-webkit-details-marker, .tb-tier > summary::-webkit-details-marker { display: none; }
@@ -1154,7 +1177,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-shapes { margin-bottom: 9px; }
 .tb-shapes button, .tb-intent button { min-width: 0; min-height: 34px; padding: 0 4px; border: 0; border-radius: 7px; background: transparent; color: var(--body-text); font: 800 var(--ta-small) var(--font-body); cursor: pointer; }
 .tb-shapes button.is-active, .tb-intent button.is-active { color: var(--ok); background: var(--ok-bg); box-shadow: inset 0 0 0 1px var(--ok-line); }
-.tb-tiers { display: grid; gap: 7px; }
+.tb-tiers { display: grid; gap: 7px; margin-top: 9px; }
 .tb-tier > summary { display: grid; grid-template-columns: 24px minmax(0, 1fr) 18px; align-items: center; gap: 8px; min-height: 54px; padding: 8px 10px; cursor: pointer; list-style: none; }
 .tb-tier-mark { display: block; width: 10px; height: 10px; margin-left: 5px; border: 2px solid currentColor; border-radius: 50%; color: var(--warn-ink); }
 .tb-tier.is-aggressive .tb-tier-mark { border-radius: 2px; transform: rotate(45deg); color: var(--accent); }
@@ -1187,7 +1210,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-intent > span { align-self: center; padding: 0 7px; color: var(--muted); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .08em; }
 .tb-generate { width: 100%; min-height: 44px; margin-top: 8px; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); color: var(--ok); font: 900 var(--ta-small) var(--font-body); letter-spacing: .08em; cursor: pointer; }
 .tb-generate:hover { background: color-mix(in srgb, var(--ok) 16%, var(--bg-2)); }
-.td-custom { margin-top: 0; }
+.td-custom { margin-top: 0; background-image: none; }
 .td-page { margin-top: 0; }
 
 @media (max-width: 680px) {
@@ -1195,6 +1218,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .ta-shop-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .tb-board { margin-inline: -12px; padding: 12px; border-left: 0; border-right: 0; border-radius: 0; }
   .tb-head-row { align-items: center; }
+  .tb-blueprint, .tb-package-controls { grid-template-columns: minmax(0, 1fr); }
   .tb-target-controls { grid-template-columns: minmax(0, 1fr); }
 }
 
