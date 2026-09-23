@@ -363,11 +363,41 @@ export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB =
   };
 }
 
+const TRADE_SHAPES = [[1, 1], [2, 1], [1, 2], [2, 2]];
+
+function tradePackages(players, size, required = []) {
+  const requiredIds = [...new Set(required.map(String))];
+  if (requiredIds.length > size) return [];
+  const available = players.map(player => String(player.id)).filter(id => !requiredIds.includes(id));
+  if (size === requiredIds.length) return [requiredIds];
+  if (size - requiredIds.length === 1) return available.map(id => [...requiredIds, id]);
+  const packages = [];
+  for (let i = 0; i < available.length; i++) {
+    for (let j = i + 1; j < available.length; j++) packages.push([...requiredIds, available[i], available[j]]);
+  }
+  return packages;
+}
+
+export function tradeSuggestionTier(result) {
+  if (!result) return null;
+  if (result.fairness >= 88 && result.weeklyDeltaA >= -.25 && result.weeklyDeltaB >= -.25) return "fair";
+  if (result.fairness >= 67 && result.weeklyDeltaA >= -.65 && result.weeklyDeltaB >= -1.25) return "aggressive";
+  return "steal";
+}
+
+function suggestionScore(result, intent = "press") {
+  const mutualGain = Math.max(-2, result.weeklyDeltaA) + Math.max(-2, result.weeklyDeltaB);
+  if (intent === "fair") return result.fairness * 1.5 + mutualGain * 10;
+  if (intent === "swing") return result.fairness * .45 + result.weeklyDeltaA * 22 + Math.max(0, result.valueToA - result.valueToB) * .35;
+  return result.fairness + result.weeklyDeltaA * 15 + result.weeklyDeltaB * 5;
+}
+
 /**
- * Search realistic one-for-one, one-for-two and two-for-one structures. A
- * package is judged after roster cuts; extra names do not receive free value.
+ * Search all practical 1x1, 2x1, 1x2 and 2x2 structures around the selected
+ * player(s). Uneven packages are opening negotiations, so they are ranked in
+ * honest bands instead of disappearing behind a near-perfect balance gate.
  */
-export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, pool = new Map(), limit = 6 } = {}) {
+export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, pool = new Map(), limit = 12, shapes = [], intent = "press" } = {}) {
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
   const anchorId = String(anchorTeamId ?? teamId);
@@ -378,19 +408,17 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const partners = anchorId === String(mine.id)
     ? teams.filter(team => String(team.id) !== String(mine.id) && (!partnerId || String(team.id) === String(partnerId)))
     : [anchorTeam];
+  const allowedShapes = (shapes.length ? shapes : TRADE_SHAPES.map(([a, b]) => `${a}-${b}`));
   const possibilities = [];
   for (const other of partners) {
-    const targets = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
-    const mineTargets = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
-    if (anchorId === String(mine.id)) {
-      for (const target of targets) possibilities.push({ other, sendA: anchors, sendB: [target.id] });
-      for (let i = 0; i < Math.min(7, targets.length); i++) {
-        for (let j = i + 1; j < Math.min(7, targets.length); j++) possibilities.push({ other, sendA: anchors, sendB: [targets[i].id, targets[j].id] });
-      }
-    } else {
-      for (const target of mineTargets) possibilities.push({ other, sendA: [target.id], sendB: anchors });
-      for (let i = 0; i < Math.min(7, mineTargets.length); i++) {
-        for (let j = i + 1; j < Math.min(7, mineTargets.length); j++) possibilities.push({ other, sendA: [mineTargets[i].id, mineTargets[j].id], sendB: anchors });
+    const theirs = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
+    const minePlayers = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue).slice(0, 9);
+    for (const [sendCount, receiveCount] of TRADE_SHAPES) {
+      if (!allowedShapes.includes(`${sendCount}-${receiveCount}`)) continue;
+      const sendPackages = tradePackages(minePlayers, sendCount, anchorId === String(mine.id) ? anchors : []);
+      const receivePackages = tradePackages(theirs, receiveCount, anchorId === String(mine.id) ? [] : anchors);
+      for (const sendA of sendPackages) {
+        for (const sendB of receivePackages) possibilities.push({ other, sendA, sendB });
       }
     }
   }
@@ -398,18 +426,10 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
-    const score = result.fairness + (result.deltaA + result.deltaB) * 2 - balancePenalty;
-    return { ...candidate, ...result, score };
+    const tier = tradeSuggestionTier(result);
+    const score = suggestionScore(result, intent) + (result.deltaA + result.deltaB) * .35 - balancePenalty * .1;
+    return { ...candidate, ...result, tier, shape: `${candidate.sendA.length}-${candidate.sendB.length}`, score };
   }).filter(Boolean)
-    /* A seasonal delta of 30 points is under two points per week. Keep that
-       much negotiating room; stricter filtering made positional swaps vanish
-       even when both packages were fairly valued. */
-    /* Suggestions are opening offers, not every mathematically possible
-       swap. Do not recommend a package unless both sides keep or improve
-       their modeled weekly lineup, and keep the value gap tight enough that
-       a manager could plausibly accept it. The manual desk remains free to
-       analyze riskier offers. */
-    .filter(isPlausibleTradeSuggestion)
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")))
@@ -417,10 +437,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 }
 
 export function isPlausibleTradeSuggestion(result) {
-  const consolidation = result?.sendA?.length !== result?.sendB?.length;
-  return consolidation
-    ? result.fairness >= 90 && result.weeklyDeltaA >= 0 && result.weeklyDeltaB >= 0
-    : result.fairness >= 75 && result.weeklyDeltaA >= -.25 && result.weeklyDeltaB >= -.25;
+  return Boolean(result) && result.fairness >= 45 && result.weeklyDeltaA >= -1 && result.weeklyDeltaB >= -2;
 }
 
 export function compareTeams(teamA, teamB) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANALYZER_UNITS, analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, isPlausibleTradeSuggestion, optimalLineup, suggestTrades } from "./team-analyzer.js";
+import { ANALYZER_UNITS, analyzeLeague, buildPlayerPool, compareTeams, evaluateTrade, isPlausibleTradeSuggestion, optimalLineup, suggestTrades, tradeSuggestionTier } from "./team-analyzer.js";
 
 const scoring = { pass_yd: .04, pass_td: 4, rush_yd: .1, rush_td: 6, rec: 1, rec_yd: .1, rec_td: 6 };
 const players = {
@@ -155,8 +155,8 @@ describe("team analyzer", () => {
     const teams = analyzeLeague({ rosters, pool });
     const offers = suggestTrades({ teams, teamId: "1", playerId: "r1", pool });
     expect(offers.every(offer => offer.sendA.includes("r1") && offer.other.id === "2")).toBe(true);
-    expect(offers.every(offer => offer.fairness >= 75)).toBe(true);
-    expect(offers.every(offer => offer.weeklyDeltaA >= -.25 && offer.weeklyDeltaB >= -.25)).toBe(true);
+    expect(offers.every(offer => tradeSuggestionTier(offer))).toBe(true);
+    expect(offers.every(offer => ["1-1", "1-2", "2-1", "2-2"].includes(offer.shape))).toBe(true);
   });
 
   it("shops a two-player package from either side", () => {
@@ -167,10 +167,18 @@ describe("team analyzer", () => {
     expect(theirs.every(offer => offer.sendB.includes("r2") && offer.sendB.includes("w4") && offer.other.id === "2")).toBe(true);
   });
 
-  it("holds uneven star packages to a higher bar than straight swaps", () => {
-    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 82, weeklyDeltaA: .8, weeklyDeltaB: 1 })).toBe(false);
-    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 92, weeklyDeltaA: -.1, weeklyDeltaB: 1.9 })).toBe(false);
-    expect(isPlausibleTradeSuggestion({ sendA: ["star"], sendB: ["a", "b"], fairness: 92, weeklyDeltaA: .2, weeklyDeltaB: .1 })).toBe(true);
-    expect(isPlausibleTradeSuggestion({ sendA: ["a"], sendB: ["b"], fairness: 80, weeklyDeltaA: -.2, weeklyDeltaB: .1 })).toBe(true);
+  it("keeps imperfect packages but labels their negotiating range honestly", () => {
+    expect(tradeSuggestionTier({ fairness: 92, weeklyDeltaA: .2, weeklyDeltaB: .1 })).toBe("fair");
+    expect(tradeSuggestionTier({ fairness: 82, weeklyDeltaA: .8, weeklyDeltaB: 1 })).toBe("aggressive");
+    expect(tradeSuggestionTier({ fairness: 55, weeklyDeltaA: .8, weeklyDeltaB: -.8 })).toBe("steal");
+    expect(isPlausibleTradeSuggestion({ fairness: 25, weeklyDeltaA: 4, weeklyDeltaB: -4 })).toBe(false);
+  });
+
+  it("can build every package shape around a selected target", () => {
+    const teams = analyzeLeague({ rosters, pool });
+    const offers = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", partnerId: "2", playerId: "w1", pool, limit: 100 });
+    const shapes = new Set(offers.map(offer => offer.shape));
+    expect(shapes).toEqual(new Set(["1-1", "2-1", "1-2", "2-2"]));
+    expect(offers.every(offer => offer.sendB.includes("w1"))).toBe(true);
   });
 });

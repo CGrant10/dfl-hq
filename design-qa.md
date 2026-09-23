@@ -1,52 +1,54 @@
-# DFL Home — Design QA
+# Trade Board design QA
 
-- Source visual truth: `C:/Users/GUEST/Documents/Codex/2026-08-31/okay/.codex-remote-attachments/01a05a88-a21b-7f51-8231-82aa8376e4e7/2ed396b2-207f-4ece-aa01-3c590a12054e/1-Photo-1.jpg`
-- Browser-rendered implementation: `qa/home-implementation.png`
-- Combined comparison: `qa/home-comparison.png`
-- Browser/runtime evidence: `qa/home-console.json`
-- Viewport: 592 × 1280 CSS px at DPR 1.
-- Source pixels: 592 × 1280. Implementation pixels: 592 × 1280. No density normalization required.
-- State: Martin77 signed in, current live DFL data, My Week active.
+- Source visual truth: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\option-3.png`
+- Implementation capture: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-live.png`
+- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-compare.png`
+- Viewport: 390 x 844 CSS px, device scale factor 1
+- Source pixels: 390 x 844
+- Implementation pixels: 390 x 844
+- State: Trade route, Martin77 selected, 2-for-1 shape, Press intent, populated Steal attempts tier expanded
 
-## Findings
+**Full-view comparison evidence**
 
-No actionable P0, P1, or P2 visual mismatches remain.
+- The implementation preserves the selected target-first hierarchy: title, target controls, five package shapes, Fair/Aggressive/Steal disclosures, intent selector, offer regeneration, and the fixed app navigation.
+- The production header and navigation are the real app components rather than mock replacements. The implementation uses the selected member's live light team palette; the source mock used the default dark palette. This is expected theme behavior, not design drift.
+- The added compact `Trading as` selector is an intentional production requirement for commissioner/team previewing. It replaces the old full page header, team toolbar, and roster summary, so the Trade Board remains the first page task.
+- The first visual pass retained those three legacy blocks and pushed the board below the fold (P1). They were consolidated into the board header. A second pass made each offer too tall by moving Analyze to its own row (P2). The action is now an icon-sized fourth column and multiple offers scan naturally without horizontal overflow.
 
-- Fonts and typography: the implementation uses the app's Rajdhani display face with source-matched condensed headlines, cream body copy, uppercase metadata, and numeric emphasis. Live names and scores wrap or clamp without breaking the composition.
-- Spacing and layout rhythm: the browser measurements align the major source bands: top bar 101px, anniversary ending at 196px, featured card ending at 557px, Power Rankings at 571–992px, Weekly Report at 992–1178px, and the enlarged persistent navigation below. Text-safe min-width, wrapping, and clamping rules keep long live names and report copy inside their columns.
-- Colors and visual tokens: Home is intentionally locked to the source's black/cream/green broadcast palette so member light themes cannot wash it out. Red is absent from the primary composition except when live movement semantics require a down state.
-- Image quality and assets: the real DFL crest, mark, member profile images when available, existing stadium asset, and a dedicated transparent gold-laurel asset are used. The matchup watermark and stadium atmosphere remain subtle enough to preserve text contrast.
-- Copy and content: the source hierarchy and labels are preserved while scores, team names, rankings, movement, records, and report stories come from live DFL data.
+**Focused region comparison evidence**
 
-## Full-view Comparison Evidence
+- Target and shape controls: same order, rounded bordered surfaces, condensed Rajdhani hierarchy, green selected state, and five equal-width shape buttons.
+- Tier headers: same three semantic groups, count display, short explanatory copy, independent disclosure behavior, and a populated tier opens automatically so the page never presents a blank default state.
+- Offer rows: unequal packages remain visibly side-by-side, the package shape and value edge stay above the players, and the Analyze control loads the exact package into the preserved manual analyzer.
 
-`qa/home-comparison.png` contains the original 592 × 1280 source and browser-rendered implementation together. Both use the same four-part Home composition and nearly identical vertical proportions: anniversary masthead, rotating matchup feature, always-visible Power Rankings, and a three-column Weekly Report above the persistent navigation.
+**Required fidelity surfaces**
 
-## Focused Region Comparison Evidence
+- Fonts and typography: existing Rajdhani 600/700 assets are used; hierarchy, casing, wrapping, and compact labels match the app and source.
+- Spacing and layout rhythm: 12px mobile gutters, compact control heights, 7-9px section gaps, and existing card radii/tokens are used. No horizontal overflow at 390px.
+- Colors and visual tokens: all surfaces and semantic states use the current member theme tokens. No hard-coded blue copy or red card gradients were introduced.
+- Image quality and asset fidelity: no generated player photos, fake team logos, placeholder imagery, or new raster assets are used. The real app seal, top bar, and navigation remain intact.
+- Copy and content: the source labels are preserved where useful. Live offers use real Sleeper player/team data and honest `Fair shot`, `Worth a text`, and `Long shot` language.
 
-- Featured card: four tabs, large outcome headline, two-column score treatment, crest watermark, progress rule, pagination dots, and pause control are present and aligned.
-- Power Rankings: header, week context, personal rank, league leader, top three, ellipsis, highlighted personal row, records, and movement match the source structure. The compact state shows the top three plus the signed-in team; the disclosure expands in place to all 12 teams and collapses without navigating away.
-- Weekly Report: three separated highlights, icon rail, compact metadata, stronger titles, and readable two-line live-data handling match the source density.
+**Interaction and runtime evidence**
 
-## Interaction And Runtime Checks
+- All, 1-for-1, 2-for-1, 1-for-2, and 2-for-2 filters returned offers with the live synced league data (12, 9, 12, 12, and 12 in the captured pass).
+- Selecting a generated offer opened the custom analyzer and loaded a non-idle evaluated ticket.
+- Target disclosure, tier disclosures, intent controls, pagination/regeneration, and team selection were exercised in the browser.
+- Browser console errors: none.
+- Repository checks: typecheck, name check, 842 tests, and production build passed.
 
-- Playwright selected My Week, Power Ranks, Next Move, and Report successfully; every tab reported `aria-selected="true"` in turn.
-- The rotation control changed from Pause to Play and preserved its accessible label.
-- The rankings disclosure reported four visible compact rows, 12 expanded rows, and `aria-expanded="true"` after activation.
-- TypeScript, unresolved-name validation, 68 test files / 763 tests, and the production Vite build pass.
-- The only console network responses are the already-known optional `trade_alerts` table 404s; they degrade safely and do not alter or block Home. The table still requires its Supabase migration before trade alerts can activate.
+**Findings**
 
-## Comparison History
+- No actionable P0, P1, or P2 findings remain.
 
-1. Previous release incorrectly validated Analyzer styling instead of Home against the approved mock. That evidence was discarded.
-2. First correct browser capture exposed the saved light member palette washing out the source design and a profile reminder covering the screen. The reminder was dismissed in the QA harness and Home received an isolated dark broadcast token set.
-3. Second capture aligned the major bands but showed undersized chrome, a hidden anniversary tagline, lower utility content entering the first viewport, and tiny report copy. The top and bottom chrome were resized, the incorrect tagline selector was fixed, the dashboard/report heights were measured to the source, and report copy was shortened and enlarged.
-4. User review identified the remaining gaps: the anniversary lacked the mock's gold branches, header chrome was underspecified, live wording could collide, and rankings did not expand in place.
-5. A transparent matched laurel pair was added, the title/tagline columns were separated, the Home header received the mock's structured bell/commissioner/profile treatment, live-text constraints were hardened, and rankings gained an accessible 12-team disclosure.
-6. Final browser capture, automated expanded-state evidence, and combined comparison show no remaining P0/P1/P2 fidelity issues.
+**Follow-up polish**
 
-## Follow-up Polish
+- P3: A future pass could hide zero-count tiers behind an `Other ranges` disclosure, but leaving them visible makes the three negotiation bands predictable and avoids changing the selected structure.
 
-- P3: the mock depicts commissioner-only controls and a profile photo in the header. The live header continues to show controls according to the signed-in member's actual privileges and available profile data.
+**Comparison history**
+
+1. P1: legacy page header, team toolbar, and roster lead block pushed the selected Trade Board below the first viewport. Fixed by consolidating team selection into the board and making Trade Board the page heading.
+2. P2: mobile Analyze action wrapped beneath every offer and made rows materially taller than the source. Fixed by retaining the four-column row and reducing the mobile action to the existing chevron icon.
+3. Post-fix evidence: 390 x 844 capture shows the target, all package filters, all three tiers, and the start of multiple live offers above the fixed navigation with no horizontal overflow.
 
 final result: passed

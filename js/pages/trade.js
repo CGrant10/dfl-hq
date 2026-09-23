@@ -23,33 +23,42 @@ import { suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
-const ordinal = value => {
-  const n = Number(value), mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
-  return `${n}${["th", "st", "nd", "rd"][n % 10] || "th"}`;
+const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
+const shapeLabel = offer => `${offer.sendA.length} FOR ${offer.sendB.length}`;
+const edge = offer => {
+  const high = Math.max(offer.valueToA, offer.valueToB, 1);
+  return Math.round((offer.valueToA - offer.valueToB) / high * 100);
+};
+const tierCopy = {
+  fair: { title: "Fair deals", note: "Good value. Realistic moves.", call: "FAIR SHOT" },
+  aggressive: { title: "Aggressive shots", note: "Bigger swings. Bigger upside.", call: "WORTH A TEXT" },
+  steal: { title: "Steal attempts", note: "Low odds. League-changing upside.", call: "SWING BIG" },
 };
 
-/*
-  WHAT THE LEAD BLOCK IS FOR NOW.
-
-  It used to print a projected finish and four KPIs above the desk - a second
-  summary of the roster on the one page that is not about the roster. The
-  ticket is the lead now, so this is one line: who is trading, and the single
-  fact that should steer which players get tapped.
-*/
-function lead(team, count) {
-  return `<header class="td-who">
-    <div>
-      <small>Trading as</small>
-      <strong>${esc(teamName(team))}</strong>
-      <span>${esc(team.ownerName)} &middot; ${ordinal(team.rank)} of ${count} &middot; ${team.playerIds.length} rostered</span>
-    </div>
-    ${team.need ? `<div class="td-need"><small>Shopping for</small><b>${esc(team.need)}</b></div>` : ""}
-  </header>`;
+function offerPlayerRows(ids, pool) {
+  return ids.map(id => {
+    const player = pool.get(String(id));
+    const initials = (player?.name || String(id)).split(/\s+/).map(part => part[0]).join("").slice(0, 2);
+    return `<span class="tb-player"><i>${esc(initials)}</i><span><b>${esc(player?.name || String(id))}</b><small>${esc([player?.position, player?.nflTeam].filter(Boolean).join(" · "))}</small></span></span>`;
+  }).join("");
 }
 
-const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
-const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || String(id)).join(" + ");
+function offerMarkup(offer, pool) {
+  const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
+    : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
+  return `<article class="tb-offer">
+    <header><span>${shapeLabel(offer)}</span><small>EDGE ${signed(valueEdge).replace(".0", "")}% · ${signed(offer.weeklyDeltaA)} / wk</small><b>${call}</b></header>
+    <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
+  </article>`;
+}
+
+function tierMarkup(tier, offers, pool, open) {
+  const copy = tierCopy[tier];
+  return `<details class="tb-tier is-${tier}" data-tb-tier="${tier}"${open ? " open" : ""}>
+    <summary><span class="tb-tier-mark" aria-hidden="true"></span><span><b>${copy.title} (${offers.length})</b><small>${copy.note}</small></span><svg class="ico tb-tier-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary>
+    <div>${offers.length ? offers.map(offer => offerMarkup(offer, pool)).join("") : `<p class="tb-tier-empty">No ${copy.title.toLowerCase()} in this set.</p>`}</div>
+  </details>`;
+}
 
 /*
   THE LAB BELONGS BESIDE THE DESK.
@@ -62,36 +71,34 @@ const playerNames = (ids, pool) => ids.map(id => pool.get(String(id))?.name || S
 function tradeLab(team, teams, pool, shop) {
   const otherTeams = teams.filter(item => item.id !== team.id);
   const partner = otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
-  if (shop.side === "theirs" && !shop.partnerId) shop.partnerId = partner?.id || "";
-  const anchorTeam = shop.side === "theirs" ? partner : team;
-  const players = (anchorTeam?.playerIds || []).map(id => pool.get(id)).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const first = players.find(player => player.id === shop.playerA) || players[0];
-  const second = players.find(player => player.id === shop.playerB && player.id !== first?.id);
-  const anchors = [first?.id, second?.id].filter(Boolean);
-  const offers = anchors.length ? suggestTrades({ teams, teamId: team.id, playerIds: anchors, partnerId: shop.partnerId || undefined, anchorTeamId: anchorTeam?.id, pool, limit: 8 }) : [];
-  const playerOptions = (selected, exclude, optional = false) => `${optional ? '<option value="">None</option>' : ""}${players.filter(player => player.id !== exclude).map(player => `<option value="${esc(player.id)}" ${player.id === selected ? "selected" : ""}>${esc(player.name)} · ${player.position} · ${player.tradeValue}</option>`).join("")}`;
-  const controls = `<div class="ta-shop-controls">
-    <label><span>Player from</span><select data-ta-shop-side><option value="mine" ${shop.side !== "theirs" ? "selected" : ""}>My team</option><option value="theirs" ${shop.side === "theirs" ? "selected" : ""}>Another team</option></select></label>
-    <label><span>Trade with</span><select data-ta-shop-partner>${shop.side === "theirs" ? "" : '<option value="">Any team</option>'}${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(shop.partnerId) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
-    <label><span>Player 1</span><select data-ta-player="a">${playerOptions(first?.id, second?.id)}</select></label>
-    <label><span>Player 2</span><select data-ta-player="b">${playerOptions(second?.id, first?.id, true)}</select></label>
-  </div>`;
-  return `<details class="ta-report-section ta-trades"${shop.expanded ? " open" : ""}>
-    <summary class="ta-report-title"><div><small>SMART STARTS</small><h2>Deals worth exploring</h2></div><span class="ta-fold-hint">Optional</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
-    <div class="ta-section-body">
-      ${controls}
-      ${offers.length ? `<div class="ta-deal-grid">${offers.map(offer => {
-        const call = recommendationFor(offer);
-        return `<article class="ta-deal-card">
-          <header><div><small>${esc(teamName(offer.other))}</small><strong>${offer.sendA.length === 1 && offer.sendB.length === 1 ? "Straight-up deal" : "Package deal"}</strong></div><span class="td-call is-${call.tone}">${call.action}</span></header>
-          <div class="ta-deal-flow"><div><small>YOU SEND</small><b>${esc(playerNames(offer.sendA, pool))}</b></div><i aria-hidden="true">→</i><div><small>YOU GET</small><b>${esc(playerNames(offer.sendB, pool))}</b></div></div>
-          <dl><div><dt>Balance</dt><dd>${offer.fairness}%</dd></div><div><dt>Your lineup</dt><dd class="${offer.weeklyDeltaA >= 0 ? "positive" : "negative"}">${signed(offer.weeklyDeltaA)} / wk</dd></div></dl>
-          <button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze this deal</button>
-        </article>`;
-      }).join("")}</div>`
-        : `<div class="ta-empty">No balanced offers found for this package.</div>`}
-    </div>
-  </details>`;
+  shop.partnerId = partner?.id || "";
+  const players = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  const target = players.find(player => String(player.id) === String(shop.targetId)) || players[0];
+  shop.targetId = target?.id || "";
+  const shape = shop.shape || "all", intent = shop.intent || "press";
+  const allOffers = target ? suggestTrades({ teams, teamId: team.id, playerId: target.id, partnerId: partner.id,
+    anchorTeamId: partner.id, pool, limit: 48, shapes: shape === "all" ? [] : [shape], intent }) : [];
+  const pages = Math.max(1, Math.ceil(allOffers.length / 12));
+  shop.page = (shop.page || 0) % pages;
+  const offers = allOffers.slice(shop.page * 12, shop.page * 12 + 12);
+  const groups = Object.fromEntries(Object.keys(tierCopy).map(tier => [tier, offers.filter(offer => offer.tier === tier)]));
+  const openTier = groups[shop.openTier]?.length ? shop.openTier
+    : ["aggressive", "fair", "steal"].find(tier => groups[tier].length) || shop.openTier;
+  shop.openTier = openTier;
+  const targetName = target?.name || "Choose a player";
+  return `<section class="tb-board">
+    <div class="tb-head-row"><header class="tb-head"><small>DFLYZER</small><h1>Trade Board</h1><p>Pick your pressure. Send something worth answering.</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div>
+    <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
+    <details class="tb-target" data-tb-target${shop.targetOpen ? " open" : ""}>
+      <summary><span class="tb-target-avatar">${esc(targetName.split(/\s+/).map(part => part[0]).join("").slice(0, 2))}</span><span><small>TARGET</small><b>${esc(targetName)}</b><em>${esc([target?.position, teamName(partner)].filter(Boolean).join(" · "))}</em></span><i>CHANGE</i></summary>
+      <div class="tb-target-controls"><label><span>Team</span><select data-ta-shop-partner>${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label><label><span>Player</span><select data-ta-target>${players.map(player => `<option value="${esc(player.id)}" ${String(player.id) === String(target?.id) ? "selected" : ""}>${esc(player.name)} · ${player.position} · ${Math.round(player.tradeValue)}</option>`).join("")}</select></label></div>
+    </details>
+    <div class="tb-shapes" aria-label="Package shape">${[["all", "ALL"], ["1-1", "1↔1"], ["2-1", "2↔1"], ["1-2", "1↔2"], ["2-2", "2↔2"]].map(([value, label]) => `<button type="button" data-tb-shape="${value}" class="${shape === value ? "is-active" : ""}">${label}</button>`).join("")}</div>
+    <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, openTier === "fair")}${tierMarkup("aggressive", groups.aggressive, pool, openTier === "aggressive")}${tierMarkup("steal", groups.steal, pool, openTier === "steal")}</div>
+    ${offers.length ? "" : `<div class="ta-empty">No credible offers for this exact target and shape. Try All packages or another target.</div>`}
+    <div class="tb-intent" aria-label="Offer intent"><span>MY INTENT</span>${[["fair", "FAIR"], ["press", "PRESS"], ["swing", "SWING BIG"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div>
+    <button type="button" class="tb-generate" data-tb-generate>GENERATE ${allOffers.length > 12 ? "12 NEW" : "BEST"} OFFERS</button>
+  </section>`;
 }
 
 /*
@@ -138,21 +145,11 @@ function page(data, tradeAlerts = []) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
-  const shop = { side: "mine", partnerId: "", playerA: "", playerB: "", expanded: false };
+  const shop = { partnerId: "", targetId: "", shape: "all", intent: "press", page: 0,
+    openTier: "aggressive", targetOpen: false, customOpen: false };
 
   return {
-    markup: `<header class="page-head ta-page-head">
-        <div><h1>Trade Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · DFL full-PPR scoring</p></div>
-        <a class="btn ghost small" href="#/analyzer">Analyzer</a>
-      </header>
-      ${completedTradeMarkup(tradeAlerts, selectedTransactionId)}
-      <div class="ta-toolbar">
-        <label><span>Your team</span>
-          <select data-td-team>${data.teams.map(team =>
-            `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select>
-        </label>
-      </div>
-      <main class="ta-report" data-td-body></main>`,
+    markup: `${completedTradeMarkup(tradeAlerts, selectedTransactionId)}<main class="ta-report td-page" data-td-body></main>`,
 
     wire(view) {
       const body = view.querySelector("[data-td-body]");
@@ -162,12 +159,12 @@ function page(data, tradeAlerts = []) {
 
       const draw = () => {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
-        body.innerHTML = `${lead(team, data.teams.length)}
-          <section class="ta-report-section td-deck">
-            <div class="ta-section-body" data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
-            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div>
-          </section>
-          ${tradeLab(team, data.teams, data.pool, shop)}`;
+        body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}
+          <details class="ta-report-section td-custom"${shop.customOpen ? " open" : ""}>
+            <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Analyze a custom deal</h2></div><span class="ta-fold-hint">Any package</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
+            <div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
+            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>
+          </details>`;
         const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
@@ -178,21 +175,24 @@ function page(data, tradeAlerts = []) {
             if (share) share.disabled = !current;
           },
         });
-        body.querySelector(".ta-trades")?.addEventListener("toggle", event => {
-          shop.expanded = event.currentTarget.open;
-        });
+        body.querySelector("[data-tb-target]")?.addEventListener("toggle", event => { shop.targetOpen = event.currentTarget.open; });
+        body.querySelector(".td-custom")?.addEventListener("toggle", event => { shop.customOpen = event.currentTarget.open; });
+        body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
+          if (event.currentTarget.open) shop.openTier = event.currentTarget.dataset.tbTier;
+        }));
       };
       body.addEventListener("change", event => {
-        if (event.target.matches("[data-ta-shop-side]")) {
-          shop.side = event.target.value; shop.playerA = ""; shop.playerB = "";
-          if (shop.side === "theirs" && !shop.partnerId) shop.partnerId = data.teams.find(item => item.id !== selectedId)?.id || "";
+        if (event.target.matches("[data-td-team]")) {
+          selectedId = event.target.value;
+          trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
+          shop.partnerId = ""; shop.targetId = ""; shop.shape = "all"; shop.intent = "press"; shop.page = 0;
+          shop.openTier = "aggressive"; shop.targetOpen = false; shop.customOpen = false;
           draw(); return;
         }
         if (event.target.matches("[data-ta-shop-partner]")) {
-          shop.partnerId = event.target.value; shop.playerA = ""; shop.playerB = ""; draw(); return;
+          shop.partnerId = event.target.value; shop.targetId = ""; shop.page = 0; draw(); return;
         }
-        if (event.target.matches('[data-ta-player="a"]')) { shop.playerA = event.target.value; draw(); return; }
-        if (event.target.matches('[data-ta-player="b"]')) { shop.playerB = event.target.value; draw(); }
+        if (event.target.matches("[data-ta-target]")) { shop.targetId = event.target.value; shop.page = 0; draw(); }
       });
       body.addEventListener("click", async event => {
         const shareButton = event.target.closest("[data-td-share]");
@@ -216,6 +216,11 @@ function page(data, tradeAlerts = []) {
           }
           return;
         }
+        const shape = event.target.closest("[data-tb-shape]");
+        if (shape) { shop.shape = shape.dataset.tbShape; shop.page = 0; draw(); return; }
+        const intent = event.target.closest("[data-tb-intent]");
+        if (intent) { shop.intent = intent.dataset.tbIntent; shop.page = 0; draw(); return; }
+        if (event.target.closest("[data-tb-generate]")) { shop.page += 1; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
         trade.memberIds = [button.dataset.partner];
@@ -223,15 +228,9 @@ function page(data, tradeAlerts = []) {
           new Set((button.dataset.sendA || "").split(",").filter(Boolean)),
           new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
         ];
+        shop.customOpen = true;
         draw();
         body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      view.querySelector("[data-td-team]").addEventListener("change", event => {
-        selectedId = event.currentTarget.value;
-        /* Both sides referred to rosters that are no longer in play. */
-        trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
-        shop.side = "mine"; shop.partnerId = ""; shop.playerA = ""; shop.playerB = ""; shop.expanded = false;
-        draw();
       });
       draw();
     },

@@ -16,11 +16,13 @@ describe("trade analyzer layout", () => {
     expect(markup.indexOf('class="td-builder"')).toBeLessThan(markup.indexOf("data-td-verdict"));
   });
 
-  it("renders suggestions as a disclosure that starts closed", () => {
+  it("renders the generated Trade Board before the custom analyzer", () => {
     const source = readFileSync(new URL("./pages/trade.js", import.meta.url), "utf8");
 
-    expect(source).toContain('<details class="ta-report-section ta-trades"${shop.expanded ? " open" : ""}>');
-    expect(source).toContain('expanded: false');
+    expect(source).toContain('<section class="tb-board">');
+    expect(source).toContain('class="ta-report-section td-custom"');
+    expect(source.indexOf('${tradeLab(team, data.teams, data.pool, shop)}')).toBeLessThan(source.indexOf('class="ta-report-section td-custom"'));
+    expect(source).toContain('openTier: "aggressive"');
   });
 
   it("scrolls a loaded suggestion to its analysis result", () => {
