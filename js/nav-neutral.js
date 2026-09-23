@@ -7,4 +7,3 @@ function useSteelSymbols(root=document){root.querySelectorAll?.('#tabbar use, #m
 function repairGolfRoute(){const bar=document.getElementById('tabbar');if(!bar)return;const golfUse=bar.querySelector('use[href="#i-golf"],use[href$="#i-golf"],use[href="#i-golf-steel"],use[href$="#i-golf-steel"]');const golf=golfUse?.closest('a,.tabmore,button');if(!golf)return;if(golf.tagName==='A')golf.setAttribute('href','#/golf');golf.dataset.route='golf';}
 function apply(){ensureNeutralStyle();useSteelSymbols();repairGolfRoute();}
 apply();new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
-document.addEventListener('click',event=>{const golf=event.target.closest('#tabbar [data-route="golf"]');if(!golf)return;if(location.hash.split('?')[0]!=='#/golf'){event.preventDefault();location.hash='#/golf';}});

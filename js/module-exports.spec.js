@@ -164,6 +164,16 @@ describe("the initial app shell", () => {
     expect(router).toContain('new Event("dfl:app-ready")');
   });
 
+  it("commits bottom-tab navigation before moving its indicator", () => {
+    const router = fs.readFileSync("js/router.js", "utf8");
+    const neutralNav = fs.readFileSync("js/nav-neutral.js", "utf8");
+    expect(router).toContain('bar?.addEventListener("click"');
+    expect(router).toContain("location.hash = nextHash");
+    expect(router).toContain("view?.dataset.route !== name");
+    expect(router).not.toContain('bar?.addEventListener("pointerdown"');
+    expect(neutralNav).not.toContain("document.addEventListener('click'");
+  });
+
   it("starts network background work after the first route", () => {
     const app = fs.readFileSync("js/app.js", "utf8");
     const ready = app.indexOf('window.addEventListener("dfl:app-ready"');

@@ -88,6 +88,36 @@ function syncTabIndicator() {
 }
 
 /*
+  THE TAB BAR MUST NAVIGATE BEFORE IT ANIMATES.
+
+  The old pointerdown listener moved the indicator before the browser had
+  committed the anchor navigation. On touch screens a cancelled click could
+  therefore leave the green rail on Home while the previous page stayed
+  mounted. Own the click here instead. A same-hash tap also repairs the rare
+  case where the URL says Home but an interrupted render left another route in
+  #view; normal taps on the already-open page remain a no-op.
+*/
+function handleTabNavigation(event, bar) {
+  const target = event.target?.closest?.("a[data-route]");
+  if (!target || !bar.contains(target)) return;
+  const name = target.dataset.route;
+  if (!routes[name]) return;
+  const href = target.getAttribute("href") || `#/${name}`;
+  const nextHash = href.startsWith("#/") ? href : `#/${name}`;
+  event.preventDefault();
+  if (location.hash !== nextHash) {
+    location.hash = nextHash;
+    return;
+  }
+  const view = document.getElementById("view");
+  if (view?.dataset.route !== name && !view?.classList.contains("is-route-loading")) {
+    void renderRoute();
+    return;
+  }
+  syncTabIndicator();
+}
+
+/*
   DFL predates the Sleeper archive by two seasons. The synced rows remain the
   authority for records, points, averages and standings; only labels that mean
   "how many DFL seasons" get the legacy tenure added. Keeping this at the
@@ -294,10 +324,7 @@ export function startRouter() {
   ensureSportsbookNav();
   startMemberLock();
   const bar = document.getElementById("tabbar");
-  bar?.addEventListener("pointerdown", (event) => {
-    const target = event.target.closest("a[data-route]");
-    if (target) setTabIndicatorTarget(target);
-  }, { passive: true });
+  bar?.addEventListener("click", (event) => handleTabNavigation(event, bar));
   window.addEventListener("resize", syncTabIndicator);
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
