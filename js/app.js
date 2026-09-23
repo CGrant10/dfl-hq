@@ -22,6 +22,7 @@ import { trapFocus } from "./focus-trap.js";
 import { forgetVerifiedPin } from "./member-lock.js";
 import { mountSeasonNavigation } from "./season-nav.js";
 import { mountNotificationBell } from "./notifications.js";
+import { mountQuickSleeperSync, refreshQuickSleeperSync } from "./quick-sleeper-sync.js";
 
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
@@ -161,6 +162,7 @@ const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.clas
 */
 const closeMore=()=>{moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
 const openMore=()=>{
+  void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
   syncMore();
   releaseMore?.();
@@ -176,6 +178,7 @@ document.getElementById("more-close")?.addEventListener("click",closeMore);
 moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});
 moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore()});
 window.addEventListener("hashchange",closeMore);
+window.addEventListener("dfl:quick-sync-complete",()=>{closeMore();renderRoute();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMore()});
 if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;const previous=currentMember();if(previous&&String(previous.id)!==String(member.id))forgetVerifiedPin(previous.id);selectMember(member);await adoptSelectedMemberTheme();paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
 welcomeCancel?.addEventListener("click",closeWelcome);
@@ -231,6 +234,7 @@ window.addEventListener("resize",moveTabIndicator);
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   mountNotificationBell();
+  mountQuickSleeperSync();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */
