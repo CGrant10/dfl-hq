@@ -136,8 +136,8 @@ function tradeLab(team, teams, pool, shop) {
       <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
       <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
     </div>
-    <div class="tb-intent" aria-label="Offer intent"><span>MY INTENT</span>${[["fair", "FAIR"], ["press", "PRESS"], ["swing", "SWING BIG"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div>
-    <button type="button" class="tb-generate" data-tb-generate>SHOW ANOTHER BATCH · ${allOffers.length} FOUND</button>
+    <div class="tb-intent" aria-label="Offer intent"><span>MY INTENT</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "FAIR"], ["press", "PRESS"], ["swing", "SWING BIG"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
+    <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label>${shop.justRefreshed ? "OFFERS REFRESHED" : "SHOW ANOTHER BATCH"} · ${allOffers.length} FOUND</span></button>
     <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, shop.openTiers.has("fair"), fullGroups.fair.length)}${tierMarkup("aggressive", groups.aggressive, pool, shop.openTiers.has("aggressive"), fullGroups.aggressive.length)}${tierMarkup("steal", groups.steal, pool, shop.openTiers.has("steal"), fullGroups.steal.length)}</div>
     ${allOffers.length ? "" : `<div class="ta-empty">No offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
   </section>`;
@@ -228,6 +228,20 @@ function page(data, tradeAlerts = []) {
           if (event.currentTarget.open) shop.openTiers.add(tier);
           else shop.openTiers.delete(tier);
         }));
+        if (shop.justRefreshed) {
+          const stamp = shop.refreshStamp;
+          setTimeout(() => {
+            if (stamp !== shop.refreshStamp) return;
+            shop.justRefreshed = false;
+            const button = body.querySelector("[data-tb-generate]");
+            button?.classList.remove("is-refreshed");
+            const label = button?.querySelector("[data-tb-generate-label]");
+            if (label) label.textContent = label.textContent.replace("OFFERS REFRESHED", "SHOW ANOTHER BATCH");
+          }, 1200);
+        }
+      };
+      const refreshOffers = () => {
+        shop.page = 0; shop.justRefreshed = true; shop.refreshStamp = (shop.refreshStamp || 0) + 1; draw();
       };
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
@@ -243,7 +257,7 @@ function page(data, tradeAlerts = []) {
         }
         if (event.target.matches("[data-ta-shop-partner]")) {
           shop.partnerId = event.target.value; shop.anchorPartnerId = ""; shop.receiveAnchors = [];
-          shop.page = 0; shop.openTiers.clear(); draw(); return;
+          shop.openTiers.clear(); refreshOffers(); return;
         }
         const anchorSelect = event.target.closest("[data-tb-add-anchor]");
         if (anchorSelect && anchorSelect.value) {
@@ -258,7 +272,7 @@ function page(data, tradeAlerts = []) {
             const countKey = side === "send" ? "sendCount" : "receiveCount";
             if (shop[countKey] !== "any" && Number(shop[countKey]) < list.length) shop[countKey] = "any";
           }
-          shop.page = 0; draw(); return;
+          refreshOffers(); return;
         }
         if (event.target.matches("[data-tb-send-count], [data-tb-receive-count]")) {
           const isSend = event.target.matches("[data-tb-send-count]");
@@ -267,7 +281,7 @@ function page(data, tradeAlerts = []) {
           const other = isSend ? "receiveCount" : "sendCount";
           if (shop.sendCount !== "any" && shop.receiveCount !== "any"
             && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop[other] = "any";
-          shop.page = 0; draw(); return;
+          refreshOffers(); return;
         }
         if (event.target.matches("[data-tb-max]")) {
           shop.maxPlayers = Number(event.target.value);
@@ -275,7 +289,7 @@ function page(data, tradeAlerts = []) {
           if (shop.receiveCount !== "any" && Number(shop.receiveCount) >= shop.maxPlayers) shop.receiveCount = "any";
           if (shop.sendCount !== "any" && shop.receiveCount !== "any"
             && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop.receiveCount = "any";
-          shop.page = 0; draw();
+          refreshOffers();
         }
       });
       body.addEventListener("input", event => {
@@ -313,10 +327,20 @@ function page(data, tradeAlerts = []) {
           const side = removeAnchor.dataset.tbRemoveAnchor;
           const key = side === "send" ? "sendAnchors" : "receiveAnchors";
           shop[key] = shop[key].filter(id => String(id) !== String(removeAnchor.dataset.playerId));
-          shop.page = 0; draw(); return;
+          refreshOffers(); return;
         }
         const intent = event.target.closest("[data-tb-intent]");
-        if (intent) { shop.intent = intent.dataset.tbIntent; shop.page = 0; draw(); return; }
+        if (intent) {
+          const value = intent.dataset.tbIntent;
+          if (value === shop.intent) return;
+          shop.intent = value;
+          const options = intent.closest(".tb-intent-options");
+          if (options) options.dataset.intent = value;
+          options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button === intent));
+          const stamp = shop.intentStamp = (shop.intentStamp || 0) + 1;
+          setTimeout(() => { if (stamp === shop.intentStamp) refreshOffers(); }, 260);
+          return;
+        }
         if (event.target.closest("[data-tb-generate]")) { shop.page += 1; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
