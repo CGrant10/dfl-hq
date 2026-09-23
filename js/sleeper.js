@@ -191,7 +191,11 @@ const STATE_MS      = 15 * 60 * 1000;
 
 /** A manual league sync is an explicit request for a fresh analyzer model. */
 export async function clearSleeperAnalysisCache() {
-  await Promise.all([caches.delete(STATS_CACHE), caches.delete(MARKET_CACHE)]);
+  playersPromise = null;
+  await Promise.all([
+    caches.delete(STATS_CACHE), caches.delete(MARKET_CACHE), caches.delete(WEEKLY_CACHE),
+    caches.delete(TREND_CACHE), caches.delete(PLAYER_CACHE),
+  ]);
 }
 
 /**
@@ -274,12 +278,14 @@ export async function loadTrendingPlayers({ hours = 24, limit = 200 } = {}) {
 // ---------------------------------------------------------------------
 // Rosters come back as bare player ids ("4034"). The id -> name map is a
 // separate ~5MB download, far too big to pull on every page load, so we
-// fetch it only when something actually needs to show names and keep it
-// in the Cache API for a week.
+// fetch it only when something actually needs names or long-term injury
+// metadata and keep it in the Cache API for one day, matching Sleeper's
+// recommendation for this large endpoint.
 // ---------------------------------------------------------------------
 
-const PLAYER_CACHE = "sleeper-players-v1";
+const PLAYER_CACHE = "sleeper-players-v2";
 const PLAYER_URL   = `${BASE}/players/nfl`;
+const PLAYER_CACHE_MS = 24 * 60 * 60 * 1000;
 
 let playersPromise = null;
 
@@ -296,7 +302,7 @@ export function loadPlayers() {
 
     if (hit) {
       const age = Date.now() - Number(hit.headers.get("x-fetched-at") || 0);
-      if (age < WEEK_MS) return trim(await hit.json());
+      if (age < PLAYER_CACHE_MS) return trim(await hit.json());
     }
 
     const res = await fetch(PLAYER_URL);
@@ -325,6 +331,11 @@ function trim(map) {
       n: p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || id,
       p: p.position || "",
       t: p.team || "FA",
+      i: p.injury_status || null,
+      s: p.status || null,
+      pp: p.practice_participation || null,
+      is: p.injury_start_date || null,
+      nu: p.news_updated || null,
     };
   }
   return out;

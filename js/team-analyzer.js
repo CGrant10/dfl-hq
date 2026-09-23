@@ -5,6 +5,8 @@ export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
 const STARTERS = { QB: 1, RB: 2, WR: 2, TE: 1 };
 const FLEX_POSITIONS = new Set(["RB", "WR", "TE"]);
 const DEPTH_WEIGHTS = [1, .84, .68, .52, .36];
+const OUT_STATUSES = new Set(["Out", "IR", "PUP", "Sus", "NA", "DNR"]);
+const RISKY_STATUSES = new Set(["Questionable", "Doubtful"]);
 const round = (value, digits = 1) => {
   const scale = 10 ** digits;
   return Math.round((Number(value) || 0) * scale) / scale;
@@ -12,6 +14,35 @@ const round = (value, digits = 1) => {
 const finite = value => value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const playerPosition = player => String(player?.p || player?.position || "").toUpperCase();
 const projectionId = row => row?.player_id == null ? "" : String(row.player_id);
+
+function recentProduction(weeks = [], scoringSettings = null) {
+  const byPlayer = new Map();
+  for (const rows of weeks || []) for (const row of rows || []) {
+    const id = projectionId(row);
+    const games = finite(row?.stats?.gp);
+    if (!id || games === 0 || !row?.stats) continue;
+    const points = scorePlayer(row.stats, scoringSettings);
+    if (!Number.isFinite(points) || (games == null && points === 0)) continue;
+    if (!byPlayer.has(id)) byPlayer.set(id, []);
+    byPlayer.get(id).push(points);
+  }
+  return byPlayer;
+}
+
+function injuryProfile(status, playerStatus) {
+  const injuryStatus = String(status || "").trim() || null;
+  const rosterStatus = String(playerStatus || "").trim() || null;
+  const reserve = /injured reserve|physically unable|pup/i.test(rosterStatus || "");
+  const isOut = reserve || OUT_STATUSES.has(injuryStatus);
+  const isRisky = !isOut && RISKY_STATUSES.has(injuryStatus);
+  const missedGames = reserve || ["IR", "PUP"].includes(injuryStatus) ? 3
+    : ["Out", "Sus", "NA", "DNR"].includes(injuryStatus) ? 1
+    : injuryStatus === "Doubtful" ? .65 : injuryStatus === "Questionable" ? .15 : 0;
+  const valueFactor = reserve || ["IR", "PUP"].includes(injuryStatus) ? .86
+    : injuryStatus === "Out" ? .95 : injuryStatus === "Doubtful" ? .97
+    : injuryStatus === "Questionable" ? .99 : 1;
+  return { injuryStatus, playerStatus: rosterStatus, isOut, isRisky, missedGames, valueFactor };
+}
 
 function adpFrom(row, scoringFormat = "ppr") {
   const stats = row?.stats || {};
@@ -39,9 +70,12 @@ function percentileMap(entries, valueOf, { lowerIsBetter = false } = {}) {
  * the completed season keeps one hot forecast from erasing proven production.
  */
 export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}, currentStats = {},
-                                  projections = [], scoringSettings = null,
+                                  projections = [], weeklyProjections = [], recentStats = [], trending = null,
+                                  scoringSettings = null,
                                   scoringFormat = "ppr" } = {}) {
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
+  const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
+  const recentById = recentProduction(recentStats, scoringSettings);
   const ids = [...new Set(rosters.flatMap(roster => Array.isArray(roster?.players) ? roster.players.map(String) : []))];
   const list = ids.map(id => {
     const meta = players[id] || projectionById.get(id)?.player || {};
@@ -49,6 +83,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const priorLine = previousStats[id] || null;
     const currentLine = currentStats[id] || null;
     const projection = projectionById.get(id) || null;
+    const weekly = weeklyById.get(id) || null;
+    const weeklyMeta = weekly?.player || {};
+    const availability = injuryProfile(weekly?.injury_status || weeklyMeta.injury_status || meta?.i || meta?.injury_status,
+      weeklyMeta.status || meta?.s || meta?.status);
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
     const games = finite(priorLine?.gp);
@@ -63,6 +101,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const currentPoints = currentLine ? scorePlayer(currentLine, scoringSettings) : null;
     const currentGames = Math.max(0, Math.min(17, finite(currentLine?.gp) || 0));
     const currentPace = currentGames > 0 ? currentPoints / currentGames * 17 : null;
+    const recentScores = recentById.get(id) || [];
+    const recentAverage = recentScores.length ? recentScores.reduce((sum, points) => sum + points, 0) / recentScores.length : null;
     /* Current production earns influence gradually: one wild Sunday cannot
        rewrite a season, but by midseason the model should reflect this year
        more than its preseason priors. Actual points already earned are never
@@ -73,12 +113,25 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const currentWeight = Math.min(.65, currentGames / 6 * .65);
     const baselinePerGame = baselinePoints == null ? null : baselinePoints / 17;
     const currentPerGame = currentGames > 0 ? currentPoints / currentGames : null;
-    const forwardPerGame = baselinePerGame != null && currentPerGame != null
-      ? baselinePerGame * (1 - currentWeight) + currentPerGame * currentWeight
-      : baselinePerGame ?? currentPerGame;
+    /* Recent form is a correction inside the in-season share, not a second
+       full-strength input. Three hot Sundays can move the forecast, but they
+       cannot erase the season projection or the larger current sample. */
+    const formWeight = Math.min(.3, recentScores.length / 3 * .3);
+    const formPerGame = currentPerGame != null && recentAverage != null
+      ? currentPerGame * (1 - formWeight) + recentAverage * formWeight
+      : currentPerGame ?? recentAverage;
+    const forwardPerGame = baselinePerGame != null && formPerGame != null
+      ? baselinePerGame * (1 - currentWeight) + formPerGame * currentWeight
+      : baselinePerGame ?? formPerGame;
+    const remainingGames = Math.max(0, 17 - currentGames);
     const expectedPoints = currentGames > 0 && forwardPerGame != null
-      ? currentPoints + forwardPerGame * Math.max(0, 17 - currentGames)
-      : baselinePoints;
+      ? currentPoints + forwardPerGame * Math.max(0, remainingGames - Math.min(remainingGames, availability.missedGames))
+      : baselinePoints == null ? null : baselinePoints - (baselinePerGame || 0) * Math.min(17, availability.missedGames);
+    const priorWindowGames = Math.max(0, currentGames - recentScores.length);
+    const priorWindowAverage = priorWindowGames >= 2
+      ? (currentPoints - recentScores.reduce((sum, points) => sum + points, 0)) / priorWindowGames
+      : baselinePerGame;
+    const recentDelta = recentAverage != null && priorWindowAverage != null ? recentAverage - priorWindowAverage : null;
     return {
       id,
       name: meta?.n || meta?.full_name || id,
@@ -90,10 +143,21 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       currentPoints: finite(currentPoints),
       currentGames,
       currentPace: finite(currentPace),
+      recentAverage: finite(recentAverage),
+      recentGames: recentScores.length,
+      recentDelta: finite(recentDelta),
       expectedPoints: finite(expectedPoints),
       adp: adpFrom(projection, scoringFormat),
       games,
       hasPriorProduction,
+      injuryStatus: availability.injuryStatus,
+      playerStatus: availability.playerStatus,
+      practiceParticipation: weeklyMeta.practice_participation || meta?.pp || meta?.practice_participation || null,
+      isOut: availability.isOut,
+      isRisky: availability.isRisky,
+      injuryValueFactor: availability.valueFactor,
+      marketAdds: Number(trending?.adds?.get?.(id)) || 0,
+      marketDrops: Number(trending?.drops?.get?.(id)) || 0,
     };
   }).filter(player => ANALYZER_POSITIONS.includes(player.position));
 
@@ -122,16 +186,26 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       : known.length ? known[0] : 0;
     const expectedPerGame = (player.expectedPoints || 0) / 17;
     const lastPerGame = player.hasPriorProduction ? player.lastPoints / Math.max(1, player.games || 17) : null;
+    const recentTrend = player.recentGames >= 2 && player.recentDelta != null
+      ? player.recentDelta > Math.max(1.5, Math.abs((player.recentAverage || 0) - player.recentDelta) * .15) ? "up"
+        : player.recentDelta < -Math.max(1.5, Math.abs((player.recentAverage || 0) - player.recentDelta) * .15) ? "down" : "steady"
+      : null;
+    const baseTradeValue = value * 99 + 1;
+    const marketActivity = player.marketAdds + player.marketDrops;
+    const marketBalance = marketActivity >= 25 ? (player.marketAdds - player.marketDrops) / marketActivity : 0;
+    const marketFactor = 1 + marketBalance * .02;
     pool.set(player.id, {
       ...player,
       expectedPoints: player.expectedPoints == null ? 0 : round(player.expectedPoints, 2),
       expectedPerGame: round(expectedPerGame, 2),
       lastPerGame: lastPerGame == null ? null : round(lastPerGame, 2),
-      trend: lastPerGame == null ? "new" : expectedPerGame - lastPerGame > 1.25 ? "up"
-        : lastPerGame - expectedPerGame > 1.25 ? "down" : "steady",
+      trend: recentTrend || (lastPerGame == null ? "new" : expectedPerGame - lastPerGame > 1.25 ? "up"
+        : lastPerGame - expectedPerGame > 1.25 ? "down" : "steady"),
+      trendBasis: recentTrend ? "recent" : lastPerGame == null ? "projection" : "year-over-year",
+      marketTrend: marketBalance > .2 ? "up" : marketBalance < -.2 ? "down" : "steady",
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
-      tradeValue: Math.max(1, Math.min(100, Math.round(value * 99 + 1))),
+      tradeValue: Math.max(1, Math.min(100, Math.round(baseTradeValue * player.injuryValueFactor * marketFactor))),
     });
   }
   return pool;

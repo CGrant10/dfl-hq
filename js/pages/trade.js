@@ -39,7 +39,8 @@ function offerPlayerRows(ids, pool) {
   return ids.map(id => {
     const player = pool.get(String(id));
     const initials = (player?.name || String(id)).split(/\s+/).map(part => part[0]).join("").slice(0, 2);
-    return `<span class="tb-player"><i>${esc(initials)}</i><span><b>${esc(player?.name || String(id))}</b><small>${esc([player?.position, player?.nflTeam].filter(Boolean).join(" · "))}</small></span></span>`;
+    const signal = player?.injuryStatus || (player?.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
+    return `<span class="tb-player"><i>${esc(initials)}</i><span><b>${esc(player?.name || String(id))}</b><small>${esc([player?.position, player?.nflTeam, signal].filter(Boolean).join(" · "))}</small></span></span>`;
   }).join("");
 }
 

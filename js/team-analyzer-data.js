@@ -1,5 +1,5 @@
 import { db } from "./supabase.js";
-import { loadMarketAdp, loadPlayers, loadSeasonStats } from "./sleeper.js";
+import { loadMarketAdp, loadNflState, loadPlayers, loadSeasonStats, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } from "./sleeper.js";
 import { scoringFormat } from "./dfl-scoring.js";
 import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
 import { loadMemberDirectory } from "./members.js";
@@ -19,10 +19,11 @@ let analyzerEpoch = 0;
  * already painted.
  */
 async function fetchAnalyzerData() {
-  const [leagueRes, rosterRes, memberRes] = await Promise.all([
+  const [leagueRes, rosterRes, memberRes, nflStateRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
     loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
+    loadNflState().catch(() => ({ data: null, fetchedAt: 0, stale: true })),
   ]);
   const error = leagueRes.error || rosterRes.error || memberRes.error;
   if (error) throw error;
@@ -45,7 +46,17 @@ async function fetchAnalyzerData() {
   });
   const projectionSeason = Number(league.season) || rosterSeason;
   const format = scoringFormat(league.scoring_settings);
-  const [players, statsRes, currentStatsRes, projectionRes, matchupRes] = await Promise.all([
+  const nflState = nflStateRes?.data || null;
+  const liveWeek = Number(nflState?.season) === projectionSeason && nflState?.season_type === "regular"
+    ? Math.max(0, Math.min(18, Number(nflState?.week) || 0)) : 0;
+  const recentWeeks = liveWeek ? Array.from({ length: Math.min(3, liveWeek) }, (_, index) => liveWeek - index).reverse() : [];
+  const liveSignals = liveWeek ? Promise.all([
+    loadWeeklyProjections(projectionSeason, liveWeek).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    Promise.all(recentWeeks.map(week => loadWeeklyStats(projectionSeason, week)
+      .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
+    loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
+  ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending]] = await Promise.all([
     loadPlayers(),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
@@ -56,6 +67,7 @@ async function fetchAnalyzerData() {
     db().from("sleeper_matchups")
       .select("season,week,roster1,user1,score1,roster2,user2,score2")
       .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
+    liveSignals,
   ]);
   const pool = buildPlayerPool({
     rosters: namedRosters,
@@ -63,6 +75,9 @@ async function fetchAnalyzerData() {
     previousStats: statsRes.data || {},
     currentStats: currentStatsRes.data || {},
     projections: projectionRes.data || [],
+    weeklyProjections: weeklyProjectionRes.data || [],
+    recentStats: recentStatsRes.map(result => result.data || []),
+    trending,
     scoringSettings: league.scoring_settings || {},
     scoringFormat: format,
   });
@@ -73,6 +88,9 @@ async function fetchAnalyzerData() {
     matchups: matchupRes?.error ? [] : (matchupRes?.data || []),
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
+    liveSignalsUpdatedAt: Math.max(weeklyProjectionRes.fetchedAt || 0,
+      ...recentStatsRes.map(result => result.fetchedAt || 0), trending.fetchedAt || 0),
+    liveWeek,
   };
 }
 

@@ -68,11 +68,12 @@ export function recommendationFor(result) {
 
 function playerRow(player, side, checked) {
   const search = `${player.name} ${player.position} ${player.nflTeam}`.toLowerCase();
+  const signal = player.injuryStatus || (player.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
   return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-search="${esc(search)}">
     <input type="checkbox" data-td-pick="${side}" value="${esc(player.id)}" ${checked ? "checked" : ""}>
     <span class="td-player-copy">
       <b>${esc(player.name)}</b>
-      <small>${esc(player.position)} · ${esc(player.nflTeam)} · ${Math.round(num(player.expectedPoints))} pts</small>
+      <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} pts`].filter(Boolean).join(" · "))}</small>
     </span>
     <span class="td-value">${Math.round(num(player.tradeValue))}</span>
   </label>`;

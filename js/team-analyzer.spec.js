@@ -81,6 +81,34 @@ describe("team analyzer", () => {
     expect(live.get("r1").expectedPoints).toBeGreaterThan(baseline.get("r1").expectedPoints);
   });
 
+  it("uses recent game form without letting a short streak replace the season model", () => {
+    const input = { rosters, players, projections, scoringSettings: scoring,
+      previousStats: { r1: { gp: 17, rush_yd: 1020 } }, currentStats: { r1: { gp: 4, rec: 100 } } };
+    const hot = buildPlayerPool({ ...input, recentStats: [
+      [{ player_id: "r1", stats: { gp: 1, rec: 30 } }],
+      [{ player_id: "r1", stats: { gp: 1, rec: 30 } }],
+    ] });
+    const cold = buildPlayerPool({ ...input, recentStats: [
+      [{ player_id: "r1", stats: { gp: 1, rec: 5 } }],
+      [{ player_id: "r1", stats: { gp: 1, rec: 5 } }],
+    ] });
+    expect(hot.get("r1")).toMatchObject({ trend: "up", trendBasis: "recent", recentGames: 2, recentAverage: 30 });
+    expect(cold.get("r1")).toMatchObject({ trend: "down", trendBasis: "recent", recentGames: 2, recentAverage: 5 });
+    expect(hot.get("r1").expectedPoints).toBeGreaterThan(cold.get("r1").expectedPoints);
+  });
+
+  it("prices current injury availability into points and trade value", () => {
+    const input = { rosters, players, projections, scoringSettings: scoring,
+      previousStats: { r1: { gp: 17, rush_yd: 1020 } }, currentStats: { r1: { gp: 4, rec: 80 } } };
+    const healthy = buildPlayerPool(input);
+    const injured = buildPlayerPool({ ...input, weeklyProjections: [{
+      player_id: "r1", injury_status: "Out", player: { position: "RB", injury_status: "Out" }, stats: { gp: 0 },
+    }] });
+    expect(injured.get("r1")).toMatchObject({ injuryStatus: "Out", isOut: true });
+    expect(injured.get("r1").expectedPoints).toBeLessThan(healthy.get("r1").expectedPoints);
+    expect(injured.get("r1").tradeValue).toBeLessThan(healthy.get("r1").tradeValue);
+  });
+
   it("derives the starter grade from the five visible unit grades", () => {
     const teams = analyzeLeague({ rosters, pool });
     for (const team of teams) {
