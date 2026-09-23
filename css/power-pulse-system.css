@@ -100,6 +100,45 @@
 }
 .view[data-pulse-system="1"] .card-meta { color: var(--body-text); }
 
+/* The source pages do more than frame the outside of a card: their labels
+   create a clear pause before the content starts. Carry that rhythm into the
+   ordinary routes so the shared treatment is visible in the page, not only
+   around its title. Profile and Facts remain the untouched reference. */
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card-title-row {
+  position: relative;
+  padding-bottom: var(--s-3);
+  border-bottom: 0;
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card-title-row::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--theme-primary),
+    color-mix(in srgb, var(--theme-primary) 36%, transparent) 56%,
+    transparent 100%);
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card > .card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: 28px;
+  margin: 0 0 var(--s-3);
+  padding: 0 0 var(--s-2);
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card > .card-title::after {
+  content: "";
+  flex: 1;
+  min-width: 22px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--theme-primary),
+    color-mix(in srgb, var(--theme-primary) 24%, transparent) 58%,
+    transparent 100%);
+}
+
 /* Broadcast section labels: strong typography, a lit rule and a real count. */
 .view[data-pulse-system="1"] .section-title {
   color: var(--text);
@@ -152,8 +191,8 @@
   min-width: 24px;
   height: 2px;
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--accent-fill) 82%, var(--text)),
-    color-mix(in srgb, var(--accent-fill) 28%, transparent) 52%,
+    var(--theme-primary),
+    color-mix(in srgb, var(--theme-primary) 28%, transparent) 52%,
     transparent 100%);
 }
 .view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]) :is(
@@ -165,7 +204,19 @@
    steady beat on ordinary routes, while leaving Home and Golf's purpose-made
    compositions alone. */
 .view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) .card {
-  margin-bottom: var(--s-4);
+  margin-bottom: var(--s-5);
+}
+.view[data-pulse-system="1"]:not([data-route="home"]):not([data-route="golf"]):not([data-route="facts"]):not([data-route="profile"]) :is(
+  .ta-report-section,
+  .so-panel,
+  .wo-panel,
+  .factcard,
+  .fleece-card,
+  .notification-item,
+  .subcard,
+  .ta-toolbar
+) {
+  margin-bottom: var(--s-5);
 }
 
 /* Trade deliberately stays a flat workbench below the title, but its title
@@ -418,7 +469,7 @@
 }
 .view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .section-title::after {
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--accent-fill) 72%, var(--text)),
+    var(--theme-primary),
     transparent 86%);
 }
 

@@ -205,6 +205,8 @@ describe("the initial app shell", () => {
     expect(screens).toContain('background: linear-gradient(90deg,');
     expect(screens).toContain(':not([data-route="home"]):not([data-route="golf"])');
     expect(screens).toContain(':not([data-route="facts"]):not([data-route="profile"]) .card');
+    expect(screens).toContain('.card > .card-title::after');
+    expect(screens).toContain('.card-title-row::after');
   });
 
   it("does not precache the update-only stadium artwork", () => {
