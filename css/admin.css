@@ -164,3 +164,95 @@
   #view:has(#admin-tabs) > .section-head:first-child{min-height:68px;padding:12px 12px 12px 14px;}
   #view:has(#admin-tabs) > .section-head:first-child::before{display:none;}
 }
+
+/* Commissioner-controlled Sleeper polling. Each weekday stays a clean row;
+   adding a time is the act that opts that day into the schedule. */
+.sl-schedule-title-row,
+.sl-schedule-foot,
+.sl-schedule-day-head,
+.sl-schedule-time {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.sl-schedule-title-row { align-items:flex-start; }
+.sl-schedule-title-row .card-title { margin-bottom:3px; }
+.sl-schedule-toggle {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--bg-3);
+  color:var(--text);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.sl-schedule-toggle input { width:18px; height:18px; margin:0; accent-color:var(--accent); }
+.sl-schedule-days {
+  margin-top:16px;
+  border-top:1px solid var(--line);
+}
+.sl-schedule-day {
+  display:grid;
+  grid-template-columns:minmax(112px,.42fr) minmax(0,1fr);
+  gap:18px;
+  padding:13px 0;
+  border-bottom:1px solid var(--line);
+}
+.sl-schedule-day-head { align-self:start; min-height:38px; }
+.sl-schedule-day-head strong {
+  font-family:var(--font-display);
+  font-size:14px;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.sl-schedule-day-head button,
+.sl-remove-time {
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--accent);
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.sl-schedule-times { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
+.sl-schedule-time {
+  justify-content:flex-start;
+  gap:5px;
+  padding:4px 6px 4px 9px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--bg-3);
+}
+.sl-schedule-time input[type="time"] {
+  width:104px;
+  min-height:34px;
+  padding:4px 3px;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  font-weight:800;
+  color-scheme:dark;
+}
+html[data-mode="light"] .sl-schedule-time input[type="time"] { color-scheme:light; }
+.sl-remove-time { padding:6px; color:var(--muted); }
+.sl-remove-time:hover { color:var(--danger); }
+.sl-no-times { align-self:center; padding:10px 0; color:var(--muted); font-size:12px; }
+.sl-schedule-foot { align-items:flex-end; margin-top:14px; }
+.sl-schedule-foot .btn { flex:0 0 auto; }
+
+@media(max-width:640px){
+  .sl-schedule-day { grid-template-columns:1fr; gap:7px; }
+  .sl-schedule-day-head { min-height:28px; }
+  .sl-schedule-foot { align-items:stretch; flex-direction:column; }
+  .sl-schedule-foot .btn { width:100%; }
+}

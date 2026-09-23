@@ -6,6 +6,36 @@
 import { db } from "../supabase.js";
 import { syncSleeper } from "../sync.js";
 import { esc, toast, errorBox, fmtDate, loading } from "../ui.js";
+import {
+  SLEEPER_SYNC_DAYS,
+  normalizeSleeperSchedule,
+  sleeperScheduleByDay,
+} from "../sleeper-sync-schedule.js";
+
+function scheduleTimeRow(day, time = "12:00") {
+  const name = SLEEPER_SYNC_DAYS[day];
+  return `<div class="sl-schedule-time">
+    <input type="time" value="${esc(time)}" data-sync-time data-day="${day}"
+      aria-label="${name} sync time">
+    <button class="sl-remove-time" type="button" data-remove-sync-time
+      aria-label="Remove ${name} sync time">Remove</button>
+  </div>`;
+}
+
+function scheduleDaysMarkup(slots) {
+  const grouped = sleeperScheduleByDay(slots);
+  return SLEEPER_SYNC_DAYS.map((name, day) => `
+    <section class="sl-schedule-day" data-schedule-day="${day}">
+      <div class="sl-schedule-day-head">
+        <strong>${name}</strong>
+        <button type="button" data-add-sync-time="${day}">+ Add time</button>
+      </div>
+      <div class="sl-schedule-times" data-times-for="${day}">
+        ${grouped[day].map((time) => scheduleTimeRow(day, time)).join("")}
+        <span class="sl-no-times" ${grouped[day].length ? "hidden" : ""}>No automatic sync</span>
+      </div>
+    </section>`).join("");
+}
 
 /** The show/hide checklist of everyone a sync has ever found. */
 async function renderPeople(host) {
@@ -52,10 +82,14 @@ export async function renderSleeperPanel(host) {
     return;
   }
 
-  const [{ count: seasonCount }, { count: matchupCount }] = await Promise.all([
+  const [{ count: seasonCount }, { count: matchupCount }, scheduleResult] = await Promise.all([
     db().from("sleeper_leagues").select("*", { count: "exact", head: true }),
     db().from("sleeper_matchups").select("*", { count: "exact", head: true }),
+    db().rpc("sleeper_get_sync_schedule"),
   ]);
+  const schedule = scheduleResult.error ? null : scheduleResult.data;
+  const scheduleSlots = normalizeSleeperSchedule(schedule?.slots || []);
+  const scheduleEnabled = schedule?.enabled ?? config.auto_sync_enabled ?? false;
 
   host.innerHTML = `
     <form class="card" id="sl-form">
@@ -83,6 +117,32 @@ export async function renderSleeperPanel(host) {
       <pre id="sl-log" class="synclog hidden"></pre>
     </div>
 
+    <div class="card sl-schedule-card">
+      <div class="sl-schedule-title-row">
+        <div>
+          <div class="card-title">Automatic sync schedule</div>
+          <div class="muted tiny">Pick any weekdays and times. Central time · adjusts for daylight saving.</div>
+        </div>
+        <label class="sl-schedule-toggle">
+          <input id="sl-auto-enabled" type="checkbox" ${scheduleEnabled ? "checked" : ""}
+            ${schedule ? "" : "disabled"}>
+          <span>Enabled</span>
+        </label>
+      </div>
+      ${schedule ? `
+        <div class="sl-schedule-days">${scheduleDaysMarkup(scheduleSlots)}</div>
+        <div class="sl-schedule-foot">
+          <div class="muted tiny">
+            ${config.last_auto_checked_at ? `Last automatic check: ${esc(fmtDate(config.last_auto_checked_at))}` : "No automatic check recorded yet."}
+            ${config.last_auto_error ? `<br><span class="warntext">${esc(config.last_auto_error)}</span>` : ""}
+          </div>
+          <button class="btn primary" id="sl-save-schedule" type="button">Save schedule</button>
+        </div>` : `
+        <div class="notice warn" style="margin-top:12px">
+          Schedule controls need <strong>sleeper_sync_schedule_schema.sql</strong> applied to Supabase.
+        </div>`}
+    </div>
+
     <div class="card" id="sl-people">
       <div class="card-title">Who shows up</div>
       <div id="sl-people-list" class="muted tiny">Loading…</div>
@@ -90,6 +150,61 @@ export async function renderSleeperPanel(host) {
   `;
 
   renderPeople(host);
+
+  // ---- commissioner-managed automatic sync schedule ----
+  const scheduleCard = host.querySelector(".sl-schedule-card");
+  scheduleCard?.addEventListener("click", (event) => {
+    const add = event.target.closest("[data-add-sync-time]");
+    if (add) {
+      const day = Number(add.dataset.addSyncTime);
+      const times = scheduleCard.querySelector(`[data-times-for="${day}"]`);
+      if (times.querySelectorAll("[data-sync-time]").length >= 8) {
+        toast("That day already has the maximum of 8 sync times", true);
+        return;
+      }
+      const used = new Set([...times.querySelectorAll("[data-sync-time]")].map((input) => input.value));
+      const suggested = ["12:00", "13:00", "15:30", "18:00", "21:00", "00:00", "09:00"]
+        .find((time) => !used.has(time)) || "12:00";
+      times.querySelector(".sl-no-times")?.setAttribute("hidden", "");
+      times.insertAdjacentHTML("beforeend", scheduleTimeRow(day, suggested));
+      times.querySelector(".sl-schedule-time:last-child input")?.focus();
+      return;
+    }
+
+    const remove = event.target.closest("[data-remove-sync-time]");
+    if (remove) {
+      const times = remove.closest(".sl-schedule-times");
+      remove.closest(".sl-schedule-time")?.remove();
+      if (!times.querySelector("[data-sync-time]")) times.querySelector(".sl-no-times")?.removeAttribute("hidden");
+    }
+  });
+
+  host.querySelector("#sl-save-schedule")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const enabled = host.querySelector("#sl-auto-enabled").checked;
+    const slots = normalizeSleeperSchedule([...host.querySelectorAll("[data-sync-time]")].map((input) => ({
+      day: Number(input.dataset.day),
+      time: input.value,
+    })));
+    if (enabled && !slots.length) {
+      toast("Add at least one time before enabling automatic sync", true);
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Saving…";
+    const { error } = await db().rpc("sleeper_save_sync_schedule", {
+      new_schedule: slots,
+      new_enabled: enabled,
+    });
+    if (error) {
+      toast(error.message, true);
+      button.disabled = false;
+      button.textContent = "Save schedule";
+      return;
+    }
+    toast(enabled ? `Automatic sync saved · ${slots.length} weekly time${slots.length === 1 ? "" : "s"}` : "Automatic sync paused");
+    renderSleeperPanel(host);
+  });
 
   // ---- show / hide synced people ----
   host.querySelector("#sl-people-list").addEventListener("change", async (e) => {
