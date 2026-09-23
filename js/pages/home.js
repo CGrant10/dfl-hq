@@ -191,6 +191,16 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
 }
 
+/* Home is personal before it is editorial. The deck may rank a live league
+   item above this one, but opening Home should land on the signed-in member's
+   matchup; the automatic rotation can carry on from there. */
+export function personalMatchupFirst(deck = []) {
+  const index = deck.findIndex(item => item?.generator === "matchupPreview"
+    || item?.generator === "myMatchup" || item?.kind === "mine");
+  if (index <= 0) return deck.slice();
+  return [deck[index], ...deck.slice(0, index), ...deck.slice(index + 1)];
+}
+
 /*
   THE PAIRING FOR A WEEK NOBODY HAS PLAYED YET.
 
@@ -319,6 +329,7 @@ export async function render(view) {
      removes an entire network waterfall from Home without changing its data. */
   const manualPromise = loadBroadcastItems();
   const overridesPromise = loadBroadcastOverrides();
+  const lorePromise = loadLore();
   const activityPromise = (async () => {
     try {
       const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
@@ -366,7 +377,10 @@ export async function render(view) {
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const deck1 = editorialStage(broadcastContext({ home: homeData, golfDay, member: me }), { custom: manual, off: broadcastOff(), overrides });
+  const fallbackDeck = personalMatchupFirst(editorialStage(
+    broadcastContext({ home: homeData, golfDay, member: me }),
+    { custom: manual, off: broadcastOff(), overrides },
+  ));
 
   const wn = newsWindow();
   const changes = wn.firstRun ? [] : changesSince({
@@ -422,7 +436,9 @@ export async function render(view) {
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
-    <section class="home-broadcast" aria-label="League broadcast">${renderStage(deck1)}</section>
+    <section class="home-broadcast is-loading" aria-label="League broadcast">
+      <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
+    </section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
@@ -522,7 +538,10 @@ export async function render(view) {
   let liveSlides = [];
   let golfDayNow = golfDay;
   const off = broadcastOff();
-  const build = (day) => editorialStage(broadcastContext({ home: homeData, lore, golfDay: day, member: me }), { custom: [...custom, ...liveSlides], off, overrides });
+  const build = (day) => personalMatchupFirst(editorialStage(
+    broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
+    { custom: [...custom, ...liveSlides], off, overrides },
+  ));
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -533,21 +552,22 @@ export async function render(view) {
     return build(day);
   };
 
-  const root = view.querySelector("[data-bx-stage]");
-  if (root) stage = startStage(root, deck1, { refresh });
-
-  const lorePromise = loadLore();
-  lorePromise.then((got) => {
-    if (got?.error || !got) return;
-    lore = got;
-    if (mine !== generation) return;
-    if (!view.querySelector("[data-bx-stage]")) return;
-    stage?.update(build(golfDay));
-  }).catch((err) => console.warn("broadcast: lore unavailable", err));
+  const startHomeStage = deck => {
+    if (mine !== generation || !view.isConnected) return;
+    const host = view.querySelector(".home-broadcast");
+    if (!host) return;
+    const ordered = personalMatchupFirst(deck);
+    try { stage?.stop(); } catch {}
+    host.classList.remove("is-loading");
+    host.innerHTML = renderStage(ordered);
+    const root = host.querySelector("[data-bx-stage]");
+    if (root) stage = startStage(root, ordered, { refresh });
+  };
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
+    lore = got?.error ? null : got;
     const clubhouse = clubhouseView({
       analysis, lore: got?.error ? null : got, members: memberRows,
       meSleeperId: myMember?.sleeper_user_id || null,
@@ -580,17 +600,21 @@ export async function render(view) {
        verdict and the auto-scout. Both go to the stage as slides. */
     const ahead = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null, lore: got?.error ? null : got }) || [];
     const extras = [...ahead, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
-    if (extras.length && view.querySelector("[data-bx-stage]")) {
+    if (extras.length) {
       liveSlides = extras;
       /* A preview and the myMatchup generator are the same fixture from two
          directions - one looking forward, one looking back. Showing both puts
          last week's result next to this week's projection on the same stage,
          so the generator stands down while a preview exists. */
       suppressMyMatchup = ahead.some(slide => slide?.generator === "matchupPreview");
-      stage?.update(build(golfDayNow));
     }
+    /* Commit the carousel once, after every startup source has contributed.
+       The member sees their matchup first instead of watching partial decks
+       replace one another as they load. */
+    startHomeStage(build(golfDayNow));
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
+    startHomeStage(fallbackDeck);
   });
   view.querySelector("#install-app")?.addEventListener("click", async () => {
     const outcome = await promptInstall();

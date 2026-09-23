@@ -30,12 +30,21 @@ describe("Home redesign wiring", () => {
   });
 
   it("promotes the broadcast stage into the slot the dashboard held", () => {
-    expect(source).toContain('<section class="home-broadcast"');
+    expect(source).toContain('<section class="home-broadcast is-loading"');
     expect(source).not.toContain("home-broadcast-secondary");
-    /* One stage, above the standing sections and the league utility. */
-    expect(source.match(/\$\{renderStage\(deck1\)\}/g)).toHaveLength(1);
-    expect(source.indexOf("${renderStage(deck1)}")).toBeLessThan(source.indexOf("data-home-rankings-slot"));
-    expect(source.indexOf("${renderStage(deck1)}")).toBeLessThan(source.indexOf("home-lower"));
+    /* One reserved stage, above the standing sections and the league utility.
+       It commits only after the complete startup deck is ready. */
+    expect(source).toContain("Loading your matchup");
+    expect(source).toContain("startHomeStage(build(golfDayNow))");
+    expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("data-home-rankings-slot"));
+    expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("home-lower"));
+  });
+
+  it("opens the complete deck on the signed-in member's matchup", () => {
+    expect(source).toContain("export function personalMatchupFirst");
+    expect(source).toContain('item?.generator === "myMatchup"');
+    expect(source).not.toContain("stage?.update(build(golfDay))");
+    expect(source).not.toContain("if (stage) stage.update(build(golfDayNow))");
   });
 
   it("renders the approved always-visible power rankings composition", () => {

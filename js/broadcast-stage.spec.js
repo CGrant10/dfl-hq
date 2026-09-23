@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { fitSize, focusShouldPause, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
+import { fitSize, focusShouldPause, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 /* A stand-in for a DOM node: only closest() is used, and only against the
    control selector, so this is the whole surface the decision touches. */
 const el = (matches) => ({ closest: (sel) => (sel === STAGE_CONTROL && matches ? {} : null) });
 
 describe("broadcast stage autoplay", () => {
+  it("does not repaint an unchanged active card when other cards join the deck", () => {
+    const matchup = { id: "mine-2", generator: "myMatchup", headline: "Your matchup", sides: [{ score: "12.4" }] };
+    expect(sameStageItem(matchup, { ...matchup, sides: [{ score: "12.4" }] })).toBe(true);
+    expect(sameStageItem(matchup, { ...matchup, sides: [{ score: "14.8" }] })).toBe(false);
+  });
+
   it("does NOT pause when focus lands on a nav control", () => {
     /*
       THE BUG. Clicking the next arrow focuses that arrow. focusin fired, the

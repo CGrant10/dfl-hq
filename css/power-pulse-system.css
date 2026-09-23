@@ -369,6 +369,39 @@
 .view[data-route="finances"][data-pulse-system="1"] .fin-section > .card {
   margin-bottom: 0;
 }
+/* Finance's two summary surfaces are one clean card apiece. The shared
+   statgrid normally boxes every figure; inside these cards that created a
+   second stack of tiny cards and fought the page framing. Keep only quiet
+   dividers so the figures read as one summary. */
+.view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid {
+  margin: 0;
+  gap: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid > * {
+  border: 0;
+  border-left: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid > :nth-child(3n + 1) {
+  border-left: 0;
+}
+.view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid > :nth-child(n + 4) {
+  border-top: 1px solid var(--line-soft);
+}
+@media (min-width: 720px) {
+  .view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid > * {
+    border-top: 0;
+  }
+  .view[data-route="finances"][data-pulse-system="1"] .fin-summary-card .statgrid > :not(:first-child) {
+    border-left: 1px solid var(--line-soft);
+  }
+}
 
 .view[data-route="trade"][data-pulse-system="1"] :is(.tb-workbench-card,.tb-offers-card),
 .view[data-route="analyzer"][data-pulse-system="1"] .ta-section-body {

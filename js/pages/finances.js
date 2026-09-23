@@ -126,7 +126,7 @@ function financeSection(title, card, count = "") {
 
 function buyInCard(buyIn, teams, prizePool) {
   return financeSection("League buy-in", `
-    <div class="card accent">
+    <div class="card fin-summary-card">
       <div class="statgrid">
         ${stat("Buy-in", money(buyIn))}
         ${stat("Teams", teams)}
@@ -138,7 +138,7 @@ function buyInCard(buyIn, teams, prizePool) {
 function summaryCard(t) {
   const negative = t.remaining < 0;
   return financeSection("Fees summary", `
-    <div class="card">
+    <div class="card fin-summary-card">
       <div class="statgrid">
         ${/* "Dues expected" needed 99px on one line in a 76px cell - no legible
              type size fits that. It sits beside Collected, Owed and Balance,

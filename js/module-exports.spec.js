@@ -211,6 +211,8 @@ describe("the initial app shell", () => {
     expect(screens).toContain('.ta-report-title::after');
     expect(finances).toContain('function financeSection(title, card, count = "")');
     expect(finances).toContain('<h2 class="section-title">');
+    expect(finances.match(/class="card fin-summary-card"/g)).toHaveLength(2);
+    expect(screens).toContain('.fin-summary-card .statgrid');
     expect(finances).not.toContain('<div class="card-title">Fees summary</div>');
   });
 

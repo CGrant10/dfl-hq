@@ -372,13 +372,13 @@ function arrows() {
     </button>`;
 }
 
-function controls(items) {
+function controls(items, current = 0) {
   /* One pause button and one segment per slide. The segments are real
      buttons, so the whole thing is reachable with a keyboard and needs no
      gestures. */
   const dots = items.map((it, i) => `
-    <button type="button" class="bx-dot${i === 0 ? " on" : ""}" data-bx-go="${i}"
-      aria-label="Show item ${i + 1} of ${items.length}"${i === 0 ? ' aria-current="true"' : ""}></button>`).join("");
+    <button type="button" class="bx-dot${i === current ? " on" : ""}" data-bx-go="${i}"
+      aria-label="Show item ${i + 1} of ${items.length}"${i === current ? ' aria-current="true"' : ""}></button>`).join("");
   /* The button's accessible name is the ACTION, and there is deliberately no
      aria-pressed. A toggle that changes both its label and its pressed state
      announces itself as "Play, toggle button, pressed", which is a riddle.
@@ -475,6 +475,13 @@ export function focusShouldPause(el) {
  */
 export function shouldRun({ dead = false, userPaused = false, softSize = 0, count = 0 } = {}) {
   return !dead && !userPaused && softSize === 0 && count > 1;
+}
+
+/* The active card may survive while the rest of the deck changes. Treat its
+   complete rendered data as the identity check so adding another card does
+   not replay this card's entrance animation. */
+export function sameStageItem(a, b) {
+  return Boolean(a && b) && JSON.stringify(a) === JSON.stringify(b);
 }
 
 /** Live data goes stale fastest, so a live deck re-checks itself. */
@@ -822,6 +829,7 @@ export function startStage(root, deck, { refresh } = {}) {
   function update(next) {
     const fresh = (next || []).slice();
     if (!fresh.length) return;
+    const currentItem = items[i];
     const currentId = items[i]?.id;
     const same = fresh.length === items.length &&
       fresh.every((it, n) => it.id === items[n]?.id && it.headline === items[n]?.headline &&
@@ -829,9 +837,12 @@ export function startStage(root, deck, { refresh } = {}) {
     items = fresh;
     if (same) return;                       // nothing moved; leave the DOM alone
     const found = fresh.findIndex((it) => it.id === currentId);
+    const currentUnchanged = found >= 0 && sameStageItem(currentItem, fresh[found]);
     i = found >= 0 ? found : 0;
     rebuildDots();
-    paint();
+    /* Adding or reordering OTHER cards must not replay the active slide's
+       entrance. That was the home-page shutter during async startup. */
+    if (!currentUnchanged) paint();
     arm();
   }
 
@@ -847,8 +858,8 @@ export function startStage(root, deck, { refresh } = {}) {
        an eight-item one, so this has to be able to create them as well as
        replace them - arrows included, or a deck that grew would rotate with
        no way to step through it. */
-    if (wrap) wrap.outerHTML = controls(items);
-    else root.insertAdjacentHTML("beforeend", controls(items));
+    if (wrap) wrap.outerHTML = controls(items, i);
+    else root.insertAdjacentHTML("beforeend", controls(items, i));
     if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows());
     paintButton();
   }

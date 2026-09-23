@@ -54,6 +54,32 @@
    which existed to escape that same gutter from inside the old layout -
    would push it past the screen edge and cause a sideways scroll. */
 #home-wrap > .home-broadcast .bx-stage { margin: 0; }
+#home-wrap .home-broadcast-loading {
+  height: 52svh;
+  min-height: 300px;
+  max-height: 460px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s-3);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--muted);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+#home-wrap .home-broadcast-loading span {
+  width: 44px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent-sweep);
+}
+@supports not (height: 52svh) {
+  #home-wrap .home-broadcast-loading { height: 52vh; }
+}
 
 /* ---------------------------------------------------------------------
    HOME COMMAND DECK. The selected redesign turns the four most useful
