@@ -2039,71 +2039,15 @@ span) { overflow-wrap: anywhere; }
   #home-wrap .dfl-anniv-branch { width: 30px; height: 48px; }
 }
 
-/* =====================================================================
-   SCROLL ASSEMBLY
-
-   js/scroll-assembly.js writes --a to each [data-assemble] part: 1 while it
-   is still low on the screen, 0 once it has risen into place. Everything
-   here is arithmetic on that, so the motion is bound to scroll POSITION -
-   scroll back up and --a rises again and the band pulls apart. The distances
-   are tokens (--asm-*) in css/tokens.css.
-
-   --a defaults to 0, so with the script absent or failed every part sits
-   assembled and nothing is hidden waiting on a listener.
-
-   Only transform and opacity are touched: no layout is recalculated while
-   the page scrolls.
-   ===================================================================== */
-
-/* The laurels close in around the headline. This is the one effect that uses
-   the band's real composition rather than being applied on top of it. */
-#home-wrap .dfl-anniv-branch {
-  transform:
-    translate3d(calc(var(--side, 0) * var(--asm-spread) * var(--a, 0)), 0, 0)
-    rotate(calc(var(--side, 0) * var(--asm-turn) * var(--a, 0)));
+/* One quiet entrance, then everything stays still. The class is added only
+   when IntersectionObserver is available, so content never remains hidden
+   if JavaScript fails or the browser cannot run the reveal. */
+#home-wrap.has-scroll-fade [data-assemble] {
+  opacity: 0;
+  transition: opacity .38s ease-out;
 }
-#home-wrap .dfl-anniv-branch.is-left  { --side: -1; }
-#home-wrap .dfl-anniv-branch.is-right { --side:  1; }
-#home-wrap .dfl-anniv-words {
-  opacity: calc(var(--asm-dim) + (1 - var(--asm-dim)) * (1 - var(--a, 0)));
-}
+#home-wrap.has-scroll-fade [data-assemble].is-scroll-visible { opacity: 1; }
 
-/* Ranking rows converge from alternating sides, straightening as they land.
-   The ellipsis row is excluded - it is a spacer, and a drifting "..." reads
-   as a glitch rather than a part arriving. */
-#home-wrap .home-rankings-card ol > li[data-assemble] {
-  transform:
-    translate3d(calc(var(--side, 0) * var(--asm-spread) * var(--a, 0)),
-                calc(var(--asm-rise) * var(--a, 0)), 0)
-    rotate(calc(var(--side, 0) * var(--asm-turn) * .35 * var(--a, 0)));
-  opacity: calc(var(--asm-dim) + (1 - var(--asm-dim)) * (1 - var(--a, 0)));
-}
-#home-wrap .home-rankings-card ol > li[data-assemble]:nth-of-type(odd)  { --side: -1; }
-#home-wrap .home-rankings-card ol > li[data-assemble]:nth-of-type(even) { --side:  1; }
-
-/* The report's three columns close ranks. The middle one only scales, so the
-   outer two visibly travel toward it rather than all three sliding together. */
-#home-wrap .home-weekly-digest article[data-assemble] {
-  transform:
-    translate3d(calc(var(--side, 0) * var(--asm-spread) * .8 * var(--a, 0)), 0, 0)
-    scale(calc(1 - (1 - var(--asm-zoom)) * var(--a, 0)));
-  opacity: calc(var(--asm-dim) + (1 - var(--asm-dim)) * (1 - var(--a, 0)));
-}
-#home-wrap .home-weekly-digest article[data-assemble]:nth-of-type(1) { --side: -1; }
-#home-wrap .home-weekly-digest article[data-assemble]:nth-of-type(2) { --side:  0; }
-#home-wrap .home-weekly-digest article[data-assemble]:nth-of-type(3) { --side:  1; }
-
-/*
-  The app honours this in all ten of its stylesheets and so does this. Note
-  the driver ALSO checks the query and pins --a to 0 - this is the belt to
-  that braces, so a part is assembled even if the script never runs.
-*/
 @media (prefers-reduced-motion: reduce) {
-  #home-wrap .dfl-anniv-branch,
-  #home-wrap .home-rankings-card ol > li[data-assemble],
-  #home-wrap .home-weekly-digest article[data-assemble] {
-    transform: none !important;
-    opacity: 1 !important;
-  }
-  #home-wrap .dfl-anniv-words { opacity: 1 !important; }
+  #home-wrap.has-scroll-fade [data-assemble] { opacity: 1; transition: none; }
 }

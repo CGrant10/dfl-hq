@@ -204,9 +204,8 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
 async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   if (!weekly?.week || !meSleeperId || analysis?.state !== "ready") return null;
   const week = currentMatchupWeek(weekly.week);
-  /* Tuesday and Wednesday belong to the week just played, and that week has
-     a real row with real scores - the myMatchup generator is the right voice
-     for it. Only look ahead when the week on the slide is the live one. */
+  /* The report owns the completed week on Tuesday; this surface owns the new
+     week as soon as Sleeper advances it. */
   if (week !== Number(weekly.week)) return null;
   const leagueId = analysis.league?.sleeper_league_id;
   if (!leagueId) return null;

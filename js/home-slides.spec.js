@@ -83,13 +83,13 @@ describe("which week the matchup slide is about", () => {
   const on = day => new Date(Date.UTC(2026, 8, 6 + day, 12, 0, 0));
   /* Sleeper rolls state.week forward once Monday night ends, so on Tuesday
      "week 5" already means the week nobody has played. */
-  it("holds Tuesday and Wednesday back to the week just played", () => {
-    expect(currentMatchupWeek(5, on(2))).toBe(4);
-    expect(currentMatchupWeek(5, on(3))).toBe(4);
+  it("moves matchup previews to Sleeper's new week on Tuesday morning", () => {
+    expect(currentMatchupWeek(5, on(2))).toBe(5);
+    expect(currentMatchupWeek(5, on(3))).toBe(5);
   });
 
-  it("looks ahead from Thursday through Monday", () => {
-    for (const day of [4, 5, 6, 0, 1]) expect(currentMatchupWeek(5, on(day))).toBe(5);
+  it("uses Sleeper's current week every day", () => {
+    for (const day of [0, 1, 2, 3, 4, 5, 6]) expect(currentMatchupWeek(5, on(day))).toBe(5);
   });
 
   it("never goes below week 1", () => {

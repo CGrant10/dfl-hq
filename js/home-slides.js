@@ -78,15 +78,13 @@ export function nextMoveSlide(move) {
   still reading Tuesday's box scores. home-clubhouse's aftermathReportWeek()
   holds the REPORT back for that reason, but only on Tuesday.
 
-  The matchup wants a slightly longer tail: Tuesday and Wednesday still
-  belong to the week just played - that is when people argue about it - and
-  from Thursday, when the first game kicks off, the slide should be about the
-  week ahead instead of the week behind.
+  The matchup turns over immediately with Sleeper on Tuesday. The completed
+  report remains on the prior week for that day, so Home can show both the
+  receipts and the next opponent instead of spending Tuesday looking back in
+  every surface.
 */
-export function currentMatchupWeek(week, now = new Date()) {
-  const current = Math.max(1, Number(week) || 1);
-  const day = now instanceof Date ? now.getDay() : -1;
-  return (day === 2 || day === 3) ? Math.max(1, current - 1) : current;
+export function currentMatchupWeek(week) {
+  return Math.max(1, Number(week) || 1);
 }
 
 /*
