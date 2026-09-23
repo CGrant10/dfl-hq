@@ -32,6 +32,11 @@ import { esc } from "./ui.js";
 const num = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(num(value)).toFixed(1)}`;
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
+export const MAX_TRADE_PLAYERS = 8;
+
+export function tradePlayerCount(sends = []) {
+  return sends.reduce((total, selected) => total + (selected?.size ?? selected?.length ?? 0), 0);
+}
 
 /* Fairness is a percentage of the larger package, so the bands are about
    how lopsided a deal is rather than how big it is. */
@@ -73,6 +78,14 @@ function playerRow(player, side, checked) {
   </label>`;
 }
 
+function selectedPlayersMarkup(picked, pool, side) {
+  if (!picked.size) return `<span class="td-selected-empty">No players added yet.</span>`;
+  return [...picked].map(id => {
+    const player = pool.get(String(id));
+    return `<button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>`;
+  }).join("");
+}
+
 function sideList(team, pool, picked, side, label) {
   const players = (team?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
@@ -82,6 +95,7 @@ function sideList(team, pool, picked, side, label) {
       <strong>${esc(teamName(team))}</strong></div>
       <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
+    <div class="td-selected" data-td-selected="${side}">${selectedPlayersMarkup(picked, pool, side)}</div>
     <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" placeholder="Search players" autocomplete="off"></label>
     <div class="td-list">${players.map(p => playerRow(p, side, picked.has(String(p.id)))).join("")
       || `<p class="td-empty">No rated players on this roster.</p>`}</div>
@@ -401,6 +415,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
+        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>Build any even or uneven package across both sides.</small></div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
           ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND")).join("")}
         </div>
@@ -421,6 +436,20 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     state.editing = event.currentTarget.open;
   });
   const partiesOf = () => [team, ...state.memberIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
+
+  const syncSelectionUi = () => {
+    const total = tradePlayerCount(state.sends), full = total >= MAX_TRADE_PLAYERS;
+    const totalNode = root.querySelector("[data-td-total-count]");
+    if (totalNode) totalNode.textContent = String(total);
+    root.querySelector("[data-td-limit]")?.classList.toggle("is-full", full);
+    state.sends.forEach((set, index) => {
+      const count = root.querySelector(`[data-td-count="${index}"]`);
+      if (count) count.textContent = `${set.size} picked`;
+      const tray = root.querySelector(`[data-td-selected="${index}"]`);
+      if (tray) tray.innerHTML = selectedPlayersMarkup(set, pool, String(index));
+    });
+    root.querySelectorAll("[data-td-pick]").forEach(box => { box.disabled = full && !box.checked; });
+  };
 
   /*
     onDeal hands the page whatever the ticket is currently showing, so the
@@ -446,10 +475,14 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const box = event.target.closest("[data-td-pick]");
     if (box) {
       const set = state.sends[Number(box.dataset.tdPick)];
+      if (box.checked && tradePlayerCount(state.sends) >= MAX_TRADE_PLAYERS) {
+        box.checked = false;
+        root.querySelector("[data-td-limit]")?.classList.add("is-full");
+        return;
+      }
       if (box.checked) set.add(box.value); else set.delete(box.value);
       box.closest(".td-player")?.classList.toggle("is-picked", box.checked);
-      const count = root.querySelector(`[data-td-count="${box.dataset.tdPick}"]`);
-      if (count) count.textContent = `${set.size} picked`;
+      syncSelectionUi();
       update();
       return;
     }
@@ -477,6 +510,19 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   });
 
   root.addEventListener("click", event => {
+    const removePick = event.target.closest("[data-td-remove-pick]");
+    if (removePick) {
+      const side = Number(removePick.dataset.tdRemovePick), id = String(removePick.dataset.playerId);
+      state.sends[side]?.delete(id);
+      root.querySelectorAll(`[data-td-pick="${side}"]`).forEach(box => {
+        if (String(box.value) !== id) return;
+        box.checked = false;
+        box.closest(".td-player")?.classList.remove("is-picked");
+      });
+      syncSelectionUi();
+      update();
+      return;
+    }
     if (event.target.closest("[data-td-add-member]")) {
       const used = new Set([String(team.id), ...state.memberIds.map(String)]);
       const next = teams.find(item => !used.has(String(item.id)));
@@ -495,9 +541,10 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       box.checked = false;
       box.closest(".td-player")?.classList.remove("is-picked");
     });
-    root.querySelectorAll("[data-td-count]").forEach(count => { count.textContent = "0 picked"; });
+    syncSelectionUi();
     update();
   });
 
+  syncSelectionUi();
   update();
 }

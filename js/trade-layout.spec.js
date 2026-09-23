@@ -31,4 +31,12 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('body.querySelector("[data-td-verdict]")?.scrollIntoView');
     expect(source).not.toContain('body.querySelector("[data-trade-desk]")?.scrollIntoView');
   });
+
+  it("lazy-renders the large custom roster builder only when it is opened", () => {
+    const source = readFileSync(new URL("./pages/trade.js", import.meta.url), "utf8");
+
+    expect(source).toContain('shop.customOpen ? `<div class="ta-section-body">');
+    expect(source).toContain('shop.offerCache ||= new Map()');
+    expect(source).toContain('Up to 8 players');
+  });
 });

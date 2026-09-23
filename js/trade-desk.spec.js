@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recommendationFor, verdictFor } from "./trade-desk.js";
+import { MAX_TRADE_PLAYERS, recommendationFor, tradePlayerCount, verdictFor } from "./trade-desk.js";
 import { buildPlayerPool, evaluateMultiTeamTrade, evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
 
 /* Full PPR, the league's own setting - see scoring_settings on sleeper_leagues.
@@ -70,6 +70,14 @@ describe("recommendationFor", () => {
 
   it("keeps mixed, marginal evidence in the negotiation band", () => {
     expect(recommendationFor({ valueToA: 52, valueToB: 50, weeklyDeltaA: -0.1 }).action).toBe("NEGOTIATE");
+  });
+});
+
+describe("custom package limits", () => {
+  it("counts every selected player across both sides against one eight-player cap", () => {
+    const sends = [new Set(["a", "b", "c"]), new Set(["d", "e", "f", "g", "h"])];
+    expect(tradePlayerCount(sends)).toBe(MAX_TRADE_PLAYERS);
+    expect(MAX_TRADE_PLAYERS).toBe(8);
   });
 });
 

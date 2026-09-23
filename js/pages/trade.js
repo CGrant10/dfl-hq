@@ -76,8 +76,14 @@ function tradeLab(team, teams, pool, shop) {
   const target = players.find(player => String(player.id) === String(shop.targetId)) || players[0];
   shop.targetId = target?.id || "";
   const shape = shop.shape || "all", intent = shop.intent || "press";
-  const allOffers = target ? suggestTrades({ teams, teamId: team.id, playerId: target.id, partnerId: partner.id,
-    anchorTeamId: partner.id, pool, limit: 48, shapes: shape === "all" ? [] : [shape], intent }) : [];
+  shop.offerCache ||= new Map();
+  const cacheKey = [team.id, partner?.id, target?.id, shape, intent].map(String).join("|");
+  let allOffers = shop.offerCache.get(cacheKey);
+  if (!allOffers) {
+    allOffers = target ? suggestTrades({ teams, teamId: team.id, playerId: target.id, partnerId: partner.id,
+      anchorTeamId: partner.id, pool, limit: 48, shapes: shape === "all" ? [] : [shape], intent }) : [];
+    shop.offerCache.set(cacheKey, allOffers);
+  }
   const pages = Math.max(1, Math.ceil(allOffers.length / 12));
   shop.page = (shop.page || 0) % pages;
   const offers = allOffers.slice(shop.page * 12, shop.page * 12 + 12);
@@ -161,9 +167,9 @@ function page(data, tradeAlerts = []) {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}
           <details class="ta-report-section td-custom"${shop.customOpen ? " open" : ""}>
-            <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Analyze a custom deal</h2></div><span class="ta-fold-hint">Any package</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
-            <div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
-            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>
+            <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Build your own package</h2></div><span class="ta-fold-hint">Up to 8 players</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
+            ${shop.customOpen ? `<div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
+            <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>` : ""}
           </details>`;
         const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
@@ -176,7 +182,11 @@ function page(data, tradeAlerts = []) {
           },
         });
         body.querySelector("[data-tb-target]")?.addEventListener("toggle", event => { shop.targetOpen = event.currentTarget.open; });
-        body.querySelector(".td-custom")?.addEventListener("toggle", event => { shop.customOpen = event.currentTarget.open; });
+        body.querySelector(".td-custom")?.addEventListener("toggle", event => {
+          const open = event.currentTarget.open;
+          if (open && !shop.customOpen) { shop.customOpen = true; draw(); return; }
+          shop.customOpen = open;
+        });
         body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
           if (event.currentTarget.open) shop.openTier = event.currentTarget.dataset.tbTier;
         }));
