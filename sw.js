@@ -1,8 +1,9 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.246.46";
+const CACHE_NAME = "dfl-hq-v1.246.47";
+const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
-  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.246.46",
+  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.246.47",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./css/golf.css","./css/home.css","./css/nav-neutral.css","./css/update-gate.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/performance.js","./js/pages/admin_performance.js",
@@ -13,11 +14,10 @@ const APP_SHELL = [
      precache for an image the page never draws - only the OS reads it, at
      install time, when there is by definition a network. The splash mark and
      brand mark ARE drawn on first paint and were not cached at all. */
-  /* The 1.9MB update artwork is fetched and cached only if an update gate is
-     actually shown. Making every service-worker install download it delayed
-     normal releases and first visits for an image absent from the app shell. */
+  /* Update-gate artwork is fetched only if the gate is actually shown. The
+     anniversary uses its optimized WebP directly from Home instead. */
   "./icons/dfl-seal-heritage-512.webp","./icons/dfl-seal-heritage-64.webp",
-  "./icons/app-192.png","./icons/app-update-512.png","./icons/apple-touch-icon.png"
+  "./icons/app-192.png","./icons/apple-touch-icon.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(async c=>{
@@ -25,7 +25,11 @@ self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(asyn
   await Promise.all(APP_SHELL.map(url=>c.add(url).catch(()=>missing.push(url))));
   if(missing.length)console.warn("[sw] not precached:",missing);
 }).then(()=>self.skipWaiting())));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys
+  /* Retire old app shells only. Sleeper data caches have their own expiry
+     rules and must survive a DFL release. */
+  .filter(k=>k.startsWith(APP_CACHE_PREFIX)&&k!==CACHE_NAME)
+  .map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 function revalidating(request){try{return new Request(request,{cache:"no-cache"});}catch{return request;}}
 async function refreshCached(request){
   try{

@@ -63,6 +63,9 @@ export function updateGateMarkup(version){
 }
 
 function showGate(el,version){
+  /* This is the first moment the full-screen stadium treatment is useful.
+     Keeping its URL out of update CSS prevents non-Home routes fetching it. */
+  el.style.setProperty("--update-gate-artwork",'url("assets/dfl-update-stadium.webp")');
   el.dataset.version=version;
   el.setAttribute("role","dialog");
   el.setAttribute("aria-modal","true");

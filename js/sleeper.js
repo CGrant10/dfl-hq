@@ -99,6 +99,7 @@ const MARKET_POSITIONS = ["QB", "RB", "WR", "TE"];
    matchup projection roughly 15-25 points light even though the skill-player
    advice itself looks plausible. */
 const WEEKLY_POSITIONS = [...MARKET_POSITIONS, "K", "DEF"];
+const jsonInFlight = new Map();
 
 /**
  * Fetch-and-cache JSON that is too big to pull on every page view.
@@ -108,7 +109,7 @@ const WEEKLY_POSITIONS = [...MARKET_POSITIONS, "K", "DEF"];
  * a great deal more useful than an empty card - the caller gets a timestamp
  * and says how old it is.
  */
-async function cachedJson(cacheName, url, maxAgeMs) {
+async function readCachedJson(cacheName, url, maxAgeMs) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(url);
   const hitAt = hit ? Number(hit.headers.get("x-fetched-at") || 0) : 0;
@@ -140,6 +141,16 @@ export function loadSeasonStats(season, { maxAgeMs = WEEK_MS } = {}) {
   const year = Number(season);
   if (!Number.isFinite(year)) return Promise.resolve({ data: {}, fetchedAt: 0 });
   return cachedJson(STATS_CACHE, `${BASE}/stats/nfl/regular/${year}`, maxAgeMs);
+}
+
+function cachedJson(cacheName, url, maxAgeMs) {
+  const key = `${cacheName}\n${url}\n${maxAgeMs}`;
+  if (jsonInFlight.has(key)) return jsonInFlight.get(key);
+  const request = readCachedJson(cacheName, url, maxAgeMs);
+  jsonInFlight.set(key, request);
+  return request.finally(() => {
+    if (jsonInFlight.get(key) === request) jsonInFlight.delete(key);
+  });
 }
 
 /**

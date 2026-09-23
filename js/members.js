@@ -38,8 +38,9 @@ import { setUsername } from "./store.js";
 
 const KEY = "dfl.memberId";
 
-let cache = null;
-let inFlight = null;      // all active members, loaded once per page load
+let directoryCache = null;
+let directoryInFlight = null; // every member, shared by Home, Lore and Analyzer
+let directoryEpoch = 0;
 let current = null;    // the member using this device
 
 export function getMemberId() {
@@ -50,9 +51,15 @@ export function currentMember() {
   return current;
 }
 
-/** Active members, newest league additions last. */
-export async function loadMembers({ force = false } = {}) {
-  if (cache && !force) return cache;
+/**
+ * The complete member directory, loaded once per page visit.
+ *
+ * Home, Lore and Analyzer previously selected slightly different member
+ * columns independently. With only twelve owners the row size is negligible;
+ * sharing the complete rows removes several round trips from every Home load.
+ */
+export async function loadMemberDirectory({ force = false } = {}) {
+  if (directoryCache && !force) return directoryCache;
   if (!configured) return [];
   /*
     The cache was read before the request and written after it resolved, so
@@ -61,27 +68,40 @@ export async function loadMembers({ force = false } = {}) {
     the same list, so that was a real duplicate request on every cold start.
     Holding the promise makes them share one.
   */
-  if (inFlight && !force) return inFlight;
+  if (directoryInFlight && !force) return directoryInFlight;
 
-  inFlight = (async () => {
+  const requestEpoch = directoryEpoch;
+  directoryInFlight = (async () => {
     const { data, error } = await db()
       .from("members")
       .select("*")
-      .eq("active", true)
       .order("sort_order", { ascending: true })
       .order("display_name", { ascending: true });
 
     if (error) throw error;
-    cache = data || [];
-    return cache;
+    const members = data || [];
+    if (requestEpoch === directoryEpoch) directoryCache = members;
+    return members;
   })();
 
   try {
-    return await inFlight;
+    return await directoryInFlight;
   } finally {
     /* Cleared either way: a rejected fetch must not be cached as the answer. */
-    inFlight = null;
+    directoryInFlight = null;
   }
+}
+
+export function clearMemberDirectoryCache() {
+  directoryEpoch += 1;
+  directoryCache = null;
+  directoryInFlight = null;
+}
+
+/** Active members, newest league additions last. */
+export async function loadMembers({ force = false } = {}) {
+  const members = await loadMemberDirectory({ force });
+  return members.filter((member) => member.active === true);
 }
 
 /** Work out who this device belongs to. Returns null if not chosen yet. */
@@ -116,7 +136,7 @@ export function clearMember() {
 
 /** Reload the current member's row after an edit. */
 export async function refreshMember() {
-  cache = null;
+  clearMemberDirectoryCache();
   return restoreMember();
 }
 

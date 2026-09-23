@@ -279,7 +279,7 @@ export async function captureCompletedTradeAlerts({ transactions = [], priorTran
   }
 
   let analyzer;
-  try { analyzer = await loadAnalyzerData(); }
+  try { analyzer = await loadAnalyzerData({ force: true }); }
   catch (error) { log(`Trade alerts skipped: DFLyzer data unavailable (${error.message}).`); return { created: 0, notified: 0 }; }
   if (analyzer.state !== "ready") return { created: 0, notified: 0 };
   const state = preTradeRosterState({ previousRosters, currentRosters, transactions: freshOwnership });

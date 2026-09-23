@@ -1660,7 +1660,7 @@
   border-radius: 0;
   background:
     linear-gradient(rgba(6, 18, 22, .78), rgba(6, 18, 22, .9)),
-    url("../assets/dfl-update-stadium.png") center 23% / cover no-repeat;
+    url("../assets/dfl-update-stadium.webp") center 23% / cover no-repeat;
   box-shadow: none;
 }
 #home-wrap > .dfl-anniv > .dfl-anniv-copy { position: relative; }

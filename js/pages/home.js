@@ -24,7 +24,7 @@ import { esc, fmtDate, fmtWhen, fmtShort, money, errorBox, toast } from "../ui.j
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
 import { promptInstall, isInstalled } from "../install.js";
-import { currentMember } from "../members.js";
+import { currentMember, loadMemberDirectory } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
@@ -336,10 +336,9 @@ export async function render(view) {
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
     db().from("sleeper_leagues").select("season,status,champion_user_id").order("season", { ascending: false }),
-    /* Only the four columns this page reads. Not loadMembers(), which filters
-       to active members - the owner count and the historical champion lookup
-       both need people who have since left. */
-    db().from("members").select("id,display_name,team_name,sleeper_user_id,profile_image"),
+    /* The shared directory includes former members; the owner count and the
+       historical champion lookup both need people who have since left. */
+    loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
     db().from("golf_outings").select("id,name,course,event_date,event_time,status").neq("status", "final").order("event_date", { ascending: true }).limit(1),
     db().from("finance_payments").select("season,amount_due,amount_paid"),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),

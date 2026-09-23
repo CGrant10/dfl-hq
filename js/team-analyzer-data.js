@@ -2,6 +2,13 @@ import { db } from "./supabase.js";
 import { loadMarketAdp, loadPlayers, loadSeasonStats } from "./sleeper.js";
 import { scoringFormat } from "./dfl-scoring.js";
 import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
+import { loadMemberDirectory } from "./members.js";
+
+const ANALYZER_CACHE_MS = 60 * 1000;
+let analyzerValue = null;
+let analyzerExpiresAt = 0;
+let analyzerInFlight = null;
+let analyzerEpoch = 0;
 
 /**
  * The shared wire behind Team Analyzer and Home's Power Pulse.
@@ -11,11 +18,11 @@ import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
  * cached by sleeper.js, and Home calls this only after its useful shell has
  * already painted.
  */
-export async function loadAnalyzerData() {
+async function fetchAnalyzerData() {
   const [leagueRes, rosterRes, memberRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
-    db().from("members").select("id,display_name,team_name,sleeper_user_id,active"),
+    loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
   ]);
   const error = leagueRes.error || rosterRes.error || memberRes.error;
   if (error) throw error;
@@ -67,4 +74,36 @@ export async function loadAnalyzerData() {
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
   };
+}
+
+/** Drop the shared model after a Sleeper sync changes rosters or matchups. */
+export function clearAnalyzerDataCache() {
+  analyzerEpoch += 1;
+  analyzerValue = null;
+  analyzerExpiresAt = 0;
+  analyzerInFlight = null;
+}
+
+/**
+ * Share one analyzer build across Home, Analyzer, Trade and trade alerts.
+ * A one-minute result cache makes quick route changes instant; `force` is for
+ * the sync pipeline, where a newly completed trade must never use old rosters.
+ */
+export function loadAnalyzerData({ force = false } = {}) {
+  const now = Date.now();
+  if (!force && analyzerValue && now < analyzerExpiresAt) return Promise.resolve(analyzerValue);
+  if (!force && analyzerInFlight) return analyzerInFlight;
+
+  const requestEpoch = analyzerEpoch;
+  const request = fetchAnalyzerData().then((value) => {
+    if (requestEpoch === analyzerEpoch) {
+      analyzerValue = value;
+      analyzerExpiresAt = Date.now() + ANALYZER_CACHE_MS;
+    }
+    return value;
+  });
+  analyzerInFlight = request;
+  return request.finally(() => {
+    if (analyzerInFlight === request) analyzerInFlight = null;
+  });
 }

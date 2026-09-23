@@ -200,8 +200,19 @@ describe("the initial app shell", () => {
 
   it("does not precache the update-only stadium artwork", () => {
     const worker = fs.readFileSync("sw.js", "utf8");
+    const updateCss = fs.readFileSync("css/update-gate.css", "utf8");
+    const updateJs = fs.readFileSync("js/update.js", "utf8");
     const shell = worker.slice(worker.indexOf("const APP_SHELL"), worker.indexOf("const SHELL_URLS"));
     expect(shell).not.toContain("dfl-update-stadium.png");
+    expect(shell).not.toContain("app-update-512.png");
+    expect(updateCss).not.toContain("dfl-update-stadium.");
+    expect(updateJs).toContain('el.style.setProperty("--update-gate-artwork"');
+  });
+
+  it("preserves Sleeper data caches when an app shell activates", () => {
+    const worker = fs.readFileSync("sw.js", "utf8");
+    expect(worker).toContain("k.startsWith(APP_CACHE_PREFIX)&&k!==CACHE_NAME");
+    expect(worker).not.toContain("keys.filter(k=>k!==CACHE_NAME)");
   });
 
   it("keeps Pixi out of ordinary metadata consumers", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("./supabase.js", () => ({ db: vi.fn(), edge: vi.fn(), privilegedFunctionHeaders: vi.fn() }));
-vi.mock("./team-analyzer-data.js", () => ({ loadAnalyzerData: vi.fn() }));
+vi.mock("./team-analyzer-data.js", () => ({ loadAnalyzerData: vi.fn(), clearAnalyzerDataCache: vi.fn() }));
 import { adoptTeamName } from "./sync.js";
 
 describe("adopting a renamed team", () => {

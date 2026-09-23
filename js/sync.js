@@ -24,6 +24,8 @@ import { slotsFromOrder, slotsFromPicks } from "./draft-order.js";
 import { collectLeagueChain } from "./sleeper-sync-scope.js";
 import { captureCompletedTradeAlerts } from "./trade-alerts.js";
 import { clearLoreCache } from "./lore.js";
+import { clearAnalyzerDataCache } from "./team-analyzer-data.js";
+import { clearMemberDirectoryCache } from "./members.js";
 
 const MAX_WEEK    = 18;
 const CONCURRENCY = 4;    // parallel week requests; polite to the API
@@ -77,6 +79,8 @@ export async function syncSleeper(leagueId, log = () => {}, { includeHistory = f
     last_sync_note:    `${includeHistory ? "History repair" : "Current season"}: ${seasons.join(", ")}`,
   }).eq("id", 1);
   clearLoreCache();
+  clearMemberDirectoryCache();
+  clearAnalyzerDataCache();
   await clearSleeperAnalysisCache();
 
   log(`Done. ${counts.seasons} season(s) synced.`);
