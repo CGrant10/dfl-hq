@@ -14,6 +14,7 @@ let adminClientKey = "";
 let adminToken = "";
 let adminOn = false;
 let commissionerClient = null;
+let commissionerClientKey = "";
 let commissionerAccess = null;
 let commissionerMemberId = "";
 
@@ -79,7 +80,12 @@ function makePublicClient() {
   previous one.
 */
 function adminHeaderKey(token) {
-  return `${token}|${memberIdNow()}|${golfHeaderKey()}`;
+  const memberId = memberIdNow();
+  return `${token}|${memberId}|${notificationDeviceToken(memberId)}|${golfHeaderKey()}`;
+}
+
+function commissionerHeaderKey(memberId, pin) {
+  return `${memberId}|${pin}|${notificationDeviceToken(memberId)}|${golfHeaderKey()}`;
 }
 
 function makeAdminClient(token) {
@@ -174,7 +180,18 @@ export function db() {
     }
     return adminClient;
   }
-  if (commissionerStillMatchesMember()) return commissionerClient;
+  if (commissionerStillMatchesMember()) {
+    /* Enabling push stores its device token after the commissioner client was
+       created. Rebuild here when that token changes or notification RPCs keep
+       sending the old headers and the UI falsely says the device is off. */
+    const pin = getCommissionerPin();
+    const key = commissionerHeaderKey(commissionerMemberId, pin);
+    if (key !== commissionerClientKey) {
+      commissionerClient = makeCommissionerClient(commissionerMemberId, pin);
+      commissionerClientKey = key;
+    }
+    return commissionerClient;
+  }
   return makePublicClient();
 }
 
@@ -273,6 +290,7 @@ export async function adminLogin(password, remember = true) {
   adminClientKey = adminHeaderKey(password);
   adminOn = true;
   commissionerClient = null;
+  commissionerClientKey = "";
   commissionerAccess = null;
   commissionerMemberId = "";
   setCommissionerPin("");
@@ -292,6 +310,7 @@ export async function commissionerLogin(pin, remember = true) {
 
   commissionerClient = client;
   commissionerMemberId = String(row.member_id);
+  commissionerClientKey = commissionerHeaderKey(commissionerMemberId, pin);
   commissionerAccess = {
     member_id: row.member_id,
     is_owner: !!row.is_owner,
@@ -313,6 +332,7 @@ export function adminLogout() {
   adminToken = "";
   adminOn = false;
   commissionerClient = null;
+  commissionerClientKey = "";
   commissionerAccess = null;
   commissionerMemberId = "";
   setAdminToken("");

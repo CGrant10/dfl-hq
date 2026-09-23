@@ -524,6 +524,17 @@ describe("the supported golf GPS courses", () => {
     expect(worker).toContain("./js/member-preview.js");
   });
 
+  it("rebuilds privileged clients when a notification device token changes", () => {
+    const gate = fs.readFileSync("js/supabase.js", "utf8");
+    /* Push enrollment saves its token after the active admin/commissioner
+       client was created. Both cache keys must include that token or every
+       later visit looks like an unregistered device. */
+    expect(gate).toContain("notificationDeviceToken(memberId)");
+    expect(gate).toContain("function commissionerHeaderKey(memberId, pin)");
+    expect(gate).toContain("key !== commissionerClientKey");
+    expect(gate).toContain("commissionerClient = makeCommissionerClient(commissionerMemberId, pin)");
+  });
+
   it("maps front, center and back of every green and rings the player with layup arcs", () => {
     const source = fs.readFileSync("js/golf-gps-course-map.js", "utf8");
     const schema = fs.readFileSync("golf_gps_green_points_schema.sql", "utf8");
