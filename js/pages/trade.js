@@ -30,9 +30,9 @@ const edge = offer => {
   return Math.round((offer.valueToA - offer.valueToB) / high * 100);
 };
 const tierCopy = {
-  fair: { title: "Fair deals", note: "Good value. Realistic moves.", call: "FAIR SHOT" },
-  aggressive: { title: "Aggressive shots", note: "Bigger swings. Bigger upside.", call: "WORTH A TEXT" },
-  steal: { title: "Steal attempts", note: "Low odds. League-changing upside.", call: "SWING BIG" },
+  fair: { title: "Fair deals", note: "Balanced value. Both sides have a reason.", call: "FAIR SHOT" },
+  aggressive: { title: "Aggressive offers", note: "You pay a premium to land your target.", call: "WORTH A TEXT" },
+  steal: { title: "Steal attempts", note: "You win the value. Low-odds asks.", call: "SWING BIG" },
 };
 
 function offerPlayerRows(ids, pool) {
@@ -87,7 +87,10 @@ function tradeLab(team, teams, pool, shop) {
   const theirPlayers = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
   shop.sendAnchors = (shop.sendAnchors || []).filter(id => minePlayers.some(player => String(player.id) === String(id)));
   if (String(shop.anchorPartnerId) !== String(partner?.id)) {
-    shop.receiveAnchors = theirPlayers[0] ? [String(theirPlayers[0].id)] : [];
+    /* A new partner must start unanchored. Auto-selecting their most valuable
+       player forced every batch to invent a blockbuster before the user had
+       asked for one, which made the "fair" tier look ridiculous. */
+    shop.receiveAnchors = [];
     shop.anchorPartnerId = partner?.id || "";
   } else {
     shop.receiveAnchors = (shop.receiveAnchors || []).filter(id => theirPlayers.some(player => String(player.id) === String(id)));

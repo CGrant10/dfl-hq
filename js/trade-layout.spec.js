@@ -45,4 +45,11 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('shop.offerCache ||= new Map()');
     expect(source).toContain('Up to 8 players');
   });
+
+  it("does not silently target the other team's most valuable player", () => {
+    const source = readFileSync(new URL("./pages/trade.js", import.meta.url), "utf8");
+
+    expect(source).toContain("shop.receiveAnchors = [];");
+    expect(source).not.toContain("shop.receiveAnchors = theirPlayers[0]");
+  });
 });

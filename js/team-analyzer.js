@@ -485,6 +485,21 @@ function evaluationCandidates(possibilities, pool, cap = 900) {
   return selected;
 }
 
+/* A global cap naturally fills with 2-for-2s because that shape has far more
+   combinations than 1-for-2 or 3-for-1. Give every requested shape its own
+   evaluation budget first, then let value proximity choose within the shape. */
+function shapeBalancedCandidates(possibilities, pool, cap = 1200) {
+  if (possibilities.length <= cap) return possibilities;
+  const groups = new Map();
+  for (const candidate of possibilities) {
+    const shape = candidate.shape || `${candidate.sendA.length}-${candidate.sendB.length}`;
+    if (!groups.has(shape)) groups.set(shape, []);
+    groups.get(shape).push(candidate);
+  }
+  const perShape = Math.max(80, Math.floor(cap / Math.max(1, groups.size)));
+  return [...groups.values()].flatMap(group => evaluationCandidates(group, pool, perShape));
+}
+
 function pairPackages(sendPackages, receivePackages, pool) {
   if (!sendPackages.length || !receivePackages.length) return [];
   if (sendPackages.length * receivePackages.length <= 320) {
@@ -508,9 +523,16 @@ function pairPackages(sendPackages, receivePackages, pool) {
 
 export function tradeSuggestionTier(result) {
   if (!result) return null;
-  if (result.fairness >= 85) return "fair";
-  if (result.fairness >= 65) return "aggressive";
-  return "steal";
+  const high = Math.max(Number(result.valueToA) || 0, Number(result.valueToB) || 0, 1);
+  const edge = ((Number(result.valueToA) || 0) - (Number(result.valueToB) || 0)) / high * 100;
+  const weeklyA = Number(result.weeklyDeltaA) || 0, weeklyB = Number(result.weeklyDeltaB) || 0;
+  const lineupGap = weeklyA - weeklyB;
+  /* Fair means both the asset exchange and the lineup consequence are close.
+     Direction matters below that line: winning the value is a steal attempt;
+     paying the premium to land the target is an aggressive offer. */
+  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(weeklyA, weeklyB) >= -.75) return "fair";
+  if (edge >= 6 || lineupGap >= 1.5) return "steal";
+  return "aggressive";
 }
 
 function suggestionScore(result, intent = "press") {
@@ -518,6 +540,31 @@ function suggestionScore(result, intent = "press") {
   if (intent === "fair") return result.fairness * 1.5 + mutualGain * 10;
   if (intent === "swing") return result.fairness * .45 + result.weeklyDeltaA * 22 + Math.max(0, result.valueToA - result.valueToB) * .35;
   return result.fairness + result.weeklyDeltaA * 15 + result.weeklyDeltaB * 5;
+}
+
+function shapeOrder(shape) {
+  const [send, receive] = String(shape).split("-").map(Number);
+  return (send + receive) * 10 - Math.abs(send - receive) + send / 100;
+}
+
+/* Round-robin across package shapes so the first batch is not four versions
+   of the same 2-for-2. Ranking still decides the best offer within each shape. */
+function diverseOffers(offers, limit) {
+  const queues = new Map();
+  for (const offer of offers) {
+    if (!queues.has(offer.shape)) queues.set(offer.shape, []);
+    queues.get(offer.shape).push(offer);
+  }
+  const shapes = [...queues.keys()].sort((a, b) => shapeOrder(a) - shapeOrder(b));
+  const selected = [];
+  while (selected.length < limit && shapes.some(shape => queues.get(shape).length)) {
+    for (const shape of shapes) {
+      const offer = queues.get(shape).shift();
+      if (offer) selected.push(offer);
+      if (selected.length === limit) break;
+    }
+  }
+  return selected;
 }
 
 /**
@@ -555,22 +602,24 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     for (const [sendCount, receiveCount] of allowedShapes) {
       const sendPackages = tradePackages(minePlayers, sendCount, sendRequired);
       const receivePackages = tradePackages(theirs, receiveCount, receiveRequired);
-      for (const pair of pairPackages(sendPackages, receivePackages, pool)) possibilities.push({ other, ...pair });
+      for (const pair of pairPackages(sendPackages, receivePackages, pool)) {
+        possibilities.push({ other, ...pair, shape: `${sendCount}-${receiveCount}` });
+      }
     }
   }
-  const ranked = evaluationCandidates(possibilities, pool).map(candidate => {
+  const ranked = shapeBalancedCandidates(possibilities, pool).map(candidate => {
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
     const tier = tradeSuggestionTier(result);
     const score = suggestionScore(result, intent) + (result.deltaA + result.deltaB) * .35 - balancePenalty * .1;
     return { ...candidate, ...result, tier, shape: `${candidate.sendA.length}-${candidate.sendB.length}`, score };
-  }).filter(Boolean)
+  }).filter(isPlausibleTradeSuggestion)
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
   const quota = Math.max(1, Math.floor(limit / 3));
-  const selected = ["fair", "aggressive", "steal"].flatMap(tier => ranked.filter(offer => offer.tier === tier).slice(0, quota));
+  const selected = ["fair", "aggressive", "steal"].flatMap(tier => diverseOffers(ranked.filter(offer => offer.tier === tier), quota));
   if (selected.length < limit) {
     for (const offer of ranked) {
       if (selected.includes(offer)) continue;
@@ -582,7 +631,9 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 }
 
 export function isPlausibleTradeSuggestion(result) {
-  return Boolean(result) && result.fairness >= 45 && result.weeklyDeltaA >= -1 && result.weeklyDeltaB >= -2;
+  if (!result || result.fairness < 40) return false;
+  const a = Number(result.weeklyDeltaA) || 0, b = Number(result.weeklyDeltaB) || 0;
+  return a >= -2.5 && b >= -2.5 && a + b >= -3.5;
 }
 
 export function compareTeams(teamA, teamB) {
