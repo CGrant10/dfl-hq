@@ -2022,6 +2022,7 @@ span) { overflow-wrap: anywhere; }
   object-fit: cover;
 }
 .whoami-photo[hidden] { display: none; }
+:root[data-mode="light"] .whoami-photo { border-color: var(--line); }
 
 @media (max-width: 620px) {
   #home-wrap > .dfl-anniv { grid-template-columns: minmax(0, 1fr); padding-inline: 14px; }
@@ -2069,3 +2070,16 @@ span) { overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   #home-wrap.has-scroll-fade [data-assemble] { opacity: 1; transition: none; }
 }
+
+/* The anniversary remains photographic in light mode, but it is now printed
+   on the same paper as the rest of Home instead of becoming a second black
+   header. The stadium survives as a quiet watermark and the gold laurels keep
+   their occasion role. */
+:root[data-mode="light"] #home-wrap > .dfl-anniv {
+  --home-program-ink: var(--text);
+  --home-program-muted: var(--muted);
+  background:
+    linear-gradient(color-mix(in srgb, var(--bg-2) 90%, transparent), color-mix(in srgb, var(--bg) 94%, transparent)),
+    url("../assets/dfl-update-stadium.webp") center 23% / cover no-repeat;
+}
+:root[data-mode="light"] #home-wrap > .dfl-anniv > .dfl-anniv-copy strong { text-shadow: none; }

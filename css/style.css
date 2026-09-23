@@ -1577,25 +1577,8 @@ textarea { min-height: 96px; resize: vertical; }
 .option:active, .quicknav a:active, .memberbtn:active, .chip:active { transform: scale(.975); }
 .tabbar :is(a, .tabmore):active { transform: scale(.9); }
 
-/* ---------------------------------------------------------------------
-   THE TOP BAR IS ALWAYS DARK
-
-   The bar at the top keeps the crest's black banner in light mode as well
-   as dark. It is the one piece of the app the logo genuinely dictates, and
-   it means the wordmark reads the same everywhere instead of being
-   restyled twice.
-
-   The consequence has to be handled explicitly: everything inside it is
-   pinned light-on-dark rather than following --text and --muted, which
-   invert. Without this the header goes near-black on near-black the moment
-   a phone is in light mode.
-
-   THE BOTTOM BAR NO LONGER FOLLOWS THIS RULE. It carries no wordmark, so
-   nothing about the logo dictated it, and a black slab under a white page
-   was the single most obvious thing wrong with light mode. It takes the
-   palette; its glyphs are brushed steel that has a light-mode ramp of its
-   own. See css/ui.css and css/profile-neutral.css.
-   ------------------------------------------------------------------- */
+/* Dark palettes retain the crest banner. Light palettes override the ink and
+   controls below so the entire fixed shell follows the selected mode. */
 .topbar { color: #f5f7fa; border-bottom-color: #222b3a; }
 .topbar .whoami {
   background: rgba(255,255,255,.09);
@@ -1604,6 +1587,15 @@ textarea { min-height: 96px; resize: vertical; }
 }
 .topbar .whoami:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.32); }
 .brand-text span { color: #E67582; }
+:root[data-mode="light"] .topbar { color: var(--text); border-bottom-color: var(--line); }
+:root[data-mode="light"] .topbar .whoami {
+  background: color-mix(in srgb, var(--bg-2) 90%, transparent);
+  color: var(--text);
+  border-color: var(--control-line);
+}
+:root[data-mode="light"] .topbar .whoami:hover { background: var(--hover); border-color: var(--accent); }
+:root[data-mode="light"] .brand-text .creed { color: var(--text); }
+:root[data-mode="light"] .brand-text .creed i:nth-of-type(2) { color: var(--text); }
 .tabbar { border-top-color: var(--line); }
 .tabbar :is(a, .tabmore) { color: var(--muted); }
 .tabbar :is(a, .tabmore).on, .tabbar :is(a, .tabmore):hover { color: var(--accent); }

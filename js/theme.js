@@ -139,13 +139,10 @@ const MODES = {
     warnInk: "#8a5200", warnBg: "rgba(196,124,0,.12)", warnLine: "#e0bd7e",
     dangerInk: "#a3121a", dangerBg: "rgba(163,18,26,.09)", dangerLine: "#e2a9a5",
     scUnder: "#0f7a3d", scOver: "#c2371f", scBad: "#a3121a",
-    /* The bar keeps the crest's black banner in both modes - it is the one
-       piece of chrome the logo actually dictates. */
-    topbarA: "#101823", topbarB: "#0d1117",
-    /* ...which is exactly why it needs its own accents. See THE BAR IS ALWAYS
-       DARK below: these are the dark palette's text pair, because that is the
-       ground the bar actually has. */
-    barInk: "#E67582", barInk2: "#7098E6",
+    /* Light mode is light all the way through the shell. Keeping a black band
+       here made the fixed header look detached from the page. */
+    topbarA: "#ffffff", topbarB: "#eef1f6",
+    barInk: "#B8001B", barInk2: "#003396",
     heroA: "#ffffff", heroWash: "rgba(16,24,40,.04)",
     toastBg: "#11161d", onToast: "#f5f7fa",
     milestone: "#8a6410",
@@ -174,8 +171,8 @@ const MODES = {
     warnInk: "#805200", warnBg: "rgba(180,119,0,.11)", warnLine: "#ddc483",
     dangerInk: "#a12929", dangerBg: "rgba(161,41,41,.09)", dangerLine: "#e1adad",
     scUnder: "#05723c", scOver: "#bb442f", scBad: "#992727",
-    topbarA: "#07344d", topbarB: "#082c40",
-    barInk: "#63D69B", barInk2: "#7FC4F5",
+    topbarA: "#ffffff", topbarB: "#edf1f3",
+    barInk: "#056936", barInk2: "#075077",
     heroA: "#ffffff", heroWash: "rgba(7,80,119,.035)",
     toastBg: "#082c40", onToast: "#f7fffb",
     milestone: "#765c0d",
@@ -274,13 +271,10 @@ const MODES = {
     warnInk: "#6B4300", warnBg: "rgba(138,90,0,.13)", warnLine: "#D9BE84",
     dangerInk: "#A3121A", dangerBg: "rgba(163,18,26,.09)", dangerLine: "#E0A9A4",
     scUnder: "#0A5527", scOver: "#8E2610", scBad: "#93101A",
-    /* Black is one of the four, so the banner is not borrowed from the
-       crest here the way it is in every other palette - it is the ground
-       the wheel was drawn on, kept as the one dark band on the page. */
-    topbarA: "#15110D", topbarB: "#0A0A0A",
-    /* On that black band the wheel is back on its own ground, so the bar
-       wears the DARK palette's inks - the lifted red and the full yellow. */
-    barInk: "#F08279", barInk2: "#EFC94C",
+    /* Keep the shell on the same bone paper instead of dropping a dark band
+       above an otherwise light Medicine Wheel screen. */
+    topbarA: "#FFFFFF", topbarB: "#F3EDE4",
+    barInk: "#A50E26", barInk2: "#6E4B00",
     heroA: "#FFFFFF", heroWash: "rgba(21,17,13,.045)",
     /* Toasts and sheets land on black with bone type: a pop-up over a light
        page has to separate from it, and black is the wheel's own answer. */
@@ -495,22 +489,11 @@ function apply() {
   s.setProperty("--topbar-a", m.topbarA);
   s.setProperty("--topbar-b", m.topbarB);
   /*
-    THE BAR IS ALWAYS DARK, SO IT NEEDS ITS OWN ACCENTS.
+    THE BAR MAY HAVE ITS OWN ACCENTS.
 
-    Every palette in this file paints the top bar with the crest's black
-    banner - it is the one piece of chrome the logo dictates. That is fine
-    for the WORDS, which style.css pins to white for exactly this reason,
-    and it was quietly wrong for anything on the bar drawn in --accent:
-    those are chosen to be read on the PAGE, and on a light palette that
-    means they are dark, and a dark accent on a black band is not there.
-    The creed's three stars were the proof - #B8001B measures 2.4:1 up
-    there, and in Light and Fairway they had simply vanished.
-
-    A dark palette's accents already read on the bar, so it falls back to
-    them and nothing about those palettes changes. A light palette declares
-    the pair that reads on ITS bar - which for Medicine Wheel Light is the
-    dark wheel's own red and yellow, because that is the same black ground
-    the wheel was drawn on.
+    Dark palettes use their page accents here. Light palettes explicitly use
+    the darker pair that reads on their light header. Keeping this token
+    separate also lets the tiny creed stars remain legible in every mode.
   */
   s.setProperty("--bar-ink", m.barInk || m.accent);
   s.setProperty("--bar-ink-2", m.barInk2 || m.accent2);

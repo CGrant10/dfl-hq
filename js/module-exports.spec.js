@@ -340,11 +340,33 @@ describe("the supported golf GPS courses", () => {
     expect(theme).toContain('name === "medicine-light"');
     expect(memberScope).toContain('"medicine-light"');
     expect(schema).toContain("'fairway', 'medicine', 'medicine-light'");
-    /* The bar is always dark, so it carries its own accents - see the note in
-       apply(). Without this the creed's stars are drawn in a dark ink on a
-       black band in every light palette, which is where they had been. */
+    /* The bar carries explicit accents so its tiny creed stars remain readable
+       whether the selected palette gives it a light or dark surface. */
     expect(theme).toContain('s.setProperty("--bar-ink", m.barInk || m.accent)');
     expect(styles).toContain("color: var(--bar-ink);");
+  });
+
+  it("keeps the fixed header and anniversary banner on the light surface", () => {
+    const theme = fs.readFileSync("js/theme.js", "utf8");
+    const styles = fs.readFileSync("css/style.css", "utf8");
+    const home = fs.readFileSync("css/home.css", "utf8");
+    expect(theme).toContain('topbarA: "#ffffff", topbarB: "#eef1f6"');
+    expect(theme).toContain('topbarA: "#FFFFFF", topbarB: "#F3EDE4"');
+    expect(styles).toContain(':root[data-mode="light"] .topbar');
+    expect(styles).toContain(':root[data-mode="light"] .brand-text .creed');
+    expect(home).toContain(':root[data-mode="light"] #home-wrap > .dfl-anniv');
+    expect(home).toContain('var(--bg-2) 90%');
+  });
+
+  it("automatically grades completed Sleeper sportsbook tickets once", () => {
+    const migration = fs.readFileSync("sportsbook_sleeper_settlement_schema.sql", "utf8");
+    expect(migration).toContain("sportsbook_settle_completed_matchups");
+    expect(migration).toContain("pg_advisory_xact_lock(73910422)");
+    expect(migration).toContain("sportsbook_roll_up_entry");
+    expect(migration).toContain("dfl-sportsbook-tuesday-settlement");
+    expect(migration).toContain("America/Chicago");
+    expect(migration).toContain("to service_role");
+    expect(migration).toContain("from public, anon, authenticated");
   });
 
   it("keeps typography and component geometry consistent across app themes", () => {
