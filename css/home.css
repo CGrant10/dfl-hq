@@ -1621,26 +1621,16 @@
 }
 
 /* =====================================================================
-   APPROVED HOME COMPOSITION — Photo 1.jpg is the visual source of truth.
-   The page reads as one dark broadcast program: anniversary masthead,
-   featured matchup, weekly power table, then a three-hit report rail.
+   APPROVED HOME COMPOSITION — Photo 1.jpg is the structural source of
+   truth. The broadcast program follows the member's active palette; only
+   the photographic anniversary masthead keeps its night-stadium treatment.
    ===================================================================== */
 #home-wrap {
-  --bg: #061216;
-  --bg-2: #0a191d;
-  --bg-3: #102328;
-  --card: #09171a;
-  --card-surface: #09171a;
-  --text: #f3efe4;
-  --body-text: #c5c8c2;
-  --muted: #8e9998;
-  --line: rgba(232, 238, 228, .22);
-  --line-soft: rgba(232, 238, 228, .12);
-  --control-bg: #0d2024;
-  --control-line: rgba(232, 238, 228, .2);
-  --home-program-line: color-mix(in srgb, var(--text) 18%, transparent);
-  --home-program-ink: #f3efe4;
-  --home-program-muted: #a9afb0;
+  --card: var(--bg-2);
+  --card-surface: var(--bg-2);
+  --home-program-line: var(--line);
+  --home-program-ink: var(--text);
+  --home-program-muted: var(--muted);
   gap: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
@@ -1651,6 +1641,8 @@
 }
 
 #home-wrap > .dfl-anniv {
+  --home-program-ink: #f3efe4;
+  --home-program-muted: #a9afb0;
   min-height: 98px;
   grid-template-columns: minmax(0, 1fr);
   gap: 3px;
@@ -1740,8 +1732,8 @@
 #home-wrap .home-rank-summary span.is-down,
 #home-wrap .home-rank-summary span.is-even,
 #home-wrap .home-rankings-card ol > li > span:last-child { display: inline-flex; align-items: center; gap: 2px; font-weight: var(--fw-bold); font-style: normal; }
-#home-wrap .home-rankings-card .is-up { color: #62e5ac; }
-#home-wrap .home-rankings-card .is-down { color: #ff8585; }
+#home-wrap .home-rankings-card .is-up { color: var(--ok); }
+#home-wrap .home-rankings-card .is-down { color: var(--danger-ink); }
 #home-wrap .home-rankings-card .is-up .ico-sm { transform: rotate(-90deg); }
 #home-wrap .home-rankings-card .is-down .ico-sm { transform: rotate(90deg); }
 #home-wrap .home-rank-leader > .home-rank-face { width: 54px; height: 54px; object-fit: cover; border-radius: 50%; font-size: 1.05rem; }
@@ -1792,7 +1784,7 @@
   min-height: 230px;
   padding: 0 var(--s-5) 20px;
   color: var(--home-program-ink);
-  background: color-mix(in srgb, var(--bg) 96%, #00120f 4%);
+  background: color-mix(in srgb, var(--bg) 94%, var(--bg-3) 6%);
 }
 #home-wrap .home-weekly-digest > header small { color: var(--home-program-muted); font-size: .58rem; font-weight: var(--fw-bold); letter-spacing: .18em; }
 #home-wrap .home-weekly-digest > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 17px; }

@@ -339,6 +339,17 @@ describe("the supported golf GPS courses", () => {
     expect(styles).not.toContain(':root[data-mode="fairway"] {\n  --font-body');
   });
 
+  it("lets the Home broadcast composition inherit the selected palette", () => {
+    const home = fs.readFileSync("css/home.css", "utf8");
+    const wrap = [...home.matchAll(/#home-wrap\s*\{([\s\S]*?)\n\}/g)]
+      .find((match) => match[1].includes("--home-program-ink"))?.[1] || "";
+    for (const token of ["--bg:", "--bg-2:", "--bg-3:", "--text:", "--muted:", "--line:"]) {
+      expect(wrap, `Home must not pin ${token}`).not.toContain(token);
+    }
+    expect(wrap).toContain("--home-program-ink: var(--text)");
+    expect(wrap).toContain("--home-program-muted: var(--muted)");
+  });
+
   it("keeps a locked Profile actionable when its status check is interrupted", () => {
     const profileLock = fs.readFileSync("js/pages/profile-locked.js", "utf8");
     const screens = fs.readFileSync("css/screens.css", "utf8");

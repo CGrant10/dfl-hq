@@ -1,54 +1,52 @@
-# Trade Board design QA
+# Trade page design QA
 
-- Source visual truth: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\option-3.png`
-- Implementation capture: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-live.png`
-- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-compare.png`
-- Viewport: 390 x 844 CSS px, device scale factor 1
-- Source pixels: 390 x 844
-- Implementation pixels: 390 x 844
-- State: Trade route, Martin77 selected, 2-for-1 shape, Press intent, populated Steal attempts tier expanded
+## Evidence
 
-**Full-view comparison evidence**
+- Source visual truth: `C:\Users\GUEST\.codex\generated_images\01a05a88-a21b-7f51-8231-82aa8376e4e7\exec-a0c2383f-25c9-4252-b63d-f9dd8d5c56b5.png`
+- Browser-rendered implementation: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\trade-board-full-live.png`
+- Combined comparison: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\trade-mocks\design-qa-comparison.png`
+- Actual fixed-navigation viewport: `C:\Users\GUEST\Documents\Codex\2026-08-31\okay\theme-audit\screenshots\light-trade.png`
+- CSS viewport: 390 x 844 at device scale factor 1.
+- Source pixels: 724 x 2172. Implementation full-page pixels: 390 x 1365. The combined comparison normalizes both to 364 CSS px wide; heights remain proportional.
+- State: Light theme, Da Nickers trading with DaGrapeApes, Bijan Robinson required, package maximum 4, all offer tiers collapsed, manual mode collapsed.
+- Console/runtime errors checked during capture: none.
+- Primary interactions checked: package slider changes to 8, offer batch refresh indicator, Fair/Press/Swing highlight motion, tier expansion, generated-offer loading, manual builder lazy opening, and the eight-player cap.
 
-- The implementation preserves the selected target-first hierarchy: title, target controls, five package shapes, Fair/Aggressive/Steal disclosures, intent selector, offer regeneration, and the fixed app navigation.
-- The production header and navigation are the real app components rather than mock replacements. The implementation uses the selected member's live light team palette; the source mock used the default dark palette. This is expected theme behavior, not design drift.
-- The added compact `Trading as` selector is an intentional production requirement for commissioner/team previewing. It replaces the old full page header, team toolbar, and roster summary, so the Trade Board remains the first page task.
-- The first visual pass retained those three legacy blocks and pushed the board below the fold (P1). They were consolidated into the board header. A second pass made each offer too tall by moving Analyze to its own row (P2). The action is now an icon-sized fourth column and multiple offers scan naturally without horizontal overflow.
+## Full-view comparison
 
-**Focused region comparison evidence**
+The implementation matches the selected Flat Rules direction: one white reading surface, clear horizontal section rules, outlined form controls only where the user can interact, flat collapsed offer rows, and a rule-separated manual mode. The persistent navigation is fixed to the bottom in the real 390 x 844 viewport. Its mid-page position in the full-page capture is a Chrome `captureBeyondViewport` artifact, not the rendered viewport position.
 
-- Target and shape controls: same order, rounded bordered surfaces, condensed Rajdhani hierarchy, green selected state, and five equal-width shape buttons.
-- Tier headers: same three semantic groups, count display, short explanatory copy, independent disclosure behavior, and a populated tier opens automatically so the page never presents a blank default state.
-- Offer rows: unequal packages remain visibly side-by-side, the package shape and value edge stay above the players, and the Analyze control loads the exact package into the preserved manual analyzer.
+The pressure selector remains visible although the generated mock omitted it. That is an intentional product constraint: it preserves the existing Fair/Press/Swing behavior and the sliding selection motion the user explicitly requested.
 
-**Required fidelity surfaces**
+## Required fidelity surfaces
 
-- Fonts and typography: existing Rajdhani 600/700 assets are used; hierarchy, casing, wrapping, and compact labels match the app and source.
-- Spacing and layout rhythm: 12px mobile gutters, compact control heights, 7-9px section gaps, and existing card radii/tokens are used. No horizontal overflow at 390px.
-- Colors and visual tokens: all surfaces and semantic states use the current member theme tokens. No hard-coded blue copy or red card gradients were introduced.
-- Image quality and asset fidelity: no generated player photos, fake team logos, placeholder imagery, or new raster assets are used. The real app seal, top bar, and navigation remain intact.
-- Copy and content: the source labels are preserved where useful. Live offers use real Sleeper player/team data and honest `Fair shot`, `Worth a text`, and `Long shot` language.
+- Fonts and typography: existing DFL display/body system is preserved; hierarchy, optical weight, wrapping, and small-label spacing track the mock closely.
+- Spacing and layout: major section rhythm and hairline separation match. The live page is slightly taller because it retains the functional pressure selector.
+- Colors and tokens: the page uses active palette tokens only. Light, Dark, Fairway, Medicine Wheel, and Medicine Wheel Light captures show no hardcoded page-surface leakage.
+- Image quality and assets: existing crest and interface icons are reused at native quality. The mock introduced no new product imagery that required replacement.
+- Copy and content: live labels, team names, package controls, offer counts, and manual-builder copy remain intact.
 
-**Interaction and runtime evidence**
+## Focused-region comparison
 
-- All, 1-for-1, 2-for-1, 1-for-2, and 2-for-2 filters returned offers with the live synced league data (12, 9, 12, 12, and 12 in the captured pass).
-- Selecting a generated offer opened the custom analyzer and loaded a non-idle evaluated ticket.
-- Target disclosure, tier disclosures, intent controls, pagination/regeneration, and team selection were exercised in the browser.
-- Browser console errors: none.
-- Repository checks: typecheck, name check, 842 tests, and production build passed.
+A separate crop was not needed: both columns in `design-qa-comparison.png` keep controls and labels readable at 364 CSS px. The actual fixed-navigation placement was verified separately in `light-trade.png`.
 
-**Findings**
+## Findings
 
-- No actionable P0, P1, or P2 findings remain.
+- No actionable P0, P1, or P2 differences remain.
+- P3: the implementation is taller than the mock because the retained pressure selector is an intentional functional addition.
 
-**Follow-up polish**
+## Comparison history
 
-- P3: A future pass could hide zero-count tiers behind an `Other ranges` disclosure, but leaving them visible makes the three negotiation bands predictable and avoids changing the selected structure.
+1. Initial rendered comparison found the selected flat-rule hierarchy was present, but the full-page screenshot placed the fixed navigation mid-document. A real 390 x 844 viewport capture confirmed the navigation remains at the bottom; no production CSS change was needed.
+2. Theme captures found no Trade-specific palette leakage after the cleanup. No post-comparison Trade fix was required.
 
-**Comparison history**
+## Implementation checklist
 
-1. P1: legacy page header, team toolbar, and roster lead block pushed the selected Trade Board below the first viewport. Fixed by consolidating team selection into the board and making Trade Board the page heading.
-2. P2: mobile Analyze action wrapped beneath every offer and made rows materially taller than the source. Fixed by retaining the four-column row and reducing the mobile action to the existing chevron icon.
-3. Post-fix evidence: 390 x 844 capture shows the target, all package filters, all three tiers, and the start of multiple live offers above the fixed navigation with no horizontal overflow.
+- [x] Flatten outer Trade board and nested section cards.
+- [x] Retain outlined boundaries for real controls.
+- [x] Keep all offer-generation and manual-builder behavior.
+- [x] Keep navigation fixed at the viewport bottom.
+- [x] Verify all five selectable palettes.
+- [x] Verify interactions and console output.
 
 final result: passed

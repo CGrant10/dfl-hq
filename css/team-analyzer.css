@@ -1126,18 +1126,19 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* =====================================================================
    TRADE BOARD - target first, then honest negotiation bands
    ===================================================================== */
-.tb-board { margin: 0 0 var(--s-4); padding: 14px; border: 1px solid var(--card-border); border-radius: var(--panel-radius); background: var(--bg-2); background-image: none; box-shadow: 0 16px 40px rgba(0, 0, 0, .18), inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent); }
+.tb-board { margin: 0 0 var(--s-4); padding: 14px 0 4px; border: 0; background: transparent; background-image: none; box-shadow: none; }
 .tb-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.tb-head { min-width: 0; margin-bottom: 10px; }
+.tb-head { min-width: 0; margin-bottom: 15px; }
 .tb-head-row > .btn { flex: none; }
 .tb-head > small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .14em; }
 .tb-head h1 { margin: 2px 0 0; font-family: var(--font-display); font-size: clamp(25px, 7vw, 34px); line-height: 1; letter-spacing: -.02em; }
 .tb-head p { margin: 4px 0 0; color: var(--muted); font-size: var(--ta-small); }
-.tb-team-select { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-3); }
+.tb-team-select { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; margin: 0; padding: 13px 4px 15px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
 .tb-team-select > span { flex: none; color: var(--muted); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.tb-team-select select { min-width: 0; flex: 1; min-height: 34px; padding: 5px 28px 5px 8px; border: 0; border-left: 1px solid var(--line-soft); background: transparent; color: var(--text); font: 800 var(--ta-small) var(--font-body); }
-.tb-blueprint { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 9px; }
-.tb-blueprint > section { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
+.tb-team-select select { min-width: 0; width: 100%; min-height: 44px; padding: 7px 32px 7px 11px; border: 1px solid var(--control-line); border-radius: 8px; background: var(--control-bg); color: var(--text); font: 800 var(--ta-small) var(--font-body); }
+.tb-blueprint { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0; border-top: 1px solid var(--line); }
+.tb-blueprint > section { min-width: 0; padding: 14px 4px 15px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; background-image: none; }
+.tb-blueprint > section + section { padding-left: 14px; border-left: 1px solid var(--line-soft); }
 .tb-blueprint header { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
 .tb-blueprint header small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .09em; }
 .tb-blueprint header span { overflow: hidden; color: var(--muted); font-size: var(--ta-micro); text-overflow: ellipsis; white-space: nowrap; }
@@ -1147,8 +1148,9 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-anchor-chips button i { color: var(--muted); font-size: 15px; font-style: normal; line-height: 1; }
 .tb-anchor-empty { align-self: center; color: var(--muted); font-size: var(--ta-small); }
 .tb-blueprint select { width: 100%; min-width: 0; min-height: 38px; padding: 7px 28px 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: 700 var(--ta-small) var(--font-body); }
-.tb-package-controls { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(190px, 1fr); align-items: stretch; gap: 8px; margin-bottom: 9px; }
-.tb-package-controls > * { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
+.tb-package-controls { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(190px, 1fr); align-items: stretch; gap: 0; margin: 0; border-bottom: 1px solid var(--line); }
+.tb-package-controls > * { min-width: 0; padding: 14px 4px 15px; border: 0; border-radius: 0; background: transparent; background-image: none; }
+.tb-package-controls > * + * { padding-left: 14px; border-left: 1px solid var(--line-soft); }
 .tb-max { display: grid; gap: 5px; }
 .tb-max > span { display: flex; justify-content: space-between; gap: 8px; color: var(--text); font-size: var(--ta-small); font-weight: 850; }
 .tb-max output { color: var(--ok); font-family: var(--font-display); font-size: var(--ta-lead); line-height: 1; }
@@ -1159,8 +1161,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-split label span { color: var(--muted); font-size: var(--ta-micro); font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
 .tb-split select { width: 100%; min-width: 0; min-height: 36px; padding: 6px 24px 6px 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: 800 var(--ta-small) var(--font-body); }
 .tb-split > b { align-self: center; color: var(--accent-2); text-align: center; }
-.tb-target, .tb-tier { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-3); background-image: none; }
-.tb-target { margin-bottom: 9px; }
+.tb-target, .tb-tier { overflow: hidden; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; background-image: none; }
+.tb-target { margin-bottom: 0; }
 .tb-target > summary { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 64px; padding: 9px 11px; cursor: pointer; list-style: none; }
 .tb-target > summary::-webkit-details-marker, .tb-tier > summary::-webkit-details-marker { display: none; }
 .tb-target-avatar { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid color-mix(in srgb, var(--accent-2) 42%, var(--line)); border-radius: 50%; color: var(--accent-2); background: var(--bg-2); font-size: var(--ta-micro); font-weight: 900; }
@@ -1174,10 +1176,10 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-target-controls label > span { color: var(--muted); font-size: var(--ta-micro); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .tb-target-controls select { width: 100%; min-width: 0; min-height: 40px; padding: 8px 28px 8px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: inherit; }
 .tb-shapes, .tb-intent { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-3); }
-.tb-shapes { margin-bottom: 9px; }
+.tb-shapes { margin: 13px 4px; }
 .tb-shapes button, .tb-intent-options button { min-width: 0; min-height: 34px; padding: 0 4px; border: 0; border-radius: 7px; background: transparent; color: var(--body-text); font: 800 var(--ta-small) var(--font-body); cursor: pointer; }
 .tb-shapes button.is-active { color: var(--ok); background: var(--ok-bg); box-shadow: inset 0 0 0 1px var(--ok-line); }
-.tb-tiers { display: grid; gap: 7px; margin-top: 9px; }
+.tb-tiers { display: grid; gap: 0; margin-top: 13px; border-top: 1px solid var(--line); }
 .tb-tier > summary { display: grid; grid-template-columns: 24px minmax(0, 1fr) 18px; align-items: center; gap: 8px; min-height: 54px; padding: 8px 10px; cursor: pointer; list-style: none; }
 .tb-tier-mark { display: block; width: 10px; height: 10px; margin-left: 5px; border: 2px solid currentColor; border-radius: 50%; color: var(--warn-ink); }
 .tb-tier.is-aggressive .tb-tier-mark { border-radius: 2px; transform: rotate(45deg); color: var(--accent); }
@@ -1206,7 +1208,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-player small { color: var(--muted); font-size: var(--ta-micro); }
 .tb-offer-flow > button { display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 0 5px; border: 0; background: transparent; color: var(--accent-2); font: 800 var(--ta-micro) var(--font-body); cursor: pointer; }
 .tb-offer-flow > button .ico { width: 14px; height: 14px; }
-.tb-intent { grid-template-columns: auto minmax(0, 1fr); margin-top: 9px; }
+.tb-intent { grid-template-columns: auto minmax(0, 1fr); margin: 13px 4px 0; }
 .tb-intent > span { align-self: center; padding: 0 7px; color: var(--muted); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .08em; }
 .tb-intent-options { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); min-width: 0; }
 .tb-intent-options > i { position: absolute; inset: 0 auto 0 0; width: 33.333%; border: 1px solid var(--ok-line); border-radius: 7px; background: var(--ok-bg); box-shadow: 0 4px 12px color-mix(in srgb, var(--ok) 12%, transparent), inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent); transition: transform 260ms cubic-bezier(.22, 1, .36, 1); }
@@ -1214,22 +1216,23 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-intent-options[data-intent="swing"] > i { transform: translateX(200%); }
 .tb-intent-options button { position: relative; z-index: 1; transition: color 180ms ease; }
 .tb-intent-options button.is-active { color: var(--ok); }
-.tb-generate { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: 0; margin-top: 8px; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); color: var(--ok); font: 900 var(--ta-small) var(--font-body); letter-spacing: .08em; cursor: pointer; transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.tb-generate { display: flex; width: calc(100% - 8px); min-height: 44px; align-items: center; justify-content: center; gap: 0; margin: 8px 4px 0; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); color: var(--ok); font: 900 var(--ta-small) var(--font-body); letter-spacing: .08em; cursor: pointer; transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
 .tb-refresh-mark { width: 0; height: 14px; margin-right: 0; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; opacity: 0; transition: width 180ms ease, margin-right 180ms ease, opacity 180ms ease; }
 .tb-generate.is-refreshed { background: color-mix(in srgb, var(--ok) 16%, var(--bg-2)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 10%, transparent), 0 8px 22px color-mix(in srgb, var(--ok) 12%, transparent); animation: tb-refresh-pulse 440ms ease-out; }
 .tb-generate.is-refreshed .tb-refresh-mark { width: 14px; margin-right: 7px; opacity: 1; animation: tb-refresh-spin 650ms linear infinite; }
 @keyframes tb-refresh-spin { to { transform: rotate(360deg); } }
 @keyframes tb-refresh-pulse { 50% { transform: translateY(-1px); } }
 .tb-generate:hover { background: color-mix(in srgb, var(--ok) 16%, var(--bg-2)); }
-.td-custom { margin-top: 0; background-image: none; }
+.td-custom { margin-top: 0; padding-inline: 4px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; background-image: none; box-shadow: none; }
 .td-page { margin-top: 0; }
 
 @media (max-width: 680px) {
   .td-board, .td-board.is-multi, .ta-deal-grid { grid-template-columns: minmax(0, 1fr); }
   .ta-shop-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .tb-board { margin-inline: -12px; padding: 12px; border-left: 0; border-right: 0; border-radius: 0; }
+  .tb-board { margin-inline: 0; padding: 12px 0 4px; }
   .tb-head-row { align-items: center; }
   .tb-blueprint, .tb-package-controls { grid-template-columns: minmax(0, 1fr); }
+  .tb-blueprint > section + section, .tb-package-controls > * + * { padding-left: 4px; border-left: 0; }
   .tb-target-controls { grid-template-columns: minmax(0, 1fr); }
 }
 
