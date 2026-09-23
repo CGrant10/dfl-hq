@@ -47,7 +47,9 @@ export function verdictFor(result) {
   if (fairness >= 88) return { tone: "even", headline: "Balanced", who: null };
   const who = gap > 0 ? "a" : "b";
   if (fairness >= 72) return { tone: "slight", headline: "Slight edge", who };
-  if (fairness >= 55) return { tone: "clear", headline: gap < 0 ? "FLEECE" : "Clear winner", who };
+  /* The middle band is a meaningful value edge, not automatically a fleece.
+     A team may rationally pay this premium to turn depth into starting points. */
+  if (fairness >= 55) return { tone: "clear", headline: "Clear value edge", who };
   return { tone: "lopsided", headline: "FLEECE", who };
 }
 
@@ -156,6 +158,10 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
     reasons.push({ tone: "good", weight: 84,
       title: "Damn, you actually won this one.",
       copy: `The incoming side grades ${gap} points higher after roster cuts, at ${fairness}% balance. A sexy little piece of business without getting reckless.` });
+  } else if (result.weeklyDeltaA >= .25) {
+    reasons.push({ tone: "warn", weight: 86,
+      title: result.weeklyDeltaA >= 1 ? "You are buying points at a premium." : "It helps the lineup, but you are overpaying.",
+      copy: `Your lineup gains ${signed(result.weeklyDeltaA)} points a week, but your outgoing package grades ${gap} value points higher at ${fairness}% balance. The upgrade is real; the price is the problem. Ask for something back or pay less.` });
   } else {
     reasons.push({ tone: "bad", weight: 84,
       title: "This deal is dogshit. Stop negotiating.",

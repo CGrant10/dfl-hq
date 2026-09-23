@@ -42,7 +42,7 @@ describe("verdictFor", () => {
 
   it("escalates the language as the gap widens", () => {
     expect(verdictFor({ fairness: 80, valueToA: 60, valueToB: 45 }).headline).toBe("Slight edge");
-    expect(verdictFor({ fairness: 60, valueToA: 90, valueToB: 40 }).headline).toBe("Clear winner");
+    expect(verdictFor({ fairness: 60, valueToA: 90, valueToB: 40 }).headline).toBe("Clear value edge");
     expect(verdictFor({ fairness: 20, valueToA: 99, valueToB: 10 }).headline).toBe("FLEECE");
   });
 
@@ -60,8 +60,8 @@ describe("recommendationFor", () => {
     expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("FLEECE");
   });
 
-  it("shows fleece on a clear losing value gap before it becomes fully lopsided", () => {
-    expect(verdictFor({ fairness: 64, valueToA: 40, valueToB: 63 }).headline).toBe("FLEECE");
+  it("calls a clear losing gap a value edge before it becomes fully lopsided", () => {
+    expect(verdictFor({ fairness: 64, valueToA: 40, valueToB: 63 }).headline).toBe("Clear value edge");
   });
 
   it("calls a severely lopsided loss a fleece", () => {

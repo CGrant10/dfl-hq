@@ -60,6 +60,15 @@ describe('who is fleecing whom', () => {
 });
 
 describe('the lineup bands', () => {
+  it('describes an expensive lineup upgrade without calling the whole deal dogshit', () => {
+    const reasons = read({ fairness: 69, valueToA: 90, valueToB: 130.1, weeklyDeltaA: 2.5, weeklyDeltaB: .4 });
+    expect(reasons[0].title).toBe('You are buying points at a premium.');
+    expect(reasons[0].tone).toBe('warn');
+    expect(reasons[0].copy).toContain('+2.5');
+    expect(reasons[0].copy).toContain('40.1');
+    expect(titles(reasons).join(' ')).not.toMatch(/dogshit/i);
+  });
+
   /* This is the one that was wrong first time: −0.3 a week got the same
      sentence as −6.0, which is how a tool loses its credibility. */
   it('does not shout about a third of a point a week', () => {
