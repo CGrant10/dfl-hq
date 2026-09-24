@@ -1220,7 +1220,10 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-intent-options[data-intent="steal"] > i { transform: translateX(200%); }
 .tb-intent-options button { position: relative; z-index: 1; transition: color 180ms ease; }
 .tb-intent-options button.is-active { color: var(--ok); }
-.tb-generate { display: flex; width: calc(100% - 8px); min-height: 44px; align-items: center; justify-content: center; gap: 0; margin: 8px 4px 0; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); color: var(--ok); font: 900 var(--ta-small) var(--font-body); letter-spacing: .08em; cursor: pointer; transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.tb-offer-actions { display: flex; gap: 7px; margin: 8px 4px 0; }
+.tb-generate { display: flex; flex: 1 1 auto; min-width: 0; min-height: 44px; align-items: center; justify-content: center; gap: 0; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); color: var(--ok); font: 900 var(--ta-small) var(--font-body); letter-spacing: .06em; cursor: pointer; transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+.tb-generate:disabled { cursor: default; opacity: .72; }
+.tb-show-all { flex: 0 0 auto; min-height: 44px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg-2); color: var(--body-text); font: 900 var(--ta-micro) var(--font-body); letter-spacing: .06em; cursor: pointer; }
 .tb-refresh-mark { width: 0; height: 14px; margin-right: 0; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; opacity: 0; transition: width 180ms ease, margin-right 180ms ease, opacity 180ms ease; }
 .tb-generate.is-refreshed { background: color-mix(in srgb, var(--ok) 16%, var(--bg-2)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 10%, transparent), 0 8px 22px color-mix(in srgb, var(--ok) 12%, transparent); animation: tb-refresh-pulse 440ms ease-out; }
 .tb-generate.is-refreshed .tb-refresh-mark { width: 14px; margin-right: 7px; opacity: 1; animation: tb-refresh-spin 650ms linear infinite; }
@@ -1245,6 +1248,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .tb-offer-flow > button .ico { width: 18px; height: 18px; }
   .tb-intent > span { display: none; }
   .tb-intent { grid-template-columns: minmax(0, 1fr); }
+  .tb-offer-actions { align-items: stretch; flex-direction: column; }
+  .tb-show-all { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,6 +34,7 @@ const tierCopy = {
   aggressive: { title: "Aggressive", note: "You pay a premium to land your target.", call: "WORTH A TEXT" },
   steal: { title: "Steal", note: "You win the value. Low-odds asks.", call: "SWING BIG" },
 };
+const OFFER_BATCH_SIZE = 6;
 
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
@@ -122,10 +123,16 @@ function tradeLab(team, teams, pool, shop) {
   }
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const representedTeams = new Set(tierOffers.map(offer => String(offer.other.id))).size;
-  const page = shop.page || 0;
-  const start = tierOffers.length ? page * 4 % tierOffers.length : 0;
-  const visibleOffers = tierOffers.length <= 4 ? tierOffers
-    : Array.from({ length: 4 }, (_, index) => tierOffers[(start + index) % tierOffers.length]);
+  /* Keep earlier results on screen. The old four-card carousel reported the
+     full generated count but silently replaced one batch with the next, so a
+     user could never inspect all of the offers the model said it found. */
+  const visibleCount = Math.min(tierOffers.length, Math.max(OFFER_BATCH_SIZE, Number(shop.visibleCount) || OFFER_BATCH_SIZE));
+  const visibleOffers = tierOffers.slice(0, visibleCount);
+  const remainingOffers = Math.max(0, tierOffers.length - visibleOffers.length);
+  const nextOfferCount = Math.min(OFFER_BATCH_SIZE, remainingOffers);
+  const moreLabel = remainingOffers
+    ? `SHOW ${nextOfferCount} MORE · ${remainingOffers} REMAINING`
+    : `ALL ${tierOffers.length} OFFERS SHOWN`;
   shop.openTiers ||= new Set();
   const countOptions = (side, selected, minimum) => `<option value="any" ${selected === "any" ? "selected" : ""}>Any</option>${Array.from({ length: 7 }, (_, index) => index + 1)
     .filter(count => count >= minimum && count < maxPlayers)
@@ -151,10 +158,13 @@ function tradeLab(team, teams, pool, shop) {
       </div>
     </section>
     <section class="tb-layout-section">
-      <h2 class="section-title">Generated offers<span class="count">${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
-      <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers, rotated across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
+      <h2 class="section-title">Generated offers<span class="count">Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
+      <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
       <div class="tb-offers-card">
-        <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label>${shop.justRefreshed ? "OFFERS REFRESHED" : "SHOW ANOTHER BATCH"} · ${tierOffers.length} FOUND</span></button>
+        <div class="tb-offer-actions">
+          <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "OFFERS REFRESHED" : esc(moreLabel)}</span></button>
+          ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>SHOW ALL ${tierOffers.length}</button>` : ""}
+        </div>
         <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
         ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
       </div>
@@ -207,7 +217,7 @@ function page(data, tradeAlerts = []) {
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
   const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
-    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", page: 0,
+    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(), customOpen: false };
 
   return {
@@ -255,17 +265,17 @@ function page(data, tradeAlerts = []) {
             const button = body.querySelector("[data-tb-generate]");
             button?.classList.remove("is-refreshed");
             const label = button?.querySelector("[data-tb-generate-label]");
-            if (label) label.textContent = label.textContent.replace("OFFERS REFRESHED", "SHOW ANOTHER BATCH");
+            if (label) label.textContent = label.dataset.defaultLabel || "SHOW MORE OFFERS";
           }, 1200);
         }
       };
       const refreshOffers = () => {
-        shop.page = 0; shop.justRefreshed = true; shop.refreshStamp = (shop.refreshStamp || 0) + 1; draw();
+        shop.visibleCount = OFFER_BATCH_SIZE; shop.justRefreshed = true; shop.refreshStamp = (shop.refreshStamp || 0) + 1; draw();
       };
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
-        shop.intent = "aggressive"; shop.page = 0; shop.openTiers.clear(); shop.customOpen = false;
+        shop.intent = "aggressive"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers.clear(); shop.customOpen = false;
       };
       body.addEventListener("change", event => {
         if (event.target.matches("[data-td-team]")) {
@@ -361,7 +371,8 @@ function page(data, tradeAlerts = []) {
           setTimeout(() => { if (stamp === shop.intentStamp) refreshOffers(); }, 260);
           return;
         }
-        if (event.target.closest("[data-tb-generate]")) { shop.page += 1; draw(); return; }
+        if (event.target.closest("[data-tb-show-all]")) { shop.visibleCount = Number.MAX_SAFE_INTEGER; draw(); return; }
+        if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
         trade.memberIds = [button.dataset.partner];

@@ -34,6 +34,11 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('Best league-wide return');
     expect(source).toContain('[["fair", "FAIR"], ["aggressive", "AGGRESSIVE"], ["steal", "STEAL"]]');
     expect(source).toContain('tierMarkup(intent, visibleOffers');
+    expect(source).toContain('tierOffers.slice(0, visibleCount)');
+    expect(source).toContain('Showing ${visibleOffers.length} of ${tierOffers.length}');
+    expect(source).toContain('data-tb-show-all');
+    expect(source).toContain('shop.visibleCount += OFFER_BATCH_SIZE');
+    expect(source).not.toContain('page * 4 % tierOffers.length');
     expect(source).not.toContain('tierMarkup("fair", groups.fair');
   });
 
