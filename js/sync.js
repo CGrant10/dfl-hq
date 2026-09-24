@@ -305,9 +305,15 @@ async function syncSeason(league, season, log, { detectTradeAlerts = false } = {
   const weeks = range(1, MAX_WEEK);
 
   const matchupRows = [];
+  const currentWeek = Math.max(1, Math.min(MAX_WEEK, Number(league.settings?.leg) || 1));
   await inBatches(weeks, CONCURRENCY, async (week) => {
     const raw = await sleeper.matchups(leagueId, week);
-    const rows = pairMatchups(raw, season, week, ownerOf, leagueId);
+    /* Keep the current schedule before anybody scores. Upcoming weeks still
+       stay out of history, but the live week is available to previews and
+       sportsbook automation as soon as Sleeper publishes the pairings. */
+    const rows = pairMatchups(raw, season, week, ownerOf, leagueId, {
+      includeUnplayed: detectTradeAlerts && week === currentWeek,
+    });
     if (rows.length) matchupRows.push(...rows);
   });
   if (matchupRows.length) {
@@ -549,12 +555,13 @@ function points(whole, decimal) {
 /**
  * Sleeper returns one entry per TEAM per week, tied together by
  * matchup_id. Fold each pair into a single row.
- * Weeks that have not been played yet (everyone on 0) are skipped, so we
- * do not fill the table with empty future weeks.
+ * Blank future/history weeks are skipped. The caller may retain exactly the
+ * current blank slate so previews and sportsbook lines exist before kickoff.
  */
-function pairMatchups(raw, season, week, ownerOf, leagueId) {
+function pairMatchups(raw, season, week, ownerOf, leagueId, { includeUnplayed = false } = {}) {
   if (!raw?.length) return [];
-  if (!raw.some((m) => Number(m.points) > 0)) return [];   // not played yet
+  const started = raw.some((m) => Number(m.points) > 0);
+  if (!started && !includeUnplayed) return [];             // future / historical blank
 
   const byMatchup = new Map();
   for (const m of raw) {
@@ -566,8 +573,10 @@ function pairMatchups(raw, season, week, ownerOf, leagueId) {
   const rows = [];
   for (const [matchupId, sides] of byMatchup) {
     const [a, b] = sides;
-    const scoreA = a ? Number(a.points) : null;
-    const scoreB = b ? Number(b.points) : null;
+    /* A scheduled 0-0 is not a completed tie. Null scores make that state
+       explicit and keep the Tuesday ticket grader from settling it. */
+    const scoreA = started && a ? Number(a.points) : null;
+    const scoreB = started && b ? Number(b.points) : null;
 
     let winner = null;
     if (scoreA != null && scoreB != null && scoreA !== scoreB) {

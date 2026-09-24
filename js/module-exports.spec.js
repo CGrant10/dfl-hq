@@ -360,6 +360,8 @@ describe("the supported golf GPS courses", () => {
 
   it("automatically grades completed Sleeper sportsbook tickets once", () => {
     const migration = fs.readFileSync("sportsbook_sleeper_settlement_schema.sql", "utf8");
+    const browserSync = fs.readFileSync("js/sync.js", "utf8");
+    const edgeSync = fs.readFileSync("supabase/functions/sync-sleeper/index.ts", "utf8");
     expect(migration).toContain("sportsbook_settle_completed_matchups");
     expect(migration).toContain("pg_advisory_xact_lock(73910422)");
     expect(migration).toContain("sportsbook_roll_up_entry");
@@ -367,6 +369,12 @@ describe("the supported golf GPS courses", () => {
     expect(migration).toContain("America/Chicago");
     expect(migration).toContain("to service_role");
     expect(migration).toContain("from public, anon, authenticated");
+    expect(migration).toContain("idx_sportsbook_matchup_auto_key");
+    expect(browserSync).toContain("includeUnplayed: detectTradeAlerts && week === currentWeek");
+    expect(browserSync).toContain("const scoreA = started && a ? Number(a.points) : null");
+    expect(edgeSync).toContain("ensureMatchupMarkets");
+    expect(edgeSync).toContain("sportsbookMarketsCreated");
+    expect(edgeSync).toContain("Never re-price a board after somebody can bet it");
   });
 
   it("keeps typography and component geometry consistent across app themes", () => {

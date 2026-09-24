@@ -19,6 +19,12 @@ alter table public.sportsbook_outcomes
 create index if not exists idx_sportsbook_outcomes_roster
   on public.sportsbook_outcomes(market_id, sleeper_roster_id);
 
+-- One scheduled matchup may only have one board, even when two cron calls
+-- overlap during the DST-safe sync window.
+create unique index if not exists idx_sportsbook_matchup_auto_key
+  on public.sportsbook_markets(auto_key)
+  where auto_key ~ '^matchup:[0-9]+:[0-9]+:[0-9]+$';
+
 create or replace function private.sportsbook_normalize_label(value text)
 returns text
 language sql

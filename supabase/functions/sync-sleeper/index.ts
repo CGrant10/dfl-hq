@@ -33,6 +33,16 @@ async function sleeper(path: string) {
   return response.json();
 }
 
+async function sleeperAbsolute(url: string) {
+  const response = await fetch(url, {
+    headers: { "User-Agent": "DFL-HQ-Sleeper-Sync/1.0" },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (response.status === 404) return [];
+  if (!response.ok) throw new Error(`Sleeper ${response.status} on projections`);
+  return response.json();
+}
+
 function stable(value: any): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
   if (value && typeof value === "object") {
@@ -75,7 +85,8 @@ function standings(rosters: Json[], season: number, league: Json, leagueId: stri
 }
 
 function matchups(raw: Json[], season: number, week: number, leagueId: string, owners: Map<number, string>) {
-  if (!raw?.length || !raw.some((item) => Number(item.points) > 0)) return [];
+  if (!raw?.length) return [];
+  const started = raw.some((item) => Number(item.points) > 0);
   const groups = new Map<number, Json[]>();
   for (const item of raw) {
     if (item.matchup_id == null) continue;
@@ -85,8 +96,8 @@ function matchups(raw: Json[], season: number, week: number, leagueId: string, o
   }
   return Array.from(groups, ([matchupId, sides]) => {
     const [a, b] = sides;
-    const scoreA = a ? Number(a.points) : null;
-    const scoreB = b ? Number(b.points) : null;
+    const scoreA = started && a ? Number(a.points) : null;
+    const scoreB = started && b ? Number(b.points) : null;
     let winner = null;
     if (scoreA != null && scoreB != null && scoreA !== scoreB) winner = scoreA > scoreB ? a.roster_id : b.roster_id;
     return {
@@ -96,6 +107,101 @@ function matchups(raw: Json[], season: number, week: number, leagueId: string, o
       winner_roster_id: winner,
     };
   });
+}
+
+function projectedPoints(starters: unknown, projections: Map<string, Json>, scoring: Json) {
+  return (Array.isArray(starters) ? starters : []).reduce((total: number, rawId: unknown) => {
+    const stats = projections.get(String(rawId)) || {};
+    let player = 0;
+    for (const [key, weight] of Object.entries(scoring || {})) {
+      const count = Number(stats[key]);
+      const rate = Number(weight);
+      if (Number.isFinite(count) && Number.isFinite(rate)) player += count * rate;
+    }
+    return total + player;
+  }, 0);
+}
+
+function american(probability: number) {
+  const p = Math.max(.05, Math.min(.95, probability));
+  const raw = p >= .5 ? -100 * p / (1 - p) : 100 * (1 - p) / p;
+  const rounded = Math.round(raw / 5) * 5;
+  return rounded > -100 && rounded < 100 ? (rounded < 0 ? -100 : 100) : rounded;
+}
+
+async function matchupClose(admin: ReturnType<typeof createClient>, season: number, week: number) {
+  const { data } = await admin.from("sportsbook_markets").select("closes_at")
+    .like("auto_key", `matchup:${season}:1:%`).not("closes_at", "is", null)
+    .order("closes_at").limit(1).maybeSingle();
+  if (data?.closes_at) return new Date(new Date(data.closes_at).getTime() + (week - 1) * 604_800_000);
+
+  /* Fallback for a brand-new season before an anchor exists: the next
+     Thursday-night lock, represented as Friday 00:15 UTC during football
+     season in Chicago. */
+  const close = new Date();
+  const days = (5 - close.getUTCDay() + 7) % 7;
+  close.setUTCDate(close.getUTCDate() + days);
+  close.setUTCHours(0, 15, 0, 0);
+  return close;
+}
+
+async function ensureMatchupMarkets(
+  admin: ReturnType<typeof createClient>, league: Json, season: number, week: number,
+  raw: Json[], rosters: Json[], names: Map<string, Json>, projectionRows: Json[],
+) {
+  const close = await matchupClose(admin, season, week);
+  if (close.getTime() <= Date.now()) return 0;
+
+  const rosterMap = new Map<number, Json>(rosters.map((row) => [Number(row.roster_id), row]));
+  const projections = new Map<string, Json>(projectionRows.map((row) => [String(row.player_id), row.stats || {}]));
+  const grouped = new Map<number, Json[]>();
+  for (const row of raw || []) {
+    if (row.matchup_id == null) continue;
+    const group = grouped.get(Number(row.matchup_id)) || [];
+    group.push(row);
+    grouped.set(Number(row.matchup_id), group);
+  }
+  const name = (row: Json) => {
+    const roster = rosterMap.get(Number(row.roster_id));
+    const owner = names.get(String(roster?.owner_id));
+    return String(roster?.metadata?.team_name || owner?.team || owner?.display || `Team ${row.roster_id}`).trim();
+  };
+
+  let created = 0;
+  for (const [matchupId, sides] of grouped) {
+    if (sides.length !== 2) continue;
+    const key = `matchup:${season}:${week}:${matchupId}`;
+    const { data: existing, error: lookupError } = await admin.from("sportsbook_markets")
+      .select("id").eq("auto_key", key).limit(1).maybeSingle();
+    if (lookupError) throw lookupError;
+    if (existing) continue; // Never re-price a board after somebody can bet it.
+
+    const [a, b] = sides;
+    const pa = projectedPoints(a.starters, projections, league.scoring_settings || {});
+    const pb = projectedPoints(b.starters, projections, league.scoring_settings || {});
+    const fairA = Math.max(.18, Math.min(.82, 1 / (1 + Math.exp(-(pa - pb) / 13))));
+    const { data: market, error: marketError } = await admin.from("sportsbook_markets").insert({
+      title: `${name(a)} vs ${name(b)}`,
+      category: "Fantasy",
+      source: "commissioner",
+      lore_note: `Week ${week} projected ${pa.toFixed(1)}–${pb.toFixed(1)}`,
+      status: "open",
+      closes_at: close.toISOString(),
+      auto_key: key,
+    }).select("id").single();
+    if (marketError) {
+      /* A simultaneous scheduled run may have won the unique-key race. */
+      if (String(marketError.message || "").toLowerCase().includes("duplicate")) continue;
+      throw marketError;
+    }
+    const { error: outcomeError } = await admin.from("sportsbook_outcomes").insert([
+      { market_id: market.id, label: name(a), odds_american: american(Math.min(.95, fairA + .025)), sort_order: 0, sleeper_roster_id: Number(a.roster_id) },
+      { market_id: market.id, label: name(b), odds_american: american(Math.min(.95, 1 - fairA + .025)), sort_order: 1, sleeper_roster_id: Number(b.roster_id) },
+    ]);
+    if (outcomeError) throw outcomeError;
+    created++;
+  }
+  return created;
 }
 
 async function upsert(admin: ReturnType<typeof createClient>, table: string, rows: Json[], onConflict: string) {
@@ -168,14 +274,26 @@ Deno.serve(async (request) => {
     const season = Number(league.season);
     const nflState = await sleeper("/state/nfl");
     const week = Math.max(1, Math.min(18, Number(league.settings?.leg || nflState?.week || 1)));
-    const [users, rosters, weeklyMatchups, weeklyTransactions] = await Promise.all([
+    const [users, rosters, weeklyMatchups, weeklyTransactions, weeklyProjections] = await Promise.all([
       sleeper(`/league/${leagueId}/users`),
       sleeper(`/league/${leagueId}/rosters`),
       sleeper(`/league/${leagueId}/matchups/${week}`),
       sleeper(`/league/${leagueId}/transactions/${week}`),
+      sleeperAbsolute(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
     ]);
 
     const signature = await sha256(stable({ league, users, rosters, weeklyMatchups, weeklyTransactions, week }));
+    const earlyNames = new Map<string, Json>((users || []).map((user: Json) => [user.user_id, {
+      team: user.metadata?.team_name || "",
+      display: user.display_name || user.username || "",
+    }]));
+    const earlyOwners = new Map<number, string>((rosters || []).map((roster: Json) => [roster.roster_id, roster.owner_id]));
+    const earlyMatchups = matchups(weeklyMatchups || [], season, week, leagueId, earlyOwners);
+    await upsert(admin, "sleeper_matchups", earlyMatchups, "season,week,matchup_id");
+    const sportsbookMarketsCreated = await ensureMatchupMarkets(
+      admin, league, season, week, weeklyMatchups || [], rosters || [], earlyNames, weeklyProjections || [],
+    );
+
     if (signature === config.last_auto_signature) {
       const { error } = await admin.from("sleeper_config").update({
         last_auto_checked_at: checkedAt,
@@ -183,7 +301,7 @@ Deno.serve(async (request) => {
       }).eq("id", 1);
       if (error) throw error;
       await notifyCommissioners(url, cronToken, `Checked ${season} Week ${week}. No Sleeper changes found.`);
-      return Response.json({ ok: true, changed: false, season, week });
+      return Response.json({ ok: true, changed: false, season, week, sportsbookMarketsCreated });
     }
 
     const now = new Date().toISOString();
@@ -261,6 +379,7 @@ Deno.serve(async (request) => {
       changed: true,
       season,
       week,
+      sportsbookMarketsCreated,
       counts: { users: users?.length || 0, rosters: rosters?.length || 0, matchups: matchupRows.length, transactions: transactionRows.length },
     });
   } catch (error) {
