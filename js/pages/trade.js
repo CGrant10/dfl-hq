@@ -48,7 +48,7 @@ function offerMarkup(offer, pool) {
   const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
   return `<article class="tb-offer">
-    <header><span>${shapeLabel(offer)}</span><small>EDGE ${signed(valueEdge).replace(".0", "")}% · ${signed(offer.weeklyDeltaA)} / wk</small><b>${call}</b></header>
+    <header><span>${shapeLabel(offer)}</span><small><strong>${esc(teamName(offer.other))}</strong> · EDGE ${signed(valueEdge).replace(".0", "")}% · ${signed(offer.weeklyDeltaA)} / wk</small><b>${call}</b></header>
     <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
   </article>`;
 }
@@ -80,18 +80,21 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeLab(team, teams, pool, shop) {
-  const otherTeams = teams.filter(item => item.id !== team.id);
-  const partner = otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
-  shop.partnerId = partner?.id || "";
+  const otherTeams = teams.filter(item => String(item.id) !== String(team.id));
+  const allPartners = shop.partnerId === "all";
+  const partner = allPartners ? null
+    : otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
+  if (!allPartners) shop.partnerId = partner?.id || "";
+  const partnerKey = allPartners ? "all" : partner?.id || "";
   const minePlayers = (team.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
   const theirPlayers = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
   shop.sendAnchors = (shop.sendAnchors || []).filter(id => minePlayers.some(player => String(player.id) === String(id)));
-  if (String(shop.anchorPartnerId) !== String(partner?.id)) {
+  if (String(shop.anchorPartnerId) !== String(partnerKey)) {
     /* A new partner must start unanchored. Auto-selecting their most valuable
        player forced every batch to invent a blockbuster before the user had
        asked for one, which made the "fair" tier look ridiculous. */
     shop.receiveAnchors = [];
-    shop.anchorPartnerId = partner?.id || "";
+    shop.anchorPartnerId = partnerKey;
   } else {
     shop.receiveAnchors = (shop.receiveAnchors || []).filter(id => theirPlayers.some(player => String(player.id) === String(id)));
   }
@@ -109,14 +112,15 @@ function tradeLab(team, teams, pool, shop) {
     }
   }
   shop.offerCache ||= new Map();
-  const cacheKey = [team.id, partner?.id, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
+  const cacheKey = [team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
   let allOffers = shop.offerCache.get(cacheKey);
   if (!allOffers) {
-    allOffers = partner ? suggestTrades({ teams, teamId: team.id, partnerId: partner.id,
+    allOffers = otherTeams.length ? suggestTrades({ teams, teamId: team.id, partnerId: allPartners ? undefined : partner?.id,
       sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, maxPlayers,
-      pool, limit: 96, shapes: shapeKeys, intent }) : [];
+      pool, limit: allPartners ? 132 : 96, shapes: shapeKeys, intent }) : [];
     shop.offerCache.set(cacheKey, allOffers);
   }
+  const representedTeams = new Set(allOffers.map(offer => String(offer.other.id))).size;
   const fullGroups = Object.fromEntries(Object.keys(tierCopy).map(tier => [tier, allOffers.filter(offer => offer.tier === tier)]));
   const page = shop.page || 0;
   const groups = Object.fromEntries(Object.entries(fullGroups).map(([tier, offers]) => {
@@ -135,10 +139,11 @@ function tradeLab(team, teams, pool, shop) {
       <p class="section-copy">Choose the teams, anchor the players that matter, then set how aggressive the ask should be.</p>
       <div class="tb-workbench-card">
         <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
-        <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner>${otherTeams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
+        <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner><option value="all" ${allPartners ? "selected" : ""}>All teams · Shop league-wide</option>${otherTeams.map(item => `<option value="${esc(item.id)}" ${!allPartners && String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
         <div class="tb-blueprint">
           <section><header><small>YOU CAN SEND</small><span>Optional anchors</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
-          <section><header><small>YOU WANT</small><span>Must be included</span></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add one of their players…")}</select></section>
+          ${allPartners ? `<section class="tb-league-return"><header><small>YOU WANT</small><span>Any team</span></header><div><b>Best league-wide return</b><small>We will match your outgoing package against every roster. Pick one team above to require a specific player.</small></div></section>`
+            : `<section><header><small>YOU WANT</small><span>Must be included</span></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add one of their players…")}</select></section>`}
         </div>
         <div class="tb-package-controls">
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
@@ -148,8 +153,8 @@ function tradeLab(team, teams, pool, shop) {
       </div>
     </section>
     <section class="tb-layout-section">
-      <h2 class="section-title">Generated offers<span class="count">${allOffers.length}</span></h2>
-      <p class="section-copy">Open only the pressure level you want to shop.</p>
+      <h2 class="section-title">Generated offers<span class="count">${allOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
+      <p class="section-copy">${allPartners ? "League-wide offers are rotated across matching teams so one roster cannot flood the board." : "Open only the pressure level you want to shop."}</p>
       <div class="tb-offers-card">
         <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label>${shop.justRefreshed ? "OFFERS REFRESHED" : "SHOW ANOTHER BATCH"} · ${allOffers.length} FOUND</span></button>
         <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, shop.openTiers.has("fair"), fullGroups.fair.length)}${tierMarkup("aggressive", groups.aggressive, pool, shop.openTiers.has("aggressive"), fullGroups.aggressive.length)}${tierMarkup("steal", groups.steal, pool, shop.openTiers.has("steal"), fullGroups.steal.length)}</div>

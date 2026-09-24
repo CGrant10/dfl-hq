@@ -195,6 +195,14 @@ describe("team analyzer", () => {
     expect(theirs.every(offer => offer.sendB.includes("r2") && offer.sendB.includes("w4") && offer.other.id === "2")).toBe(true);
   });
 
+  it("shops an outgoing package across every matching opponent", () => {
+    const analyzed = analyzeLeague({ rosters, pool });
+    const third = { ...analyzed[1], id: "3", roster_id: "3", team_name: "C Team" };
+    const offers = suggestTrades({ teams: [...analyzed, third], teamId: "1", sendAnchorIds: ["r1"], pool, limit: 60 });
+    expect(new Set(offers.map(offer => String(offer.other.id)))).toEqual(new Set(["2", "3"]));
+    expect(offers.every(offer => offer.sendA.includes("r1"))).toBe(true);
+  });
+
   it("uses value direction and lineup impact to label the negotiating range honestly", () => {
     expect(tradeSuggestionTier({ fairness: 94, valueToA: 94, valueToB: 100, weeklyDeltaA: .2, weeklyDeltaB: .1 })).toBe("fair");
     expect(tradeSuggestionTier({ fairness: 78, valueToA: 78, valueToB: 100, weeklyDeltaA: .8, weeklyDeltaB: .3 })).toBe("aggressive");

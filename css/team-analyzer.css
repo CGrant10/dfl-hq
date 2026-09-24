@@ -1148,6 +1148,9 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-anchor-chips button i { color: var(--muted); font-size: 15px; font-style: normal; line-height: 1; }
 .tb-anchor-empty { align-self: center; color: var(--muted); font-size: var(--ta-small); }
 .tb-blueprint select { width: 100%; min-width: 0; min-height: 38px; padding: 7px 28px 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--text); font: 700 var(--ta-small) var(--font-body); }
+.tb-league-return > div { min-height: 75px; display: grid; align-content: center; gap: 4px; padding: 10px 11px; border: 1px solid var(--ok-line); border-radius: 9px; background: var(--ok-bg); }
+.tb-league-return > div b { color: var(--text); font-size: var(--ta-small); }
+.tb-league-return > div small { color: var(--muted); font-size: var(--ta-micro); line-height: 1.35; }
 .tb-package-controls { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(190px, 1fr); align-items: stretch; gap: 0; margin: 0; border-bottom: 1px solid var(--line); }
 .tb-package-controls > * { min-width: 0; padding: 14px 4px 15px; border: 0; border-radius: 0; background: transparent; background-image: none; }
 .tb-package-controls > * + * { padding-left: 14px; border-left: 1px solid var(--line-soft); }
@@ -1194,6 +1197,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .tb-offer > header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 10px 5px; }
 .tb-offer > header > span { padding: 3px 7px; border: 1px solid var(--ok-line); border-radius: 5px; color: var(--ok); background: var(--ok-bg); font-size: var(--ta-micro); font-weight: 900; }
 .tb-offer > header small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: var(--ta-micro); }
+.tb-offer > header small strong { color: var(--text); font-weight: 900; }
 .tb-offer > header b { color: var(--warn-ink); font-size: var(--ta-micro); letter-spacing: .04em; }
 .tb-offer-flow { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 3px 10px 9px; }
 .tb-offer-flow > div { min-width: 0; }

@@ -29,6 +29,9 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('class="tb-workbench-card"');
     expect(source).toContain('class="tb-offers-card"');
     expect(source).toContain('class="section-copy"');
+    expect(source).toContain('<option value="all"');
+    expect(source).toContain('partnerId: allPartners ? undefined : partner?.id');
+    expect(source).toContain('Best league-wide return');
   });
 
   it("scrolls a loaded suggestion to its analysis result", () => {

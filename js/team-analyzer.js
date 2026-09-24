@@ -496,8 +496,23 @@ function shapeBalancedCandidates(possibilities, pool, cap = 1200) {
     if (!groups.has(shape)) groups.set(shape, []);
     groups.get(shape).push(candidate);
   }
-  const perShape = Math.max(80, Math.floor(cap / Math.max(1, groups.size)));
+  const perShape = Math.max(4, Math.floor(cap / Math.max(1, groups.size)));
   return [...groups.values()].flatMap(group => evaluationCandidates(group, pool, perShape));
+}
+
+/* Before evaluation gets expensive, reserve a candidate budget for every
+   opponent. Without this pass a league-wide search can spend its entire cap
+   on the first few rosters that happen to produce the most combinations. */
+function partnerBalancedCandidates(possibilities, pool, cap = 1800) {
+  const groups = new Map();
+  for (const candidate of possibilities) {
+    const partner = String(candidate.other?.id ?? "");
+    if (!groups.has(partner)) groups.set(partner, []);
+    groups.get(partner).push(candidate);
+  }
+  if (groups.size <= 1) return shapeBalancedCandidates(possibilities, pool, Math.min(cap, 1200));
+  const perPartner = Math.max(120, Math.floor(cap / groups.size));
+  return [...groups.values()].flatMap(group => shapeBalancedCandidates(group, pool, perPartner));
 }
 
 function pairPackages(sendPackages, receivePackages, pool) {
@@ -567,6 +582,29 @@ function diverseOffers(offers, limit) {
   return selected;
 }
 
+/* A league-wide search should not read like twelve offers from the same
+   manager. Keep each manager's own package shapes varied, then deal one offer
+   from every matching roster before returning to any of them. */
+function diverseOffersAcrossPartners(offers, limit) {
+  const queues = new Map();
+  for (const offer of offers) {
+    const partner = String(offer.other?.id ?? "");
+    if (!queues.has(partner)) queues.set(partner, []);
+    queues.get(partner).push(offer);
+  }
+  for (const [partner, queue] of queues) queues.set(partner, diverseOffers(queue, queue.length));
+  const partners = [...queues.keys()];
+  const selected = [];
+  while (selected.length < limit && partners.some(partner => queues.get(partner).length)) {
+    for (const partner of partners) {
+      const offer = queues.get(partner).shift();
+      if (offer) selected.push(offer);
+      if (selected.length === limit) break;
+    }
+  }
+  return selected;
+}
+
 /**
  * Search one- or two-sided packages up to eight total players around optional
  * anchors. Large combinations are value-paired before evaluation so expanding
@@ -607,7 +645,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
       }
     }
   }
-  const ranked = shapeBalancedCandidates(possibilities, pool).map(candidate => {
+  const ranked = partnerBalancedCandidates(possibilities, pool).map(candidate => {
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
@@ -619,7 +657,8 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
   const quota = Math.max(1, Math.floor(limit / 3));
-  const selected = ["fair", "aggressive", "steal"].flatMap(tier => diverseOffers(ranked.filter(offer => offer.tier === tier), quota));
+  const chooseDiverse = partnerId ? diverseOffers : diverseOffersAcrossPartners;
+  const selected = ["fair", "aggressive", "steal"].flatMap(tier => chooseDiverse(ranked.filter(offer => offer.tier === tier), quota));
   if (selected.length < limit) {
     for (const offer of ranked) {
       if (selected.includes(offer)) continue;
