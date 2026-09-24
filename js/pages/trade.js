@@ -30,9 +30,9 @@ const edge = offer => {
   return Math.round((offer.valueToA - offer.valueToB) / high * 100);
 };
 const tierCopy = {
-  fair: { title: "Fair deals", note: "Balanced value. Both sides have a reason.", call: "FAIR SHOT" },
-  aggressive: { title: "Aggressive offers", note: "You pay a premium to land your target.", call: "WORTH A TEXT" },
-  steal: { title: "Steal attempts", note: "You win the value. Low-odds asks.", call: "SWING BIG" },
+  fair: { title: "Fair", note: "Balanced value. Both sides have a reason.", call: "FAIR SHOT" },
+  aggressive: { title: "Aggressive", note: "You pay a premium to land your target.", call: "WORTH A TEXT" },
+  steal: { title: "Steal", note: "You win the value. Low-odds asks.", call: "SWING BIG" },
 };
 
 function offerPlayerRows(ids, pool) {
@@ -101,7 +101,7 @@ function tradeLab(team, teams, pool, shop) {
   const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length);
   const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
   shop.maxPlayers = maxPlayers;
-  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "press";
+  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "aggressive";
   const shapeKeys = [];
   for (let send = 1; send < maxPlayers; send++) {
     for (let receive = 1; send + receive <= maxPlayers; receive++) {
@@ -120,14 +120,12 @@ function tradeLab(team, teams, pool, shop) {
       pool, limit: allPartners ? 132 : 96, shapes: shapeKeys, intent }) : [];
     shop.offerCache.set(cacheKey, allOffers);
   }
-  const representedTeams = new Set(allOffers.map(offer => String(offer.other.id))).size;
-  const fullGroups = Object.fromEntries(Object.keys(tierCopy).map(tier => [tier, allOffers.filter(offer => offer.tier === tier)]));
+  const tierOffers = allOffers.filter(offer => offer.tier === intent);
+  const representedTeams = new Set(tierOffers.map(offer => String(offer.other.id))).size;
   const page = shop.page || 0;
-  const groups = Object.fromEntries(Object.entries(fullGroups).map(([tier, offers]) => {
-    if (offers.length <= 4) return [tier, offers];
-    const start = page * 4 % offers.length;
-    return [tier, Array.from({ length: Math.min(4, offers.length) }, (_, index) => offers[(start + index) % offers.length])];
-  }));
+  const start = tierOffers.length ? page * 4 % tierOffers.length : 0;
+  const visibleOffers = tierOffers.length <= 4 ? tierOffers
+    : Array.from({ length: 4 }, (_, index) => tierOffers[(start + index) % tierOffers.length]);
   shop.openTiers ||= new Set();
   const countOptions = (side, selected, minimum) => `<option value="any" ${selected === "any" ? "selected" : ""}>Any</option>${Array.from({ length: 7 }, (_, index) => index + 1)
     .filter(count => count >= minimum && count < maxPlayers)
@@ -149,16 +147,16 @@ function tradeLab(team, teams, pool, shop) {
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
         </div>
-        <div class="tb-intent" aria-label="Offer intent"><span>MY INTENT</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "FAIR"], ["press", "PRESS"], ["swing", "SWING BIG"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
+        <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "FAIR"], ["aggressive", "AGGRESSIVE"], ["steal", "STEAL"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
       </div>
     </section>
     <section class="tb-layout-section">
-      <h2 class="section-title">Generated offers<span class="count">${allOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
-      <p class="section-copy">${allPartners ? "League-wide offers are rotated across matching teams so one roster cannot flood the board." : "Open only the pressure level you want to shop."}</p>
+      <h2 class="section-title">Generated offers<span class="count">${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
+      <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers, rotated across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
       <div class="tb-offers-card">
-        <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label>${shop.justRefreshed ? "OFFERS REFRESHED" : "SHOW ANOTHER BATCH"} · ${allOffers.length} FOUND</span></button>
-        <div class="tb-tiers">${tierMarkup("fair", groups.fair, pool, shop.openTiers.has("fair"), fullGroups.fair.length)}${tierMarkup("aggressive", groups.aggressive, pool, shop.openTiers.has("aggressive"), fullGroups.aggressive.length)}${tierMarkup("steal", groups.steal, pool, shop.openTiers.has("steal"), fullGroups.steal.length)}</div>
-        ${allOffers.length ? "" : `<div class="ta-empty">No offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
+        <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label>${shop.justRefreshed ? "OFFERS REFRESHED" : "SHOW ANOTHER BATCH"} · ${tierOffers.length} FOUND</span></button>
+        <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
+        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
       </div>
     </section>
   </section>`;
@@ -209,7 +207,7 @@ function page(data, tradeAlerts = []) {
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
   const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
-    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "press", page: 0,
+    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", page: 0,
     openTiers: new Set(), customOpen: false };
 
   return {
@@ -267,7 +265,7 @@ function page(data, tradeAlerts = []) {
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
-        shop.intent = "press"; shop.page = 0; shop.openTiers.clear(); shop.customOpen = false;
+        shop.intent = "aggressive"; shop.page = 0; shop.openTiers.clear(); shop.customOpen = false;
       };
       body.addEventListener("change", event => {
         if (event.target.matches("[data-td-team]")) {
@@ -355,6 +353,7 @@ function page(data, tradeAlerts = []) {
           const value = intent.dataset.tbIntent;
           if (value === shop.intent) return;
           shop.intent = value;
+          shop.openTiers.clear();
           const options = intent.closest(".tb-intent-options");
           if (options) options.dataset.intent = value;
           options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button === intent));

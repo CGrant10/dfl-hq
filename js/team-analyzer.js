@@ -550,10 +550,10 @@ export function tradeSuggestionTier(result) {
   return "aggressive";
 }
 
-function suggestionScore(result, intent = "press") {
+function suggestionScore(result, intent = "aggressive") {
   const mutualGain = Math.max(-2, result.weeklyDeltaA) + Math.max(-2, result.weeklyDeltaB);
   if (intent === "fair") return result.fairness * 1.5 + mutualGain * 10;
-  if (intent === "swing") return result.fairness * .45 + result.weeklyDeltaA * 22 + Math.max(0, result.valueToA - result.valueToB) * .35;
+  if (intent === "steal") return result.fairness * .45 + result.weeklyDeltaA * 22 + Math.max(0, result.valueToA - result.valueToB) * .35;
   return result.fairness + result.weeklyDeltaA * 15 + result.weeklyDeltaB * 5;
 }
 
@@ -611,7 +611,7 @@ function diverseOffersAcrossPartners(offers, limit) {
  * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
 export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
-  pool = new Map(), limit = 12, shapes = [], maxPlayers = 4, intent = "press" } = {}) {
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 4, intent = "aggressive" } = {}) {
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
   const anchorId = String(anchorTeamId ?? teamId), anchorTeam = teams.find(team => String(team.id) === anchorId);

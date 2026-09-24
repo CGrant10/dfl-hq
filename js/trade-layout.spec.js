@@ -32,6 +32,9 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('<option value="all"');
     expect(source).toContain('partnerId: allPartners ? undefined : partner?.id');
     expect(source).toContain('Best league-wide return');
+    expect(source).toContain('[["fair", "FAIR"], ["aggressive", "AGGRESSIVE"], ["steal", "STEAL"]]');
+    expect(source).toContain('tierMarkup(intent, visibleOffers');
+    expect(source).not.toContain('tierMarkup("fair", groups.fair');
   });
 
   it("scrolls a loaded suggestion to its analysis result", () => {
