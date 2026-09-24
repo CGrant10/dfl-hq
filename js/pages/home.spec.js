@@ -64,4 +64,12 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("TOP STARTER");
     expect(source).toContain("data-home-report-slot");
   });
+
+  it("keeps completed trade verdicts on Home after breaking coverage ends", () => {
+    expect(source).toContain("export function homeTradeWire");
+    expect(source).toContain("TRADE WIRE");
+    expect(source).toContain("DFLYZER VERDICTS");
+    expect(source).toContain("data-home-trade-slot");
+    expect(source).toContain("tradeAlertViewModel");
+  });
 });

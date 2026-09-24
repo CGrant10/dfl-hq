@@ -1702,7 +1702,8 @@
 #home-wrap > .dfl-anniv > .dfl-anniv-tag { color: var(--home-program-muted); }
 
 [data-home-rankings-slot],
-[data-home-report-slot] { min-width: 0; }
+[data-home-report-slot],
+[data-home-trade-slot] { min-width: 0; }
 
 #home-wrap .home-rankings-card {
   padding: 0 var(--s-5) 17px;
@@ -1712,7 +1713,8 @@
   background: rgba(0, 0, 0, .08);
 }
 #home-wrap .home-rankings-card > header,
-#home-wrap .home-weekly-digest > header {
+#home-wrap .home-weekly-digest > header,
+#home-wrap .home-trade-wire > header {
   min-height: 64px;
   display: flex;
   align-items: center;
@@ -1721,7 +1723,8 @@
   border-bottom: 1px solid var(--home-program-line);
 }
 #home-wrap .home-rankings-card h2,
-#home-wrap .home-weekly-digest h2 {
+#home-wrap .home-weekly-digest h2,
+#home-wrap .home-trade-wire h2 {
   margin: 0;
   color: var(--home-program-ink);
   font-family: var(--font-display);
@@ -1827,6 +1830,92 @@
 #home-wrap .home-weekly-digest.is-loading > p,
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
 
+/* TRADE WIRE
+   A scoreboard rail, not another floating card. Completed deals remain here
+   after the breaking banner is dismissed, with the roster-aware call doing
+   the visual work instead of another wall of containers. */
+#home-wrap .home-trade-wire {
+  padding: 0 var(--s-5) 18px;
+  border-top: 1px solid var(--home-program-line);
+  border-bottom: 1px solid var(--home-program-line);
+  color: var(--home-program-ink);
+  background: color-mix(in srgb, var(--bg) 96%, var(--bg-3) 4%);
+}
+#home-wrap .home-trade-wire > header a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--home-program-muted);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .14em;
+  text-decoration: none;
+}
+#home-wrap .home-trade-wire > header .ico-sm { width: 17px; height: 17px; color: var(--home-program-ink); }
+#home-wrap .home-trade-list { display: grid; }
+#home-wrap .home-trade-item {
+  --trade-call: var(--accent);
+  display: grid;
+  grid-template-columns: minmax(92px, .34fr) minmax(0, 1.66fr) 18px;
+  align-items: center;
+  gap: clamp(12px, 3vw, 24px);
+  min-width: 0;
+  padding: 16px 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--home-program-line) 76%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+#home-wrap .home-trade-item:last-child { border-bottom: 0; }
+#home-wrap .home-trade-item.is-fair { --trade-call: var(--ok); }
+#home-wrap .home-trade-item.is-close { --trade-call: var(--accent-2); }
+#home-wrap .home-trade-item.is-clear { --trade-call: var(--accent); }
+#home-wrap .home-trade-item.is-robbery { --trade-call: var(--danger-ink); }
+#home-wrap .home-trade-item.is-review { --trade-call: var(--home-program-muted); }
+#home-wrap .home-trade-call {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding-left: 11px;
+  border-left: 3px solid var(--trade-call);
+}
+#home-wrap .home-trade-call small,
+#home-wrap .home-trade-call em {
+  color: var(--home-program-muted);
+  font-size: var(--fs-micro);
+  font-style: normal;
+  font-weight: var(--fw-bold);
+  letter-spacing: .1em;
+}
+#home-wrap .home-trade-call strong {
+  color: var(--trade-call);
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.8vw, 1.55rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+#home-wrap .home-trade-deal { min-width: 0; }
+#home-wrap .home-trade-deal h3 {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: var(--fs-title-sm);
+  line-height: 1.05;
+}
+#home-wrap .home-trade-deal > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 18px; }
+#home-wrap .home-trade-deal span { min-width: 0; display: grid; }
+#home-wrap .home-trade-deal span + span { padding-left: 18px; border-left: 1px solid var(--home-program-line); }
+#home-wrap .home-trade-deal b,
+#home-wrap .home-trade-deal em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .home-trade-deal b { font-size: var(--fs-small); }
+#home-wrap .home-trade-deal em { color: var(--home-program-muted); font-size: var(--fs-small); font-style: normal; }
+#home-wrap .home-trade-deal p { margin: 7px 0 0; color: var(--home-program-muted); font-size: var(--fs-small); line-height: 1.3; }
+#home-wrap .home-trade-item > .ico-sm { color: var(--home-program-muted); }
+#home-wrap .home-trade-empty,
+#home-wrap .home-trade-wire.is-loading > p { margin: 0; padding: 24px 4px 8px; color: var(--home-program-muted); }
+#home-wrap .home-trade-empty { display: grid; gap: 4px; }
+#home-wrap .home-trade-empty strong { color: var(--home-program-ink); }
+
 /*
   FULL BLEED, CANCELLING THE VIEW'S OWN GUTTER.
 
@@ -1849,6 +1938,7 @@
 /* Existing league utilities remain available below the approved composition,
    with their original spacing restored after the report rail. */
 #home-wrap > [data-home-report-slot] ~ * { margin: var(--home-gap) var(--s-4) 0; }
+#home-wrap > [data-home-trade-slot] { margin: 0; }
 #home-wrap > [data-home-report-slot] ~ .version-line { margin-bottom: var(--s-5); }
 
 @media (max-width: 620px) {
@@ -1872,11 +1962,14 @@
   #home-wrap > .dfl-anniv > .dfl-anniv-copy::after { left: calc(100% + 4px); }
   #home-wrap > .dfl-anniv > .dfl-anniv-tag { display: block; font-size: .5rem; line-height: 1.5; letter-spacing: .12em; }
   #home-wrap .home-rankings-card,
-  #home-wrap .home-weekly-digest { padding-inline: 20px; }
+  #home-wrap .home-weekly-digest,
+  #home-wrap .home-trade-wire { padding-inline: 20px; }
   #home-wrap .home-rankings-card > header,
-  #home-wrap .home-weekly-digest > header { min-height: 57px; }
+  #home-wrap .home-weekly-digest > header,
+  #home-wrap .home-trade-wire > header { min-height: 57px; }
   #home-wrap .home-rankings-card h2,
-  #home-wrap .home-weekly-digest h2 { font-size: clamp(1.45rem, 6.2vw, 1.95rem); }
+  #home-wrap .home-weekly-digest h2,
+  #home-wrap .home-trade-wire h2 { font-size: clamp(1.45rem, 6.2vw, 1.95rem); }
   #home-wrap .home-rank-summary { min-height: 90px; }
   #home-wrap .home-rank-summary > div { gap: 8px; padding: 11px 12px; }
   #home-wrap .home-rank-summary > div:first-child > strong { font-size: clamp(2.75rem, 11vw, 3.6rem); }
@@ -1897,7 +1990,19 @@
   #home-wrap .home-weekly-digest article small { font-size: .59rem; }
   #home-wrap .home-weekly-digest article strong { font-size: .84rem; }
   #home-wrap .home-weekly-digest article span { font-size: .69rem; }
+  #home-wrap .home-trade-item { grid-template-columns: 88px minmax(0, 1fr) 14px; gap: 10px; padding-block: 14px; }
+  #home-wrap .home-trade-call { padding-left: 8px; }
+  #home-wrap .home-trade-call strong { font-size: 1rem; }
+  #home-wrap .home-trade-call small,
+  #home-wrap .home-trade-call em { font-size: .55rem; }
+  #home-wrap .home-trade-deal h3 { font-size: .92rem; }
+  #home-wrap .home-trade-deal > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  #home-wrap .home-trade-deal span + span { padding: 0; border-left: 0; }
+  #home-wrap .home-trade-deal b,
+  #home-wrap .home-trade-deal em,
+  #home-wrap .home-trade-deal p { font-size: .67rem; }
   #home-wrap > [data-home-report-slot] ~ * { margin-inline: 12px; }
+  #home-wrap > [data-home-trade-slot] { margin-inline: 0; }
 }
 
 @media (max-width: 410px) {

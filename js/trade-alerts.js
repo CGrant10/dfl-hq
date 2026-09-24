@@ -28,6 +28,53 @@ export function tradeBreakingHeadline(alert) {
   return `${winner} HAS THE EARLY EDGE`;
 }
 
+const impactFor = (result, side) => {
+  const roster = Number(result?.[`rosterImpact${side}`]);
+  if (Number.isFinite(roster)) return roster;
+  return (Number(result?.[`weeklyDelta${side}`]) || 0) + (Number(result?.[`depthDelta${side}`]) || 0) * .35;
+};
+
+/** One plain-English result for Home's Trade Wire. Value is important, but a
+ * pile of bench names cannot win the call if it does not help the receiving
+ * roster. The same 55/8 blend used by recommendationFor() is applied to both
+ * sides, then compared so the Home verdict and full ticket speak one language. */
+export function tradeOutcomeSummary(alert) {
+  if (alert?.analysis_status !== "graded" || !alert?.result) {
+    return { grade: "Review", tone: "review", winner: null, loser: null, closeness: null,
+      detail: alert?.limitations?.[0] || "The model needs a complete two-team player exchange." };
+  }
+  const teams = list(alert.teams);
+  const a = teams[0]?.team_name || `Team ${teams[0]?.roster_id || 1}`;
+  const b = teams[1]?.team_name || `Team ${teams[1]?.roster_id || 2}`;
+  const valueA = Number(alert.result.valueToA) || 0;
+  const valueB = Number(alert.result.valueToB) || 0;
+  const base = Math.max(valueA, valueB, 1);
+  const valueEdge = (valueA - valueB) / base * 100;
+  const impactA = impactFor(alert.result, "A");
+  const impactB = impactFor(alert.result, "B");
+  const scoreA = valueEdge * .55 + impactA * 8;
+  const scoreB = -valueEdge * .55 + impactB * 8;
+  const spread = scoreA - scoreB;
+  const strength = Math.abs(spread);
+  const fairness = Math.max(0, Math.min(100, Number(alert.result.fairness) || 0));
+  const winnerA = spread >= 0;
+  const winner = winnerA ? a : b;
+  const loser = winnerA ? b : a;
+  const lineup = winnerA ? Number(alert.result.weeklyDeltaA) || 0 : Number(alert.result.weeklyDeltaB) || 0;
+  const depth = winnerA ? Number(alert.result.depthDeltaA) || 0 : Number(alert.result.depthDeltaB) || 0;
+  const fair = fairness >= 92 && strength < 8;
+  const robbery = !fair && fairness < 55 && strength >= 15;
+  const close = !fair && !robbery && (strength < 10 || fairness >= 82);
+  const grade = fair ? "Fair deal" : robbery ? "Robbery" : close ? "Close win" : "Clear win";
+  const tone = fair ? "fair" : robbery ? "robbery" : close ? "close" : "clear";
+  return {
+    grade, tone, winner: fair ? null : winner, loser: fair ? null : loser,
+    closeness: Math.round(fairness), lineup, depth, strength,
+    detail: fair ? `${Math.round(fairness)}% balanced · neither roster owns a meaningful edge`
+      : `${winner} wins the model · lineup ${lineup >= 0 ? "+" : "−"}${Math.abs(lineup).toFixed(1)} · depth ${depth >= 0 ? "+" : "−"}${Math.abs(depth).toFixed(1)}`,
+  };
+}
+
 function copyRosterMap(rows = []) {
   return new Map(rows.map(row => [rosterId(row.roster_id), new Set(list(row.players).map(playerId).filter(Boolean))]));
 }
@@ -213,6 +260,7 @@ export function tradeAlertViewModel(alert) {
     balanced,
     verdict: balanced ? "Balanced" : winner ? (alert.verdict?.headline || "Winner") : "Review needed",
     headline: tradeBreakingHeadline(alert),
+    outcome: tradeOutcomeSummary(alert),
     fairness: alert.analysis_status === "graded" ? Number(alert.result?.fairness) || 0 : null,
     lineupDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),

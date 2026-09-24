@@ -10,6 +10,7 @@ import {
   tradeAlertViewModel,
   tradeAlertNotification,
   tradeBreakingHeadline,
+  tradeOutcomeSummary,
 } from "./trade-alerts.js";
 
 const player = (id, name, position, value, points) => [id, {
@@ -124,5 +125,23 @@ describe("completed trade alerts", () => {
       verdict: { who: "a", winner_team_name: "Alpha" },
       result: { fairness: 82, weeklyDeltaA: -2, rosterImpactA: -1.2 },
     })).toBe("Alpha WON VALUE, NOT THEIR LINEUP");
+  });
+
+  it("grades Home trade outcomes with value plus roster usefulness", () => {
+    const close = tradeOutcomeSummary({
+      analysis_status: "graded",
+      teams: [{ team_name: "Alpha" }, { team_name: "Bravo" }],
+      result: { valueToA: 105, valueToB: 100, fairness: 95, rosterImpactA: .3, rosterImpactB: .1,
+        weeklyDeltaA: .2, weeklyDeltaB: .1, depthDeltaA: .2, depthDeltaB: 0 },
+    });
+    expect(close).toMatchObject({ grade: "Fair deal", tone: "fair", winner: null });
+
+    const robbery = tradeOutcomeSummary({
+      analysis_status: "graded",
+      teams: [{ team_name: "Alpha" }, { team_name: "Bravo" }],
+      result: { valueToA: 180, valueToB: 75, fairness: 42, rosterImpactA: 3, rosterImpactB: -2,
+        weeklyDeltaA: 2.5, weeklyDeltaB: -2, depthDeltaA: 1, depthDeltaB: -1 },
+    });
+    expect(robbery).toMatchObject({ grade: "Robbery", winner: "Alpha", loser: "Bravo" });
   });
 });

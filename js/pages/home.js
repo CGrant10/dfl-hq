@@ -41,7 +41,7 @@ import { buildNextMove } from "../next-move.js";
 import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
-import { loadActiveTradeAlert } from "../trade-alerts.js";
+import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { loadLeagueState } from "../league-state.js";
 
 let stage = null;
@@ -190,6 +190,35 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
   }).slice(0, 8);
   if (picked.length) return picked;
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
+}
+
+function tradePackageLine(pkg) {
+  const players = (pkg.players || []).map(player => player.name).filter(Boolean);
+  const shown = players.slice(0, 3);
+  const extra = players.length - shown.length;
+  return `<span><b>${esc(pkg.teamName)}</b><em>${esc(shown.join(" + ") || "No rated players")}${extra > 0 ? ` +${extra} more` : ""}</em></span>`;
+}
+
+/** A persistent record of league deals. Breaking coverage may end; the result
+ * belongs on Home until newer trades replace it, just like a real transaction
+ * wire rather than a temporary notification. */
+export function homeTradeWire(alerts) {
+  if (alerts == null) return `<section class="home-trade-wire is-loading"><header><h2>TRADE WIRE</h2><small>DFLYZER VERDICTS</small></header><p>Checking the league wire…</p></section>`;
+  const recent = (alerts || []).slice(0, 3);
+  return `<section class="home-trade-wire">
+    <header><h2>TRADE WIRE</h2><a href="#/trade">ALL RECEIPTS <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    ${recent.length ? `<div class="home-trade-list">${recent.map(alert => {
+      const outcome = alert.outcome || { grade: "Review", tone: "review", detail: "Model review needed" };
+      const teams = alert.teams.map(team => team.teamName).filter(Boolean);
+      const matchup = teams.length > 1 ? `${teams[0]} ↔ ${teams[1]}` : teams[0] || "Completed trade";
+      const verdict = outcome.winner ? `${outcome.winner} beat ${outcome.loser}` : matchup;
+      return `<a class="home-trade-item is-${esc(outcome.tone)}" href="${esc(alert.href || "#/trade")}" data-assemble>
+        <div class="home-trade-call"><small>${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><strong>${esc(outcome.grade)}</strong><em>${outcome.closeness == null ? "MODEL REVIEW" : `${esc(outcome.closeness)}% BALANCED`}</em></div>
+        <div class="home-trade-deal"><h3>${esc(verdict)}</h3><div>${alert.packages.slice(0, 2).map(tradePackageLine).join("")}</div><p>${esc(outcome.detail)}</p></div>
+        <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+      </a>`;
+    }).join("")}</div>` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
+  </section>`;
 }
 
 /* Home is personal before it is editorial. The deck may rank a live league
@@ -442,6 +471,7 @@ export async function render(view) {
     </section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
+    <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     ${strip}
     ${seasonDoors(dues.data)}
@@ -461,9 +491,9 @@ export async function render(view) {
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
-  const tradeAlertPromise = loadActiveTradeAlert({ hours: 24 * 30 }).catch(err => {
-    console.warn("trade alert unavailable", err);
-    return null;
+  const tradeAlertsPromise = loadTradeAlerts({ limit: 6 }).catch(err => {
+    console.warn("trade wire unavailable", err);
+    return [];
   });
   const weeklyPromise = analysisPromise.then(async analysis => {
     if (analysis?.state !== "ready") return null;
@@ -565,7 +595,7 @@ export async function render(view) {
     if (root) stage = startStage(root, ordered, { refresh });
   };
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlert]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
     lore = got?.error ? null : got;
@@ -580,6 +610,9 @@ export async function render(view) {
       standings: standings.data || [], currentWeek: weekly?.week || null,
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
+    const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
+    const tradeAlert = tradeViews.find(alert => alert.breakingActive
+      && Date.parse(alert.occurredAt || "") >= Date.now() - 30 * 24 * 60 * 60 * 1000) || null;
 
     /* The two standing sections. POWER RANKINGS and WEEKLY REPORT each own
        their own place on the page, which is exactly why the retired
@@ -587,11 +620,13 @@ export async function render(view) {
        the same two views from the same two objects, one scroll apart. */
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
+    const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
     if (homeRankingsSlot) {
       homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
+    if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(tradeViews);
     /* Both slots just replaced their contents, so the parts the driver was
        holding are detached. Re-bind against what is actually on the page. */
     try { dropAssembly?.(); } catch { }
