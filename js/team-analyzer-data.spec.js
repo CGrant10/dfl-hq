@@ -34,6 +34,9 @@ vi.mock("./sleeper.js", () => ({
   loadWeeklyStats: vi.fn(async () => ({ data: [], fetchedAt: 1 })),
   loadTrendingPlayers: vi.fn(async () => ({ adds: new Map(), drops: new Map(), fetchedAt: 1 })),
 }));
+vi.mock("./league-state.js", () => ({
+  loadLeagueState: vi.fn(async () => ({ season: 2026, currentWeek: 3 })),
+}));
 vi.mock("./dfl-scoring.js", () => ({ scoringFormat: () => "ppr" }));
 vi.mock("./team-analyzer.js", () => ({
   buildPlayerPool: () => ({}),

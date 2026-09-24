@@ -16,6 +16,7 @@ import { renderFinancePanel } from "./admin_finance.js";
 import { renderKeeperRulesPanel } from "./admin_keepers.js";
 import { renderNotificationPanel } from "./admin_notifications.js";
 import { renderPerformancePanel } from "./admin_performance.js";
+import { renderOperationsPanel } from "./admin_operations.js";
 import { esc, toast } from "../ui.js";
 import { ensureBroadcastStyles } from "../lazy-css.js";
 /* Admin screens are styled by admin.css, which broadcast.css @imports. */
@@ -27,6 +28,7 @@ const TABLES = [
 ];
 
 const PANELS = [
+  { id: "operations", tab: "Operations", permission: "sleeper", render: renderOperationsPanel },
   { id: "finances", tab: "Fees", permission: "fees", render: renderFinancePanel },
   { id: "keepers", tab: "Keeper rules", permission: "keepers", render: renderKeeperRulesPanel },
   { id: "sleeper", tab: "Sleeper", permission: "sleeper", render: renderSleeperPanel },
@@ -42,7 +44,7 @@ const PANELS = [
   { id: "commissioners", tab: "Commissioner Access", ownerOnly: true, render: renderCommissionerPanel },
 ];
 
-let activeSection = "members";
+let activeSection = "operations";
 
 const CAN_MASK = typeof CSS !== "undefined"
   && typeof CSS.supports === "function"

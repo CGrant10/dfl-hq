@@ -7,6 +7,8 @@ const LABELS = {
   cumulative_layout_shift: "Layout shift",
   interaction_latency: "Interaction latency",
   route_render: "Route render",
+  route_module: "Route module",
+  route_content: "Route content",
 };
 
 const value = (n, unit) => unit === "score" ? Number(n).toFixed(3) : `${Math.round(Number(n))} ms`;
@@ -25,4 +27,3 @@ export async function renderPerformancePanel(host) {
       ${rows.length ? `<div class="table-wrap"><table><thead><tr><th>Measure</th><th>Route</th><th>Samples</th><th>Median</th><th>P75</th><th>P95</th></tr></thead><tbody>${rows.map(row => `<tr><td>${esc(LABELS[row.metric] || row.metric)}</td><td>${esc(row.route)}</td><td>${Number(row.samples) || 0}</td><td>${value(row.p50, row.unit)}</td><td>${value(row.p75, row.unit)}</td><td>${value(row.p95, row.unit)}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">No sampled sessions yet. Data will appear as members use this release.</div>`}
     </div></div>`;
 }
-

@@ -22,13 +22,36 @@ create table if not exists public.trade_alerts (
   pre_trade_rosters jsonb not null default '[]'::jsonb check (jsonb_typeof(pre_trade_rosters) = 'array'),
   notification_message_id bigint unique references public.notification_messages(id) on delete set null,
   notified_at timestamptz,
+  breaking_active boolean not null default true,
+  breaking_started_at timestamptz not null default now(),
+  breaking_ended_at timestamptz,
+  breaking_ended_by bigint references public.members(id) on delete set null,
+  headline_override text,
   created_at timestamptz not null default now()
 );
+
+/* Existing installations can safely re-run this file. These columns turn a
+   short-lived Home slide into commissioner-controlled breaking coverage. */
+alter table public.trade_alerts add column if not exists breaking_active boolean not null default true;
+alter table public.trade_alerts add column if not exists breaking_started_at timestamptz not null default now();
+alter table public.trade_alerts add column if not exists breaking_ended_at timestamptz;
+alter table public.trade_alerts add column if not exists breaking_ended_by bigint references public.members(id) on delete set null;
+alter table public.trade_alerts add column if not exists headline_override text;
+/* Rows created before breaking coverage existed are receipts, not active
+   emergencies. Only a genuinely recent legacy trade may launch the banner. */
+update public.trade_alerts
+   set breaking_active = false,
+       breaking_ended_at = coalesce(breaking_ended_at, now())
+ where breaking_active
+   and coalesce(occurred_at, created_at) < now() - interval '72 hours';
 
 create index if not exists trade_alerts_recent_idx
   on public.trade_alerts(occurred_at desc nulls last, created_at desc);
 create index if not exists trade_alerts_season_week_idx
   on public.trade_alerts(season desc, week desc);
+create index if not exists trade_alerts_breaking_idx
+  on public.trade_alerts(breaking_active, occurred_at desc nulls last)
+  where breaking_active;
 
 /* A source key makes push delivery idempotent too. If a browser loses the
    response after the server inserts the inbox message, the next sync finds
@@ -40,7 +63,8 @@ create unique index if not exists notification_messages_source_key_idx
 alter table public.trade_alerts enable row level security;
 revoke all on table public.trade_alerts from anon, authenticated;
 grant select, insert on table public.trade_alerts to anon, authenticated;
-grant update(notification_message_id, notified_at) on table public.trade_alerts to anon, authenticated;
+grant update(notification_message_id, notified_at, breaking_active, breaking_ended_at, breaking_ended_by, headline_override)
+  on table public.trade_alerts to anon, authenticated;
 grant usage, select on sequence public.trade_alerts_id_seq to anon, authenticated;
 
 drop policy if exists "public read" on public.trade_alerts;
@@ -95,3 +119,32 @@ before update on public.trade_alerts
 for each row execute function public.keep_trade_alert_receipt_immutable();
 
 revoke all on function public.keep_trade_alert_receipt_immutable() from public;
+
+/* The receipt stays immutable; this RPC only changes the live presentation
+   state. Authorization is resolved from the existing commissioner session,
+   never from a caller-supplied member id. */
+create or replace function public.end_trade_breaking_coverage(alert_id bigint)
+returns boolean
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare affected integer;
+begin
+  if not public.has_commissioner_permission('sleeper') then
+    raise exception 'Commissioner Sleeper permission required';
+  end if;
+  update public.trade_alerts
+     set breaking_active = false,
+         breaking_ended_at = now(),
+         breaking_ended_by = nullif(
+           nullif(current_setting('request.headers', true), '')::json ->> 'x-member-id', ''
+         )::bigint
+   where id = alert_id and breaking_active;
+  get diagnostics affected = row_count;
+  return affected > 0;
+end;
+$$;
+
+revoke all on function public.end_trade_breaking_coverage(bigint) from public;
+grant execute on function public.end_trade_breaking_coverage(bigint) to anon, authenticated;

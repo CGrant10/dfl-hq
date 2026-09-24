@@ -35,14 +35,14 @@ function signed(value) {
 
 export function tradeAlertSlide(alert) {
   if (!alert) return null;
-  const call = alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED";
+  const call = alert.headline || (alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED");
   const reason = alert.reason?.title || alert.limitations?.[0] || "The completed trade is ready for league review.";
   const delta = (alert.lineupDeltas || [])[0];
   return {
     source: "auto", pinned: true, id: "trade-alert", generator: "tradeAlert",
     kind: "trade", treatment: "stat", temporal: "recent",
     priority: P.RECENT + 40, dwell: 8000,
-    kicker: `DFL TRADE ALERT · ${alert.week ? `WEEK ${alert.week}` : "COMPLETED"}`,
+    kicker: `BREAKING TRADE · ${alert.week ? `WEEK ${alert.week}` : "COMPLETED"}`,
     figure: alert.fairness == null ? null : `${alert.fairness}%`,
     headline: call,
     subtitle: delta ? `${reason} ${delta.teamName} ${signed(delta.weekly)}/wk.` : reason,

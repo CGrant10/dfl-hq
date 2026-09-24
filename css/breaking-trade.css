@@ -1,0 +1,38 @@
+.breaking-trade[hidden] { display: none !important; }
+.breaking-trade {
+  position: sticky;
+  top: calc(56px + env(safe-area-inset-top));
+  z-index: 19;
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px max(var(--pad), env(safe-area-inset-right)) 9px max(var(--pad), env(safe-area-inset-left));
+  color: #fff8ec;
+  border-bottom: 1px solid rgba(241, 193, 78, .58);
+  background:
+    radial-gradient(circle at 8% 50%, rgba(231, 38, 48, .34), transparent 34%),
+    linear-gradient(105deg, #25080b, #100d0e 58%, #241607);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
+}
+.breaking-trade-copy { min-width: 0; color: inherit; text-decoration: none; display: grid; gap: 1px; }
+.breaking-trade-copy small { display: flex; align-items: center; gap: 7px; font: 700 9px/1 var(--font-body); letter-spacing: .17em; }
+.breaking-trade-copy small b { color: #ff5260; }
+.breaking-trade-copy small span { color: #efc668; }
+.breaking-trade-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 17px/1.1 var(--font-display); letter-spacing: .025em; }
+.breaking-trade-copy em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.7); font: 600 10px/1.2 var(--font-body); font-style: normal; }
+.breaking-trade > button { min-height: 34px; padding: 0 10px; border: 1px solid rgba(239,198,104,.55); border-radius: 999px; background: rgba(255,255,255,.07); color: #f4d486; font: 700 9px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+.breaking-trade-beacon { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
+.breaking-trade-beacon::before { content: ""; width: 13px; height: 17px; border-radius: 9px 9px 4px 4px; background: linear-gradient(#ff7180, #db1428); box-shadow: 0 0 12px rgba(255,37,58,.9); }
+.breaking-trade-beacon i { position: absolute; inset: 2px; border: 1px solid rgba(255,76,92,.52); border-radius: 50%; animation: breaking-trade-ring 1.8s ease-out infinite; }
+.breaking-trade-beacon i + i { animation-delay: .9s; }
+@keyframes breaking-trade-ring { 0% { transform: scale(.48); opacity: 0; } 25% { opacity: 1; } 100% { transform: scale(1.18); opacity: 0; } }
+@media (max-width: 520px) {
+  .breaking-trade { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 7px; min-height: 61px; }
+  .breaking-trade-copy strong { font-size: 15px; }
+  .breaking-trade > button { width: 46px; padding: 0 5px; border-radius: 8px; white-space: normal; line-height: 1.1; }
+}
+@media (max-width: 370px) { .breaking-trade > button { display: none; } }
+@media (min-width: 900px) { .breaking-trade { top: calc(103px + env(safe-area-inset-top)); } }
+@media (prefers-reduced-motion: reduce) { .breaking-trade-beacon i { animation: none; opacity: .55; } }

@@ -112,8 +112,9 @@ export function startPerformanceTracking({ readyAt = performance.now(), route = 
   window.addEventListener("dfl:route-performance", event => {
     const detail = event.detail || {};
     record("route_render", Number(detail.duration) || 0, "ms", detail.route);
+    record("route_module", Number(detail.moduleDuration) || 0, "ms", detail.route);
+    record("route_content", Number(detail.renderDuration) || 0, "ms", detail.route);
   });
   document.addEventListener("visibilitychange", () => { if (document.hidden) void flush(); });
   window.addEventListener("pagehide", () => { void flush(); }, { once: true });
 }
-

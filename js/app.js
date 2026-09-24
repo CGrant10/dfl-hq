@@ -23,6 +23,7 @@ import { forgetVerifiedPin } from "./member-lock.js";
 import { mountSeasonNavigation } from "./season-nav.js";
 import { mountNotificationBell } from "./notifications.js";
 import { mountQuickSleeperSync, refreshQuickSleeperSync } from "./quick-sleeper-sync.js";
+import { mountBreakingTradeCoverage } from "./breaking-trade.js";
 
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
@@ -235,6 +236,7 @@ const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   mountNotificationBell();
   mountQuickSleeperSync();
+  mountBreakingTradeCoverage();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */

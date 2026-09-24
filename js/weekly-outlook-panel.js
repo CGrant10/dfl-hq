@@ -20,7 +20,8 @@
 
 import { onRoute } from "./router.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
-import { loadNflState, loadTrendingPlayers, loadWeeklyProjections } from "./sleeper.js";
+import { loadTrendingPlayers, loadWeeklyProjections } from "./sleeper.js";
+import { loadLeagueState } from "./league-state.js";
 import { buildWeeklyPool, defenseDifficulty, matchupNote, startSitAdvice } from "./weekly-outlook.js";
 import { ensureStylesheet } from "./lazy-css.js";
 import { esc } from "./ui.js";
@@ -149,9 +150,9 @@ async function draw(host) {
   const team = data.teams.find(item => String(item.id) === String(chosen)) || data.teams[0];
   if (!team) { host.innerHTML = ""; return; }
 
-  const state = await loadNflState().catch(() => null);
-  const season = Number(state?.data?.season) || data.projectionSeason;
-  const week = Number(state?.data?.week) || 1;
+  const state = await loadLeagueState().catch(() => null);
+  const season = Number(state?.season) || data.projectionSeason;
+  const week = Number(state?.currentWeek) || 1;
 
   const [projections, trending] = await Promise.all([
     weekly(season, week),

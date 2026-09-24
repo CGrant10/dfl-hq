@@ -55,8 +55,22 @@ const routeStyles = {
   analyzer: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
   trade: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
 };
+const routeModules = new Map();
 function loadRouteStyles(name) {
   return Promise.all((routeStyles[name] || []).map(({ href, anchor }) => ensureStylesheet(href, { anchor })));
+}
+function loadRoute(name) {
+  if (!routeModules.has(name)) {
+    const request = Promise.all([routes[name](), loadRouteStyles(name)])
+      .then(([module]) => module)
+      .catch(error => { routeModules.delete(name); throw error; });
+    routeModules.set(name, request);
+  }
+  return routeModules.get(name);
+}
+export function prefetchRoute(name) {
+  if (!routes[name] || name === "golf" || name === "broadcast" || name.startsWith("arena")) return;
+  void loadRoute(name).catch(() => {});
 }
 
 /** Every page module name. Used by the updater to refresh unvisited pages. */
@@ -287,10 +301,15 @@ export async function renderRoute() {
 
   view.innerHTML = loading();
   try {
-    const [mod] = await Promise.all([routes[name](), loadRouteStyles(name)]);
+    const moduleStarted = performance.now();
+    const mod = await loadRoute(name);
+    const moduleDuration = performance.now() - moduleStarted;
     if (!isCurrent()) return;
     if (typeof mod.leave === "function") leaving = mod.leave;
+    const renderStarted = performance.now();
     await mod.render(view);
+    view.dataset.routeRenderMs = String(performance.now() - renderStarted);
+    view.dataset.routeModuleMs = String(moduleDuration);
     if (!isCurrent()) return;
     view.classList.remove("is-route-loading");
     document.body.classList.remove("route-loading");
@@ -315,7 +334,12 @@ export async function renderRoute() {
     view.classList.add("page-in");
   }
   for (const fn of listeners) { try { fn(name); } catch (err) { console.warn(err); } }
-  window.dispatchEvent(new CustomEvent("dfl:route-performance", { detail: { route: name, duration: performance.now() - routeStarted } }));
+  window.dispatchEvent(new CustomEvent("dfl:route-performance", { detail: {
+    route: name,
+    duration: performance.now() - routeStarted,
+    moduleDuration: Number(view.dataset.routeModuleMs) || 0,
+    renderDuration: Number(view.dataset.routeRenderMs) || 0,
+  } }));
   announceReady();
 }
 
@@ -325,8 +349,17 @@ export function startRouter() {
   startMemberLock();
   const bar = document.getElementById("tabbar");
   bar?.addEventListener("click", (event) => handleTabNavigation(event, bar));
+  const warm = event => {
+    const route = event.target?.closest?.("[data-route]")?.dataset?.route;
+    if (route) prefetchRoute(route);
+  };
+  bar?.addEventListener("pointerover", warm, { passive: true });
+  bar?.addEventListener("touchstart", warm, { passive: true });
   window.addEventListener("resize", syncTabIndicator);
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
   else renderRoute();
+  const warmWeeklyRoutes = () => ["trade", "analyzer", "keepers", "profile"].forEach(prefetchRoute);
+  if ("requestIdleCallback" in window) window.requestIdleCallback(warmWeeklyRoutes, { timeout: 5000 });
+  else setTimeout(warmWeeklyRoutes, 1800);
 }

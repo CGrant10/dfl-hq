@@ -41,7 +41,8 @@ import { buildNextMove } from "../next-move.js";
 import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
-import { loadLatestTradeAlert } from "../trade-alerts.js";
+import { loadActiveTradeAlert } from "../trade-alerts.js";
+import { loadLeagueState } from "../league-state.js";
 
 let stage = null;
 let generation = 0;
@@ -460,16 +461,16 @@ export async function render(view) {
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
-  const tradeAlertPromise = loadLatestTradeAlert({ hours: 72 }).catch(err => {
+  const tradeAlertPromise = loadActiveTradeAlert({ hours: 24 * 30 }).catch(err => {
     console.warn("trade alert unavailable", err);
     return null;
   });
   const weeklyPromise = analysisPromise.then(async analysis => {
     if (analysis?.state !== "ready") return null;
-    const { loadNflState, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
-    const state = await loadNflState();
-    const season = Number(state?.data?.season) || analysis.projectionSeason;
-    const week = Number(state?.data?.week) || 1;
+    const { loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
+    const state = await loadLeagueState();
+    const season = Number(state?.season) || analysis.projectionSeason;
+    const week = Number(state?.currentWeek) || 1;
     const [projections, actual, trending] = await Promise.all([
       loadWeeklyProjections(season, week), loadWeeklyStats(season, week), loadTrendingPlayers(),
     ]);
@@ -485,7 +486,7 @@ export async function render(view) {
      bundle while every other dashboard feature keeps the current week. */
   const aftermathWeeklyPromise = Promise.all([analysisPromise, weeklyPromise]).then(async ([analysis, current]) => {
     if (!current) return current;
-    const reportWeek = aftermathReportWeek(current.week);
+    const reportWeek = (await loadLeagueState()).reportWeek || aftermathReportWeek(current.week);
     if (reportWeek === current.week) return current;
     const { loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
     const [projections, actual] = await Promise.all([

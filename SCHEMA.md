@@ -188,6 +188,7 @@ Dependencies are real: a file that adds a column to `members` needs
 | # | File | What it establishes |
 |---|---|---|
 | 48 | `performance_metrics_schema.sql` | A write-only `app_performance_events` table, a tightly validated anonymous batch endpoint, and an aggregate-only commissioner report. Needs 31 because Admin → Performance uses the existing `sleeper` permission. Samples 25% of browser sessions and stores only metric, route name, app version, broad device/network class, and time — never member identity, team, content, full URL, or a persistent browser identifier. |
+| 49 | `trade_alerts_schema.sql` | Immutable DFLyzer receipts for completed Sleeper trades plus persistent breaking-coverage state. Needs 9, 31 and `notifications_schema.sql`. A newly detected trade stays in the global red-and-gold alert until a Sleeper commissioner ends coverage; ending it archives the banner, never the receipt. Safe to re-run to add the coverage columns and dismissal RPC to an existing installation. |
 
 ### Not schema
 
@@ -260,6 +261,7 @@ up:
 | `sportsbook_entries_schema.sql` | The board and every existing single work exactly as before — `sportsbook_my_bets()` from 33 still answers, and the page rebuilds each row as the one-leg entry it is. A single still places, through `sportsbook_place_bet()`. **Multi-pick entries are the only thing that fails**: the slip assembles and the Review button toasts "Multi-pick entries need the new tables. Run sportsbook_entries_schema.sql in Supabase". Pull ticket and Dismiss toast the same. |
 | `keeper_basis_correction.sql` | Everything still works: `js/keeper-rules.js` reads the old `original_draft_round` / `fixed_from_original` values and normalises them, so the *calculation* is already corrected in code. Only the stored wording, the two new `keepers` columns and the audit report are missing. |
 | `performance_metrics_schema.sql` | The app works normally and tracking disables itself quietly after the first unavailable endpoint response. Admin → Performance names the SQL file to run. |
+| `trade_alerts_schema.sql` | Sync still completes and the app continues without the breaking banner. Trade receipt loading falls back quietly; commissioner dismissal explains which SQL file must be run. |
 
 Rows that a migration could not map safely are **preserved, never deleted**.
 `polls_schema.sql` leaves unmatched votes with a NULL `member_id`;

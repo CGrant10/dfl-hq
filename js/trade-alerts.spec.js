@@ -9,6 +9,7 @@ import {
   preTradeRosterState,
   tradeAlertViewModel,
   tradeAlertNotification,
+  tradeBreakingHeadline,
 } from "./trade-alerts.js";
 
 const player = (id, name, position, value, points) => [id, {
@@ -110,5 +111,18 @@ describe("completed trade alerts", () => {
     });
     expect(view.packages[0]).toMatchObject({ teamName: "Alpha", players: [{ name: "Sunday Monster" }] });
     expect(view.lineupDeltas).toHaveLength(2);
+    expect(view.depthDeltas).toHaveLength(2);
+    expect(view.breakingActive).toBe(true);
+  });
+
+  it("writes bold breaking copy without contradicting roster impact", () => {
+    expect(tradeBreakingHeadline({
+      verdict: { who: "a", winner_team_name: "Alpha" },
+      result: { fairness: 48, weeklyDeltaA: 2, rosterImpactA: 2.4 },
+    })).toBe("Alpha JUST COMMITTED HIGHWAY ROBBERY");
+    expect(tradeBreakingHeadline({
+      verdict: { who: "a", winner_team_name: "Alpha" },
+      result: { fairness: 82, weeklyDeltaA: -2, rosterImpactA: -1.2 },
+    })).toBe("Alpha WON VALUE, NOT THEIR LINEUP");
   });
 });

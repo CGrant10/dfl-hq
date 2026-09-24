@@ -48,8 +48,9 @@ function offerPlayerRows(ids, pool) {
 function offerMarkup(offer, pool) {
   const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
+  const depth = Number(offer.depthDeltaA) || 0;
   return `<article class="tb-offer">
-    <header><span>${shapeLabel(offer)}</span><small><strong>${esc(teamName(offer.other))}</strong> · EDGE ${signed(valueEdge).replace(".0", "")}% · ${signed(offer.weeklyDeltaA)} / wk</small><b>${call}</b></header>
+    <header><span>${shapeLabel(offer)}</span><small><strong>${esc(teamName(offer.other))}</strong> · LINEUP ${signed(offer.weeklyDeltaA)} · DEPTH ${signed(depth)}</small><b>${call}</b></header>
     <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
   </article>`;
 }
@@ -201,7 +202,7 @@ export function completedTradeMarkup(alerts = [], selectedTransactionId = "") {
       return `<article class="td-alert-receipt" id="trade-${esc(alert.transactionId)}">
         <header><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3></div><span>${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% balance`}</span></header>
         <div class="td-alert-packages">${alert.packages.map(pkg => `<section><small>${esc(pkg.teamName)} SENT</small>${pkg.players.map(player => `<div><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam].filter(Boolean).join(" · "))}</small></span><b>${Math.round(player.value)}</b></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
-        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.lineupDeltas.slice(0, 2).map(delta => `<small>${esc(delta.teamName)} <b>${alertSigned(delta.weekly)} / wk</b></small>`).join("")}</footer>
+        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.lineupDeltas.slice(0, 2).map((delta, index) => `<small>${esc(delta.teamName)} <b>lineup ${alertSigned(delta.weekly)} · depth ${alertSigned(alert.depthDeltas?.[index]?.weekly)}</b></small>`).join("")}</footer>
       </article>`;
     }).join("")}</div>
   </details>`;

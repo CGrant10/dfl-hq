@@ -12,6 +12,22 @@ const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.ros
 const schemaMissing = error => ["42P01", "42703", "PGRST204", "PGRST205"].includes(error?.code)
   || /trade_alerts|source_key/i.test(error?.message || "") && /does not exist|schema cache|column/i.test(error?.message || "");
 
+export function tradeBreakingHeadline(alert) {
+  if (String(alert?.headline_override || "").trim()) return String(alert.headline_override).trim();
+  const winner = alert?.verdict?.winner_team_name || null;
+  const fairness = Number(alert?.result?.fairness);
+  const lineup = alert?.verdict?.who === "a" ? Number(alert?.result?.weeklyDeltaA) || 0
+    : alert?.verdict?.who === "b" ? Number(alert?.result?.weeklyDeltaB) || 0 : 0;
+  const roster = alert?.verdict?.who === "a" ? Number(alert?.result?.rosterImpactA) || lineup
+    : alert?.verdict?.who === "b" ? Number(alert?.result?.rosterImpactB) || lineup : 0;
+  if (!winner) return Number.isFinite(fairness) && fairness >= 88
+    ? "BLOCKBUSTER. NO CLEAR VICTIM." : "THE LEAGUE NEEDS TO REVIEW THIS ONE";
+  if (Number.isFinite(fairness) && fairness < 55 && roster > 0) return `${winner} JUST COMMITTED HIGHWAY ROBBERY`;
+  if (lineup < -.25 && roster <= 0) return `${winner} WON VALUE, NOT THEIR LINEUP`;
+  if (roster >= 2) return `${winner} JUST GOT BETTER`;
+  return `${winner} HAS THE EARLY EDGE`;
+}
+
 function copyRosterMap(rows = []) {
   return new Map(rows.map(row => [rosterId(row.roster_id), new Set(list(row.players).map(playerId).filter(Boolean))]));
 }
@@ -188,16 +204,29 @@ export function tradeAlertViewModel(alert) {
     season: Number(alert.season) || null,
     week: Number(alert.week) || null,
     occurredAt: alert.occurred_at || alert.created_at || null,
+    breakingActive: alert.breaking_active !== false,
+    breakingStartedAt: alert.breaking_started_at || alert.created_at || null,
+    breakingEndedAt: alert.breaking_ended_at || null,
     teams: teams.map(team => ({ rosterId: rosterId(team.roster_id), teamName: team.team_name || `Team ${team.roster_id}` })),
     packages,
     winner,
     balanced,
     verdict: balanced ? "Balanced" : winner ? (alert.verdict?.headline || "Winner") : "Review needed",
+    headline: tradeBreakingHeadline(alert),
     fairness: alert.analysis_status === "graded" ? Number(alert.result?.fairness) || 0 : null,
     lineupDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
       teamName: team.team_name || `Team ${team.roster_id}`,
       weekly: index === 0 ? Number(alert.result?.weeklyDeltaA) || 0 : index === 1 ? Number(alert.result?.weeklyDeltaB) || 0 : null,
+    })),
+    depthDeltas: teams.map((team, index) => ({
+      rosterId: rosterId(team.roster_id),
+      teamName: team.team_name || `Team ${team.roster_id}`,
+      weekly: index === 0 ? Number(alert.result?.depthDeltaA) || 0 : index === 1 ? Number(alert.result?.depthDeltaB) || 0 : null,
+    })),
+    rosterImpacts: teams.map((team, index) => ({
+      rosterId: rosterId(team.roster_id),
+      weekly: index === 0 ? Number(alert.result?.rosterImpactA) || 0 : index === 1 ? Number(alert.result?.rosterImpactB) || 0 : null,
     })),
     reason: list(alert.reasons)[0] || null,
     limitations: list(alert.limitations),
@@ -205,16 +234,41 @@ export function tradeAlertViewModel(alert) {
   };
 }
 
-export async function loadLatestTradeAlert({ hours = 72 } = {}) {
+export async function loadLatestTradeAlert({ hours = 72, activeOnly = false } = {}) {
   const safeHours = Math.min(Math.max(Number(hours) || 72, 1), 24 * 30);
   const cutoff = new Date(Date.now() - safeHours * 60 * 60 * 1000).toISOString();
-  const { data, error } = await db().from("trade_alerts").select("*")
-    .gte("occurred_at", cutoff).order("occurred_at", { ascending: false }).limit(1).maybeSingle();
+  let query = db().from("trade_alerts").select("*")
+    .gte("occurred_at", cutoff).order("occurred_at", { ascending: false }).limit(1);
+  if (activeOnly) query = query.eq("breaking_active", true);
+  let { data, error } = await query.maybeSingle();
+  /* A deployment may briefly have the new client before the additive schema.
+     Home still gets its ordinary recent trade card; the commissioner control
+     clearly reports that the schema is required instead of breaking launch. */
+  if (activeOnly && error?.code === "42703") {
+    ({ data, error } = await db().from("trade_alerts").select("*")
+      .gte("occurred_at", cutoff).order("occurred_at", { ascending: false }).limit(1).maybeSingle());
+  }
   if (error) {
     if (schemaMissing(error)) return null;
     throw error;
   }
   return tradeAlertViewModel(data);
+}
+
+export const loadActiveTradeAlert = options => loadLatestTradeAlert({ ...options, activeOnly: true });
+
+export async function endBreakingTradeCoverage(alertId) {
+  const id = Number(alertId);
+  if (!Number.isFinite(id) || id <= 0) throw new Error("That trade alert could not be identified");
+  const { data, error } = await db().rpc("end_trade_breaking_coverage", { alert_id: id });
+  if (error) {
+    if (/end_trade_breaking_coverage|schema cache|does not exist/i.test(error.message || "")) {
+      throw new Error("Run trade_alerts_schema.sql in Supabase to activate commissioner dismissal");
+    }
+    throw error;
+  }
+  window.dispatchEvent(new CustomEvent("dfl:trade-coverage-changed", { detail: { id, active: false } }));
+  return data === true;
 }
 
 async function notifyTradeAlert(alert, database) {

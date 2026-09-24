@@ -328,6 +328,24 @@ h3 {
   background: var(--accent-sweep);
 }
 
+/* Commissioner operations: compact status, then editorial rows. */
+.ops-head { align-items: end; }
+.ops-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0 0 var(--s-6); border-block: 1px solid var(--line); background: var(--line); }
+.ops-status { min-width: 0; display: grid; gap: 2px; padding: var(--s-3) var(--s-4); color: inherit; text-decoration: none; background: var(--bg-2); }
+.ops-status small { color: var(--muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
+.ops-status strong { font-family: var(--font-display); font-size: var(--fs-h2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-status span { color: var(--muted); font-size: var(--fs-micro); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-status.is-good strong { color: var(--success-ink, #55dc9a); }
+.ops-status.is-warn strong { color: var(--warn-ink); }
+.ops-status.is-bad strong { color: var(--danger-ink); }
+.ops-trade-list { margin-bottom: var(--s-6); border-top: 1px solid var(--accent-fill); }
+.ops-trade-row { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) 0; border-bottom: 1px solid var(--line-soft); }
+.ops-trade-row > a { min-width: 0; flex: 1; display: grid; gap: 1px; color: inherit; text-decoration: none; }
+.ops-trade-row small { color: var(--accent); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
+.ops-trade-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-trade-row span, .ops-trade-row em { color: var(--muted); font-size: var(--fs-micro); font-style: normal; }
+@media (min-width: 720px) { .ops-status-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
 .sheet-card { border-radius: var(--r-lg) var(--r-lg) 0 0; }
 .sheet-head strong { font-family: var(--font-display); letter-spacing: var(--ls-wide); text-transform: uppercase; }
 .quicknav a { border-radius: var(--r-md); transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
