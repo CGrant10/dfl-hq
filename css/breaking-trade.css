@@ -22,7 +22,7 @@
 .breaking-trade-copy small span { color: #efc668; }
 .breaking-trade-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 17px/1.1 var(--font-display); letter-spacing: .025em; }
 .breaking-trade-copy em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.7); font: 600 10px/1.2 var(--font-body); font-style: normal; }
-.breaking-trade > button { min-height: 34px; padding: 0 10px; border: 1px solid rgba(239,198,104,.55); border-radius: 999px; background: rgba(255,255,255,.07); color: #f4d486; font: 700 9px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+.breaking-trade > button { min-width: 70px; min-height: 34px; padding: 0 11px; border: 1px solid rgba(239,198,104,.55); border-radius: 999px; background: rgba(255,255,255,.07); color: #f4d486; font: 700 9px/1 var(--font-body); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
 .breaking-trade-beacon { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
 .breaking-trade-beacon::before { content: ""; width: 13px; height: 17px; border-radius: 9px 9px 4px 4px; background: linear-gradient(#ff7180, #db1428); box-shadow: 0 0 12px rgba(255,37,58,.9); }
 .breaking-trade-beacon i { position: absolute; inset: 2px; border: 1px solid rgba(255,76,92,.52); border-radius: 50%; animation: breaking-trade-ring 1.8s ease-out infinite; }
@@ -31,7 +31,7 @@
 @media (max-width: 520px) {
   .breaking-trade { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 7px; min-height: 61px; }
   .breaking-trade-copy strong { font-size: 15px; }
-  .breaking-trade > button { width: 46px; padding: 0 5px; border-radius: 8px; white-space: normal; line-height: 1.1; }
+  .breaking-trade > button { min-width: 62px; padding: 0 8px; border-radius: 8px; font-size: 8px; }
 }
 @media (max-width: 370px) { .breaking-trade > button { display: none; } }
 @media (min-width: 900px) { .breaking-trade { top: calc(103px + env(safe-area-inset-top)); } }

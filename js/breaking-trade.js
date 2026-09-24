@@ -1,4 +1,4 @@
-import { hasPermission } from "./supabase.js";
+import { ACCESS_EVENT, hasPermission } from "./supabase.js";
 import { endBreakingTradeCoverage, loadActiveTradeAlert } from "./trade-alerts.js";
 import { esc, toast } from "./ui.js";
 
@@ -31,7 +31,7 @@ function markup(alert) {
       <strong>${esc(headline(alert))}</strong>
       <em>${esc(verdict(alert))} · Tap for the full receipt</em>
     </a>
-    ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}">End coverage</button>` : ""}`;
+    ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}">End alert</button>` : ""}`;
 }
 
 function hide() {
@@ -73,6 +73,14 @@ export function mountBreakingTradeCoverage() {
   host.addEventListener("click", async event => {
     const button = event.target.closest("[data-end-trade-coverage]");
     if (!button) return;
+    /* The banner can survive while the commissioner/member transition is in
+       flight. Re-check the live gate at the action boundary so a stale node
+       never behaves like commissioner UI. Postgres enforces this again. */
+    if (!hasPermission("sleeper")) {
+      toast("Only a commissioner can end a trade alert", true);
+      void refresh({ force: true });
+      return;
+    }
     button.disabled = true;
     button.textContent = "Ending…";
     try {
@@ -81,13 +89,17 @@ export function mountBreakingTradeCoverage() {
       toast("Breaking trade coverage ended · receipt archived");
     } catch (error) {
       button.disabled = false;
-      button.textContent = "End coverage";
+      button.textContent = "End alert";
       toast(error.message || "Could not end breaking coverage", true);
     }
   });
 
   window.addEventListener("dfl:quick-sync-complete", () => refresh({ force: true }));
   window.addEventListener("dfl:trade-coverage-changed", () => refresh({ force: true }));
+  /* Member Preview changes the permission gates without navigating. Redraw the
+     existing alert immediately so its commissioner-only action follows the
+     top-bar switch in both directions. */
+  window.addEventListener(ACCESS_EVENT, () => refresh({ force: true }));
   window.addEventListener("hashchange", () => refresh({ force: true }));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) void refresh({ force: true }); });
   void refresh({ force: true });
