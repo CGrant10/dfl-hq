@@ -473,7 +473,7 @@ describe("the supported golf GPS courses", () => {
     // stuck on. An SVG filter works on the element's own rendered pixels.
     expect(ui).toContain("feDisplacementMap");
     expect(ui).toContain("feTurbulence");
-    expect(ui).toContain("body.is-tearing #view,body.is-tearing .topbar{filter:url(#${FILTER_ID})}");
+    expect(ui).toContain("body.is-tearing #view,body.is-tearing .topbar,body.is-tearing .breaking-trade{filter:url(#${FILTER_ID})}");
     // The coloured panes are gone; the split happens on real artwork now.
     expect(ui).not.toContain("dfl-glitch-rgb");
     // Full-page filters are real GPU work, so it measures itself once and
@@ -563,6 +563,8 @@ describe("the supported golf GPS courses", () => {
     expect(gate).toContain("sessionStorage.getItem(MEMBER_PREVIEW_KEY)");
     expect(ui).toContain("void renderRoute()");
     expect(ui).toContain("is-member-preview");
+    expect(ui).toContain("body.is-glitching .breaking-trade");
+    expect(ui).toContain("body.is-tearing .breaking-trade");
     expect(worker).toContain("./js/member-preview.js");
   });
 

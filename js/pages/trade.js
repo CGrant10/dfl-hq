@@ -397,7 +397,7 @@ export async function render(view) {
   try {
     const [data, tradeAlerts] = await Promise.all([
       loadAnalyzerData(),
-      loadTradeAlerts({ limit: 12 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),
+      loadTradeAlerts({ limit: 50 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),
     ]);
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1></header>

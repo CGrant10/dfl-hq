@@ -13,7 +13,7 @@ describe("breaking trade commissioner controls", () => {
 
   it("repaints when commissioner/member mode changes", () => {
     expect(source).toContain("ACCESS_EVENT");
-    expect(source).toContain('window.addEventListener(ACCESS_EVENT, () => refresh({ force: true }))');
+    expect(source).toContain("if (currentAlert && !host.hidden) host.innerHTML = markup(currentAlert)");
   });
 
   it("uses the compact non-wrapping End alert action", () => {

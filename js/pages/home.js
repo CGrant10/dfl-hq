@@ -205,19 +205,21 @@ function tradePackageLine(pkg) {
 export function homeTradeWire(alerts) {
   if (alerts == null) return `<section class="home-trade-wire is-loading"><header><h2>TRADE WIRE</h2><small>DFLYZER VERDICTS</small></header><p>Checking the league wire…</p></section>`;
   const recent = (alerts || []).slice(0, 3);
+  const older = (alerts || []).slice(3);
+  const tradeRow = alert => {
+    const outcome = alert.outcome || { grade: "Review", tone: "review", detail: "Model review needed" };
+    const teams = alert.teams.map(team => team.teamName).filter(Boolean);
+    const matchup = teams.length > 1 ? `${teams[0]} ↔ ${teams[1]}` : teams[0] || "Completed trade";
+    const verdict = outcome.winner ? `${outcome.winner} beat ${outcome.loser}` : matchup;
+    return `<a class="home-trade-item is-${esc(outcome.tone)}" href="${esc(alert.href || "#/trade")}" data-assemble>
+      <div class="home-trade-call"><small>${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><strong>${esc(outcome.grade)}</strong><em>${outcome.closeness == null ? "MODEL REVIEW" : `${esc(outcome.closeness)}% BALANCED`}</em></div>
+      <div class="home-trade-deal"><h3>${esc(verdict)}</h3><div>${alert.packages.slice(0, 2).map(tradePackageLine).join("")}</div><p>${esc(outcome.detail)}</p></div>
+      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+    </a>`;
+  };
   return `<section class="home-trade-wire">
     <header><h2>TRADE WIRE</h2><a href="#/trade">ALL RECEIPTS <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
-    ${recent.length ? `<div class="home-trade-list">${recent.map(alert => {
-      const outcome = alert.outcome || { grade: "Review", tone: "review", detail: "Model review needed" };
-      const teams = alert.teams.map(team => team.teamName).filter(Boolean);
-      const matchup = teams.length > 1 ? `${teams[0]} ↔ ${teams[1]}` : teams[0] || "Completed trade";
-      const verdict = outcome.winner ? `${outcome.winner} beat ${outcome.loser}` : matchup;
-      return `<a class="home-trade-item is-${esc(outcome.tone)}" href="${esc(alert.href || "#/trade")}" data-assemble>
-        <div class="home-trade-call"><small>${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><strong>${esc(outcome.grade)}</strong><em>${outcome.closeness == null ? "MODEL REVIEW" : `${esc(outcome.closeness)}% BALANCED`}</em></div>
-        <div class="home-trade-deal"><h3>${esc(verdict)}</h3><div>${alert.packages.slice(0, 2).map(tradePackageLine).join("")}</div><p>${esc(outcome.detail)}</p></div>
-        <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
-      </a>`;
-    }).join("")}</div>` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
+    ${recent.length ? `<div class="home-trade-list">${recent.map(tradeRow).join("")}</div>${older.length ? `<details class="home-trade-more"><summary>SHOW ${older.length} OLDER TRADE${older.length === 1 ? "" : "S"}</summary><div class="home-trade-list">${older.map(tradeRow).join("")}</div></details>` : ""}` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
   </section>`;
 }
 
@@ -491,7 +493,7 @@ export async function render(view) {
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
-  const tradeAlertsPromise = loadTradeAlerts({ limit: 6 }).catch(err => {
+  const tradeAlertsPromise = loadTradeAlerts({ limit: 50 }).catch(err => {
     console.warn("trade wire unavailable", err);
     return [];
   });
@@ -611,6 +613,8 @@ export async function render(view) {
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
     const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
+    const seasonTradeViews = tradeViews.filter(alert => !analysis?.projectionSeason
+      || Number(alert.season) === Number(analysis.projectionSeason));
     const tradeAlert = tradeViews.find(alert => alert.breakingActive
       && Date.parse(alert.occurredAt || "") >= Date.now() - 30 * 24 * 60 * 60 * 1000) || null;
 
@@ -626,7 +630,7 @@ export async function render(view) {
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
-    if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(tradeViews);
+    if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was
        holding are detached. Re-bind against what is actually on the page. */
     try { dropAssembly?.(); } catch { }

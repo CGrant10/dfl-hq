@@ -71,5 +71,7 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("DFLYZER VERDICTS");
     expect(source).toContain("data-home-trade-slot");
     expect(source).toContain("tradeAlertViewModel");
+    expect(source).toContain("SHOW ${older.length} OLDER TRADE");
+    expect(source).toContain("seasonTradeViews");
   });
 });

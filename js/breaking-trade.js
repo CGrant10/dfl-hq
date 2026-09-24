@@ -5,6 +5,7 @@ import { esc, toast } from "./ui.js";
 let host = null;
 let timer = 0;
 let currentId = null;
+let currentAlert = null;
 let loading = false;
 const excludedRoute = () => /^#\/(golf|broadcast|arena(?:-|\?|$))/.test(location.hash || "");
 
@@ -40,6 +41,7 @@ function hide() {
   host.replaceChildren();
   document.body.classList.remove("has-breaking-trade");
   currentId = null;
+  currentAlert = null;
 }
 
 async function refresh({ force = false } = {}) {
@@ -51,6 +53,7 @@ async function refresh({ force = false } = {}) {
     if (!alert?.breakingActive) return hide();
     if (!force && String(alert.id) === String(currentId) && !host.hidden) return;
     currentId = alert.id;
+    currentAlert = alert;
     host.innerHTML = markup(alert);
     host.hidden = false;
     document.body.classList.add("has-breaking-trade");
@@ -99,7 +102,14 @@ export function mountBreakingTradeCoverage() {
   /* Member Preview changes the permission gates without navigating. Redraw the
      existing alert immediately so its commissioner-only action follows the
      top-bar switch in both directions. */
-  window.addEventListener(ACCESS_EVENT, () => refresh({ force: true }));
+  window.addEventListener(ACCESS_EVENT, () => {
+    /* The switch commits while the glitch is covering the page. Repaint from
+       the alert already in memory so the button changes inside that same
+       frame; a network round-trip here made the banner update after the
+       transition had visibly finished. */
+    if (currentAlert && !host.hidden) host.innerHTML = markup(currentAlert);
+    else void refresh({ force: true });
+  });
   window.addEventListener("hashchange", () => refresh({ force: true }));
   document.addEventListener("visibilitychange", () => { if (!document.hidden) void refresh({ force: true }); });
   void refresh({ force: true });

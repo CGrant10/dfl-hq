@@ -1911,6 +1911,21 @@
 #home-wrap .home-trade-deal em { color: var(--home-program-muted); font-size: var(--fs-small); font-style: normal; }
 #home-wrap .home-trade-deal p { margin: 7px 0 0; color: var(--home-program-muted); font-size: var(--fs-small); line-height: 1.3; }
 #home-wrap .home-trade-item > .ico-sm { color: var(--home-program-muted); }
+#home-wrap .home-trade-more { border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-trade-more > summary {
+  width: max-content;
+  margin: 12px auto 0;
+  padding: 7px 11px;
+  color: var(--home-program-muted);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: .12em;
+  cursor: pointer;
+  list-style: none;
+}
+#home-wrap .home-trade-more > summary::-webkit-details-marker { display: none; }
+#home-wrap .home-trade-more > summary::after { content: " +"; color: var(--home-program-ink); }
+#home-wrap .home-trade-more[open] > summary::after { content: " −"; }
 #home-wrap .home-trade-empty,
 #home-wrap .home-trade-wire.is-loading > p { margin: 0; padding: 24px 4px 8px; color: var(--home-program-muted); }
 #home-wrap .home-trade-empty { display: grid; gap: 4px; }

@@ -338,7 +338,7 @@ async function notifyTradeAlert(alert, database) {
 
 async function deliverPendingTradeAlerts(database, transactionIds, log) {
   const { data, error } = await database.from("trade_alerts").select("*")
-    .in("sleeper_transaction_id", transactionIds).is("notification_message_id", null);
+    .in("sleeper_transaction_id", transactionIds).eq("breaking_active", true).is("notification_message_id", null);
   if (error) {
     if (schemaMissing(error)) return { notified: 0, schemaMissing: true };
     throw error;
@@ -365,17 +365,16 @@ export async function captureCompletedTradeAlerts({ transactions = [], priorTran
     known = response.data;
   }
   const priorStatus = new Map((known || []).map(row => [String(row.sleeper_transaction_id), row.status]));
-  /* Apply every newly completed ownership change in chronological order.
-     A player can be claimed and traded between two manual syncs; skipping the
-     waiver would make the pre-trade roster falsely say the sender never owned
-     them and would suppress an otherwise valid grade. */
-  const freshOwnership = transactions.filter(transaction => transaction?.status === "complete"
-    && priorStatus.get(String(transaction.transaction_id)) !== "complete")
-    .sort((a, b) => Number(a.created || 0) - Number(b.created || 0));
-  const freshIds = new Set(complete.filter(transaction => priorStatus.get(String(transaction.transaction_id)) !== "complete")
-    .map(transaction => String(transaction.transaction_id)));
-  const fresh = complete.filter(transaction => freshIds.has(String(transaction.transaction_id)));
-  if (!fresh.length) {
+  const { data: existingAlerts, error: existingError } = await database.from("trade_alerts")
+    .select("sleeper_transaction_id").in("sleeper_transaction_id", ids);
+  if (existingError) {
+    if (schemaMissing(existingError)) return { created: 0, notified: 0, schemaMissing: true };
+    throw existingError;
+  }
+  const existingIds = new Set((existingAlerts || []).map(row => String(row.sleeper_transaction_id)));
+  const missingIds = new Set(ids.filter(id => !existingIds.has(id)));
+  const freshIds = new Set(ids.filter(id => priorStatus.get(id) !== "complete"));
+  if (!missingIds.size) {
     const pending = await deliverPendingTradeAlerts(database, ids, log);
     return { created: 0, notified: pending.notified, schemaMissing: pending.schemaMissing };
   }
@@ -384,12 +383,28 @@ export async function captureCompletedTradeAlerts({ transactions = [], priorTran
   try { analyzer = await loadAnalyzerData({ force: true }); }
   catch (error) { log(`Trade alerts skipped: DFLyzer data unavailable (${error.message}).`); return { created: 0, notified: 0 }; }
   if (analyzer.state !== "ready") return { created: 0, notified: 0 };
-  const state = preTradeRosterState({ previousRosters, currentRosters, transactions: freshOwnership });
+  /* Rebuild the season from its current roster by reversing every completed
+     ownership change, then replay the full ledger. That lets an installation
+     created midseason grade its older trades against the roster each team
+     actually had at the time. Waivers must be replayed too or a later trade
+     can falsely claim its sender never owned the player. */
+  const ownership = transactions.filter(transaction => transaction?.status === "complete")
+    .sort((a, b) => Number(a.created || 0) - Number(b.created || 0));
+  const state = preTradeRosterState({ previousRosters: [], currentRosters, transactions: ownership });
   const created = [];
-  for (const transaction of freshOwnership) {
-    if (freshIds.has(String(transaction.transaction_id))) {
+  let backfilled = 0;
+  for (const transaction of ownership) {
+    const transactionId = String(transaction.transaction_id);
+    if (missingIds.has(transactionId) && classifyCompletedTrade(transaction)) {
       const snapshot = buildTradeAlertSnapshot({ transaction, season, week, rosterState: state, teams: analyzer.teams, pool: analyzer.pool });
       if (snapshot) {
+        /* Receipts from before this feature belong in Trade Wire, but must not
+           impersonate new breaking news or send a surprise historical push. */
+        if (!freshIds.has(transactionId)) {
+          snapshot.breaking_active = false;
+          snapshot.breaking_ended_at = new Date().toISOString();
+          backfilled++;
+        }
         const { data, error } = await database.from("trade_alerts").insert(snapshot).select("*").single();
         if (error?.code !== "23505") {
           if (schemaMissing(error)) {
@@ -406,6 +421,6 @@ export async function captureCompletedTradeAlerts({ transactions = [], priorTran
 
   const pending = await deliverPendingTradeAlerts(database, ids, log);
   const notified = pending.notified;
-  if (created.length) log(`   ${created.length} new trade alert${created.length === 1 ? "" : "s"}; ${notified} push${notified === 1 ? "" : "es"} sent`);
-  return { created: created.length, notified };
+  if (created.length) log(`   ${created.length} trade receipt${created.length === 1 ? "" : "s"}${backfilled ? ` (${backfilled} backfilled)` : ""}; ${notified} push${notified === 1 ? "" : "es"} sent`);
+  return { created: created.length, backfilled, notified };
 }

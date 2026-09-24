@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("./supabase.js", () => ({ db: vi.fn(), edge: vi.fn(), privilegedFunctionHeaders: vi.fn() }));
 vi.mock("./team-analyzer-data.js", () => ({ loadAnalyzerData: vi.fn() }));
+import { loadAnalyzerData } from "./team-analyzer-data.js";
 import {
   TRADE_ALERT_MODEL_VERSION,
   applyCompletedTrade,
   buildTradeAlertSnapshot,
+  captureCompletedTradeAlerts,
   classifyCompletedTrade,
   preTradeRosterState,
   tradeAlertViewModel,
@@ -143,5 +145,44 @@ describe("completed trade alerts", () => {
         weeklyDeltaA: 2.5, weeklyDeltaB: -2, depthDeltaA: 1, depthDeltaB: -1 },
     });
     expect(robbery).toMatchObject({ grade: "Robbery", winner: "Alpha", loser: "Bravo" });
+  });
+
+  it("backfills an older completed trade without relaunching breaking news", async () => {
+    const transaction = completed();
+    const currentRosters = [
+      { roster_id: 1, players: beforeA.filter(id => id !== "star").concat("filler") },
+      { roster_id: 2, players: beforeB.filter(id => id !== "filler").concat("star") },
+    ];
+    loadAnalyzerData.mockResolvedValue({ state: "ready", teams, pool });
+    const inserted = [];
+    const database = {
+      from(table) {
+        expect(table).toBe("trade_alerts");
+        return {
+          select(columns) {
+            if (columns === "sleeper_transaction_id") return { in: async () => ({ data: [], error: null }) };
+            return { in: () => ({ eq: () => ({ is: async () => ({ data: [], error: null }) }) }) };
+          },
+          insert(row) {
+            inserted.push(row);
+            return { select: () => ({ single: async () => ({ data: { id: 1, ...row }, error: null }) }) };
+          },
+        };
+      },
+    };
+    const result = await captureCompletedTradeAlerts({
+      transactions: [transaction],
+      priorTransactions: [{ sleeper_transaction_id: "tx-1", status: "complete" }],
+      currentRosters,
+      season: 2026,
+      week: 4,
+      database,
+    });
+    expect(result).toMatchObject({ created: 1, backfilled: 1, notified: 0 });
+    expect(inserted[0]).toMatchObject({
+      sleeper_transaction_id: "tx-1",
+      breaking_active: false,
+    });
+    expect(inserted[0].breaking_ended_at).toBeTruthy();
   });
 });

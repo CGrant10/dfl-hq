@@ -175,8 +175,8 @@ body.is-member-preview .topbar{box-shadow:inset 0 -2px 0 var(--accent-fill)}
 /* The filter is the effect; the jolt is only what a knocked screen does on top
    of it. Applying filter here also makes #view a containing block - the old
    contrast()/invert() shake already did that, so this changes nothing. */
-body.is-glitching #view,body.is-glitching .topbar{animation:dfl-glitch-shake ${GLITCH_MS}ms steps(2,end)}
-body.is-tearing #view,body.is-tearing .topbar{filter:url(#${FILTER_ID})}
+body.is-glitching #view,body.is-glitching .topbar,body.is-glitching .breaking-trade{animation:dfl-glitch-shake ${GLITCH_MS}ms steps(2,end)}
+body.is-tearing #view,body.is-tearing .topbar,body.is-tearing .breaking-trade{filter:url(#${FILTER_ID})}
 @keyframes dfl-glitch-shake{0%{transform:none}18%{transform:translate(-2px,1px)}34%{transform:translate(3px,-1px)}52%{transform:translate(-1px,1px)}70%{transform:translate(2px,0)}100%{transform:none}}
 
 /* Anyone who has asked the system to calm down gets the switch with none of the
@@ -184,9 +184,9 @@ body.is-tearing #view,body.is-tearing .topbar{filter:url(#${FILTER_ID})}
 @media(prefers-reduced-motion:reduce){
   .dfl-glitch{animation:dfl-glitch-out 160ms steps(1,end) forwards}
   .dfl-glitch-scan,.dfl-glitch-tear{display:none}
-  body.is-tearing #view,body.is-tearing .topbar{filter:none}
+  body.is-tearing #view,body.is-tearing .topbar,body.is-tearing .breaking-trade{filter:none}
   .dfl-glitch-readout{animation:none;opacity:1}
-  body.is-glitching #view,body.is-glitching .topbar{animation:none}
+  body.is-glitching #view,body.is-glitching .topbar,body.is-glitching .breaking-trade{animation:none}
   .dfl-preview-knob{transition:none}
 }
 `;
