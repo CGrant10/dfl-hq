@@ -12,6 +12,7 @@ import {
   tradeAlertViewModel,
   tradeAlertNotification,
   tradeBreakingHeadline,
+  tradeOutcomeReason,
   tradeOutcomeSummary,
 } from "./trade-alerts.js";
 
@@ -145,6 +146,23 @@ describe("completed trade alerts", () => {
         weeklyDeltaA: 2.5, weeklyDeltaB: -2, depthDeltaA: 1, depthDeltaB: -1 },
     });
     expect(robbery).toMatchObject({ grade: "Robbery", winner: "Alpha", loser: "Bravo" });
+  });
+
+  it("uses a league-wide outcome line instead of team A's private negotiation roast", () => {
+    const outcome = { grade: "Fair deal", winner: null, detail: "94% balanced" };
+    expect(tradeOutcomeReason(outcome).title).toBe("Fair deal. Nobody got robbed.");
+    const view = tradeAlertViewModel({
+      id: 12,
+      sleeper_transaction_id: "tx-balanced",
+      analysis_status: "graded",
+      teams: [{ roster_id: 1, team_name: "Alpha" }, { roster_id: 2, team_name: "Bravo" }],
+      packages: [],
+      result: { valueToA: 100, valueToB: 98, fairness: 98, rosterImpactA: 0, rosterImpactB: 0 },
+      verdict: { winner_team_name: null },
+      reasons: [{ tone: "bad", title: "This deal is dogshit. Stop negotiating." }],
+    });
+    expect(view).toMatchObject({ balanced: true, winner: null });
+    expect(view.reason.title).toBe("Fair deal. Nobody got robbed.");
   });
 
   it("backfills an older completed trade without relaunching breaking news", async () => {

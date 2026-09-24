@@ -75,6 +75,27 @@ export function tradeOutcomeSummary(alert) {
   };
 }
 
+/** Public receipt copy must describe the deal as a whole, not scold whichever
+ * roster Sleeper happened to list first. `tradeReasons()` is intentionally
+ * written from team A's negotiating point of view, so using its first line on
+ * league-wide cards made several different trades all read "dogshit" even
+ * when the receipt above them said balanced or named the other team winner. */
+export function tradeOutcomeReason(outcome) {
+  if (!outcome || outcome.grade === "Review") {
+    return { tone: "neutral", title: outcome?.detail || "Completed trade recorded." };
+  }
+  if (outcome.grade === "Fair deal") {
+    return { tone: "neutral", title: "Fair deal. Nobody got robbed.", copy: outcome.detail };
+  }
+  if (outcome.grade === "Robbery") {
+    return { tone: "good", title: `${outcome.winner} committed robbery.`, copy: outcome.detail };
+  }
+  if (outcome.grade === "Close win") {
+    return { tone: "neutral", title: `${outcome.winner} got the slight edge.`, copy: outcome.detail };
+  }
+  return { tone: "good", title: `${outcome.winner} won this trade.`, copy: outcome.detail };
+}
+
 function copyRosterMap(rows = []) {
   return new Map(rows.map(row => [rosterId(row.roster_id), new Set(list(row.players).map(playerId).filter(Boolean))]));
 }
@@ -242,8 +263,9 @@ export function tradeAlertViewModel(alert) {
       position: player.position || "", nflTeam: player.nfl_team || "", value: Number(player.trade_value) || 0,
     })),
   }));
-  const winner = alert.analysis_status === "graded" ? alert.verdict?.winner_team_name || null : null;
-  const balanced = alert.analysis_status === "graded" && !winner;
+  const outcome = tradeOutcomeSummary(alert);
+  const winner = outcome.winner;
+  const balanced = outcome.grade === "Fair deal";
   return {
     id: alert.id,
     transactionId: String(alert.sleeper_transaction_id),
@@ -260,7 +282,7 @@ export function tradeAlertViewModel(alert) {
     balanced,
     verdict: balanced ? "Balanced" : winner ? (alert.verdict?.headline || "Winner") : "Review needed",
     headline: tradeBreakingHeadline(alert),
-    outcome: tradeOutcomeSummary(alert),
+    outcome,
     fairness: alert.analysis_status === "graded" ? Number(alert.result?.fairness) || 0 : null,
     lineupDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
@@ -276,7 +298,7 @@ export function tradeAlertViewModel(alert) {
       rosterId: rosterId(team.roster_id),
       weekly: index === 0 ? Number(alert.result?.rosterImpactA) || 0 : index === 1 ? Number(alert.result?.rosterImpactB) || 0 : null,
     })),
-    reason: list(alert.reasons)[0] || null,
+    reason: tradeOutcomeReason(outcome),
     limitations: list(alert.limitations),
     href: `#/trade?tx=${encodeURIComponent(alert.sleeper_transaction_id)}`,
   };
