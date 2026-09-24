@@ -370,33 +370,114 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
   });
 }
 
-function packageValue(ids, recipientIds, pool) {
+/* A package is worth what survives on THIS roster, not the sum of the names
+   printed in the offer. Extra bodies have to beat the cut line, and a player
+   blocked at a loaded position is less useful than the same player filling a
+   starter or depth hole. This is deliberately recipient-specific: the same RB
+   can be a starter for one manager and roster clutter for another. */
+const uniqueIds = ids => [...new Set((ids || []).map(String))];
+
+function depthHoles(ids, pool) {
+  const lineup = optimalLineup(ids, pool);
+  const holes = new Set();
+  for (const position of ANALYZER_POSITIONS) {
+    const starters = lineup.starters.filter(player => player.position === position)
+      .sort((a, b) => a.expectedPoints - b.expectedPoints);
+    const reserve = lineup.bench.find(player => player.position === position);
+    if (starters.length < STARTERS[position]) holes.add(position);
+    else if (!reserve || reserve.expectedPoints < starters[0].expectedPoints * .78) holes.add(position);
+  }
+  return holes;
+}
+
+function trimRoster(ids, pool, capacity) {
+  const roster = uniqueIds(ids);
+  if (!Number.isFinite(capacity) || roster.length <= capacity) return roster;
+  const lineup = optimalLineup(roster, pool);
+  const keep = new Set(lineup.starters.map(player => player.id));
+  const holes = depthHoles(roster, pool);
+  const bench = lineup.bench.sort((a, b) => {
+    const score = player => (Number(player.tradeValue) || 0)
+      + (Number(player.expectedPerGame) || Number(player.expectedPoints) / 17 || 0) * 3
+      + (holes.has(player.position) ? 12 : 0);
+    return score(b) - score(a);
+  });
+  for (const player of bench) {
+    if (keep.size >= capacity) break;
+    keep.add(player.id);
+  }
+  return roster.filter(id => keep.has(id));
+}
+
+function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient) {
   const incoming = sortedPlayers(ids, pool).sort((a, b) => b.tradeValue - a.tradeValue);
-  if (!incoming.length) return 0;
-  const cutLine = sortedPlayers(recipientIds, pool).sort((a, b) => a.tradeValue - b.tradeValue);
-  return round(incoming.reduce((sum, player, index) => {
-    if (index === 0) return sum + player.tradeValue;
-    const displaced = cutLine[index - 1]?.tradeValue || 0;
-    return sum + Math.max(0, player.tradeValue - displaced) * .65;
-  }, 0));
+  const kept = new Set(recipientNextIds.map(String));
+  const lineup = optimalLineup(recipientNextIds, pool);
+  const starters = new Set(lineup.starters.map(player => player.id));
+  const coreDepth = new Set(lineup.bench.slice(0, 5).map(player => player.id));
+  const starterFloor = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position,
+    Math.min(...lineup.starters.filter(player => player.position === position).map(player => player.expectedPoints))]));
+  const holes = depthHoles(recipientBaseIds, pool);
+  const ranked = incoming.map(player => {
+    let role = 0;
+    if (kept.has(player.id)) {
+      if (starters.has(player.id)) role = 1;
+      else if (recipient?.need === player.position || holes.has(player.position)) role = .72;
+      else if (coreDepth.has(player.id) && Number.isFinite(starterFloor[player.position])
+        && player.expectedPoints >= starterFloor[player.position] * .55) role = .5;
+      else role = .22;
+    }
+    return { player, role, adjusted: (Number(player.tradeValue) || 0) * role };
+  }).sort((a, b) => b.adjusted - a.adjusted);
+  const packageWeights = [1, .78, .55, .35];
+  const value = ranked.reduce((sum, item, index) => sum + item.adjusted * (packageWeights[index] ?? .22), 0);
+  return {
+    value: round(value),
+    usefulIds: ranked.filter(item => item.role >= .5).map(item => item.player.id),
+    starterIds: ranked.filter(item => item.role === 1).map(item => item.player.id),
+    surplusIds: ranked.filter(item => item.role > 0 && item.role < .5).map(item => item.player.id),
+    cutIds: ranked.filter(item => item.role === 0).map(item => item.player.id),
+  };
+}
+
+function rosterImpact(before, after) {
+  const weekly = round((after.starterPoints - before.starterPoints) / 17);
+  const depth = round((after.depthScore - before.depthScore) / 17);
+  return { weekly, depth, useful: round(weekly + depth * .35) };
 }
 
 export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new Map() } = {}) {
   if (!teamA || !teamB || !sendA.length || !sendB.length) return null;
   const aSet = new Set(teamA.playerIds.map(String)), bSet = new Set(teamB.playerIds.map(String));
   if (sendA.some(id => !aSet.has(String(id))) || sendB.some(id => !bSet.has(String(id)))) return null;
-  const nextA = teamA.playerIds.filter(id => !sendA.map(String).includes(String(id))).concat(sendB.map(String));
-  const nextB = teamB.playerIds.filter(id => !sendB.map(String).includes(String(id))).concat(sendA.map(String));
+  const baseA = teamA.playerIds.filter(id => !sendA.map(String).includes(String(id)));
+  const baseB = teamB.playerIds.filter(id => !sendB.map(String).includes(String(id)));
+  const nextA = trimRoster(baseA.concat(sendB.map(String)), pool, teamA.playerIds.length);
+  const nextB = trimRoster(baseB.concat(sendA.map(String)), pool, teamB.playerIds.length);
   const beforeA = optimalLineup(teamA.playerIds, pool), beforeB = optimalLineup(teamB.playerIds, pool);
   const afterA = optimalLineup(nextA, pool), afterB = optimalLineup(nextB, pool);
-  const valueToA = packageValue(sendB, nextA, pool), valueToB = packageValue(sendA, nextB, pool);
+  const fitA = packageFit(sendB, baseA, nextA, pool, teamA), fitB = packageFit(sendA, baseB, nextB, pool, teamB);
+  const valueToA = fitA.value, valueToB = fitB.value;
+  const impactA = rosterImpact(beforeA, afterA), impactB = rosterImpact(beforeB, afterB);
   const high = Math.max(valueToA, valueToB, 1);
   return {
     sendA: sendA.map(String), sendB: sendB.map(String),
     deltaA: round(afterA.score - beforeA.score),
     deltaB: round(afterB.score - beforeB.score),
-    weeklyDeltaA: round((afterA.starterPoints - beforeA.starterPoints) / 17),
-    weeklyDeltaB: round((afterB.starterPoints - beforeB.starterPoints) / 17),
+    weeklyDeltaA: impactA.weekly,
+    weeklyDeltaB: impactB.weekly,
+    depthDeltaA: impactA.depth,
+    depthDeltaB: impactB.depth,
+    rosterImpactA: impactA.useful,
+    rosterImpactB: impactB.useful,
+    usefulIncomingA: fitA.usefulIds,
+    usefulIncomingB: fitB.usefulIds,
+    startingIncomingA: fitA.starterIds,
+    startingIncomingB: fitB.starterIds,
+    surplusIncomingA: fitA.surplusIds,
+    surplusIncomingB: fitB.surplusIds,
+    cutIncomingA: fitA.cutIds,
+    cutIncomingB: fitB.cutIds,
     valueToA, valueToB,
     fairness: Math.max(0, Math.round(100 - Math.abs(valueToA - valueToB) / high * 100)),
   };
@@ -411,15 +492,23 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], pool = new Map(
     return packages[index].some(id => !owned.has(id));
   })) return null;
   const count = teams.length;
-  const next = teams.map((team, index) => team.playerIds.filter(id => !packages[index].includes(String(id)))
-    .concat(packages[(index + count - 1) % count]));
+  const bases = teams.map((team, index) => team.playerIds.filter(id => !packages[index].includes(String(id))));
+  const next = teams.map((team, index) => trimRoster(
+    bases[index].concat(packages[(index + count - 1) % count]), pool, team.playerIds.length));
   const before = teams.map(team => optimalLineup(team.playerIds, pool));
   const after = next.map(ids => optimalLineup(ids, pool));
-  const values = teams.map((_, index) => packageValue(packages[(index + count - 1) % count], next[index], pool));
+  const fits = teams.map((team, index) => packageFit(packages[(index + count - 1) % count], bases[index], next[index], pool, team));
+  const values = fits.map(fit => fit.value);
   const high = Math.max(...values, 1), low = Math.min(...values);
-  const weekly = teams.map((_, index) => round((after[index].starterPoints - before[index].starterPoints) / 17));
+  const impacts = teams.map((_, index) => rosterImpact(before[index], after[index]));
+  const weekly = impacts.map(impact => impact.weekly);
   return {
     sends: packages, values, weeklyDeltas: weekly,
+    depthDeltas: impacts.map(impact => impact.depth),
+    rosterImpacts: impacts.map(impact => impact.useful),
+    usefulIncoming: fits.map(fit => fit.usefulIds),
+    surplusIncoming: fits.map(fit => fit.surplusIds),
+    cutIncoming: fits.map(fit => fit.cutIds),
     deltas: teams.map((_, index) => round(after[index].score - before[index].score)),
     fairness: Math.max(0, Math.round(low / high * 100)),
   };
@@ -433,6 +522,8 @@ export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB =
     sendA: result.sends[0], sendB: result.sends[1], sendC: result.sends[2],
     valueToA: result.values[0], valueToB: result.values[1], valueToC: result.values[2], valueOutA: result.values[1],
     weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[1], weeklyDeltaC: result.weeklyDeltas[2],
+    depthDeltaA: result.depthDeltas[0], depthDeltaB: result.depthDeltas[1], depthDeltaC: result.depthDeltas[2],
+    rosterImpactA: result.rosterImpacts[0], rosterImpactB: result.rosterImpacts[1], rosterImpactC: result.rosterImpacts[2],
     deltaA: result.deltas[0], deltaB: result.deltas[1], deltaC: result.deltas[2],
   };
 }
@@ -541,20 +632,26 @@ export function tradeSuggestionTier(result) {
   const high = Math.max(Number(result.valueToA) || 0, Number(result.valueToB) || 0, 1);
   const edge = ((Number(result.valueToA) || 0) - (Number(result.valueToB) || 0)) / high * 100;
   const weeklyA = Number(result.weeklyDeltaA) || 0, weeklyB = Number(result.weeklyDeltaB) || 0;
-  const lineupGap = weeklyA - weeklyB;
+  const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA)
+    : weeklyA + (Number(result.depthDeltaA) || 0) * .35;
+  const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB)
+    : weeklyB + (Number(result.depthDeltaB) || 0) * .35;
+  const lineupGap = fitA - fitB;
   /* Fair means both the asset exchange and the lineup consequence are close.
      Direction matters below that line: winning the value is a steal attempt;
      paying the premium to land the target is an aggressive offer. */
-  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(weeklyA, weeklyB) >= -.75) return "fair";
+  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(fitA, fitB) >= -.75) return "fair";
   if (edge >= 6 || lineupGap >= 1.5) return "steal";
   return "aggressive";
 }
 
 function suggestionScore(result, intent = "aggressive") {
-  const mutualGain = Math.max(-2, result.weeklyDeltaA) + Math.max(-2, result.weeklyDeltaB);
+  const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA) : Number(result.weeklyDeltaA) || 0;
+  const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB) : Number(result.weeklyDeltaB) || 0;
+  const mutualGain = Math.max(-2, fitA) + Math.max(-2, fitB);
   if (intent === "fair") return result.fairness * 1.5 + mutualGain * 10;
-  if (intent === "steal") return result.fairness * .45 + result.weeklyDeltaA * 22 + Math.max(0, result.valueToA - result.valueToB) * .35;
-  return result.fairness + result.weeklyDeltaA * 15 + result.weeklyDeltaB * 5;
+  if (intent === "steal") return result.fairness * .45 + fitA * 22 + Math.max(0, fitB) * 5 + Math.max(0, result.valueToA - result.valueToB) * .35;
+  return result.fairness + fitA * 15 + fitB * 7;
 }
 
 function shapeOrder(shape) {
@@ -672,7 +769,11 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 export function isPlausibleTradeSuggestion(result) {
   if (!result || result.fairness < 40) return false;
   const a = Number(result.weeklyDeltaA) || 0, b = Number(result.weeklyDeltaB) || 0;
-  return a >= -2.5 && b >= -2.5 && a + b >= -3.5;
+  const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA) : a;
+  const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB) : b;
+  if (Array.isArray(result.usefulIncomingA) && !result.usefulIncomingA.length) return false;
+  if (Array.isArray(result.usefulIncomingB) && !result.usefulIncomingB.length) return false;
+  return a >= -2.5 && b >= -2.5 && fitA >= -2.25 && fitB >= -2.25 && fitA + fitB >= -3;
 }
 
 export function compareTeams(teamA, teamB) {

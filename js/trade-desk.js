@@ -62,10 +62,39 @@ export function recommendationFor(result) {
   const valueGap = num(result.valueToA) - num(result.valueToB);
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
-  const signal = valueEdge * .55 + num(result.weeklyDeltaA) * 8;
+  /* FLEECE describes the VALUE of the exchange, not every reason to reject a
+     trade. A strong incoming value package can still hurt this week's best
+     lineup; calling that a fleece makes the analyzer contradict its own
+     winner and totals. Derive fairness when a small unit fixture omits it so
+     the same rule holds in tests, generated offers and the hand-built desk. */
+  const suppliedFairness = Number(result.fairness);
+  const fairness = Number.isFinite(suppliedFairness)
+    ? suppliedFairness
+    : Math.min(num(result.valueToA), num(result.valueToB)) / valueBase * 100;
+  const rosterImpact = Number.isFinite(Number(result.rosterImpactA))
+    ? Number(result.rosterImpactA)
+    : num(result.weeklyDeltaA) + num(result.depthDeltaA) * .35;
+  const signal = valueEdge * .55 + rosterImpact * 8;
+  if (valueGap < 0 && fairness < 55) return { action: "FLEECE", tone: "pass", signal, valueEdge };
   if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
-  if (signal <= -7) return { action: "FLEECE", tone: "pass", signal, valueEdge };
+  if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
   return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
+}
+
+/** Keep the large recommendation stamp explicit when value and lineup point
+ * in opposite directions. The header above it is the asset-value verdict;
+ * this caption explains why the overall action may differ. */
+export function recommendationCaption(result, team, recommendation = recommendationFor(result)) {
+  if (!result || !recommendation) return "";
+  const valueGap = num(result.valueToA) - num(result.valueToB);
+  const weekly = num(result.weeklyDeltaA);
+  const depth = num(result.depthDeltaA);
+  if (recommendation.action === "FLEECE") {
+    return `${teamName(team)} loses ${Math.round(Math.abs(valueGap))} value points`;
+  }
+  if (valueGap >= 0 && weekly < 0) return `Value win · lineup ${signed(weekly)} / wk${depth > .2 ? ` · depth ${signed(depth)}` : ""}`;
+  if (valueGap < 0 && weekly > 0) return `Lineup ${signed(weekly)} / wk · ${Math.round(Math.abs(valueGap))} value premium`;
+  return `For ${teamName(team)}`;
 }
 
 function playerRow(player, side, checked) {
@@ -128,7 +157,8 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
   const outgoing = sendA.map(id => pool.get(String(id))).filter(Boolean);
   const need = teamA?.need;
-  const fillsNeed = need && incoming.some(player => player.position === need);
+  const usefulIncoming = new Set((result.usefulIncomingA || sendB).map(String));
+  const fillsNeed = need && incoming.some(player => usefulIncoming.has(String(player.id)) && player.position === need);
   const givesStrength = teamA?.strength && outgoing.some(player => player.position === teamA.strength);
   const valueGap = num(result.valueToA) - num(result.valueToB);
   const gap = Math.abs(valueGap).toFixed(1);
@@ -188,6 +218,25 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
     reasons.push({ tone: "neutral", weight: 58,
       title: "All that work for jack shit.",
       copy: `${signed(result.weeklyDeltaA)} points a week. All that tapping for jack shit on Sunday, so make sure the roster shape is actually the point.` });
+  }
+
+  /* ---- usable depth, not decorative roster volume ------------------- */
+  if (num(result.depthDeltaA) >= .35) {
+    reasons.push({ tone: "good", weight: 69,
+      title: "The depth actually has a job.",
+      copy: `Your usable bench improves ${signed(result.depthDeltaA)} points a week after cuts. These are insurance pieces, not decorative names.` });
+  } else if (num(result.depthDeltaA) <= -.35) {
+    reasons.push({ tone: "warn", weight: 69,
+      title: "Your bench gets thinner too.",
+      copy: `Usable depth falls ${signed(result.depthDeltaA)} points a week. The starting-lineup result is not the only damage here.` });
+  }
+
+  const deadPieces = [...(result.cutIncomingA || []), ...(result.surplusIncomingA || [])];
+  if (deadPieces.length) {
+    const names = deadPieces.map(id => pool.get(String(id))?.name).filter(Boolean);
+    reasons.push({ tone: "warn", weight: 88,
+      title: deadPieces.length === 1 ? "One incoming name has no damn job." : `${deadPieces.length} incoming names have no damn job.`,
+      copy: `${names.join(", ") || `${deadPieces.length} package pieces`} ${deadPieces.length === 1 ? "does" : "do"} not crack your starters or useful depth after roster cuts. Extra names are not extra value.` });
   }
 
   /* ---- a real player for spare parts --------------------------------- */
@@ -322,7 +371,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>${esc(teamName(teamA))} <i aria-hidden="true">&rlarr;</i> ${esc(teamName(teamB))}</h2>
-      <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins it` : ""}</span>
+      <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins value` : ""}</span>
     </div>
 
     <div class="td-cols">
@@ -339,12 +388,14 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     </div>
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
-      <span>${recommendation.action === "FLEECE" ? `${esc(teamName(teamA))} is getting robbed` : `For ${esc(teamName(teamA))}`}</span>
+      <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
     </div>
 
     <div class="td-lines">
       <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} / wk</b></div>
+      <div class="td-line"><span>Your usable depth</span><b class="${num(result.depthDeltaA) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaA)} / wk</b></div>
       <div class="td-line"><span>${esc(teamName(teamB))} lineup</span><b class="${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaB)} / wk</b></div>
+      <div class="td-line"><span>${esc(teamName(teamB))} depth</span><b class="${num(result.depthDeltaB) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaB)} / wk</b></div>
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div>
 
@@ -364,7 +415,11 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
 function multiTicketMarkup(result, parties, pool, sends) {
   if (!result) return idleTicket();
   const last = parties.length - 1;
-  const perspective = { ...result, valueToA: result.values[0], valueToB: result.values[1], weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last] };
+  const perspective = { ...result, valueToA: result.values[0], valueToB: result.values[1],
+    weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last],
+    depthDeltaA: result.depthDeltas?.[0], depthDeltaB: result.depthDeltas?.[last],
+    rosterImpactA: result.rosterImpacts?.[0], rosterImpactB: result.rosterImpacts?.[last],
+    usefulIncomingA: result.usefulIncoming?.[0], surplusIncomingA: result.surplusIncoming?.[0], cutIncomingA: result.cutIncoming?.[0] };
   const v = verdictFor(perspective), recommendation = recommendationFor(perspective);
   const winnerIndex = result.values.reduce((best, value, index, values) => value > values[best] ? index : best, 0);
   const winner = parties[winnerIndex];
@@ -373,7 +428,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>${parties.length}-team deal</h2>
-      <span>${esc(v.headline)} &middot; ${esc(teamName(winner))}</span>
+      <span>${esc(v.headline)} &middot; ${esc(teamName(winner))} leads value</span>
     </div>
 
     <div class="td-legs">
@@ -389,11 +444,11 @@ function multiTicketMarkup(result, parties, pool, sends) {
 
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
-      <span>${recommendation.action === "FLEECE" ? `${esc(teamName(parties[0]))} is getting robbed` : `For ${esc(teamName(parties[0]))}`}</span>
+      <span>${esc(recommendationCaption(perspective, parties[0], recommendation))}</span>
     </div>
 
     <div class="td-lines">
-      ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} / wk</b></div>`).join("")}
+      ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} / wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} / wk</b></div>`).join("")}
     </div>
 
     ${balanceMeter(result.fairness)}

@@ -38,7 +38,7 @@ const CALL_INK = { accept: GOLD, pass: CREST_RED, negotiate: CREST_BLUE };
 function savageFallback(recommendation) {
   if (recommendation?.action === "FLEECE") return "FLEECE. They are robbing your ass blind.";
   if (recommendation?.action === "ACCEPT") return "You are committing the robbery. Hit accept.";
-  if (recommendation?.action === "PASS") return "This deal is dogshit. Stop negotiating.";
+  if (recommendation?.action === "PASS") return "The value and the lineup are pulling in opposite directions.";
   return "Fair as hell. Weird, but fine.";
 }
 
@@ -306,7 +306,7 @@ export function dealCanvas(t) {
   /* Not "· for X" as well: on any deal you win, the winner and the point of
      view are the same team, and the card said its name twice in one line.
      Whose call it is, is answered by the name at the foot of the card. */
-  fitText(ctx, `${t.headline}${t.winner ? ` · ${t.winner} wins it` : ""}`,
+  fitText(ctx, `${t.headline}${t.winner ? ` · ${t.winner} wins value` : ""}`,
     W / 2, f.stampTop + 108, W - 200, 24, 700, "center");
 
   // ---- every DFLyzer description, with room to read it ----------------

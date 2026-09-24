@@ -179,6 +179,30 @@ describe("team analyzer", () => {
     expect(junk.valueToA).toBeLessThanOrEqual(one.valueToA + 5);
   });
 
+  it("credits needed depth but strips an incoming roster-clogger from the package", () => {
+    const fitPool = new Map();
+    const add = (id, position, expectedPoints, tradeValue) => {
+      fitPool.set(id, { id, name: id, position, expectedPoints, expectedPerGame: expectedPoints / 17, tradeValue });
+      return id;
+    };
+    const a = { id: "a", roster_id: "a", team_name: "A", need: "RB", playerIds: [
+      add("aq", "QB", 300, 80), add("ar1", "RB", 220, 90), add("ar2", "RB", 190, 78),
+      add("aw1", "WR", 230, 88), add("aw2", "WR", 210, 82), add("aw3", "WR", 180, 68),
+      add("at", "TE", 170, 70), add("a-rb-weak", "RB", 40, 16),
+      add("a-wr-depth", "WR", 170, 62), add("a-spare", "WR", 80, 24),
+    ] };
+    const b = { id: "b", roster_id: "b", team_name: "B", playerIds: [
+      add("bq", "QB", 290, 76), add("br1", "RB", 210, 84), add("br2", "RB", 185, 74),
+      add("bw1", "WR", 220, 85), add("bw2", "WR", 200, 78), add("bw3", "WR", 175, 65),
+      add("bt", "TE", 165, 67), add("b-rb-depth", "RB", 160, 60),
+      add("b-wr-junk", "WR", 30, 28), add("b-spare", "TE", 70, 20),
+    ] };
+    const result = evaluateTrade({ teamA: a, teamB: b, sendA: ["a-spare"], sendB: ["b-rb-depth", "b-wr-junk"], pool: fitPool });
+    expect(result.usefulIncomingA).toContain("b-rb-depth");
+    expect([...result.surplusIncomingA, ...result.cutIncomingA]).toContain("b-wr-junk");
+    expect(result.depthDeltaA).toBeGreaterThan(0);
+  });
+
   it("shops a selected player only in legal, roster-aware offers", () => {
     const teams = analyzeLeague({ rosters, pool });
     const offers = suggestTrades({ teams, teamId: "1", playerId: "r1", pool });
@@ -210,6 +234,8 @@ describe("team analyzer", () => {
     expect(tradeSuggestionTier({ fairness: 92, valueToA: 100, valueToB: 92, weeklyDeltaA: 2, weeklyDeltaB: -.2 })).toBe("steal");
     expect(isPlausibleTradeSuggestion({ fairness: 25, weeklyDeltaA: 4, weeklyDeltaB: -4 })).toBe(false);
     expect(isPlausibleTradeSuggestion({ fairness: 82, weeklyDeltaA: 1.2, weeklyDeltaB: -.8 })).toBe(true);
+    expect(isPlausibleTradeSuggestion({ fairness: 90, weeklyDeltaA: 1, weeklyDeltaB: 0,
+      usefulIncomingA: [], usefulIncomingB: ["useful"] })).toBe(false);
   });
 
   it("builds varied package shapes around a selected target without forcing implausible shapes", () => {

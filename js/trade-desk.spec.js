@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_TRADE_PLAYERS, recommendationFor, tradePlayerCount, verdictFor } from "./trade-desk.js";
+import { MAX_TRADE_PLAYERS, recommendationCaption, recommendationFor, tradePlayerCount, verdictFor } from "./trade-desk.js";
 import { buildPlayerPool, evaluateMultiTeamTrade, evaluateThreeWayTrade, evaluateTrade } from "./team-analyzer.js";
 
 /* Full PPR, the league's own setting - see scoring_settings on sleeper_leagues.
@@ -56,8 +56,8 @@ describe("recommendationFor", () => {
     expect(recommendationFor({ valueToA: 70, valueToB: 55, weeklyDeltaA: 1.2 }).action).toBe("ACCEPT");
   });
 
-  it("passes when value and weekly lineup both decline", () => {
-    expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("FLEECE");
+  it("passes without calling every overall loss a fleece", () => {
+    expect(recommendationFor({ valueToA: 45, valueToB: 70, weeklyDeltaA: -1.1 }).action).toBe("PASS");
   });
 
   it("calls a clear losing gap a value edge before it becomes fully lopsided", () => {
@@ -70,6 +70,15 @@ describe("recommendationFor", () => {
 
   it("keeps mixed, marginal evidence in the negotiation band", () => {
     expect(recommendationFor({ valueToA: 52, valueToB: 50, weeklyDeltaA: -0.1 }).action).toBe("NEGOTIATE");
+  });
+
+  it("does not say the value winner is being fleeced when its lineup declines", () => {
+    const mixed = { fairness: 84, valueToA: 170, valueToB: 142, weeklyDeltaA: -3.3 };
+    const recommendation = recommendationFor(mixed);
+    expect(verdictFor(mixed).who).toBe("a");
+    expect(recommendation.action).toBe("PASS");
+    expect(recommendationCaption(mixed, { team_name: "Bastards of the Realm" }, recommendation))
+      .toBe("Value win · lineup −3.3 / wk");
   });
 });
 
