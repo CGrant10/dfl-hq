@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-mode="medicine">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071719">
+  <title>DFL HQ · Weekly Reads Live Mock</title>
+  <link rel="preload" href="../fonts/rajdhani-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/screens.css">
+  <link rel="stylesheet" href="../css/home.css">
+  <link rel="stylesheet" href="weekly-reads-live.css">
+</head>
+<body class="weekly-prototype">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-lockup">
+        <img class="brand-mark" src="../icons/dfl-seal-heritage-64.webp" alt="" width="30" height="30">
+        <div class="brand-text"><span class="brand-word">DFL <span>HQ</span></span><small class="creed">Draft<i>★</i>Golf<i>★</i>Sin<i>★</i>Fold</small></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="mock-bell" type="button" aria-label="Notifications"><span aria-hidden="true">4</span></button>
+        <button class="whoami" type="button"><img class="whoami-photo" src="../icons/dfl-seal-heritage-64.webp" alt=""><span>Martin77</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="view" aria-live="polite">
+    <div class="prototype-switcher" role="group" aria-label="Choose live mock state">
+      <button type="button" data-state="slate">Thursday</button>
+      <button type="button" data-state="autopsy" class="on">Tuesday</button>
+      <button type="button" data-state="vote">Superlatives</button>
+    </div>
+
+    <div id="home-wrap">
+      <aside class="dfl-anniv" role="note">
+        <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>10th Anniversary<br>Season</strong><small>2017 — 2026</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
+        <span class="dfl-anniv-tag">Same guys. Higher stakes. Bigger bragging rights.</span>
+      </aside>
+
+      <section class="mock-broadcast" aria-label="Your matchup">
+        <div class="mock-broadcast-kicker"><span>2026 · WEEK 3</span><b>YOUR MATCHUP</b></div>
+        <div class="mock-matchup">
+          <div><strong>127.8</strong><span>Bastards of the Realm</span><small>Projected</small></div>
+          <em>VS</em>
+          <div><strong>107.9</strong><span>Jack-HAMMER</span><small>Projected</small></div>
+        </div>
+        <p><strong>You’re favored by 19.9.</strong> The model likes the matchup. Don’t make it weird.</p>
+        <div class="mock-progress" aria-hidden="true"><span></span><i></i><i></i><i></i><i></i></div>
+      </section>
+
+      <section class="home-rankings-card">
+        <header><h2>POWER RANKINGS</h2><span>WEEK 2 OF 14</span></header>
+        <div class="home-rank-summary">
+          <div><small>YOUR RANK</small><strong>#1</strong><span class="rank-up">↑ 1</span></div>
+          <div class="home-rank-leader"><span class="home-rank-face home-rank-initials">BR</span><span><small>LEAGUE LEADER</small><strong>Bastards of the Realm</strong><em>#1 &nbsp;|&nbsp; 2–0</em></span></div>
+        </div>
+        <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
+        <ol data-rank-list></ol>
+        <button class="home-rank-all" type="button" data-rank-toggle aria-expanded="false"><span>View all 12</span><b>⌄</b></button>
+      </section>
+
+      <section class="weekly-reading" data-reading></section>
+      <section class="mock-after"><h2>YOUR SEASON</h2><div><span><b>2–0</b><small>Record</small></span><span><b>256.4</b><small>Points</small></span><span><b>#1</b><small>Power rank</small></span></div></section>
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a href="#" class="on"><svg class="ico" aria-hidden="true"><use href="../index.html#i-home-steel"></use></svg><span>Home</span></a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="../index.html#i-trade-steel"></use></svg><span>Trade</span></a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="../index.html#i-analyzer-steel"></use></svg><span>Analyzer</span></a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="../index.html#i-record-steel"></use></svg><span>Facts</span></a>
+    <a href="#"><svg class="ico" aria-hidden="true"><use href="../index.html#i-finances-steel"></use></svg><span>Fees</span></a>
+    <button type="button" class="tabmore"><svg class="ico" aria-hidden="true"><use href="../index.html#i-more-steel"></use></svg><span>More</span></button>
+  </nav>
+  <script type="module" src="weekly-reads-live.js"></script>
+</body>
+</html>
