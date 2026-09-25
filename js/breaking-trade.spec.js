@@ -8,7 +8,7 @@ describe("breaking trade commissioner controls", () => {
   it("shows the action only with live Sleeper permission", () => {
     expect(source).toContain('const commissioner = hasPermission("sleeper")');
     expect(source).toContain('if (!hasPermission("sleeper"))');
-    expect(source).toContain("Only a commissioner can end a trade alert");
+    expect(source).toContain("Only a commissioner can end a breaking alert");
   });
 
   it("repaints when commissioner/member mode changes", () => {
@@ -20,5 +20,11 @@ describe("breaking trade commissioner controls", () => {
     expect(source).toContain(">End alert</button>");
     expect(source).not.toContain("End coverage");
     expect(css).toContain("white-space: nowrap");
+  });
+
+  it("shares the breaking surface with commissioner-authored alerts", () => {
+    expect(source).toContain("loadActiveCustomAlert");
+    expect(source).toContain('alert?.kind === "custom"');
+    expect(source).toContain("endCustomBreakingAlert");
   });
 });

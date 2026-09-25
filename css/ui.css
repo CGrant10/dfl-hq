@@ -344,6 +344,14 @@ h3 {
 .ops-trade-row small { color: var(--accent); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); }
 .ops-trade-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ops-trade-row span, .ops-trade-row em { color: var(--muted); font-size: var(--fs-micro); font-style: normal; }
+.ops-alert-compose { display: grid; grid-template-columns: minmax(0, .55fr) minmax(0, 1fr); gap: var(--s-3); margin-bottom: var(--s-5); padding: var(--s-4) 0; border-block: 1px solid var(--line); }
+.ops-alert-compose > div { min-width: 0; }
+.ops-alert-compose label:not(.checkrow) { display: block; margin-bottom: 5px; color: var(--muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.ops-alert-compose input, .ops-alert-compose textarea, .ops-alert-compose select { width: 100%; }
+.ops-alert-wide { grid-column: 1 / -1; }
+.ops-alert-phone { margin: 0; align-self: end; }
+.ops-alert-action { align-self: end; }
+@media (max-width: 540px) { .ops-alert-compose { grid-template-columns: 1fr; } .ops-alert-wide { grid-column: auto; } }
 @media (min-width: 720px) { .ops-status-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 .sheet-card { border-radius: var(--r-lg) var(--r-lg) 0 0; }

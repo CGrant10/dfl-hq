@@ -1,5 +1,6 @@
 import { ACCESS_EVENT, hasPermission } from "./supabase.js";
 import { endBreakingTradeCoverage, loadActiveTradeAlert } from "./trade-alerts.js";
+import { endCustomBreakingAlert, loadActiveCustomAlert } from "./custom-alerts.js";
 import { esc, toast } from "./ui.js";
 
 let host = null;
@@ -12,6 +13,7 @@ const excludedRoute = () => /^#\/(golf|broadcast|arena(?:-|\?|$))/.test(location
 const names = alert => (alert?.teams || []).map(team => team.teamName).filter(Boolean);
 
 function headline(alert) {
+  if (alert?.kind === "custom") return alert.title || "League alert";
   if (alert?.headline) return alert.headline;
   const clubs = names(alert);
   if (clubs.length > 1) return `${clubs[0]} ↔ ${clubs[1]}`;
@@ -19,6 +21,7 @@ function headline(alert) {
 }
 
 function verdict(alert) {
+  if (alert?.kind === "custom") return alert.message || "Tap to open";
   if (alert?.balanced) return "DFLyzer calls it balanced";
   if (alert?.winner) return `${alert.winner} has the early edge`;
   return "DFLyzer review in progress";
@@ -26,13 +29,14 @@ function verdict(alert) {
 
 function markup(alert) {
   const commissioner = hasPermission("sleeper");
+  const custom = alert?.kind === "custom";
   return `<div class="breaking-trade-beacon" aria-hidden="true"><i></i><i></i></div>
     <a class="breaking-trade-copy" href="${esc(alert.href || "#/trade")}">
-      <small><b>BREAKING</b><span>TRADE ALERT${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}</span></small>
+      <small><b>BREAKING</b><span>${custom ? esc(alert.label || "LEAGUE ALERT") : `TRADE ALERT${alert.week ? ` · WEEK ${esc(alert.week)}` : ""}`}</span></small>
       <strong>${esc(headline(alert))}</strong>
-      <em>${esc(verdict(alert))} · Tap for the full receipt</em>
+      <em>${esc(verdict(alert))}${custom ? "" : " · Tap for the full receipt"}</em>
     </a>
-    ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}">End alert</button>` : ""}`;
+    ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}" data-alert-kind="${custom ? "custom" : "trade"}" data-alert-raw-id="${esc(alert.rawId || alert.id)}">End alert</button>` : ""}`;
 }
 
 function hide() {
@@ -49,7 +53,12 @@ async function refresh({ force = false } = {}) {
   if (excludedRoute()) return hide();
   loading = true;
   try {
-    const alert = await loadActiveTradeAlert({ hours: 24 * 30 });
+    const candidates = await Promise.all([
+      loadActiveTradeAlert({ hours: 24 * 30 }).catch(() => null),
+      loadActiveCustomAlert().catch(() => null),
+    ]);
+    const alert = candidates.filter(Boolean).sort((a, b) => Date.parse(b.breakingStartedAt || b.occurredAt || 0)
+      - Date.parse(a.breakingStartedAt || a.occurredAt || 0))[0] || null;
     if (!alert?.breakingActive) return hide();
     if (!force && String(alert.id) === String(currentId) && !host.hidden) return;
     currentId = alert.id;
@@ -80,16 +89,17 @@ export function mountBreakingTradeCoverage() {
        flight. Re-check the live gate at the action boundary so a stale node
        never behaves like commissioner UI. Postgres enforces this again. */
     if (!hasPermission("sleeper")) {
-      toast("Only a commissioner can end a trade alert", true);
+      toast("Only a commissioner can end a breaking alert", true);
       void refresh({ force: true });
       return;
     }
     button.disabled = true;
     button.textContent = "Ending…";
     try {
-      await endBreakingTradeCoverage(button.dataset.endTradeCoverage);
+      if (button.dataset.alertKind === "custom") await endCustomBreakingAlert(button.dataset.alertRawId);
+      else await endBreakingTradeCoverage(button.dataset.alertRawId);
       hide();
-      toast("Breaking trade coverage ended · receipt archived");
+      toast(button.dataset.alertKind === "custom" ? "Custom alert ended" : "Breaking trade coverage ended · receipt archived");
     } catch (error) {
       button.disabled = false;
       button.textContent = "End alert";
