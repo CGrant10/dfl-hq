@@ -74,9 +74,10 @@ describe("weekly aftermath", () => {
     expect(card.story).toContain("DREAM ENDERS");
   });
 
-  it("only offers the completed recap on Tuesday", () => {
-    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") })).toBeNull();
-    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-16T08:00:00") })).toBeNull();
-    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-13T20:00:00") })).toBeNull();
+  it("keeps a completed recap available throughout the week", () => {
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-14T08:00:00") })).toMatchObject({ week: 1, final: true });
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-16T08:00:00") })).toMatchObject({ week: 1, final: true });
+    expect(buildAftermath({ lore, members, weekly, now: new Date("2026-09-18T20:00:00") })).toMatchObject({ week: 1, final: true });
+    expect(buildAftermath({ lore, members, weekly: { ...weekly, teams: weekly.teams.map(team => ({ ...team, complete: false })) }, now: new Date("2026-09-15T08:00:00") })).toBeNull();
   });
 });

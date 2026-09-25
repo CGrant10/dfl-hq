@@ -70,8 +70,11 @@ function teamName(members, uid, fallback) {
 
 /** Build Tuesday's truthful recap of the completed week. */
 export function buildAftermath({ lore, members = [], weekly, now = new Date() } = {}) {
-  const day = now instanceof Date ? now.getDay() : -1;
-  if (day !== 2 || !weekly?.teams?.length || !weekly.season || !weekly.week) return null;
+  /* A completed recap stays readable all week. The old Tuesday-only gate
+     made Wednesday through Monday fall back to generic dashboard facts—the
+     exact reason Home's "weekly report" felt like it had nothing to say. */
+  if (!weekly?.teams?.length || !weekly.season || !weekly.week
+    || weekly.teams.some(team => !team?.complete)) return null;
 
   const values = new Map(weekly.teams.map(team => [key(team.sleeper_user_id), team]));
   const current = (lore?.matchups || []).filter(row => Number(row.season) === Number(weekly.season)

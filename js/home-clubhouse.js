@@ -272,7 +272,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
 
 export function aftermathReportWeek(week, now = new Date()) {
   const current = Math.max(1, Number(week) || 1);
-  return now instanceof Date && now.getDay() === 2 ? Math.max(1, current - 1) : current;
+  return Math.max(1, current - 1);
 }
 
 export function clubhouseView({ analysis, lore, members = [], meSleeperId = null, standings = [], weekly = null, aftermathWeekly = weekly, now = new Date() } = {}) {

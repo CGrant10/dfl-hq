@@ -1810,23 +1810,59 @@
 #home-wrap .home-rank-all { width: max-content; margin: 10px auto 0; color: var(--home-program-ink); text-transform: none; letter-spacing: .02em; }
 
 #home-wrap .home-weekly-digest {
-  min-height: 230px;
-  padding: 0 var(--s-5) 20px;
+  padding: 0 var(--s-5) var(--s-5);
   color: var(--home-program-ink);
   background: color-mix(in srgb, var(--bg) 94%, var(--bg-3) 6%);
 }
-#home-wrap .home-weekly-digest > header small { color: var(--home-program-muted); font-size: .58rem; font-weight: var(--fw-bold); letter-spacing: .18em; }
-#home-wrap .home-weekly-digest > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 17px; }
-#home-wrap .home-weekly-digest article { min-width: 0; display: grid; align-content: start; gap: 2px; padding: 0 18px; }
-#home-wrap .home-weekly-digest article:first-child { padding-left: 0; }
-#home-wrap .home-weekly-digest article + article { border-left: 1px solid var(--home-program-line); }
-#home-wrap .home-weekly-digest article small { color: var(--home-program-muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .08em; }
-/* NO line-clamp. These three columns are the whole report, and a report
-   that ends in "..." is a report nobody can read - the clamp was cutting
-   team names in half and dropping the end of every detail line. The column
-   grows to its text instead. */
-#home-wrap .home-weekly-digest article strong { font-size: var(--fs-body); line-height: 1.12; }
-#home-wrap .home-weekly-digest article span { color: var(--home-program-ink); font-size: var(--fs-small); line-height: 1.25; }
+#home-wrap .home-weekly-digest > header > div { min-width: 0; }
+#home-wrap .home-weekly-digest > header small,
+#home-wrap .home-weekly-digest :is(.home-weekly-lede, .home-weekly-awards, .home-weekly-leaderboard) small {
+  color: var(--home-program-muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .12em;
+}
+#home-wrap .home-weekly-digest > header button {
+  min-height: 32px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--accent-2) 56%, transparent);
+  border-radius: var(--r-pill); color: var(--accent-2); background: transparent;
+  font: inherit; font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .1em; cursor: pointer;
+}
+#home-wrap .home-weekly-lede { padding: var(--s-4) 0; border-bottom: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-lede > small { color: var(--accent); }
+#home-wrap .home-weekly-lede p { margin: 7px 0 0; max-width: 850px; color: var(--home-program-ink); font-size: clamp(.95rem, 2.5vw, 1.08rem); font-weight: var(--fw-semi); line-height: 1.45; }
+#home-wrap .home-weekly-lede p strong { color: var(--accent-2); }
+#home-wrap .home-weekly-awards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: var(--s-4); background: var(--home-program-line); border-block: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-awards article { min-width: 0; display: grid; gap: 3px; padding: 13px 15px; background: var(--bg); box-shadow: inset 3px 0 var(--home-program-muted); }
+#home-wrap .home-weekly-awards article.is-gold { box-shadow: inset 3px 0 var(--accent-2); }
+#home-wrap .home-weekly-awards article.is-red { box-shadow: inset 3px 0 var(--accent); }
+#home-wrap .home-weekly-awards article strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: var(--fs-h3); line-height: 1.05; }
+#home-wrap .home-weekly-awards article span { color: var(--home-program-ink); font-size: var(--fs-small); font-weight: var(--fw-semi); line-height: 1.25; }
+#home-wrap .home-weekly-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); margin-top: var(--s-4); }
+#home-wrap .home-weekly-leaderboard { min-width: 0; border-top: 3px solid var(--accent-2); background: color-mix(in srgb, var(--bg-2) 94%, black 6%); }
+#home-wrap .home-weekly-leaderboard.is-red { border-top-color: var(--accent); }
+#home-wrap .home-weekly-leaderboard > header { display: grid; padding: 10px 13px; border-bottom: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-leaderboard > header strong { font-family: var(--font-display); font-size: var(--fs-body); }
+#home-wrap .home-weekly-leaderboard ol { margin: 0; padding: 0; list-style: none; }
+#home-wrap .home-weekly-leaderboard li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 48px; padding: 6px 12px; border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-leaderboard li:first-child { border-top: 0; }
+#home-wrap .home-weekly-leaderboard li > b { color: var(--accent-2); font-size: var(--fs-micro); }
+#home-wrap .home-weekly-leaderboard.is-red li > b { color: var(--accent); }
+#home-wrap .home-weekly-leaderboard li > span { min-width: 0; }
+#home-wrap .home-weekly-leaderboard li span > :is(strong, small) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .home-weekly-leaderboard li span > strong { font-size: var(--fs-small); }
+#home-wrap .home-weekly-leaderboard li span > small { margin-top: 1px; letter-spacing: 0; }
+#home-wrap .home-weekly-leaderboard li > em { color: var(--home-program-ink); font-family: var(--font-display); font-size: var(--fs-h3); font-style: normal; font-weight: var(--fw-bold); }
+#home-wrap .home-weekly-games { margin-top: var(--s-4); border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-games summary { display: flex; justify-content: space-between; gap: var(--s-3); padding: 13px 0; color: var(--home-program-ink); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .12em; cursor: pointer; list-style: none; }
+#home-wrap .home-weekly-games summary::-webkit-details-marker { display: none; }
+#home-wrap .home-weekly-games summary span { color: var(--home-program-muted); }
+#home-wrap .home-weekly-games > div { display: grid; border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-games article { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; min-height: 54px; border-bottom: 1px solid var(--home-program-line); }
+#home-wrap .home-weekly-games article > span { min-width: 0; display: flex; justify-content: space-between; gap: 8px; }
+#home-wrap .home-weekly-games article > span:last-child { flex-direction: row-reverse; text-align: right; opacity: .67; }
+#home-wrap .home-weekly-games article strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-small); }
+#home-wrap .home-weekly-games article b { font-family: var(--font-display); font-size: var(--fs-h3); }
+#home-wrap .home-weekly-games article em { color: var(--home-program-muted); font-size: var(--fs-micro); font-style: normal; white-space: nowrap; }
+@media (max-width: 560px) {
+  #home-wrap .home-weekly-players { grid-template-columns: 1fr; }
+}
 #home-wrap .home-weekly-digest.is-loading > p,
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
 
@@ -1997,14 +2033,20 @@
   #home-wrap .home-rankings-card ol > li > span strong,
   #home-wrap .home-rankings-card ol > li > em,
   #home-wrap .home-rankings-card ol > li > span:last-child { font-size: var(--fs-small); }
-  #home-wrap .home-weekly-digest > header small { max-width: 140px; text-align: right; }
-  #home-wrap .home-weekly-digest > div { padding-top: 14px; }
-  #home-wrap .home-weekly-digest { min-height: 186px; }
-  #home-wrap .home-weekly-digest > div { align-items: start; min-height: 98px; }
-  #home-wrap .home-weekly-digest article { padding: 0 12px; }
-  #home-wrap .home-weekly-digest article small { font-size: .59rem; }
-  #home-wrap .home-weekly-digest article strong { font-size: .84rem; }
-  #home-wrap .home-weekly-digest article span { font-size: .69rem; }
+  #home-wrap .home-weekly-digest > header button { padding-inline: 9px; font-size: .55rem; }
+  #home-wrap .home-weekly-lede p { font-size: .88rem; line-height: 1.4; }
+  #home-wrap .home-weekly-awards { gap: 1px; }
+  #home-wrap .home-weekly-awards article { padding: 11px 10px; }
+  #home-wrap .home-weekly-awards article small { font-size: .55rem; }
+  #home-wrap .home-weekly-awards article strong { font-size: .9rem; }
+  #home-wrap .home-weekly-awards article span { font-size: .66rem; }
+  #home-wrap .home-weekly-leaderboard li { padding-inline: 9px; }
+  #home-wrap .home-weekly-games article { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; }
+  #home-wrap .home-weekly-games article > span { display: grid; gap: 0; }
+  #home-wrap .home-weekly-games article > span:last-child { display: grid; }
+  #home-wrap .home-weekly-games article strong { font-size: .68rem; }
+  #home-wrap .home-weekly-games article b { font-size: .9rem; }
+  #home-wrap .home-weekly-games article em { font-size: .52rem; }
   #home-wrap .home-trade-item { grid-template-columns: 88px minmax(0, 1fr) 14px; gap: 10px; padding-block: 14px; }
   #home-wrap .home-trade-call { padding-left: 8px; }
   #home-wrap .home-trade-call strong { font-size: 1rem; }

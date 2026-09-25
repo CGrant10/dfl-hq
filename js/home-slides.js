@@ -75,12 +75,12 @@ export function nextMoveSlide(move) {
 
   Sleeper rolls its own state into the new week as soon as Monday Night
   Football ends, so state.week is already "next week" while the league is
-  still reading Tuesday's box scores. home-clubhouse's aftermathReportWeek()
-  holds the REPORT back for that reason, but only on Tuesday.
+  still reading the completed box scores. home-clubhouse's aftermathReportWeek()
+  keeps the REPORT on the last final week until another week replaces it.
 
   The matchup turns over immediately with Sleeper on Tuesday. The completed
-  report remains on the prior week for that day, so Home can show both the
-  receipts and the next opponent instead of spending Tuesday looking back in
+  report remains on the prior completed week, so Home can show both the
+  receipts and the next opponent instead of spending every surface looking back in
   every surface.
 */
 export function currentMatchupWeek(week) {

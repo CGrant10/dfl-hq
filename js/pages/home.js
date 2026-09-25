@@ -37,6 +37,7 @@ import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
 import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
+import { shareAftermath } from "../aftermath-share.js";
 import { buildNextMove } from "../next-move.js";
 import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
@@ -125,37 +126,59 @@ function wireHomeRankings(root) {
   gives the words the whole column, which is the only thing in here anybody
   reads.
 */
-function digestItem(label, title, detail) {
-  return `<article data-assemble><small>${esc(label)}</small><strong>${esc(title)}</strong><span>${esc(detail)}</span></article>`;
+function weeklyStoryMarkup(report) {
+  const names = [...new Set((report?.games || []).flatMap(game => [game.winner?.name, game.loser?.name])
+    .map(name => String(name || "").trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  const story = String(report?.story || "The league survived another week. Barely.");
+  if (!names.length) return esc(story);
+  const upper = story.toUpperCase();
+  let cursor = 0, html = "";
+  while (cursor < story.length) {
+    let hit = null;
+    for (const name of names) {
+      const at = upper.indexOf(name.toUpperCase(), cursor);
+      if (at >= 0 && (!hit || at < hit.at || at === hit.at && name.length > hit.name.length)) hit = { at, name };
+    }
+    if (!hit) { html += esc(story.slice(cursor)); break; }
+    html += esc(story.slice(cursor, hit.at));
+    html += `<strong>${esc(story.slice(hit.at, hit.at + hit.name.length))}</strong>`;
+    cursor = hit.at + hit.name.length;
+  }
+  return html;
 }
 
-/** The compact three-hit weekly report shown directly on Home. */
+function weeklyLeaders(title, subtitle, players = [], tone = "gold") {
+  if (!players.length) return "";
+  return `<section class="home-weekly-leaderboard is-${tone}">
+    <header><small>${esc(subtitle)}</small><strong>${esc(title)}</strong></header>
+    <ol>${players.slice(0, 3).map((player, index) => `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam, player.owner].filter(Boolean).join(" · "))}</small></span><em>${Number(player.points).toFixed(1)}</em></li>`).join("")}</ol>
+  </section>`;
+}
+
+/** The completed week as an actual read, not three context-free statistics. */
 export function homeWeeklyDigest(view) {
   const report = view?.aftermath;
-  let items = [];
-  if (report?.final) {
-    const bench = report.bench;
-    const close = report.closest;
-    const starter = report.players?.starters?.[0];
-    if (bench) items.push(["BENCH CRIME", bench.name, `${Number(bench.value).toFixed(1)} pts wasted on the bench.`]);
-    if (close) items.push(["CLOSEST ESCAPE", close.winner, `Won by ${Number(close.margin).toFixed(1)}. No room to breathe.`]);
-    if (starter) items.push(["TOP STARTER", starter.name, `${Number(starter.points).toFixed(1)} pts. Carried the squad.`]);
-  }
-  if (items.length < 3) {
-    const fallbacks = (view?.stories || []).filter(story => story?.headline).slice(0, 3);
-    items = fallbacks.map((story) => {
-      const sides = story.sides || [];
-      const matchup = sides.length > 1
-        ? `${view?.focusName || sides[0].name} ${sides[0].score}–${sides[1].score} ${sides[1].name}` : null;
-      const power = story.key === "power" ? String(story.detail || "").replace(/ in the current roster model\.?/i, "") : null;
-      return [story.label, matchup || power || story.headline, matchup ? story.headline : story.detail];
-    });
-  }
-  if (!items.length) return `<section class="home-weekly-digest is-loading"><header><h2>WEEKLY REPORT</h2></header><p>Your report appears after the next Sleeper sync.</p></section>`;
+  if (!report?.final) return `<section class="home-weekly-digest is-loading"><header><h2>WEEKLY REPORT</h2></header><p>Your savage recap appears after the completed week syncs.</p></section>`;
+  const highlights = (report.highlights || []).slice(0, 4);
+  const games = report.games || [];
   return `<section class="home-weekly-digest">
-    <header><h2>WEEKLY REPORT</h2><small>SAME STORIES. DIFFERENT VICTIMS.</small></header>
-    <div>${items.slice(0, 3).map(item => digestItem(...item)).join("")}</div>
+    <header><div><small>WEEK ${esc(report.week)} · FINAL</small><h2>WEEKLY REPORT</h2></div><button type="button" data-home-report-share>SHARE REPORT</button></header>
+    <div class="home-weekly-lede"><small>THE WEEK, WITHOUT THE BULLSHIT</small><p>${weeklyStoryMarkup(report)}</p></div>
+    <div class="home-weekly-awards">${highlights.map(item => `<article class="is-${esc(item.tone || "ink")}" data-assemble><small>${esc(item.label)}</small><strong>${esc(item.title)}</strong><span>${esc(item.detail)}</span></article>`).join("")}</div>
+    <div class="home-weekly-players">
+      ${weeklyLeaders("STARTED & SHOWED OUT", "TOP 3 STARTERS", report.players?.starters, "gold")}
+      ${weeklyLeaders("WASTED ON THE BENCH", "TOP 3 BENCH", report.players?.bench, "red")}
+    </div>
+    ${games.length ? `<details class="home-weekly-games"><summary>ALL ${games.length} MATCHUPS <span>OPEN THE RECEIPTS</span></summary><div>${games.map(game => `<article><span><strong>${esc(game.winner.name)}</strong><b>${Number(game.winner.value).toFixed(2)}</b></span><em>beat by ${Number(game.margin).toFixed(2)}</em><span><strong>${esc(game.loser.name)}</strong><b>${Number(game.loser.value).toFixed(2)}</b></span></article>`).join("")}</div></details>` : ""}
   </section>`;
+}
+
+function wireHomeWeeklyDigest(slot, view) {
+  slot?.querySelector("[data-home-report-share]")?.addEventListener("click", () => {
+    const outcome = shareAftermath(view?.aftermath);
+    if (outcome === "saved") toast("Week recap saved to your downloads");
+    if (outcome === "failed") toast("Could not share the week recap", true);
+  });
 }
 
 export function leave() {
@@ -629,7 +652,10 @@ export async function render(view) {
       homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
       wireHomeRankings(homeRankingsSlot);
     }
-    if (homeReportSlot) homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
+    if (homeReportSlot) {
+      homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
+      wireHomeWeeklyDigest(homeReportSlot, clubhouse);
+    }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was
        holding are detached. Re-bind against what is actually on the page. */

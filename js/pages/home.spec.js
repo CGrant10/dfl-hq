@@ -57,11 +57,14 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("wireHomeRankings");
   });
 
-  it("renders a compact three-column weekly report rail", () => {
+  it("renders the completed week as a story, awards, players and collapsible receipts", () => {
     expect(source).toContain("export function homeWeeklyDigest");
-    expect(source).toContain("BENCH CRIME");
-    expect(source).toContain("CLOSEST ESCAPE");
-    expect(source).toContain("TOP STARTER");
+    expect(source).toContain("THE WEEK, WITHOUT THE BULLSHIT");
+    expect(source).toContain("TOP 3 STARTERS");
+    expect(source).toContain("TOP 3 BENCH");
+    expect(source).toContain("OPEN THE RECEIPTS");
+    expect(source).toContain("data-home-report-share");
+    expect(source).toContain("shareAftermath");
     expect(source).toContain("data-home-report-slot");
   });
 

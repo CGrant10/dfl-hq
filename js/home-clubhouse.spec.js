@@ -21,9 +21,10 @@ const lore = { matchups: [
 ] };
 
 describe("Home weekly report", () => {
-  it("keeps Monday on the current week and grades the previous week on Tuesday", () => {
-    expect(aftermathReportWeek(2, new Date("2026-09-14T08:00:00"))).toBe(2);
+  it("keeps the report on the last completed week throughout the week", () => {
+    expect(aftermathReportWeek(2, new Date("2026-09-14T08:00:00"))).toBe(1);
     expect(aftermathReportWeek(2, new Date("2026-09-15T08:00:00"))).toBe(1);
+    expect(aftermathReportWeek(2, new Date("2026-09-18T08:00:00"))).toBe(1);
     expect(aftermathReportWeek(1, new Date("2026-09-15T08:00:00"))).toBe(1);
   });
 

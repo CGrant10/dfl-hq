@@ -10,7 +10,9 @@ export function deriveLeagueState({ nfl = {}, config = {}, now = new Date() } = 
   const currentWeek = Math.max(1, Math.min(18, Number(nfl.week) || 1));
   const day = now.getDay();
   const completedWeek = Math.max(0, currentWeek - 1);
-  const reportWeek = day === 2 ? Math.max(1, completedWeek) : currentWeek;
+  /* The report is a receipt, not a one-day special. Once Sleeper advances,
+     keep the last completed week on Home until the next one replaces it. */
+  const reportWeek = Math.max(1, completedWeek);
   const phase = day === 2 || day === 3 ? "preview" : day === 4 ? "opening" : day === 0 || day === 1 ? "live" : "preview";
   const syncedAt = config.last_synced_at || null;
   const syncAgeMs = syncedAt ? Math.max(0, now.getTime() - Date.parse(syncedAt)) : Infinity;

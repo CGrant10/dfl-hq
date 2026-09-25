@@ -17,6 +17,12 @@ describe("shared league state", () => {
     expect(state.currentWeek).toBe(4);
   });
 
+  it("keeps the last completed report for the rest of the week", () => {
+    const state = deriveLeagueState({ nfl: { season: 2026, week: 4 }, now: new Date("2026-09-25T09:00:00") });
+    expect(state.reportWeek).toBe(3);
+    expect(state.currentWeek).toBe(4);
+  });
+
   it("marks an old sync as stale", () => {
     const state = deriveLeagueState({
       nfl: { season: 2026, week: 4 },
