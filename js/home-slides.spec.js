@@ -318,9 +318,9 @@ describe("the slate during a week in progress", () => {
     expect([rows[0].a.score, rows[0].b.score]).toEqual(["102.4", "110.4"]);
   });
 
-  it("says which kind of number the card is showing", () => {
-    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).subtitle).toBe("Actual scores · projected until a starter plays");
-    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).subtitle).toBe("All scores projected");
+  it("uses the row labels instead of adding explanatory copy to the card", () => {
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).subtitle).toBeNull();
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).subtitle).toBeNull();
   });
 
   it("labels a completed lineup as final", () => {

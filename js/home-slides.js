@@ -268,7 +268,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     priority: P.MINE + 10, dwell: 9000,
     kicker: `${season} · Week ${week}`,
     headline: "Around the league",
-    subtitle: live ? "Actual scores · projected until a starter plays" : "All scores projected",
+    subtitle: null,
     href: "#/analyzer",
     fixtures: rows,
   };
