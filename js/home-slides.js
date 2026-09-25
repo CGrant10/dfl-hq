@@ -230,26 +230,33 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
 
     On the Friday of a week exactly one game has been played, so a card that
     switched wholesale to live scores showed one real result and five rows of
-    0.0 - less use than the projections it replaced. A fixture shows its
-    actual scores once THAT fixture has started and its projection until
-    then, which is the only reading where every row on the card is worth
-    something.
+    0.0 - less use than the projections it replaced. Each TEAM now changes
+    from projection to actual only after one of its own starters has played,
+    and carries a plain status label so mixed Thursday rows remain honest.
   */
-  const started = fixture => (Number(fixture.a?.actual) || 0) !== 0
-    || (Number(fixture.b?.actual) || 0) !== 0;
+  const hasPlayed = side => Number(side?.played) > 0 || (side?.played == null && (Number(side?.actual) || 0) !== 0);
+  const sideView = side => {
+    const played = Math.max(0, Number(side.played) || 0);
+    const showActual = live && hasPlayed(side);
+    const value = showActual ? Number(side.actual) || 0 : side.projection;
+    const status = side.complete ? "FINAL" : showActual
+      ? `${played} PLAYED` : "PROJECTED";
+    return { value, status, mode: side.complete ? "final" : showActual ? "live" : "projected" };
+  };
   const rows = fixtures.map(fixture => {
     const a = fixture.a, b = fixture.b;
     if (!a || !b) return null;
-    const useActual = live && started(fixture);
-    if (!useActual && (a.projection == null || b.projection == null)) return null;
-    const av = useActual ? Number(a.actual) || 0 : a.projection;
-    const bv = useActual ? Number(b.actual) || 0 : b.projection;
-    if (av == null || bv == null) return null;
+    const av = sideView(a), bv = sideView(b);
+    if (av.value == null || bv.value == null) return null;
+    /* A live score and a projection are different units. Lighting a leader
+       across that mixed row implies a comparison the numbers do not make;
+       only name a leader when both sides are showing the same kind of score. */
+    const comparable = av.mode === bv.mode;
     return {
       mine: String(a.sleeper_user_id) === String(meSleeperId)
         || String(b.sleeper_user_id) === String(meSleeperId),
-      a: { name: a.name, score: av.toFixed(1), up: av > bv },
-      b: { name: b.name, score: bv.toFixed(1), up: bv > av },
+      a: { name: a.name, score: Number(av.value).toFixed(1), status: av.status, mode: av.mode, up: comparable && av.value > bv.value },
+      b: { name: b.name, score: Number(bv.value).toFixed(1), status: bv.status, mode: bv.mode, up: comparable && bv.value > av.value },
     };
   }).filter(Boolean);
   /* One fixture is the reader's own game with extra steps - the preview slide
@@ -261,7 +268,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     priority: P.MINE + 10, dwell: 9000,
     kicker: `${season} · Week ${week}`,
     headline: "Around the league",
-    subtitle: live ? "Live" : "Projected",
+    subtitle: live ? "Actual scores · projected until a starter plays" : "All scores projected",
     href: "#/analyzer",
     fixtures: rows,
   };

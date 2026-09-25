@@ -295,11 +295,15 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   const side = row => {
     const team = teamFor(row.roster_id);
     if (!team) return null;
+    const weeklyTeam = (weekly.teams || []).find(item => String(item.sleeper_user_id) === String(team.sleeper_user_id));
     return {
       sleeper_user_id: team.sleeper_user_id,
       name: team.team_name || team.ownerName || "Unnamed",
       projection: projectionOf(team.sleeper_user_id),
       actual: actualOf(team.sleeper_user_id),
+      played: Number(weeklyTeam?.played) || 0,
+      remaining: Number(weeklyTeam?.remaining) || 0,
+      complete: Boolean(weeklyTeam?.complete),
     };
   };
 

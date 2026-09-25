@@ -237,7 +237,9 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
       const played = actual.get(id);
       return total + (played?.hasGame ? num(played.points) : 0);
     }, 0);
+    const scheduled = submitted.filter(id => pool.get(id)?.hasGame).length;
     const remaining = submitted.filter(id => pool.get(id)?.hasGame && !actual.get(id)?.hasGame).length;
+    const played = Math.max(0, scheduled - remaining);
     const liveProjection = submitted.reduce((total, id) => {
       const played = actual.get(id);
       const projected = pool.get(id);
@@ -260,7 +262,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
       projection: advice.lineupIsSet ? round(liveProjection) : round(advice.bestTotal),
       /* Final fantasy scores settle to hundredths. Keeping only one decimal
          could turn a sub-point loss into the wrong-looking margin. */
-      actual: scoreRound(actualPoints), remaining,
+      actual: scoreRound(actualPoints), played, remaining,
       complete: submitted.length > 0 && remaining === 0,
       pointsOnBench: round(advice.pointsOnBench), starterScores, benchScores,
       lineupIsSet: advice.lineupIsSet,

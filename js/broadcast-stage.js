@@ -93,11 +93,11 @@ function slate(item) {
   const rows = (item.fixtures || []).map((fixture) => `
     <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}">
       <span class="bx-slate-side${fixture.a.up ? " is-up" : ""}">
-        <b>${esc(fixture.a.name)}</b><i>${esc(fixture.a.score)}</i>
+        <b>${esc(fixture.a.name)}</b><span class="bx-slate-score is-${esc(fixture.a.mode || "projected")}"><i>${esc(fixture.a.score)}</i><small>${esc(fixture.a.status || "PROJECTED")}</small></span>
       </span>
       <span class="bx-slate-v" aria-hidden="true">v</span>
       <span class="bx-slate-side${fixture.b.up ? " is-up" : ""}">
-        <b>${esc(fixture.b.name)}</b><i>${esc(fixture.b.score)}</i>
+        <b>${esc(fixture.b.name)}</b><span class="bx-slate-score is-${esc(fixture.b.mode || "projected")}"><i>${esc(fixture.b.score)}</i><small>${esc(fixture.b.status || "PROJECTED")}</small></span>
       </span>
     </li>`).join("");
   return `

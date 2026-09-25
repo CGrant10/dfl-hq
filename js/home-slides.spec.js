@@ -290,23 +290,26 @@ describe("the week's slate", () => {
 
 describe("the slate during a week in progress", () => {
   const fixtures = [
-    { a: { sleeper_user_id: "me", name: "Da Nickers", projection: 102.4, actual: 16.2 },
-      b: { sleeper_user_id: "them", name: "Jack-HAMMER", projection: 110.4, actual: 0 } },
-    { a: { sleeper_user_id: "c", name: "Charlie", projection: 120.1, actual: 0 },
-      b: { sleeper_user_id: "d", name: "Delta", projection: 99.5, actual: 0 } },
+    { a: { sleeper_user_id: "me", name: "Da Nickers", projection: 102.4, actual: 16.2, played: 1, remaining: 8 },
+      b: { sleeper_user_id: "them", name: "Jack-HAMMER", projection: 110.4, actual: 0, played: 0, remaining: 9 } },
+    { a: { sleeper_user_id: "c", name: "Charlie", projection: 120.1, actual: 0, played: 0, remaining: 9 },
+      b: { sleeper_user_id: "d", name: "Delta", projection: 99.5, actual: 0, played: 0, remaining: 9 } },
   ];
 
   /* Friday: one game has been played and five have not. A card that switched
      wholesale to live showed one result and a column of 0.0. */
-  it("shows actuals only for the fixture that has started", () => {
+  it("shows actuals only for a team that has had a starter play", () => {
     const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
-    expect([rows[0].a.score, rows[0].b.score]).toEqual(["16.2", "0.0"]);
+    expect([rows[0].a.score, rows[0].b.score]).toEqual(["16.2", "110.4"]);
     expect([rows[1].a.score, rows[1].b.score]).toEqual(["120.1", "99.5"]);
+    expect([rows[0].a.status, rows[0].b.status]).toEqual(["1 PLAYED", "PROJECTED"]);
+    expect([rows[0].a.mode, rows[0].b.mode]).toEqual(["live", "projected"]);
   });
 
   it("re-reads the favourite from whichever numbers a row is showing", () => {
     const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
-    expect(rows[0].a.up).toBe(true);    // 16.2 leads 0.0 live
+    expect(rows[0].a.up).toBe(false);   // live points and a projection are not comparable
+    expect(rows[0].b.up).toBe(false);
     expect(rows[1].a.up).toBe(true);    // 120.1 leads 99.5 on projection
   });
 
@@ -316,7 +319,17 @@ describe("the slate during a week in progress", () => {
   });
 
   it("says which kind of number the card is showing", () => {
-    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).subtitle).toBe("Live");
-    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).subtitle).toBe("Projected");
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).subtitle).toBe("Actual scores · projected until a starter plays");
+    expect(weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: false }).subtitle).toBe("All scores projected");
+  });
+
+  it("labels a completed lineup as final", () => {
+    const done = fixtures.map(fixture => ({
+      a: { ...fixture.a, actual: 101.2, played: 9, remaining: 0, complete: true },
+      b: { ...fixture.b, actual: 99.8, played: 9, remaining: 0, complete: true },
+    }));
+    const [row] = weekSlateSlide({ fixtures: done, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
+    expect([row.a.status, row.b.status]).toEqual(["FINAL", "FINAL"]);
+    expect(row.a.up).toBe(true);
   });
 });

@@ -162,7 +162,7 @@ describe("Home weekly report", () => {
     ];
     const weekly = buildClubhouseWeekly({ analysis: liveAnalysis, rows, actualRows, season: 2026, week: 1 });
     expect(weekly.teams[0].projection).toBe(130.4);
-    expect(weekly.teams[0]).toMatchObject({ actual: 13.37, remaining: 2, complete: false });
+    expect(weekly.teams[0]).toMatchObject({ actual: 13.37, played: 1, remaining: 2, complete: false });
     expect(weekly.teams[0].starterScores).toEqual([expect.objectContaining({ name: "SEA", points: 13.37 })]);
     expect(weekly.teams[0].benchScores).toEqual([expect.objectContaining({ name: "Bench Blast", points: 15.25, nflTeam: "BUF" })]);
   });
