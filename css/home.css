@@ -403,6 +403,9 @@
    --------------------------------------------------------------------- */
 .wall .wall-card { padding: var(--s-4); display: grid; gap: var(--s-4); }
 .wall-signin { margin: 0; }
+.wall.is-preview .wall-photo { max-height: 220px; }
+.wall.is-preview .wall-photo-frame { max-width: 100%; aspect-ratio: 16 / 9; }
+.wall-page { width: min(100%, 760px); margin-inline: auto; padding-bottom: var(--s-7); }
 
 .wall-form { display: grid; gap: var(--s-2); }
 .wall-form textarea {
@@ -1867,6 +1870,29 @@
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
 
 /* WEEK AHEAD — a live model board, not a stack of recap cards. */
+#home-wrap .home-week-tabs,
+#home-wrap .home-position-tabs {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px;
+  padding: 1px; border: 1px solid var(--home-program-line); background: var(--home-program-line);
+}
+#home-wrap .home-week-tabs button,
+#home-wrap .home-position-tabs button {
+  min-width: 0; min-height: 44px; border: 0; color: var(--home-program-muted); background: var(--bg);
+  font: inherit; font-size: var(--fs-small); font-weight: var(--fw-bold); letter-spacing: .04em; cursor: pointer;
+}
+#home-wrap .home-week-tabs button[aria-selected="true"],
+#home-wrap .home-position-tabs button[aria-pressed="true"] {
+  color: var(--home-program-ink); background: color-mix(in srgb, var(--accent-2) 13%, var(--bg));
+  box-shadow: inset 0 -3px var(--accent-2);
+}
+#home-wrap .home-week-tabs button b {
+  display: inline-grid; place-items: center; min-width: 17px; height: 17px; margin-left: 5px;
+  border-radius: 50%; color: var(--bg); background: var(--accent); font-size: .58rem;
+}
+#home-wrap .home-week-panels [hidden],
+#home-wrap .home-outlook-players [hidden] { display: none !important; }
+#home-wrap .home-position-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-bottom: 10px; }
+#home-wrap .home-position-tabs button { min-height: 40px; font-family: var(--font-display); font-size: var(--fs-body); }
 #home-wrap .home-weekly-digest > header a {
   min-height: 32px; display: inline-flex; align-items: center; padding: 0 11px;
   border: 1px solid color-mix(in srgb, var(--accent-2) 56%, transparent); border-radius: var(--r-pill);
@@ -1895,7 +1921,7 @@
 #home-wrap .home-outlook-players > summary::after { content: "−"; color: var(--accent-2); font-size: var(--fs-h3); }
 #home-wrap .home-outlook-players:not([open]) > summary::after { content: "+"; }
 #home-wrap .home-outlook-players > summary > span { margin-left: auto; }
-#home-wrap .home-outlook-players > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+#home-wrap .home-outlook-players > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 #home-wrap .home-outlook-players section { min-width: 0; border-top: 3px solid var(--accent-2); background: color-mix(in srgb, var(--bg-2) 95%, black 5%); }
 #home-wrap .home-outlook-players section > header { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; border-bottom: 1px solid var(--home-program-line); }
 #home-wrap .home-outlook-players section > header strong { font-family: var(--font-display); font-size: var(--fs-h3); }
@@ -1935,9 +1961,42 @@
 #home-wrap .home-outlook-empty { color: var(--home-program-muted); font-size: var(--fs-small); }
 #home-wrap .home-outlook-startsit footer { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; color: var(--home-program-muted); font-size: var(--fs-small); }
 #home-wrap .home-outlook-startsit footer a { color: var(--accent-2); font-weight: var(--fw-bold); text-decoration: none; white-space: nowrap; }
+#home-wrap .home-outlook-more { border-top: 1px solid var(--home-program-line); background: var(--bg); }
+#home-wrap .home-outlook-more > summary {
+  min-height: 44px; display: grid; place-items: center; color: var(--accent-2); cursor: pointer; list-style: none;
+  font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .1em;
+}
+#home-wrap .home-outlook-more > summary::-webkit-details-marker { display: none; }
+#home-wrap .home-outlook-more > summary::after { content: " +"; }
+#home-wrap .home-outlook-more[open] > summary::after { content: " −"; }
+#home-wrap .home-outlook-more > div { display: grid; gap: 1px; background: var(--home-program-line); }
+
+/* One lower-page feed, with the two old stacked lists sharing the footprint. */
+#home-wrap .home-feed-tabs {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  margin-bottom: 1px; padding: 1px; border: 1px solid var(--home-program-line); background: var(--home-program-line);
+}
+#home-wrap .home-feed-tabs button {
+  min-height: 44px; border: 0; color: var(--home-program-muted); background: var(--bg);
+  font: inherit; font-size: var(--fs-small); font-weight: var(--fw-bold); cursor: pointer;
+}
+#home-wrap .home-feed-tabs button[aria-selected="true"] {
+  color: var(--home-program-ink); background: color-mix(in srgb, var(--accent) 10%, var(--bg)); box-shadow: inset 0 -3px var(--accent);
+}
+#home-wrap .home-feed-panel { padding: var(--s-3); border: 1px solid var(--home-program-line); background: var(--bg); }
+#home-wrap .home-feed-panel[hidden] { display: none; }
+#home-wrap .home-feed-state { margin: 0; color: var(--home-program-muted); font-size: var(--fs-small); }
+
+/* Let the browser skip layout and paint for expensive sections that are well
+   below the viewport. The intrinsic size keeps scroll position stable until
+   the real section is needed. */
+#home-wrap > [data-home-trade-slot],
+#home-wrap > [data-wall-slot],
+#home-wrap > [data-home-feed-slot],
+#home-wrap > .hero { content-visibility: auto; contain-intrinsic-size: 1px 320px; }
 
 @media (max-width: 720px) {
-  #home-wrap .home-outlook-players > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #home-wrap .home-outlook-players > div { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
   #home-wrap .home-outlook-games > div:last-child,

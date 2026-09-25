@@ -37,7 +37,7 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("Loading your matchup");
     expect(source).toContain("startHomeStage(build(golfDayNow))");
     expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("data-home-rankings-slot"));
-    expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("home-lower"));
+    expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("data-home-feed-slot"));
   });
 
   it("opens the complete deck on the signed-in member's matchup", () => {
@@ -63,7 +63,10 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("CURRENT FORECAST");
     expect(source).toContain("ACTUAL / PROJ");
     expect(source).toContain("PLAYED · ACTUAL");
-    expect(source).toContain("TOP 3 AT EVERY POSITION");
+    expect(source).toContain("TOP 3 BY POSITION");
+    expect(source).toContain("data-week-tab");
+    expect(source).toContain("data-position-tab");
+    expect(source).toContain("wireHomeWeekHub");
     expect(source).toContain("START / SIT");
     expect(source).toContain("FULL START/SIT");
     expect(source).toContain("buildHomeWeekOutlook");
@@ -76,7 +79,17 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("DFLYZER VERDICTS");
     expect(source).toContain("data-home-trade-slot");
     expect(source).toContain("tradeAlertViewModel");
-    expect(source).toContain("SHOW ${older.length} OLDER TRADE");
+    expect(source).toContain("(alerts || []).slice(0, 1)");
+    expect(source).not.toContain("SHOW ${older.length} OLDER TRADE");
     expect(source).toContain("seasonTradeViews");
+  });
+
+  it("keeps the lower Home page compact and defers its secondary data", () => {
+    expect(source).not.toContain("seasonDoors(");
+    expect(source).toContain("loadWall(1)");
+    expect(source).toContain("compact: true");
+    expect(source).toContain("homeLeagueFeed");
+    expect(source).toContain("whenNear");
+    expect(source).toContain("loadTradeAlerts({ limit: 12 })");
   });
 });

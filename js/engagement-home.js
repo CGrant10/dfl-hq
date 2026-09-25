@@ -130,7 +130,7 @@ async function paintSinceAway() {
     const list = strip.querySelector(".wn-list");
     const extras = [];
     if (raceCount && !list?.querySelector('[data-engagement-kind="arena"]')) extras.push(`<li data-engagement-kind="arena"><a href="#/arena"><svg class="ico-sm" aria-hidden="true"><use href="#i-arena"></use></svg><span>${raceCount === 1 ? "An Arena race finished" : `${raceCount} Arena races finished`}</span></a></li>`);
-    if (wallCount && !list?.querySelector('[data-engagement-kind="wall"]')) extras.push(`<li data-engagement-kind="wall"><a href="#/home"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span>${wallCount === 1 ? "A new Wall post" : `${wallCount} new Wall posts`}</span></a></li>`);
+    if (wallCount && !list?.querySelector('[data-engagement-kind="wall"]')) extras.push(`<li data-engagement-kind="wall"><a href="#/wall"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span>${wallCount === 1 ? "A new Wall post" : `${wallCount} new Wall posts`}</span></a></li>`);
     if (list && extras.length) list.insertAdjacentHTML("beforeend", extras.join(""));
     strip.querySelector("[data-engagement-dismiss]")?.addEventListener("click", () => { markSeen(new Date()); strip.remove(); }, { once: true });
   }

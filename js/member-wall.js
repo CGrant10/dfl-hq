@@ -56,14 +56,15 @@ export async function loadWall(limit = 12) {
   throw last;
 }
 
-export function wallCard(rows) {
+export function wallCard(rows, { compact = false } = {}) {
   if (rows == null) return "";
   const me = currentMember();
-  return `<section class="block wall">
-    <h2 class="section-title">The Wall</h2>
+  const visibleRows = compact ? rows.slice(0, 1) : rows;
+  return `<section class="block wall${compact ? " is-preview" : ""}">
+    <h2 class="section-title">The Wall${compact ? `<a class="section-link" href="#/wall">Open the Wall →</a>` : ""}</h2>
     <div class="card wall-card">
-      ${me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
-      <div class="wall-posts">${rows.length ? rows.map(postHtml).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
+      ${compact ? "" : me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
+      <div class="wall-posts">${visibleRows.length ? visibleRows.map(postHtml).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
     </div>
   </section>`;
 }

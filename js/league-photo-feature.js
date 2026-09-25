@@ -200,7 +200,11 @@ function decorate() {
   if (painting) return;
   painting = true;
   queueMicrotask(() => {
-    try { quickActions(); decorateHistory(); } finally { painting = false; }
+    /* Home already has a fixed navigation and a compact league feed. The
+       injected Quick Actions block duplicated those routes and added another
+       full section to an already long dashboard; photo submission remains on
+       History, where the Hall of Fame photos live. */
+    try { decorateHistory(); } finally { painting = false; }
   });
 }
 

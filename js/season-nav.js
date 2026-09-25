@@ -17,6 +17,7 @@ export const SECONDARY_SEASON_ROUTES = [
   { route: "profile", label: "Profile", icon: "profile" },
   { route: "calendar", label: "Calendar", icon: "calendar" },
   { route: "history", label: "History", icon: "history" },
+  { route: "wall", label: "The Wall", icon: "polls" },
   { route: "keepers", label: "Keepers", icon: "keepers" },
   { route: "golf", label: "Golf", icon: "golf" },
   { route: "polls", label: "Polls", icon: "polls" },

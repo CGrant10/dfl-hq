@@ -19,7 +19,7 @@
 // made the page an About screen.
 // =====================================================================
 import { db, configured } from "../supabase.js";
-import { activityCard, ACTIVITY_RPC, ACTIVITY_MISSING } from "../activity.js";
+import { activityLine, ACTIVITY_RPC, ACTIVITY_MISSING } from "../activity.js";
 import { esc, fmtDate, fmtWhen, fmtShort, money, errorBox, toast } from "../ui.js";
 import { APP_VERSION, LEAGUE_FOUNDED } from "../config.js";
 import { checkForUpdate } from "../update.js";
@@ -50,6 +50,7 @@ let generation = 0;
 let dropAssembly = null;
 let suppressMyMatchup = false;
 let dropPresence = null;
+let deferredStops = [];
 
 function rankMove(value) {
   const move = Number(value) || 0;
@@ -144,21 +145,47 @@ export function homeWeeklyDigest(outlook) {
   if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
+  const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
+  const predictions = outlook.predictions || [];
+  const firstGames = predictions.slice(0, 3);
+  const moreGames = predictions.slice(3);
   return `<section class="home-weekly-digest">
     <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>WEEK AHEAD</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
-    <section class="home-outlook-block home-outlook-games"><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${outlook.predictions.length} MATCHUPS · LIVE + PROJ</span></div>
-      <div>${outlook.predictions.map(game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
-    </section>
-    <details class="home-outlook-block home-outlook-players" open><summary><div><small>PLAYER FORECAST</small><h3>TOP 3 AT EVERY POSITION</h3></div><span>QB · RB · WR · TE · K · DEF</span></summary>
-      <div>${HOME_OUTLOOK_POSITIONS.map(position => `<section><header><strong>${position}</strong><small>ACTUAL / PROJ</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
-    </details>
-    <section class="home-outlook-block home-outlook-startsit"><div class="home-outlook-title"><div><small>YOUR LINEUP</small><h3>START / SIT</h3></div><span>${esc(outlook.startSit?.teamName || "YOUR TEAM")}</span></div>
-      ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
-      ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong><span>${esc(playerScoreLine(swap.start))}</span></div><b>+${Number(swap.gain).toFixed(1)}</b><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong><span>${esc(playerScoreLine(swap.sit))}</span></div></article>`).join("")}</div>`
-        : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "NO MOVE WORTH FORCING" : "SET YOUR LINEUP"}</strong><span>${outlook.startSit?.lineupIsSet ? "The model sees no bench swap worth at least 1.5 points right now." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
-      <footer><span>Injuries, opponent difficulty and DFL scoring included.</span><a href="#/analyzer">Open full Start/Sit</a></footer>
-    </section>
+    <nav class="home-week-tabs" role="tablist" aria-label="Week Ahead views">
+      <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="true" data-week-tab="picks">Predictions</button>
+      <button id="home-week-tab-players" type="button" role="tab" aria-controls="home-week-panel-players" aria-selected="false" data-week-tab="players">Top Players</button>
+      <button id="home-week-tab-startsit" type="button" role="tab" aria-controls="home-week-panel-startsit" aria-selected="false" data-week-tab="startsit">Start / Sit${alarms.length || swaps.length ? `<b>${alarms.length + swaps.length}</b>` : ""}</button>
+    </nav>
+    <div class="home-week-panels">
+      <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks"><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
+        <div>${firstGames.map(gameRow).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
+        ${moreGames.length ? `<details class="home-outlook-more"><summary>VIEW ALL ${predictions.length} MATCHUPS</summary><div>${moreGames.map(gameRow).join("")}</div></details>` : ""}
+      </section>
+      <section id="home-week-panel-players" class="home-outlook-block home-outlook-players" role="tabpanel" aria-labelledby="home-week-tab-players" data-week-panel="players" hidden><div class="home-outlook-title"><div><small>PLAYER FORECAST</small><h3>TOP 3 BY POSITION</h3></div><span>ACTUAL / PROJ</span></div>
+        <nav class="home-position-tabs" aria-label="Player position">${HOME_OUTLOOK_POSITIONS.map((position, index) => `<button type="button" data-position-tab="${position}" aria-pressed="${index === 0}">${position}</button>`).join("")}</nav>
+        <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><header><strong>${position}</strong><small>ACTUAL / PROJ</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
+      </section>
+      <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden><div class="home-outlook-title"><div><small>YOUR LINEUP</small><h3>START / SIT</h3></div><span>${esc(outlook.startSit?.teamName || "YOUR TEAM")}</span></div>
+        ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
+        ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong><span>${esc(playerScoreLine(swap.start))}</span></div><b>+${Number(swap.gain).toFixed(1)}</b><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong><span>${esc(playerScoreLine(swap.sit))}</span></div></article>`).join("")}</div>`
+          : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "NO MOVE WORTH FORCING" : "SET YOUR LINEUP"}</strong><span>${outlook.startSit?.lineupIsSet ? "The model sees no bench swap worth at least 1.5 points right now." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
+        <footer><span>Injuries, opponent difficulty and DFL scoring included.</span><a href="#/analyzer">Open full Start/Sit</a></footer>
+      </section>
+    </div>
   </section>`;
+}
+
+function wireHomeWeekHub(root) {
+  const setWeekPanel = name => {
+    root.querySelectorAll("[data-week-tab]").forEach(button => button.setAttribute("aria-selected", String(button.dataset.weekTab === name)));
+    root.querySelectorAll("[data-week-panel]").forEach(panel => { panel.hidden = panel.dataset.weekPanel !== name; });
+  };
+  root.querySelectorAll("[data-week-tab]").forEach(button => button.addEventListener("click", () => setWeekPanel(button.dataset.weekTab)));
+  root.querySelectorAll("[data-position-tab]").forEach(button => button.addEventListener("click", () => {
+    const position = button.dataset.positionTab;
+    root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+    root.querySelectorAll("[data-position-panel]").forEach(panel => { panel.hidden = panel.dataset.positionPanel !== position; });
+  }));
 }
 
 export function leave() {
@@ -168,6 +195,29 @@ export function leave() {
   dropPresence = null;
   try { dropAssembly?.(); } catch { }
   dropAssembly = null;
+  deferredStops.forEach(stop => { try { stop(); } catch {} });
+  deferredStops = [];
+}
+
+function whenNear(node, task) {
+  if (!node) return () => {};
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    observer?.disconnect();
+    Promise.resolve().then(task).catch(error => console.warn("deferred Home section unavailable", error));
+  };
+  let observer = null;
+  if (typeof IntersectionObserver === "function") {
+    observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) run();
+    }, { rootMargin: "700px 0px" });
+    observer.observe(node);
+  } else {
+    queueMicrotask(run);
+  }
+  return () => { done = true; observer?.disconnect(); };
 }
 
 function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(ua))return "In Safari: Share, then Add to Home Screen";if(/android/i.test(ua))return "Chrome menu (⋮), then Install app";return "Chrome menu (⋮) → Cast, save and share → Install page as app"}
@@ -207,8 +257,7 @@ function tradePackageLine(pkg) {
  * wire rather than a temporary notification. */
 export function homeTradeWire(alerts) {
   if (alerts == null) return `<section class="home-trade-wire is-loading"><header><h2>TRADE WIRE</h2><small>DFLYZER VERDICTS</small></header><p>Checking the league wire…</p></section>`;
-  const recent = (alerts || []).slice(0, 3);
-  const older = (alerts || []).slice(3);
+  const recent = (alerts || []).slice(0, 1);
   const tradeRow = alert => {
     const outcome = alert.outcome || { grade: "Review", tone: "review", detail: "Model review needed" };
     const teams = alert.teams.map(team => team.teamName).filter(Boolean);
@@ -222,7 +271,7 @@ export function homeTradeWire(alerts) {
   };
   return `<section class="home-trade-wire">
     <header><h2>TRADE WIRE</h2><a href="#/trade">ALL RECEIPTS <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
-    ${recent.length ? `<div class="home-trade-list">${recent.map(tradeRow).join("")}</div>${older.length ? `<details class="home-trade-more"><summary>SHOW ${older.length} OLDER TRADE${older.length === 1 ? "" : "S"}</summary><div class="home-trade-list">${older.map(tradeRow).join("")}</div></details>` : ""}` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
+    ${recent.length ? `<div class="home-trade-list">${recent.map(tradeRow).join("")}</div>` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
   </section>`;
 }
 
@@ -369,17 +418,6 @@ export async function render(view) {
   const manualPromise = loadBroadcastItems();
   const overridesPromise = loadBroadcastOverrides();
   const lorePromise = loadLore();
-  const activityPromise = (async () => {
-    try {
-      const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 8 });
-      if (error) throw error;
-      return data || [];
-    } catch (err) {
-      return ACTIVITY_MISSING.test(err?.message || "") ? null : [];
-    }
-  })();
-  const wallPromise = loadWall().catch((err) => { console.warn("wall unavailable", err); return null; });
-  const draftPromise = loadDraftOrder();
   const [events, announcements, polls, leagues, members, golf, dues, standings, golfDone] = await Promise.all([
     db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
@@ -403,13 +441,10 @@ export async function render(view) {
   const me = currentMember();
   const myMember = me ? memberRows.find((m) => String(m.id) === String(me.id)) : null;
 
-  const [golfDay, manual, overrides, activity, wall, draft] = await Promise.all([
+  const [golfDay, manual, overrides] = await Promise.all([
     golfRow ? loadGolfDay(golfRow.id) : null,
     manualPromise,
     overridesPromise,
-    activityPromise,
-    wallPromise,
-    draftPromise,
   ]);
   const homeData = {
     events: events.data || [], announcements: announcements.data || [],
@@ -430,39 +465,13 @@ export async function render(view) {
   if (wn.firstRun) markSeen(new Date(), leagues.data || []);
   const strip = whatsNewStrip(changes, wn.since);
 
-  /* The feed is its own read rather than part of the Promise.all above: it is
-     the newest thing on the page and the one most likely to be missing, so a
-     league that has not run the migration must not have it fail beside the
-     announcements. activityFeed() returns null in that case and the section is
-     simply not drawn. */
-  /* The feed and the Wall are read together and kept off the Promise.all
-     above for the same reason: each depends on a migration a league may not
-     have run, and neither is allowed to take the front page down. Both
-     resolve to null when their table is absent, and null draws nothing. */
-  /* Null all the way through when there is no draft, no order, or a draft
-     that finished long enough ago to be history rather than news. */
-  const leagueStatus = leagues.data?.[0]?.status || "";
-  const draftEvidence = {
-    draft: draft?.draft || null,
-    slots: draft?.slots || [],
-    picks: draft?.picks || [],
-    members: memberRows,
-    meSleeperId: myMember?.sleeper_user_id || null,
-    leagueStatus,
-  };
-  const draftPanel = draftCard(draftView(draftEvidence));
-
   /*
     THE ORDER IS THE EDIT.
 
-    Stage, then three figures, then the four IN-SEASON doors: what is happening,
-    where the reader stands, and the weekly football work. The draft board follows the doors, and
-    only while there is a draft to care about - see draftView() in
-    js/draft-order.js, which returns null the rest of the year. The Wall sits directly under the doors
-    because it is the only part of this page that changes because somebody
-    did something, and burying a posting surface under two static lists is
-    how a wall dies. The commissioner and the activity feed follow; the
-    crest closes the page, since the splash already carries the brand.
+    Stage, rankings, the compact weekly hub, snapshot, and the latest trade
+    tell the active football story first. Draft, Wall, and League Feed are
+    staged below and load only as the reader approaches them. The crest closes
+    the page, since the splash already carries the brand.
 
     UPCOMING AND OPEN POLLS ARE GONE FROM THE MARKUP. They were rendered
     here and then hidden with a positional `display:none` in
@@ -480,17 +489,12 @@ export async function render(view) {
     </section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
-    <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
+    <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
-    ${seasonDoors(dues.data)}
-    ${draftPanel}
-    <div data-wall-slot>${wallCard(wall)}</div>
-    <div class="home-lower">
-      <section class="block"><h2 class="section-title">Words from the Commissioner<a class="section-link" href="#/calendar">Calendar →</a></h2>
-        ${newsList(announcements.data)}${adminRow(addControl("announcements", "Add announcement"))}</section>
-      ${activityCard(activity)}
-    </div>
+    <div data-draft-slot></div>
+    <div data-wall-slot class="home-deferred-slot"></div>
+    <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
@@ -500,7 +504,7 @@ export async function render(view) {
      both the cold open and Power Pulse, so making Home livelier does not make
      it fetch the entire Sleeper model twice. */
   const analysisPromise = import("../team-analyzer-data.js").then(({ loadAnalyzerData }) => loadAnalyzerData());
-  const tradeAlertsPromise = loadTradeAlerts({ limit: 50 }).catch(err => {
+  const tradeAlertsPromise = loadTradeAlerts({ limit: 12 }).catch(err => {
     console.warn("trade wire unavailable", err);
     return [];
   });
@@ -522,16 +526,14 @@ export async function render(view) {
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
 
-  /*
-    THE WALL REDRAWS ITSELF, NOT THE PAGE. A new post used to re-render all
-    of home, which restarts the broadcast stage mid-slide and re-runs every
-    query on the page. Repainting just the slot keeps the stage running.
-  */
+  /* Lower-page social and draft data no longer compete with the broadcast,
+     rankings and weekly model. Each starts only as its slot approaches the
+     viewport, and redraws only its own slot. */
   const redrawWall = async () => {
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
-      slot.innerHTML = wallCard(await loadWall());
+      slot.innerHTML = wallCard(await loadWall(1), { compact: true });
       wireWall(slot, redrawWall);
     } catch (err) {
       console.warn("wall unavailable", err);
@@ -539,7 +541,36 @@ export async function render(view) {
     }
   };
   const wallSlot = view.querySelector("[data-wall-slot]");
-  if (wallSlot) wireWall(wallSlot, redrawWall);
+  deferredStops.push(whenNear(wallSlot, redrawWall));
+
+  const feedSlot = view.querySelector("[data-home-feed-slot]");
+  deferredStops.push(whenNear(feedSlot, async () => {
+    let activity = null;
+    try {
+      const { data, error } = await db().rpc(ACTIVITY_RPC, { row_limit: 6 });
+      if (error) throw error;
+      activity = data || [];
+    } catch (error) {
+      if (!ACTIVITY_MISSING.test(error?.message || "")) console.warn("activity feed unavailable", error);
+      activity = [];
+    }
+    if (mine !== generation || !feedSlot?.isConnected) return;
+    feedSlot.innerHTML = homeLeagueFeed(announcements.data || [], activity);
+    wireHomeLeagueFeed(feedSlot);
+  }));
+  wireHomeLeagueFeed(feedSlot);
+
+  const draftSlot = view.querySelector("[data-draft-slot]");
+  deferredStops.push(whenNear(draftSlot, async () => {
+    const draft = await loadDraftOrder();
+    if (mine !== generation || !draftSlot?.isConnected) return;
+    const panel = draftCard(draftView({
+      draft: draft?.draft || null, slots: draft?.slots || [], picks: draft?.picks || [],
+      members: memberRows, meSleeperId: myMember?.sleeper_user_id || null,
+      leagueStatus: leagues.data?.[0]?.status || "",
+    }));
+    draftSlot.innerHTML = panel || "";
+  }));
 
   const alive = view.querySelector("[data-alive]");
   if (alive) {
@@ -622,6 +653,7 @@ export async function render(view) {
     }
     if (homeReportSlot) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook);
+      wireHomeWeekHub(homeReportSlot);
     }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was
@@ -717,6 +749,32 @@ function newsList(allRows) {
     ${editControls("announcements", a)}</article>`).join("")}</div>`;
 }
 
+function homeLeagueFeed(announcements = [], activity = null) {
+  const lines = (activity || []).filter(row => row.as_commissioner !== true).map(row => activityLine(row));
+  const activityMarkup = activity == null
+    ? `<p class="home-feed-state" role="status">Loading activity…</p>`
+    : lines.length
+      ? `<ul class="act-list">${lines.map(line => `<li class="act-row"><span class="act-who">${line.memberId ? `<a class="plainlink" href="#/profile?id=${esc(line.memberId)}">${esc(line.who)}</a>` : esc(line.who)}</span><span class="act-what">${esc(line.text)}</span><span class="act-when">${esc(line.when)}</span></li>`).join("")}</ul>`
+      : `<p class="home-feed-state">No recent member activity.</p>`;
+  return `<section class="block home-league-feed">
+    <h2 class="section-title">League Feed<a class="section-link" href="#/calendar">Calendar →</a></h2>
+    <nav class="home-feed-tabs" role="tablist" aria-label="League feed views">
+      <button id="home-feed-tab-news" type="button" role="tab" aria-controls="home-feed-panel-news" aria-selected="true" data-feed-tab="news">Commissioner</button>
+      <button id="home-feed-tab-activity" type="button" role="tab" aria-controls="home-feed-panel-activity" aria-selected="false" data-feed-tab="activity">Activity</button>
+    </nav>
+    <div id="home-feed-panel-news" class="home-feed-panel" role="tabpanel" aria-labelledby="home-feed-tab-news" data-feed-panel="news">${newsList(announcements)}${adminRow(addControl("announcements", "Add announcement"))}</div>
+    <div id="home-feed-panel-activity" class="home-feed-panel" role="tabpanel" aria-labelledby="home-feed-tab-activity" data-feed-panel="activity" hidden>${activityMarkup}</div>
+  </section>`;
+}
+
+function wireHomeLeagueFeed(root) {
+  root?.querySelectorAll?.("[data-feed-tab]").forEach(button => button.addEventListener("click", () => {
+    const name = button.dataset.feedTab;
+    root.querySelectorAll("[data-feed-tab]").forEach(item => item.setAttribute("aria-selected", String(item === button)));
+    root.querySelectorAll("[data-feed-panel]").forEach(panel => { panel.hidden = panel.dataset.feedPanel !== name; });
+  }));
+}
+
 function identity(leagues, members, logo) {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   return `<section class="hero">
@@ -731,20 +789,5 @@ const CREST_SIZE=256,MAX_UPLOAD=12*1024*1024;function wireCrest(view){const pick
 async function toSquarePng(fileObj,size){const bitmap=await createImageBitmap(fileObj);try{const side=Math.min(bitmap.width,bitmap.height),canvas=document.createElement("canvas");canvas.width=canvas.height=size;canvas.getContext("2d").drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,size,size);return canvas.toDataURL("image/png")}finally{bitmap.close?.()}}
 function ordinal(n){const r=n%100;if(r>=11&&r<=13)return `${n}th`;return n+(["th","st","nd","rd"][n%10]||"th")}
 
-function seasonDoors(dues){
-  const rows=dues||[];
-  const season=rows.reduce((a,r)=>Math.max(a,Number(r.season)||0),0);
-  const owed=rows.filter(r=>Number(r.season)===season)
-    .reduce((t,r)=>t+Math.max(0,(Number(r.amount_due)||0)-(Number(r.amount_paid)||0)),0);
-  const doors=[
-    ["TRADE","analyzer","Analyze rosters"],
-    ["RULES","rules","League handbook"],
-    ["FACTS","facts","Records & rivalries"],
-    ["FEES","finances",owed?money(owed):"Settled"],
-  ];
-  return `<nav class="creed-doors">${doors.map(([word,route,sub],i)=>
-    `<a class="cdoor cd-${i}" href="#/${route}"><span class="cd-word">${word}</span><span class="cd-sub">${esc(sub)}</span></a>`
-  ).join("")}</nav>`;
-}
 function adminRow(control){return control?`<div class="row-end">${control}</div>`:""}
 function setupNotice(){return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`}

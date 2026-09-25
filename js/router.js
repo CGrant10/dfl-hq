@@ -43,6 +43,7 @@ const routes = {
   finances: () => import("./pages/finances.js"),
   profile:  () => import("./pages/profile-locked.js"),
   notifications: () => import("./pages/notifications.js"),
+  wall:     () => import("./pages/wall.js"),
   admin:    () => import("./pages/admin.js"),
 };
 
