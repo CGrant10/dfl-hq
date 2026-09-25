@@ -20,6 +20,7 @@ function playerView(player, owners, defense) {
     nflTeam: player.team || "", opponent: player.opponent || "", points: num(player.points) || 0,
     injuryStatus: player.injuryStatus || null, ownerName: owner?.name || "Free agent",
     ownerId: owner?.id || null, matchup: matchupNote(player, defense),
+    scoreSource: player.scoreSource === "actual" ? "actual" : "projected",
   };
 }
 
@@ -58,7 +59,10 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleepe
     startSit = {
       teamName: teamName(mine), lineupIsSet: advice.lineupIsSet, pointsOnBench: advice.pointsOnBench,
       alarms: advice.alarms.map(alarm => ({ player: playerView(alarm.player, owners, defense), reason: alarm.reason })),
-      swaps: advice.swaps.slice(0, 3).map(swap => ({
+      /* Once either side has played, the lineup decision is locked. Keep
+         completed scores visible in the leaders, but never recommend an
+         impossible after-the-fact swap. */
+      swaps: advice.swaps.filter(swap => swap.in.scoreSource !== "actual" && swap.out.scoreSource !== "actual").slice(0, 3).map(swap => ({
         start: playerView(swap.in, owners, defense), sit: playerView(swap.out, owners, defense),
         gain: swap.gain, urgent: swap.urgent,
       })),
@@ -68,4 +72,3 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleepe
 }
 
 export { POSITIONS as HOME_OUTLOOK_POSITIONS };
-

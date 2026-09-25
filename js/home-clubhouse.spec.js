@@ -165,6 +165,8 @@ describe("Home weekly report", () => {
     expect(weekly.teams[0]).toMatchObject({ actual: 13.37, played: 1, remaining: 2, complete: false });
     expect(weekly.teams[0].starterScores).toEqual([expect.objectContaining({ name: "SEA", points: 13.37 })]);
     expect(weekly.teams[0].benchScores).toEqual([expect.objectContaining({ name: "Bench Blast", points: 15.25, nflTeam: "BUF" })]);
+    expect(weekly.pool.get("SEA").scoreSource).toBe("actual");
+    expect(weekly.pool.get("qb").scoreSource).toBe("projected");
   });
 
   it("uses finished player results for comparisons and secures a completed win", () => {

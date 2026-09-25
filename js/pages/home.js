@@ -129,7 +129,14 @@ function wireHomeRankings(root) {
 function outlookPlayerRow(player, index) {
   const matchup = player.matchup ? ` · ${player.matchup.tone} vs ${player.matchup.opponent}`
     : player.opponent ? ` · vs ${player.opponent}` : "";
-  return `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc(`${player.nflTeam || "FA"} · ${player.ownerName}${matchup}`)}</small></span><em>${Number(player.points).toFixed(1)}</em></li>`;
+  const source = player.scoreSource === "actual" ? "ACTUAL" : "PROJ";
+  return `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc(`${player.nflTeam || "FA"} · ${player.ownerName}${matchup}`)}</small></span><em class="is-${player.scoreSource}"><strong>${Number(player.points).toFixed(1)}</strong><small>${source}</small></em></li>`;
+}
+
+function playerScoreLine(player) {
+  const source = player.scoreSource === "actual" ? "PLAYED · ACTUAL" : "NOT PLAYED · PROJ";
+  const matchup = player.matchup ? `${player.matchup.tone} vs ${player.matchup.opponent}` : `vs ${player.opponent || "TBD"}`;
+  return `${Number(player.points).toFixed(1)} · ${source} · ${matchup}`;
 }
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
@@ -139,15 +146,15 @@ export function homeWeeklyDigest(outlook) {
   const alarms = outlook.startSit?.alarms || [];
   return `<section class="home-weekly-digest">
     <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>WEEK AHEAD</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
-    <section class="home-outlook-block home-outlook-games"><div class="home-outlook-title"><div><small>PROJECTED WINNERS</small><h3>WHO TAKES THE WEEK</h3></div><span>${outlook.predictions.length} MATCHUPS</span></div>
+    <section class="home-outlook-block home-outlook-games"><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${outlook.predictions.length} MATCHUPS · LIVE + PROJ</span></div>
       <div>${outlook.predictions.map(game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
     </section>
     <details class="home-outlook-block home-outlook-players" open><summary><div><small>PLAYER FORECAST</small><h3>TOP 3 AT EVERY POSITION</h3></div><span>QB · RB · WR · TE · K · DEF</span></summary>
-      <div>${HOME_OUTLOOK_POSITIONS.map(position => `<section><header><strong>${position}</strong><small>PROJECTED</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
+      <div>${HOME_OUTLOOK_POSITIONS.map(position => `<section><header><strong>${position}</strong><small>ACTUAL / PROJ</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
     </details>
     <section class="home-outlook-block home-outlook-startsit"><div class="home-outlook-title"><div><small>YOUR LINEUP</small><h3>START / SIT</h3></div><span>${esc(outlook.startSit?.teamName || "YOUR TEAM")}</span></div>
       ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
-      ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong><span>${swap.start.points.toFixed(1)} · ${esc(swap.start.matchup ? `${swap.start.matchup.tone} vs ${swap.start.matchup.opponent}` : `vs ${swap.start.opponent || "TBD"}`)}</span></div><b>+${Number(swap.gain).toFixed(1)}</b><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong><span>${swap.sit.points.toFixed(1)} · ${esc(swap.sit.matchup ? `${swap.sit.matchup.tone} vs ${swap.sit.matchup.opponent}` : `vs ${swap.sit.opponent || "TBD"}`)}</span></div></article>`).join("")}</div>`
+      ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong><span>${esc(playerScoreLine(swap.start))}</span></div><b>+${Number(swap.gain).toFixed(1)}</b><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong><span>${esc(playerScoreLine(swap.sit))}</span></div></article>`).join("")}</div>`
         : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "NO MOVE WORTH FORCING" : "SET YOUR LINEUP"}</strong><span>${outlook.startSit?.lineupIsSet ? "The model sees no bench swap worth at least 1.5 points right now." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
       <footer><span>Injuries, opponent difficulty and DFL scoring included.</span><a href="#/analyzer">Open full Start/Sit</a></footer>
     </section>

@@ -60,7 +60,9 @@ describe("Home redesign wiring", () => {
   it("renders the current week as matchup predictions, player forecasts and Start/Sit advice", () => {
     expect(source).toContain("export function homeWeeklyDigest");
     expect(source).toContain("WEEK AHEAD");
-    expect(source).toContain("PROJECTED WINNERS");
+    expect(source).toContain("CURRENT FORECAST");
+    expect(source).toContain("ACTUAL / PROJ");
+    expect(source).toContain("PLAYED · ACTUAL");
     expect(source).toContain("TOP 3 AT EVERY POSITION");
     expect(source).toContain("START / SIT");
     expect(source).toContain("FULL START/SIT");

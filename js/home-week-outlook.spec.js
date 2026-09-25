@@ -31,4 +31,14 @@ describe("Home week outlook", () => {
     const outlook = buildHomeWeekOutlook({ analysis, weekly: { season: 2026, week: 4, pool }, meSleeperId: "me" });
     expect(outlook.leaders.QB.map(player => player.name)).toEqual(["Healthy"]);
   });
+
+  it("preserves whether each leaderboard score is actual or projected", () => {
+    const pool = new Map([
+      p("qb1", "Already Played", "QB", 24, { scoreSource: "actual" }),
+      p("qb2", "Still Projected", "QB", 22, { scoreSource: "projected" }),
+    ]);
+    const analysis = { state: "ready", teams: [{ id: "1", sleeper_user_id: "me", team_name: "Alpha", playerIds: ["qb1", "qb2"], starters: ["qb1"] }] };
+    const outlook = buildHomeWeekOutlook({ analysis, weekly: { season: 2026, week: 4, pool }, meSleeperId: "me" });
+    expect(outlook.leaders.QB.map(player => player.scoreSource)).toEqual(["actual", "projected"]);
+  });
 });

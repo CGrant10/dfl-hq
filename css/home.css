@@ -1907,7 +1907,10 @@
 #home-wrap .home-outlook-players li span > :is(strong, small) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #home-wrap .home-outlook-players li span > strong { font-size: var(--fs-small); }
 #home-wrap .home-outlook-players li span > small { margin-top: 2px; font-size: .57rem; letter-spacing: 0; }
-#home-wrap .home-outlook-players li > em { color: var(--home-program-ink); font-family: var(--font-display); font-size: var(--fs-title-sm); font-style: normal; }
+#home-wrap .home-outlook-players li > em { display: grid; justify-items: end; color: var(--home-program-ink); font-style: normal; }
+#home-wrap .home-outlook-players li > em > strong { font-family: var(--font-display); font-size: var(--fs-title-sm); line-height: 1; }
+#home-wrap .home-outlook-players li > em > small { margin-top: 3px; color: var(--home-program-muted); font-size: .5rem; letter-spacing: .08em; }
+#home-wrap .home-outlook-players li > em.is-actual > small { color: var(--ok); }
 #home-wrap .home-outlook-players li.is-empty { display: block; color: var(--home-program-muted); font-size: var(--fs-small); }
 #home-wrap .home-outlook-alarms { display: grid; gap: 1px; margin-bottom: 10px; background: var(--home-program-line); }
 #home-wrap .home-outlook-alarms p { min-width: 0; display: grid; grid-template-columns: auto minmax(0, .45fr) minmax(0, 1fr); gap: 9px; margin: 0; padding: 10px 12px; background: var(--bg); }

@@ -221,10 +221,10 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
   if (analysis?.state !== "ready" || !rows.length || !season || !week) return null;
   const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null);
   const actual = buildWeeklyPool(actualRows, analysis.league?.scoring_settings || null);
-  const livePool = new Map(pool);
+  const livePool = new Map([...pool].map(([id, player]) => [id, { ...player, scoreSource: "projected" }]));
   for (const [id, played] of actual) {
     if (!played.hasGame) continue;
-    livePool.set(id, { ...(pool.get(id) || {}), ...played, points: played.points });
+    livePool.set(id, { ...(pool.get(id) || {}), ...played, points: played.points, scoreSource: "actual" });
   }
   const teams = analysis.teams.map(team => {
     const owner = nameOf(team);
