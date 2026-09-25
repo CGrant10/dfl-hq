@@ -36,8 +36,8 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
-import { aftermathReportWeek, buildClubhouseWeekly, clubhouseView } from "../home-clubhouse.js";
-import { shareAftermath } from "../aftermath-share.js";
+import { buildClubhouseWeekly } from "../home-clubhouse.js";
+import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlook.js";
 import { buildNextMove } from "../next-move.js";
 import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
@@ -126,59 +126,32 @@ function wireHomeRankings(root) {
   gives the words the whole column, which is the only thing in here anybody
   reads.
 */
-function weeklyStoryMarkup(report) {
-  const names = [...new Set((report?.games || []).flatMap(game => [game.winner?.name, game.loser?.name])
-    .map(name => String(name || "").trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
-  const story = String(report?.story || "The league survived another week. Barely.");
-  if (!names.length) return esc(story);
-  const upper = story.toUpperCase();
-  let cursor = 0, html = "";
-  while (cursor < story.length) {
-    let hit = null;
-    for (const name of names) {
-      const at = upper.indexOf(name.toUpperCase(), cursor);
-      if (at >= 0 && (!hit || at < hit.at || at === hit.at && name.length > hit.name.length)) hit = { at, name };
-    }
-    if (!hit) { html += esc(story.slice(cursor)); break; }
-    html += esc(story.slice(cursor, hit.at));
-    html += `<strong>${esc(story.slice(hit.at, hit.at + hit.name.length))}</strong>`;
-    cursor = hit.at + hit.name.length;
-  }
-  return html;
+function outlookPlayerRow(player, index) {
+  const matchup = player.matchup ? ` · ${player.matchup.tone} vs ${player.matchup.opponent}`
+    : player.opponent ? ` · vs ${player.opponent}` : "";
+  return `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc(`${player.nflTeam || "FA"} · ${player.ownerName}${matchup}`)}</small></span><em>${Number(player.points).toFixed(1)}</em></li>`;
 }
 
-function weeklyLeaders(title, subtitle, players = [], tone = "gold") {
-  if (!players.length) return "";
-  return `<section class="home-weekly-leaderboard is-${tone}">
-    <header><small>${esc(subtitle)}</small><strong>${esc(title)}</strong></header>
-    <ol>${players.slice(0, 3).map((player, index) => `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam, player.owner].filter(Boolean).join(" · "))}</small></span><em>${Number(player.points).toFixed(1)}</em></li>`).join("")}</ol>
-  </section>`;
-}
-
-/** The completed week as an actual read, not three context-free statistics. */
-export function homeWeeklyDigest(view) {
-  const report = view?.aftermath;
-  if (!report?.final) return `<section class="home-weekly-digest is-loading"><header><h2>WEEKLY REPORT</h2></header><p>Your savage recap appears after the completed week syncs.</p></section>`;
-  const highlights = (report.highlights || []).slice(0, 4);
-  const games = report.games || [];
+/** A living current-week forecast: games, player leaders, and your lineup. */
+export function homeWeeklyDigest(outlook) {
+  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
+  const swaps = outlook.startSit?.swaps || [];
+  const alarms = outlook.startSit?.alarms || [];
   return `<section class="home-weekly-digest">
-    <header><div><small>WEEK ${esc(report.week)} · FINAL</small><h2>WEEKLY REPORT</h2></div><button type="button" data-home-report-share>SHARE REPORT</button></header>
-    <div class="home-weekly-lede"><small>THE WEEK, WITHOUT THE BULLSHIT</small><p>${weeklyStoryMarkup(report)}</p></div>
-    <div class="home-weekly-awards">${highlights.map(item => `<article class="is-${esc(item.tone || "ink")}" data-assemble><small>${esc(item.label)}</small><strong>${esc(item.title)}</strong><span>${esc(item.detail)}</span></article>`).join("")}</div>
-    <div class="home-weekly-players">
-      ${weeklyLeaders("STARTED & SHOWED OUT", "TOP 3 STARTERS", report.players?.starters, "gold")}
-      ${weeklyLeaders("WASTED ON THE BENCH", "TOP 3 BENCH", report.players?.bench, "red")}
-    </div>
-    ${games.length ? `<details class="home-weekly-games"><summary>ALL ${games.length} MATCHUPS <span>OPEN THE RECEIPTS</span></summary><div>${games.map(game => `<article><span><strong>${esc(game.winner.name)}</strong><b>${Number(game.winner.value).toFixed(2)}</b></span><em>beat by ${Number(game.margin).toFixed(2)}</em><span><strong>${esc(game.loser.name)}</strong><b>${Number(game.loser.value).toFixed(2)}</b></span></article>`).join("")}</div></details>` : ""}
+    <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>WEEK AHEAD</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
+    <section class="home-outlook-block home-outlook-games"><div class="home-outlook-title"><div><small>PROJECTED WINNERS</small><h3>WHO TAKES THE WEEK</h3></div><span>${outlook.predictions.length} MATCHUPS</span></div>
+      <div>${outlook.predictions.map(game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
+    </section>
+    <details class="home-outlook-block home-outlook-players" open><summary><div><small>PLAYER FORECAST</small><h3>TOP 3 AT EVERY POSITION</h3></div><span>QB · RB · WR · TE · K · DEF</span></summary>
+      <div>${HOME_OUTLOOK_POSITIONS.map(position => `<section><header><strong>${position}</strong><small>PROJECTED</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
+    </details>
+    <section class="home-outlook-block home-outlook-startsit"><div class="home-outlook-title"><div><small>YOUR LINEUP</small><h3>START / SIT</h3></div><span>${esc(outlook.startSit?.teamName || "YOUR TEAM")}</span></div>
+      ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
+      ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong><span>${swap.start.points.toFixed(1)} · ${esc(swap.start.matchup ? `${swap.start.matchup.tone} vs ${swap.start.matchup.opponent}` : `vs ${swap.start.opponent || "TBD"}`)}</span></div><b>+${Number(swap.gain).toFixed(1)}</b><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong><span>${swap.sit.points.toFixed(1)} · ${esc(swap.sit.matchup ? `${swap.sit.matchup.tone} vs ${swap.sit.matchup.opponent}` : `vs ${swap.sit.opponent || "TBD"}`)}</span></div></article>`).join("")}</div>`
+        : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "NO MOVE WORTH FORCING" : "SET YOUR LINEUP"}</strong><span>${outlook.startSit?.lineupIsSet ? "The model sees no bench swap worth at least 1.5 points right now." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
+      <footer><span>Injuries, opponent difficulty and DFL scoring included.</span><a href="#/analyzer">Open full Start/Sit</a></footer>
+    </section>
   </section>`;
-}
-
-function wireHomeWeeklyDigest(slot, view) {
-  slot?.querySelector("[data-home-report-share]")?.addEventListener("click", () => {
-    const outcome = shareAftermath(view?.aftermath);
-    if (outcome === "saved") toast("Week recap saved to your downloads");
-    if (outcome === "failed") toast("Could not share the week recap", true);
-  });
 }
 
 export function leave() {
@@ -371,7 +344,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     }));
   }
   slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId, live: weekStarted }));
-  return slides.filter(Boolean);
+  return { slides: slides.filter(Boolean), fixtures };
 }
 
 export async function render(view) {
@@ -535,24 +508,6 @@ export async function render(view) {
     });
     return built ? { ...built, trending } : null;
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
-  /* Sleeper rolls its state into the new week after Monday Night Football.
-     Tuesday's report card must look backward without dragging the lineup and
-     waiver tools backward with it, so Aftermath gets its own completed-week
-     bundle while every other dashboard feature keeps the current week. */
-  const aftermathWeeklyPromise = Promise.all([analysisPromise, weeklyPromise]).then(async ([analysis, current]) => {
-    if (!current) return current;
-    const reportWeek = (await loadLeagueState()).reportWeek || aftermathReportWeek(current.week);
-    if (reportWeek === current.week) return current;
-    const { loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
-    const [projections, actual] = await Promise.all([
-      loadWeeklyProjections(current.season, reportWeek), loadWeeklyStats(current.season, reportWeek),
-    ]);
-    return buildClubhouseWeekly({
-      analysis, rows: projections?.data || [], actualRows: actual?.data || [],
-      season: current.season, week: reportWeek,
-      fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0),
-    });
-  }).catch(err => { console.warn("aftermath report week unavailable", err); return null; });
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
 
@@ -620,15 +575,17 @@ export async function render(view) {
     if (root) stage = startStage(root, ordered, { refresh });
   };
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, tradeAlerts]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
     lore = got?.error ? null : got;
-    const clubhouse = clubhouseView({
-      analysis, lore: got?.error ? null : got, members: memberRows,
+    const aheadData = await weekAheadSlide({
+      analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
+      lore: got?.error ? null : got,
+    }) || { slides: [], fixtures: [] };
+    const outlook = buildHomeWeekOutlook({
+      analysis, weekly, fixtures: aheadData.fixtures,
       meSleeperId: myMember?.sleeper_user_id || null,
-      standings: standings.data || [],
-      weekly, aftermathWeekly,
     });
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
@@ -641,7 +598,7 @@ export async function render(view) {
     const tradeAlert = tradeViews.find(alert => alert.breakingActive
       && Date.parse(alert.occurredAt || "") >= Date.now() - 30 * 24 * 60 * 60 * 1000) || null;
 
-    /* The two standing sections. POWER RANKINGS and WEEKLY REPORT each own
+    /* The two standing sections. POWER RANKINGS and WEEK AHEAD each own
        their own place on the page, which is exactly why the retired
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
@@ -653,8 +610,7 @@ export async function render(view) {
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) {
-      homeReportSlot.innerHTML = homeWeeklyDigest(clubhouse);
-      wireHomeWeeklyDigest(homeReportSlot, clubhouse);
+      homeReportSlot.innerHTML = homeWeeklyDigest(outlook);
     }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was
@@ -664,7 +620,7 @@ export async function render(view) {
 
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
-    const ahead = await weekAheadSlide({ analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null, lore: got?.error ? null : got }) || [];
+    const ahead = aheadData.slides;
     const extras = [...ahead, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;

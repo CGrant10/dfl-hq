@@ -1866,6 +1866,86 @@
 #home-wrap .home-weekly-digest.is-loading > p,
 #home-wrap .home-rankings-card.is-loading > p { color: var(--home-program-muted); }
 
+/* WEEK AHEAD — a live model board, not a stack of recap cards. */
+#home-wrap .home-weekly-digest > header a {
+  min-height: 32px; display: inline-flex; align-items: center; padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--accent-2) 56%, transparent); border-radius: var(--r-pill);
+  color: var(--accent-2); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .1em; text-decoration: none;
+}
+#home-wrap .home-outlook-block { padding: var(--s-4) 0; border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-outlook-title,
+#home-wrap .home-outlook-players > summary { display: flex; align-items: end; justify-content: space-between; gap: var(--s-3); margin-bottom: 12px; }
+#home-wrap .home-outlook-title h3,
+#home-wrap .home-outlook-players > summary h3 { margin: 2px 0 0; font-family: var(--font-display); font-size: var(--fs-h3); line-height: 1; }
+#home-wrap .home-outlook-title > span,
+#home-wrap .home-outlook-players > summary > span { color: var(--home-program-muted); font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: .08em; }
+#home-wrap .home-outlook-games > div:last-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--home-program-line); }
+#home-wrap .home-outlook-games article { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; background: var(--bg); box-shadow: inset 3px 0 var(--home-program-muted); }
+#home-wrap .home-outlook-games article.is-mine { box-shadow: inset 3px 0 var(--accent-2); }
+#home-wrap .home-outlook-games article > div { min-width: 0; display: grid; gap: 2px; }
+#home-wrap .home-outlook-games article strong,
+#home-wrap .home-outlook-games article span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .home-outlook-games article strong { font-family: var(--font-display); font-size: var(--fs-title-sm); }
+#home-wrap .home-outlook-games article span { color: var(--home-program-muted); font-size: var(--fs-small); }
+#home-wrap .home-outlook-games article p { display: flex; align-items: baseline; gap: 5px; margin: 0; white-space: nowrap; }
+#home-wrap .home-outlook-games article p b { color: var(--accent-2); font-family: var(--font-display); font-size: var(--fs-h3); }
+#home-wrap .home-outlook-games article p :is(em, span) { color: var(--home-program-muted); font-size: var(--fs-small); font-style: normal; }
+#home-wrap .home-outlook-players > summary { margin: 0; cursor: pointer; list-style: none; }
+#home-wrap .home-outlook-players > summary::-webkit-details-marker { display: none; }
+#home-wrap .home-outlook-players > summary::after { content: "−"; color: var(--accent-2); font-size: var(--fs-h3); }
+#home-wrap .home-outlook-players:not([open]) > summary::after { content: "+"; }
+#home-wrap .home-outlook-players > summary > span { margin-left: auto; }
+#home-wrap .home-outlook-players > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+#home-wrap .home-outlook-players section { min-width: 0; border-top: 3px solid var(--accent-2); background: color-mix(in srgb, var(--bg-2) 95%, black 5%); }
+#home-wrap .home-outlook-players section > header { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; border-bottom: 1px solid var(--home-program-line); }
+#home-wrap .home-outlook-players section > header strong { font-family: var(--font-display); font-size: var(--fs-h3); }
+#home-wrap .home-outlook-players ol { margin: 0; padding: 0; list-style: none; }
+#home-wrap .home-outlook-players li { min-width: 0; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 48px; padding: 6px 10px; border-top: 1px solid var(--home-program-line); }
+#home-wrap .home-outlook-players li:first-child { border-top: 0; }
+#home-wrap .home-outlook-players li > b { color: var(--accent-2); font-size: var(--fs-micro); }
+#home-wrap .home-outlook-players li > span { min-width: 0; }
+#home-wrap .home-outlook-players li span > :is(strong, small) { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .home-outlook-players li span > strong { font-size: var(--fs-small); }
+#home-wrap .home-outlook-players li span > small { margin-top: 2px; font-size: .57rem; letter-spacing: 0; }
+#home-wrap .home-outlook-players li > em { color: var(--home-program-ink); font-family: var(--font-display); font-size: var(--fs-title-sm); font-style: normal; }
+#home-wrap .home-outlook-players li.is-empty { display: block; color: var(--home-program-muted); font-size: var(--fs-small); }
+#home-wrap .home-outlook-alarms { display: grid; gap: 1px; margin-bottom: 10px; background: var(--home-program-line); }
+#home-wrap .home-outlook-alarms p { min-width: 0; display: grid; grid-template-columns: auto minmax(0, .45fr) minmax(0, 1fr); gap: 9px; margin: 0; padding: 10px 12px; background: var(--bg); }
+#home-wrap .home-outlook-alarms b { color: var(--danger-ink); font-size: var(--fs-micro); }
+#home-wrap .home-outlook-alarms strong,
+#home-wrap .home-outlook-alarms span { font-size: var(--fs-small); }
+#home-wrap .home-outlook-alarms span { color: var(--home-program-muted); }
+#home-wrap .home-outlook-swaps { display: grid; gap: 1px; background: var(--home-program-line); }
+#home-wrap .home-outlook-swaps article { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 13px 14px; background: var(--bg); }
+#home-wrap .home-outlook-swaps article > div { min-width: 0; display: grid; gap: 2px; }
+#home-wrap .home-outlook-swaps article > div:last-child { text-align: right; }
+#home-wrap .home-outlook-swaps article small { color: var(--ok); }
+#home-wrap .home-outlook-swaps .is-sit small { color: var(--danger-ink); }
+#home-wrap .home-outlook-swaps article strong,
+#home-wrap .home-outlook-swaps article span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#home-wrap .home-outlook-swaps article strong { font-family: var(--font-display); font-size: var(--fs-title-sm); }
+#home-wrap .home-outlook-swaps article span { color: var(--home-program-muted); font-size: var(--fs-small); }
+#home-wrap .home-outlook-swaps article > b { color: var(--ok); font-family: var(--font-display); font-size: var(--fs-h3); }
+#home-wrap .home-outlook-clean { display: grid; gap: 4px; margin: 0; padding: 17px 14px; border-left: 3px solid var(--ok); background: var(--bg); }
+#home-wrap .home-outlook-clean strong { font-family: var(--font-display); font-size: var(--fs-title-sm); }
+#home-wrap .home-outlook-clean span,
+#home-wrap .home-outlook-empty { color: var(--home-program-muted); font-size: var(--fs-small); }
+#home-wrap .home-outlook-startsit footer { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; color: var(--home-program-muted); font-size: var(--fs-small); }
+#home-wrap .home-outlook-startsit footer a { color: var(--accent-2); font-weight: var(--fw-bold); text-decoration: none; white-space: nowrap; }
+
+@media (max-width: 720px) {
+  #home-wrap .home-outlook-players > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  #home-wrap .home-outlook-games > div:last-child,
+  #home-wrap .home-outlook-players > div { grid-template-columns: 1fr; }
+  #home-wrap .home-outlook-players > summary > span { display: none; }
+  #home-wrap .home-outlook-alarms p { grid-template-columns: auto minmax(0, 1fr); }
+  #home-wrap .home-outlook-alarms p span { grid-column: 2; }
+  #home-wrap .home-outlook-swaps article { gap: 7px; padding-inline: 10px; }
+  #home-wrap .home-outlook-startsit footer { display: grid; }
+}
+
 /* TRADE WIRE
    A scoreboard rail, not another floating card. Completed deals remain here
    after the breaking banner is dismissed, with the roster-aware call doing

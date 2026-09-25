@@ -57,14 +57,14 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("wireHomeRankings");
   });
 
-  it("renders the completed week as a story, awards, players and collapsible receipts", () => {
+  it("renders the current week as matchup predictions, player forecasts and Start/Sit advice", () => {
     expect(source).toContain("export function homeWeeklyDigest");
-    expect(source).toContain("THE WEEK, WITHOUT THE BULLSHIT");
-    expect(source).toContain("TOP 3 STARTERS");
-    expect(source).toContain("TOP 3 BENCH");
-    expect(source).toContain("OPEN THE RECEIPTS");
-    expect(source).toContain("data-home-report-share");
-    expect(source).toContain("shareAftermath");
+    expect(source).toContain("WEEK AHEAD");
+    expect(source).toContain("PROJECTED WINNERS");
+    expect(source).toContain("TOP 3 AT EVERY POSITION");
+    expect(source).toContain("START / SIT");
+    expect(source).toContain("FULL START/SIT");
+    expect(source).toContain("buildHomeWeekOutlook");
     expect(source).toContain("data-home-report-slot");
   });
 
