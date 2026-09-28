@@ -181,7 +181,7 @@ function postHtml(r) {
   return `<article class="wall-post" data-wall-post="${esc(r.id)}" data-wall-owner="${esc(r.member_id)}" style="--ident:${esc(accentOf(m))}">
     <div class="wall-head${byline ? " has-byline" : ""}">
       ${avatar}
-      <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}">${esc(name)}</a>
+      <a class="wall-name plainlink" href="#/profile?id=${esc(r.member_id)}"><strong>${esc(name)}</strong>${m?.team_name && m.team_name !== name ? `<small>${esc(m.team_name)}</small>` : ""}</a>
       <time class="wall-when muted tiny" datetime="${esc(r.created_at)}" title="${esc(stampFull(r.created_at))}">${esc(stamp(r.created_at))}</time>
       ${byline}
     </div>

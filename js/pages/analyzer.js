@@ -6,6 +6,7 @@ import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
 import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason } from "../season-outlook.js";
 import { buildFindings } from "../analyzer-findings.js";
 import { playerIdentity } from "../player-presentation.js";
+import { teamIdentity, teamPortrait } from "../team-presentation.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -55,7 +56,7 @@ function briefing(team, teams, projections, count) {
   return `<section class="ta-layout-section">
     <h2 class="section-title">Team report<span class="count">${ordinal(team.overallRank)} of ${count}</span></h2>
     <section class="ta-brief">
-    <h2>${esc(teamName(team))}</h2>
+    <div class="ta-team-identity">${teamIdentity(team, { meta: `Projected ${ordinal(team.rank)} · ${team.ownerName || ""}` })}</div>
     <div class="ta-brief-verdict is-${gradeTone(team.overallGrade)}">
       <b>${esc(team.overallGrade)}</b>
       <div>
@@ -144,7 +145,7 @@ function comparison(team, opponent, teams) {
   ];
   const picker = `<label class="ta-inline-select"><span>Compare with</span><select data-ta-compare aria-label="Team to compare">${teams.filter(other => other.id !== team.id).map(other => `<option value="${esc(other.id)}" ${other.id === opponent.id ? "selected" : ""}>${esc(teamName(other))}</option>`).join("")}</select></label>`;
   return section("HEAD TO HEAD", "Team comparison", { open: true, id: "compare", aside: picker,
-    body: `<div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div>` });
+    body: `<div class="ta-versus-identities">${teamIdentity(team, { meta: `${team.starterGrade} starters`, compact: true })}<b>VS</b>${teamIdentity(opponent, { meta: `${opponent.starterGrade} starters`, compact: true })}</div><div class="ta-compare-summary"><strong>${result.weeklyEdge === 0 ? "Even weekly projection" : `${teamName(result.weeklyEdge > 0 ? team : opponent)} leads by ${Math.abs(result.weeklyEdge).toFixed(1)} per week`}</strong><span>Positive lineup value is highlighted below.</span></div><div class="ta-table-wrap"><table class="ta-table ta-comparison-table"><thead><tr><th>Measure</th><th>${esc(teamName(team))}</th><th>${esc(teamName(opponent))}</th></tr></thead><tbody>${metrics.map(([label, a, b, winner]) => `<tr><td>${esc(label)}</td><td class="${winner === "a" ? "wins" : ""}">${esc(String(a))}</td><td class="${winner === "b" ? "wins" : ""}">${esc(String(b))}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 /*
@@ -166,7 +167,7 @@ function rankings(teams, selectedId, myTeamId) {
   return section("LEAGUE OUTLOOK", "Projected table", { open: true, id: "league",
     hint: `${teams.length} teams`,
     aside: `<span class="ta-inline-note">Grades read starters · depth · overall</span>`,
-    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}"><strong><span class="ta-seed">${team.rank}</span><span class="ta-name">${esc(teamName(team))}</span>${rowMark(team, selectedId, myTeamId)}</strong><small>${esc(team.ownerName)}</small></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
+    body: `<div class="ta-table-wrap"><table class="ta-table ta-league-table is-compact"><thead><tr><th>Team</th><th>Weekly</th><th>Grades</th><th>Best unit</th><th>Need</th></tr></thead><tbody>${teams.map(team => `<tr class="${String(team.id) === String(selectedId) ? "is-current" : ""}"><td><button type="button" data-ta-team="${esc(team.id)}">${teamPortrait(team, { className: "ta-team-mark" })}<span><strong><span class="ta-seed">${team.rank}</span><span class="ta-name">${esc(teamName(team))}</span>${rowMark(team, selectedId, myTeamId)}</strong><small>${esc(team.ownerName)}</small></span></button></td><td data-label="Weekly">${stat(team.lineup.weeklyPoints)}</td><td data-label="Grades"><span class="ta-gradeset"><b class="is-${gradeTone(team.starterGrade)}" title="Starters">${esc(team.starterGrade)}</b><b class="is-${gradeTone(team.depthGrade)}" title="Depth">${esc(team.depthGrade)}</b><b class="is-${gradeTone(team.overallGrade)}" title="Overall">${esc(team.overallGrade)}</b></span></td><td data-label="Best unit">${esc(team.strength || "—")}</td><td data-label="Need">${esc(team.need || "No urgent need")}</td></tr>`).join("")}</tbody></table></div>` });
 }
 
 const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;

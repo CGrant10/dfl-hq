@@ -466,6 +466,11 @@
   font-weight: var(--fw-bold);
   line-height: 1;
 }
+.sb-outcome.is-picked .sb-team-mark::after {
+  content: "✓"; position: absolute; inset: 0; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 84%, #06110b); color: var(--on-accent, #fff);
+  font-size: 1rem; font-weight: 1000;
+}
 
 #sportsbook-wrap .sb-outcome-label {
   min-width: 0;

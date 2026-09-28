@@ -15,6 +15,12 @@
 */
 import { P } from "./broadcast-order.js";
 
+const ordinal = value => {
+  const n = Number(value) || 0, mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}TH`;
+  return `${n}${["TH", "ST", "ND", "RD"][n % 10] || "TH"}`;
+};
+
 /*
   THE TRADE ALERT AND THE NEXT MOVE, AS STAGE SLIDES.
 
@@ -112,17 +118,21 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
   if (mine == null || theirs == null) return null;
   const spread = Math.abs(mine - theirs);
   const favoured = mine === theirs ? null : (mine > theirs ? pairing.mine : pairing.theirs);
+  const h2h = headToHead({ matchups, meSleeperId, oppSleeperId: pairing.theirs.sleeper_user_id });
+  const billing = !h2h?.meetings ? "FIRST MEETING" : h2h.meetings >= 5 ? `RIVALRY · MEETING ${h2h.meetings + 1}`
+    : h2h.streak?.count >= 2 ? `${h2h.streak.holder === "me" ? "YOU" : pairing.theirs.name.toUpperCase()} WON LAST ${h2h.streak.count}` : `${ordinal(h2h.meetings + 1)} MEETING`;
   return {
     source: "auto", pinned: true, id: "matchup-preview", generator: "matchupPreview",
     kind: "mine", treatment: "scoreboard", temporal: "upcoming",
     priority: P.MINE + 20, dwell: 8000,
     kicker: `${season} · Week ${week} · Preview`,
     headline: "Your matchup",
+    tags: [billing],
     /* The story goes in the mood slot and the arithmetic in the where slot -
        the stage gives a scoreboard exactly those two lines, and the history
        is the reason to care about the fixture. */
     moodText: matchupStory({
-      h2h: headToHead({ matchups, meSleeperId, oppSleeperId: pairing.theirs.sleeper_user_id }),
+      h2h,
       theirsName: pairing.theirs.name,
     }),
     whereText: favoured
@@ -130,8 +140,8 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
       : "Projected dead even",
     href: "#/analyzer",
     sides: [
-      { name: pairing.mine.name, score: mine.toFixed(2), up: mine > theirs, down: mine < theirs },
-      { name: pairing.theirs.name, score: theirs.toFixed(2), up: theirs > mine, down: theirs < mine },
+      { name: pairing.mine.name, score: mine.toFixed(2), up: mine > theirs, down: mine < theirs, identity: pairing.mine.identity },
+      { name: pairing.theirs.name, score: theirs.toFixed(2), up: theirs > mine, down: theirs < mine, identity: pairing.theirs.identity },
     ],
   };
 }
@@ -256,8 +266,8 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
       mine: String(a.sleeper_user_id) === String(meSleeperId)
         || String(b.sleeper_user_id) === String(meSleeperId),
       key: [a.sleeper_user_id, b.sleeper_user_id].map(String).sort().join(":"),
-      a: { id: a.sleeper_user_id, name: a.name, score: Number(av.value).toFixed(1), status: av.status, mode: av.mode, up: comparable && av.value > bv.value },
-      b: { id: b.sleeper_user_id, name: b.name, score: Number(bv.value).toFixed(1), status: bv.status, mode: bv.mode, up: comparable && bv.value > av.value },
+      a: { id: a.sleeper_user_id, name: a.name, score: Number(av.value).toFixed(1), status: av.status, mode: av.mode, up: comparable && av.value > bv.value, identity: a.identity },
+      b: { id: b.sleeper_user_id, name: b.name, score: Number(bv.value).toFixed(1), status: bv.status, mode: bv.mode, up: comparable && bv.value > av.value, identity: b.identity },
     };
   }).filter(Boolean);
   /* One fixture is the reader's own game with extra steps - the preview slide

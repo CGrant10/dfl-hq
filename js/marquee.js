@@ -19,6 +19,7 @@
    ===================================================================== */
 
 import { esc } from "./ui.js";
+import { teamPortrait } from "./team-presentation.js";
 
 /*
   THE STATUS VOCABULARY.
@@ -118,6 +119,7 @@ export function marquee({ billing = [], main = false, live = false, final = fals
 
   const tape = sides.map((s) => `
     <div class="mq-side ${s.down ? "is-down" : ""} ${s.up ? "is-up" : ""}"${s.colour ? ` style="--racer:${esc(s.colour)}"` : ""}>
+      ${s.identity ? teamPortrait({ team_name: s.name, identity: s.identity }, { className: "mq-team-mark" }) : ""}
       <span class="mq-side-score"${s.liveKey ? ` data-live-key="${esc(s.liveKey)}" data-live-score="${esc(s.score)}" data-live-state="${esc(s.liveState || "live")}"` : ""}>${esc(s.score)}</span>
       <span class="mq-side-name">${esc(s.name)}</span>
       <span class="mq-side-bar"></span>

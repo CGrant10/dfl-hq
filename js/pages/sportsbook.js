@@ -6,6 +6,7 @@ import { currentMember } from "../members.js";
 import { esc, toast } from "../ui.js";
 import { parseStake, entryReturn, combineOdds, MAX_PICKS } from "../sportsbook-slip.js";
 import { shareTicket } from "../sportsbook-ticket.js";
+import { teamPortrait } from "../team-presentation.js";
 
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
@@ -219,23 +220,28 @@ function bankrollCard(me,wallet,open,autoReady){
        longer opens a slip on the spot - it adds a pick, and a member building
        a 4-pick entry needs to see the four.
 */
-function outcomeButtons(m,outcomes,picked,held){
+const identityKey=value=>String(value||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+function outcomeButtons(m,outcomes,picked,held,members=[]){
   const mine=held||new Set();
+  const identities=new Map();
+  for(const member of members){
+    for(const value of [member.team_name,member.display_name])if(value)identities.set(identityKey(value),member);
+  }
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
   return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}">
-      <span class="sb-team-mark" aria-hidden="true">${inSlip?"&check;":esc(String(o.label||"?").trim().slice(0,1).toUpperCase())}</span>
+      ${teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
       <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
-function marketCard(m,outcomes,canBook,picked,held){
+function marketCard(m,outcomes,canBook,picked,held,members){
   const key=matchupKey(m);
   const kicker=key?`Week ${key[2]} &middot; Matchup`:esc(m.category||"DFL");
-  return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held)}${houseControls(m,outcomes,canBook)}</article>`;
+  return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -257,7 +263,7 @@ function heldOutcomes(bets,marketMap,outcomeMap){
   return held;
 }
 
-function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap){
+function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[]){
   if(!markets.length)return "";
   const picked=new Set(slip.map(String));
   const held=heldOutcomes(bets,marketMap,outcomeMap);
@@ -266,7 +272,7 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap){
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const group=groups.get(cat);
-    const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held));
+    const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members));
     /* A heading is only allowed to say "matchup" if every card under it is
        one; a category that mixes props in gets called what it is. */
     const scope=scopeOf(group),matchups=group.every(matchupKey);
@@ -332,8 +338,6 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
     const on=slip.some(x=>String(x)===id);
     button.classList.toggle("is-picked",on);
     button.setAttribute("aria-pressed",String(on));
-    const mark=button.querySelector(".sb-team-mark");
-    if(mark)mark.innerHTML=on?"&check;":esc(String(outcomeMap.get(id)?.label||"?").trim().slice(0,1).toUpperCase());
   };
 
   const wireBar=()=>{

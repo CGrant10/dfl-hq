@@ -343,6 +343,39 @@
   }
 }
 
+/* One team identity object across fantasy routes. The accent is member-owned,
+   the portrait is optional, and initials remain visible until the image has
+   actually loaded so a bad profile URL never leaves an empty circle. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) .dfl-team {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding-left: 9px; position: relative;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) .dfl-team::before {
+  content: ""; position: absolute; inset: 5px auto 5px 0; width: 2px;
+  border-radius: 2px; background: var(--team-accent, var(--muted));
+}
+.dfl-team-mark {
+  width: 36px; height: 36px; flex: 0 0 auto; position: relative; overflow: hidden;
+  display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--team-accent, var(--line)) 62%, var(--line));
+  background: color-mix(in srgb, var(--team-accent, var(--bg-3)) 13%, var(--bg-3));
+  color: var(--text);
+}
+.dfl-team-mark i { font-style: normal; font-size: .65rem; font-weight: 900; letter-spacing: .03em; }
+.dfl-team-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.dfl-team-mark.has-photo img { opacity: 1; }
+.dfl-team-mark.has-photo i { visibility: hidden; }
+.dfl-team-copy { min-width: 0; display: grid; gap: 2px; }
+.dfl-team-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.dfl-team-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--route-muted, var(--muted)); }
+.dfl-team-record { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--text); }
+.dfl-team-move { font-size: .72rem; font-weight: 900; color: var(--muted); }
+.dfl-team-move.is-up { color: var(--ok); }
+.dfl-team-move.is-down { color: var(--danger); }
+.dfl-team.is-compact .dfl-team-mark { width: 29px; height: 29px; }
+
+.view[data-route="home"] .mq-team-mark { width: clamp(34px, 9vw, 48px); height: clamp(34px, 9vw, 48px); }
+
 /* =====================================================================
    PREMIUM EXPERIENCE LAYER — identity, atmosphere and tactile controls.
    ===================================================================== */

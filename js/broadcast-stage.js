@@ -30,6 +30,7 @@
 import { esc } from "./ui.js";
 import { marquee } from "./marquee.js";
 import { artworkStyle } from "./broadcast-artwork.js";
+import { teamPortrait } from "./team-presentation.js";
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -63,11 +64,12 @@ function scoreboard(item) {
      a label and belongs in the billing; "ABSOLUTE BEATDOWN" is drama and
      belongs in the mood slot. Only the generator knows which it produced. */
   return marquee({
-    billing: [item.kicker, item.headline].filter(Boolean),
+    billing: [item.kicker, item.headline, ...(item.tags || [])].filter(Boolean),
     live: item.temporal === "live",
     final: item.temporal === "final" || item.temporal === "recent",
     sides: (item.sides || []).map((s, index) => ({
       name: s.name, score: s.score, colour: s.colour || "",
+      identity: s.identity || null,
       up: !!s.up, down: !!s.down,
       liveKey: item.temporal === "live" || item.temporal === "final" || item.temporal === "recent"
         ? `scoreboard:${item.id || item.generator || `${item.headline || "matchup"}:${item.kicker || ""}`}:${s.id || index}` : "",
@@ -98,11 +100,11 @@ function slate(item) {
   const rows = (item.fixtures || []).map((fixture) => `
     <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}" data-live-matchup="${esc(fixture.key || "matchup")}">
       <span class="bx-slate-side${fixture.a.up ? " is-up" : ""}">
-        <b>${esc(fixture.a.name)}</b><span class="bx-slate-score is-${esc(fixture.a.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.a.id || "a")}" data-live-score="${esc(fixture.a.score)}" data-live-state="${esc(fixture.a.mode || "projected")}">${esc(fixture.a.score)}</i><small>${esc(fixture.a.status || "YET TO PLAY")}</small></span>
+        <span class="bx-slate-club">${teamPortrait({ team_name: fixture.a.name, identity: fixture.a.identity }, { className: "bx-team-mark" })}<b>${esc(fixture.a.name)}</b></span><span class="bx-slate-score is-${esc(fixture.a.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.a.id || "a")}" data-live-score="${esc(fixture.a.score)}" data-live-state="${esc(fixture.a.mode || "projected")}">${esc(fixture.a.score)}</i><small>${esc(fixture.a.status || "YET TO PLAY")}</small></span>
       </span>
       <span class="bx-slate-v" aria-hidden="true">v</span>
       <span class="bx-slate-side${fixture.b.up ? " is-up" : ""}">
-        <b>${esc(fixture.b.name)}</b><span class="bx-slate-score is-${esc(fixture.b.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.b.id || "b")}" data-live-score="${esc(fixture.b.score)}" data-live-state="${esc(fixture.b.mode || "projected")}">${esc(fixture.b.score)}</i><small>${esc(fixture.b.status || "YET TO PLAY")}</small></span>
+        <span class="bx-slate-club">${teamPortrait({ team_name: fixture.b.name, identity: fixture.b.identity }, { className: "bx-team-mark" })}<b>${esc(fixture.b.name)}</b></span><span class="bx-slate-score is-${esc(fixture.b.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.b.id || "b")}" data-live-score="${esc(fixture.b.score)}" data-live-state="${esc(fixture.b.mode || "projected")}">${esc(fixture.b.score)}</i><small>${esc(fixture.b.status || "YET TO PLAY")}</small></span>
       </span>
     </li>`).join("");
   return `

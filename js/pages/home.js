@@ -39,7 +39,8 @@ import { powerPulseView } from "../power-pulse.js";
 import { buildClubhouseWeekly } from "../home-clubhouse.js";
 import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlook.js";
 import { buildNextMove } from "../next-move.js";
-import { teamInitials, weekHasStarted } from "../league-trajectory.js";
+import { weekHasStarted } from "../league-trajectory.js";
+import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
@@ -77,10 +78,7 @@ function rankMove(value) {
 */
 function memberAvatar(team, members, cls) {
   const member = (members || []).find(row => String(row.sleeper_user_id) === String(team?.sleeper_user_id));
-  const photo = member?.profile_image;
-  if (photo) return `<img class="${cls}" src="${esc(photo)}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
-  const name = member?.team_name || member?.display_name || team?.team_name || "?";
-  return `<span class="${cls} home-rank-initials" aria-hidden="true">${esc(teamInitials(name))}</span>`;
+  return teamPortrait({ ...team, identity: team?.identity || member || null }, { className: `${cls} home-rank-initials` });
 }
 
 
@@ -359,6 +357,8 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
     return {
       sleeper_user_id: team.sleeper_user_id,
       name: team.team_name || team.ownerName || "Unnamed",
+      ownerName: team.ownerName || "",
+      identity: team.identity || null,
       projection: projectionOf(team.sleeper_user_id),
       actual: actualOf(team.sleeper_user_id),
       played: Number(weeklyTeam?.played) || 0,

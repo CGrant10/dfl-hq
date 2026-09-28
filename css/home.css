@@ -495,9 +495,11 @@
 /* .wall-who is gone: it existed only to stack the name and the byline in one
    grid cell, which is the constraint that squeezed the byline. */
 .wall-name {
-  font-weight: var(--fw-bold);
+  display: grid; min-width: 0; font-weight: var(--fw-bold);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.wall-name strong,.wall-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wall-name small { color: var(--muted); font-size: var(--fs-micro); font-weight: 700; letter-spacing: .035em; }
 .wall-when { white-space: nowrap; align-self: start; }
 
 .wall-body {

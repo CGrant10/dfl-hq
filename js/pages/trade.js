@@ -22,6 +22,7 @@ import { shareDeal } from "../trade-card.js";
 import { suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
+import { teamIdentity, teamPortrait } from "../team-presentation.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -50,7 +51,7 @@ function offerMarkup(offer, pool) {
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
   const depth = Number(offer.depthDeltaA) || 0;
   return `<article class="tb-offer">
-    <header><span>${shapeLabel(offer)}</span><small><strong>${esc(teamName(offer.other))}</strong> · LINEUP ${signed(offer.weeklyDeltaA)} · DEPTH ${signed(depth)}</small><b>${call}</b></header>
+    <header><span>${shapeLabel(offer)}</span><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<span><strong>${esc(teamName(offer.other))}</strong><i>${esc(offer.other.ownerName || "Roster owner")} · LINEUP ${signed(offer.weeklyDeltaA)} · DEPTH ${signed(depth)}</i></span></small><b>${call}</b></header>
     <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
   </article>`;
 }
@@ -146,6 +147,7 @@ function tradeLab(team, teams, pool, shop) {
       <div class="tb-workbench-card">
         <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
         <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner><option value="all" ${allPartners ? "selected" : ""}>All teams · Shop league-wide</option>${otherTeams.map(item => `<option value="${esc(item.id)}" ${!allPartners && String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
+        <div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(partner, { meta: "TRADE WITH", compact: true })}</div>
         <div class="tb-blueprint">
           <section><header><small>YOU CAN SEND</small><span>Optional anchors</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
           ${allPartners ? `<section class="tb-league-return"><header><small>YOU WANT</small><span>Any team</span></header><div><b>Best league-wide return</b><small>We will match your outgoing package against every roster. Pick one team above to require a specific player.</small></div></section>`

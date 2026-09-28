@@ -41,6 +41,7 @@ async function fetchAnalyzerData() {
     const member = bySleeper.get(String(roster.sleeper_user_id));
     return {
       ...roster,
+      identity: member || null,
       ownerName: roster.display_name || member?.display_name || "Unassigned owner",
       team_name: roster.team_name || member?.team_name || roster.display_name || member?.display_name || `Team ${roster.roster_id}`,
     };
@@ -84,7 +85,7 @@ async function fetchAnalyzerData() {
   const teams = analyzeLeague({ rosters: namedRosters, pool });
   return {
     state: teams.length ? "ready" : "empty",
-    league, rosterSeason, projectionSeason, teams, pool,
+    league, rosterSeason, projectionSeason, teams, pool, members,
     matchups: matchupRes?.error ? [] : (matchupRes?.data || []),
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,

@@ -1025,9 +1025,11 @@
 }
 /* The right-hand team mirrors so both scores sit against the middle. */
 .bx-slate-side:last-child { grid-template-columns: auto minmax(0, 1fr); }
-.bx-slate-side:last-child > b { order: 2; text-align: left; }
+.bx-slate-side:last-child > .bx-slate-club { order: 2; flex-direction: row-reverse; text-align: left; }
 .bx-slate-side:last-child > .bx-slate-score { order: 1; justify-items: start; }
-.bx-slate-side > b {
+.bx-slate-club { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; }
+.bx-slate-club > .bx-team-mark { width: 22px; height: 22px; font-size: .5rem; }
+.bx-slate-club > b {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1064,7 +1066,7 @@
 /* Only the projected winner is lit, so the favourite is readable at a glance
    without colouring half the card. */
 .bx-slate-side.is-up .bx-slate-score > i { color: var(--accent-2, var(--accent)); }
-.bx-slate-side.is-up > b { color: var(--text); }
+.bx-slate-side.is-up .bx-slate-club > b { color: var(--text); }
 .bx-slate-row .bx-slate-side.is-up {
   border-radius: 5px;
   background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-2, var(--accent)) 8%, transparent));
