@@ -59,7 +59,7 @@ export async function loadWall(limit = 12) {
 export function wallCard(rows, { compact = false } = {}) {
   if (rows == null) return "";
   const me = currentMember();
-  const visibleRows = compact ? rows.slice(0, 1) : rows;
+  const visibleRows = compact ? rows.slice(0, 3) : rows;
   return `<section class="block wall${compact ? " is-preview" : ""}">
     <h2 class="section-title">The Wall${compact ? `<a class="section-link" href="#/wall">Open the Wall →</a>` : ""}</h2>
     <div class="card wall-card">

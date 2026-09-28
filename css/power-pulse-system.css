@@ -412,7 +412,10 @@
 
 /* The Trade Board had a legacy monogram column; the shared player component
    now owns that footprint. */
-.view[data-route="trade"] .tb-player > .dfl-player { width: 100%; }
+.view[data-route="trade"] .tb-player > .dfl-player {
+  width: 100%;
+  grid-column: 1 / -1;
+}
 .view[data-route="trade"] .tb-player > .dfl-player > em { margin-left: auto; }
 .view[data-route="analyzer"] .ta-player { min-width: 210px; }
 

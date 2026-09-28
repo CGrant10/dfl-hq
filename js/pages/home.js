@@ -534,7 +534,7 @@ export async function render(view) {
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
-      slot.innerHTML = wallCard(await loadWall(1), { compact: true });
+      slot.innerHTML = wallCard(await loadWall(3), { compact: true });
       wireWall(slot, redrawWall);
     } catch (err) {
       console.warn("wall unavailable", err);
