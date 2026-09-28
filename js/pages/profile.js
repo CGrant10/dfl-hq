@@ -24,6 +24,7 @@ import { mountProfileNotifications } from "../profile-notifications.js";
 /* The same derivation the history page reads, so a career and the record
    book can never disagree about the same game. */
 import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
+import { experienceSettingsMarkup, wireExperienceSettings } from "../experience.js";
 
 export async function render(view) {
   const wanted = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
@@ -522,6 +523,7 @@ function appearanceCard() {
       <p class="muted tiny" id="mode-note">${esc(modeNote())}</p>
       ${isTeamMode(want) ? `<p class="muted tiny">Wearing ${esc(modeLabel(want))} colours.
         Change that with your favourite club at the top of this page.</p>` : ""}
+      ${experienceSettingsMarkup()}
     </div>`;
 }
 
@@ -558,6 +560,7 @@ function wireThemePicker(view) {
     const note = view.querySelector("#mode-note");
     if (note) note.textContent = modeNote();
   });
+  wireExperienceSettings(card);
 }
 
 // ------------------------------ others --------------------------------

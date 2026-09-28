@@ -21,6 +21,7 @@ import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdi
 import { shareDeal } from "../trade-card.js";
 import { suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
+import { playerIdentity } from "../player-presentation.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -39,9 +40,8 @@ const OFFER_BATCH_SIZE = 6;
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
     const player = pool.get(String(id));
-    const initials = (player?.name || String(id)).split(/\s+/).map(part => part[0]).join("").slice(0, 2);
     const signal = player?.injuryStatus || (player?.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
-    return `<span class="tb-player"><i>${esc(initials)}</i><span><b>${esc(player?.name || String(id))}</b><small>${esc([player?.position, player?.nflTeam, signal].filter(Boolean).join(" · "))}</small></span></span>`;
+    return `<span class="tb-player">${playerIdentity(player || { id, name: String(id) }, { detail: [player?.position, player?.nflTeam].filter(Boolean).join(" · "), signal })}</span>`;
   }).join("");
 }
 

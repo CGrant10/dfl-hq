@@ -24,6 +24,7 @@ import { mountSeasonNavigation } from "./season-nav.js";
 import { mountNotificationBell } from "./notifications.js";
 import { mountQuickSleeperSync, refreshQuickSleeperSync } from "./quick-sleeper-sync.js";
 import { mountBreakingTradeCoverage } from "./breaking-trade.js";
+import { startExperience, syncExperience } from "./experience.js";
 
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
@@ -234,6 +235,7 @@ window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+  startExperience();
   mountNotificationBell();
   mountQuickSleeperSync();
   mountBreakingTradeCoverage();
@@ -247,7 +249,7 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give 
     swapped rather than racing it, and Back/Forward get the same treatment as a
     tap because the router handles all three identically.
   */
-  onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); });
+  onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); syncExperience(document.getElementById("view"), name); });
   /* Background conveniences used to compete with Home for the same Supabase
      connection: the ticker alone repeats five dashboard reads. Let the first
      route settle, then start presence, updates, notifications and PWA caching. */

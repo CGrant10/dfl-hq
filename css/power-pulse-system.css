@@ -344,6 +344,152 @@
 }
 
 /* =====================================================================
+   PREMIUM EXPERIENCE LAYER — identity, atmosphere and tactile controls.
+   ===================================================================== */
+
+/* Player identity is one component everywhere: portrait, club colour,
+   football context and a compact availability/trend signal. */
+.view[data-pulse-system="1"] .dfl-player {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+}
+.view[data-pulse-system="1"] .dfl-player-portrait {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--player-primary, var(--accent)) 54%, var(--line));
+  border-radius: 50%;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--player-primary, var(--accent-fill)) 72%, var(--bg-2)),
+    color-mix(in srgb, var(--player-secondary, var(--accent-2-fill)) 48%, var(--bg)));
+  box-shadow: inset 0 1px color-mix(in srgb, white 18%, transparent);
+}
+.view[data-pulse-system="1"] .dfl-player-portrait i {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: var(--fs-micro);
+  font-style: normal;
+  font-weight: var(--fw-bold);
+}
+.view[data-pulse-system="1"] .dfl-player-portrait img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.view[data-pulse-system="1"] .dfl-player-portrait.is-team img { padding: 4px; object-fit: contain; }
+.view[data-pulse-system="1"] .dfl-player-copy { min-width: 0; display: grid; }
+.view[data-pulse-system="1"] .dfl-player-copy strong,
+.view[data-pulse-system="1"] .dfl-player-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view[data-pulse-system="1"] .dfl-player-copy strong { color: var(--text); font-size: var(--fs-small); }
+.view[data-pulse-system="1"] .dfl-player-copy small { margin-top: 1px; color: var(--route-muted, var(--muted)); font-size: var(--fs-micro); }
+.view[data-pulse-system="1"] .dfl-player > em {
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--route-muted, var(--muted));
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: var(--fw-bold);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.view[data-pulse-system="1"] .dfl-player > em.is-up { border-color: var(--ok-line); color: var(--ok); background: var(--ok-bg); }
+.view[data-pulse-system="1"] .dfl-player > em.is-down,
+.view[data-pulse-system="1"] .dfl-player > em.is-danger { border-color: var(--danger-line); color: var(--danger-ink); background: var(--danger-bg); }
+
+/* The Trade Board had a legacy monogram column; the shared player component
+   now owns that footprint. */
+.view[data-route="trade"] .tb-player > .dfl-player { width: 100%; }
+.view[data-route="trade"] .tb-player > .dfl-player > em { margin-left: auto; }
+.view[data-route="analyzer"] .ta-player { min-width: 210px; }
+
+/* Context changes the room, not the layout. These are static washes: no
+   particle field, no continuous flicker, and Golf never receives a state. */
+body[data-atmosphere] .view[data-pulse-system="1"] {
+  background-image: radial-gradient(ellipse 80% 260px at 50% 0,
+    var(--dfl-atmosphere, transparent), transparent 72%);
+  background-repeat: no-repeat;
+}
+body[data-atmosphere="pregame"] { --dfl-atmosphere: color-mix(in srgb, var(--accent-2-fill) 7%, transparent); }
+body[data-atmosphere="live"] { --dfl-atmosphere: color-mix(in srgb, var(--ok) 8%, transparent); }
+body[data-atmosphere="final"] { --dfl-atmosphere: color-mix(in srgb, var(--milestone) 10%, transparent); }
+body[data-atmosphere="breaking"] { --dfl-atmosphere: color-mix(in srgb, var(--accent-fill) 10%, transparent); }
+body[data-atmosphere="front-office"] { --dfl-atmosphere: color-mix(in srgb, var(--accent-2-fill) 6%, transparent); }
+body[data-atmosphere="sportsbook"] { --dfl-atmosphere: color-mix(in srgb, var(--milestone) 8%, transparent); }
+
+/* A signature event gets one fast broadcast sweep, never a looping effect. */
+body.is-dfl-moment::after {
+  content: "";
+  position: fixed;
+  z-index: 80;
+  inset: var(--topbar-h, 56px) 0 auto;
+  height: 3px;
+  pointer-events: none;
+  background: var(--accent-sweep);
+  transform-origin: left;
+  animation: dfl-moment-sweep .7s var(--ease) both;
+}
+body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90deg, transparent, var(--milestone), transparent); }
+@keyframes dfl-moment-sweep {
+  0% { opacity: 0; transform: scaleX(0); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: scaleX(1); }
+}
+
+/* Device feedback lives with appearance because it is a device preference. */
+.experience-settings {
+  display: grid;
+  gap: 1px;
+  margin-top: var(--s-4);
+  border-block: 1px solid var(--line);
+  background: var(--line);
+}
+.experience-settings label {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  background: var(--bg-2);
+}
+.experience-settings label > span { min-width: 0; display: grid; }
+.experience-settings label strong { color: var(--text); font-size: var(--fs-small); }
+.experience-settings label small { color: var(--route-muted, var(--muted)); font-size: var(--fs-micro); line-height: var(--lh-snug); }
+.experience-settings input { width: 20px; height: 20px; accent-color: var(--accent); }
+.experience-settings .btn { width: max-content; margin: var(--s-3) 0; }
+
+/* Existing loading treatment now has the footprint of real content, so a
+   route feels fast and does not collapse while data arrives. */
+.view[data-pulse-system="1"] .state.is-loading {
+  min-height: 132px;
+  background-color: var(--hover-soft);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 8%, transparent), color-mix(in srgb, var(--text) 8%, transparent)),
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 5%, transparent), color-mix(in srgb, var(--text) 5%, transparent));
+  background-position: center calc(50% + 24px), center calc(50% + 38px);
+  background-repeat: no-repeat;
+  background-size: min(190px, 52%) 6px, min(130px, 38%) 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-dfl-moment::after { animation: none; opacity: 0; }
+}
+
+/* =====================================================================
    OUTSIDE-HEADING LAYOUT
    ---------------------------------------------------------------------
    Profile and Facts establish one important rule: the label and its red rail

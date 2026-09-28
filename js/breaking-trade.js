@@ -7,6 +7,7 @@ let host = null;
 let timer = 0;
 let currentId = null;
 let currentAlert = null;
+let announcedId = null;
 let loading = false;
 const excludedRoute = () => /^#\/(golf|broadcast|arena(?:-|\?|$))/.test(location.hash || "");
 
@@ -66,6 +67,10 @@ async function refresh({ force = false } = {}) {
     host.innerHTML = markup(alert);
     host.hidden = false;
     document.body.classList.add("has-breaking-trade");
+    if (String(announcedId) !== String(alert.id)) {
+      announcedId = alert.id;
+      window.dispatchEvent(new CustomEvent("dfl:moment", { detail: { kind: "alert", source: alert.kind === "custom" ? "custom-alert" : "trade" } }));
+    }
   } catch (error) {
     console.warn("breaking trade coverage unavailable", error);
   } finally {

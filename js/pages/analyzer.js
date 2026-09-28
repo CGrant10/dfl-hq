@@ -5,6 +5,7 @@ import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { HISTORY_SEASONS, wireTrendPanel } from "../trend-panel.js";
 import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason } from "../season-outlook.js";
 import { buildFindings } from "../analyzer-findings.js";
+import { playerIdentity } from "../player-presentation.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -126,7 +127,7 @@ function rosterReport(team, pool) {
     const role = starting ? (player.id === flexId ? "Flex" : "Starter") : "Bench";
     const divider = index === team.lineup.starters.length && team.lineup.bench.length ? `<tr class="ta-roster-divider"><td colspan="9">DEPTH · GRADED SEPARATELY FROM THE STARTING LINEUP</td></tr>` : "";
     const status = player.injuryStatus || (player.trendBasis === "recent" ? `${trendLabel(player.trend)} · last ${player.recentGames}` : "");
-    return `${divider}<tr class="${starting ? "is-starter" : "is-bench"}"><td><div class="ta-player"><b>${esc(player.name)}</b><small>${esc([player.position, player.nflTeam, status].filter(Boolean).join(" · "))}</small></div></td><td data-label="Role"><span class="ta-role">${role}</span></td><td data-label="Expected"><strong class="ta-expected">${stat(player.expectedPoints)}</strong></td><td data-label="Per game">${stat(player.expectedPerGame, 2)}</td><td data-label="Trend"><span class="ta-trend is-${esc(player.trend)}">${esc(trendLabel(player.trend))}</span></td><td data-label="Projection">${stat(player.projectedPoints)}</td><td data-label="Prior pace">${stat(player.priorPace)}</td><td data-label="Pos rank"><strong>${rankText(player.positionRank, player.positionCount)}</strong></td><td data-label="Value"><b class="ta-value">${player.tradeValue}</b></td></tr>`;
+    return `${divider}<tr class="${starting ? "is-starter" : "is-bench"}"><td><div class="ta-player">${playerIdentity(player, { detail: [player.position, player.nflTeam].filter(Boolean).join(" · "), signal: status })}</div></td><td data-label="Role"><span class="ta-role">${role}</span></td><td data-label="Expected"><strong class="ta-expected">${stat(player.expectedPoints)}</strong></td><td data-label="Per game">${stat(player.expectedPerGame, 2)}</td><td data-label="Trend"><span class="ta-trend is-${esc(player.trend)}">${esc(trendLabel(player.trend))}</span></td><td data-label="Projection">${stat(player.projectedPoints)}</td><td data-label="Prior pace">${stat(player.priorPace)}</td><td data-label="Pos rank"><strong>${rankText(player.positionRank, player.positionCount)}</strong></td><td data-label="Value"><b class="ta-value">${player.tradeValue}</b></td></tr>`;
   }).join("")}</tbody></table></div>` });
 }
 

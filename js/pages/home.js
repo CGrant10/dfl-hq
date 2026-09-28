@@ -43,6 +43,7 @@ import { teamInitials, weekHasStarted } from "../league-trajectory.js";
 import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
+import { playerIdentity } from "../player-presentation.js";
 import { loadLeagueState } from "../league-state.js";
 
 let stage = null;
@@ -131,7 +132,7 @@ function outlookPlayerRow(player, index) {
   const matchup = player.matchup ? ` · ${player.matchup.tone} vs ${player.matchup.opponent}`
     : player.opponent ? ` · vs ${player.opponent}` : "";
   const source = player.scoreSource === "actual" ? "ACTUAL" : "PROJ";
-  return `<li><b>${index + 1}</b><span><strong>${esc(player.name)}</strong><small>${esc(`${player.nflTeam || "FA"} · ${player.ownerName}${matchup}`)}</small></span><em class="is-${player.scoreSource}"><strong>${Number(player.points).toFixed(1)}</strong><small>${source}</small></em></li>`;
+  return `<li><b>${index + 1}</b>${playerIdentity(player, { detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource}"><strong>${Number(player.points).toFixed(1)}</strong><small>${source}</small></em></li>`;
 }
 
 function playerScoreLine(player) {

@@ -12,6 +12,19 @@ const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",ho
 const isOpen=m=>m.status==="open"&&(!m.closes_at||new Date(m.closes_at)>new Date());
 const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
 const num=n=>Number(n||0).toLocaleString();
+function announceFreshPayout(bets,memberId){
+  const won=(bets||[]).find(b=>b.status==="won");
+  if(!won)return;
+  const key=`dfl.sportsbook.payout.${memberId}`;
+  try{
+    if(localStorage.getItem(key)===String(won.id))return;
+    localStorage.setItem(key,String(won.id));
+  }catch{}
+  const EventCtor=globalThis.CustomEvent;
+  if(globalThis.window?.dispatchEvent&&EventCtor){
+    window.dispatchEvent(new EventCtor("dfl:moment",{detail:{kind:"payout",source:"sportsbook",id:won.id}}));
+  }
+}
 
 /*
   THE MIGRATION MIGHT NOT BE RUN YET.
@@ -143,6 +156,7 @@ export async function render(view){
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);
   if(canBook)wireCommissioner(view);
+  announceFreshPayout(bets,me.id);
 }
 
 function trendingPicks(rows){
