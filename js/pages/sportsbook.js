@@ -77,25 +77,39 @@ function mastheadCaption(open){
 */
 let slip=[];
 
+/* The Sportsbook is intentionally allowed to open even when the member
+   directory is unavailable: the moneyline still works with initials. In the
+   normal app this resolves from members.js' shared cache, so adding faces and
+   club colours costs no extra database trip after boot. Keeping the import
+   optional also makes old/offline installs degrade cleanly. */
+async function loadSportsbookIdentities(){
+  try{
+    const membersModule=await import("../members.js");
+    return typeof membersModule.loadMemberDirectory==="function"
+      ? await membersModule.loadMemberDirectory() : [];
+  }catch{return []}
+}
+
 export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets,trends;
+  let wallet,ledger,leaders,markets,outcomes,bets,trends,members;
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
-    const[lr,br,mr,or,btr,tr]=await Promise.all([
+    const[lr,br,mr,or,btr,tr,memberRows]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
       db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100),
       db().from("sportsbook_outcomes").select("*").order("sort_order"),
       db().rpc("sportsbook_my_bets",{row_limit:30}),
-      db().rpc("sportsbook_trending_picks",{row_limit:3})
+      db().rpc("sportsbook_trending_picks",{row_limit:3}),
+      loadSportsbookIdentities()
     ]);
     const err=lr.error||br.error||mr.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];
+    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
@@ -138,7 +152,7 @@ export async function render(view){
     ${trendingPicks(trends)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap)}
+    ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap,members)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>

@@ -22,7 +22,10 @@ vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], db:()=>({
   rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
-vi.mock('../members.js',()=>({currentMember:()=>({display_name:'Preview'})}));
+vi.mock('../members.js',()=>({
+  currentMember:()=>({display_name:'Preview'}),
+  loadMemberDirectory:async()=>[{display_name:'Owner A',team_name:'Team <A>',profile_image:'https://example.com/team-a.jpg',accent_color:'#22C7A9'}]
+}));
 vi.mock('../sportsbook-ticket.js',()=>({shareTicket:vi.fn()}));
 import { render } from './sportsbook.js';
 
@@ -33,6 +36,8 @@ it('renders the real markets and wallet with separate accessible ticket panel', 
   await render(view);
   expect(view.innerHTML).toContain('2,400');
   expect(view.innerHTML).toContain('Team &lt;A&gt;');
+  expect(view.innerHTML).toContain('https://example.com/team-a.jpg');
+  expect(view.innerHTML).toContain('--team-accent:#22C7A9');
   expect(view.innerHTML).toContain('data-bet-outcome="2"');
   expect(view.innerHTML).toContain('id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden');
   expect(view.innerHTML).toContain('No tickets yet');
