@@ -239,10 +239,13 @@ function announceReady() {
   Broadcast and Arena Beta own full-screen motion systems of their own. Mixing
   this layer into either would make both weaker, so they deliberately opt out.
 */
-const pulseMotionRoutes = new Set(["broadcast", "arena-beta"]);
+/* Golf keeps its own visual language until its dedicated redesign. It must
+   opt out here, not merely in a few CSS selectors, otherwise newly added
+   shared components can silently restyle it later. */
+const pulseOptOutRoutes = new Set(["broadcast", "arena-beta", "golf"]);
 function decoratePulseSystem(view, name) {
   view.dataset.route = name;
-  if (pulseMotionRoutes.has(name)) return;
+  if (pulseOptOutRoutes.has(name)) return;
   view.dataset.pulseSystem = "1";
   const bareTitle = view.querySelector(":scope > h1:first-of-type");
   bareTitle?.classList.add("dfl-page-title");

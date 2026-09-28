@@ -293,10 +293,10 @@
   }
 }
 
-/* Route changes use Power Pulse's actual 28px deck-slide motion. */
+/* Route changes use one quiet fade; layout remains optically stationary. */
 @keyframes dfl-pulse-surface-in {
-  from { opacity: 0; transform: translate3d(0,8px,0); }
-  to { opacity: 1; transform: translate3d(0,0,0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes dfl-pulse-rail-in {
   from { transform: scaleX(0); opacity: .25; }
@@ -661,5 +661,247 @@
   .view[data-route="trade"][data-pulse-system="1"] .ta-report-section:hover {
     transform: none;
     box-shadow: none;
+  }
+}
+
+/* =====================================================================
+   APP-WIDE POLISH — Home's quieter finish on every standard DFL route.
+
+   Golf has no data-pulse-system attribute (router.js enforces that), and
+   every selector still carries an explicit route guard as a second lock.
+   Broadcast and Arena Beta also retain their purpose-built presentation.
+   ===================================================================== */
+.view[data-pulse-system="1"]:not([data-route="golf"]) {
+  --route-muted: color-mix(in srgb, var(--text) 68%, var(--bg));
+  --route-gutter: clamp(16px, 3.5vw, 24px);
+}
+
+/* Type hierarchy: page → section → component → supporting copy. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .page-head,
+  .notification-head,
+  .dfl-page-title
+) h1,
+.view[data-pulse-system="1"]:not([data-route="golf"]) h1.dfl-page-title {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .section-title,
+  .section-head > :first-child,
+  .notification-section-title > :first-child,
+  .ta-report-title h2
+) {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-tight);
+  letter-spacing: .045em;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .card-title,
+  .card-heading,
+  .state-title
+) {
+  font-size: var(--fs-title-sm);
+  line-height: var(--lh-snug);
+  letter-spacing: .015em;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .page-sub,
+  .section-copy,
+  .card-meta,
+  .card-body,
+  .muted,
+  .tiny,
+  small
+) { color: var(--route-muted); }
+
+/* Shared section rhythm and comfortable mobile-safe edges. */
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) :is(
+  .page-head,
+  .notification-head,
+  .dfl-page-title
+) {
+  margin-bottom: var(--s-6);
+  padding-inline: var(--route-gutter);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) :is(
+  .block,
+  .fin-section,
+  .ta-layout-section,
+  .tb-layout-section,
+  .notification-inbox
+) + :is(
+  .block,
+  .fin-section,
+  .ta-layout-section,
+  .tb-layout-section,
+  .notification-inbox
+) { margin-top: var(--s-7); }
+
+/* Section headings live outside their content surface with one branded rail. */
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 36px;
+  margin: 0 0 var(--s-3);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .section-title::after {
+  content: "";
+  flex: 1;
+  min-width: 24px;
+  height: 2px;
+  order: 1;
+  background: linear-gradient(90deg, var(--theme-primary), transparent 88%);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .section-title > :first-child:not(.count):not(.section-link) {
+  order: 0;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .section-title :is(.count,.section-link) {
+  order: 2;
+  flex: none;
+}
+
+/* Cards keep depth, but nested chrome is reduced to dividers and surfaces. */
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .card {
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .card .card {
+  margin-bottom: 0;
+  border-color: color-mix(in srgb, var(--line) 74%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+  box-shadow: none;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) :is(
+  .card-title-row,
+  .card-heading + .card-body,
+  .statgrid,
+  .table-wrap,
+  .tblwrap,
+  .ta-table-wrap
+) { border-color: color-mix(in srgb, var(--line) 82%, var(--text) 18%); }
+
+/* Same flat control rails introduced on Home. */
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > * {
+  min-height: 44px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > * + * {
+  border-left: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > :is(
+  .on,
+  .active,
+  [aria-selected="true"]
+) {
+  border: 0;
+  background: color-mix(in srgb, var(--accent-fill) 7%, transparent);
+  box-shadow: inset 0 -2px var(--accent);
+}
+
+/* Dense data stays readable without looking like a boxed spreadsheet. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .tbl,
+  .ta-table,
+  .table-wrap table
+) {
+  font-variant-numeric: tabular-nums;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+  .tbl,
+  .ta-table,
+  .table-wrap table
+) tbody tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+/* Loading and empty surfaces reserve useful space instead of collapsing. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.state,.empty) {
+  min-height: 104px;
+  align-content: center;
+  padding: var(--s-5);
+  color: var(--route-muted);
+}
+
+/* One restrained fade per route. No lift, zoom, or sideways table motion. */
+@keyframes dfl-pulse-surface-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.view[data-pulse-system="1"] :is(
+  .card,
+  .ta-report-section,
+  .so-panel,
+  .wo-panel,
+  .factcard,
+  .fleece-card,
+  .profile-settings,
+  .notification-item,
+  .subcard,
+  .ta-toolbar,
+  .bag-card,
+  .gd-card
+) { transition: border-color .24s ease, background-color .24s ease, box-shadow .24s ease; }
+
+@media (hover: hover) and (pointer: fine) {
+  .view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+    .card,
+    .ta-report-section,
+    .so-panel,
+    .wo-panel,
+    .factcard,
+    .fleece-card,
+    .profile-settings,
+    .notification-item,
+    .subcard,
+    .ta-toolbar
+  ):hover { transform: none; }
+  .view[data-pulse-system="1"]:not([data-route="golf"]) :is(
+    .tbl,
+    .ta-table,
+    .table-wrap table
+  ) tbody tr:hover { transform: none; }
+}
+
+/* Power Rankings is Home's dense table, so it receives the same flatter row
+   and readable metadata treatment without changing its approved structure. */
+.view[data-route="home"][data-pulse-system="1"] #home-wrap .home-rank-summary {
+  background: color-mix(in srgb, var(--bg-2) 44%, transparent);
+}
+.view[data-route="home"][data-pulse-system="1"] #home-wrap .home-rankings-card ol > li {
+  background: transparent;
+  transition: background-color var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
+}
+.view[data-route="home"][data-pulse-system="1"] #home-wrap .home-rankings-card ol > li:nth-child(odd):not(.home-rank-ellipsis) {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.view[data-route="home"][data-pulse-system="1"] #home-wrap .home-rankings-card ol > li.is-me {
+  background: color-mix(in srgb, var(--accent-fill) 9%, transparent);
+}
+
+@media (max-width: 620px) {
+  .view[data-pulse-system="1"]:not([data-route="golf"]) { --route-gutter: 16px; }
+  .view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > * {
+    min-width: max-content;
+    padding-inline: var(--s-3);
+    font-size: var(--fs-label);
+  }
+  .view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .card {
+    padding: var(--s-4);
   }
 }

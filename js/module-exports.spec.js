@@ -199,10 +199,11 @@ describe("the initial app shell", () => {
     expect(router).toContain("decoratePulseSystem(view, name)");
     expect(router).toContain('view.dataset.pulseSystem = "1"');
     expect(router).toContain('bareTitle?.classList.add("dfl-page-title")');
-    expect(router).toContain('new Set(["broadcast", "arena-beta"])');
+    expect(router).toContain('new Set(["broadcast", "arena-beta", "golf"])');
     expect(screens).toContain("dfl-pulse-surface-in");
     expect(screens).toContain("prefers-reduced-motion: reduce");
-    expect(screens).toContain("translate3d(0,8px,0)");
+    expect(screens).not.toContain("translate3d(0,8px,0)");
+    expect(screens).toContain("from { opacity: 0; }");
     expect(screens).not.toContain("scale(.992)");
     expect(screens).toContain("details::details-content");
     expect(screens).not.toContain("animation: dfl-pulse-surface-in 340ms linear");
