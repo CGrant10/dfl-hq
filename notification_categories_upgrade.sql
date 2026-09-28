@@ -18,7 +18,7 @@ create or replace function public.notify_settled_sportsbook_ticket()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   if old.status = 'open' and new.status in ('won','lost','void') then
@@ -37,6 +37,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.notify_settled_sportsbook_ticket() from public;
 
 drop trigger if exists sportsbook_ticket_notification on public.sportsbook_bets;
 create trigger sportsbook_ticket_notification
