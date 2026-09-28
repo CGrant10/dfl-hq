@@ -44,6 +44,7 @@ import { startAssembly } from "../scroll-assembly.js";
 import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
+import { playerLiveState } from "../live-score.js";
 import { loadLeagueState } from "../league-state.js";
 
 let stage = null;
@@ -131,12 +132,14 @@ function wireHomeRankings(root) {
 function outlookPlayerRow(player, index) {
   const matchup = player.matchup ? ` · ${player.matchup.tone} vs ${player.matchup.opponent}`
     : player.opponent ? ` · vs ${player.opponent}` : "";
+  const state = playerLiveState(player);
   const source = player.scoreSource === "actual" ? "ACTUAL" : "PROJ";
-  return `<li><b>${index + 1}</b>${playerIdentity(player, { detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource}"><strong>${Number(player.points).toFixed(1)}</strong><small>${source}</small></em></li>`;
+  return `<li><b>${index + 1}</b>${playerIdentity(player, { detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource} is-${state.key}"><strong data-live-key="player:${esc(player.id)}" data-live-score="${Number(player.points).toFixed(1)}" data-live-state="${state.key}">${Number(player.points).toFixed(1)}</strong><small>${state.label} · ${source}</small></em></li>`;
 }
 
 function playerScoreLine(player) {
-  const source = player.scoreSource === "actual" ? "PLAYED · ACTUAL" : "NOT PLAYED · PROJ";
+  const state = playerLiveState(player);
+  const source = `${state.label} · ${player.scoreSource === "actual" ? "ACTUAL" : "PROJ"}`;
   const matchup = player.matchup ? `${player.matchup.tone} vs ${player.matchup.opponent}` : `vs ${player.opponent || "TBD"}`;
   return `${Number(player.points).toFixed(1)} · ${source} · ${matchup}`;
 }

@@ -20,6 +20,7 @@ function playerView(player, owners, defense) {
     nflTeam: player.team || "", opponent: player.opponent || "", points: num(player.points) || 0,
     injuryStatus: player.injuryStatus || null, ownerName: owner?.name || "Free agent",
     ownerId: owner?.id || null, matchup: matchupNote(player, defense),
+    hasGame: player.hasGame, gameStatus: player.gameStatus || "", complete: Boolean(player.complete),
     scoreSource: player.scoreSource === "actual" ? "actual" : "projected",
   };
 }

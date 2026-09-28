@@ -65,12 +65,15 @@ export function buildWeeklyPool(rows = [], scoringSettings = null) {
        looking like advice. No opponent and no gp means not scheduled. */
     const games = num(row.stats?.gp);
     const opponent = row.opponent || null;
+    const gameStatus = row.game_status || row.game?.status || row.metadata?.game_status || "";
     pool.set(id, {
       id,
       position,
       name: [meta.first_name, meta.last_name].filter(Boolean).join(" ") || id,
       team: row.team || meta.team || null,
       opponent,
+      gameId: row.game_id || null,
+      gameStatus,
       week: num(row.week),
       points: row.stats ? scorePlayer(row.stats, scoringSettings) : null,
       injuryStatus: status,

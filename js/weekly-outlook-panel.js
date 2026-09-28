@@ -25,6 +25,7 @@ import { loadLeagueState } from "./league-state.js";
 import { buildWeeklyPool, defenseDifficulty, matchupNote, startSitAdvice } from "./weekly-outlook.js";
 import { ensureStylesheet } from "./lazy-css.js";
 import { esc } from "./ui.js";
+import { playerLiveState } from "./live-score.js";
 
 const HOST = "data-weekly-outlook";
 const pts = value => (Number.isFinite(value) ? value.toFixed(1) : "—");
@@ -88,6 +89,7 @@ function swapCard(swap, trending) {
 
 function lineupRow(slot, max, trending, defense) {
   const player = slot.player;
+  const live = playerLiveState(player || { hasGame: false });
   const width = max > 0 && slot.score ? Math.max(4, Math.round(slot.score / max * 100)) : 0;
   /* The board carries the matchup too, not just the swaps: a start you are
      not being told to change is still a start you might want to reconsider. */
@@ -97,7 +99,7 @@ function lineupRow(slot, max, trending, defense) {
     <span class="wo-name">${player ? esc(player.name) : "<em>nobody available</em>"}
       ${player ? `<small>${matchup ? chip(matchup) : player.opponent ? `vs ${esc(player.opponent)}` : "no opponent set"} ${statusTag(player)} ${trendTag(player.id, trending)}</small>` : ""}</span>
     <span class="wo-bar" aria-hidden="true"><i style="width:${width}%"></i></span>
-    <span class="wo-pts">${pts(slot.score)}</span>
+    <span class="wo-pts is-${live.key}"><b>${pts(slot.score)}</b><small>${esc(live.label)}</small></span>
   </li>`;
 }
 

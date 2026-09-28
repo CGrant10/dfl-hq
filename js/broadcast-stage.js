@@ -66,13 +66,18 @@ function scoreboard(item) {
     billing: [item.kicker, item.headline].filter(Boolean),
     live: item.temporal === "live",
     final: item.temporal === "final" || item.temporal === "recent",
-    sides: (item.sides || []).map((s) => ({
+    sides: (item.sides || []).map((s, index) => ({
       name: s.name, score: s.score, colour: s.colour || "",
       up: !!s.up, down: !!s.down,
+      liveKey: item.temporal === "live" || item.temporal === "final" || item.temporal === "recent"
+        ? `scoreboard:${item.id || item.generator || `${item.headline || "matchup"}:${item.kicker || ""}`}:${s.id || index}` : "",
+      liveState: item.temporal === "live" ? "playing" : item.temporal === "final" || item.temporal === "recent" ? "final" : "projected",
     })),
     mood: item.moodText || "",
     tone: item.temporal === "live" ? "hot" : "done",
     where: item.whereText || item.subtitle || "",
+    liveMatchup: item.temporal === "live" || item.temporal === "final" || item.temporal === "recent"
+      ? `scoreboard:${item.id || item.generator || `${item.headline || "matchup"}:${item.kicker || ""}`}` : "",
   });
 }
 
@@ -91,13 +96,13 @@ function scoreboard(item) {
 */
 function slate(item) {
   const rows = (item.fixtures || []).map((fixture) => `
-    <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}">
+    <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}" data-live-matchup="${esc(fixture.key || "matchup")}">
       <span class="bx-slate-side${fixture.a.up ? " is-up" : ""}">
-        <b>${esc(fixture.a.name)}</b><span class="bx-slate-score is-${esc(fixture.a.mode || "projected")}"><i>${esc(fixture.a.score)}</i><small>${esc(fixture.a.status || "PROJECTED")}</small></span>
+        <b>${esc(fixture.a.name)}</b><span class="bx-slate-score is-${esc(fixture.a.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.a.id || "a")}" data-live-score="${esc(fixture.a.score)}" data-live-state="${esc(fixture.a.mode || "projected")}">${esc(fixture.a.score)}</i><small>${esc(fixture.a.status || "YET TO PLAY")}</small></span>
       </span>
       <span class="bx-slate-v" aria-hidden="true">v</span>
       <span class="bx-slate-side${fixture.b.up ? " is-up" : ""}">
-        <b>${esc(fixture.b.name)}</b><span class="bx-slate-score is-${esc(fixture.b.mode || "projected")}"><i>${esc(fixture.b.score)}</i><small>${esc(fixture.b.status || "PROJECTED")}</small></span>
+        <b>${esc(fixture.b.name)}</b><span class="bx-slate-score is-${esc(fixture.b.mode || "projected")}"><i data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(fixture.b.id || "b")}" data-live-score="${esc(fixture.b.score)}" data-live-state="${esc(fixture.b.mode || "projected")}">${esc(fixture.b.score)}</i><small>${esc(fixture.b.status || "YET TO PLAY")}</small></span>
       </span>
     </li>`).join("");
   return `

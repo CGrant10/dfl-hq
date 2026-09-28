@@ -421,7 +421,65 @@
   grid-column: 1 / -1;
 }
 .view[data-route="trade"] .tb-player > .dfl-player > em { margin-left: auto; }
+.view[data-route="trade"] .tb-player {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 42px;
+  padding-block: 4px;
+}
+.view[data-route="trade"] .tb-player .dfl-player {
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.view[data-route="trade"] .tb-player .dfl-player-portrait { width: 32px; height: 32px; }
+.view[data-route="trade"] .tb-player .dfl-player-copy strong {
+  overflow: visible;
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: clip;
+  white-space: normal;
+}
+.view[data-route="trade"] .tb-player .dfl-player-copy small {
+  color: color-mix(in srgb, var(--body-text) 76%, var(--text) 24%);
+  font-size: .62rem;
+}
 .view[data-route="analyzer"] .ta-player { min-width: 210px; }
+
+@media (max-width: 520px) {
+  .view[data-route="trade"] .tb-offer-flow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 7px 10px 11px;
+  }
+  .view[data-route="trade"] .tb-offer-flow > i {
+    height: 18px;
+    transform: rotate(90deg);
+  }
+  .view[data-route="trade"] .tb-offer-flow > button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+    border-top: 1px solid var(--line-soft);
+    font-size: var(--ta-small);
+  }
+}
+
+/* Scores stay still on first paint. Only a real change gets one short flash
+   and count-up, so loading or rotating a card never causes a slot-machine
+   effect. */
+.view:not([data-route="golf"]) [data-live-score].is-score-change {
+  color: var(--ok) !important;
+  animation: dfl-score-change .62s var(--ease) both;
+}
+.view:not([data-route="golf"]) [data-live-score].is-big-play {
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ok) 38%, transparent);
+}
+@keyframes dfl-score-change {
+  0% { opacity: .55; }
+  38% { opacity: 1; }
+  100% { opacity: 1; }
+}
 
 /* Context changes the room, not the layout. These are static washes: no
    particle field, no continuous flicker, and Golf never receives a state. */

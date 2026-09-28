@@ -2,6 +2,8 @@
 // experience.js - optional tactile/audio feedback and contextual atmosphere
 // =====================================================================
 
+import { startLiveScorePresentation } from "./live-score.js";
+
 const SOUND_KEY = "dfl.experience.sound";
 const HAPTIC_KEY = "dfl.experience.haptics";
 
@@ -87,6 +89,7 @@ export function syncExperience(view, route) {
 }
 
 export function startExperience() {
+  startLiveScorePresentation();
   document.addEventListener("click", event => {
     if (location.hash.startsWith("#/golf")) return;
     if (event.target.closest("[data-experience-preview]")) return;

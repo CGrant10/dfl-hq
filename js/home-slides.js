@@ -240,7 +240,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     const showActual = live && hasPlayed(side);
     const value = showActual ? Number(side.actual) || 0 : side.projection;
     const status = side.complete ? "FINAL" : showActual
-      ? `${played} PLAYED` : "PROJECTED";
+      ? `PLAYING · ${played} STARTED` : "YET TO PLAY · PROJ";
     return { value, status, mode: side.complete ? "final" : showActual ? "live" : "projected" };
   };
   const rows = fixtures.map(fixture => {
@@ -255,8 +255,9 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     return {
       mine: String(a.sleeper_user_id) === String(meSleeperId)
         || String(b.sleeper_user_id) === String(meSleeperId),
-      a: { name: a.name, score: Number(av.value).toFixed(1), status: av.status, mode: av.mode, up: comparable && av.value > bv.value },
-      b: { name: b.name, score: Number(bv.value).toFixed(1), status: bv.status, mode: bv.mode, up: comparable && bv.value > av.value },
+      key: [a.sleeper_user_id, b.sleeper_user_id].map(String).sort().join(":"),
+      a: { id: a.sleeper_user_id, name: a.name, score: Number(av.value).toFixed(1), status: av.status, mode: av.mode, up: comparable && av.value > bv.value },
+      b: { id: b.sleeper_user_id, name: b.name, score: Number(bv.value).toFixed(1), status: bv.status, mode: bv.mode, up: comparable && bv.value > av.value },
     };
   }).filter(Boolean);
   /* One fixture is the reader's own game with extra steps - the preview slide

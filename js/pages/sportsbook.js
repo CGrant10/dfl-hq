@@ -235,7 +235,7 @@ function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house"
 function marketCard(m,outcomes,canBook,picked,held){
   const key=matchupKey(m);
   const kicker=key?`Week ${key[2]} &middot; Matchup`:esc(m.category||"DFL");
-  return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div>${outcomeButtons(m,outcomes,picked,held)}${houseControls(m,outcomes,canBook)}</article>`;
+  return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -424,7 +424,9 @@ function ticketCard(b,marketMap,outcomeMap){
     return `${esc(blocking.leg.label)} has locked. Waiting on a ruling.`;
   })();
   const won=legs.filter(l=>l.status==="won").length;
-  const label=pulled?"pulled":multi&&(b.status==="won"||b.status==="lost")?`${won} of ${legs.length}`:b.status;
+  const label=pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
+    :b.status==="won"?"PAID":b.status==="lost"?"LOST":b.status==="void"?"VOID"
+      :blocking?"AWAITING RESULT":"OPEN";
   return `<article class="card sb-ticket${multi?" is-entry":""}">
     <div class="card-title-row">
       <div>

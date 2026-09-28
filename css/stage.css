@@ -1065,6 +1065,13 @@
    without colouring half the card. */
 .bx-slate-side.is-up .bx-slate-score > i { color: var(--accent-2, var(--accent)); }
 .bx-slate-side.is-up > b { color: var(--text); }
+.bx-slate-row .bx-slate-side.is-up {
+  border-radius: 5px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-2, var(--accent)) 8%, transparent));
+}
+.bx-slate-row .bx-slate-side:last-child.is-up {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-2, var(--accent)) 8%, transparent), transparent);
+}
 .bx-slate-v {
   font-size: clamp(.5rem, 1.5vw, .62rem);
   font-weight: 700;

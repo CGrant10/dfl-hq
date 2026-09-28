@@ -127,7 +127,11 @@
 .wo-name small { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 2px; color: var(--muted); font-size: var(--ta-micro); }
 .wo-bar { display: block; height: 7px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
 .wo-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), var(--accent)); }
-.wo-pts { text-align: right; font: 700 var(--ta-lead)/1 var(--font-display); }
+.wo-pts { display: grid; justify-items: end; text-align: right; }
+.wo-pts b { font: 700 var(--ta-lead)/1 var(--font-display); }
+.wo-pts small { margin-top: 3px; color: var(--muted); font: 800 .48rem/1 var(--font-body); letter-spacing: .045em; white-space: nowrap; }
+.wo-pts.is-playing small { color: var(--ok); }
+.wo-pts.is-final small { color: var(--accent-2); }
 
 /* ----------------------------- tags --------------------------------- */
 
@@ -164,6 +168,6 @@
   .wo-method { padding-inline: 14px; }
   .wo-swap { grid-template-columns: 60px 1fr; }
   /* The bar is decoration; the number is not. */
-  .wo-slot { grid-template-columns: 38px minmax(0, 1fr) 46px; }
+  .wo-slot { grid-template-columns: 38px minmax(0, 1fr) 70px; }
   .wo-bar { display: none; }
 }

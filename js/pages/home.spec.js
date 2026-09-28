@@ -62,7 +62,8 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("WEEK AHEAD");
     expect(source).toContain("CURRENT FORECAST");
     expect(source).toContain("ACTUAL / PROJ");
-    expect(source).toContain("PLAYED · ACTUAL");
+    expect(source).toContain("playerLiveState(player)");
+    expect(source).toContain("data-live-score");
     expect(source).toContain("TOP 3 BY POSITION");
     expect(source).toContain("data-week-tab");
     expect(source).toContain("data-position-tab");

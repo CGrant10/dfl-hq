@@ -302,7 +302,7 @@ describe("the slate during a week in progress", () => {
     const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
     expect([rows[0].a.score, rows[0].b.score]).toEqual(["16.2", "110.4"]);
     expect([rows[1].a.score, rows[1].b.score]).toEqual(["120.1", "99.5"]);
-    expect([rows[0].a.status, rows[0].b.status]).toEqual(["1 PLAYED", "PROJECTED"]);
+    expect([rows[0].a.status, rows[0].b.status]).toEqual(["PLAYING · 1 STARTED", "YET TO PLAY · PROJ"]);
     expect([rows[0].a.mode, rows[0].b.mode]).toEqual(["live", "projected"]);
   });
 

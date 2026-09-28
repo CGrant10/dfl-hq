@@ -106,7 +106,7 @@ export function dayMood(values, done, total) {
  * @param {string}   o.tone     hot | level | done
  * @param {string}   o.where    "THRU 7" / "HOLE 4" - the small line under it
  */
-export function marquee({ billing = [], main = false, live = false, final = false, sides = [], mood: moodText = "", tone = "", where = "" }) {
+export function marquee({ billing = [], main = false, live = false, final = false, sides = [], mood: moodText = "", tone = "", where = "", liveMatchup = "" }) {
   /* MAIN EVENT is a flag, not a position. Deciding it by index made whatever
      happened to be first - ROUND 1 - wear the crest red on every other card. */
   const tags = [
@@ -118,13 +118,13 @@ export function marquee({ billing = [], main = false, live = false, final = fals
 
   const tape = sides.map((s) => `
     <div class="mq-side ${s.down ? "is-down" : ""} ${s.up ? "is-up" : ""}"${s.colour ? ` style="--racer:${esc(s.colour)}"` : ""}>
-      <span class="mq-side-score">${esc(s.score)}</span>
+      <span class="mq-side-score"${s.liveKey ? ` data-live-key="${esc(s.liveKey)}" data-live-score="${esc(s.score)}" data-live-state="${esc(s.liveState || "live")}"` : ""}>${esc(s.score)}</span>
       <span class="mq-side-name">${esc(s.name)}</span>
       <span class="mq-side-bar"></span>
     </div>`).join(`<div class="mq-vs">vs</div>`);
 
   return `
-    <section class="mq-card dfl-mark">
+    <section class="mq-card dfl-mark"${liveMatchup ? ` data-live-matchup="${esc(liveMatchup)}"` : ""}>
       ${tags ? `<div class="mq-billing">${tags}</div>` : ""}
       <div class="mq-tape">${tape}</div>
       ${moodText || where ? `
