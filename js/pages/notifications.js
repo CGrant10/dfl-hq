@@ -1,6 +1,6 @@
 import { currentMember } from "../members.js";
 import { esc, errorBox, toast } from "../ui.js";
-import { DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, timeAgo } from "../notification-core.js";
+import { DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, timeAgo } from "../notification-core.js";
 import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription, testNotification } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
 
@@ -23,7 +23,8 @@ function settingsMarkup(state) {
     </div>
     ${active ? `<p class="muted tiny notify-test-hint">A test arrives after five seconds. Lock the phone or switch to another app before it does &mdash; Android will not interrupt you with a banner for the app you are already looking at.</p>` : ""}` : ""}
     ${active ? `<fieldset class="notify-categories"><legend>What should reach this phone?</legend>
-      ${NOTIFICATION_CATEGORIES.map(([id, label]) => `<label><input type="checkbox" value="${id}" ${selected.has(id) ? "checked" : ""}><span>${esc(label)}</span></label>`).join("")}
+      <div class="notify-presets"><button type="button" data-notify-preset="essential">Essential</button><button type="button" data-notify-preset="gameday">Game day</button><button type="button" data-notify-preset="all">Everything</button></div>
+      ${NOTIFICATION_CATEGORIES.map(([id, label, description]) => `<label><input type="checkbox" value="${id}" ${selected.has(id) ? "checked" : ""}><span><strong>${esc(label)}</strong><small>${esc(description || "")}</small></span></label>`).join("")}
     </fieldset>` : ""}
   </section>`;
 }
@@ -91,6 +92,15 @@ export async function render(view) {
     try { await saveSubscription(preferences.subscription, categories); toast("Notification preferences saved"); }
     catch (err) { toast(err.message || "Could not save preferences", true); }
   });
+  view.querySelectorAll("[data-notify-preset]").forEach(button => button.addEventListener("click", async () => {
+    if (!preferences?.subscription) return;
+    const categories = NOTIFICATION_PRESETS[button.dataset.notifyPreset] || DEFAULT_NOTIFICATION_CATEGORIES;
+    view.querySelectorAll('.notify-categories input[type="checkbox"]').forEach(input => { input.checked = categories.includes(input.value); });
+    button.disabled = true;
+    try { await saveSubscription(preferences.subscription, categories); toast(`${button.textContent} notifications selected`); }
+    catch (err) { toast(err.message || "Could not save preferences", true); }
+    finally { button.disabled = false; }
+  }));
 
   view.querySelector("[data-read-all]")?.addEventListener("click", async e => {
     e.currentTarget.disabled = true;

@@ -14,6 +14,7 @@
   without standing up Supabase: nothing in here reads the network.
 */
 import { P } from "./broadcast-order.js";
+import { stakeLine } from "./league-stakes.js";
 
 const ordinal = value => {
   const n = Number(value) || 0, mod100 = n % 100;
@@ -91,6 +92,23 @@ export function nextMoveSlide(move) {
 */
 export function currentMatchupWeek(week) {
   return Math.max(1, Number(week) || 1);
+}
+
+export function playoffPictureSlide(stakes, meSleeperId) {
+  const mine = stakes?.rows?.find(row => String(row.sleeperUserId) === String(meSleeperId));
+  if (!mine?.projection) return null;
+  const odds = Math.round((Number(mine.projection.playoffOdds) || 0) * 100);
+  const game = stakes.gameOfWeek;
+  const gameLine = game ? `Game of the week: ${game.a.name} vs ${game.b.name} · ${game.spread.toFixed(1)} projected points apart.` : "The playoff picture updates after every completed week.";
+  return {
+    source: "auto", pinned: true, id: "playoff-picture", generator: "playoffPicture",
+    kind: "league", treatment: "stat", temporal: mine.status === "clinched" || mine.status === "eliminated" ? "recent" : "upcoming",
+    priority: P.MINE + 5, dwell: 8500,
+    kicker: `${stakes.season} · WEEK ${stakes.week} · PLAYOFF PICTURE`,
+    figure: `${odds}%`, headline: stakeLine(mine),
+    subtitle: `${mine.name} projects as the ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed. ${gameLine}`,
+    href: "#/analyzer",
+  };
 }
 
 /*

@@ -109,6 +109,12 @@ export function startPerformanceTracking({ readyAt = performance.now(), route = 
     if (interaction) record("interaction_latency", interaction, "ms", safeRoute(route));
   }, { durationThreshold: 40 });
 
+  let longestTask = 0;
+  observe("longtask", entries => {
+    for (const entry of entries) longestTask = Math.max(longestTask, entry.duration || 0);
+    if (longestTask) record("long_task", longestTask, "ms", safeRoute(route));
+  });
+
   window.addEventListener("dfl:route-performance", event => {
     const detail = event.detail || {};
     record("route_render", Number(detail.duration) || 0, "ms", detail.route);

@@ -29,7 +29,7 @@ const corsHeaders = (request?: Request) => ({
   Vary: "Access-Control-Request-Headers",
 });
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: corsHeaders() });
-const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "events", "updates"]);
+const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "weekly", "sportsbook", "waivers", "events", "updates"]);
 
 async function internalSyncRequest(request: Request) {
   const token = request.headers.get("x-dfl-cron-token") || "";
@@ -110,7 +110,7 @@ Deno.serve(async request => {
     const body = String(input.body || "").trim().slice(0, 240);
     const category = categories.has(input.category) ? input.category : "announcements";
     const targetUrl = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(input.targetUrl || "") ? input.targetUrl : "#/home";
-    const sourceKey = /^trade:[a-z0-9_-]{1,120}$/i.test(String(input.sourceKey || ""))
+    const sourceKey = /^(?:trade|weekly|sportsbook):[a-z0-9:_-]{1,140}$/i.test(String(input.sourceKey || ""))
       ? String(input.sourceKey) : null;
     let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];

@@ -1,11 +1,14 @@
 export const NOTIFICATION_CATEGORIES = Object.freeze([
-  ["announcements", "Announcements"],
-  ["trades", "Trades"],
-  ["polls", "Polls"],
-  ["fees", "Fees"],
-  ["matchups", "Matchups"],
-  ["events", "Events"],
-  ["updates", "App updates"],
+  ["announcements", "Announcements", "Commissioner and league-wide news"],
+  ["trades", "Trades", "Completed deals and breaking trade alerts"],
+  ["matchups", "Matchups", "Live, final and matchup reminders"],
+  ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
+  ["sportsbook", "Sportsbook", "Settled tickets, wins and losses"],
+  ["waivers", "Waivers", "Useful pickups and roster movement"],
+  ["polls", "Polls", "New votes and closing reminders"],
+  ["fees", "Fees", "Dues and payment reminders"],
+  ["events", "Events", "Drafts and league dates"],
+  ["updates", "App updates", "New DFL HQ releases"],
 ]);
 
 export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) => id);
@@ -25,6 +28,12 @@ export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) =>
 */
 export const DEFAULT_NOTIFICATION_CATEGORIES =
   ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates");
+
+export const NOTIFICATION_PRESETS = Object.freeze({
+  essential: ["announcements", "trades", "fees", "matchups"],
+  gameday: ["matchups", "weekly", "sportsbook", "waivers"],
+  all: DEFAULT_NOTIFICATION_CATEGORIES,
+});
 
 export function safeNotificationUrl(value) {
   const url = String(value || "").trim();

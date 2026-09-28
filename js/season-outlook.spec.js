@@ -49,6 +49,17 @@ describe("projectSeason", () => {
     }
   });
 
+  it("preserves completed games and simulates only what remains", () => {
+    const teams = SPREAD.map((team, index) => ({
+      ...team, wins: index === 0 ? 6 : 1, losses: index === 0 ? 0 : 5,
+      points: 700 - index * 12,
+    }));
+    const out = projectSeason({ teams, weeks: 8, playoffTeams: 4, runs: 800 });
+    expect(out.get("t1").wins).toBeGreaterThanOrEqual(6);
+    expect(out.get("t1").wins + out.get("t1").losses).toBe(8);
+    expect(out.get("t1").playoffOdds).toBeGreaterThan(out.get("t12").playoffOdds);
+  });
+
   it("keeps the probabilities honest", () => {
     const out = projectSeason({ teams: SPREAD, runs: 800 });
     let title = 0, last = 0;

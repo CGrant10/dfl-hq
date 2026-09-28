@@ -26,7 +26,7 @@ function playerView(player, owners, defense) {
 }
 
 /** One shared Home forecast derived from the exact pool used by Start/Sit. */
-export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleeperId = null } = {}) {
+export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], stakes = null, meSleeperId = null } = {}) {
   if (analysis?.state !== "ready" || !weekly?.pool?.size || !weekly?.week) return null;
   const owners = ownerMap(analysis.teams || []);
   const defense = defenseDifficulty(weekly.pool);
@@ -35,6 +35,7 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleepe
     .sort((a, b) => num(b.points) - num(a.points) || String(a.name).localeCompare(String(b.name)))
     .slice(0, 3).map(player => playerView(player, owners, defense))]));
 
+  const gameOfWeek = stakes?.gameOfWeek;
   const predictions = fixtures.map(fixture => {
     const a = fixture?.a, b = fixture?.b;
     const aPoints = num(a?.projection), bPoints = num(b?.projection);
@@ -44,9 +45,16 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleepe
     const winnerPoints = winner === a ? aPoints : bPoints;
     const loserPoints = winner === a ? bPoints : aPoints;
     const margin = Math.abs(aPoints - bPoints);
+    const stakeRows = [a, b].map(side => stakes?.rows?.find(row => id(row.sleeperUserId) === id(side.sleeper_user_id))).filter(Boolean);
+    const sameGame = gameOfWeek && [gameOfWeek.a.sleeperUserId, gameOfWeek.b.sleeperUserId].every(uid =>
+      [a.sleeper_user_id, b.sleeper_user_id].some(sideId => id(sideId) === id(uid)));
+    const bubble = stakeRows.length === 2 && stakeRows.every(row => row.status === "alive"
+      && Number(row.projection?.playoffOdds) >= .25 && Number(row.projection?.playoffOdds) <= .75);
+    const desperate = stakeRows.find(row => row.status === "alive" && Number(row.projection?.playoffOdds) < .3);
     return {
       winner: { ...winner, projection: winnerPoints }, loser: { ...loser, projection: loserPoints }, margin,
       confidence: margin < 3 ? "TOSS-UP" : margin < 8 ? "LEAN" : margin < 15 ? "FAVORED" : "HEAVY FAVORITE",
+      story: sameGame ? "GAME OF THE WEEK" : bubble ? "BUBBLE FIGHT" : desperate ? `${desperate.name.toUpperCase()} NEEDS IT` : null,
       isMine: [a.sleeper_user_id, b.sleeper_user_id].some(uid => id(uid) === id(meSleeperId)),
     };
   }).filter(Boolean).sort((a, b) => Number(b.isMine) - Number(a.isMine) || b.margin - a.margin);
@@ -69,7 +77,7 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], meSleepe
       })),
     };
   }
-  return { season: weekly.season, week: weekly.week, predictions, leaders, startSit };
+  return { season: weekly.season, week: weekly.week, predictions, leaders, startSit, stakes };
 }
 
 export { POSITIONS as HOME_OUTLOOK_POSITIONS };

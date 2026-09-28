@@ -57,7 +57,7 @@ function normal(random, mean, sd) {
 function seedFrom(teams) {
   let hash = 2166136261;
   for (const team of teams) {
-    const key = `${team.id}:${Math.round((team.mean || 0) * 10)}`;
+    const key = `${team.id}:${Math.round((team.mean || 0) * 10)}:${Number(team.wins) || 0}:${Number(team.losses) || 0}:${Math.round(Number(team.points) || 0)}`;
     for (let i = 0; i < key.length; i += 1) {
       hash ^= key.charCodeAt(i);
       hash = Math.imul(hash, 16777619);
@@ -78,7 +78,13 @@ function seedFrom(teams) {
 export function projectSeason({ teams = [], playoffTeams = 8, weeks = REGULAR_SEASON_WEEKS,
                                 sd = LEAGUE_WEEKLY_SD, runs = DEFAULT_RUNS } = {}) {
   const out = new Map();
-  const live = teams.filter(team => Number.isFinite(team?.mean));
+  const live = teams.filter(team => Number.isFinite(team?.mean)).map(team => ({
+    ...team,
+    wins: Math.max(0, Number(team.wins) || 0),
+    losses: Math.max(0, Number(team.losses) || 0),
+    ties: Math.max(0, Number(team.ties) || 0),
+    points: Math.max(0, Number(team.points) || 0),
+  }));
   if (live.length < 2) return out;
 
   const tally = new Map(live.map(team => [team.id,
@@ -87,8 +93,13 @@ export function projectSeason({ teams = [], playoffTeams = 8, weeks = REGULAR_SE
   const berths = Math.min(playoffTeams, live.length);
 
   for (let run = 0; run < runs; run += 1) {
-    const season = live.map(team => ({ id: team.id, mean: team.mean, wins: 0, points: 0 }));
-    for (let week = 0; week < weeks; week += 1) {
+    const season = live.map(team => ({
+      id: team.id, mean: team.mean, wins: team.wins, losses: team.losses,
+      ties: team.ties, points: team.points,
+      remaining: Math.max(0, weeks - team.wins - team.losses - team.ties),
+    }));
+    const remainingWeeks = Math.max(...season.map(team => team.remaining), 0);
+    for (let week = 0; week < remainingWeeks; week += 1) {
       /*
         A RANDOM SCHEDULE, NOT ALL-PLAY.
 
@@ -102,16 +113,18 @@ export function projectSeason({ teams = [], playoffTeams = 8, weeks = REGULAR_SE
         instead. That is an honest stand-in for an unknown fixture list and it
         keeps the thing all-play threw away - the week you score 140 and lose.
       */
-      for (let i = season.length - 1; i > 0; i -= 1) {
+      const active = season.filter(team => team.remaining > week);
+      for (let i = active.length - 1; i > 0; i -= 1) {
         const j = Math.floor(random() * (i + 1));
-        [season[i], season[j]] = [season[j], season[i]];
+        [active[i], active[j]] = [active[j], active[i]];
       }
-      for (let i = 0; i + 1 < season.length; i += 2) {
-        const home = season[i], away = season[i + 1];
+      for (let i = 0; i + 1 < active.length; i += 2) {
+        const home = active[i], away = active[i + 1];
         const homeScore = normal(random, home.mean, sd);
         const awayScore = normal(random, away.mean, sd);
         home.points += homeScore; away.points += awayScore;
-        if (homeScore >= awayScore) home.wins += 1; else away.wins += 1;
+        if (homeScore >= awayScore) { home.wins += 1; away.losses += 1; }
+        else { away.wins += 1; home.losses += 1; }
       }
     }
     season.sort((a, b) => b.wins - a.wins || b.points - a.points);
@@ -149,9 +162,11 @@ export function projectSeason({ teams = [], playoffTeams = 8, weeks = REGULAR_SE
     */
     const expectedWins = record.wins / runs;
     const wins = Math.round(expectedWins);
+    const ties = live.find(team => String(team.id) === String(id))?.ties || 0;
     out.set(id, {
       wins,
-      losses: weeks - wins,
+      losses: Math.max(0, weeks - wins - ties),
+      ties,
       expectedWins: Math.round(expectedWins * 10) / 10,
       playoffOdds: record.playoff / runs,
       titleOdds: record.title / runs,

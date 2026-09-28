@@ -529,6 +529,12 @@
 .career-moment small { overflow: hidden; color: var(--muted); font-size: var(--fs-micro); line-height: var(--lh-snug); text-overflow: ellipsis; }
 .career-moment > strong { flex: 0 0 auto; font-family: var(--font-display); font-size: var(--fs-stat-sm); font-variant-numeric: tabular-nums; }
 .career-moment > strong.is-empty { color: var(--muted); }
+.profile-rival-team { min-width: 210px; }
+.profile-rival-team > a { display: block; color: inherit; text-decoration: none; }
+.profile-rival-team .dfl-team { padding-block: 2px; }
+.profile-rival-team ~ td.good { color: var(--ok); }
+.profile-rival-team ~ td.bad { color: var(--danger-ink); }
+.rival-avg { display: block; margin-top: 2px; color: var(--muted); font-size: var(--fs-micro); white-space: nowrap; }
 
 /* Reference rows read as destinations: label, useful count, then caret. */
 #profile-wrap .card > .dfl-fold { min-height: 54px; padding: var(--s-3) var(--s-4); }

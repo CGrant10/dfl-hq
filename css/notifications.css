@@ -16,3 +16,11 @@
 .notification-delete:disabled{opacity:.4;cursor:default}
 .notification-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:560px){.notification-delete{width:40px;font-size:20px}}
+
+/* Presets change the whole device profile; each category still stays an
+   independent checkbox underneath for members who want an exact mix. */
+.notify-presets{grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap}
+.notify-presets button{padding:6px 10px;border:1px solid var(--control-line);border-radius:999px;background:transparent;color:var(--muted);font:800 var(--fs-micro) var(--display);letter-spacing:.05em;cursor:pointer}
+.notify-presets button:hover,.notify-presets button:focus-visible{border-color:var(--accent);color:var(--text)}
+.notify-categories label>span{display:flex;min-width:0;flex-direction:column;gap:2px}
+.notify-categories label small{color:var(--muted);font-size:var(--fs-micro);line-height:1.25}

@@ -10,7 +10,7 @@ create table if not exists public.app_performance_events (
   id          bigint generated always as identity primary key,
   metric      text not null check (metric in (
     'app_ready', 'largest_contentful_paint', 'cumulative_layout_shift',
-    'interaction_latency', 'route_render'
+    'interaction_latency', 'route_render', 'route_module', 'route_content', 'long_task'
   )),
   metric_value numeric not null check (metric_value >= 0 and metric_value <= 600000),
   unit        text not null check (unit in ('ms', 'score')),
@@ -29,6 +29,17 @@ create index if not exists idx_app_performance_created
   on public.app_performance_events (created_at desc);
 create index if not exists idx_app_performance_metric_route_created
   on public.app_performance_events (metric, route, created_at desc);
+
+/* Earlier installs had the original five-metric check. Expand it safely so
+   the route split and main-thread stalls the client already reports are not
+   silently discarded. */
+alter table public.app_performance_events
+  drop constraint if exists app_performance_events_metric_check;
+alter table public.app_performance_events
+  add constraint app_performance_events_metric_check check (metric in (
+    'app_ready', 'largest_contentful_paint', 'cumulative_layout_shift',
+    'interaction_latency', 'route_render', 'route_module', 'route_content', 'long_task'
+  ));
 
 alter table public.app_performance_events enable row level security;
 revoke all on table public.app_performance_events from anon, authenticated;
@@ -61,7 +72,7 @@ begin
   from jsonb_array_elements(p_events) event
   where event->>'metric' in (
       'app_ready', 'largest_contentful_paint', 'cumulative_layout_shift',
-      'interaction_latency', 'route_render'
+      'interaction_latency', 'route_render', 'route_module', 'route_content', 'long_task'
     )
     and event->>'unit' in ('ms', 'score')
     and coalesce(event->>'route', 'app') ~ '^[a-z0-9-]{1,32}$'

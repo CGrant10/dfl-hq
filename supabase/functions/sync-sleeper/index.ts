@@ -226,6 +226,23 @@ async function notifyCommissioners(url: string, token: string, body: string) {
   if (!response.ok) throw new Error(`Commissioner notification failed (${response.status})`);
 }
 
+async function notifyWeeklyReport(url: string, token: string, season: number, completedWeek: number) {
+  const response = await fetch(`${url}/functions/v1/send-notification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-dfl-cron-token": token },
+    body: JSON.stringify({
+      title: `Week ${completedWeek} report is ready`,
+      body: `The receipts are in. See the recap, updated playoff picture and Week ${completedWeek + 1} outlook.`,
+      category: "weekly",
+      targetUrl: "#/home",
+      audience: "all",
+      sourceKey: `weekly:${season}:${completedWeek}`,
+    }),
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`Weekly report notification failed (${response.status})`);
+}
+
 async function refreshMemberTeamNames(admin: ReturnType<typeof createClient>) {
   const [members, currentUsers, historicalRosters] = await Promise.all([
     admin.from("members").select("id,team_name,sleeper_user_id"),
@@ -293,6 +310,10 @@ Deno.serve(async (request) => {
     const sportsbookMarketsCreated = await ensureMatchupMarkets(
       admin, league, season, week, weeklyMatchups || [], rosters || [], earlyNames, weeklyProjections || [],
     );
+    if (week > 1) {
+      await notifyWeeklyReport(url, cronToken, season, week - 1)
+        .catch(error => console.warn("Weekly report notification skipped:", error));
+    }
 
     if (signature === config.last_auto_signature) {
       const { error } = await admin.from("sleeper_config").update({

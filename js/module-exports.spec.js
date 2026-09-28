@@ -378,6 +378,20 @@ describe("the supported golf GPS courses", () => {
     expect(edgeSync).toContain("Never re-price a board after somebody can bet it");
   });
 
+  it("upgrades notification controls and creates automatic weekly and sportsbook receipts", () => {
+    const upgrade = fs.readFileSync("notification_categories_upgrade.sql", "utf8");
+    const edgeSync = fs.readFileSync("supabase/functions/sync-sleeper/index.ts", "utf8");
+    const sender = fs.readFileSync("supabase/functions/send-notification/index.ts", "utf8");
+    expect(upgrade).toContain("'weekly'");
+    expect(upgrade).toContain("'sportsbook'");
+    expect(upgrade).toContain("'waivers'");
+    expect(upgrade).toContain("notify_settled_sportsbook_ticket");
+    expect(upgrade).toContain("after update of status on public.sportsbook_bets");
+    expect(edgeSync).toContain("notifyWeeklyReport(url, cronToken, season, week - 1)");
+    expect(edgeSync).toContain("sourceKey: `weekly:${season}:${completedWeek}`");
+    expect(sender).toContain("(?:trade|weekly|sportsbook)");
+  });
+
   it("keeps typography and component geometry consistent across app themes", () => {
     const tokens = fs.readFileSync("css/tokens.css", "utf8");
     const ui = fs.readFileSync("css/ui.css", "utf8");

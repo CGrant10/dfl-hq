@@ -16,7 +16,11 @@ const routes = {
   home:     () => import("./pages/home.js"),
   rules:    () => import("./pages/rules.js"),
   keepers:  () => import("./pages/keepers.js"),
-  analyzer: () => import("./pages/analyzer.js"),
+  analyzer: async () => {
+    const [page, outlook] = await Promise.all([import("./pages/analyzer.js"), import("./weekly-outlook-panel.js")]);
+    outlook.mountWeeklyOutlook();
+    return page;
+  },
   polls:    () => import("./pages/polls.js"),
   proposals:() => import("./pages/proposals.js"),
   arena:    () => import("./pages/arena.js"),

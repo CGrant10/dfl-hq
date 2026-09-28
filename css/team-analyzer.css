@@ -1373,6 +1373,9 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .so-source b { color: var(--text); font-weight: 800; }
 
 .so-odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.so-stake { display: inline-flex; margin-top: 5px; padding: 3px 8px; border: 1px solid var(--control-line); border-radius: 999px; color: var(--muted); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .075em; }
+.so-stake.is-clinched { border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
+.so-stake.is-eliminated { border-color: var(--danger-line); background: var(--danger-bg); color: var(--danger-ink); }
 .so-odd { min-width: 0; padding: var(--card-pad); border-radius: var(--card-radius); border: 1px solid var(--card-line); background: var(--card-bg); }
 .so-odd small { display: block; color: var(--muted); font-size: var(--ta-micro); text-transform: uppercase; letter-spacing: .04em; }
 .so-odd b { display: block; margin: 2px 0 0; font-family: var(--font-display); font-size: 24px; line-height: 1; }

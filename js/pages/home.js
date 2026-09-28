@@ -42,7 +42,8 @@ import { buildNextMove } from "../next-move.js";
 import { weekHasStarted } from "../league-trajectory.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
+import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
+import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { playerLiveState } from "../live-score.js";
@@ -147,7 +148,7 @@ export function homeWeeklyDigest(outlook) {
   if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
-  const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
+  const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.story || game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
   const predictions = outlook.predictions || [];
   const firstGames = predictions.slice(0, 3);
   const moreGames = predictions.slice(3);
@@ -629,13 +630,18 @@ export async function render(view) {
       analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
       lore: got?.error ? null : got,
     }) || { slides: [], fixtures: [] };
-    const outlook = buildHomeWeekOutlook({
-      analysis, weekly, fixtures: aheadData.fixtures,
-      meSleeperId: myMember?.sleeper_user_id || null,
-    });
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
       standings: standings.data || [], currentWeek: weekly?.week || null,
+    });
+    if (pulse?.stakes) pulse.stakes = buildLeagueStakes({
+      teams: analysis.teams, standings: standings.data || [], projections: pulse.projections,
+      fixtures: aheadData.fixtures, season: analysis.projectionSeason, week: weekly?.week,
+      playoffTeams: Number(analysis.league?.playoff_teams) || 8,
+    });
+    const outlook = buildHomeWeekOutlook({
+      analysis, weekly, fixtures: aheadData.fixtures, stakes: pulse?.stakes,
+      meSleeperId: myMember?.sleeper_user_id || null,
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
     const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
@@ -668,7 +674,7 @@ export async function render(view) {
     /* What the dashboard carried that nothing else does: the completed-trade
        verdict and the auto-scout. Both go to the stage as slides. */
     const ahead = aheadData.slides;
-    const extras = [...ahead, tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
+    const extras = [...ahead, playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
       /* A preview and the myMatchup generator are the same fixture from two

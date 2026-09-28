@@ -9,11 +9,6 @@
    promise could outlive the test worker and fail an otherwise clean CI run. */
 if (globalThis.document) {
   void import("./nav-neutral.js").catch(err => console.warn("Optional module failed: ./nav-neutral.js", err));
-  /* The week view above the Team Analyzer report. Self-mounting and route-gated,
-     so it costs one module on boot and nothing until Analyzer is opened. */
-  void import("./weekly-outlook-panel.js")
-    .then(module => module.mountWeeklyOutlook())
-    .catch(err => console.warn("Optional module failed: ./weekly-outlook-panel.js", err));
 }
 
 const GOLF_FEATURES = [

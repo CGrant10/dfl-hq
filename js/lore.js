@@ -449,7 +449,7 @@ export function headToHead(lore, userId) {
     const myRoster = m[`roster${mine}`];
 
     if (!out.has(foe)) out.set(foe, { user: foe, wins: 0, losses: 0, ties: 0, pf: 0, pa: 0,
-                                      meetings: 0, last: null, biggest: null });
+                                      meetings: 0, last: null, biggest: null, games: [] });
     const r = out.get(foe);
     r.meetings++;
     r.pf += myScore; r.pa += theirScore;
@@ -459,10 +459,23 @@ export function headToHead(lore, userId) {
 
     const game = { season: m.season, week: m.week, mine: myScore, theirs: theirScore,
                    margin: Math.abs(myScore - theirScore), won: m.winner_roster_id === myRoster };
+    r.games.push({ ...game, tied: m.winner_roster_id == null });
     if (!r.last || m.season > r.last.season || (m.season === r.last.season && m.week > r.last.week)) r.last = game;
     if (!r.biggest || game.margin > r.biggest.margin) r.biggest = game;
   }
-  return [...out.values()].sort((a, b) => b.meetings - a.meetings);
+  return [...out.values()].map(record => {
+    const games = record.games.sort((a, b) => Number(a.season) - Number(b.season) || Number(a.week) - Number(b.week));
+    const last = games.at(-1);
+    let streak = null;
+    if (last && !last.tied) {
+      let count = 0;
+      for (let i = games.length - 1; i >= 0 && !games[i].tied && games[i].won === last.won; i--) count++;
+      streak = { won: last.won, count };
+    }
+    const { games: _, ...clean } = record;
+    return { ...clean, streak, differential: record.pf - record.pa,
+      averageMargin: record.meetings ? (record.pf - record.pa) / record.meetings : 0 };
+  }).sort((a, b) => b.meetings - a.meetings);
 }
 
 // ---------------------------------------------------------- one career

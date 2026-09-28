@@ -25,6 +25,7 @@ import { mountProfileNotifications } from "../profile-notifications.js";
    book can never disagree about the same game. */
 import { loadLore, namer, career, headToHead, spanLabel } from "../lore.js";
 import { experienceSettingsMarkup, wireExperienceSettings } from "../experience.js";
+import { teamIdentity } from "../team-presentation.js";
 
 export async function render(view) {
   const wanted = new URLSearchParams((location.hash.split("?")[1] || "")).get("id");
@@ -732,7 +733,7 @@ function rivalryCard(rows, name, members) {
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr>
-            <th>Opponent</th><th>Record</th><th class="num">Met</th><th>Last</th>
+            <th>Opponent</th><th>Record</th><th>Point edge</th><th class="num">Met</th><th>Last</th>
           </tr></thead>
           <tbody>
             ${rows.map((r) => {
@@ -742,12 +743,13 @@ function rivalryCard(rows, name, members) {
               const owned = r.meetings >= 5 && r.wins === 0;
               return `
                 <tr>
-                  <td>
-                    ${mem ? `<a href="#/profile?id=${mem.id}">${esc(who.label)}</a>` : esc(who.label)}
+                  <td class="profile-rival-team">
+                    ${mem ? `<a href="#/profile?id=${mem.id}">${teamIdentity({ team_name: who.label, ownerName: mem.display_name, identity: mem }, { meta: r.streak ? `${r.streak.won ? "Won" : "Lost"} last ${r.streak.count}` : "Series history", compact: true })}</a>` : esc(who.label)}
                     ${level ? `<span class="pill warn tiny">dead level</span>` : ""}
                     ${owned ? `<span class="pill red tiny">never beaten them</span>` : ""}
                   </td>
                   <td>${r.wins}-${r.losses}${r.ties ? "-" + r.ties : ""}</td>
+                  <td class="${r.differential > 0 ? "good" : r.differential < 0 ? "bad" : "muted"}">${r.differential > 0 ? "+" : ""}${r.differential.toFixed(1)}<small class="rival-avg">${r.averageMargin > 0 ? "+" : ""}${r.averageMargin.toFixed(1)}/game</small></td>
                   <td class="num">${r.meetings}</td>
                   <td class="muted tiny">${r.last
                     ? `${r.last.season} Wk ${r.last.week} · ${r.last.won ? "won" : "lost"} ${r.last.mine.toFixed(1)}–${r.last.theirs.toFixed(1)}`

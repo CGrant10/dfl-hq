@@ -20,11 +20,12 @@ let analyzerEpoch = 0;
  * already painted.
  */
 async function fetchAnalyzerData() {
-  const [leagueRes, rosterRes, memberRes, leagueState] = await Promise.all([
+  const [leagueRes, rosterRes, memberRes, leagueState, standingRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
     loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
     loadLeagueState().catch(() => null),
+    db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
   ]);
   const error = leagueRes.error || rosterRes.error || memberRes.error;
   if (error) throw error;
@@ -86,6 +87,7 @@ async function fetchAnalyzerData() {
   return {
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool, members,
+    standings: standingRes?.error ? [] : (standingRes?.data || []),
     matchups: matchupRes?.error ? [] : (matchupRes?.data || []),
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,

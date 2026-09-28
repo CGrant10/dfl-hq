@@ -1,6 +1,7 @@
 import { esc } from "./ui.js";
 import { REGULAR_SEASON_WEEKS, projectSeason } from "./season-outlook.js";
 import { buildLeaguePowerRankings, leaguePowerRankingsCard } from "./league-trajectory.js";
+import { buildLeagueStakes } from "./league-stakes.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "EVEN";
@@ -21,6 +22,7 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
   const teams = analysis.teams;
   const focus = teams.find(team => meSleeperId && String(team.sleeper_user_id) === String(meSleeperId)) || teams[0];
   const comparison = comparisonRows(standings, analysis.projectionSeason);
+  const currentStandings = standings.filter(row => Number(row.season) === Number(analysis.projectionSeason));
   const baseline = new Map(comparison.rows.map(row => [String(row.sleeper_user_id), Number(row.rank)]));
   const scores = teams.map(team => Number(team.lineup?.score || 0));
   const low = Math.min(...scores), high = Math.max(...scores);
@@ -42,7 +44,11 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
     glance is where their own season is heading.
   */
   const projections = projectSeason({
-    teams: teams.map(team => ({ id: String(team.id), mean: team.lineup?.weeklyPoints })),
+    teams: teams.map(team => {
+      const standing = currentStandings.find(row => String(row.sleeper_user_id) === String(team.sleeper_user_id));
+      return { id: String(team.id), mean: team.lineup?.weeklyPoints,
+        wins: standing?.wins, losses: standing?.losses, ties: standing?.ties, points: standing?.points_for };
+    }),
     playoffTeams: Number(analysis.league?.playoff_teams) || 8,
   });
   const record = projections.get(String(focus.id)) || null;
@@ -52,8 +58,12 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
     currentWeek,
     weeks: REGULAR_SEASON_WEEKS,
   });
+  const stakes = buildLeagueStakes({
+    teams, standings: currentStandings, projections, season: analysis.projectionSeason,
+    week: currentWeek, playoffTeams: Number(analysis.league?.playoff_teams) || 8,
+  });
   return {
-    record,
+    record, projections, stakes,
     weeks: REGULAR_SEASON_WEEKS,
     season: analysis.projectionSeason,
     teams: teams.slice(0, 5),

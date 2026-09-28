@@ -7,6 +7,7 @@ import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason 
 import { buildFindings } from "../analyzer-findings.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
+import { buildLeagueStakes, stakeLine } from "../league-stakes.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -180,9 +181,10 @@ const pct = value => `${Math.round((Number(value) || 0) * 100)}%`;
   formula'd, on this league's own measured weekly spread. See
   season-outlook.js for why the schedule is random and the seed is fixed.
 */
-function seasonOutlook(team, projections, teams) {
+function seasonOutlook(team, projections, teams, stakes) {
   const projection = projections.get(String(team.id));
   if (!projection) return "";
+  const stake = stakes?.rows?.find(row => String(row.id) === String(team.id));
   const ranked = [...projections.entries()].sort((a, b) => b[1].titleOdds - a[1].titleOdds);
   const favourite = teams.find(t => String(t.id) === String(ranked[0]?.[0]));
   const chip = [...projections.entries()].sort((a, b) => b[1].lastOdds - a[1].lastOdds)[0];
@@ -193,7 +195,7 @@ function seasonOutlook(team, projections, teams) {
     <h2 class="section-title">Season outlook<span class="count">${ordinal(Math.round(projection.seed))} of ${teams.length}</span></h2>
     <section class="so-panel" id="outlook">
     <header class="so-head">
-      <div><h2>${esc(teamName(team))}</h2></div>
+      <div><h2>${esc(teamName(team))}</h2>${stake ? `<span class="so-stake is-${esc(stake.status)}">${esc(stakeLine(stake))}</span>` : ""}</div>
       <div class="so-record">
         <strong>${projection.wins}<i>-</i>${projection.losses}</strong>
         <span>projected · ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
@@ -221,9 +223,9 @@ function seasonOutlook(team, projections, teams) {
   </section>`;
 }
 
-const DEFAULT_RUNS_NOTE = `3,000 simulated ${REGULAR_SEASON_WEEKS}-week seasons on each roster's projected weekly points, with a `
+const DEFAULT_RUNS_NOTE = `3,000 simulations preserve every completed result, then play only the remaining games on each roster's projected weekly points, with a `
   + `${LEAGUE_WEEKLY_SD}-point weekly spread measured from 24 team-seasons of real DFL matchups. `
-  + `No 2026 schedule has been published, so each week draws a random opponent — the odds describe the roster, not a fixture list.`;
+  + `Remaining opponents are randomized, so the odds describe record plus roster strength without pretending to know an unpublished future schedule.`;
 
 function trendReport(team) {
   /* Folded, and it loads nothing until opened - three seasons of Sleeper stats
@@ -244,7 +246,17 @@ function page(data) {
   const myTeamId = data.teams.find(team => me?.sleeper_user_id && String(team.sleeper_user_id) === String(me.sleeper_user_id))?.id ?? null;
   /* Once per page load. Seeded, so it is stable across redraws too. */
   const projections = projectSeason({
-    teams: data.teams.map(team => ({ id: String(team.id), mean: team.lineup.weeklyPoints })),
+    teams: data.teams.map(team => {
+      const standing = (data.standings || []).find(row => Number(row.season) === Number(data.projectionSeason)
+        && String(row.sleeper_user_id) === String(team.sleeper_user_id));
+      return { id: String(team.id), mean: team.lineup.weeklyPoints,
+        wins: standing?.wins, losses: standing?.losses, ties: standing?.ties, points: standing?.points_for };
+    }),
+    playoffTeams: Number(data.league?.playoff_teams) || 8,
+  });
+  const stakes = buildLeagueStakes({
+    teams: data.teams, standings: data.standings || [], projections,
+    season: data.projectionSeason, week: data.liveWeek,
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
@@ -255,7 +267,7 @@ function page(data) {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         const opponent = data.teams.find(item => item.id === compareId && item.id !== team.id) || data.teams.find(item => item.id !== team.id) || team;
         compareId = opponent.id;
-        body.innerHTML = `${briefing(team, data.teams, projections, data.teams.length)}${positionReport(team)}${rosterReport(team, data.pool)}${seasonOutlook(team, projections, data.teams)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses total points from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above, so one high-scoring position cannot hide several weaker units. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Position needs are league-relative and only appear for a genuinely weak starting unit. Player forecasts favor current projections and pace-adjust prior production. Estimates are not guarantees.</p></details>`;
+        body.innerHTML = `${briefing(team, data.teams, projections, data.teams.length)}${positionReport(team)}${rosterReport(team, data.pool)}${seasonOutlook(team, projections, data.teams, stakes)}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses the current record and points, then simulates only the remaining regular-season games from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Clinched and eliminated labels use conservative record math; ties at the cutoff are never assumed. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Estimates are not guarantees.</p></details>`;
         view.querySelector("[data-ta-team-select]").value = team.id;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,

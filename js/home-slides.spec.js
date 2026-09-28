@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, tradeAlertSlide, weekSlateSlide } from "./home-slides.js";
+import { currentMatchupWeek, headToHead, matchupPreviewSlide, matchupStory, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "./home-slides.js";
 
 describe("trade alert as a stage slide", () => {
   const alert = {
@@ -331,5 +331,17 @@ describe("the slate during a week in progress", () => {
     const [row] = weekSlateSlide({ fixtures: done, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
     expect([row.a.status, row.b.status]).toEqual(["FINAL", "FINAL"]);
     expect(row.a.up).toBe(true);
+  });
+});
+
+describe("playoff picture slide", () => {
+  it("turns the shared stakes model into one compact broadcast story", () => {
+    const slide = playoffPictureSlide({ season: 2026, week: 9, rows: [{
+      sleeperUserId: "me", name: "My Team", status: "alive",
+      projection: { playoffOdds: .63, seed: 4.2 },
+    }], gameOfWeek: { a: { name: "Alpha" }, b: { name: "Beta" }, spread: 2.4 } }, "me");
+    expect(slide.figure).toBe("63%");
+    expect(slide.headline).toBe("INSIDE THE PROJECTED FIELD");
+    expect(slide.subtitle).toContain("Game of the week: Alpha vs Beta");
   });
 });

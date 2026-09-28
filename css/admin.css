@@ -72,6 +72,16 @@
 #admin-tabs > button[data-section="broadcast"]::before { content:"LIVE"; font-size:10px; }
 #admin-tabs > button[data-section="ticker_items"]::before { content:"T"; }
 #admin-tabs > button[data-section="notifications"]::before { content:"N"; }
+.perf-health { display: grid; gap: 12px; margin-bottom: 16px; padding: 16px; border: 1px solid var(--control-line); border-radius: var(--r-lg); background: var(--bg-2); }
+.perf-health > div { display: grid; gap: 3px; }
+.perf-health > div small { color: var(--muted); font-weight: 800; letter-spacing: .11em; }
+.perf-health > div strong { font: 800 var(--fs-h2) var(--font-display); }
+.perf-health.is-good { border-color: var(--ok-line); background: color-mix(in srgb, var(--ok-bg) 55%, var(--bg-2)); }
+.perf-health ol { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; background: var(--line-soft); }
+.perf-health li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; background: var(--bg-2); }
+.perf-health li span { display: grid; gap: 2px; }
+.perf-health li small { color: var(--muted); }
+.perf-health li > strong { flex: none; color: var(--warn-ink); font-variant-numeric: tabular-nums; }
 #admin-tabs > button[data-section="commissioners"]::before { content:"A"; }
 
 #admin-tabs > button:hover {
