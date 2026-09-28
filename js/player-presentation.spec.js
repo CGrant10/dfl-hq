@@ -8,6 +8,8 @@ describe("shared player presentation", () => {
     expect(html).toContain("--player-primary:#0076B6");
     expect(html).toContain("Amon-Ra St. Brown");
     expect(html).toContain("is-up");
+    expect(html).toContain("classList.add('has-photo')");
+    expect(html).toContain("onerror=\"this.remove()\"");
   });
 
   it("uses the real team mark for defenses", () => {
@@ -16,4 +18,3 @@ describe("shared player presentation", () => {
     expect(html).toContain("is-team");
   });
 });
-

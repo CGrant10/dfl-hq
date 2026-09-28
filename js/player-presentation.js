@@ -9,7 +9,7 @@ export function playerPortrait(player = {}) {
   const source = defense ? teamLogoUrl(player.nflTeam || player.team)
     : player.id ? `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(player.id)}.jpg` : "";
   const style = club ? ` style="--player-primary:${esc(club.primary)};--player-secondary:${esc(club.secondary)}"` : "";
-  return `<span class="dfl-player-portrait${defense ? " is-team" : ""}"${style}><i>${esc(initials(player.name))}</i>${source ? `<img src="${esc(source)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ""}</span>`;
+  return `<span class="dfl-player-portrait${defense ? " is-team" : ""}"${style}><i>${esc(initials(player.name))}</i>${source ? `<img src="${esc(source)}" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">` : ""}</span>`;
 }
 
 export function playerIdentity(player = {}, { detail = "", signal = "" } = {}) {
@@ -18,4 +18,3 @@ export function playerIdentity(player = {}, { detail = "", signal = "" } = {}) {
   const meta = detail || [player.position, player.nflTeam || player.team].filter(Boolean).join(" · ");
   return `<span class="dfl-player">${playerPortrait(player)}<span class="dfl-player-copy"><strong>${esc(player.name || player.id || "Player")}</strong><small>${esc(meta)}</small></span>${status ? `<em class="is-${tone || "neutral"}">${esc(status)}</em>` : ""}</span>`;
 }
-
