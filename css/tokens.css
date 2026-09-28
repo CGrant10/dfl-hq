@@ -67,6 +67,7 @@
   /* rem, not px, so a reader who sets a larger default text size gets one. */
   --fs-micro:  0.6875rem;   /* 11px - timestamps, the quietest metadata   */
   --fs-label:  0.75rem;     /* 12px - column heads, badges, form labels   */
+  --fs-small:  0.8125rem;   /* 13px - supporting copy and compact rows    */
   --fs-body:   0.875rem;    /* 14px - card copy                          */
   /*
     FLUID, AND SET FROM THE ANNIVERSARY HEADLINE.
@@ -79,6 +80,7 @@
     from it on the same ratio.
   */
   --fs-h3:     clamp(0.95rem, 2.2vw, 1.12rem);   /* card titles    */
+  --fs-title-sm: clamp(1rem, 2.4vw, 1.2rem);     /* row headlines  */
   --fs-h2:     clamp(1.12rem, 3.2vw, 1.45rem);   /* section heads  */
   --fs-h1:     clamp(1.3rem,  3.8vw, 1.8rem);    /* page titles    */
   --fs-display: clamp(1.45rem, 4.2vw, 2.25rem);  /* hero headlines */

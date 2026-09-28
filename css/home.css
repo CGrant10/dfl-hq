@@ -2387,3 +2387,166 @@ span) { overflow-wrap: anywhere; }
     url("../assets/dfl-update-stadium.webp") center 23% / cover no-repeat;
 }
 :root[data-mode="light"] #home-wrap > .dfl-anniv > .dfl-anniv-copy strong { text-shadow: none; }
+
+/* =====================================================================
+   HOME POLISH PASS — one rhythm, fewer boxes, readable supporting type.
+
+   This deliberately starts below the established broadcast composition.
+   The anniversary, stage, rankings structure and sticky app chrome keep
+   their layout; the rules below align the supporting sections around them.
+   ===================================================================== */
+#home-wrap {
+  --home-gutter: clamp(18px, 4vw, 24px);
+  --home-program-muted: color-mix(in srgb, var(--text) 68%, var(--bg));
+}
+
+/* The three football rails now share the same edge and header rhythm. */
+#home-wrap .home-rankings-card,
+#home-wrap .home-weekly-digest,
+#home-wrap .home-trade-wire { padding-inline: var(--home-gutter); }
+#home-wrap .home-rankings-card > header,
+#home-wrap .home-weekly-digest > header,
+#home-wrap .home-trade-wire > header {
+  min-height: 60px;
+  gap: var(--s-3);
+}
+#home-wrap .home-rankings-card h2,
+#home-wrap .home-weekly-digest h2,
+#home-wrap .home-trade-wire h2 {
+  font-size: clamp(1.4rem, 4.4vw, 1.95rem);
+  letter-spacing: .065em;
+}
+#home-wrap :is(.home-rankings-card, .home-weekly-digest, .home-trade-wire) > header :is(a, button) {
+  flex: 0 0 auto;
+  transition: color var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease), background var(--t-mid) var(--ease);
+}
+
+/* Tabs read as one control rail, not another set of cards. */
+#home-wrap .home-week-tabs,
+#home-wrap .home-position-tabs,
+#home-wrap .home-feed-tabs {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--home-program-line);
+  background: transparent;
+}
+#home-wrap :is(.home-week-tabs, .home-position-tabs, .home-feed-tabs) button {
+  position: relative;
+  background: transparent;
+  transition: color var(--t-mid) var(--ease), background var(--t-mid) var(--ease);
+}
+#home-wrap :is(.home-week-tabs, .home-position-tabs, .home-feed-tabs) button + button {
+  border-left: 1px solid color-mix(in srgb, var(--home-program-line) 72%, transparent);
+}
+#home-wrap :is(.home-week-tabs, .home-position-tabs) button[aria-selected="true"],
+#home-wrap .home-position-tabs button[aria-pressed="true"],
+#home-wrap .home-feed-tabs button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent-2) 7%, transparent);
+  box-shadow: inset 0 -2px var(--accent-2);
+}
+#home-wrap .home-feed-tabs button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  box-shadow: inset 0 -2px var(--accent);
+}
+
+/* Rows use surface shifts and hairlines instead of nested bordered boxes. */
+#home-wrap .home-outlook-block { padding-block: var(--s-4); border-top: 0; }
+#home-wrap .home-outlook-games article,
+#home-wrap .home-outlook-alarms p,
+#home-wrap .home-outlook-swaps article,
+#home-wrap .home-outlook-clean,
+#home-wrap .home-outlook-players section {
+  background: color-mix(in srgb, var(--bg-2) 72%, var(--bg));
+}
+#home-wrap .home-outlook-title { margin-bottom: var(--s-3); }
+#home-wrap .home-outlook-title h3 { letter-spacing: .035em; }
+#home-wrap .home-outlook-players li span > small,
+#home-wrap .home-outlook-players li > em > small,
+#home-wrap .home-trade-call :is(small, em) { font-size: var(--fs-micro); }
+
+/* Wall and League Feed become editorial rails rather than cards in cards. */
+#home-wrap .wall.is-preview,
+#home-wrap .home-league-feed {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#home-wrap :is(.wall.is-preview, .home-league-feed) > .section-title {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0 var(--s-1);
+  border-bottom: 1px solid var(--home-program-line);
+}
+#home-wrap .wall.is-preview .wall-card {
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#home-wrap .wall.is-preview .wall-post { padding-block: var(--s-4); }
+#home-wrap .home-feed-panel {
+  padding: var(--s-4) var(--s-1);
+  border: 0;
+  border-bottom: 1px solid var(--home-program-line);
+  background: transparent;
+}
+
+/* Reserve the final footprint while the model loads so Home does not jump. */
+#home-wrap .home-rankings-card.is-loading { min-height: 286px; }
+#home-wrap .home-weekly-digest.is-loading { min-height: 230px; }
+#home-wrap .home-trade-wire.is-loading { min-height: 132px; }
+#home-wrap :is(.home-rankings-card, .home-weekly-digest, .home-trade-wire).is-loading > p {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  margin: 0;
+  padding: var(--s-4) 0;
+  line-height: var(--lh-snug);
+}
+
+@media (hover: hover) {
+  #home-wrap :is(.home-week-tabs, .home-position-tabs, .home-feed-tabs) button:hover {
+    color: var(--home-program-ink);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+  #home-wrap .home-trade-item:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+}
+
+@media (max-width: 620px) {
+  #home-wrap { --home-gutter: 18px; }
+  #home-wrap .home-rankings-card h2,
+  #home-wrap .home-weekly-digest h2,
+  #home-wrap .home-trade-wire h2 { font-size: clamp(1.35rem, 5.7vw, 1.72rem); }
+  #home-wrap .home-weekly-digest > header a {
+    min-height: 36px;
+    max-width: 110px;
+    padding-inline: 9px;
+    font-size: var(--fs-micro);
+    line-height: 1.1;
+    text-align: center;
+  }
+  #home-wrap .home-week-tabs button { padding-inline: 6px; font-size: var(--fs-label); }
+  #home-wrap .home-position-tabs button { font-size: var(--fs-small); }
+  #home-wrap .home-trade-call small,
+  #home-wrap .home-trade-call em,
+  #home-wrap .home-trade-deal b,
+  #home-wrap .home-trade-deal em,
+  #home-wrap .home-trade-deal p { font-size: var(--fs-micro); }
+}
+
+@media (max-width: 370px) {
+  #home-wrap { --home-gutter: 16px; }
+  #home-wrap .home-week-tabs button { font-size: var(--fs-micro); letter-spacing: .015em; }
+  #home-wrap .home-week-tabs button b { display: none; }
+  #home-wrap .home-position-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #home-wrap .home-position-tabs button:nth-child(n + 4) { border-top: 1px solid var(--home-program-line); }
+}
