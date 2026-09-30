@@ -171,7 +171,7 @@ export async function render(view){
     <p class="muted tiny" style="text-align:center">SIN is play money only.</p>
     ${slipBar(slip,outcomeMap,marketMap)}
     </div>
-    <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc)}</div>
+    <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc,canBook)}</div>
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;

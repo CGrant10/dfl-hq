@@ -54,6 +54,52 @@ async function syncPublicPickem(admin:ReturnType<typeof createClient>,season:num
   return games;
 }
 
+async function sendPickemNotice(url:string,cronToken:string,payload:J){
+  if(cronToken.length<32)return null;
+  try{
+    const response=await fetch(`${url}/functions/v1/send-notification`,{method:"POST",headers:{"content-type":"application/json","x-dfl-cron-token":cronToken},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
+    const body=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(body.error||`Notification returned ${response.status}`);
+    return body;
+  }catch(error){console.warn("pickem notification unavailable",error);return null}
+}
+
+async function pickemNotifications(admin:ReturnType<typeof createClient>,url:string,cronToken:string,season:number,week:number){
+  if(cronToken.length<32)return{reminder:false,recap:false};
+  let reminder=false,recap=false;
+  const chicagoWeekday=new Intl.DateTimeFormat("en-US",{timeZone:"America/Chicago",weekday:"short"}).format(new Date());
+  const [{data:games,error:gamesError},{data:config}]=await Promise.all([
+    admin.from("nfl_pickem_games").select("starts_at").eq("season",season).eq("week",week).order("starts_at").limit(1),
+    admin.from("nfl_pickem_config").select("weekly_prize").eq("singleton",true).maybeSingle(),
+  ]);
+  if(gamesError)throw gamesError;
+  const lockAt=games?.[0]?.starts_at?new Date(games[0].starts_at):null;
+  if(chicagoWeekday==="Thu"&&lockAt&&lockAt>new Date()){
+    const [{data:members,error:memberError},{data:entries,error:entryError}]=await Promise.all([
+      admin.from("members").select("id").eq("active",true),
+      admin.from("nfl_pickem_entries").select("member_id").eq("season",season).eq("week",week),
+    ]);
+    if(memberError||entryError)throw memberError||entryError;
+    const entered=new Set((entries||[]).map(row=>Number(row.member_id)));
+    const missing=(members||[]).map(row=>Number(row.id)).filter(id=>Number.isSafeInteger(id)&&!entered.has(id));
+    if(missing.length){
+      const outcome=await sendPickemNotice(url,cronToken,{title:`Week ${week} Pick'em locks tonight`,body:`Your card is still empty. Pick the full slate before Thursday kickoff.${Number(config?.weekly_prize||0)>0?` Winner gets ${Number(config.weekly_prize)} SIN.`:""}`,category:"sportsbook",targetUrl:"#/sportsbook",sourceKey:`sportsbook:pickem:${season}:${week}:reminder`,audience:"members",targetMemberIds:missing});
+      reminder=!!outcome?.ok;
+    }
+  }
+  const previousWeek=Math.max(0,week-1);
+  if(previousWeek){
+    const{data:winner,error}=await admin.from("nfl_pickem_entries").select("correct_count,tiebreak_delta,prize_paid,member_id,members(display_name)").eq("season",season).eq("week",previousWeek).eq("weekly_rank",1).eq("graded",true).limit(1).maybeSingle();
+    if(error)throw error;
+    if(winner){
+      const member=Array.isArray(winner.members)?winner.members[0]:winner.members;
+      const outcome=await sendPickemNotice(url,cronToken,{title:`Week ${previousWeek} Pick'em winner`,body:`${member?.display_name||"The weekly winner"} took it with ${Number(winner.correct_count)} right${winner.tiebreak_delta!=null?` and missed the MNF total by ${Number(winner.tiebreak_delta)}`:""}.${Number(winner.prize_paid||0)>0?` +${Number(winner.prize_paid)} SIN.`:""}`,category:"sportsbook",targetUrl:"#/sportsbook",sourceKey:`sportsbook:pickem:${season}:${previousWeek}:results`,audience:"all"});
+      recap=!!outcome?.ok;
+    }
+  }
+  return{reminder,recap};
+}
+
 Deno.serve(async request=>{
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors(request)});
   if(request.method!=="POST")return json({error:"Method not allowed"},405,request);
@@ -67,7 +113,8 @@ Deno.serve(async request=>{
   try{
     const nfl=await publicNflState();
     const publicGames=await syncPublicPickem(admin,nfl.season,nfl.week);
-    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:0,syncedAt:new Date().toISOString()},200,request);
+    const notices=await pickemNotifications(admin,url,request.headers.get("x-dfl-cron-token")||"",nfl.season,nfl.week);
+    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:0,notices,syncedAt:new Date().toISOString()},200,request);
     const now=new Date(),after=new Date(now.getTime()-8*864e5),before=new Date(now.getTime()+11*864e5);
     const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),includeOpposingOdds:"true",expandResults:"true",bookmakerID:"underdog,draftkings,fanduel",limit:"50"});
     const response=await fetch(`${API}?${q}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
@@ -90,6 +137,6 @@ Deno.serve(async request=>{
         const{error:oe}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(oe)throw oe;props++;
       }
     }
-    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled,syncedAt:new Date().toISOString()},200,request);
+    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled,notices,syncedAt:new Date().toISOString()},200,request);
   }catch(error){return json({ok:false,error:error instanceof Error?error.message:String(error)},500,request)}
 });

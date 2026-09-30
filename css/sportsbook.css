@@ -52,6 +52,7 @@
 .sb-pickem-sides>span { color:var(--muted); font-size:var(--fs-micro); }
 .sb-pickem-sides button { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-width:0; min-height:48px; padding:var(--s-2) var(--s-3); border:1px solid var(--line); border-radius:var(--r-md); background:var(--card-surface); color:var(--body-text); font:inherit; font-weight:var(--fw-bold); cursor:pointer; }
 .sb-pickem-sides button span { overflow:hidden; text-overflow:ellipsis; }
+.sb-pickem-sides button small { margin-left:auto; color:var(--muted); font-size:var(--fs-micro); font-weight:var(--fw-bold); }
 .sb-pickem-sides button[aria-pressed="true"] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 13%,var(--card-surface)); color:var(--text); box-shadow:inset 3px 0 var(--accent); }
 .sb-pickem-lock { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--s-3); align-items:end; margin:var(--s-5) 0; padding:var(--s-4); border:1px solid var(--line); border-radius:var(--r-md); }
 .sb-pickem-lock label span { display:block; margin-bottom:var(--s-2); font-weight:var(--fw-bold); }
@@ -61,11 +62,29 @@
 .sb-pickem-standings li { display:grid; grid-template-columns:28px minmax(0,1fr) auto auto; gap:var(--s-3); align-items:center; min-height:48px; border-bottom:1px solid var(--line-soft); }
 .sb-pickem-standings li>b,.sb-pickem-standings li small { color:var(--muted); }
 .sb-pickem-empty { padding:var(--s-7) var(--s-5); border:1px solid var(--line); border-radius:var(--r-lg); text-align:center; }
+.sb-pickem-recap { margin:0 0 var(--s-5); padding:var(--s-4); border:1px solid color-mix(in srgb,var(--accent-2) 38%,var(--line)); border-radius:var(--r-lg); background:linear-gradient(135deg,color-mix(in srgb,var(--accent-2) 12%,var(--card-surface)),var(--card-surface)); }
+.sb-pickem-recap header small,.sb-pickem-recap header strong { display:block; }
+.sb-pickem-recap header small { color:var(--accent-2); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.16em; }
+.sb-pickem-recap header strong { margin-top:3px; font-family:var(--font-display); font-size:var(--fs-h2); }
+.sb-pickem-recap>div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s-3); margin-top:var(--s-4); }
+.sb-pickem-recap span { min-width:0; padding-top:var(--s-2); border-top:1px solid var(--line); }
+.sb-pickem-recap span small,.sb-pickem-recap span b { display:block; }
+.sb-pickem-recap span small { color:var(--muted); font-size:var(--fs-micro); letter-spacing:.08em; }
+.sb-pickem-prize { display:flex; align-items:end; justify-content:space-between; gap:var(--s-4); margin-top:var(--s-6); padding:var(--s-4) 0; border-top:1px solid var(--line); }
+.sb-pickem-prize label span,.sb-pickem-prize label small { display:block; }
+.sb-pickem-prize label span { font-weight:var(--fw-bold); }
+.sb-pickem-prize label small { margin-top:4px; color:var(--muted); }
+.sb-pickem-prize input { max-width:160px; margin-top:var(--s-2); }
+.sb-pickem-card-picks { grid-column:2/-1; margin-top:4px; color:var(--muted); font-size:var(--fs-micro); }
+.sb-pickem-card-picks summary { cursor:pointer; color:var(--accent-2); font-weight:var(--fw-bold); letter-spacing:.08em; text-transform:uppercase; }
+.sb-pickem-card-picks p { margin:6px 0 0; line-height:1.55; }
 
 @media(max-width:680px){
   .sb-pickem-games { grid-template-columns:minmax(0,1fr); }
   .sb-pickem-lock { grid-template-columns:1fr; align-items:stretch; }
   .sb-pickem-lock input { max-width:none; }
+  .sb-pickem-recap>div { grid-template-columns:1fr; }
+  .sb-pickem-prize { align-items:stretch; flex-direction:column; }
 }
 
 /* ---------------------------------------------------------------------

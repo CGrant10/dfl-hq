@@ -392,6 +392,23 @@ describe("the supported golf GPS courses", () => {
     expect(sender).toContain("(?:trade|weekly|sportsbook)");
   });
 
+  it("runs the full Pick'em game-day and recap experience", () => {
+    const migration = fs.readFileSync("pickem_experience_schema.sql", "utf8");
+    const pickem = fs.readFileSync("js/sportsbook-pickem.js", "utf8");
+    const home = fs.readFileSync("js/pages/home.js", "utf8");
+    const feed = fs.readFileSync("supabase/functions/sync-sportsbook-feed/index.ts", "utf8");
+    expect(migration).toContain("weekly_prize");
+    expect(migration).toContain("prize_paid=0");
+    expect(migration).toContain("private.pickem_season_rankings");
+    expect(migration).toContain("'15 * * * 0,1,2'");
+    expect(pickem).toContain("awayPickPct");
+    expect(pickem).toContain("View picks");
+    expect(pickem).toContain("YOUR RECEIPT");
+    expect(home).toContain("homePickemMarkup(board, esc)");
+    expect(feed).toContain("Pick'em locks tonight");
+    expect(feed).toContain(":results`");
+  });
+
   it("keeps typography and component geometry consistent across app themes", () => {
     const tokens = fs.readFileSync("css/tokens.css", "utf8");
     const ui = fs.readFileSync("css/ui.css", "utf8");

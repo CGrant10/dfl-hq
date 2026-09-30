@@ -51,6 +51,7 @@ import { loadLeagueState } from "../league-state.js";
 import { buildWeeklyBriefing } from "../weekly-briefing.js";
 import { buildAftermath, shareAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
+import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 
 let stage = null;
 let generation = 0;
@@ -473,6 +474,10 @@ export async function render(view) {
   const manualPromise = loadBroadcastItems();
   const overridesPromise = loadBroadcastOverrides();
   const lorePromise = loadLore();
+  const pickemPromise = loadPickemBoard().catch(error => {
+    console.warn("pick'em card unavailable", error);
+    return { available: false };
+  });
   let bootstrap, settings;
   try { [bootstrap, settings] = await Promise.all([loadHomeBootstrap(today), loadSettings()]); }
   catch (error) { view.innerHTML = errorBox(error); return; }
@@ -532,6 +537,7 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <div data-home-pickem-slot></div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
@@ -580,6 +586,11 @@ export async function render(view) {
   }).catch(err => { console.warn("Tuesday report unavailable", err); return null; });
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
+  pickemPromise.then(board => {
+    if (mine !== generation || !view.isConnected) return;
+    const slot = view.querySelector("[data-home-pickem-slot]");
+    if (slot) slot.innerHTML = homePickemMarkup(board, esc);
+  });
 
   /* Lower-page social and draft data no longer compete with the broadcast,
      rankings and weekly model. Each starts only as its slot approaches the
