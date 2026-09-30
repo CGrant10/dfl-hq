@@ -422,6 +422,8 @@ describe("the supported golf GPS courses", () => {
     expect(feed).toContain(".slice(0,96)");
     expect(feed).toContain("upsert(selected.map(row=>row.market)");
     expect(sportsbook).toContain('.in("market_id",marketIds)');
+    expect(sportsbook).toContain('.neq("category","Player Props")');
+    expect(sportsbook).toContain('.limit(48)');
     expect(providerConflict).toContain("uq_sportsbook_outcome_provider_side_full");
     expect(providerConflict).toContain("uq_sportsbook_market_provider_key_full");
     expect(notifications).toContain("my_push_delivery_status");

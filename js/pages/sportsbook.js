@@ -101,9 +101,12 @@ export async function render(view){
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
-    const mr=await db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100);
-    if(mr.error)throw mr.error;
-    markets=mr.data||[];
+    const[mr,propMarkets]=await Promise.all([
+      db().from("sportsbook_markets").select("*").neq("category","Player Props").order("created_at",{ascending:false}).limit(100),
+      db().from("sportsbook_markets").select("*").eq("category","Player Props").order("provider_updated_at",{ascending:false}).limit(48)
+    ]);
+    if(mr.error||propMarkets.error)throw mr.error||propMarkets.error;
+    markets=[...(mr.data||[]),...(propMarkets.data||[])].filter((market,index,all)=>all.findIndex(row=>String(row.id)===String(market.id))===index);
     const marketIds=markets.map(m=>m.id);
     const[lr,br,or,btr,tr,memberRows,pickemBoard]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
