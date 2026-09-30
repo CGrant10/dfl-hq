@@ -9,6 +9,7 @@ import { shareTicket, shareSportsbookRecap } from "../sportsbook-ticket.js";
 import { teamPortrait } from "../team-presentation.js";
 import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
 import { sleeperPropImporterMarkup, wireSleeperPropImporter } from "../sleeper-prop-import-ui.js";
+import { propMarketMeta, propMatches, readPropFavorites, sortPropRows, togglePropFavorite } from "../sportsbook-props.js";
 
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
@@ -98,8 +99,9 @@ async function loadSportsbookIdentities(){
 export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
+  const canBook=hasPermission("sportsbook");
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap;
+  let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,feedStatus={};
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
@@ -113,7 +115,7 @@ export async function render(view){
     markets=[...(mr.data||[]),...(propMarkets.data||[])].filter((market,index,all)=>all.findIndex(row=>String(row.id)===String(market.id))===index);
     const marketIds=markets.map(m=>m.id);
     const outcomePages=async()=>{if(!marketIds.length)return{data:[],error:null};const rows=[];for(let from=0;from<marketIds.length;from+=500){const{data,error}=await db().from("sportsbook_outcomes").select("*").in("market_id",marketIds.slice(from,from+500)).order("sort_order");if(error)return{data:rows,error};rows.push(...(data||[]))}return{data:rows,error:null}};
-    const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult]=await Promise.all([
+    const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult,feedResult]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
       outcomePages(),
@@ -121,16 +123,16 @@ export async function render(view){
       db().rpc("sportsbook_trending_picks",{row_limit:3}),
       loadSportsbookIdentities(),
       loadPickemBoard().catch(()=>({available:false})),
-      db().rpc("sportsbook_weekly_recap",{})
+      db().rpc("sportsbook_weekly_recap",{}),
+      canBook?edge().functions.invoke("sync-sportsbook-feed",{body:{action:"status"},headers:privilegedFunctionHeaders()}):Promise.resolve({data:null,error:null})
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;
+    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
-  const canBook=hasPermission("sportsbook");
   const open=markets.filter(m=>isOpen(m)&&isBookCategory(m)&&!isGolf(m));
   const onBoard=new Set(open.map(m=>String(m.id)));
   /*
@@ -167,12 +169,12 @@ export async function render(view){
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
-    ${canBook?`${refreshFeedControl()}${sleeperPropImporterMarkup()}`:""}
+    ${canBook?`${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}`:""}
     ${trendingPicks(trends)}
     ${weeklyRecapMarkup(recap)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap,members)}
+    ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap,members,me.id)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -192,7 +194,7 @@ export async function render(view){
   view.__bets=bets;
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   wireProductTabs(view);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view);wireRecapShare(view,recap);
+  wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id);wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
 }
@@ -301,13 +303,13 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
-function marketCard(m,outcomes,canBook,picked,held,members){
+function marketCard(m,outcomes,canBook,picked,held,members,meta=null,favorite=false){
   const key=matchupKey(m);
   const imported=String(m.provider_key||"").startsWith("sleeper-import:");
   const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"CONSENSUS"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
-  const prop=m.category==="Player Props",stat=prop?String(m.title||"").split("·").at(-1).trim().toLowerCase():"";
-  const attrs=prop?` data-prop-card data-prop-text="${esc(String(m.title||"").toLowerCase())}" data-prop-stat="${esc(stat)}"`:"";
-  return `<article class="card sb-market"${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
+  const prop=m.category==="Player Props",info=meta||propMarketMeta(m,outcomes);
+  const attrs=prop?` data-prop-card data-prop-key="${esc(info.key)}" data-prop-player="${esc(info.player)}" data-prop-stat="${esc(info.stat.toLowerCase())}" data-prop-position="${esc(info.position)}" data-prop-team="${esc(info.team)}" data-prop-game="${esc(info.matchup)}" data-prop-source="${esc(info.source)}" data-prop-updated="${info.updatedAt}" data-prop-price="${info.bestPrice}"`:"";
+  return `<article class="card sb-market"${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)}</span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -329,7 +331,7 @@ function heldOutcomes(bets,marketMap,outcomeMap){
   return held;
 }
 
-function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[]){
+function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[],memberId=null){
   if(!markets.length)return "";
   propGameCache.clear();
   const picked=new Set(slip.map(String));
@@ -340,10 +342,14 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   return cats.map(cat=>{
     const group=groups.get(cat);
     if(cat==="Player Props"){
-      const games=new Map();group.forEach(market=>{const label=String(market.lore_note||"").split(" · Book consensus")[0]||"NFL props",key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,html:marketCard(market,byMarket.get(String(market.id))||[],canBook,picked,held,members)});games.set(key,bucket)});
-      for(const[key,game]of games)propGameCache.set(key,game.rows);
+      const favorites=readPropFavorites(memberId),games=new Map();group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:marketCard(market,choices,canBook,picked,held,members,meta,favorites.has(meta.key))});games.set(key,bucket)});
+      for(const[key,game]of games)propGameCache.set(key,sortPropRows(game.rows,"player"));
+      const metas=[...games.values()].flatMap(game=>game.rows.map(row=>row.meta));
+      const positionOrder=["QB","RB","WR","TE"];const positions=[...new Set(metas.map(meta=>meta.position).filter(Boolean))].sort((a,b)=>(positionOrder.indexOf(a)<0?99:positionOrder.indexOf(a))-(positionOrder.indexOf(b)<0?99:positionOrder.indexOf(b))||a.localeCompare(b));
+      const teams=[...new Set(metas.map(meta=>meta.team).filter(Boolean))].sort();
+      const gameNames=[...new Set(metas.map(meta=>meta.matchup).filter(Boolean))].sort();
       return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>Current week &middot; consensus lines</small><h2>Player props</h2></div><span>${group.length} lines</span></div>
-        <div class="sb-prop-tools"><label><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Search player"></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing">Passing</option><option value="rushing">Rushing</option><option value="receiving">Receiving</option><option value="receptions">Receptions</option><option value="touchdown">Touchdowns</option><option value="fantasy">Fantasy points</option></select></label></div>
+        <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player, team or matchup"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><details class="sb-prop-filter-drawer"><summary>Filter and sort <span>Position · stat · team · game</span></summary><div class="sb-prop-filter-grid"><label><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing">Passing</option><option value="rushing">Rushing</option><option value="receiving">Receiving</option><option value="receptions">Receptions</option><option value="touchdown">Touchdowns</option><option value="fantasy">Fantasy points</option></select></label><label><span>Team</span><select id="sb-prop-team"><option value="">All teams</option>${teams.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Game</span><select id="sb-prop-game"><option value="">All games</option>${gameNames.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Source</span><select id="sb-prop-source"><option value="">All sources</option><option value="sportsbooks">Sportsbooks</option><option value="sleeper">Sleeper</option></select></label><label><span>Sort</span><select id="sb-prop-sort"><option value="player">Player</option><option value="stat">Stat</option><option value="price">Best price</option><option value="updated">Newest</option></select></label></div></details></div>
         <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${game.rows.length} props</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
         <p class="sb-empty" data-prop-empty hidden>No props match that filter.</p></section>`;
     }
@@ -358,15 +364,19 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   }).join("");
 }
 
-function wirePropFilters(view){
-  const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat");if(!search||!stat)return;
-  const hydrate=game=>{const grid=game.querySelector("[data-prop-grid]");if(!grid||grid.dataset.ready)return;const rows=propGameCache.get(game.dataset.propKey)||[];grid.innerHTML=rows.map(row=>row.html).join("");grid.dataset.ready="true"};
+function wirePropFilters(view,memberId){
+  const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat"),position=view.querySelector("#sb-prop-position"),team=view.querySelector("#sb-prop-team"),gameFilter=view.querySelector("#sb-prop-game"),source=view.querySelector("#sb-prop-source"),sort=view.querySelector("#sb-prop-sort"),favoriteToggle=view.querySelector("[data-prop-favorites]");if(!search||!stat)return;
+  let favoriteKeys=readPropFavorites(memberId),favoritesOnly=false;
+  const paintFavorites=grid=>grid?.querySelectorAll("[data-prop-favorite]").forEach(button=>{const active=favoriteKeys.has(button.dataset.propFavorite);button.classList.toggle("is-favorite",active);button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",`${active?"Remove from":"Add to"} favorite props`)});
+  const hydrate=game=>{const grid=game.querySelector("[data-prop-grid]");if(!grid||grid.dataset.ready)return;const rows=sortPropRows(propGameCache.get(game.dataset.propKey)||[],sort?.value||"player");grid.innerHTML=rows.map(row=>row.html).join("");grid.dataset.ready="true";paintFavorites(grid)};
   view.querySelectorAll("[data-prop-game]").forEach(game=>game.addEventListener("toggle",()=>{if(game.open)hydrate(game)}));
-  const apply=()=>{const query=search.value.trim().toLowerCase(),kind=stat.value;let total=0;
-    view.querySelectorAll("[data-prop-game]").forEach(game=>{hydrate(game);let visible=0;game.querySelectorAll("[data-prop-card]").forEach(card=>{const show=(!query||card.dataset.propText.includes(query))&&(!kind||card.dataset.propStat.includes(kind));card.hidden=!show;if(show)visible++});game.hidden=!visible;const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
+  const apply=()=>{const filters={query:search.value,stat:stat.value,position:position?.value||"",team:team?.value||"",game:gameFilter?.value||"",source:source?.value||"",favorites:favoritesOnly,favoriteKeys},active=Object.values(filters).some(value=>value&&!(value instanceof Set));let total=0;
+    view.querySelectorAll("[data-prop-game]").forEach(game=>{const grid=game.querySelector("[data-prop-grid]"),rows=sortPropRows(propGameCache.get(game.dataset.propKey)||[],sort?.value||"player"),visibleRows=rows.filter(row=>propMatches(row.meta,filters)),visible=visibleRows.length;game.hidden=!visible;if(active&&visible)game.open=true;if(grid&&(active||game.open||grid.dataset.ready)){grid.innerHTML=visibleRows.map(row=>row.html).join("");grid.dataset.ready="true";paintFavorites(grid)}const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
     const empty=view.querySelector("[data-prop-empty]");if(empty)empty.hidden=total>0;
   };
-  search.addEventListener("input",apply);stat.addEventListener("change",apply);
+  search.addEventListener("input",apply);[stat,position,team,gameFilter,source,sort].filter(Boolean).forEach(control=>control.addEventListener("change",apply));
+  favoriteToggle?.addEventListener("click",()=>{favoritesOnly=!favoritesOnly;favoriteToggle.setAttribute("aria-pressed",String(favoritesOnly));favoriteToggle.classList.toggle("is-active",favoritesOnly);apply()});
+  view.querySelector(".sb-props")?.addEventListener("click",event=>{const button=event.target.closest("[data-prop-favorite]");if(!button)return;favoriteKeys=togglePropFavorite(memberId,button.dataset.propFavorite);const active=favoriteKeys.has(button.dataset.propFavorite);button.classList.toggle("is-favorite",active);button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",`${active?"Remove from":"Add to"} favorite props`);if(favoritesOnly)apply()});
 }
 
 /*
@@ -589,7 +599,7 @@ function rulingQueue(markets,byMarket){
   sees it: canBook gates the whole thing.
 */
 function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
-function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>NFL FEED</small><span>Matchups, real prop lines + settlement</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
+function refreshFeedControl(status={}){const objects=Number(status.monthlyEventObjects)||0,last=status.lastSuccessAt?fmtTime(status.lastSuccessAt):"not synced";return `<div class="sb-feed-control"><div><small>NFL FEED</small><span>Matchups, real prop lines + settlement</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite">Last ${esc(last)} · ${objects} API event objects this month${status.lastError?` · ${esc(status.lastError)}`:""}</p></div>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 
 /*
@@ -689,7 +699,7 @@ function wireFeedRefresh(view){
   button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling matchups and prop lines…";
     const{data,error}=await edge().functions.invoke("sync-sportsbook-feed",{body:{action:"sync"},headers:privilegedFunctionHeaders()});
     if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.error||error?.message||"Feed unavailable";return}
-    toast(`${Number(data.games||0)} games · ${Number(data.props||0)} props · ${Number(data.teamTotals||0)} totals · ${Number(data.billedEventObjects||data.events||0)} API objects`);render(view);
+    toast(`${data.cached?"Cached · ":""}${Number(data.games||0)} games · ${Number(data.props||0)} props · ${Number(data.teamTotals||0)} totals · ${Number(data.billedEventObjects||0)} new API objects`);render(view);
   });
 }
 

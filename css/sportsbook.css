@@ -1238,9 +1238,18 @@
 
 /* Current-week prop finder: the game is the collapsible unit, so a real
    sportsbook board stays scan-friendly instead of becoming a 48-card wall. */
-.sb-prop-tools{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(130px,.7fr);gap:var(--s-3);margin:0 0 var(--s-3)}
+.sb-prop-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s-3);align-items:end;margin:0 0 var(--s-3)}
 .sb-prop-tools label{display:grid;gap:5px;color:var(--muted);font-size:var(--fs-micro);font-weight:var(--fw-bold);letter-spacing:.08em;text-transform:uppercase}
 .sb-prop-tools input,.sb-prop-tools select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:var(--r-control);background:var(--bg-2);color:var(--text);font:inherit;font-size:var(--fs-body);letter-spacing:0;text-transform:none}
+.sb-prop-favorites{min-height:44px;border:1px solid var(--line);border-radius:var(--r-control);background:var(--bg-2);color:var(--muted);font:inherit;font-weight:var(--fw-bold);cursor:pointer}
+.sb-prop-favorites.is-active{border-color:color-mix(in srgb,var(--gold,#d8b65b) 58%,var(--line));background:color-mix(in srgb,var(--gold,#d8b65b) 11%,var(--bg-2));color:var(--gold,#d8b65b)}
+.sb-prop-filter-drawer{grid-column:1/-1;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.sb-prop-filter-drawer>summary{display:flex;justify-content:space-between;gap:var(--s-3);padding:10px 2px;list-style:none;color:var(--text);font-weight:var(--fw-bold);cursor:pointer}
+.sb-prop-filter-drawer>summary::-webkit-details-marker{display:none}.sb-prop-filter-drawer>summary span{color:var(--muted);font-size:var(--fs-micro);font-weight:var(--fw-semi)}
+.sb-prop-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-3);padding:0 0 var(--s-3)}
+.sb-market-source{display:block;margin-top:4px;color:var(--muted);font-size:var(--fs-micro);font-weight:var(--fw-semi);letter-spacing:.05em}
+.sb-prop-favorite{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--bg-2);color:var(--muted);font-size:17px;cursor:pointer}
+.sb-prop-favorite.is-favorite{border-color:color-mix(in srgb,var(--gold,#d8b65b) 64%,var(--line));background:color-mix(in srgb,var(--gold,#d8b65b) 12%,var(--bg-2));color:var(--gold,#d8b65b)}
 .sb-prop-games{border-top:1px solid var(--line)}
 .sb-prop-games>details{border-bottom:1px solid var(--line)}
 .sb-prop-games>details>summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);min-height:54px;padding:var(--s-2) 2px;color:var(--text);font-weight:var(--fw-bold);cursor:pointer;list-style:none}
@@ -1266,4 +1275,5 @@
 .sb-leg-pulse.is-live,.sb-leg-pulse.is-push{color:var(--warn-ink)}
 
 @media(max-width:760px){.sb-recap-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-recap-grid article:nth-child(2){border-right:0}.sb-recap-grid article:nth-child(-n+2){border-bottom:1px solid var(--line)}}
-@media(max-width:520px){.sb-prop-tools{grid-template-columns:1fr}.sb-recap-grid{grid-template-columns:1fr}.sb-recap-grid article{border-right:0;border-bottom:1px solid var(--line)}.sb-recap-grid article:last-child{border-bottom:0}}
+@media(max-width:760px){.sb-prop-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-prop-filter-drawer>summary span{display:none}}
+@media(max-width:520px){.sb-prop-tools{grid-template-columns:minmax(0,1fr) auto}.sb-prop-favorites{padding-inline:12px}.sb-prop-filter-grid{grid-template-columns:1fr}.sb-recap-grid{grid-template-columns:1fr}.sb-recap-grid article{border-right:0;border-bottom:1px solid var(--line)}.sb-recap-grid article:last-child{border-bottom:0}}

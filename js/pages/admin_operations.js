@@ -1,4 +1,4 @@
-import { db } from "../supabase.js";
+import { db, edge, privilegedFunctionHeaders } from "../supabase.js";
 import { endBreakingTradeCoverage, loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { createCustomBreakingAlert, endCustomBreakingAlert, loadCustomAlerts } from "../custom-alerts.js";
 import { esc, fmtWhen, toast } from "../ui.js";
@@ -35,7 +35,7 @@ function customRow(alert) {
 
 export async function renderOperationsPanel(host) {
   host.innerHTML = `<div class="card"><div class="card-body muted">Checking league operations…</div></div>`;
-  const [configResult, marketResult, operationsResult, scheduleResult, performanceResult, alertResult, customResult] = await Promise.all([
+  const [configResult, marketResult, operationsResult, scheduleResult, performanceResult, alertResult, customResult, sportsbookFeedResult] = await Promise.all([
     settled(db().from("sleeper_config").select("last_synced_at,last_sync_note,last_auto_checked_at,last_auto_error,auto_sync_enabled").eq("id", 1).maybeSingle()),
     settled(db().from("sportsbook_markets").select("id", { count: "exact", head: true }).in("status", ["open", "locked"])),
     settled(db().rpc("commissioner_operations_health")),
@@ -43,6 +43,7 @@ export async function renderOperationsPanel(host) {
     settled(db().rpc("app_performance_summary", { days_back: 14 })),
     settled(loadTradeAlerts({ limit: 20 })),
     settled(loadCustomAlerts({ limit: 10 })),
+    settled(edge().functions.invoke("sync-sportsbook-feed", { body: { action: "status" }, headers: privilegedFunctionHeaders() })),
   ]);
   const config = configResult.value?.data || {};
   const health = syncHealth(config);
@@ -60,6 +61,9 @@ export async function renderOperationsPanel(host) {
   const schedule = scheduleResult.value?.data || {};
   const nextSync = schedule.enabled ? nextSleeperSync(schedule.slots || []) : null;
   const hotspots = performanceFindings(performanceResult.value?.data || []);
+  const sportsbookFeed = sportsbookFeedResult.value?.data || {};
+  const feedError = sportsbookFeed.lastError || sportsbookFeedResult.error?.message || sportsbookFeedResult.value?.error?.message || "";
+  const feedObjects = Number(sportsbookFeed.monthlyEventObjects) || 0;
   const finalWeek = Number(operations.latest_final_week) || 0;
   const settlementPending = Number(operations.settlement_pending) || 0;
   const automationSteps = [
@@ -77,7 +81,7 @@ export async function renderOperationsPanel(host) {
       <a class="ops-status is-${health.tone}" href="#/admin"><small>LEAGUE DATA</small><strong>${esc(health.label)}</strong><span>${esc(health.detail)}</span></a>
       <a class="ops-status ${config.last_auto_error ? "is-bad" : "is-good"}" href="#/admin"><small>AUTO SYNC</small><strong>${config.auto_sync_enabled ? "Enabled" : "Paused"}</strong><span>${esc(config.last_auto_error || (config.last_auto_checked_at ? `Checked ${fmtWhen(config.last_auto_checked_at)}` : "No check recorded"))}</span></a>
       <a class="ops-status ${pushFailures ? "is-warn" : "is-good"}" href="#/notifications"><small>PUSH HEALTH</small><strong>${pushDevices}</strong><span>${pushFailures ? `${pushFailures} delivery failures recorded` : "Enabled devices healthy"}</span></a>
-      <a class="ops-status ${unsettledTickets ? "is-warn" : "is-good"}" href="#/sportsbook"><small>SPORTSBOOK</small><strong>${unsettledTickets}</strong><span>Unsettled tickets · ${countOf(marketResult)} active markets</span></a>
+      <a class="ops-status ${unsettledTickets || feedError ? "is-warn" : "is-good"}" href="#/sportsbook"><small>SPORTSBOOK</small><strong>${unsettledTickets}</strong><span>${countOf(marketResult)} active markets · ${feedObjects} API objects this month</span></a>
       <a class="ops-status ${memberReview ? "is-warn" : "is-good"}" href="#/admin"><small>MEMBER REVIEW</small><strong>${memberReview}</strong><span>Inactive or unlinked profiles</span></a>
       <a class="ops-status ${hotspots.length ? "is-warn" : "is-good"}" href="#/admin" data-open-performance><small>PERFORMANCE</small><strong>${hotspots.length}</strong><span>${hotspots.length ? "Real-user hotspots" : "Within current targets"}</span></a>
     </div>
@@ -85,7 +89,8 @@ export async function renderOperationsPanel(host) {
       <div><p><small>EXPIRED PUSH ENDPOINTS</small><strong>${expiredDevices}</strong><span>Automatically replaced when an opted-in device returns.</span></p>
       <p><small>MISSING PROFILE IMAGES</small><strong>${missingImages}</strong><span>Active members using the fallback mark.</span></p>
       <p><small>LAST PUSH DELIVERY</small><strong>${operations.last_push_success ? esc(fmtWhen(operations.last_push_success)) : "No success recorded"}</strong><span>${pushFailures ? `${pushFailures} active delivery failures` : "Current endpoints are clean"}</span></p>
-      <p><small>OLDEST OPEN TICKET</small><strong>${operations.oldest_open_ticket ? esc(fmtWhen(operations.oldest_open_ticket)) : "None"}</strong><span>${unsettledTickets} tickets awaiting settlement.</span></p></div>
+      <p><small>OLDEST OPEN TICKET</small><strong>${operations.oldest_open_ticket ? esc(fmtWhen(operations.oldest_open_ticket)) : "None"}</strong><span>${unsettledTickets} tickets awaiting settlement.</span></p>
+      <p><small>ODDS FEED</small><strong>${sportsbookFeed.lastSuccessAt ? esc(fmtWhen(sportsbookFeed.lastSuccessAt)) : "No sync recorded"}</strong><span>${feedError ? esc(feedError) : `${Number(sportsbookFeed.activeMarkets)||0} cached markets · ${feedObjects} billed event objects this month`}</span></p></div>
     </details>
     <div class="section-head"><div><h2>Weekly automation</h2><p class="muted">One timeline for the jobs that move the league into its next week.</p></div><span class="pill ${automationSteps.every(step => step[1]) ? "green" : "grey"}">${automationSteps.filter(step => step[1]).length}/${automationSteps.length}</span></div>
     <section class="ops-automation-line">${automationSteps.map(([label, healthy, detail]) => `<article class="${healthy ? "is-good" : "is-warn"}"><i></i><div><strong>${esc(label)}</strong><span>${esc(detail)}</span></div></article>`).join("")}</section>
