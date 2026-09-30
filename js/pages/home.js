@@ -49,6 +49,7 @@ import { playerIdentity } from "../player-presentation.js";
 import { playerLiveState } from "../live-score.js";
 import { loadLeagueState } from "../league-state.js";
 import { buildWeeklyBriefing } from "../weekly-briefing.js";
+import { buildAftermath, shareAftermath } from "../aftermath-share.js";
 
 let stage = null;
 let generation = 0;
@@ -145,7 +146,7 @@ function playerScoreLine(player) {
 }
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
-export function homeWeeklyDigest(outlook, briefing = null) {
+export function homeWeeklyDigest(outlook, briefing = null, report = null) {
   if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
@@ -171,6 +172,7 @@ export function homeWeeklyDigest(outlook, briefing = null) {
           <article><small>LINEUP CALL</small><span>${esc(briefing?.lineup || "Checking your starters")}</span></article>
           <article><small>NEXT MOVE</small><span>${esc(briefing?.action || "Keep the roster ready")}</span></article>
         </div>
+        ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><button class="btn small" type="button" data-share-week-recap>Share report</button></aside>` : ""}
       </section>
       <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
         <div>${firstGames.map(gameRow).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
@@ -190,7 +192,7 @@ export function homeWeeklyDigest(outlook, briefing = null) {
   </section>`;
 }
 
-function wireHomeWeekHub(root) {
+function wireHomeWeekHub(root, report = null) {
   const setWeekPanel = name => {
     root.querySelectorAll("[data-week-tab]").forEach(button => button.setAttribute("aria-selected", String(button.dataset.weekTab === name)));
     root.querySelectorAll("[data-week-panel]").forEach(panel => { panel.hidden = panel.dataset.weekPanel !== name; });
@@ -201,6 +203,11 @@ function wireHomeWeekHub(root) {
     root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
     root.querySelectorAll("[data-position-panel]").forEach(panel => { panel.hidden = panel.dataset.positionPanel !== position; });
   }));
+  root.querySelector("[data-share-week-recap]")?.addEventListener("click", async event => {
+    event.currentTarget.disabled = true;
+    try { await shareAftermath(report); } catch (error) { toast(error?.message || "Could not share the report", true); }
+    finally { event.currentTarget.disabled = false; }
+  });
 }
 
 export function leave() {
@@ -435,7 +442,8 @@ export async function render(view) {
   const manualPromise = loadBroadcastItems();
   const overridesPromise = loadBroadcastOverrides();
   const lorePromise = loadLore();
-  const [events, announcements, polls, leagues, members, golf, dues, standings, golfDone] = await Promise.all([
+  const settingsPromise = loadSettings();
+  const [events, announcements, polls, leagues, members, golf, dues, standings, golfDone, settings] = await Promise.all([
     db().from("events").select("*").gte("event_date", today).order("event_date", { ascending: true }).limit(3),
     db().from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
     db().from("polls").select("*").eq("active", true).order("created_at", { ascending: false }).limit(3),
@@ -448,11 +456,11 @@ export async function render(view) {
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
     db().from("golf_outings").select("id,name,finalized_at").not("finalized_at", "is", null)
         .order("finalized_at", { ascending: false }).limit(5),
+    settingsPromise,
   ]);
   const firstError = events.error || announcements.error || polls.error;
   if (firstError) { view.innerHTML = errorBox(firstError); return; }
 
-  const settings = await loadSettings();
   const memberRows = members.data || [];
   const golfRow = (golf.data || [])[0] || null;
   const me = currentMember();
@@ -540,6 +548,17 @@ export async function render(view) {
     });
     return built ? { ...built, trending } : null;
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
+  const aftermathWeeklyPromise = analysisPromise.then(async analysis => {
+    if (analysis?.state !== "ready" || new Date().getDay() !== 2) return null;
+    const { loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
+    const state = await loadLeagueState();
+    const season = Number(state?.season) || analysis.projectionSeason;
+    const week = Math.max(0, (Number(state?.currentWeek) || 1) - 1);
+    if (!week) return null;
+    const [projections, actual] = await Promise.all([loadWeeklyProjections(season, week), loadWeeklyStats(season, week)]);
+    return buildClubhouseWeekly({ analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,
+      fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0) });
+  }).catch(err => { console.warn("Tuesday report unavailable", err); return null; });
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
 
@@ -634,7 +653,7 @@ export async function render(view) {
     if (root) stage = startStage(root, ordered, { refresh });
   };
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, tradeAlerts]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
     lore = got?.error ? null : got;
@@ -658,6 +677,7 @@ export async function render(view) {
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
     const briefing = buildWeeklyBriefing({ outlook, stakes: pulse?.stakes, move,
       meSleeperId: myMember?.sleeper_user_id || null });
+    const completedReport = buildAftermath({ lore: got?.error ? null : got, members: memberRows, weekly: aftermathWeekly });
     const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
     const seasonTradeViews = tradeViews.filter(alert => !analysis?.projectionSeason
       || Number(alert.season) === Number(analysis.projectionSeason));
@@ -676,8 +696,8 @@ export async function render(view) {
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) {
-      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing);
-      wireHomeWeekHub(homeReportSlot);
+      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport);
+      wireHomeWeekHub(homeReportSlot, completedReport);
     }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was

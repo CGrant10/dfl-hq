@@ -23,6 +23,7 @@ import { suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
+import { recommendationOutcomes, recordTradeRecommendation, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -52,7 +53,7 @@ function offerMarkup(offer, pool) {
   const depth = Number(offer.depthDeltaA) || 0;
   return `<article class="tb-offer">
     <header><span>${shapeLabel(offer)}</span><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<span><strong>${esc(teamName(offer.other))}</strong><i>${esc(offer.other.ownerName || "Roster owner")} · LINEUP ${signed(offer.weeklyDeltaA)} · DEPTH ${signed(depth)}</i></span></small><b>${call}</b></header>
-    <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
+    <div class="tb-offer-flow"><div><small>YOU SEND</small>${offerPlayerRows(offer.sendA, pool)}</div><i aria-hidden="true"><svg class="ico"><use href="#i-trade-steel"></use></svg></i><div><small>YOU GET</small>${offerPlayerRows(offer.sendB, pool)}</div><button type="button" aria-label="Analyze ${shapeLabel(offer)} offer" data-td-load-offer data-partner="${esc(offer.other.id)}" data-send-a="${esc(offer.sendA.join(","))}" data-send-b="${esc(offer.sendB.join(","))}" data-weekly-delta="${Number(offer.weeklyDeltaA) || 0}">Analyze <svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></div>
   </article>`;
 }
 
@@ -239,7 +240,8 @@ function page(data, tradeAlerts = []) {
             <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Build your own package</h2></div><span class="ta-fold-hint">Up to 8 players</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
             ${shop.customOpen ? `<div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
             <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>` : ""}
-          </details>`;
+          </details>
+          ${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool) }, esc)}`;
         const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
@@ -378,6 +380,9 @@ function page(data, tradeAlerts = []) {
         if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
+        recordTradeRecommendation({ teamId: selectedId, partnerId: button.dataset.partner,
+          sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
+          weeklyDelta: button.dataset.weeklyDelta }, data.pool);
         trade.memberIds = [button.dataset.partner];
         trade.sends = [
           new Set((button.dataset.sendA || "").split(",").filter(Boolean)),

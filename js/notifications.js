@@ -1,9 +1,11 @@
 import { db, edge } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { DEFAULT_NOTIFICATION_CATEGORIES } from "./notification-core.js";
+import { notificationIntent, rememberNotificationCategories, rememberNotificationIntent, rememberedNotificationCategories, shouldRepairMissingSubscription } from "./notification-device-state.js";
 
 const BADGE_EVENT = "dfl:notifications-changed";
 const tokenKey = memberId => `dfl.notification.deviceToken.${memberId}`;
+let missingSubscriptionRepair = null;
 
 function bytesFromBase64(value) {
   const padded = value + "=".repeat((4 - value.length % 4) % 4);
@@ -58,6 +60,8 @@ export async function enrollSubscription(subscription, categories = DEFAULT_NOTI
   if (error) throw error;
   if (!data || !member) throw new Error("This device could not be enrolled");
   localStorage.setItem(tokenKey(member.id), data);
+  rememberNotificationIntent(member.id, true);
+  rememberNotificationCategories(member.id, categories);
   window.dispatchEvent(new CustomEvent(BADGE_EVENT));
   return data;
 }
@@ -68,6 +72,8 @@ export async function saveSubscription(subscription, categories = DEFAULT_NOTIFI
     push_categories: categories,
   });
   if (error) throw error;
+  const member = currentMember();
+  if (member) rememberNotificationCategories(member.id, categories);
   window.dispatchEvent(new CustomEvent(BADGE_EVENT));
   return data;
 }
@@ -134,18 +140,34 @@ export async function testNotification(delayMs = 5000) {
 
 export async function disablePush() {
   const subscription = await currentPushSubscription();
-  if (!subscription) return;
-  const { error } = await db().rpc("disable_push_subscription", { push_endpoint: subscription.endpoint });
-  if (error) throw error;
-  await subscription.unsubscribe();
   const member = currentMember();
+  if (member) rememberNotificationIntent(member.id, false);
+  if (subscription) {
+    const { error } = await db().rpc("disable_push_subscription", { push_endpoint: subscription.endpoint });
+    if (error) throw error;
+    await subscription.unsubscribe();
+  }
   if (member) localStorage.removeItem(tokenKey(member.id));
   window.dispatchEvent(new CustomEvent(BADGE_EVENT));
 }
 
 export async function pushPreferences() {
-  const subscription = await currentPushSubscription();
-  if (!subscription) return { subscription: null, enabled: false, categories: DEFAULT_NOTIFICATION_CATEGORIES };
+  let subscription = await currentPushSubscription();
+  const member = currentMember();
+  if (!subscription) {
+    const categories = rememberedNotificationCategories(member?.id);
+    const repair = member && shouldRepairMissingSubscription({ permission: Notification.permission,
+      desired: notificationIntent(member.id), hasDeviceToken: !!localStorage.getItem(tokenKey(member.id)) });
+    if (!repair) return { subscription: null, enabled: false, categories };
+    missingSubscriptionRepair ||= (async () => {
+      const registration = await navigator.serviceWorker.ready;
+      const active = await registration.pushManager.subscribe({ userVisibleOnly: true,
+        applicationServerKey: bytesFromBase64(await pushPublicKey()) });
+      await enrollSubscription(active, categories);
+      return active;
+    })().finally(() => { missingSubscriptionRepair = null; });
+    subscription = await missingSubscriptionRepair;
+  }
   let { data, error } = await db().rpc("my_push_preferences", { push_endpoint: subscription.endpoint });
   if (error) throw error;
   let row = Array.isArray(data) ? data[0] : data;

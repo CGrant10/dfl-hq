@@ -55,6 +55,8 @@ export async function renderOperationsPanel(host) {
   const pushFailures = Number(operations.push_failures) || 0;
   const memberReview = Number(operations.member_review) || 0;
   const unsettledTickets = Number(operations.unsettled_tickets) || 0;
+  const expiredDevices = Number(operations.expired_push_devices) || 0;
+  const missingImages = Number(operations.missing_profile_images) || 0;
   const schedule = scheduleResult.value?.data || {};
   const nextSync = schedule.enabled ? nextSleeperSync(schedule.slots || []) : null;
   const hotspots = performanceFindings(performanceResult.value?.data || []);
@@ -69,6 +71,12 @@ export async function renderOperationsPanel(host) {
       <a class="ops-status ${memberReview ? "is-warn" : "is-good"}" href="#/admin"><small>MEMBER REVIEW</small><strong>${memberReview}</strong><span>Inactive or unlinked profiles</span></a>
       <a class="ops-status ${hotspots.length ? "is-warn" : "is-good"}" href="#/admin" data-open-performance><small>PERFORMANCE</small><strong>${hotspots.length}</strong><span>${hotspots.length ? "Real-user hotspots" : "Within current targets"}</span></a>
     </div>
+    <details class="ops-diagnostics"><summary>Diagnostics <span>${expiredDevices + missingImages ? `${expiredDevices + missingImages} items` : "all clear"}</span></summary>
+      <div><p><small>EXPIRED PUSH ENDPOINTS</small><strong>${expiredDevices}</strong><span>Automatically replaced when an opted-in device returns.</span></p>
+      <p><small>MISSING PROFILE IMAGES</small><strong>${missingImages}</strong><span>Active members using the fallback mark.</span></p>
+      <p><small>LAST PUSH DELIVERY</small><strong>${operations.last_push_success ? esc(fmtWhen(operations.last_push_success)) : "No success recorded"}</strong><span>${pushFailures ? `${pushFailures} active delivery failures` : "Current endpoints are clean"}</span></p>
+      <p><small>OLDEST OPEN TICKET</small><strong>${operations.oldest_open_ticket ? esc(fmtWhen(operations.oldest_open_ticket)) : "None"}</strong><span>${unsettledTickets} tickets awaiting settlement.</span></p></div>
+    </details>
     <div class="section-head"><div><h2>Custom breaking alert</h2><p class="muted">Launch your own league-wide banner using the same breaking treatment.</p></div><span class="pill ${activeCount ? "red" : "grey"}">${activeCount} active</span></div>
     <form class="ops-alert-compose" data-ops-alert-form>
       <div><label for="ops-alert-label">Label</label><input id="ops-alert-label" maxlength="28" value="LEAGUE ALERT" placeholder="BREAKING"></div>

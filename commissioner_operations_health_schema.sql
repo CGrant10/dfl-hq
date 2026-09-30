@@ -13,11 +13,15 @@ begin
   end if;
   select jsonb_build_object(
     'push_devices', count(*) filter (where p.enabled),
-    'push_failures', coalesce(sum(p.failure_count) filter (where p.enabled), 0)
+    'push_failures', coalesce(sum(p.failure_count) filter (where p.enabled), 0),
+    'expired_push_devices', count(*) filter (where not p.enabled and p.failure_count >= 99),
+    'last_push_success', max(p.last_success_at)
   ) into result from public.push_subscriptions p;
   return result || jsonb_build_object(
     'unsettled_tickets', (select count(*) from public.sportsbook_bets where status = 'open'),
-    'member_review', (select count(*) from public.members where active is false or sleeper_user_id is null)
+    'member_review', (select count(*) from public.members where active is false or sleeper_user_id is null),
+    'missing_profile_images', (select count(*) from public.members where active is true and nullif(trim(profile_image), '') is null),
+    'oldest_open_ticket', (select min(created_at) from public.sportsbook_bets where status = 'open')
   );
 end;
 $$;
