@@ -36,6 +36,39 @@
 .sb-feed-control div small { color:var(--accent); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.14em; }
 .sb-feed-control div span { font-weight:var(--fw-bold); }
 .sb-feed-control p { grid-column:1/-1; margin:0; }
+
+/* Commissioner Sleeper board import. Kept folded until needed so the betting
+   board does not become another long settings page for regular visits. */
+.sb-prop-import { margin: calc(var(--s-3) * -1) 0 var(--s-6); border: 0; border-bottom: 1px solid var(--line); }
+.sb-prop-import > summary { display:flex; align-items:center; justify-content:space-between; gap:var(--s-3); min-height:54px; padding:var(--s-3) 0; cursor:pointer; list-style:none; }
+.sb-prop-import > summary::-webkit-details-marker { display:none; }
+.sb-prop-import > summary span { display:grid; gap:2px; }
+.sb-prop-import > summary small { color:var(--accent); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.14em; }
+.sb-prop-import > summary strong { font-size:var(--fs-body); }
+.sb-prop-import > summary em { color:var(--muted); font-size:var(--fs-label); font-style:normal; }
+.sb-prop-import-body { display:grid; gap:var(--s-3); padding:0 0 var(--s-5); }
+.sb-prop-import-body > p { margin:0; color:var(--muted); }
+.sb-prop-import textarea { width:100%; min-height:136px; resize:vertical; font:inherit; line-height:1.45; }
+.sb-import-actions { display:flex; flex-wrap:wrap; gap:var(--s-2); }
+.sb-image-pick { position:relative; overflow:hidden; }
+.sb-image-pick input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+.sb-prop-review-head { display:flex; justify-content:space-between; align-items:center; margin:var(--s-2) 0; }
+.sb-prop-review-head span { color:var(--muted); font-size:var(--fs-label); }
+.sb-prop-review-list { display:grid; gap:1px; overflow:hidden; border:1px solid var(--line); border-radius:var(--r-md); background:var(--line); }
+.sb-prop-review-row { display:grid; grid-template-columns:minmax(130px,1fr) minmax(150px,1fr) 82px auto; gap:var(--s-2); align-items:center; padding:var(--s-3); background:var(--card); }
+.sb-prop-review-row > input,.sb-prop-review-row > select { min-width:0; width:100%; }
+.sb-prop-review-row > label { display:grid; gap:3px; }
+.sb-prop-review-row > label span { color:var(--muted); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.08em; text-transform:uppercase; }
+.sb-prop-review-row > label input { width:100%; }
+.sb-prop-match { grid-column:1/4; font-size:var(--fs-label); }
+.sb-prop-match.is-matched { color:var(--success); }
+.sb-prop-match.is-missing { color:var(--danger); }
+.sb-import-board { margin-top:var(--s-3); }
+@media (max-width:640px) {
+  .sb-prop-review-row { grid-template-columns:minmax(0,1fr) 76px auto; }
+  .sb-prop-review-row > input[data-prop-name],.sb-prop-review-row > select { grid-column:1/-1; }
+  .sb-prop-match { grid-column:1/-1; }
+}
 .sb-prop-side { display:grid; place-items:center; width:38px; height:38px; flex:none; border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line)); border-radius:50%; color:var(--accent); font-family:var(--font-display); font-size:var(--fs-h3); }
 
 .sb-pickem-hero { display:flex; justify-content:space-between; gap:var(--s-4); align-items:flex-start; margin-bottom:var(--s-5); padding:var(--s-5); border:1px solid var(--card-border); border-radius:var(--r-lg); background:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent-2) 18%,transparent),transparent 45%),var(--card-surface); box-shadow:var(--card-shadow); }

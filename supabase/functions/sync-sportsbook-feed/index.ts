@@ -22,6 +22,54 @@ function underdogLine(odd:J){const u=odd.byBookmaker?.underdog;return u?.availab
 function playerName(e:J,odd:J){const p=e.players?.[odd.playerID]||e.players?.find?.((x:J)=>String(x.playerID||x.id)===String(odd.playerID));return String(p?.name||p?.names?.long||odd.playerName||odd.statEntityName||"").trim()}
 function oddScore(e:J,odd:J){return value(odd.score,e.results?.[odd.oddID],e.results?.[odd.statID]?.[odd.playerID])}
 
+function importedStat(stats:J,key:string){
+  const n=(name:string)=>Number(stats?.[name]||0);
+  switch(key){
+    case"pass_yd":return n("pass_yd");
+    case"pass_td":return n("pass_td");
+    case"rush_yd":return n("rush_yd");
+    case"rec_yd":return n("rec_yd");
+    case"rec":return n("rec");
+    case"rush_rec_yd":return n("rush_yd")+n("rec_yd");
+    case"pass_rush_yd":return n("pass_yd")+n("rush_yd");
+    case"rush_rec_td":return n("rush_td")+n("rec_td");
+    case"fantasy_points_ppr":return value(stats?.pts_ppr,stats?.fantasy_points_ppr)??0;
+    default:return null;
+  }
+}
+
+async function settleSleeperImports(admin:ReturnType<typeof createClient>){
+  const{data:markets,error}=await admin.from("sportsbook_markets")
+    .select("provider_key,provider_event_id,provider_market_id,provider_line")
+    .like("provider_key","sleeper-import:%").in("status",["open","locked"]);
+  if(error)throw error;
+  const grouped=new Map<string,J[]>();
+  for(const market of markets||[]){
+    const match=String(market.provider_key||"").match(/^sleeper-import:(\d+):(\d+):/);if(!match)continue;
+    const group=`${match[1]}:${match[2]}`,rows=grouped.get(group)||[];rows.push(market);grouped.set(group,rows);
+  }
+  let settled=0;
+  for(const[group,rows]of grouped){
+    const[season,week]=group.split(":").map(Number);
+    const{data:games,error:gameError}=await admin.from("nfl_pickem_games").select("status").eq("season",season).eq("week",week);
+    if(gameError)throw gameError;
+    if(!games?.length||games.some(game=>!["final","cancelled"].includes(game.status)))continue;
+    const response=await fetch(`https://api.sleeper.app/stats/nfl/${season}/${week}?season_type=regular`,{headers:{"User-Agent":"DFL-HQ-Prop-Settlement/1.0"},signal:AbortSignal.timeout(20000)});
+    if(!response.ok)throw new Error(`Sleeper weekly stats returned ${response.status}`);
+    const payload=await response.json();
+    const stats=new Map((Array.isArray(payload)?payload:[]).map((row:J)=>[String(row.player_id),row.stats||row]));
+    for(const market of rows){
+      const playerId=String(market.provider_event_id||"").split(":").at(-1)||"";
+      const score=importedStat(stats.get(playerId)||{},String(market.provider_market_id||""));
+      if(score===null)continue;
+      const line=Number(market.provider_line);
+      const{data,error:settleError}=await admin.rpc("sportsbook_settle_provider_market",{target_provider_key:market.provider_key,winner_side:score===line?"void":score>line?"over":"under",final_score:score,void_market:score===line});
+      if(settleError)throw settleError;if(data)settled++;
+    }
+  }
+  return settled;
+}
+
 async function publicNflState(){
   const response=await fetch("https://api.sleeper.app/v1/state/nfl",{headers:{"User-Agent":"DFL-HQ-Pickem/1.0"},signal:AbortSignal.timeout(12000)});
   if(!response.ok)throw new Error(`NFL week lookup returned ${response.status}`);
@@ -113,8 +161,9 @@ Deno.serve(async request=>{
   try{
     const nfl=await publicNflState();
     const publicGames=await syncPublicPickem(admin,nfl.season,nfl.week);
+    const sleeperPropsSettled=await settleSleeperImports(admin);
     const notices=await pickemNotifications(admin,url,request.headers.get("x-dfl-cron-token")||"",nfl.season,nfl.week);
-    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:0,notices,syncedAt:new Date().toISOString()},200,request);
+    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
     const now=new Date(),after=new Date(now.getTime()-8*864e5),before=new Date(now.getTime()+11*864e5);
     const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),includeOpposingOdds:"true",expandResults:"true",bookmakerID:"underdog,draftkings,fanduel",limit:"50"});
     const response=await fetch(`${API}?${q}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
@@ -137,6 +186,6 @@ Deno.serve(async request=>{
         const{error:oe}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(oe)throw oe;props++;
       }
     }
-    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled,notices,syncedAt:new Date().toISOString()},200,request);
+    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled:settled+sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
   }catch(error){return json({ok:false,error:error instanceof Error?error.message:String(error)},500,request)}
 });

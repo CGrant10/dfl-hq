@@ -8,6 +8,7 @@ import { parseStake, entryReturn, combineOdds, MAX_PICKS } from "../sportsbook-s
 import { shareTicket } from "../sportsbook-ticket.js";
 import { teamPortrait } from "../team-presentation.js";
 import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
+import { sleeperPropImporterMarkup, wireSleeperPropImporter } from "../sleeper-prop-import-ui.js";
 
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
@@ -153,7 +154,7 @@ export async function render(view){
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
-    ${canBook?refreshFeedControl():""}
+    ${canBook?`${refreshFeedControl()}${sleeperPropImporterMarkup()}`:""}
     ${trendingPicks(trends)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
@@ -176,7 +177,7 @@ export async function render(view){
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
-  wireProductTabs(view);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);
+  wireProductTabs(view);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
   wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
@@ -251,19 +252,21 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
   }
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
   const prop=m.category==="Player Props";
+  const propSource=String(m.provider_key||"").startsWith("sleeper-import:")?"Sleeper line":"Underdog line";
   return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}">
       ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
-      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?"Underdog line":projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
+      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
 function marketCard(m,outcomes,canBook,picked,held,members){
   const key=matchupKey(m);
-  const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`UNDERDOG &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
+  const imported=String(m.provider_key||"").startsWith("sleeper-import:");
+  const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"UNDERDOG"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
