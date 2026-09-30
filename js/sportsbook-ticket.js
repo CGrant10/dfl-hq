@@ -399,3 +399,53 @@ export async function shareTicket(input) {
   if (how === "none") await shareText({ title: "DFL Sportsbook", text: ticketText(t) });
   return how;
 }
+
+const recapWho=item=>item?.team_name||item?.display_name||"Nobody";
+
+export function sportsbookRecapData(recap){
+  if(!recap?.available)return null;
+  const start=new Date(recap.startsAt),end=new Date(recap.endsAt);
+  const range=`${start.toLocaleDateString("en-US",{month:"short",day:"numeric"})}–${end.toLocaleDateString("en-US",{month:"short",day:"numeric"})}`;
+  return{
+    range,tickets:Number(recap.tickets||0),risked:Number(recap.sinRisked||0),
+    cards:[
+      recap.biggestWinner&&{label:"BIGGEST CASH",name:recapWho(recap.biggestWinner),value:`+${num(recap.biggestWinner.net)} SIN`,note:"Somebody actually beat the damn house."},
+      recap.worstBeat&&{label:"BAD BEAT",name:recapWho(recap.worstBeat),value:`${num(recap.worstBeat.potential_payout)} MISSED`,note:"One beautiful ticket, reduced to a corpse."},
+      recap.longestParlay&&{label:"PARLAY PSYCHO",name:recapWho(recap.longestParlay),value:`${recap.longestParlay.pick_count}-LEG ${String(recap.longestParlay.status).toUpperCase()}`,note:recap.longestParlay.status==="won"?"The lunatic landed it.":"Ambition met a folding chair."},
+      recap.funniestFailure&&{label:"HOUSE VICTIM",name:recapWho(recap.funniestFailure),value:`${recap.funniestFailure.pick_count}-LEG FUNERAL`,note:"Absolutely cooked. No notes."},
+      recap.mostProfitable&&{label:"WEEK'S SHARPEST",name:recapWho(recap.mostProfitable),value:`${Number(recap.mostProfitable.net)>=0?"+":""}${num(recap.mostProfitable.net)} SIN`,note:"Best net when the smoke cleared."}
+    ].filter(Boolean).slice(0,4)
+  };
+}
+
+export function sportsbookRecapText(recap){
+  const data=sportsbookRecapData(recap);if(!data)return "";
+  return [`DFL SPORTSBOOK AFTERMATH · ${data.range}`,`${num(data.tickets)} tickets · ${num(data.risked)} SIN risked`,...data.cards.map(card=>`${card.label}: ${card.name} — ${card.value}`)].join("\n");
+}
+
+export function sportsbookRecapCanvas(recap){
+  const data=sportsbookRecapData(recap);if(!data)return null;
+  const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
+  ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);ctx.strokeStyle=LINE;ctx.lineWidth=6;ctx.strokeRect(3,3,W-6,H-6);
+  const grad=ctx.createLinearGradient(0,0,W,0);grad.addColorStop(0,CREST_RED);grad.addColorStop(1,CREST_BLUE);ctx.fillStyle=grad;ctx.fillRect(0,0,W,10);
+  const crest=crestImage();if(crest){const width=230,height=width*(crest.naturalHeight/crest.naturalWidth||.66);ctx.drawImage(crest,(W-width)/2,54,width,height)}
+  ctx.textAlign="center";ctx.fillStyle=MUTED;ctx.font=`800 24px ${FONT}`;ctx.letterSpacing="6px";ctx.fillText("DFL SPORTSBOOK",W/2,265);ctx.letterSpacing="0px";
+  ctx.fillStyle=INK;fitText(ctx,"AFTERMATH",W/2,355,W-150,82,900,"center");
+  ctx.fillStyle=GOLD;ctx.font=`800 28px ${FONT}`;ctx.fillText(`${data.range.toUpperCase()}  ·  ${num(data.tickets)} TICKETS  ·  ${num(data.risked)} SIN RISKED`,W/2,410);
+  const gap=24,cardW=(W-128-gap)/2,cardH=320,startY=470;
+  data.cards.forEach((card,index)=>{const col=index%2,row=Math.floor(index/2),x=52+col*(cardW+gap),y=startY+row*(cardH+gap);
+    ctx.fillStyle=CARD;roundRect(ctx,x,y,cardW,cardH,24);ctx.fill();ctx.strokeStyle=index===0?GOLD:LINE;ctx.lineWidth=index===0?4:2;roundRect(ctx,x,y,cardW,cardH,24);ctx.stroke();
+    ctx.textAlign="left";ctx.fillStyle=index===0?GOLD:ACCENT;ctx.font=`900 22px ${FONT}`;ctx.letterSpacing="3px";ctx.fillText(card.label,x+28,y+52);ctx.letterSpacing="0px";
+    ctx.fillStyle=INK;fitText(ctx,card.name,x+28,y+120,cardW-56,42,900,"left");ctx.fillStyle=GOLD;fitText(ctx,card.value,x+28,y+184,cardW-56,36,900,"left");
+    ctx.fillStyle=MUTED;ctx.font=`700 24px ${FONT}`;fitText(ctx,card.note,x+28,y+246,cardW-56,24,700,"left");
+  });
+  ctx.textAlign="center";ctx.fillStyle=INK;ctx.font=`900 34px ${FONT}`;ctx.fillText("THE HOUSE REMEMBERS EVERYTHING.",W/2,1240);ctx.fillStyle=MUTED;ctx.font=`700 22px ${FONT}`;ctx.fillText("SIN is play money. The embarrassment is real.",W/2,1290);
+  return canvas;
+}
+
+export async function shareSportsbookRecap(recap){
+  const canvas=sportsbookRecapCanvas(recap);if(!canvas)return "none";
+  const how=await shareCanvas(canvas,"dfl-sportsbook-aftermath.png",{title:"DFL Sportsbook Aftermath",text:sportsbookRecapText(recap)});
+  if(how==="none")await shareText({title:"DFL Sportsbook Aftermath",text:sportsbookRecapText(recap)});
+  return how;
+}

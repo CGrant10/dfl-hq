@@ -1,5 +1,5 @@
 import { it, expect, vi } from 'vitest';
-const { markets, outcomes, bets, perms, trends } = vi.hoisted(() => ({
+const { markets, outcomes, bets, perms, trends, recap } = vi.hoisted(() => ({
   /* Flipped by the commissioner test below. */
   perms: { sportsbook: false },
   markets: [
@@ -13,13 +13,14 @@ const { markets, outcomes, bets, perms, trends } = vi.hoisted(() => ({
   ],
   /* Mutated by the entry test below; empty for the first one. */
   bets: [],
+  recap: {available:false},
   trends: [
     {outcome_id:2,market_id:1,outcome_label:'Team <A>',market_title:'Team <A> vs B',ticket_count:3,bettor_count:2,pick_share:60},
     {outcome_id:4,market_id:2,outcome_label:'C',market_title:'C vs D',ticket_count:2,bettor_count:2,pick_share:40}
   ]
 }));
 vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], db:()=>({
-  rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:[],error:null}),
+  rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({
@@ -60,6 +61,36 @@ it('offers no slip bar until something is picked', async()=>{
   expect(view.innerHTML).not.toContain('sb-slipbar');
   /* Every price is a toggle, so every row has to say whether it is on. */
   expect(view.innerHTML).toContain('aria-pressed="false"');
+});
+
+it('shows live ticket progress against the accepted line', async()=>{
+  bets.push({id:31,stake:25,odds_american:-110,potential_payout:47,status:'open',pick_count:1,legs:[{
+    outcome_id:2,market_id:1,label:'Over 14.5',market:'Player receiving yards',odds_american:-110,status:'open',
+    accepted_line:14.5,provider_line:15.5,provider_score:17,provider_side:'over',market_status:'locked',category:'Player Props'
+  }]});
+  const view=fakeView();await render(view);
+  expect(view.innerHTML).toContain('17 / 14.5 · WINNING');
+  expect(view.innerHTML).toContain('Automatic grading follows the final stat');
+  bets.length=0;
+});
+
+it('groups player props behind game collapsibles with search and stat filters', async()=>{
+  markets.push({id:22,category:'Player Props',source:'provider',status:'open',title:'Player One · Receiving yards',provider_event_id:'game-1',lore_note:'AAA @ BBB · Book consensus 54.5',closes_at:'2099-01-01'});
+  outcomes.push({id:44,market_id:22,label:'Over 54.5',odds_american:-110,provider_side:'over'},{id:45,market_id:22,label:'Under 54.5',odds_american:-110,provider_side:'under'});
+  const view=fakeView();await render(view);
+  expect(view.innerHTML).toContain('id="sb-prop-search"');
+  expect(view.innerHTML).toContain('AAA @ BBB');
+  expect(view.innerHTML).toContain('data-prop-game');
+  markets.pop();outcomes.splice(-2);
+});
+
+it('renders the shareable weekly sportsbook aftermath when tickets were graded', async()=>{
+  Object.assign(recap,{available:true,tickets:8,sinRisked:500,startsAt:'2026-09-22T05:00:00Z',endsAt:'2026-09-29T05:00:00Z',biggestWinner:{team_name:'Chaos Club',net:420,pick_count:4},worstBeat:{team_name:'Bad Beats',potential_payout:900,pick_count:5},mostProfitable:{team_name:'Chaos Club',net:420},funniestFailure:{team_name:'Bad Beats',pick_count:5,stake:50,potential_payout:900}});
+  const view=fakeView();await render(view);
+  expect(view.innerHTML).toContain('Sportsbook aftermath');
+  expect(view.innerHTML).toContain('Chaos Club');
+  expect(view.innerHTML).toContain('HOUSE VICTIM');
+  Object.keys(recap).forEach(key=>delete recap[key]);recap.available=false;
 });
 
 it('draws a multi-pick entry as one ticket with its legs, and offers a pull', async()=>{

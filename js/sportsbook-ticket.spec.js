@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ticketData, ticketText, opponentLine } from './sportsbook-ticket.js';
+import { ticketData, ticketText, opponentLine, sportsbookRecapData, sportsbookRecapText } from './sportsbook-ticket.js';
 
 const leg = (label, odds, status = 'open') => ({ label, odds_american: odds, market: `${label} vs Someone`, status });
 const member = { display_name: 'GrantsTweaking' };
@@ -103,5 +103,36 @@ describe('opponentLine', () => {
     expect(opponentLine('', 'A')).toBe('');
     expect(opponentLine('A vs B', '')).toBe('A vs B');
     expect(opponentLine(null, null)).toBe('');
+  });
+});
+
+describe('sportsbook aftermath share', () => {
+  const recap = {
+    available: true,
+    startsAt: '2026-09-22T05:00:00Z',
+    endsAt: '2026-09-29T05:00:00Z',
+    tickets: 7,
+    sinRisked: 420,
+    biggestWinner: { team_name: 'Bastards of the Realm', net: 3528 },
+    worstBeat: { display_name: 'Bad Beat Bob', potential_payout: 900 },
+    longestParlay: { team_name: 'Parlay Patrol', pick_count: 6, status: 'won' },
+    funniestFailure: { team_name: 'House Food', pick_count: 5 },
+    mostProfitable: { team_name: 'Sharp Money', net: 210 },
+  };
+
+  it('turns the settled week into four readable share-card moments', () => {
+    const data = sportsbookRecapData(recap);
+    expect(data.range).toContain('Sep');
+    expect(data.cards).toHaveLength(4);
+    expect(data.cards[0]).toMatchObject({ label: 'BIGGEST CASH', name: 'Bastards of the Realm', value: '+3,528 SIN' });
+    expect(data.cards[2]).toMatchObject({ label: 'PARLAY PSYCHO', value: '6-LEG WON' });
+  });
+
+  it('keeps all key results in the text fallback', () => {
+    const text = sportsbookRecapText(recap);
+    expect(text).toContain('7 tickets · 420 SIN risked');
+    expect(text).toContain('Bastards of the Realm');
+    expect(text).toContain('Parlay Patrol');
+    expect(sportsbookRecapText({ available: false })).toBe('');
   });
 });

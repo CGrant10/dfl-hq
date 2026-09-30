@@ -1235,3 +1235,35 @@
   .sb-slip-price strong { font-size: var(--fs-stat-sm); }
   .sb-slipbar-odds { font-size: var(--fs-h2); }
 }
+
+/* Current-week prop finder: the game is the collapsible unit, so a real
+   sportsbook board stays scan-friendly instead of becoming a 48-card wall. */
+.sb-prop-tools{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(130px,.7fr);gap:var(--s-3);margin:0 0 var(--s-3)}
+.sb-prop-tools label{display:grid;gap:5px;color:var(--muted);font-size:var(--fs-micro);font-weight:var(--fw-bold);letter-spacing:.08em;text-transform:uppercase}
+.sb-prop-tools input,.sb-prop-tools select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:var(--r-control);background:var(--bg-2);color:var(--text);font:inherit;font-size:var(--fs-body);letter-spacing:0;text-transform:none}
+.sb-prop-games{border-top:1px solid var(--line)}
+.sb-prop-games>details{border-bottom:1px solid var(--line)}
+.sb-prop-games>details>summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);min-height:54px;padding:var(--s-2) 2px;color:var(--text);font-weight:var(--fw-bold);cursor:pointer;list-style:none}
+.sb-prop-games>details>summary::-webkit-details-marker{display:none}
+.sb-prop-games>details>summary::after{content:"+";order:3;color:var(--accent);font-size:20px}
+.sb-prop-games>details[open]>summary::after{content:"−"}
+.sb-prop-games>details>summary b{margin-left:auto;color:var(--muted);font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase}
+.sb-prop-games .sb-market-grid{padding:0 0 var(--s-4)}
+
+.sb-recap{margin:0 0 var(--s-6)}
+.sb-recap .sb-board-head>button{order:1;align-self:end;margin-bottom:3px}
+.sb-recap-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-block:1px solid var(--line)}
+.sb-recap-grid article{min-width:0;padding:var(--s-4);border-right:1px solid var(--line);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 4%,transparent),transparent)}
+.sb-recap-grid article:last-child{border-right:0}
+.sb-recap-grid small,.sb-recap-grid strong,.sb-recap-grid b{display:block}
+.sb-recap-grid small{color:var(--accent);font-size:var(--fs-micro);font-weight:var(--fw-bold);letter-spacing:.12em}
+.sb-recap-grid strong{margin-top:var(--s-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-h3)}
+.sb-recap-grid b{margin-top:3px;color:var(--accent-2);font-size:var(--fs-label)}
+.sb-recap-grid p{margin:var(--s-2) 0 0;color:var(--muted);font-size:var(--fs-micro);line-height:1.4}
+.sb-leg-pulse{display:block;margin-top:4px;color:var(--muted);font-size:9px;font-style:normal;font-weight:900;letter-spacing:.08em}
+.sb-leg-pulse.is-ahead{color:var(--ok)}
+.sb-leg-pulse.is-behind{color:var(--danger-ink)}
+.sb-leg-pulse.is-live,.sb-leg-pulse.is-push{color:var(--warn-ink)}
+
+@media(max-width:760px){.sb-recap-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-recap-grid article:nth-child(2){border-right:0}.sb-recap-grid article:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+@media(max-width:520px){.sb-prop-tools{grid-template-columns:1fr}.sb-recap-grid{grid-template-columns:1fr}.sb-recap-grid article{border-right:0;border-bottom:1px solid var(--line)}.sb-recap-grid article:last-child{border-bottom:0}}
