@@ -101,7 +101,7 @@ begin
   select count(*) into game_count from public.nfl_pickem_games where season=target_season and week=target_week;
   if game_count=0 then raise exception 'That pick em slate is not available'; end if;
   if (select min(starts_at) from public.nfl_pickem_games where season=target_season and week=target_week)<=now() then raise exception 'The weekly card has locked'; end if;
-  if jsonb_typeof(picks)<>'object' or jsonb_object_length(picks)<>game_count then raise exception 'Pick every game before locking your card'; end if;
+  if jsonb_typeof(picks)<>'object' or (select count(*) from jsonb_object_keys(picks))<>game_count then raise exception 'Pick every game before locking your card'; end if;
   for g in select * from public.nfl_pickem_games where season=target_season and week=target_week loop
     picked:=picks->>g.provider_event_id;
     if picked is null or picked not in (g.away_team_id,g.home_team_id) then raise exception 'Choose a valid winner for every game'; end if;
