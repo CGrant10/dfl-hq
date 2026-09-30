@@ -48,6 +48,7 @@ import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { playerLiveState } from "../live-score.js";
 import { loadLeagueState } from "../league-state.js";
+import { buildWeeklyBriefing } from "../weekly-briefing.js";
 
 let stage = null;
 let generation = 0;
@@ -144,7 +145,7 @@ function playerScoreLine(player) {
 }
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
-export function homeWeeklyDigest(outlook) {
+export function homeWeeklyDigest(outlook, briefing = null) {
   if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
@@ -155,12 +156,23 @@ export function homeWeeklyDigest(outlook) {
   return `<section class="home-weekly-digest">
     <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>WEEK AHEAD</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
     <nav class="home-week-tabs" role="tablist" aria-label="Week Ahead views">
-      <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="true" data-week-tab="picks">Predictions</button>
+      <button id="home-week-tab-brief" type="button" role="tab" aria-controls="home-week-panel-brief" aria-selected="true" data-week-tab="brief">Briefing</button>
+      <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="false" data-week-tab="picks">Predictions</button>
       <button id="home-week-tab-players" type="button" role="tab" aria-controls="home-week-panel-players" aria-selected="false" data-week-tab="players">Top Players</button>
       <button id="home-week-tab-startsit" type="button" role="tab" aria-controls="home-week-panel-startsit" aria-selected="false" data-week-tab="startsit">Start / Sit${alarms.length || swaps.length ? `<b>${alarms.length + swaps.length}</b>` : ""}</button>
     </nav>
     <div class="home-week-panels">
-      <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks"><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
+      <section id="home-week-panel-brief" class="home-outlook-block home-week-brief" role="tabpanel" aria-labelledby="home-week-tab-brief" data-week-panel="brief">
+        <div class="home-outlook-title"><div><small>PERSONAL INTELLIGENCE</small><h3>${esc(briefing?.title || "WEEKLY BRIEFING")}</h3></div><a href="#/stakes">PLAYOFF RACE →</a></div>
+        <strong class="home-brief-headline">${esc(briefing?.headline || "Your week is taking shape")}</strong>
+        <div class="home-brief-grid">
+          <article><small>MATCHUP</small><span>${esc(briefing?.matchup || "Sleeper matchup pending")}</span></article>
+          <article><small>PLAYOFF PATH</small><strong>${esc(briefing?.playoff || "Model pending")}</strong><span>${esc(briefing?.playoffDetail || "Sync the league to build your path.")}</span></article>
+          <article><small>LINEUP CALL</small><span>${esc(briefing?.lineup || "Checking your starters")}</span></article>
+          <article><small>NEXT MOVE</small><span>${esc(briefing?.action || "Keep the roster ready")}</span></article>
+        </div>
+      </section>
+      <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
         <div>${firstGames.map(gameRow).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
         ${moreGames.length ? `<details class="home-outlook-more"><summary>VIEW ALL ${predictions.length} MATCHUPS</summary><div>${moreGames.map(gameRow).join("")}</div></details>` : ""}
       </section>
@@ -644,6 +656,8 @@ export async function render(view) {
       meSleeperId: myMember?.sleeper_user_id || null,
     });
     const move = buildNextMove({ analysis, weekly, trending: weekly?.trending, meSleeperId: myMember?.sleeper_user_id || null });
+    const briefing = buildWeeklyBriefing({ outlook, stakes: pulse?.stakes, move,
+      meSleeperId: myMember?.sleeper_user_id || null });
     const tradeViews = tradeAlerts.map(tradeAlertViewModel).filter(Boolean);
     const seasonTradeViews = tradeViews.filter(alert => !analysis?.projectionSeason
       || Number(alert.season) === Number(analysis.projectionSeason));
@@ -662,7 +676,7 @@ export async function render(view) {
       wireHomeRankings(homeRankingsSlot);
     }
     if (homeReportSlot) {
-      homeReportSlot.innerHTML = homeWeeklyDigest(outlook);
+      homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing);
       wireHomeWeekHub(homeReportSlot);
     }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);

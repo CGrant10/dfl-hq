@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLeagueStakes, stakeLine } from "./league-stakes.js";
+import { buildLeagueStakes, scenarioLine, stakeLine } from "./league-stakes.js";
 
 const teams = Array.from({ length: 4 }, (_, i) => ({ id: `t${i + 1}`, sleeper_user_id: `u${i + 1}`, team_name: `Team ${i + 1}` }));
 const standing = (id, wins, losses, rank) => ({ season: 2026, sleeper_user_id: id, wins, losses, ties: 0, rank, points_for: wins * 100 });
@@ -16,5 +16,14 @@ describe("league stakes", () => {
     const projections = new Map([["t1", { playoffOdds: .46, seed: 2.8 }]]);
     const stakes = buildLeagueStakes({ teams, projections, standings: teams.map((_, i) => standing(`u${i + 1}`, 3, 3, i + 1)), season: 2026, playoffTeams: 2 });
     expect(stakeLine(stakes.rows[0])).toBe("ON THE PLAYOFF BUBBLE");
+    expect(scenarioLine(stakes.rows[0], 2)).toContain("46% playoff chance");
+  });
+
+  it("adds projected seed and a compact win target", () => {
+    const projections = new Map(teams.map((team, i) => [team.id, { playoffOdds: .9 - i * .2, seed: i + 1 }]));
+    const stakes = buildLeagueStakes({ teams, projections, standings: teams.map((_, i) => standing(`u${i + 1}`, 4 - i, 2 + i, i + 1)), season: 2026, playoffTeams: 2, week: 7 });
+    expect(stakes.projected[0]).toMatchObject({ projectedSeed: 1, playoffOdds: .9 });
+    expect(stakes.cutline.id).toBe("t2");
+    expect(stakes.rows.find(row => row.id === "t3").winsNeeded).toBeGreaterThan(0);
   });
 });

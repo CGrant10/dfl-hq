@@ -27,3 +27,15 @@ export function formatSleeperSyncTime(time) {
   const suffix = hours >= 12 ? "PM" : "AM";
   return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${suffix}`;
 }
+
+export function nextSleeperSync(slots = [], now = new Date()) {
+  const candidates = normalizeSleeperSchedule(slots).map(slot => {
+    const [hour, minute] = slot.time.split(":").map(Number);
+    const date = new Date(now);
+    date.setDate(now.getDate() + (slot.day - now.getDay() + 7) % 7);
+    date.setHours(hour, minute, 0, 0);
+    if (date <= now) date.setDate(date.getDate() + 7);
+    return date;
+  });
+  return candidates.sort((a, b) => a - b)[0] || null;
+}

@@ -107,7 +107,7 @@ export function playoffPictureSlide(stakes, meSleeperId) {
     kicker: `${stakes.season} · WEEK ${stakes.week} · PLAYOFF PICTURE`,
     figure: `${odds}%`, headline: stakeLine(mine),
     subtitle: `${mine.name} projects as the ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed. ${gameLine}`,
-    href: "#/analyzer",
+    href: "#/stakes",
   };
 }
 

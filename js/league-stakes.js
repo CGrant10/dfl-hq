@@ -31,6 +31,22 @@ export function buildLeagueStakes({ teams = [], standings = [], projections = ne
   });
   rows.forEach(row => { row.status = statusFor(row, rows, berths); });
 
+  /* Keep the public table legible even when the simulator has not produced a
+     seed yet. Record and points are the league's real tiebreaking evidence;
+     simulated odds only decide between otherwise similar resumes. */
+  const ordered = [...rows].sort((a, b) => number(b.projection?.playoffOdds) - number(a.projection?.playoffOdds)
+    || b.wins - a.wins || b.points - a.points || number(a.rank) - number(b.rank));
+  ordered.forEach((row, index) => {
+    row.projectedSeed = Math.max(1, Math.round(number(row.projection?.seed) || index + 1));
+    row.playoffOdds = row.status === "clinched" ? 1 : row.status === "eliminated" ? 0
+      : Math.max(0, Math.min(1, number(row.projection?.playoffOdds)));
+  });
+  const cutline = ordered[Math.min(berths - 1, ordered.length - 1)] || null;
+  rows.forEach(row => {
+    const target = cutline ? cutline.wins : 0;
+    row.winsNeeded = row.status === "clinched" ? 0 : Math.max(0, Math.min(row.remaining, target + 1 - row.wins));
+  });
+
   const rowByUser = new Map(rows.map(row => [row.sleeperUserId, row]));
   const games = fixtures.map(fixture => {
     const a = rowByUser.get(key(fixture?.a?.sleeper_user_id));
@@ -45,9 +61,7 @@ export function buildLeagueStakes({ teams = [], standings = [], projections = ne
     return { a, b, spread, aProjection, bProjection, importance };
   }).filter(Boolean).sort((a, b) => b.importance - a.importance);
 
-  const projected = [...rows].sort((a, b) => number(b.projection?.playoffOdds) - number(a.projection?.playoffOdds)
-    || number(a.projection?.seed) - number(b.projection?.seed));
-  return { season, week: Number(week) || 1, berths, rows, gameOfWeek: games[0] || null, projected };
+  return { season, week: Number(week) || 1, berths, rows, cutline, gameOfWeek: games[0] || null, projected: ordered };
 }
 
 export function stakeLine(row) {
@@ -59,4 +73,15 @@ export function stakeLine(row) {
   if (odds >= 55) return "INSIDE THE PROJECTED FIELD";
   if (odds >= 30) return "ON THE PLAYOFF BUBBLE";
   return "NEEDS A RUN NOW";
+}
+
+export function scenarioLine(row, berths = 8) {
+  if (!row) return "No playoff scenario yet.";
+  if (row.status === "clinched") return `Seed #${row.projectedSeed} projection · playing for position.`;
+  if (row.status === "eliminated") return "The postseason path is closed.";
+  const odds = Math.round(number(row.playoffOdds ?? row.projection?.playoffOdds) * 100);
+  const need = number(row.winsNeeded);
+  if (!row.remaining) return `${odds}% playoff chance · awaiting the final table.`;
+  if (!need) return `${odds}% playoff chance · currently inside the top ${berths}.`;
+  return `${odds}% playoff chance · target ${need} win${need === 1 ? "" : "s"} over the final ${row.remaining}.`;
 }

@@ -48,6 +48,7 @@ const routes = {
   profile:  () => import("./pages/profile-locked.js"),
   notifications: () => import("./pages/notifications.js"),
   wall:     () => import("./pages/wall.js"),
+  stakes:   () => import("./pages/stakes.js"),
   admin:    () => import("./pages/admin.js"),
 };
 
@@ -59,6 +60,7 @@ const routeStyles = {
   sportsbook: [{ href: "css/sportsbook.css", anchor: 'link[rel="stylesheet"][href*="css/marquee.css"]' }],
   analyzer: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
   trade: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
+  stakes: [{ href: "css/stakes.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
 };
 const routeModules = new Map();
 function loadRouteStyles(name) {

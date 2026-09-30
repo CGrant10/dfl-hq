@@ -4,6 +4,7 @@ import {
   normalizeSleeperSchedule,
   sleeperScheduleByDay,
   formatSleeperSyncTime,
+  nextSleeperSync,
 } from "./sleeper-sync-schedule.js";
 
 describe("commissioner Sleeper sync schedule", () => {
@@ -38,5 +39,11 @@ describe("commissioner Sleeper sync schedule", () => {
   it("formats Central-time slots for a readable summary", () => {
     expect(formatSleeperSyncTime("00:00")).toBe("12:00 AM");
     expect(formatSleeperSyncTime("15:30")).toBe("3:30 PM");
+  });
+
+  it("finds the next configured local slot", () => {
+    const next = nextSleeperSync([{ day: 2, time: "13:00" }, { day: 0, time: "12:00" }], new Date("2026-09-29T09:00:00"));
+    expect(next.getDay()).toBe(2);
+    expect(next.getHours()).toBe(13);
   });
 });

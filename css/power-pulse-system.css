@@ -1138,6 +1138,15 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
   background: color-mix(in srgb, var(--accent-fill) 9%, transparent);
 }
 
+/* Final phone guardrails: shared routes keep breathing room, long words wrap,
+   and off-screen sections skip layout/paint until they approach the viewport.
+   Golf never receives data-pulse-system, so its established layout is intact. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.card-body,.section-copy,.page-head>div,.notification-item>div,.ta-section-body){min-width:0;overflow-wrap:anywhere}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.tblwrap,.table-wrap,.ta-table-wrap){max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(button,.btn,a[role="button"],summary){touch-action:manipulation}
+@media(max-width:620px){.view[data-pulse-system="1"]:not([data-route="golf"]){padding-inline:max(14px,env(safe-area-inset-left));}.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .card{margin-inline:0}}
+@media(prefers-reduced-motion:reduce){.view[data-pulse-system="1"] *{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
 @media (max-width: 620px) {
   .view[data-pulse-system="1"]:not([data-route="golf"]) { --route-gutter: 16px; }
   .view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) .tabs > * {

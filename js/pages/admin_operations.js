@@ -2,6 +2,9 @@ import { db } from "../supabase.js";
 import { endBreakingTradeCoverage, loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { createCustomBreakingAlert, endCustomBreakingAlert, loadCustomAlerts } from "../custom-alerts.js";
 import { esc, fmtWhen, toast } from "../ui.js";
+import { runQuickSleeperSync } from "../quick-sleeper-sync.js";
+import { nextSleeperSync } from "../sleeper-sync-schedule.js";
+import { performanceFindings } from "../performance-findings.js";
 
 const settled = promise => promise.then(value => ({ value }), error => ({ error }));
 const countOf = result => Number(result?.value?.count) || 0;
@@ -32,10 +35,12 @@ function customRow(alert) {
 
 export async function renderOperationsPanel(host) {
   host.innerHTML = `<div class="card"><div class="card-body muted">Checking league operations…</div></div>`;
-  const [configResult, pushResult, marketResult, alertResult, customResult] = await Promise.all([
+  const [configResult, marketResult, operationsResult, scheduleResult, performanceResult, alertResult, customResult] = await Promise.all([
     settled(db().from("sleeper_config").select("last_synced_at,last_sync_note,last_auto_checked_at,last_auto_error,auto_sync_enabled").eq("id", 1).maybeSingle()),
-    settled(db().from("push_subscriptions").select("id", { count: "exact", head: true }).eq("enabled", true)),
     settled(db().from("sportsbook_markets").select("id", { count: "exact", head: true }).in("status", ["open", "locked"])),
+    settled(db().rpc("commissioner_operations_health")),
+    settled(db().rpc("sleeper_get_sync_schedule")),
+    settled(db().rpc("app_performance_summary", { days_back: 14 })),
     settled(loadTradeAlerts({ limit: 20 })),
     settled(loadCustomAlerts({ limit: 10 })),
   ]);
@@ -45,13 +50,24 @@ export async function renderOperationsPanel(host) {
   const active = alerts.filter(alert => alert.breakingActive);
   const customAlerts = customResult.value || [];
   const activeCount = active.length + customAlerts.filter(alert => alert.breakingActive).length;
+  const operations = operationsResult.value?.data || {};
+  const pushDevices = Number(operations.push_devices) || 0;
+  const pushFailures = Number(operations.push_failures) || 0;
+  const memberReview = Number(operations.member_review) || 0;
+  const unsettledTickets = Number(operations.unsettled_tickets) || 0;
+  const schedule = scheduleResult.value?.data || {};
+  const nextSync = schedule.enabled ? nextSleeperSync(schedule.slots || []) : null;
+  const hotspots = performanceFindings(performanceResult.value?.data || []);
 
   host.innerHTML = `<div class="section-head ops-head"><div><h2>League operations</h2><p class="muted">Sync, alerts, notifications and open weekly jobs in one place.</p></div><a class="btn ghost small" href="#/notifications">Notification inbox</a></div>
+    <div class="ops-command-bar"><button class="btn" type="button" data-ops-sync-now>↻ Sync Sleeper now</button><span>${nextSync ? `Next auto sync ${esc(nextSync.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }))}` : "No automatic sync scheduled"}</span></div>
     <div class="ops-status-grid">
       <a class="ops-status is-${health.tone}" href="#/admin"><small>LEAGUE DATA</small><strong>${esc(health.label)}</strong><span>${esc(health.detail)}</span></a>
       <a class="ops-status ${config.last_auto_error ? "is-bad" : "is-good"}" href="#/admin"><small>AUTO SYNC</small><strong>${config.auto_sync_enabled ? "Enabled" : "Paused"}</strong><span>${esc(config.last_auto_error || (config.last_auto_checked_at ? `Checked ${fmtWhen(config.last_auto_checked_at)}` : "No check recorded"))}</span></a>
-      <a class="ops-status" href="#/notifications"><small>PUSH DEVICES</small><strong>${countOf(pushResult)}</strong><span>Enabled subscriptions</span></a>
-      <a class="ops-status" href="#/sportsbook"><small>SPORTSBOOK</small><strong>${countOf(marketResult)}</strong><span>Open or awaiting settlement</span></a>
+      <a class="ops-status ${pushFailures ? "is-warn" : "is-good"}" href="#/notifications"><small>PUSH HEALTH</small><strong>${pushDevices}</strong><span>${pushFailures ? `${pushFailures} delivery failures recorded` : "Enabled devices healthy"}</span></a>
+      <a class="ops-status ${unsettledTickets ? "is-warn" : "is-good"}" href="#/sportsbook"><small>SPORTSBOOK</small><strong>${unsettledTickets}</strong><span>Unsettled tickets · ${countOf(marketResult)} active markets</span></a>
+      <a class="ops-status ${memberReview ? "is-warn" : "is-good"}" href="#/admin"><small>MEMBER REVIEW</small><strong>${memberReview}</strong><span>Inactive or unlinked profiles</span></a>
+      <a class="ops-status ${hotspots.length ? "is-warn" : "is-good"}" href="#/admin" data-open-performance><small>PERFORMANCE</small><strong>${hotspots.length}</strong><span>${hotspots.length ? "Real-user hotspots" : "Within current targets"}</span></a>
     </div>
     <div class="section-head"><div><h2>Custom breaking alert</h2><p class="muted">Launch your own league-wide banner using the same breaking treatment.</p></div><span class="pill ${activeCount ? "red" : "grey"}">${activeCount} active</span></div>
     <form class="ops-alert-compose" data-ops-alert-form>
@@ -79,6 +95,21 @@ export async function renderOperationsPanel(host) {
       toast(error.message || "Could not end coverage", true);
     }
   }));
+  host.querySelector("[data-ops-sync-now]")?.addEventListener("click", async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "Syncing…";
+    try {
+      const { counts } = await runQuickSleeperSync();
+      toast(`Sleeper synced · ${counts.rosters} rosters`);
+      window.dispatchEvent(new CustomEvent("dfl:quick-sync-complete", { detail: { counts } }));
+      await renderOperationsPanel(host);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "↻ Sync Sleeper now";
+      toast(error.message || "Sync failed", true);
+    }
+  });
   host.querySelectorAll("[data-ops-end-custom]").forEach(button => button.addEventListener("click", async () => {
     if (!confirm("End this custom breaking alert?")) return;
     button.disabled = true;

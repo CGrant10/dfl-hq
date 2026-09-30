@@ -1874,7 +1874,7 @@
 /* WEEK AHEAD — a live model board, not a stack of recap cards. */
 #home-wrap .home-week-tabs,
 #home-wrap .home-position-tabs {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px;
   padding: 1px; border: 1px solid var(--home-program-line); background: var(--home-program-line);
 }
 #home-wrap .home-week-tabs button,
@@ -1891,6 +1891,17 @@
   display: inline-grid; place-items: center; min-width: 17px; height: 17px; margin-left: 5px;
   border-radius: 50%; color: var(--bg); background: var(--accent); font-size: .58rem;
 }
+
+#home-wrap .home-week-brief { display:grid; gap:14px; }
+#home-wrap .home-brief-headline { font-size:clamp(18px,4vw,25px); line-height:1.08; overflow-wrap:anywhere; }
+#home-wrap .home-brief-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-block:1px solid var(--line); }
+#home-wrap .home-brief-grid article { display:grid; align-content:start; gap:4px; padding:13px 12px; border-bottom:1px solid var(--line); min-width:0; }
+#home-wrap .home-brief-grid article:nth-child(odd) { border-right:1px solid var(--line); }
+#home-wrap .home-brief-grid small { color:var(--accent); font-size:9px; font-weight:900; letter-spacing:.13em; }
+#home-wrap .home-brief-grid :is(strong,span) { overflow-wrap:anywhere; }
+#home-wrap .home-brief-grid span { color:var(--body-text); font-size:12px; line-height:1.35; }
+#home-wrap [data-draft-slot],#home-wrap [data-wall-slot],#home-wrap [data-home-feed-slot],#home-wrap .home-identity { content-visibility:auto; contain-intrinsic-size:auto 420px; }
+@media(max-width:480px){#home-wrap .home-brief-grid{grid-template-columns:1fr}#home-wrap .home-brief-grid article:nth-child(odd){border-right:0}}
 #home-wrap .home-week-panels [hidden],
 #home-wrap .home-outlook-players [hidden] { display: none !important; }
 #home-wrap .home-position-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-bottom: 10px; }
