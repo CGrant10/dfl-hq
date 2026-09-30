@@ -1,12 +1,13 @@
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
 // =====================================================================
-import { db, hasPermission } from "../supabase.js";
+import { db, edge, hasPermission, privilegedFunctionHeaders } from "../supabase.js";
 import { currentMember } from "../members.js";
 import { esc, toast } from "../ui.js";
 import { parseStake, entryReturn, combineOdds, MAX_PICKS } from "../sportsbook-slip.js";
 import { shareTicket } from "../sportsbook-ticket.js";
 import { teamPortrait } from "../team-presentation.js";
+import { loadPickemBoard, pickemMarkup, wirePickem } from "../sportsbook-pickem.js";
 
 const fmtOdds=n=>Number(n)>0?`+${Number(n)}`:String(Number(n));
 const fmtTime=v=>v?new Date(v).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
@@ -94,29 +95,30 @@ export async function render(view){
   const me=currentMember();
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets,trends,members;
+  let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem;
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
-    const[lr,br,mr,or,btr,tr,memberRows]=await Promise.all([
+    const[lr,br,mr,or,btr,tr,memberRows,pickemBoard]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
       db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100),
       db().from("sportsbook_outcomes").select("*").order("sort_order"),
       db().rpc("sportsbook_my_bets",{row_limit:30}),
       db().rpc("sportsbook_trending_picks",{row_limit:3}),
-      loadSportsbookIdentities()
+      loadSportsbookIdentities(),
+      loadPickemBoard().catch(()=>({available:false}))
     ]);
     const err=lr.error||br.error||mr.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];
+    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
   const canBook=hasPermission("sportsbook");
-  const open=markets.filter(m=>isOpen(m)&&m.category==="Fantasy"&&!isGolf(m));
+  const open=markets.filter(m=>isOpen(m)&&(m.category==="Fantasy"||m.category==="Player Props")&&!isGolf(m));
   const onBoard=new Set(open.map(m=>String(m.id)));
   /*
     OFF THE BOARD, AND WHY THAT USED TO TRAP MONEY.
@@ -148,7 +150,10 @@ export async function render(view){
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
     <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${mastheadCaption(open)}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
+    <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
+    <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
+    ${canBook?refreshFeedControl():""}
     ${trendingPicks(trends)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
@@ -165,10 +170,13 @@ export async function render(view){
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body">${ledger.length?ledger.map(r=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?"+":""}${num(r.amount)} SIN</strong></div>`).join(""):`<span class="muted">No SIN has moved yet.</span>`}</div></details>
     <p class="muted tiny" style="text-align:center">SIN is play money only.</p>
     ${slipBar(slip,outcomeMap,marketMap)}
+    </div>
+    <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc)}</div>
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
+  wireProductTabs(view);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);
   wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
@@ -242,19 +250,20 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
     for(const value of [member.team_name,member.display_name])if(value)identities.set(identityKey(value),member);
   }
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
+  const prop=m.category==="Player Props";
   return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
     <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}">
-      ${teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
-      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
+      ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
+      <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?"Underdog line":projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
     </button>`}).join("")}</div>`;
 }
 function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house">${outcomes.map(o=>`<button type="button" class="linkbtn" data-settle-market="${m.id}" data-settle-outcome="${o.id}">${esc(o.label)}</button>`).join(" · ")} · <button type="button" class="linkbtn" data-void-market="${m.id}">Void</button></div>`:""}
 function marketCard(m,outcomes,canBook,picked,held,members){
   const key=matchupKey(m);
-  const kicker=key?`Week ${key[2]} &middot; Matchup`:esc(m.category||"DFL");
+  const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`UNDERDOG &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
@@ -502,6 +511,7 @@ function rulingQueue(markets,byMarket){
   sees it: canBook gates the whole thing.
 */
 function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
+function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>REAL-LINE FEED</small><span>Underdog props + NFL Pick'em</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 
 /*
@@ -589,6 +599,20 @@ function wireBookTabs(view) {
   const tabs=[...view.querySelectorAll('[data-sb-tab]')];
   const select=tab=>{for(const button of tabs){const active=button===tab;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;view.querySelector('#sb-'+button.dataset.sbTab).hidden=!active;}};
   tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus();});});
+}
+
+function wireProductTabs(view){
+  const tabs=[...view.querySelectorAll("[data-sb-product]")];
+  tabs.forEach(tab=>tab.addEventListener("click",()=>{for(const item of tabs){const active=item===tab;item.setAttribute("aria-selected",String(active));view.querySelector(`#sb-${item.dataset.sbProduct}-panel`).hidden=!active}}));
+}
+
+function wireFeedRefresh(view){
+  const button=view.querySelector("#sb-feed-refresh");if(!button)return;
+  button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling licensed lines…";
+    const{data,error}=await edge().functions.invoke("sync-sportsbook-feed",{body:{action:"sync"},headers:privilegedFunctionHeaders()});
+    if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.configured===false?"Add SPORTSGAMEODDS_API_KEY to activate the feed.":(data?.error||error?.message||"Feed unavailable");return}
+    toast(`${Number(data.props||0)} props and ${Number(data.games||0)} games synced`);render(view);
+  });
 }
 
 // ---------------------------------------------------------------------

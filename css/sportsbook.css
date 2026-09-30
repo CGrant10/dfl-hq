@@ -28,6 +28,46 @@
 #sportsbook-wrap { max-width: 1080px; margin: 0 auto; }
 #sportsbook-wrap [hidden] { display: none !important; }
 
+.sb-product-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin:0 0 var(--s-5); padding:4px; border:1px solid var(--line); border-radius:var(--r-pill); background:color-mix(in srgb,var(--bg-2) 82%,transparent); }
+.sb-product-tabs button { min-height:42px; border:0; border-radius:var(--r-pill); background:transparent; color:var(--muted); font:inherit; font-weight:var(--fw-bold); cursor:pointer; transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease); }
+.sb-product-tabs button[aria-selected="true"] { background:var(--card-surface); color:var(--text); box-shadow:var(--e-1); }
+.sb-feed-control { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px var(--s-3); align-items:center; margin:0 0 var(--s-5); padding:var(--s-3) 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.sb-feed-control div small,.sb-feed-control div span { display:block; }
+.sb-feed-control div small { color:var(--accent); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.14em; }
+.sb-feed-control div span { font-weight:var(--fw-bold); }
+.sb-feed-control p { grid-column:1/-1; margin:0; }
+.sb-prop-side { display:grid; place-items:center; width:38px; height:38px; flex:none; border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line)); border-radius:50%; color:var(--accent); font-family:var(--font-display); font-size:var(--fs-h3); }
+
+.sb-pickem-hero { display:flex; justify-content:space-between; gap:var(--s-4); align-items:flex-start; margin-bottom:var(--s-5); padding:var(--s-5); border:1px solid var(--card-border); border-radius:var(--r-lg); background:radial-gradient(circle at 100% 0,color-mix(in srgb,var(--accent-2) 18%,transparent),transparent 45%),var(--card-surface); box-shadow:var(--card-shadow); }
+.sb-pickem-hero small,.sb-pickem-empty small { color:var(--accent); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.18em; }
+.sb-pickem-hero h2,.sb-pickem-empty h2 { margin:4px 0; font-family:var(--font-display); font-size:clamp(28px,6vw,44px); line-height:1; }
+.sb-pickem-hero p,.sb-pickem-empty p { margin:0; color:var(--muted); }
+.sb-pickem-hero>span { display:grid; place-items:center; min-width:68px; min-height:68px; border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line)); border-radius:50%; color:var(--accent); font-family:var(--font-display); font-size:var(--fs-h2); }
+.sb-pickem-games { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-3); }
+.sb-pickem-game { min-width:0; padding:var(--s-3); border-top:1px solid var(--line); background:linear-gradient(90deg,color-mix(in srgb,var(--bg-2) 65%,transparent),transparent); }
+.sb-pickem-game.is-mnf { border-top-color:var(--accent-2); }
+.sb-pickem-gamehead { display:flex; justify-content:space-between; gap:var(--s-2); margin-bottom:var(--s-2); color:var(--muted); font-size:var(--fs-micro); letter-spacing:.08em; }
+.sb-pickem-gamehead small { color:inherit; font:inherit; font-weight:var(--fw-bold); }
+.sb-pickem-sides { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:var(--s-2); align-items:center; }
+.sb-pickem-sides>span { color:var(--muted); font-size:var(--fs-micro); }
+.sb-pickem-sides button { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-width:0; min-height:48px; padding:var(--s-2) var(--s-3); border:1px solid var(--line); border-radius:var(--r-md); background:var(--card-surface); color:var(--body-text); font:inherit; font-weight:var(--fw-bold); cursor:pointer; }
+.sb-pickem-sides button span { overflow:hidden; text-overflow:ellipsis; }
+.sb-pickem-sides button[aria-pressed="true"] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 13%,var(--card-surface)); color:var(--text); box-shadow:inset 3px 0 var(--accent); }
+.sb-pickem-lock { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--s-3); align-items:end; margin:var(--s-5) 0; padding:var(--s-4); border:1px solid var(--line); border-radius:var(--r-md); }
+.sb-pickem-lock label span { display:block; margin-bottom:var(--s-2); font-weight:var(--fw-bold); }
+.sb-pickem-lock input { max-width:180px; }
+.sb-pickem-lock p { grid-column:1/-1; margin:0; }
+.sb-pickem-standings ol { margin:0; padding:0; list-style:none; border-top:1px solid var(--line); }
+.sb-pickem-standings li { display:grid; grid-template-columns:28px minmax(0,1fr) auto auto; gap:var(--s-3); align-items:center; min-height:48px; border-bottom:1px solid var(--line-soft); }
+.sb-pickem-standings li>b,.sb-pickem-standings li small { color:var(--muted); }
+.sb-pickem-empty { padding:var(--s-7) var(--s-5); border:1px solid var(--line); border-radius:var(--r-lg); text-align:center; }
+
+@media(max-width:680px){
+  .sb-pickem-games { grid-template-columns:minmax(0,1fr); }
+  .sb-pickem-lock { grid-template-columns:1fr; align-items:stretch; }
+  .sb-pickem-lock input { max-width:none; }
+}
+
 /* ---------------------------------------------------------------------
    THE MASTHEAD
    A broadcast title bar, not a page heading. The accent sweep across the

@@ -1,5 +1,5 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.246.94";
+const CACHE_NAME = "dfl-hq-v1.247.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
@@ -10,8 +10,8 @@ const APP_SHELL = [
   "./js/trade-accountability.js",
   "./js/trade-model-health.js",
   "./js/notification-device-state.js",
-  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.246.94","./css/stakes.css",
-  "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/nav-neutral.css","./css/update-gate.css",
+  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.247.0","./css/stakes.css",
+  "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/nav-neutral.css","./css/update-gate.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",

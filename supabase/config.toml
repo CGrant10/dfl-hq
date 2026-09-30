@@ -7,3 +7,8 @@ verify_jwt = false
 [functions.sync-sleeper]
 # The scheduled request carries a dedicated secret header stored in Vault.
 verify_jwt = false
+
+[functions.sync-sportsbook-feed]
+# Authorization is re-checked against DFL commissioner permissions, or the
+# scheduled job's dedicated token. The provider key never reaches the browser.
+verify_jwt = false
