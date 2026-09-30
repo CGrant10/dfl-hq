@@ -5,16 +5,19 @@ function auditRows(storage = localStorage) {
   try { const rows = JSON.parse(storage.getItem(AUDIT_KEY) || "[]"); return Array.isArray(rows) ? rows : []; } catch { return []; }
 }
 
-export function recordTradeRecommendation({ teamId, partnerId, sendA = [], sendB = [], weeklyDelta = 0 }, pool, storage = localStorage) {
+export function recordTradeRecommendation({ season = null, week = null, teamId, partnerId, sendA = [], sendB = [], weeklyDelta = 0 }, pool, storage = localStorage) {
   const baseline = ids => ids.map(id => { const player = pool.get(String(id)) || {}; return { id: String(id), points: Number(player.currentPoints) || 0, games: Number(player.currentGames) || 0 }; });
-  const row = { at: new Date().toISOString(), teamId: String(teamId), partnerId: String(partnerId), sendA: baseline(sendA), sendB: baseline(sendB), weeklyDelta: Number(weeklyDelta) || 0 };
+  const row = { at: new Date().toISOString(), season, week, teamId: String(teamId), partnerId: String(partnerId), sendA: baseline(sendA), sendB: baseline(sendB), weeklyDelta: Number(weeklyDelta) || 0 };
   const rows = auditRows(storage).filter(item => JSON.stringify([item.teamId, item.partnerId, item.sendA?.map(p => p.id), item.sendB?.map(p => p.id)]) !== JSON.stringify([row.teamId, row.partnerId, row.sendA.map(p => p.id), row.sendB.map(p => p.id)]));
   storage.setItem(AUDIT_KEY, JSON.stringify([row, ...rows].slice(0, 80)));
   return row;
 }
 
-export function recommendationOutcomes(pool, storage = localStorage) {
-  const rows = auditRows(storage);
+export function recommendationOutcomes(pool, storage = localStorage, sharedRows = []) {
+  const normalizedShared = (sharedRows || []).map(row => ({ at: row.created_at, season: row.season, week: row.week,
+    teamId: row.team_id, partnerId: row.partner_id, sendA: row.send_snapshot || [], sendB: row.receive_snapshot || [],
+    weeklyDelta: Number(row.projected_weekly_delta) || 0 }));
+  const rows = normalizedShared.length ? normalizedShared : auditRows(storage);
   const graded = rows.map(row => {
     const gained = side => (side || []).reduce((sum, old) => sum + Math.max(0, (Number(pool.get(String(old.id))?.currentPoints) || 0) - (Number(old.points) || 0)), 0);
     const games = side => (side || []).reduce((sum, old) => sum + Math.max(0, (Number(pool.get(String(old.id))?.currentGames) || 0) - (Number(old.games) || 0)), 0);

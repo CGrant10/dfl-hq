@@ -23,7 +23,8 @@ import { suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
-import { recommendationOutcomes, recordTradeRecommendation, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
+import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
+import { loadSharedTradeRecommendations, saveTradeRecommendation } from "../trade-accountability.js";
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -222,7 +223,7 @@ function page(data, tradeAlerts = []) {
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
   const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
-    openTiers: new Set(), customOpen: false };
+    openTiers: new Set(), customOpen: false, sharedAudit: [] };
 
   return {
     markup: `${completedTradeMarkup(tradeAlerts, selectedTransactionId)}<main class="ta-report td-page" data-td-body></main>`,
@@ -241,7 +242,8 @@ function page(data, tradeAlerts = []) {
             ${shop.customOpen ? `<div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
             <div class="td-share"><button type="button" class="btn" data-td-share disabled>Share this ticket</button></div></div>` : ""}
           </details>
-          ${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool) }, esc)}`;
+          ${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool, localStorage,
+            shop.sharedAudit.filter(row => !row.season || Number(row.season) === Number(data.projectionSeason))) }, esc)}`;
         const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
@@ -380,9 +382,10 @@ function page(data, tradeAlerts = []) {
         if (event.target.closest("[data-tb-generate]")) { shop.visibleCount += OFFER_BATCH_SIZE; draw(); return; }
         const button = event.target.closest("[data-td-load-offer]");
         if (!button) return;
-        recordTradeRecommendation({ teamId: selectedId, partnerId: button.dataset.partner,
+        const auditInput = { season: data.projectionSeason, week: data.liveWeek, teamId: selectedId, partnerId: button.dataset.partner,
           sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
-          weeklyDelta: button.dataset.weeklyDelta }, data.pool);
+          weeklyDelta: button.dataset.weeklyDelta };
+        void saveTradeRecommendation(auditInput, data.pool).catch(error => console.warn("trade recommendation audit unavailable", error));
         trade.memberIds = [button.dataset.partner];
         trade.sends = [
           new Set((button.dataset.sendA || "").split(",").filter(Boolean)),
@@ -393,6 +396,8 @@ function page(data, tradeAlerts = []) {
         body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       draw();
+      void loadSharedTradeRecommendations().then(rows => { shop.sharedAudit = rows; draw(); })
+        .catch(error => console.warn("shared trade accountability unavailable", error));
     },
   };
 }

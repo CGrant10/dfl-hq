@@ -13,6 +13,9 @@ import { loadLore, clearLore } from "../lore.js";
 import { funFacts, factOfTheDay } from "../funfacts.js";
 import { shareFact } from "../fact-share.js";
 import { canEdit } from "../inline.js";
+import { loadLeagueState } from "../league-state.js";
+import { loadMemberDirectory } from "../members.js";
+import { historyForWeek } from "../league-history-week.js";
 
 const ICON = {
   nailbiter: "i-versus", blowout: "i-versus", high: "i-record", low: "i-record",
@@ -22,11 +25,16 @@ const ICON = {
 export async function render(view) {
   view.innerHTML = loading();
 
-  const lore = await loadLore();
+  const [lore, leagueState, members] = await Promise.all([
+    loadLore(),
+    loadLeagueState().catch(() => null),
+    loadMemberDirectory().catch(() => []),
+  ]);
   if (!lore || lore.error) { view.innerHTML = errorBox(lore?.error || new Error("No league data yet")); return; }
 
   const today = factOfTheDay(lore);
   const all = funFacts(lore);
+  const historyWeek = historyForWeek({ lore, week: leagueState?.currentWeek || 1, members });
 
   if (!today) {
     view.innerHTML = `<header class="page-head"><h1>DFL Lore</h1></header>
@@ -60,6 +68,13 @@ export async function render(view) {
     </section>
 
     <p class="muted tiny fact-note">A new piece of league history every day — the same one for everybody.</p>
+
+    ${historyWeek ? `<h2 class="section-title">This week in DFL history<span class="count">WEEK ${historyWeek.week}</span></h2><section class="history-week-grid">
+      <article><small>WEEK'S RECORD</small><strong>${esc(historyWeek.high.name)}</strong><span>${historyWeek.high.score.toFixed(2)} points · ${historyWeek.high.season}</span></article>
+      <article><small>BIGGEST ASS-WHIPPING</small><strong>${esc(historyWeek.blowout.winner.name)}</strong><span>Beat ${esc(historyWeek.blowout.loser.name)} by ${historyWeek.blowout.margin.toFixed(2)} · ${historyWeek.blowout.season}</span></article>
+      <article><small>DECIMAL HELL</small><strong>${esc(historyWeek.close.winner.name)}</strong><span>Escaped ${esc(historyWeek.close.loser.name)} by ${historyWeek.close.margin.toFixed(2)} · ${historyWeek.close.season}</span></article>
+      <article><small>WEEK ${historyWeek.week} RIVALS</small><strong>${esc(historyWeek.rivalry.names.join(" vs "))}</strong><span>${historyWeek.rivalry.games} meetings across ${historyWeek.seasons} seasons</span></article>
+    </section>` : ""}
 
     ${canEdit() ? `
       <section class="card lore-admin">

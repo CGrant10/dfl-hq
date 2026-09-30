@@ -21,7 +21,16 @@ begin
     'unsettled_tickets', (select count(*) from public.sportsbook_bets where status = 'open'),
     'member_review', (select count(*) from public.members where active is false or sleeper_user_id is null),
     'missing_profile_images', (select count(*) from public.members where active is true and nullif(trim(profile_image), '') is null),
-    'oldest_open_ticket', (select min(created_at) from public.sportsbook_bets where status = 'open')
+    'oldest_open_ticket', (select min(created_at) from public.sportsbook_bets where status = 'open'),
+    'latest_final_week', (select max(week) from public.sleeper_matchups where winner_roster_id is not null),
+    'latest_final_season', (select max(season) from public.sleeper_matchups where winner_roster_id is not null),
+    'settlement_pending', (select count(*) from public.sportsbook_markets m join public.sleeper_matchups sm
+      on m.auto_key = concat('matchup:',sm.season,':',sm.week,':',sm.matchup_id)
+      where m.status in ('open','locked') and sm.winner_roster_id is not null),
+    'active_trade_alerts', (select count(*) from public.trade_alerts where breaking_active),
+    'latest_trade_at', (select max(coalesce(occurred_at,created_at)) from public.trade_alerts),
+    'cron_last_run', (select max(r.end_time) from cron.job_run_details r join cron.job j on j.jobid=r.jobid where j.jobname='dfl-sleeper-schedule-dispatcher'),
+    'cron_last_status', (select r.status from cron.job_run_details r join cron.job j on j.jobid=r.jobid where j.jobname='dfl-sleeper-schedule-dispatcher' order by r.end_time desc nulls last limit 1)
   );
 end;
 $$;

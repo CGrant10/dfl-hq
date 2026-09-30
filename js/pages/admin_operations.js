@@ -60,6 +60,16 @@ export async function renderOperationsPanel(host) {
   const schedule = scheduleResult.value?.data || {};
   const nextSync = schedule.enabled ? nextSleeperSync(schedule.slots || []) : null;
   const hotspots = performanceFindings(performanceResult.value?.data || []);
+  const finalWeek = Number(operations.latest_final_week) || 0;
+  const settlementPending = Number(operations.settlement_pending) || 0;
+  const automationSteps = [
+    ["Sleeper sync", health.tone === "good", health.detail],
+    ["Sportsbook settlement", !settlementPending, settlementPending ? `${settlementPending} completed market${settlementPending === 1 ? "" : "s"} waiting` : "Caught up"],
+    ["Power rankings", finalWeek > 0, finalWeek ? `Week ${finalWeek} finalized` : "Waiting for final scores"],
+    ["Tuesday report", finalWeek > 0, finalWeek ? `Week ${finalWeek} receipt available` : "No completed week"],
+    ["Trade import", !!operations.latest_trade_at, operations.latest_trade_at ? `Latest ${fmtWhen(operations.latest_trade_at)}` : "No completed trade receipt"],
+    ["Schedule dispatcher", operations.cron_last_status === "succeeded", operations.cron_last_run ? `${operations.cron_last_status || "unknown"} · ${fmtWhen(operations.cron_last_run)}` : "No run recorded"],
+  ];
 
   host.innerHTML = `<div class="section-head ops-head"><div><h2>League operations</h2><p class="muted">Sync, alerts, notifications and open weekly jobs in one place.</p></div><a class="btn ghost small" href="#/notifications">Notification inbox</a></div>
     <div class="ops-command-bar"><button class="btn" type="button" data-ops-sync-now>↻ Sync Sleeper now</button><span>${nextSync ? `Next auto sync ${esc(nextSync.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" }))}` : "No automatic sync scheduled"}</span></div>
@@ -77,6 +87,8 @@ export async function renderOperationsPanel(host) {
       <p><small>LAST PUSH DELIVERY</small><strong>${operations.last_push_success ? esc(fmtWhen(operations.last_push_success)) : "No success recorded"}</strong><span>${pushFailures ? `${pushFailures} active delivery failures` : "Current endpoints are clean"}</span></p>
       <p><small>OLDEST OPEN TICKET</small><strong>${operations.oldest_open_ticket ? esc(fmtWhen(operations.oldest_open_ticket)) : "None"}</strong><span>${unsettledTickets} tickets awaiting settlement.</span></p></div>
     </details>
+    <div class="section-head"><div><h2>Weekly automation</h2><p class="muted">One timeline for the jobs that move the league into its next week.</p></div><span class="pill ${automationSteps.every(step => step[1]) ? "green" : "grey"}">${automationSteps.filter(step => step[1]).length}/${automationSteps.length}</span></div>
+    <section class="ops-automation-line">${automationSteps.map(([label, healthy, detail]) => `<article class="${healthy ? "is-good" : "is-warn"}"><i></i><div><strong>${esc(label)}</strong><span>${esc(detail)}</span></div></article>`).join("")}</section>
     <div class="section-head"><div><h2>Custom breaking alert</h2><p class="muted">Launch your own league-wide banner using the same breaking treatment.</p></div><span class="pill ${activeCount ? "red" : "grey"}">${activeCount} active</span></div>
     <form class="ops-alert-compose" data-ops-alert-form>
       <div><label for="ops-alert-label">Label</label><input id="ops-alert-label" maxlength="28" value="LEAGUE ALERT" placeholder="BREAKING"></div>

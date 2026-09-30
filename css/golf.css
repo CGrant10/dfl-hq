@@ -358,3 +358,4 @@ body.golf-content #view{
 .golf-fairway-try[aria-pressed="true"]{color:var(--accent-2)}
 .golf-fairway-try:disabled{cursor:default;opacity:.72}
 .gqm-focus-shell.is-scorecard>.golf-fairway-row{display:none}
+.gqm-save-state{flex:0 0 auto;color:var(--success);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.gqm-save-state[data-state="saving"]{color:var(--accent-2)}.gqm-save-state[data-state="offline"],.gqm-save-state[data-state="error"]{color:var(--warn-ink)}
