@@ -13,14 +13,24 @@ function authHeaders(r:Request){const h:Record<string,string>={};for(const n of[
 async function authorized(r:Request,url:string,pub:string){const token=r.headers.get("x-dfl-cron-token")||"";if(token.length>=32&&await sha256(token)===TOKEN_HASH)return true;const c=createClient(url,pub,{global:{headers:authHeaders(r)},auth:{persistSession:false,autoRefreshToken:false}});const{data,error}=await c.rpc("has_commissioner_permission",{permission_name:"sportsbook"});return !error&&data===true}
 const value=(...xs:any[])=>{for(const x of xs){const n=Number(x);if(Number.isFinite(n))return n}return null};
 function weekOf(e:J){const raw=String(e.info?.seasonWeek||e.info?.week||e.week||"");return Number(raw.match(/(\d+)/)?.[1]||0)}
-function seasonOf(e:J){return Number(e.info?.season||e.season||new Date(e.startsAt||Date.now()).getFullYear())}
+function startsAtOf(e:J){return String(e.status?.startsAt||e.startsAt||e.startTime||"")}
+function seasonOf(e:J){return Number(e.info?.season||e.season||new Date(startsAtOf(e)||Date.now()).getFullYear())}
 function eventStatus(e:J){if(e.status?.cancelled)return"cancelled";if(e.status?.finalized||e.status?.completed||e.status?.ended)return"final";if(e.status?.started)return"live";return"scheduled"}
 const labelFor=(s:string)=>({passing_yards:"Passing yards",passing_touchdowns:"Passing TDs",rushing_yards:"Rushing yards",receiving_yards:"Receiving yards",receptions:"Receptions",touchdowns:"Touchdowns",fantasy_points:"Fantasy points"} as J)[s]||s.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
 const supported=(s:string)=>/^(passing_yards|passing_touchdowns|rushing_yards|receiving_yards|receptions|touchdowns|fantasy_points)$/.test(s);
+const statPriority=(s:string)=>({passing_yards:0,rushing_yards:1,receiving_yards:2,receptions:3,passing_touchdowns:4,touchdowns:5,fantasy_points:6} as J)[s]??99;
 
-function underdogLine(odd:J){const u=odd.byBookmaker?.underdog;return u?.available===false?null:value(u?.overUnder,u?.line,odd.bookOverUnder?.underdog)}
-function playerName(e:J,odd:J){const p=e.players?.[odd.playerID]||e.players?.find?.((x:J)=>String(x.playerID||x.id)===String(odd.playerID));return String(p?.name||p?.names?.long||odd.playerName||odd.statEntityName||"").trim()}
-function oddScore(e:J,odd:J){return value(odd.score,e.results?.[odd.oddID],e.results?.[odd.statID]?.[odd.playerID])}
+function playerID(odd:J){return String(odd.playerID||odd.statEntityID||"")}
+function playerName(e:J,odd:J){const id=playerID(odd),p=e.players?.[id]||Object.values(e.players||{}).find((x:any)=>String(x?.playerID||x?.id)===id);return String((p as J)?.name||(p as J)?.names?.long||odd.playerName||odd.statEntityName||"").trim()}
+function consensusLine(odd:J){
+  const direct=value(odd.bookOverUnder,odd.fairOverUnder);
+  if(direct!==null)return{line:direct,books:Object.values(odd.byBookmaker||{}).filter((book:any)=>book?.available!==false&&value(book?.overUnder)!==null).length};
+  const lines=Object.values(odd.byBookmaker||{}).filter((book:any)=>book?.available!==false).map((book:any)=>value(book?.overUnder)).filter((line):line is number=>line!==null).sort((a,b)=>a-b);
+  if(!lines.length)return{line:null,books:0};
+  const middle=Math.floor(lines.length/2),line=lines.length%2?lines[middle]:(lines[middle-1]+lines[middle])/2;
+  return{line,books:lines.length};
+}
+function oddScore(e:J,odd:J){const entity=String(odd.statEntityID||odd.playerID||""),period=String(odd.periodID||"game"),stat=String(odd.statID||"");return value(odd.score,e.results?.[period]?.[entity]?.[stat])}
 
 function importedStat(stats:J,key:string){
   const n=(name:string)=>Number(stats?.[name]||0);
@@ -158,34 +168,49 @@ Deno.serve(async request=>{
   const input=await request.json().catch(()=>({}));
   if(input.action==="status")return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:!!apiKey},200,request);
   const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+  let stage="starting";
   try{
+    stage="NFL week lookup";
     const nfl=await publicNflState();
+    stage="public Pick'em slate";
     const publicGames=await syncPublicPickem(admin,nfl.season,nfl.week);
+    stage="imported prop settlement";
     const sleeperPropsSettled=await settleSleeperImports(admin);
+    stage="Pick'em notifications";
     const notices=await pickemNotifications(admin,url,request.headers.get("x-dfl-cron-token")||"",nfl.season,nfl.week);
     if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
     const now=new Date(),after=new Date(now.getTime()-8*864e5),before=new Date(now.getTime()+11*864e5);
-    const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),includeOpposingOdds:"true",expandResults:"true",bookmakerID:"underdog,draftkings,fanduel",limit:"50"});
+    const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),oddsPresent:"true",includeOpposingOdds:"true",expandResults:"true",limit:"50"});
+    stage="SportsGameOdds request";
     const response=await fetch(`${API}?${q}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
     const body=await response.json().catch(()=>({}));
     if(!response.ok||body.success===false)throw new Error(body.error||`SportsGameOdds returned ${response.status}`);
     const events=Array.isArray(body.data)?body.data:[];let props=0,settled=0;
+    stage="SportsGameOdds market import";
+    const candidates:J[]=[];
     for(const e of events){
-      const season=seasonOf(e),week=weekOf(e),startsAt=e.startsAt||e.startTime;if(!e.eventID||!season||!week||!startsAt)continue;
+      const season=seasonOf(e),week=weekOf(e),startsAt=startsAtOf(e);if(!e.eventID||!season||!week||!startsAt)continue;
       const status=eventStatus(e),start=new Date(startsAt);
       const odds=Object.values(e.odds||{}) as J[];
       for(const odd of odds){
-        if(String(odd.sideID).toLowerCase()!=="over"||!supported(String(odd.statID||"")))continue;
-        const line=underdogLine(odd),player=playerName(e,odd);if(line===null||!player)continue;
-        const key=`sgo:${e.eventID}:${odd.statID}:${odd.playerID}:${line}`,score=oddScore(e,odd);
+        if(String(odd.sideID).toLowerCase()!=="over"||String(odd.periodID||"game")!=="game"||String(odd.betTypeID||"ou")!=="ou"||!supported(String(odd.statID||"")))continue;
+        const consensus=consensusLine(odd),line=consensus.line,player=playerName(e,odd),playerKey=playerID(odd);if(line===null||!player||!playerKey)continue;
+        const oddID=String(odd.oddID||`${odd.statID}:${playerKey}`),key=`sgo:${e.eventID}:${oddID}`,score=oddScore(e,odd);
         if(status==="final"&&score!==null){const{data}=await admin.rpc("sportsbook_settle_provider_market",{target_provider_key:key,winner_side:score===line?"void":score>line?"over":"under",final_score:score,void_market:score===line});if(data)settled++;continue}
-        if(status!=="scheduled"||start<=now)continue;
-        const market={title:`${player} · ${labelFor(String(odd.statID))}`,category:"Player Props",source:"provider",lore_note:`Underdog ${line} · house price -110`,status:"open",closes_at:start.toISOString(),provider_key:key,provider_event_id:String(e.eventID),provider_market_id:String(odd.oddID||""),provider_line:line,provider_updated_at:new Date().toISOString()};
-        const{data:m,error:me}=await admin.from("sportsbook_markets").upsert(market,{onConflict:"provider_key"}).select("id").single();if(me)throw me;
-        const choices=[{market_id:m.id,label:`Over ${line}`,odds_american:-110,sort_order:0,provider_side:"over"},{market_id:m.id,label:`Under ${line}`,odds_american:-110,sort_order:1,provider_side:"under"}];
-        const{error:oe}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(oe)throw oe;props++;
+        if(status!=="scheduled"||start<=now||week!==nfl.week)continue;
+        const market={title:`${player} · ${labelFor(String(odd.statID))}`,category:"Player Props",source:"provider",lore_note:`Book consensus ${line} · ${consensus.books||"multiple"} books · house price -110`,status:"open",closes_at:start.toISOString(),provider_key:key,provider_event_id:String(e.eventID),provider_market_id:String(odd.oddID||""),provider_line:line,provider_updated_at:new Date().toISOString()};
+        candidates.push({market,line,playerKey,priority:statPriority(String(odd.statID)),start:start.getTime()});
       }
     }
+    const bestByPlayer=new Map<string,J>();
+    for(const candidate of candidates){const current=bestByPlayer.get(candidate.playerKey);if(!current||candidate.priority<current.priority)bestByPlayer.set(candidate.playerKey,candidate)}
+    const selected=[...bestByPlayer.values()].sort((a,b)=>a.start-b.start||a.priority-b.priority||String(a.market.title).localeCompare(String(b.market.title))).slice(0,96);
+    if(selected.length){
+      const{data:markets,error:marketError}=await admin.from("sportsbook_markets").upsert(selected.map(row=>row.market),{onConflict:"provider_key"}).select("id,provider_key");if(marketError)throw marketError;
+      const selectedByKey=new Map(selected.map(row=>[row.market.provider_key,row]));
+      const choices=(markets||[]).flatMap(market=>{const row=selectedByKey.get(market.provider_key);return row?[{market_id:market.id,label:`Over ${row.line}`,odds_american:-110,sort_order:0,provider_side:"over"},{market_id:market.id,label:`Under ${row.line}`,odds_american:-110,sort_order:1,provider_side:"under"}]:[]});
+      const{error:outcomeError}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(outcomeError)throw outcomeError;props=selected.length;
+    }
     return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled:settled+sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
-  }catch(error){return json({ok:false,error:error instanceof Error?error.message:String(error)},500,request)}
+  }catch(error){const detail=error instanceof Error?error.message:typeof error==="object"?JSON.stringify(error):String(error);console.error("sportsbook feed failed",stage,detail);return json({ok:false,error:`${stage}: ${detail}`},500,request)}
 });

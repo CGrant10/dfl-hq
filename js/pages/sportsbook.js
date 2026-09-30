@@ -101,18 +101,21 @@ export async function render(view){
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
-    const[lr,br,mr,or,btr,tr,memberRows,pickemBoard]=await Promise.all([
+    const mr=await db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100);
+    if(mr.error)throw mr.error;
+    markets=mr.data||[];
+    const marketIds=markets.map(m=>m.id);
+    const[lr,br,or,btr,tr,memberRows,pickemBoard]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
-      db().from("sportsbook_markets").select("*").order("created_at",{ascending:false}).limit(100),
-      db().from("sportsbook_outcomes").select("*").order("sort_order"),
+      marketIds.length?db().from("sportsbook_outcomes").select("*").in("market_id",marketIds).order("sort_order"):Promise.resolve({data:[],error:null}),
       db().rpc("sportsbook_my_bets",{row_limit:30}),
       db().rpc("sportsbook_trending_picks",{row_limit:3}),
       loadSportsbookIdentities(),
       loadPickemBoard().catch(()=>({available:false}))
     ]);
-    const err=lr.error||br.error||mr.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];markets=mr.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;
+    const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
+    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
@@ -252,7 +255,7 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
   }
   const projected=String(m.lore_note||"").match(/projected\s+([\d.]+)[–-]([\d.]+)/i)?.slice(1)||[];
   const prop=m.category==="Player Props";
-  const propSource=String(m.provider_key||"").startsWith("sleeper-import:")?"Sleeper line":"Underdog line";
+  const propSource=String(m.provider_key||"").startsWith("sleeper-import:")?"Sleeper line":"Book consensus";
   return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
@@ -266,7 +269,7 @@ function houseControls(m,outcomes,canBook){return canBook?`<div class="sb-house"
 function marketCard(m,outcomes,canBook,picked,held,members){
   const key=matchupKey(m);
   const imported=String(m.provider_key||"").startsWith("sleeper-import:");
-  const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"UNDERDOG"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
+  const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"CONSENSUS"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   return `<article class="card sb-market"><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3></div><div class="sb-market-status"><span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
@@ -514,7 +517,7 @@ function rulingQueue(markets,byMarket){
   sees it: canBook gates the whole thing.
 */
 function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
-function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>FREE NFL FEED</small><span>Weekly Pick'em schedule + results</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync Pick'em</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
+function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>NFL FEED</small><span>Matchups, real prop lines + settlement</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 
 /*
@@ -611,10 +614,10 @@ function wireProductTabs(view){
 
 function wireFeedRefresh(view){
   const button=view.querySelector("#sb-feed-refresh");if(!button)return;
-  button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling the NFL slate…";
+  button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling matchups and prop lines…";
     const{data,error}=await edge().functions.invoke("sync-sportsbook-feed",{body:{action:"sync"},headers:privilegedFunctionHeaders()});
     if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.error||error?.message||"Feed unavailable";return}
-    toast(`${Number(data.games||0)} NFL games synced`);render(view);
+    toast(`${Number(data.games||0)} games · ${Number(data.props||0)} props · ${Number(data.settled||0)} settled`);render(view);
   });
 }
 

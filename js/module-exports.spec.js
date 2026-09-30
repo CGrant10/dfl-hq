@@ -395,8 +395,10 @@ describe("the supported golf GPS courses", () => {
   it("runs the full Pick'em game-day and recap experience", () => {
     const migration = fs.readFileSync("pickem_experience_schema.sql", "utf8");
     const pickem = fs.readFileSync("js/sportsbook-pickem.js", "utf8");
+    const sportsbook = fs.readFileSync("js/pages/sportsbook.js", "utf8");
     const home = fs.readFileSync("js/pages/home.js", "utf8");
     const feed = fs.readFileSync("supabase/functions/sync-sportsbook-feed/index.ts", "utf8");
+    const providerConflict = fs.readFileSync("sportsbook_provider_outcome_conflict_fix.sql", "utf8");
     const notifications = fs.readFileSync("notifications_schema.sql", "utf8");
     expect(migration).toContain("weekly_prize");
     expect(migration).toContain("prize_paid=0");
@@ -412,6 +414,16 @@ describe("the supported golf GPS courses", () => {
     expect(home).toContain("homePickemMarkup(board, esc)");
     expect(feed).toContain("Pick'em locks tonight");
     expect(feed).toContain(":results`");
+    expect(feed).toContain("e.status?.startsAt");
+    expect(feed).toContain("e.results?.[period]?.[entity]?.[stat]");
+    expect(feed).toContain("Book consensus");
+    expect(feed).not.toContain("function underdogLine");
+    expect(feed).toContain("week!==nfl.week");
+    expect(feed).toContain(".slice(0,96)");
+    expect(feed).toContain("upsert(selected.map(row=>row.market)");
+    expect(sportsbook).toContain('.in("market_id",marketIds)');
+    expect(providerConflict).toContain("uq_sportsbook_outcome_provider_side_full");
+    expect(providerConflict).toContain("uq_sportsbook_market_provider_key_full");
     expect(notifications).toContain("my_push_delivery_status");
   });
 
