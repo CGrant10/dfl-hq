@@ -78,6 +78,30 @@
 .sb-pickem-card-picks { grid-column:2/-1; margin-top:4px; color:var(--muted); font-size:var(--fs-micro); }
 .sb-pickem-card-picks summary { cursor:pointer; color:var(--accent-2); font-weight:var(--fw-bold); letter-spacing:.08em; text-transform:uppercase; }
 .sb-pickem-card-picks p { margin:6px 0 0; line-height:1.55; }
+.sb-pickem-archive { margin-top:var(--s-6); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.sb-pickem-archive>summary { display:flex; align-items:center; justify-content:space-between; gap:var(--s-4); padding:var(--s-4) 0; cursor:pointer; list-style:none; }
+.sb-pickem-archive>summary::-webkit-details-marker { display:none; }
+.sb-pickem-archive>summary span small,.sb-pickem-archive>summary span strong { display:block; }
+.sb-pickem-archive>summary small,.sb-pickem-rival header small,.sb-pickem-history header small { color:var(--accent); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.14em; }
+.sb-pickem-archive>summary strong { margin-top:3px; font-family:var(--font-display); font-size:var(--fs-h2); }
+.sb-pickem-archive>summary>b { color:var(--muted); font-size:var(--fs-micro); letter-spacing:.1em; }
+.sb-pickem-archive[open]>summary>b { color:var(--accent); }
+.sb-pickem-archive-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s-6); padding:0 0 var(--s-5); }
+.sb-pickem-rival h3,.sb-pickem-history h3 { margin:3px 0 var(--s-3); font-family:var(--font-display); font-size:var(--fs-h2); }
+.sb-pickem-rival label span { display:block; margin-bottom:5px; color:var(--muted); font-size:var(--fs-micro); font-weight:var(--fw-bold); letter-spacing:.08em; }
+.sb-pickem-rival select { width:100%; }
+.sb-pickem-rival article { margin-top:var(--s-3); padding:var(--s-4); border-left:3px solid var(--accent); background:color-mix(in srgb,var(--accent) 7%,transparent); }
+.sb-pickem-rival article>strong { font-family:var(--font-display); font-size:var(--fs-h3); }
+.sb-pickem-rival article>div { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s-2); margin:var(--s-3) 0; }
+.sb-pickem-rival article span b,.sb-pickem-rival article span small { display:block; }
+.sb-pickem-rival article span b { font-family:var(--font-display); font-size:var(--fs-h2); }
+.sb-pickem-rival article span small { color:var(--muted); font-size:var(--fs-micro); }
+.sb-pickem-rival article p { margin:0; color:var(--muted); font-size:var(--fs-label); }
+.sb-pickem-history ol { margin:0; padding:0; list-style:none; border-top:1px solid var(--line); }
+.sb-pickem-history li { display:grid; grid-template-columns:38px minmax(0,1fr) auto; gap:var(--s-3); align-items:center; min-height:54px; border-bottom:1px solid var(--line-soft); }
+.sb-pickem-history li>b { color:var(--accent-2); }
+.sb-pickem-history li span strong,.sb-pickem-history li span small { display:block; }
+.sb-pickem-history li span small,.sb-pickem-history li em { color:var(--muted); font-size:var(--fs-micro); font-style:normal; }
 
 @media(max-width:680px){
   .sb-pickem-games { grid-template-columns:minmax(0,1fr); }
@@ -85,6 +109,7 @@
   .sb-pickem-lock input { max-width:none; }
   .sb-pickem-recap>div { grid-template-columns:1fr; }
   .sb-pickem-prize { align-items:stretch; flex-direction:column; }
+  .sb-pickem-archive-body { grid-template-columns:1fr; }
 }
 
 /* ---------------------------------------------------------------------

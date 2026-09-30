@@ -10,12 +10,18 @@ function settingsMarkup(state) {
   const capability = pushCapability();
   const active = state?.enabled && !!state?.subscription;
   const selected = new Set(state?.categories || DEFAULT_NOTIFICATION_CATEGORIES);
+  const delivery = active ? state.failureCount > 0
+    ? `<p class="notify-delivery is-warn"><b>Needs attention</b><span>The last push failed. Send a test to refresh this phone's connection.</span></p>`
+    : state.lastSuccessAt
+      ? `<p class="notify-delivery is-good"><b>Delivery confirmed</b><span>${esc(timeAgo(state.lastSuccessAt))} · ${esc(state.deviceLabel || "this device")}</span></p>`
+      : `<p class="notify-delivery"><b>Ready on this device</b><span>${esc(state.deviceLabel || "This phone")} · waiting for its first delivered alert</span></p>` : "";
   return `<section class="notify-setup">
     <div class="notify-setup-copy">
       <small>THIS DEVICE</small>
       <h2>${active ? "Notifications are on" : "Never miss league business"}</h2>
       <p>${active ? "This phone can receive alerts even when DFL HQ is closed." : esc(capability.reason || "Enable lock-screen alerts for this device. Other phones keep their own setting.")}</p>
     </div>
+    ${delivery}
     ${capability.installRequired ? `<div class="notify-install"><strong>Install first</strong><span>Share <b>→</b> Add to Home Screen, then open DFL HQ from its icon.</span></div>` : ""}
     ${capability.supported ? `<div class="notify-actions">
       <button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>

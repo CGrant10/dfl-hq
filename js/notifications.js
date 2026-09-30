@@ -78,6 +78,21 @@ export async function saveSubscription(subscription, categories = DEFAULT_NOTIFI
   return data;
 }
 
+async function pushDeliveryStatus(endpoint) {
+  const { data, error } = await db().rpc("my_push_delivery_status", { push_endpoint: endpoint });
+  if (error) {
+    if (/does not exist|schema cache|could not find/i.test(error.message || "")) return {};
+    throw error;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ? {
+    deviceLabel: row.device_label || "This device",
+    lastSuccessAt: row.last_success_at || null,
+    failureCount: Number(row.failure_count) || 0,
+    enrollmentUpdatedAt: row.updated_at || null,
+  } : {};
+}
+
 /*
   Turning notifications on is one tap. It used to want a Profile PIN, which
   meant the members most likely to want alerts - the ones who had never opened
@@ -196,12 +211,13 @@ export async function pushPreferences() {
     ({ data, error } = await db().rpc("my_push_preferences", { push_endpoint: active.endpoint }));
     if (error) throw error;
     row = Array.isArray(data) ? data[0] : data;
-    return { subscription: active, enabled: !!row?.enabled, categories };
+    return { subscription: active, enabled: !!row?.enabled, categories, ...await pushDeliveryStatus(active.endpoint) };
   }
   return {
     subscription,
     enabled: !!row?.enabled,
     categories: Array.isArray(row?.categories) ? row.categories : DEFAULT_NOTIFICATION_CATEGORIES,
+    ...await pushDeliveryStatus(subscription.endpoint),
   };
 }
 

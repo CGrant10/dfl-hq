@@ -24,3 +24,7 @@
 .notify-presets button:hover,.notify-presets button:focus-visible{border-color:var(--accent);color:var(--text)}
 .notify-categories label>span{display:flex;min-width:0;flex-direction:column;gap:2px}
 .notify-categories label small{color:var(--muted);font-size:var(--fs-micro);line-height:1.25}
+.notify-delivery{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 0;padding:9px 11px;border:1px solid var(--control-line);border-radius:var(--r-sm);background:color-mix(in srgb,var(--bg-3) 76%,transparent);font-size:var(--fs-small)}
+.notify-delivery b{color:var(--text)}.notify-delivery span{color:var(--muted)}
+.notify-delivery.is-good{border-color:color-mix(in srgb,var(--success) 38%,var(--control-line))}.notify-delivery.is-good b{color:var(--success)}
+.notify-delivery.is-warn{border-color:color-mix(in srgb,var(--danger) 42%,var(--control-line))}.notify-delivery.is-warn b{color:var(--danger)}

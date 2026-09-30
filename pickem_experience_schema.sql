@@ -13,6 +13,8 @@ revoke all on public.nfl_pickem_config from anon,authenticated;
 alter table public.nfl_pickem_entries
   add column if not exists weekly_rank int,
   add column if not exists prize_paid int not null default 0;
+create index if not exists idx_pickem_entries_week_results on public.nfl_pickem_entries(season,week,graded,weekly_rank);
+create index if not exists idx_pickem_picks_game on public.nfl_pickem_picks(game_id);
 
 create or replace function public.pickem_save_config(new_weekly_prize int)
 returns int language plpgsql security definer set search_path=public as $$
@@ -86,6 +88,32 @@ begin
         case when is_locked then coalesce((select jsonb_object_agg(p.game_id,p.picked_team_id) from public.nfl_pickem_picks p where p.entry_id=e.id),'{}'::jsonb) else null end picks
         from public.nfl_pickem_entries e join public.members m on m.id=e.member_id where e.season=s and e.week=w) x),'[]'::jsonb),
     'seasonStandings',coalesce((select jsonb_agg(to_jsonb(x) order by x.season_rank) from private.pickem_season_rankings(s,coalesce(previous_week,w)) x),'[]'::jsonb),
+    'history',coalesce((select jsonb_agg(to_jsonb(x) order by x.week desc) from (
+      select win.week,(select count(*)::int from public.nfl_pickem_entries all_cards where all_cards.season=s and all_cards.week=win.week) cards,
+        jsonb_build_object('memberId',win.member_id,'name',wm.display_name,'correct',win.correct_count,'delta',win.tiebreak_delta,'prize',win.prize_paid) winner,
+        (select jsonb_build_object('correct',mine.correct_count,'rank',mine.weekly_rank,'delta',mine.tiebreak_delta,'prize',mine.prize_paid)
+          from public.nfl_pickem_entries mine where mine.member_id=mid and mine.season=s and mine.week=win.week and mine.graded) mine
+      from public.nfl_pickem_entries win join public.members wm on wm.id=win.member_id
+      where win.season=s and win.graded and win.weekly_rank=1
+    ) x),'[]'::jsonb),
+    'rivals',coalesce((select jsonb_agg(to_jsonb(x) order by x.display_name) from (
+      select opp.member_id,m.display_name,count(*)::int weeks,
+        sum(me.correct_count)::int my_correct,sum(opp.correct_count)::int their_correct,
+        count(*) filter(where me.correct_count>opp.correct_count)::int my_wins,
+        count(*) filter(where opp.correct_count>me.correct_count)::int their_wins,
+        count(*) filter(where opp.correct_count=me.correct_count)::int ties,
+        case when is_locked then (select count(*)::int
+          from public.nfl_pickem_entries my_now
+          join public.nfl_pickem_picks my_pick on my_pick.entry_id=my_now.id
+          join public.nfl_pickem_entries their_now on their_now.season=my_now.season and their_now.week=my_now.week and their_now.member_id=opp.member_id
+          join public.nfl_pickem_picks their_pick on their_pick.entry_id=their_now.id and their_pick.game_id=my_pick.game_id
+          where my_now.member_id=mid and my_now.season=s and my_now.week=w and my_pick.picked_team_id<>their_pick.picked_team_id) else null end current_disagreements
+      from public.nfl_pickem_entries opp
+      join public.nfl_pickem_entries me on me.season=opp.season and me.week=opp.week and me.member_id=mid and me.graded
+      join public.members m on m.id=opp.member_id
+      where opp.season=s and opp.graded and opp.member_id<>mid
+      group by opp.member_id,m.display_name
+    ) x),'[]'::jsonb),
     'lastRecap',case when previous_week is null then null else (select jsonb_build_object(
       'week',previous_week,
       'winner',(select jsonb_build_object('name',m.display_name,'correct',e.correct_count,'delta',e.tiebreak_delta,'prize',e.prize_paid) from public.nfl_pickem_entries e join public.members m on m.id=e.member_id where e.season=s and e.week=previous_week order by e.weekly_rank nulls last limit 1),
