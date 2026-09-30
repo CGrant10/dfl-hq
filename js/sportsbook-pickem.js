@@ -11,7 +11,7 @@ export async function loadPickemBoard(){
 }
 
 export function pickemMarkup(board,esc){
-  if(!board?.available)return `<section class="sb-pickem-empty"><small>NFL PICK'EM</small><h2>Lines feed not connected</h2><p>Once the licensed NFL feed is connected, every weekly game and the Monday-night tiebreaker will appear here automatically.</p></section>`;
+  if(!board?.available)return `<section class="sb-pickem-empty"><small>NFL PICK'EM</small><h2>Building this week's card</h2><p>A commissioner can tap Sync Pick'em now, or the free public NFL feed will fill it during the next automatic refresh.</p></section>`;
   const picks=board.entry?.picks||{},isLocked=locked(board),games=board.games||[],chosen=Object.keys(picks).length;
   return `<section class="sb-pickem" data-season="${Number(board.season)}" data-week="${Number(board.week)}">
     <div class="sb-pickem-hero"><div><small>WEEK ${Number(board.week)} · ${Number(board.season)}</small><h2>Call the whole slate.</h2><p>${isLocked?"Card locked. Follow the damage live.":`Pick every winner before ${esc(fmt(board.locksAt))}.`}</p></div><span>${chosen}/${games.length}</span></div>

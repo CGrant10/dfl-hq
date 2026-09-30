@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const TOKEN_HASH="c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091";
 const API="https://api.sportsgameodds.com/v2/events";
+const ESPN="https://cdn.espn.com/core/nfl/scoreboard";
 const cors=(r?:Request)=>({"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":r?.headers.get("access-control-request-headers")||"authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-dfl-cron-token","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Max-Age":"86400",Vary:"Access-Control-Request-Headers"});
 const json=(v:unknown,s=200,r?:Request)=>Response.json(v,{status:s,headers:cors(r)});
 type J=Record<string,any>;
@@ -11,13 +12,8 @@ async function sha256(v:string){const b=await crypto.subtle.digest("SHA-256",new
 function authHeaders(r:Request){const h:Record<string,string>={};for(const n of["x-admin-token","x-member-id","x-commissioner-pin"]){const v=r.headers.get(n);if(v)h[n]=v}return h}
 async function authorized(r:Request,url:string,pub:string){const token=r.headers.get("x-dfl-cron-token")||"";if(token.length>=32&&await sha256(token)===TOKEN_HASH)return true;const c=createClient(url,pub,{global:{headers:authHeaders(r)},auth:{persistSession:false,autoRefreshToken:false}});const{data,error}=await c.rpc("has_commissioner_permission",{permission_name:"sportsbook"});return !error&&data===true}
 const value=(...xs:any[])=>{for(const x of xs){const n=Number(x);if(Number.isFinite(n))return n}return null};
-const nameOf=(x:any)=>String(x?.names?.long||x?.names?.medium||x?.name||x?.teamName||x?.teamID||x?.id||"");
 function weekOf(e:J){const raw=String(e.info?.seasonWeek||e.info?.week||e.week||"");return Number(raw.match(/(\d+)/)?.[1]||0)}
 function seasonOf(e:J){return Number(e.info?.season||e.season||new Date(e.startsAt||Date.now()).getFullYear())}
-function teamScore(e:J,side:"home"|"away"){
-  return value(e.results?.[side],e.scores?.[side],e.score?.[side],e.teams?.[side]?.score,
-    e.results?.[`points-${side}-game-ml-${side}`],e.results?.[`points-${side}-game-ou-over`]);
-}
 function eventStatus(e:J){if(e.status?.cancelled)return"cancelled";if(e.status?.finalized||e.status?.completed||e.status?.ended)return"final";if(e.status?.started)return"live";return"scheduled"}
 const labelFor=(s:string)=>({passing_yards:"Passing yards",passing_touchdowns:"Passing TDs",rushing_yards:"Rushing yards",receiving_yards:"Receiving yards",receptions:"Receptions",touchdowns:"Touchdowns",fantasy_points:"Fantasy points"} as J)[s]||s.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
 const supported=(s:string)=>/^(passing_yards|passing_touchdowns|rushing_yards|receiving_yards|receptions|touchdowns|fantasy_points)$/.test(s);
@@ -25,6 +21,38 @@ const supported=(s:string)=>/^(passing_yards|passing_touchdowns|rushing_yards|re
 function underdogLine(odd:J){const u=odd.byBookmaker?.underdog;return u?.available===false?null:value(u?.overUnder,u?.line,odd.bookOverUnder?.underdog)}
 function playerName(e:J,odd:J){const p=e.players?.[odd.playerID]||e.players?.find?.((x:J)=>String(x.playerID||x.id)===String(odd.playerID));return String(p?.name||p?.names?.long||odd.playerName||odd.statEntityName||"").trim()}
 function oddScore(e:J,odd:J){return value(odd.score,e.results?.[odd.oddID],e.results?.[odd.statID]?.[odd.playerID])}
+
+async function publicNflState(){
+  const response=await fetch("https://api.sleeper.app/v1/state/nfl",{headers:{"User-Agent":"DFL-HQ-Pickem/1.0"},signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw new Error(`NFL week lookup returned ${response.status}`);
+  const state=await response.json();
+  return{season:Number(state.season),week:Number(state.week)};
+}
+
+async function syncPublicPickem(admin:ReturnType<typeof createClient>,season:number,week:number){
+  let games=0;const weeks=new Set<string>();
+  for(const targetWeek of [...new Set([Math.max(1,week-1),week])]){
+    const params=new URLSearchParams({xhr:"1",limit:"50",dates:String(season),seasontype:"2",week:String(targetWeek)});
+    const response=await fetch(`${ESPN}?${params}`,{headers:{"User-Agent":"Mozilla/5.0 DFL-HQ-Pickem/1.0"},signal:AbortSignal.timeout(20000)});
+    if(!response.ok)throw new Error(`Public NFL schedule returned ${response.status}`);
+    const payload=await response.json();
+    const events=payload?.content?.sbData?.events||[];
+    for(const event of events){
+      const competition=event.competitions?.[0],competitors=competition?.competitors||[];
+      const away=competitors.find((x:J)=>x.homeAway==="away"),home=competitors.find((x:J)=>x.homeAway==="home");
+      const startsAt=event.date||competition?.date;if(!event.id||!away||!home||!startsAt)continue;
+      const type=competition?.status?.type||event.status?.type||{},name=String(type.name||"").toLowerCase();
+      const status=name.includes("cancel")||name.includes("postpon")?"cancelled":type.completed||type.state==="post"?"final":type.state==="in"?"live":"scheduled";
+      const started=status==="live"||status==="final";
+      const start=new Date(startsAt);
+      const row={provider_event_id:`espn:${event.id}`,season,week:targetWeek,starts_at:start.toISOString(),away_team_id:String(away.team?.abbreviation||away.team?.id),away_team_name:String(away.team?.shortDisplayName||away.team?.displayName),home_team_id:String(home.team?.abbreviation||home.team?.id),home_team_name:String(home.team?.shortDisplayName||home.team?.displayName),away_score:started?value(away.score):null,home_score:started?value(home.score):null,status,is_monday_night:start.toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short"})==="Mon",updated_at:new Date().toISOString()};
+      const{error}=await admin.from("nfl_pickem_games").upsert(row,{onConflict:"provider_event_id"});if(error)throw error;
+      games++;weeks.add(`${season}:${targetWeek}`);
+    }
+  }
+  for(const key of weeks){const[s,w]=key.split(":").map(Number);const{error}=await admin.rpc("pickem_grade_week",{target_season:s,target_week:w});if(error)throw error}
+  return games;
+}
 
 Deno.serve(async request=>{
   if(request.method==="OPTIONS")return new Response("ok",{headers:cors(request)});
@@ -34,21 +62,21 @@ Deno.serve(async request=>{
   if(!await authorized(request,url,pub))return json({error:"Unauthorized"},401,request);
   const apiKey=Deno.env.get("SPORTSGAMEODDS_API_KEY")||"";
   const input=await request.json().catch(()=>({}));
-  if(input.action==="status")return json({ok:true,configured:!!apiKey,provider:"SportsGameOdds / Underdog"},200,request);
-  if(!apiKey)return json({ok:false,configured:false,error:"SportsGameOdds key is not configured"},503,request);
+  if(input.action==="status")return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:!!apiKey},200,request);
   const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
   try{
+    const nfl=await publicNflState();
+    const publicGames=await syncPublicPickem(admin,nfl.season,nfl.week);
+    if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:0,syncedAt:new Date().toISOString()},200,request);
     const now=new Date(),after=new Date(now.getTime()-8*864e5),before=new Date(now.getTime()+11*864e5);
     const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),includeOpposingOdds:"true",expandResults:"true",bookmakerID:"underdog,draftkings,fanduel",limit:"50"});
     const response=await fetch(`${API}?${q}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
     const body=await response.json().catch(()=>({}));
     if(!response.ok||body.success===false)throw new Error(body.error||`SportsGameOdds returned ${response.status}`);
-    const events=Array.isArray(body.data)?body.data:[];let games=0,props=0,settled=0;const weeks=new Set<string>();
+    const events=Array.isArray(body.data)?body.data:[];let props=0,settled=0;
     for(const e of events){
       const season=seasonOf(e),week=weekOf(e),startsAt=e.startsAt||e.startTime;if(!e.eventID||!season||!week||!startsAt)continue;
-      const away=e.teams?.away||{},home=e.teams?.home||{},status=eventStatus(e),start=new Date(startsAt);
-      const game={provider_event_id:String(e.eventID),season,week,starts_at:start.toISOString(),away_team_id:String(away.teamID||away.id||"away"),away_team_name:nameOf(away),home_team_id:String(home.teamID||home.id||"home"),home_team_name:nameOf(home),away_score:teamScore(e,"away"),home_score:teamScore(e,"home"),status,is_monday_night:start.toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short"})==="Mon",updated_at:new Date().toISOString()};
-      const{error:gameError}=await admin.from("nfl_pickem_games").upsert(game,{onConflict:"provider_event_id"});if(gameError)throw gameError;games++;weeks.add(`${season}:${week}`);
+      const status=eventStatus(e),start=new Date(startsAt);
       const odds=Object.values(e.odds||{}) as J[];
       for(const odd of odds){
         if(String(odd.sideID).toLowerCase()!=="over"||!supported(String(odd.statID||"")))continue;
@@ -62,7 +90,6 @@ Deno.serve(async request=>{
         const{error:oe}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(oe)throw oe;props++;
       }
     }
-    for(const key of weeks){const[s,w]=key.split(":").map(Number);await admin.rpc("pickem_grade_week",{target_season:s,target_week:w})}
-    return json({ok:true,configured:true,events:events.length,games,props,settled,syncedAt:new Date().toISOString()},200,request);
+    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,settled,syncedAt:new Date().toISOString()},200,request);
   }catch(error){return json({ok:false,error:error instanceof Error?error.message:String(error)},500,request)}
 });

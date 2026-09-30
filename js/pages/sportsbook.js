@@ -511,7 +511,7 @@ function rulingQueue(markets,byMarket){
   sees it: canBook gates the whole thing.
 */
 function commissionerBook(){return `<details class="card sb-book" open><summary class="card-title">Open a line</summary><form class="card-body" id="sportsbook-market-form"><label for="book-title">Market</label><input id="book-title" maxlength="120" required placeholder="Market title"><label for="book-category">Category</label><select id="book-category"><option>Fantasy</option><option>DFL Life</option><option>Marvel</option><option>Gaming</option></select><label for="book-close">Closes</label><input id="book-close" type="datetime-local"><label for="book-note">House note</label><input id="book-note" maxlength="180" placeholder="Optional"><p class="muted tiny">American odds, like -110 or +150. Two outcomes minimum, the third optional.</p><div class="section-head"><h3>Outcomes</h3></div>${outcomeInput(1,"YES","-110")}${outcomeInput(2,"NO","-110")}${outcomeInput(3,"","")}<div class="row-end"><button class="btn" type="submit">Open market</button></div></form></details>`}
-function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>REAL-LINE FEED</small><span>Underdog props + NFL Pick'em</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync lines</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
+function refreshFeedControl(){return `<div class="sb-feed-control"><div><small>FREE NFL FEED</small><span>Weekly Pick'em schedule + results</span></div><button type="button" class="btn small" id="sb-feed-refresh">Sync Pick'em</button><p id="sb-feed-status" class="muted tiny" aria-live="polite"></p></div>`}
 function outcomeInput(n,label,odds){return `<div class="row" style="gap:8px"><input data-book-label="${n}" maxlength="60" placeholder="Outcome ${n}" value="${esc(label)}" ${n<3?"required":""}><input data-book-odds="${n}" inputmode="numeric" placeholder="-110" value="${esc(odds)}" style="max-width:100px" ${n<3?"required":""}></div>`}
 
 /*
@@ -608,10 +608,10 @@ function wireProductTabs(view){
 
 function wireFeedRefresh(view){
   const button=view.querySelector("#sb-feed-refresh");if(!button)return;
-  button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling licensed lines…";
+  button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling the NFL slate…";
     const{data,error}=await edge().functions.invoke("sync-sportsbook-feed",{body:{action:"sync"},headers:privilegedFunctionHeaders()});
-    if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.configured===false?"Add SPORTSGAMEODDS_API_KEY to activate the feed.":(data?.error||error?.message||"Feed unavailable");return}
-    toast(`${Number(data.props||0)} props and ${Number(data.games||0)} games synced`);render(view);
+    if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.error||error?.message||"Feed unavailable";return}
+    toast(`${Number(data.games||0)} NFL games synced`);render(view);
   });
 }
 
