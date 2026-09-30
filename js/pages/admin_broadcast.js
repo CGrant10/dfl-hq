@@ -31,8 +31,6 @@ import { clearLore } from "../lore.js";
 import { refreshBottomlineNow } from "../bottomline.js";
 import { broadcastInboxHtml, wireBroadcastInbox } from "../broadcast-inbox.js";
 import { ensureBroadcastStyles } from "../lazy-css.js";
-/* Renders inside the Admin shell; asks in its own right so order never matters. */
-ensureBroadcastStyles();
 
 wireImageFields();
 
@@ -63,6 +61,7 @@ function refreshBar(label) {
 }
 
 export async function renderBroadcastPanel(host) {
+  await ensureBroadcastStyles();
   host.innerHTML = `
     ${refreshBar("Refresh the broadcast")}
     <div data-broadcast-inbox-slot></div>

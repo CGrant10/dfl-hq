@@ -310,7 +310,7 @@ h3 {
    both modes, with its ink and its glyphs following it (profile-neutral.css).
    The TOP bar still keeps the crest's black banner - see "CHROME" in
    style.css - because that one is the wordmark's own background. */
-.tabbar { background: color-mix(in srgb, var(--bg-2) 94%, var(--bg)); backdrop-filter: blur(8px); }
+.tabbar { background: var(--bg-2); }
 .tabbar :is(a, .tabmore) {
   min-height: 52px;
   font-size: var(--fs-micro);

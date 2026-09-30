@@ -251,18 +251,23 @@
     color .3s ease;
 }
 
-/* The app cannot choose the display's refresh rate. Keeping the moving layer
-   to transforms and opacity lets 90/120 Hz devices use every frame they offer. */
+/* Fixed chrome follows the visual viewport directly. Promoting these bars to
+   transformed compositor layers made them lag a frame behind mobile scroll
+   and made the whole shell look as though it was moving. */
 .topbar,
 .tabbar {
   position: fixed !important;
-  transform: translate3d(0,0,0);
-  backface-visibility: hidden;
-  will-change: transform;
-  contain: layout paint;
+  width: 100%;
+  max-width: 100%;
 }
-.topbar { inset: 0 0 auto; z-index: 30; }
-.tabbar { inset: auto 0 0; z-index: 30; }
+.topbar { top: 0; right: 0; bottom: auto; left: 0; z-index: 30; }
+.tabbar { top: auto; right: 0; bottom: 0; left: 0; z-index: 30; }
+@media (min-width: 900px) {
+  .tabbar {
+    top: calc(56px + env(safe-area-inset-top));
+    bottom: auto;
+  }
+}
 .view[data-pulse-system="1"] :is(input,select,textarea):focus {
   border-color: color-mix(in srgb, var(--accent) 62%, var(--control-line));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-fill) 13%, transparent);

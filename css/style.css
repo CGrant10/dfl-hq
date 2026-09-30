@@ -225,6 +225,12 @@ img, svg, .bx-art, .bx-crest {
 html, body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  /* A wide admin table or tab row must scroll inside itself, not widen the
+     document and drag the fixed app chrome along with it. */
+  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   /* The token, not a second copy of the same stack. This file loads after
@@ -432,6 +438,8 @@ a { color: var(--accent); }
 /* ------------------------------ content ------------------------------ */
 
 .view {
+  width: 100%;
+  min-width: 0;
   max-width: 900px;
   margin: 0 auto;
   padding: var(--pad);

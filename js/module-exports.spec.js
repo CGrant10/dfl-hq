@@ -209,6 +209,22 @@ describe("the initial app shell", () => {
     expect(screens).not.toContain("animation: dfl-pulse-surface-in 340ms linear");
   });
 
+  it("keeps fixed app chrome stable and loads Admin geometry before rendering", () => {
+    const router = fs.readFileSync("js/router.js", "utf8");
+    const pulse = fs.readFileSync("css/power-pulse-system.css", "utf8");
+    const styles = fs.readFileSync("css/style.css", "utf8");
+    const admin = fs.readFileSync("js/pages/admin.js", "utf8");
+    const commissioners = fs.readFileSync("js/pages/admin_commissioners.js", "utf8");
+    const broadcast = fs.readFileSync("js/pages/admin_broadcast.js", "utf8");
+    expect(router).toContain('admin: [{ href: "css/admin.css"');
+    expect(pulse).not.toContain("will-change: transform");
+    expect(pulse).not.toContain("translate3d(0,0,0)");
+    expect(styles).toContain("overflow-x: clip");
+    expect(admin).not.toContain("ensureBroadcastStyles");
+    expect(commissioners).not.toContain("ensureBroadcastStyles");
+    expect(broadcast).toContain("await ensureBroadcastStyles();");
+  });
+
   it("shares the Profile and Facts framing across ordinary routes", () => {
     const screens = fs.readFileSync("css/power-pulse-system.css", "utf8");
     const finances = fs.readFileSync("js/pages/finances.js", "utf8");

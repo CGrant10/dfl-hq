@@ -18,9 +18,6 @@ import { renderNotificationPanel } from "./admin_notifications.js";
 import { renderPerformancePanel } from "./admin_performance.js";
 import { renderOperationsPanel } from "./admin_operations.js";
 import { esc, toast } from "../ui.js";
-import { ensureBroadcastStyles } from "../lazy-css.js";
-/* Admin screens are styled by admin.css, which broadcast.css @imports. */
-ensureBroadcastStyles();
 
 const TABLES = [
   { id: "members", tab: "Members", table: "members", permission: "members" },

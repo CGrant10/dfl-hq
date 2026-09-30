@@ -61,6 +61,7 @@ const routeStyles = {
   analyzer: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
   trade: [{ href: "css/team-analyzer.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
   stakes: [{ href: "css/stakes.css", anchor: 'link[rel="stylesheet"][href*="css/update-gate.css"]' }],
+  admin: [{ href: "css/admin.css", anchor: 'link[rel="stylesheet"][href*="css/ui.css"]' }],
 };
 const routeModules = new Map();
 function loadRouteStyles(name) {

@@ -3,9 +3,6 @@
 // =====================================================================
 import { db } from "../supabase.js";
 import { esc, toast } from "../ui.js";
-import { ensureBroadcastStyles } from "../lazy-css.js";
-/* Same - idempotent, so asking twice costs nothing. */
-ensureBroadcastStyles();
 
 const PERMISSIONS = [
   ["announcements", "Announcements"],
