@@ -80,6 +80,7 @@ function mastheadCaption(open){
   against the database before anything is placed.
 */
 let slip=[];
+const propGameCache=new Map();
 
 /* The Sportsbook is intentionally allowed to open even when the member
    directory is unavailable: the moneyline still works with initials. In the
@@ -103,17 +104,19 @@ export async function render(view){
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
+    const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Player Props","Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
     const[mr,propMarkets]=await Promise.all([
       db().from("sportsbook_markets").select("*").neq("source","provider").order("created_at",{ascending:false}).limit(100),
-      db().from("sportsbook_markets").select("*").in("category",["Player Props","Team Totals","Game Totals"]).order("provider_updated_at",{ascending:false}).limit(96)
+      providerMarketPages()
     ]);
     if(mr.error||propMarkets.error)throw mr.error||propMarkets.error;
     markets=[...(mr.data||[]),...(propMarkets.data||[])].filter((market,index,all)=>all.findIndex(row=>String(row.id)===String(market.id))===index);
     const marketIds=markets.map(m=>m.id);
+    const outcomePages=async()=>{if(!marketIds.length)return{data:[],error:null};const rows=[];for(let from=0;from<marketIds.length;from+=500){const{data,error}=await db().from("sportsbook_outcomes").select("*").in("market_id",marketIds.slice(from,from+500)).order("sort_order");if(error)return{data:rows,error};rows.push(...(data||[]))}return{data:rows,error:null}};
     const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
-      marketIds.length?db().from("sportsbook_outcomes").select("*").in("market_id",marketIds).order("sort_order"):Promise.resolve({data:[],error:null}),
+      outcomePages(),
       db().rpc("sportsbook_my_bets",{row_limit:30}),
       db().rpc("sportsbook_trending_picks",{row_limit:3}),
       loadSportsbookIdentities(),
@@ -328,6 +331,7 @@ function heldOutcomes(bets,marketMap,outcomeMap){
 
 function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[]){
   if(!markets.length)return "";
+  propGameCache.clear();
   const picked=new Set(slip.map(String));
   const held=heldOutcomes(bets,marketMap,outcomeMap);
   const groups=new Map();for(const m of markets){const c=m.category||"Other";if(!groups.has(c))groups.set(c,[]);groups.get(c).push(m)}
@@ -335,14 +339,15 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const group=groups.get(cat);
-    const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members));
     if(cat==="Player Props"){
-      const games=new Map();group.forEach((market,index)=>{const label=String(market.lore_note||"").split(" · Book consensus")[0]||"NFL props",key=String(market.provider_event_id||label),bucket=games.get(key)||{label,cards:[]};bucket.cards.push(cards[index]);games.set(key,bucket)});
-      return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>Current week &middot; consensus lines</small><h2>Player props</h2></div><span>${cards.length} lines</span></div>
+      const games=new Map();group.forEach(market=>{const label=String(market.lore_note||"").split(" · Book consensus")[0]||"NFL props",key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,html:marketCard(market,byMarket.get(String(market.id))||[],canBook,picked,held,members)});games.set(key,bucket)});
+      for(const[key,game]of games)propGameCache.set(key,game.rows);
+      return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>Current week &middot; consensus lines</small><h2>Player props</h2></div><span>${group.length} lines</span></div>
         <div class="sb-prop-tools"><label><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Search player"></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing">Passing</option><option value="rushing">Rushing</option><option value="receiving">Receiving</option><option value="receptions">Receptions</option><option value="touchdown">Touchdowns</option><option value="fantasy">Fantasy points</option></select></label></div>
-        <div class="sb-prop-games">${[...games.values()].map(game=>`<details data-prop-game><summary><span>${esc(game.label)}</span><b data-prop-count>${game.cards.length} props</b></summary><div class="sb-market-grid">${game.cards.join("")}</div></details>`).join("")}</div>
+        <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${game.rows.length} props</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
         <p class="sb-empty" data-prop-empty hidden>No props match that filter.</p></section>`;
     }
+    const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members));
     /* A heading is only allowed to say "matchup" if every card under it is
        one; a category that mixes props in gets called what it is. */
     const scope=scopeOf(group),matchups=group.every(matchupKey);
@@ -355,8 +360,10 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
 
 function wirePropFilters(view){
   const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat");if(!search||!stat)return;
+  const hydrate=game=>{const grid=game.querySelector("[data-prop-grid]");if(!grid||grid.dataset.ready)return;const rows=propGameCache.get(game.dataset.propKey)||[];grid.innerHTML=rows.map(row=>row.html).join("");grid.dataset.ready="true"};
+  view.querySelectorAll("[data-prop-game]").forEach(game=>game.addEventListener("toggle",()=>{if(game.open)hydrate(game)}));
   const apply=()=>{const query=search.value.trim().toLowerCase(),kind=stat.value;let total=0;
-    view.querySelectorAll("[data-prop-game]").forEach(game=>{let visible=0;game.querySelectorAll("[data-prop-card]").forEach(card=>{const show=(!query||card.dataset.propText.includes(query))&&(!kind||card.dataset.propStat.includes(kind));card.hidden=!show;if(show)visible++});game.hidden=!visible;const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
+    view.querySelectorAll("[data-prop-game]").forEach(game=>{hydrate(game);let visible=0;game.querySelectorAll("[data-prop-card]").forEach(card=>{const show=(!query||card.dataset.propText.includes(query))&&(!kind||card.dataset.propStat.includes(kind));card.hidden=!show;if(show)visible++});game.hidden=!visible;const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
     const empty=view.querySelector("[data-prop-empty]");if(empty)empty.hidden=total>0;
   };
   search.addEventListener("input",apply);stat.addEventListener("change",apply);
@@ -441,7 +448,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
     wireBar();
   };
 
-  view.querySelectorAll("[data-bet-outcome]").forEach(button=>button.addEventListener("click",()=>{
+  wrap?.addEventListener("click",event=>{const button=event.target.closest("[data-bet-outcome]");if(!button)return;
     const id=String(button.dataset.betOutcome);
     const outcome=outcomeMap.get(id);
     const market=marketMap.get(String(outcome?.market_id));
@@ -452,7 +459,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
     if(slip.length>=MAX_PICKS){toast(`${MAX_PICKS} picks is the most one entry can hold`,true);return}
     slip=[...slip,id];
     refresh();
-  }));
+  });
 
   wireBar();
 }
@@ -682,7 +689,7 @@ function wireFeedRefresh(view){
   button.addEventListener("click",async()=>{const status=view.querySelector("#sb-feed-status");button.disabled=true;if(status)status.textContent="Pulling matchups and prop lines…";
     const{data,error}=await edge().functions.invoke("sync-sportsbook-feed",{body:{action:"sync"},headers:privilegedFunctionHeaders()});
     if(error||data?.ok===false){button.disabled=false;if(status)status.textContent=data?.error||error?.message||"Feed unavailable";return}
-    toast(`${Number(data.games||0)} games · ${Number(data.props||0)} props · ${Number(data.teamTotals||0)} totals · ${Number(data.settled||0)} settled`);render(view);
+    toast(`${Number(data.games||0)} games · ${Number(data.props||0)} props · ${Number(data.teamTotals||0)} totals · ${Number(data.billedEventObjects||data.events||0)} API objects`);render(view);
   });
 }
 

@@ -6,6 +6,7 @@ const ESPN="https://cdn.espn.com/core/nfl/scoreboard";
 const cors=(r?:Request)=>({"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":r?.headers.get("access-control-request-headers")||"authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-dfl-cron-token","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Max-Age":"86400",Vary:"Access-Control-Request-Headers"});
 const json=(v:unknown,s=200,r?:Request)=>Response.json(v,{status:s,headers:cors(r)});
 type J=Record<string,any>;
+const chunks=<T>(rows:T[],size=250)=>Array.from({length:Math.ceil(rows.length/size)},(_,index)=>rows.slice(index*size,(index+1)*size));
 
 function envKey(name:"SUPABASE_SECRET_KEYS"|"SUPABASE_PUBLISHABLE_KEYS",legacy:string){try{const map=JSON.parse(Deno.env.get(name)||"{}");if(map.default)return String(map.default)}catch{}return Deno.env.get(legacy)||""}
 async function sha256(v:string){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("")}
@@ -16,10 +17,7 @@ function weekOf(e:J){const raw=String(e.info?.seasonWeek||e.info?.week||e.week||
 function startsAtOf(e:J){return String(e.status?.startsAt||e.startsAt||e.startTime||"")}
 function seasonOf(e:J){return Number(e.info?.season||e.season||new Date(startsAtOf(e)||Date.now()).getFullYear())}
 function eventStatus(e:J){if(e.status?.cancelled)return"cancelled";if(e.status?.finalized||e.status?.completed||e.status?.ended)return"final";if(e.status?.started)return"live";return"scheduled"}
-const labelFor=(s:string)=>({passing_yards:"Passing yards",passing_touchdowns:"Passing TDs",rushing_yards:"Rushing yards",receiving_yards:"Receiving yards",receptions:"Receptions",touchdowns:"Touchdowns",fantasy_points:"Fantasy points"} as J)[s]||s.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
-const supported=(s:string)=>/^(passing_yards|passing_touchdowns|rushing_yards|receiving_yards|receptions|touchdowns|fantasy_points)$/.test(s);
-const statPriority=(s:string)=>({passing_yards:0,rushing_yards:1,receiving_yards:2,receptions:3,passing_touchdowns:4,touchdowns:5,fantasy_points:6} as J)[s]??99;
-
+const labelFor=(s:string)=>({passing_yards:"Passing yards",passing_touchdowns:"Passing TDs",rushing_yards:"Rushing yards",receiving_yards:"Receiving yards",receptions:"Receptions",receiving_receptions:"Receptions",touchdowns:"Touchdowns",fantasy_points:"Fantasy points",fantasyScore:"Fantasy points"} as J)[s]||s.replaceAll("_"," ").replaceAll("+"," + ").replace(/([a-z])([A-Z])/g,"$1 $2").replace(/\s+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
 function playerID(odd:J){return String(odd.playerID||odd.statEntityID||"")}
 function playerName(e:J,odd:J){const id=playerID(odd),p=e.players?.[id]||Object.values(e.players||{}).find((x:any)=>String(x?.playerID||x?.id)===id);return String((p as J)?.name||(p as J)?.names?.long||odd.playerName||odd.statEntityName||"").trim()}
 function teamName(team:J){return String(team?.names?.medium||team?.names?.short||team?.names?.long||team?.teamID||"").trim()}
@@ -38,6 +36,14 @@ function consensusLine(odd:J){
   if(!lines.length)return{line:null,books:0};
   const middle=Math.floor(lines.length/2),line=lines.length%2?lines[middle]:(lines[middle-1]+lines[middle])/2;
   return{line,books:lines.length};
+}
+function americanOdds(input:any){const n=Number(input);return Number.isFinite(n)&&n!==0?Math.round(n):null}
+function consensusPrice(odd:J,line:number){
+  const directLine=value(odd.bookOverUnder,odd.fairOverUnder),book=americanOdds(odd.bookOdds);
+  if(book!==null&&(directLine===null||Math.abs(directLine-line)<.001))return book;
+  const prices=Object.values(odd.byBookmaker||{}).filter((entry:any)=>entry?.available!==false&&Math.abs(Number(entry?.overUnder)-line)<.001).map((entry:any)=>americanOdds(entry?.odds)).filter((price):price is number=>price!==null).sort((a,b)=>a-b);
+  if(prices.length){const middle=Math.floor(prices.length/2);return prices.length%2?prices[middle]:Math.round((prices[middle-1]+prices[middle])/2)}
+  return americanOdds(odd.fairOdds);
 }
 function oddScore(e:J,odd:J){const entity=String(odd.statEntityID||odd.playerID||""),period=String(odd.periodID||"game"),stat=String(odd.statID||"");return value(odd.score,e.results?.[period]?.[entity]?.[stat])}
 
@@ -188,55 +194,67 @@ Deno.serve(async request=>{
     stage="Pick'em notifications";
     const notices=await pickemNotifications(admin,url,request.headers.get("x-dfl-cron-token")||"",nfl.season,nfl.week);
     if(!apiKey)return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:false,games:publicGames,props:0,settled:sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
-    const now=new Date(),after=new Date(now.getTime()-8*864e5),before=new Date(now.getTime()+11*864e5);
+    const now=new Date();
+    const{data:slate,error:slateError}=await admin.from("nfl_pickem_games").select("starts_at").eq("season",nfl.season).eq("week",nfl.week).order("starts_at");if(slateError)throw slateError;
+    const starts=(slate||[]).map(row=>new Date(row.starts_at).getTime()).filter(Number.isFinite);
+    const after=new Date((starts.length?Math.min(...starts):now.getTime())-12*36e5),before=new Date((starts.length?Math.max(...starts):now.getTime()+7*864e5)+18*36e5);
     const q=new URLSearchParams({leagueID:"NFL",startsAfter:after.toISOString(),startsBefore:before.toISOString(),oddsPresent:"true",includeOpposingOdds:"true",expandResults:"true",limit:"50"});
     stage="SportsGameOdds request";
     const response=await fetch(`${API}?${q}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
     const body=await response.json().catch(()=>({}));
     if(!response.ok||body.success===false)throw new Error(body.error||`SportsGameOdds returned ${response.status}`);
-    const events=Array.isArray(body.data)?body.data:[];let props=0,teamTotals=0,settled=0,liveUpdated=0;
+    const freshEvents=Array.isArray(body.data)?body.data:[];
+    const currentEventIds=new Set(freshEvents.map((event:J)=>String(event.eventID)));
+    const{data:pending,error:pendingError}=await admin.from("sportsbook_markets").select("provider_event_id,provider_key").eq("source","provider").in("status",["open","locked"]);if(pendingError)throw pendingError;
+    const recoveryIds=[...new Set((pending||[]).filter(row=>String(row.provider_key||"").startsWith("sgo:")).map(row=>String(row.provider_event_id||"")).filter(id=>id&&!currentEventIds.has(id)))];
+    let recoveryEvents:J[]=[];
+    if(recoveryIds.length){
+      const recoveryQuery=new URLSearchParams({eventIDs:recoveryIds.slice(0,50).join(","),includeOpposingOdds:"true",expandResults:"true",limit:"50"});
+      const recoveryResponse=await fetch(`${API}?${recoveryQuery}`,{headers:{"x-api-key":apiKey,"User-Agent":"DFL-HQ/1.0"},signal:AbortSignal.timeout(25000)});
+      const recoveryBody=await recoveryResponse.json().catch(()=>({}));if(!recoveryResponse.ok||recoveryBody.success===false)throw new Error(recoveryBody.error||`SportsGameOdds recovery returned ${recoveryResponse.status}`);
+      recoveryEvents=Array.isArray(recoveryBody.data)?recoveryBody.data:[];
+    }
+    const events=[...new Map([...freshEvents,...recoveryEvents].map((event:J)=>[String(event.eventID),event])).values()];let props=0,teamTotals=0,settled=0,liveUpdated=0;
     stage="SportsGameOdds market import";
     const candidates:J[]=[],liveUpdates:J[]=[],settlements:J[]=[];
     for(const e of events){
       const season=seasonOf(e),week=weekOf(e),startsAt=startsAtOf(e);if(!e.eventID||!season||!week||!startsAt)continue;
       const status=eventStatus(e),start=new Date(startsAt);
-      const odds=Object.values(e.odds||{}) as J[];
+      const odds=Object.values(e.odds||{}) as J[],oddsById=new Map(odds.map((odd:J)=>[String(odd.oddID||""),odd]));
       for(const odd of odds){
-        const stat=String(odd.statID||""),total=stat==="points"?totalIdentity(e,odd):null,isPlayer=supported(stat);
+        const stat=String(odd.statID||""),total=stat==="points"?totalIdentity(e,odd):null,player=playerName(e,odd),isPlayer=!!player;
         if(String(odd.sideID).toLowerCase()!=="over"||String(odd.periodID||"game")!=="game"||String(odd.betTypeID||"ou")!=="ou"||(!isPlayer&&!total))continue;
-        const consensus=consensusLine(odd),line=consensus.line,player=isPlayer?playerName(e,odd):"",playerKey=isPlayer?playerID(odd):`${e.eventID}:${total?.key}`;if(line===null||!playerKey||(isPlayer&&!player))continue;
+        const consensus=consensusLine(odd),line=consensus.line,playerKey=isPlayer?playerID(odd):`${e.eventID}:${total?.key}`;if(line===null||!playerKey)continue;
+        const opposite=oddsById.get(String(odd.opposingOddID||""))||odds.find((candidate:J)=>String(candidate.statID)===stat&&String(candidate.statEntityID||candidate.playerID)===String(odd.statEntityID||odd.playerID)&&String(candidate.periodID||"game")==="game"&&String(candidate.betTypeID||"ou")==="ou"&&String(candidate.sideID).toLowerCase()==="under");
+        const overOdds=consensusPrice(odd,line),underOdds=opposite?consensusPrice(opposite,line):null;if(overOdds===null||underOdds===null)continue;
         const oddID=String(odd.oddID||`${odd.statID}:${playerKey}`),key=`sgo:${e.eventID}:${oddID}`,score=oddScore(e,odd);
         if(status==="final"&&score!==null){settlements.push({provider_key:key,final_score:score});continue}
         if(status==="live"){if(score!==null)liveUpdates.push({provider_key:key,provider_score:score,provider_updated_at:new Date().toISOString(),market_status:"locked"});continue}
         if(status!=="scheduled"||start<=now||week!==nfl.week)continue;
-        const market={title:isPlayer?`${player} · ${labelFor(stat)}`:total.title,category:isPlayer?"Player Props":total.category,source:"provider",lore_note:`${matchupName(e)} · Book consensus ${line} · ${consensus.books||"market"} books · house price -110`,status:"open",closes_at:start.toISOString(),provider_key:key,provider_event_id:String(e.eventID),provider_market_id:String(odd.oddID||""),provider_line:line,provider_updated_at:new Date().toISOString()};
-        candidates.push({market,line,playerKey,kind:isPlayer?"player":"total",priority:isPlayer?statPriority(stat):0,start:start.getTime()});
+        const market={title:isPlayer?`${player} · ${labelFor(stat)}`:total.title,category:isPlayer?"Player Props":total.category,source:"provider",lore_note:`${matchupName(e)} · Book consensus ${line} · ${consensus.books||"market"} books · real consensus pricing`,status:"open",closes_at:start.toISOString(),provider_key:key,provider_event_id:String(e.eventID),provider_market_id:String(odd.oddID||""),provider_line:line,provider_updated_at:new Date().toISOString()};
+        candidates.push({market,line,overOdds,underOdds,playerKey,kind:isPlayer?"player":"total",start:start.getTime()});
       }
     }
     if(liveUpdates.length){const{data,error}=await admin.rpc("sportsbook_update_provider_markets",{updates:liveUpdates});if(error)throw error;liveUpdated=Number(data||0)}
     if(settlements.length){const{data,error}=await admin.rpc("sportsbook_settle_provider_markets",{updates:settlements});if(error)throw error;settled=Number(data||0)}
-    const bestByPlayer=new Map<string,J>();
-    for(const candidate of candidates.filter(row=>row.kind==="player")){const current=bestByPlayer.get(candidate.playerKey);if(!current||candidate.priority<current.priority)bestByPlayer.set(candidate.playerKey,candidate)}
-    const propsByEvent=new Map<string,J[]>();
-    for(const row of [...bestByPlayer.values()].sort((a,b)=>a.priority-b.priority||String(a.market.title).localeCompare(String(b.market.title)))){const key=String(row.market.provider_event_id),bucket=propsByEvent.get(key)||[];bucket.push(row);propsByEvent.set(key,bucket)}
-    const playerSelected:J[]=[];let pass=0;
-    while(playerSelected.length<48){let added=0;for(const bucket of propsByEvent.values()){if(bucket[pass]){playerSelected.push(bucket[pass]);added++;if(playerSelected.length===48)break}}if(!added)break;pass++}
-    const totalSelected=candidates.filter(row=>row.kind==="total").sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title))).slice(0,48);
+    const playerSelected=candidates.filter(row=>row.kind==="player").sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title)));
+    const totalSelected=candidates.filter(row=>row.kind==="total").sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title)));
     const selected=[...playerSelected,...totalSelected];
     if(selected.length){
-      const keys=selected.map(row=>row.market.provider_key),selectedByKey=new Map(selected.map(row=>[row.market.provider_key,row]));
-      const{data:existing,error:existingError}=await admin.from("sportsbook_markets").select("id,provider_key").in("provider_key",keys);if(existingError)throw existingError;
-      const existingIds=(existing||[]).map(row=>row.id);let protectedIds=new Set<string>();
-      if(existingIds.length){const{data:legs,error:legError}=await admin.from("sportsbook_bet_legs").select("market_id").in("market_id",existingIds);if(legError)throw legError;protectedIds=new Set((legs||[]).map(row=>String(row.market_id)))}
-      const protectedKeys=new Set((existing||[]).filter(row=>protectedIds.has(String(row.id))).map(row=>row.provider_key));
+      const selectedByKey=new Map(selected.map(row=>[row.market.provider_key,row]));
+      const eventIds=[...new Set(selected.map(row=>String(row.market.provider_event_id)))],existing:J[]=[];
+      for(let from=0;;from+=1000){const{data,error}=await admin.from("sportsbook_markets").select("id,provider_key").eq("source","provider").in("provider_event_id",eventIds).range(from,from+999);if(error)throw error;existing.push(...(data||[]));if((data||[]).length<1000)break}
+      const existingIds=existing.map(row=>row.id);let protectedIds=new Set<string>();
+      for(const ids of chunks(existingIds,500)){const{data:legs,error:legError}=await admin.from("sportsbook_bet_legs").select("market_id").in("market_id",ids);if(legError)throw legError;for(const leg of legs||[])protectedIds.add(String(leg.market_id))}
+      const protectedKeys=new Set(existing.filter(row=>protectedIds.has(String(row.id))).map(row=>row.provider_key));
       const writable=selected.filter(row=>!protectedKeys.has(row.market.provider_key));
-      if(writable.length){const{error:marketError}=await admin.from("sportsbook_markets").upsert(writable.map(row=>row.market),{onConflict:"provider_key"});if(marketError)throw marketError}
-      const{data:markets,error:marketReadError}=await admin.from("sportsbook_markets").select("id,provider_key").in("provider_key",keys);if(marketReadError)throw marketReadError;
+      for(const batch of chunks(writable)){const{error:marketError}=await admin.from("sportsbook_markets").upsert(batch.map(row=>row.market),{onConflict:"provider_key"});if(marketError)throw marketError}
+      const markets:J[]=[];for(let from=0;;from+=1000){const{data,error}=await admin.from("sportsbook_markets").select("id,provider_key").eq("source","provider").in("provider_event_id",eventIds).range(from,from+999);if(error)throw error;markets.push(...(data||[]));if((data||[]).length<1000)break}
       const writableKeys=new Set(writable.map(row=>row.market.provider_key));
-      const choices=(markets||[]).flatMap(market=>{const row=selectedByKey.get(market.provider_key);return row&&writableKeys.has(market.provider_key)?[{market_id:market.id,label:`Over ${row.line}`,odds_american:-110,sort_order:0,provider_side:"over"},{market_id:market.id,label:`Under ${row.line}`,odds_american:-110,sort_order:1,provider_side:"under"}]:[]});
-      if(choices.length){const{error:outcomeError}=await admin.from("sportsbook_outcomes").upsert(choices,{onConflict:"market_id,provider_side"});if(outcomeError)throw outcomeError}
+      const choices=markets.flatMap(market=>{const row=selectedByKey.get(market.provider_key);return row&&writableKeys.has(market.provider_key)?[{market_id:market.id,label:`Over ${row.line}`,odds_american:row.overOdds,sort_order:0,provider_side:"over"},{market_id:market.id,label:`Under ${row.line}`,odds_american:row.underOdds,sort_order:1,provider_side:"under"}]:[]});
+      for(const batch of chunks(choices,500)){const{error:outcomeError}=await admin.from("sportsbook_outcomes").upsert(batch,{onConflict:"market_id,provider_side"});if(outcomeError)throw outcomeError}
       props=playerSelected.length;teamTotals=totalSelected.length;
     }
-    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,games:publicGames,props,teamTotals,liveUpdated,settled:settled+sleeperPropsSettled,notices,syncedAt:new Date().toISOString()},200,request);
+    return json({ok:true,configured:true,pickemProvider:"Public NFL scoreboard",propsConfigured:true,events:events.length,billedEventObjects:freshEvents.length+recoveryEvents.length,recoveredEvents:recoveryEvents.length,games:publicGames,props,teamTotals,liveUpdated,settled:settled+sleeperPropsSettled,notices,providerNotice:body.notice||null,syncedAt:new Date().toISOString()},200,request);
   }catch(error){const detail=error instanceof Error?error.message:typeof error==="object"?JSON.stringify(error):String(error);console.error("sportsbook feed failed",stage,detail);return json({ok:false,error:`${stage}: ${detail}`},500,request)}
 });

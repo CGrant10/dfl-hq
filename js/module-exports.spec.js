@@ -424,7 +424,10 @@ describe("the supported golf GPS courses", () => {
     expect(feed).toContain("sportsbook_settle_provider_markets");
     expect(feed).toContain('category:"Team Totals"');
     expect(feed).toContain("protectedKeys");
-    expect(sportsbook).toContain('.in("market_id",marketIds)');
+    expect(feed).toContain("billedEventObjects");
+    expect(feed).toContain("row.overOdds");
+    expect(feed).not.toContain("playerSelected.length<48");
+    expect(sportsbook).toContain('.in("market_id",marketIds.slice(from,from+500))');
     expect(sportsbook).toContain('.neq("source","provider")');
     expect(sportsbook).toContain("wirePropFilters(view)");
     expect(sportsbook).toContain("Sportsbook aftermath");

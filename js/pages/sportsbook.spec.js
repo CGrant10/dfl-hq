@@ -21,7 +21,7 @@ const { markets, outcomes, bets, perms, trends, recap } = vi.hoisted(() => ({
 }));
 vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], db:()=>({
   rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
-  from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
+  from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,range:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({
   currentMember:()=>({display_name:'Preview'}),
