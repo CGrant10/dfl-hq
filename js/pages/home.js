@@ -1,3 +1,4 @@
+import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
 // =====================================================================
 // Home - the league's front page.
 // ---------------------------------------------------------------------
@@ -49,7 +50,7 @@ import { playerIdentity } from "../player-presentation.js";
 import { playerLiveState } from "../live-score.js";
 import { loadLeagueState } from "../league-state.js";
 import { buildWeeklyBriefing } from "../weekly-briefing.js";
-import { buildAftermath, shareAftermath } from "../aftermath-share.js";
+import { buildAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
 import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 
@@ -203,7 +204,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
           <article><small>LINEUP CALL</small><span>${esc(briefing?.lineup || "Checking your starters")}</span></article>
           <article><small>NEXT MOVE</small><span>${esc(briefing?.action || "Keep the roster ready")}</span></article>
         </div>
-        ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><button class="btn small" type="button" data-share-week-recap>Share report</button></aside>` : ""}
+        ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
         ${changes.length ? `<aside class="home-signal-changes"><small>CHANGED SINCE LAST SYNC</small>${changes.slice(0, 3).map(change => `<span class="is-${change.impact}"><strong>${esc(change.name)}</strong><em>${esc(change.detail)}</em></span>`).join("")}</aside>` : ""}
       </section>
       <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
@@ -224,7 +225,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   </section>`;
 }
 
-function wireHomeWeekHub(root, report = null) {
+function wireHomeWeekHub(root) {
   const setWeekPanel = name => {
     root.querySelectorAll("[data-week-tab]").forEach(button => button.setAttribute("aria-selected", String(button.dataset.weekTab === name)));
     root.querySelectorAll("[data-week-panel]").forEach(panel => { panel.hidden = panel.dataset.weekPanel !== name; });
@@ -235,11 +236,7 @@ function wireHomeWeekHub(root, report = null) {
     root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
     root.querySelectorAll("[data-position-panel]").forEach(panel => { panel.hidden = panel.dataset.positionPanel !== position; });
   }));
-  root.querySelector("[data-share-week-recap]")?.addEventListener("click", async event => {
-    event.currentTarget.disabled = true;
-    try { await shareAftermath(report); } catch (error) { toast(error?.message || "Could not share the report", true); }
-    finally { event.currentTarget.disabled = false; }
-  });
+
 }
 
 export function leave() {
@@ -538,6 +535,7 @@ export async function render(view) {
     </section>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-pickem-slot></div>
+    <section class="home-weekly-clubhouse card"><div><small>WEEKLY CLUBHOUSE</small><h2>Own the week. Bring receipts.</h2><p>Awards, matchup conversations and the Monday recap.</p></div><a class="btn" href="#/clubhouse">Open clubhouse</a></section>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
@@ -574,16 +572,19 @@ export async function render(view) {
     return built ? { ...built, trending } : null;
   }).catch(err => { console.warn("clubhouse weekly projections unavailable", err); return null; });
   const aftermathWeeklyPromise = analysisPromise.then(async analysis => {
-    if (analysis?.state !== "ready" || new Date().getDay() !== 2) return null;
-    const { loadWeeklyProjections, loadWeeklyStats } = await import("../sleeper.js");
-    const state = await loadLeagueState();
-    const season = Number(state?.season) || analysis.projectionSeason;
-    const week = Math.max(0, (Number(state?.currentWeek) || 1) - 1);
+    if (analysis?.state !== "ready") return null;
+    const state = await loadLeagueState(),season=Number(state?.season)||analysis.projectionSeason,week=Number(state?.completedWeek)||0;
     if (!week) return null;
-    const [projections, actual] = await Promise.all([loadWeeklyProjections(season, week), loadWeeklyStats(season, week)]);
-    return buildClubhouseWeekly({ analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,
-      fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0) });
-  }).catch(err => { console.warn("Tuesday report unavailable", err); return null; });
+    const data=await loadClubhouseWeek(season,week);if(!data.completed)return null;
+    const [raw,players]=await Promise.all([loadWeeklyRosters(data.leagueId,week),import("../sleeper.js").then(mod=>mod.loadPlayers())]);
+    const owners=new Map(data.games.flatMap(g=>[[String(g.roster1),g.user1],[String(g.roster2),g.user2]]));
+    return {season,week,teams:raw.filter(row=>owners.has(String(row.roster_id))).map(row=>{
+      const uid=owners.get(String(row.roster_id)),member=memberRows.find(m=>String(m.sleeper_user_id)===String(uid)),starters=new Set((row.starters||[]).map(String));
+      const performance=([id,points])=>({name:players[id]?.n||`Player ${id}`,points:Number(points),owner:member?.team_name||member?.display_name||"Team",position:players[id]?.p,nflTeam:players[id]?.t});
+      const scores=Object.entries(row.players_points||{}).filter(([,points])=>points!=null&&Number.isFinite(Number(points)));
+      return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
+    })};
+  }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
   pickemPromise.then(board => {
@@ -728,7 +729,7 @@ export async function render(view) {
     }
     if (homeReportSlot) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
-      wireHomeWeekHub(homeReportSlot, completedReport);
+      wireHomeWeekHub(homeReportSlot);
     }
     if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
     /* Both slots just replaced their contents, so the parts the driver was

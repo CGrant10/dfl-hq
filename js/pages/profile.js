@@ -1,3 +1,4 @@
+import {memberWeeklyAwardsHtml,wireMemberWeeklyAwards} from "../weekly-clubhouse-ui.js";
 // =====================================================================
 // Profile - one member, everything the app knows about them.
 //
@@ -121,6 +122,7 @@ export async function render(view) {
     DEFAULT - one tap and that card stays open for good.
   */
   const reference = [
+    memberWeeklyAwardsHtml(),
     awardsCard(member),
     historyCard(seasons, leagues.data || [], member.sleeper_user_id),
     loreName ? rivalryCard(foes, loreName, members) : "",
@@ -207,6 +209,7 @@ export async function render(view) {
 
   // An edit changes the member row the picker and the header chip read from,
   // so the cache has to go before the page is drawn again.
+  wireMemberWeeklyAwards(view,member.id);
   wireInline(view.querySelector("#profile-wrap"), async () => {
     await refreshMember();
     render(view);

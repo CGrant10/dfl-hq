@@ -48,6 +48,7 @@ const routes = {
   profile:  () => import("./pages/profile-locked.js"),
   notifications: () => import("./pages/notifications.js"),
   wall:     () => import("./pages/wall.js"),
+  clubhouse:() => import("./pages/clubhouse.js"),
   stakes:   () => import("./pages/stakes.js"),
   admin:    () => import("./pages/admin.js"),
 };

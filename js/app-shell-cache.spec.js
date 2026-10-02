@@ -16,5 +16,5 @@ it('can start and import core clubhouse routes offline after a fresh installatio
       else if(ref.startsWith('https://cdn.jsdelivr.net/'))expect(shell.has(ref),`Missing startup CDN module ${ref}`).toBe(true);
     }
   };
-  for(const entry of ['js/app.js','js/collapse.js','js/pages/home.js','js/pages/wall.js','js/pages/sportsbook.js'])walk(resolve(root,entry));
+  for(const entry of ['js/app.js','js/collapse.js','js/pages/home.js','js/pages/wall.js','js/pages/sportsbook.js','js/pages/clubhouse.js'])walk(resolve(root,entry));
 });
