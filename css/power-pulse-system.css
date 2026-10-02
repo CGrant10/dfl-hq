@@ -1191,3 +1191,78 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 
 .page-priority-note { display: block; padding: 1rem; border: 1px solid var(--control-line); border-radius: 12px; line-height: 1.5; }
 .view[data-route="trade"] .td-selected-empty { color: var(--text); }
+
+/* Calm surfaces, generous spacing and restrained controls across member pages. */
+.view[data-pulse-system="1"]:not([data-route="golf"]) {
+  --pulse-surface: var(--bg-2);
+  --pulse-shadow: 0 2px 12px color-mix(in srgb, var(--bg) 10%, transparent);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.btn,.linkbtn,.clubhouse-text-link) {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: .8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) .btn {
+  min-height: 44px;
+  padding: .5rem .875rem;
+  border-radius: 8px;
+  box-shadow: none;
+  width: auto;
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.btn.ghost,.linkbtn,.clubhouse-text-link) { background: transparent; }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.linkbtn,.clubhouse-text-link) { display: inline-flex; align-items: center; min-height: 44px; gap: .375rem; }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.btn,button,summary):is(:hover,:active) { transform: none; }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.card,.ta-report-section,.wo-panel,.factcard,.so-panel):hover { transform: none; }
+.view[data-pulse-system="1"]:not([data-route="golf"]):not([data-route="home"]) :is(.card,.wo-panel,.ta-toolbar,.factcard) { padding: clamp(20px,3vw,28px); }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.page-head,.ta-toolbar-section,.block,.clubhouse-section) { margin-bottom: 1.75rem; }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.card-title-row,.clubhouse-heading,.sb-board-head) { margin-bottom: 1.125rem; }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.section-copy,.clubhouse-section-copy,.page-sub) { line-height: 1.65; }
+.view[data-pulse-system="1"] .page-disclosure { border-color: var(--line); border-radius: 12px; margin-block: 1.5rem; box-shadow: none; }
+.view[data-pulse-system="1"] .page-disclosure > summary { padding: 1rem 1.25rem; gap: .75rem; }
+.view[data-pulse-system="1"] .page-disclosure > summary strong { font-family: ui-sans-serif,system-ui,sans-serif; font-size: .875rem; font-weight: 600; }
+.view[data-pulse-system="1"] .page-disclosure > summary small { font-size: .8125rem; line-height: 1.5; }
+.view[data-pulse-system="1"] .page-disclosure > summary::after { font-size: 1.125rem; color: var(--muted); }
+.view[data-pulse-system="1"] .page-detail-body { padding: .5rem 1.25rem 1.25rem; }
+.view[data-pulse-system="1"] .page-activity-tabs { gap: 1rem; border-bottom: 1px solid var(--line); }
+.view[data-pulse-system="1"] .page-activity-tabs > button { flex: 0 1 auto; min-height: 44px; padding: .625rem .125rem; border: 0; border-radius: 0; background: transparent; font-family: ui-sans-serif,system-ui,sans-serif; font-size: .8125rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.view[data-pulse-system="1"] .page-activity-tabs > button[aria-selected="true"] { box-shadow: inset 0 -2px var(--accent); font-weight: 600; }
+#home-wrap > :is([data-home-rankings-slot],[data-home-focus-slot],.home-weekly-clubhouse,.page-disclosure) { margin: 1.5rem 1rem 0; }
+#home-wrap .home-week-focus { margin: 0; }
+#home-wrap > .page-disclosure { margin-bottom: 1.5rem; }
+#home-wrap :is(.home-rankings-card,.home-week-focus,.home-weekly-clubhouse) { border: 1px solid var(--line); border-radius: 14px; padding: 1.25rem; background: var(--bg-2); box-shadow: none; }
+#home-wrap .home-rankings-card > header { min-height: 48px; padding-bottom: .75rem; margin-bottom: .5rem; }
+#home-wrap .home-rankings-card h2 { font-size: clamp(1.15rem,3vw,1.5rem); letter-spacing: .025em; }
+#home-wrap .home-rankings-card ol > li { min-height: 48px; padding-block: .625rem; }
+#home-wrap .home-rankings-card > header a, #home-wrap .home-rank-all { min-height: 44px; font-family: ui-sans-serif,system-ui,sans-serif; font-size: .75rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+#home-wrap .home-focus-links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.125rem; margin-top: 1rem; }
+#home-wrap :is(.home-week-focus,.home-weekly-clubhouse) h2 { font-size: 1.25rem; line-height: 1.25; margin-block: .5rem .875rem; }
+#home-wrap :is(.home-week-focus,.home-weekly-clubhouse) p { line-height: 1.65; }
+@media(max-width:620px) { .view[data-pulse-system="1"] .page-activity-tabs { gap: .875rem; } #home-wrap .home-rankings-card { padding-inline: 1rem; } }
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.tabs,.sb-tabs,.sb-product-tabs,.clubhouse-tabs) > :is(button,a) {
+  font-family: ui-sans-serif,system-ui,sans-serif;
+  font-size: .8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: 44px;
+}
+.view[data-pulse-system="1"] :is(.sb-product-tabs,.clubhouse-tabs) {
+  display: flex; flex-wrap: wrap; gap: 1rem; padding: 0;
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: transparent; margin-bottom: 1.5rem;
+}
+.view[data-pulse-system="1"] :is(.sb-product-tabs,.clubhouse-tabs) > button {
+  flex: 0 1 auto; padding: .625rem .125rem; border: 0; border-radius: 0;
+  background: transparent; color: var(--body-text); box-shadow: none;
+}
+.view[data-pulse-system="1"] :is(.sb-product-tabs,.clubhouse-tabs) > button[aria-selected="true"] {
+  background: transparent; color: var(--text); font-weight: 600;
+  box-shadow: inset 0 -2px var(--accent);
+}
+.view[data-pulse-system="1"]:not([data-route="golf"]) :is(.btn,.linkbtn,.clubhouse-text-link) { text-decoration: none; }
+@media(hover:hover) {
+  .view[data-pulse-system="1"]:not([data-route="golf"]) :is(.linkbtn,.clubhouse-text-link):hover { text-decoration: underline; text-underline-offset: 3px; }
+}

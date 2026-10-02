@@ -229,7 +229,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 export function homeWeeklyFocus(outlook,briefing=null){
  if(!outlook)return '<section class="card home-week-focus"><small>YOUR WEEK</small><h2>Your next move</h2><p role="status">Checking your lineup…</p></section>';
  const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
- return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><a class="btn" href="#/analyzer">Review my lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">This week’s matchup talk →</a></section>`;
+ return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer">Review lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">Matchup talk →</a></div></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -541,9 +541,10 @@ export async function render(view) {
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
+    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
-    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn" href="#/clubhouse">Open clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
-    ${disclosure("home-league","More from the league","Rankings, weekly forecasts, side games and activity",`<div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse →</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
+    ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
     <div data-home-pickem-slot></div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
