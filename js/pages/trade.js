@@ -1,4 +1,3 @@
-import {wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 // =====================================================================
 // pages/trade.js - the Trade Desk, on its own page
 // ---------------------------------------------------------------------
@@ -224,9 +223,8 @@ function page(data, tradeAlerts = []) {
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
   const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
-    openTiers: new Set(), customOpen: readPageChoice("trade-mode",["analyze","shop"],"analyze")==="analyze", sharedAudit: [] };
+    openTiers: new Set(), customOpen: false, sharedAudit: [] };
 
-  let activity=readPageChoice("trade-mode",["analyze","shop"],"analyze");
   return {
     markup: `${completedTradeMarkup(tradeAlerts, selectedTransactionId)}<main class="ta-report td-page" data-td-body></main>`,
 
@@ -238,7 +236,7 @@ function page(data, tradeAlerts = []) {
 
       const draw = () => {
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
-        body.innerHTML = `<div class="page-activity-tabs" role="tablist" aria-label="Trade activity">${[["analyze","Build a trade"],["shop","Find offers"]].map(([key,label])=>`<button type="button" role="tab" id="trade-mode-${key}" aria-controls="trade-panel-${key}" aria-selected="${key===activity}" tabindex="${key===activity?0:-1}" data-trade-mode="${key}">${label}</button>`).join("")}</div>${activity==="analyze"?`<label class="tb-team-select page-team-choice"><span>Trading as</span><select data-td-team>${data.teams.map(item=>`<option value="${esc(item.id)}" ${String(item.id)===String(team.id)?"selected":""}>${esc(teamName(item))}</option>`).join("")}</select></label>`:""}${tradeLab(team, data.teams, data.pool, shop)}
+        body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}
           <details class="ta-report-section td-custom"${shop.customOpen ? " open" : ""}>
             <summary class="ta-report-title"><div><small>MANUAL MODE</small><h2>Build your own package</h2></div><span class="ta-fold-hint">Up to 8 players</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
             ${shop.customOpen ? `<div class="ta-section-body"><div data-trade-desk>${tradeDeskMarkup(team, data.teams, data.pool, trade)}</div>
@@ -246,10 +244,6 @@ function page(data, tradeAlerts = []) {
           </details>
           ${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool, localStorage,
             shop.sharedAudit.filter(row => !row.season || Number(row.season) === Number(data.projectionSeason))) }, esc)}`;
-        const shopPanel=body.querySelector('.tb-board'),analyzePanel=body.querySelector('.td-custom');
-        for(const [panel,key]of [[shopPanel,'shop'],[analyzePanel,'analyze']]){panel.id=`trade-panel-${key}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',`trade-mode-${key}`);panel.hidden=activity!==key}
-        for(const section of body.querySelectorAll('details'))if(!section.classList.contains('td-custom')){section.dataset.pageDetail=`trade-${section.dataset.tbTier||section.className.replace(/[^a-z]+/g,'-')}`}
-        wirePageDisclosures(body);
         const share = body.querySelector("[data-td-share]");
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
@@ -262,7 +256,7 @@ function page(data, tradeAlerts = []) {
         });
         body.querySelector(".td-custom")?.addEventListener("toggle", event => {
           const open = event.currentTarget.open;
-          if (open && !shop.customOpen) { shop.customOpen = true; activity="analyze";savePageChoice("trade-mode",activity); draw(); return; }
+          if (open && !shop.customOpen) { shop.customOpen = true; draw(); return; }
           shop.customOpen = open;
         });
         body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
@@ -295,7 +289,6 @@ function page(data, tradeAlerts = []) {
           selectedId = event.target.value;
           trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
           resetBlueprint();
-          shop.customOpen=activity==="analyze";
           draw(); return;
         }
         if (event.target.matches("[data-ta-shop-partner]")) {
@@ -343,10 +336,7 @@ function page(data, tradeAlerts = []) {
         const note = event.target.closest(".tb-max")?.querySelector("small");
         if (note) note.textContent = `Up to ${value} total players—not a required total.`;
       });
-      const setActivity=(mode,focus=false)=>{activity=mode;shop.customOpen=mode==='analyze';savePageChoice('trade-mode',mode);draw();if(focus)body.querySelector(`[data-trade-mode="${mode}"]`)?.focus()};
-      body.addEventListener('keydown',event=>{const tab=event.target.closest('[data-trade-mode]');if(!tab||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();setActivity(event.key==='Home'?'analyze':event.key==='End'?'shop':activity==='analyze'?'shop':'analyze',true)});
       body.addEventListener("click", async event => {
-        const modeButton=event.target.closest('[data-trade-mode]');if(modeButton){setActivity(modeButton.dataset.tradeMode,true);return}
         const shareButton = event.target.closest("[data-td-share]");
         if (shareButton) {
           if (!deal) return;
@@ -401,7 +391,7 @@ function page(data, tradeAlerts = []) {
           new Set((button.dataset.sendA || "").split(",").filter(Boolean)),
           new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
         ];
-        shop.customOpen = true; activity="analyze";savePageChoice("trade-mode",activity);
+        shop.customOpen = true;
         draw();
         body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
