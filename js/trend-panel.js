@@ -129,22 +129,11 @@ export async function renderTrendPanel(host, { team, pool, season, scoringSettin
   }
 }
 
-/**
- * Loads once the page has settled, not during it.
- *
- * Two earlier designs were worse. Hanging it off a <details> made folding the
- * section load-bearing, and hiding information to avoid a download is solving
- * the wrong problem. An IntersectionObserver then looked clever until it did
- * not fire at all in a pane that was not compositing - and an observer that
- * silently never fires leaves the section permanently blank.
- *
- * The bandwidth worry that drove both was overstated: loadSeasonStats caches
- * for a week, so this is one fetch per device per week, not one per visit. So
- * it simply loads, deferred off the critical path so the report paints first.
- */
+/** Load season history when its section opens, including a remembered open state. */
 export function wireTrendPanel(root, options) {
   if (!root || root.dataset.loaded === "1") return;
-  const start = () => renderTrendPanel(root, options).catch(() => {});
-  if (typeof requestIdleCallback === "function") requestIdleCallback(start, { timeout: 2500 });
-  else setTimeout(start, 600);
+  const section=root.closest('details');
+  const start=()=>{if(root.isConnected)void renderTrendPanel(root,options).catch(()=>{})};
+  if(section){section.addEventListener('toggle',()=>{if(section.open)start()});if(section.open)start()}
+  else start();
 }

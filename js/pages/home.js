@@ -1,3 +1,4 @@
+import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
 // =====================================================================
 // Home - the league's front page.
@@ -223,6 +224,12 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
       </section>
     </div>
   </section>`;
+}
+
+export function homeWeeklyFocus(outlook,briefing=null){
+ if(!outlook)return '<section class="card home-week-focus"><small>YOUR WEEK</small><h2>Your next move</h2><p role="status">Checking your lineup…</p></section>';
+ const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
+ return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><a class="btn" href="#/analyzer">Review my lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">This week’s matchup talk →</a></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -514,9 +521,9 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    Stage, rankings, the compact weekly hub, snapshot and latest trade
-    tell the football story first. Draft, League Feed and the Wall are
-    staged below and load only as the reader approaches them. The crest closes
+    The personal stage, next lineup action and one league highlight lead.
+    Rankings, forecasts and activity sit in a remembered disclosure.
+    Draft, League Feed and the Wall still load as the reader approaches them. The crest closes
     the page, since the splash already carries the brand.
 
     UPCOMING AND OPEN POLLS ARE GONE FROM THE MARKUP. They were rendered
@@ -530,19 +537,21 @@ export async function render(view) {
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${anniversary()}
+    <div data-home-deadline-slot></div>
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
-    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
+    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn" href="#/clubhouse">Open clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
+    ${disclosure("home-league","More from the league","Rankings, weekly forecasts, side games and activity",`<div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-pickem-slot></div>
-    <section class="home-weekly-clubhouse card"><div><small>WEEKLY CLUBHOUSE</small><h2>Own the week. Bring receipts.</h2><p>Awards, matchup conversations and the Monday recap.</p></div><a class="btn" href="#/clubhouse">Open clubhouse</a></section>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
     <div data-draft-slot></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>
-    <div data-wall-slot class="home-deferred-slot"></div>
+    <div data-wall-slot class="home-deferred-slot"></div>`)}
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
@@ -585,12 +594,16 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
+  wirePageDisclosures(view);
+  view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
   pickemPromise.then(board => {
     if (mine !== generation || !view.isConnected) return;
     const slot = view.querySelector("[data-home-pickem-slot]");
     if (slot) slot.innerHTML = homePickemMarkup(board, esc);
+    const notice=view.querySelector('[data-home-deadline-slot]');
+    if(notice&&board?.available&&Date.parse(board.locksAt)>Date.now())notice.innerHTML=`<a class="page-priority-note" href="#/sportsbook?product=pickem">NFL Pick’em · Week ${Number(board.week)} locks ${esc(new Date(board.locksAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))} →</a>`;
   });
 
   /* Lower-page social and draft data no longer compete with the broadcast,
@@ -720,6 +733,8 @@ export async function render(view) {
        their own place on the page, which is exactly why the retired
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
+    const focusSlot=view.querySelector("[data-home-focus-slot]");
+    if(focusSlot)focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
@@ -755,6 +770,7 @@ export async function render(view) {
     startHomeStage(build(golfDayNow));
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
+    if(mine===generation&&view.isConnected){const focus=view.querySelector("[data-home-focus-slot]");if(focus)focus.innerHTML='<section class="card home-week-focus"><small>YOUR WEEK</small><h2>Review your lineup</h2><p role="status">Weekly data could not load. Open Analyzer to retry.</p><a class="btn" href="#/analyzer">Open Analyzer</a></section>'}
     startHomeStage(fallbackDeck);
   });
   view.querySelector("#install-app")?.addEventListener("click", async () => {

@@ -1,3 +1,4 @@
+import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 // =====================================================================
 // Fantasy Fun Facts - "Did you know?"
 // ---------------------------------------------------------------------
@@ -70,12 +71,12 @@ export async function render(view) {
 
     <p class="muted tiny fact-note">A new piece of league history every day — the same one for everybody.</p>
 
-    ${historyWeek ? `<h2 class="section-title">This week in DFL history<span class="count">WEEK ${historyWeek.week}</span></h2><section class="history-week-grid">
+    ${historyWeek ? disclosure("facts-history","This week in DFL history",`Week ${historyWeek.week} records and rivalries`, `<h2 class="section-title">This week in DFL history<span class="count">WEEK ${historyWeek.week}</span></h2><section class="history-week-grid">
       <article><small>WEEK'S RECORD</small><strong>${esc(historyWeek.high.name)}</strong><span>${historyWeek.high.score.toFixed(2)} points · ${historyWeek.high.season}</span></article>
       <article><small>BIGGEST ASS-WHIPPING</small><strong>${esc(historyWeek.blowout.winner.name)}</strong><span>Beat ${esc(historyWeek.blowout.loser.name)} by ${historyWeek.blowout.margin.toFixed(2)} · ${historyWeek.blowout.season}</span></article>
       <article><small>DECIMAL HELL</small><strong>${esc(historyWeek.close.winner.name)}</strong><span>Escaped ${esc(historyWeek.close.loser.name)} by ${historyWeek.close.margin.toFixed(2)} · ${historyWeek.close.season}</span></article>
       <article><small>WEEK ${historyWeek.week} RIVALS</small><strong>${esc(historyWeek.rivalry.names.join(" vs "))}</strong><span>${historyWeek.rivalry.games} meetings across ${historyWeek.seasons} seasons</span></article>
-    </section>` : ""}
+    </section>`) : ""}
 
     ${canEdit() ? `
       <section class="card lore-admin">
@@ -94,14 +95,15 @@ export async function render(view) {
         </div>
       </section>` : ""}
 
-    <section class="lore-discovery" aria-label="Explore DFL facts">
+    ${disclosure("facts-browse","Browse league facts","Search your team, rivalries, records and championships",`    <section class="lore-discovery" aria-label="Explore DFL facts">
      <h2 class="section-title">Explore the lore</h2>
      <div class="lore-tools"><label for="lore-filter">Show<select id="lore-filter"><option value="all">All facts</option><option value="mine">My team</option><option value="rivalries">Rivalries</option><option value="records">Records</option><option value="titles">Championships</option></select></label><label for="lore-search">Search facts<input id="lore-search" type="search" placeholder="Owner, season or record"></label></div>
      <p class="muted" role="status" data-fact-count></p><div class="lore-card-grid" data-fact-results></div><button class="btn ghost" type="button" data-more-facts hidden>Show more facts</button>
-    </section>
+    </section>`)}
   `;
 
-  let shown=12;
+  wirePageDisclosures(view);
+  let shown=6;
   const drawFacts=()=>{
     const mine=currentMember(),filter=view.querySelector('#lore-filter').value;
     const results=filterFacts(all,{filter,query:view.querySelector('#lore-search').value,userId:mine?.sleeper_user_id||''});
@@ -112,8 +114,8 @@ export async function render(view) {
     }).join('')||'<p class="muted">No matching facts. Try another filter or search.</p>';
     view.querySelector('[data-more-facts]').hidden=results.length<=shown;
   };
-  view.querySelector('[data-more-facts]').addEventListener('click',()=>{shown+=12;drawFacts()});
-  const resetFacts=()=>{shown=12;drawFacts()};
+  view.querySelector('[data-more-facts]').addEventListener('click',()=>{shown+=6;drawFacts()});
+  const resetFacts=()=>{shown=6;drawFacts()};
   drawFacts();view.querySelector('#lore-filter').addEventListener('change',resetFacts);view.querySelector('#lore-search').addEventListener('input',resetFacts);
   view.querySelector('[data-fact-results]').addEventListener('click',event=>{const button=event.target.closest('[data-share-fact]');if(button)void shareFact(all.find(f=>f.id===button.dataset.shareFact))});
   let triviaLoaded=false;view.querySelector('.trivia-hub').addEventListener('toggle',event=>{if(event.currentTarget.open&&!triviaLoaded){triviaLoaded=true;void mountTrivia(view.querySelector('[data-trivia-host]'),leagueState,members)}});

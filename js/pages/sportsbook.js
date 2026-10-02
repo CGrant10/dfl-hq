@@ -1,3 +1,4 @@
+import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
 import { selectCoreProps } from "../sportsbook-core-props.js";
@@ -177,10 +178,10 @@ export async function render(view){
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
-    ${bets.length?`<section class="block">${ticketBoardHead(bets)}${bets.slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}</section>`:""}
+    ${bets.length?`<section class="block">${ticketBoardHead(bets)}${bets.filter(b=>b.status==="open").map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}${disclosure("sportsbook-settled","Settled tickets",`${bets.filter(b=>b.status!=="open").length} results`,bets.filter(b=>b.status!=="open").slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")||'<p class="muted">No settled tickets yet.</p>')}</section>`:""}
     ${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':""}
     </div>
-    ${trendingPicks(trends)}
+    ${disclosure("sportsbook-trends","Trending picks","See where the league is placing its picks",trendingPicks(trends))}
     ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
     ${canBook?commissionerBook():""}
@@ -196,9 +197,25 @@ export async function render(view){
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
+  wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
+}
+
+function wireMarketActivities(view){
+ const host=view.querySelector('#sb-markets');if(!host)return;
+ const sections=[...host.children].filter(el=>!el.matches('.sb-empty'));
+ const groups=[['fantasy','Fantasy matchups'],['props','Player props'],['other','More lines']];
+ const nav=document.createElement('div');nav.className='page-activity-tabs';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Market type');
+ nav.innerHTML=groups.map(([key,label])=>`<button type="button" role="tab" id="sb-market-tab-${key}" aria-controls="sb-market-panel-${key}" data-market-activity="${key}">${label}</button>`).join('');host.prepend(nav);
+ const panels=new Map(groups.map(([key])=>{const panel=document.createElement('div');panel.id=`sb-market-panel-${key}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',`sb-market-tab-${key}`);host.append(panel);return[key,panel]}));
+ for(const section of sections){const heading=section.querySelector('h2')?.textContent?.toLowerCase()||section.querySelector('summary')?.textContent?.toLowerCase()||'';const key=section.matches('.sb-props')?'props':section.matches('.sb-fantasy-slate')||heading.includes('fantasy')||heading.includes('early lines')?'fantasy':'other';panels.get(key).append(section)}
+ for(const [key,panel]of panels)if(!panel.children.length)panel.innerHTML=`<p class="sb-empty">No ${key==='fantasy'?'fantasy matchups':key==='props'?'player props':'additional lines'} available right now.</p>`;
+ const tabs=[...nav.querySelectorAll('button')];
+ const activate=(key,focus=false)=>{for(const tab of tabs){const on=tab.dataset.marketActivity===key;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;panels.get(tab.dataset.marketActivity).hidden=!on}if(focus)tabs.find(t=>t.dataset.marketActivity===key).focus();savePageChoice('sportsbook-markets',key)};
+ for(const [i,tab]of tabs.entries()){tab.addEventListener('click',()=>activate(tab.dataset.marketActivity));tab.addEventListener('keydown',event=>{let next;if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else if(event.key==='ArrowRight')next=(i+1)%tabs.length;else if(event.key==='ArrowLeft')next=(i+tabs.length-1)%tabs.length;else return;event.preventDefault();activate(tabs[next].dataset.marketActivity,true)})}
+ const player=new URLSearchParams(location.hash.split('?')[1]||'').get('player');activate(player?'props':readPageChoice('sportsbook-markets',groups.map(g=>g[0]),'fantasy'));
+ for(const [i,section]of [...view.querySelectorAll('.sb-secondary,details.card')].entries())section.dataset.pageDetail=`sportsbook-${section.querySelector('summary')?.textContent.trim().toLowerCase().replace(/[^a-z]+/g,'-')||i}`;
 }
 
 function trendingPicks(rows){
@@ -375,7 +392,7 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members){
  const note=upcoming?`These are next week’s games. Week ${Number(clock.week)} is still the current NFL week.`:allLocked?'Winner bets locked at the first NFL kickoff. These games stay visible while the week plays out.':'Pick a team to win and add it to your slip. Winner bets lock at the first NFL kickoff of the week.';
  const cards=slate.markets.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
  const grid=`<div class="sb-market-grid">${cards}</div>`;
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${upcoming||allLocked?`<details class="sb-fantasy-games"><summary>${upcoming?`Pick Week ${slate.week} winners`:`View Week ${slate.week} matchups`}<span>${slate.markets.length} games</span></summary>${grid}</details>`:grid}</section>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${upcoming||allLocked?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${upcoming?`Pick Week ${slate.week} winners`:`View Week ${slate.week} matchups`}<span>${slate.markets.length} games</span></summary>${grid}</details>`:grid}</section>`;
 }
 
 function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketMap,members}){
@@ -740,7 +757,8 @@ function wireProductTabs(view,memberId){
   if(!tabs.length)return;
   const select=tab=>{for(const item of tabs){const active=item===tab;item.setAttribute("aria-selected",String(active));item.tabIndex=active?0:-1;item.id=`sb-product-${item.dataset.sbProduct}`;item.setAttribute("aria-controls",`sb-${item.dataset.sbProduct}-panel`);const panel=view.querySelector(`#sb-${item.dataset.sbProduct}-panel`);panel.hidden=!active;panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",item.id)}writeBookState(memberId,{product:tab.dataset.sbProduct})};
   tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>select(tab));tab.addEventListener("keydown",event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus()})});
-  select(tabs.find(tab=>tab.dataset.sbProduct===readBookState(memberId).product)||tabs[0]);
+  const requested=new URLSearchParams(location.hash.split("?")[1]||"").get("product");
+  select(tabs.find(tab=>tab.dataset.sbProduct===(requested||readBookState(memberId).product))||tabs[0]);
 }
 
 let stopRemembering=null;

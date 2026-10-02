@@ -1,3 +1,4 @@
+import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // =====================================================================
 // weekly-outlook-panel.js - the week view on top of the Team Analyzer
 // ---------------------------------------------------------------------
@@ -119,17 +120,18 @@ function markup({ week, team, advice, trending, defense, stale }) {
     ${advice.swaps.length ? `<div class="wo-block">
       <div class="wo-block-head"><h3>Make ${advice.swaps.length} change${advice.swaps.length === 1 ? "" : "s"}</h3>
         <small>only moves worth more than 1.5 projected points</small></div>
-      <ul class="wo-swaps">${advice.swaps.map(swap => swapCard(swap, trending)).join("")}</ul>
+      <div class="wo-move-list"><ul class="wo-swaps">${advice.swaps.slice(0,1).map(swap => swapCard(swap, trending)).join("")}</ul>${advice.swaps.length>1?disclosure("analyzer-more-moves",`View ${advice.swaps.length-1} more lineup moves`,"Other projected upgrades",`<ul class="wo-swaps">${advice.swaps.slice(1).map(swap=>swapCard(swap,trending)).join("")}</ul>`):""}</div>
     </div>` : `<p class="wo-clean">${advice.lineupIsSet
       ? "Every starter is the best legal option at their slot this week."
       : "No lineup submitted yet — the board below is the one to set."}</p>`}
 
-    <div class="wo-block">
+    ${disclosure("analyzer-week-lineup","View full weekly lineup",`${pts(advice.bestTotal)} projected · scoring and data sources`, `    <div class="wo-block">
       <div class="wo-block-head"><h3>Best legal lineup</h3><small>${pts(advice.bestTotal)} projected</small></div>
       <ul class="wo-lineup">${advice.lineup.slots.map(slot => lineupRow(slot, max, trending, defense)).join("")}</ul>
     </div>
 
-    <p class="wo-method">Week ${esc(week)} projections, matchup and injury status from one Sleeper call, scored with the league's own settings. Matchup rates how much each defense is projected to concede this week. A player with no published projection is left out rather than counted as zero. Players who cannot play are excluded; everyone else is ranked on the published number, with injury flags shown rather than quietly subtracted.${stale ? " Showing the last cached copy — the live fetch failed." : ""}</p>
+    <p class="wo-method">Week ${esc(week)} projections, matchup and injury status from one Sleeper call, scored with the league's own settings. Matchup rates how much each defense is projected to concede this week. A player with no published projection is left out rather than counted as zero. Players who cannot play are excluded; everyone else is ranked on the published number, with injury flags shown rather than quietly subtracted.${stale ? " Showing the last cached copy — the live fetch failed." : ""}</p>`)}
+    ${stale?'<p class="wo-method" role="status">Using cached projections after a failed refresh.</p>':""}
   </section>`;
 }
 
@@ -169,7 +171,8 @@ async function draw(host) {
   });
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
   const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;
-  const lab=document.createElement('div');host.append(lab);mountLineupLab(lab,{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
+  const lab=document.createElement('div');lab.innerHTML=disclosure("analyzer-tools","Try a lineup swap or read this week’s strategy","Lineup lab and weekly lesson",'<div data-lab-tools></div>');host.append(lab);mountLineupLab(lab.querySelector("[data-lab-tools]"),{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
+  wirePageDisclosures(host);
 }
 
 let selectorBound=false;
