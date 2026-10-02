@@ -1,5 +1,5 @@
 import { currentMember } from "../members.js";
-import { esc, errorBox, toast } from "../ui.js";
+import { esc, toast } from "../ui.js";
 import { DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, timeAgo } from "../notification-core.js";
 import { clearInbox, disablePush, dismissNotifications, enablePush, inbox, markRead, pushCapability, pushPreferences, saveSubscription, testNotification } from "../notifications.js";
 import { ensureStylesheet } from "../lazy-css.js";
@@ -55,17 +55,19 @@ export async function render(view) {
     view.innerHTML = `<h1>Notifications</h1><div class="card"><div class="card-body">Pick your member identity first.</div></div>`;
     return;
   }
-  let rows = [], preferences = null;
+  let rows = [], preferences = null, deviceError = "";
   try {
-    /* Preferences may repair an older device enrollment, so load them before
-       the inbox request that relies on the same device token. */
-    preferences = await pushPreferences();
+    /* Preferences may repair an older device enrollment. A device setup
+       failure should not hide the member's existing inbox. */
+    try { preferences = await pushPreferences(); }
+    catch { deviceError = "Device notification settings are unavailable. Your inbox is still here; check your connection and try again."; }
     rows = await inbox();
   } catch (err) {
-    view.innerHTML = `<h1>Notifications</h1>${errorBox(err)}<div class="card"><div class="card-body muted">Run <strong>notifications_schema.sql</strong> in Supabase to finish notification setup.</div></div>`;
+    view.innerHTML = `<h1>Notifications</h1><div class="card"><div class="card-body"><p>We could not load your inbox. Check your connection and try again.</p><button class="btn" type="button" data-retry-inbox>Retry</button></div></div>`;
+    view.querySelector("[data-retry-inbox]")?.addEventListener("click", () => render(view));
     return;
   }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
+  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
 
   view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
     const btn = e.currentTarget;

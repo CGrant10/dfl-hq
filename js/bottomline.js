@@ -227,6 +227,8 @@ function fillTickerWidth() {
     first.innerHTML = filled;
     runs[1].innerHTML = filled;
   }
+  // Keep visual copies clickable, but never keyboard-focusable or announced.
+  runs[1].querySelectorAll("a").forEach(link => link.tabIndex = -1);
   const seconds = Math.max(18, Math.round(first.scrollWidth / 42));
   host.style.setProperty("--bl-duration", `${seconds}s`);
 }

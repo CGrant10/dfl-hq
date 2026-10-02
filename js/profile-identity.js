@@ -68,7 +68,7 @@ export {
 function rings(member, size) {
   const n = ringCount(member);
   if (!n) return "";
-  return `<span class="idp-rings" aria-label="${n} championship${n === 1 ? "" : "s"}">${
+  return `<span class="idp-rings" role="img" aria-label="${n} championship${n === 1 ? "" : "s"}">${
     icon("trophy", { size }).repeat(n)}</span>`;
 }
 

@@ -126,7 +126,7 @@ const MODES = {
        still reads as a card without needing a heavier border. */
     bg: "#eef1f6", bg2: "#ffffff", bg3: "#e6eaf1",
     line: "#ccd4e0", lineSoft: "#e3e8f0",
-    text: "#11161d", muted: "#5a6575", chalk: "#11161d",
+    text: "#11161d", muted: "#4c5868", chalk: "#11161d",
     bodyText: "#2a323d",
     hover: "#e0e6ef", hoverSoft: "rgba(16,24,40,.035)",
     controlLine: "#7C8695", controlBg: "rgba(255,255,255,.82)",
@@ -135,7 +135,7 @@ const MODES = {
     accent: "#B8001B", accent2: "#003396",
     onAccent: "#FFFFFF",
     // Same statuses, darkened until they read on white.
-    ok: "#0f7a3d", okBg: "rgba(15,122,61,.10)", okLine: "#9fd3b4",
+    ok: "#0a5c2d", okBg: "rgba(15,122,61,.10)", okLine: "#9fd3b4",
     warnInk: "#8a5200", warnBg: "rgba(196,124,0,.12)", warnLine: "#e0bd7e",
     dangerInk: "#a3121a", dangerBg: "rgba(163,18,26,.09)", dangerLine: "#e2a9a5",
     scUnder: "#0f7a3d", scOver: "#c2371f", scBad: "#a3121a",

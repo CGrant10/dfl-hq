@@ -764,18 +764,8 @@ textarea { min-height: 96px; resize: vertical; }
   border-radius: 999px;
   padding: 2px 7px;
 }
-/*
-  PAST EVENTS, HELD BACK - on the rows, not on the card, and that is the fix.
-
-  This used to be `.schedule.is-past { opacity: .78 }` and it never once took
-  effect. Every card on an entering page runs the `cardIn` keyframes with
-  fill-mode `both`, and cardIn's last frame is `opacity: 1` - an animated
-  value beats a normal declaration no matter how specific the selector is, so
-  the past schedule has always drawn at full strength. Putting it on .evrow,
-  which nothing animates, gets the de-emphasis the rule was asking for without
-  reaching for !important.
-*/
-.schedule.is-past .evrow { opacity: .74; }
+/* Past dates use readable muted ink rather than fading the whole row. */
+.schedule.is-past .evdate { color: var(--muted); }
 
 /* the stacked MON / 29 block */
 .evdate {

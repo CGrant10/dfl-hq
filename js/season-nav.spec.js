@@ -9,7 +9,7 @@ import {
 describe("regular-season navigation", () => {
   it("puts the analyzer in the primary bar with the weekly league tools", () => {
     expect(PRIMARY_SEASON_ROUTES.map((item) => item.route))
-      .toEqual(["home", "trade", "analyzer", "facts", "finances"]);
+      .toEqual(["home", "wall", "sportsbook", "trade", "analyzer"]);
     expect(PRIMARY_SEASON_ROUTES.find((item) => item.lead)?.route).toBe("analyzer");
   });
 
@@ -30,8 +30,10 @@ describe("regular-season navigation", () => {
 
   it("keeps completed-season and occasional tools in More", () => {
     const secondary = SECONDARY_SEASON_ROUTES.map((item) => item.route);
-    expect(secondary).toEqual(expect.arrayContaining(["keepers", "golf", "polls", "admin"]));
+    expect(secondary).toEqual(expect.arrayContaining(["keepers", "golf", "polls", "admin", "facts", "finances"]));
     expect(secondary).not.toContain("analyzer");
+    expect(secondary).not.toContain("sportsbook");
+    expect(secondary).not.toContain("wall");
   });
 
   it("renders unique routes and a More control", () => {
@@ -43,4 +45,3 @@ describe("regular-season navigation", () => {
     expect(secondarySeasonNavMarkup()).toContain('href="#/golf"');
   });
 });
-

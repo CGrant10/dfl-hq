@@ -106,6 +106,10 @@ export function loading(message = "Loading…") {
 export function errorBox(err) {
   console.error(err);
   const msg = err?.message || String(err);
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline || /failed to fetch|networkerror|network request failed|dynamically imported module/i.test(msg)) {
+    return `<div class="state is-error" role="alert"><span class="state-title">${offline ? "You’re offline" : "Connection interrupted"}</span><p>${offline ? "Reconnect to load the latest league information." : "Check your connection and try again."}</p><div class="row"><button type="button" class="btn" data-retry-page>Retry</button><a class="btn ghost" href="#/home">Back to Home</a></div></div>`;
+  }
   return `<div class="state is-error" role="alert">
     <span class="state-title">Could not load</span>
     <span class="tiny">${esc(msg)}</span>

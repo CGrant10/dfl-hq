@@ -278,8 +278,8 @@
 */
 .ta-unit-grade.is-elite strong   { color: var(--ok); }
 .ta-unit-grade.is-good strong    { color: var(--accent-2); }
-.ta-unit-grade.is-average strong { color: var(--warn); }
-.ta-unit-grade.is-weak strong    { color: var(--danger); }
+.ta-unit-grade.is-average strong { color: var(--warn-ink); }
+.ta-unit-grade.is-weak strong    { color: var(--danger-ink); }
 
 /* ---------------------------- sections ------------------------------ */
 
@@ -346,14 +346,14 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 
 .ta-player-run { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .ta-player-run span, .ta-player { display: grid; min-width: 130px; }
-.ta-player-run span.is-depth { opacity: .68; }
+.ta-player-run span.is-depth { color: var(--body-text); }
 .ta-player-run b, .ta-player b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ta-player-run small, .ta-player small { margin-top: 2px; color: var(--muted); font-size: var(--ta-small); }
 .ta-position-table td:last-child { width: 52%; }
 
 .ta-roster-table { min-width: 880px; }
 .ta-roster-table tr.is-starter td:first-child { box-shadow: inset 3px 0 var(--accent); }
-.ta-roster-table tr.is-bench { opacity: .8; }
+.ta-roster-table tr.is-bench { color: var(--body-text); }
 .ta-roster-divider td {
   padding: 8px 11px !important;
   background: color-mix(in srgb, var(--accent-fill) 8%, var(--bg-3)) !important;
@@ -369,7 +369,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   font-size: var(--ta-micro); font-weight: 800; white-space: nowrap;
 }
 .ta-trend.is-up { color: var(--ok); }
-.ta-trend.is-down { color: var(--danger); }
+.ta-trend.is-down { color: var(--danger-ink); }
 .ta-trend.is-new { color: var(--accent-2); }
 .ta-value {
   display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
@@ -478,7 +478,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   border-radius: 999px; background: var(--bg-3); font-weight: 900; font-size: var(--ta-small);
 }
 .ta-trade-table .positive { color: var(--ok); }
-.ta-trade-table .negative { color: var(--danger); }
+.ta-trade-table .negative { color: var(--danger-ink); }
 .ta-empty { padding: 16px; border-block: 1px dashed var(--line); color: var(--muted); font-size: var(--ta-body); line-height: 1.55; }
 /* The method belongs on the page - a report that will not say how it decided
    is worth less - but it is a footnote, not a chapter, and expanded it ran
@@ -734,7 +734,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .td-party-controls .ta-inline-select { margin:0; }
 .td-member-control { display:flex; align-items:end; gap:5px; }
 .td-remove-member { width:34px; height:40px; border:1px solid var(--line); border-radius:9px; background:var(--bg-3); color:var(--muted); font-size:21px; line-height:1; cursor:pointer; }
-.td-remove-member:hover { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 40%,var(--line)); }
+.td-remove-member:hover { color:var(--danger-ink); border-color:color-mix(in srgb,var(--danger-ink) 40%,var(--line)); }
 .td-add-member { min-height:40px; }
 .td-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .td-board.is-multi { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); }
@@ -943,8 +943,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
    are reading. The stamp below is that same word at deciding size. */
 .td-call { display:inline-flex; align-items:center; min-height:24px; padding:4px 8px; border-radius:6px; font-size:var(--ta-micro); font-weight:900; letter-spacing:.08em; }
 .td-call.is-accept { color:var(--ok); background:color-mix(in srgb,var(--ok) 12%,var(--bg-2)); border:1px solid var(--ok-line); }
-.td-call.is-negotiate { color:var(--warn-ink); background:color-mix(in srgb,var(--warn) 11%,var(--bg-2)); border:1px solid var(--warn-line); }
-.td-call.is-pass { color:var(--danger-ink); background:color-mix(in srgb,var(--danger) 10%,var(--bg-2)); border:1px solid var(--danger-line); }
+.td-call.is-negotiate { color:var(--warn-ink); background:color-mix(in srgb,var(--warn-ink) 11%,var(--bg-2)); border:1px solid var(--warn-line); }
+.td-call.is-pass { color:var(--danger-ink); background:color-mix(in srgb,var(--danger-ink) 10%,var(--bg-2)); border:1px solid var(--danger-line); }
 
 /* THE STAMP. The largest thing on the page, because it is the answer. */
 .td-stamp {
@@ -1135,7 +1135,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .ta-deal-card dt { color:var(--muted); font-size:var(--ta-micro); text-transform:uppercase; }
 .ta-deal-card dd { margin:0; font-size:var(--ta-small); font-weight:800; }
 .ta-deal-card dd.positive { color:var(--ok); }
-.ta-deal-card dd.negative { color:var(--danger); }
+.ta-deal-card dd.negative { color:var(--danger-ink); }
 .ta-deal-card .btn { justify-self:start; }
 
 /* =====================================================================
@@ -1143,7 +1143,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
    ===================================================================== */
 .tb-board { margin: 0 0 var(--s-4); padding: 14px 12px 4px; border: 0; background: transparent; background-image: none; box-shadow: none; }
 .tb-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.tb-head { min-width: 0; margin-bottom: 15px; }
+.tb-head { display: block; flex: 1 1 auto; min-width: 0; margin-bottom: 15px; }
 .tb-head-row > .btn { flex: none; }
 .tb-head > small { color: var(--accent-2); font-size: var(--ta-micro); font-weight: 900; letter-spacing: .14em; }
 .tb-head h1 { margin: 2px 0 0; font-family: var(--font-display); font-size: clamp(25px, 7vw, 34px); line-height: 1; letter-spacing: -.02em; }
@@ -1307,7 +1307,7 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 /* The line takes the direction's colour; the words repeat it for anyone who
    cannot separate these hues. */
 .tp-row.is-up .tp-spark-wrap, .tp-row.is-up .tp-dir { color: var(--ok); }
-.tp-row.is-down .tp-spark-wrap, .tp-row.is-down .tp-dir { color: var(--danger); }
+.tp-row.is-down .tp-spark-wrap, .tp-row.is-down .tp-dir { color: var(--danger-ink); }
 .tp-row.is-flat .tp-spark-wrap, .tp-row.is-flat .tp-dir { color: var(--accent-2); }
 .tp-row.is-unknown .tp-spark-wrap, .tp-row.is-unknown .tp-dir { color: var(--muted); }
 
@@ -1322,8 +1322,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   border: 1px solid var(--line);
 }
 .tp-latest { color: var(--muted); }
-.tp-tag.is-swing { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
-.tp-tag.is-risk  { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.tp-tag.is-swing { color: var(--warn-ink); border-color: color-mix(in srgb, var(--warn-ink) 45%, transparent); }
+.tp-tag.is-risk  { color: var(--danger-ink); border-color: color-mix(in srgb, var(--danger-ink) 45%, transparent); }
 .tp-tag.is-hot   { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .tp-tag.is-cold  { color: var(--muted); }
 .tp-tag.is-mixed { color: var(--muted); }
@@ -1382,8 +1382,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 .so-odd i { font-style: normal; color: var(--muted); font-size: var(--ta-micro); }
 .so-odd.is-title { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
 .so-odd.is-title b { color: var(--ok); }
-.so-odd.is-chip { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
-.so-odd.is-chip b { color: var(--danger); }
+.so-odd.is-chip { border-color: color-mix(in srgb, var(--danger-ink) 40%, var(--line)); }
+.so-odd.is-chip b { color: var(--danger-ink); }
 
 .so-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .so-field div { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
@@ -1412,8 +1412,8 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 }
 .ta-gradeset b.is-elite { color: var(--ok); }
 .ta-gradeset b.is-good { color: var(--accent-2); }
-.ta-gradeset b.is-average { color: var(--warn); }
-.ta-gradeset b.is-weak { color: var(--danger); }
+.ta-gradeset b.is-average { color: var(--warn-ink); }
+.ta-gradeset b.is-weak { color: var(--danger-ink); }
 
 @media (max-width: 680px) {
   .so-odds { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -1448,4 +1448,9 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .td-alert-packages { grid-template-columns: minmax(0, 1fr); }
   .td-alert-receipt > header { padding-inline: var(--s-3); }
   .td-alert-receipt > footer { align-items: flex-start; flex-direction: column; padding-inline: var(--s-3); }
+}
+
+@media (max-width: 420px) {
+  .tb-head-row { flex-direction: column; align-items: stretch; }
+  .tb-head-row > .btn { align-self: flex-start; }
 }

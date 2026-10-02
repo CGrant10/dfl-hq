@@ -4,7 +4,7 @@ import { decorateChipEaters } from "./chip-eaters.js";
 
 export function ensureSportsbookNav() {
   const nav = document.querySelector("#more .quicknav");
-  if (nav && !nav.querySelector('a[href="#/sportsbook"]')) {
+  if (nav && !document.querySelector('#tabbar a[data-route="sportsbook"]') && !nav.querySelector('a[href="#/sportsbook"]')) {
     const link = document.createElement("a");
     link.href = "#/sportsbook";
     /* -steel, like every other glyph in this sheet - see the sprite in

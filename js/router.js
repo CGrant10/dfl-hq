@@ -3,7 +3,7 @@
 // Hash routing is used because GitHub Pages cannot rewrite URLs.
 // =====================================================================
 
-import { loading, errorBox } from "./ui.js";
+import { loading } from "./ui.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
 import { startMemberLock } from "./member-lock.js";
 import { dflSeasonCount, loadGolfFeatures } from "./config.js";
@@ -306,6 +306,8 @@ export async function renderRoute() {
     const on = a.dataset.route === name;
     if (on) matched = true;
     a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
   });
   document.getElementById("more-btn")?.classList.toggle("on", !matched);
   syncTabIndicator();
@@ -333,7 +335,17 @@ export async function renderRoute() {
         .then((m) => m.decorateCommissionerBadge(view))
         .catch(() => {});
     }
-  } catch (err) { if (isCurrent()) { view.classList.remove("is-route-loading"); document.body.classList.remove("route-loading"); setRouteCanvas("var(--bg)"); view.innerHTML = errorBox(err); } }
+  } catch (err) {
+    if (isCurrent()) {
+      view.classList.remove("is-route-loading");
+      document.body.classList.remove("route-loading");
+      setRouteCanvas("var(--bg)");
+      console.error(err);
+      const offline = navigator.onLine === false;
+      view.innerHTML = `<section class="state is-error" role="alert"><h1 class="state-title">${offline ? "You’re offline" : "This page could not load"}</h1><p>${offline ? "Reconnect to open this page. Pages already opened may still be available." : "Check your connection and try again."}</p><div class="row"><button type="button" class="btn" data-route-retry>Retry</button><a class="btn ghost" href="#/home">Back to Home</a></div></section>`;
+      view.querySelector("[data-route-retry]")?.addEventListener("click", () => location.reload());
+    }
+  }
 
   if (!isCurrent()) return;
 

@@ -1809,7 +1809,7 @@
 }
 #home-wrap .home-rankings-card ol > li > span { min-width: 0; }
 #home-wrap .home-rankings-card ol > li > span strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#home-wrap .home-rankings-card ol > li > em { color: var(--home-program-muted); font-style: normal; }
+#home-wrap .home-rankings-card ol > li > em { color: var(--muted); font-style: normal; }
 #home-wrap .home-rankings-card ol > li.is-me { margin-top: 8px; border: 1px solid color-mix(in srgb, var(--accent) 75%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--accent-fill) 8%, transparent); }
 #home-wrap .home-rank-ellipsis { display: block !important; min-height: 26px !important; padding: 0 !important; border: 0 !important; color: var(--home-program-muted); text-align: center; letter-spacing: .24em; }
 #home-wrap .home-rank-all { width: max-content; margin: 10px auto 0; color: var(--home-program-ink); text-transform: none; letter-spacing: .02em; }

@@ -81,6 +81,8 @@ export async function render(view) {
 
   const seasons = (standings.data || []).sort((a, b) => b.season - a.season);
   const careerStats = careerTotals(seasons, leagues.data || [], member.sleeper_user_id);
+  const displayMember = dfl ? { ...member, championships: dfl.titles.length } : member;
+  if (dfl) { careerStats.titles = dfl.titles.length; careerStats.runnerUps = dfl.seconds.length; }
 
   const myKeepers = (keepers.data || []).filter((k) =>
     sameName(k.team, member.team_name) || sameName(k.team, member.display_name));
@@ -159,7 +161,7 @@ export async function render(view) {
      nothing to do with the rest of this page. */
   if (isMe) void mountProfileNotifications(view);
 
-  wireDflPage(view, member, isMe, () => render(view), {
+  wireDflPage(view, displayMember, isMe, () => render(view), {
     currentTeam,
     currentSeason: sleeperUser?.data?.current_season,
     /*

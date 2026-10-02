@@ -322,6 +322,9 @@ h3 {
 /* The active tab is marked at the TOP edge, above the icon: a line under a
    label competes with the home-screen indicator on a phone. */
 .tabbar :is(a, .tabmore).on { position: relative; }
+@media (max-width: 360px) {
+  .tabbar.is-in-season :is(a, .tabmore) { font-size: .625rem; letter-spacing: 0; }
+}
 .tabbar :is(a, .tabmore).on::before {
   content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 2px;
   border-radius: 0 0 2px 2px;

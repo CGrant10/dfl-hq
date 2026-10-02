@@ -58,7 +58,7 @@ function loadPermanentChromeStyles() {
   style.textContent = `
 .brand-word,.brand-text .brand-word,.brand-text .brand-word span{
   background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;
-  -webkit-text-fill-color:#fff!important;color:#fff!important
+  -webkit-text-fill-color:var(--text)!important;color:var(--text)!important
 }
 
 #profile-wrap .dfl-career-card .card-title{

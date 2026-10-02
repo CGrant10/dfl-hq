@@ -517,8 +517,8 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    Stage, rankings, the compact weekly hub, snapshot, and the latest trade
-    tell the active football story first. Draft, Wall, and League Feed are
+    Stage and a recent Wall post welcome the group first. Rankings, the
+    compact weekly hub, snapshot and latest trade follow. Draft and League Feed are
     staged below and load only as the reader approaches them. The crest closes
     the page, since the splash already carries the brand.
 
@@ -536,6 +536,7 @@ export async function render(view) {
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
+    <div data-wall-slot class="home-deferred-slot"></div>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-pickem-slot></div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
@@ -543,7 +544,6 @@ export async function render(view) {
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
     <div data-draft-slot></div>
-    <div data-wall-slot class="home-deferred-slot"></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
@@ -599,7 +599,7 @@ export async function render(view) {
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
-      slot.innerHTML = wallCard(await loadWall(3), { compact: true });
+      slot.innerHTML = wallCard(await loadWall(1), { compact: true });
       wireWall(slot, redrawWall);
     } catch (err) {
       console.warn("wall unavailable", err);

@@ -1,6 +1,7 @@
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
+import { registerAppWorker } from "./service-worker.js";
 import { APP_VERSION } from "./config.js";
 import { getUsername } from "./store.js";
 import { restoreAdmin, registerUser, configured } from "./supabase.js";
@@ -29,6 +30,9 @@ import { startExperience, syncExperience } from "./experience.js";
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
 mountSeasonNavigation();
+document.addEventListener("click", event => {
+  if (event.target.closest?.("[data-retry-page]")) location.reload();
+});
 /* welcomeForm and welcomeInput used to be looked up here and have never
    existed in index.html - leftovers from the free-text name box that the
    member picker replaced. Every branch that touched them was dead. */
@@ -244,7 +248,7 @@ function moveTabIndicator(){
 window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+async function boot(){void registerAppWorker();console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
   startExperience();
   mountNotificationBell();
   mountQuickSleeperSync();
@@ -262,7 +266,8 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give 
   onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); syncExperience(document.getElementById("view"), name); });
   /* Background conveniences used to compete with Home for the same Supabase
      connection: the ticker alone repeats five dashboard reads. Let the first
-     route settle, then start presence, updates, notifications and PWA caching. */
+     route settle, then start presence, updates and notification nudges.
+     Worker registration starts independently so a push page cannot deadlock. */
   window.addEventListener("dfl:app-ready", () => {
     const readyAt=performance.now();
     void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});
@@ -270,11 +275,7 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give 
     void startBottomline(currentRoute);
     setupUpdates();
     void setupNotifyNudge();
-    if("serviceWorker"in navigator&&location.protocol.startsWith("http")){
-      const register=()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(console.warn);
-      if("requestIdleCallback"in window)window.requestIdleCallback(register,{timeout:4000});
-      else setTimeout(register,1000);
-    }
+
   }, { once: true });
   startRouter();
   /* A broadcast/OBS URL is a public spectator surface. It must render without

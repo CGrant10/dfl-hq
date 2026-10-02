@@ -170,8 +170,6 @@ export async function render(view){
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
     ${canBook?`${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}`:""}
-    ${trendingPicks(trends)}
-    ${weeklyRecapMarkup(recap)}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap,members,me.id)}
@@ -181,6 +179,8 @@ export async function render(view){
     ${bets.length?`<section class="block">${ticketBoardHead(bets)}${bets.slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}</section>`:""}
     ${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':""}
     </div>
+    ${trendingPicks(trends)}
+    ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
     ${canBook?commissionerBook():""}
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>

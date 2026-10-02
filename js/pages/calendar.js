@@ -40,6 +40,10 @@ export async function render(view) {
 }
 
 async function paint(body, view) {
+  if (navigator.onLine === false) {
+    body.innerHTML = errorBox(new Error("Offline"));
+    return;
+  }
   body.innerHTML = loading();
   try {
     if (tab === "events") await paintEvents(body);

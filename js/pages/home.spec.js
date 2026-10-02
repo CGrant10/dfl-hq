@@ -87,7 +87,7 @@ describe("Home redesign wiring", () => {
 
   it("keeps the lower Home page compact and defers its secondary data", () => {
     expect(source).not.toContain("seasonDoors(");
-    expect(source).toContain("loadWall(3)");
+    expect(source).toContain("loadWall(1)");
     expect(source).toContain("compact: true");
     expect(source).toContain("homeLeagueFeed");
     expect(source).toContain("whenNear");

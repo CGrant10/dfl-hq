@@ -3,6 +3,8 @@ import { currentMember } from "./members.js";
 import { DEFAULT_NOTIFICATION_CATEGORIES } from "./notification-core.js";
 import { notificationIntent, rememberNotificationCategories, rememberNotificationIntent, rememberedNotificationCategories, shouldRepairMissingSubscription } from "./notification-device-state.js";
 
+import { activeAppWorker, requireAppWorker } from "./service-worker.js";
+
 const BADGE_EVENT = "dfl:notifications-changed";
 const tokenKey = memberId => `dfl.notification.deviceToken.${memberId}`;
 let missingSubscriptionRepair = null;
@@ -27,8 +29,8 @@ export function pushCapability() {
 
 export async function currentPushSubscription() {
   if (!("serviceWorker" in navigator)) return null;
-  const registration = await navigator.serviceWorker.ready;
-  return registration.pushManager?.getSubscription() || null;
+  const registration = await activeAppWorker();
+  return registration?.pushManager?.getSubscription() || null;
 }
 
 async function pushPublicKey() {
@@ -106,7 +108,7 @@ export async function enablePush(categories = DEFAULT_NOTIFICATION_CATEGORIES) {
     ? "granted"
     : await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Notifications were not allowed. You can change that in your phone settings.");
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await requireAppWorker();
   let subscription = await registration.pushManager.getSubscription();
   if (!subscription) {
     const publicKey = await pushPublicKey();
@@ -140,7 +142,7 @@ export async function enablePush(categories = DEFAULT_NOTIFICATION_CATEGORIES) {
 export async function testNotification(delayMs = 5000) {
   if (!("serviceWorker" in navigator)) throw new Error("This browser cannot show notifications");
   if (Notification.permission !== "granted") throw new Error("Turn notifications on for this device first");
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await requireAppWorker();
   await new Promise(resolve => setTimeout(resolve, delayMs));
   await registration.showNotification("Test notification", {
     body: "If this dropped down from the top of the screen, alerts are working.",
@@ -171,11 +173,11 @@ export async function pushPreferences() {
   const member = currentMember();
   if (!subscription) {
     const categories = rememberedNotificationCategories(member?.id);
-    const repair = member && shouldRepairMissingSubscription({ permission: Notification.permission,
+    const repair = member && pushCapability().supported && await activeAppWorker() && shouldRepairMissingSubscription({ permission: Notification.permission,
       desired: notificationIntent(member.id), hasDeviceToken: !!localStorage.getItem(tokenKey(member.id)) });
     if (!repair) return { subscription: null, enabled: false, categories };
     missingSubscriptionRepair ||= (async () => {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await requireAppWorker();
       const active = await registration.pushManager.subscribe({ userVisibleOnly: true,
         applicationServerKey: bytesFromBase64(await pushPublicKey()) });
       await enrollSubscription(active, categories);
@@ -201,7 +203,7 @@ export async function pushPreferences() {
        the next delivery fail again. Rotate the subscription and keys first. */
     if (previous && previous.enabled === false) {
       await subscription.unsubscribe().catch(() => {});
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await requireAppWorker();
       active = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: bytesFromBase64(await pushPublicKey()),
