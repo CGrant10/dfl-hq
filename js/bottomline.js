@@ -305,6 +305,13 @@ async function refreshBottomline(routeOf) {
 }
 
 export async function startBottomline(routeOf) {
+  const navigation=document.getElementById("tabbar");
+  if(navigation&&typeof ResizeObserver!=="undefined"){
+    const measure=()=>document.documentElement.style.setProperty("--dfl-nav-height",`${navigation.getBoundingClientRect().height}px`);
+    measure();
+    const observer=new ResizeObserver(measure);
+    observer.observe(navigation);
+  }
   routeReader = routeOf;
   try { items = await bottomlineItems(); }
   catch { items = []; }

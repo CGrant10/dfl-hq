@@ -315,7 +315,7 @@ export function loadPlayers() {
       headers: { "Content-Type": "application/json", "x-fetched-at": String(Date.now()) },
     }));
     return slim;
-  })();
+  })().catch(error=>{playersPromise=null;throw error;});
 
   return playersPromise;
 }

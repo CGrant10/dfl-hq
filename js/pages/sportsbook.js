@@ -1,3 +1,4 @@
+import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
 // =====================================================================
@@ -193,8 +194,9 @@ export async function render(view){
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
   wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
-  wireProductTabs(view);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
-  wireBookTabs(view);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id);wireRecapShare(view,recap);
+  rememberView(view,me.id);
+  wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
+  wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id);wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
 }
@@ -366,17 +368,26 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
 
 function wirePropFilters(view,memberId){
   const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat"),position=view.querySelector("#sb-prop-position"),team=view.querySelector("#sb-prop-team"),gameFilter=view.querySelector("#sb-prop-game"),source=view.querySelector("#sb-prop-source"),sort=view.querySelector("#sb-prop-sort"),favoriteToggle=view.querySelector("[data-prop-favorites]");if(!search||!stat)return;
-  let favoriteKeys=readPropFavorites(memberId),favoritesOnly=false;
+  const saved=readBookState(memberId);
+  const requestedPlayer=new URLSearchParams(location.hash.split("?")[1]||"").get("player");
+  if(requestedPlayer){saved.filters={search:requestedPlayer};saved.favorites=false;view.dataset.restoreScrollY="0";}
+  const controls={search,stat,position,team,game:gameFilter,source,sort};
+  for(const [key,control] of Object.entries(controls)){if(!control)continue;const value=saved.filters[key];if(control.tagName!=="SELECT"||[...control.options].some(option=>option.value===value))control.value=value||""}
+  let favoriteKeys=readPropFavorites(memberId),favoritesOnly=saved.favorites;
+  if(favoriteToggle){favoriteToggle.setAttribute("aria-pressed",String(favoritesOnly));favoriteToggle.classList.toggle("is-active",favoritesOnly)}
+  const rememberFilters=()=>writeBookState(memberId,{filters:Object.fromEntries(Object.entries(controls).map(([key,control])=>[key,control?.value||""])),favorites:favoritesOnly});
   const paintFavorites=grid=>grid?.querySelectorAll("[data-prop-favorite]").forEach(button=>{const active=favoriteKeys.has(button.dataset.propFavorite);button.classList.toggle("is-favorite",active);button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",`${active?"Remove from":"Add to"} favorite props`)});
   const hydrate=game=>{const grid=game.querySelector("[data-prop-grid]");if(!grid||grid.dataset.ready)return;const rows=sortPropRows(propGameCache.get(game.dataset.propKey)||[],sort?.value||"player");grid.innerHTML=rows.map(row=>row.html).join("");grid.dataset.ready="true";paintFavorites(grid)};
-  view.querySelectorAll("[data-prop-game]").forEach(game=>game.addEventListener("toggle",()=>{if(game.open)hydrate(game)}));
-  const apply=()=>{const filters={query:search.value,stat:stat.value,position:position?.value||"",team:team?.value||"",game:gameFilter?.value||"",source:source?.value||"",favorites:favoritesOnly,favoriteKeys},active=Object.values(filters).some(value=>value&&!(value instanceof Set));let total=0;
+  view.querySelectorAll("[data-prop-game]").forEach(game=>game.addEventListener("toggle",()=>{if(game.open)hydrate(game);writeBookState(memberId,{expanded:[...view.querySelectorAll("[data-prop-game]")].filter(item=>item.open).map(item=>item.dataset.propKey)})}));
+  const apply=()=>{rememberFilters();const filters={query:search.value,stat:stat.value,position:position?.value||"",team:team?.value||"",game:gameFilter?.value||"",source:source?.value||"",favorites:favoritesOnly,favoriteKeys},active=Object.values(filters).some(value=>value&&!(value instanceof Set));let total=0;
     view.querySelectorAll("[data-prop-game]").forEach(game=>{const grid=game.querySelector("[data-prop-grid]"),rows=sortPropRows(propGameCache.get(game.dataset.propKey)||[],sort?.value||"player"),visibleRows=rows.filter(row=>propMatches(row.meta,filters)),visible=visibleRows.length;game.hidden=!visible;if(active&&visible)game.open=true;if(grid&&(active||game.open||grid.dataset.ready)){grid.innerHTML=visibleRows.map(row=>row.html).join("");grid.dataset.ready="true";paintFavorites(grid)}const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
     const empty=view.querySelector("[data-prop-empty]");if(empty)empty.hidden=total>0;
   };
   search.addEventListener("input",apply);[stat,position,team,gameFilter,source,sort].filter(Boolean).forEach(control=>control.addEventListener("change",apply));
   favoriteToggle?.addEventListener("click",()=>{favoritesOnly=!favoritesOnly;favoriteToggle.setAttribute("aria-pressed",String(favoritesOnly));favoriteToggle.classList.toggle("is-active",favoritesOnly);apply()});
   view.querySelector(".sb-props")?.addEventListener("click",event=>{const button=event.target.closest("[data-prop-favorite]");if(!button)return;favoriteKeys=togglePropFavorite(memberId,button.dataset.propFavorite);const active=favoriteKeys.has(button.dataset.propFavorite);button.classList.toggle("is-favorite",active);button.setAttribute("aria-pressed",String(active));button.setAttribute("aria-label",`${active?"Remove from":"Add to"} favorite props`);if(favoritesOnly)apply()});
+  view.querySelectorAll("[data-prop-game]").forEach(game=>{game.open=saved.expanded.includes(game.dataset.propKey);if(game.open)hydrate(game)});
+  apply();
 }
 
 /*
@@ -683,15 +694,37 @@ function wireTicketActions(view,marketMap,outcomeMap,me){
   }));
 }
 
-function wireBookTabs(view) {
+function wireBookTabs(view,memberId) {
   const tabs=[...view.querySelectorAll('[data-sb-tab]')];
-  const select=tab=>{for(const button of tabs){const active=button===tab;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;view.querySelector('#sb-'+button.dataset.sbTab).hidden=!active;}};
+  if(!tabs.length)return;
+  const select=tab=>{for(const button of tabs){const active=button===tab;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;view.querySelector('#sb-'+button.dataset.sbTab).hidden=!active;}writeBookState(memberId,{tab:tab.dataset.sbTab});};
+  select(tabs.find(tab=>tab.dataset.sbTab===readBookState(memberId).tab)||tabs[0]);
   tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus();});});
 }
 
-function wireProductTabs(view){
+function wireProductTabs(view,memberId){
   const tabs=[...view.querySelectorAll("[data-sb-product]")];
-  tabs.forEach(tab=>tab.addEventListener("click",()=>{for(const item of tabs){const active=item===tab;item.setAttribute("aria-selected",String(active));view.querySelector(`#sb-${item.dataset.sbProduct}-panel`).hidden=!active}}));
+  if(!tabs.length)return;
+  const select=tab=>{for(const item of tabs){const active=item===tab;item.setAttribute("aria-selected",String(active));item.tabIndex=active?0:-1;item.id=`sb-product-${item.dataset.sbProduct}`;item.setAttribute("aria-controls",`sb-${item.dataset.sbProduct}-panel`);const panel=view.querySelector(`#sb-${item.dataset.sbProduct}-panel`);panel.hidden=!active;panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",item.id)}writeBookState(memberId,{product:tab.dataset.sbProduct})};
+  tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>select(tab));tab.addEventListener("keydown",event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;select(tabs[next]);tabs[next].focus()})});
+  select(tabs.find(tab=>tab.dataset.sbProduct===readBookState(memberId).product)||tabs[0]);
+}
+
+let stopRemembering=null;
+export function leave(){stopRemembering?.();stopRemembering=null}
+function rememberView(view,memberId){
+  if(!view.isConnected)return;
+  leave();
+  const saved=readBookState(memberId);
+  const requestedPlayer=new URLSearchParams(location.hash.split("?")[1]||"").get("player");
+  if(requestedPlayer)writeBookState(memberId,{product:"book",tab:"markets"});
+  view.dataset.restoreScrollY=String(saved.scroll);
+  let active=view.dataset.route==="sportsbook"&&!view.classList.contains("is-route-loading");
+  const save=()=>{if(active&&view.isConnected)writeBookState(memberId,{scroll:window.scrollY})};
+  const onReady=event=>{if(event.detail?.route==="sportsbook")active=true};
+  window.addEventListener("dfl:route-performance",onReady);
+  window.addEventListener("pagehide",save);
+  stopRemembering=()=>{save();window.removeEventListener("dfl:route-performance",onReady);window.removeEventListener("pagehide",save)};
 }
 
 function wireFeedRefresh(view){

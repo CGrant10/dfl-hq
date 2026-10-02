@@ -1,3 +1,4 @@
+import { mountLeagueSearch } from "./league-search.js";
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
@@ -30,6 +31,7 @@ import { startExperience, syncExperience } from "./experience.js";
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
 mountSeasonNavigation();
+mountLeagueSearch();
 document.addEventListener("click", event => {
   if (event.target.closest?.("[data-retry-page]")) location.reload();
 });
@@ -248,7 +250,14 @@ function moveTabIndicator(){
 window.addEventListener("resize",moveTabIndicator);
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){void registerAppWorker();console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);await Promise.all([restoreAdmin(),restoreMember(),loadSettings()]);paintName();mountMemberPreview();
+async function boot(){void registerAppWorker();console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(navigator.onLine===false){
+  initialView.innerHTML='<section class="state is-error" role="alert"><h1 class="state-title">You’re offline</h1><p>DFL HQ is ready on this device. Reconnect to load league data, post or place a bet.</p><button class="btn" type="button" data-retry-page>Retry</button></section>';
+  window.addEventListener("online",()=>location.reload(),{once:true});
+  setupInstall();return;
+}if(!configured)toast("Add your Supabase keys in js/config.js",true);let startupTimer;
+try{await Promise.race([Promise.all([restoreAdmin(),restoreMember(),loadSettings()]),new Promise((_,reject)=>{startupTimer=setTimeout(()=>reject(new Error("Startup connection timed out")),10000)})]);}
+finally{clearTimeout(startupTimer)}
+paintName();mountMemberPreview();
   startExperience();
   mountNotificationBell();
   mountQuickSleeperSync();
@@ -284,4 +293,8 @@ if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicke
 else if(getUsername())registerUser(getUsername());setupInstall();
 }
 onGolfPassChange(paintName);
-boot();
+boot().catch(error=>{
+  console.error(error);
+  const view=document.getElementById("view");
+  if(view)view.innerHTML='<section class="state is-error" role="alert"><h1 class="state-title">DFL HQ could not connect</h1><p>Check your connection and try again.</p><button class="btn" type="button" data-retry-page>Retry</button></section>';
+});

@@ -1,3 +1,4 @@
+import { threadHtml, wireConversations } from "./wall-conversations.js";
 // =====================================================================
 // member-wall.js - The Wall. Members post, everybody reads.
 // ---------------------------------------------------------------------
@@ -48,7 +49,11 @@ export async function loadWall(limit = 12) {
   let last = null;
   for (const columns of SELECTS) {
     const { data, error } = await read(columns);
-    if (!error) return data || [];
+    if (!error) {
+      const rows=data||[];
+      if(rows.length){const counts=await db().from("member_wall_reply_counts").select("post_id,reply_count").in("post_id",rows.map(row=>row.id));const byId=new Map((counts.data||[]).map(row=>[String(row.post_id),row.reply_count]));for(const row of rows)row.reply_count=byId.get(String(row.id))||0;}
+      return rows;
+    }
     last = error;
     if (!COLUMN_GONE.test(error.message || "")) break;
   }
@@ -64,7 +69,7 @@ export function wallCard(rows, { compact = false } = {}) {
     <h2 class="section-title">The Wall${compact ? `<a class="section-link" href="#/wall">Open the Wall →</a>` : ""}</h2>
     <div class="card wall-card">
       ${compact ? "" : me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
-      <div class="wall-posts">${visibleRows.length ? visibleRows.map(postHtml).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
+      <div class="wall-posts">${visibleRows.length ? visibleRows.map(row=>postHtml(row,compact)).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
     </div>
   </section>`;
 }
@@ -98,7 +103,7 @@ const WALL_FRAMING = {
 
 function composer() {
   return `<form class="wall-form" data-wall-form>
-    <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…" data-wall-body></textarea>
+    <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…" aria-label="Wall post" data-wall-body></textarea>
     <div class="wall-picture">
       <span class="wall-picture-label">${icon("camera", { size: 15 })}<span>Picture (optional)</span></span>
       ${imageFieldHtml({ id: "wall-image", name: "image", preset: "backdrop", framing: WALL_FRAMING })}
@@ -130,7 +135,7 @@ function stampFull(iso) {
 }
 const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
-function postHtml(r) {
+function postHtml(r,compact=false) {
   const m = r.members || {};
   const me = currentMember();
   const own = !!me && String(me.id) === String(r.member_id);
@@ -167,7 +172,7 @@ function postHtml(r) {
       data-image-x="${esc(r.image_position_x ?? "")}"
       data-image-y="${esc(r.image_position_y ?? "")}"
       data-image-zoom="${esc(r.image_zoom ?? "")}">
-    <textarea maxlength="500" rows="3" data-wall-edit-body>${esc(r.body || "")}</textarea>
+    <textarea maxlength="500" rows="3" aria-label="Edit Wall post" data-wall-edit-body>${esc(r.body || "")}</textarea>
     <div class="wall-picture">
       <span class="wall-picture-label">${icon("camera", { size: 15 })}<span>Picture</span></span>
       ${imageFieldHtml({ id: `wall-edit-image-${esc(r.id)}`, name: "image", preset: "backdrop", framing: WALL_FRAMING })}
@@ -189,6 +194,7 @@ function postHtml(r) {
     ${editForm}
     ${photoHtml(r, name)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
+    ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}">Join the conversation (${Number(r.reply_count)||0})</a>`:threadHtml(r)}
   </article>`;
 }
 
@@ -277,6 +283,11 @@ function editFraming(form, { imageChanged }) {
 }
 
 export function wireWall(root, onChanged) {
+  root._wallController?.abort();
+  const controller=new AbortController();
+  root._wallController=controller;
+  const signal=controller.signal;
+  void wireConversations(root);
   const form = root.querySelector("[data-wall-form]");
 
   form?.addEventListener("submit", async (e) => {
@@ -306,7 +317,7 @@ export function wireWall(root, onChanged) {
     if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
     toast("Posted");
     onChanged?.();
-  });
+  }, {signal});
 
   root.addEventListener("click", async (e) => {
     const edit = e.target.closest("[data-wall-edit]");
@@ -340,7 +351,7 @@ export function wireWall(root, onChanged) {
       } catch (err) { del.disabled = false; toast(err.message || "Could not delete post", true); }
       return;
     }
-  });
+  }, {signal});
 
   root.addEventListener("submit", async (e) => {
     const editForm = e.target.closest("[data-wall-edit-form]");
@@ -375,5 +386,5 @@ export function wireWall(root, onChanged) {
       toast("Post updated");
       onChanged?.();
     } catch (err) { btn.disabled = false; toast(err.message || "Could not update post", true); }
-  });
+  }, {signal});
 }

@@ -1102,3 +1102,18 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .imgf-zoom-mark { color: var(--muted); font-size: var(--fs-micro); line-height: 1; }
 
 .imgf-frame-hint { margin-top: 6px; }
+
+/* League search and conversations share the existing clubhouse palette. */
+#league-search-button{font-size:28px;min-width:44px;min-height:44px}
+.league-search{width:min(640px,calc(100vw - 24px));max-height:85dvh;overflow:auto;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--bg);color:var(--text)}
+.league-search::backdrop{background:rgb(0 0 0 / .75)}
+.league-search header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.league-search h2{margin:0}.league-search label{display:block;margin:18px 0 8px}.league-search input{width:100%;min-height:48px}
+.league-search ul{list-style:none;padding:0}.league-search li a{display:flex;flex-direction:column;gap:6px;padding:12px 4px;min-height:48px;border-bottom:1px solid var(--line);color:var(--text);text-decoration:none;overflow-wrap:anywhere}.league-search li span{font-size:13px;color:var(--muted)}
+.wall-thread{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.wall-thread summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--text);font-weight:700}.wall-reply{padding:12px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.wall-reply p{white-space:pre-wrap;margin:8px 0}.wall-reply-form label{display:block;margin:12px 0 6px}.wall-reply-form textarea{width:100%}.wall-mention-control{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.wall-mention-control select{max-width:100%;min-height:44px}.wall-post{scroll-margin-top:90px}.wall-thread-status{margin:10px 0}
+@media(max-width:360px){.topbar-actions{gap:4px}.whoami{max-width:110px}.league-search{padding:14px}}
+.wall-reply-form > button{min-height:44px}
+
+.bottomline .bl-item{min-height:24px;align-items:center}
+
+@media(max-width:899px){.bottomline{bottom:var(--dfl-nav-height,calc(60px + env(safe-area-inset-bottom)))}}

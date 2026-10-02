@@ -36,12 +36,12 @@ function settingsMarkup(state) {
 }
 
 function inboxMarkup(rows) {
-  if (!rows.length) return `<div class="notify-empty"><strong>You’re all caught up.</strong><span>Commissioner notes, trades, polls and reminders will collect here.</span></div>`;
+  if (!rows.length) return `<div class="notify-empty"><strong>You’re all caught up.</strong><span>Replies, mentions, commissioner notes, trades and reminders will collect here.</span></div>`;
   return `<div class="notification-list">${rows.map(row => `
     <div class="notification-item">
       <a class="notification-row ${row.is_read ? "" : "is-unread"}" href="${esc(row.target_url || "#/home")}" data-notification-id="${row.id}">
         <span class="notification-dot" aria-hidden="true"></span>
-        <span class="notification-copy"><small>${esc(labelFor(row.category))} · ${esc(timeAgo(row.created_at))}</small><strong>${esc(row.title)}</strong><span>${esc(row.body)}</span></span>
+        <span class="notification-copy"><small>${esc(row.target_url?.startsWith("#/wall?post=")?"The Wall":labelFor(row.category))} · ${esc(timeAgo(row.created_at))}</small><strong>${esc(row.title)}</strong><span>${esc(row.body)}</span></span>
         <span class="notification-arrow" aria-hidden="true">›</span>
       </a>
       <button type="button" class="notification-delete" data-delete-notification="${row.id}" aria-label="Delete ${esc(row.title)}">&times;</button>
@@ -67,7 +67,7 @@ export async function render(view) {
     view.querySelector("[data-retry-inbox]")?.addEventListener("click", () => render(view));
     return;
   }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
+  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<p class="muted tiny">Wall replies and @mentions appear in your inbox even without push enabled. Wall alerts currently stay in the app.</p><section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
 
   view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
     const btn = e.currentTarget;

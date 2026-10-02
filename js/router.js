@@ -291,6 +291,7 @@ export async function renderRoute() {
   if (previousView._dflSeasonObserver) { previousView._dflSeasonObserver.disconnect(); previousView._dflSeasonObserver = null; }
 
   const view = previousView.cloneNode(false);
+  delete view.dataset.restoreScrollY;
   view.classList.remove("page-in");
   view.classList.add("is-route-loading");
   document.body.classList.add("route-loading");
@@ -349,7 +350,9 @@ export async function renderRoute() {
 
   if (!isCurrent()) return;
 
-  window.scrollTo(0, 0);
+  window.scrollTo(0, Number(view.dataset.restoreScrollY) || 0);
+  const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
+  if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
   lastAnimated = name;
   if (changed) {
     view.classList.remove("page-switching");

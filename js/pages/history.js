@@ -45,6 +45,8 @@ let tab = "fame";
 let season = null;
 
 export async function render(view) {
+  const requestedEntry=Number(new URLSearchParams(location.hash.split("?")[1]||"").get("entry"));
+  if(requestedEntry)tab="fame";
   view.innerHTML = `<h1>History</h1>` + loading("Reading the record book…");
 
   /* ONE LOAD for every tab on this page, and the same one a profile reads.
@@ -136,6 +138,7 @@ export async function render(view) {
   });
 
   paint();
+  if(requestedEntry){const entry=view.querySelector(`[data-history-entry="${requestedEntry}"]`);if(entry){entry.setAttribute("data-route-focus","");entry.tabIndex=-1;}}
   /* Arriving back on a tab that sits off the right of a phone screen should
      not look like the first tab is selected. */
   scrollTabIntoView(view.querySelector(`#hist-tabs button[data-tab="${tab}"]`));
@@ -217,7 +220,7 @@ function sortRows(list) {
  */
 function entry(r) {
   return `
-    <div class="evrow ${hiddenClass("history", r)}">
+    <div class="evrow ${hiddenClass("history", r)}" data-history-entry="${esc(r.id)}">
       <div class="evicon" aria-hidden="true">${icon(r.category)}</div>
       <div class="evbody">
         <div class="evtop">
