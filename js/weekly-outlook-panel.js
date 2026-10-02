@@ -18,6 +18,7 @@
 // always showing the same team as the report underneath it.
 // =====================================================================
 
+import { mountLineupLab } from "./lineup-lab-ui.js";
 import { onRoute } from "./router.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { loadTrendingPlayers, loadWeeklyProjections } from "./sleeper.js";
@@ -30,20 +31,9 @@ import { playerLiveState } from "./live-score.js";
 const HOST = "data-weekly-outlook";
 const pts = value => (Number.isFinite(value) ? value.toFixed(1) : "—");
 
-/* One load per session. The analyzer page has already paid for this data;
-   asking Supabase for it a second time on every visit would be rude. */
-let analyzerPromise = null;
-const analyzer = () => (analyzerPromise ||= loadAnalyzerData());
-
-let weeklyPromise = null;
-let weeklyKey = "";
-function weekly(season, week) {
-  const key = `${season}:${week}`;
-  if (weeklyPromise && weeklyKey === key) return weeklyPromise;
-  weeklyKey = key;
-  weeklyPromise = loadWeeklyProjections(season, week);
-  return weeklyPromise;
-}
+// Both data sources own their cache TTLs; avoid keeping a stale session promise.
+const analyzer = () => loadAnalyzerData();
+const weekly = (season, week) => loadWeeklyProjections(season, week);
 
 function chip(matchup) {
   if (!matchup) return "";
@@ -144,6 +134,7 @@ function markup({ week, team, advice, trending, defense, stale }) {
 }
 
 async function draw(host) {
+  const token = (host.drawGeneration || 0) + 1; host.drawGeneration = token;
   const data = await analyzer();
   if (data.state !== "ready") { host.innerHTML = ""; return; }
 
@@ -170,13 +161,18 @@ async function draw(host) {
     weekly: pool,
     defense,
   });
+  if (!host.isConnected || host.drawGeneration !== token) return;
   host.innerHTML = markup({
     week,
     team: team.team_name || team.ownerName || "Your team",
     advice, trending, defense, stale: projections.stale,
   });
+  const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
+  const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;
+  const lab=document.createElement('div');host.append(lab);mountLineupLab(lab,{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
 }
 
+let selectorBound=false;
 function attach() {
   const report = document.querySelector("[data-ta-body]");
   if (!report) return false;
@@ -186,9 +182,12 @@ function attach() {
     host.setAttribute(HOST, "");
     /* Before the report, not inside it - see the header. */
     report.parentElement.insertBefore(host, report);
-    /* The report owns the team selector; follow it rather than add a second. */
+  }
+  if(!selectorBound){
+    selectorBound=true;
     document.addEventListener("change", event => {
-      if (event.target?.matches?.("[data-ta-team-select]")) void draw(host).catch(() => {});
+      const currentHost=document.querySelector(`[${HOST}]`);
+      if(currentHost&&event.target?.matches?.("[data-ta-team-select]"))void draw(currentHost).catch(()=>{});
     });
   }
   void draw(host).catch(() => { host.innerHTML = ""; });

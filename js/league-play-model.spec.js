@@ -1,0 +1,22 @@
+import {describe,it,expect,vi} from 'vitest';
+vi.mock('./supabase.js',()=>({db:vi.fn()}));
+vi.mock('./members.js',()=>({loadMemberDirectory:vi.fn()}));
+import {filterFacts,rankTrivia,gradeCall,rivalryFor} from './league-play-model.js';
+import {legalWeeklyLineup,simulateSwap,strategyLesson} from './lineup-lab.js';
+const positions=['QB','RB','RB','WR','WR','TE','K','DEF','RB'];
+const weekly=new Map(positions.map((position,i)=>[String(i),{id:String(i),position,name:`Player ${i}`,points:10+i,hasGame:true,isOut:false}]));
+weekly.set('bench',{id:'bench',name:'Bench WR',position:'WR',points:20,hasGame:true});weekly.set('qb',{id:'qb',position:'QB',points:30,hasGame:true});weekly.set('out',{id:'out',position:'RB',points:30,hasGame:true,isOut:true});
+const starters=positions.map((_,i)=>String(i)),roster=[...starters,'bench','qb','out'];
+describe('league discovery and games',()=>{
+ it('filters personal facts by identity rather than names',()=>{const f=[{id:'a',headline:'Grant',detail:'2021',userIds:['u1'],kind:'high'},{id:'b',headline:'Grant',detail:'2020',userIds:['u2'],kind:'title'}];expect(filterFacts(f,{filter:'mine',userId:'u1'})).toEqual([f[0]]);expect(filterFacts(f,{query:'2020'})).toEqual([f[1]]);expect(filterFacts(f,{filter:'titles'})).toEqual([f[1]])});
+ it('keeps equal scores tied and aggregates season attempts',()=>{expect(rankTrivia([{member_id:1,correct:3},{member_id:2,correct:4},{member_id:1,correct:1},{member_id:3,correct:2}]).map(r=>[r.memberId,r.rank])).toEqual([[2,1],[1,1],[3,3]])});
+ it('waits for finality, handles ties and missing scores',()=>{const game={matchup_id:1,left:{roster:1,score:100},right:{roster:2,score:90}},call={matchup_id:1,roster_id:1};expect(gradeCall(call,[game],false).correct).toBeNull();expect(gradeCall(call,[game],true).correct).toBe(true);expect(gradeCall({...call,roster_id:2},[game],true).correct).toBe(false);expect(gradeCall(call,[{...game,left:{...game.left,score:null}}],true).correct).toBeNull();expect(gradeCall(call,[{...game,right:{roster:2,score:100}}],true).label).toContain('Tie')});
+ it('shares high-score wins on ties and waits for every score',()=>{const games=[{matchup_id:1,left:{roster:1,score:100},right:{roster:2,score:90}},{matchup_id:2,left:{roster:3,score:100},right:{roster:4,score:80}}];expect(gradeCall({matchup_id:1,roster_id:1,kind:'high-score'},games,true).correct).toBe(true);expect(gradeCall({matchup_id:1,roster_id:2,kind:'high-score'},games,true).correct).toBe(false);expect(gradeCall({matchup_id:1,roster_id:1,kind:'high-score'},[...games,{matchup_id:3,left:{roster:5,score:null},right:{roster:6,score:70}}],true).correct).toBeNull()});
+ it('rivalry pregame history excludes current and future weeks',()=>{const lore={matchups:[{season:2025,week:1,user1:'a',user2:'b',roster1:1,roster2:2,score1:100,score2:90,winner_roster_id:1},{season:2026,week:4,user1:'a',user2:'b',roster1:1,roster2:2,score1:100,score2:120,winner_roster_id:2}]};expect(rivalryFor(lore,{left:{uid:'a'},right:{uid:'b'}},2026,4).wins).toBe(1)});
+});
+describe('lineup experiments',()=>{
+ it('allows flex swaps without losing dedicated position coverage',()=>{expect(legalWeeklyLineup(starters,weekly)).toBe(true);const r=simulateSwap({starters,roster,outId:'8',inId:'bench',weekly,opponentStarters:starters});expect(r.error).toBeUndefined();expect(r.delta).toBe(2);expect(r.beforeMargin).toBe(0);expect(r.afterMargin).toBe(2);expect(starters[8]).toBe('8')});
+ it('rejects illegal positions, duplicates and unowned incoming players',()=>{expect(simulateSwap({starters,roster,outId:'1',inId:'qb',weekly}).error).toContain('illegal');expect(simulateSwap({starters,roster:starters,outId:'3',inId:'bench',weekly}).error).toContain('bench');expect(legalWeeklyLineup([...starters.slice(0,8),'1'],weekly)).toBe(false)});
+ it('rejects unavailable incoming players and does not invent missing projections',()=>{expect(simulateSwap({starters,roster,outId:'1',inId:'out',weekly}).error).toContain('out');const missing=new Map(weekly);missing.set('0',{...missing.get('0'),points:null});expect(simulateSwap({starters,roster,outId:'3',inId:'bench',weekly:missing}).error).toContain('missing')});
+ it('rotates useful lessons with an actual roster example',()=>{expect(strategyLesson({week:1,starters,roster,weekly}).title).toContain('flex');expect(strategyLesson({week:6,starters,roster,weekly}).title).toContain('upside');expect(strategyLesson({week:7,starters,roster,weekly}).title).toContain('flex')});
+});

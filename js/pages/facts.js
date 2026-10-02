@@ -8,6 +8,10 @@
 // turn takes every figure from lore.js. Three layers, one direction, no
 // second stats engine.
 // =====================================================================
+import { currentMember } from "../members.js";
+import { teamPortrait } from "../team-presentation.js";
+import { filterFacts } from "../league-play-model.js";
+import { mountTrivia } from "../league-trivia.js";
 import { esc, errorBox, loading, toast } from "../ui.js";
 import { loadLore, clearLore } from "../lore.js";
 import { funFacts, factOfTheDay } from "../funfacts.js";
@@ -43,12 +47,9 @@ export async function render(view) {
     return;
   }
 
-  /* The rest of the book, today's fact excluded - it is already the top
-     of the page and printing it twice makes the list look padded. */
-  const rest = all.filter((f) => f.id !== today.id);
-
   view.innerHTML = `
-    <header class="page-head"><h1>DFL Lore</h1></header>
+    <header class="page-head"><div><h1>DFL Lore</h1><p>Know the records. Remember the rivalries. Test your league knowledge.</p></div></header>
+    <details class="card trivia-hub"><summary>DFL trivia · Week ${leagueState?.currentWeek || 1} <span>Take the five-question challenge</span></summary><div data-trivia-host role="region" aria-label="Weekly DFL trivia"><p role="status">Open the challenge to load this week’s quiz.</p></div></details>
 
     <section class="factcard dfl-mark" data-fact>
       <span class="fact-kicker">
@@ -93,19 +94,30 @@ export async function render(view) {
         </div>
       </section>` : ""}
 
-    ${rest.length ? `<h2 class="section-title">The rest of the lore<span class="count">${rest.length}</span></h2>
-      <div class="factlist">
-        ${rest.map((f) => `
-          <article class="card fact-row">
-            <svg class="ico-sm" aria-hidden="true"><use href="#${esc(ICON[f.kind] || "i-record")}"></use></svg>
-            <div>
-              <h3 class="card-heading">${esc(f.headline)}</h3>
-              <div class="card-body">${esc(f.detail)}</div>
-            </div>
-          </article>`).join("")}
-      </div>` : ""}
+    <section class="lore-discovery" aria-label="Explore DFL facts">
+     <h2 class="section-title">Explore the lore</h2>
+     <div class="lore-tools"><label for="lore-filter">Show<select id="lore-filter"><option value="all">All facts</option><option value="mine">My team</option><option value="rivalries">Rivalries</option><option value="records">Records</option><option value="titles">Championships</option></select></label><label for="lore-search">Search facts<input id="lore-search" type="search" placeholder="Owner, season or record"></label></div>
+     <p class="muted" role="status" data-fact-count></p><div class="lore-card-grid" data-fact-results></div><button class="btn ghost" type="button" data-more-facts hidden>Show more facts</button>
+    </section>
   `;
 
+  let shown=12;
+  const drawFacts=()=>{
+    const mine=currentMember(),filter=view.querySelector('#lore-filter').value;
+    const results=filterFacts(all,{filter,query:view.querySelector('#lore-search').value,userId:mine?.sleeper_user_id||''});
+    view.querySelector('[data-fact-count]').textContent=filter==='mine'&&!mine?'Choose your profile to see your team’s facts.':`Showing ${Math.min(shown,results.length)} of ${results.length} facts`;
+    view.querySelector('[data-fact-results]').innerHTML=results.slice(0,shown).map(f=>{
+      const owners=members.filter(m=>(f.userIds||[]).includes(String(m.sleeper_user_id)));
+      return `<article class="card lore-fact"><div class="lore-fact-owners">${owners.map(m=>teamPortrait({identity:m,team_name:m.team_name||m.display_name})).join('')}<small>${esc(f.season?`${f.season} season`:'All-time')} · ${esc(f.kind)}</small></div><h3>${esc(f.headline)}</h3><p>${esc(f.detail)}</p><button class="btn ghost small" type="button" data-share-fact="${esc(f.id)}">Share fact</button></article>`;
+    }).join('')||'<p class="muted">No matching facts. Try another filter or search.</p>';
+    view.querySelector('[data-more-facts]').hidden=results.length<=shown;
+  };
+  view.querySelector('[data-more-facts]').addEventListener('click',()=>{shown+=12;drawFacts()});
+  const resetFacts=()=>{shown=12;drawFacts()};
+  drawFacts();view.querySelector('#lore-filter').addEventListener('change',resetFacts);view.querySelector('#lore-search').addEventListener('input',resetFacts);
+  view.querySelector('[data-fact-results]').addEventListener('click',event=>{const button=event.target.closest('[data-share-fact]');if(button)void shareFact(all.find(f=>f.id===button.dataset.shareFact))});
+  let triviaLoaded=false;view.querySelector('.trivia-hub').addEventListener('toggle',event=>{if(event.currentTarget.open&&!triviaLoaded){triviaLoaded=true;void mountTrivia(view.querySelector('[data-trivia-host]'),leagueState,members)}});
+  if(new URLSearchParams(location.hash.split("?")[1]||"").get("play")==="trivia")view.querySelector(".trivia-hub").open=true;
   /*
     THE REFRESH.
 

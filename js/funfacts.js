@@ -284,6 +284,28 @@ export function funFacts(lore) {
       unlucky.season, Math.round(Number(unlucky.points_for)));
   }
 
+  // Explicit owner IDs support personal discovery without matching display names.
+  const owners = {
+    closest: closest ? [closest.user1, closest.user2] : [],
+    blowout: blow ? [blow.user1, blow.user2] : [], high: [high?.user], low: [low?.user],
+    streak: [bestWin?.user], skid: [worstLoss?.user],
+    final: [tightest?.champUser, tightest?.runnerUser],
+    dynasty: [...titles].filter(([, count]) => count === topCount).map(([user]) => user),
+    rivalry: [lopsided?.u, lopsided?.r.user], mostplayed: [played_most?.u, played_most?.r.user],
+    winpct: [bestPct?.u], playoffs: [mostPo?.u], cursed: [cursed?.u], careerpoints: [mostPoints?.u],
+    bigseason: [bigSeason?.sleeper_user_id], unlucky: [unlucky?.sleeper_user_id],
+  };
+  for (const fact of out) fact.userIds = (owners[fact.id] || []).filter(Boolean).map(String);
+  const seenPersonalRivals=new Set();
+  for (const user of users) {
+    if(name(user).label==='Unknown')continue;
+    const peak=best(sides.filter(s=>s.user===user), s=>s.score);
+    if(peak)out.push({id:`owner-high-${user}`,kind:'high',headline:`${who(user)}’s personal best is ${peak.score.toFixed(2)} points.`,detail:`${peak.season} Week ${peak.week}. A score to chase.`,season:peak.season,figure:peak.score,userIds:[String(user)]});
+    const rival=headToHead(lore,user)[0];
+    const pair=rival?[String(user),String(rival.user)].sort().join(':'):'';
+    if(rival&&!seenPersonalRivals.has(pair)&&name(rival.user).label!=='Unknown')out.push({id:`owner-rival-${user}`,kind:'rivalry',headline:`${who(user)} has faced ${who(rival.user)} ${rival.meetings} times.`,detail:`The series stands ${rival.wins}-${rival.losses}${rival.ties?`-${rival.ties}`:''} from ${who(user)}’s side.`,season:null,figure:rival.meetings,userIds:[String(user),String(rival.user)]});
+    if(pair)seenPersonalRivals.add(pair);
+  }
   cached = out;
   cachedFor = lore;
   return out;

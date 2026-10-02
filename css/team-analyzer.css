@@ -1454,3 +1454,6 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
   .tb-head-row { flex-direction: column; align-items: stretch; }
   .tb-head-row > .btn { align-self: flex-start; }
 }
+
+/* Fairway's bright fill needs darker ink behind the small white identity badge. */
+html[data-palette="fairway"] .ta-mark.is-you { background: var(--accent); }

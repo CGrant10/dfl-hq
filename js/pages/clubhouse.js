@@ -1,3 +1,4 @@
+import {mountRivalries,mountWeeklyCalls} from "../clubhouse-play.js";
 import {teamPortrait} from "../team-presentation.js";
 import {db} from '../supabase.js';
 import {currentMember,loadMemberDirectory} from '../members.js';
@@ -9,7 +10,7 @@ import {shareWeeklyClubhouse} from '../weekly-clubhouse-share.js';
 let renderGeneration=0;
 export async function render(view){
  const token=++renderGeneration,active=()=>token===renderGeneration&&view.isConnected&&location.hash.startsWith("#/clubhouse");
- view.innerHTML='<h1>Weekly clubhouse</h1><p role="status">Loading the league’s receipts…</p>';
+ view.innerHTML='<header class="page-head"><h1>Clubhouse</h1></header><p role="status">Loading the league’s receipts…</p><div class="clubhouse-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>';
  try{
   const[index,members]=await Promise.all([loadClubhouseIndex(),loadMemberDirectory()]);if(!active())return;
   const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||index.find(w=>w.completed)||index[0];
@@ -27,10 +28,14 @@ export async function render(view){
     <section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL RESULTS':'IN PROGRESS'}</small><h2>Weekly awards</h2></div><span class="clubhouse-status">${model.games.length} matchups</span></div><div data-clubhouse-awards>${weeklyAwardsHtml(model)}</div><p class="clubhouse-footnote" role="status" data-bench-status>${model.completed?'Checking the actual weekly lineups…':'Final awards wait for the NFL slate to finish. Join the matchup talk in the meantime.'}</p></section>
     ${weeklyVoteHtml(model)}
    </div></div>
-   <div id="clubhouse-panel-matchups" role="tabpanel" aria-labelledby="clubhouse-tab-matchups" ${initialTab==='matchups'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL SCORES':'SYNCED SCORES'}</small><h2>Matchup conversations</h2></div><span class="clubhouse-status">${model.games.length} games</span></div><p class="clubhouse-section-copy">One shared thread per matchup. Bring your predictions, trash talk and receipts.</p><div class="clubhouse-games">${model.games.map(g=>gameHtml(g,model,threadIds)).join('')}</div>${!model.completed?'<p class="clubhouse-footnote">Synced scores can change while NFL games are in progress.</p>':''}</section></div>
-   <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><p class="clubhouse-section-copy">${model.completed?'The scores, side bets and best of the Wall. Use Share recap to send the card to your group chat.':'The recap will be ready after the NFL slate finishes.'}</p><div data-clubhouse-recap>${recapHtml(model)}</div></section></div>
+   <div id="clubhouse-panel-matchups" role="tabpanel" aria-labelledby="clubhouse-tab-matchups" ${initialTab==='matchups'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL SCORES':'SYNCED SCORES'}</small><h2>Matchup conversations</h2></div><span class="clubhouse-status">${model.games.length} games</span></div><div class="clubhouse-play-links"><a href="#/facts?play=trivia">DFL trivia →</a><a href="#/analyzer">Plan your lineup →</a></div><p class="clubhouse-section-copy">One shared thread per matchup. Bring your predictions, trash talk and receipts.</p><div class="clubhouse-games">${model.games.map(g=>gameHtml(g,model,threadIds)).join('')}</div>${!model.completed?'<p class="clubhouse-footnote">Synced scores can change while NFL games are in progress.</p>':''}</section><section class="card clubhouse-section" data-weekly-calls><p role="status">Loading this week’s challenge…</p></section></div>
+   <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><p class="clubhouse-section-copy">${model.completed?'The scores, side bets and best of the Wall. Use Share recap to send the card to your group chat.':'The recap will be ready after the NFL slate finishes.'}</p><div data-clubhouse-recap>${recapHtml(model)}</div></section><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
   </div>`;
   wireClubhouseTabs(view,initialTab);
+  void mountRivalries(view,model);
+  if(!model.completed)void mountWeeklyCalls(view.querySelector("[data-weekly-calls]"),model);
+  else view.querySelector("[data-weekly-calls]").innerHTML='<a href="#clubhouse-panel-recap" class="clubhouse-text-link" data-view-calls>See prediction receipts in Recap →</a>';
+  view.querySelector("[data-view-calls]")?.addEventListener("click",event=>{event.preventDefault();view.querySelector("#clubhouse-tab-recap").click()});
   view.querySelector('#clubhouse-season').addEventListener('change',event=>{const season=Number(event.target.value),week=index.find(w=>w.season===season&&w.completed)||index.find(w=>w.season===season);location.hash=weeklyHref(week.season,week.week)+'&tab='+activeTab(view)});
   view.querySelector('#clubhouse-week').addEventListener('change',event=>{const[season,week]=event.target.value.split(':');location.hash=weeklyHref(season,week)+'&tab='+activeTab(view)});
   wireMatchupThreads(view,model.season,model.week);
@@ -43,12 +48,14 @@ export async function render(view){
    try{const q=db().from('clubhouse_award_votes');const{error}=withdraw?await q.delete().eq('season',model.season).eq('week',model.week).eq('voter_id',actor.id):await q.upsert({season:model.season,week:model.week,voter_id:actor.id,nominee_id:nominee},{onConflict:'season,week,voter_id'});if(error)throw error;await refreshVote();ballot.querySelector('[data-withdraw-vote]').hidden=withdraw;ballot.querySelector('[type="submit"]').textContent=withdraw?'Cast vote':'Change vote';if(withdraw)ballot.elements.nominee.value='';status.textContent=withdraw?'Vote withdrawn.':'Vote saved.'}catch{status.textContent='Could not save your vote. Check your connection and whether voting is still open, then retry.'}finally{busy=false;ballot.querySelectorAll('button').forEach(b=>b.disabled=false)}
   };
   ballot?.addEventListener('submit',event=>{event.preventDefault();void vote(false)});ballot?.querySelector('[data-withdraw-vote]').addEventListener('click',()=>void vote(true));
+  if(!model.completed)view.querySelector('[data-recap-calls]').hidden=true;
   if(model.completed){
    // Update only the score/award islands; preserve ballot selections and focus.
    const enriched=await enrichClubhouseWeek(data,members);if(!active())return;
    raw=enriched.rawRosters;players=enriched.playerDirectory;
    model=buildWeeklyClubhouse({...enriched,votes:model.votes},members,raw,players);repaintAwards();
    for(const game of model.games){view.querySelector(`[data-score-left="${game.matchup_id}"]`).textContent=game.left.score?.toFixed(2)??'—';view.querySelector(`[data-score-right="${game.matchup_id}"]`).textContent=game.right.score?.toFixed(2)??'—'}
+   void mountWeeklyCalls(view.querySelector('[data-recap-calls]'),model);
    view.querySelector('[data-bench-status]').textContent=model.benchAvailable?'Awards use actual weekly starters and bench scores. Tied awards are shared.':'Weekly lineup data is unavailable. Score awards use synced totals; bench awards are omitted.';
    view.querySelector('[data-clubhouse-share]').disabled=model.games.some(g=>g.left.score===null||g.right.score===null);
   }
@@ -57,7 +64,7 @@ export async function render(view){
 function activeTab(view){return view.querySelector('[data-clubhouse-tab][aria-selected="true"]')?.dataset.clubhouseTab||'overview'}
 function gameHtml(game,model,threadIds){
  const side=(team,position)=>{const identity=model.members.find(m=>String(m.id)===String(team.memberId));return `<div class="clubhouse-game-side">${teamPortrait({team_name:team.name,identity},{className:'clubhouse-team-mark'})}<strong>${team.memberId?`<a href="#/profile?id=${esc(team.memberId)}">${esc(team.name)}</a>`:esc(team.name)}</strong><b data-score-${position}="${game.matchup_id}">${team.score?.toFixed(2)??'—'}</b></div>`};
- return `<article class="clubhouse-game"><header><small>Matchup ${game.matchup_id}</small><span>${model.completed?'Final':'In progress'}</span></header><div class="clubhouse-game-teams">${side(game.left,'left')}${side(game.right,'right')}</div>${threadIds.has(String(game.matchup_id))?`<a class="btn ghost" aria-label="Join conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" href="#/wall?post=${threadIds.get(String(game.matchup_id))}">Join conversation</a>`:`<button class="btn ghost" type="button" aria-label="Start conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" data-matchup-thread="${game.matchup_id}">Start conversation</button>`}<p class="clubhouse-footnote" role="status" data-matchup-status></p></article>`;
+ return `<article class="clubhouse-game"><header><small>Matchup ${game.matchup_id}</small><span>${model.completed?'Final':'In progress'}</span></header><div class="clubhouse-game-teams">${side(game.left,'left')}${side(game.right,'right')}</div><div data-rivalry="${game.matchup_id}"><p class="muted">Loading rivalry history…</p></div>${threadIds.has(String(game.matchup_id))?`<a class="btn ghost" aria-label="Join conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" href="#/wall?post=${threadIds.get(String(game.matchup_id))}">Join conversation</a>`:`<button class="btn ghost" type="button" aria-label="Start conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" data-matchup-thread="${game.matchup_id}">Start conversation</button>`}<p class="clubhouse-footnote" role="status" data-matchup-status></p></article>`;
 }
 function recapHtml(model){
  if(!model.completed)return'<div class="clubhouse-empty"><strong>Receipts are still being written</strong><p>Check the Matchups tab for this week’s scores and conversations.</p></div>';

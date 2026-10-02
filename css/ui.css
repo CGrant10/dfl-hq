@@ -1233,3 +1233,66 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
  .toast{bottom:calc(var(--season-nav-height,76px) + 12px)}
  body.has-bottomline .toast{bottom:calc(var(--season-nav-height,76px) + var(--bl-h) + 12px)}
 }
+
+/* League play shares the page cards, typography and theme tokens. */
+.play-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.play-heading small,.strategy-bite>small{color:var(--muted);font-weight:700;letter-spacing:.06em}
+.play-heading h2,.strategy-bite h2{margin:4px 0 8px;font-family:var(--font-display);font-size:1.6rem;line-height:1.2}
+.play-heading p{margin:0;color:var(--muted)}
+.play-score{font-family:var(--font-display);font-size:2rem;white-space:nowrap}
+.trivia-hub{margin-bottom:24px;padding:0;overflow:hidden}
+.trivia-hub>summary{padding:20px;cursor:pointer;font-weight:800;min-height:48px}
+.trivia-hub>summary span{display:block;margin-top:6px;font-weight:400;color:var(--muted)}
+.trivia-hub [data-trivia-host]{padding:20px;border-top:1px solid var(--line)}
+.trivia-question{border:0;padding:0;margin:0 0 24px;min-width:0}
+.trivia-question legend{font-weight:700;margin-bottom:12px;line-height:1.45;width:100%}
+.trivia-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:10px}
+.trivia-options label{display:flex;gap:10px;align-items:center;min-height:48px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;background:var(--bg-2)}
+.trivia-options label:has(input:checked){border-color:var(--text);box-shadow:inset 0 0 0 1px var(--text)}
+.trivia-options input{width:18px;height:18px;flex-shrink:0;margin:0}
+.trivia-options span{overflow-wrap:anywhere}
+.trivia-receipt article{padding:16px 0;border-top:1px solid var(--line)}
+.trivia-receipt h3{font-size:1rem;line-height:1.45;margin:0 0 10px}
+.trivia-receipt small{color:var(--muted)}
+.play-board{margin-top:20px;border-top:1px solid var(--line)}
+.play-board summary{padding:16px 0;cursor:pointer;font-weight:700;min-height:44px}
+.play-leaderboard{list-style:none;padding:0;margin:0}
+.play-leaderboard li,.call-receipts article{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.play-leaderboard strong{font-variant-numeric:tabular-nums;text-align:right}
+.play-leaderboard small{font-weight:400;color:var(--muted)}
+.lore-tools,.lab-pickers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:14px}
+.lore-tools label,.lab-pickers label,[data-call-form]>label{display:grid;gap:8px;font-weight:700}
+.lore-tools input,.lore-tools select,.lab-pickers select,[data-call-form] select{width:100%;min-width:0;min-height:48px;font:inherit}
+.lore-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr));gap:16px}
+.lore-fact{display:flex;flex-direction:column;align-items:flex-start;padding:20px;overflow-wrap:anywhere;margin:0}
+.lore-fact h3{font-size:1.12rem;line-height:1.4;margin:14px 0 8px}
+.lore-fact p{color:var(--muted);line-height:1.6;margin:0 0 16px}
+.lore-fact>.btn{margin-top:auto}
+.lore-fact-owners{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lore-fact-owners .dfl-team-mark{width:32px;height:32px;font-size:.8rem}
+.lore-fact-owners small{color:var(--muted)}
+.rivalry-details{margin-bottom:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-bottom:4px}
+.rivalry-details summary{font-weight:700;cursor:pointer;padding:14px 0;min-height:44px;line-height:1.5}
+.rivalry-details p{font-size:var(--fs-small);color:var(--muted);line-height:1.6;margin:8px 0}
+.rivalry-details>.btn{margin:8px 0}
+.clubhouse-play-links{display:flex;flex-wrap:wrap;gap:10px 24px;margin-bottom:14px}
+.clubhouse-play-links a{min-height:44px;display:inline-flex;align-items:center;font-weight:700}
+[data-weekly-calls],[data-recap-calls]{margin-top:20px}
+[data-call-form] select{margin:8px 0 14px}
+.call-receipts small{display:block;color:var(--muted);margin-top:4px}
+.call-grade{font-size:var(--fs-small);text-align:right}
+.lineup-lab,.strategy-bite{margin-top:20px;padding:20px;overflow-wrap:anywhere}
+[data-lineup-lab]>.btn{margin:14px 8px 8px 0;min-height:44px}
+.lab-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:12px;margin-top:16px}
+.lab-totals>div{padding:14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--bg-2)}
+.lab-totals small{display:block;color:var(--muted);margin-bottom:8px}
+.lab-totals strong{font-family:var(--font-display);font-size:1.8rem;font-variant-numeric:tabular-nums}
+.strategy-bite p{line-height:1.65}
+.strategy-example{border-left:3px solid var(--line);padding-left:14px}
+.clubhouse-skeleton{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:16px}
+.clubhouse-skeleton i{display:block;height:180px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-2);animation:dfl-skeleton-pulse 1.5s ease-in-out infinite alternate}
+.trivia-receipt,.lab-totals{animation:dfl-result-reveal .2s ease-out}
+@keyframes dfl-skeleton-pulse{to{opacity:.45}}
+@keyframes dfl-result-reveal{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.clubhouse-skeleton i,.trivia-receipt,.lab-totals{animation:none}}
+@media(max-width:600px){.lineup-lab,.strategy-bite,.lore-fact,.trivia-hub [data-trivia-host]{padding:16px}.play-heading{gap:10px}.play-heading h2{font-size:1.5rem}}

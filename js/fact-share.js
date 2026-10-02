@@ -83,12 +83,12 @@ export function factCanvas(fact) {
   ctx.fillStyle = RED;
   ctx.font = `800 34px ${FONT}`;
   ctx.letterSpacing = "8px";
-  ctx.fillText("DFL LORE", W / 2, 130);
+  ctx.fillText(fact.kicker || "DFL LORE", W / 2, 130);
   ctx.letterSpacing = "0px";
 
   ctx.fillStyle = MUTED;
   ctx.font = `700 30px ${FONT}`;
-  ctx.fillText("DID YOU KNOW?", W / 2, 186);
+  ctx.fillText(fact.ask || "DID YOU KNOW?", W / 2, 186);
 
   // ---- the card --------------------------------------------------------
   const pad = 70, cardTop = 240, cardBottom = H - 210;
