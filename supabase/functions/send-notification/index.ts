@@ -3,7 +3,7 @@ import webpush from "npm:web-push@3.6.7";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token, x-member-id, x-commissioner-pin, x-device-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: CORS });

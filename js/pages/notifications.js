@@ -19,7 +19,7 @@ function settingsMarkup(state, profileLocked) {
     </div>
     ${capability.installRequired ? `<div class="notify-install"><strong>Install first</strong><span>Share <b>→</b> Add to Home Screen, then open DFL HQ from its icon.</span></div>` : ""}
     ${capability.supported ? `<div class="notify-actions">
-      ${!active && profileLocked ? `<label class="notify-pin">Profile PIN<input type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{4,6}" data-notification-pin placeholder="4–6 digits"></label>` : ""}
+      ${!active && profileLocked ? `<label class="notify-pin">Profile PIN<input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{4,6}" style="-webkit-text-security:disc" data-form-type="other" data-lpignore="true" data-1p-ignore data-bwignore data-protonpass-ignore="true" data-notification-pin placeholder="4–6 digits"></label>` : ""}
       ${!active && !profileLocked ? `<div class="notify-install"><strong>Protect your identity first</strong><span>Add a Profile PIN so only you can connect a phone to your alerts.</span><a class="btn ghost small" href="#/profile">Set a Profile PIN</a></div>` : `<button class="btn ${active ? "ghost" : ""}" type="button" data-push-toggle="${active ? "off" : "on"}">${active ? "Turn off on this device" : "Enable notifications"}</button>`}
     </div>` : ""}
     ${active ? `<fieldset class="notify-categories"><legend>What should reach this phone?</legend>
