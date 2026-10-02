@@ -27,12 +27,23 @@ export function mountLeagueSearch(){
   dialog.addEventListener('close',()=>{generation++;clearTimeout(timer);releaseFocus?.();releaseFocus=null;button.focus()});
   document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();open()}});
   results.addEventListener('click',event=>{if(event.target.closest('a'))dialog.close()});
-  input.addEventListener('input',()=>{clearTimeout(timer);const token=++generation,query=input.value.trim();results.replaceChildren();if(query.length<2){status.textContent='Type at least two characters.';return}status.textContent='Searching the league…';timer=setTimeout(async()=>{
-    const groups=await Promise.allSettled([db().rpc('league_search',{search_text:query}).then(({data,error})=>{if(error)throw error;return data||[]}),loadPlayers().then(players=>playerSearchResults(players,query))]);
-    if(token!==generation||!dialog.open)return;
-    const rows=groups.flatMap(group=>group.status==='fulfilled'?group.value:[]),failed=groups.map((group,index)=>group.status==='rejected'?(index?'Players':'League results'):null).filter(Boolean);
-    status.textContent=`${rows.length} result${rows.length===1?'':'s'}.${failed.length?` ${failed.join(' and ')} unavailable. Change your search to retry.`:rows.length?'':' Try another name or phrase.'}`;
-    const kinds=[...new Set(rows.map(row=>row.kind))];
-    results.innerHTML=kinds.map(kind=>`<section><h3>${esc(kind)}</h3><ul>${rows.filter(row=>row.kind===kind).map(row=>`<li><a href="${esc(row.url)}"><strong>${esc(row.title)}</strong><span>${esc(row.detail||'')}</span></a></li>`).join('')}</ul></section>`).join('');
+  input.addEventListener('input',()=>{clearTimeout(timer);const token=++generation,query=input.value.trim();results.replaceChildren();if(query.length<2){status.textContent='Type at least two characters.';return}status.textContent='Searching the league…';timer=setTimeout(()=>{
+    const groups=[{rows:[],pending:true,error:false},{rows:[],pending:true,error:false}];
+    const sections=new Map();
+    const paint=()=>{
+      if(token!==generation||!dialog.open)return;
+      const rows=groups.flatMap(group=>group.rows),pending=groups.some(group=>group.pending),failed=groups.map((group,index)=>group.error?(index?'Players':'League results'):null).filter(Boolean);
+      status.textContent=`${rows.length} result${rows.length===1?'':'s'}.${pending?' Still searching…':!rows.length&&!failed.length?' Try another name or phrase.':''}${failed.length?` ${failed.join(' and ')} unavailable. Change your search to retry.`:''}`;
+      // Append a finished group without replacing links somebody is already
+      // navigating with a keyboard while the slower group is still loading.
+      for(const kind of [...new Set(rows.map(row=>row.kind))]){
+        if(sections.has(kind))continue;
+        const section=document.createElement('section');section.innerHTML=`<h3>${esc(kind)}</h3><ul>${rows.filter(row=>row.kind===kind).map(row=>`<li><a href="${esc(row.url)}"><strong>${esc(row.title)}</strong><span>${esc(row.detail||'')}</span></a></li>`).join('')}</ul>`;
+        sections.set(kind,section);results.append(section);
+      }
+    };
+    const settle=(index,rows,error=false)=>{groups[index]={rows,pending:false,error};paint()};
+    Promise.resolve().then(()=>db().rpc('league_search',{search_text:query})).then(({data,error})=>{if(error)throw error;settle(0,data||[])}).catch(()=>settle(0,[],true));
+    loadPlayers().then(players=>settle(1,playerSearchResults(players,query))).catch(()=>settle(1,[],true));
   },200)});
 }

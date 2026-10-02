@@ -1,3 +1,5 @@
+import { reactionHtml, wireReactions } from "./wall-reactions.js";
+import { wireWallDraft, clearWallDraft } from "./wall-drafts.js";
 import { threadHtml, wireConversations } from "./wall-conversations.js";
 // =====================================================================
 // member-wall.js - The Wall. Members post, everybody reads.
@@ -30,17 +32,17 @@ import { identityByline, accentOf } from "./profile-identity.js";
    it, exactly as form.js does for the admin forms. Idempotent. */
 wireImageFields();
 
-const TABLE_GONE = /member_wall_posts|could not find the table/i;
+const TABLE_GONE = /(?:relation .*member_wall_posts.* does not exist|could not find the table .*member_wall_posts)/i;
 const COLUMN_GONE = /profile_title|favorite_team|featured_achievement|accent_color|image_fit|image_position|image_zoom/i;
 /* The framing columns come off first, because member_wall_framing_schema.sql
    may not have been run yet and the Wall is not allowed to go dark over a
    presentation column. */
 const FRAMING_COLUMNS = "image_fit,image_position_x,image_position_y,image_zoom";
 const SELECTS = [
-  `id,member_id,body,image,${FRAMING_COLUMNS},created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)`,
-  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)",
-  "id,member_id,body,image,created_at,members(display_name,profile_image,profile_title,favorite_team,featured_achievement)",
-  "id,member_id,body,image,created_at,members(display_name,profile_image)",
+  `id,member_id,body,image,${FRAMING_COLUMNS},created_at,members!member_wall_posts_member_id_fkey(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)`,
+  "id,member_id,body,image,created_at,members!member_wall_posts_member_id_fkey(display_name,profile_image,profile_title,favorite_team,featured_achievement,accent_color)",
+  "id,member_id,body,image,created_at,members!member_wall_posts_member_id_fkey(display_name,profile_image,profile_title,favorite_team,featured_achievement)",
+  "id,member_id,body,image,created_at,members!member_wall_posts_member_id_fkey(display_name,profile_image)",
 ];
 
 export async function loadWall(limit = 12) {
@@ -194,6 +196,7 @@ function postHtml(r,compact=false) {
     ${editForm}
     ${photoHtml(r, name)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
+    ${reactionHtml(r.id)}
     ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}">Join the conversation (${Number(r.reply_count)||0})</a>`:threadHtml(r)}
   </article>`;
 }
@@ -288,7 +291,9 @@ export function wireWall(root, onChanged) {
   root._wallController=controller;
   const signal=controller.signal;
   void wireConversations(root);
+  void wireReactions(root);
   const form = root.querySelector("[data-wall-form]");
+  wireWallDraft(form,currentMember()?.id,"post");
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -315,6 +320,7 @@ export function wireWall(root, onChanged) {
       error = (await db().from("member_wall_posts").insert(post)).error;
     }
     if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
+    clearWallDraft(me.id,"post");
     toast("Posted");
     onChanged?.();
   }, {signal});

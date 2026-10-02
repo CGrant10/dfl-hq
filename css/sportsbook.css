@@ -1277,3 +1277,5 @@
 @media(max-width:760px){.sb-recap-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-recap-grid article:nth-child(2){border-right:0}.sb-recap-grid article:nth-child(-n+2){border-bottom:1px solid var(--line)}}
 @media(max-width:760px){.sb-prop-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sb-prop-filter-drawer>summary span{display:none}}
 @media(max-width:520px){.sb-prop-tools{grid-template-columns:minmax(0,1fr) auto}.sb-prop-favorites{padding-inline:12px}.sb-prop-filter-grid{grid-template-columns:1fr}.sb-recap-grid{grid-template-columns:1fr}.sb-recap-grid article{border-right:0;border-bottom:1px solid var(--line)}.sb-recap-grid article:last-child{border-bottom:0}}
+
+.sb-slipbar-chips:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

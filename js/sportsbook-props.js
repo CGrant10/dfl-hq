@@ -18,10 +18,10 @@ export function togglePropFavorite(memberId, propKey, storage = globalThis.local
 
 const token = (note, name) => String(note || "").match(new RegExp(`(?:^| · )${name} ([^·]+)`, "i"))?.[1]?.trim() || "";
 
-export function propMarketMeta(market = {}, outcomes = []) {
+export function propMarketMeta(market = {}, outcomes = [], matchupName = "") {
   const [player = "Player", stat = "Prop"] = String(market.title || "").split("·").map(value => value.trim());
   const note = String(market.lore_note || "");
-  const matchup = note.split(" · Book consensus")[0].trim() || "NFL props";
+  const matchup = matchupName || note.split(" · Book consensus")[0].trim() || "NFL props";
   const books = Number(note.match(/(?:^| · )(\d+) books?\b/i)?.[1]) || 0;
   const providerKey = String(market.provider_key || "");
   const prices = outcomes.map(outcome => Number(outcome.odds_american)).filter(Number.isFinite);
@@ -60,4 +60,8 @@ export function sortPropRows(rows = [], mode = "player") {
     if (mode === "stat") return a.meta.stat.localeCompare(b.meta.stat) || a.meta.player.localeCompare(b.meta.player);
     return a.meta.player.localeCompare(b.meta.player) || String(a.meta.stat || "").localeCompare(String(b.meta.stat || ""));
   });
+}
+
+export function propGameNames(markets){
+ return new Map(markets.filter(m=>m.category==="Game Totals"&&m.provider_event_id).map(m=>[String(m.provider_event_id),String(m.title||"").split("·")[0].trim()]));
 }

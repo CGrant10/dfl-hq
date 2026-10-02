@@ -25,3 +25,10 @@ describe("sportsbook prop discovery", () => {
     expect(sortPropRows(rows, "price")[0].meta.player).toBe("B");
   });
 });
+
+it('uses the game-total matchup label for older prop rows with only book notes',async()=>{
+ const {propGameNames}=await import('./sportsbook-props.js');
+ const names=propGameNames([{category:'Game Totals',provider_event_id:'game',title:'Bills @ Patriots · Game total'}]);
+ const meta=propMarketMeta({title:'Josh Allen · Passing yards',lore_note:'Book consensus 230 · 4 books',provider_event_id:'game'},[],names.get('game'));
+ expect(meta.matchup).toBe('Bills @ Patriots');expect(propMatches(meta,{query:'Patriots'})).toBe(true);
+});
