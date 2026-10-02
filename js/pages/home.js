@@ -517,8 +517,8 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    Stage and a recent Wall post welcome the group first. Rankings, the
-    compact weekly hub, snapshot and latest trade follow. Draft and League Feed are
+    Stage, rankings, the compact weekly hub, snapshot and latest trade
+    tell the football story first. Draft, League Feed and the Wall are
     staged below and load only as the reader approaches them. The crest closes
     the page, since the splash already carries the brand.
 
@@ -536,7 +536,6 @@ export async function render(view) {
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
-    <div data-wall-slot class="home-deferred-slot"></div>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-pickem-slot></div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
@@ -545,6 +544,7 @@ export async function render(view) {
     ${strip}
     <div data-draft-slot></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>
+    <div data-wall-slot class="home-deferred-slot"></div>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
