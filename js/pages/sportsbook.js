@@ -1,3 +1,5 @@
+import { loadNflState } from "../sleeper.js";
+import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
 import { selectCoreProps } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
@@ -46,30 +48,13 @@ function announceFreshPayout(bets,memberId){
 const MIGRATE="Run sportsbook_entries_schema.sql in Supabase";
 const needsMigration=err=>/does not exist|schema cache|Could not find the function/i.test(err?.message||"");
 
-/*
-  WHERE "WEEK 1" COMES FROM NOW.
-
-  It was hardcoded in three places - the masthead caption, every card's
-  kicker and the board heading - which is fine for exactly as long as it is
-  week one and then quietly wrong for the rest of the season. The weekly
-  matchup lines are booked with an auto_key of matchup:<season>:<week>:<id>
-  (see tools/current-sportsbook-lines.mjs), so the board can just read it.
-
-  scopeOf() returns null rather than guessing when the markets on screen do
-  not agree on a week, and the caption falls back to a count. A board that
-  says nothing about the week beats a board that says the wrong one.
-*/
+// Market keys identify the slate; the masthead uses the actual NFL clock.
 const matchupKey=m=>String(m.auto_key||"").match(/^matchup:(\d+):(\d+):/);
 function scopeOf(markets){
   const keys=(markets||[]).map(matchupKey).filter(Boolean);
   if(!keys.length)return null;
   const[,season,week]=keys[0];
   return keys.every(k=>k[1]===season&&k[2]===week)?{season:Number(season),week:Number(week)}:null;
-}
-function mastheadCaption(open){
-  const scope=scopeOf(open);
-  if(scope)return `Week ${scope.week} &middot; ${scope.season} &middot; Moneyline`;
-  return open.length?`${open.length} open line${open.length===1?"":"s"}`:"The book is closed";
 }
 
 /*
@@ -104,7 +89,7 @@ export async function render(view){
   if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
   const canBook=hasPermission("sportsbook");
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
-  let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,feedStatus={};
+  let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};
   let autoReady=true;
   try{
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
@@ -126,7 +111,7 @@ export async function render(view){
     markets=[...discovered.values()];
     const marketIds=markets.filter(m=>!m._lazy).map(m=>m.id);
     const outcomePages=async()=>({data:[...await loadMarketOutcomes(db(),marketIds),...selectedOutcomes],error:null});
-    const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult,feedResult]=await Promise.all([
+    const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult,feedResult,nfl]=await Promise.all([
       db().rpc("sportsbook_my_ledger",{row_limit:16}),
       db().rpc("sportsbook_leaderboard"),
       outcomePages(),
@@ -135,10 +120,11 @@ export async function render(view){
       loadSportsbookIdentities(),
       loadPickemBoard().catch(()=>({available:false})),
       db().rpc("sportsbook_weekly_recap",{}),
-      canBook?edge().functions.invoke("sync-sportsbook-feed",{body:{action:"status"},headers:privilegedFunctionHeaders()}):Promise.resolve({data:null,error:null})
+      canBook?edge().functions.invoke("sync-sportsbook-feed",{body:{action:"status"},headers:privilegedFunctionHeaders()}):Promise.resolve({data:null,error:null}),
+      loadNflState().catch(()=>null)
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};
+    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
   const byMarket=new Map();
@@ -180,14 +166,14 @@ export async function render(view){
   if(slip.length<before)toast(`${before-slip.length} pick${before-slip.length===1?"":"s"} dropped: the line closed`,true);
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
-    <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${mastheadCaption(open)}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
+    <header class="sb-masthead"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
     ${canBook?`${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}`:""}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id)}
+    ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -347,7 +333,7 @@ function heldOutcomes(bets,marketMap,outcomeMap){
   return held;
 }
 
-function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[],memberId=null){
+function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,members=[],memberId=null,leagueWeek={}){
   if(!markets.length)return "";
   propGameCache.clear();
   const picked=new Set(slip.map(String));
@@ -357,6 +343,7 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const group=groups.get(cat);
+    if(cat==="Fantasy"&&group.every(matchupKey))return fantasyWeekGroups(group,leagueWeek).map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members)).join("");
     if(cat==="Player Props"){
       const favorites=readPropFavorites(memberId),games=new Map(),gameNamesById=propGameNames(markets);group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id))),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:market._lazy?null:marketCard(market,choices,canBook,picked,held,members,meta,favorites.has(meta.key))});games.set(key,bucket)});
       for(const[key,game]of games)propGameCache.set(key,sortPropRows(game.rows,"player"));
@@ -380,6 +367,15 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
     const count=matchups?`${group.filter(isOpen).length} open &middot; ${group.filter(m=>!isOpen(m)).length} locked`:`${cards.length} ${unit}`;
     return `<section class="block sb-section"><div class="sb-board-head"><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${count}</span></div>${matchups?'<p class="muted tiny">Pick a fantasy team to add its win to your slip. Bets lock at the first NFL kickoff of the week; locked matchups stay visible.</p>':""}<div class="sb-market-grid">${cards.join("")}</div></section>`;
   }).join("");
+}
+
+function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members){
+ const openCount=slate.markets.filter(isOpen).length,allLocked=!openCount,upcoming=slate.period==='upcoming';
+ const heading=upcoming?`Week ${slate.week} early lines`:`Week ${slate.week} fantasy matchups`;
+ const note=upcoming?`These are next week’s games. Week ${Number(clock.week)} is still the current NFL week.`:allLocked?'Winner bets locked at the first NFL kickoff. These games stay visible while the week plays out.':'Pick a team to win and add it to your slip. Winner bets lock at the first NFL kickoff of the week.';
+ const cards=slate.markets.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
+ const grid=`<div class="sb-market-grid">${cards}</div>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${upcoming||allLocked?`<details class="sb-fantasy-games"><summary>${upcoming?`Pick Week ${slate.week} winners`:`View Week ${slate.week} matchups`}<span>${slate.markets.length} games</span></summary>${grid}</details>`:grid}</section>`;
 }
 
 function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketMap,members}){

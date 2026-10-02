@@ -27,6 +27,7 @@ vi.mock('../members.js',()=>({
   currentMember:()=>({display_name:'Preview'}),
   loadMemberDirectory:async()=>[{display_name:'Owner A',team_name:'Team <A>',profile_image:'https://example.com/team-a.jpg',accent_color:'#22C7A9'}]
 }));
+vi.mock('../sleeper.js',()=>({loadNflState:async()=>({data:{season:'2026',week:4}}),loadPlayers:async()=>({})}));
 vi.mock('../sportsbook-ticket.js',()=>({shareTicket:vi.fn()}));
 import { render } from './sportsbook.js';
 
@@ -48,10 +49,11 @@ it('renders the real markets and wallet with separate accessible ticket panel', 
   expect(view.innerHTML).not.toContain('Projected');
 });
 
-it('reads the week off the matchup key rather than printing week 1 forever', async()=>{
+it('keeps the NFL clock distinct from the week attached to fantasy markets', async()=>{
   const view=fakeView();
   await render(view);
   expect(view.innerHTML).toContain('Week 3');
+  expect(view.innerHTML).toContain('Week 4 · 2026 · NFL &amp; fantasy');
   expect(view.innerHTML).not.toContain('WEEK 1');
 });
 
@@ -180,7 +182,7 @@ it('keeps locked fantasy winner picks visible and disabled',async()=>{
  markets.push({id:99,category:'Fantasy',status:'open',title:'Locked A vs Locked B',auto_key:'matchup:2026:4:1',closes_at:'2026-01-01'});
  outcomes.push({id:991,market_id:99,label:'Locked A',odds_american:-110});
  const view=fakeView();await render(view);
- expect(view.innerHTML).toContain('Fantasy matchup winners');
+ expect(view.innerHTML).toContain('Week 4 fantasy matchups');
  expect(view.innerHTML).toContain('LOCKED');
  expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
  expect(view.innerHTML).toMatch(/data-bet-outcome="2"[^>]*aria-pressed="false"/);

@@ -1284,3 +1284,12 @@
 .sb-market-state.is-locked { background: var(--card); border-color: var(--line); color: var(--muted); }
 .sb-outcome:disabled { cursor: not-allowed; opacity: .6; box-shadow: none; }
 .sb-outcome:disabled:hover { transform: none; }
+
+/* Current league week stays separate from early next-week winner markets. */
+.sb-fantasy-note{font-size:var(--fs-body);line-height:1.6;color:var(--muted);margin:0 0 14px}
+.sb-fantasy-games{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.sb-fantasy-games>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:54px;padding:14px 16px;cursor:pointer;font-size:1rem;font-weight:700;background:var(--bg-2)}
+.sb-fantasy-games>summary span{font-size:var(--fs-small);color:var(--muted);flex:none}
+.sb-fantasy-games>summary::after{content:'+';font-size:1.35rem;color:var(--accent)}
+.sb-fantasy-games[open]>summary::after{content:'−'}
+.sb-fantasy-games>.sb-market-grid{padding:14px}

@@ -99,6 +99,7 @@ function setTabIndicatorTarget(target) {
   if (!bar || !target) return;
   bar.style.setProperty("--tab-x", `${target.offsetLeft}px`);
   bar.style.setProperty("--tab-w", `${target.offsetWidth}px`);
+  bar.style.setProperty("--tab-y", `${target.offsetTop}px`);
   bar.classList.add("has-indicator");
 }
 function syncTabIndicator() {

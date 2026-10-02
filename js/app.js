@@ -169,9 +169,7 @@ if(quicknav&&!quicknav.querySelector('a[href="#/stakes"]')){
   const admin=quicknav.querySelector('a[href="#/admin"]');
   quicknav.insertBefore(link,admin||null);
 }
-if(quicknav&&!quicknav.querySelector('a[href="#/clubhouse"]')){
- const link=document.createElement("a");link.href="#/clubhouse";link.innerHTML='<svg class="ico" aria-hidden="true"><use href="#i-record-steel"></use></svg><span class="qn-label">Weekly clubhouse</span>';quicknav.prepend(link);
-}
+
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
 const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
@@ -247,6 +245,7 @@ function moveTabIndicator(){
   if(!active){bar.classList.remove("has-indicator");return;}
   bar.style.setProperty("--tab-x",`${active.offsetLeft}px`);
   bar.style.setProperty("--tab-w",`${active.offsetWidth}px`);
+  bar.style.setProperty("--tab-y",`${active.offsetTop}px`);
   bar.classList.add("has-indicator");
 }
 /* A rotate or a keyboard opening changes the tab widths under it. */

@@ -2,7 +2,7 @@
 // fixed bar belongs to the things the league checks every week now.
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
-  { route: "wall", label: "Wall", icon: "polls" },
+  { route: "clubhouse", label: "Clubhouse", icon: "record" },
   { route: "sportsbook", label: "Sportsbook", icon: "versus" },
   /* The trade desk earned the slot Rules had. Rules is a reference you read
      once a season; a trade is a decision with a clock on it, and it was two
@@ -12,6 +12,7 @@ export const PRIMARY_SEASON_ROUTES = [
 ];
 
 export const SECONDARY_SEASON_ROUTES = [
+  { route: "wall", label: "Wall", icon: "polls" },
   { route: "facts", label: "Fun Facts", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
   { route: "rules", label: "Rules", icon: "rules" },
@@ -26,8 +27,10 @@ export const SECONDARY_SEASON_ROUTES = [
   { route: "admin", label: "Admin", icon: "admin" },
 ];
 
+const navLabel=label=>label.replace("Clubhouse","Club<wbr>house").replace("Sportsbook","Sports<wbr>book");
+let navSizeObserver;
 const link = ({ route, label, icon, lead = false }) =>
-  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span>${label}</span></a>`;
+  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span>${navLabel(label)}</span></a>`;
 
 const quickLink = ({ route, label, icon }) =>
   `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span class="qn-label">${label}</span></a>`;
@@ -47,5 +50,7 @@ export function mountSeasonNavigation(root = document) {
   bar.classList.add("is-in-season");
   bar.innerHTML = primarySeasonNavMarkup();
   more.innerHTML = secondarySeasonNavMarkup();
+  const syncSize=()=>{root.documentElement?.style.setProperty("--season-nav-height",`${Math.ceil(bar.getBoundingClientRect().height)}px`);const active=bar.querySelector(".on");if(active)bar.style.setProperty("--tab-y",`${active.offsetTop}px`)};
+  if(typeof bar.getBoundingClientRect==="function"){syncSize();navSizeObserver?.disconnect();if(globalThis.ResizeObserver){navSizeObserver=new ResizeObserver(syncSize);navSizeObserver.observe(bar)}}
   return true;
 }

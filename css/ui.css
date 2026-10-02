@@ -1135,6 +1135,101 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 
 .wall-draft-note button[hidden]{display:none}
 
-/* Weekly clubhouse uses the existing theme and native controls. */
-.clubhouse-page{max-width:1000px;margin-inline:auto}.clubhouse-page :is(h1,h2,h3){overflow-wrap:anywhere}.clubhouse-week-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:20px 0}.clubhouse-week-picker select,.clubhouse-ballot select,.clubhouse-profile-awards select{min-height:44px;max-width:100%}.clubhouse-section,.clubhouse-ballot{padding:20px;margin:20px 0}.clubhouse-heading{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.clubhouse-heading small,.clubhouse-award small{font-weight:700;letter-spacing:.08em;color:var(--accent)}.clubhouse-awards,.clubhouse-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}.clubhouse-award,.clubhouse-game{border:1px solid var(--line);border-radius:var(--r-md);padding:16px;min-width:0;overflow-wrap:anywhere}.clubhouse-award :is(strong,span){display:block;margin-top:8px}.clubhouse-award strong{font-size:1.2rem}.clubhouse-game>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}.clubhouse-game>div>span{grid-column:1/-1;color:var(--muted);font-size:.85em}.clubhouse-page :is(button,.btn),.clubhouse-profile-awards button{min-height:44px}.clubhouse-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}.clubhouse-actions [hidden]{display:none}.clubhouse-votes{list-style:none;padding:0}.clubhouse-votes li{padding:12px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.clubhouse-votes span{display:block;color:var(--muted);margin-top:6px}.clubhouse-recap-lines{padding-left:22px;overflow-wrap:anywhere}.clubhouse-recap-lines li{padding:8px 0}.clubhouse-wall-receipts{display:grid;gap:12px}.clubhouse-wall-receipts a{display:block;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);overflow-wrap:anywhere}.clubhouse-wall-receipts span{display:block;margin-top:6px}.clubhouse-profile-awards{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:var(--r-md)}.clubhouse-profile-awards>summary{min-height:44px;cursor:pointer;font-weight:700;font-size:1.1rem}.home-weekly-clubhouse{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px;margin:20px 0}.home-weekly-clubhouse h2{margin:8px 0}.home-weekly-clubhouse .btn{min-height:44px}.home-weekly-clubhouse small{color:var(--accent);font-weight:700;letter-spacing:.08em}
-@media(max-width:600px){.clubhouse-awards,.clubhouse-games{grid-template-columns:minmax(0,1fr)}.clubhouse-section,.clubhouse-ballot{padding:16px}.clubhouse-week-picker{align-items:stretch}.clubhouse-week-picker label{width:100%}}
+/* Clubhouse follows the shared card, type, spacing and team identity system. */
+.clubhouse-page{max-width:1100px;margin-inline:auto;line-height:1.5}
+.clubhouse-page :is(h1,h2,h3,strong,a){overflow-wrap:anywhere}
+.clubhouse-page .clubhouse-header{justify-content:space-between;gap:16px;flex-wrap:wrap}
+.clubhouse-header>div{flex:1 1 10rem;min-width:min(100%,10rem)}
+.clubhouse-header [data-clubhouse-share]{flex:none;white-space:nowrap}
+.clubhouse-header h1{font-size:var(--fs-display)}
+.clubhouse-header p{margin:6px 0 12px;font-size:1rem}
+.clubhouse-eyebrow,.clubhouse-heading small{font-size:var(--fs-small);letter-spacing:.1em;font-weight:700;color:var(--accent)}
+.clubhouse-status{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:var(--r-pill);padding:4px 10px;font-size:var(--fs-small);font-weight:700;color:var(--text);max-width:100%}
+.clubhouse-context{padding:16px 20px;margin:0 0 16px}
+.clubhouse-week-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));gap:14px}
+.clubhouse-week-picker label{display:grid;gap:6px;font-size:var(--fs-small);font-weight:700;color:var(--muted);min-width:0}
+.clubhouse-week-picker select,.clubhouse-ballot select,.clubhouse-profile-awards select{width:100%;min-height:44px;max-width:100%;font-size:1rem}
+.clubhouse-context-links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:var(--fs-body)}
+.clubhouse-context-links :is(a,span){display:inline-flex;align-items:center;min-height:44px}
+.clubhouse-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 16px;padding:4px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-2)}
+.clubhouse-tabs button{min-width:0;min-height:46px;margin:0;font-size:1rem;padding:8px;border-radius:var(--r-sm)}
+.clubhouse-page [role="tabpanel"][hidden]{display:none}
+.clubhouse-overview-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:18px;align-items:start}
+.clubhouse-section{padding:22px;margin:0;min-width:0}
+.clubhouse-heading{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.clubhouse-heading h2{margin:4px 0 0;font-size:var(--fs-h2)}
+.clubhouse-section-copy{font-size:1rem;color:var(--body-text);margin:0 0 20px;max-width:65ch}
+.clubhouse-awards,.clubhouse-games{display:grid;gap:14px}
+.clubhouse-awards{grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))}
+.clubhouse-games{grid-template-columns:repeat(2,minmax(0,1fr))}
+.clubhouse-award,.clubhouse-game,.clubhouse-recap-block{border:1px solid var(--line);border-radius:var(--r-md);padding:18px;min-width:0;overflow-wrap:anywhere;background:var(--bg-2)}
+.clubhouse-award.is-high-score,.clubhouse-award.is-bench{grid-column:1/-1}
+.clubhouse-award.is-high-score{border-top:3px solid var(--accent)}
+.clubhouse-award-label{display:flex;align-items:center;gap:8px;color:var(--accent)}
+.clubhouse-award-label .ico{width:18px;height:18px;flex:none}
+.clubhouse-award-label small{font-size:var(--fs-small);font-weight:700;letter-spacing:.035em}
+.clubhouse-award>strong{display:block;margin:10px 0 6px;font-size:1.2rem;line-height:1.35}
+.clubhouse-award>strong a{color:var(--text);text-decoration:none}
+.clubhouse-award>strong a:hover{text-decoration:underline}
+.clubhouse-award-metric{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-family:var(--font-display);font-size:2rem;line-height:1.25;font-weight:700;font-variant-numeric:tabular-nums}
+.clubhouse-award-metric small{font-size:var(--fs-body);font-weight:600;color:var(--muted)}
+.clubhouse-award-player{display:block;margin-top:5px;font-size:1rem;color:var(--text)}
+.clubhouse-footnote{font-size:var(--fs-body);color:var(--muted);line-height:1.55;margin:16px 0 0}
+.clubhouse-ballot p{font-size:1rem}
+.clubhouse-ballot p.tiny,.clubhouse-ballot .clubhouse-footnote{font-size:var(--fs-body)}
+.clubhouse-ballot form{display:grid;gap:8px;margin-top:18px}
+.clubhouse-ballot label{font-size:var(--fs-body);font-weight:700}
+.clubhouse-page :is(button,.btn),.clubhouse-profile-awards button{min-height:44px}
+.clubhouse-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.clubhouse-actions [hidden]{display:none}
+.clubhouse-votes{list-style:none;padding:0;margin:12px 0}
+.clubhouse-votes li{padding:12px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.clubhouse-votes span{display:block;color:var(--muted);margin-top:6px;font-size:var(--fs-body)}
+.clubhouse-game header{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:var(--fs-small);font-weight:700;color:var(--muted)}
+.clubhouse-game header small{font-size:inherit;text-transform:uppercase;letter-spacing:.07em}
+.clubhouse-game-teams{display:grid;margin-bottom:16px}
+.clubhouse-game-side{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 0}
+.clubhouse-game-side+ .clubhouse-game-side{border-top:1px solid var(--line)}
+.clubhouse-game-side .clubhouse-team-mark{width:36px;height:36px;font-size:var(--fs-small)}
+.clubhouse-game-side strong{font-size:1rem;line-height:1.35}
+.clubhouse-game-side strong a{color:var(--text);text-decoration:none}
+.clubhouse-game-side strong a:hover{text-decoration:underline}
+.clubhouse-game-side b{font-family:var(--font-display);font-size:1.7rem;font-variant-numeric:tabular-nums;line-height:1}
+.clubhouse-game>.btn,.clubhouse-game>button{width:100%}
+.clubhouse-game [data-matchup-status]:empty{display:none}
+.clubhouse-empty{padding:22px 0;font-size:1rem}
+.clubhouse-empty>strong{display:block;font-size:1.2rem}
+.clubhouse-recap-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+.clubhouse-recap-extras{display:grid;gap:16px;min-width:0}
+.clubhouse-recap-block h3{font-size:1.15rem;margin:0 0 14px}
+.clubhouse-recap-block p{font-size:1rem;margin:8px 0 0}
+.clubhouse-result-list{display:grid;gap:12px}
+.clubhouse-result-list article{border-bottom:1px solid var(--line);padding-bottom:12px}
+.clubhouse-result-list article:last-child{border-bottom:0;padding-bottom:0}
+.clubhouse-result-list article>div{display:flex;justify-content:space-between;gap:14px;padding:4px 0;font-size:1rem}
+.clubhouse-result-list b{font-variant-numeric:tabular-nums;flex:none}
+.clubhouse-recap-block .clubhouse-recap-net{font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums}
+.clubhouse-wall-receipts{display:grid;gap:12px}
+.clubhouse-wall-receipts a{display:block;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);overflow-wrap:anywhere;text-decoration:none}
+.clubhouse-wall-receipts span{display:block;font-size:1rem;color:var(--text)}
+.clubhouse-wall-receipts small{display:block;font-size:var(--fs-small);color:var(--muted);margin-top:8px}
+.clubhouse-text-link{display:inline-flex;align-items:center;min-height:44px;margin-top:6px}
+.clubhouse-profile-awards{margin:20px 0;padding:16px;border:1px solid var(--line);border-radius:var(--r-md)}
+.clubhouse-profile-awards>summary{min-height:44px;cursor:pointer;font-weight:700;font-size:1.1rem}
+.home-weekly-clubhouse{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px;margin:20px 0}
+.home-weekly-clubhouse h2{margin:8px 0}.home-weekly-clubhouse .btn{min-height:44px}.home-weekly-clubhouse small{color:var(--accent);font-weight:700;letter-spacing:.08em}
+@media(max-width:760px){.clubhouse-overview-grid,.clubhouse-recap-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.clubhouse-games{grid-template-columns:minmax(0,1fr)}.clubhouse-section{padding:16px}.clubhouse-context{padding:14px 16px}.clubhouse-award,.clubhouse-game,.clubhouse-recap-block{padding:16px}.clubhouse-header p{font-size:var(--fs-body)}.clubhouse-header [data-clubhouse-share]{padding-inline:14px}}
+@media(max-width:359px){.clubhouse-awards{grid-template-columns:minmax(0,1fr)}.clubhouse-game-side{grid-template-columns:30px minmax(0,1fr) auto;gap:8px}.clubhouse-game-side .clubhouse-team-mark{width:30px;height:30px}.clubhouse-game-side b{font-size:1.5rem}}
+
+/* Longer destination names remain readable when text is enlarged. */
+@media(max-width:899px){
+ .tabbar.is-in-season{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,3.2rem),1fr))}
+ .tabbar.is-in-season :is(a,.tabmore)>span{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.2;letter-spacing:.02em}
+ .tabbar.has-indicator::before{top:var(--tab-y,0px)}
+ body{padding-bottom:calc(var(--season-nav-height,76px) + 20px + env(safe-area-inset-bottom))}
+ body.has-bottomline{padding-bottom:calc(var(--season-nav-height,76px) + var(--bl-h) + 20px)}
+ .bottomline{bottom:var(--season-nav-height,54px)}
+ .toast{bottom:calc(var(--season-nav-height,76px) + 12px)}
+ body.has-bottomline .toast{bottom:calc(var(--season-nav-height,76px) + var(--bl-h) + 12px)}
+}

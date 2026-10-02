@@ -1,0 +1,18 @@
+# Clubhouse navigation and presentation — 1.261.0
+
+Clubhouse replaces Wall in the regular-season primary navigation. Wall remains the first destination in More and is linked directly from Clubhouse; Home's Wall placement is preserved. The old duplicate Clubhouse item in More was removed.
+
+Clubhouse uses the existing page header, cards, semantic theme variables, display typography, steel icons and team portraits. The season/week controls share a compact card. Overview contains weekly award cards and league voting; Matchups contains six shared conversation cards with team marks and separate name/score rows; Recap groups fantasy results, Pick'em, Sportsbook and Wall highlights. The old repeated bullet dump is gone. Section tabs have native button/tab semantics, roving focus, arrow/Home/End controls, hidden inactive panels and links that preserve the selected section. Incremental score/vote updates still preserve the ballot and focus.
+
+Current Week 4 is now distinct from upcoming Week 5 in the sportsbook. The masthead uses the actual Sleeper NFL clock, with the Pick'em board as a fallback, rather than deriving the league week from whichever markets remain open. Fantasy markets are grouped into current, upcoming and previous slates. Current locked games stay accessible in a collapsed list; Week 5 early lines are explicitly Upcoming and require expanding their own list. The existing Thursday kickoff lock and accepted odds were not changed. No database migration or edge deployment was needed for this release.
+
+Text enlargement revealed readability issues beyond page overflow: a score split between digits and long nav names overlapped. Award cards and week controls now adapt to their font size; the page header can wrap its action. At large text sizes the primary navigation can use two rows. Its measured height positions the ticker and reserves page space. The active marker follows its actual row, and toast placement clears the resized navigation.
+
+Validation:
+
+- Full checks passed: TypeScript, identifier checks, 972 tests in 106 files, and Vite build. Week-group tests cover current Week 4 with open Week 5 markets, unavailable clock data and season rollover. Navigation checks retain one instance of every route and confirm Wall remains in More.
+- Browser checks confirmed the primary Clubhouse link, active-route state, Wall in More, absence of the duplicate Clubhouse entry, three panel states, keyboard focus/arrow/Home/End behavior, six matchup cards and twelve team marks, grouped recap, current Week 4 and upcoming Week 5 labels, expandable markets, disabled locked outcomes, and the winner slip.
+- Fixture-only regression checks passed voting failure/retry/change/withdrawal, current-week final/share gating, opening the correct existing Wall conversation, archived weeks and member award cabinets. Production writes were blocked throughout the browser runs.
+- Shared recap image generation/download still works. The completed week uses actual weekly Sleeper lineups; current synced scores stay labelled in progress.
+- Checked light, dark, Medicine and Fairway palettes; 320px, 390px and 1280px widths; and 200% text enlargement. Automated WCAG A/AA checks found no violations on inspected panels and palettes. Browser assertions verify scores remain on one text line and nav label bounds fit their controls. No page overflow or browser errors were detected. Physical screen readers and native phone sharing were not tested.
+- Current-run screenshots and logs are under /workspace/dfl-audit (172–180). The published build is checked again after GitHub Pages completes.
