@@ -1117,3 +1117,17 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
 .bottomline .bl-item{min-height:24px;align-items:center}
 
 @media(max-width:899px){.bottomline{bottom:var(--dfl-nav-height,calc(60px + env(safe-area-inset-bottom)))}}
+
+/* Keep the access mode readable alongside search, notifications and identity. */
+@media(max-width:560px){
+  .topbar-inner:has(.dfl-preview-toggle.is-available){gap:6px}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .brand-text{display:none}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .brand-lockup{flex:0 0 auto}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .topbar-actions{gap:4px;flex:1 1 auto}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .whoami{flex:0 1 auto;min-width:0;max-width:120px}
+}
+@media(max-width:360px){
+  .topbar-inner:has(.dfl-preview-toggle.is-available){padding-inline:max(8px,env(safe-area-inset-left));gap:4px}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .brand-lockup{display:none}
+  .topbar-inner:has(.dfl-preview-toggle.is-available) .topbar-actions{justify-content:space-between}
+}

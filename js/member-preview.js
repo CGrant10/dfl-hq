@@ -99,10 +99,11 @@ function ensureStyles() {
    backs it up rather than carrying it - the palette's second accent for your
    own tools, its first for member view, so neither is a colour this file
    invented. */
-.dfl-preview-toggle{display:none;align-items:center;gap:7px;min-height:30px;margin-left:auto;padding:4px 10px 4px 7px;border:1px solid var(--control-line,rgba(255,255,255,.24));border-radius:999px;background:var(--control-bg,rgba(255,255,255,.06));color:var(--muted,#9fb0c0);font:900 9px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+.dfl-preview-toggle{display:none;align-items:center;gap:7px;min-height:44px;margin-left:auto;padding:4px 10px 4px 7px;border:1px solid var(--control-line,rgba(255,255,255,.24));border-radius:999px;background:var(--control-bg,rgba(255,255,255,.06));color:var(--muted,#9fb0c0);font:900 11px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
 .dfl-preview-toggle.is-available{display:inline-flex}
 .dfl-preview-track{position:relative;flex:0 0 auto;width:24px;height:13px;border:1px solid var(--control-line,rgba(255,255,255,.3));border-radius:999px;background:rgba(0,0,0,.32);transition:background .22s,border-color .22s}
 .dfl-preview-knob{position:absolute;top:1px;left:1px;width:9px;height:9px;border-radius:50%;background:var(--muted,#8fa0b0);transition:transform .22s cubic-bezier(.34,1.4,.5,1),background .22s}
+.dfl-preview-label{display:inline-block;color:inherit;opacity:1;visibility:visible}
 .dfl-preview-short{display:none}
 .dfl-preview-toggle:focus-visible{outline:2px solid var(--accent,#ffd400);outline-offset:2px}
 
@@ -125,7 +126,7 @@ function ensureStyles() {
    quiet, because getting back needs the PIN. */
 .dfl-preview-toggle[data-mode="locked"]{border-style:dashed;border-color:var(--control-line,rgba(255,255,255,.34));color:var(--muted,#9fb0c0)}
 .dfl-preview-toggle[data-mode="locked"] .dfl-preview-knob{transform:translateX(11px)}
-.dfl-preview-toggle[data-mode="locked"] .dfl-preview-label::after{content:"·PIN";margin-left:5px;opacity:.75}
+.dfl-preview-toggle[data-mode="locked"] .dfl-preview-track{border-style:dashed}
 
 /* Narrow phones keep the word, just a shorter one. Dropping the label entirely
    is what left the view unnamed in the first place. */
@@ -223,7 +224,7 @@ const MODES = {
   member: {
     word: "Member view",
     short: "Member",
-    title: "You are seeing the app as a member and nothing can be written. Tap to take your tools back.",
+    title: "You are in Member view with commissioner tools off. Tap to return to Commissioner view.",
   },
   locked: {
     word: "Member view",
@@ -449,8 +450,8 @@ export function mountMemberPreview() {
   node.dataset.dflPreviewToggle = "";
   node.hidden = true;
   node.setAttribute("aria-pressed", "false");
-  /* The visible word is dropped on narrow screens, so the button carries its
-     own accessible name rather than relying on the label being rendered. */
+  /* Phone headers use a shorter visible label; the accessible name still
+     announces the full current mode and what switching will do. */
   node.setAttribute("aria-label", "Commissioner view");
   node.innerHTML = `<span class="dfl-preview-track" aria-hidden="true"><span class="dfl-preview-knob"></span></span><span class="dfl-preview-label"><span class="dfl-preview-word">Commissioner</span><span class="dfl-preview-short" aria-hidden="true">Commish</span></span>`;
   node.addEventListener("click", toggle);
