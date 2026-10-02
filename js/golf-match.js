@@ -44,6 +44,7 @@ import { SCORING_NAMES, battleResult, standingLine, marginLabel, roundHoles,
          pairName } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { teamInk } from "./brand-ink.js";
+import { individualMatchLabel, individualResult, individualStanding } from "./golf-individual.js";
 import { queueSideScore, pendingForSide, pendingCountSides, dropPendingSides,
          onQueueChange, cacheMatch, cachedMatch, dropCachedMatch, flush, refusals,
          MIN_STROKES, MAX_STROKES } from "./golf-offline.js";
@@ -52,6 +53,11 @@ const SAVE_DELAY = 600;
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const holeCount = (card) => roundHoles(card.round);
 const scoringOf = (card) => (card.round?.scoring === "match" ? "match" : "strokes");
+const INDIVIDUAL_INK = ["#f4c430", "#c73a33", "#f3efe2", "#171717", "#5f7f55", "#d98935"];
+const isIndividual = (card) => card.sides.length > 2 || card.sides.some((side) => side.team_id == null);
+const resultFor = (card, maps) => isIndividual(card)
+  ? individualResult(maps, holeCount(card))
+  : battleResult(maps[0], maps[1], holeCount(card), scoringOf(card));
 
 /*
   Match play, hole by hole, from side 1's point of view - the running state a
@@ -223,7 +229,8 @@ async function fetchMatch(matchId) {
       const team = teamById.get(String(s.team_id));
       return {
         id: s.id, team_id: s.team_id, slot: Number(s.slot),
-        teamName: team?.name || "Team", color: teamInk(team?.color, team?.sort_order ?? i),
+        teamName: team?.name || (s.team_id == null ? "Individual" : "Team"),
+        color: team ? teamInk(team.color, team.sort_order ?? i) : INDIVIDUAL_INK[i % INDIVIDUAL_INK.length],
         players: mine.map((p) => {
           const part = byPart.get(String(p.participant_id));
           return {
@@ -291,6 +298,15 @@ function strokeMap(card, sideId) {
   drawn from.
 */
 function matchState(card, names, r, scoring) {
+  if (isIndividual(card)) {
+    return `<div class="gm-sides">${card.sides.map((side, i) => {
+      const score = r.sides[i];
+      return `<div class="gm-side ${r.leaders.includes(i) ? "is-up" : ""}" style="--racer:${esc(side.color || "")}">
+        <i class="gm-dot"></i><span class="gm-who"><b>${esc(names[i])}</b><small>Individual</small></span>
+        <span class="gm-fig">${score?.total || "—"}<small>${score?.posted ? `thru ${score.posted}` : "not started"}</small></span>
+      </div>`;
+    }).join("")}</div><div class="gm-stand ${r.complete ? "is-done" : ""}">${esc(individualStanding(r, names))}</div>`;
+  }
   const lead = scoring === "match" ? (r.up || 0) : (r.lead || 0);
   // r.diff < 0 means slot 1 is ahead - the same test standingLine() uses.
   const leader = !lead ? -1 : (r.diff < 0 ? 0 : 1);
@@ -366,7 +382,8 @@ function statusLine(sides, editable, stale) {
   const waiting = pendingCountSides(sides.map((s) => s.id));
   if (waiting) return `<b class="dfl-battle-wait">${waiting} hole${waiting === 1 ? "" : "s"} not saved yet</b> — kept on this phone, sent the moment you have signal.`;
   if (stale) return "Showing the last copy saved on this phone — it will refresh when you have signal.";
-  return "Both sides share this card.";
+  return sides.length > 2 || sides.some((side) => side.team_id == null)
+    ? "Each player can edit their own scorecard." : "Both sides share this card.";
 }
 
 /* The paper card: a row per side, tap a hole to jump to it. The lower score
@@ -375,19 +392,21 @@ function stripTable(card, maps, names, start, end, label) {
   const nums = [];
   for (let h = start; h <= end; h++) nums.push(h);
   const par = nums.reduce((a, h) => a + holePar(card.holes, h), 0);
-  const state = running(maps, holeCount(card));
+  const state = maps.length === 2 && scoringOf(card) === "match" ? running(maps, holeCount(card)) : new Map();
 
-  const row = (map, other, i) => {
+  const row = (map, i) => {
     const sum = nums.reduce((a, h) => a + num(map.get(h)), 0);
     return `<tr class="row-s"><th class="lbl" title="${esc(names[i])}">${esc(names[i])}</th>${nums.map((h) => {
-      const v = num(map.get(h)), o = num(other.get(h));
-      return `<td data-jump="${h}" class="${v && o && v < o ? "won" : ""}">${v || "·"}</td>`;
+      const v = num(map.get(h));
+      const posted = maps.map((other) => num(other.get(h))).filter(Boolean);
+      const low = posted.length > 1 && v === Math.min(...posted);
+      return `<td data-jump="${h}" class="${low ? "won" : ""}">${v || "·"}</td>`;
     }).join("")}<td class="sub" data-sub="${i}:${start}">${sum || "—"}</td></tr>`;
   };
   /* Match play gets the row a paper card would have: where the match stood
      after each hole. Without it the card is a wall of numbers with no way to
      see that somebody went three up at the 5th. */
-  const matchRow = scoringOf(card) !== "match" ? "" : `<tr class="row-m"><th class="lbl">Match</th>${nums.map((h) => {
+  const matchRow = maps.length !== 2 || scoringOf(card) !== "match" ? "" : `<tr class="row-m"><th class="lbl">Match</th>${nums.map((h) => {
     const v = state.get(h);
     return `<td data-mp="${h}">${v == null ? "·" : upLabel(v)}</td>`;
   }).join("")}<td class="sub"></td></tr>`;
@@ -395,7 +414,7 @@ function stripTable(card, maps, names, start, end, label) {
   return `<table class="dfl-battle-tbl">
     <tr class="row-h"><th class="lbl">Hole</th>${nums.map((h) => `<td>${h}</td>`).join("")}<td class="sub">${label}</td></tr>
     <tr class="row-p"><th class="lbl">Par</th>${nums.map((h) => `<td>${holePar(card.holes, h)}</td>`).join("")}<td class="sub">${par}</td></tr>
-    ${row(maps[0], maps[1], 0)}${row(maps[1], maps[0], 1)}${matchRow}</table>`;
+    ${maps.map((map, i) => row(map, i)).join("")}${matchRow}</table>`;
 }
 
 /*
@@ -421,9 +440,9 @@ function holeBlock(h, card, maps, names, canEditSide) {
   const yards = holeYards(card.courseHoles, h);
   const rows = maps.map((map, i) => {
     const v = map.get(h) ?? "";
-    const other = num(maps[1 - i].get(h));
+    const posted = maps.map((other) => num(other.get(h))).filter(Boolean);
     const r = holeResult(v, par);
-    const low = num(v) && other && num(v) < other;
+    const low = posted.length > 1 && num(v) === Math.min(...posted);
     const editable = canEditSide(i);
     return `<div class="bh-row ${low ? "is-low" : ""}" data-row="${i}:${h}">
       <span class="bh-name">${esc(names[i])}<i>${esc(card.sides[i].teamName)}</i></span>
@@ -450,13 +469,14 @@ function finalBlock(maps, names, card, r) {
       <span><small>Strokes</small> <b data-total="${i}">${t.s || "—"}</b></span>
       <span><small>+/−</small> <b data-topar="${i}">${fmtToPar(t.s, t.p)}</b></span></div>`).join("")}
   </div>
-  <div class="dfl-battle-outcome" data-outcome>${esc(outcomeText(r, names))}</div>`;
+  <div class="dfl-battle-outcome" data-outcome>${esc(outcomeText(r, names, isIndividual(card)))}</div>`;
 }
 
 /* What the match is worth, said plainly. The point only exists once both
    cards are full, so an unfinished match says what is missing instead of
    implying somebody has won. */
-function outcomeText(r, names) {
+function outcomeText(r, names, individual = false) {
+  if (individual) return individualStanding(r, names);
   const leader = r.diff < 0 ? names[0] : names[1];
   if (r.complete) {
     if (r.halved) return `All square after ${r.holes} — no point to either team`;
@@ -479,7 +499,7 @@ function outcomeText(r, names) {
 function recalc(root, card) {
   const holes = holeCount(card);
   const inputs = [...root.querySelectorAll("input[data-battle-score]")];
-  const maps = [new Map(), new Map()];
+  const maps = card.sides.map(() => new Map());
   for (const input of inputs) {
     const i = Number(input.dataset.side), h = Number(input.dataset.hole), v = num(input.value);
     if (v > 0) maps[i].set(h, v);
@@ -487,20 +507,21 @@ function recalc(root, card) {
   for (const input of inputs) {
     const i = Number(input.dataset.side), h = Number(input.dataset.hole);
     const par = Number(input.dataset.par) || 4;
-    const v = num(input.value), other = num(maps[1 - i].get(h));
+    const v = num(input.value);
+    const posted = maps.map((other) => num(other.get(h))).filter(Boolean);
     const r = holeResult(v, par);
     const mark = root.querySelector(`[data-mark="${i}:${h}"]`);
     if (mark) mark.className = "mark " + r.mark;
     const res = root.querySelector(`[data-res="${i}:${h}"]`);
     if (res) { res.textContent = r.label; res.className = "bh-res " + r.cls; }
     const row = root.querySelector(`[data-row="${i}:${h}"]`);
-    if (row) row.classList.toggle("is-low", !!(v && other && v < other));
+    if (row) row.classList.toggle("is-low", posted.length > 1 && v === Math.min(...posted));
     /* One row per side for each hole, in row order, so the ith cell for that
        hole belongs to this side. */
     const cell = root.querySelectorAll(`[data-jump="${h}"]`)[i];
-    if (cell) { cell.textContent = v || "·"; cell.className = v && other && v < other ? "won" : ""; }
+    if (cell) { cell.textContent = v || "·"; cell.className = posted.length > 1 && v === Math.min(...posted) ? "won" : ""; }
   }
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < maps.length; i++) {
     // Each half of the card carries its own total, so each is recomputed.
     for (const start of nineStarts(holes)) {
       let nine = 0;
@@ -515,7 +536,7 @@ function recalc(root, card) {
     const tp = root.querySelector(`[data-topar="${i}"]`);
     if (tp) tp.textContent = fmtToPar(s, p);
   }
-  if (scoringOf(card) === "match") {
+  if (maps.length === 2 && scoringOf(card) === "match") {
     const state = running(maps, holes);
     for (let h = 1; h <= holes; h++) {
       const cell = root.querySelector(`[data-mp="${h}"]`);
@@ -523,14 +544,14 @@ function recalc(root, card) {
     }
   }
   const names = card.sides.map((s) => pairName(s.players.map((p) => p.name)));
-  const r = battleResult(maps[0], maps[1], holes, scoringOf(card));
+  const r = resultFor(card, maps);
   /* Repainted whole rather than field by field: which side leads, both
      figures and the standing line all move together, and three separate
      textContent writes is how they get out of step. */
   const stateEl = root.querySelector("[data-match-state]");
   if (stateEl) stateEl.innerHTML = matchState(card, names, r, scoringOf(card));
   const outcome = root.querySelector("[data-outcome]");
-  if (outcome) outcome.textContent = outcomeText(r, names);
+  if (outcome) outcome.textContent = outcomeText(r, names, isIndividual(card));
 }
 
 let stopWatch = null;
@@ -579,34 +600,39 @@ async function render(root, matchId) {
   const pass = passFor(card.match.outing_id);
   const memberIn = !!me && card.sides.some((s) =>
     s.players.some((p) => p.member_id != null && String(p.member_id) === me));
+  const individual = isIndividual(card);
   const guestSide = pass?.teamId
     ? card.sides.findIndex((s) => String(s.team_id) === String(pass.teamId))
     : -1;
   const editable = admin || memberIn || guestSide > -1;
   // A predicate rather than a boolean, so one side can be open and the other shut.
-  const canEditSide = (i) => admin || memberIn || guestSide === i;
+  const canEditSide = (i) => admin || (individual
+    ? card.sides[i].players.some((player) => player.member_id != null && String(player.member_id) === me)
+    : memberIn || guestSide === i);
   const scoring = scoringOf(card);
-  const r = battleResult(maps[0], maps[1], holes, scoring);
+  const r = resultFor(card, maps);
   const singles = card.round?.format === "singles";
   /* The scoring is in the kicker because it changes what the numbers on this
      card mean, and it can be switched between rounds. */
   const roundLabel = card.round
-    ? `${(card.round.name || `ROUND ${card.round.round_number}`).toUpperCase()} · ${singles ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoring].toUpperCase()} · MATCH ${card.match.match_number}`
+    ? `${(card.round.name || `ROUND ${card.round.round_number}`).toUpperCase()} · ${individual ? individualMatchLabel(card.sides.length).toUpperCase() : singles ? "SINGLES" : "2V2"} · ${SCORING_NAMES[individual ? "strokes" : scoring].toUpperCase()} · MATCH ${card.match.match_number}`
     : `MATCH ${card.match.match_number}`;
 
   root.innerHTML = `<section class="card dfl-battle-card">
     <header class="dfl-battle-head">
       <div class="dfl-battle-head-top"><a class="backlink" href="${back}">← Rounds</a>
-        <div><span class="dfl-battle-kicker">${esc(roundLabel)}</span><h2>${esc(names[0])} vs ${esc(names[1])}</h2></div></div>
+        <div><span class="dfl-battle-kicker">${esc(roundLabel)}</span><h2>${esc(names.join(" vs "))}</h2></div></div>
     </header>
     <div class="dfl-battle-state" data-match-state>${matchState(card, names, r, scoring)}</div>
     <div class="dfl-battle-status" data-battle-status>${statusLine(card.sides, editable, card.stale)}</div>
     ${admin ? `<div class="dfl-battle-admin"><button type="button" class="dfl-battle-clear" data-clear-battle>Clear this match</button></div>` : ""}
-    <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>${scoring === "match" ? `UP/DN is ${esc(names[0])}` : "Tap a hole to jump to it"}</span></header>
+    <section class="dfl-battle-strip"><header class="dfl-battle-strip-title"><span>The card</span><span>${!individual && scoring === "match" ? `UP/DN is ${esc(names[0])}` : "Tap a hole to jump to it"}</span></header>
       <div style="overflow-x:auto">${strip(card, maps, names)}</div></section>
     <div class="dfl-holes">${Array.from({ length: holes }, (_, i) => holeBlock(i + 1, card, maps, names, canEditSide)).join("")}</div>
     ${finalBlock(maps, names, card, r)}
-    <div class="dfl-battle-help">${scoring === "match"
+    <div class="dfl-battle-help">${individual
+      ? `Individual stroke play: every golfer has a separate card in the same match. The lowest total after ${holes} holes wins; tied low totals share the result.`
+      : scoring === "match"
       ? `Match play: whoever takes a hole goes one up, and a big number on one hole costs no more than a small one. The match is over as soon as somebody is up by more holes than are left — 3&amp;2 means three up with two to play. All square after ${holes} is worth nothing to either side.`
       : `Stroke play: fewest strokes over these ${holes} holes wins the match and puts one point on that team's board. Level is worth nothing to either side.`}</div>
   </section>`;
@@ -631,7 +657,7 @@ async function render(root, matchId) {
   if (admin) {
     const clear = root.querySelector("[data-clear-battle]");
     clear?.addEventListener("click", async () => {
-      if (!confirm(`Clear every stroke in ${names[0]} vs ${names[1]}? This cannot be undone.`)) return;
+      if (!confirm(`Clear every stroke in ${names.join(" vs ")}? This cannot be undone.`)) return;
       clear.disabled = true;
       try {
         dropPendingSides(card.sides.map((s) => s.id));
