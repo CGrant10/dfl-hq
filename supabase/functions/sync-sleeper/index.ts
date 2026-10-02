@@ -130,18 +130,20 @@ function american(probability: number) {
 }
 
 async function matchupClose(admin: ReturnType<typeof createClient>, season: number, week: number) {
+  const { data: slate } = await admin.from("nfl_pickem_games").select("starts_at")
+    .eq("season", season).eq("week", week).order("starts_at").limit(1);
+  if (slate?.[0]?.starts_at) return new Date(slate[0].starts_at);
+
   const { data } = await admin.from("sportsbook_markets").select("closes_at")
     .like("auto_key", `matchup:${season}:1:%`).not("closes_at", "is", null)
     .order("closes_at").limit(1).maybeSingle();
   if (data?.closes_at) return new Date(new Date(data.closes_at).getTime() + (week - 1) * 604_800_000);
 
-  /* Fallback for a brand-new season before an anchor exists: the next
-     Thursday-night lock, represented as Friday 00:15 UTC during football
-     season in Chicago. */
-  const close = new Date();
-  const days = (5 - close.getUTCDay() + 7) % 7;
-  close.setUTCDate(close.getUTCDate() + days);
-  close.setUTCHours(0, 15, 0, 0);
+  // NFL regular-season kickoff is the Thursday after Labor Day. Use the
+  // requested week, rather than today's next Thursday, before a slate exists.
+  const close = new Date(Date.UTC(season, 8, 1, 0, 15));
+  const firstMonday = 1 + (1 - close.getUTCDay() + 7) % 7;
+  close.setUTCDate(firstMonday + 4 + (week - 1) * 7);
   return close;
 }
 
@@ -307,9 +309,21 @@ Deno.serve(async (request) => {
     const earlyOwners = new Map<number, string>((rosters || []).map((roster: Json) => [roster.roster_id, roster.owner_id]));
     const earlyMatchups = matchups(weeklyMatchups || [], season, week, leagueId, earlyOwners);
     await upsert(admin, "sleeper_matchups", earlyMatchups, "season,week,matchup_id");
-    const sportsbookMarketsCreated = await ensureMatchupMarkets(
+    let sportsbookMarketsCreated = await ensureMatchupMarkets(
       admin, league, season, week, weeklyMatchups || [], rosters || [], earlyNames, weeklyProjections || [],
     );
+    // Once this week's winner markets lock, keep a playable fantasy board
+    // available for next week. Existing prices and accepted tickets stay put.
+    if (week < 18 && (await matchupClose(admin, season, week)).getTime() <= Date.now()) {
+      const nextWeek = week + 1;
+      const [nextMatchups, nextProjections] = await Promise.all([
+        sleeper(`/league/${leagueId}/matchups/${nextWeek}`),
+        sleeperAbsolute(`https://api.sleeper.app/projections/nfl/${season}/${nextWeek}?season_type=regular`),
+      ]);
+      sportsbookMarketsCreated += await ensureMatchupMarkets(
+        admin, league, season, nextWeek, nextMatchups || [], rosters || [], earlyNames, nextProjections || [],
+      );
+    }
     if (week > 1) {
       await notifyWeeklyReport(url, cronToken, season, week - 1)
         .catch(error => console.warn("Weekly report notification skipped:", error));

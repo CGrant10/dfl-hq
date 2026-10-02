@@ -1279,3 +1279,8 @@
 @media(max-width:520px){.sb-prop-tools{grid-template-columns:minmax(0,1fr) auto}.sb-prop-favorites{padding-inline:12px}.sb-prop-filter-grid{grid-template-columns:1fr}.sb-recap-grid{grid-template-columns:1fr}.sb-recap-grid article{border-right:0;border-bottom:1px solid var(--line)}.sb-recap-grid article:last-child{border-bottom:0}}
 
 .sb-slipbar-chips:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Closed fantasy games retain their teams and prices as a visible receipt. */
+.sb-market-state.is-locked { background: var(--card); border-color: var(--line); color: var(--muted); }
+.sb-outcome:disabled { cursor: not-allowed; opacity: .6; box-shadow: none; }
+.sb-outcome:disabled:hover { transform: none; }

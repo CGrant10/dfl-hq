@@ -1,0 +1,20 @@
+# Sportsbook winner picks and core props — 1.260.0
+
+Fantasy winner picks disappeared after Thursday kickoff because the page only rendered open markets. The board now keeps the latest locked fantasy slate visible with disabled selections, explicit lock timestamps, and separate open/locked counts. An explicit Fantasy query prevents provider rows or the general market limit from hiding winner markets. Members can pick a winner, swap sides, and combine different fantasy games or fantasy/player props in the existing slip.
+
+The existing deadline remains the first NFL kickoff of the week. Current Week 4 was already underway; its markets were not reopened. Six Week 5 markets were seeded atomically from the actual Sleeper schedule, starting lineups, projections, scoring settings, and roster identities. Existing markets and accepted prices were untouched. The Sleeper sync now prepares next week's markets after the current week locks, including when no other league data changed. It uses the actual NFL slate's first kickoff, then the existing Week 1 anchor, then a season/week calendar fallback. Future matchups are not inserted into the current fantasy score table early.
+
+Player props are restricted to passing yards, passing TDs, rushing yards, receptions, and scoring TDs at 0.5. Receiving yards, fantasy points, longest plays, attempts, defense, kicking, punting, combined yards, and alternate scoring TD lines are excluded. One line per player/stat/kickoff is chosen across legacy copies and aliases, preferring current quotes and broader book coverage within a feed snapshot. An anytime TD market takes precedence over separate rushing/receiving TD markets when available. The supported market retains its precise original title and outcomes; passing TDs remain distinct from scoring TDs. No prices or stats are fabricated.
+
+The public discovery RPC is security invoker with an empty search path and existing table permissions; it trims and deduplicates before the browser downloads results. Frontend and feed share the same JS selection helper. The feed filters only new scheduled offers; existing extra markets and tickets remain eligible for the original live updates and final grading. The source changes were deployed to sync-sportsbook-feed v16 and sync-sleeper v7. Both keep their established custom authorization and JWT settings. An unauthenticated feed request correctly returned Unauthorized after deployment.
+
+Validation:
+
+- Full checks passed: TypeScript, identifier checks, 969 tests in 105 files, and Vite build.
+- Pure model tests cover supported stats, the 0.5 TD restriction, aliases, alternate lines, separate games, lazy metadata, and anytime TD preference. Actual sync-function tests cover slate/calendar deadlines, future market creation with roster IDs, and protection of existing/expired markets.
+- With the real anon role and selected member, rollback-only database checks successfully placed a single fantasy ticket, a two-game fantasy ticket, and a mixed fantasy/prop ticket. The real my-bets RPC confirmed their accepted legs. A current locked game was correctly rejected. Test wagers and wallet changes were rolled back.
+- Browser checks used real production read data and blocked all writes. Verified 12 playable Week 5 sides, 12 disabled Week 4 sides, swapping rivals within a single market, a two-game slip review, adding a prop, and unique requested markets within a hydrated NFL game.
+- Checked 390px mobile screenshots, 320px and 1280px overflow, modal focus, and automated WCAG A/AA checks on slip review and hydrated props. No violations, overflow, or browser errors were detected. Physical screen readers and phone-native flows were not tested.
+- The initial public list dropped from more than 2,600 props to 608. Counts naturally vary as the provider refreshes. No duplicate player/stat offers were returned by the production discovery check. Security advisors reported no finding for the changed RPC.
+
+Screenshots and browser logs are in /workspace/dfl-audit; production writes were not exercised by the browser.

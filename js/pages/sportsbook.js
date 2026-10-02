@@ -1,3 +1,4 @@
+import { selectCoreProps } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 // =====================================================================
@@ -109,12 +110,13 @@ export async function render(view){
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
     const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
-    const[mr,propMarkets,propIndex]=await Promise.all([
+    const[mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
       db().from("sportsbook_markets").select("*").neq("source","provider").order("created_at",{ascending:false}).limit(100),
-      providerMarketPages(),loadPropIndex(db())
+      providerMarketPages(),loadPropIndex(db()),
+      db().from("sportsbook_markets").select("*").eq("category","Fantasy").in("status",["open","locked"]).order("closes_at",{ascending:false}).limit(36)
     ]);
-    if(mr.error||propMarkets.error)throw mr.error||propMarkets.error;
-    const discovered=new Map([...propIndex,...(mr.data||[]),...(propMarkets.data||[])].map(market=>[String(market.id),market]));
+    if(mr.error||propMarkets.error||fantasyMarkets.error)throw mr.error||propMarkets.error||fantasyMarkets.error;
+    const discovered=new Map([...propIndex,...(mr.data||[]),...(propMarkets.data||[]),...(fantasyMarkets.data||[])].map(market=>[String(market.id),market]));
     // Reload selected picks only, including markets that closed while away.
     let selectedOutcomes=[];
     if(slip.length){const result=await db().from("sportsbook_outcomes").select("*").in("id",slip);if(result.error)throw result.error;selectedOutcomes=result.data||[];
@@ -142,7 +144,11 @@ export async function render(view){
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
-  const open=markets.filter(m=>isOpen(m)&&isBookCategory(m)&&!isGolf(m));
+  const available=markets.filter(m=>isOpen(m)&&isBookCategory(m)&&!isGolf(m));
+  const open=[...available.filter(m=>m.category!=="Player Props"),...selectCoreProps(available)];
+  const lockedFantasy=markets.filter(m=>matchupKey(m)&&["open","locked"].includes(m.status)&&!isOpen(m));
+  const lastLocked=lockedFantasy.map(m=>matchupKey(m).slice(1,3).map(Number)).sort((a,b)=>b[0]-a[0]||b[1]-a[1])[0];
+  const lockedMatchups=lockedFantasy.filter(m=>{const key=matchupKey(m);return Number(key[1])===lastLocked?.[0]&&Number(key[2])===lastLocked?.[1]});
   const onBoard=new Set(open.map(m=>String(m.id)));
   /*
     OFF THE BOARD, AND WHY THAT USED TO TRAP MONEY.
@@ -181,7 +187,7 @@ export async function render(view){
     ${canBook?`${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}`:""}
     <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
-    ${categoryBoard(open,byMarket,bets,canBook,outcomeMap,marketMap,members,me.id)}
+    ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
@@ -306,7 +312,7 @@ function outcomeButtons(m,outcomes,picked,held,members=[]){
   return `<div class="sb-outcomes">${outcomes.map((o,i)=>{
     const held=mine.has(String(o.id)),inSlip=picked.has(String(o.id));
     return `
-    <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}">
+    <button class="sb-outcome${held?" is-mine":""}${inSlip?" is-picked":""}" data-bet-outcome="${o.id}" aria-pressed="${inSlip}"${!isOpen(m)?' disabled':''}>
       ${prop?`<span class="sb-prop-side" aria-hidden="true">${i===0?"O":"U"}</span>`:teamPortrait({team_name:o.label,identity:identities.get(identityKey(o.label))||null},{className:"sb-team-mark"})}
       <span class="sb-outcome-label"><span class="sb-outcome-name">${esc(o.label)}${held?`<span class="sb-held">Held</span>`:""}</span><small>${prop?propSource:projected[i]?`${esc(projected[i])} projected`:"Moneyline"}</small></span>
       <strong class="sb-price">${fmtOdds(o.odds_american)}</strong>
@@ -319,7 +325,7 @@ function marketCard(m,outcomes,canBook,picked,held,members,meta=null,favorite=fa
   const kicker=key?`Week ${key[2]} &middot; Matchup`:m.category==="Player Props"?`${imported?"SLEEPER":"CONSENSUS"} &middot; ${m.provider_updated_at?esc(fmtTime(m.provider_updated_at)):"REAL LINE"}`:esc(m.category||"DFL");
   const prop=m.category==="Player Props",info=meta||propMarketMeta(m,outcomes);
   const attrs=prop?` data-prop-card data-prop-key="${esc(info.key)}" data-prop-player="${esc(info.player)}" data-prop-stat="${esc(info.stat.toLowerCase())}" data-prop-position="${esc(info.position)}" data-prop-team="${esc(info.team)}" data-prop-game="${esc(info.matchup)}" data-prop-source="${esc(info.source)}" data-prop-updated="${info.updatedAt}" data-prop-price="${info.bestPrice}"`:"";
-  return `<article class="card sb-market"${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)}</span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state is-open">OPEN</span>${m.closes_at?`<span class="sb-locks">Locks ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
+  return `<article class="card sb-market"${attrs}><div class="card-title-row"><div><small class="sb-market-kicker">${kicker}</small><h3 class="card-heading">${esc(m.title)}</h3>${prop?`<span class="sb-market-source">${esc(info.sourceLabel)}</span>`:""}</div><div class="sb-market-status">${prop?`<button type="button" class="sb-prop-favorite${favorite?" is-favorite":""}" data-prop-favorite="${esc(info.key)}" aria-label="${favorite?"Remove from":"Add to"} favorite props" aria-pressed="${favorite}">★</button>`:""}<span class="sb-market-state ${isOpen(m)?"is-open":"is-locked"}">${isOpen(m)?"OPEN":"LOCKED"}</span>${m.closes_at?`<span class="sb-locks">${isOpen(m)?"Locks":"Locked"} ${esc(fmtTime(m.closes_at))}</span>`:""}</div></div>${outcomeButtons(m,outcomes,picked,held,members)}${houseControls(m,outcomes,canBook)}</article>`;
 }
 
 /*
@@ -359,8 +365,8 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
       const teams=[...new Set(metas.map(meta=>meta.team).filter(Boolean))].sort();
       const gameNames=[...new Set(metas.map(meta=>meta.matchup).filter(Boolean))].sort();
       return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>Current week &middot; consensus lines</small><h2>Player props</h2></div><span>${group.length} lines</span></div>
-        <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player, team or matchup"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><details class="sb-prop-filter-drawer"><summary>Filter and sort <span>Position · stat · team · game</span></summary><div class="sb-prop-filter-grid"><label><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing">Passing</option><option value="rushing">Rushing</option><option value="receiving">Receiving</option><option value="receptions">Receptions</option><option value="touchdown">Touchdowns</option><option value="fantasy">Fantasy points</option></select></label><label><span>Team</span><select id="sb-prop-team"><option value="">All teams</option>${teams.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Game</span><select id="sb-prop-game"><option value="">All games</option>${gameNames.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Source</span><select id="sb-prop-source"><option value="">All sources</option><option value="sportsbooks">Sportsbooks</option><option value="sleeper">Sleeper</option></select></label><label><span>Sort</span><select id="sb-prop-sort"><option value="player">Player</option><option value="stat">Stat</option><option value="price">Best price</option><option value="updated">Newest</option></select></label></div></details></div>
-        <p class="muted tiny">Open a matchup for current lines. Filters search every game.</p>
+        <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player, team or matchup"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><details class="sb-prop-filter-drawer"><summary>Filter and sort <span>Position · stat · team · game</span></summary><div class="sb-prop-filter-grid"><label><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing yards">Passing yards</option><option value="passing td">Passing TDs</option><option value="rushing yards">Rushing yards</option><option value="receptions">Receptions</option><option value="touchdown">Scoring TDs · 0.5</option></select></label><label><span>Team</span><select id="sb-prop-team"><option value="">All teams</option>${teams.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Game</span><select id="sb-prop-game"><option value="">All games</option>${gameNames.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Source</span><select id="sb-prop-source"><option value="">All sources</option><option value="sportsbooks">Sportsbooks</option><option value="sleeper">Sleeper</option></select></label><label><span>Sort</span><select id="sb-prop-sort"><option value="player">Player</option><option value="stat">Stat</option><option value="price">Best price</option><option value="updated">Newest</option></select></label></div></details></div>
+        <p class="muted tiny">One main line per player and stat. Scoring TDs use 0.5. Open a matchup to see its props.</p>
         <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${game.rows.length} props</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
         <p class="sb-empty" data-prop-empty hidden>No props match that filter.</p></section>`;
     }
@@ -369,9 +375,10 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
        one; a category that mixes props in gets called what it is. */
     const scope=scopeOf(group),matchups=group.every(matchupKey);
     const eyebrow=scope?`Week ${scope.week} &middot; ${scope.season}`:esc(cat);
-    const heading=matchups?"Matchup moneylines":`${esc(cat)} lines`;
+    const heading=matchups?"Fantasy matchup winners":`${esc(cat)} lines`;
     const unit=matchups?"games":"lines";
-    return `<section class="block sb-section"><div class="sb-board-head"><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${cards.length} ${unit}</span></div><div class="sb-market-grid">${cards.join("")}</div></section>`;
+    const count=matchups?`${group.filter(isOpen).length} open &middot; ${group.filter(m=>!isOpen(m)).length} locked`:`${cards.length} ${unit}`;
+    return `<section class="block sb-section"><div class="sb-board-head"><div><small>${eyebrow}</small><h2>${heading}</h2></div><span>${count}</span></div>${matchups?'<p class="muted tiny">Pick a fantasy team to add its win to your slip. Bets lock at the first NFL kickoff of the week; locked matchups stay visible.</p>':""}<div class="sb-market-grid">${cards.join("")}</div></section>`;
   }).join("");
 }
 

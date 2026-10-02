@@ -75,7 +75,7 @@ it('shows live ticket progress against the accepted line', async()=>{
 });
 
 it('groups player props behind game collapsibles with search and stat filters', async()=>{
-  markets.push({id:22,category:'Player Props',source:'provider',status:'open',title:'Player One · Receiving yards',provider_event_id:'game-1',lore_note:'AAA @ BBB · Book consensus 54.5',closes_at:'2099-01-01'});
+  markets.push({id:22,category:'Player Props',source:'provider',status:'open',title:'Player One · Rushing yards',provider_event_id:'game-1',lore_note:'AAA @ BBB · Book consensus 54.5',closes_at:'2099-01-01'});
   outcomes.push({id:44,market_id:22,label:'Over 54.5',odds_american:-110,provider_side:'over'},{id:45,market_id:22,label:'Under 54.5',odds_american:-110,provider_side:'under'});
   const view=fakeView();await render(view);
   expect(view.innerHTML).toContain('id="sb-prop-search"');
@@ -174,4 +174,15 @@ it('puts an off-board market in the ruling queue so the house can release the st
 
   perms.sportsbook=false;
   markets.pop();
+});
+
+it('keeps locked fantasy winner picks visible and disabled',async()=>{
+ markets.push({id:99,category:'Fantasy',status:'open',title:'Locked A vs Locked B',auto_key:'matchup:2026:4:1',closes_at:'2026-01-01'});
+ outcomes.push({id:991,market_id:99,label:'Locked A',odds_american:-110});
+ const view=fakeView();await render(view);
+ expect(view.innerHTML).toContain('Fantasy matchup winners');
+ expect(view.innerHTML).toContain('LOCKED');
+ expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
+ expect(view.innerHTML).toMatch(/data-bet-outcome="2"[^>]*aria-pressed="false"/);
+ markets.pop();outcomes.pop();
 });

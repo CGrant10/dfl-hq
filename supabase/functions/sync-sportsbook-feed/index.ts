@@ -1,3 +1,4 @@
+import { corePropStat, selectCoreProps } from "../../../js/sportsbook-core-props.js";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const TOKEN_HASH="c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091";
@@ -247,6 +248,7 @@ Deno.serve(async request=>{
         if(status==="final"&&score!==null){settlements.push({provider_key:key,final_score:score});continue}
         if(status==="live"){if(score!==null)liveUpdates.push({provider_key:key,provider_score:score,provider_updated_at:new Date().toISOString(),market_status:"locked"});continue}
         if(status!=="scheduled"||start<=now||week!==nfl.week)continue;
+        if(isPlayer&&!corePropStat(labelFor(stat),line))continue;
         const meta=isPlayer?playerMeta(e,odd):{position:"",team:""};
         const market={title:isPlayer?`${player} · ${labelFor(stat)}`:total.title,category:isPlayer?"Player Props":total.category,source:"provider",lore_note:`${matchupName(e)} · Book consensus ${line} · ${consensus.books||"market"} books · best available pricing · OVER ${overQuote.book} · UNDER ${underQuote.book}${meta.position?` · POS ${meta.position}`:""}${meta.team?` · TEAM ${meta.team}`:""}`,status:"open",closes_at:start.toISOString(),provider_key:key,provider_event_id:String(e.eventID),provider_market_id:String(odd.oddID||""),provider_line:line,provider_updated_at:new Date().toISOString()};
         candidates.push({market,line,overOdds,underOdds,playerKey,kind:isPlayer?"player":"total",start:start.getTime()});
@@ -254,7 +256,8 @@ Deno.serve(async request=>{
     }
     if(liveUpdates.length){const{data,error}=await admin.rpc("sportsbook_update_provider_markets",{updates:liveUpdates});if(error)throw error;liveUpdated=Number(data||0)}
     if(settlements.length){const{data,error}=await admin.rpc("sportsbook_settle_provider_markets",{updates:settlements});if(error)throw error;settled=Number(data||0)}
-    const playerSelected=candidates.filter(row=>row.kind==="player").sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title)));
+    const coreKeys=new Set(selectCoreProps(candidates.filter(row=>row.kind==="player").map(row=>row.market)).map(market=>market.provider_key));
+    const playerSelected=candidates.filter(row=>row.kind==="player"&&coreKeys.has(row.market.provider_key)).sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title)));
     const totalSelected=candidates.filter(row=>row.kind==="total").sort((a,b)=>a.start-b.start||String(a.market.title).localeCompare(String(b.market.title)));
     const selected=[...playerSelected,...totalSelected];
     if(selected.length){

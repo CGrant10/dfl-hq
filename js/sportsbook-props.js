@@ -44,7 +44,7 @@ export function propMatches(meta, filters = {}) {
   const query = String(filters.query || "").trim().toLowerCase();
   const haystack = `${meta.player} ${meta.stat} ${meta.team} ${meta.matchup}`.toLowerCase();
   return (!query || haystack.includes(query))
-    && (!filters.stat || meta.stat.toLowerCase().includes(String(filters.stat).toLowerCase()))
+    && (!filters.stat || (filters.stat === "touchdown" ? /touchdown|td/i.test(meta.stat) && !/passing/i.test(meta.stat) : meta.stat.toLowerCase().includes(String(filters.stat).toLowerCase())))
     && (!filters.position || meta.position === String(filters.position).toUpperCase())
     && (!filters.team || meta.team === String(filters.team).toUpperCase())
     && (!filters.game || meta.matchup === filters.game)
