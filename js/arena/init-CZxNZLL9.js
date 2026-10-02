@@ -1,39 +1,39 @@
-import { A as e, B as t, C as n, H as r, I as i, R as a, T as o, U as s, Z as c, _ as l, h as u, it as d, j as f, k as p, rt as m, v as h, x as g, y as _ } from "./Geometry-CW_aidqb.js";
-import { r as v } from "./canvasUtils-BhZPiFjM.js";
+import { A as e, H as t, I as n, R as r, T as i, V as a, X as o, _ as s, h as c, j as l, k as u, nt as d, tt as f, v as p, x as m, y as h, z as g } from "./Geometry-BqZcOGkp.js";
+import { r as _ } from "./canvasUtils-DCIgU9WQ.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/mask/utils/addMaskBounds.mjs
-var y = new a();
-function b(e, t, n) {
-	let r = y;
-	e.measurable = !0, p(e, n, r), t.addBoundsMask(r), e.measurable = !1;
+var v = new r();
+function y(e, t, n) {
+	let r = v;
+	e.measurable = !0, u(e, n, r), t.addBoundsMask(r), e.measurable = !1;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/mask/utils/addMaskLocalBounds.mjs
-function x(t, n, r) {
-	let i = e.get();
+function b(t, n, r) {
+	let a = e.get();
 	t.measurable = !0;
-	let a = f.get().identity(), s = S(t, r, a);
-	o(t, i, s), t.measurable = !1, n.addBoundsMask(i), f.return(a), e.return(i);
+	let o = l.get().identity(), s = x(t, r, o);
+	i(t, a, s), t.measurable = !1, n.addBoundsMask(a), l.return(o), e.return(a);
 }
-function S(e, t, n) {
-	return e ? (e !== t && (S(e.parent, t, n), e.updateLocalTransform(), n.append(e.localTransform)), n) : (i("Mask bounds, renderable is not inside the root container"), n);
+function x(e, t, r) {
+	return e ? (e !== t && (x(e.parent, t, r), e.updateLocalTransform(), r.append(e.localTransform)), r) : (n("Mask bounds, renderable is not inside the root container"), r);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/mask/alpha/AlphaMask.mjs
-var C = class {
+var S = class {
 	constructor(e) {
 		this.priority = 0, this.inverse = !1, this.channel = "red", this.pipe = "alphaMask", e?.mask && this.init(e.mask);
 	}
 	init(e) {
-		this.mask = e, this.renderMaskToTexture = !(e instanceof _), this.mask.renderable = this.renderMaskToTexture, this.mask.includeInBuild = !this.renderMaskToTexture, this.mask.measurable = !1;
+		this.mask = e, this.renderMaskToTexture = !(e instanceof h), this.mask.renderable = this.renderMaskToTexture, this.mask.includeInBuild = !this.renderMaskToTexture, this.mask.measurable = !1;
 	}
 	reset() {
 		this.mask !== null && (this.mask.measurable = !0, this.mask = null);
 	}
 	addBounds(e, t) {
-		this.inverse || b(this.mask, e, t);
+		this.inverse || y(this.mask, e, t);
 	}
 	addLocalBounds(e, t) {
-		x(this.mask, e, t);
+		b(this.mask, e, t);
 	}
 	containsPoint(e, t) {
 		let n = this.mask;
@@ -43,13 +43,13 @@ var C = class {
 		this.reset();
 	}
 	static test(e) {
-		return e instanceof _;
+		return e instanceof h;
 	}
 };
-C.extension = m.MaskEffect;
+S.extension = f.MaskEffect;
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/mask/color/ColorMask.mjs
-var w = class {
+var C = class {
 	constructor(e) {
 		this.priority = 0, this.pipe = "colorMask", e?.mask && this.init(e.mask);
 	}
@@ -61,10 +61,10 @@ var w = class {
 		return typeof e == "number";
 	}
 };
-w.extension = m.MaskEffect;
+C.extension = f.MaskEffect;
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/mask/stencil/StencilMask.mjs
-var T = class {
+var w = class {
 	constructor(e) {
 		this.priority = 0, this.pipe = "stencilMask", e?.mask && this.init(e.mask);
 	}
@@ -75,10 +75,10 @@ var T = class {
 		this.mask !== null && (this.mask.measurable = !0, this.mask.includeInBuild = !0, this.mask = null);
 	}
 	addBounds(e, t) {
-		b(this.mask, e, t);
+		y(this.mask, e, t);
 	}
 	addLocalBounds(e, t) {
-		x(this.mask, e, t);
+		b(this.mask, e, t);
 	}
 	containsPoint(e, t) {
 		let n = this.mask;
@@ -88,16 +88,16 @@ var T = class {
 		this.reset();
 	}
 	static test(e) {
-		return e instanceof g;
+		return e instanceof m;
 	}
 };
-T.extension = m.MaskEffect;
+w.extension = f.MaskEffect;
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/utils/browser/detectVideoAlphaMode.mjs
-var E;
-async function D() {
-	return E ??= (async () => {
-		let e = h.get().createCanvas(1, 1).getContext("webgl");
+var T;
+async function E() {
+	return T ??= (async () => {
+		let e = p.get().createCanvas(1, 1).getContext("webgl");
 		if (!e) return "premultiply-alpha-on-upload";
 		let t = await new Promise((e) => {
 			let t = document.createElement("video");
@@ -110,11 +110,11 @@ async function D() {
 		e.bindFramebuffer(e.FRAMEBUFFER, r), e.framebufferTexture2D(e.FRAMEBUFFER, e.COLOR_ATTACHMENT0, e.TEXTURE_2D, n, 0), e.pixelStorei(e.UNPACK_PREMULTIPLY_ALPHA_WEBGL, !1), e.pixelStorei(e.UNPACK_COLORSPACE_CONVERSION_WEBGL, e.NONE), e.texImage2D(e.TEXTURE_2D, 0, e.RGBA, e.RGBA, e.UNSIGNED_BYTE, t);
 		let i = /* @__PURE__ */ new Uint8Array(4);
 		return e.readPixels(0, 0, 1, 1, e.RGBA, e.UNSIGNED_BYTE, i), e.deleteFramebuffer(r), e.deleteTexture(n), e.getExtension("WEBGL_lose_context")?.loseContext(), i[0] <= i[3] ? "premultiplied-alpha" : "premultiply-alpha-on-upload";
-	})(), E;
+	})(), T;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/VideoSource.mjs
-var O = class e extends s {
+var D = class e extends t {
 	constructor(t) {
 		super(t), this.isReady = !1, this.uploadMethodId = "video", t = {
 			...e.defaultOptions,
@@ -124,7 +124,7 @@ var O = class e extends s {
 	updateFrame() {
 		if (!this.destroyed) {
 			if (this._updateFPS) {
-				let e = u.shared.elapsedMS * this.resource.playbackRate;
+				let e = c.shared.elapsedMS * this.resource.playbackRate;
 				this._msToNextUpdate = Math.floor(this._msToNextUpdate - e);
 			}
 			(!this._updateFPS || this._msToNextUpdate <= 0) && (this._msToNextUpdate = this._updateFPS ? Math.floor(1e3 / this._updateFPS) : 0), this.isValid && this.update();
@@ -139,7 +139,7 @@ var O = class e extends s {
 	async load() {
 		if (this._load) return this._load;
 		let e = this.resource, t = this.options;
-		return (e.readyState === e.HAVE_ENOUGH_DATA || e.readyState === e.HAVE_FUTURE_DATA) && e.width && e.height && (e.complete = !0), e.addEventListener("play", this._onPlayStart), e.addEventListener("pause", this._onPlayStop), e.addEventListener("seeked", this._onSeeked), this._isSourceReady() ? this._mediaReady() : (t.preload || e.addEventListener("canplay", this._onCanPlay), e.addEventListener("canplaythrough", this._onCanPlayThrough), e.addEventListener("error", this._onError, !0)), this.isValid || e.addEventListener("loadedmetadata", this._onLoadedMetadata), this.alphaMode = await D(), this._load = new Promise((n, r) => {
+		return (e.readyState === e.HAVE_ENOUGH_DATA || e.readyState === e.HAVE_FUTURE_DATA) && e.width && e.height && (e.complete = !0), e.addEventListener("play", this._onPlayStart), e.addEventListener("pause", this._onPlayStop), e.addEventListener("seeked", this._onSeeked), this._isSourceReady() ? this._mediaReady() : (t.preload || e.addEventListener("canplay", this._onCanPlay), e.addEventListener("canplaythrough", this._onCanPlayThrough), e.addEventListener("error", this._onError, !0)), this.isValid || e.addEventListener("loadedmetadata", this._onLoadedMetadata), this.alphaMode = await E(), this._load = new Promise((n, r) => {
 			this.isValid ? n(this) : (this._resolve = n, this._reject = r, t.preloadTimeoutMs !== void 0 && (this._preloadTimeout = setTimeout(() => {
 				this._onError(new ErrorEvent(`Preload exceeded timeout of ${t.preloadTimeoutMs}ms`));
 			})), e.load());
@@ -195,14 +195,14 @@ var O = class e extends s {
 		e !== this._updateFPS && (this._updateFPS = e, this._configureAutoUpdate());
 	}
 	_configureAutoUpdate() {
-		this._autoUpdate && this._isSourcePlaying() ? !this._updateFPS && this.resource.requestVideoFrameCallback ? (this._isConnectedToTicker && (u.shared.remove(this.updateFrame, this), this._isConnectedToTicker = !1, this._msToNextUpdate = 0), this._videoFrameRequestCallbackHandle === null && (this._videoFrameRequestCallbackHandle = this.resource.requestVideoFrameCallback(this._videoFrameRequestCallback))) : (this._videoFrameRequestCallbackHandle !== null && (this.resource.cancelVideoFrameCallback(this._videoFrameRequestCallbackHandle), this._videoFrameRequestCallbackHandle = null), this._isConnectedToTicker || (u.shared.add(this.updateFrame, this), this._isConnectedToTicker = !0, this._msToNextUpdate = 0)) : (this._videoFrameRequestCallbackHandle !== null && (this.resource.cancelVideoFrameCallback(this._videoFrameRequestCallbackHandle), this._videoFrameRequestCallbackHandle = null), this._isConnectedToTicker && (u.shared.remove(this.updateFrame, this), this._isConnectedToTicker = !1, this._msToNextUpdate = 0));
+		this._autoUpdate && this._isSourcePlaying() ? !this._updateFPS && this.resource.requestVideoFrameCallback ? (this._isConnectedToTicker && (c.shared.remove(this.updateFrame, this), this._isConnectedToTicker = !1, this._msToNextUpdate = 0), this._videoFrameRequestCallbackHandle === null && (this._videoFrameRequestCallbackHandle = this.resource.requestVideoFrameCallback(this._videoFrameRequestCallback))) : (this._videoFrameRequestCallbackHandle !== null && (this.resource.cancelVideoFrameCallback(this._videoFrameRequestCallbackHandle), this._videoFrameRequestCallbackHandle = null), this._isConnectedToTicker || (c.shared.add(this.updateFrame, this), this._isConnectedToTicker = !0, this._msToNextUpdate = 0)) : (this._videoFrameRequestCallbackHandle !== null && (this.resource.cancelVideoFrameCallback(this._videoFrameRequestCallbackHandle), this._videoFrameRequestCallbackHandle = null), this._isConnectedToTicker && (c.shared.remove(this.updateFrame, this), this._isConnectedToTicker = !1, this._msToNextUpdate = 0));
 	}
 	static test(e) {
 		return globalThis.HTMLVideoElement && e instanceof HTMLVideoElement;
 	}
 };
-O.extension = m.TextureSource, O.defaultOptions = {
-	...s.defaultOptions,
+D.extension = f.TextureSource, D.defaultOptions = {
+	...t.defaultOptions,
 	autoLoad: !0,
 	autoPlay: !0,
 	updateFPS: 0,
@@ -211,12 +211,12 @@ O.extension = m.TextureSource, O.defaultOptions = {
 	muted: !0,
 	playsinline: !0,
 	preload: !1
-}, O.MIME_TYPES = {
+}, D.MIME_TYPES = {
 	ogv: "video/ogg",
 	mov: "video/quicktime",
 	m4v: "video/mp4"
 };
-var k = O, A = (e, t, n = !1) => (Array.isArray(e) || (e = [e]), t ? e.map((e) => typeof e == "string" || n ? t(e) : e) : e), j = new class {
+var O = D, k = (e, t, n = !1) => (Array.isArray(e) || (e = [e]), t ? e.map((e) => typeof e == "string" || n ? t(e) : e) : e), A = new class {
 	constructor() {
 		this._parsers = [], this._cache = /* @__PURE__ */ new Map(), this._cacheMap = /* @__PURE__ */ new Map();
 	}
@@ -228,35 +228,35 @@ var k = O, A = (e, t, n = !1) => (Array.isArray(e) || (e = [e]), t ? e.map((e) =
 	}
 	get(e) {
 		let t = this._cache.get(e);
-		return t || i(`[Assets] Asset id ${e} was not found in the Cache`), t;
+		return t || n(`[Assets] Asset id ${e} was not found in the Cache`), t;
 	}
 	set(e, t) {
-		let n = A(e), r;
+		let r = k(e), i;
 		for (let e = 0; e < this.parsers.length; e++) {
-			let i = this.parsers[e];
-			if (i.test(t)) {
-				r = i.getCacheableAssets(n, t);
+			let n = this.parsers[e];
+			if (n.test(t)) {
+				i = n.getCacheableAssets(r, t);
 				break;
 			}
 		}
-		let a = new Map(Object.entries(r || {}));
-		r || n.forEach((e) => {
+		let a = new Map(Object.entries(i || {}));
+		i || r.forEach((e) => {
 			a.set(e, t);
 		});
 		let o = [...a.keys()], s = {
 			cacheKeys: o,
-			keys: n
+			keys: r
 		};
-		n.forEach((e) => {
+		r.forEach((e) => {
 			this._cacheMap.set(e, s);
 		}), o.forEach((e) => {
-			let n = r ? r[e] : t;
-			this._cache.has(e) && this._cache.get(e) !== n && i("[Cache] already has key:", e), this._cache.set(e, a.get(e));
+			let r = i ? i[e] : t;
+			this._cache.has(e) && this._cache.get(e) !== r && n("[Cache] already has key:", e), this._cache.set(e, a.get(e));
 		});
 	}
 	remove(e) {
 		if (!this._cacheMap.has(e)) {
-			i(`[Assets] Asset id ${e} was not found in the Cache`);
+			n(`[Assets] Asset id ${e} was not found in the Cache`);
 			return;
 		}
 		let t = this._cacheMap.get(e);
@@ -269,48 +269,48 @@ var k = O, A = (e, t, n = !1) => (Array.isArray(e) || (e = [e]), t ? e.map((e) =
 	get parsers() {
 		return this._parsers;
 	}
-}(), M = [];
-d.handleByList(m.TextureSource, M);
-function N(e = {}) {
+}(), j = [];
+d.handleByList(f.TextureSource, j);
+function M(e = {}) {
 	let t = e && e.resource, n = t ? e.resource : e, r = t ? e : { resource: e };
-	for (let e = 0; e < M.length; e++) {
-		let t = M[e];
+	for (let e = 0; e < j.length; e++) {
+		let t = j[e];
 		if (t.test(n)) return new t(r);
 	}
 	throw Error(`Could not find a source type for resource: ${r.resource}`);
 }
-function P(e = {}, n = !1) {
-	let r = e && e.resource, i = r ? e.resource : e, a = r ? e : { resource: e };
-	if (!n && j.has(i)) return j.get(i);
-	let o = new t({ source: N(a) });
-	return o.on("destroy", () => {
-		j.has(i) && j.remove(i);
-	}), n || j.set(i, o), o;
+function N(e = {}, t = !1) {
+	let n = e && e.resource, r = n ? e.resource : e, i = n ? e : { resource: e };
+	if (!t && A.has(r)) return A.get(r);
+	let a = new g({ source: M(i) });
+	return a.on("destroy", () => {
+		A.has(r) && A.remove(r);
+	}), t || A.set(r, a), a;
 }
-function F(e, n = !1) {
-	return typeof e == "string" ? j.get(e) : e instanceof s ? new t({ source: e }) : P(e, n);
+function P(e, n = !1) {
+	return typeof e == "string" ? A.get(e) : e instanceof t ? new g({ source: e }) : N(e, n);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/init.mjs
-t.from = F, s.from = N, d.add(C, w, T, k, v, l, r);
+g.from = P, t.from = M, d.add(S, C, w, O, _, s, a);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/assets/loader/parsers/LoaderParser.mjs
-var I = /* @__PURE__ */ ((e) => (e[e.Low = 0] = "Low", e[e.Normal = 1] = "Normal", e[e.High = 2] = "High", e))(I || {});
+var F = /* @__PURE__ */ ((e) => (e[e.Low = 0] = "Low", e[e.Normal = 1] = "Normal", e[e.High = 2] = "High", e))(F || {});
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/utils/path.mjs
-function L(e) {
+function I(e) {
 	if (typeof e != "string") throw TypeError(`Path must be a string. Received ${JSON.stringify(e)}`);
 }
-function R(e) {
+function L(e) {
 	return e.split("?")[0].split("#")[0];
 }
-function z(e) {
+function R(e) {
 	return e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-function B(e, t, n) {
-	return e.replace(new RegExp(z(t), "g"), n);
+function z(e, t, n) {
+	return e.replace(new RegExp(R(t), "g"), n);
 }
-function V(e, t) {
+function B(e, t) {
 	let n = "", r = 0, i = -1, a = 0, o = -1;
 	for (let s = 0; s <= e.length; ++s) {
 		if (s < e.length) o = e.charCodeAt(s);
@@ -339,9 +339,9 @@ function V(e, t) {
 	}
 	return n;
 }
-var H = {
+var V = {
 	toPosix(e) {
-		return B(e, "\\", "/");
+		return z(e, "\\", "/");
 	},
 	isUrl(e) {
 		return /^https?:/.test(this.toPosix(e));
@@ -356,35 +356,35 @@ var H = {
 		return /^[^/:]+:/.test(this.toPosix(e));
 	},
 	getProtocol(e) {
-		L(e), e = this.toPosix(e);
+		I(e), e = this.toPosix(e);
 		let t = /^file:\/\/\//.exec(e);
 		if (t) return t[0];
 		let n = /^[^/:]+:\/{0,2}/.exec(e);
 		return n ? n[0] : "";
 	},
 	toAbsolute(e, t, n) {
-		if (L(e), this.isDataUrl(e) || this.isBlobUrl(e)) return e;
-		let r = R(this.toPosix(t ?? h.get().getBaseUrl())), i = R(this.toPosix(n ?? this.rootname(r)));
-		return e = this.toPosix(e), e.startsWith("/") ? H.join(i, e.slice(1)) : this.isAbsolute(e) ? e : this.join(r, e);
+		if (I(e), this.isDataUrl(e) || this.isBlobUrl(e)) return e;
+		let r = L(this.toPosix(t ?? p.get().getBaseUrl())), i = L(this.toPosix(n ?? this.rootname(r)));
+		return e = this.toPosix(e), e.startsWith("/") ? V.join(i, e.slice(1)) : this.isAbsolute(e) ? e : this.join(r, e);
 	},
 	normalize(e) {
-		if (L(e), e.length === 0) return ".";
+		if (I(e), e.length === 0) return ".";
 		if (this.isDataUrl(e) || this.isBlobUrl(e)) return e;
 		e = this.toPosix(e);
 		let t = "", n = e.startsWith("/");
 		this.hasProtocol(e) && (t = this.rootname(e), e = e.slice(t.length));
 		let r = e.endsWith("/");
-		return e = V(e, !1), e.length > 0 && r && (e += "/"), n ? `/${e}` : t + e;
+		return e = B(e, !1), e.length > 0 && r && (e += "/"), n ? `/${e}` : t + e;
 	},
 	isAbsolute(e) {
-		return L(e), e = this.toPosix(e), this.hasProtocol(e) ? !0 : e.startsWith("/");
+		return I(e), e = this.toPosix(e), this.hasProtocol(e) ? !0 : e.startsWith("/");
 	},
 	join(...e) {
 		if (e.length === 0) return ".";
 		let t;
 		for (let n = 0; n < e.length; ++n) {
 			let r = e[n];
-			if (L(r), r.length > 0) {
+			if (I(r), r.length > 0) {
 				if (t === void 0) t = r;
 				else {
 					let i = e[n - 1] ?? "";
@@ -395,7 +395,7 @@ var H = {
 		return t === void 0 ? "." : this.normalize(t);
 	},
 	dirname(e) {
-		if (L(e), e.length === 0) return ".";
+		if (I(e), e.length === 0) return ".";
 		e = this.toPosix(e);
 		let t = e.charCodeAt(0), n = t === 47, r = -1, i = !0, a = this.getProtocol(e), o = e;
 		e = e.slice(a.length);
@@ -408,7 +408,7 @@ var H = {
 		return r === -1 ? n ? "/" : this.isUrl(o) ? a + e : a : n && r === 1 ? "//" : a + e.slice(0, r);
 	},
 	rootname(e) {
-		L(e), e = this.toPosix(e);
+		I(e), e = this.toPosix(e);
 		let t = "";
 		if (t = e.startsWith("/") ? "/" : this.getProtocol(e), this.isUrl(e)) {
 			let n = e.indexOf("/", t.length);
@@ -417,7 +417,7 @@ var H = {
 		return t;
 	},
 	basename(e, t) {
-		L(e), t && L(t), e = R(this.toPosix(e));
+		I(e), t && I(t), e = L(this.toPosix(e));
 		let n = 0, r = -1, i = !0, a;
 		if (t !== void 0 && t.length > 0 && t.length <= e.length) {
 			if (t.length === e.length && t === e) return "";
@@ -442,7 +442,7 @@ var H = {
 		return r === -1 ? "" : e.slice(n, r);
 	},
 	extname(e) {
-		L(e), e = R(this.toPosix(e));
+		I(e), e = L(this.toPosix(e));
 		let t = -1, n = 0, r = -1, i = !0, a = 0;
 		for (let o = e.length - 1; o >= 0; --o) {
 			let s = e.charCodeAt(o);
@@ -458,7 +458,7 @@ var H = {
 		return t === -1 || r === -1 || a === 0 || a === 1 && t === r - 1 && t === n + 1 ? "" : e.slice(t, r);
 	},
 	parse(e) {
-		L(e);
+		I(e);
 		let t = {
 			root: "",
 			dir: "",
@@ -467,7 +467,7 @@ var H = {
 			name: ""
 		};
 		if (e.length === 0) return t;
-		e = R(this.toPosix(e));
+		e = L(this.toPosix(e));
 		let n = e.charCodeAt(0), r = this.isAbsolute(e), i;
 		t.root = this.rootname(e), i = r || this.hasProtocol(e) ? 1 : 0;
 		let a = -1, o = 0, s = -1, c = !0, l = e.length - 1, u = 0;
@@ -489,27 +489,27 @@ var H = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/assets/utils/createStringVariations.mjs
-function U(e, t, n, r, i) {
+function H(e, t, n, r, i) {
 	let a = t[n];
 	for (let o = 0; o < a.length; o++) {
 		let s = a[o];
-		n < t.length - 1 ? U(e.replace(r[n], s), t, n + 1, r, i) : i.push(e.replace(r[n], s));
+		n < t.length - 1 ? H(e.replace(r[n], s), t, n + 1, r, i) : i.push(e.replace(r[n], s));
 	}
 }
-function W(e) {
+function U(e) {
 	let t = e.match(/\{(.*?)\}/g), n = [];
 	if (t) {
 		let r = [];
 		t.forEach((e) => {
 			let t = e.substring(1, e.length - 1).split(",");
 			r.push(t);
-		}), U(e, r, 0, t, n);
+		}), H(e, r, 0, t, n);
 	} else n.push(e);
 	return n;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/assets/utils/isSingleItem.mjs
-var G = (e) => !Array.isArray(e), K = class {
+var W = (e) => !Array.isArray(e), G = class {
 	constructor() {
 		this._defaultBundleIdentifierOptions = {
 			connector: "-",
@@ -552,13 +552,13 @@ var G = (e) => !Array.isArray(e), K = class {
 	}
 	getAlias(e) {
 		let { alias: t, src: n } = e;
-		return A(t || n, (e) => typeof e == "string" ? e : Array.isArray(e) ? e.map((e) => e?.src ?? e) : e?.src ? e.src : e, !0);
+		return k(t || n, (e) => typeof e == "string" ? e : Array.isArray(e) ? e.map((e) => e?.src ?? e) : e?.src ? e.src : e, !0);
 	}
 	removeAlias(e, t) {
 		this._assetMap[e] && (t && t !== this._resolverHash[e] || (delete this._resolverHash[e], delete this._assetMap[e]));
 	}
 	addManifest(e) {
-		this._manifest && i("[Resolver] Manifest already exists, this will be overwritten"), this._manifest = e, e.bundles.forEach((e) => {
+		this._manifest && n("[Resolver] Manifest already exists, this will be overwritten"), this._manifest = e, e.bundles.forEach((e) => {
 			this.addBundle(e.name, e.assets);
 		});
 	}
@@ -589,31 +589,31 @@ var G = (e) => !Array.isArray(e), K = class {
 	add(e) {
 		let t = [];
 		Array.isArray(e) ? t.push(...e) : t.push(e);
-		let n = (e) => {
-			this.hasKey(e) && i(`[Resolver] already has key: ${e} overwriting`);
+		let r = (e) => {
+			this.hasKey(e) && n(`[Resolver] already has key: ${e} overwriting`);
 		};
-		A(t).forEach((e) => {
-			let { src: t } = e, { data: r, format: i, loadParser: a, parser: o } = e, s = A(t).map((e) => typeof e == "string" ? W(e) : Array.isArray(e) ? e : [e]), c = this.getAlias(e);
-			Array.isArray(c) ? c.forEach(n) : n(c);
+		k(t).forEach((e) => {
+			let { src: t } = e, { data: n, format: i, loadParser: a, parser: o } = e, s = k(t).map((e) => typeof e == "string" ? U(e) : Array.isArray(e) ? e : [e]), c = this.getAlias(e);
+			Array.isArray(c) ? c.forEach(r) : r(c);
 			let l = [], u = (e) => ({
 				src: e,
 				...this._parsers.find((t) => t.test(e))?.parse(e)
 			});
 			s.forEach((t) => {
 				t.forEach((t) => {
-					let n = {};
-					if (typeof t == "object" ? (r = t.data ?? r, i = t.format ?? i, (t.loadParser || t.parser) && (a = t.loadParser ?? a, o = t.parser ?? o), n = {
+					let r = {};
+					if (typeof t == "object" ? (n = t.data ?? n, i = t.format ?? i, (t.loadParser || t.parser) && (a = t.loadParser ?? a, o = t.parser ?? o), r = {
 						...u(t.src),
 						...t
-					}) : n = u(t), !c) throw Error(`[Resolver] alias is undefined for this asset: ${n.src}`);
-					n = this._buildResolvedAsset(n, {
+					}) : r = u(t), !c) throw Error(`[Resolver] alias is undefined for this asset: ${r.src}`);
+					r = this._buildResolvedAsset(r, {
 						aliases: c,
-						data: r,
+						data: n,
 						format: i,
 						loadParser: a,
 						parser: o,
 						progressSize: e.progressSize
-					}), l.push(n);
+					}), l.push(r);
 				});
 			}), c.forEach((e) => {
 				this._assetMap[e] = l;
@@ -621,8 +621,8 @@ var G = (e) => !Array.isArray(e), K = class {
 		});
 	}
 	resolveBundle(e) {
-		let t = G(e);
-		e = A(e);
+		let t = W(e);
+		e = k(e);
 		let n = {};
 		return e.forEach((e) => {
 			let t = this._bundles[e];
@@ -646,8 +646,8 @@ var G = (e) => !Array.isArray(e), K = class {
 		return t.src;
 	}
 	resolve(e) {
-		let t = G(e);
-		e = A(e);
+		let t = W(e);
+		e = k(e);
 		let n = {};
 		return e.forEach((e) => {
 			if (!this._resolverHash[e]) {
@@ -685,33 +685,33 @@ var G = (e) => !Array.isArray(e), K = class {
 	}
 	_buildResolvedAsset(e, t) {
 		let { aliases: n, data: r, loadParser: i, parser: a, format: o, progressSize: s } = t;
-		return (this._basePath || this._rootPath) && (e.src = H.toAbsolute(e.src, this._basePath, this._rootPath)), e.alias = n ?? e.alias ?? [e.src], e.src = this._appendDefaultSearchParams(e.src), e.data = {
+		return (this._basePath || this._rootPath) && (e.src = V.toAbsolute(e.src, this._basePath, this._rootPath)), e.alias = n ?? e.alias ?? [e.src], e.src = this._appendDefaultSearchParams(e.src), e.data = {
 			...r || {},
 			...e.data
-		}, e.loadParser = i ?? e.loadParser, e.parser = a ?? e.parser, e.format = o ?? e.format ?? q(e.src), s !== void 0 && (e.progressSize = s), e;
+		}, e.loadParser = i ?? e.loadParser, e.parser = a ?? e.parser, e.format = o ?? e.format ?? K(e.src), s !== void 0 && (e.progressSize = s), e;
 	}
 };
-K.RETINA_PREFIX = /@([0-9\.]+)x/;
-function q(e) {
+G.RETINA_PREFIX = /@([0-9\.]+)x/;
+function K(e) {
 	return e.split(".").pop().split("?").shift().split("#").shift();
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/assets/utils/copySearchParams.mjs
-var J = (e, t) => {
+var q = (e, t) => {
 	let n = t.split("?")[1];
 	return n && (e += `?${n}`), e;
-}, Y = class e {
+}, J = class e {
 	constructor(e, n) {
 		this.linkedSheets = [];
 		let r = e;
-		e?.source instanceof s && (r = {
+		e?.source instanceof t && (r = {
 			texture: e,
 			data: n
 		});
 		let { texture: i, data: a, cachePrefix: o = "" } = r;
-		this.cachePrefix = o, this._texture = i instanceof t ? i : null, this.textureSource = i.source, this.textures = {}, this.animations = {}, this.data = a;
-		let c = parseFloat(a.meta.scale);
-		c ? (this.resolution = c, i.source.resolution = this.resolution) : this.resolution = i.source._resolution, this._frames = this.data.frames, this._frameKeys = Object.keys(this._frames), this._batchIndex = 0, this._callback = null;
+		this.cachePrefix = o, this._texture = i instanceof g ? i : null, this.textureSource = i.source, this.textures = {}, this.animations = {}, this.data = a;
+		let s = parseFloat(a.meta.scale);
+		s ? (this.resolution = s, i.source.resolution = this.resolution) : this.resolution = i.source._resolution, this._frames = this.data.frames, this._frameKeys = Object.keys(this._frames), this._batchIndex = 0, this._callback = null;
 	}
 	parse() {
 		return new Promise((t) => {
@@ -721,24 +721,24 @@ var J = (e, t) => {
 	parseSync() {
 		return this._processFrames(0, !0), this._processAnimations(), this.textures;
 	}
-	_processFrames(n, r = !1) {
-		let i = n, a = r ? Infinity : e.BATCH_SIZE;
-		for (; i - n < a && i < this._frameKeys.length;) {
-			let e = this._frameKeys[i], n = this._frames[e], r = n.frame;
-			if (r) {
-				let i = null, a = null, o = n.trimmed !== !1 && n.sourceSize ? n.sourceSize : n.frame, s = new c(0, 0, Math.floor(o.w) / this.resolution, Math.floor(o.h) / this.resolution);
-				i = n.rotated ? new c(Math.floor(r.x) / this.resolution, Math.floor(r.y) / this.resolution, Math.floor(r.h) / this.resolution, Math.floor(r.w) / this.resolution) : new c(Math.floor(r.x) / this.resolution, Math.floor(r.y) / this.resolution, Math.floor(r.w) / this.resolution, Math.floor(r.h) / this.resolution), n.trimmed !== !1 && n.spriteSourceSize && (a = new c(Math.floor(n.spriteSourceSize.x) / this.resolution, Math.floor(n.spriteSourceSize.y) / this.resolution, Math.floor(r.w) / this.resolution, Math.floor(r.h) / this.resolution)), this.textures[e] = new t({
+	_processFrames(t, n = !1) {
+		let r = t, i = n ? Infinity : e.BATCH_SIZE;
+		for (; r - t < i && r < this._frameKeys.length;) {
+			let e = this._frameKeys[r], t = this._frames[e], n = t.frame;
+			if (n) {
+				let r = null, i = null, a = t.trimmed !== !1 && t.sourceSize ? t.sourceSize : t.frame, s = new o(0, 0, Math.floor(a.w) / this.resolution, Math.floor(a.h) / this.resolution);
+				r = t.rotated ? new o(Math.floor(n.x) / this.resolution, Math.floor(n.y) / this.resolution, Math.floor(n.h) / this.resolution, Math.floor(n.w) / this.resolution) : new o(Math.floor(n.x) / this.resolution, Math.floor(n.y) / this.resolution, Math.floor(n.w) / this.resolution, Math.floor(n.h) / this.resolution), t.trimmed !== !1 && t.spriteSourceSize && (i = new o(Math.floor(t.spriteSourceSize.x) / this.resolution, Math.floor(t.spriteSourceSize.y) / this.resolution, Math.floor(n.w) / this.resolution, Math.floor(n.h) / this.resolution)), this.textures[e] = new g({
 					source: this.textureSource,
-					frame: i,
+					frame: r,
 					orig: s,
-					trim: a,
-					rotate: n.rotated ? 2 : 0,
-					defaultAnchor: n.anchor,
-					defaultBorders: n.borders,
+					trim: i,
+					rotate: t.rotated ? 2 : 0,
+					defaultAnchor: t.anchor,
+					defaultBorders: t.borders,
 					label: e.toString()
 				});
 			}
-			i++;
+			r++;
 		}
 	}
 	_processAnimations() {
@@ -765,8 +765,8 @@ var J = (e, t) => {
 		this._frames = null, this._frameKeys = null, this.data = null, this.textures = null, e && (this._texture?.destroy(), this.textureSource.destroy()), this._texture = null, this.textureSource = null, this.linkedSheets = [];
 	}
 };
-Y.BATCH_SIZE = 1e3;
-var X = Y, Z = [
+J.BATCH_SIZE = 1e3;
+var Y = J, X = [
 	"jpg",
 	"png",
 	"jpeg",
@@ -784,40 +784,40 @@ var X = Y, Z = [
 	"eac",
 	"astc"
 ];
-function Q(e, t, n) {
+function Z(e, t, n) {
 	let r = {};
 	if (e.forEach((e) => {
 		r[e] = t;
 	}), Object.keys(t.textures).forEach((e) => {
 		r[`${t.cachePrefix}${e}`] = t.textures[e];
 	}), !n) {
-		let n = H.dirname(e[0]);
+		let n = V.dirname(e[0]);
 		t.linkedSheets.forEach((e, i) => {
-			let a = Q([`${n}/${t.data.meta.related_multi_packs[i]}`], e, !0);
+			let a = Z([`${n}/${t.data.meta.related_multi_packs[i]}`], e, !0);
 			Object.assign(r, a);
 		});
 	}
 	return r;
 }
-var $ = {
-	extension: m.Asset,
+var Q = {
+	extension: f.Asset,
 	cache: {
-		test: (e) => e instanceof X,
-		getCacheableAssets: (e, t) => Q(e, t, !1)
+		test: (e) => e instanceof Y,
+		getCacheableAssets: (e, t) => Z(e, t, !1)
 	},
 	resolver: {
 		extension: {
-			type: m.ResolveParser,
+			type: f.ResolveParser,
 			name: "resolveSpritesheet"
 		},
 		test: (e) => {
 			let t = e.split("?")[0].split("."), n = t.pop(), r = t.pop();
-			return n === "json" && Z.includes(r);
+			return n === "json" && X.includes(r);
 		},
 		parse: (e) => {
 			let t = e.split(".");
 			return {
-				resolution: parseFloat(K.RETINA_PREFIX.exec(e)?.[1] ?? "1"),
+				resolution: parseFloat(G.RETINA_PREFIX.exec(e)?.[1] ?? "1"),
 				format: t[t.length - 2],
 				src: e
 			};
@@ -827,51 +827,51 @@ var $ = {
 		name: "spritesheetLoader",
 		id: "spritesheet",
 		extension: {
-			type: m.LoadParser,
-			priority: I.Normal,
+			type: f.LoadParser,
+			priority: F.Normal,
 			name: "spritesheetLoader"
 		},
 		async testParse(e, t) {
-			return H.extname(t.src).toLowerCase() === ".json" && !!e.frames;
+			return V.extname(t.src).toLowerCase() === ".json" && !!e.frames;
 		},
-		async parse(e, n, r) {
-			let { texture: i, imageFilename: a, textureOptions: o, cachePrefix: s } = n?.data ?? {}, c = H.dirname(n.src);
-			c && c.lastIndexOf("/") !== c.length - 1 && (c += "/");
-			let l;
-			if (i instanceof t) l = i;
+		async parse(e, t, n) {
+			let { texture: r, imageFilename: i, textureOptions: a, cachePrefix: o } = t?.data ?? {}, s = V.dirname(t.src);
+			s && s.lastIndexOf("/") !== s.length - 1 && (s += "/");
+			let c;
+			if (r instanceof g) c = r;
 			else {
-				let t = J(c + (a ?? e.meta.image), n.src);
-				l = (await r.load([{
-					src: t,
-					data: o
-				}]))[t];
+				let r = q(s + (i ?? e.meta.image), t.src);
+				c = (await n.load([{
+					src: r,
+					data: a
+				}]))[r];
 			}
-			let u = new X({
-				texture: l.source,
+			let l = new Y({
+				texture: c.source,
 				data: e,
-				cachePrefix: s
+				cachePrefix: o
 			});
-			await u.parse();
-			let d = e?.meta?.related_multi_packs;
-			if (Array.isArray(d)) {
+			await l.parse();
+			let u = e?.meta?.related_multi_packs;
+			if (Array.isArray(u)) {
 				let e = [];
-				for (let t of d) {
-					if (typeof t != "string") continue;
-					let i = c + t;
-					n.data?.ignoreMultiPack || (i = J(i, n.src), e.push(r.load({
+				for (let r of u) {
+					if (typeof r != "string") continue;
+					let i = s + r;
+					t.data?.ignoreMultiPack || (i = q(i, t.src), e.push(n.load({
 						src: i,
 						data: {
-							textureOptions: o,
+							textureOptions: a,
 							ignoreMultiPack: !0
 						}
 					})));
 				}
-				let t = await Promise.all(e);
-				u.linkedSheets = t, t.forEach((e) => {
-					e.linkedSheets = [u].concat(u.linkedSheets.filter((t) => t !== e));
+				let r = await Promise.all(e);
+				l.linkedSheets = r, r.forEach((e) => {
+					e.linkedSheets = [l].concat(l.linkedSheets.filter((t) => t !== e));
 				});
 			}
-			return u;
+			return l;
 		},
 		async unload(e, t, n) {
 			await n.unload(e.textureSource._sourceOrigin), e.destroy(!1);
@@ -880,17 +880,7 @@ var $ = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/spritesheet/init.mjs
-d.add($);
+d.add(Q);
 //#endregion
-//#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/text/utils/getPo2TextureFromSource.mjs
-var ee = new a();
-function te(e, t, r, i, a = !1) {
-	let o = ee;
-	o.minX = 0, o.minY = 0, o.maxX = e.width / i | 0, o.maxY = e.height / i | 0;
-	let s = n.getOptimalTexture(o.width, o.height, i, !1, a);
-	return s.source.uploadMethodId = "image", s.source.resource = e, s.source.alphaMode = "premultiply-alpha-on-upload", s.frame.width = t / i, s.frame.height = r / i, s.source.emit("update", s.source), s.updateUvs(), s;
-}
-//#endregion
-export { te as t };
 
-//# sourceMappingURL=getPo2TextureFromSource-Df-ffBe0.js.map
+//# sourceMappingURL=init-CZxNZLL9.js.map

@@ -1,5 +1,5 @@
-import { I as e, X as t, d as n, n as r, r as i, tt as a } from "./Geometry-CW_aidqb.js";
-import { k as o, w as s } from "./RenderTargetSystem-CL31NvbB.js";
+import { I as e, Y as t, d as n, et as r, n as i, r as a } from "./Geometry-BqZcOGkp.js";
+import { C as o, O as s } from "./RenderTargetSystem-Dl2EX-2_.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/high-shader/shader-bits/localUniformBit.mjs
 var c = {
 	name: "local-uniform-bit",
@@ -69,10 +69,10 @@ function m(e) {
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStencilModesToPixi.mjs
 var h = [];
-h[s.NONE] = void 0, h[s.DISABLED] = {
+h[o.NONE] = void 0, h[o.DISABLED] = {
 	stencilWriteMask: 0,
 	stencilReadMask: 0
-}, h[s.RENDERING_MASK_ADD] = {
+}, h[o.RENDERING_MASK_ADD] = {
 	stencilFront: {
 		compare: "equal",
 		passOp: "increment-clamp"
@@ -81,7 +81,7 @@ h[s.NONE] = void 0, h[s.DISABLED] = {
 		compare: "equal",
 		passOp: "increment-clamp"
 	}
-}, h[s.RENDERING_MASK_REMOVE] = {
+}, h[o.RENDERING_MASK_REMOVE] = {
 	stencilFront: {
 		compare: "equal",
 		passOp: "decrement-clamp"
@@ -90,7 +90,7 @@ h[s.NONE] = void 0, h[s.DISABLED] = {
 		compare: "equal",
 		passOp: "decrement-clamp"
 	}
-}, h[s.MASK_ACTIVE] = {
+}, h[o.MASK_ACTIVE] = {
 	stencilWriteMask: 0,
 	stencilFront: {
 		compare: "equal",
@@ -100,7 +100,7 @@ h[s.NONE] = void 0, h[s.DISABLED] = {
 		compare: "equal",
 		passOp: "keep"
 	}
-}, h[s.INVERSE_MASK_ACTIVE] = {
+}, h[o.INVERSE_MASK_ACTIVE] = {
 	stencilWriteMask: 0,
 	stencilFront: {
 		compare: "not-equal",
@@ -118,13 +118,13 @@ var g = class {
 		this._syncFunctionHash = /* @__PURE__ */ Object.create(null), this._adaptor = e, this._systemCheck();
 	}
 	_systemCheck() {
-		if (!o()) throw Error("Current environment does not allow unsafe-eval, please use pixi.js/unsafe-eval module to enable support.");
+		if (!s()) throw Error("Current environment does not allow unsafe-eval, please use pixi.js/unsafe-eval module to enable support.");
 	}
 	ensureUniformGroup(e) {
 		let t = this.getUniformGroupData(e);
-		e.buffer ||= new r({
+		e.buffer ||= new i({
 			data: new Float32Array(t.layout.size / 4),
-			usage: i.UNIFORM | i.COPY_DST
+			usage: a.UNIFORM | a.COPY_DST
 		});
 	}
 	getUniformGroupData(e) {
@@ -145,13 +145,13 @@ var g = class {
 		return this._adaptor.generateUboSync(e);
 	}
 	syncUniformGroup(e, t, n) {
-		let a = this.getUniformGroupData(e);
-		e.buffer ||= new r({
-			data: new Float32Array(a.layout.size / 4),
-			usage: i.UNIFORM | i.COPY_DST
+		let r = this.getUniformGroupData(e);
+		e.buffer ||= new i({
+			data: new Float32Array(r.layout.size / 4),
+			usage: a.UNIFORM | a.COPY_DST
 		});
 		let o = null;
-		return t || (t = e.buffer.data, o = e.buffer.dataInt32), n ||= 0, a.syncFunction(e.uniforms, t, o, n), !0;
+		return t || (t = e.buffer.data, o = e.buffer.dataInt32), n ||= 0, r.syncFunction(e.uniforms, t, o, n), !0;
 	}
 	updateUniformGroup(e) {
 		if (e.isStatic && !e._dirtyId) return !1;
@@ -250,7 +250,7 @@ var b = {
 }, x = {
 	...b,
 	"mat2x2<f32>": "\n        data[offset] = v[0];\n        data[offset + 1] = v[1];\n        data[offset + 2] = v[2];\n        data[offset + 3] = v[3];\n    "
-}, S = class extends a {
+}, S = class extends r {
 	constructor({ buffer: e, offset: n, size: r }) {
 		super(), this.uid = t("buffer"), this._resourceType = "bufferResource", this._touched = 0, this._resourceId = t("resource"), this._bufferResource = !0, this.destroyed = !1, this.buffer = e, this.offset = n | 0, this.size = r, this.buffer.on("change", this.onBufferChange, this);
 	}
@@ -264,4 +264,4 @@ var b = {
 //#endregion
 export { _ as a, p as c, c as d, u as f, v as i, d as l, b as n, g as o, l as p, x as r, h as s, S as t, f as u };
 
-//# sourceMappingURL=BufferResource-Cqi4JDjl.js.map
+//# sourceMappingURL=BufferResource-BHtTHfHM.js.map

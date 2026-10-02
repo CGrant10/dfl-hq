@@ -1,4 +1,4 @@
-import { B as e, c as t } from "./Geometry-CW_aidqb.js";
+import { c as e, z as t } from "./Geometry-BqZcOGkp.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/batcher/gpu/getTextureBatchBindGroup.mjs
 var n = {};
 function r(e, t, r) {
@@ -8,14 +8,14 @@ function r(e, t, r) {
 }
 function i(r, i, a, o) {
 	let s = {}, c = 0;
-	for (let t = 0; t < o; t++) {
-		let n = t < i ? r[t] : e.EMPTY.source;
+	for (let e = 0; e < o; e++) {
+		let n = e < i ? r[e] : t.EMPTY.source;
 		s[c++] = n.source, s[c++] = n.style;
 	}
-	let l = new t(s);
+	let l = new e(s);
 	return n[a] = l, l;
 }
 //#endregion
 export { r as t };
 
-//# sourceMappingURL=getTextureBatchBindGroup-BSaolhDL.js.map
+//# sourceMappingURL=getTextureBatchBindGroup-BwWtUJqe.js.map

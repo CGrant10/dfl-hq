@@ -1,16 +1,16 @@
-import { $ as e, B as t, I as n, U as r, Z as i, _ as a, a as o, at as s, d as c, f as l, it as u, l as d, o as f, r as p, rt as m, s as ee, t as te, v as h } from "./Geometry-CW_aidqb.js";
-import { C as ne, D as re, O as g, b as ie, f as _, g as v, m as ae, n as oe, r as se, t as ce, v as le, w as y, x as ue } from "./RenderTargetSystem-CL31NvbB.js";
-import { a as b, c as de, f as x, i as fe, n as pe, o as me, s as he, t as S, u as ge } from "./BufferResource-Cqi4JDjl.js";
+import { H as e, I as t, Q as n, X as r, _ as i, a, d as o, f as s, l as c, nt as l, o as u, r as d, rt as f, s as ee, t as p, tt as m, v as h, z as g } from "./Geometry-BqZcOGkp.js";
+import { C as _, D as v, E as te, S as ne, _ as re, b as y, d as b, h as x, n as ie, p as ae, r as oe, t as se, y as ce } from "./RenderTargetSystem-Dl2EX-2_.js";
+import { a as S, c as le, f as C, i as ue, n as de, o as fe, s as pe, t as w, u as me } from "./BufferResource-BHtTHfHM.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/utils/browser/isSafari.mjs
-function _e() {
+function he() {
 	let { userAgent: e } = h.get().getNavigator();
 	return /^((?!chrome|android).)*safari/i.test(e);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/batcher/gl/GlBatchAdaptor.mjs
-var C = class {
+var T = class {
 	constructor() {
-		this._tempState = o.for2d(), this._didUploadHash = {};
+		this._tempState = a.for2d(), this._didUploadHash = {};
 	}
 	init(e) {
 		e.renderer.runners.contextChange.add(this);
@@ -30,22 +30,22 @@ var C = class {
 		n.geometry.draw(t.topology, t.size, t.start);
 	}
 };
-C.extension = {
+T.extension = {
 	type: [m.WebGLPipesAdaptor],
 	name: "batch"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/buffer/const.mjs
-var w = /* @__PURE__ */ ((e) => (e[e.ELEMENT_ARRAY_BUFFER = 34963] = "ELEMENT_ARRAY_BUFFER", e[e.ARRAY_BUFFER = 34962] = "ARRAY_BUFFER", e[e.UNIFORM_BUFFER = 35345] = "UNIFORM_BUFFER", e))(w || {}), ve = class {
+var E = /* @__PURE__ */ ((e) => (e[e.ELEMENT_ARRAY_BUFFER = 34963] = "ELEMENT_ARRAY_BUFFER", e[e.ARRAY_BUFFER = 34962] = "ARRAY_BUFFER", e[e.UNIFORM_BUFFER = 35345] = "UNIFORM_BUFFER", e))(E || {}), ge = class {
 	constructor(e, t) {
 		this._lastBindBaseLocation = -1, this._lastBindCallId = -1, this.buffer = e || null, this.updateID = -1, this.byteLength = -1, this.type = t;
 	}
 	destroy() {
 		this.buffer = null, this.updateID = -1, this.byteLength = -1, this.type = -1, this._lastBindBaseLocation = -1, this._lastBindCallId = -1;
 	}
-}, T = class {
+}, D = class {
 	constructor(e) {
-		this._boundBufferBases = /* @__PURE__ */ Object.create(null), this._minBaseLocation = 0, this._nextBindBaseIndex = this._minBaseLocation, this._bindCallId = 0, this._renderer = e, this._managedBuffers = new _({
+		this._boundBufferBases = /* @__PURE__ */ Object.create(null), this._minBaseLocation = 0, this._nextBindBaseIndex = this._minBaseLocation, this._bindCallId = 0, this._renderer = e, this._managedBuffers = new b({
 			renderer: e,
 			type: "resource",
 			onUnload: this.onBufferUnload.bind(this),
@@ -99,7 +99,7 @@ var w = /* @__PURE__ */ ((e) => (e[e.ELEMENT_ARRAY_BUFFER = 34963] = "ELEMENT_AR
 		let { _gl: t } = this, n = this.getGlBuffer(e);
 		if (e._updateID === n.updateID) return n;
 		n.updateID = e._updateID, t.bindBuffer(n.type, n.buffer);
-		let r = e.data, i = e.descriptor.usage & p.STATIC ? t.STATIC_DRAW : t.DYNAMIC_DRAW;
+		let r = e.data, i = e.descriptor.usage & d.STATIC ? t.STATIC_DRAW : t.DYNAMIC_DRAW;
 		return r ? n.byteLength >= r.byteLength ? t.bufferSubData(n.type, 0, r, 0, e._updateSize / r.BYTES_PER_ELEMENT) : (n.byteLength = r.byteLength, t.bufferData(n.type, r, i)) : (n.byteLength = e.descriptor.size, t.bufferData(n.type, n.byteLength, i)), n;
 	}
 	destroyAll(e = !1) {
@@ -110,22 +110,22 @@ var w = /* @__PURE__ */ ((e) => (e[e.ELEMENT_ARRAY_BUFFER = 34963] = "ELEMENT_AR
 		n && (t || this._gl.deleteBuffer(n.buffer));
 	}
 	createGLBuffer(e) {
-		let { _gl: t } = this, n = w.ARRAY_BUFFER;
-		e.descriptor.usage & p.INDEX ? n = w.ELEMENT_ARRAY_BUFFER : e.descriptor.usage & p.UNIFORM && (n = w.UNIFORM_BUFFER);
-		let r = new ve(t.createBuffer(), n);
+		let { _gl: t } = this, n = E.ARRAY_BUFFER;
+		e.descriptor.usage & d.INDEX ? n = E.ELEMENT_ARRAY_BUFFER : e.descriptor.usage & d.UNIFORM && (n = E.UNIFORM_BUFFER);
+		let r = new ge(t.createBuffer(), n);
 		return e._gpuData[this._renderer.uid] = r, this._managedBuffers.add(e), r;
 	}
 	resetState() {
 		this._boundBufferBases = /* @__PURE__ */ Object.create(null);
 	}
 };
-T.extension = {
+D.extension = {
 	type: [m.WebGLSystem],
 	name: "buffer"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/context/GlContextSystem.mjs
-var E = class e {
+var O = class e {
 	constructor(e) {
 		this.supports = {
 			uint32Indices: !0,
@@ -143,32 +143,32 @@ var E = class e {
 	contextChange(e) {
 		this.gl = e, this._renderer.gl = e;
 	}
-	init(t) {
-		t = {
+	init(n) {
+		n = {
 			...e.defaultOptions,
-			...t
+			...n
 		};
-		let r = this.multiView = t.multiView;
-		if (t.context && r && (n("Renderer created with both a context and multiview enabled. Disabling multiView as both cannot work together."), r = !1), this.canvas = r ? h.get().createCanvas(this._renderer.canvas.width, this._renderer.canvas.height) : this._renderer.view.canvas, t.context) this.initFromContext(t.context);
+		let r = this.multiView = n.multiView;
+		if (n.context && r && (t("Renderer created with both a context and multiview enabled. Disabling multiView as both cannot work together."), r = !1), this.canvas = r ? h.get().createCanvas(this._renderer.canvas.width, this._renderer.canvas.height) : this._renderer.view.canvas, n.context) this.initFromContext(n.context);
 		else {
-			let e = this._renderer.background.alpha < 1, n = t.premultipliedAlpha ?? !0, r = t.antialias && !this._renderer.backBuffer.useBackBuffer;
-			this.createContext(t.preferWebGLVersion, {
+			let e = this._renderer.background.alpha < 1, t = n.premultipliedAlpha ?? !0, r = n.antialias && !this._renderer.backBuffer.useBackBuffer;
+			this.createContext(n.preferWebGLVersion, {
 				alpha: e,
-				premultipliedAlpha: n,
+				premultipliedAlpha: t,
 				antialias: r,
 				stencil: !0,
-				preserveDrawingBuffer: t.preserveDrawingBuffer,
-				powerPreference: t.powerPreference ?? "default"
+				preserveDrawingBuffer: n.preserveDrawingBuffer,
+				powerPreference: n.powerPreference ?? "default"
 			});
 		}
 	}
 	ensureCanvasSize(e) {
 		if (!this.multiView) {
-			e !== this.canvas && n("multiView is disabled, but targetCanvas is not the main canvas");
+			e !== this.canvas && t("multiView is disabled, but targetCanvas is not the main canvas");
 			return;
 		}
-		let { canvas: t } = this;
-		(t.width < e.width || t.height < e.height) && (t.width = Math.max(e.width, e.width), t.height = Math.max(e.height, e.height));
+		let { canvas: n } = this;
+		(n.width < e.width || n.height < e.height) && (n.width = Math.max(e.width, e.width), n.height = Math.max(e.height, e.height));
 	}
 	initFromContext(e) {
 		this.gl = e, this.webGLVersion = e instanceof h.get().getWebGLRenderingContext() ? 1 : 2, this.getExtensions(), this.validateContext(e), this._renderer.runners.contextChange.emit(e);
@@ -233,16 +233,16 @@ var E = class e {
 		this.extensions.loseContext?.loseContext(), this._contextLossForced = !0;
 	}
 	validateContext(e) {
-		let t = e.getContextAttributes();
-		t && !t.stencil && n("Provided WebGL context does not have a stencil buffer, masks may not render correctly");
+		let n = e.getContextAttributes();
+		n && !n.stencil && t("Provided WebGL context does not have a stencil buffer, masks may not render correctly");
 		let r = this.supports, i = this.webGLVersion === 2, a = this.extensions;
-		r.uint32Indices = i || !!a.uint32ElementIndex, r.uniformBufferObject = i, r.vertexArrayObject = i || !!a.vertexArrayObject, r.srgbTextures = i || !!a.srgb, r.nonPowOf2wrapping = i, r.nonPowOf2mipmaps = i, r.msaa = i, r.uint32Indices || n("Provided WebGL context does not support 32 index buffer, large scenes may not render correctly");
+		r.uint32Indices = i || !!a.uint32ElementIndex, r.uniformBufferObject = i, r.vertexArrayObject = i || !!a.vertexArrayObject, r.srgbTextures = i || !!a.srgb, r.nonPowOf2wrapping = i, r.nonPowOf2mipmaps = i, r.msaa = i, r.uint32Indices || t("Provided WebGL context does not support 32 index buffer, large scenes may not render correctly");
 	}
 };
-E.extension = {
+O.extension = {
 	type: [m.WebGLSystem],
 	name: "context"
-}, E.defaultOptions = {
+}, O.defaultOptions = {
 	context: null,
 	premultipliedAlpha: !0,
 	preserveDrawingBuffer: !1,
@@ -250,59 +250,59 @@ E.extension = {
 	preferWebGLVersion: 2,
 	multiView: !1
 };
-var ye = E, D = /* @__PURE__ */ ((e) => (e[e.RGBA = 6408] = "RGBA", e[e.RGB = 6407] = "RGB", e[e.RG = 33319] = "RG", e[e.RED = 6403] = "RED", e[e.RGBA_INTEGER = 36249] = "RGBA_INTEGER", e[e.RGB_INTEGER = 36248] = "RGB_INTEGER", e[e.RG_INTEGER = 33320] = "RG_INTEGER", e[e.RED_INTEGER = 36244] = "RED_INTEGER", e[e.ALPHA = 6406] = "ALPHA", e[e.LUMINANCE = 6409] = "LUMINANCE", e[e.LUMINANCE_ALPHA = 6410] = "LUMINANCE_ALPHA", e[e.DEPTH_COMPONENT = 6402] = "DEPTH_COMPONENT", e[e.DEPTH_STENCIL = 34041] = "DEPTH_STENCIL", e))(D || {}), O = /* @__PURE__ */ ((e) => (e[e.TEXTURE_2D = 3553] = "TEXTURE_2D", e[e.TEXTURE_CUBE_MAP = 34067] = "TEXTURE_CUBE_MAP", e[e.TEXTURE_2D_ARRAY = 35866] = "TEXTURE_2D_ARRAY", e[e.TEXTURE_CUBE_MAP_POSITIVE_X = 34069] = "TEXTURE_CUBE_MAP_POSITIVE_X", e[e.TEXTURE_CUBE_MAP_NEGATIVE_X = 34070] = "TEXTURE_CUBE_MAP_NEGATIVE_X", e[e.TEXTURE_CUBE_MAP_POSITIVE_Y = 34071] = "TEXTURE_CUBE_MAP_POSITIVE_Y", e[e.TEXTURE_CUBE_MAP_NEGATIVE_Y = 34072] = "TEXTURE_CUBE_MAP_NEGATIVE_Y", e[e.TEXTURE_CUBE_MAP_POSITIVE_Z = 34073] = "TEXTURE_CUBE_MAP_POSITIVE_Z", e[e.TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074] = "TEXTURE_CUBE_MAP_NEGATIVE_Z", e))(O || {}), k = /* @__PURE__ */ ((e) => (e[e.UNSIGNED_BYTE = 5121] = "UNSIGNED_BYTE", e[e.UNSIGNED_SHORT = 5123] = "UNSIGNED_SHORT", e[e.UNSIGNED_SHORT_5_6_5 = 33635] = "UNSIGNED_SHORT_5_6_5", e[e.UNSIGNED_SHORT_4_4_4_4 = 32819] = "UNSIGNED_SHORT_4_4_4_4", e[e.UNSIGNED_SHORT_5_5_5_1 = 32820] = "UNSIGNED_SHORT_5_5_5_1", e[e.UNSIGNED_INT = 5125] = "UNSIGNED_INT", e[e.UNSIGNED_INT_10F_11F_11F_REV = 35899] = "UNSIGNED_INT_10F_11F_11F_REV", e[e.UNSIGNED_INT_2_10_10_10_REV = 33640] = "UNSIGNED_INT_2_10_10_10_REV", e[e.UNSIGNED_INT_24_8 = 34042] = "UNSIGNED_INT_24_8", e[e.UNSIGNED_INT_5_9_9_9_REV = 35902] = "UNSIGNED_INT_5_9_9_9_REV", e[e.BYTE = 5120] = "BYTE", e[e.SHORT = 5122] = "SHORT", e[e.INT = 5124] = "INT", e[e.FLOAT = 5126] = "FLOAT", e[e.FLOAT_32_UNSIGNED_INT_24_8_REV = 36269] = "FLOAT_32_UNSIGNED_INT_24_8_REV", e[e.HALF_FLOAT = 36193] = "HALF_FLOAT", e))(k || {}), A = {
-	uint8x2: k.UNSIGNED_BYTE,
-	uint8x4: k.UNSIGNED_BYTE,
-	sint8x2: k.BYTE,
-	sint8x4: k.BYTE,
-	unorm8x2: k.UNSIGNED_BYTE,
-	unorm8x4: k.UNSIGNED_BYTE,
-	snorm8x2: k.BYTE,
-	snorm8x4: k.BYTE,
-	uint16x2: k.UNSIGNED_SHORT,
-	uint16x4: k.UNSIGNED_SHORT,
-	sint16x2: k.SHORT,
-	sint16x4: k.SHORT,
-	unorm16x2: k.UNSIGNED_SHORT,
-	unorm16x4: k.UNSIGNED_SHORT,
-	snorm16x2: k.SHORT,
-	snorm16x4: k.SHORT,
-	float16x2: k.HALF_FLOAT,
-	float16x4: k.HALF_FLOAT,
-	float32: k.FLOAT,
-	float32x2: k.FLOAT,
-	float32x3: k.FLOAT,
-	float32x4: k.FLOAT,
-	uint32: k.UNSIGNED_INT,
-	uint32x2: k.UNSIGNED_INT,
-	uint32x3: k.UNSIGNED_INT,
-	uint32x4: k.UNSIGNED_INT,
-	sint32: k.INT,
-	sint32x2: k.INT,
-	sint32x3: k.INT,
-	sint32x4: k.INT
+var _e = O, k = /* @__PURE__ */ ((e) => (e[e.RGBA = 6408] = "RGBA", e[e.RGB = 6407] = "RGB", e[e.RG = 33319] = "RG", e[e.RED = 6403] = "RED", e[e.RGBA_INTEGER = 36249] = "RGBA_INTEGER", e[e.RGB_INTEGER = 36248] = "RGB_INTEGER", e[e.RG_INTEGER = 33320] = "RG_INTEGER", e[e.RED_INTEGER = 36244] = "RED_INTEGER", e[e.ALPHA = 6406] = "ALPHA", e[e.LUMINANCE = 6409] = "LUMINANCE", e[e.LUMINANCE_ALPHA = 6410] = "LUMINANCE_ALPHA", e[e.DEPTH_COMPONENT = 6402] = "DEPTH_COMPONENT", e[e.DEPTH_STENCIL = 34041] = "DEPTH_STENCIL", e))(k || {}), A = /* @__PURE__ */ ((e) => (e[e.TEXTURE_2D = 3553] = "TEXTURE_2D", e[e.TEXTURE_CUBE_MAP = 34067] = "TEXTURE_CUBE_MAP", e[e.TEXTURE_2D_ARRAY = 35866] = "TEXTURE_2D_ARRAY", e[e.TEXTURE_CUBE_MAP_POSITIVE_X = 34069] = "TEXTURE_CUBE_MAP_POSITIVE_X", e[e.TEXTURE_CUBE_MAP_NEGATIVE_X = 34070] = "TEXTURE_CUBE_MAP_NEGATIVE_X", e[e.TEXTURE_CUBE_MAP_POSITIVE_Y = 34071] = "TEXTURE_CUBE_MAP_POSITIVE_Y", e[e.TEXTURE_CUBE_MAP_NEGATIVE_Y = 34072] = "TEXTURE_CUBE_MAP_NEGATIVE_Y", e[e.TEXTURE_CUBE_MAP_POSITIVE_Z = 34073] = "TEXTURE_CUBE_MAP_POSITIVE_Z", e[e.TEXTURE_CUBE_MAP_NEGATIVE_Z = 34074] = "TEXTURE_CUBE_MAP_NEGATIVE_Z", e))(A || {}), j = /* @__PURE__ */ ((e) => (e[e.UNSIGNED_BYTE = 5121] = "UNSIGNED_BYTE", e[e.UNSIGNED_SHORT = 5123] = "UNSIGNED_SHORT", e[e.UNSIGNED_SHORT_5_6_5 = 33635] = "UNSIGNED_SHORT_5_6_5", e[e.UNSIGNED_SHORT_4_4_4_4 = 32819] = "UNSIGNED_SHORT_4_4_4_4", e[e.UNSIGNED_SHORT_5_5_5_1 = 32820] = "UNSIGNED_SHORT_5_5_5_1", e[e.UNSIGNED_INT = 5125] = "UNSIGNED_INT", e[e.UNSIGNED_INT_10F_11F_11F_REV = 35899] = "UNSIGNED_INT_10F_11F_11F_REV", e[e.UNSIGNED_INT_2_10_10_10_REV = 33640] = "UNSIGNED_INT_2_10_10_10_REV", e[e.UNSIGNED_INT_24_8 = 34042] = "UNSIGNED_INT_24_8", e[e.UNSIGNED_INT_5_9_9_9_REV = 35902] = "UNSIGNED_INT_5_9_9_9_REV", e[e.BYTE = 5120] = "BYTE", e[e.SHORT = 5122] = "SHORT", e[e.INT = 5124] = "INT", e[e.FLOAT = 5126] = "FLOAT", e[e.FLOAT_32_UNSIGNED_INT_24_8_REV = 36269] = "FLOAT_32_UNSIGNED_INT_24_8_REV", e[e.HALF_FLOAT = 36193] = "HALF_FLOAT", e))(j || {}), M = {
+	uint8x2: j.UNSIGNED_BYTE,
+	uint8x4: j.UNSIGNED_BYTE,
+	sint8x2: j.BYTE,
+	sint8x4: j.BYTE,
+	unorm8x2: j.UNSIGNED_BYTE,
+	unorm8x4: j.UNSIGNED_BYTE,
+	snorm8x2: j.BYTE,
+	snorm8x4: j.BYTE,
+	uint16x2: j.UNSIGNED_SHORT,
+	uint16x4: j.UNSIGNED_SHORT,
+	sint16x2: j.SHORT,
+	sint16x4: j.SHORT,
+	unorm16x2: j.UNSIGNED_SHORT,
+	unorm16x4: j.UNSIGNED_SHORT,
+	snorm16x2: j.SHORT,
+	snorm16x4: j.SHORT,
+	float16x2: j.HALF_FLOAT,
+	float16x4: j.HALF_FLOAT,
+	float32: j.FLOAT,
+	float32x2: j.FLOAT,
+	float32x3: j.FLOAT,
+	float32x4: j.FLOAT,
+	uint32: j.UNSIGNED_INT,
+	uint32x2: j.UNSIGNED_INT,
+	uint32x3: j.UNSIGNED_INT,
+	uint32x4: j.UNSIGNED_INT,
+	sint32: j.INT,
+	sint32x2: j.INT,
+	sint32x3: j.INT,
+	sint32x4: j.INT
 };
-function be(e) {
-	return A[e] ?? A.float32;
+function ve(e) {
+	return M[e] ?? M.float32;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/geometry/GlGeometrySystem.mjs
-var xe = {
+var ye = {
 	"point-list": 0,
 	"line-list": 1,
 	"line-strip": 3,
 	"triangle-list": 4,
 	"triangle-strip": 5
-}, Se = class {
+}, be = class {
 	constructor() {
 		this.vaoCache = /* @__PURE__ */ Object.create(null);
 	}
 	destroy() {
 		this.vaoCache = /* @__PURE__ */ Object.create(null);
 	}
-}, j = class {
+}, N = class {
 	constructor(e) {
-		this._renderer = e, this._activeGeometry = null, this._activeVao = null, this.hasVao = !0, this.hasInstance = !0, this._managedGeometries = new _({
+		this._renderer = e, this._activeGeometry = null, this._activeVao = null, this.hasVao = !0, this.hasInstance = !0, this._managedGeometries = new b({
 			renderer: e,
 			type: "resource",
 			onUnload: this.onGeometryUnload.bind(this),
@@ -355,10 +355,10 @@ var xe = {
 		let r = this._renderer.gl, i = this._renderer.buffer;
 		this._renderer.shader._getProgramData(t), this.checkCompatibility(e, t);
 		let a = this.getSignature(e, t), o = e._gpuData[this._renderer.uid];
-		o || (o = new Se(), e._gpuData[this._renderer.uid] = o, this._managedGeometries.add(e));
+		o || (o = new be(), e._gpuData[this._renderer.uid] = o, this._managedGeometries.add(e));
 		let s = o.vaoCache, c = s[a];
 		if (c) return s[t._key] = c, c;
-		de(e, t._attributeData);
+		le(e, t._attributeData);
 		let l = e.buffers;
 		c = r.createVertexArray(), r.bindVertexArray(c);
 		for (let e = 0; e < l.length; e++) {
@@ -381,15 +381,15 @@ var xe = {
 		e.indexBuffer && r.bind(e.indexBuffer);
 		let a = null;
 		for (let e in i) {
-			let o = i[e], s = o.buffer, l = r.getGlBuffer(s), u = t._attributeData[e];
+			let s = i[e], c = s.buffer, l = r.getGlBuffer(c), u = t._attributeData[e];
 			if (u) {
-				a !== l && (r.bind(s), a = l);
+				a !== l && (r.bind(c), a = l);
 				let e = u.location;
 				n.enableVertexAttribArray(e);
-				let t = c(o.format), i = be(o.format);
-				if (u.format?.substring(1, 4) === "int" ? n.vertexAttribIPointer(e, t.size, i, o.stride, o.offset) : n.vertexAttribPointer(e, t.size, i, t.normalised, o.stride, o.offset), o.instance) {
+				let t = o(s.format), i = ve(s.format);
+				if (u.format?.substring(1, 4) === "int" ? n.vertexAttribIPointer(e, t.size, i, s.stride, s.offset) : n.vertexAttribPointer(e, t.size, i, t.normalised, s.stride, s.offset), s.instance) {
 					if (this.hasInstance) {
-						let t = o.divisor ?? 1;
+						let t = s.divisor ?? 1;
 						n.vertexAttribDivisor(e, t);
 					} else throw Error("geometry error, GPU Instancing is not supported on this device");
 				}
@@ -397,7 +397,7 @@ var xe = {
 		}
 	}
 	draw(e, t, n, r) {
-		let { gl: i } = this._renderer, a = this._activeGeometry, o = xe[e || a.topology];
+		let { gl: i } = this._renderer, a = this._activeGeometry, o = ye[e || a.topology];
 		if (r ??= a.instanceCount, a.indexBuffer) {
 			let e = a.indexBuffer.data.BYTES_PER_ELEMENT, s = e === 2 ? i.UNSIGNED_SHORT : i.UNSIGNED_INT;
 			r === 1 ? i.drawElements(o, t || a.indexBuffer.data.length, s, (n || 0) * e) : i.drawElementsInstanced(o, t || a.indexBuffer.data.length, s, (n || 0) * e, r);
@@ -411,37 +411,37 @@ var xe = {
 		this._managedGeometries.destroy(), this._renderer = null, this.gl = null, this._activeVao = null, this._activeGeometry = null;
 	}
 };
-j.extension = {
+N.extension = {
 	type: [m.WebGLSystem],
 	name: "geometry"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/GlBackBufferSystem.mjs
-var Ce = new te({ attributes: { aPosition: [
+var xe = new p({ attributes: { aPosition: [
 	-1,
 	-1,
 	3,
 	-1,
 	-1,
 	3
-] } }), M = class e {
+] } }), P = class n {
 	constructor(e) {
 		this.useBackBuffer = !1, this._useBackBufferThisRender = !1, this._renderer = e;
 	}
-	init(r = {}) {
-		let { useBackBuffer: i, antialias: a } = {
-			...e.defaultOptions,
-			...r
+	init(e = {}) {
+		let { useBackBuffer: r, antialias: i } = {
+			...n.defaultOptions,
+			...e
 		};
-		this.useBackBuffer = i, this._antialias = a, this._renderer.context.supports.msaa || (n("antialiasing, is not supported on when using the back buffer"), this._antialias = !1), this._state = o.for2d();
-		let s = new l({
+		this.useBackBuffer = r, this._antialias = i, this._renderer.context.supports.msaa || (t("antialiasing, is not supported on when using the back buffer"), this._antialias = !1), this._state = a.for2d();
+		let o = new s({
 			vertex: "\n                attribute vec2 aPosition;\n                out vec2 vUv;\n\n                void main() {\n                    gl_Position = vec4(aPosition, 0.0, 1.0);\n\n                    vUv = (aPosition + 1.0) / 2.0;\n\n                    // flip dem UVs\n                    vUv.y = 1.0 - vUv.y;\n                }",
 			fragment: "\n                in vec2 vUv;\n                out vec4 finalColor;\n\n                uniform sampler2D uTexture;\n\n                void main() {\n                    finalColor = texture(uTexture, vUv);\n                }",
 			name: "big-triangle"
 		});
-		this._bigTriangleShader = new f({
-			glProgram: s,
-			resources: { uTexture: t.WHITE.source }
+		this._bigTriangleShader = new u({
+			glProgram: o,
+			resources: { uTexture: g.WHITE.source }
 		});
 	}
 	renderStart(e) {
@@ -457,29 +457,29 @@ var Ce = new te({ attributes: { aPosition: [
 	_presentBackBuffer() {
 		let e = this._renderer;
 		e.renderTarget.finishRenderPass(), this._useBackBufferThisRender && (e.renderTarget.bind(this._targetTexture, !1), this._bigTriangleShader.resources.uTexture = this._backBufferTexture.source, e.encoder.draw({
-			geometry: Ce,
+			geometry: xe,
 			shader: this._bigTriangleShader,
 			state: this._state
 		}));
 	}
-	_getBackBufferTexture(e) {
-		return this._backBufferTexture = this._backBufferTexture || new t({ source: new r({
-			width: e.width,
-			height: e.height,
-			resolution: e._resolution,
+	_getBackBufferTexture(t) {
+		return this._backBufferTexture = this._backBufferTexture || new g({ source: new e({
+			width: t.width,
+			height: t.height,
+			resolution: t._resolution,
 			antialias: this._antialias
-		}) }), this._backBufferTexture.source.resize(e.width, e.height, e._resolution), this._backBufferTexture;
+		}) }), this._backBufferTexture.source.resize(t.width, t.height, t._resolution), this._backBufferTexture;
 	}
 	destroy() {
 		this._backBufferTexture &&= (this._backBufferTexture.destroy(), null);
 	}
 };
-M.extension = {
+P.extension = {
 	type: [m.WebGLSystem],
 	name: "backBuffer",
 	priority: 1
-}, M.defaultOptions = { useBackBuffer: !1 };
-var we = M, N = class {
+}, P.defaultOptions = { useBackBuffer: !1 };
+var Se = P, F = class {
 	constructor(e) {
 		this._colorMaskCache = 15, this._renderer = e;
 	}
@@ -487,13 +487,13 @@ var we = M, N = class {
 		this._colorMaskCache !== e && (this._colorMaskCache = e, this._renderer.gl.colorMask(!!(e & 8), !!(e & 4), !!(e & 2), !!(e & 1)));
 	}
 };
-N.extension = {
+F.extension = {
 	type: [m.WebGLSystem],
 	name: "colorMask"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/GlEncoderSystem.mjs
-var P = class {
+var I = class {
 	constructor(e) {
 		this.commandFinished = Promise.resolve(), this._renderer = e;
 	}
@@ -509,13 +509,13 @@ var P = class {
 		this._renderer = null;
 	}
 };
-P.extension = {
+I.extension = {
 	type: [m.WebGLSystem],
 	name: "encoder"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/GlLimitsSystem.mjs
-var F = class {
+var L = class {
 	constructor(e) {
 		this._renderer = e;
 	}
@@ -527,22 +527,22 @@ var F = class {
 	}
 	destroy() {}
 };
-F.extension = {
+L.extension = {
 	type: [m.WebGLSystem],
 	name: "limits"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/GlRenderTarget.mjs
-var Te = class {
+var Ce = class {
 	constructor() {
 		this.width = -1, this.height = -1, this.msaa = !1, this._attachedMipLevel = 0, this._attachedLayer = 0, this.msaaRenderBuffer = [];
 	}
-}, I = class {
+}, R = class {
 	constructor(e) {
 		this._stencilCache = {
 			enabled: !1,
 			stencilReference: 0,
-			stencilMode: y.NONE
+			stencilMode: _.NONE
 		}, this._renderTargetStencilState = /* @__PURE__ */ Object.create(null), e.renderTarget.onRenderTargetChange.add(this);
 	}
 	contextChange(e) {
@@ -571,29 +571,29 @@ var Te = class {
 		this._activeRenderTarget = e;
 		let t = this._renderTargetStencilState[e.uid];
 		t ||= this._renderTargetStencilState[e.uid] = {
-			stencilMode: y.DISABLED,
+			stencilMode: _.DISABLED,
 			stencilReference: 0
 		}, this.setStencilMode(t.stencilMode, t.stencilReference);
 	}
 	resetState() {
-		this._stencilCache.enabled = !1, this._stencilCache.stencilMode = y.NONE, this._stencilCache.stencilReference = 0;
+		this._stencilCache.enabled = !1, this._stencilCache.stencilMode = _.NONE, this._stencilCache.stencilReference = 0;
 	}
 	setStencilMode(e, t) {
-		let n = this._renderTargetStencilState[this._activeRenderTarget.uid], r = this._gl, i = he[e], a = this._stencilCache;
-		if (n.stencilMode = e, n.stencilReference = t, e === y.DISABLED) {
+		let n = this._renderTargetStencilState[this._activeRenderTarget.uid], r = this._gl, i = pe[e], a = this._stencilCache;
+		if (n.stencilMode = e, n.stencilReference = t, e === _.DISABLED) {
 			this._stencilCache.enabled && (this._stencilCache.enabled = !1, r.disable(r.STENCIL_TEST));
 			return;
 		}
 		this._stencilCache.enabled || (this._stencilCache.enabled = !0, r.enable(r.STENCIL_TEST)), (e !== a.stencilMode || a.stencilReference !== t) && (a.stencilMode = e, a.stencilReference = t, r.stencilFunc(this._comparisonFuncMapping[i.stencilBack.compare], t, 255), r.stencilOp(r.KEEP, r.KEEP, this._stencilOpsMapping[i.stencilBack.passOp]));
 	}
 };
-I.extension = {
+R.extension = {
 	type: [m.WebGLSystem],
 	name: "stencil"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboElementsSTD40.mjs
-var L = {
+var z = {
 	f32: 4,
 	i32: 4,
 	"vec2<f32>": 8,
@@ -606,7 +606,7 @@ var L = {
 	"mat3x3<f32>": 48,
 	"mat4x4<f32>": 64
 };
-function Ee(e) {
+function we(e) {
 	let t = e.map((e) => ({
 		data: e,
 		offset: 0,
@@ -614,7 +614,7 @@ function Ee(e) {
 	})), n = 0, r = 0;
 	for (let e = 0; e < t.length; e++) {
 		let i = t[e];
-		if (n = L[i.data.type], !n) throw Error(`Unknown type ${i.data.type}`);
+		if (n = z[i.data.type], !n) throw Error(`Unknown type ${i.data.type}`);
 		i.data.size > 1 && (n = Math.max(n, 16) * i.data.size);
 		let a = n === 12 ? 16 : n;
 		i.size = n;
@@ -628,8 +628,8 @@ function Ee(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateArraySyncSTD40.mjs
-function De(e, t) {
-	let n = Math.max(L[e.data.type] / 16, 1), r = e.data.value.length / e.data.size, i = (4 - r % 4) % 4, a = e.data.type.indexOf("i32") >= 0 ? "dataInt32" : "data";
+function Te(e, t) {
+	let n = Math.max(z[e.data.type] / 16, 1), r = e.data.value.length / e.data.size, i = (4 - r % 4) % 4, a = e.data.type.indexOf("i32") >= 0 ? "dataInt32" : "data";
 	return `
         v = uv.${e.data.name};
         offset += ${t};
@@ -650,33 +650,33 @@ function De(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/createUboSyncSTD40.mjs
-function Oe(e) {
-	return fe(e, "uboStd40", De, pe);
+function Ee(e) {
+	return ue(e, "uboStd40", Te, de);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/GlUboSystem.mjs
-var R = class extends me {
+var B = class extends fe {
 	constructor() {
 		super({
-			createUboElements: Ee,
-			generateUboSync: Oe
+			createUboElements: we,
+			generateUboSync: Ee
 		});
 	}
 };
-R.extension = {
+B.extension = {
 	type: [m.WebGLSystem],
 	name: "ubo"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/renderTarget/GlRenderTargetAdaptor.mjs
-var ke = class {
+var De = class {
 	constructor() {
 		this._clearColorCache = [
 			0,
 			0,
 			0,
 			0
-		], this._viewPortCache = new i();
+		], this._viewPortCache = new r();
 	}
 	init(e, t) {
 		this._renderer = e, this._renderTargetSystem = t, e.runners.contextChange.add(this);
@@ -687,7 +687,7 @@ var ke = class {
 			0,
 			0,
 			0
-		], this._viewPortCache = new i();
+		], this._viewPortCache = new r();
 		let e = this._renderer.gl;
 		this._drawBuffersCache = [];
 		for (let t = 1; t <= 16; t++) this._drawBuffersCache[t] = Array.from({ length: t }, (t, n) => e.COLOR_ATTACHMENT0 + n);
@@ -731,8 +731,8 @@ var ke = class {
 		n.bindFramebuffer(n.FRAMEBUFFER, t.resolveTargetFramebuffer), n.bindFramebuffer(n.READ_FRAMEBUFFER, t.framebuffer), n.blitFramebuffer(0, 0, t.width, t.height, 0, 0, t.width, t.height, n.COLOR_BUFFER_BIT, n.NEAREST), n.bindFramebuffer(n.FRAMEBUFFER, t.framebuffer);
 	}
 	initGpuRenderTarget(e) {
-		let t = this._renderer.gl, n = new Te();
-		return n._attachedMipLevel = 0, n._attachedLayer = 0, e.colorTexture instanceof a ? (this._renderer.context.ensureCanvasSize(e.colorTexture.resource), n.framebuffer = null, n) : (this._initColor(e, n), t.bindFramebuffer(t.FRAMEBUFFER, null), n);
+		let t = this._renderer.gl, n = new Ce();
+		return n._attachedMipLevel = 0, n._attachedLayer = 0, e.colorTexture instanceof i ? (this._renderer.context.ensureCanvasSize(e.colorTexture.resource), n.framebuffer = null, n) : (this._initColor(e, n), t.bindFramebuffer(t.FRAMEBUFFER, null), n);
 	}
 	destroyGpuRenderTarget(e) {
 		let t = this._renderer.gl;
@@ -744,9 +744,9 @@ var ke = class {
 		if (!t) return;
 		if (a !== 0) throw Error("[RenderTargetSystem] Clearing array layers is not supported in WebGL renderer.");
 		let o = this._renderTargetSystem;
-		typeof t == "boolean" && (t = t ? g.ALL : g.NONE);
+		typeof t == "boolean" && (t = t ? v.ALL : v.NONE);
 		let s = this._renderer.gl;
-		if (t & g.COLOR) {
+		if (t & v.COLOR) {
 			n ??= o.defaultClearColor;
 			let e = this._clearColorCache, t = n;
 			(e[0] !== t[0] || e[1] !== t[1] || e[2] !== t[2] || e[3] !== t[3]) && (e[0] = t[0], e[1] = t[1], e[2] = t[2], e[3] = t[3], s.clearColor(t[0], t[1], t[2], t[3]));
@@ -758,11 +758,11 @@ var ke = class {
 		let t = this._renderTargetSystem.getGpuRenderTarget(e);
 		this._resizeColor(e, t), (e.stencil || e.depth) && this._resizeStencil(t);
 	}
-	_initColor(e, t) {
+	_initColor(e, n) {
 		let r = this._renderer, i = r.gl, a = i.createFramebuffer();
-		if (t.resolveTargetFramebuffer = a, i.bindFramebuffer(i.FRAMEBUFFER, a), t.width = e.colorTexture.source.pixelWidth, t.height = e.colorTexture.source.pixelHeight, e.colorTextures.forEach((e, a) => {
+		if (n.resolveTargetFramebuffer = a, i.bindFramebuffer(i.FRAMEBUFFER, a), n.width = e.colorTexture.source.pixelWidth, n.height = e.colorTexture.source.pixelHeight, e.colorTextures.forEach((e, a) => {
 			let o = e.source;
-			o.antialias && (r.context.supports.msaa ? t.msaa = !0 : n("[RenderTexture] Antialiasing on textures is not supported in WebGL1")), r.texture.bindSource(o, 0);
+			o.antialias && (r.context.supports.msaa ? n.msaa = !0 : t("[RenderTexture] Antialiasing on textures is not supported in WebGL1")), r.texture.bindSource(o, 0);
 			let s = r.texture.getGlSource(o), c = s.texture;
 			if (s.target === i.TEXTURE_2D) i.framebufferTexture2D(i.FRAMEBUFFER, i.COLOR_ATTACHMENT0 + a, i.TEXTURE_2D, c, 0);
 			else if (s.target === i.TEXTURE_2D_ARRAY) {
@@ -770,14 +770,14 @@ var ke = class {
 				i.framebufferTextureLayer(i.FRAMEBUFFER, i.COLOR_ATTACHMENT0 + a, c, 0, 0);
 			} else if (s.target === i.TEXTURE_CUBE_MAP) i.framebufferTexture2D(i.FRAMEBUFFER, i.COLOR_ATTACHMENT0 + a, i.TEXTURE_CUBE_MAP_POSITIVE_X, c, 0);
 			else throw Error("[RenderTargetSystem] Unsupported texture target for framebuffer attachment.");
-		}), t.msaa) {
-			let n = i.createFramebuffer();
-			t.framebuffer = n, i.bindFramebuffer(i.FRAMEBUFFER, n), e.colorTextures.forEach((e, n) => {
+		}), n.msaa) {
+			let t = i.createFramebuffer();
+			n.framebuffer = t, i.bindFramebuffer(i.FRAMEBUFFER, t), e.colorTextures.forEach((e, t) => {
 				let r = i.createRenderbuffer();
-				t.msaaRenderBuffer[n] = r;
+				n.msaaRenderBuffer[t] = r;
 			});
-		} else t.framebuffer = a;
-		this._resizeColor(e, t);
+		} else n.framebuffer = a;
+		this._resizeColor(e, n);
 	}
 	_resizeColor(e, t) {
 		let n = e.colorTexture.source;
@@ -804,77 +804,77 @@ var ke = class {
 	}
 	prerender(e) {
 		let t = e.colorTexture.resource;
-		this._renderer.context.multiView && a.test(t) && this._renderer.context.ensureCanvasSize(t);
+		this._renderer.context.multiView && i.test(t) && this._renderer.context.ensureCanvasSize(t);
 	}
 	postrender(e) {
-		if (this._renderer.context.multiView && a.test(e.colorTexture.resource)) {
+		if (this._renderer.context.multiView && i.test(e.colorTexture.resource)) {
 			let t = this._renderer.context.canvas, n = e.colorTexture;
 			n.context2D.drawImage(t, 0, n.pixelHeight - t.height);
 		}
 	}
-	_setDrawBuffers(e, t) {
+	_setDrawBuffers(e, n) {
 		let r = e.colorTextures.length, i = this._drawBuffersCache[r];
 		if (this._renderer.context.webGLVersion === 1) {
 			let e = this._renderer.context.extensions.drawBuffers;
-			e ? e.drawBuffersWEBGL(i) : n("[RenderTexture] This WebGL1 context does not support rendering to multiple targets");
-		} else t.drawBuffers(i);
+			e ? e.drawBuffersWEBGL(i) : t("[RenderTexture] This WebGL1 context does not support rendering to multiple targets");
+		} else n.drawBuffers(i);
 	}
-}, z = class extends ce {
+}, V = class extends se {
 	constructor(e) {
-		super(e), this.adaptor = new ke(), this.adaptor.init(e, this);
+		super(e), this.adaptor = new De(), this.adaptor.init(e, this);
 	}
 };
-z.extension = {
+V.extension = {
 	type: [m.WebGLSystem],
 	name: "renderTarget"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GenerateShaderSyncCode.mjs
-function Ae(e, t) {
-	let n = [], i = ["\n        var g = s.groups;\n        var sS = r.shader;\n        var p = s.glProgram;\n        var ugS = r.uniformGroup;\n        var resources;\n    "], a = !1, o = 0, s = t._getProgramData(e.glProgram);
-	for (let c in e.groups) {
-		let l = e.groups[c];
-		n.push(`
-            resources = g[${c}].resources;
+function Oe(t, n) {
+	let r = [], i = ["\n        var g = s.groups;\n        var sS = r.shader;\n        var p = s.glProgram;\n        var ugS = r.uniformGroup;\n        var resources;\n    "], a = !1, o = 0, s = n._getProgramData(t.glProgram);
+	for (let l in t.groups) {
+		let u = t.groups[l];
+		r.push(`
+            resources = g[${l}].resources;
         `);
-		for (let u in l.resources) {
-			let f = l.resources[u];
-			if (f instanceof d) {
+		for (let d in u.resources) {
+			let f = u.resources[d];
+			if (f instanceof c) {
 				if (f.ubo) {
-					let t = e._uniformBindMap[c][Number(u)];
-					n.push(`
+					let e = t._uniformBindMap[l][Number(d)];
+					r.push(`
                         sS.bindUniformBlock(
-                            resources[${u}],
-                            '${t}',
-                            ${e.glProgram._uniformBlockData[t].index}
+                            resources[${d}],
+                            '${e}',
+                            ${t.glProgram._uniformBlockData[e].index}
                         );
                     `);
-				} else n.push(`
-                        ugS.updateUniformGroup(resources[${u}], p, sD);
+				} else r.push(`
+                        ugS.updateUniformGroup(resources[${d}], p, sD);
                     `);
-			} else if (f instanceof S) {
-				let t = e._uniformBindMap[c][Number(u)];
-				n.push(`
+			} else if (f instanceof w) {
+				let e = t._uniformBindMap[l][Number(d)];
+				r.push(`
                     sS.bindUniformBlock(
-                        resources[${u}],
-                        '${t}',
-                        ${e.glProgram._uniformBlockData[t].index}
+                        resources[${d}],
+                        '${e}',
+                        ${t.glProgram._uniformBlockData[e].index}
                     );
                 `);
-			} else if (f instanceof r) {
-				let r = e._uniformBindMap[c][u], l = s.uniformData[r];
-				l && (a || (a = !0, i.push("\n                        var tS = r.texture;\n                        ")), t._gl.uniform1i(l.location, o), n.push(`
-                        tS.bind(resources[${u}], ${o});
+			} else if (f instanceof e) {
+				let e = t._uniformBindMap[l][d], c = s.uniformData[e];
+				c && (a || (a = !0, i.push("\n                        var tS = r.texture;\n                        ")), n._gl.uniform1i(c.location, o), r.push(`
+                        tS.bind(resources[${d}], ${o});
                     `), o++);
 			}
 		}
 	}
-	let c = [...i, ...n].join("\n");
-	return Function("r", "s", "sD", c);
+	let l = [...i, ...r].join("\n");
+	return Function("r", "s", "sD", l);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlProgramData.mjs
-var je = class {
+var ke = class {
 	constructor(e, t) {
 		this.program = e, this.uniformData = t, this.uniformGroups = {}, this.uniformDirtyGroups = {}, this.uniformBlockBindings = {};
 	}
@@ -884,18 +884,18 @@ var je = class {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/compileShader.mjs
-function B(e, t, n) {
+function H(e, t, n) {
 	let r = e.createShader(t);
 	return e.shaderSource(r, n), e.compileShader(r), r;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/defaultValue.mjs
-function V(e) {
+function U(e) {
 	let t = Array(e);
 	for (let e = 0; e < t.length; e++) t[e] = !1;
 	return t;
 }
-function H(e, t) {
+function Ae(e, t) {
 	switch (e) {
 		case "float": return 0;
 		case "vec2": return new Float32Array(2 * t);
@@ -912,9 +912,9 @@ function H(e, t) {
 		case "uvec3": return new Uint32Array(3 * t);
 		case "uvec4": return new Uint32Array(4 * t);
 		case "bool": return !1;
-		case "bvec2": return V(2 * t);
-		case "bvec3": return V(3 * t);
-		case "bvec4": return V(4 * t);
+		case "bvec2": return U(2 * t);
+		case "bvec3": return U(3 * t);
+		case "bvec4": return U(4 * t);
 		case "mat2": return new Float32Array([
 			1,
 			0,
@@ -955,7 +955,7 @@ function H(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/mapType.mjs
-var U = null, W = {
+var W = null, G = {
 	FLOAT: "float",
 	FLOAT_VEC2: "vec2",
 	FLOAT_VEC3: "vec3",
@@ -984,7 +984,7 @@ var U = null, W = {
 	SAMPLER_2D_ARRAY: "sampler2DArray",
 	INT_SAMPLER_2D_ARRAY: "sampler2DArray",
 	UNSIGNED_INT_SAMPLER_2D_ARRAY: "sampler2DArray"
-}, Me = {
+}, je = {
 	float: "float32",
 	vec2: "float32x2",
 	vec3: "float32x3",
@@ -1002,32 +1002,32 @@ var U = null, W = {
 	bvec3: "uint32x3",
 	bvec4: "uint32x4"
 };
-function G(e, t) {
-	if (!U) {
-		let t = Object.keys(W);
-		U = {};
+function K(e, t) {
+	if (!W) {
+		let t = Object.keys(G);
+		W = {};
 		for (let n = 0; n < t.length; ++n) {
 			let r = t[n];
-			U[e[r]] = W[r];
+			W[e[r]] = G[r];
 		}
 	}
-	return U[t];
+	return W[t];
 }
-function Ne(e, t) {
-	return Me[G(e, t)] || "float32";
+function Me(e, t) {
+	return je[K(e, t)] || "float32";
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/extractAttributesFromGlProgram.mjs
-function Pe(e, t, n = !1) {
+function Ne(e, t, n = !1) {
 	let r = {}, i = t.getProgramParameter(e, t.ACTIVE_ATTRIBUTES);
 	for (let n = 0; n < i; n++) {
 		let i = t.getActiveAttrib(e, n);
 		if (i.name.startsWith("gl_")) continue;
-		let a = Ne(t, i.type);
+		let a = Me(t, i.type);
 		r[i.name] = {
 			location: 0,
 			format: a,
-			stride: c(a).stride,
+			stride: o(a).stride,
 			offset: 0,
 			instance: !1,
 			start: 0
@@ -1043,7 +1043,7 @@ function Pe(e, t, n = !1) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUboData.mjs
-function Fe(e, t) {
+function Pe(e, t) {
 	if (!t.ACTIVE_UNIFORM_BLOCKS) return {};
 	let n = {}, r = t.getProgramParameter(e, t.ACTIVE_UNIFORM_BLOCKS);
 	for (let i = 0; i < r; i++) {
@@ -1058,24 +1058,24 @@ function Fe(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/getUniformData.mjs
-function Ie(e, t) {
+function Fe(e, t) {
 	let n = {}, r = t.getProgramParameter(e, t.ACTIVE_UNIFORMS);
 	for (let i = 0; i < r; i++) {
-		let r = t.getActiveUniform(e, i), a = r.name.replace(/\[.*?\]$/, ""), o = !!r.name.match(/\[.*?\]$/), s = G(t, r.type);
+		let r = t.getActiveUniform(e, i), a = r.name.replace(/\[.*?\]$/, ""), o = !!r.name.match(/\[.*?\]$/), s = K(t, r.type);
 		n[a] = {
 			name: a,
 			index: i,
 			type: s,
 			size: r.size,
 			isArray: o,
-			value: H(s, r.size)
+			value: Ae(s, r.size)
 		};
 	}
 	return n;
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/logProgramError.mjs
-function K(e, t) {
+function q(e, t) {
 	let n = e.getShaderSource(t);
 	if (n === null) {
 		console.error("PixiJS Error: Could not retrieve shader source (WebGL context may be lost).");
@@ -1086,32 +1086,32 @@ function K(e, t) {
 		r[e - 1] = `%c${r[e - 1]}%c`, c.push("background: #FF0000; color:#FFFFFF; font-size: 10px", "font-size: 10px");
 	}), c[0] = r.join("\n"), console.error(i), console.groupCollapsed("click to view full shader code"), console.warn(...c), console.groupEnd();
 }
-function Le(e, t, n, r) {
-	e.getProgramParameter(t, e.LINK_STATUS) || (e.getShaderParameter(n, e.COMPILE_STATUS) || K(e, n), e.getShaderParameter(r, e.COMPILE_STATUS) || K(e, r), console.error("PixiJS Error: Could not initialize shader."), e.getProgramInfoLog(t) !== "" && console.warn("PixiJS Warning: gl.getProgramInfoLog()", e.getProgramInfoLog(t)));
+function Ie(e, t, n, r) {
+	e.getProgramParameter(t, e.LINK_STATUS) || (e.getShaderParameter(n, e.COMPILE_STATUS) || q(e, n), e.getShaderParameter(r, e.COMPILE_STATUS) || q(e, r), console.error("PixiJS Error: Could not initialize shader."), e.getProgramInfoLog(t) !== "" && console.warn("PixiJS Warning: gl.getProgramInfoLog()", e.getProgramInfoLog(t)));
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/program/generateProgram.mjs
-function Re(e, t) {
-	let r = B(e, e.VERTEX_SHADER, t.vertex), i = B(e, e.FRAGMENT_SHADER, t.fragment), a = e.createProgram();
+function Le(e, n) {
+	let r = H(e, e.VERTEX_SHADER, n.vertex), i = H(e, e.FRAGMENT_SHADER, n.fragment), a = e.createProgram();
 	e.attachShader(a, r), e.attachShader(a, i);
-	let o = t.transformFeedbackVaryings;
-	o && (typeof e.transformFeedbackVaryings == "function" ? e.transformFeedbackVaryings(a, o.names, o.bufferMode === "separate" ? e.SEPARATE_ATTRIBS : e.INTERLEAVED_ATTRIBS) : n("TransformFeedback is not supported but TransformFeedbackVaryings are given.")), e.linkProgram(a), e.getProgramParameter(a, e.LINK_STATUS) || Le(e, a, r, i), t._attributeData = Pe(a, e, !/^[ \t]*#[ \t]*version[ \t]+300[ \t]+es[ \t]*$/m.test(t.vertex)), t._uniformData = Ie(a, e), t._uniformBlockData = Fe(a, e), e.deleteShader(r), e.deleteShader(i);
+	let o = n.transformFeedbackVaryings;
+	o && (typeof e.transformFeedbackVaryings == "function" ? e.transformFeedbackVaryings(a, o.names, o.bufferMode === "separate" ? e.SEPARATE_ATTRIBS : e.INTERLEAVED_ATTRIBS) : t("TransformFeedback is not supported but TransformFeedbackVaryings are given.")), e.linkProgram(a), e.getProgramParameter(a, e.LINK_STATUS) || Ie(e, a, r, i), n._attributeData = Ne(a, e, !/^[ \t]*#[ \t]*version[ \t]+300[ \t]+es[ \t]*$/m.test(n.vertex)), n._uniformData = Fe(a, e), n._uniformBlockData = Pe(a, e), e.deleteShader(r), e.deleteShader(i);
 	let s = {};
-	for (let n in t._uniformData) {
-		let r = t._uniformData[n];
-		s[n] = {
-			location: e.getUniformLocation(a, n),
-			value: H(r.type, r.size)
+	for (let t in n._uniformData) {
+		let r = n._uniformData[t];
+		s[t] = {
+			location: e.getUniformLocation(a, t),
+			value: Ae(r.type, r.size)
 		};
 	}
-	return new je(a, s);
+	return new ke(a, s);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlShaderSystem.mjs
-var q = {
+var J = {
 	textureCount: 0,
 	blockIndex: 0
-}, J = class {
+}, Y = class {
 	constructor(e) {
 		this._activeProgram = null, this._programDataHash = /* @__PURE__ */ Object.create(null), this._shaderSyncFunctions = /* @__PURE__ */ Object.create(null), this._renderer = e;
 	}
@@ -1120,12 +1120,12 @@ var q = {
 	}
 	bind(e, t) {
 		if (this._setProgram(e.glProgram), t) return;
-		q.textureCount = 0, q.blockIndex = 0;
+		J.textureCount = 0, J.blockIndex = 0;
 		let n = this._shaderSyncFunctions[e.glProgram._key];
-		n ||= this._shaderSyncFunctions[e.glProgram._key] = this._generateShaderSync(e, this), this._renderer.buffer.nextBindBase(!!e.glProgram.transformFeedbackVaryings), n(this._renderer, e, q);
+		n ||= this._shaderSyncFunctions[e.glProgram._key] = this._generateShaderSync(e, this), this._renderer.buffer.nextBindBase(!!e.glProgram.transformFeedbackVaryings), n(this._renderer, e, J);
 	}
 	updateUniformGroup(e) {
-		this._renderer.uniformGroup.updateUniformGroup(e, this._activeProgram, q);
+		this._renderer.uniformGroup.updateUniformGroup(e, this._activeProgram, J);
 	}
 	bindUniformBlock(e, t, n = 0) {
 		let r = this._renderer.buffer, i = this._getProgramData(this._activeProgram), a = e._bufferResource;
@@ -1149,26 +1149,26 @@ var q = {
 	}
 	_createProgramData(e) {
 		let t = e._key;
-		return this._programDataHash[t] = Re(this._gl, e), this._programDataHash[t];
+		return this._programDataHash[t] = Le(this._gl, e), this._programDataHash[t];
 	}
 	destroy() {
 		for (let e of Object.keys(this._programDataHash)) this._programDataHash[e].destroy();
 		this._programDataHash = null, this._shaderSyncFunctions = null, this._activeProgram = null, this._renderer = null, this._gl = null;
 	}
 	_generateShaderSync(e, t) {
-		return Ae(e, t);
+		return Oe(e, t);
 	}
 	resetState() {
 		this._activeProgram = null;
 	}
 };
-J.extension = {
+Y.extension = {
 	type: [m.WebGLSystem],
 	name: "shader"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSyncTypes.mjs
-var ze = {
+var Re = {
 	f32: "if (cv !== v) {\n            cu.value = v;\n            gl.uniform1f(location, v);\n        }",
 	"vec2<f32>": "if (cv[0] !== v[0] || cv[1] !== v[1]) {\n            cv[0] = v[0];\n            cv[1] = v[1];\n            gl.uniform2f(location, v[0], v[1]);\n        }",
 	"vec3<f32>": "if (cv[0] !== v[0] || cv[1] !== v[1] || cv[2] !== v[2]) {\n            cv[0] = v[0];\n            cv[1] = v[1];\n            cv[2] = v[2];\n            gl.uniform3f(location, v[0], v[1], v[2]);\n        }",
@@ -1188,7 +1188,7 @@ var ze = {
 	"mat2x2<f32>": "gl.uniformMatrix2fv(location, false, v);",
 	"mat3x3<f32>": "gl.uniformMatrix3fv(location, false, v);",
 	"mat4x4<f32>": "gl.uniformMatrix4fv(location, false, v);"
-}, Be = {
+}, ze = {
 	f32: "gl.uniform1fv(location, v);",
 	"vec2<f32>": "gl.uniform2fv(location, v);",
 	"vec3<f32>": "gl.uniform3fv(location, v);",
@@ -1211,29 +1211,29 @@ var ze = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/utils/generateUniformsSync.mjs
-function Ve(e, t) {
+function Be(e, t) {
 	let n = ["\n        var v = null;\n        var cv = null;\n        var cu = null;\n        var t = 0;\n        var gl = renderer.gl;\n        var name = null;\n    "];
 	for (let r in e.uniforms) {
 		if (!t[r]) {
-			e.uniforms[r] instanceof d ? e.uniforms[r].ubo ? n.push(`
+			e.uniforms[r] instanceof c ? e.uniforms[r].ubo ? n.push(`
                         renderer.shader.bindUniformBlock(uv.${r}, "${r}");
                     `) : n.push(`
                         renderer.shader.updateUniformGroup(uv.${r});
-                    `) : e.uniforms[r] instanceof S && n.push(`
+                    `) : e.uniforms[r] instanceof w && n.push(`
                         renderer.shader.bindBufferResource(uv.${r}, "${r}");
                     `);
 			continue;
 		}
 		let i = e.uniformStructures[r], a = !1;
-		for (let e = 0; e < b.length; e++) {
-			let t = b[e];
+		for (let e = 0; e < S.length; e++) {
+			let t = S[e];
 			if (i.type === t.type && t.test(i)) {
-				n.push(`name = "${r}";`, b[e].uniform), a = !0;
+				n.push(`name = "${r}";`, S[e].uniform), a = !0;
 				break;
 			}
 		}
 		if (!a) {
-			let e = (i.size === 1 ? ze : Be)[i.type].replace("location", `ud["${r}"].location`);
+			let e = (i.size === 1 ? Re : ze)[i.type].replace("location", `ud["${r}"].location`);
 			n.push(`
             cu = ud["${r}"];
             cv = cu.value;
@@ -1245,7 +1245,7 @@ function Ve(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/shader/GlUniformGroupSystem.mjs
-var Y = class {
+var X = class {
 	constructor(e) {
 		this._cache = {}, this._uniformGroupSyncHash = {}, this._renderer = e, this.gl = null, this._cache = {};
 	}
@@ -1264,7 +1264,7 @@ var Y = class {
 		return this._cache[r] || (this._cache[r] = this._generateUniformsSync(e, t._uniformData)), n[t._key] = this._cache[r], n[t._key];
 	}
 	_generateUniformsSync(e, t) {
-		return Ve(e, t);
+		return Be(e, t);
 	}
 	_getSignature(e, t, n) {
 		let r = e.uniforms, i = [`${n}-`];
@@ -1275,13 +1275,13 @@ var Y = class {
 		this._renderer = null, this._cache = null;
 	}
 };
-Y.extension = {
+X.extension = {
 	type: [m.WebGLSystem],
 	name: "uniformGroup"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/state/mapWebGLBlendModesToPixi.mjs
-function He(e) {
+function Ve(e) {
 	let t = {};
 	if (t.normal = [e.ONE, e.ONE_MINUS_SRC_ALPHA], t.add = [e.ONE, e.ONE], t.multiply = [
 		e.DST_COLOR,
@@ -1345,15 +1345,15 @@ function He(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/state/GlStateSystem.mjs
-var Ue = 0, We = 1, Ge = 2, Ke = 3, qe = 4, Je = 5, X = class e {
+var He = 0, Ue = 1, We = 2, Ge = 3, Ke = 4, qe = 5, Z = class e {
 	constructor(e) {
-		this._invertFrontFace = !1, this.gl = null, this.stateId = 0, this.polygonOffset = 0, this.blendMode = "none", this._blendEq = !1, this.map = [], this.map[Ue] = this.setBlend, this.map[We] = this.setOffset, this.map[Ge] = this.setCullFace, this.map[Ke] = this.setDepthTest, this.map[qe] = this.setFrontFace, this.map[Je] = this.setDepthMask, this.checks = [], this.defaultState = o.for2d(), e.renderTarget.onRenderTargetChange.add(this);
+		this._invertFrontFace = !1, this.gl = null, this.stateId = 0, this.polygonOffset = 0, this.blendMode = "none", this._blendEq = !1, this.map = [], this.map[He] = this.setBlend, this.map[Ue] = this.setOffset, this.map[We] = this.setCullFace, this.map[Ge] = this.setDepthTest, this.map[Ke] = this.setFrontFace, this.map[qe] = this.setDepthMask, this.checks = [], this.defaultState = a.for2d(), e.renderTarget.onRenderTargetChange.add(this);
 	}
 	onRenderTargetChange(e) {
 		this._invertFrontFace = !e.isRoot, this._cullFace ? this.setFrontFace(this._frontFace) : this._frontFaceDirty = !0;
 	}
 	contextChange(e) {
-		this.gl = e, this.blendModesMap = He(e), this.resetState();
+		this.gl = e, this.blendModesMap = Ve(e), this.resetState();
 	}
 	set(e) {
 		if (e ||= this.defaultState, this.stateId !== e.data) {
@@ -1415,22 +1415,22 @@ var Ue = 0, We = 1, Ge = 2, Ke = 3, qe = 4, Je = 5, X = class e {
 		this.gl = null, this.checks.length = 0;
 	}
 };
-X.extension = {
+Z.extension = {
 	type: [m.WebGLSystem],
 	name: "state"
 };
-var Ye = X, Xe = class {
+var Je = Z, Ye = class {
 	constructor(e) {
-		this.target = O.TEXTURE_2D, this._layerInitMask = 0, this.texture = e, this.width = -1, this.height = -1, this.type = k.UNSIGNED_BYTE, this.internalFormat = D.RGBA, this.format = D.RGBA, this.samplerType = 0;
+		this.target = A.TEXTURE_2D, this._layerInitMask = 0, this.texture = e, this.width = -1, this.height = -1, this.type = j.UNSIGNED_BYTE, this.internalFormat = k.RGBA, this.format = k.RGBA, this.samplerType = 0;
 	}
 	destroy() {}
-}, Ze = {
+}, Xe = {
 	id: "buffer",
 	upload(e, t, n, r, i, a = !1) {
 		let o = i || t.target;
 		!a && t.width === e.width && t.height === e.height ? n.texSubImage2D(o, 0, 0, 0, e.width, e.height, t.format, t.type, e.resource) : n.texImage2D(o, 0, t.internalFormat, e.width, e.height, 0, t.format, t.type, e.resource), t.width = e.width, t.height = e.height;
 	}
-}, Qe = {
+}, Ze = {
 	"bc1-rgba-unorm": !0,
 	"bc1-rgba-unorm-srgb": !0,
 	"bc2-rgba-unorm": !0,
@@ -1483,18 +1483,18 @@ var Ye = X, Xe = class {
 	"astc-12x10-unorm-srgb": !0,
 	"astc-12x12-unorm": !0,
 	"astc-12x12-unorm-srgb": !0
-}, $e = {
+}, Qe = {
 	id: "compressed",
 	upload(e, t, n, r, i, a) {
 		let o = i ?? t.target;
 		n.pixelStorei(n.UNPACK_ALIGNMENT, 4);
-		let s = e.pixelWidth, c = e.pixelHeight, l = !!Qe[e.format];
+		let s = e.pixelWidth, c = e.pixelHeight, l = !!Ze[e.format];
 		for (let r = 0; r < e.resource.length; r++) {
 			let i = e.resource[r];
 			l ? n.compressedTexImage2D(o, r, t.internalFormat, s, c, 0, i) : n.texImage2D(o, r, t.internalFormat, s, c, 0, t.format, t.type, i), s = Math.max(s >> 1, 1), c = Math.max(c >> 1, 1);
 		}
 	}
-}, Z = [
+}, $e = [
 	"right",
 	"left",
 	"top",
@@ -1507,9 +1507,9 @@ function et(e) {
 		id: "cube",
 		upload(t, n, r, i) {
 			let a = t.faces;
-			for (let t = 0; t < Z.length; t++) {
-				let o = a[Z[t]];
-				(e[o.uploadMethodId] || e.image).upload(o, n, r, i, O.TEXTURE_CUBE_MAP_POSITIVE_X + t, !(n._layerInitMask & 1 << t)), n._layerInitMask |= 1 << t;
+			for (let t = 0; t < $e.length; t++) {
+				let o = a[$e[t]];
+				(e[o.uploadMethodId] || e.image).upload(o, n, r, i, A.TEXTURE_CUBE_MAP_POSITIVE_X + t, !(n._layerInitMask & 1 << t)), n._layerInitMask |= 1 << t;
 			}
 			n.width = t.pixelWidth, n.height = t.pixelHeight;
 		}
@@ -1520,8 +1520,8 @@ function et(e) {
 var tt = {
 	id: "image",
 	upload(e, t, n, r, i, a = !1) {
-		let o = i || t.target, s = e.pixelWidth, c = e.pixelHeight, l = e.resourceWidth, u = e.resourceHeight, d = r === 2, f = a || t.width !== s || t.height !== c, p = l >= s && u >= c, m = e.resource;
-		(d ? nt : rt)(n, o, t, s, c, l, u, m, f, p), t.width = s, t.height = c;
+		let o = i || t.target, s = e.pixelWidth, c = e.pixelHeight, l = e.resourceWidth, u = e.resourceHeight, d = r === 2, f = a || t.width !== s || t.height !== c, ee = l >= s && u >= c, p = e.resource;
+		(d ? nt : rt)(n, o, t, s, c, l, u, p, f, ee), t.width = s, t.height = c;
 	}
 };
 function nt(e, t, n, r, i, a, o, s, c, l) {
@@ -1548,7 +1548,7 @@ function rt(e, t, n, r, i, a, o, s, c, l) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/texture/uploaders/glUploadVideoResource.mjs
-var it = _e(), at = {
+var it = he(), at = {
 	id: "video",
 	upload(e, t, n, r, i, a = it) {
 		if (!e.isValid) {
@@ -1832,7 +1832,7 @@ function pt(e) {
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/texture/GlTextureSystem.mjs
 var mt = 4, $ = class e {
 	constructor(t) {
-		this._glSamplers = /* @__PURE__ */ Object.create(null), this._boundTextures = [], this._activeTextureLocation = -1, this._boundSamplers = /* @__PURE__ */ Object.create(null), this._premultiplyAlpha = !1, this._useSeparateSamplers = !1, this._renderer = t, this._managedTextures = new _({
+		this._glSamplers = /* @__PURE__ */ Object.create(null), this._boundTextures = [], this._activeTextureLocation = -1, this._boundSamplers = /* @__PURE__ */ Object.create(null), this._premultiplyAlpha = !1, this._useSeparateSamplers = !1, this._renderer = t, this._managedTextures = new b({
 			renderer: t,
 			type: "resource",
 			onUnload: this.onSourceUnload.bind(this),
@@ -1840,9 +1840,9 @@ var mt = 4, $ = class e {
 		});
 		let n = {
 			image: tt,
-			buffer: Ze,
+			buffer: Xe,
 			video: at,
-			compressed: $e,
+			compressed: Qe,
 			...e.uploadExtensions
 		};
 		this._uploads = {
@@ -1855,7 +1855,7 @@ var mt = 4, $ = class e {
 	}
 	contextChange(e) {
 		this._gl = e, this._mapFormatToInternalFormat || (this._mapFormatToInternalFormat = dt(e, this._renderer.context.extensions), this._mapFormatToType = ft(e), this._mapFormatToFormat = ut(e), this._mapViewDimensionToGlTarget = pt(e)), this._managedTextures.removeAll(!0), this._glSamplers = /* @__PURE__ */ Object.create(null), this._boundSamplers = /* @__PURE__ */ Object.create(null), this._premultiplyAlpha = !1;
-		for (let e = 0; e < 16; e++) this.bind(t.EMPTY, e);
+		for (let e = 0; e < 16; e++) this.bind(g.EMPTY, e);
 	}
 	initSource(e) {
 		this.bind(e);
@@ -1864,12 +1864,12 @@ var mt = 4, $ = class e {
 		let n = e.source;
 		e ? (this.bindSource(n, t), this._useSeparateSamplers && this._bindSampler(n.style, t)) : (this.bindSource(null, t), this._useSeparateSamplers && this._bindSampler(null, t));
 	}
-	bindSource(e, n = 0) {
-		let r = this._gl;
-		if (e._gcLastUsed = this._renderer.gc.now, this._boundTextures[n] !== e) {
-			this._boundTextures[n] = e, this._activateLocation(n), e ||= t.EMPTY.source;
-			let i = this.getGlSource(e);
-			r.bindTexture(i.target, i.texture);
+	bindSource(e, t = 0) {
+		let n = this._gl;
+		if (e._gcLastUsed = this._renderer.gc.now, this._boundTextures[t] !== e) {
+			this._boundTextures[t] = e, this._activateLocation(t), e ||= g.EMPTY.source;
+			let r = this.getGlSource(e);
+			n.bindTexture(r.target, r.texture);
 		}
 	}
 	_bindSampler(e, t = 0) {
@@ -1893,7 +1893,7 @@ var mt = 4, $ = class e {
 		this._activeTextureLocation !== e && (this._activeTextureLocation = e, this._gl.activeTexture(this._gl.TEXTURE0 + e));
 	}
 	_initSource(e) {
-		let t = this._gl, n = new Xe(t.createTexture());
+		let t = this._gl, n = new Ye(t.createTexture());
 		if (n.type = this._mapFormatToType[e.format], n.internalFormat = this._mapFormatToInternalFormat[e.format], n.format = this._mapFormatToFormat[e.format], n.target = this._mapViewDimensionToGlTarget[e.viewDimension], n.target === null) throw Error(`Unsupported view dimension: ${e.viewDimension} with this webgl version: ${this._renderer.context.webGLVersion}`);
 		if (e.uploadMethodId === "cube" && (n.target = t.TEXTURE_CUBE_MAP), e.autoGenerateMipmaps && (this._renderer.context.supports.nonPowOf2mipmaps || e.isPowerOfTwo)) {
 			let t = Math.max(e.width, e.height);
@@ -1987,7 +1987,7 @@ var mt = 4, $ = class e {
 		this._managedTextures.destroy(), this._glSamplers = null, this._boundTextures = null, this._boundSamplers = null, this._mapFormatToInternalFormat = null, this._mapFormatToType = null, this._mapFormatToFormat = null, this._uploads = null, this._renderer = null;
 	}
 	resetState() {
-		this._activeTextureLocation = -1, this._boundTextures.fill(t.EMPTY.source), this._boundSamplers = /* @__PURE__ */ Object.create(null);
+		this._activeTextureLocation = -1, this._boundTextures.fill(g.EMPTY.source), this._boundSamplers = /* @__PURE__ */ Object.create(null);
 		let e = this._gl;
 		this._premultiplyAlpha = !1, e.pixelStorei(e.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this._premultiplyAlpha);
 	}
@@ -1997,12 +1997,12 @@ $.extension = {
 	name: "texture"
 }, $.uploadExtensions = /* @__PURE__ */ Object.create(null);
 var ht = $;
-u.handleByMap(m.TextureUploaderWebGL, ht.uploadExtensions);
+l.handleByMap(m.TextureUploaderWebGL, ht.uploadExtensions);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/graphics/gl/GlGraphicsAdaptor.mjs
 var gt = class {
-	contextChange(t) {
-		let n = new d({
+	contextChange(e) {
+		let t = new c({
 			uColor: {
 				value: new Float32Array([
 					1,
@@ -2013,26 +2013,26 @@ var gt = class {
 				type: "vec4<f32>"
 			},
 			uTransformMatrix: {
-				value: new e(),
+				value: new n(),
 				type: "mat3x3<f32>"
 			},
 			uRound: {
 				value: 0,
 				type: "f32"
 			}
-		}), r = t.limits.maxBatchableTextures, i = ue({
+		}), r = e.limits.maxBatchableTextures, i = y({
 			name: "graphics",
 			bits: [
-				ie,
-				le(r),
-				x,
-				v
+				ce,
+				re(r),
+				C,
+				x
 			]
 		});
-		this.shader = new f({
+		this.shader = new u({
 			glProgram: i,
 			resources: {
-				localUniforms: n,
+				localUniforms: t,
 				batchSamplers: ae(r)
 			}
 		});
@@ -2061,39 +2061,39 @@ gt.extension = {
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/mesh/gl/GlMeshAdaptor.mjs
 var _t = class {
 	init() {
-		let n = ue({
+		let e = y({
 			name: "mesh",
 			bits: [
-				x,
-				ge,
-				v
+				C,
+				me,
+				x
 			]
 		});
-		this._shader = new f({
-			glProgram: n,
+		this._shader = new u({
+			glProgram: e,
 			resources: {
-				uTexture: t.EMPTY.source,
+				uTexture: g.EMPTY.source,
 				textureUniforms: { uTextureMatrix: {
 					type: "mat3x3<f32>",
-					value: new e()
+					value: new n()
 				} }
 			}
 		});
 	}
-	execute(e, t) {
-		let r = e.renderer, i = t._shader;
+	execute(e, n) {
+		let r = e.renderer, i = n._shader;
 		if (!i) {
 			i = this._shader;
-			let e = t.texture, n = e.source;
-			i.resources.uTexture = n, i.resources.uSampler = n.style, i.resources.textureUniforms.uniforms.uTextureMatrix = e.textureMatrix.mapCoord;
+			let e = n.texture, t = e.source;
+			i.resources.uTexture = t, i.resources.uSampler = t.style, i.resources.textureUniforms.uniforms.uTextureMatrix = e.textureMatrix.mapCoord;
 		} else if (!i.glProgram) {
-			n("Mesh shader has no glProgram", t.shader);
+			t("Mesh shader has no glProgram", n.shader);
 			return;
 		}
 		i.groups[100] = r.globalUniforms.bindGroup, i.groups[101] = e.localUniformsBindGroup, r.encoder.draw({
-			geometry: t._geometry,
+			geometry: n._geometry,
 			shader: i,
-			state: t.state
+			state: n.state
 		});
 	}
 	destroy() {
@@ -2106,29 +2106,29 @@ _t.extension = {
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs
-var vt = /* @__PURE__ */ s({ WebGLRenderer: () => Tt }), yt = [
-	...se,
-	R,
-	we,
-	ye,
-	F,
-	T,
+var vt = /* @__PURE__ */ f({ WebGLRenderer: () => Tt }), yt = [
+	...oe,
+	B,
+	Se,
+	_e,
+	L,
+	D,
 	ht,
-	z,
-	j,
+	V,
+	N,
+	X,
 	Y,
-	J,
-	P,
-	Ye,
 	I,
-	N
-], bt = [...oe], xt = [
-	C,
+	Je,
+	R,
+	F
+], bt = [...ie], xt = [
+	T,
 	_t,
 	gt
 ], St = [], Ct = [], wt = [];
-u.handleByNamedList(m.WebGLSystem, St), u.handleByNamedList(m.WebGLPipes, Ct), u.handleByNamedList(m.WebGLPipesAdaptor, wt), u.add(...yt, ...bt, ...xt);
-var Tt = class extends re {
+l.handleByNamedList(m.WebGLSystem, St), l.handleByNamedList(m.WebGLPipes, Ct), l.handleByNamedList(m.WebGLPipesAdaptor, wt), l.add(...yt, ...bt, ...xt);
+var Tt = class extends te {
 	constructor() {
 		let e = {
 			name: "webgl",
@@ -2143,4 +2143,4 @@ var Tt = class extends re {
 //#endregion
 export { vt as t };
 
-//# sourceMappingURL=WebGLRenderer-CYZnrh0q.js.map
+//# sourceMappingURL=WebGLRenderer-BhnrtzLm.js.map

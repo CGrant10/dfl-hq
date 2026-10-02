@@ -1,6 +1,6 @@
-import { L as e, Q as t, U as n, rt as r, v as i } from "./Geometry-CW_aidqb.js";
+import { H as e, L as t, Z as n, tt as r, v as i } from "./Geometry-BqZcOGkp.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/shared/texture/sources/ImageSource.mjs
-var a = class extends n {
+var a = class extends e {
 	constructor(e) {
 		super(e), this.uploadMethodId = "image", this.autoGarbageCollect = !0;
 	}
@@ -89,8 +89,8 @@ var l = {
 		}
 		return n;
 	},
-	getTintedCanvas: (t, n) => {
-		let r = t.texture, a = e.shared.setValue(n).toHex(), o = r.tintCache ||= {}, s = o[a], c = r.source._resourceId;
+	getTintedCanvas: (e, n) => {
+		let r = e.texture, a = t.shared.setValue(n).toHex(), o = r.tintCache ||= {}, s = o[a], c = r.source._resourceId;
 		if (s?.tintId === c) return s;
 		let u = s && "getContext" in s ? s : i.get().createCanvas();
 		if (l.tintMethod(r, n, u), u.tintId = c, l.convertTintToImage && u.toDataURL !== void 0) {
@@ -99,9 +99,9 @@ var l = {
 		} else o[a] = u;
 		return o[a];
 	},
-	getTintedPattern: (t, n) => {
-		let r = e.shared.setValue(n).toHex(), a = t.patternCache ||= {}, o = t.source._resourceId, s = a[r];
-		return s?.tintId === o ? s : (l.canvas ||= i.get().createCanvas(), l.tintMethod(t, n, l.canvas), s = l.canvas.getContext("2d").createPattern(l.canvas, "repeat"), s.tintId = o, a[r] = s, s);
+	getTintedPattern: (e, n) => {
+		let r = t.shared.setValue(n).toHex(), a = e.patternCache ||= {}, o = e.source._resourceId, s = a[r];
+		return s?.tintId === o ? s : (l.canvas ||= i.get().createCanvas(), l.tintMethod(e, n, l.canvas), s = l.canvas.getContext("2d").createPattern(l.canvas, "repeat"), s.tintId = o, a[r] = s, s);
 	},
 	applyPatternTransform: (e, t, n = !0) => {
 		if (!t) return;
@@ -119,34 +119,34 @@ var l = {
 		]);
 		r.setTransform(n ? a.inverse() : a);
 	},
-	tintWithMultiply: (n, r, i) => {
-		let a = i.getContext("2d"), o = n.frame.clone(), s = n.source._resolution ?? n.source.resolution ?? 1, c = n.rotate;
+	tintWithMultiply: (e, r, i) => {
+		let a = i.getContext("2d"), o = e.frame.clone(), s = e.source._resolution ?? e.source.resolution ?? 1, c = e.rotate;
 		o.x *= s, o.y *= s, o.width *= s, o.height *= s;
-		let u = t.isVertical(c), d = u ? o.height : o.width, f = u ? o.width : o.height;
-		i.width = Math.ceil(d), i.height = Math.ceil(f), a.save(), a.fillStyle = e.shared.setValue(r).toHex(), a.fillRect(0, 0, d, f), a.globalCompositeOperation = "multiply";
-		let p = l.getCanvasSource(n);
+		let u = n.isVertical(c), d = u ? o.height : o.width, f = u ? o.width : o.height;
+		i.width = Math.ceil(d), i.height = Math.ceil(f), a.save(), a.fillStyle = t.shared.setValue(r).toHex(), a.fillRect(0, 0, d, f), a.globalCompositeOperation = "multiply";
+		let p = l.getCanvasSource(e);
 		if (!p) {
 			a.restore();
 			return;
 		}
 		c && l._applyInverseRotation(a, c, o.width, o.height), a.drawImage(p, o.x, o.y, o.width, o.height, 0, 0, o.width, o.height), a.globalCompositeOperation = "destination-atop", a.drawImage(p, o.x, o.y, o.width, o.height, 0, 0, o.width, o.height), a.restore();
 	},
-	tintWithOverlay: (n, r, i) => {
-		let a = i.getContext("2d"), o = n.frame.clone(), s = n.source._resolution ?? n.source.resolution ?? 1, c = n.rotate;
+	tintWithOverlay: (e, r, i) => {
+		let a = i.getContext("2d"), o = e.frame.clone(), s = e.source._resolution ?? e.source.resolution ?? 1, c = e.rotate;
 		o.x *= s, o.y *= s, o.width *= s, o.height *= s;
-		let u = t.isVertical(c), d = u ? o.height : o.width, f = u ? o.width : o.height;
-		i.width = Math.ceil(d), i.height = Math.ceil(f), a.save(), a.globalCompositeOperation = "copy", a.fillStyle = e.shared.setValue(r).toHex(), a.fillRect(0, 0, d, f), a.globalCompositeOperation = "destination-atop";
-		let p = l.getCanvasSource(n);
+		let u = n.isVertical(c), d = u ? o.height : o.width, f = u ? o.width : o.height;
+		i.width = Math.ceil(d), i.height = Math.ceil(f), a.save(), a.globalCompositeOperation = "copy", a.fillStyle = t.shared.setValue(r).toHex(), a.fillRect(0, 0, d, f), a.globalCompositeOperation = "destination-atop";
+		let p = l.getCanvasSource(e);
 		if (!p) {
 			a.restore();
 			return;
 		}
 		c && l._applyInverseRotation(a, c, o.width, o.height), a.drawImage(p, o.x, o.y, o.width, o.height, 0, 0, o.width, o.height), a.restore();
 	},
-	tintWithPerPixel: (e, n, r) => {
+	tintWithPerPixel: (e, t, r) => {
 		let i = r.getContext("2d"), a = e.frame.clone(), o = e.source._resolution ?? e.source.resolution ?? 1, s = e.rotate;
 		a.x *= o, a.y *= o, a.width *= o, a.height *= o;
-		let c = t.isVertical(s), u = c ? a.height : a.width, d = c ? a.width : a.height;
+		let c = n.isVertical(s), u = c ? a.height : a.width, d = c ? a.width : a.height;
 		r.width = Math.ceil(u), r.height = Math.ceil(d), i.save(), i.globalCompositeOperation = "copy";
 		let f = l.getCanvasSource(e);
 		if (!f) {
@@ -154,12 +154,12 @@ var l = {
 			return;
 		}
 		s && l._applyInverseRotation(i, s, a.width, a.height), i.drawImage(f, a.x, a.y, a.width, a.height, 0, 0, a.width, a.height), i.restore();
-		let p = n >> 16 & 255, m = n >> 8 & 255, h = n & 255, g = i.getImageData(0, 0, u, d), _ = g.data;
+		let p = t >> 16 & 255, m = t >> 8 & 255, h = t & 255, g = i.getImageData(0, 0, u, d), _ = g.data;
 		for (let e = 0; e < _.length; e += 4) _[e] = _[e] * p / 255, _[e + 1] = _[e + 1] * m / 255, _[e + 2] = _[e + 2] * h / 255;
 		i.putImageData(g, 0, 0);
 	},
-	_applyInverseRotation: (e, n, r, i) => {
-		let a = t.inv(n), o = t.uX(a), s = t.uY(a), c = t.vX(a), l = t.vY(a), u = -Math.min(0, o * r, c * i, o * r + c * i), d = -Math.min(0, s * r, l * i, s * r + l * i);
+	_applyInverseRotation: (e, t, r, i) => {
+		let a = n.inv(t), o = n.uX(a), s = n.uY(a), c = n.vX(a), l = n.vY(a), u = -Math.min(0, o * r, c * i, o * r + c * i), d = -Math.min(0, s * r, l * i, s * r + l * i);
 		e.transform(o, s, c, l, u, d);
 	}
 };
@@ -167,4 +167,4 @@ l.tintMethod = l.canUseMultiply ? l.tintWithMultiply : l.tintWithPerPixel;
 //#endregion
 export { c as n, a as r, l as t };
 
-//# sourceMappingURL=canvasUtils-BhZPiFjM.js.map
+//# sourceMappingURL=canvasUtils-DCIgU9WQ.js.map

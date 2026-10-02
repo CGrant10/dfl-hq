@@ -1,4 +1,4 @@
-import { F as e, K as t, v as n } from "./Geometry-CW_aidqb.js";
+import { F as e, G as t, v as n } from "./Geometry-BqZcOGkp.js";
 var r = new class {
 	constructor(e) {
 		this._canvasPool = /* @__PURE__ */ Object.create(null), this.canvasOptions = e || {}, this.enableFullScreen = !1;
@@ -29,4 +29,4 @@ e.register(r);
 //#endregion
 export { r as t };
 
-//# sourceMappingURL=CanvasPool-BTs3zFci.js.map
+//# sourceMappingURL=CanvasPool--PSAk6_p.js.map

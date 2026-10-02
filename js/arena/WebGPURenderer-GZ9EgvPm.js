@@ -1,13 +1,13 @@
-import { $ as e, B as t, I as n, U as r, X as i, _ as a, a as o, at as s, c, it as l, l as u, m as d, n as f, o as p, r as m, rt as h, s as ee, v as g } from "./Geometry-CW_aidqb.js";
-import { D as te, O as _, S as v, T as ne, _ as re, f as y, h as b, n as ie, r as ae, t as oe, w as x, y as S } from "./RenderTargetSystem-CL31NvbB.js";
-import { t as C } from "./getTextureBatchBindGroup-BSaolhDL.js";
-import { t as w } from "./CanvasPool-BTs3zFci.js";
-import { c as se, d as ce, i as le, l as ue, o as de, p as fe, r as pe, s as me, t as he } from "./BufferResource-Cqi4JDjl.js";
+import { H as e, I as t, Q as n, Y as r, _ as i, a, c as o, l as s, m as c, n as l, nt as u, o as d, r as f, rt as ee, s as te, tt as p, v as m, z as h } from "./Geometry-BqZcOGkp.js";
+import { C as g, D as _, E as ne, d as v, g as re, m as y, n as ie, r as ae, t as oe, v as se, w as ce, x as b } from "./RenderTargetSystem-Dl2EX-2_.js";
+import { t as x } from "./getTextureBatchBindGroup-BwWtUJqe.js";
+import { t as S } from "./CanvasPool--PSAk6_p.js";
+import { c as le, d as ue, i as de, l as fe, o as pe, p as me, r as he, s as ge, t as _e } from "./BufferResource-BHtTHfHM.js";
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/batcher/gpu/GpuBatchAdaptor.mjs
-var T = o.for2d(), E = class {
+var C = a.for2d(), w = class {
 	start(e, t, n) {
 		let r = e.renderer, i = r.encoder, a = n.gpuProgram;
-		this._shader = n, this._geometry = t, i.setGeometry(t, a), T.blendMode = "normal", r.pipeline.getPipeline(t, a, T);
+		this._shader = n, this._geometry = t, i.setGeometry(t, a), C.blendMode = "normal", r.pipeline.getPipeline(t, a, C);
 		let o = r.globalUniforms.bindGroup;
 		i.resetBindGroup(1), i.setBindGroup(0, o, a);
 	}
@@ -15,20 +15,20 @@ var T = o.for2d(), E = class {
 		let n = this._shader.gpuProgram, r = e.renderer, i = r.encoder;
 		if (!t.bindGroup) {
 			let e = t.textures;
-			t.bindGroup = C(e.textures, e.count, r.limits.maxBatchableTextures);
+			t.bindGroup = x(e.textures, e.count, r.limits.maxBatchableTextures);
 		}
-		T.blendMode = t.blendMode;
-		let a = r.bindGroup.getBindGroup(t.bindGroup, n, 1), o = r.pipeline.getPipeline(this._geometry, n, T, t.topology);
+		C.blendMode = t.blendMode;
+		let a = r.bindGroup.getBindGroup(t.bindGroup, n, 1), o = r.pipeline.getPipeline(this._geometry, n, C, t.topology);
 		t.bindGroup._touch(r.gc.now, r.tick), i.setPipeline(o), i.renderPassEncoder.setBindGroup(1, a), i.renderPassEncoder.drawIndexed(t.size, 1, t.start);
 	}
 };
-E.extension = {
-	type: [h.WebGPUPipesAdaptor],
+w.extension = {
+	type: [p.WebGPUPipesAdaptor],
 	name: "batch"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/BindGroupSystem.mjs
-var D = class {
+var T = class {
 	constructor(e) {
 		this._hash = /* @__PURE__ */ Object.create(null), this._renderer = e;
 	}
@@ -87,22 +87,22 @@ var D = class {
 		this._hash = null, this._renderer = null;
 	}
 };
-D.extension = {
-	type: [h.WebGPUSystem],
+T.extension = {
+	type: [p.WebGPUSystem],
 	name: "bindGroup"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/GpuBufferSystem.mjs
-var ge = class {
+var ve = class {
 	constructor(e) {
 		this.gpuBuffer = e;
 	}
 	destroy() {
 		this.gpuBuffer.destroy(), this.gpuBuffer = null;
 	}
-}, O = class {
+}, E = class {
 	constructor(e) {
-		this._renderer = e, this._managedBuffers = new y({
+		this._renderer = e, this._managedBuffers = new v({
 			renderer: e,
 			type: "resource",
 			onUnload: this.onBufferUnload.bind(this),
@@ -127,7 +127,7 @@ var ge = class {
 	}
 	createGPUBuffer(e) {
 		let t = this._gpu.device.createBuffer(e.descriptor);
-		return e._updateID = 0, e._resourceId = i("resource"), e.data && (ne(e.data.buffer, t.getMappedRange(), e.data.byteOffset, e.data.byteLength), t.unmap()), e._gpuData[this._renderer.uid] = new ge(t), this._managedBuffers.add(e) && (e.on("update", this.updateBuffer, this), e.on("change", this.onBufferChange, this)), t;
+		return e._updateID = 0, e._resourceId = r("resource"), e.data && (ce(e.data.buffer, t.getMappedRange(), e.data.byteOffset, e.data.byteLength), t.unmap()), e._gpuData[this._renderer.uid] = new ve(t), this._managedBuffers.add(e) && (e.on("update", this.updateBuffer, this), e.on("change", this.onBufferChange, this)), t;
 	}
 	onBufferChange(e) {
 		this._managedBuffers.remove(e), e._updateID = 0, this.createGPUBuffer(e);
@@ -136,13 +136,13 @@ var ge = class {
 		this._managedBuffers.destroy(), this._renderer = null, this._gpu = null;
 	}
 };
-O.extension = {
-	type: [h.WebGPUSystem],
+E.extension = {
+	type: [p.WebGPUSystem],
 	name: "buffer"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/buffer/UboBatch.mjs
-var _e = class {
+var ye = class {
 	constructor({ minUniformOffsetAlignment: e }) {
 		this._minUniformOffsetAlignment = 256, this.byteIndex = 0, this._minUniformOffsetAlignment = e, this.data = /* @__PURE__ */ new Float32Array(65535);
 	}
@@ -163,7 +163,7 @@ var _e = class {
 	destroy() {
 		this.data = null;
 	}
-}, k = class {
+}, D = class {
 	constructor(e) {
 		this._colorMaskCache = 15, this._renderer = e;
 	}
@@ -174,13 +174,13 @@ var _e = class {
 		this._renderer = null, this._colorMaskCache = null;
 	}
 };
-k.extension = {
-	type: [h.WebGPUSystem],
+D.extension = {
+	type: [p.WebGPUSystem],
 	name: "colorMask"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuDeviceSystem.mjs
-var A = class {
+var O = class {
 	constructor(e) {
 		this._renderer = e;
 	}
@@ -193,7 +193,7 @@ var A = class {
 		this._renderer.gpu = e;
 	}
 	async _createDeviceAndAdaptor(e) {
-		let t = await g.get().getNavigator().gpu.requestAdapter({
+		let t = await m.get().getNavigator().gpu.requestAdapter({
 			powerPreference: e.powerPreference,
 			forceFallbackAdapter: e.forceFallbackAdapter
 		}), n = [
@@ -210,16 +210,16 @@ var A = class {
 		this.gpu = null, this.extensions = null, this._renderer = null;
 	}
 };
-A.extension = {
-	type: [h.WebGPUSystem],
+O.extension = {
+	type: [p.WebGPUSystem],
 	name: "device"
-}, A.defaultOptions = {
+}, O.defaultOptions = {
 	powerPreference: void 0,
 	forceFallbackAdapter: !1
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuEncoderSystem.mjs
-var j = class {
+var k = class {
 	constructor(e) {
 		this._boundBindGroup = /* @__PURE__ */ Object.create(null), this._boundVertexBuffer = /* @__PURE__ */ Object.create(null), this._renderer = e;
 	}
@@ -316,14 +316,14 @@ var j = class {
 		this._gpu = e;
 	}
 };
-j.extension = {
-	type: [h.WebGPUSystem],
+k.extension = {
+	type: [p.WebGPUSystem],
 	name: "encoder",
 	priority: 1
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuLimitsSystem.mjs
-var M = class {
+var A = class {
 	constructor(e) {
 		this._renderer = e;
 	}
@@ -332,20 +332,20 @@ var M = class {
 	}
 	destroy() {}
 };
-M.extension = {
-	type: [h.WebGPUSystem],
+A.extension = {
+	type: [p.WebGPUSystem],
 	name: "limits"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuStencilSystem.mjs
-var N = class {
+var j = class {
 	constructor(e) {
 		this._renderTargetStencilState = /* @__PURE__ */ Object.create(null), this._renderer = e, e.renderTarget.onRenderTargetChange.add(this);
 	}
 	onRenderTargetChange(e) {
 		let t = this._renderTargetStencilState[e.uid];
 		t ||= this._renderTargetStencilState[e.uid] = {
-			stencilMode: x.DISABLED,
+			stencilMode: g.DISABLED,
 			stencilReference: 0
 		}, this._activeRenderTarget = e, this.setStencilMode(t.stencilMode, t.stencilReference);
 	}
@@ -359,13 +359,13 @@ var N = class {
 		this._renderer.renderTarget.onRenderTargetChange.remove(this), this._renderer = null, this._activeRenderTarget = null, this._renderTargetStencilState = null;
 	}
 };
-N.extension = {
-	type: [h.WebGPUSystem],
+j.extension = {
+	type: [p.WebGPUSystem],
 	name: "stencil"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboElementsWGSL.mjs
-var P = {
+var M = {
 	i32: {
 		align: 4,
 		size: 4
@@ -503,15 +503,15 @@ var P = {
 		size: 32
 	}
 };
-function ve(e) {
+function N(e) {
 	let t = e.map((e) => ({
 		data: e,
 		offset: 0,
 		size: 0
 	})), n = 0;
 	for (let e = 0; e < t.length; e++) {
-		let r = t[e], i = P[r.data.type].size, a = P[r.data.type].align;
-		if (!P[r.data.type]) throw Error(`[Pixi.js] WebGPU UniformBuffer: Unknown type ${r.data.type}`);
+		let r = t[e], i = M[r.data.type].size, a = M[r.data.type].align;
+		if (!M[r.data.type]) throw Error(`[Pixi.js] WebGPU UniformBuffer: Unknown type ${r.data.type}`);
 		r.data.size > 1 && (i = Math.max(i, a) * r.data.size), n = Math.ceil(n / a) * a, r.size = i, r.offset = n, n += i;
 	}
 	return n = Math.ceil(n / 16) * 16, {
@@ -521,8 +521,8 @@ function ve(e) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/generateArraySyncWGSL.mjs
-function F(e, t) {
-	let { size: n, align: r } = P[e.data.type], i = (r - n) / 4, a = e.data.type.indexOf("i32") >= 0 ? "dataInt32" : "data";
+function P(e, t) {
+	let { size: n, align: r } = M[e.data.type], i = (r - n) / 4, a = e.data.type.indexOf("i32") >= 0 ? "dataInt32" : "data";
 	return `
          v = uv.${e.data.name};
          ${t === 0 ? "" : `offset += ${t};`}
@@ -543,32 +543,32 @@ function F(e, t) {
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/shader/utils/createUboSyncFunctionWGSL.mjs
-function ye(e) {
-	return le(e, "uboWgsl", F, pe);
+function be(e) {
+	return de(e, "uboWgsl", P, he);
 }
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUboSystem.mjs
-var I = class extends de {
+var F = class extends pe {
 	constructor() {
 		super({
-			createUboElements: ve,
-			generateUboSync: ye
+			createUboElements: N,
+			generateUboSync: be
 		});
 	}
 };
-I.extension = {
-	type: [h.WebGPUSystem],
+F.extension = {
+	type: [p.WebGPUSystem],
 	name: "ubo"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/GpuUniformBatchPipe.mjs
-var L = 128, R = class {
+var I = 128, L = class {
 	constructor(e) {
-		this._bindGroupHash = /* @__PURE__ */ Object.create(null), this._buffers = [], this._bindGroups = [], this._bufferResources = [], this._renderer = e, this._batchBuffer = new _e({ minUniformOffsetAlignment: L });
-		let t = 256 / L;
+		this._bindGroupHash = /* @__PURE__ */ Object.create(null), this._buffers = [], this._bindGroups = [], this._bufferResources = [], this._renderer = e, this._batchBuffer = new ye({ minUniformOffsetAlignment: I });
+		let t = 256 / I;
 		for (let e = 0; e < t; e++) {
-			let t = m.UNIFORM | m.COPY_DST;
-			e === 0 && (t |= m.COPY_SRC), this._buffers.push(new f({
+			let t = f.UNIFORM | f.COPY_DST;
+			e === 0 && (t |= f.COPY_SRC), this._buffers.push(new l({
 				data: this._batchBuffer.data,
 				usage: t
 			}));
@@ -584,35 +584,35 @@ var L = 128, R = class {
 		if (!t && this._bindGroupHash[e.uid]) return this._bindGroupHash[e.uid];
 		this._renderer.ubo.ensureUniformGroup(e);
 		let n = e.buffer.data, r = this._batchBuffer.addEmptyGroup(n.length);
-		return this._renderer.ubo.syncUniformGroup(e, this._batchBuffer.data, r / 4), this._bindGroupHash[e.uid] = this._getBindGroup(r / L), this._bindGroupHash[e.uid];
+		return this._renderer.ubo.syncUniformGroup(e, this._batchBuffer.data, r / 4), this._bindGroupHash[e.uid] = this._getBindGroup(r / I), this._bindGroupHash[e.uid];
 	}
 	getUboResource(e) {
 		this._renderer.ubo.updateUniformGroup(e);
 		let t = e.buffer.data, n = this._batchBuffer.addGroup(t);
-		return this._getBufferResource(n / L);
+		return this._getBufferResource(n / I);
 	}
 	getArrayBindGroup(e) {
 		let t = this._batchBuffer.addGroup(e);
-		return this._getBindGroup(t / L);
+		return this._getBindGroup(t / I);
 	}
 	getArrayBufferResource(e) {
-		let t = this._batchBuffer.addGroup(e) / L;
+		let t = this._batchBuffer.addGroup(e) / I;
 		return this._getBufferResource(t);
 	}
 	_getBufferResource(e) {
 		if (!this._bufferResources[e]) {
 			let t = this._buffers[e % 2];
-			this._bufferResources[e] = new he({
+			this._bufferResources[e] = new _e({
 				buffer: t,
 				offset: (e / 2 | 0) * 256,
-				size: L
+				size: I
 			});
 		}
 		return this._bufferResources[e];
 	}
 	_getBindGroup(e) {
 		if (!this._bindGroups[e]) {
-			let t = new c({ 0: this._getBufferResource(e) });
+			let t = new o({ 0: this._getBufferResource(e) });
 			this._bindGroups[e] = t;
 		}
 		return this._bindGroups[e];
@@ -623,7 +623,7 @@ var L = 128, R = class {
 		let n = this._renderer.gpu.device.createCommandEncoder();
 		for (let r = 1; r < this._buffers.length; r++) {
 			let i = this._buffers[r];
-			n.copyBufferToBuffer(e.getGPUBuffer(t), L, e.getGPUBuffer(i), 0, this._batchBuffer.byteIndex);
+			n.copyBufferToBuffer(e.getGPUBuffer(t), I, e.getGPUBuffer(i), 0, this._batchBuffer.byteIndex);
 		}
 		this._renderer.gpu.device.queue.submit([n.finish()]);
 	}
@@ -636,31 +636,31 @@ var L = 128, R = class {
 		this._bufferResources = null, this._batchBuffer.destroy(), this._renderer = null;
 	}
 };
-R.extension = {
-	type: [h.WebGPUPipes],
+L.extension = {
+	type: [p.WebGPUPipes],
 	name: "uniformBatch"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/pipeline/PipelineSystem.mjs
-var be = {
+var xe = {
 	"point-list": 0,
 	"line-list": 1,
 	"line-strip": 2,
 	"triangle-list": 3,
 	"triangle-strip": 4
 };
-function xe(e, t, n, r, i) {
+function Se(e, t, n, r, i) {
 	return e << 24 | t << 16 | n << 10 | r << 5 | i;
 }
-function Se(e, t, n, r, i) {
+function Ce(e, t, n, r, i) {
 	return n << 8 | e << 5 | r << 3 | i << 1 | t;
 }
-var z = class {
+var R = class {
 	constructor(e) {
 		this._moduleCache = /* @__PURE__ */ Object.create(null), this._bufferLayoutsCache = /* @__PURE__ */ Object.create(null), this._bindingNamesCache = /* @__PURE__ */ Object.create(null), this._pipeCache = /* @__PURE__ */ Object.create(null), this._pipeStateCaches = /* @__PURE__ */ Object.create(null), this._colorMask = 15, this._multisampleCount = 1, this._colorTargetCount = 1, this._renderer = e;
 	}
 	contextChange(e) {
-		this._gpu = e, this.setStencilMode(x.DISABLED), this._updatePipeHash();
+		this._gpu = e, this.setStencilMode(g.DISABLED), this._updatePipeHash();
 	}
 	setMultisampleCount(e) {
 		this._multisampleCount !== e && (this._multisampleCount = e, this._updatePipeHash());
@@ -672,19 +672,19 @@ var z = class {
 		this._colorMask !== e && (this._colorMask = e, this._updatePipeHash());
 	}
 	setStencilMode(e) {
-		this._stencilMode !== e && (this._stencilMode = e, this._stencilState = me[e], this._updatePipeHash());
+		this._stencilMode !== e && (this._stencilMode = e, this._stencilState = ge[e], this._updatePipeHash());
 	}
 	setPipeline(e, t, n, r) {
 		let i = this.getPipeline(e, t, n);
 		r.setPipeline(i);
 	}
 	getPipeline(e, t, n, r) {
-		e._layoutKey || (se(e, t.attributeData), this._generateBufferKey(e)), r ||= e.topology;
-		let i = xe(e._layoutKey, t._layoutKey, n.data, n._blendModeId, be[r]);
+		e._layoutKey || (le(e, t.attributeData), this._generateBufferKey(e)), r ||= e.topology;
+		let i = Se(e._layoutKey, t._layoutKey, n.data, n._blendModeId, xe[r]);
 		return this._pipeCache[i] || (this._pipeCache[i] = this._createPipeline(e, t, n, r)), this._pipeCache[i];
 	}
 	_createPipeline(e, t, n, r) {
-		let i = this._gpu.device, a = this._createVertexBufferLayouts(e, t), o = this._renderer.state.getColorTargets(n, this._colorTargetCount), s = this._stencilMode === x.RENDERING_MASK_ADD ? 0 : this._colorMask;
+		let i = this._gpu.device, a = this._createVertexBufferLayouts(e, t), o = this._renderer.state.getColorTargets(n, this._colorTargetCount), s = this._stencilMode === g.RENDERING_MASK_ADD ? 0 : this._colorMask;
 		for (let e = 0; e < o.length; e++) o[e].writeMask = s;
 		let c = this._renderer.shader.getProgramData(t).pipeline, l = {
 			vertex: {
@@ -726,7 +726,7 @@ var z = class {
 			t[n++] = a.offset, t[n++] = a.format, t[n++] = a.stride, t[n++] = a.instance;
 		}
 		let i = t.join("|");
-		return e._layoutKey = d(i, "geometry"), e._layoutKey;
+		return e._layoutKey = c(i, "geometry"), e._layoutKey;
 	}
 	_generateAttributeLocationsKey(e) {
 		let t = [], n = 0, r = Object.keys(e.attributeData).sort();
@@ -735,7 +735,7 @@ var z = class {
 			t[n++] = a.location;
 		}
 		let i = t.join("|");
-		return e._attributeLocationsKey = d(i, "programAttributes"), e._attributeLocationsKey;
+		return e._attributeLocationsKey = c(i, "programAttributes"), e._attributeLocationsKey;
 	}
 	getBufferNamesToBind(e, t) {
 		let n = e._layoutKey << 16 | t._attributeLocationsKey;
@@ -750,9 +750,9 @@ var z = class {
 		}
 		return this._bindingNamesCache[n] = i, i;
 	}
-	_createVertexBufferLayouts(e, t) {
-		t._attributeLocationsKey || this._generateAttributeLocationsKey(t);
-		let r = e._layoutKey << 16 | t._attributeLocationsKey;
+	_createVertexBufferLayouts(e, n) {
+		n._attributeLocationsKey || this._generateAttributeLocationsKey(n);
+		let r = e._layoutKey << 16 | n._attributeLocationsKey;
 		if (this._bufferLayoutsCache[r]) return this._bufferLayoutsCache[r];
 		let i = [];
 		return e.buffers.forEach((r) => {
@@ -761,10 +761,10 @@ var z = class {
 				stepMode: "vertex",
 				attributes: []
 			}, o = a.attributes;
-			for (let i in t.attributeData) {
+			for (let i in n.attributeData) {
 				let s = e.attributes[i];
-				(s.divisor ?? 1) !== 1 && n(`Attribute ${i} has an invalid divisor value of '${s.divisor}'. WebGPU only supports a divisor value of 1`), s.buffer === r && (a.arrayStride = s.stride, a.stepMode = s.instance ? "instance" : "vertex", o.push({
-					shaderLocation: t.attributeData[i].location,
+				(s.divisor ?? 1) !== 1 && t(`Attribute ${i} has an invalid divisor value of '${s.divisor}'. WebGPU only supports a divisor value of 1`), s.buffer === r && (a.arrayStride = s.stride, a.stepMode = s.instance ? "instance" : "vertex", o.push({
+					shaderLocation: n.attributeData[i].location,
 					offset: s.offset,
 					format: s.format
 				}));
@@ -773,20 +773,20 @@ var z = class {
 		}), this._bufferLayoutsCache[r] = i, i;
 	}
 	_updatePipeHash() {
-		let e = Se(this._stencilMode, this._multisampleCount, this._colorMask, this._depthStencilAttachment, this._colorTargetCount);
+		let e = Ce(this._stencilMode, this._multisampleCount, this._colorMask, this._depthStencilAttachment, this._colorTargetCount);
 		this._pipeStateCaches[e] || (this._pipeStateCaches[e] = /* @__PURE__ */ Object.create(null)), this._pipeCache = this._pipeStateCaches[e];
 	}
 	destroy() {
 		this._renderer = null, this._bufferLayoutsCache = null;
 	}
 };
-z.extension = {
-	type: [h.WebGPUSystem],
+R.extension = {
+	type: [p.WebGPUSystem],
 	name: "pipeline"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/renderTarget/GpuRenderTarget.mjs
-var Ce = class {
+var z = class {
 	constructor() {
 		this.contexts = [], this.msaaTextures = [], this.msaaSamples = 1;
 	}
@@ -874,14 +874,14 @@ var Ce = class {
 			c.queue.submit([u]);
 		} else this.startRenderPass(e, t, n, r, i, a);
 	}
-	initGpuRenderTarget(e) {
-		e.isRoot = !0;
-		let t = new Ce();
-		return t.colorTargetCount = e.colorTextures.length, e.colorTextures.forEach((e, n) => {
-			if (e instanceof a) {
-				let r = e.resource.getContext("webgpu"), i = e.transparent ? "premultiplied" : "opaque";
+	initGpuRenderTarget(t) {
+		t.isRoot = !0;
+		let n = new z();
+		return n.colorTargetCount = t.colorTextures.length, t.colorTextures.forEach((t, r) => {
+			if (t instanceof i) {
+				let e = t.resource.getContext("webgpu"), i = t.transparent ? "premultiplied" : "opaque";
 				try {
-					r.configure({
+					e.configure({
 						device: this._renderer.gpu.device,
 						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 						format: "bgra8unorm",
@@ -890,19 +890,19 @@ var Ce = class {
 				} catch (e) {
 					console.error(e);
 				}
-				t.contexts[n] = r;
+				n.contexts[r] = e;
 			}
-			if (t.msaa = e.source.antialias, e.source.antialias) {
-				let i = new r({
+			if (n.msaa = t.source.antialias, t.source.antialias) {
+				let i = new e({
 					width: 0,
 					height: 0,
 					sampleCount: 4,
-					transient: e.source.transient,
-					arrayLayerCount: e.source.arrayLayerCount
+					transient: t.source.transient,
+					arrayLayerCount: t.source.arrayLayerCount
 				});
-				t.msaaTextures[n] = i;
+				n.msaaTextures[r] = i;
 			}
-		}), t.msaa && (t.msaaSamples = 4, e.depthStencilTexture && (e.depthStencilTexture.source.sampleCount = 4, e.depthStencilTexture.source.transient = !!t.msaaTextures[0]?.transient)), t;
+		}), n.msaa && (n.msaaSamples = 4, t.depthStencilTexture && (t.depthStencilTexture.source.sampleCount = 4, t.depthStencilTexture.source.transient = !!n.msaaTextures[0]?.transient)), n;
 	}
 	destroyGpuRenderTarget(e) {
 		e.contexts.forEach((e) => {
@@ -927,7 +927,7 @@ var Ce = class {
 	}
 };
 B.extension = {
-	type: [h.WebGPUSystem],
+	type: [p.WebGPUSystem],
 	name: "renderTarget"
 };
 //#endregion
@@ -954,7 +954,7 @@ var V = class {
 	}
 };
 V.extension = {
-	type: [h.WebGPUSystem],
+	type: [p.WebGPUSystem],
 	name: "shader"
 };
 //#endregion
@@ -1097,7 +1097,7 @@ H.normal = {
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/state/GpuStateSystem.mjs
 var U = class {
 	constructor() {
-		this.defaultState = new o(), this.defaultState.blend = !0;
+		this.defaultState = new a(), this.defaultState.blend = !0;
 	}
 	contextChange(e) {
 		this.gpu = e;
@@ -1116,7 +1116,7 @@ var U = class {
 	}
 };
 U.extension = {
-	type: [h.WebGPUSystem],
+	type: [p.WebGPUSystem],
 	name: "state"
 };
 //#endregion
@@ -1230,16 +1230,16 @@ function Oe(e) {
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/texture/uploaders/gpuUploadImageSource.mjs
 var K = {
 	type: "image",
-	upload(e, t, r, i = 0) {
+	upload(e, n, r, i = 0) {
 		let a = e.resource;
 		if (!a) return;
 		if (globalThis.HTMLImageElement && a instanceof HTMLImageElement) {
-			let t = g.get().createCanvas(a.width, a.height);
-			t.getContext("2d").drawImage(a, 0, 0, a.width, a.height), e.resource = t, n("ImageSource: Image element passed, converting to canvas and replacing resource.");
+			let n = m.get().createCanvas(a.width, a.height);
+			n.getContext("2d").drawImage(a, 0, 0, a.width, a.height), e.resource = n, t("ImageSource: Image element passed, converting to canvas and replacing resource.");
 		}
-		let o = Math.min(t.width, e.resourceWidth || e.pixelWidth), s = Math.min(t.height, e.resourceHeight || e.pixelHeight), c = e.alphaMode === "premultiply-alpha-on-upload";
+		let o = Math.min(n.width, e.resourceWidth || e.pixelWidth), s = Math.min(n.height, e.resourceHeight || e.pixelHeight), c = e.alphaMode === "premultiply-alpha-on-upload";
 		r.device.queue.copyExternalImageToTexture({ source: a }, {
-			texture: t,
+			texture: n,
 			origin: {
 				x: 0,
 				y: 0,
@@ -1356,7 +1356,7 @@ var K = {
 	}
 }, q = class e {
 	constructor(t) {
-		this._gpuSamplers = /* @__PURE__ */ Object.create(null), this._bindGroupHash = /* @__PURE__ */ Object.create(null), this._renderer = t, t.gc.addCollection(this, "_bindGroupHash", "hash"), this._managedTextures = new y({
+		this._gpuSamplers = /* @__PURE__ */ Object.create(null), this._bindGroupHash = /* @__PURE__ */ Object.create(null), this._renderer = t, t.gc.addCollection(this, "_bindGroupHash", "hash"), this._managedTextures = new v({
 			renderer: t,
 			type: "resource",
 			onUnload: this.onSourceUnload.bind(this),
@@ -1440,10 +1440,10 @@ var K = {
 	}
 	_createTextureBindGroup(e) {
 		let t = e.source;
-		return this._bindGroupHash[e.uid] = new c({
+		return this._bindGroupHash[e.uid] = new o({
 			0: t,
 			1: t.style,
-			2: new u({ uTextureMatrix: {
+			2: new s({ uTextureMatrix: {
 				type: "mat3x3<f32>",
 				value: e.textureMatrix.mapCoord
 			} })
@@ -1456,13 +1456,13 @@ var K = {
 		return n ||= (this.initSource(t), t._gpuData[this._renderer.uid]), n.textureView || (n.textureView = n.gpuTexture.createView({ dimension: t.viewDimension })), n.textureView;
 	}
 	generateCanvas(e) {
-		let t = this._renderer, n = t.gpu.device.createCommandEncoder(), r = g.get().createCanvas();
+		let t = this._renderer, n = t.gpu.device.createCommandEncoder(), r = m.get().createCanvas();
 		r.width = e.source.pixelWidth, r.height = e.source.pixelHeight;
 		let i = r.getContext("webgpu");
 		return i.configure({
 			device: t.gpu.device,
 			usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC,
-			format: g.get().getNavigator().gpu.getPreferredCanvasFormat(),
+			format: m.get().getNavigator().gpu.getPreferredCanvasFormat(),
 			alphaMode: "premultiplied"
 		}), n.copyTextureToTexture({
 			texture: t.texture.getGpuSource(e.source),
@@ -1476,10 +1476,10 @@ var K = {
 		}), t.gpu.device.queue.submit([n.finish()]), r;
 	}
 	getPixels(e) {
-		let t = this.generateCanvas(e), n = w.getOptimalCanvasAndContext(t.width, t.height), r = n.context;
+		let t = this.generateCanvas(e), n = S.getOptimalCanvasAndContext(t.width, t.height), r = n.context;
 		r.drawImage(t, 0, 0);
 		let { width: i, height: a } = t, o = r.getImageData(0, 0, i, a), s = new Uint8ClampedArray(o.data.buffer);
-		return w.returnCanvasAndContext(n), {
+		return S.returnCanvasAndContext(n), {
 			pixels: s,
 			width: i,
 			height: a
@@ -1495,21 +1495,21 @@ var K = {
 	}
 };
 q.extension = {
-	type: [h.WebGPUSystem],
+	type: [p.WebGPUSystem],
 	name: "texture"
 }, q.uploadExtensions = /* @__PURE__ */ Object.create(null);
 var J = q;
-l.handleByMap(h.TextureUploaderWebGPU, J.uploadExtensions);
+u.handleByMap(p.TextureUploaderWebGPU, J.uploadExtensions);
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/graphics/gpu/GpuGraphicsAdaptor.mjs
 var Y = class {
 	constructor() {
 		this._maxTextures = 0;
 	}
-	contextChange(t) {
-		let n = new u({
+	contextChange(e) {
+		let t = new s({
 			uTransformMatrix: {
-				value: new e(),
+				value: new n(),
 				type: "mat3x3<f32>"
 			},
 			uColor: {
@@ -1526,19 +1526,19 @@ var Y = class {
 				type: "f32"
 			}
 		});
-		this._maxTextures = t.limits.maxBatchableTextures;
-		let r = v({
+		this._maxTextures = e.limits.maxBatchableTextures;
+		let r = b({
 			name: "graphics",
 			bits: [
-				S,
+				se,
 				re(this._maxTextures),
-				fe,
-				b
+				me,
+				y
 			]
 		});
-		this.shader = new p({
+		this.shader = new d({
 			gpuProgram: r,
-			resources: { localUniforms: n }
+			resources: { localUniforms: t }
 		});
 	}
 	execute(e, t) {
@@ -1553,7 +1553,7 @@ var Y = class {
 			let n = u[t];
 			if (n.topology !== d && (d = n.topology, s.setPipelineFromGeometryProgramAndState(a.geometry, r.gpuProgram, e.state, n.topology)), r.groups[1] = n.bindGroup, !n.gpuBindGroup) {
 				let e = n.textures;
-				n.bindGroup = C(e.textures, e.count, this._maxTextures), n.gpuBindGroup = i.bindGroup.getBindGroup(n.bindGroup, r.gpuProgram, 1);
+				n.bindGroup = x(e.textures, e.count, this._maxTextures), n.gpuBindGroup = i.bindGroup.getBindGroup(n.bindGroup, r.gpuProgram, 1);
 			}
 			s.setBindGroup(1, n.bindGroup, r.gpuProgram), s.renderPassEncoder.drawIndexed(n.size, 1, n.start);
 		}
@@ -1563,38 +1563,38 @@ var Y = class {
 	}
 };
 Y.extension = {
-	type: [h.WebGPUPipesAdaptor],
+	type: [p.WebGPUPipesAdaptor],
 	name: "graphics"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/scene/mesh/gpu/GpuMeshAdapter.mjs
 var X = class {
 	init() {
-		let n = v({
+		let e = b({
 			name: "mesh",
 			bits: [
-				ce,
 				ue,
-				b
+				fe,
+				y
 			]
 		});
-		this._shader = new p({
-			gpuProgram: n,
+		this._shader = new d({
+			gpuProgram: e,
 			resources: {
-				uTexture: t.EMPTY._source,
-				uSampler: t.EMPTY._source.style,
+				uTexture: h.EMPTY._source,
+				uSampler: h.EMPTY._source.style,
 				textureUniforms: { uTextureMatrix: {
 					type: "mat3x3<f32>",
-					value: new e()
+					value: new n()
 				} }
 			}
 		});
 	}
-	execute(e, t) {
-		let r = e.renderer, i = t._shader;
-		if (!i) i = this._shader, i.groups[2] = r.texture.getTextureBindGroup(t.texture);
+	execute(e, n) {
+		let r = e.renderer, i = n._shader;
+		if (!i) i = this._shader, i.groups[2] = r.texture.getTextureBindGroup(n.texture);
 		else if (!i.gpuProgram) {
-			n("Mesh shader has no gpuProgram", t.shader);
+			t("Mesh shader has no gpuProgram", n.shader);
 			return;
 		}
 		let a = i.gpuProgram;
@@ -1603,9 +1603,9 @@ var X = class {
 			i.groups[1] = r.renderPipes.uniformBatch.getUniformBindGroup(t, !0);
 		}
 		r.encoder.draw({
-			geometry: t._geometry,
+			geometry: n._geometry,
 			shader: i,
-			state: t.state
+			state: n.state
 		});
 	}
 	destroy() {
@@ -1613,37 +1613,37 @@ var X = class {
 	}
 };
 X.extension = {
-	type: [h.WebGPUPipesAdaptor],
+	type: [p.WebGPUPipesAdaptor],
 	name: "mesh"
 };
 //#endregion
 //#region node_modules/.pnpm/pixi.js@8.19.0/node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs
-var Me = /* @__PURE__ */ s({ WebGPURenderer: () => Ie }), Ne = [
+var Me = /* @__PURE__ */ ee({ WebGPURenderer: () => Ie }), Ne = [
 	...ae,
-	I,
-	j,
-	A,
-	M,
+	F,
+	k,
 	O,
+	A,
+	E,
 	J,
 	B,
 	V,
 	U,
-	z,
-	k,
-	N,
-	D
-], Pe = [...ie, R], Fe = [
-	E,
+	R,
+	D,
+	j,
+	T
+], Pe = [...ie, L], Fe = [
+	w,
 	X,
 	Y
 ], Z = [], Q = [], $ = [];
-l.handleByNamedList(h.WebGPUSystem, Z), l.handleByNamedList(h.WebGPUPipes, Q), l.handleByNamedList(h.WebGPUPipesAdaptor, $), l.add(...Ne, ...Pe, ...Fe);
-var Ie = class extends te {
+u.handleByNamedList(p.WebGPUSystem, Z), u.handleByNamedList(p.WebGPUPipes, Q), u.handleByNamedList(p.WebGPUPipesAdaptor, $), u.add(...Ne, ...Pe, ...Fe);
+var Ie = class extends ne {
 	constructor() {
 		let e = {
 			name: "webgpu",
-			type: ee.WEBGPU,
+			type: te.WEBGPU,
 			systems: Z,
 			renderPipes: Q,
 			renderPipeAdaptors: $
@@ -1654,4 +1654,4 @@ var Ie = class extends te {
 //#endregion
 export { Me as t };
 
-//# sourceMappingURL=WebGPURenderer-qWv9ERNr.js.map
+//# sourceMappingURL=WebGPURenderer-GZ9EgvPm.js.map
