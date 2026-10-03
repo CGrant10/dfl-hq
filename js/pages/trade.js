@@ -19,7 +19,7 @@ import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
 import { shareDeal } from "../trade-card.js";
-import { suggestTrades } from "../team-analyzer.js";
+import { suggestMultiTeamTrades, suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
@@ -49,6 +49,7 @@ function offerPlayerRows(ids, pool) {
 }
 
 function offerMarkup(offer, pool) {
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
   const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
   const depth = Number(offer.depthDeltaA) || 0;
@@ -90,9 +91,15 @@ function tradeLab(team, teams, pool, shop) {
   const partner = allPartners ? null
     : otherTeams.find(item => String(item.id) === String(shop.partnerId)) || otherTeams[0];
   if (!allPartners) shop.partnerId = partner?.id || "";
-  const partnerKey = allPartners ? "all" : partner?.id || "";
+  let partnerKey = allPartners ? "all" : partner?.id || "";
   const minePlayers = (team.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
-  const theirPlayers = (partner?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  shop.memberIds = (shop.memberIds || []).filter((id, index, ids) => otherTeams.some(t => String(t.id) === String(id)) && String(id) !== String(partner?.id) && ids.indexOf(id) === index);
+  if (allPartners) shop.memberIds = [];
+  const parties = [team, partner, ...shop.memberIds.map(id => otherTeams.find(t => String(t.id) === String(id)))].filter(Boolean);
+  const multi = parties.length > 2;
+  const returnTeam = multi ? parties.at(-1) : partner;
+  const theirPlayers = (returnTeam?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a, b) => b.tradeValue - a.tradeValue);
+  partnerKey = [partnerKey, ...shop.memberIds].join("/");
   shop.sendAnchors = (shop.sendAnchors || []).filter(id => minePlayers.some(player => String(player.id) === String(id)));
   if (String(shop.anchorPartnerId) !== String(partnerKey)) {
     /* A new partner must start unanchored. Auto-selecting their most valuable
@@ -103,7 +110,7 @@ function tradeLab(team, teams, pool, shop) {
   } else {
     shop.receiveAnchors = (shop.receiveAnchors || []).filter(id => theirPlayers.some(player => String(player.id) === String(id)));
   }
-  const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length);
+  const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length) + Math.max(0, parties.length - 2);
   const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
   shop.maxPlayers = maxPlayers;
   const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "aggressive";
@@ -120,7 +127,7 @@ function tradeLab(team, teams, pool, shop) {
   const cacheKey = [team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
   let allOffers = shop.offerCache.get(cacheKey);
   if (!allOffers) {
-    allOffers = otherTeams.length ? suggestTrades({ teams, teamId: team.id, partnerId: allPartners ? undefined : partner?.id,
+    allOffers = multi ? suggestMultiTeamTrades({ parties, pool, maxPlayers, sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, sendCount, receiveCount, intent }) : otherTeams.length ? suggestTrades({ teams, teamId: team.id, partnerId: allPartners ? undefined : partner?.id,
       sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, maxPlayers,
       pool, limit: allPartners ? 132 : 96, shapes: shapeKeys, intent }) : [];
     shop.offerCache.set(cacheKey, allOffers);
@@ -139,7 +146,7 @@ function tradeLab(team, teams, pool, shop) {
     : `ALL ${tierOffers.length} OFFERS SHOWN`;
   shop.openTiers ||= new Set();
   const countOptions = (side, selected, minimum) => `<option value="any" ${selected === "any" ? "selected" : ""}>Any</option>${Array.from({ length: 7 }, (_, index) => index + 1)
-    .filter(count => count >= minimum && count < maxPlayers)
+    .filter(count => count >= minimum && count < maxPlayers - shop.memberIds.length)
     .map(count => `<option value="${count}" ${String(selected) === String(count) ? "selected" : ""}>${count}</option>`).join("")}`;
   return `<section class="tb-board">
     <div class="tb-head-row"><header class="tb-head"><small>DFLYZER</small><h1>Trade Board</h1><p>Pick your pressure. Send something worth answering.</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div>
@@ -149,7 +156,9 @@ function tradeLab(team, teams, pool, shop) {
       <div class="tb-workbench-card">
         <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
         <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner><option value="all" ${allPartners ? "selected" : ""}>All teams · Shop league-wide</option>${otherTeams.map(item => `<option value="${esc(item.id)}" ${!allPartners && String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
-        <div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(partner, { meta: "TRADE WITH", compact: true })}</div>
+        <div class="tb-members">${shop.memberIds.map((id, index) => `<div class="td-member-control"><label class="tb-team-select"><span>Member ${index + 3}</span><select data-tb-member="${index}">${otherTeams.filter(t => String(t.id) !== String(partner?.id) && (!shop.memberIds.includes(t.id) || String(t.id) === String(id))).map(t => `<option value="${esc(t.id)}" ${String(t.id) === String(id) ? "selected" : ""}>${esc(teamName(t))}</option>`).join("")}</select></label><button type="button" class="td-remove-member" data-tb-remove-member="${index}" aria-label="Remove ${esc(teamName(parties[index + 2]))}">×</button></div>`).join("")}${parties.length < Math.min(8, teams.length) ? `<button type="button" class="btn ghost small" data-tb-add-member>+ Add member</button>` : ""}</div>
+        ${multi ? `<div class="tb-trade-route">${parties.map((t, i) => `<span>${esc(teamName(t))} → ${esc(teamName(parties[(i + 1) % parties.length]))}</span>`).join("")}</div>` : ""}
+        <div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(returnTeam, { meta: multi ? "RETURN FROM" : "TRADE WITH", compact: true })}</div>
         <div class="tb-blueprint">
           <section><header><small>YOU CAN SEND</small><span>Optional anchors</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
           ${allPartners ? `<section class="tb-league-return"><header><small>YOU WANT</small><span>Any team</span></header><div><b>Best league-wide return</b><small>We will match your outgoing package against every roster. Pick one team above to require a specific player.</small></div></section>`
@@ -204,9 +213,9 @@ export function completedTradeMarkup(alerts = [], selectedTransactionId = "") {
     <div class="ta-section-body td-alert-list">${views.map(alert => {
       const call = alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED";
       return `<article class="td-alert-receipt" id="trade-${esc(alert.transactionId)}">
-        <header><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3></div><span>${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% balance`}</span></header>
-        <div class="td-alert-packages">${alert.packages.map(pkg => `<section><small>${esc(pkg.teamName)} SENT</small>${pkg.players.map(player => `<div><span><strong>${esc(player.name)}</strong><small>${esc([player.position, player.nflTeam].filter(Boolean).join(" · "))}</small></span><b>${Math.round(player.value)}</b></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
-        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.lineupDeltas.slice(0, 2).map((delta, index) => `<small>${esc(delta.teamName)} <b>lineup ${alertSigned(delta.weekly)} · depth ${alertSigned(alert.depthDeltas?.[index]?.weekly)}</b></small>`).join("")}</footer>
+        <header><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3></div><span class="td-receipt-balance">${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% balance`}</span></header>
+        <div class="td-alert-packages">${alert.packages.map(pkg => `<section>${teamIdentity({ team_name: pkg.teamName }, { meta: "SENT", compact: true })}${pkg.players.map(player => `<div class="td-receipt-player">${playerIdentity(player)}<span class="td-receipt-value"><b>${Math.round(player.value)}</b><small>VALUE</small></span></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
+        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.fairness == null ? "" : alert.lineupDeltas.filter(delta => delta.weekly != null).map((delta, index) => `<small>${esc(delta.teamName)} <b>lineup ${alertSigned(delta.weekly)} · depth ${alertSigned(alert.depthDeltas?.[index]?.weekly)}</b></small>`).join("")}</footer>
       </article>`;
     }).join("")}</div>
   </details>`;
@@ -221,7 +230,7 @@ function page(data, tradeAlerts = []) {
     || data.teams.find(team => String(team.sleeper_user_id) === String(me?.sleeper_user_id))?.id
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true };
-  const shop = { partnerId: "", anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
+  const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(), customOpen: false, sharedAudit: [] };
 
@@ -280,11 +289,15 @@ function page(data, tradeAlerts = []) {
         shop.visibleCount = OFFER_BATCH_SIZE; shop.justRefreshed = true; shop.refreshStamp = (shop.refreshStamp || 0) + 1; draw();
       };
       const resetBlueprint = () => {
-        shop.partnerId = ""; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
+        shop.partnerId = ""; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
         shop.intent = "aggressive"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers.clear(); shop.customOpen = false;
       };
       body.addEventListener("change", event => {
+        if (event.target.matches("[data-tb-member]")) {
+          shop.memberIds[Number(event.target.dataset.tbMember)] = event.target.value;
+          shop.anchorPartnerId = ""; refreshOffers(); return;
+        }
         if (event.target.matches("[data-td-team]")) {
           selectedId = event.target.value;
           trade.memberIds = []; trade.sends = [new Set(), new Set()]; trade.editing = true;
@@ -301,7 +314,7 @@ function page(data, tradeAlerts = []) {
           const list = side === "send" ? shop.sendAnchors : shop.receiveAnchors;
           const nextSend = shop.sendAnchors.length + (side === "send" ? 1 : 0);
           const nextReceive = shop.receiveAnchors.length + (side === "receive" ? 1 : 0);
-          if (Math.max(1, nextSend) + Math.max(1, nextReceive) > shop.maxPlayers) {
+          if (Math.max(1, nextSend) + Math.max(1, nextReceive) + shop.memberIds.length > shop.maxPlayers) {
             toast(`This package is capped at ${shop.maxPlayers} players. Raise the slider or remove an anchor.`, true);
           } else if (!list.includes(anchorSelect.value)) {
             list.push(anchorSelect.value);
@@ -316,7 +329,7 @@ function page(data, tradeAlerts = []) {
           else shop.receiveCount = event.target.value;
           const other = isSend ? "receiveCount" : "sendCount";
           if (shop.sendCount !== "any" && shop.receiveCount !== "any"
-            && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop[other] = "any";
+            && Number(shop.sendCount) + Number(shop.receiveCount) + shop.memberIds.length > shop.maxPlayers) shop[other] = "any";
           refreshOffers(); return;
         }
         if (event.target.matches("[data-tb-max]")) {
@@ -324,7 +337,7 @@ function page(data, tradeAlerts = []) {
           if (shop.sendCount !== "any" && Number(shop.sendCount) >= shop.maxPlayers) shop.sendCount = "any";
           if (shop.receiveCount !== "any" && Number(shop.receiveCount) >= shop.maxPlayers) shop.receiveCount = "any";
           if (shop.sendCount !== "any" && shop.receiveCount !== "any"
-            && Number(shop.sendCount) + Number(shop.receiveCount) > shop.maxPlayers) shop.receiveCount = "any";
+            && Number(shop.sendCount) + Number(shop.receiveCount) + shop.memberIds.length > shop.maxPlayers) shop.receiveCount = "any";
           refreshOffers();
         }
       });
@@ -337,6 +350,16 @@ function page(data, tradeAlerts = []) {
         if (note) note.textContent = `Up to ${value} total players—not a required total.`;
       });
       body.addEventListener("click", async event => {
+        if (event.target.closest("[data-tb-add-member]")) {
+          const team = data.teams.find(t => String(t.id) === String(selectedId));
+          if (shop.partnerId === "all") shop.partnerId = data.teams.find(t => String(t.id) !== String(team.id))?.id;
+          const used = new Set([team.id, shop.partnerId, ...shop.memberIds].map(String));
+          const next = data.teams.find(t => !used.has(String(t.id)));
+          if (next) { shop.memberIds.push(next.id); shop.maxPlayers = Math.min(8, Math.max(shop.maxPlayers, shop.memberIds.length + 2)); shop.anchorPartnerId = ""; refreshOffers(); body.querySelectorAll("[data-tb-member]")[shop.memberIds.length - 1]?.focus(); }
+          return;
+        }
+        const removeMember = event.target.closest("[data-tb-remove-member]");
+        if (removeMember) { shop.memberIds.splice(Number(removeMember.dataset.tbRemoveMember), 1); shop.anchorPartnerId = ""; refreshOffers(); body.querySelector("[data-tb-add-member]")?.focus(); return; }
         const shareButton = event.target.closest("[data-td-share]");
         if (shareButton) {
           if (!deal) return;
@@ -385,12 +408,13 @@ function page(data, tradeAlerts = []) {
         const auditInput = { season: data.projectionSeason, week: data.liveWeek, teamId: selectedId, partnerId: button.dataset.partner,
           sendA: (button.dataset.sendA || "").split(",").filter(Boolean), sendB: (button.dataset.sendB || "").split(",").filter(Boolean),
           weeklyDelta: button.dataset.weeklyDelta };
-        void saveTradeRecommendation(auditInput, data.pool).catch(error => console.warn("trade recommendation audit unavailable", error));
-        trade.memberIds = [button.dataset.partner];
-        trade.sends = [
+        if (!button.dataset.parties) void saveTradeRecommendation(auditInput, data.pool).catch(error => console.warn("trade recommendation audit unavailable", error));
+        trade.memberIds = button.dataset.parties ? JSON.parse(button.dataset.parties) : [button.dataset.partner];
+        trade.sends = button.dataset.sends ? JSON.parse(button.dataset.sends).map(ids => new Set(ids)) : [
           new Set((button.dataset.sendA || "").split(",").filter(Boolean)),
           new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
         ];
+        trade.editing = true;
         shop.customOpen = true;
         draw();
         body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "smooth", block: "start" });

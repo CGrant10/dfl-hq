@@ -1457,3 +1457,34 @@ details[open] > .ta-report-title .ta-fold-chevron { transform: rotate(-135deg); 
 
 /* Fairway's bright fill needs darker ink behind the small white identity badge. */
 html[data-palette="fairway"] .ta-mark.is-you { background: var(--accent); }
+
+/* Trade Board members and saved receipts share the photo-led desk language. */
+.tb-members { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.tb-members .td-member-control { flex: 1 1 220px; min-width: 0; }
+.tb-members .tb-team-select { flex: 1; min-width: 0; }
+.tb-trade-route { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--body-text); font-size: var(--fs-small); }
+.tb-multi-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 24px; padding: 20px; }
+.tb-multi-flow > section { display: grid; align-content: start; gap: 14px; min-width: 0; }
+.tb-multi-flow > section > small { color: var(--body-text); font-size: var(--fs-small); }
+.tb-multi-offer > button { margin: 0 20px 20px; }
+.td-alert-list { gap: 24px; }
+.td-alert-receipt { border-color: var(--line); border-radius: 18px; background: var(--card); }
+.td-alert-receipt > header { padding: 22px 24px; align-items: center; }
+.td-alert-receipt > header h3 { font-size: clamp(1.2rem, 3vw, 1.65rem); line-height: 1.2; overflow-wrap: anywhere; }
+.td-alert-receipt .td-receipt-balance { flex-shrink: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: var(--fs-small); }
+.td-alert-packages { grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
+.td-alert-packages > section { padding: 22px 24px; }
+.td-alert-packages > section > .dfl-team { justify-content: start; margin: 0 0 20px; }
+.td-alert-packages > section > .td-receipt-player { margin-top: 16px; }
+.td-alert-packages .td-receipt-player > .dfl-player { display: flex; min-width: 0; }
+.td-alert-packages .dfl-player-copy strong { white-space: normal; overflow-wrap: anywhere; }
+.td-alert-packages .td-receipt-value { display: grid; flex-shrink: 0; text-align: right; gap: 2px; }
+.td-receipt-value small { font-size: .65rem; letter-spacing: .08em; }
+.td-alert-receipt > footer { flex-wrap: wrap; gap: 12px 24px; padding: 20px 24px; border-top: 1px solid var(--line-soft); }
+.td-alert-receipt > footer p { flex-basis: 100%; }
+.td-alert-receipt > footer small { flex: 1 1 220px; white-space: normal; overflow-wrap: anywhere; }
+@media(max-width: 540px) {
+  .td-alert-receipt > header { flex-wrap: wrap; padding: 18px; }
+  .td-alert-packages > section, .td-alert-receipt > footer { padding: 18px; }
+  .td-alert-receipt > footer small { flex-basis: auto; }
+}

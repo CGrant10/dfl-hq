@@ -766,6 +766,48 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   return selected;
 }
 
+/** Bounded package search for a circular exchange, matching the manual desk. */
+export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 4,
+  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96 } = {}) {
+  if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
+  const cap = Math.min(8, Math.max(parties.length, Number(maxPlayers) || 4));
+  const choices = parties.map((team, index) => {
+    const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
+    if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
+    const ranked = sortedPlayers(team.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
+    const players = ranked.slice(0, 8);
+    for (const id of required) { const player = ranked.find(p => String(p.id) === String(id)); if (player && !players.includes(player)) players.push(player); }
+    const fixed = index === 0 ? sendCount : index === parties.length - 1 ? receiveCount : "any";
+    return Array.from({ length: cap - parties.length + 1 }, (_, i) => i + 1)
+      .filter(size => fixed === "any" || size === Number(fixed))
+      .flatMap(size => tradePackages(players, size, required, 24));
+  });
+  if (choices.some(list => !list.length)) return [];
+  let beam = [{ sends: [], count: 0, values: [] }];
+  for (let index = 0; index < choices.length; index++) {
+    beam = beam.flatMap(candidate => choices[index].map(ids => ({
+      sends: [...candidate.sends, ids], count: candidate.count + ids.length,
+      values: [...candidate.values, rawPackageValue(ids, pool)],
+    }))).filter(candidate => candidate.count + parties.length - index - 1 <= cap)
+      .sort((a, b) => {
+        const gap = c => (Math.max(...c.values, 1) - Math.min(...c.values)) / Math.max(...c.values, 1);
+        return gap(a) - gap(b);
+      }).slice(0, 240);
+  }
+  return beam.map(candidate => {
+    const result = evaluateMultiTeamTrade({ teams: parties, sends: candidate.sends, pool });
+    if (!result || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
+      || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
+    const high = Math.max(...result.values, 1), edge = (result.values[0] - result.values[1]) / high * 100;
+    const spread = Math.max(...result.rosterImpacts) - Math.min(...result.rosterImpacts);
+    const tier = result.fairness >= 90 && spread <= 1.25 && Math.min(...result.rosterImpacts) >= -.75
+      ? "fair" : edge >= 6 || result.rosterImpacts[0] - Math.max(...result.rosterImpacts.slice(1)) >= 1.5 ? "steal" : "aggressive";
+    return { ...result, parties, tier, other: parties[1], sendA: candidate.sends[0], sendB: candidate.sends.at(-1),
+      valueToA: result.values[0], valueToB: result.values[1], weeklyDeltaA: result.weeklyDeltas[0], depthDeltaA: result.depthDeltas[0],
+      score: result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5 };
+  }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
 export function isPlausibleTradeSuggestion(result) {
   if (!result || result.fairness < 40) return false;
   const a = Number(result.weeklyDeltaA) || 0, b = Number(result.weeklyDeltaB) || 0;
