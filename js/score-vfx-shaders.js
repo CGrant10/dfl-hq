@@ -29,21 +29,29 @@ void main(){
  if(u_cold<.5){
   float t=u_time;
   float height=clamp((u_glyph.y+u_glyph.w*.8-p.y)/(u_glyph.w*1.65),0.,1.);
+  // Two rising flow scales curl the flame and break its tips independently.
   vec2 field=vec2(p.x*.11,p.y*.095+t*1.35);
   vec2 curl=vec2(fbm(field*.65+vec2(t*.18,0.)),fbm(field*.65+19.7));
   float flow=fbm(field+(curl-.5)*2.4);
-  float sway=(flow-.5)*(3.+height*8.);
+  float detail=noise(field*2.15+vec2(flow*2.,t*.6));
+  float sway=(flow-.5)*(3.+height*8.)+(detail-.5)*height*2.;
   vec4 emission=texture2D(u_mask,vec2(clamp((p.x+sway)/u_size.x,0.,1.),.5));
   float top=emission.g*u_size.y;
   float rise=clamp((top-p.y)/(u_glyph.w*.92),0.,1.);
-  float fuel=emission.r*pow(1.-rise,.72);
-  float plume=smoothstep(.25,.76,fuel+(flow-.5)*.72)*emission.r*(1.-smoothstep(.8,1.,rise));
+  // Adjacent tongues stretch and recede at different rates within the same bounds.
+  float stretch=.72+.28*noise(vec2(p.x*.16,t*.85));
+  float localRise=clamp(rise/stretch,0.,1.);
+  float fuel=emission.r*pow(1.-localRise,.9);
+  float plume=smoothstep(.25,.76,fuel+(flow-.5)*.64+(detail-.5)*.18)*emission.r;
+  plume*=1.-smoothstep(.8,1.,localRise);
   plume*=1.-smoothstep(top-1.,top+7.,p.y);
-  float flicker=.82+.18*noise(vec2(p.x*.09,t*1.1));
+  float flicker=.86+.14*noise(vec2(p.x*.09,t*1.1));
   float fire=max(edge*.55,plume*flicker)*(1.-glyph);
-  float heat=clamp(fire*.9+(1.-height)*.2,0.,1.);
-  color=mix(vec3(.95,.12,.015),vec3(1.,.68,.12),heat);
-  color=mix(color,vec3(1.,.96,.68),pow(heat,4.)*.85);
+  // Dense fuel near the digits burns pale; thin, cooling tips remain deep orange.
+  float heat=clamp(plume*.78+(1.-rise)*.22+edge*.18,0.,1.);
+  color=mix(vec3(.88,.075,.008),vec3(1.,.43,.035),smoothstep(.18,.65,heat));
+  color=mix(color,vec3(1.,.78,.25),smoothstep(.58,.88,heat));
+  color=mix(color,vec3(1.,.97,.78),smoothstep(.86,1.,heat)*.9);
   alpha=fire*.74+halo*.09;
   float sparks=0.;
   for(int i=0;i<8;i++){
