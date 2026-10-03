@@ -22,9 +22,10 @@ float fbm(vec2 p){return noise(p)*.57+noise(p*2.03+7.1)*.28+noise(p*4.01-3.7)*.1
 float mask(vec2 p){return texture2D(u_mask,clamp(p/u_size,vec2(0.),vec2(1.))).a;}
 void main(){
  vec2 p=v_uv*u_size;
- float glyph=mask(p),near=0.,far=0.;
- for(int i=0;i<8;i++){float a=float(i)*.785398;vec2 d=vec2(cos(a),sin(a));near=max(near,mask(p+d*1.7));far=max(far,mask(p+d*4.2));}
+ float glyph=mask(p),near=0.,far=0.,inside=1.;
+ for(int i=0;i<8;i++){float a=float(i)*.785398;vec2 d=vec2(cos(a),sin(a));near=max(near,mask(p+d*1.7));inside=min(inside,mask(p+d*1.15));far=max(far,mask(p+d*4.2));}
  float edge=max(0.,near-glyph),halo=max(0.,far-glyph);
+ float innerRim=max(0.,glyph-inside);
  vec3 color;float alpha;
  if(u_cold<.5){
   float t=u_time;
@@ -46,13 +47,30 @@ void main(){
   plume*=1.-smoothstep(.8,1.,localRise);
   plume*=1.-smoothstep(top-1.,top+7.,p.y);
   float flicker=.86+.14*noise(vec2(p.x*.09,t*1.1));
-  float fire=max(edge*.55,plume*flicker)*(1.-glyph);
+  // Sample the actual strokes below this pixel: flame roots follow curves,
+  // counters and decimal points instead of forming a backdrop behind the text.
+  float reach=clamp(u_glyph.w*.32,4.,12.);
+  float contour=0.;
+  for(int i=1;i<=4;i++){
+   float lift=float(i)*reach*.25;
+   float root=mask(p+vec2(sway*lift/reach*.48,lift));
+   float tongue=smoothstep(.28,.72,flow+root*.34-float(i)*.095);
+   contour=max(contour,root*tongue*(1.-float(i)*.13));
+  }
+  float fire=max(edge*(.6+flow*.25),max(contour*.88,plume*flicker*.62))*(1.-glyph);
   // Dense fuel near the digits burns pale; thin, cooling tips remain deep orange.
   float heat=clamp(plume*.78+(1.-rise)*.22+edge*.18,0.,1.);
   color=mix(vec3(.88,.075,.008),vec3(1.,.43,.035),smoothstep(.18,.65,heat));
   color=mix(color,vec3(1.,.78,.25),smoothstep(.58,.88,heat));
   color=mix(color,vec3(1.,.97,.78),smoothstep(.86,1.,heat)*.9);
-  alpha=fire*.74+halo*.09;
+  // A low-opacity heat glaze and bright, animated inner rim fuse the fire
+  // with the digits. The DOM text stays intact beneath the GPU surface.
+  float shimmer=smoothstep(.3,.76,fbm(p*.14+vec2(-t*.2,t*.75)));
+  float surface=glyph*(.065+shimmer*.065)+innerRim*(.24+shimmer*.16);
+  surface*=mix(1.,.3,u_light);
+  vec3 ember=mix(vec3(1.,.38,.04),vec3(1.,.91,.58),shimmer*.65+innerRim*.35);
+  color=mix(color,ember,glyph);
+  alpha=fire*.74+halo*.07+surface;
   float sparks=0.;
   for(int i=0;i<8;i++){
    float id=float(i),seed=hash(vec2(id,3.));float life=fract(t*(.24+seed*.18)+seed);
@@ -60,7 +78,7 @@ void main(){
    vec2 delta=(p-q)*vec2(1.,.7);float r=.45+seed*.4;
    sparks+=exp(-dot(delta,delta)/(r*r*2.))*(sin(life*3.14159))*.7;
   }
-  color=mix(color,vec3(1.,.72,.25),clamp(sparks,0.,1.));alpha=max(alpha,sparks)*(1.-glyph);
+  color=mix(color,vec3(1.,.72,.25),clamp(sparks,0.,1.));alpha=max(alpha,sparks*(1.-glyph));
  }else{
   float crystal=fbm(p*.2);
   vec2 cell=p*.19;float ridge=1.;
