@@ -1388,8 +1388,9 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 :root[data-mode="light"] .topbar .dfl-preview-toggle[data-mode="member"],
 :root[data-mode="light"] .topbar .dfl-preview-toggle[data-mode="locked"] { --role-ink:#ad1630; }
 .topbar .dfl-preview-toggle:is([data-mode="commissioner"],[data-mode="member"],[data-mode="locked"]) { color:var(--role-ink); background:color-mix(in srgb,var(--role-fill) 8%,var(--topbar-b)); border:0; }
-.topbar .dfl-preview-toggle .dfl-preview-track { width:6px; height:6px; flex:0 0 6px; border:0; background:var(--role-fill); border-radius:50%; }
-.topbar .dfl-preview-toggle .dfl-preview-knob { display:none; }
+.topbar .dfl-preview-toggle[data-mode] .dfl-preview-track { box-sizing:border-box; width:28px; height:16px; flex:0 0 28px; border:1px solid var(--role-ink); background:color-mix(in srgb,var(--role-fill) 24%,var(--topbar-b)); border-radius:999px; }
+.topbar .dfl-preview-toggle[data-mode] .dfl-preview-knob { display:block; width:12px; height:12px; top:1px; left:1px; background:var(--role-ink); box-shadow:none; transform:translateX(0); }
+.topbar .dfl-preview-toggle:is([data-mode="member"],[data-mode="locked"]) .dfl-preview-knob { transform:translateX(12px); }
 .injury-page { color:var(--body-text); font:500 11px/1 system-ui,sans-serif; white-space:nowrap; margin-left:8px; vertical-align:middle; }
 @media(max-width:560px) {
  .topbar .brand-text { display:none; }

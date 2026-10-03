@@ -11,3 +11,9 @@ Validation: pnpm check passed (1,022 tests across 113 files, type checks, names 
 Injury report opening focuses its heading, including native dialog autofocus, rather than a text field. Search remains available on tap. Header order is search, notifications, profile and access mode, with consistent six-pixel gaps. Shared hover/press transforms exclude broadcast arrows so their translateY(-50%) centering remains intact.
 
 Validation: all 1,022 tests and build checks pass. Chromium verifies both arrows keep their vertical center at rest, hover, pointer-down and after switching slides; the dialog initially focuses its heading and search focuses on tap. Existing full-report, mobile full-name, theme, accessibility, enlarged text and route-cleanup checks pass.
+
+## v1.282.0 visible access switch
+
+Restored the access control's visible 28×16px switch track and 12px sliding thumb. Commissioner sits on the left in yellow, member view on the right in red; the role label, 44px touch target, keyboard behavior, reduced-motion preference and PIN rules remain intact.
+
+Validation: 1,022 automated tests and build checks pass. Chromium checks both thumb positions, track bounds and role colors at 320, 390 and 768px, profile-name fit, plus the existing broadcast-arrow, injury-dialog, accessibility and route-cleanup checks.
