@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {buildGameDay,gameDayHighlights,kickoffCountdown} from './game-day-model.js';
+import {buildGameDay,gameDayHighlights,kickoffCountdown,gameDayLineup} from './game-day-model.js';
 const week={season:2026,week:4,completed:false,games:[{matchup_id:1,user1:'one',user2:'two',roster1:1,roster2:2}]};
 const members=[{id:11,sleeper_user_id:'one',team_name:'Home'},{id:12,sleeper_user_id:'two',team_name:'Away'}];
 const players={a:{n:'Player A',p:'QB',t:'BUF'},b:{n:'Player B',p:'WR',t:'NYG'},bench:{n:'Bench',p:'RB',t:'BUF'}};
@@ -13,4 +13,9 @@ describe('GameDay actual score tracking',()=>{
  it('handles tied and missing leaders without false lead-change alerts',()=>{expect(gameDayHighlights(build(12,12),build(10,12).snapshot)).toEqual([])});
  it('does not assign unmapped starters to a guest',()=>{const model=buildGameDay({week,players,rows:[{roster_id:1,starters:['a'],points:1,players_points:{a:1}}]});expect(model.mine).toEqual([])});
  it('formats an upcoming countdown and stops it at kickoff',()=>{expect(kickoffCountdown(3600000,0)).toBe('1h 0m to kickoff');expect(kickoffCountdown(60000,0)).toBe('1m to kickoff');expect(kickoffCountdown(100,100)).toBe('')});
+});
+
+describe('GameDay lineup slots and bench',()=>{
+ it('labels Flex by the assigned slot, keeps duplicate positions and displays kicker before defense',()=>{const row={starters:['a','r1','r2','w1','w2','t','b','d','k'],players:['a','r1','r2','w1','w2','t','b','d','k','bench'],players_points:{bench:40}};const roster=gameDayLineup(row,players,null,{rosterPositions:['QB','RB','RB','WR','WR','TE','FLEX','DEF','K','BN']});expect(roster.lineup.map(p=>p.slot)).toEqual(['QB','RB','RB','WR','WR','TE','Flex','Kicker','Def']);expect(roster.lineup[6].id).toBe('b');expect(roster.lineup[6].position).toBe('WR');expect(roster.bench.map(p=>p.id)).toEqual(['bench']);expect(roster.bench[0].points).toBe(40)});
+ it('keeps an empty starter slot without counting it as a player',()=>{const roster=gameDayLineup({starters:['a','0','b'],players:['a','b','bench']},players);expect(roster.lineup[1]).toMatchObject({slot:'RB',empty:true,points:null});expect(roster.bench.map(p=>p.id)).toEqual(['bench'])});
 });

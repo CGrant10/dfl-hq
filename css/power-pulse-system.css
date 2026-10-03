@@ -1415,3 +1415,17 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
  .tabbar.is-in-season :is(a,.tabmore) .ico { width:20px; height:20px; margin:0; flex:0 0 20px; }
  .tabbar.is-in-season :is(a,.tabmore) > span { white-space:nowrap; overflow-wrap:normal; text-transform:none; font:600 clamp(9px,2.4vw,11px)/1.2 system-ui,sans-serif; letter-spacing:0; }
 }
+
+/* Roster slots stay in lineup order rather than moving as scores change. */
+.gameday-player:has(.gameday-slot) { display:grid; grid-template-columns:3.25rem minmax(0,1fr) auto; gap:.625rem; }
+.gameday-slot { display:inline-flex; align-items:center; justify-content:center; min-height:26px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--body-text); font:700 .625rem/1.2 system-ui,sans-serif; }
+.gameday-empty-slot { color:var(--body-text); font-size:.8125rem; }
+.gameday-bench { margin-top:.875rem; border-top:1px solid var(--line); padding-top:.75rem; }
+.gameday-bench > summary,.gameday-banter summary { cursor:pointer; color:var(--text); font:600 .75rem/1.5 system-ui,sans-serif; padding-block:.375rem; }
+.gameday-banter { margin-block:1rem; padding:1rem 0; border-block:1px solid var(--line); }
+.gameday-banter > small { color:var(--accent); font-size:.6875rem; letter-spacing:.04em; }
+.gameday-banter p { margin:.5rem 0; font-size:.8125rem; line-height:1.6; }
+.gameday-banter ul { list-style:none; margin:.75rem 0; padding:0; }
+.gameday-banter li { padding:.75rem 0; border-top:1px solid var(--line); }
+.gameday-banter li > strong { color:var(--body-text); font-size:.75rem; }
+@media(max-width:360px) { .gameday-player:has(.gameday-slot) { grid-template-columns:2.75rem minmax(0,1fr) auto; gap:.375rem; } }

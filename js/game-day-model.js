@@ -1,14 +1,26 @@
 import {matchupTeamView} from './clubhouse-matchup-model.js';
+const DEFAULT_SLOTS=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'];
+const slotName=s=>({FLEX:'Flex',K:'Kicker',DEF:'Def',SUPER_FLEX:'Superflex',WRRB_FLEX:'Flex',REC_FLEX:'Flex'}[s]||s);
+const slotOrder=s=>({QB:0,RB:1,WR:2,TE:3,FLEX:4,WRRB_FLEX:4,REC_FLEX:4,SUPER_FLEX:4,K:5,DEF:6}[s]??7);
+export function gameDayLineup(row,players={},schedule=null,{completed=false,rosterPositions=DEFAULT_SLOTS}={}){
+ const slots=rosterPositions.filter(s=>s!=='BN'),started=new Set((row?.starters||[]).map(String));
+ const named=matchupTeamView(row,players,schedule,{completed}).starters,byId=new Map(named.map(p=>[p.id,p]));
+ const lineup=(row?.starters||[]).map((id,index)=>{const metaPosition=players[String(id)]?.p;const position=['K','DEF'].includes(metaPosition)?metaPosition:slots[index]||metaPosition||'Starter';return {...(byId.get(String(id))||{id:`empty-${index}`,name:'Empty slot',position,nflTeam:'',points:null,state:'unknown',empty:true}),slot:slotName(position),slotIndex:index,slotType:position}}).sort((a,b)=>slotOrder(a.slotType)-slotOrder(b.slotType)||a.slotIndex-b.slotIndex);
+ const benchIds=[...new Set((row?.players||[]).map(String))].filter(id=>id!=='0'&&!started.has(id));
+ const bench=matchupTeamView({...row,starters:benchIds},players,schedule,{completed}).starters.map(p=>({...p,slot:'Bench'}));
+ return {lineup,bench};
+}
 const finite=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v));
-export function buildGameDay({week,rows=[],players={},nfl=null,members=[],memberId=null,now=Date.now()}){
+export function buildGameDay({week,rows=[],players={},nfl=null,members=[],memberId=null,rosterPositions=DEFAULT_SLOTS,now=Date.now()}){
  const rosterMap=new Map(rows.map(r=>[String(r.roster_id),r]));
  const memberMap=new Map(members.map(m=>[String(m.sleeper_user_id),m]));
- const starters=[],games=[];
+ const starters=[],games=[];let mine=[],bench=[];
  for(const game of week.games||[]){
   const sides=[['user1','roster1'],['user2','roster2']].map(([uid,rid])=>{
    const member=memberMap.get(String(game[uid])),row=rosterMap.get(String(game[rid])),team=matchupTeamView(row,players,nfl?.teams,{completed:week.completed}),name=member?.team_name||member?.display_name||`Team ${game[rid]}`;
    for(const p of team.starters)starters.push({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId),points:finite(p.points)?Number(p.points):null});
-   return {...team,name,memberId:member?.id,roster:String(game[rid])};
+   if(memberId!=null&&String(member?.id)===String(memberId)){const roster=gameDayLineup(row,players,nfl?.teams,{completed:week.completed,rosterPositions});const own=p=>({...p,memberId:member.id,owner:name,roster:String(game[rid]),isMine:true});mine=roster.lineup.map(own);bench=roster.bench.map(own)}
+   return {...team,name,uid:game[uid],memberId:member?.id,roster:String(game[rid])};
   });
   games.push({id:String(game.matchup_id),sides,isMine:sides.some(t=>memberId!=null&&String(t.memberId)===String(memberId)),leader:sides.some(t=>t.score==null)||sides[0].score===sides[1].score?null:sides[sides[0].score>sides[1].score?0:1].roster});
  }
@@ -16,9 +28,8 @@ export function buildGameDay({week,rows=[],players={},nfl=null,members=[],member
  const nextKickoff=Math.min(...events.filter(e=>e.state==='upcoming'&&e.kickoff>now).map(e=>e.kickoff));
  const live=events.some(e=>e.state==='live');
  const leaders=starters.filter(p=>p.points!==null&&p.points>0).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name)).slice(0,4);
- const mine=starters.filter(p=>p.isMine).sort((a,b)=>(b.state==='live')-(a.state==='live')||(b.points??0)-(a.points??0));
  const snapshot={points:Object.fromEntries(starters.filter(p=>p.points!==null).map(p=>[`${p.roster}:${p.id}`,p.points])),leaders:Object.fromEntries(games.map(g=>[g.id,g.leader]))};
- return {season:week.season,week:week.week,completed:week.completed,live,nextKickoff:Number.isFinite(nextKickoff)?nextKickoff:null,starters,mine,leaders,games,events,snapshot};
+ return {season:week.season,week:week.week,completed:week.completed,live,nextKickoff:Number.isFinite(nextKickoff)?nextKickoff:null,starters,mine,bench,leaders,games,events,snapshot};
 }
 export function gameDayHighlights(model,previous=null){
  const highlights=[];

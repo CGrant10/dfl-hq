@@ -1,9 +1,9 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.269.0";
+const CACHE_NAME = "dfl-hq-v1.270.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
-  "./js/nfl-game-day.js","./js/game-day-model.js","./js/game-day.js",
+  "./js/nfl-game-day.js","./js/game-day-model.js","./js/game-day.js", "./js/matchup-banter.js",
   "./js/clubhouse-matchup-model.js","./js/clubhouse-matchup-cards.js","./js/clubhouse-matchup-live.js",
   "./js/page-disclosure.js",
   "./js/pages/facts.js","./js/fact-share.js","./js/funfacts.js","./js/clubhouse-play.js","./js/league-trivia.js","./js/league-play-model.js","./js/lineup-lab.js","./js/lineup-lab-ui.js",
@@ -97,7 +97,7 @@ const APP_SHELL = [
   "./js/trade-model-health.js",
   "./js/notification-device-state.js",
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
-  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.269.0","./css/stakes.css",
+  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.270.0","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/nav-neutral.css","./css/update-gate.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
