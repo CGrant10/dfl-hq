@@ -1,0 +1,44 @@
+import {loadClubhouseIndex,loadClubhouseWeek,loadWeeklyRosters} from './weekly-clubhouse-data.js';
+import {loadPlayers} from './sleeper.js';
+import {loadNflGameDay} from './nfl-game-day.js';
+import {buildGameDay,gameDayHighlights,kickoffCountdown} from './game-day-model.js';
+import {playerIdentity} from './player-presentation.js';
+import {esc} from './ui.js';
+import {readPageChoice,savePageChoice,wirePageDisclosures} from './page-disclosure.js';
+const score=v=>v==null?'—':Number(v).toFixed(2);
+const phase=p=>({live:'Live',final:'Final',upcoming:'Upcoming',unknown:'Status pending'}[p.state]||'Status pending');
+function playerRows(rows,previous,motion){return rows.map(p=>{const old=previous?.points?.[`${p.roster}:${p.id}`],changed=old!=null&&p.points!=null&&old!==p.points;return `<li class="gameday-player${changed&&motion?' gd-score-hit':''}">${playerIdentity(p,{detail:`${p.position} · ${p.nflTeam}`})}<span class="gameday-player-score"><b>${score(p.points)}</b><small data-player-phase="${p.id}">${phase(p)}</small></span></li>`}).join('')}
+export function mountGameDay(root,{members,member,active}){
+ let stopped=false,busy=false,timer,model=null,previous=null,moments=[],tab=readPageChoice('gameday-tab',['mine','leaders'],'mine'),motion=readPageChoice('gameday-motion',['on','off'],'on')==='on',lastKey='';
+ const current=()=>!stopped&&root.isConnected&&active();
+ root.innerHTML=`<section class="gameday-card" data-gameday-card><header><div><small>GAMEDAY</small><h2>Follow the action</h2></div><div class="gameday-controls"><button type="button" class="linkbtn" data-gameday-motion aria-pressed="${motion}">Motion ${motion?'on':'off'}</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></header><div data-gameday-content><p role="status">Checking the league’s game-day stats…</p></div><p class="gameday-freshness" data-gameday-freshness></p><span class="sr-only" data-gameday-announcement role="status"></span></section>`;
+ const card=root.querySelector('[data-gameday-card]'),content=root.querySelector('[data-gameday-content]'),freshness=root.querySelector('[data-gameday-freshness]'),button=root.querySelector('[data-gameday-refresh]');
+ const paint=()=>{
+  if(!model)return;const focusSummary=document.activeElement===content.querySelector('.gameday-full-lineup > summary');const focusTab=document.activeElement?.dataset?.gamedayTab;card.dataset.motion=motion?'on':'off';card.dataset.phase=model.live?'live':model.completed?'final':'pregame';
+  const mine=model.games.find(g=>g.isMine),featured=(tab==='mine'?model.mine:model.leaders).slice(0,4),football=[...model.events].sort((a,b)=>(b.state==='live')-(a.state==='live')||(a.state==='upcoming'?0:1)-(b.state==='upcoming'?0:1)||a.kickoff-b.kickoff).slice(0,3);
+  content.innerHTML=`<div class="gameday-status"><span class="gameday-beacon" aria-hidden="true"></span><strong>${model.live?'NFL games live':model.completed?'Final whistle':'GameDay watch'}</strong><span>${model.season} · Week ${model.week}</span></div>${model.nextKickoff?`<p class="gameday-countdown">${esc(kickoffCountdown(model.nextKickoff))} · ${esc(new Date(model.nextKickoff).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}))}</p>`:''}${mine?`<a class="gameday-matchup" href="#/clubhouse?season=${model.season}&week=${model.week}&tab=matchups">${mine.sides.map(t=>`<span><strong>${esc(t.name)}</strong><b>${score(t.score)}</b></span>`).join('<i aria-hidden="true">vs</i>')}<small>Actual matchup score · Open matchup →</small></a>`:''}<div class="gameday-tabs" role="tablist" aria-label="Player trackers">${[['mine','My starters'],['leaders','League leaders']].map(([key,label])=>`<button type="button" role="tab" id="gameday-tab-${key}" aria-controls="gameday-player-panel" aria-selected="${key===tab}" tabindex="${key===tab?0:-1}" data-gameday-tab="${key}">${label}</button>`).join('')}</div><div role="tabpanel" id="gameday-player-panel" aria-labelledby="gameday-tab-${tab}"><p class="gameday-note">Recorded fantasy points · ${tab==='mine'?'submitted starters':'league starters only'}</p><ul class="gameday-players">${featured.length?playerRows(featured,previous,motion):`<li class="gameday-empty">${tab==='mine'?'Choose your league profile or set your starters to follow your team.':'No starter has recorded positive points yet.'}</li>`}</ul>${tab==='mine'&&model.mine.length>4?`<details class="gameday-full-lineup" data-page-detail="gameday-lineup"><summary>View all ${model.mine.length} starters</summary><ul class="gameday-players">${playerRows(model.mine.slice(4),previous,motion)}</ul></details>`:''}</div><section class="gameday-moments" aria-label="League highlights"><small>LEAGUE HIGHLIGHTS</small>${moments.length?`<ul>${moments.slice(0,3).map(m=>`<li class="is-${esc(m.kind)}"><time datetime="${esc(new Date(m.at||Date.now()).toISOString())}">${esc(new Date(m.at||Date.now()).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}))}</time> ${esc(m.text)}</li>`).join('')}</ul>`:'<p>Watching for lead changes, scoring surges and 20-point days.</p>'}</section>${football.length?`<div class="gameday-nfl" aria-label="NFL scoreboard">${football.map(g=>`<div><strong>${g.teams.map(t=>esc(t.name)+(g.state==='upcoming'?'':` ${score(t.score).replace('.00','')}`)).join(' · ')}</strong><span>${g.state==='upcoming'?esc(new Date(g.kickoff).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'})):esc(g.label)}</span></div>`).join('')}</div>`:''}`;
+  wirePageDisclosures(content);if(focusSummary)content.querySelector('.gameday-full-lineup > summary')?.focus({preventScroll:true});if(focusTab)content.querySelector(`[data-gameday-tab="${focusTab}"]`)?.focus({preventScroll:true});
+ };
+ const refresh=async(force=false)=>{
+  if(busy||!current())return;busy=true;button.disabled=true;
+  try{
+   const index=await loadClubhouseIndex();if(!index[0])throw Error('No synced week');const week=await loadClubhouseWeek(index[0].season,index[0].week);
+   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force})]);if(!current())return;
+   if(results[0].status!=='fulfilled'||!results[0].value.length)throw Error('Scores unavailable');
+   const nfl=results[2].status==='fulfilled'?results[2].value:null,players=results[1].status==='fulfilled'?results[1].value:{};
+   const next=buildGameDay({week,rows:results[0].value,players,nfl,members,memberId:member?.id});
+   const key=`dfl.gameday.v1.${member?.id||'guest'}.${week.season}.${week.week}`;if(key!==lastKey){lastKey=key;moments=[];try{previous=JSON.parse(sessionStorage.getItem(key)||'null')}catch{previous=null}}
+   const updates=gameDayHighlights(next,previous).map(m=>({...m,at:Date.now()}));moments=[...updates,...moments.filter(m=>!updates.some(n=>n.key===m.key))].slice(0,3);model=next;paint();
+   if(updates.length&&previous)root.querySelector('[data-gameday-announcement]').textContent=`${updates.length} new league highlights. ${updates[0].text}`;
+   previous=next.snapshot;try{sessionStorage.setItem(key,JSON.stringify(previous))}catch{}
+   freshness.textContent=`Checked ${new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})} · Sleeper scores${nfl?' · ESPN game status':' · NFL status unavailable'}`;
+  }catch{if(current()){freshness.textContent='Refresh unavailable. Last recorded stats stay visible; try again.';if(!model)content.innerHTML='<p>GameDay stats could not load. Use Refresh to retry.</p>'}}
+  finally{busy=false;if(current())button.disabled=false}
+ };
+ root.addEventListener('click',event=>{const target=event.target.closest('[data-gameday-tab]');if(target){tab=target.dataset.gamedayTab;savePageChoice('gameday-tab',tab);paint();root.querySelector(`[data-gameday-tab="${tab}"]`)?.focus()}});
+ root.addEventListener('keydown',event=>{if(!event.target.closest('[data-gameday-tab]')||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();tab=event.key==='Home'?'mine':event.key==='End'?'leaders':tab==='mine'?'leaders':'mine';savePageChoice('gameday-tab',tab);paint();root.querySelector(`[data-gameday-tab="${tab}"]`)?.focus()});
+ root.querySelector('[data-gameday-motion]').addEventListener('click',event=>{motion=!motion;savePageChoice('gameday-motion',motion?'on':'off');event.currentTarget.setAttribute('aria-pressed',String(motion));event.currentTarget.textContent=`Motion ${motion?'on':'off'}`;card.dataset.motion=motion?'on':'off'});
+ button.addEventListener('click',()=>void refresh(true));
+ const tick=()=>{if(!current())return;if(document.visibilityState==='visible')void refresh();timer=setTimeout(tick,60000)};
+ void refresh();timer=setTimeout(tick,60000);return()=>{stopped=true;clearTimeout(timer)};
+}

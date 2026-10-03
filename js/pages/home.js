@@ -1,3 +1,4 @@
+import {mountGameDay} from "../game-day.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
 // =====================================================================
@@ -541,6 +542,7 @@ export async function render(view) {
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
     </section>
+    <div data-home-gameday-slot></div>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse →</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
@@ -595,6 +597,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireInline(view.querySelector("#home-wrap"), () => render(view));

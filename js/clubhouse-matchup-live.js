@@ -1,14 +1,11 @@
+import {loadNflGameDay} from "./nfl-game-day.js";
 import {db} from './supabase.js';
 import {loadPlayers} from './sleeper.js';
 import {loadWeeklyRosters} from './weekly-clubhouse-data.js';
-import {nflWeekStatuses,matchupTeamView,matchupPhase} from './clubhouse-matchup-model.js';
+import {matchupTeamView,matchupPhase} from './clubhouse-matchup-model.js';
 import {keyPlayersHtml} from './clubhouse-matchup-cards.js';
 import {esc} from './ui.js';
 let stopCurrent=null;
-async function schedule(season,week){
- const response=await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${Number(season)}&seasontype=2&week=${Number(week)}`,{signal:AbortSignal.timeout(12000)});
- if(!response.ok)throw Error('NFL status unavailable');return nflWeekStatuses(await response.json(),season,week);
-}
 async function previews(root,threads,active){
  const ids=[...threads.values()];if(!ids.length)return;
  const counts=await db().from('member_wall_reply_counts').select('post_id,reply_count').in('post_id',ids);
@@ -26,7 +23,7 @@ export function mountMatchupLive(root,model,threads,active){
   if(busy||!current())return;busy=true;button.disabled=true;
    void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.textContent.includes('Loading conversation'))slot.innerHTML='<small>MATCHUP TALK</small><p>Preview unavailable. Open the conversation to catch up.</p>'});
   try{
-   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers(),model.completed?Promise.resolve(null):schedule(model.season,model.week)]);
+   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers(),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}).then(result=>result.teams)]);
    if(!current())return;
    const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:{},nfl=results[2].status==='fulfilled'?results[2].value:null;
    if(!rows.length)throw Error('Weekly scores unavailable');
