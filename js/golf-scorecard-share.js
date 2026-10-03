@@ -1,11 +1,9 @@
 import { FONT, fitText, shareCanvas } from "./share.js";
+import { SHARE_INK } from "./brand-ink.js";
 
 const clean = value => String(value || "").replace(/\s+/g, " ").trim();
 const W = 1600, H = 900;
-const INK = "#263b49", MUTED = "#627681", LINE = "#ccd2d6";
-const HEADER = "#eef3f6", PAPER = "#ffffff";
-const GREEN = "#23834b", GREEN_BG = "#e9f7ef";
-const RED = "#c73a33", RED_BG = "#fff0ef";
+const { INK, MUTED, LINE, GOLD, ACCENT, BG: PAPER, CARD: HEADER, CARD_2, GOLD_WASH: GOOD_BG, RED_WASH: BAD_BG } = SHARE_INK;
 
 function cellMark(cell) {
   const mark = cell?.querySelector?.(".m-eagle,.m-birdie,.m-par,.m-bogey,.m-dbl")?.className || "";
@@ -60,14 +58,14 @@ function line(ctx, x1, y1, x2, y2) {
 function drawScoreMark(ctx, value, mark, x, y, w, h) {
   const size = Math.min(42, w - 10, h - 10);
   const cx = x + w / 2, cy = y + h / 2;
-  const isGreen = mark === "birdie" || mark === "eagle";
-  const isRed = mark === "bogey" || mark === "double";
-  if (isGreen || isRed) {
+  const isGood = mark === "birdie" || mark === "eagle";
+  const isBad = mark === "bogey" || mark === "double";
+  if (isGood || isBad) {
     const inset = mark === "eagle" || mark === "double" ? 4 : 0;
-    ctx.fillStyle = isGreen ? GREEN_BG : RED_BG;
-    ctx.strokeStyle = isGreen ? GREEN : RED;
+    ctx.fillStyle = isGood ? GOOD_BG : BAD_BG;
+    ctx.strokeStyle = isGood ? GOLD : ACCENT;
     ctx.lineWidth = 2;
-    if (isGreen) {
+    if (isGood) {
       ctx.beginPath();
       ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
       ctx.fill(); ctx.stroke();
@@ -78,7 +76,7 @@ function drawScoreMark(ctx, value, mark, x, y, w, h) {
       if (inset) ctx.strokeRect(cx - size / 2 + inset, cy - size / 2 + inset, size - inset * 2, size - inset * 2);
     }
   }
-  ctx.fillStyle = isGreen ? "#176338" : isRed ? "#a62f29" : INK;
+  ctx.fillStyle = isGood ? GOLD : isBad ? ACCENT : INK;
   ctx.textBaseline = "middle";
   fitText(ctx, value, cx, cy + 1, Math.max(20, w - 10), Math.min(25, h * .42), 850);
 }
@@ -120,7 +118,7 @@ export function scorecardCanvas(model) {
     ctx.fillStyle = MUTED;
     fitText(ctx, model.context, margin, 92, W - margin * 2, 20, 650, "left");
   }
-  ctx.fillStyle = GREEN; ctx.fillRect(margin, tableTop - 8, tableW, 8);
+  ctx.fillStyle = GOLD; ctx.fillRect(margin, tableTop - 8, tableW, 8);
 
   ctx.fillStyle = HEADER; ctx.fillRect(margin, tableTop, nameW, headerH);
   ctx.fillStyle = INK; ctx.textBaseline = "middle";
@@ -129,7 +127,7 @@ export function scorecardCanvas(model) {
 
   model.rows.forEach((row, rowIndex) => {
     const y = tableTop + headerH + rowH * rowIndex;
-    ctx.fillStyle = rowIndex % 2 ? "#fbfcfc" : PAPER;
+    ctx.fillStyle = rowIndex % 2 ? CARD_2 : PAPER;
     ctx.fillRect(margin, y, tableW, rowH);
     ctx.fillStyle = INK; ctx.textBaseline = "middle";
     fitText(ctx, row.name, margin + 14, y + (row.detail ? rowH * .4 : rowH / 2), nameW - 28, Math.min(21, rowH * .34), 800, "left");

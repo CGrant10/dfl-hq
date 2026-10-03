@@ -4,7 +4,7 @@ import { memberNames } from "./golf-people.js";
 import { progress as boardProgress, label as boardLabel, roundBoard } from "./golf-board.js";
 import { shareBoard, shareTeamSheet } from "./golf-share.js";
 
-const { INK, MUTED, BG, CARD, LINE, GOLD } = SHARE_INK;
+const { INK, MUTED, BG, CARD, LINE, GOLD, CARD_2 } = SHARE_INK;
 const W = 1080, H = 1350;
 
 function adapted(state) {
@@ -29,7 +29,7 @@ export function leaderboardCanvas(state, entry) {
   ctx.fillStyle = MUTED; fitText(ctx, `${String(entry.round.name || entry.round.format || "ROUND").toUpperCase()} · LIVE LEADERBOARD`, W / 2, 138, W - 100, 25, 800);
   const top = 190, gap = 10, rowH = Math.min(92, Math.max(46, (H - top - 120 - Math.max(0, rows.length - 1) * gap) / Math.max(1, rows.length)));
   rows.slice(0, 16).forEach((row, index) => {
-    const y = top + index * (rowH + gap); ctx.fillStyle = index === 0 ? "#20242a" : CARD; roundRect(ctx, 50, y, W - 100, rowH, 18); ctx.fill(); ctx.strokeStyle = index === 0 ? GOLD : LINE; ctx.lineWidth = 2; ctx.stroke();
+    const y = top + index * (rowH + gap); ctx.fillStyle = index === 0 ? CARD_2 : CARD; roundRect(ctx, 50, y, W - 100, rowH, 18); ctx.fill(); ctx.strokeStyle = index === 0 ? GOLD : LINE; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = index === 0 ? GOLD : MUTED; ctx.font = `950 28px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(index + 1), 92, y + rowH / 2);
     ctx.textAlign = "left"; ctx.fillStyle = INK; fitText(ctx, row.name, 135, y + rowH * .44, 570, Math.min(34, rowH * .38), 900, "left");
     /* Keep team colour in markers and borders. Shared-image lettering uses

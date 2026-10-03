@@ -226,7 +226,7 @@ export function aftermathCanvas(card) {
   ctx.fillRect(0, 0, W, H);
 
   // Medicine-wheel brand rail: four flat fields, no ornamental imitation.
-  const segments = [SHARE_INK.CREST_RED, SHARE_INK.GOLD, SHARE_INK.INK, SHARE_INK.CARD];
+  const segments = [SHARE_INK.BRAND_RED, SHARE_INK.GOLD, SHARE_INK.INK, SHARE_INK.CARD];
   segments.forEach((color, index) => {
     ctx.fillStyle = color;
     ctx.fillRect(index * W / 4, 0, W / 4 + 1, 11);
@@ -240,8 +240,8 @@ export function aftermathCanvas(card) {
     ctx.restore();
   }
 
-  rule(ctx, 100, 69, 250, SHARE_INK.CREST_RED, 3);
-  rule(ctx, 830, 69, 980, SHARE_INK.CREST_BLUE, 3);
+  rule(ctx, 100, 69, 250, SHARE_INK.BRAND_RED, 3);
+  rule(ctx, 830, 69, 980, SHARE_INK.BRAND_YELLOW, 3);
   caps(ctx, `DFL HQ · ${card.season} SEASON · FINAL`, W / 2, 75, SHARE_INK.INK, 22);
 
   ctx.fillStyle = SHARE_INK.INK;

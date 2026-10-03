@@ -36,7 +36,7 @@ import { SHARE_INK } from "./brand-ink.js";
 
 const W = 1080, H = 1350;
 const FOOTER = 90;
-const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, CREST_RED, CREST_BLUE } = SHARE_INK;
+const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
 const fmtOdds = (n) => (Number(n) > 0 ? `+${Number(n)}` : String(Number(n)));
 const num = (n) => Number(n || 0).toLocaleString("en-US");
@@ -242,7 +242,7 @@ export function ticketCanvas(t) {
   /* The brand rule: the same device the stage, the marquee, the lore card and
      the keeper board use. Fills, so the crest's own pair. */
   const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, CREST_RED); grad.addColorStop(1, CREST_BLUE);
+  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, 10);
 
@@ -427,7 +427,7 @@ export function sportsbookRecapCanvas(recap){
   const data=sportsbookRecapData(recap);if(!data)return null;
   const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
   ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);ctx.strokeStyle=LINE;ctx.lineWidth=6;ctx.strokeRect(3,3,W-6,H-6);
-  const grad=ctx.createLinearGradient(0,0,W,0);grad.addColorStop(0,CREST_RED);grad.addColorStop(1,CREST_BLUE);ctx.fillStyle=grad;ctx.fillRect(0,0,W,10);
+  const grad=ctx.createLinearGradient(0,0,W,0);grad.addColorStop(0,BRAND_RED);grad.addColorStop(1,BRAND_YELLOW);ctx.fillStyle=grad;ctx.fillRect(0,0,W,10);
   const crest=crestImage();if(crest){const width=230,height=width*(crest.naturalHeight/crest.naturalWidth||.66);ctx.drawImage(crest,(W-width)/2,54,width,height)}
   ctx.textAlign="center";ctx.fillStyle=MUTED;ctx.font=`800 24px ${FONT}`;ctx.letterSpacing="6px";ctx.fillText("DFL SPORTSBOOK",W/2,265);ctx.letterSpacing="0px";
   ctx.fillStyle=INK;fitText(ctx,"AFTERMATH",W/2,355,W-150,82,900,"center");

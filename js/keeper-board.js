@@ -43,7 +43,7 @@ import { SHARE_INK } from "./brand-ink.js";
 import { describeRules, keeperTenure } from "./keeper-rules.js";
 
 const W = 1080, H = 1350;
-const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, CREST_RED, CREST_BLUE } = SHARE_INK;
+const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
 /**
  * Fold the page's data into exactly what the board draws.
@@ -193,7 +193,7 @@ export function boardCanvas(board) {
   /* The brand rule, the same device the stage, the marquee and the lore card
      use. Fills, so the crest's own pair rather than the readable pair. */
   const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, CREST_RED); grad.addColorStop(1, CREST_BLUE);
+  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, 10);
 
@@ -333,11 +333,11 @@ export function boardCanvas(board) {
           const ty = ky + 16;
           const pipW = 16, pipH = 6, pipGap = 4;
           t.max > 0 && Array.from({ length: t.max }).forEach((_, i) => {
-            ctx.fillStyle = i < t.year ? (t.final ? CREST_RED : GOLD) : LINE;
+            ctx.fillStyle = i < t.year ? (t.final ? ACCENT : GOLD) : LINE;
             roundRect(ctx, tx + i * (pipW + pipGap), ty - pipH / 2 - 2, pipW, pipH, 3);
             ctx.fill();
           });
-          ctx.fillStyle = t.final ? CREST_RED : MUTED;
+          ctx.fillStyle = t.final ? ACCENT : MUTED;
           ctx.font = `800 19px ${FONT}`;
           ctx.textAlign = "left";
           ctx.fillText(`YR ${t.year}/${t.max}`, tx + t.max * (pipW + pipGap) + 8, ty + 1);

@@ -51,10 +51,12 @@ export const SHARE_INK = {
   GOLD: "#EFC94C",
   ACCENT: "#F08279",
   OK: "#8fd6a4",
-  /* The crest's own pair, for the brand rule at the top of a card. Fills, not
-     letters - see the note above. */
-  CREST_RED: "#E5011B",
-  CREST_BLUE: "#003396",
+  /* Fixed Medicine Wheel fills for shared-image rules, not live theme values. */
+  BRAND_RED: "#C8102E",
+  BRAND_YELLOW: "#EFC94C",
+  CHARCOAL: "#66666e",
+  GOLD_WASH: "#292519",
+  RED_WASH: "#2e1b1c",
 };
 
 /*
@@ -122,4 +124,10 @@ export function teamInk(stored, index = 0) {
 /** The colour to STORE for a newly generated team. */
 export function newTeamColor(index = 0) {
   return TEAM_INKS[Math.abs(Number(index) || 0) % TEAM_INKS.length];
+}
+
+/** Shared-image defaults stay in the wheel even for legacy generated golf teams. */
+export function shareTeamInk(stored,index=0) {
+ const ink=teamInk(stored,index);
+ return ink.toLowerCase()==='#5a82d6'?SHARE_INK.CHARCOAL:ink;
 }

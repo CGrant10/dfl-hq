@@ -11,7 +11,7 @@ import { SHARE_INK } from "./brand-ink.js";
 import { dflSeasonCount } from "./config.js";
 
 const W = 1080, H = 1350;
-const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, OK, CREST_RED, CREST_BLUE } = SHARE_INK;
+const { BG, CARD, LINE, INK, MUTED, GOLD, ACCENT, OK, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 const one = (v) => (num(v) == null ? "—" : num(v).toFixed(1));
@@ -205,8 +205,8 @@ export function profileShareCanvas(d) {
   ctx.strokeRect(3, 3, W - 6, H - 6);
 
   const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, CREST_RED);
-  grad.addColorStop(1, CREST_BLUE);
+  grad.addColorStop(0, BRAND_RED);
+  grad.addColorStop(1, BRAND_YELLOW);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, 12);
 

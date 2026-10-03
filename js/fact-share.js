@@ -19,11 +19,11 @@
    inside the user's gesture - see the note in share.js.
    ===================================================================== */
 import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { SHARE_INK } from "./brand-ink.js";
 import { factLine } from "./funfacts.js";
 
 const W = 1080, H = 1350;
-const INK = "#f2f5f8", MUTED = "#8b98a5", BG = "#0d1117", CARD = "#161b22", LINE = "#2b313a";
-const RED = "#E5011B", BLUE = "#003396";
+const { INK, MUTED, BG, CARD, LINE, ACCENT, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
 /** Wrap text to a width, returning the lines. Canvas has no such thing. */
 function wrap(ctx, text, maxWidth, size, weight) {
@@ -57,7 +57,7 @@ export function factCanvas(fact) {
 
   // The brand rule, the same device the stage and the marquee use.
   const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, RED); grad.addColorStop(1, BLUE);
+  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, 10);
 
@@ -80,7 +80,7 @@ export function factCanvas(fact) {
   ctx.textBaseline = "alphabetic";
 
   // ---- the billing -----------------------------------------------------
-  ctx.fillStyle = RED;
+  ctx.fillStyle = ACCENT;
   ctx.font = `800 34px ${FONT}`;
   ctx.letterSpacing = "8px";
   ctx.fillText(fact.kicker || "DFL LORE", W / 2, 130);
@@ -99,7 +99,7 @@ export function factCanvas(fact) {
   roundRect(ctx, pad, cardTop, W - pad * 2, cardBottom - cardTop, 28);
   ctx.stroke();
   // A weighted left edge, so the card reads as a quote rather than a box.
-  ctx.fillStyle = RED;
+  ctx.fillStyle = ACCENT;
   roundRect(ctx, pad, cardTop, 8, cardBottom - cardTop, 4);
   ctx.fill();
 

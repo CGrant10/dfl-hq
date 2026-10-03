@@ -25,7 +25,7 @@ import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./
 import { SHARE_INK } from "./brand-ink.js";
 
 const W = 1080;
-const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, CREST_RED, CREST_BLUE } = SHARE_INK;
+const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
 
 const num = value => (Number.isFinite(Number(value)) ? Math.round(Number(value)) : 0);
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -33,7 +33,7 @@ const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.ros
 
 /* recommendationFor() owns the call and its tone. FLEECE deliberately uses
    the same red as PASS: the word is louder, the direction is identical. */
-const CALL_INK = { accept: GOLD, pass: CREST_RED, negotiate: CREST_BLUE };
+const CALL_INK = { accept: GOLD, pass: ACCENT, negotiate: BRAND_YELLOW };
 
 function savageFallback(recommendation) {
   if (recommendation?.action === "FLEECE") return "FLEECE. They are robbing your ass blind.";
@@ -236,7 +236,7 @@ export function dealCanvas(t) {
   ctx.lineWidth = 6;
   ctx.strokeRect(3, 3, W - 6, H - 6);
 
-  [CREST_RED, GOLD, INK, CREST_BLUE].forEach((colour, index) => {
+  [BRAND_RED, GOLD, INK, CARD_2].forEach((colour, index) => {
     ctx.fillStyle = colour;
     ctx.fillRect(index * W / 4, 0, W / 4, 12);
   });
@@ -316,7 +316,7 @@ export function dealCanvas(t) {
   ctx.letterSpacing = "3px";
   ctx.fillText("THE FULL DFLYZER READ", 80, f.reasonsTop + 24);
   ctx.letterSpacing = "0px";
-  const reasonInk = tone => tone === "bad" ? CREST_RED : tone === "good" ? GOLD : tone === "warn" ? CREST_BLUE : MUTED;
+  const reasonInk = tone => tone === "bad" ? ACCENT : tone === "good" ? GOLD : tone === "warn" ? BRAND_YELLOW : MUTED;
   (t.remarks || []).forEach((reason, index) => {
     const top = f.reasonsTop + 44 + index * 128;
     ctx.fillStyle = CARD_2;
@@ -349,7 +349,7 @@ export function dealCanvas(t) {
     ctx.font = `700 24px ${FONT}`;
     fitText(ctx, `${row.team} lineup`, 80, lineY + 32, W - 400, 24, 700, "left");
     ctx.textAlign = "right";
-    ctx.fillStyle = row.delta >= 0 ? GOLD : CREST_RED;
+    ctx.fillStyle = row.delta >= 0 ? GOLD : ACCENT;
     ctx.font = `900 30px ${FONT}`;
     ctx.fillText(`${signed(row.delta)} / wk`, W - 80, lineY + 33);
   });
@@ -363,9 +363,9 @@ export function dealCanvas(t) {
   ctx.save();
   roundRect(ctx, barX, f.meterY, barW, barH, 7);
   ctx.clip();
-  band(0, .55, `${CREST_RED}66`);
+  band(0, .55, `${BRAND_RED}66`);
   band(.55, .72, `${GOLD}33`);
-  band(.72, .88, `${CREST_BLUE}66`);
+  band(.72, .88, `${BRAND_YELLOW}66`);
   band(.88, 1, `${INK}33`);
   ctx.restore();
   const markX = barX + barW * (t.fairness / 100);
