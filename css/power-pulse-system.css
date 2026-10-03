@@ -332,9 +332,9 @@
     transform: translateX(4px);
     background: color-mix(in srgb, var(--accent-fill) 10%, var(--bg-2));
   }
-  .view[data-pulse-system="1"] :is(.btn,button,summary):hover { transform: translateY(-1px); }
+  .view[data-pulse-system="1"] :is(.btn,button:not(.bx-arrow),summary):hover { transform: translateY(-1px); }
 }
-.view[data-pulse-system="1"] :is(.btn,button,summary):active { transform: scale(.97); }
+.view[data-pulse-system="1"] :is(.btn,button:not(.bx-arrow),summary):active { transform: scale(.97); }
 
 @media (max-width: 620px) {
   .view[data-pulse-system="1"] :is(.page-head,.notification-head,.dfl-page-title) {
@@ -1214,7 +1214,7 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 }
 .view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.btn.ghost,.linkbtn,.clubhouse-text-link) { background: transparent; }
 .view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.linkbtn,.clubhouse-text-link) { display: inline-flex; align-items: center; min-height: 44px; gap: .375rem; }
-.view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.btn,button,summary):is(:hover,:active) { transform: none; }
+.view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.btn,button:not(.bx-arrow),summary):is(:hover,:active) { transform: none; }
 .view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.card,.ta-report-section,.wo-panel,.factcard,.so-panel):hover { transform: none; }
 .view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]):not([data-route="home"]) :is(.card,.wo-panel,.ta-toolbar,.factcard) { padding: clamp(20px,3vw,28px); }
 .view[data-pulse-system="1"]:not([data-route="trade"]):not([data-route="golf"]) :is(.page-head,.ta-toolbar-section,.block,.clubhouse-section) { margin-bottom: 1.75rem; }
@@ -1366,7 +1366,11 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 /* Lightweight controls leave room for the full profile name. */
 .topbar .topbar-inner { height:56px; gap:12px; padding-inline:max(16px,env(safe-area-inset-left)); }
 .topbar .brand-lockup { flex:0 1 auto; }
-.topbar .topbar-actions { flex:1 1 auto; justify-content:flex-end; gap:6px; }
+.topbar .topbar-inner .topbar-actions { flex:1 1 auto; justify-content:flex-end; gap:6px; }
+.topbar #league-search-button { order:1; }
+.topbar #notification-bell { order:2; }
+.topbar #whoami { order:3; }
+.topbar .dfl-preview-toggle { order:4; }
 .topbar .topbar-actions > button { min-height:44px; border-radius:8px; box-shadow:none; }
 .topbar .topbar-actions > button:not(.whoami):not(.dfl-preview-toggle) { width:32px; height:44px; flex:0 0 32px; padding:0; margin:0; border:0; background:transparent; color:var(--body-text); }
 .topbar .notification-bell svg { width:18px; height:18px; }
@@ -1391,12 +1395,12 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
  .topbar .brand-text { display:none; }
  .topbar .brand-lockup { flex:0 0 30px; }
  .topbar .topbar-inner { gap:6px; padding-inline:12px; }
- .topbar .topbar-actions { gap:3px; min-width:0; }
+ .topbar .topbar-inner .topbar-actions { gap:6px; min-width:0; }
  .topbar .topbar-inner .topbar-actions .whoami { flex:1 1 auto; padding-inline:6px; }
 }
 @media(max-width:360px) {
  .topbar .topbar-inner { gap:4px; padding-inline:8px; }
- .topbar .topbar-actions { gap:2px; }
+ .topbar .topbar-inner .topbar-actions { gap:6px; }
  .topbar .dfl-preview-toggle { gap:5px; padding-inline:6px; }
  .topbar .whoami-chevron { display:none; }
 }
