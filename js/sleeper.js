@@ -231,7 +231,7 @@ export function loadWeeklyProjections(season, week) {
  * actual points for players whose games have started plus projections for the
  * starters still waiting to play. A short cache keeps Sunday totals useful.
  */
-export function loadWeeklyStats(season, week) {
+export function loadWeeklyStats(season, week, { maxAgeMs = FIVE_MIN_MS } = {}) {
   const year = Number(season), wk = Number(week);
   if (!Number.isFinite(year) || !Number.isFinite(wk) || wk < 1) {
     return Promise.resolve({ data: [], fetchedAt: 0 });
@@ -239,7 +239,7 @@ export function loadWeeklyStats(season, week) {
   const positions = WEEKLY_POSITIONS.map((p) => `position[]=${p}`).join("&");
   const url = `https://api.sleeper.app/stats/nfl/${year}/${wk}`
             + `?season_type=regular&${positions}`;
-  return cachedJson(WEEKLY_CACHE, url, FIVE_MIN_MS);
+  return cachedJson(WEEKLY_CACHE, url, maxAgeMs);
 }
 
 /**

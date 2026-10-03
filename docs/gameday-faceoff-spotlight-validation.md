@@ -1,0 +1,11 @@
+# GameDay faceoff, opponent lineup, and player spotlights — v1.272.0
+
+The actual matchup score now sits between team portraits and team-color accents. The current leader gets a quiet tint; a recorded lead change gets one brief animation. Initial loading, ties, and unchanged scores do not invent a lead-change effect. The existing Motion preference and reduced-motion setting disable the effect.
+
+My team, Opponent, and Leaders tabs share the tracker. Both team lineups preserve assigned roster slots and separate their benches. Arrow keys, Home, and End navigate the tabs, and the selected view persists per member. Opponent data uses the same actual weekly roster source as the member's team.
+
+Player photos and names open a native modal spotlight with recorded fantasy points, NFL phase, and position-specific raw game stats. The stats loader checks the selected season, regular-season week, and player ID; it preserves actual zeroes and omits missing fields. QB passing, RB/WR/TE rushing or receiving, kicker, and defense fields are supported. No projections or standard-scoring totals replace the league's fantasy points.
+
+Detailed NFL stats load only when a spotlight opens, with a one-minute cache while open. Home refresh updates the open spotlight's fantasy points and checks raw stats again. Raw stat timestamps remain visible. Missing or failed stats keep fantasy points visible with a compact empty/error state. Escape or Close dismisses the modal; focus returns to the selected player. Leaving Home closes and removes the spotlight.
+
+Validation: 1,004 tests across 111 files, typecheck, identifier checks, and build passed. New tests cover both teams' roster identity, bench exclusion, position-specific recorded stats, zeroes, missing stats, and rejecting another player/season/week/preseason. Read-only browser checks verify opponent switching, roster slots, photos, modal stats, keyboard closing/focus restoration, expanded bench refresh, persisted view/motion settings, and all matchup banter. Mobile/desktop, Dark/Medicine/Fairway, and enlarged-text checks passed automated WCAG A/AA and overflow checks. Controlled live fixtures verified a single lead-change animation, updating an open spotlight, and keeping fantasy points visible after stats or roster refresh failures. Production writes were blocked during browser validation.

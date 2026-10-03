@@ -19,8 +19,9 @@ export function buildGameDay({week,rows=[],players={},nfl=null,members=[],member
   const sides=[['user1','roster1'],['user2','roster2']].map(([uid,rid])=>{
    const member=memberMap.get(String(game[uid])),row=rosterMap.get(String(game[rid])),team=matchupTeamView(row,players,nfl?.teams,{completed:week.completed}),name=member?.team_name||member?.display_name||`Team ${game[rid]}`;
    for(const p of team.starters)starters.push({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId),points:finite(p.points)?Number(p.points):null});
-   if(memberId!=null&&String(member?.id)===String(memberId)){const roster=gameDayLineup(row,players,nfl?.teams,{completed:week.completed,rosterPositions});const own=p=>({...p,memberId:member.id,owner:name,roster:String(game[rid]),isMine:true});mine=roster.lineup.map(own);bench=roster.bench.map(own)}
-   return {...team,name,uid:game[uid],memberId:member?.id,roster:String(game[rid])};
+   const roster=gameDayLineup(row,players,nfl?.teams,{completed:week.completed,rosterPositions});const context=p=>({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId)});const lineup=roster.lineup.map(context),teamBench=roster.bench.map(context);
+   if(memberId!=null&&String(member?.id)===String(memberId)){mine=lineup;bench=teamBench}
+   return {...team,name,uid:game[uid],identity:member||{},memberId:member?.id,roster:String(game[rid]),lineup,bench:teamBench};
   });
   games.push({id:String(game.matchup_id),sides,isMine:sides.some(t=>memberId!=null&&String(t.memberId)===String(memberId)),leader:sides.some(t=>t.score==null)||sides[0].score===sides[1].score?null:sides[sides[0].score>sides[1].score?0:1].roster});
  }
