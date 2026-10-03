@@ -1477,12 +1477,7 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .gd-thermal-number[data-score-temperature="steady"] { color:var(--gd-steady-ink); }
 .gd-score-marker { position:relative; z-index:1; display:inline-flex; width:.55em; height:.75em; flex:0 0 .55em; }
 .gd-score-marker svg { width:100%; height:100%; }
-.gd-thermal-fx { position:absolute; inset:0; z-index:0; pointer-events:none; }
-.gd-thermal-fx i { position:absolute; left:8%; opacity:.35; }
-.gd-thermal-fx i:nth-child(2) { left:46%; animation-delay:.25s; }
-.gd-thermal-fx i:nth-child(3) { left:84%; animation-delay:.5s; }
-[data-score-temperature="hot"] .gd-thermal-fx i { bottom:-.04em; width:.28em; height:.85em; background:linear-gradient(0deg,#ff4c1b,#ffc851); border-radius:0; clip-path:polygon(0 100%,12% 45%,28% 65%,50% 0,72% 55%,84% 35%,100% 100%); transform:rotate(-18deg); animation:gd-ember-rise 1.8s ease-in-out 3; }
-[data-score-temperature="cold"] .gd-thermal-fx i { top:-.12em; width:.22em; height:.42em; background:linear-gradient(#a8e9ff,#39a7eb55); clip-path:polygon(0 0,100% 0,50% 100%); animation:gd-frost-settle 2.2s ease-in-out 2; }
+.gd-vfx-canvas { position:absolute; pointer-events:none; z-index:2; border-radius:inherit; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="hot"] { background:linear-gradient(0deg,#ff831016,transparent 65%); border-top-color:#df6b13; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="cold"] { background:linear-gradient(0deg,#42baf216,transparent 65%); border-top-color:#309bd0; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="steady"] { border-top-color:#b99830; }
@@ -1490,11 +1485,11 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 [data-team-temperature="hot"] .gd-team-form { color:var(--gd-hot-ink); }
 [data-team-temperature="cold"] .gd-team-form { color:var(--gd-cold-ink); }
 [data-team-temperature="steady"] .gd-team-form { color:var(--gd-steady-ink); }
-@keyframes gd-ember-rise { 0%,100% { opacity:.3; transform:translateY(0) rotate(-18deg) scaleY(.8); } 50% { opacity:.6; transform:translateY(-.12em) rotate(-10deg) scaleY(1.1); } }
-@keyframes gd-frost-settle { 0%,100% { opacity:.3; transform:translateY(-.05em); } 50% { opacity:.6; transform:translateY(.03em); } }
-.gameday-card[data-motion="off"] .gd-thermal-fx i,
-.gameday-spotlight[data-motion="off"] .gd-thermal-fx i { animation:none; }
-@media(prefers-reduced-motion:reduce) { .gd-thermal-fx i { animation:none !important; } }
 @media(max-width:360px) { .gameday-faceoff-team .gd-thermal-number { font-size:min(1.75rem,8vw); } }
 
 .gameday-spotlight-score strong.gd-thermal-number { display:inline-flex; line-height:1.15; }
+
+/* Leave breathing room for the GPU flame crowns and keep score labels clear. */
+.gameday-faceoff-team .gd-thermal-number { margin-top:24px; }
+.gameday-spotlight-score { padding-top:32px; }
+.gameday-spotlight-score small { margin-top:6px; }
