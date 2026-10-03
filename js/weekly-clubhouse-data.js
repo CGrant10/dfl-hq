@@ -3,8 +3,8 @@ import {sleeper,loadPlayers} from './sleeper.js';
 import {loadMemberDirectory} from './members.js';
 import {buildWeeklyClubhouse} from './weekly-clubhouse-model.js';
 const cache=new Map();
-export async function loadWeeklyRosters(leagueId,week){
- if(!leagueId)return[];const key=`${leagueId}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<600000)return hit.value;
+export async function loadWeeklyRosters(leagueId,week,{maxAgeMs=600000}={}){
+ if(!leagueId)return[];const key=`${leagueId}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<maxAgeMs)return hit.value;
  const promise=sleeper.matchups(leagueId,week).then(rows=>{if(!Array.isArray(rows)||!rows.length)throw Error('Weekly roster data unavailable');return rows}).catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value:promise});return promise;
 }
 export async function loadClubhouseIndex(){const{data,error}=await db().rpc('clubhouse_week_index');if(error)throw error;return data||[]}

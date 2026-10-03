@@ -1,6 +1,7 @@
+import {matchupCardHtml} from "../clubhouse-matchup-cards.js";
+import {mountMatchupLive} from "../clubhouse-matchup-live.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {mountRivalries,mountWeeklyCalls} from "../clubhouse-play.js";
-import {teamPortrait} from "../team-presentation.js";
 import {db} from '../supabase.js';
 import {currentMember,loadMemberDirectory} from '../members.js';
 import {esc,errorBox,toast} from '../ui.js';
@@ -14,7 +15,7 @@ export async function render(view){
  view.innerHTML='<header class="page-head"><h1>Clubhouse</h1></header><p role="status">Loading the league’s receipts…</p><div class="clubhouse-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>';
  try{
   const[index,members]=await Promise.all([loadClubhouseIndex(),loadMemberDirectory()]);if(!active())return;
-  const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||index.find(w=>w.completed)||index[0];
+  const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||index[0];
   if((params.has('season')||params.has('week'))&&!wanted){view.innerHTML='<h1>Weekly clubhouse</h1><p>That week is not available.</p><a class="btn" href="#/clubhouse">Latest completed week</a>';return}
   if(!selected){view.innerHTML='<h1>Weekly clubhouse</h1><p>The first synced matchup will start the clubhouse.</p>';return}
   const data=await loadClubhouseWeek(selected.season,selected.week);if(!active())return;let model=buildWeeklyClubhouse(data,members);
@@ -29,9 +30,10 @@ export async function render(view){
     <section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL RESULTS':'IN PROGRESS'}</small><h2>Weekly awards</h2></div><span class="clubhouse-status">${model.games.length} matchups</span></div><p class="clubhouse-section-copy">${model.completed?"The week’s headline. Open the awards for the rest of the receipts.":"Join this week’s matchup conversations while the scores develop."}</p><button type="button" class="btn ghost" data-open-matchups>Open matchup conversations</button><div data-clubhouse-awards>${overviewAwardsHtml(model)}</div><p class="clubhouse-footnote" role="status" data-bench-status>${model.completed?'Checking the actual weekly lineups…':'Final awards wait for the NFL slate to finish. Join the matchup talk in the meantime.'}</p></section>
     ${weeklyVoteHtml(model)}
    </div></div>
-   <div id="clubhouse-panel-matchups" role="tabpanel" aria-labelledby="clubhouse-tab-matchups" ${initialTab==='matchups'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL SCORES':'SYNCED SCORES'}</small><h2>Matchup conversations</h2></div><span class="clubhouse-status">${model.games.length} games</span></div><div class="clubhouse-play-links"><a href="#/facts?play=trivia">DFL trivia →</a><a href="#/analyzer">Plan your lineup →</a></div><p class="clubhouse-section-copy">One shared thread per matchup. Bring your predictions, trash talk and receipts.</p><div class="clubhouse-matchup-list">${matchupFocusHtml(model,threadIds)}</div>${!model.completed?'<p class="clubhouse-footnote">Synced scores can change while NFL games are in progress.</p>':''}</section><section class="card clubhouse-section" data-weekly-calls><p role="status">Loading this week’s challenge…</p></section></div>
+   <div id="clubhouse-panel-matchups" role="tabpanel" aria-labelledby="clubhouse-tab-matchups" ${initialTab==='matchups'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.completed?'FINAL SCORES':'SYNCED SCORES'}</small><h2>Matchup conversations</h2></div><span class="clubhouse-status">${model.games.length} games</span></div><div class="clubhouse-play-links"><a href="#/facts?play=trivia">DFL trivia →</a><a href="#/analyzer">Plan your lineup →</a></div><p class="clubhouse-section-copy">One shared thread per matchup. Bring your predictions, trash talk and receipts.</p><div class="clubhouse-matchup-toolbar"><span data-matchup-freshness>Checking current scores…</span><button type="button" class="btn ghost small" data-matchup-refresh>Refresh scores</button></div><div class="clubhouse-matchup-list">${matchupFocusHtml(model,threadIds)}</div>${!model.completed?'<p class="clubhouse-footnote">Synced scores can change while NFL games are in progress.</p>':''}</section><section class="card clubhouse-section" data-weekly-calls><p role="status">Loading this week’s challenge…</p></section></div>
    <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><p class="clubhouse-section-copy">${model.completed?'The scores, side bets and best of the Wall. Use Share recap to send the card to your group chat.':'The recap will be ready after the NFL slate finishes.'}</p><div data-clubhouse-recap>${recapHtml(model)}</div></section><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
   </div>`;
+  mountMatchupLive(view,model,threadIds,active);
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
   view.querySelector('[data-open-matchups]')?.addEventListener('click',()=>view.querySelector('#clubhouse-tab-matchups').click());
@@ -75,10 +77,7 @@ function matchupFocusHtml(model,threadIds){
  return `<div class="clubhouse-matchup-focus"><small>${member&&[focus.left.memberId,focus.right.memberId].map(String).includes(String(member.id))?'YOUR MATCHUP':'FEATURED MATCHUP'}</small>${gameHtml(focus,model,threadIds)}</div>`+disclosure('clubhouse-other-games',`View ${rest.length} other matchups`,'Scores, rivalry histories and shared conversations',`<div class="clubhouse-games">${rest.map(g=>gameHtml(g,model,threadIds)).join('')}</div>`);
 }
 function activeTab(view){return view.querySelector('[data-clubhouse-tab][aria-selected="true"]')?.dataset.clubhouseTab||'overview'}
-function gameHtml(game,model,threadIds){
- const side=(team,position)=>{const identity=model.members.find(m=>String(m.id)===String(team.memberId));return `<div class="clubhouse-game-side">${teamPortrait({team_name:team.name,identity},{className:'clubhouse-team-mark'})}<strong>${team.memberId?`<a href="#/profile?id=${esc(team.memberId)}">${esc(team.name)}</a>`:esc(team.name)}</strong><b data-score-${position}="${game.matchup_id}">${team.score?.toFixed(2)??'—'}</b></div>`};
- return `<article class="clubhouse-game"><header><small>Matchup ${game.matchup_id}</small><span>${model.completed?'Final':'In progress'}</span></header><div class="clubhouse-game-teams">${side(game.left,'left')}${side(game.right,'right')}</div><div data-rivalry="${game.matchup_id}"><p class="muted">Loading rivalry history…</p></div>${threadIds.has(String(game.matchup_id))?`<a class="btn ghost" aria-label="Join conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" href="#/wall?post=${threadIds.get(String(game.matchup_id))}">Join conversation</a>`:`<button class="btn ghost" type="button" aria-label="Start conversation for ${esc(game.left.name)} versus ${esc(game.right.name)}, week ${model.week}" data-matchup-thread="${game.matchup_id}">Start conversation</button>`}<p class="clubhouse-footnote" role="status" data-matchup-status></p></article>`;
-}
+function gameHtml(game,model,threadIds){return matchupCardHtml(game,model,threadIds)}
 function recapHtml(model){
  if(!model.completed)return'<div class="clubhouse-empty"><strong>Receipts are still being written</strong><p>Check the Matchups tab for this week’s scores and conversations.</p></div>';
  const pickem=(model.pickem||[]).filter(row=>Number(row.rank)===1),book=model.sportsbook?.mostProfitable;
