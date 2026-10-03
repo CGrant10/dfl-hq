@@ -1363,35 +1363,42 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .gameday-card[data-motion="off"]::before { animation: none; }
 @media(prefers-reduced-motion:reduce) { .gameday-card::before { animation: none; } }
 
-/* Header controls share a compact geometry; role colors describe access,
-   including Member view before a commissioner enters a PIN. */
-.topbar .topbar-inner { gap:12px; padding-inline:max(16px,env(safe-area-inset-left)); }
-.topbar .topbar-actions { gap:8px; }
-.topbar .topbar-actions > button { min-height:36px; border-radius:10px; box-shadow:none; }
-.topbar .topbar-actions > button:not(.whoami):not(.dfl-preview-toggle) { width:36px; height:36px; flex:0 0 36px; padding:0; }
-.topbar .topbar-actions .whoami { padding:8px 12px; font:600 12px/1.2 system-ui,sans-serif; max-width:150px; }
-.topbar .dfl-preview-toggle { gap:7px; padding:7px 9px; font:700 10px/1.2 system-ui,sans-serif; letter-spacing:.025em; }
+/* Lightweight controls leave room for the full profile name. */
+.topbar .topbar-inner { height:56px; gap:12px; padding-inline:max(16px,env(safe-area-inset-left)); }
+.topbar .brand-lockup { flex:0 1 auto; }
+.topbar .topbar-actions { flex:1 1 auto; justify-content:flex-end; gap:6px; }
+.topbar .topbar-actions > button { min-height:44px; border-radius:8px; box-shadow:none; }
+.topbar .topbar-actions > button:not(.whoami):not(.dfl-preview-toggle) { width:32px; height:44px; flex:0 0 32px; padding:0; margin:0; border:0; background:transparent; color:var(--body-text); }
+.topbar .notification-bell svg { width:18px; height:18px; }
+.topbar .topbar-inner .topbar-actions .whoami { display:flex; align-items:center; justify-content:center; gap:6px; flex:0 1 auto; min-width:0; max-width:none; margin:0; padding:5px 8px; border:0; background:transparent; color:var(--text); font:600 12px/1.2 system-ui,sans-serif; white-space:normal; overflow:visible; }
+.topbar #whoami-name { min-width:0; overflow-wrap:anywhere; text-align:left; }
+.topbar .whoami-photo { width:20px; height:20px; }
+.topbar .whoami-chevron { width:10px; height:10px; flex:0 0 10px; opacity:.65; }
+.topbar .topbar-actions > button:hover { background:var(--hover); }
+.topbar .topbar-actions > button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.topbar .dfl-preview-toggle { flex:0 0 auto; margin:0; gap:6px; padding:5px 8px; font:600 11px/1.2 system-ui,sans-serif; letter-spacing:0; text-transform:none; }
 .topbar .dfl-preview-toggle[data-mode="commissioner"] { --role-ink:#ffe07a; --role-fill:#ffd447; }
 .topbar .dfl-preview-toggle[data-mode="member"],
 .topbar .dfl-preview-toggle[data-mode="locked"] { --role-ink:#ff8993; --role-fill:#ef3347; }
 :root[data-mode="light"] .topbar .dfl-preview-toggle[data-mode="commissioner"] { --role-ink:#765100; }
 :root[data-mode="light"] .topbar .dfl-preview-toggle[data-mode="member"],
 :root[data-mode="light"] .topbar .dfl-preview-toggle[data-mode="locked"] { --role-ink:#ad1630; }
-.topbar .dfl-preview-toggle:is([data-mode="commissioner"],[data-mode="member"],[data-mode="locked"]) { color:var(--role-ink); background:color-mix(in srgb,var(--role-fill) 13%,var(--topbar-b)); border:1px solid color-mix(in srgb,var(--role-ink) 48%,var(--topbar-b)); }
-.topbar .dfl-preview-toggle .dfl-preview-track { border:1px solid color-mix(in srgb,var(--role-ink) 65%,transparent); background:color-mix(in srgb,var(--role-fill) 18%,var(--topbar-b)); }
-.topbar .dfl-preview-toggle .dfl-preview-knob { background:var(--role-fill); box-shadow:none; }
+.topbar .dfl-preview-toggle:is([data-mode="commissioner"],[data-mode="member"],[data-mode="locked"]) { color:var(--role-ink); background:color-mix(in srgb,var(--role-fill) 8%,var(--topbar-b)); border:0; }
+.topbar .dfl-preview-toggle .dfl-preview-track { width:6px; height:6px; flex:0 0 6px; border:0; background:var(--role-fill); border-radius:50%; }
+.topbar .dfl-preview-toggle .dfl-preview-knob { display:none; }
+.injury-page { color:var(--body-text); font:500 11px/1 system-ui,sans-serif; white-space:nowrap; margin-left:8px; vertical-align:middle; }
 @media(max-width:560px) {
  .topbar .brand-text { display:none; }
- .topbar .brand-lockup { flex:0 0 36px; }
- .topbar .topbar-inner { gap:8px; padding-inline:12px; }
- .topbar .topbar-actions { flex:0 1 auto; gap:6px; }
- .topbar .topbar-actions .whoami { flex:0 1 auto; min-width:0; max-width:110px; padding-inline:9px; }
+ .topbar .brand-lockup { flex:0 0 30px; }
+ .topbar .topbar-inner { gap:6px; padding-inline:12px; }
+ .topbar .topbar-actions { gap:3px; min-width:0; }
+ .topbar .topbar-inner .topbar-actions .whoami { flex:1 1 auto; padding-inline:6px; }
 }
 @media(max-width:360px) {
- .topbar .topbar-inner { gap:6px; padding-inline:10px; }
- .topbar .topbar-actions { gap:4px; }
+ .topbar .topbar-inner { gap:4px; padding-inline:8px; }
+ .topbar .topbar-actions { gap:2px; }
  .topbar .dfl-preview-toggle { gap:5px; padding-inline:6px; }
- .topbar .topbar-actions .whoami { max-width:82px; }
+ .topbar .whoami-chevron { display:none; }
 }
 
 /* Keep score sources beside the numbers and the weekly home cards aligned. */

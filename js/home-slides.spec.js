@@ -345,3 +345,12 @@ describe("playoff picture slide", () => {
     expect(slide.subtitle).toContain("Game of the week: Alpha vs Beta");
   });
 });
+
+describe('league matchup order',()=>{
+ it('puts the league slate first while retaining the other priorities and leaves the source untouched',async()=>{
+ const {matchupFirst}=await import('./home-slides.js');
+ const items=[{generator:'injuryReport',id:'one'},{generator:'weekSlate',id:'slate'},{generator:'injuryReport',id:'two'},{generator:'history',id:'fact'}];
+ expect(matchupFirst(items).map(i=>i.id)).toEqual(['slate','one','two','fact']);expect(items[0].id).toBe('one');
+ expect(matchupFirst(items.filter(i=>i.generator!=='weekSlate')).map(i=>i.id)).toEqual(['one','two','fact']);
+ });
+});

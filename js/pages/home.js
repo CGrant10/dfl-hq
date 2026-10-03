@@ -45,7 +45,7 @@ import { buildNextMove } from "../next-move.js";
 import { weekHasStarted } from "../league-trajectory.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
+import { matchupFirst, currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -55,7 +55,7 @@ import { buildWeeklyBriefing } from "../weekly-briefing.js";
 import { buildAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
 import {loadNflInjuries} from "../injury-report-data.js";
-import {buildInjuryReport,injuryReportSlide} from "../injury-report-model.js";
+import {buildInjuryReport,injuryReportSlides} from "../injury-report-model.js";
 import {mountInjuryReport} from "../injury-report-ui.js";
 import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 
@@ -287,12 +287,12 @@ const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
 function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
   // GameDay owns the personal matchup in every phase of the week.
   const ranked = buildDeck(ctx, { custom, off: new Set([...off, "myMatchup"]), overrides, max: 20 });
-  const picked = ranked.filter((it) => {
+  const picked = matchupFirst(ranked.filter((it) => {
     if (it.source === "manual" || it.pinned) return true;
     if (STAGE_UTILITY.has(it.generator)) return false;
     if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
     return true;
-  }).slice(0, 8);
+  })).slice(0, 8);
   if (picked.length) return picked;
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
 }
@@ -619,7 +619,7 @@ export async function render(view) {
   const off = broadcastOff();
   const build = (day) => editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
-    { custom: [...custom, ...liveSlides, injuryReportSlide(injuryReport)].filter(Boolean), off, overrides },
+    { custom: [...custom, ...liveSlides, ...injuryReportSlides(injuryReport)].filter(Boolean), off, overrides },
   );
   const refresh = async () => {
     const [day, fresh] = await Promise.all([

@@ -302,3 +302,8 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
     fixtures: rows,
   };
 }
+
+/** Keep the league slate first without disturbing the other editorial priorities. */
+export function matchupFirst(items) {
+ return [...items.filter(item=>item.generator==='weekSlate'),...items.filter(item=>item.generator!=='weekSlate')];
+}

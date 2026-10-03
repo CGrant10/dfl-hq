@@ -52,6 +52,7 @@ function paintName(){
   if(!whoamiName)return;
   whoamiName.textContent=m?m.display_name:(g?g.name:(getUsername()||"Who are you?"));
   const button=document.getElementById("whoami");
+  if(button){button.title=whoamiName.textContent;button.setAttribute("aria-label",`Profile for ${whoamiName.textContent}`)}
   let photo=button?.querySelector(".whoami-photo");
   if(button&&!photo){photo=document.createElement("img");photo.className="whoami-photo";photo.alt="";photo.hidden=true;button.insertBefore(photo,whoamiName)}
   const source=m?.profile_image||"";

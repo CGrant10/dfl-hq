@@ -32,6 +32,7 @@ export function buildInjuryReport(payload,{analysis=null,now=Date.now()}={}){
  const stamp=Date.parse(payload.timestamp);
  return{items,checkedAt:now,sourceAt:Number.isFinite(stamp)?stamp:null,rostersKnown:analysis?.state==='ready',starters:items.filter(p=>p.tier===0).length,owned:items.filter(p=>p.tier<2).length};
 }
-export function injuryReportSlide(report){
- return{id:'injury-report',generator:'injuryReport',source:'auto',pinned:true,priority:675,treatment:'injuries',temporal:'none',background:'slate',logo:'default',headline:'Injury report',kicker:'NFL · AVAILABILITY',players:report?.items.slice(0,4)||[],checkedAt:report?.checkedAt||0,total:report?.items.length||0,available:!!report};
+export function injuryReportSlides(report){
+ const players=report?.items.slice(0,4)||[],pages=Math.max(1,Math.ceil(players.length/2));
+ return Array.from({length:pages},(_,page)=>({id:`injury-report-${page+1}`,generator:'injuryReport',source:'auto',pinned:true,priority:675-page,treatment:'injuries',temporal:'none',background:'slate',logo:'default',headline:'Injury report',kicker:'NFL · AVAILABILITY',players:players.slice(page*2,page*2+2),page:page+1,pages,checkedAt:report?.checkedAt||0,total:report?.items.length||0,available:!!report}));
 }

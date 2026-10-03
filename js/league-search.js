@@ -12,7 +12,7 @@ export function playerSearchResults(players, query) {
 }
 export function mountLeagueSearch(){
   if(document.getElementById('league-search-button'))return;
-  const button=document.createElement('button');button.id='league-search-button';button.className='notification-bell';button.type='button';button.setAttribute('aria-label','Search the league');button.title='Search the league (Ctrl/⌘ K)';button.textContent='⌕';
+  const button=document.createElement('button');button.id='league-search-button';button.className='notification-bell';button.type='button';button.setAttribute('aria-label','Search the league');button.title='Search the league (Ctrl/⌘ K)';button.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>';
   document.getElementById('whoami')?.before(button);
   const dialog=document.createElement('dialog');dialog.className='league-search';dialog.setAttribute('aria-labelledby','league-search-title');
   dialog.innerHTML=`<header><h2 id="league-search-title">Search DFL</h2><button class="btn ghost small" type="button" data-search-close>Close</button></header><label for="league-search-input">Members, players, records and Wall posts</label><input id="league-search-input" type="search" maxlength="80" autocomplete="off" placeholder="Try a name, championship or old receipt"><p class="muted tiny" role="status" data-search-status>Type at least two characters. Ctrl/⌘ K opens search.</p><div data-search-results></div>`;
