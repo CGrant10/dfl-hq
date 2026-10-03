@@ -122,8 +122,8 @@ function ensureStyles() {
 .dfl-preview-toggle[data-mode="member"] .dfl-preview-knob{transform:translateX(11px);background:var(--accent-fill);box-shadow:0 0 7px color-mix(in srgb,var(--accent-fill) 75%,transparent)}
 
 /* A commissioner who has not entered a PIN this session. Same side of the
-   switch as member view, because that is what they are seeing - but dashed and
-   quiet, because getting back needs the PIN. */
+   switch as member view, because that is what they are seeing. The header
+   applies the same role color; the accessible copy explains the PIN requirement. */
 .dfl-preview-toggle[data-mode="locked"]{border-style:dashed;border-color:var(--control-line,rgba(255,255,255,.34));color:var(--muted,#9fb0c0)}
 .dfl-preview-toggle[data-mode="locked"] .dfl-preview-knob{transform:translateX(11px)}
 .dfl-preview-toggle[data-mode="locked"] .dfl-preview-track{border-style:dashed}
