@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 /* =====================================================================
    aftermath-share.js - the completed week, as one group-chat picture.
    ---------------------------------------------------------------------
@@ -8,7 +9,7 @@
    The canvas is a share-friendly 4:5 report card, and drawing is synchronous
    because iOS only allows the share sheet during the tap itself.
    ===================================================================== */
-import { sealImage, shareCanvas, shareText } from "./share.js";
+import { sealImage, shareCanvas, shareText, roundRect } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
 /* 4:5 gives the report room for the story, awards, and both player podiums
@@ -193,26 +194,26 @@ function wrapStory(ctx, text, x, y, maxWidth, size = 30, lineHeight = 39, maxLin
 function drawPlayerPodium(ctx, { x, y, title, kicker, players = [], tone }) {
   const width = 460, height = 305;
   ctx.fillStyle = SHARE_INK.CARD_2;
-  ctx.fillRect(x, y, width, height);
+  roundRect(ctx,x,y,width,height,22);ctx.fill();
   ctx.fillStyle = tone;
-  ctx.fillRect(x, y, width, 5);
+  roundRect(ctx,x,y,4,height,2);ctx.fill();
   caps(ctx, kicker, x + 25, y + 39, tone, 16, "left");
   ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, title, x + 25, y + 80, width - 50, 28, 800, "left");
+  fitDisplay(ctx, title, x + 25, y + 80, width - 50, 28, 600, "left");
   rule(ctx, x + 25, y + 98, x + width - 25, SHARE_INK.LINE, 2);
   players.slice(0, 3).forEach((player, index) => {
     const rowY = y + 137 + index * 56;
     ctx.fillStyle = tone;
     ctx.textAlign = "left";
-    ctx.font = `800 20px ${DISPLAY}`;
+    ctx.font = `600 20px ${DISPLAY}`;
     ctx.fillText(String(index + 1).padStart(2, "0"), x + 25, rowY);
     ctx.fillStyle = SHARE_INK.INK;
-    fitDisplay(ctx, String(player.name).toUpperCase(), x + 68, rowY, 245, 23, 800, "left");
+    fitDisplay(ctx, String(player.name), x + 68, rowY, 245, 23, 600, "left");
     ctx.fillStyle = index === 0 ? tone : SHARE_INK.INK;
-    fitDisplay(ctx, score(player.points), x + width - 25, rowY, 82, 26, 800, "right");
+    fitDisplay(ctx, score(player.points), x + width - 25, rowY, 82, 26, 600, "right");
     const meta = [player.position, player.nflTeam, player.owner].filter(Boolean).join(" · ");
     ctx.fillStyle = SHARE_INK.MUTED;
-    fitDisplay(ctx, meta.toUpperCase(), x + 68, rowY + 22, 340, 13, 700, "left");
+    fitDisplay(ctx, meta.toUpperCase(), x + 68, rowY + 22, 340, 18, 500, "left");
   });
   if (!players.length) caps(ctx, "NO COMPLETED PLAYER DATA", x + width / 2, y + 178, SHARE_INK.MUTED, 18);
 }
@@ -222,32 +223,11 @@ export function aftermathCanvas(card) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = SHARE_INK.BG;
-  ctx.fillRect(0, 0, W, H);
-
-  // Medicine-wheel brand rail: four flat fields, no ornamental imitation.
-  const segments = [SHARE_INK.BRAND_RED, SHARE_INK.GOLD, SHARE_INK.INK, SHARE_INK.CARD];
-  segments.forEach((color, index) => {
-    ctx.fillStyle = color;
-    ctx.fillRect(index * W / 4, 0, W / 4 + 1, 11);
-  });
-
-  const mark = sealImage();
-  if (mark) {
-    ctx.save();
-    ctx.globalAlpha = 0.045;
-    ctx.drawImage(mark, 105, 66, 870, 870);
-    ctx.restore();
-  }
-
-  rule(ctx, 100, 69, 250, SHARE_INK.BRAND_RED, 3);
-  rule(ctx, 830, 69, 980, SHARE_INK.BRAND_YELLOW, 3);
-  caps(ctx, `DFL HQ · ${card.season} SEASON · FINAL`, W / 2, 75, SHARE_INK.INK, 22);
+  drawShareFrame(ctx,`${card.season} · Week ${card.week} · Final`);
 
   ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, card.title || card.label, W / 2, 158, 960, 80, 800);
-  caps(ctx, "NO MERCY · NO EXCUSES · JUST RECEIPTS", W / 2, 198, SHARE_INK.MUTED, 20);
-  rule(ctx, 70, 220, 1010, SHARE_INK.GOLD, 4);
+  fitDisplay(ctx, card.title || card.label, W / 2, 218, 944, 68, 600);
+  rule(ctx,70,245,1010,SHARE_INK.GOLD,2);
 
   caps(ctx, "THE WEEK, WITHOUT THE BULLSHIT", 70, 268, SHARE_INK.ACCENT, 18, "left");
   ctx.fillStyle = SHARE_INK.INK;
@@ -259,12 +239,12 @@ export function aftermathCanvas(card) {
     const x = 70 + col * 480, y = 525 + row * 205, width = 460, height = 180;
     const tone = item.tone === "gold" ? SHARE_INK.GOLD : item.tone === "red" ? SHARE_INK.ACCENT : SHARE_INK.INK;
     ctx.fillStyle = SHARE_INK.CARD_2;
-    ctx.fillRect(x, y, width, height);
+    roundRect(ctx,x,y,width,height,22);ctx.fill();
     ctx.fillStyle = tone;
     ctx.fillRect(x, y, 6, height);
     caps(ctx, item.label, x + 28, y + 38, tone, 18, "left");
     ctx.fillStyle = SHARE_INK.INK;
-    fitDisplay(ctx, String(item.title).toUpperCase(), x + 28, y + 91, width - 56, 35, 800, "left");
+    fitDisplay(ctx, String(item.title).toUpperCase(), x + 28, y + 91, width - 56, 35, 600, "left");
     ctx.fillStyle = SHARE_INK.INK;
     fitDisplay(ctx, String(item.detail).toUpperCase(), x + 28, y + 143, width - 56, 20, 700, "left");
   });
@@ -274,7 +254,7 @@ export function aftermathCanvas(card) {
   drawPlayerPodium(ctx, { x: 550, y: 930, title: "WASTED ON THE BENCH", kicker: "TOP 3 BENCH",
     players: card.players?.bench, tone: SHARE_INK.ACCENT });
 
-  caps(ctx, "DRAFT · GOLF · SIN · FOLD", W / 2, 1318, SHARE_INK.MUTED, 21);
+  drawShareFooter(ctx,"Weekly aftermath");
   return canvas;
 }
 

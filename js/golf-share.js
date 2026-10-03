@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter,shareMonogram} from "./share-card-style.js";
 /* =====================================================================
    golf-share.js - the tournament board as a picture
    ---------------------------------------------------------------------
@@ -21,7 +22,7 @@
 
    Everything here is synchronous - see the gesture rule in share.js.
    ===================================================================== */
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SCORING_NAMES, dayPoints, pairName, roundHoles } from "./golf-battle.js";
 import { memberNames, playerName } from "./golf-people.js";
 import { LEAGUE_FOUNDED } from "./config.js";
@@ -97,20 +98,9 @@ function annivText() {
   const n = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   return n > 1 && n % 10 === 0 ? `${ordinalOf(n)} ANNIVERSARY SEASON` : "";
 }
-function drawAnniv(ctx, width) {
-  const text = annivText();
-  if (!text) return 0;
-  const h = 68;
-  ctx.fillStyle = "rgba(239,201,76,.13)";
-  ctx.fillRect(0, 0, width, h);
-  ctx.strokeStyle = "rgba(239,201,76,.55)";
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(width, h - 1); ctx.stroke();
-  ctx.fillStyle = GOLD;
-  ctx.textAlign = "center";
-  ctx.font = `700 30px ${FONT}`;
-  ctx.fillText(`★   ${text}   ★`, width / 2, 45);
-  return h;
+function drawAnniv(ctx,width) {
+ const text=annivText();if(text){ctx.save();ctx.fillStyle=GOLD;fitText(ctx,text,width-70,170,width-140,20,500,"right");ctx.restore()}
+ return 142;
 }
 
 /* Same rule as every screen, rather than a second copy with its own 9. */
@@ -161,29 +151,11 @@ export function summaryText(s) {
 
 // ------------------------------------------------------------- the drawing
 
-/* The crest is fetched when share.js loads, which is long before anybody
-   taps share - but if it somehow has not arrived, the card must still be the
-   same card. Reserving the SAME height it would have taken means the
-   fallback is a missing picture rather than a different layout. */
-/* What every card reserves for the crest. These two move with the artwork -
-   the landscape lockup is 3:2 - or the fallback layout goes wrong. */
-const CREST_W = 340, CREST_H = 226;
-
-function drawCrest(ctx, top) {
-  const img = crestImage();
-  if (!img) return top + 6 + CREST_H + 20;
-  const w = CREST_W, h = w * (img.naturalHeight / img.naturalWidth || CREST_H / CREST_W);
-  /* No plate. The artwork is mostly white fill, red and blue and reads fine on
-     the card's dark ground - and a white rectangle in a chat thumbnail is
-     exactly what it looks like: a bug. */
-  ctx.drawImage(img, (W - w) / 2, top + 6, w, h);
-  return top + 6 + h + 20;
-}
-
 function drawScore(ctx, s, top) {
   const mid = W / 2;
   ctx.textBaseline = "alphabetic";
 
+  ctx.fillStyle=CARD;roundRect(ctx,68,top-10,W-136,240,26);ctx.fill();
   // The dash sits dead centre; each team owns the half beside it.
   ctx.fillStyle = MUTED;
   ctx.font = `700 54px ${FONT}`;
@@ -198,19 +170,19 @@ function drawScore(ctx, s, top) {
        chat background, so the score stays in the house white and the small
        rule beneath it carries the team's colour. */
     ctx.fillStyle = INK;
-    ctx.font = `950 150px ${FONT}`;
+    ctx.font = `700 150px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(String(s.values[i]), cx, top + 120);
     ctx.fillStyle = colour;
     ctx.fillRect(cx - 46, top + 136, 92, 6);
     ctx.fillStyle = INK;
-    fitText(ctx, team.name.toUpperCase(), cx, top + 176, W * 0.42, 40, 900);
+    fitText(ctx, team.name.toUpperCase(), cx, top + 176, W * 0.42, 40, 700);
     /* Who leads this team, under its name. Nothing is drawn when the team
        has no captain set. */
     const cap = s.captains?.[i];
     if (cap) {
       ctx.fillStyle = MUTED;
-      fitText(ctx, `CAPTAIN ${cap.toUpperCase()}`, cx, top + 210, W * 0.40, 22, 800);
+      fitText(ctx, `CAPTAIN ${cap.toUpperCase()}`, cx, top + 210, W * 0.40, 22, 600);
     }
   });
 }
@@ -238,21 +210,21 @@ function drawRounds(ctx, s, top, bottom) {
     roundRect(ctx, x, y, w, rowH, 18 * k);
     ctx.fill();
     ctx.strokeStyle = LINE;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.textAlign = "left";
     ctx.fillStyle = INK;
-    ctx.font = `900 ${Math.round(38 * k)}px ${FONT}`;
+    ctx.font = `700 ${Math.round(38 * k)}px ${FONT}`;
     ctx.fillText(round.name || `Round ${round.round_number}`, x + 28, y + rowH * 0.46);
     ctx.fillStyle = MUTED;
-    ctx.font = `800 ${Math.round(25 * k)}px ${FONT}`;
+    ctx.font = `600 ${Math.round(25 * k)}px ${FONT}`;
     ctx.fillText(`${round.format === "singles" ? "Singles" : "2v2"} · ${SCORING_NAMES[scoringOf(round)]} · ${holesOf(round)} holes`,
       x + 28, y + rowH * 0.81);
 
     ctx.textAlign = "right";
     ctx.fillStyle = INK;
-    ctx.font = `950 ${Math.round(52 * k)}px ${FONT}`;
+    ctx.font = `700 ${Math.round(52 * k)}px ${FONT}`;
     ctx.fillText(s.teams.map((t) => points.get(String(t.id)) || 0).join("  –  "), x + w - 28, y + rowH * 0.66);
   });
   return top + n * rowH + (n - 1) * gap;
@@ -265,27 +237,20 @@ export function boardCanvas(data, outing) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, W - 6, H - 6);
-
-  /* One vertical budget for the whole card, so nothing can grow into
-     anything else: crest, headline, the score band, the rounds, the footer. */
-  const titleY = drawCrest(ctx, drawAnniv(ctx, W) + 48) + 46;
+  drawShareFrame(ctx,"Golf tournament");
+  const titleY=drawAnniv(ctx,W)+98;
   ctx.fillStyle = INK;
-  fitText(ctx, s.title, W / 2, titleY, W - 140, 52, 900);
+  fitText(ctx, s.title, W / 2, titleY, W - 140, 52, 700);
   if (s.meta) {
     ctx.fillStyle = MUTED;
-    ctx.font = `800 26px ${FONT}`;
+    ctx.font = `600 26px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(s.meta.toUpperCase(), W / 2, titleY + 42);
   }
 
   if (!s.teams.length) {
     ctx.fillStyle = MUTED;
-    ctx.font = `800 32px ${FONT}`;
+    ctx.font = `600 32px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("The tournament is not set up yet.", W / 2, titleY + 130);
     return canvas;
@@ -299,14 +264,14 @@ export function boardCanvas(data, outing) {
      rounds, so the card looks the same whether there are two rounds or four. */
   ctx.textAlign = "center";
   ctx.fillStyle = s.done ? OK : INK;
-  ctx.font = `900 40px ${FONT}`;
+  ctx.font = `700 40px ${FONT}`;
   ctx.fillText(s.done ? `FINAL · ${s.lead.toUpperCase()}` : s.lead.toUpperCase(), W / 2, H - 118);
   ctx.fillStyle = MUTED;
-  ctx.font = `800 26px ${FONT}`;
+  ctx.font = `600 26px ${FONT}`;
   ctx.fillText(s.done ? `${s.matches} matches · ${s.holes} holes`
                       : `${s.played} of ${s.matches} matches decided · ${s.holes} holes`, W / 2, H - 76);
   ctx.font = `700 24px ${FONT}`;
-  ctx.fillText("cgrant10.github.io/dfl-hq", W / 2, H - 36);
+  drawShareFooter(ctx,"Golf tournament");
 
   return canvas;
 }
@@ -431,23 +396,24 @@ export function teamSheetText(sheet) {
 
 export function teamSheetCanvas(data, outing) {
   const sheet = teamSheet(data, outing);
+  const rosterRows=Math.max(0,...sheet.rosters.map(r=>r.players.length)),pairRows=sheet.rounds.reduce((n,r)=>n+r.pairs.length,0);
+  const TH=Math.max(1350,620+rosterRows*44+pairRows*56+sheet.rounds.length*50+(sheet.showdown?220:0));
   const canvas = document.createElement("canvas");
   canvas.width = TW; canvas.height = TH;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, TW, TH);
-  ctx.strokeStyle = LINE; ctx.lineWidth = 6; ctx.strokeRect(3, 3, TW - 6, TH - 6);
+  drawShareFrame(ctx,"Golf teams & matchups");
   ctx.textBaseline = "alphabetic";
 
   const bandH = drawAnniv(ctx, TW);
   ctx.fillStyle = INK;
-  fitText(ctx, sheet.title, TW / 2, bandH + 84, TW - 120, 54, 900);
+  fitText(ctx, sheet.title, TW / 2, bandH + 84, TW - 120, 54, 700);
   ctx.fillStyle = MUTED;
-  ctx.font = `800 26px ${FONT}`;
+  ctx.font = `600 26px ${FONT}`;
   ctx.textAlign = "center";
   ctx.fillText((sheet.meta ? sheet.meta + " · " : "") + "TEAMS & MATCHUPS", TW / 2, bandH + 126);
 
   if (!sheet.teams.length) {
-    ctx.fillStyle = MUTED; ctx.font = `800 32px ${FONT}`;
+    ctx.fillStyle = MUTED; ctx.font = `600 32px ${FONT}`;
     ctx.fillText("Teams have not been set yet.", TW / 2, 320);
     return canvas;
   }
@@ -461,14 +427,14 @@ export function teamSheetCanvas(data, outing) {
     const rows = Math.max(r.players.length, 1);
     const h = 76 + rows * 44 + 14;
     ctx.fillStyle = CARD; roundRect(ctx, x, top, colW, h, 18); ctx.fill();
-    ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 1.5; ctx.stroke();
     // the colour bar: the same signal the app uses for a team
     ctx.fillStyle = colour; roundRect(ctx, x, top, 7, h, 4); ctx.fill();
 
     ctx.textAlign = "left";
     ctx.fillStyle = INK;
-    fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 900, "left");
-    ctx.fillStyle = MUTED; ctx.font = `800 20px ${FONT}`;
+    fitText(ctx, r.team.name.toUpperCase(), x + 26, top + 52, colW - 52, 36, 700, "left");
+    ctx.fillStyle = MUTED; ctx.font = `600 20px ${FONT}`;
     /*
       THE CAPTAIN IS NAMED ONCE.
 
@@ -481,7 +447,7 @@ export function teamSheetCanvas(data, outing) {
     */
     const capLine = `${r.players.length} PLAYER${r.players.length === 1 ? "" : "S"}`
       + (r.captain && !sheet.showdown ? ` · CAPTAIN ${r.captain.toUpperCase()}` : "");
-    fitText(ctx, capLine, x + 26, top + 78, colW - 52, 20, 800, "left");
+    fitText(ctx, capLine, x + 26, top + 78, colW - 52, 20, 600, "left");
     (r.players.length ? r.players : ["Nobody yet"]).forEach((n, j) => {
       const isCap = j === r.captainIndex;
       const rowY = top + 118 + j * 44;
@@ -493,7 +459,7 @@ export function teamSheetCanvas(data, outing) {
       fitText(ctx, n, x + 26, rowY, colW - (isCap ? 78 : 52), 28, 700, "left");
       if (isCap) {
         ctx.fillStyle = GOLD;
-        ctx.font = `900 20px ${FONT}`;
+        ctx.font = `700 20px ${FONT}`;
         ctx.textAlign = "right";
         ctx.fillText("C", x + colW - 24, rowY);
       }
@@ -556,7 +522,7 @@ export function teamSheetCanvas(data, outing) {
   if (sheet.showdown) {
     ctx.textAlign = "center";
     ctx.fillStyle = MUTED;
-    ctx.font = `900 19px ${FONT}`;
+    ctx.font = `700 19px ${FONT}`;
     ctx.fillText("CAPTAINS", CX, y + 18);
 
     const nameY = y + 66, teamY = y + 92;
@@ -564,14 +530,14 @@ export function teamSheetCanvas(data, outing) {
       const left = i === 0;
       ctx.fillStyle = INK;
       fitText(ctx, r.captain.toUpperCase(), left ? CX - 70 : CX + 70, nameY,
-              CX - 70 - EDGE, 44, 900, left ? "right" : "left");
+              CX - 70 - EDGE, 44, 700, left ? "right" : "left");
       ctx.fillStyle = MUTED;
       fitText(ctx, r.team.name.toUpperCase(), left ? CX - 70 : CX + 70, teamY,
-              CX - 70 - EDGE, 19, 800, left ? "right" : "left");
+              CX - 70 - EDGE, 19, 600, left ? "right" : "left");
     });
 
     ctx.fillStyle = INK;
-    ctx.font = `900 32px ${FONT}`;
+    ctx.font = `700 32px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("VS", CX, nameY - 4);
 
@@ -616,7 +582,7 @@ export function teamSheetCanvas(data, outing) {
       const left = i === 0;
       ctx.fillStyle = INK;
       fitText(ctx, roster.team.name.toUpperCase(), left ? CX - VS_GAP : CX + VS_GAP,
-              y + 26, SIDE_W, 26, 900, left ? "right" : "left");
+              y + 26, SIDE_W, 26, 700, left ? "right" : "left");
     });
     y += HEAD_H;
   }
@@ -625,7 +591,7 @@ export function teamSheetCanvas(data, outing) {
     // The round label: a section heading, so the quietest thing in the block.
     ctx.textAlign = "left";
     ctx.fillStyle = MUTED;
-    ctx.font = `800 17px ${FONT}`;
+    ctx.font = `600 17px ${FONT}`;
     ctx.fillText(`${(r.round.name || "Round " + r.round.round_number).toUpperCase()} · ${r.round.format === "singles" ? "SINGLES" : "2V2"} · ${SCORING_NAMES[scoringOf(r.round)].toUpperCase()}`,
                  EDGE + 2, y + 21);
     y += LABEL_H;
@@ -657,7 +623,7 @@ export function teamSheetCanvas(data, outing) {
         });
 
       ctx.fillStyle = MUTED;
-      ctx.font = `900 ${Math.max(15, Math.round(rowH * 0.42))}px ${FONT}`;
+      ctx.font = `700 ${Math.max(15, Math.round(rowH * 0.42))}px ${FONT}`;
       ctx.textAlign = "center";
       ctx.fillText("VS", CX, baseline);
       y += rowH;
@@ -668,7 +634,7 @@ export function teamSheetCanvas(data, outing) {
   ctx.textAlign = "center";
   ctx.fillStyle = MUTED;
   ctx.font = `700 24px ${FONT}`;
-  ctx.fillText("cgrant10.github.io/dfl-hq", TW / 2, TH - 44);
+  drawShareFooter(ctx,"Golf teams & matchups");
   return canvas;
 }
 
@@ -702,7 +668,6 @@ export function shareTeamSheet(data, outing) {
    will show without cropping the margin out of the middle.
    ===================================================================== */
 const PW = 1080, PH = 1350;
-const RED = SHARE_INK.BRAND_RED, YELLOW = SHARE_INK.BRAND_YELLOW;
 
 /** The numbers the poster is about. Handed in, never derived here. */
 export function posterData({ names, sides, result, scoring, round, matchNumber, outing, standing }) {
@@ -732,107 +697,43 @@ export function posterData({ names, sides, result, scoring, round, matchNumber, 
   };
 }
 
-function drawPosterBand(ctx, y, h, colour) {
-  const g = ctx.createLinearGradient(0, y, PW, y + h);
-  g.addColorStop(0, colour);
-  g.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, y, PW, h);
-}
-
-/**
- * One match as a poster.
- * @param {object} p        from posterData()
- * @param {string} moodText the status headline, chosen by marquee.js
- */
 export function matchPosterCanvas(p, moodText) {
   const canvas = document.createElement("canvas");
   canvas.width = PW; canvas.height = PH;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, PW, PH);
-
-  /* The two team colours as bands top and bottom, so the poster is that
-     match's colours before a word is read. Falls back to the Medicine Wheel pair. */
-  drawPosterBand(ctx, 0, 260, hexA(teamInk(p.sides[0]?.color, 0) || RED, 0.30));
-  ctx.save();
-  ctx.translate(PW, PH); ctx.rotate(Math.PI);
-  drawPosterBand(ctx, 0, 260, hexA(teamInk(p.sides[1]?.color, 1) || YELLOW, 0.30));
-  ctx.restore();
-
-  ctx.strokeStyle = LINE; ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, PW - 6, PH - 6);
-
-  let y = drawAnniv(ctx, PW) + 40;
-  y = drawCrest(ctx, y) + 34;
-
-  // ---- the billing -------------------------------------------------------
-  ctx.textAlign = "center";
-  const billing = [p.matchNumber === 1 ? "MAIN EVENT" : `MATCH ${p.matchNumber}`, p.round]
-    .filter(Boolean).join("   ·   ").toUpperCase();
-  /* The billing is TYPE, so it takes the theme's text red rather than the
-     wheel's fill red - #C8102E is a 3:1 letter on this ground. RED and YELLOW
-     stay below as the band colours, where they are a fallback for a team
-     that has no colour of its own, not a house accent. */
-  ctx.fillStyle = ACCENT;
-  ctx.font = `900 30px ${FONT}`;
-  ctx.fillText(billing, PW / 2, y);
-  y += 30;
-  ctx.fillStyle = MUTED;
-  ctx.font = `800 24px ${FONT}`;
-  ctx.fillText([p.event, p.when].filter(Boolean).join("  ·  ").toUpperCase(), PW / 2, y + 8);
-
-  // ---- the tale of the tape ---------------------------------------------
-  const tapeTop = y + 90;
-  const side = (i, top) => {
-    ctx.fillStyle = INK;
-    fitText(ctx, p.names[i].toUpperCase(), PW / 2, top, PW - 160, 58, 900);
-    ctx.fillStyle = i === p.leader ? "#ffffff" : MUTED;
-    ctx.font = `900 132px ${FONT}`;
-    ctx.fillText(p.figures[i], PW / 2, top + 148);
-    /* The team's ink, translated - a stored legacy colour would otherwise put
-       Golf's old green and blue back on the poster. */
-    const c = teamInk(p.sides[i]?.color, i) || (i === 0 ? RED : YELLOW);
-    ctx.fillStyle = c;
-    ctx.fillRect(PW / 2 - 70, top + 178, 140, 8);
-  };
-  side(0, tapeTop);
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `900 44px ${FONT}`;
-  ctx.fillText("VS", PW / 2, tapeTop + 268);
-
-  side(1, tapeTop + 350);
+  drawShareFrame(ctx,"Golf matchup");drawAnniv(ctx,PW);
+  ctx.textBaseline="alphabetic";ctx.fillStyle=INK;
+  fitText(ctx,p.event,PW/2,246,PW-144,56,650,"center");
+  ctx.fillStyle=MUTED;fitText(ctx,[p.round,p.when].filter(Boolean).join(" · "),PW/2,292,PW-144,27,500,"center");
+  for(let i=0;i<2;i++){
+   const x=70+i*484,cx=x+228;
+   ctx.fillStyle=CARD;roundRect(ctx,x,366,456,474,26);ctx.fill();
+   shareMonogram(ctx,p.names[i],cx-48,416,96,i===p.leader?GOLD:INK);
+   ctx.fillStyle=INK;fitText(ctx,p.names[i],cx,586,408,42,600,"center");
+   ctx.fillStyle=i===p.leader?GOLD:INK;fitText(ctx,p.figures[i],cx,740,408,124,700,"center");
+   ctx.fillStyle=teamInk(p.sides[i]?.color,i);roundRect(ctx,cx-44,794,88,5,2);ctx.fill();
+  }
+  ctx.fillStyle=MUTED;fitText(ctx,"VS",PW/2,905,100,26,500,"center");
 
   // ---- the status --------------------------------------------------------
   const statusY = PH - 210;
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(70, statusY - 60); ctx.lineTo(PW - 70, statusY - 60); ctx.stroke();
 
   if (moodText) {
     ctx.fillStyle = p.result.complete ? INK : ACCENT;
-    fitText(ctx, moodText, PW / 2, statusY, PW - 120, 56, 900);
+    fitText(ctx, moodText, PW / 2, statusY, PW - 120, 56, 700);
   }
   ctx.fillStyle = MUTED;
-  ctx.font = `800 28px ${FONT}`;
+  ctx.font = `600 28px ${FONT}`;
   ctx.fillText(p.standing.toUpperCase(), PW / 2, statusY + 52);
 
   ctx.fillStyle = MUTED;
   ctx.font = `700 24px ${FONT}`;
-  ctx.fillText("cgrant10.github.io/dfl-hq", PW / 2, PH - 46);
+  drawShareFooter(ctx,"Golf matchup");
 
   return canvas;
-}
-
-/* #rrggbb -> rgba(). Team colours come out of the database as hex, and a
-   band needs them transparent. Anything unparseable falls back rather than
-   painting the poster with the string "undefined". */
-function hexA(hex, alpha) {
-  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
-  if (!m) return `rgba(200,16,46,${alpha})`;
-  const n = parseInt(m[1], 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
 /** One line of text for the share sheet, for anybody without image support. */

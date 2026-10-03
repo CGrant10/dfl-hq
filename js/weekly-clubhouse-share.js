@@ -1,15 +1,32 @@
-import {shareCanvas,shareText,fitText,sealImage} from './share.js';
+import {drawShareFrame,drawShareFooter,wrapShareText} from "./share-card-style.js";
+import {shareCanvas,shareText,fitText,roundRect,FONT} from './share.js';
 import {SHARE_INK} from './brand-ink.js';
 import {weeklyRecapLines,weeklyHref} from './weekly-clubhouse-model.js';
 export function weeklyClubhouseCanvas(model){
- const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;const ctx=canvas.getContext('2d');ctx.fillStyle=SHARE_INK.BG;ctx.fillRect(0,0,1080,1350);
- const seal=sealImage();if(seal){ctx.save();ctx.globalAlpha=.04;ctx.drawImage(seal,90,160,900,900);ctx.restore()}
- ctx.fillStyle=SHARE_INK.ACCENT;ctx.fillRect(0,0,1080,12);ctx.fillStyle=SHARE_INK.MUTED;fitText(ctx,`DFL HQ · ${model.season} · FINAL RECEIPTS`,540,70,960,25,800);
- ctx.fillStyle=SHARE_INK.INK;fitText(ctx,`WEEK ${model.week} RECAP`,540,150,960,75,900);
- const awards=model.awards.slice(0,5);let y=205;
- for(const award of awards){ctx.fillStyle=SHARE_INK.CARD_2;ctx.fillRect(60,y,960,110);ctx.fillStyle=SHARE_INK.ACCENT;fitText(ctx,award.label.toUpperCase(),85,y+30,900,21,800,'left');ctx.fillStyle=SHARE_INK.INK;fitText(ctx,award.winners.map(w=>w.name).join(' & '),85,y+63,900,32,900,'left');ctx.fillStyle=SHARE_INK.MUTED;fitText(ctx,[award.winners.map(w=>w.playerName).filter(Boolean).join(" & "),award.detail].filter(Boolean).join(" · "),85,y+92,900,20,700,'left');y+=123}
- const lines=weeklyRecapLines(model).slice(1+model.awards.length);ctx.fillStyle=SHARE_INK.INK;for(const line of lines.slice(0,Math.floor((1270-y)/38))){fitText(ctx,line.length>105?line.slice(0,102)+"…":line,70,y+27,940,24,700,'left');y+=38}
- ctx.fillStyle=SHARE_INK.MUTED;fitText(ctx,'DRAFT · GOLF · SIN · FOLD',540,1315,940,24,800);return canvas;
+ const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;const ctx=canvas.getContext('2d');
+ const awards=model.awards.slice(0,5).map(award=>({...award,
+  names:wrapShareText(ctx,award.winners.map(w=>w.name).join(' & '),880,34,650),
+  details:wrapShareText(ctx,[award.winners.map(w=>w.playerName).filter(Boolean).join(' & '),award.detail].filter(Boolean).join(' · '),880,24,500)
+ }));
+ const lines=weeklyRecapLines(model).slice(1+model.awards.length).map(line=>wrapShareText(ctx,line,880,28,500));
+ const awardsH=awards.reduce((n,a)=>n+74+a.names.length*40+a.details.length*32+20,0),linesH=lines.reduce((n,l)=>n+l.length*38+28,0);
+ canvas.height=Math.max(1350,344+awardsH+linesH+130);drawShareFrame(ctx,'Clubhouse recap');
+ ctx.fillStyle=SHARE_INK.INK;fitText(ctx,`Week ${model.week} recap`,68,236,944,72,650,'left');
+ ctx.fillStyle=SHARE_INK.MUTED;fitText(ctx,`${model.season} · Final receipts`,68,284,944,27,500,'left');
+ let y=344;
+ for(const award of awards){
+  const height=74+award.names.length*40+award.details.length*32;
+  ctx.fillStyle=SHARE_INK.CARD;roundRect(ctx,68,y,944,height,22);ctx.fill();
+  ctx.fillStyle=SHARE_INK.ACCENT;fitText(ctx,award.label,100,y+40,880,24,600,'left');
+  ctx.fillStyle=SHARE_INK.INK;ctx.font=`650 34px ${FONT}`;ctx.textAlign='left';
+  award.names.forEach((line,i)=>ctx.fillText(line,100,y+88+i*40));
+  ctx.fillStyle=SHARE_INK.MUTED;ctx.font=`500 24px ${FONT}`;
+  award.details.forEach((line,i)=>ctx.fillText(line,100,y+86+award.names.length*40+i*32));
+  y+=height+20;
+ }
+ ctx.fillStyle=SHARE_INK.INK;ctx.font=`500 28px ${FONT}`;ctx.textAlign='left';
+ for(const group of lines){group.forEach((line,i)=>ctx.fillText(line,100,y+34+i*38));y+=group.length*38+28}
+ drawShareFooter(ctx,'Clubhouse recap');return canvas;
 }
 export function shareWeeklyClubhouse(model){
  if(!model.completed)return'failed';const text=weeklyRecapLines(model).join('\n'),url=new URL(weeklyHref(model.season,model.week),location.href).href;

@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 // =====================================================================
 // sportsbook-ticket.js - share one ENTRY as an image
 // ---------------------------------------------------------------------
@@ -31,7 +32,7 @@
 // of the same object look like six of the same object.
 // =====================================================================
 
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
 const W = 1080, H = 1350;
@@ -168,7 +169,7 @@ function drawLeg(ctx, leg, index, x, y, w, rowH) {
   ctx.fillStyle = CARD_2;
   roundRect(ctx, x + 18, cy - chip / 2, chip, chip, 13);
   ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, x + 18, cy - chip / 2, chip, chip, 13);
   ctx.stroke();
   const markX = x + 18 + chip / 2;
@@ -177,14 +178,14 @@ function drawLeg(ctx, leg, index, x, y, w, rowH) {
   } else {
     ctx.textAlign = "center";
     ctx.fillStyle = leg.status === "void" ? MUTED : GOLD;
-    ctx.font = `900 ${compact ? 22 : 26}px ${FONT}`;
+    ctx.font = `700 ${compact ? 22 : 26}px ${FONT}`;
     ctx.fillText(String(index + 1), markX, cy + (compact ? 8 : 9));
   }
 
   // The price first, so the name knows how much room it has left.
   ctx.textAlign = "right";
   ctx.fillStyle = leg.status === "lost" || leg.status === "void" ? MUTED : GOLD;
-  ctx.font = `900 ${compact ? 34 : 42}px ${FONT}`;
+  ctx.font = `700 ${compact ? 34 : 42}px ${FONT}`;
   const priceW = ctx.measureText(leg.odds).width;
   ctx.fillText(leg.odds, x + w - 24, cy + (compact ? 12 : 15));
 
@@ -193,9 +194,9 @@ function drawLeg(ctx, leg, index, x, y, w, rowH) {
   ctx.textAlign = "left";
   ctx.fillStyle = leg.status === "lost" || leg.status === "void" ? MUTED : INK;
   if (!leg.market) {
-    fitText(ctx, leg.pick, textX, cy + 12, textW, compact ? 30 : 36, 800, "left");
+    fitText(ctx, leg.pick, textX, cy + 12, textW, compact ? 30 : 36, 600, "left");
   } else {
-    fitText(ctx, leg.pick, textX, cy - (compact ? 2 : 4), textW, compact ? 28 : 34, 800, "left");
+    fitText(ctx, leg.pick, textX, cy - (compact ? 2 : 4), textW, compact ? 28 : 34, 600, "left");
     ctx.fillStyle = MUTED;
     fitText(ctx, leg.market, textX, cy + (compact ? 20 : 24), textW, compact ? 19 : 22, 700, "left");
   }
@@ -210,95 +211,26 @@ function drawLeg(ctx, leg, index, x, y, w, rowH) {
   in the same place on both. The picks are the only variable-height part, so
   they are the only part that flexes.
 */
-function frame(t) {
-  const multi = t.picks.length > 1;
-  const open = t.status === "open";
-  const disclaimer = H - 40;
-  const who = H - 96;
-  const chipTop = open ? null : H - 222;
-  const profit = open ? who - 72 : null;
-  const boxesTop = (profit ? profit - 30 : chipTop - 28) - 168;
-  /* The combined price: 104px on a multi so the picks above it keep their
-     room, 150px on a single where it is the only figure on the card. */
-  const priceSize = multi ? 104 : 150;
-  const priceBase = boxesTop - 34;
-  const mustLand = multi && open ? priceBase - priceSize - 14 : null;
-  const ceiling = (mustLand !== null ? mustLand : priceBase - priceSize) - 26;
-  return { multi, open, disclaimer, who, chipTop, profit, boxesTop, priceSize, priceBase, mustLand, ceiling };
+function frame(t,height=H) {
+ const multi=t.picks.length>1,open=t.status==="open",rowH=104;
+ const priceSize=multi?104:150,priceBase=multi?320+t.picks.length*rowH+136:560;
+ const boxesTop=priceBase+60,profit=open?boxesTop+220:null,chipTop=open?null:boxesTop+210;
+ return{multi,open,rowH,priceSize,priceBase,boxesTop,profit,chipTop,who:height-130,disclaimer:height-48,mustLand:multi&&open?priceBase-priceSize-10:null};
 }
 
 export function ticketCanvas(t) {
+  const base=frame(t),H=Math.max(1350,base.boxesTop+490);
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  const f = frame(t);
+  const f = frame(t,H);
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, W - 6, H - 6);
-
-  /* The brand rule: the same device the stage, the marquee, the lore card and
-     the keeper board use. Fills, so the crest's own pair. */
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 10);
-
-  /* Rows get tighter as the entry gets longer, and past four picks the crest
-     is the thing that gives way - the picks are the content. */
-  const rowH = t.picks.length <= 3 ? 100 : t.picks.length <= 4 ? 92 : 80;
-  const img = t.picks.length <= 4 ? crestImage() : null;
-  const cw = 340;
-  const ch = img ? cw * (img.naturalHeight / img.naturalWidth || 0.666) : 0;
-  const rowsH = f.multi ? t.picks.length * rowH : 0;
-  const marketH = !f.multi && t.market ? 46 : 0;
-  const headH = (img ? ch + 16 : 0) + 44 + 92 + marketH;
-
-  /*
-    WHERE THE SPARE ROOM GOES.
-
-    The brand block and the picks share everything above the price. Centring
-    that group split the leftover evenly, which on a two-pick put ~110px of
-    nothing between the last pick and the combined price those picks add up
-    to - the two things on the card with the strongest relationship, pushed
-    apart by arithmetic.
-
-    So the slack goes ABOVE the crest, where it reads as a margin, and at
-    most 60px of it is allowed to fall below the picks. A six-pick has no
-    slack to place and clamps to the top either way.
-  */
-  const groupH = headH + rowsH + (f.multi ? 14 : 0);
-  const slack = Math.max(0, f.ceiling - 38 - groupH);
-  let y = 38 + slack - Math.min(slack / 2, 60);
-
-  if (img) {
-    ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
-    y += ch + 16;
-  }
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = MUTED;
-  ctx.font = `800 25px ${FONT}`;
-  ctx.letterSpacing = "6px";
-  ctx.fillText("DFL SPORTSBOOK", W / 2, y + 22);
-  ctx.letterSpacing = "0px";
-  y += 44;
-
-  // ---- the headline: the pick, or the entry that holds them -------------
-  ctx.fillStyle = INK;
-  const titleSize = f.multi ? (t.picks.length >= 5 ? 48 : 58) : 74;
-  fitText(ctx, t.title.toUpperCase(), W / 2, y + 58, W - 140, titleSize, 900, "center");
-  y += 92;
-
-  if (marketH) {
-    ctx.fillStyle = MUTED;
-    ctx.font = `700 28px ${FONT}`;
-    fitText(ctx, t.market, W / 2, y + 8, W - 160, 28, 700, "center");
-    y += marketH;
-  }
+  drawShareFrame(ctx,"Sportsbook ticket");
+  const rowH=f.rowH;
+  ctx.textAlign="center";ctx.textBaseline="alphabetic";
+  ctx.fillStyle=INK;fitText(ctx,t.title,W/2,232,W-144,f.multi?58:74,650,"center");
+  if(t.market){ctx.fillStyle=MUTED;fitText(ctx,t.market,W/2,282,W-160,28,500,"center")}
+  let y=306;
 
   // ---- every pick on the entry, in order -------------------------------
   if (f.multi) {
@@ -309,13 +241,13 @@ export function ticketCanvas(t) {
   // ---- the price, big, because it is the brag --------------------------
   if (f.mustLand !== null) {
     ctx.fillStyle = MUTED;
-    ctx.font = `800 23px ${FONT}`;
+    ctx.font = `600 23px ${FONT}`;
     ctx.letterSpacing = "4px";
     ctx.fillText(`ALL ${t.picks.length} MUST LAND`, W / 2, f.mustLand);
     ctx.letterSpacing = "0px";
   }
   ctx.fillStyle = t.status === "lost" ? MUTED : GOLD;
-  ctx.font = `900 ${f.priceSize}px ${FONT}`;
+  ctx.font = `700 ${f.priceSize}px ${FONT}`;
   ctx.fillText(t.odds, W / 2, f.priceBase);
 
   // ---- stake / return, side by side -----------------------------------
@@ -325,16 +257,16 @@ export function ticketCanvas(t) {
     ctx.fillStyle = CARD;
     roundRect(ctx, x, f.boxesTop, boxW, boxH, 22);
     ctx.fill();
-    ctx.strokeStyle = LINE; ctx.lineWidth = 3;
+    ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
     roundRect(ctx, x, f.boxesTop, boxW, boxH, 22);
     ctx.stroke();
     ctx.fillStyle = MUTED;
-    ctx.font = `800 23px ${FONT}`;
+    ctx.font = `600 23px ${FONT}`;
     ctx.letterSpacing = "3px";
     ctx.fillText(label, x + boxW / 2, f.boxesTop + 52);
     ctx.letterSpacing = "0px";
     ctx.fillStyle = ink;
-    fitText(ctx, value, x + boxW / 2, f.boxesTop + 126, boxW - 40, 62, 900, "center");
+    fitText(ctx, value, x + boxW / 2, f.boxesTop + 126, boxW - 40, 62, 700, "center");
   };
   cell(left, t.pulled ? "REFUNDED" : "STAKE", num(t.stake), INK);
   cell(left + boxW + gap,
@@ -355,7 +287,7 @@ export function ticketCanvas(t) {
     const label = (t.pulled ? "PULLED"
       : f.multi && (t.status === "won" || t.status === "lost") ? `${t.won} OF ${t.picks.length}`
       : t.status).toUpperCase();
-    ctx.font = `900 40px ${FONT}`;
+    ctx.font = `700 40px ${FONT}`;
     const chipW = Math.min(W - 200, ctx.measureText(label).width + 96);
     const chipX = (W - chipW) / 2;
     ctx.fillStyle = CARD;
@@ -370,12 +302,10 @@ export function ticketCanvas(t) {
 
   // ---- who, and the disclaimer that keeps this a joke -----------------
   ctx.fillStyle = INK;
-  ctx.font = `800 37px ${FONT}`;
-  fitText(ctx, t.who, W / 2, f.who, W - 200, 37, 800, "center");
+  ctx.font = `600 37px ${FONT}`;
+  fitText(ctx, t.who, W / 2, f.who, W - 200, 37, 600, "center");
 
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 23px ${FONT}`;
-  ctx.fillText("SIN is play money. No cash value. Never has been.", W / 2, f.disclaimer);
+  drawShareFooter(ctx,"SIN is play money · No cash value");
 
   return canvas;
 }
@@ -426,20 +356,18 @@ export function sportsbookRecapText(recap){
 export function sportsbookRecapCanvas(recap){
   const data=sportsbookRecapData(recap);if(!data)return null;
   const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
-  ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);ctx.strokeStyle=LINE;ctx.lineWidth=6;ctx.strokeRect(3,3,W-6,H-6);
-  const grad=ctx.createLinearGradient(0,0,W,0);grad.addColorStop(0,BRAND_RED);grad.addColorStop(1,BRAND_YELLOW);ctx.fillStyle=grad;ctx.fillRect(0,0,W,10);
-  const crest=crestImage();if(crest){const width=230,height=width*(crest.naturalHeight/crest.naturalWidth||.66);ctx.drawImage(crest,(W-width)/2,54,width,height)}
-  ctx.textAlign="center";ctx.fillStyle=MUTED;ctx.font=`800 24px ${FONT}`;ctx.letterSpacing="6px";ctx.fillText("DFL SPORTSBOOK",W/2,265);ctx.letterSpacing="0px";
-  ctx.fillStyle=INK;fitText(ctx,"AFTERMATH",W/2,355,W-150,82,900,"center");
-  ctx.fillStyle=GOLD;ctx.font=`800 28px ${FONT}`;ctx.fillText(`${data.range.toUpperCase()}  ·  ${num(data.tickets)} TICKETS  ·  ${num(data.risked)} SIN RISKED`,W/2,410);
-  const gap=24,cardW=(W-128-gap)/2,cardH=320,startY=470;
+  drawShareFrame(ctx,"Sportsbook aftermath");
+  ctx.textAlign="left";ctx.fillStyle=INK;fitText(ctx,"The week's receipts",68,240,W-136,68,650,"left");
+  ctx.textAlign="center";
+  ctx.fillStyle=GOLD;ctx.font=`600 28px ${FONT}`;ctx.fillText(`${data.range.toUpperCase()}  ·  ${num(data.tickets)} TICKETS  ·  ${num(data.risked)} SIN RISKED`,W/2,306);
+  const gap=24,cardW=(W-128-gap)/2,cardH=320,startY=380;
   data.cards.forEach((card,index)=>{const col=index%2,row=Math.floor(index/2),x=52+col*(cardW+gap),y=startY+row*(cardH+gap);
     ctx.fillStyle=CARD;roundRect(ctx,x,y,cardW,cardH,24);ctx.fill();ctx.strokeStyle=index===0?GOLD:LINE;ctx.lineWidth=index===0?4:2;roundRect(ctx,x,y,cardW,cardH,24);ctx.stroke();
-    ctx.textAlign="left";ctx.fillStyle=index===0?GOLD:ACCENT;ctx.font=`900 22px ${FONT}`;ctx.letterSpacing="3px";ctx.fillText(card.label,x+28,y+52);ctx.letterSpacing="0px";
+    ctx.textAlign="left";ctx.fillStyle=index===0?GOLD:ACCENT;ctx.font=`700 22px ${FONT}`;ctx.letterSpacing="3px";ctx.fillText(card.label,x+28,y+52);ctx.letterSpacing="0px";
     ctx.fillStyle=INK;fitText(ctx,card.name,x+28,y+120,cardW-56,42,900,"left");ctx.fillStyle=GOLD;fitText(ctx,card.value,x+28,y+184,cardW-56,36,900,"left");
     ctx.fillStyle=MUTED;ctx.font=`700 24px ${FONT}`;fitText(ctx,card.note,x+28,y+246,cardW-56,24,700,"left");
   });
-  ctx.textAlign="center";ctx.fillStyle=INK;ctx.font=`900 34px ${FONT}`;ctx.fillText("THE HOUSE REMEMBERS EVERYTHING.",W/2,1240);ctx.fillStyle=MUTED;ctx.font=`700 22px ${FONT}`;ctx.fillText("SIN is play money. The embarrassment is real.",W/2,1290);
+  ctx.textAlign="center";ctx.fillStyle=INK;ctx.font=`700 34px ${FONT}`;ctx.fillText("THE HOUSE REMEMBERS EVERYTHING.",W/2,1240);ctx.fillStyle=MUTED;ctx.font=`700 22px ${FONT}`;drawShareFooter(ctx,"SIN is play money · No cash value");
   return canvas;
 }
 

@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 /* =====================================================================
    fact-share.js - a piece of DFL lore as a picture
    ---------------------------------------------------------------------
@@ -18,7 +19,7 @@
    Everything is synchronous, because the share sheet must be opened
    inside the user's gesture - see the note in share.js.
    ===================================================================== */
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 import { factLine } from "./funfacts.js";
 
@@ -52,50 +53,28 @@ export function factCanvas(fact) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-
-  // The brand rule, the same device the stage and the marquee use.
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 10);
-
-  /*
-    THE CREST AS A WATERMARK, bled off the right edge - the same
-    composition as the dfl-mark utility in the app. Drawn before the card
-    so the text sits on top of it, and at 7% for the same reason it is 7%
-    everywhere else: it should be felt rather than read.
-  */
-  const img = crestImage();
-  if (img) {
-    ctx.save();
-    ctx.globalAlpha = 0.07;
-    const cw = W * 1.05, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
-    ctx.drawImage(img, W - cw * 0.72, H / 2 - ch / 2, cw, ch);
-    ctx.restore();
-  }
+  drawShareFrame(ctx,"League lore");
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
 
   // ---- the billing -----------------------------------------------------
   ctx.fillStyle = ACCENT;
-  ctx.font = `800 34px ${FONT}`;
+  ctx.font = `600 34px ${FONT}`;
   ctx.letterSpacing = "8px";
-  ctx.fillText(fact.kicker || "DFL LORE", W / 2, 130);
+  ctx.fillText(fact.kicker || "DFL LORE", W / 2, 206);
   ctx.letterSpacing = "0px";
 
   ctx.fillStyle = MUTED;
   ctx.font = `700 30px ${FONT}`;
-  ctx.fillText(fact.ask || "DID YOU KNOW?", W / 2, 186);
+  ctx.fillText(fact.ask || "DID YOU KNOW?", W / 2, 256);
 
   // ---- the card --------------------------------------------------------
-  const pad = 70, cardTop = 240, cardBottom = H - 210;
+  const pad = 70, cardTop = 310, cardBottom = H - 210;
   ctx.fillStyle = CARD;
   roundRect(ctx, pad, cardTop, W - pad * 2, cardBottom - cardTop, 28);
   ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, pad, cardTop, W - pad * 2, cardBottom - cardTop, 28);
   ctx.stroke();
   // A weighted left edge, so the card reads as a quote rather than a box.
@@ -108,10 +87,10 @@ export function factCanvas(fact) {
   /* The headline, set as large as it can be while still fitting the card.
      Stepping down beats truncating: the number IS the fact. */
   let size = 74;
-  let lines = wrap(ctx, fact.headline, inner, size, 800);
+  let lines = wrap(ctx, fact.headline, inner, size, 600);
   while (lines.length > 5 && size > 40) {
     size -= 4;
-    lines = wrap(ctx, fact.headline, inner, size, 800);
+    lines = wrap(ctx, fact.headline, inner, size, 600);
   }
   ctx.fillStyle = INK;
   let y = cardTop + 110;
@@ -129,7 +108,7 @@ export function factCanvas(fact) {
   if (fact.season) {
     y += 24;
     const label = `${fact.season} SEASON`;
-    ctx.font = `800 28px ${FONT}`;
+    ctx.font = `600 28px ${FONT}`;
     const tw = ctx.measureText(label).width + 44;
     ctx.strokeStyle = LINE;
     roundRect(ctx, W / 2 - tw / 2, y - 34, tw, 50, 12);
@@ -138,12 +117,7 @@ export function factCanvas(fact) {
     ctx.fillText(label, W / 2, y);
   }
 
-  // ---- the footer ------------------------------------------------------
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 26px ${FONT}`;
-  ctx.letterSpacing = "4px";
-  ctx.fillText("DFL HQ", W / 2, H - 90);
-  ctx.letterSpacing = "0px";
+  drawShareFooter(ctx,fact.season?`${fact.season} season`:"League lore");
 
   return canvas;
 }

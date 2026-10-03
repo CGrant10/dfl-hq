@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter,wrapShareText} from "./share-card-style.js";
 // =====================================================================
 // trade-card.js - share one deal as an image
 // ---------------------------------------------------------------------
@@ -21,7 +22,7 @@
 // cards from one app should be recognisably the same object.
 // =====================================================================
 
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
 const W = 1080;
@@ -122,39 +123,29 @@ function packageMetrics(t) {
   return { packH, packsH: t.columns.length <= 2 ? packH : t.columns.length * (packH + 12) - 12 };
 }
 
-function canvasHeight(t) {
-  const { packsH } = packageMetrics(t);
-  const reasonCount = Math.max(1, t.remarks?.length || 0);
-  const needed = 300 + packsH + 468 + t.deltas.length * 44 + 44 + reasonCount * 128;
-  return Math.max(1800, Math.ceil(needed / 20) * 20);
-}
-
-function frame(t, height) {
-  const disclaimer = height - 40;
-  const who = height - 92;
-  const meterY = height - 168;
-  const linesBottom = meterY - 56;
-  const lineH = 44;
-  const linesTop = linesBottom - t.deltas.length * lineH;
-  const stampH = 132;
-  const reasonsH = 44 + Math.max(1, t.remarks?.length || 0) * 128;
-  const reasonsTop = linesTop - 26 - reasonsH;
-  const stampTop = reasonsTop - 26 - stampH;
-  const ceiling = stampTop - 26;
-  return { disclaimer, who, meterY, linesTop, lineH, stampTop, stampH, reasonsTop, reasonsH, ceiling };
+function frame(t) {
+ const {packH,packsH}=packageMetrics(t),measure=document.createElement('canvas').getContext('2d');
+ const reasons=(t.remarks||[]).map(reason=>{
+  const titles=wrapShareText(measure,reason.title,W-216,28,650),copies=wrapShareText(measure,reason.copy,W-216,24,500);
+  return{...reason,titles,copies,height:Math.max(112,48+titles.length*34+copies.length*32)};
+ });
+ const stampH=132,stampTop=274+packsH+28,reasonsTop=stampTop+stampH+26;
+ const reasonsH=44+reasons.reduce((sum,r)=>sum+r.height+16,0);
+ const lineH=52,linesTop=reasonsTop+reasonsH+26,meterY=linesTop+t.deltas.length*lineH+60,who=meterY+104;
+ return{packH,packsH,stampH,stampTop,reasonsTop,reasonsH,reasons,linesTop,lineH,meterY,who,height:Math.max(1350,who+154)};
 }
 
 function drawPackage(ctx, column, x, y, w, h, accent) {
   ctx.fillStyle = CARD;
   roundRect(ctx, x, y, w, h, 20);
   ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, x, y, w, h, 20);
   ctx.stroke();
 
   ctx.textAlign = "left";
   ctx.fillStyle = accent;
-  ctx.font = `800 20px ${FONT}`;
+  ctx.font = `600 20px ${FONT}`;
   ctx.letterSpacing = "3px";
   ctx.fillText(column.label.toUpperCase(), x + 20, y + 34);
   ctx.letterSpacing = "0px";
@@ -166,14 +157,14 @@ function drawPackage(ctx, column, x, y, w, h, accent) {
   for (const player of rows) {
     ctx.textAlign = "right";
     ctx.fillStyle = MUTED;
-    ctx.font = `800 26px ${FONT}`;
+    ctx.font = `600 26px ${FONT}`;
     const valueText = player.value === null ? "" : String(player.value);
     const valueW = valueText ? ctx.measureText(valueText).width : 0;
     if (valueText) ctx.fillText(valueText, x + w - 20, rowY + 22);
 
     ctx.textAlign = "left";
     ctx.fillStyle = player.value === null ? MUTED : INK;
-    fitText(ctx, player.name, x + 20, rowY + 20, w - 44 - valueW, 27, 800, "left");
+    fitText(ctx, player.name, x + 20, rowY + 20, w - 44 - valueW, 27, 600, "left");
     if (player.meta) {
       ctx.fillStyle = MUTED;
       fitText(ctx, player.meta, x + 20, rowY + 42, w - 44 - valueW, 19, 700, "left");
@@ -183,100 +174,38 @@ function drawPackage(ctx, column, x, y, w, h, accent) {
 
   /* The total, on a rule, because the whole point of the two columns is that
      you can see the arithmetic instead of trusting a percentage. */
-  ctx.strokeStyle = LINE; ctx.lineWidth = 2;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(x + 20, y + h - 62);
   ctx.lineTo(x + w - 20, y + h - 62);
   ctx.stroke();
   ctx.textAlign = "left";
   ctx.fillStyle = MUTED;
-  ctx.font = `800 20px ${FONT}`;
+  ctx.font = `600 20px ${FONT}`;
   ctx.letterSpacing = "3px";
   ctx.fillText("VALUE", x + 20, y + h - 26);
   ctx.letterSpacing = "0px";
   ctx.textAlign = "right";
   ctx.fillStyle = accent;
-  ctx.font = `900 42px ${FONT}`;
+  ctx.font = `700 42px ${FONT}`;
   ctx.fillText(String(column.total), x + w - 20, y + h - 20);
   ctx.textAlign = "center";
 }
 
-function wrappedLines(ctx, text, maxWidth, maxLines = 3) {
-  const words = String(text || "").split(/\s+/).filter(Boolean);
-  const lines = [];
-  let line = "";
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(next).width > maxWidth) {
-      lines.push(line);
-      line = word;
-      if (lines.length === maxLines - 1) break;
-    } else line = next;
-  }
-  if (line && lines.length < maxLines) {
-    const used = lines.join(" ").split(/\s+/).filter(Boolean).length;
-    const remaining = words.slice(used).join(" ");
-    let final = remaining || line;
-    while (ctx.measureText(final).width > maxWidth && final.length > 1) final = `${final.slice(0, -2).trim()}…`;
-    lines.push(final);
-  }
-  return lines;
-}
-
 export function dealCanvas(t) {
-  const H = canvasHeight(t);
+  const f=frame(t),H=f.height;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  const f = frame(t, H);
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, W - 6, H - 6);
 
-  [BRAND_RED, GOLD, INK, CARD_2].forEach((colour, index) => {
-    ctx.fillStyle = colour;
-    ctx.fillRect(index * W / 4, 0, W / 4, 12);
-  });
-
-  const img = t.columns.length <= 2 ? crestImage() : null;
-  const cw = 260;
-  const ch = img ? cw * (img.naturalHeight / img.naturalWidth || 0.666) : 0;
-  const headH = (img ? ch + 14 : 0) + 40 + 66;
-
-  /* Two parties sit side by side; three or more stack, because a 1080px card
-     cannot hold three readable columns.
-
-     The boxes are sized to their contents rather than to a constant - a
-     fixed 300px left a one-player package two thirds empty - and both
-     columns take the TALLER of the two, because two side-by-side boxes of
-     different heights read as a layout bug rather than as a short package. */
-  const side = t.columns.length <= 2;
-  const { packH, packsH } = packageMetrics(t);
-  const groupH = headH + 18 + packsH;
-  const slack = Math.max(0, f.ceiling - 34 - groupH);
-  let y = 34 + slack - Math.min(slack / 2, 50);
-
-  if (img) {
-    ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
-    y += ch + 14;
-  }
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = MUTED;
-  ctx.font = `800 24px ${FONT}`;
-  ctx.letterSpacing = "6px";
-  ctx.fillText("DFL TRADE ANALYZER", W / 2, y + 20);
-  ctx.letterSpacing = "0px";
-  y += 40;
-
-  ctx.fillStyle = INK;
-  fitText(ctx, t.multi ? `${t.columns.length}-TEAM DEAL` : `${t.forWhom.toUpperCase()}  ⇄  ${t.against.toUpperCase()}`,
-    W / 2, y + 42, W - 120, 44, 900, "center");
-  y += 66 + 18;
+  drawShareFrame(ctx,"Trade analyzer");
+  const side=t.columns.length<=2;
+  const {packH}=packageMetrics(t);
+  let y=176;
+  ctx.fillStyle=INK;ctx.textBaseline="alphabetic";
+  fitText(ctx,t.multi?`${t.columns.length}-team deal`:`${t.forWhom}  ⇄  ${t.against}`,W/2,y+44,W-144,48,650,"center");
+  y+=98;
 
   // ---- the packages ---------------------------------------------------
   if (side) {
@@ -300,7 +229,7 @@ export function dealCanvas(t) {
   ctx.stroke();
   ctx.textAlign = "center";
   ctx.fillStyle = callInk;
-  fitText(ctx, t.call, W / 2, f.stampTop + 74, W - 240, 66, 900, "center");
+  fitText(ctx, t.call, W / 2, f.stampTop + 74, W - 240, 66, 700, "center");
   ctx.fillStyle = MUTED;
   ctx.font = `700 24px ${FONT}`;
   /* Not "· for X" as well: on any deal you win, the winner and the point of
@@ -312,29 +241,21 @@ export function dealCanvas(t) {
   // ---- every DFLyzer description, with room to read it ----------------
   ctx.textAlign = "left";
   ctx.fillStyle = MUTED;
-  ctx.font = `800 20px ${FONT}`;
+  ctx.font = `600 20px ${FONT}`;
   ctx.letterSpacing = "3px";
   ctx.fillText("THE FULL DFLYZER READ", 80, f.reasonsTop + 24);
   ctx.letterSpacing = "0px";
   const reasonInk = tone => tone === "bad" ? ACCENT : tone === "good" ? GOLD : tone === "warn" ? BRAND_YELLOW : MUTED;
-  (t.remarks || []).forEach((reason, index) => {
-    const top = f.reasonsTop + 44 + index * 128;
-    ctx.fillStyle = CARD_2;
-    roundRect(ctx, 80, top, W - 160, 116, 18);
-    ctx.fill();
-    ctx.fillStyle = reasonInk(reason.tone);
-    roundRect(ctx, 80, top, 7, 116, 4);
-    ctx.fill();
-    ctx.fillStyle = reasonInk(reason.tone);
-    fitText(ctx, reason.title, 108, top + 34, W - 216, 27, 900, "left");
-    if (reason.copy) {
-      ctx.fillStyle = INK;
-      ctx.font = `600 20px ${FONT}`;
-      wrappedLines(ctx, reason.copy, W - 216, 3).forEach((line, lineIndex) => {
-        ctx.fillText(line, 108, top + 63 + lineIndex * 23);
-      });
-    }
-  });
+  let reasonY=f.reasonsTop+44;
+  for(const reason of f.reasons){
+   ctx.fillStyle=CARD_2;roundRect(ctx,80,reasonY,W-160,reason.height,22);ctx.fill();
+   ctx.fillStyle=reasonInk(reason.tone);roundRect(ctx,80,reasonY,4,reason.height,2);ctx.fill();
+   ctx.textAlign='left';ctx.font=`650 28px ${FONT}`;
+   reason.titles.forEach((line,i)=>ctx.fillText(line,108,reasonY+38+i*34));
+   ctx.fillStyle=INK;ctx.font=`500 24px ${FONT}`;
+   reason.copies.forEach((line,i)=>ctx.fillText(line,108,reasonY+54+reason.titles.length*34+i*32));
+   reasonY+=reason.height+16;
+  }
 
   // ---- what it does to each lineup ------------------------------------
   t.deltas.forEach((row, index) => {
@@ -350,7 +271,7 @@ export function dealCanvas(t) {
     fitText(ctx, `${row.team} lineup`, 80, lineY + 32, W - 400, 24, 700, "left");
     ctx.textAlign = "right";
     ctx.fillStyle = row.delta >= 0 ? GOLD : ACCENT;
-    ctx.font = `900 30px ${FONT}`;
+    ctx.font = `700 30px ${FONT}`;
     ctx.fillText(`${signed(row.delta)} / wk`, W - 80, lineY + 33);
   });
 
@@ -374,7 +295,7 @@ export function dealCanvas(t) {
   ctx.fill();
   ctx.textAlign = "left";
   ctx.fillStyle = MUTED;
-  ctx.font = `800 19px ${FONT}`;
+  ctx.font = `600 19px ${FONT}`;
   ctx.letterSpacing = "2px";
   ctx.fillText("LOPSIDED", barX, f.meterY + 42);
   ctx.textAlign = "right";
@@ -382,16 +303,14 @@ export function dealCanvas(t) {
   ctx.letterSpacing = "0px";
   ctx.textAlign = "center";
   ctx.fillStyle = INK;
-  ctx.font = `900 22px ${FONT}`;
+  ctx.font = `700 22px ${FONT}`;
   ctx.fillText(`${t.fairness}% BALANCE`, W / 2, f.meterY - 14);
 
   // ---- who, and the disclaimer that keeps this a model -----------------
   ctx.fillStyle = INK;
-  ctx.font = `800 34px ${FONT}`;
-  fitText(ctx, t.who, W / 2, f.who, W - 200, 34, 800, "center");
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 22px ${FONT}`;
-  ctx.fillText("A model estimate on DFL scoring. Not a promise, and not a trade offer.", W / 2, f.disclaimer);
+  ctx.font = `600 34px ${FONT}`;
+  fitText(ctx, t.who, W / 2, f.who, W - 200, 34, 600, "center");
+  drawShareFooter(ctx,"DFLyzer · Model estimate, not a promise");
 
   return canvas;
 }

@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter,shareMonogram} from "./share-card-style.js";
 // =====================================================================
 // profile-share.js - one member's DFL scouting report, as an image.
 // ---------------------------------------------------------------------
@@ -6,7 +7,7 @@
 // No invented stats and no random roast copy.
 // =====================================================================
 
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 import { dflSeasonCount } from "./config.js";
 
@@ -139,22 +140,23 @@ export function profileShareText(d) {
 
 function drawStat(ctx, x, y, w, label, value) {
   ctx.fillStyle = MUTED;
-  ctx.font = `800 20px ${FONT}`;
+  ctx.font = `600 20px ${FONT}`;
   ctx.letterSpacing = "2px";
   ctx.fillText(label, x + w / 2, y + 22);
   ctx.letterSpacing = "0px";
   ctx.fillStyle = INK;
-  fitText(ctx, value, x + w / 2, y + 73, w - 18, 46, 900, "center");
+  fitText(ctx, value, x + w / 2, y + 73, w - 18, 46, 700, "center");
 }
 
 function drawReceiptColumn(ctx, x, y, w, h, title, list, ink, emptyText) {
+  ctx.textAlign="center";
   ctx.fillStyle = CARD;
   roundRect(ctx, x, y, w, h, 24); ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 3;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, x, y, w, h, 24); ctx.stroke();
 
   ctx.fillStyle = ink;
-  ctx.font = `900 27px ${FONT}`;
+  ctx.font = `700 27px ${FONT}`;
   ctx.letterSpacing = "4px";
   ctx.fillText(title, x + w / 2, y + 42);
   ctx.letterSpacing = "0px";
@@ -166,14 +168,11 @@ function drawReceiptColumn(ctx, x, y, w, h, title, list, ink, emptyText) {
     return;
   }
 
-  const rowH = (h - 64) / Math.max(5, list.length);
-  list.forEach(([label, value], i) => {
-    const ry = y + 64 + i * rowH;
-    ctx.fillStyle = MUTED;
-    ctx.font = `700 19px ${FONT}`;
-    fitText(ctx, label, x + w / 2, ry + 22, w - 30, 19, 700, "center");
-    ctx.fillStyle = ink;
-    fitText(ctx, value, x + w / 2, ry + 60, w - 30, 38, 900, "center");
+  const rowH=(h-90)/Math.max(1,list.length);
+  list.forEach(([label,value],i)=>{
+    const ry=y+95+i*rowH;
+    ctx.fillStyle=MUTED;fitText(ctx,label,x+24,ry,w*.58-28,24,500,"left");
+    ctx.fillStyle=ink;fitText(ctx,value,x+w-24,ry,w*.36,32,650,"right");
   });
 }
 
@@ -198,52 +197,18 @@ export function profileShareCanvas(d) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, W - 6, H - 6);
-
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, BRAND_RED);
-  grad.addColorStop(1, BRAND_YELLOW);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 12);
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-
-  // ---- identity -------------------------------------------------------
-  let y = 55;
-  const img = crestImage();
-  if (img) {
-    const cw = 210;
-    const ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
-    ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
-    y += ch + 12;
-  }
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `900 20px ${FONT}`;
-  ctx.letterSpacing = "5px";
-  ctx.fillText("DFL PLAYER FILE", W / 2, y + 20);
-  ctx.letterSpacing = "0px";
-  y += 34;
-
-  ctx.fillStyle = INK;
-  fitText(ctx, d.who.toUpperCase(), W / 2, y + 58, W - 120, 72, 900, "center");
-  y += 80;
-  if (d.team) {
-    ctx.fillStyle = MUTED;
-    fitText(ctx, d.team, W / 2, y + 28, W - 150, 29, 700, "center");
-    y += 46;
-  }
+  drawShareFrame(ctx,"Member profile");
+  ctx.textBaseline="alphabetic";ctx.fillStyle=INK;
+  shareMonogram(ctx,d.who,W-172,180,100);
+  fitText(ctx,d.who,70,238,W-285,72,650,"left");
+  if(d.team){ctx.fillStyle=MUTED;fitText(ctx,d.team,70,288,W-270,29,500,"left")}
+  let y=342;ctx.textAlign="center";
 
   // ---- career strip ---------------------------------------------------
   const sx = 70, sw = W - 140, sh = 112;
   ctx.fillStyle = CARD;
   roundRect(ctx, sx, y, sw, sh, 22); ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 3;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, sx, y, sw, sh, 22); ctx.stroke();
 
   const stats = [
@@ -259,29 +224,28 @@ export function profileShareCanvas(d) {
 
   // ---- the two things DFL actually cares about ------------------------
   const gap = 28, colW = (W - 140 - gap) / 2;
-  const colH = 420;
+  const colH = Math.max(270,100+Math.max(d.trophyCase.length,d.crimeScene.length)*68);
   drawReceiptColumn(ctx, 70, y, colW, colH, "TROPHY CASE", d.trophyCase, GOLD, "Nothing in the case yet");
   drawReceiptColumn(ctx, 70 + colW + gap, y, colW, colH, "CRIME SCENE", d.crimeScene, ACCENT, "No bodies on record");
   y += colH + 26;
 
+  ctx.textAlign="center";
   // ---- verdict --------------------------------------------------------
   const vh = 150;
   ctx.fillStyle = CARD;
   roundRect(ctx, 70, y, W - 140, vh, 22); ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 3;
+  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
   roundRect(ctx, 70, y, W - 140, vh, 22); ctx.stroke();
   ctx.fillStyle = OK;
-  ctx.font = `900 22px ${FONT}`;
+  ctx.font = `700 22px ${FONT}`;
   ctx.letterSpacing = "4px";
   ctx.fillText("DFL VERDICT", W / 2, y + 38);
   ctx.letterSpacing = "0px";
   ctx.fillStyle = INK;
-  ctx.font = `800 28px ${FONT}`;
+  ctx.font = `600 28px ${FONT}`;
   wrapText(ctx, d.verdict, W / 2, y + 78, W - 210, 33, 2);
 
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 22px ${FONT}`;
-  ctx.fillText("DFL HQ · Draft ★ Golf ★ Sin ★ Fold", W / 2, H - 34);
+  drawShareFooter(ctx,`${d.seasons} DFL seasons`);
 
   return canvas;
 }

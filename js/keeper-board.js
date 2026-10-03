@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 // =====================================================================
 // keeper-board.js - the whole league's keepers, as one picture
 // ---------------------------------------------------------------------
@@ -38,7 +39,7 @@
 // uses so a keeper board and a golf board look like the same league.
 // =====================================================================
 
-import { FONT, crestImage, roundRect, fitText, shareCanvas, shareText } from "./share.js";
+import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 import { describeRules, keeperTenure } from "./keeper-rules.js";
 
@@ -180,47 +181,24 @@ export function boardText(board) {
  * running off the bottom. Row height is computed, never assumed.
  */
 export function boardCanvas(board) {
+  const lines=[...board.rows,...(board.also.length?[{keepers:board.also}]:[])].reduce((n,r)=>n+Math.max(1,r.keepers.length),0);
+  const H=Math.max(1350,470+lines*86);
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = LINE;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, W - 6, H - 6);
-
-  /* The brand rule, the same device the stage, the marquee and the lore card
-     use. Fills, so the crest's own pair rather than the readable pair. */
-  const grad = ctx.createLinearGradient(0, 0, W, 0);
-  grad.addColorStop(0, BRAND_RED); grad.addColorStop(1, BRAND_YELLOW);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, 10);
-
-  // ---- the billing ----------------------------------------------------
-  /*
-    THE CREST IS THE BILLING. At 300px it was still only 28% of a 1080px card
-    and read like a header icon in chat previews. At 460px it owns roughly 43%
-    of the canvas width, while tighter surrounding gaps preserve room for the
-    keeper rows below.
-  */
-  let y = 48;
-  const img = crestImage();
-  if (img) {
-    const cw = 460, ch = cw * (img.naturalHeight / img.naturalWidth || 0.666);
-    ctx.drawImage(img, (W - cw) / 2, y, cw, ch);
-    y += ch + 24;
-  }
+  drawShareFrame(ctx,"Keeper board");
+  let y=220;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = INK;
-  ctx.font = `900 66px ${FONT}`;
+  ctx.font = `700 66px ${FONT}`;
   ctx.fillText(`${board.season} KEEPERS`, W / 2, y);
   y += 42;
 
   ctx.fillStyle = MUTED;
-  ctx.font = `800 26px ${FONT}`;
+  ctx.font = `600 26px ${FONT}`;
   ctx.letterSpacing = "4px";
   ctx.fillText(`${board.submitted} OF ${board.total} SUBMITTED`, W / 2, y);
   ctx.letterSpacing = "0px";
@@ -251,7 +229,7 @@ export function boardCanvas(board) {
   ];
   /* Two keepers under one member needs a taller row than one, so the budget is
      divided by LINES rather than by rows. */
-  const lines = drawn.reduce((t, r) => t + Math.max(1, r.keepers.length), 0);
+
   /*
     A row is capped so a four-team league does not get four enormous bars, and
     the block is then CENTRED in what is left. Without the centring, a six-team
@@ -263,7 +241,7 @@ export function boardCanvas(board) {
   const used = unit * lines;
 
   ctx.textBaseline = "middle";
-  let ry = top + Math.max(0, (listH - used) / 2);
+  let ry = top;
 
   for (const row of drawn) {
     const count = Math.max(1, row.keepers.length);
@@ -291,7 +269,7 @@ export function boardCanvas(board) {
        stay PROPORTIONAL to it. A fixed 21px under a team name that had to shrink
        to 18 made the label smaller than its own subtitle. */
     const nameSize = fitText(ctx, label, nameX, twoLine ? midY - 13 : midY,
-                             370, 30, 800, "left");
+                             370, 30, 600, "left");
     if (twoLine) {
       ctx.fillStyle = MUTED;
       ctx.font = `700 ${Math.min(21, Math.max(15, nameSize - 6))}px ${FONT}`;
@@ -309,7 +287,7 @@ export function boardCanvas(board) {
         const ky = ry + unit * i + (unit - rowGap) / 2;
         ctx.textAlign = "left";
         ctx.fillStyle = INK;
-        fitText(ctx, k.name, px, k.where ? ky - 12 : ky, W - px - 150, 30, 800, "left");
+        fitText(ctx, k.name, px, k.where ? ky - 12 : ky, W - px - 150, 30, 600, "left");
         if (k.where) {
           ctx.fillStyle = MUTED;
           ctx.font = `700 20px ${FONT}`;
@@ -338,7 +316,7 @@ export function boardCanvas(board) {
             ctx.fill();
           });
           ctx.fillStyle = t.final ? ACCENT : MUTED;
-          ctx.font = `800 19px ${FONT}`;
+          ctx.font = `600 19px ${FONT}`;
           ctx.textAlign = "left";
           ctx.fillText(`YR ${t.year}/${t.max}`, tx + t.max * (pipW + pipGap) + 8, ty + 1);
         }
@@ -346,11 +324,11 @@ export function boardCanvas(board) {
         ctx.textAlign = "right";
         if (k.round != null) {
           ctx.fillStyle = ACCENT;
-          ctx.font = `900 34px ${FONT}`;
+          ctx.font = `700 34px ${FONT}`;
           ctx.fillText(`R${k.round}`, W - 76, ky);
         } else {
           ctx.fillStyle = MUTED;
-          ctx.font = `800 30px ${FONT}`;
+          ctx.font = `600 30px ${FONT}`;
           ctx.fillText("—", W - 76, ky);
         }
       });
@@ -359,16 +337,7 @@ export function boardCanvas(board) {
     ry += unit * count;
   }
 
-  // ---- the footer -----------------------------------------------------
-  ctx.textBaseline = "alphabetic";
-  ctx.textAlign = "center";
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 26px ${FONT}`;
-  ctx.letterSpacing = "4px";
-  ctx.fillText("DFL HQ", W / 2, H - 58);
-  ctx.letterSpacing = "0px";
-  ctx.font = `700 22px ${FONT}`;
-  ctx.fillText("cgrant10.github.io/dfl-hq", W / 2, H - 26);
+  drawShareFooter(ctx,`${board.season} season`);
 
   return canvas;
 }

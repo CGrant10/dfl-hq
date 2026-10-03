@@ -1,3 +1,4 @@
+import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 import { FONT, fitText, shareCanvas } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
 
@@ -64,7 +65,7 @@ function drawScoreMark(ctx, value, mark, x, y, w, h) {
     const inset = mark === "eagle" || mark === "double" ? 4 : 0;
     ctx.fillStyle = isGood ? GOOD_BG : BAD_BG;
     ctx.strokeStyle = isGood ? GOLD : ACCENT;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     if (isGood) {
       ctx.beginPath();
       ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
@@ -97,14 +98,15 @@ function drawHeader(ctx, column, x, y, w, h) {
 }
 
 export function scorecardCanvas(model) {
+  const H=Math.max(900,500+model.rows.length*64);
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+  drawShareFrame(ctx,"Golf scorecard");
 
-  const margin = 38;
-  const tableTop = model.context ? 125 : 105;
-  const footerH = 34, headerH = 86;
+  const margin = 68;
+  const tableTop = model.context ? 296 : 260;
+  const footerH = 100, headerH = 86;
   const tableW = W - margin * 2;
   const nameW = Math.min(270, Math.max(205, tableW * .17));
   const dataW = (tableW - nameW) / Math.max(1, model.columns.length);
@@ -113,10 +115,10 @@ export function scorecardCanvas(model) {
   const renderedTableH = headerH + rowH * model.rows.length;
 
   ctx.fillStyle = INK; ctx.textBaseline = "alphabetic";
-  fitText(ctx, model.title.toUpperCase(), margin, 58, W - margin * 2, 36, 900, "left");
+  fitText(ctx, model.title.toUpperCase(), margin, 214, W - margin * 2, 36, 700, "left");
   if (model.context) {
     ctx.fillStyle = MUTED;
-    fitText(ctx, model.context, margin, 92, W - margin * 2, 20, 650, "left");
+    fitText(ctx, model.context, margin, 256, W - margin * 2, 20, 650, "left");
   }
   ctx.fillStyle = GOLD; ctx.fillRect(margin, tableTop - 8, tableW, 8);
 
@@ -130,7 +132,7 @@ export function scorecardCanvas(model) {
     ctx.fillStyle = rowIndex % 2 ? CARD_2 : PAPER;
     ctx.fillRect(margin, y, tableW, rowH);
     ctx.fillStyle = INK; ctx.textBaseline = "middle";
-    fitText(ctx, row.name, margin + 14, y + (row.detail ? rowH * .4 : rowH / 2), nameW - 28, Math.min(21, rowH * .34), 800, "left");
+    fitText(ctx, row.name, margin + 14, y + (row.detail ? rowH * .4 : rowH / 2), nameW - 28, Math.min(21, rowH * .34), 600, "left");
     if (row.detail) {
       ctx.fillStyle = MUTED;
       fitText(ctx, row.detail, margin + 14, y + rowH * .7, nameW - 28, Math.min(14, rowH * .24), 600, "left");
@@ -159,7 +161,7 @@ export function scorecardCanvas(model) {
   });
 
   ctx.fillStyle = MUTED; ctx.textBaseline = "alphabetic";
-  fitText(ctx, "DFL HQ · GOLF SCORECARD", W - margin, H - 18, W / 2, 15, 750, "right");
+  drawShareFooter(ctx,"Golf scorecard");
   return canvas;
 }
 
