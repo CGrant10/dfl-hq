@@ -28,6 +28,7 @@
    ===================================================================== */
 
 import { esc } from "./ui.js";
+import { injurySlideMarkup } from "./injury-report-ui.js";
 import { marquee } from "./marquee.js";
 import { artworkStyle } from "./broadcast-artwork.js";
 import { teamPortrait } from "./team-presentation.js";
@@ -179,7 +180,7 @@ function hero(item) {
     </div>`;
 }
 
-const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero, slate };
+const TREATMENTS = { scoreboard, champion, stat, announcement, event, hero, slate, injuries: injurySlideMarkup };
 
 /*
   THE PLATE A SLIDE SITS ON.
@@ -890,6 +891,7 @@ export function startStage(root, deck, { refresh } = {}) {
 
   return {
     update(next) { update(next); armPoll(); },
+    suspend(reason, on = true) { softPause(reason, on); },
     stop() {
       dead = true;
       clear();

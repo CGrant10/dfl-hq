@@ -54,6 +54,9 @@ import { loadLeagueState } from "../league-state.js";
 import { buildWeeklyBriefing } from "../weekly-briefing.js";
 import { buildAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
+import {loadNflInjuries} from "../injury-report-data.js";
+import {buildInjuryReport,injuryReportSlide} from "../injury-report-model.js";
+import {mountInjuryReport} from "../injury-report-ui.js";
 import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 
 let stage = null;
@@ -411,6 +414,7 @@ export async function render(view) {
   const today = new Date().toISOString().slice(0, 10);
   /* These reads do not depend on the core dashboard rows. Starting them now
      removes an entire network waterfall from Home without changing its data. */
+  const injuryPromise = loadNflInjuries().catch(()=>null);
   const manualPromise = loadBroadcastItems();
   const overridesPromise = loadBroadcastOverrides();
   const lorePromise = loadLore();
@@ -608,11 +612,14 @@ export async function render(view) {
      into it so a refresh() that reloads the commissioner's hand-written
      items cannot drop them. */
   let liveSlides = [];
+  let injuryReport=null,injuryAnalysis=null;
+  const injuryUi=mountInjuryReport(view,{getReport:()=>injuryReport,onOpen:()=>stage?.suspend('injury-report',true),onClose:()=>stage?.suspend('injury-report',false),refresh:async()=>{const data=await loadNflInjuries({force:true});if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});stage?.update(build(golfDayNow));injuryUi.update()}});
+  deferredStops.push(()=>injuryUi.stop());
   let golfDayNow = golfDay;
   const off = broadcastOff();
   const build = (day) => editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
-    { custom: [...custom, ...liveSlides], off, overrides },
+    { custom: [...custom, ...liveSlides, injuryReportSlide(injuryReport)].filter(Boolean), off, overrides },
   );
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
@@ -623,6 +630,14 @@ export async function render(view) {
     golfDayNow = day;
     return build(day);
   };
+
+  const updateInjuries=async()=>{
+    if(document.visibilityState!=='visible'||mine!==generation||!injuryAnalysis)return;
+    try{const data=await loadNflInjuries();if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});stage?.update(build(golfDayNow));injuryUi.update()}catch{/* Keep the last checked report and its timestamp. */}
+  };
+  const injuryTimer=setInterval(()=>void updateInjuries(),5*60*1000);
+  document.addEventListener('visibilitychange',updateInjuries);
+  deferredStops.push(()=>{clearInterval(injuryTimer);document.removeEventListener('visibilitychange',updateInjuries)});
 
   const startHomeStage = deck => {
     if (mine !== generation || !view.isConnected) return;
@@ -636,9 +651,11 @@ export async function render(view) {
     if (root) stage = startStage(root, ordered, { refresh });
   };
 
-  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts]) => {
+  Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
+    injuryAnalysis=analysis;
+    if(injuries)injuryReport=buildInjuryReport(injuries.payload,{analysis,now:injuries.checkedAt});
     lore = got?.error ? null : got;
     const aheadData = await weekAheadSlide({
       analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
