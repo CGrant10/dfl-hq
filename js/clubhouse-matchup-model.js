@@ -5,13 +5,13 @@ export function nflWeekStatuses(payload,season,week){
  if(Number(payload?.season?.year)!==Number(season)||Number(payload?.season?.type)!==2||Number(payload?.week?.number)!==Number(week)||!payload.events?.length)throw Error('NFL week status unavailable');
  const teams=new Map();
  for(const event of payload.events){const type=event.status?.type||{},key=type.completed||type.state==='post'?'final':type.state==='in'?'live':type.state==='pre'?'upcoming':'unknown';
-  for(const team of event.competitions?.[0]?.competitors||[])teams.set(club(team.team?.abbreviation),{key,label:type.shortDetail||type.description||'',kickoff:event.date});
+  for(const team of event.competitions?.[0]?.competitors||[])teams.set(club(team.team?.abbreviation),{key,label:type.shortDetail||type.description||'',kickoff:event.date,afterHalftime:key==='final'||key==='live'&&Number(event.status?.period)>=3});
  }
  return teams;
 }
 export function matchupTeamView(row,players={},schedule=null,{completed=false}={}){
  const ids=(row?.starters||[]).map(String).filter(id=>id!=='0');
- const starters=ids.map(id=>{const meta=players[id]||{},state=schedule?.get(club(meta.t));return{id,name:meta.n||`Player ${id}`,position:meta.p||'',nflTeam:meta.t||'',injuryStatus:completed?'':meta.i||'',points:number(row?.players_points?.[id]),state:completed?'final':state?.key||'unknown'}});
+ const starters=ids.map(id=>{const meta=players[id]||{},state=schedule?.get(club(meta.t));return{id,name:meta.n||`Player ${id}`,position:meta.p||'',nflTeam:meta.t||'',injuryStatus:completed?'':meta.i||'',points:number(row?.players_points?.[id]),state:completed?'final':state?.key||'unknown',afterHalftime:completed||state?.afterHalftime===true}});
  const known=starters.length>0&&starters.every(p=>p.state!=='unknown');
  const remaining=completed?0:known?starters.filter(p=>p.state!=='final').length:null;
  const live=starters.filter(p=>p.state==='live').length;
