@@ -29,25 +29,27 @@ void main(){
  if(u_cold<.5){
   float t=u_time;
   float height=clamp((u_glyph.y+u_glyph.w*.8-p.y)/(u_glyph.w*1.65),0.,1.);
-  float flow=fbm(vec2(p.x*.075,p.y*.07+t*1.45));
-  float sway=(flow-.5)*(5.+height*15.);
+  vec2 field=vec2(p.x*.11,p.y*.095+t*1.35);
+  vec2 curl=vec2(fbm(field*.65+vec2(t*.18,0.)),fbm(field*.65+19.7));
+  float flow=fbm(field+(curl-.5)*2.4);
+  float sway=(flow-.5)*(3.+height*8.);
   vec4 emission=texture2D(u_mask,vec2(clamp((p.x+sway)/u_size.x,0.,1.),.5));
   float top=emission.g*u_size.y;
-  float rise=clamp((top-p.y)/(u_glyph.w*1.5),0.,1.);
-  float fuel=emission.r*(1.-rise*.74);
-  float plume=smoothstep(.24,.62,fuel+(flow-.5)*.72)*emission.r;
+  float rise=clamp((top-p.y)/(u_glyph.w*.92),0.,1.);
+  float fuel=emission.r*pow(1.-rise,.72);
+  float plume=smoothstep(.25,.76,fuel+(flow-.5)*.72)*emission.r*(1.-smoothstep(.8,1.,rise));
   plume*=1.-smoothstep(top-1.,top+7.,p.y);
   float flicker=.82+.18*noise(vec2(p.x*.09,t*1.1));
-  float fire=max(edge*.86,plume*flicker)*(1.-glyph);
+  float fire=max(edge*.55,plume*flicker)*(1.-glyph);
   float heat=clamp(fire*.9+(1.-height)*.2,0.,1.);
   color=mix(vec3(.95,.12,.015),vec3(1.,.68,.12),heat);
   color=mix(color,vec3(1.,.96,.68),pow(heat,4.)*.85);
-  alpha=fire*.86+halo*.14;
+  alpha=fire*.74+halo*.09;
   float sparks=0.;
-  for(int i=0;i<12;i++){
+  for(int i=0;i<8;i++){
    float id=float(i),seed=hash(vec2(id,3.));float life=fract(t*(.24+seed*.18)+seed);
-   vec2 q=vec2(u_glyph.x+hash(vec2(id,8.))*u_glyph.z+sin(t*1.3+id)*life*7.,u_glyph.y+u_glyph.w*.7-life*(u_glyph.w+28.));
-   vec2 delta=(p-q)*vec2(1.,.7);float r=.65+seed*.65;
+   vec2 q=vec2(u_glyph.x+hash(vec2(id,8.))*u_glyph.z+sin(t*1.3+id)*life*7.,u_glyph.y+u_glyph.w*.7-life*(u_glyph.w*.7+12.));
+   vec2 delta=(p-q)*vec2(1.,.7);float r=.45+seed*.4;
    sparks+=exp(-dot(delta,delta)/(r*r*2.))*(sin(life*3.14159))*.7;
   }
   color=mix(color,vec3(1.,.72,.25),clamp(sparks,0.,1.));alpha=max(alpha,sparks)*(1.-glyph);

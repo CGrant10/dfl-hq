@@ -1470,13 +1470,11 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 /* Score temperature is decoration around the recorded number. */
 :root { --gd-hot-ink:#ffca76; --gd-cold-ink:#9adfff; --gd-steady-ink:#ffe08b; }
 :root[data-mode="light"] { --gd-hot-ink:#9c3900; --gd-cold-ink:#155b94; --gd-steady-ink:#765700; }
-.gd-thermal-number { position:relative; display:inline-flex; align-items:center; justify-content:center; gap:.1em; isolation:isolate; white-space:nowrap; }
+.gd-thermal-number { position:relative; display:inline-block; vertical-align:baseline; isolation:isolate; white-space:nowrap; }
 .gd-thermal-value { position:relative; z-index:1; }
 .gd-thermal-number[data-score-temperature="hot"] { color:var(--gd-hot-ink); text-shadow:0 0 .5em #ff711a35; }
 .gd-thermal-number[data-score-temperature="cold"] { color:var(--gd-cold-ink); text-shadow:0 0 .5em #66cfff30; }
 .gd-thermal-number[data-score-temperature="steady"] { color:var(--gd-steady-ink); }
-.gd-score-marker { position:relative; z-index:1; display:inline-flex; width:.55em; height:.75em; flex:0 0 .55em; }
-.gd-score-marker svg { width:100%; height:100%; }
 .gd-vfx-canvas { position:absolute; pointer-events:none; z-index:2; border-radius:inherit; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="hot"] { background:linear-gradient(0deg,#ff831016,transparent 65%); border-top-color:#df6b13; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="cold"] { background:linear-gradient(0deg,#42baf216,transparent 65%); border-top-color:#309bd0; }
@@ -1487,9 +1485,11 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 [data-team-temperature="steady"] .gd-team-form { color:var(--gd-steady-ink); }
 @media(max-width:360px) { .gameday-faceoff-team .gd-thermal-number { font-size:min(1.75rem,8vw); } }
 
-.gameday-spotlight-score strong.gd-thermal-number { display:inline-flex; line-height:1.15; }
+.gameday-spotlight-score strong.gd-thermal-number { display:inline-block; line-height:1.15; }
 
 /* Leave breathing room for the GPU flame crowns and keep score labels clear. */
-.gameday-faceoff-team .gd-thermal-number { margin-top:24px; }
-.gameday-spotlight-score { padding-top:32px; }
+.gameday-faceoff-team .gd-thermal-number { margin-top:16px; }
+.gameday-spotlight-score { padding-top:24px; }
 .gameday-spotlight-score small { margin-top:6px; }
+
+.gameday-player-score { justify-items:end; }

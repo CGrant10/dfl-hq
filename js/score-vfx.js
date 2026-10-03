@@ -35,7 +35,7 @@ export function mountScoreVfx(root){
     gl.viewport(x,y,width,height);gl.scissor(x,y,width,height);gl.bindTexture(gl.TEXTURE_2D,texture);
     gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.drawArrays(gl.TRIANGLES,0,6);
    }
-   gl.disable(gl.SCISSOR_TEST);canvas.dataset.running='true';
+   gl.disable(gl.SCISSOR_TEST);if(canvas.dataset.running!=='true')canvas.dataset.running='true';
   }
   raf=requestAnimationFrame(render);
  };
@@ -53,7 +53,7 @@ export function mountScoreVfx(root){
   const light=getComputedStyle(root).getPropertyValue('--gd-hot-ink').trim()==='#9c3900';
   for(const element of root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')){
    const value=element.querySelector('.gd-thermal-value'),rect=value?.getBoundingClientRect();if(!rect||!rect.width||!rect.height||!element.getClientRects().length)continue;
-   const style=getComputedStyle(value),padX=14,padTop=element.closest('.gameday-player-score')?20:Math.min(42,rect.height*1.6),padBottom=12,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
+   const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
    const mask=document.createElement('canvas');mask.width=Math.ceil(width*scale);mask.height=Math.ceil(height*scale);const context=mask.getContext('2d');if(!context)continue;
    context.scale(scale,scale);context.font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;context.fillStyle='#fff';context.textBaseline='alphabetic';
    if('letterSpacing' in context)context.letterSpacing=style.letterSpacing;
