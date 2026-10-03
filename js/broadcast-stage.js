@@ -68,7 +68,7 @@ function scoreboard(item) {
     live: item.temporal === "live",
     final: item.temporal === "final" || item.temporal === "recent",
     sides: (item.sides || []).map((s, index) => ({
-      name: s.name, score: s.score, colour: s.colour || "",
+      name: s.name, score: s.score, scoreLabel: item.scoreLabel || "", colour: s.colour || "",
       identity: s.identity || null,
       up: !!s.up, down: !!s.down,
       liveKey: item.temporal === "live" || item.temporal === "final" || item.temporal === "recent"

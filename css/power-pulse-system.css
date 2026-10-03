@@ -1393,3 +1393,25 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
  .topbar .dfl-preview-toggle { gap:5px; padding-inline:6px; }
  .topbar .topbar-actions .whoami { max-width:82px; }
 }
+
+/* Keep score sources beside the numbers and the weekly home cards aligned. */
+.mq-score-label { display:block; color:inherit; font:600 10px/1.4 system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+.gameday-score-label { color:var(--body-text); font:500 .6875rem/1.3 system-ui,sans-serif; font-style:normal; }
+#home-wrap :is(.gameday-card,.home-rankings-card,.home-week-focus,.home-weekly-clubhouse) { padding:1.25rem; }
+#home-wrap :is(.gameday-card,.home-rankings-card,.home-week-focus,.home-weekly-clubhouse) h2 { font-size:1.125rem; line-height:1.3; letter-spacing:.035em; margin-block:0 .5rem; }
+#home-wrap :is(.gameday-card,.home-rankings-card,.home-week-focus) > header { padding-bottom:.5rem; margin-bottom:.75rem; }
+.gameday-player-score { min-width:4.5rem; }
+.gameday-moments li { position:relative; padding:0 0 .625rem 1.25rem; border-bottom:1px solid var(--line); }
+.gameday-moments li:last-child { border-bottom:0; padding-bottom:0; }
+.gameday-moments li::before { position:absolute; left:0; top:1.25rem; color:var(--accent); content:'↗'; }
+.gameday-moments .is-big::before { content:'★'; }
+.gameday-moments .is-lead::before { content:'⇄'; }
+.gameday-moments li > span { display:block; }
+.gameday-moments .is-lead > span { font-weight:650; }
+.gameday-loading { display:grid; gap:8px; padding-block:12px; }
+.gameday-loading > span { height:52px; border-radius:8px; background:linear-gradient(90deg,var(--bg) 0 36px,transparent 36px 48px,var(--bg) 48px 75%,transparent 75%); border-bottom:1px solid var(--line); }
+@media(max-width:899px) {
+ .tabbar.is-in-season :is(a,.tabmore) { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 1px 10px; min-height:54px; }
+ .tabbar.is-in-season :is(a,.tabmore) .ico { width:20px; height:20px; margin:0; flex:0 0 20px; }
+ .tabbar.is-in-season :is(a,.tabmore) > span { white-space:nowrap; overflow-wrap:normal; text-transform:none; font:600 clamp(9px,2.4vw,11px)/1.2 system-ui,sans-serif; letter-spacing:0; }
+}

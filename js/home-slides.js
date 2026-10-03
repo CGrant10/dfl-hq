@@ -140,7 +140,7 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
   const billing = !h2h?.meetings ? "FIRST MEETING" : h2h.meetings >= 5 ? `RIVALRY · MEETING ${h2h.meetings + 1}`
     : h2h.streak?.count >= 2 ? `${h2h.streak.holder === "me" ? "YOU" : pairing.theirs.name.toUpperCase()} WON LAST ${h2h.streak.count}` : `${ordinal(h2h.meetings + 1)} MEETING`;
   return {
-    source: "auto", pinned: true, id: "matchup-preview", generator: "matchupPreview",
+    source: "auto", pinned: true, id: "matchup-preview", generator: "matchupPreview", scoreLabel: "Projected",
     kind: "mine", treatment: "scoreboard", temporal: "upcoming",
     priority: P.MINE + 20, dwell: 8000,
     kicker: `${season} · Week ${week} · Preview`,

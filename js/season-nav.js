@@ -7,7 +7,7 @@ export const PRIMARY_SEASON_ROUTES = [
   /* The trade desk earned the slot Rules had. Rules is a reference you read
      once a season; a trade is a decision with a clock on it, and it was two
      taps deep inside another page. Rules keeps its place in More. */
-  { route: "trade", label: "Trade", icon: "trade" },
+  { route: "trade", label: "Trades", icon: "trade" },
   { route: "analyzer", label: "Analyzer", icon: "analyzer", lead: true },
 ];
 
@@ -27,7 +27,7 @@ export const SECONDARY_SEASON_ROUTES = [
   { route: "admin", label: "Admin", icon: "admin" },
 ];
 
-const navLabel=label=>label.replace("Clubhouse","Club<wbr>house").replace("Sportsbook","Sports<wbr>book");
+const navLabel=label=>label;
 let navSizeObserver;
 const link = ({ route, label, icon, lead = false }) =>
   `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span>${navLabel(label)}</span></a>`;
