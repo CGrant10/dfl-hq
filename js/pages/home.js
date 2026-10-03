@@ -45,7 +45,7 @@ import { buildNextMove } from "../next-move.js";
 import { weekHasStarted } from "../league-trajectory.js";
 import { teamPortrait } from "../team-presentation.js";
 import { startAssembly } from "../scroll-assembly.js";
-import { currentMatchupWeek, matchupPreviewSlide, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
+import { currentMatchupWeek, nextMoveSlide, playoffPictureSlide, tradeAlertSlide, weekSlateSlide } from "../home-slides.js";
 import { buildLeagueStakes } from "../league-stakes.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity } from "../player-presentation.js";
@@ -59,7 +59,6 @@ import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 let stage = null;
 let generation = 0;
 let dropAssembly = null;
-let suppressMyMatchup = false;
 let dropPresence = null;
 let deferredStops = [];
 
@@ -283,21 +282,12 @@ function installHelp(){const ua=navigator.userAgent;if(/iphone|ipad|ipod/i.test(
 
 const STAGE_UTILITY = new Set(["events", "poll", "news", "dues"]);
 function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map() } = {}) {
-  const ranked = buildDeck(ctx, { custom, off, overrides, max: 20 });
+  // GameDay owns the personal matchup in every phase of the week.
+  const ranked = buildDeck(ctx, { custom, off: new Set([...off, "myMatchup"]), overrides, max: 20 });
   const picked = ranked.filter((it) => {
     if (it.source === "manual" || it.pinned) return true;
     if (STAGE_UTILITY.has(it.generator)) return false;
     if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
-    /* myMatchup used to be held back unless the game was LIVE. That made
-       sense when the tabbed dashboard carried a permanent "My Week" card and
-       a second copy on the stage would have been the same fact twice. The
-       dashboard is gone, so this is now the only place the reader's own game
-       appears - and a finished game is still the thing they came to see.
-
-       The exception is a week-ahead preview: that is the same fixture looking
-       forward, so the backward-looking generator stands down rather than
-       putting last week's final beside this week's projection. */
-    if (it.generator === "myMatchup" && suppressMyMatchup) return false;
     return true;
   }).slice(0, 8);
   if (picked.length) return picked;
@@ -334,27 +324,10 @@ export function homeTradeWire(alerts) {
   </section>`;
 }
 
-/* Home is personal before it is editorial. The deck may rank a live league
-   item above this one, but opening Home should land on the signed-in member's
-   matchup; the automatic rotation can carry on from there. */
-export function personalMatchupFirst(deck = []) {
-  const index = deck.findIndex(item => item?.generator === "matchupPreview"
-    || item?.generator === "myMatchup" || item?.kind === "mine");
-  if (index <= 0) return deck.slice();
-  return [deck[index], ...deck.slice(0, index), ...deck.slice(index + 1)];
-}
-
-/*
-  THE PAIRING FOR A WEEK NOBODY HAS PLAYED YET.
-
-  sync.js will not write a week into sleeper_matchups until somebody has
-  points in it, so the fixture for the week ahead is not in the database at
-  the moment it matters most. It comes from Sleeper directly here, mapped
-  roster -> owner through the analyzer's teams, and is only asked for when a
-  preview is actually wanted: a network call on every Home paint to render
-  nothing would be a poor trade.
-*/
-async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
+/* Sleeper supplies the current league fixtures before the first score sync.
+   The broadcast slate and weekly model share those fixtures; GameDay owns
+   the personal matchup view. */
+async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
   if (!weekly?.week || !meSleeperId || analysis?.state !== "ready") return null;
   const week = currentMatchupWeek(weekly.week);
   /* The report owns the completed week on Tuesday; this surface owns the new
@@ -362,21 +335,6 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   if (week !== Number(weekly.week)) return null;
   const leagueId = analysis.league?.sleeper_league_id;
   if (!leagueId) return null;
-  /*
-    THE WEEK BEING PLAYED IS STILL THIS WEEK'S CARD.
-
-    This used to bail the moment any row for the week had a score, which
-    meant one Thursday-night kickoff deleted the whole surface - the slate
-    and the preview both vanished on the Friday, and all that was left was a
-    personal scoreboard reading 16.20 to 0.00. The league slate is wanted
-    MORE once the week is under way, not less.
-
-    So nothing is skipped here. What changes is what the cards say: the slate
-    switches from projections to live scores (see `live` below), and the
-    personal preview stands down for its own fixture once that fixture has
-    started, because from then on the myMatchup generator has real numbers
-    and says it better.
-  */
   const weekRows = (analysis.matchups || []).filter(row => Number(row.week) === week);
   const weekStarted = weekHasStarted(weekRows);
   /* This function only runs for Sleeper's current week. Non-zero scores on
@@ -425,8 +383,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   };
 
   /* Sleeper returns one row per ROSTER; a fixture is the two rows sharing a
-     matchup_id. Grouping once means the slate and the personal preview can
-     never disagree about who is playing whom. */
+     matchup_id. Grouping once keeps league fixtures consistent for the slate and weekly model. */
   const fixtures = [];
   const byMatchup = new Map();
   for (const row of raw) {
@@ -442,35 +399,13 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId, lore }) {
   }
   if (!fixtures.length) return null;
 
-  const mineFixture = fixtures.find(fixture =>
-    String(fixture.a.sleeper_user_id) === String(meSleeperId)
-    || String(fixture.b.sleeper_user_id) === String(meSleeperId));
-
   const slides = [];
-  /* Has the reader's own game started? Their fixture's rows are the only
-     ones that decide it - another matchup kicking off on Thursday says
-     nothing about theirs. */
-  const mineStarted = mineFixture && weekRows.some(row =>
-    [row.user1, row.user2].some(uid => String(uid) === String(mineFixture.a.sleeper_user_id)
-      || String(uid) === String(mineFixture.b.sleeper_user_id))
-    && (Number(row.score1) > 0 || Number(row.score2) > 0));
-  if (mineFixture && !mineStarted) {
-    const iAmA = String(mineFixture.a.sleeper_user_id) === String(meSleeperId);
-    slides.push(matchupPreviewSlide({
-      pairing: { mine: iAmA ? mineFixture.a : mineFixture.b, theirs: iAmA ? mineFixture.b : mineFixture.a },
-      weekly, meSleeperId, season: weekly.season, week,
-      /* The head-to-head is all-time, so it comes from lore's full matchup
-         history rather than the analyzer's season-scoped slice. */
-      matchups: lore?.matchups || [],
-    }));
-  }
   slides.push(weekSlateSlide({ fixtures, season: weekly.season, week, meSleeperId, live: weekStarted }));
   return { slides: slides.filter(Boolean), fixtures };
 }
 
 export async function render(view) {
   leave();
-  suppressMyMatchup = false;
   const mine = ++generation;
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
@@ -505,10 +440,10 @@ export async function render(view) {
     polls: polls.data || [], leagues: leagues.data || [], members: memberRows,
     dues: dues.data || [], standings: standings.data || [], golfRow,
   };
-  const fallbackDeck = personalMatchupFirst(editorialStage(
+  const fallbackDeck = editorialStage(
     broadcastContext({ home: homeData, golfDay, member: me }),
     { custom: manual, off: broadcastOff(), overrides },
-  ));
+  );
 
   const wn = newsWindow();
   const changes = wn.firstRun ? [] : changesSince({
@@ -540,7 +475,7 @@ export async function render(view) {
     ${anniversary()}
     <div data-home-deadline-slot></div>
     <section class="home-broadcast is-loading" aria-label="League broadcast">
-      <div class="home-broadcast-loading" role="status"><span></span><strong>Loading your matchup</strong></div>
+      <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     <div data-home-gameday-slot></div>
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
@@ -675,10 +610,10 @@ export async function render(view) {
   let liveSlides = [];
   let golfDayNow = golfDay;
   const off = broadcastOff();
-  const build = (day) => personalMatchupFirst(editorialStage(
+  const build = (day) => editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
     { custom: [...custom, ...liveSlides], off, overrides },
-  ));
+  );
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -693,7 +628,7 @@ export async function render(view) {
     if (mine !== generation || !view.isConnected) return;
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
-    const ordered = personalMatchupFirst(deck);
+    const ordered = deck;
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
     host.innerHTML = renderStage(ordered);
@@ -707,7 +642,6 @@ export async function render(view) {
     lore = got?.error ? null : got;
     const aheadData = await weekAheadSlide({
       analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
-      lore: got?.error ? null : got,
     }) || { slides: [], fixtures: [] };
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
@@ -762,14 +696,9 @@ export async function render(view) {
     const extras = [...ahead, playoffPictureSlide(pulse?.stakes, myMember?.sleeper_user_id), tradeAlertSlide(tradeAlert), nextMoveSlide(move)].filter(Boolean);
     if (extras.length) {
       liveSlides = extras;
-      /* A preview and the myMatchup generator are the same fixture from two
-         directions - one looking forward, one looking back. Showing both puts
-         last week's result next to this week's projection on the same stage,
-         so the generator stands down while a preview exists. */
-      suppressMyMatchup = ahead.some(slide => slide?.generator === "matchupPreview");
     }
     /* Commit the carousel once, after every startup source has contributed.
-       The member sees their matchup first instead of watching partial decks
+       The broadcast starts in editorial order instead of showing partial decks
        replace one another as they load. */
     startHomeStage(build(golfDayNow));
   }).catch((err) => {

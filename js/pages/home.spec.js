@@ -34,15 +34,16 @@ describe("Home redesign wiring", () => {
     expect(source).not.toContain("home-broadcast-secondary");
     /* One reserved stage, above the standing sections and the league utility.
        It commits only after the complete startup deck is ready. */
-    expect(source).toContain("Loading your matchup");
+    expect(source).toContain("Loading league broadcast");
     expect(source).toContain("startHomeStage(build(golfDayNow))");
     expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("data-home-rankings-slot"));
     expect(source.indexOf("home-broadcast-loading")).toBeLessThan(source.indexOf("data-home-feed-slot"));
   });
 
-  it("opens the complete deck on the signed-in member's matchup", () => {
-    expect(source).toContain("export function personalMatchupFirst");
-    expect(source).toContain('item?.generator === "myMatchup"');
+  it("lets GameDay own the personal matchup while the broadcast keeps its editorial order", () => {
+    expect(source).toContain('off: new Set([...off, "myMatchup"])');
+    expect(source).not.toContain("personalMatchupFirst");
+    expect(source).not.toContain("slides.push(matchupPreviewSlide(");
     expect(source).not.toContain("stage?.update(build(golfDay))");
     expect(source).not.toContain("if (stage) stage.update(build(golfDayNow))");
   });
