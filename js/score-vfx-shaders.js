@@ -89,17 +89,24 @@ void main(){
    ridge=min(ridge,length(delta));
   }
   float facets=smoothstep(.24,.35,ridge)*(1.-smoothstep(.4,.49,ridge));
-  float ice=edge*(.55+crystal*.4)+halo*(.2+facets*.6);
-  float mist=exp(-abs(p.y-u_glyph.y-u_glyph.w*.55)*.12)*exp(-abs(p.x-u_glyph.x-u_glyph.z*.5)/(u_glyph.z*.55))*.12;
+  // Frost lives on the stroke: stable facets with a slow, moving light catch.
+  float glint=smoothstep(.48,.82,fbm(p*.075+vec2(u_time*.12,-u_time*.17)));
+  float grain=smoothstep(.35,.76,crystal);
+  float surface=glyph*(.045+grain*.065+facets*.06)+innerRim*(.16+glint*.16);
+  surface*=mix(1.,.26,u_light);
+  float ice=edge*(.3+crystal*.2)*mix(1.,.42,u_light)
+    +halo*(.03+facets*.1)*mix(1.,.16,u_light);
+  float mist=exp(-abs(p.y-u_glyph.y-u_glyph.w*.55)*.12)*exp(-abs(p.x-u_glyph.x-u_glyph.z*.5)/(u_glyph.z*.55))*.045*mix(1.,.35,u_light);
   float snow=0.;
-  for(int i=0;i<10;i++){
+  for(int i=0;i<6;i++){
    float id=float(i),seed=hash(vec2(id,9.));float life=fract(u_time*(.15+seed*.12)+seed);
    vec2 q=vec2(u_glyph.x-10.+seed*(u_glyph.z+20.)+sin(u_time*.7+id)*4.,u_glyph.y-14.+life*(u_glyph.w+30.));
-   vec2 d=p-q;float r=.65+hash(vec2(id,5.));float flake=exp(-dot(d,d)/(r*r*1.6));
-   snow+=flake*sin(life*3.14159)*.65;
+   vec2 d=p-q;float r=.45+hash(vec2(id,5.))*.45;float flake=exp(-dot(d,d)/(r*r*1.6));
+   snow+=flake*sin(life*3.14159)*.42;
   }
-  color=mix(vec3(.16,.55,.95),vec3(.79,.96,1.),clamp(edge+facets*.65+snow,0.,1.));
-  alpha=(ice+mist+snow)*(1.-glyph);
+  color=mix(vec3(.12,.46,.78),vec3(.82,.96,1.),clamp(facets*.5+innerRim*.45+glint*.25,0.,1.));
+  // Keep the score counters open, with smaller ice dust beyond the outline.
+  alpha=(ice+mist+snow*mix(1.,.5,u_light))*(1.-glyph)+surface;
  }
  color=mix(color,color*.75,u_light*.45);
  float fade=smoothstep(0.,7.,p.x)*smoothstep(0.,7.,u_size.x-p.x)*smoothstep(0.,6.,p.y)*smoothstep(0.,6.,u_size.y-p.y);

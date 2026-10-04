@@ -1485,7 +1485,7 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .gd-thermal-number { position:relative; display:inline-block; vertical-align:baseline; isolation:isolate; white-space:nowrap; }
 .gd-thermal-value { position:relative; z-index:1; }
 .gd-thermal-number[data-score-temperature="hot"] { color:var(--gd-hot-ink); text-shadow:0 0 .5em #ff711a35; }
-.gd-thermal-number[data-score-temperature="cold"] { color:var(--gd-cold-ink); text-shadow:0 0 .5em #66cfff30; }
+.gd-thermal-number[data-score-temperature="cold"] { color:var(--gd-cold-ink); text-shadow:0 0 .3em #66cfff20; }
 .gd-thermal-number[data-score-temperature="steady"] { color:var(--gd-steady-ink); }
 .gd-vfx-canvas { position:absolute; pointer-events:none; z-index:2; border-radius:inherit; }
 .gameday-matchup > .gameday-faceoff-team[data-team-temperature="hot"] { background:linear-gradient(0deg,#ff831016,transparent 65%); border-top-color:#df6b13; }
@@ -1547,3 +1547,5 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .gd-score-updated > small { visibility:hidden; }
 
 :root[data-mode="light"] .gd-thermal-number[data-score-temperature="hot"] { text-shadow:0 0 .2em #ff711a12; }
+
+:root[data-mode="light"] .gd-thermal-number[data-score-temperature="cold"] { text-shadow:0 0 .15em #66cfff10; }

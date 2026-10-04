@@ -1,0 +1,9 @@
+# Frosted score polish — 1.290.0
+
+The old cold shader excluded the glyph surface, leaving frost outside otherwise plain digits. Cold scores now carry a translucent crystalline surface and an inner frost rim, with stable facets and a slowly moving light catch. The exterior outline/halo and mist are quieter, while ice dust uses six smaller particles rather than ten larger snowflakes. Light mode further attenuates the surface and outer halo, and both themes have smaller text shadows.
+
+The existing glyph mask keeps frost attached to digit curves, counters and decimal points. DOM score text, alignment, effect bounds, the 30 FPS cap and trigger rules remain intact. Cold still requires players below 10 after halftime/final, or teams below 100 after all starters reach halftime/final. Score changes, fire and steady cues keep their behavior.
+
+Validation: 1,034 tests in 116 files; TypeScript, name checks and production build. The GPU lab verifies WebGL compilation, animated cold pixels, all 257 sampled solid-glyph pixels receiving a translucent frost layer, dark-mode peak overlay alpha 110/255 and light-mode peak 27/255. Player/team sizes and the player dialog are visually inspected in light/dark modes. Motion off, reduced motion, offscreen/closed-dialog pause, context recovery, no-WebGL fallback and teardown pass. Physical-phone GPU performance is outside these checks.
+
+Read-only product verification opens an eligible cold player from the actual weekly lineup/bench, retains its recorded score and stats, verifies the Ice cold accessible label, and exercises motion controls and route cleanup. Home and the spotlight pass automated WCAG A/AA checks in light/dark modes without horizontal overflow or JavaScript errors. No production writes or external sharing occur during browser checks.
