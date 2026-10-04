@@ -1,3 +1,5 @@
+import {ticketShareSpec} from './share-export-model.js';
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 // =====================================================================
 // sportsbook-ticket.js - share one ENTRY as an image
@@ -219,95 +221,7 @@ function frame(t,height=H) {
 }
 
 export function ticketCanvas(t) {
-  const base=frame(t),H=Math.max(1350,base.boxesTop+490);
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  const f = frame(t,H);
-
-  drawShareFrame(ctx,"Sportsbook ticket");
-  const rowH=f.rowH;
-  ctx.textAlign="center";ctx.textBaseline="alphabetic";
-  ctx.fillStyle=INK;fitText(ctx,t.title,W/2,232,W-144,f.multi?58:74,650,"center");
-  if(t.market){ctx.fillStyle=MUTED;fitText(ctx,t.market,W/2,282,W-160,28,500,"center")}
-  let y=306;
-
-  // ---- every pick on the entry, in order -------------------------------
-  if (f.multi) {
-    y += 14;
-    t.picks.forEach((leg, i) => drawLeg(ctx, leg, i, 88, y + i * rowH, W - 176, rowH));
-  }
-
-  // ---- the price, big, because it is the brag --------------------------
-  if (f.mustLand !== null) {
-    ctx.fillStyle = MUTED;
-    ctx.font = `600 23px ${FONT}`;
-    ctx.letterSpacing = "4px";
-    ctx.fillText(`ALL ${t.picks.length} MUST LAND`, W / 2, f.mustLand);
-    ctx.letterSpacing = "0px";
-  }
-  ctx.fillStyle = t.status === "lost" ? MUTED : GOLD;
-  ctx.font = `700 ${f.priceSize}px ${FONT}`;
-  ctx.fillText(t.odds, W / 2, f.priceBase);
-
-  // ---- stake / return, side by side -----------------------------------
-  const boxW = (W - 200) / 2, boxH = 168, gap = 40;
-  const left = 100;
-  const cell = (x, label, value, ink) => {
-    ctx.fillStyle = CARD;
-    roundRect(ctx, x, f.boxesTop, boxW, boxH, 22);
-    ctx.fill();
-    ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-    roundRect(ctx, x, f.boxesTop, boxW, boxH, 22);
-    ctx.stroke();
-    ctx.fillStyle = MUTED;
-    ctx.font = `600 23px ${FONT}`;
-    ctx.letterSpacing = "3px";
-    ctx.fillText(label, x + boxW / 2, f.boxesTop + 52);
-    ctx.letterSpacing = "0px";
-    ctx.fillStyle = ink;
-    fitText(ctx, value, x + boxW / 2, f.boxesTop + 126, boxW - 40, 62, 700, "center");
-  };
-  cell(left, t.pulled ? "REFUNDED" : "STAKE", num(t.stake), INK);
-  cell(left + boxW + gap,
-    t.status === "won" ? "PAID" : t.status === "lost" ? "RETURNED" : t.status === "void" ? "VOID" : "TO RETURN",
-    t.status === "lost" ? "0" : t.status === "void" ? "—" : num(t.ret),
-    t.status === "lost" || t.status === "void" ? MUTED : GOLD);
-
-  if (f.profit !== null) {
-    ctx.fillStyle = MUTED;
-    ctx.font = `700 27px ${FONT}`;
-    ctx.fillText(`${num(t.profit)} SIN profit if ${f.multi ? "they all land" : "it lands"}`, W / 2, f.profit);
-  }
-
-  // ---- settled result chip --------------------------------------------
-  if (!f.open) {
-    const ink = STATUS_INK[t.status] || GOLD;
-    /* A settled multi says how it went - "1 OF 3" is the story, "LOST" is not. */
-    const label = (t.pulled ? "PULLED"
-      : f.multi && (t.status === "won" || t.status === "lost") ? `${t.won} OF ${t.picks.length}`
-      : t.status).toUpperCase();
-    ctx.font = `700 40px ${FONT}`;
-    const chipW = Math.min(W - 200, ctx.measureText(label).width + 96);
-    const chipX = (W - chipW) / 2;
-    ctx.fillStyle = CARD;
-    roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
-    ctx.fill();
-    ctx.strokeStyle = ink; ctx.lineWidth = 5;
-    roundRect(ctx, chipX, f.chipTop, chipW, 84, 42);
-    ctx.stroke();
-    ctx.fillStyle = ink;
-    ctx.fillText(label, W / 2, f.chipTop + 57);
-  }
-
-  // ---- who, and the disclaimer that keeps this a joke -----------------
-  ctx.fillStyle = INK;
-  ctx.font = `600 37px ${FONT}`;
-  fitText(ctx, t.who, W / 2, f.who, W - 200, 37, 600, "center");
-
-  drawShareFooter(ctx,"SIN is play money · No cash value");
-
-  return canvas;
+ return editorialShareCanvas(ticketShareSpec(t));
 }
 
 /**
@@ -354,21 +268,7 @@ export function sportsbookRecapText(recap){
 }
 
 export function sportsbookRecapCanvas(recap){
-  const data=sportsbookRecapData(recap);if(!data)return null;
-  const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
-  drawShareFrame(ctx,"Sportsbook aftermath");
-  ctx.textAlign="left";ctx.fillStyle=INK;fitText(ctx,"The week's receipts",68,240,W-136,68,650,"left");
-  ctx.textAlign="center";
-  ctx.fillStyle=GOLD;ctx.font=`600 28px ${FONT}`;ctx.fillText(`${data.range.toUpperCase()}  ·  ${num(data.tickets)} TICKETS  ·  ${num(data.risked)} SIN RISKED`,W/2,306);
-  const gap=24,cardW=(W-128-gap)/2,cardH=320,startY=380;
-  data.cards.forEach((card,index)=>{const col=index%2,row=Math.floor(index/2),x=52+col*(cardW+gap),y=startY+row*(cardH+gap);
-    ctx.fillStyle=CARD;roundRect(ctx,x,y,cardW,cardH,24);ctx.fill();ctx.strokeStyle=index===0?GOLD:LINE;ctx.lineWidth=index===0?4:2;roundRect(ctx,x,y,cardW,cardH,24);ctx.stroke();
-    ctx.textAlign="left";ctx.fillStyle=index===0?GOLD:ACCENT;ctx.font=`700 22px ${FONT}`;ctx.letterSpacing="3px";ctx.fillText(card.label,x+28,y+52);ctx.letterSpacing="0px";
-    ctx.fillStyle=INK;fitText(ctx,card.name,x+28,y+120,cardW-56,42,900,"left");ctx.fillStyle=GOLD;fitText(ctx,card.value,x+28,y+184,cardW-56,36,900,"left");
-    ctx.fillStyle=MUTED;ctx.font=`700 24px ${FONT}`;fitText(ctx,card.note,x+28,y+246,cardW-56,24,700,"left");
-  });
-  ctx.textAlign="center";ctx.fillStyle=INK;ctx.font=`700 34px ${FONT}`;ctx.fillText("THE HOUSE REMEMBERS EVERYTHING.",W/2,1240);ctx.fillStyle=MUTED;ctx.font=`700 22px ${FONT}`;drawShareFooter(ctx,"SIN is play money · No cash value");
-  return canvas;
+ const data=sportsbookRecapData(recap);if(!data)return null;return editorialShareCanvas({kind:'Sportsbook aftermath',context:data.range,headline:'THE WEEK’S\nRECEIPTS.',summary:`${data.tickets} tickets · ${data.risked} SIN risked`,sections:data.cards.map(c=>({label:c.label,rows:[{name:c.name,value:c.value,detail:c.note}]})),footer:'SIN is play money · No cash value'});
 }
 
 export async function shareSportsbookRecap(recap){

@@ -1,3 +1,5 @@
+import {aftermathShareSpec} from './share-export-model.js';
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 /* =====================================================================
    aftermath-share.js - the completed week, as one group-chat picture.
@@ -219,43 +221,7 @@ function drawPlayerPodium(ctx, { x, y, title, kicker, players = [], tone }) {
 }
 
 export function aftermathCanvas(card) {
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  ctx.textBaseline = "alphabetic";
-  drawShareFrame(ctx,`${card.season} · Week ${card.week} · Final`);
-
-  ctx.fillStyle = SHARE_INK.INK;
-  fitDisplay(ctx, card.title || card.label, W / 2, 218, 944, 68, 600);
-  rule(ctx,70,245,1010,SHARE_INK.GOLD,2);
-
-  caps(ctx, "THE WEEK, WITHOUT THE BULLSHIT", 70, 268, SHARE_INK.ACCENT, 18, "left");
-  ctx.fillStyle = SHARE_INK.INK;
-  wrapStory(ctx, card.story || "The league survived another week. Barely.", 70, 310, 940, 30, 39, 5);
-
-  const highlights = (card.highlights || []).slice(0, 4);
-  highlights.forEach((item, index) => {
-    const col = index % 2, row = Math.floor(index / 2);
-    const x = 70 + col * 480, y = 525 + row * 205, width = 460, height = 180;
-    const tone = item.tone === "gold" ? SHARE_INK.GOLD : item.tone === "red" ? SHARE_INK.ACCENT : SHARE_INK.INK;
-    ctx.fillStyle = SHARE_INK.CARD_2;
-    roundRect(ctx,x,y,width,height,22);ctx.fill();
-    ctx.fillStyle = tone;
-    ctx.fillRect(x, y, 6, height);
-    caps(ctx, item.label, x + 28, y + 38, tone, 18, "left");
-    ctx.fillStyle = SHARE_INK.INK;
-    fitDisplay(ctx, String(item.title).toUpperCase(), x + 28, y + 91, width - 56, 35, 600, "left");
-    ctx.fillStyle = SHARE_INK.INK;
-    fitDisplay(ctx, String(item.detail).toUpperCase(), x + 28, y + 143, width - 56, 20, 700, "left");
-  });
-
-  drawPlayerPodium(ctx, { x: 70, y: 930, title: "STARTED & SHOWED OUT", kicker: "TOP 3 STARTERS",
-    players: card.players?.starters, tone: SHARE_INK.GOLD });
-  drawPlayerPodium(ctx, { x: 550, y: 930, title: "WASTED ON THE BENCH", kicker: "TOP 3 BENCH",
-    players: card.players?.bench, tone: SHARE_INK.ACCENT });
-
-  drawShareFooter(ctx,"Weekly aftermath");
-  return canvas;
+ return editorialShareCanvas(aftermathShareSpec(card));
 }
 
 export function aftermathText(card) {

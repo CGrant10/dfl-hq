@@ -1,3 +1,4 @@
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 /* =====================================================================
    fact-share.js - a piece of DFL lore as a picture
@@ -49,77 +50,7 @@ function wrap(ctx, text, maxWidth, size, weight) {
  * worse than one set two points smaller.
  */
 export function factCanvas(fact) {
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-
-  drawShareFrame(ctx,"League lore");
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-
-  // ---- the billing -----------------------------------------------------
-  ctx.fillStyle = ACCENT;
-  ctx.font = `600 34px ${FONT}`;
-  ctx.letterSpacing = "8px";
-  ctx.fillText(fact.kicker || "DFL LORE", W / 2, 206);
-  ctx.letterSpacing = "0px";
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 30px ${FONT}`;
-  ctx.fillText(fact.ask || "DID YOU KNOW?", W / 2, 256);
-
-  // ---- the card --------------------------------------------------------
-  const pad = 70, cardTop = 310, cardBottom = H - 210;
-  ctx.fillStyle = CARD;
-  roundRect(ctx, pad, cardTop, W - pad * 2, cardBottom - cardTop, 28);
-  ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-  roundRect(ctx, pad, cardTop, W - pad * 2, cardBottom - cardTop, 28);
-  ctx.stroke();
-  // A weighted left edge, so the card reads as a quote rather than a box.
-  ctx.fillStyle = ACCENT;
-  roundRect(ctx, pad, cardTop, 8, cardBottom - cardTop, 4);
-  ctx.fill();
-
-  const inner = W - pad * 2 - 90;
-
-  /* The headline, set as large as it can be while still fitting the card.
-     Stepping down beats truncating: the number IS the fact. */
-  let size = 74;
-  let lines = wrap(ctx, fact.headline, inner, size, 600);
-  while (lines.length > 5 && size > 40) {
-    size -= 4;
-    lines = wrap(ctx, fact.headline, inner, size, 600);
-  }
-  ctx.fillStyle = INK;
-  let y = cardTop + 110;
-  for (const line of lines) { ctx.fillText(line, W / 2, y); y += size * 1.18; }
-
-  // ---- the detail ------------------------------------------------------
-  y += 26;
-  const dLines = wrap(ctx, fact.detail, inner, 36, 500).slice(0, 6);
-  ctx.fillStyle = MUTED;
-  ctx.font = `500 36px ${FONT}`;
-  for (const line of dLines) { ctx.fillText(line, W / 2, y); y += 50; }
-
-  /* The season, when the fact has one. A record with no year on it reads
-     as something that happened last week, and most of these did not. */
-  if (fact.season) {
-    y += 24;
-    const label = `${fact.season} SEASON`;
-    ctx.font = `600 28px ${FONT}`;
-    const tw = ctx.measureText(label).width + 44;
-    ctx.strokeStyle = LINE;
-    roundRect(ctx, W / 2 - tw / 2, y - 34, tw, 50, 12);
-    ctx.stroke();
-    ctx.fillStyle = MUTED;
-    ctx.fillText(label, W / 2, y);
-  }
-
-  drawShareFooter(ctx,fact.season?`${fact.season} season`:"League lore");
-
-  return canvas;
+ return editorialShareCanvas({kind:'League lore',context:fact.season?`${fact.season} SEASON`:'DFL LORE',headline:fact.headline,summary:fact.detail,footer:fact.ask||'Did you know?'});
 }
 
 /**

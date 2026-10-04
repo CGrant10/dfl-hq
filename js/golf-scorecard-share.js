@@ -1,3 +1,4 @@
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 import { FONT, fitText, shareCanvas } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
@@ -98,71 +99,7 @@ function drawHeader(ctx, column, x, y, w, h) {
 }
 
 export function scorecardCanvas(model) {
-  const H=Math.max(900,500+model.rows.length*64);
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-  drawShareFrame(ctx,"Golf scorecard");
-
-  const margin = 68;
-  const tableTop = model.context ? 296 : 260;
-  const footerH = 100, headerH = 86;
-  const tableW = W - margin * 2;
-  const nameW = Math.min(270, Math.max(205, tableW * .17));
-  const dataW = (tableW - nameW) / Math.max(1, model.columns.length);
-  const availableRowsH = H - tableTop - headerH - footerH - 18;
-  const rowH = Math.min(64, availableRowsH / Math.max(1, model.rows.length));
-  const renderedTableH = headerH + rowH * model.rows.length;
-
-  ctx.fillStyle = INK; ctx.textBaseline = "alphabetic";
-  fitText(ctx, model.title.toUpperCase(), margin, 214, W - margin * 2, 36, 700, "left");
-  if (model.context) {
-    ctx.fillStyle = MUTED;
-    fitText(ctx, model.context, margin, 256, W - margin * 2, 20, 650, "left");
-  }
-  ctx.fillStyle = GOLD; ctx.fillRect(margin, tableTop - 8, tableW, 8);
-
-  ctx.fillStyle = HEADER; ctx.fillRect(margin, tableTop, nameW, headerH);
-  ctx.fillStyle = INK; ctx.textBaseline = "middle";
-  fitText(ctx, "GOLFER", margin + 14, tableTop + headerH / 2, nameW - 28, 20, 850, "left");
-  model.columns.forEach((column, index) => drawHeader(ctx, column, margin + nameW + dataW * index, tableTop, dataW, headerH));
-
-  model.rows.forEach((row, rowIndex) => {
-    const y = tableTop + headerH + rowH * rowIndex;
-    ctx.fillStyle = rowIndex % 2 ? CARD_2 : PAPER;
-    ctx.fillRect(margin, y, tableW, rowH);
-    ctx.fillStyle = INK; ctx.textBaseline = "middle";
-    fitText(ctx, row.name, margin + 14, y + (row.detail ? rowH * .4 : rowH / 2), nameW - 28, Math.min(21, rowH * .34), 600, "left");
-    if (row.detail) {
-      ctx.fillStyle = MUTED;
-      fitText(ctx, row.detail, margin + 14, y + rowH * .7, nameW - 28, Math.min(14, rowH * .24), 600, "left");
-    }
-    model.columns.forEach((column, index) => {
-      const x = margin + nameW + dataW * index;
-      if (!column.hole) { ctx.fillStyle = HEADER; ctx.fillRect(x, y, dataW, rowH); }
-      drawScoreMark(ctx, row.values[column.index] || "—", column.hole ? row.marks[column.index] : "par", x, y, dataW, rowH);
-    });
-  });
-
-  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-  line(ctx, margin, tableTop, margin + tableW, tableTop);
-  line(ctx, margin, tableTop + renderedTableH, margin + tableW, tableTop + renderedTableH);
-  line(ctx, margin, tableTop, margin, tableTop + renderedTableH);
-  line(ctx, margin + tableW, tableTop, margin + tableW, tableTop + renderedTableH);
-  line(ctx, margin + nameW, tableTop, margin + nameW, tableTop + renderedTableH);
-  model.columns.forEach((_, index) => {
-    const x = margin + nameW + dataW * (index + 1);
-    line(ctx, x, tableTop, x, tableTop + renderedTableH);
-  });
-  line(ctx, margin, tableTop + headerH, margin + tableW, tableTop + headerH);
-  model.rows.forEach((_, index) => {
-    const y = tableTop + headerH + rowH * (index + 1);
-    line(ctx, margin, y, margin + tableW, y);
-  });
-
-  ctx.fillStyle = MUTED; ctx.textBaseline = "alphabetic";
-  drawShareFooter(ctx,"Golf scorecard");
-  return canvas;
+ return editorialShareCanvas({kind:'Golf scorecard',headline:model.title,context:model.context,table:model,footer:'Golf scorecard · Yellow: birdie/eagle · Red: bogey/double'});
 }
 
 export function shareScorecard(card, fallbackTitle = "Golf scorecard") {

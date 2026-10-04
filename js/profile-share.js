@@ -1,3 +1,4 @@
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter,shareMonogram} from "./share-card-style.js";
 // =====================================================================
 // profile-share.js - one member's DFL scouting report, as an image.
@@ -193,61 +194,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
 }
 
 export function profileShareCanvas(d) {
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-
-  drawShareFrame(ctx,"Member profile");
-  ctx.textBaseline="alphabetic";ctx.fillStyle=INK;
-  shareMonogram(ctx,d.who,W-172,180,100);
-  fitText(ctx,d.who,70,238,W-285,72,650,"left");
-  if(d.team){ctx.fillStyle=MUTED;fitText(ctx,d.team,70,288,W-270,29,500,"left")}
-  let y=342;ctx.textAlign="center";
-
-  // ---- career strip ---------------------------------------------------
-  const sx = 70, sw = W - 140, sh = 112;
-  ctx.fillStyle = CARD;
-  roundRect(ctx, sx, y, sw, sh, 22); ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-  roundRect(ctx, sx, y, sw, sh, 22); ctx.stroke();
-
-  const stats = [
-    ["RECORD", d.record],
-    ["WIN %", pct(d.winPct)],
-    ["POINTS", d.points],
-    ["AVG FINISH", d.avgFinish],
-    ["SEASONS", String(d.seasons)],
-  ];
-  const statW = sw / stats.length;
-  stats.forEach(([label, value], i) => drawStat(ctx, sx + i * statW, y + 8, statW, label, value));
-  y += sh + 24;
-
-  // ---- the two things DFL actually cares about ------------------------
-  const gap = 28, colW = (W - 140 - gap) / 2;
-  const colH = Math.max(270,100+Math.max(d.trophyCase.length,d.crimeScene.length)*68);
-  drawReceiptColumn(ctx, 70, y, colW, colH, "TROPHY CASE", d.trophyCase, GOLD, "Nothing in the case yet");
-  drawReceiptColumn(ctx, 70 + colW + gap, y, colW, colH, "CRIME SCENE", d.crimeScene, ACCENT, "No bodies on record");
-  y += colH + 26;
-
-  ctx.textAlign="center";
-  // ---- verdict --------------------------------------------------------
-  const vh = 150;
-  ctx.fillStyle = CARD;
-  roundRect(ctx, 70, y, W - 140, vh, 22); ctx.fill();
-  ctx.strokeStyle = LINE; ctx.lineWidth = 1.5;
-  roundRect(ctx, 70, y, W - 140, vh, 22); ctx.stroke();
-  ctx.fillStyle = OK;
-  ctx.font = `700 22px ${FONT}`;
-  ctx.letterSpacing = "4px";
-  ctx.fillText("DFL VERDICT", W / 2, y + 38);
-  ctx.letterSpacing = "0px";
-  ctx.fillStyle = INK;
-  ctx.font = `600 28px ${FONT}`;
-  wrapText(ctx, d.verdict, W / 2, y + 78, W - 210, 33, 2);
-
-  drawShareFooter(ctx,`${d.seasons} DFL seasons`);
-
-  return canvas;
+ return editorialShareCanvas({kind:'Member profile',context:d.team,headline:d.who,results:[{label:'Record',value:d.record},{label:'Win percentage',value:pct(d.winPct)},{label:'Points',value:d.points},{label:'Average finish',value:d.avgFinish},{label:'Seasons',value:String(d.seasons)}],sections:[{label:'Trophy case',rows:d.trophyCase.map(([name,value])=>({name,value}))},{label:'Crime scene',rows:d.crimeScene.map(([name,value])=>({name,value}))},{label:'DFLyzer verdict',copy:d.verdict}],footer:'Member profile'});
 }
 
 /** Draw it and hand it to the device share sheet. */

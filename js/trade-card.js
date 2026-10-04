@@ -1,3 +1,5 @@
+import {tradeShareSpec} from './share-export-model.js';
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter,wrapShareText} from "./share-card-style.js";
 // =====================================================================
 // trade-card.js - share one deal as an image
@@ -55,6 +57,7 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
   const named = ids => (ids || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => Number(b.tradeValue) - Number(a.tradeValue))
     .map(player => ({
+      id: String(player.id || ''), position: player.position || '', nflTeam: player.nflTeam || '',
       name: String(player.name || ""),
       meta: `${player.position || ""}${player.nflTeam ? ` · ${player.nflTeam}` : ""}`,
       value: num(player.tradeValue),
@@ -193,126 +196,7 @@ function drawPackage(ctx, column, x, y, w, h, accent) {
 }
 
 export function dealCanvas(t) {
-  const f=frame(t),H=f.height;
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-
-
-  drawShareFrame(ctx,"Trade analyzer");
-  const side=t.columns.length<=2;
-  const {packH}=packageMetrics(t);
-  let y=176;
-  ctx.fillStyle=INK;ctx.textBaseline="alphabetic";
-  fitText(ctx,t.multi?`${t.columns.length}-team deal`:`${t.forWhom}  ⇄  ${t.against}`,W/2,y+44,W-144,48,650,"center");
-  y+=98;
-
-  // ---- the packages ---------------------------------------------------
-  if (side) {
-    const gap = 24, colW = (W - 160 - gap) / 2;
-    drawPackage(ctx, { ...t.columns[0], label: "You send" }, 80, y, colW, packH, INK);
-    drawPackage(ctx, { ...t.columns[1], label: "You get" }, 80 + colW + gap, y, colW, packH, GOLD);
-  } else {
-    t.columns.forEach((column, index) => {
-      drawPackage(ctx, { ...column, label: `${column.from} → ${column.to}` },
-        80, y + index * (packH + 12), W - 160, packH, index ? GOLD : INK);
-    });
-  }
-
-  // ---- the call, stamped ----------------------------------------------
-  const callInk = CALL_INK[t.callTone] || GOLD;
-  ctx.fillStyle = `${callInk}1f`;
-  roundRect(ctx, 80, f.stampTop, W - 160, f.stampH, 22);
-  ctx.fill();
-  ctx.strokeStyle = callInk; ctx.lineWidth = 5;
-  roundRect(ctx, 80, f.stampTop, W - 160, f.stampH, 22);
-  ctx.stroke();
-  ctx.textAlign = "center";
-  ctx.fillStyle = callInk;
-  fitText(ctx, t.call, W / 2, f.stampTop + 74, W - 240, 66, 700, "center");
-  ctx.fillStyle = MUTED;
-  ctx.font = `700 24px ${FONT}`;
-  /* Not "· for X" as well: on any deal you win, the winner and the point of
-     view are the same team, and the card said its name twice in one line.
-     Whose call it is, is answered by the name at the foot of the card. */
-  fitText(ctx, `${t.headline}${t.winner ? ` · ${t.winner} wins value` : ""}`,
-    W / 2, f.stampTop + 108, W - 200, 24, 700, "center");
-
-  // ---- every DFLyzer description, with room to read it ----------------
-  ctx.textAlign = "left";
-  ctx.fillStyle = MUTED;
-  ctx.font = `600 20px ${FONT}`;
-  ctx.letterSpacing = "3px";
-  ctx.fillText("THE FULL DFLYZER READ", 80, f.reasonsTop + 24);
-  ctx.letterSpacing = "0px";
-  const reasonInk = tone => tone === "bad" ? ACCENT : tone === "good" ? GOLD : tone === "warn" ? BRAND_YELLOW : MUTED;
-  let reasonY=f.reasonsTop+44;
-  for(const reason of f.reasons){
-   ctx.fillStyle=CARD_2;roundRect(ctx,80,reasonY,W-160,reason.height,22);ctx.fill();
-   ctx.fillStyle=reasonInk(reason.tone);roundRect(ctx,80,reasonY,4,reason.height,2);ctx.fill();
-   ctx.textAlign='left';ctx.font=`650 28px ${FONT}`;
-   reason.titles.forEach((line,i)=>ctx.fillText(line,108,reasonY+38+i*34));
-   ctx.fillStyle=INK;ctx.font=`500 24px ${FONT}`;
-   reason.copies.forEach((line,i)=>ctx.fillText(line,108,reasonY+54+reason.titles.length*34+i*32));
-   reasonY+=reason.height+16;
-  }
-
-  // ---- what it does to each lineup ------------------------------------
-  t.deltas.forEach((row, index) => {
-    const lineY = f.linesTop + index * f.lineH;
-    ctx.strokeStyle = LINE; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(80, lineY);
-    ctx.lineTo(W - 80, lineY);
-    ctx.stroke();
-    ctx.textAlign = "left";
-    ctx.fillStyle = MUTED;
-    ctx.font = `700 24px ${FONT}`;
-    fitText(ctx, `${row.team} lineup`, 80, lineY + 32, W - 400, 24, 700, "left");
-    ctx.textAlign = "right";
-    ctx.fillStyle = row.delta >= 0 ? GOLD : ACCENT;
-    ctx.font = `700 30px ${FONT}`;
-    ctx.fillText(`${signed(row.delta)} / wk`, W - 80, lineY + 33);
-  });
-
-  // ---- the balance, against verdictFor()'s own bands -------------------
-  const barX = 80, barW = W - 160, barH = 14;
-  const band = (from, to, colour) => {
-    ctx.fillStyle = colour;
-    ctx.fillRect(barX + barW * from, f.meterY, barW * (to - from), barH);
-  };
-  ctx.save();
-  roundRect(ctx, barX, f.meterY, barW, barH, 7);
-  ctx.clip();
-  band(0, .55, `${BRAND_RED}66`);
-  band(.55, .72, `${GOLD}33`);
-  band(.72, .88, `${BRAND_YELLOW}66`);
-  band(.88, 1, `${INK}33`);
-  ctx.restore();
-  const markX = barX + barW * (t.fairness / 100);
-  ctx.fillStyle = INK;
-  roundRect(ctx, markX - 3, f.meterY - 6, 6, barH + 12, 3);
-  ctx.fill();
-  ctx.textAlign = "left";
-  ctx.fillStyle = MUTED;
-  ctx.font = `600 19px ${FONT}`;
-  ctx.letterSpacing = "2px";
-  ctx.fillText("LOPSIDED", barX, f.meterY + 42);
-  ctx.textAlign = "right";
-  ctx.fillText("EVEN SPLIT", barX + barW, f.meterY + 42);
-  ctx.letterSpacing = "0px";
-  ctx.textAlign = "center";
-  ctx.fillStyle = INK;
-  ctx.font = `700 22px ${FONT}`;
-  ctx.fillText(`${t.fairness}% BALANCE`, W / 2, f.meterY - 14);
-
-  // ---- who, and the disclaimer that keeps this a model -----------------
-  ctx.fillStyle = INK;
-  ctx.font = `600 34px ${FONT}`;
-  fitText(ctx, t.who, W / 2, f.who, W - 200, 34, 600, "center");
-  drawShareFooter(ctx,"DFLyzer · Model estimate, not a promise");
-
-  return canvas;
+ return editorialShareCanvas(tradeShareSpec(t));
 }
 
 /**

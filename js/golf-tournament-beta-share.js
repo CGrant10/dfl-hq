@@ -1,3 +1,4 @@
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 import { FONT, fitText, roundRect, shareCanvas } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
@@ -21,26 +22,7 @@ export function shareBetaTeams(state) {
 }
 
 export function leaderboardCanvas(state, entry) {
-  const balls = entry.battles.flatMap(b => b.sides.map(s => ({ ...s, round: entry.round, matchId: s.match_id, matchNumber: s.match_number, teamOrder: s.slot })));
-  const rows = roundBoard({ balls, holes: state.holes }, entry.round).flatMap(group => group.rows);
-  const H=Math.max(1350,460+rows.length*104);
-  const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
-  const ctx=canvas.getContext("2d");drawShareFrame(ctx,"Golf leaderboard");
-  ctx.fillStyle = INK; fitText(ctx, String(state.outing.name || "DFL Golf").toUpperCase(), W / 2, 228, W - 100, 52, 700);
-  ctx.fillStyle = MUTED; fitText(ctx, `${String(entry.round.name || entry.round.format || "ROUND").toUpperCase()} · LIVE LEADERBOARD`, W / 2, 274, W - 100, 25, 600);
-  const top = 330, gap = 10, rowH = Math.min(92, Math.max(46, (H - top - 120 - Math.max(0, rows.length - 1) * gap) / Math.max(1, rows.length)));
-  rows.forEach((row, index) => {
-    const y = top + index * (rowH + gap); ctx.fillStyle = index === 0 ? CARD_2 : CARD; roundRect(ctx, 50, y, W - 100, rowH, 18); ctx.fill(); ctx.strokeStyle = index === 0 ? GOLD : LINE; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.fillStyle = index === 0 ? GOLD : MUTED; ctx.font = `700 28px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(index + 1), 92, y + rowH / 2);
-    ctx.textAlign = "left"; ctx.fillStyle = INK; fitText(ctx, row.name, 135, y + rowH * .44, 570, Math.min(34, rowH * .38), 700, "left");
-    /* Keep team colour in markers and borders. Shared-image lettering uses
-       the fixed high-contrast ink so blue never disappears into the black. */
-    ctx.fillStyle = MUTED; fitText(ctx, `${row.teamName || "Individual"} · ${boardProgress(row)}`, 135, y + rowH * .76, 590, Math.min(20, rowH * .22), 750, "left");
-    ctx.fillStyle = index === 0 ? GOLD : INK; fitText(ctx, boardLabel(row), W - 92, y + rowH * .60, 225, Math.min(38, rowH * .44), 700, "right");
-  });
-  if (!rows.length) { ctx.fillStyle = MUTED; ctx.font = `600 30px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("No scores have been entered yet.", W / 2, 420); }
-  ctx.fillStyle = MUTED; ctx.font = `700 22px ${FONT}`; ctx.textAlign = "center"; drawShareFooter(ctx,"Golf leaderboard");
-  return canvas;
+ const balls=entry.battles.flatMap(b=>b.sides.map(s=>({...s,round:entry.round,matchId:s.match_id,matchNumber:s.match_number,teamOrder:s.slot})));const rows=roundBoard({balls,holes:state.holes},entry.round).flatMap(g=>g.rows);return editorialShareCanvas({kind:'Golf leaderboard',context:entry.round.name||entry.round.format,headline:state.outing.name||'DFL GOLF',sections:[{label:'Leaderboard',rows:rows.map((r,i)=>({name:`${i+1}. ${r.name}`,value:boardLabel(r),detail:[r.teamName||'Individual',boardProgress(r)].join(' · ')}))}],footer:'Golf leaderboard'});
 }
 
 export function shareBetaLeaderboard(state, entry) {

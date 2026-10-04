@@ -53,7 +53,7 @@ const seal = typeof Image === "function" ? new Image() : null;
 let sealReady = false;
 if (seal) {
   seal.onload = () => { sealReady = true; };
-  seal.src = new URL("../icons/dfl-seal-heritage-512.webp", import.meta.url).href;
+  seal.src = new URL("../icons/dfl-seal-512.webp", import.meta.url).href;
 }
 export const sealImage = () => (sealReady ? seal : null);
 
@@ -125,7 +125,7 @@ const canShareAtAll = () => typeof navigator !== "undefined" && !!navigator.shar
  * Share a canvas as a PNG. Call this DIRECTLY inside a click handler.
  * @returns {"shared"|"saved"|"failed"} what actually happened
  */
-export function shareCanvas(canvas, filename, { title, text } = {}) {
+export function shareCanvasDirect(canvas, filename, { title, text } = {}) {
   const file = dataUrlToFile(canvas.toDataURL("image/png"), filename);
 
   if (navigator.canShare?.({ files: [file] })) {
@@ -147,6 +147,14 @@ export function shareCanvas(canvas, filename, { title, text } = {}) {
   saveFile(file);
   return "saved";
 }
+
+/** A deliberate preview preserves a fresh user gesture for its Share action. */
+export function shareCanvas(canvas,filename,options={}) {
+  return canvas?.openSharePreview ? canvas.openSharePreview({filename,...options}) : shareCanvasDirect(canvas,filename,options);
+}
+
+/** Explicit download action, including on phones that support sharing. */
+export function saveCanvas(canvas,filename) { saveFile(dataUrlToFile(canvas.toDataURL('image/png'),filename)); }
 
 /**
  * Share plain text and a link - the cheap version, and the desktop fallback.

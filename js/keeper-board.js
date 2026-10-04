@@ -1,3 +1,5 @@
+import {keeperShareSpec} from './share-export-model.js';
+import {editorialShareCanvas} from './share-editorial.js';
 import {drawShareFrame,drawShareFooter} from "./share-card-style.js";
 // =====================================================================
 // keeper-board.js - the whole league's keepers, as one picture
@@ -123,6 +125,7 @@ export function boardData({ season, members = [], keeperRows = [], players = {},
     const position = row.player_pos || meta?.p || "";
     const nflTeam = row.player_team || meta?.t || "";
     return {
+      id: row.player_id == null ? '' : String(row.player_id), position,
       name: row.player_name || row.player || "—",
       where: [position, nflTeam].filter((v) => v && v !== "FA").join(" · "),
       round: row.round_cost == null ? null : Number(row.round_cost),
@@ -181,165 +184,7 @@ export function boardText(board) {
  * running off the bottom. Row height is computed, never assumed.
  */
 export function boardCanvas(board) {
-  const lines=[...board.rows,...(board.also.length?[{keepers:board.also}]:[])].reduce((n,r)=>n+Math.max(1,r.keepers.length),0);
-  const H=Math.max(1350,470+lines*86);
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d");
-
-  drawShareFrame(ctx,"Keeper board");
-  let y=220;
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = INK;
-  ctx.font = `700 66px ${FONT}`;
-  ctx.fillText(`${board.season} KEEPERS`, W / 2, y);
-  y += 42;
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `600 26px ${FONT}`;
-  ctx.letterSpacing = "4px";
-  ctx.fillText(`${board.submitted} OF ${board.total} SUBMITTED`, W / 2, y);
-  ctx.letterSpacing = "0px";
-  y += 30;
-
-  /*
-    THE RULE SUMMARY IS NOT ON THE CARD.
-
-    It used to print "3-year maximum · Previous season's draft -1 round · Floor
-    R1" under the count. The commissioner asked for it off: the board is a
-    scoreboard of who kept whom, and the rules are a separate conversation that
-    lives on the Rules page and in the editor. `boardData().rulesLine` is still
-    produced - boardText() and any future caller can use it - but nothing is
-    painted here.
-  */
-
-  // ---- the rows -------------------------------------------------------
-  const footer = 116;
-  const top = y + 22;
-  const listH = H - top - footer;
-  /* Everybody who is drawn: the members, then anything recorded that matched
-     no member. An extra row costs height rather than being hidden. */
-  const drawn = [
-    ...board.rows.map((r) => ({ ...r, extra: false })),
-    ...(board.also.length
-      ? [{ member: "Also recorded", team: "", keepers: board.also, extra: true }]
-      : []),
-  ];
-  /* Two keepers under one member needs a taller row than one, so the budget is
-     divided by LINES rather than by rows. */
-
-  /*
-    A row is capped so a four-team league does not get four enormous bars, and
-    the block is then CENTRED in what is left. Without the centring, a six-team
-    board was six rows at the top and half a card of black underneath - which
-    reads as a rendering fault rather than as a small league.
-  */
-  const unit = Math.min(78, listH / lines);
-  const rowGap = 6;
-  const used = unit * lines;
-
-  ctx.textBaseline = "middle";
-  let ry = top;
-
-  for (const row of drawn) {
-    const count = Math.max(1, row.keepers.length);
-    const h = unit * count - rowGap;
-
-    ctx.fillStyle = CARD;
-    roundRect(ctx, 46, ry, W - 92, h, 16);
-    ctx.fill();
-    /* A weighted left edge, gold when this member has submitted and a quiet
-       line when they have not - so "who still owes one" is answerable from
-       across the room, without shouting at anybody. */
-    ctx.fillStyle = row.keepers.length ? GOLD : LINE;
-    roundRect(ctx, 46, ry, 7, h, 4);
-    ctx.fill();
-
-    const midY = ry + h / 2;
-    const nameX = 78;
-
-    // Who
-    ctx.textAlign = "left";
-    ctx.fillStyle = INK;
-    const label = row.team || row.member || "—";
-    const twoLine = row.team && row.member && !row.extra;
-    /* fitText returns the size it settled on, so the member name underneath can
-       stay PROPORTIONAL to it. A fixed 21px under a team name that had to shrink
-       to 18 made the label smaller than its own subtitle. */
-    const nameSize = fitText(ctx, label, nameX, twoLine ? midY - 13 : midY,
-                             370, 30, 600, "left");
-    if (twoLine) {
-      ctx.fillStyle = MUTED;
-      ctx.font = `700 ${Math.min(21, Math.max(15, nameSize - 6))}px ${FONT}`;
-      ctx.fillText(row.member, nameX, midY + 16);
-    }
-
-    // What
-    const px = 470;
-    if (!row.keepers.length) {
-      ctx.fillStyle = MUTED;
-      ctx.font = `600 italic 25px ${FONT}`;
-      ctx.fillText("No keeper submitted", px, midY);
-    } else {
-      row.keepers.forEach((k, i) => {
-        const ky = ry + unit * i + (unit - rowGap) / 2;
-        ctx.textAlign = "left";
-        ctx.fillStyle = INK;
-        fitText(ctx, k.name, px, k.where ? ky - 12 : ky, W - px - 150, 30, 600, "left");
-        if (k.where) {
-          ctx.fillStyle = MUTED;
-          ctx.font = `700 20px ${FONT}`;
-          ctx.letterSpacing = "2px";
-          ctx.fillText(k.where.toUpperCase(), px, ky + 16);
-          ctx.letterSpacing = "0px";
-        }
-        /*
-          THE HOLD, ON THE SHARED IMAGE.
-
-          A keeper board that shows only the cost answers half the question.
-          "R7" says what he costs; "YR 2/3" says how much longer he can be
-          held at all, which is the part that changes what anybody does about
-          it. Drawn as pips plus the numerals for the same reason the card
-          does both - the pips are read at a glance and the numerals survive
-          a screenshot being looked at on a small phone.
-        */
-        if (k.tenure?.max) {
-          const t = k.tenure;
-          const tx = k.where ? px + ctx.measureText(k.where.toUpperCase()).width + 24 : px;
-          const ty = ky + 16;
-          const pipW = 16, pipH = 6, pipGap = 4;
-          t.max > 0 && Array.from({ length: t.max }).forEach((_, i) => {
-            ctx.fillStyle = i < t.year ? (t.final ? ACCENT : GOLD) : LINE;
-            roundRect(ctx, tx + i * (pipW + pipGap), ty - pipH / 2 - 2, pipW, pipH, 3);
-            ctx.fill();
-          });
-          ctx.fillStyle = t.final ? ACCENT : MUTED;
-          ctx.font = `600 19px ${FONT}`;
-          ctx.textAlign = "left";
-          ctx.fillText(`YR ${t.year}/${t.max}`, tx + t.max * (pipW + pipGap) + 8, ty + 1);
-        }
-        // The round, as a column you can read straight down.
-        ctx.textAlign = "right";
-        if (k.round != null) {
-          ctx.fillStyle = ACCENT;
-          ctx.font = `700 34px ${FONT}`;
-          ctx.fillText(`R${k.round}`, W - 76, ky);
-        } else {
-          ctx.fillStyle = MUTED;
-          ctx.font = `600 30px ${FONT}`;
-          ctx.fillText("—", W - 76, ky);
-        }
-      });
-    }
-
-    ry += unit * count;
-  }
-
-  drawShareFooter(ctx,`${board.season} season`);
-
-  return canvas;
+ return editorialShareCanvas(keeperShareSpec(board));
 }
 
 /**
