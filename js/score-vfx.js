@@ -52,6 +52,8 @@ export function mountScoreVfx(root){
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
   const light=getComputedStyle(root).getPropertyValue('--gd-hot-ink').trim()==='#9c3900';
   for(const element of root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')){
+   // A nested player dialog has its own GPU surface.
+   if(element.closest('dialog')!==(root.matches('dialog')?root:null))continue;
    const value=element.querySelector('.gd-thermal-value'),rect=value?.getBoundingClientRect();if(!rect||!rect.width||!rect.height||!element.getClientRects().length)continue;
    const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
    const mask=document.createElement('canvas');mask.width=Math.ceil(width*scale);mask.height=Math.ceil(height*scale);const context=mask.getContext('2d');if(!context)continue;
