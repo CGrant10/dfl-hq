@@ -142,8 +142,8 @@ function tradeLab(team, teams, pool, shop) {
   const remainingOffers = Math.max(0, tierOffers.length - visibleOffers.length);
   const nextOfferCount = Math.min(OFFER_BATCH_SIZE, remainingOffers);
   const moreLabel = remainingOffers
-    ? `SHOW ${nextOfferCount} MORE · ${remainingOffers} REMAINING`
-    : `ALL ${tierOffers.length} OFFERS SHOWN`;
+    ? `Show ${nextOfferCount} more · ${remainingOffers} remaining`
+    : `All ${tierOffers.length} offers shown`;
   shop.openTiers ||= new Set();
   const countOptions = (side, selected, minimum) => `<option value="any" ${selected === "any" ? "selected" : ""}>Any</option>${Array.from({ length: 7 }, (_, index) => index + 1)
     .filter(count => count >= minimum && count < maxPlayers - shop.memberIds.length)
@@ -168,7 +168,7 @@ function tradeLab(team, teams, pool, shop) {
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
         </div>
-        <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "FAIR"], ["aggressive", "AGGRESSIVE"], ["steal", "STEAL"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
+        <div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
       </div>
     </section>
     <section class="tb-layout-section">
@@ -176,8 +176,8 @@ function tradeLab(team, teams, pool, shop) {
       <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
       <div class="tb-offers-card">
         <div class="tb-offer-actions">
-          <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "OFFERS REFRESHED" : esc(moreLabel)}</span></button>
-          ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>SHOW ALL ${tierOffers.length}</button>` : ""}
+          <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
+          ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
         </div>
         <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
         ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
@@ -281,7 +281,7 @@ function page(data, tradeAlerts = []) {
             const button = body.querySelector("[data-tb-generate]");
             button?.classList.remove("is-refreshed");
             const label = button?.querySelector("[data-tb-generate-label]");
-            if (label) label.textContent = label.dataset.defaultLabel || "SHOW MORE OFFERS";
+            if (label) label.textContent = label.dataset.defaultLabel || "Show more offers";
           }, 1200);
         }
       };

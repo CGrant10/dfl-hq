@@ -264,11 +264,9 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
   */
   const hasPlayed = side => Number(side?.played) > 0 || (side?.played == null && (Number(side?.actual) || 0) !== 0);
   const sideView = side => {
-    const played = Math.max(0, Number(side.played) || 0);
     const showActual = live && hasPlayed(side);
     const value = showActual ? Number(side.actual) || 0 : side.projection;
-    const status = side.complete ? "FINAL" : showActual
-      ? `PLAYING · ${played} STARTED` : "YET TO PLAY · PROJ";
+    const status = side.complete ? "Final" : showActual ? "Live" : "Projected";
     return { value, status, mode: side.complete ? "final" : showActual ? "live" : "projected" };
   };
   const rows = fixtures.map(fixture => {

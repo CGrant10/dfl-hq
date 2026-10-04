@@ -1488,3 +1488,22 @@ html[data-palette="fairway"] .ta-mark.is-you { background: var(--accent); }
   .td-alert-packages > section, .td-alert-receipt > footer { padding: 18px; }
   .td-alert-receipt > footer small { flex-basis: auto; }
 }
+
+/* Quieter control surfaces inside a full 44px hit area. */
+.td-page :is(.btn,.tb-generate,.tb-show-all,.td-remove-member) { position:relative; isolation:isolate; min-height:44px; padding:0 12px; border:0; border-radius:8px; background:transparent; box-shadow:none; font-family:ui-sans-serif,system-ui,sans-serif; font-size:.8125rem; font-weight:500; letter-spacing:0; text-transform:none; transform:none; }
+.td-page :is(.btn,.tb-generate,.tb-show-all,.td-remove-member)::before { content:""; position:absolute; inset:6px 0; border:1px solid var(--line); border-radius:6px; background:var(--control-bg); z-index:-1; pointer-events:none; }
+.td-page :is(.btn,.tb-show-all,.td-remove-member):hover::before { background:var(--hover); border-color:var(--control-line); }
+.td-page .tb-generate::before { background:var(--ok-bg); border-color:var(--ok-line); }
+.td-page .tb-generate:hover::before { background:color-mix(in srgb,var(--ok) 12%,var(--control-bg)); }
+.td-page .td-remove-member { min-width:44px; width:44px; font-size:20px; padding:0; }
+.td-page .td-remove-member::before { inset:6px; }
+.td-page .tb-intent-options button { display:block; min-height:44px; padding:6px; font:500 .8125rem/1.25 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; text-transform:none; white-space:normal; overflow-wrap:anywhere; }
+.td-page .tb-intent-options > i { top:6px; bottom:6px; box-shadow:none; }
+.td-page .tb-team-select select, .td-page .tb-anchor-chips button { font-family:ui-sans-serif,system-ui,sans-serif; font-weight:500; }
+.td-page .tb-offer-flow > button { min-height:44px; font-family:ui-sans-serif,system-ui,sans-serif; font-weight:500; }
+@media(max-width:390px) { .td-page .tb-offer-flow > button { font-size:0; } }
+
+.td-page .ta-report-title > div, .td-completed .ta-report-title > div { min-width:0; }
+.td-page .ta-report-title h2, .td-completed .ta-report-title h2 { white-space:normal; overflow-wrap:anywhere; }
+
+.td-page a.btn { text-decoration:none; }

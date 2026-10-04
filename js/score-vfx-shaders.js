@@ -70,7 +70,9 @@ void main(){
   surface*=mix(1.,.3,u_light);
   vec3 ember=mix(vec3(1.,.38,.04),vec3(1.,.91,.58),shimmer*.65+innerRim*.35);
   color=mix(color,ember,glyph);
-  alpha=fire*.74+halo*.07+surface;
+  // On white surfaces, retain the hot stroke but soften the detached rim.
+  float rimSoftening=mix(1.,1.-edge*.62,u_light);
+  alpha=fire*.74*rimSoftening+halo*mix(.07,.015,u_light)+surface;
   float sparks=0.;
   for(int i=0;i<8;i++){
    float id=float(i),seed=hash(vec2(id,3.));float life=fract(t*(.24+seed*.18)+seed);

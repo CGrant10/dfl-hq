@@ -1,0 +1,9 @@
+# Focused UI polish — 1.289.0
+
+Light-mode score fire now attenuates the exterior glyph rim and halo, and uses a smaller, fainter text shadow. Heat within the digits remains animated. Dark-mode fire and cold effects retain their existing shader behavior and trigger thresholds.
+
+Broadcast matchup names can wrap and retain full text, with a title fallback. On phones the team name spans the entire side, while team marks and scores occupy a second row with aligned, fixed-width score columns. Labels are now Projected, Live or Final, preserving the actual/projection distinction and mixed-row rules. The mobile broadcast uses a consistent 33rem minimum height for every slide to fit six rows above the controls; desktop keeps the inline scoreboard layout. The height scales with enlarged text rather than cropping names.
+
+Trade controls now use normal-case system text at medium weight. Button surfaces occupy the center 32px of a 44px hit area, with lighter borders; member-removal controls also retain 44px square targets. Selects use matching typography. Offer-type labels wrap at enlarged sizes, and fold headings can reflow. Existing player photos, trade-model logic and multi-member controls are unchanged.
+
+Validation: 1,034 tests in 116 files, TypeScript, name checks and production build. Read-only browser tests cover Home/Trades in light/dark modes at 320, 390 and 1280 pixels; automated WCAG A/AA checks find no violations or horizontal overflow. At 200% text size, Home/Trades reflow and all six broadcast rows remain within the stage above its controls. Next/previous arrows retain their center between slides. Member add/remove controls retain their functionality and 44px targets. GPU lab verifies compilation, animated glyph-surface pixels, motion-off/reduced-motion pause, context restoration and readable no-GPU fallback. Physical phone GPU performance is outside these checks.

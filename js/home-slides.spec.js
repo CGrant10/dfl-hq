@@ -302,7 +302,7 @@ describe("the slate during a week in progress", () => {
     const rows = weekSlateSlide({ fixtures, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
     expect([rows[0].a.score, rows[0].b.score]).toEqual(["16.2", "110.4"]);
     expect([rows[1].a.score, rows[1].b.score]).toEqual(["120.1", "99.5"]);
-    expect([rows[0].a.status, rows[0].b.status]).toEqual(["PLAYING · 1 STARTED", "YET TO PLAY · PROJ"]);
+    expect([rows[0].a.status, rows[0].b.status]).toEqual(["Live", "Projected"]);
     expect([rows[0].a.mode, rows[0].b.mode]).toEqual(["live", "projected"]);
   });
 
@@ -329,7 +329,7 @@ describe("the slate during a week in progress", () => {
       b: { ...fixture.b, actual: 99.8, played: 9, remaining: 0, complete: true },
     }));
     const [row] = weekSlateSlide({ fixtures: done, season: 2026, week: 2, meSleeperId: "me", live: true }).fixtures;
-    expect([row.a.status, row.b.status]).toEqual(["FINAL", "FINAL"]);
+    expect([row.a.status, row.b.status]).toEqual(["Final", "Final"]);
     expect(row.a.up).toBe(true);
   });
 });

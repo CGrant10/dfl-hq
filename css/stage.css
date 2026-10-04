@@ -1082,3 +1082,25 @@
   color: var(--muted);
   opacity: .7;
 }
+
+
+/* Short score labels leave two lines for names, with stable score columns. */
+.bx-slate-club > b { white-space:normal; overflow:visible; overflow-wrap:anywhere; text-overflow:clip; font-size:clamp(.7rem,2.7vw,.82rem); line-height:1.15; }
+.bx-slate-score { width:3.25rem; min-width:0; }
+.bx-slate-score > small { font-size:.6rem; font-weight:500; letter-spacing:0; white-space:normal; }
+.bx-slate-score > i { font-size:.9rem; }
+@media(max-width:600px) {
+ .bx-stage { min-height:33rem; }
+ /* A name owns its side's full width; the mark and score sit below it. */
+ .bx-slate-side, .bx-slate-side:last-child { grid-template-columns:minmax(0,1fr) 3.25rem; align-items:center; gap:4px 8px; }
+ .bx-slate-side > .bx-slate-club { display:contents; }
+ .bx-slate-club > b { grid-column:1 / -1; grid-row:1; min-height:2.3em; text-align:left; }
+ .bx-slate-club > .bx-team-mark { grid-column:1; grid-row:2; justify-self:start; }
+ .bx-slate-side > .bx-slate-score { grid-column:2; grid-row:2; }
+ .bx-slate-side:last-child { grid-template-columns:3.25rem minmax(0,1fr); }
+ .bx-slate-side:last-child .bx-slate-club > b { text-align:right; }
+ .bx-slate-side:last-child .bx-team-mark { grid-column:2; justify-self:end; }
+ .bx-slate-side:last-child > .bx-slate-score { grid-column:1; }
+ .bx-slate-row { gap:6px; padding:3px 6px; }
+ .bx-slate-list { gap:3px; }
+}

@@ -1545,3 +1545,5 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 .gameday-final-action { display:flex; justify-content:flex-end; padding:8px 0 14px; }
 
 .gd-score-updated > small { visibility:hidden; }
+
+:root[data-mode="light"] .gd-thermal-number[data-score-temperature="hot"] { text-shadow:0 0 .2em #ff711a12; }
