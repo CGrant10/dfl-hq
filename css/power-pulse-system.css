@@ -1538,3 +1538,10 @@ body[data-moment="payout"].is-dfl-moment::after { background: linear-gradient(90
 
 :root { --injury-out-ink:#ffb3aa; }
 :root[data-mode="light"] { --injury-out-ink:#99273a; }
+
+.gameday-player-score { position:relative; }
+.gd-score-delta { position:absolute; right:0; bottom:0; padding:0 4px; border:1px solid var(--line); border-radius:5px; background:var(--card); color:var(--text); font:600 12px/1.2 system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; pointer-events:none; z-index:3; }
+.gd-score-delta.is-negative { color:var(--text); }
+.gameday-final-action { display:flex; justify-content:flex-end; padding:8px 0 14px; }
+
+.gd-score-updated > small { visibility:hidden; }
