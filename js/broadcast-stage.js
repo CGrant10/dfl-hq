@@ -339,6 +339,14 @@ function fitHeadlines(slide) {
 /** One item as markup. An unknown treatment degrades to an announcement. */
 export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
+  if (editorial && item.homeFeature) {
+    return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
+      <span class="bx-home-week">${esc(item.kicker)}</span>
+      <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
+      <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
+      <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
+    </a>`;
+  }
   const draw = TREATMENTS[item.treatment] || announcement;
   const media = editorial
     ? item.background === "image" && item.image
@@ -380,7 +388,7 @@ export function renderStage(deck, { editorial = false } = {}) {
     <section class="bx-stage" data-bx-stage${editorial ? ' data-presentation="editorial"' : ''}>
       ${editorial ? '<span class="bx-editorial-label">League broadcast</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial })}</div>
-      ${items.length > 1 ? arrows() + controls(items) : ""}
+      ${items.length > 1 ? arrows(editorial) + controls(items) : ""}
     </section>`;
 }
 
@@ -390,13 +398,13 @@ export function renderStage(deck, { editorial = false } = {}) {
   and a keyboard user both need a control they can actually reach. CSS
   fades them up on hover where hover exists; on touch they simply stay.
 */
-function arrows() {
+function arrows(editorial = false) {
   return `
     <button type="button" class="bx-arrow bx-prev" data-bx-step="-1" aria-label="Previous slide">
-      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-left"></use></svg>
+      <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-left' : '#i-chev-left'}"></use></svg>
     </button>
     <button type="button" class="bx-arrow bx-next" data-bx-step="1" aria-label="Next slide">
-      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+      <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-right' : '#i-chev-right'}"></use></svg>
     </button>`;
 }
 

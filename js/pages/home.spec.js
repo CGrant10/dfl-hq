@@ -48,7 +48,7 @@ describe("Home redesign wiring", () => {
     expect(source).not.toContain("if (stage) stage.update(build(golfDayNow))");
   });
 
-  it("renders the approved always-visible power rankings composition", () => {
+  it("retains the power rankings composition in the league disclosure", () => {
     expect(source).toContain("export function homeRankingsCard");
     expect(source).toContain("home-rank-head");
     expect(source).toContain('row(item, index, String(item.id) === String(focus.id))');
@@ -95,3 +95,4 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("loadTradeAlerts({ limit: 12 })");
   });
 });
+

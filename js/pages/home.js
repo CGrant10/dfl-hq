@@ -32,6 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
+import {homeBroadcastDeck,homeNavigationPresentation} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
@@ -405,6 +406,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
 export async function render(view) {
   leave();
   const mine = ++generation;
+  deferredStops.push(homeNavigationPresentation());
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
   /* These reads do not depend on the core dashboard rows. Starting them now
@@ -477,10 +479,10 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     <div data-home-gameday-slot></div>
-    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
-    <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse →</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
     ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
+    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
     <div data-home-pickem-slot></div>
     <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
@@ -531,7 +533,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireInline(view.querySelector("#home-wrap"), () => render(view));
@@ -611,11 +613,12 @@ export async function render(view) {
   const injuryUi=mountInjuryReport(view,{getReport:()=>injuryReport,onOpen:()=>stage?.suspend('injury-report',true),onClose:()=>stage?.suspend('injury-report',false),refresh:async()=>{const data=await loadNflInjuries({force:true});if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});stage?.update(build(golfDayNow));injuryUi.update()}});
   deferredStops.push(()=>injuryUi.stop());
   let golfDayNow = golfDay;
+  let homeBroadcastWeek = null;
   const off = broadcastOff();
-  const build = (day) => editorialStage(
+  const build = (day) => homeBroadcastDeck(editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
     { custom: [...custom, ...liveSlides, ...injuryReportSlides(injuryReport)].filter(Boolean), off, overrides },
-  );
+  ), {week: homeBroadcastWeek});
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -638,7 +641,7 @@ export async function render(view) {
     if (mine !== generation || !view.isConnected) return;
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
-    const ordered = deck;
+    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek});
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
     host.innerHTML = renderStage(ordered, { editorial: true });
@@ -649,6 +652,7 @@ export async function render(view) {
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;
     if (!view.isConnected) return;
+    homeBroadcastWeek=weekly?.week || null;
     injuryAnalysis=analysis;
     if(injuries)injuryReport=buildInjuryReport(injuries.payload,{analysis,now:injuries.checkedAt});
     lore = got?.error ? null : got;
@@ -835,3 +839,4 @@ function ordinal(n){const r=n%100;if(r>=11&&r<=13)return `${n}th`;return n+(["th
 
 function adminRow(control){return control?`<div class="row-end">${control}</div>`:""}
 function setupNotice(){return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`}
+

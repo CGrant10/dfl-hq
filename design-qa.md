@@ -1,39 +1,44 @@
-# Quiet Editorial Home — v1.297.0
+# Broadcast Home — v1.298.0
 
-Source visual truth: `/workspace/generated_images/exec-c1f11ce4-6b24-4b36-8ffd-c952f1aac75a.png` (latest ideation option 1). User amendment: retain existing fire and ice effects and their timing rules.
+Final result: **passed** for the selected option-3 visual implementation and production-component browser review.
 
-Implementation: `/workspace/dfl-audit/editorial-1.297.0/home-390.png`.
-Full-view paired evidence: `/workspace/dfl-audit/editorial-1.297.0/comparison.png`.
-Viewport: 390 × 844 CSS pixels, deviceScaleFactor 1. Source 853 × 1844 pixels displayed at 390 × 844 beside the 390 × 844 implementation using browser HTML. Source ratio differs by less than 0.3%; no device chrome is included.
-State: medicine palette, Home, first league matchup slide, compact GameDay, collapsed rankings. Scores reflect read-only live data, not static mock scores. The verification member is azhee28, so identity and commissioner-only controls differ from the mock's cgrant10 account.
+## Reference and evidence
 
-## Comparison history
+Selected reference: `exec-b10c2c8d-0155-43a7-a138-d5ddf329ec7c.png`, 853 × 1844, normalized to 390 × 844 for comparison. This report replaces the prior report for a different design.
 
-- P2: Opening slide headings and its action clipped inside the original 163px content box. Fixed the stage/content allocation and reduced internal gaps. Final comparison shows the complete heading, teams, score-source labels and All matchups action.
-- P2: Legacy four-row faceoff grid and Home margins created excessive space. Reset grid rows and slot margins; moved live tracker details into a remembered disclosure. Existing lineup, bench, leaders, banter and highlights remain available.
-- P2: Injury preview overflowed its compact slide. Kept two players per slide, removed duplicate description text from the preview, compressed rows, and retained the full report button and dialog. Evidence: `slide-next.png`; original injury detail remains in the report.
-- P2: Rankings column headings wrapped because the previous TEAM spanning rule expected five grid tracks. Restored five matching tracks and aligned rank, portrait, name, record and movement.
-- P2: The final-matchup share button added a large block to the summary. Converted it to a quiet text-sized action beside the disclosure when collapsed; sharing remains available.
+Final application commit reviewed: `ae165301811261459e6687b1938795fae5cf6a1f`.
 
-## Required fidelity surfaces
+- Browser captures and check results: [Home design review](https://github.com/CGrant10/dfl-hq/actions/runs/37333514518), downloadable workflow artifact.
+- Full suite: [TypeScript migration check](https://github.com/CGrant10/dfl-hq/actions/runs/37333514460).
+- Workspace evidence: `/workspace/dfl-review/capture-final/comparison.png`, `shell-hero-comparison.png`, `leaders-nav-comparison.png`, `home-390.png`, `home-320.png`, `home-1280.png`, and `browser-checks.json`.
 
-- Typography: existing locally hosted Rajdhani for display/data and system sans for controls. Modest headings, compact actions, tabular scores, wrapping team names. Existing accessible thermal score labels retained.
-- Spacing/layout: continuous flat surface, hairline dividers, 20px mobile gutters, compact broadcast and GameDay, grouped rankings. No nested Home cards. The persistent ticker and actual/projected score labels are retained production features, so lower ranking rows continue below the first viewport. Rankings remain directly below GameDay rather than behind a disclosure.
-- Colors/tokens: member theme inks retained, medicine palette by default, red/yellow role switch unchanged in behavior. No broadcast weave, light sweep, corner decoration, gradients or textures introduced. Banner artwork and existing GPU score effects retain their approved treatments.
-- Images/assets: reuse the exact approved anniversary WebP and supplied DFL seal. Keep existing real league/team/player portraits and identity fallbacks rather than inventing fake team logos. Existing uploaded broadcast art remains real media, displayed without decorative layers. Standard icons reuse the app's sprite library. No new illustration assets or CSS art added.
-- Copy/content: current Week 4 fixtures, actual score-source labels, live scores, Week 3 power rankings and owner row. All matchups opens Clubhouse matchups. Existing injury/history/custom-story slides remain in the carousel. GameDay exposes its full tracker through a disclosure and Watch.
+The final review inspected the same-viewport full comparison, both focused comparisons, and the 320px and 1280px captures. The fixture renders production Home presentation, carousel, stylesheet, navigation symbols, and score effects with deterministic sample data. It does not write league data.
 
-## Verification
+## Visual review
 
-- Browser-rendered 320, 390 and 1280px captures: no horizontal overflow.
-- Carousel next/previous, progress, pause/play; rankings expand/collapse; player tracker tabs; refresh preserves open disclosure; Watch opens and closes.
-- Scoped axe audit over Home, topbar and nav: zero WCAG A/AA violations; zero browser page errors.
-- Real WebGL fixture checks: player >15 hot at any point; team >120 hot; cold suppressed until after halftime; hot and cold render in compact Home and Watch. Motion off and reduced motion stop the renderer. Test-only response overrides made no production writes.
-- `pnpm check`: typecheck, identifier scan, 1086 tests across 122 files, and production build passed.
-- Service worker precaches the new stylesheet and release/cache versions advance together.
+The implementation follows the reference's dark charcoal shell, gold accents, native anniversary artwork, stadium broadcast, cream Clubhouse CTA, compact personal matchup, four-row player leaderboard, ticker, and six-tab navigation. The original anniversary asset remains intact. The new stadium artwork is positioned with the player on the right and readable copy on the left. The licensed DFL Broadcast display font follows the reference's compact varsity lettering; body text remains readable system text.
 
-## Follow-up polish
+At 390px, the topbar is 57px, anniversary banner 130px, broadcast 254px, and leaderboard 215px. These closely follow the normalized reference's approximately 59px, 129px, 253px, and 215px. Broadcast body copy occupies two lines, and the CTA, dots, arrows, and player rows retain the reference's placement and density. At 320px, the compact matchup can wrap its owner metadata while keeping totals and controls readable. Desktop retains the existing top navigation and a centered wider Home column.
 
-P3: Source mock shows invented multicolor team monograms and fewer production controls. Existing identities, refresh/motion/share actions and the persistent ticker are intentionally retained. This adds a little vertical scroll compared with the mock.
+Resolved findings:
 
-final result: passed
+| Priority | Finding | Verified correction |
+| --- | --- | --- |
+| P1 | Earlier presentation used oversized player portraits and mismatched typography. | Production-scoped styles now render four compact portrait rows and the varsity display font. |
+| P1 | New navigation symbols were outside an SVG namespace. | Symbols live inside an SVG; all six tabs render and the browser checks their references and namespace. |
+| P2 | Broadcast copy and controls competed for space. | Two-line copy, single-line CTA, separate dots and arrows match the reference hierarchy. |
+| P2 | Legacy negative margins shifted the Home page 16px left. | Removed the old bleed offset; native banner and section gutters align with the viewport. |
+| P2 | Small viewport branding and leaderboard density differed. | Seal remains visible at 320px; compact rows keep the player preview above the ticker and navigation. |
+
+No unresolved P0, P1, or P2 visual findings remain in the reviewed states. Small optical differences remain in fictional reference letterforms and exact icon shapes. Production uses real player and owner portraits, actual records, and actual status labels. Animated fire and ice naturally differ by frame from the reference still image; both remain attached to the score numbers.
+
+## Behavior and validation
+
+- All existing broadcast slides, rotation, pause, dots, arrows, and refresh behavior are retained behind the new Clubhouse opener.
+- Strict player temperature boundaries remain: hot above 15, cold below 10 with the existing halftime/final eligibility gate. Scores exactly 15 or 10 stay neutral. Defenses remain neutral and are excluded from the preview and Hot/Cold filters.
+- Team totals stay neutral. Player-card and Watch hooks remain connected; league tools and score controls remain available in disclosures.
+- Standard CI passed: 1,092 tests in 123 files, type checking, unresolved-name checking, and the production Arena build.
+- Browser checks passed at 320, 390, and 1280px: no horizontal overflow, next/previous slides, pause, correct Clubhouse target, working WebGL score renderer, two hot/two cold sample players, valid SVG navigation, reduced motion stopping animation, and no page errors.
+- Local checks covered threshold boundaries, the cold eligibility gate, defense aliases, deduplication and balancing, retaining the original deck, current-season records, and the service-worker precache graph.
+
+The browser review verifies production components with fixture data. Authenticated end-to-end league requests, live scoring updates, and every destination route were not exercised in that fixture. The redesign is on the PR branch and has not been merged or deployed.
