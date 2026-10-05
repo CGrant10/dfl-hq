@@ -63,7 +63,8 @@ export function mountSeasonNavigation(root = document) {
     navSizeObserver?.disconnect();
     if (globalThis.ResizeObserver) {
       navSizeObserver = new ResizeObserver(syncSize);
-      navSizeObserver.observe(bar);
+      // Safe-area changes can alter padding without resizing the content box.
+      navSizeObserver.observe(bar, { box: "border-box" });
     }
   }
   return true;
