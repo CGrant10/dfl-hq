@@ -48,8 +48,16 @@ with sync_playwright() as p:
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     page.screenshot(path=str(OUT / 'home-390.png'))
+    metrics_visibility = page.evaluate('''() => {
+        const logo=document.querySelector('.brand-mark').getBoundingClientRect();
+        const last=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();
+        const ticker=document.querySelector('.bottomline').getBoundingClientRect();
+        return {logoLeft:logo.left,logoRight:logo.right,lastRowBottom:last.bottom,tickerTop:ticker.top};
+    }''')
+    assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'League seal is clipped'
+    assert metrics_visibility['lastRowBottom'] <= metrics_visibility['tickerTop'] - 1, 'Ticker covers the fourth player row at the reference viewport'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
-    metrics = {}
+    metrics = {'visibility': metrics_visibility}
     for width in [390, 320, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
