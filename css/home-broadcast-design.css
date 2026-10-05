@@ -96,12 +96,15 @@
 #home-wrap .bx-next { right: var(--home-gutter); }
 #home-wrap .bx-arrow:hover { background: #343b3ccc; transform: none; }
 #home-wrap .bx-arrow .ico-sm { width: 18px; height: 18px; }
-#home-wrap .bx-slide.is-injuries { overflow: visible; align-content: center; }
+#home-wrap .bx-slide.is-injuries { overflow: visible; align-content: center; padding-inline: var(--home-gutter); }
 #home-wrap .bx-injuries { width: 100%; padding: 0; }
 #home-wrap .bx-injuries > .bx-kicker { display: none; }
 #home-wrap .bx-injuries h2 { font: 400 22px/1.15 var(--home-display); margin-bottom: 6px; }
 #home-wrap .bx-injuries .injury-player { grid-template-columns: 28px minmax(0,1fr) 86px; gap: 6px; padding-block: 5px; }
 #home-wrap .bx-injuries .dfl-player-portrait { width: 28px; height: 28px; }
+#home-wrap .bx-injuries .injury-player-state { min-width: 0; max-width: none; grid-template-columns: minmax(0,1fr); }
+#home-wrap .bx-injuries .injury-player-state :is(b,small) { white-space: normal; overflow-wrap: anywhere; }
+#home-wrap .bx-injuries .player-card-trigger { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 #home-wrap .bx-injuries .injury-player-copy small + small, #home-wrap .bx-injuries footer > small { display: none; }
 
 /* Personal scores lead directly into the visible thermal preview. */
@@ -232,6 +235,11 @@ body:has(#view[data-route="home"]) { background: #0b0e0f; }
 #home-wrap .home-thermal-leaders .dfl-player-copy :is(strong,small) { text-transform: none; letter-spacing: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 #home-wrap :is(.home-score-tools,.gameday-home-detail) > summary { min-height: 36px; }
 #home-wrap > :is(.page-disclosure,.version-line,.dfl-alive) { margin-inline: var(--home-gutter); }
+#home-wrap > .page-disclosure { margin: 16px 0 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+#home-wrap > .page-disclosure > summary { padding: 14px var(--home-gutter); }
+#home-wrap > .page-disclosure > .page-detail-body { padding: 0 var(--home-gutter) 16px; }
+#home-wrap .page-detail-body .home-rankings-card { padding-inline: 0; }
+#home-wrap .page-detail-body .home-week-focus { margin-inline: 0; }
 
 /* Scoreboards and the weekly slate share the same reserved content area. */
 #home-wrap .bx-slide .mq-card { width: 100%; margin: 0; padding: 0; overflow: visible; }

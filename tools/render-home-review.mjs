@@ -6,6 +6,7 @@ import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup } from '../js/h
 import { renderStage } from '../js/broadcast-stage.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
 import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
+import { disclosure } from '../js/page-disclosure.js';
 
 const players = [
   { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'live', roster: '1' },
@@ -27,7 +28,7 @@ const deck = homeBroadcastDeck([
   { id: 'fixture:slate', treatment: 'slate', kicker: '2026 · Week 5', fixtures: [{ key: 'fixture:matchup', a: { name: 'Klutch Sports Group', score: '124.80', status: '3 still playing', identity: { display_name: 'Grant' } }, b: { name: 'Dream Enders', score: '118.20', status: 'Final', identity: { display_name: 'Mike' } } }], temporal: 'live', href: '#/clubhouse' },
   { id: 'fixture:event', treatment: 'event', kicker: 'League calendar', headline: 'Anniversary golf weekend', subtitle: 'The next chapter starts on the first tee.', body: 'Saturday, October 10 · 9:00 AM', temporal: 'upcoming', href: '#/calendar' },
   { id: 'fixture:hero', treatment: 'hero', kicker: 'Ten seasons of DFL', headline: 'Draft. Golf. Repeat.', subtitle: 'A decade of matchups, rivalries and receipts.', temporal: 'none' },
-  { id: 'fixture:injury', treatment: 'injuries', available: true, page: 1, pages: 3, total: 6, players: [{ id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', owner: 'Klutch Sports Group', tag: 'Questionable', availability: 'Game-time decision', tone: 'questionable' }, { id: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', owner: 'Dream Enders', tag: 'Out', availability: 'Will not play', tone: 'out' }], temporal: 'none' },
+  { id: 'fixture:injury', treatment: 'injuries', available: true, page: 1, pages: 3, total: 6, players: [{ sleeperId: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', owner: 'Klutch Sports Group', tag: 'Questionable', availability: 'Game-time decision', tone: 'questionable' }, { sleeperId: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', owner: 'Dream Enders', tag: 'Out', availability: 'Will not play', tone: 'out' }], temporal: 'none' },
 ], { week: 5, now: new Date('2026-10-05T12:00:00Z') });
 let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -37,6 +38,7 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <aside class="dfl-anniv dfl-anniv--editorial"><img class="dfl-anniv-art" src="assets/anniversary-ten.webp" width="2172" height="724" alt="10th anniversary season, 2017–2026"></aside>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="on"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Live</span><button class="linkbtn" data-gameday-watch>Watch →</button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
+  ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
