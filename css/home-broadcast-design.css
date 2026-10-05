@@ -9,6 +9,7 @@
 #view.view[data-route="home"] { width: min(100%, 900px); max-width: 900px; padding: 0; }
 body:has(#view[data-route="home"]) { --home-gutter: 18px; background: #0b0e0f; }
 #home-wrap {
+  --home-gutter: inherit;
   --home-gap: 0px;
   --bg: #0b0e0f;
   --bg-2: #121617;
