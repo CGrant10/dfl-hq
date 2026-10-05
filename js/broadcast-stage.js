@@ -544,6 +544,34 @@ export function startStage(root, deck, { refresh } = {}) {
   let dead = false;
 
   const layer = root.querySelector("[data-bx-layer]");
+  const editorial = root.dataset.presentation === "editorial";
+  let layoutFrame = 0;
+  function fitLayout() {
+    layoutFrame = 0;
+    if (dead || !layer) return;
+    const slide = [...layer.children].find(el => !el.classList.contains("bx-leaving"));
+    if (!slide) return;
+    fitHeadlines(slide);
+    if (!editorial) return;
+    const style = getComputedStyle(slide);
+    const children = [...slide.children].filter(el => !el.classList.contains("bx-editorial-art"));
+    const content = children.reduce((height, el) => {
+      const childStyle = getComputedStyle(el);
+      return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
+    }, 0)
+      + Math.max(0, children.length - 1) * (parseFloat(style.rowGap) || 0);
+    const min = parseFloat(getComputedStyle(root).getPropertyValue("--bx-min-height"));
+    if (!min) return;
+    const height = Math.ceil(Math.max(min, content + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0) + 2));
+    if (root.style.height !== `${height}px`) root.style.height = `${height}px`;
+    const dot = root.querySelector('[aria-current="true"]');
+    const dots = dot?.parentElement;
+    if (dot && dots && dots.scrollWidth > dots.clientWidth) dots.scrollLeft = dot.offsetLeft - dots.clientWidth / 2 + dot.offsetWidth / 2;
+  }
+  const scheduleLayout = () => { if (!dead && !layoutFrame) layoutFrame = requestAnimationFrame(fitLayout); };
+  const resize = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleLayout) : null;
+  resize?.observe(root);
+  document.fonts?.ready.then(scheduleLayout);
   /* Looked up on demand, never cached: the controls are re-rendered whenever
      the deck length changes, so a captured reference would go stale and the
      button would stop working. Click handling is delegated on root for the
@@ -599,6 +627,7 @@ export function startStage(root, deck, { refresh } = {}) {
          document but not yet animating - a mid-animation scale() would make
          getBoundingClientRect() report the wrong width. */
       fitHeadlines(slide);
+      scheduleLayout();
       slide.classList.add("bx-enter");
       /* Commit the entrance state before anything can release it. .bx-enter
          carries transition:none, so this reflow makes opacity 0 and the 28px
@@ -896,7 +925,7 @@ export function startStage(root, deck, { refresh } = {}) {
        no way to step through it. */
     if (wrap) wrap.outerHTML = controls(items, i);
     else root.insertAdjacentHTML("beforeend", controls(items, i));
-    if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows());
+    if (!root.querySelector("[data-bx-step]")) root.insertAdjacentHTML("beforeend", arrows(editorial));
     paintButton();
   }
 
@@ -922,6 +951,8 @@ export function startStage(root, deck, { refresh } = {}) {
     suspend(reason, on = true) { softPause(reason, on); },
     stop() {
       dead = true;
+      cancelAnimationFrame(layoutFrame);
+      resize?.disconnect();
       clear();
       if (poll) { clearInterval(poll); poll = null; }
       root.removeEventListener("click", onClick);

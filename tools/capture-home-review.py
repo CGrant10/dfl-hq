@@ -74,6 +74,43 @@ with sync_playwright() as p:
     assert page.locator('[data-score-temperature="cold"]').count() == 2
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
+    metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
+    assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
+    assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
+    metrics['slides'] = []
+    count = page.evaluate('window.reviewDeck.length')
+    for width in [320, 390, 768, 1280]:
+        page.set_viewport_size({'width': width, 'height': 844})
+        for index in range(count):
+            page.locator(f'[data-bx-go="{index}"]').click()
+            page.wait_for_timeout(650)
+            layout = page.evaluate('''() => {
+                const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
+                const elements=[...slide.children].filter(e=>!e.classList.contains('bx-editorial-art'));
+                return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,
+                    left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
+                    content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
+                    controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
+                    scroll:document.documentElement.scrollWidth};
+            }''')
+            assert layout['scroll'] <= width, f'Slide overflow: {layout}'
+            assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['controlsTop'] - 3 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
+            metrics['slides'].append(layout)
+            if width == 390:
+                page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
+    page.set_viewport_size({'width': 390, 'height': 844})
+    page.locator('[data-bx-go="0"]').click()
+    page.wait_for_timeout(650)
+    density_context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=3)
+    density_page = density_context.new_page()
+    density_page.set_content(html, wait_until='domcontentloaded')
+    density_page.wait_for_function('document.querySelector("canvas.gd-vfx-canvas")?.dataset.running === "true"', timeout=15000)
+    density_page.evaluate('document.fonts.ready')
+    density_page.wait_for_timeout(650)
+    metrics['phoneDensity'] = density_page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>({pixels:e.width,css:e.clientWidth,ratio:e.width/e.clientWidth})')
+    assert metrics['phoneDensity']['ratio'] >= 2.9, 'Score effects are below phone screen resolution'
+    density_page.screenshot(path=str(OUT / 'home-390@3x.png'))
+    density_context.close()
     page.emulate_media(reduced_motion='reduce')
     page.wait_for_timeout(200)
     metrics['reducedMotion'] = page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>e.dataset.running')

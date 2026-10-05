@@ -48,7 +48,9 @@ export function mountScoreVfx(root){
   if(!gl&&!init())return;
   release();intersection.disconnect();visible.clear();
   const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
-  const scale=Math.min(devicePixelRatio||1,1.5,Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE))/Math.max(box.width,box.height));
+  // Match phone density while bounding the shared surface for long scoreboards.
+  const pixelBudgetScale=Math.sqrt(6000000/Math.max(1,root.clientWidth*root.clientHeight));
+  const scale=Math.min(devicePixelRatio||1,3,pixelBudgetScale,Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE))/Math.max(box.width,box.height));
   canvas.width=Math.ceil(root.clientWidth*scale);canvas.height=Math.ceil(root.clientHeight*scale);
   // Keep the GPU surface inside the padding box, including scrollable dialogs.
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
