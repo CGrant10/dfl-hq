@@ -3,6 +3,20 @@ import { playerIdentity } from './player-presentation.js';
 import { teamPortrait } from './team-presentation.js';
 import { isDefensePlayer, playerScoreTemperature, thermalScore } from './score-temperature.js';
 
+// Lucide icons match the selected navigation; route handlers stay unchanged.
+export function homeNavigationPresentation(root = document) {
+  const icons = { home: 'house', clubhouse: 'users-round', sportsbook: 'banknote', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
+  const changed = [];
+  for (const tab of root.querySelectorAll('#tabbar [data-route], #tabbar .tabmore')) {
+    const icon = icons[tab.dataset.route] || (tab.classList.contains('tabmore') ? 'ellipsis' : null);
+    const use = tab.querySelector('use');
+    if (!icon || !use) continue;
+    changed.push([use, use.getAttribute('href')]);
+    use.setAttribute('href', `#home-ui-${icon}`);
+  }
+  return () => changed.forEach(([use, href]) => { if (use.isConnected) use.setAttribute('href', href); });
+}
+
 /** Keep the existing deck and its refresh behavior behind the illustrated opener. */
 export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } = {}) {
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });

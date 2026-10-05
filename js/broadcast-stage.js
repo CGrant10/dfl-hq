@@ -344,7 +344,7 @@ export function renderItem(item, { editorial = false } = {}) {
       <span class="bx-home-week">${esc(item.kicker)}</span>
       <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
       <p class="bx-sub">${esc(item.body)}</p>
-      <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></span>
+      <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
   }
   const draw = TREATMENTS[item.treatment] || announcement;

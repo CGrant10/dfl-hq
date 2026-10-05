@@ -32,7 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
-import {homeBroadcastDeck} from "../home-presentation.js";
+import {homeBroadcastDeck,homeNavigationPresentation} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
@@ -532,6 +532,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
+  deferredStops.push(homeNavigationPresentation());
   deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});

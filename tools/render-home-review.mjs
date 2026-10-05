@@ -24,7 +24,7 @@ let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="medicine">');
-html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home"><div id="home-wrap">
+html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
   <aside class="dfl-anniv dfl-anniv--editorial"><img class="dfl-anniv-art" src="assets/anniversary-ten.webp" width="2172" height="724" alt="10th anniversary season, 2017–2026"></aside>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="on"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Live</span><button class="linkbtn" data-gameday-watch>Watch →</button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
@@ -38,7 +38,9 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
 <script type="module">
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
+  import { homeNavigationPresentation } from './js/home-presentation.js';
   const deck = ${JSON.stringify(deck)};
+  homeNavigationPresentation();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
