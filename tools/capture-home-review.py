@@ -27,7 +27,7 @@ with sync_playwright() as p:
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.goto('http://dfl.local/')
+    page.goto('http://dfl.local/', wait_until='domcontentloaded')
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     page.screenshot(path=str(OUT / 'home-390.png'))

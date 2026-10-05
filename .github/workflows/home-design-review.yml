@@ -32,5 +32,5 @@ jobs:
         if: always()
         with:
           name: home-design-review
-          path: ../dfl-review/
+          path: ${{ github.workspace }}/../dfl-review/
           retention-days: 7
