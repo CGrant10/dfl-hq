@@ -62,7 +62,6 @@ describe('DFL archive on Home', () => {
     const html = homeLeagueFile();
     expect(html).toContain('href="#/history"');
     expect(html).not.toContain('RIVALRY FILE');
-    expect(html).toContain('href="#/wall"');
   });
   it('preserves sourced facts and rivalry receipts and escapes member content', () => {
     const html = homeLeagueFile({ fact: { headline: '<img src=x>', detail: '2019 · Decided by 0.02 points' }, rivalry: { label: 'RIVALRY FILE', headline: 'Mike has your number.', detail: '1-2 all time', href: '#/facts' } });

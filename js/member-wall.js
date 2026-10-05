@@ -68,7 +68,7 @@ export function wallCard(rows, { compact = false } = {}) {
   const me = currentMember();
   const visibleRows = compact ? rows.slice(0, 3) : rows;
   return `<section class="block wall${compact ? " is-preview" : ""}">
-    <h2 class="section-title">The Wall${compact ? `<a class="section-link" href="#/wall">Open the Wall →</a>` : ""}</h2>
+    <h2 class="section-title">The Wall${compact ? `<a class="section-link home-section-action" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>` : ""}</h2>
     <div class="card wall-card">
       ${compact ? "" : me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
       <div class="wall-posts">${visibleRows.length ? visibleRows.map(row=>postHtml(row,compact)).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
@@ -197,7 +197,7 @@ function postHtml(r,compact=false) {
     ${photoHtml(r, name)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
     ${reactionHtml(r.id)}
-    ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}">Join the conversation (${Number(r.reply_count)||0})</a>`:threadHtml(r)}
+    ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}" aria-label="Join the conversation, ${Number(r.reply_count)||0} replies">Replies · ${Number(r.reply_count)||0}</a>`:threadHtml(r)}
   </article>`;
 }
 

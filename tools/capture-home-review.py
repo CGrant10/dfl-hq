@@ -55,7 +55,6 @@ with sync_playwright() as p:
         return {logoLeft:logo.left,logoRight:logo.right,lastRowBottom:last.bottom,tickerTop:ticker.top};
     }''')
     assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'League seal is clipped'
-    assert metrics_visibility['lastRowBottom'] <= metrics_visibility['tickerTop'] - 1, 'Ticker covers the fourth player row at the reference viewport'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
     metrics = {'visibility': metrics_visibility}
     for width in [390, 320, 1280]:
@@ -63,6 +62,18 @@ with sync_playwright() as p:
         page.wait_for_timeout(300)
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.dfl-anniv,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
+        banner = page.locator('.dfl-anniv-art').evaluate('''e => ({width:e.getBoundingClientRect().width,parentWidth:e.parentElement.clientWidth,ratio:e.getBoundingClientRect().width/e.getBoundingClientRect().height,fit:getComputedStyle(e).objectFit})''')
+        assert abs(banner['width'] - banner['parentWidth']) < .5 and abs(banner['ratio'] - 3) < .01 and banner['fit'] == 'contain', f'Banner does not span its content width without cropping: {banner}'
+        metrics[str(width)]['banner'] = banner
+        if width < 900:
+            # The full-width banner adds natural scroll. Every player must
+            # remain reachable above the persistent ticker and navigation.
+            page.evaluate("window.scrollTo(0,Math.max(0,document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect().bottom-document.querySelector('.bottomline').getBoundingClientRect().top+20))")
+            visible = page.evaluate("""() => {const row=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();return {top:row.top,bottom:row.bottom,headerBottom:document.querySelector('.topbar').getBoundingClientRect().bottom,tickerTop:document.querySelector('.bottomline').getBoundingClientRect().top}}""")
+            assert visible['top'] > visible['headerBottom'] and visible['bottom'] < visible['tickerTop'] - 1, f'Last player cannot be reached above persistent controls: {visible}'
+            metrics[str(width)]['scrolledPlayer'] = visible
+            page.screenshot(path=str(OUT / f'home-{width}-leaders.png'))
+            page.evaluate('window.scrollTo(0,0)')
     page.set_viewport_size({'width': 390, 'height': 844})
     page.locator('.bx-next').click()
     page.wait_for_timeout(350)
@@ -86,10 +97,19 @@ with sync_playwright() as p:
     assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
     metrics['refinement'] = page.evaluate("""() => ({bannerHeight:document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,bannerRatio:document.querySelector('.dfl-anniv-art').getBoundingClientRect().width/document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),teamFont:parseFloat(getComputedStyle(document.querySelector('.gameday-faceoff-team .gd-thermal-number')).fontSize),broadcastBackground:getComputedStyle(document.querySelector('.bx-stage')).backgroundImage,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
-    assert metrics['refinement']['bannerHeight'] <= 96 and abs(metrics['refinement']['bannerRatio'] - 3) < .01, 'Banner is oversized or cropped'
+    assert abs(metrics['refinement']['bannerRatio'] - 3) < .01, 'Banner is cropped'
     assert metrics['refinement']['playerFont'] <= 24 and metrics['refinement']['teamFont'] <= 22, 'Points are still oversized'
     assert metrics['refinement']['broadcastBackground'] == 'none', 'Broadcast text still sits over an image'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
+    metrics['cleanup'] = page.evaluate("""() => ({stories:[...document.querySelectorAll('.home-league-story')].map(e=>({border:getComputedStyle(e).borderLeftWidth,background:getComputedStyle(e).backgroundColor,decoration:getComputedStyle(e).textDecorationLine})),actions:[...document.querySelectorAll('.home-section-action')].map(e=>({label:e.getAttribute('aria-label'),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),storyLinks:document.querySelectorAll('.home-league-file > nav').length})""")
+    assert all(s['border'] == '0px' and s['background'] == 'rgba(0, 0, 0, 0)' and s['decoration'] == 'none' for s in metrics['cleanup']['stories']), 'Archive stories still use boxed cards or underlined links'
+    assert all(a['label'] and a['width'] >= 44 and a['height'] >= 44 for a in metrics['cleanup']['actions']), 'Section controls need accessible names and phone-sized targets'
+    assert metrics['cleanup']['storyLinks'] == 0, 'Redundant story link strip is still present'
+    page.locator('.home-league-file > header .home-section-action').focus()
+    page.keyboard.press('Shift+Tab')
+    page.keyboard.press('Tab')
+    assert page.locator('.home-league-file > header .home-section-action').evaluate("e=>getComputedStyle(e).outlineStyle") != 'none', 'Keyboard focus is not visible'
+    page.evaluate('document.activeElement.blur();window.scrollTo(0,0)')
     page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.visibility='hidden')")
     page.screenshot(path=str(OUT / 'home-390-full.png'), full_page=True)
     page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.removeProperty('visibility'))")

@@ -481,7 +481,7 @@ export async function render(view) {
     <div data-home-gameday-slot></div>
     <div data-home-lore-slot>${homeLeagueFile()}</div>
     <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
-    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse →</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
+    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>News</button>':""}</section>
     ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>

@@ -12,7 +12,7 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
     body: 'League history, rivalries, and this week’s receipts.',
     bodyLines: ['League history, rivalries,', 'and this week’s receipts.'],
     kicker: `${week ? `Week ${week} · ` : ''}${day}`,
-    href: '#/clubhouse', actionLabel: 'Open Clubhouse', temporal: 'none',
+    href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
     background: 'default',
   };
   return [opener, ...deck.filter(item => item?.key !== opener.key)];
@@ -72,7 +72,7 @@ export function homeThermalBoard(model) {
     </li>`;
   }).join('');
   return `<section class="home-thermal-leaders" aria-label="Player leaders">
-    <header><h2>Player leaders</h2><button type="button" class="linkbtn" data-gameday-board="all">View all <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
+    <header><h2>Player leaders</h2><button type="button" class="home-section-action" data-gameday-board="all" aria-label="View all player leaders" title="View all player leaders"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
     ${players.length ? `<ul class="gameday-players">${rows}</ul>` : '<p class="home-thermal-empty">No hot or cold starters yet.</p>'}
   </section>`;
 }
@@ -85,8 +85,7 @@ export function homeLeagueFile({ fact = null, rivalry = null } = {}) {
     rivalry,
   ].filter(Boolean);
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
-    <header><h2 id="home-league-file-title">The DFL file</h2><a href="#/history">League history →</a></header>
-    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></a>`).join('')}</div>
-    <nav aria-label="DFL stories"><a href="#/facts">Fun facts</a><a href="#/clubhouse">This week’s receipts</a><a href="#/wall">Talk your shit →</a></nav>
+    <header><h2 id="home-league-file-title">The DFL file</h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-chevron-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }
