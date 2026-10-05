@@ -388,7 +388,7 @@ export function renderStage(deck, { editorial = false } = {}) {
     <section class="bx-stage" data-bx-stage${editorial ? ' data-presentation="editorial"' : ''}>
       ${editorial ? '<span class="bx-editorial-label">League broadcast</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial })}</div>
-      ${items.length > 1 ? arrows() + controls(items) : ""}
+      ${items.length > 1 ? arrows(editorial) + controls(items) : ""}
     </section>`;
 }
 
@@ -398,13 +398,13 @@ export function renderStage(deck, { editorial = false } = {}) {
   and a keyboard user both need a control they can actually reach. CSS
   fades them up on hover where hover exists; on touch they simply stay.
 */
-function arrows() {
+function arrows(editorial = false) {
   return `
     <button type="button" class="bx-arrow bx-prev" data-bx-step="-1" aria-label="Previous slide">
-      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-left"></use></svg>
+      <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-left' : '#i-chev-left'}"></use></svg>
     </button>
     <button type="button" class="bx-arrow bx-next" data-bx-step="1" aria-label="Next slide">
-      <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+      <svg class="ico-sm" aria-hidden="true"><use href="${editorial ? '#home-ui-chevron-right' : '#i-chev-right'}"></use></svg>
     </button>`;
 }
 

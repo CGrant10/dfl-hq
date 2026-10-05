@@ -14,6 +14,8 @@ export function homeNavigationPresentation(root = document) {
     changed.push([use, use.getAttribute('href')]);
     use.setAttribute('href', `#home-ui-${icon}`);
   }
+  const bell = root.querySelector('.notification-bell use');
+  if (bell) { changed.push([bell, bell.getAttribute('href')]); bell.setAttribute('href', '#home-ui-bell'); }
   return () => changed.forEach(([use, href]) => { if (use.isConnected) use.setAttribute('href', href); });
 }
 
@@ -81,11 +83,11 @@ export function homeThermalBoard(model) {
         ${thermalScore(player.points, temperature)}
         ${player.state === 'final' && temperature === 'cold' ? '<small data-player-final>Final</small>' : ''}
       </span>
-      <svg class="home-player-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg>
+      <svg class="home-player-chevron" aria-hidden="true"><use href="#home-ui-chevron-right"></use></svg>
     </li>`;
   }).join('');
   return `<section class="home-thermal-leaders" aria-label="Player leaders">
-    <header><h2>Player leaders</h2><button type="button" class="linkbtn" data-gameday-board="all">View all <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></button></header>
+    <header><h2>Player leaders</h2><button type="button" class="linkbtn" data-gameday-board="all">View all <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
     ${players.length ? `<ul class="gameday-players">${rows}</ul>` : '<p class="home-thermal-empty">No hot or cold starters yet.</p>'}
   </section>`;
 }

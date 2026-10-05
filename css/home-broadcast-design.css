@@ -280,3 +280,22 @@ body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) > span { font-size: 1
 #home-wrap .home-team-name { display: grid; gap: 2px; }
 #home-wrap .home-team-name strong { color: #f5f1e6; font: 700 16px/1.05 var(--font-display); }
 #home-wrap .home-team-name small { color: #a5abad; font: 600 11px/1.2 var(--font-display); }
+
+#view[data-route="home"] #home-wrap .bx-slide { padding-left: 18px; padding-right: 18px; }
+#view[data-route="home"] #home-wrap .gameday-card > header { padding-left: 18px; padding-right: 18px; }
+#view[data-route="home"] #home-wrap .gameday-matchup { padding-left: 18px; padding-right: 18px; }
+#view[data-route="home"] #home-wrap .home-thermal-leaders { padding-left: 18px; padding-right: 18px; }
+#view[data-route="home"] #home-wrap .home-thermal-leaders > header { min-height: 26px; margin-bottom: 3px; padding: 0; }
+#view[data-route="home"] #home-wrap .home-thermal-leaders > header > h2 { margin: 0; }
+#view[data-route="home"] #home-wrap .home-thermal-leaders > header > button { min-height: 26px; }
+#view[data-route="home"] #home-wrap .home-thermal-leaders .gameday-player { min-height: 44px; height: 44px; padding-block: 3px; }
+#home-wrap .bx-home-action { font-size: 20px; gap: 10px; }
+body:has(#view[data-route="home"]) .topbar .brand-mark { transform: scale(1.35); }
+@media(min-width:700px) {
+  #view[data-route="home"] #home-wrap :is(.bx-slide,.gameday-card > header,.gameday-matchup,.home-thermal-leaders) { padding-left: 32px; padding-right: 32px; }
+  #view[data-route="home"] #home-wrap .home-thermal-leaders .gameday-player { min-height: 64px; height: 64px; }
+}
+@media(max-width:360px) {
+  #view[data-route="home"] #home-wrap :is(.bx-slide,.gameday-card > header,.gameday-matchup,.home-thermal-leaders) { padding-left: 14px; padding-right: 14px; }
+  body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) > span { font-size: 11px; }
+}
