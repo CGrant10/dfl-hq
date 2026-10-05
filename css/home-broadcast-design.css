@@ -268,3 +268,11 @@ body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) > span { font-size: 1
 }
 
 #home-wrap :is(.bx-home-title,.home-thermal-leaders h2,.gameday-card > header small,.gd-thermal-value) { -webkit-text-stroke: .4px currentColor; }
+
+#home-wrap .bx-home-feature { gap: 6px; }
+#home-wrap .bx-home-feature .bx-sub { max-width: 28ch; }
+#home-wrap .bx-controls { height: 24px; bottom: 7px; }
+#home-wrap .bx-dot { height: 24px; }
+#home-wrap .bx-dot::after { top: 8px; }
+#home-wrap .bx-pause { height: 24px; }
+#home-wrap .bx-arrow { bottom: 1px; }
