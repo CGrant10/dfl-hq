@@ -1,4 +1,4 @@
-# GameDay design and release QA — 1.295.0
+# GameDay design and release QA — 1.295.1
 
 **Findings**
 
@@ -20,7 +20,7 @@ No actionable P0/P1/P2 findings remain in the changed surfaces. Watch now has Ma
 - Fonts/typography: existing editorial app typography and actual player portraits remain. Watch controls use restrained system typography and 44-pixel interaction heights. Team names wrap inside their columns; enlarged text does not produce horizontal overflow.
 - Spacing/layout: the scoreboard is shorter and remains visible while scrolling the active section. Matchup keeps reactions, rivalry detail and lineups; Moments contains the saved timeline; League holds the player board and existing reel. Desktop player rows use two columns; phones use one.
 - Colors/tokens: app palette preferences remain respected. New selected tabs use Medicine Wheel red; surfaces and copy use existing theme tokens. Score temperature colors and shaders are retained.
-- Image quality/assets: actual Sleeper photos and team identity fallbacks remain. Updating a row preserves its loaded image. No new decorative asset or imitation player portrait is introduced.
+- Image quality/assets: actual Sleeper photos and team identity fallbacks remain. Updating a row preserves its loaded image, including custom team photos. No new decorative asset or imitation player portrait is introduced.
 - Copy/content: Hot means strictly over 15 points, at any time. Cold means strictly under 10, only after halftime or final. Unknown stays unknown, zero remains zero, and bench players require an explicit choice. Close-game context requires live starters and a known gap of at most 10 points. No win probability or unsupported touchdown claim is added.
 
 **Comparison and implementation history**
@@ -31,7 +31,8 @@ No actionable P0/P1/P2 findings remain in the changed surfaces. Watch now has Ma
 4. [P2] Enlarged team scores and tabs could exceed a 320-pixel viewport. Constrained scoreboard geometry, allowed tab wrapping and verified 200% text. A style-cleanup iteration briefly removed the score constraint; the final rule was restored and the matrix repeated.
 5. Added temperature-attribute observation so halftime can activate frost without a score change. Offscreen rows skip texture construction; sticky-header occlusion prevents effects from appearing through the scoreboard.
 6. A rapid palette matrix sampled a transient color transition. Static accessibility captures disable transitions, while separate normal-motion tests verify effects and live behavior.
-7. Final combined full-view and focused comparisons passed. The section structure and shorter scoreboard are intentional changes from the approved baseline.
+7. [P2] A final source check found that custom team portraits needed the same loaded-state preservation as player portraits. Added it and verified the image node and visible state survive a redraw.
+8. Final combined full-view and focused comparisons passed. The section structure and shorter scoreboard are intentional changes from the approved baseline.
 
 **Saved timeline and data verification**
 

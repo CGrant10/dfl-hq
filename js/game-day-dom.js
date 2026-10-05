@@ -3,7 +3,7 @@ const key=node=>!node||node.nodeType!==1?null:node.id?`id:${node.id}`:node.match
 const compatible=(a,b)=>a?.nodeType===b.nodeType&&(a.nodeType!==1||a.tagName===b.tagName);
 function update(node,fresh){
  if(node.nodeType!==1){if(node.nodeValue!==fresh.nodeValue)node.nodeValue=fresh.nodeValue;return}
- const disclosure=node.tagName==='DETAILS',opened=node.open,photo=node.matches('.dfl-player-portrait.has-photo')&&node.querySelector('img')?.getAttribute('src')===fresh.querySelector('img')?.getAttribute('src');
+ const disclosure=node.tagName==='DETAILS',opened=node.open,photo=node.matches('.dfl-player-portrait.has-photo,.dfl-team-mark.has-photo')&&node.querySelector('img')?.getAttribute('src')===fresh.querySelector('img')?.getAttribute('src');
  if(photo)fresh.classList.add('has-photo');
  for(const attr of [...node.attributes])if(!fresh.hasAttribute(attr.name)&&!(disclosure&&attr.name==='open')&&attr.name!=='data-page-detail-wired')node.removeAttribute(attr.name);
  for(const attr of fresh.attributes)if(!(disclosure&&attr.name==='open')&&node.getAttribute(attr.name)!==attr.value)node.setAttribute(attr.name,attr.value);
