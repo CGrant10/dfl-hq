@@ -50,8 +50,8 @@ describe("Home redesign wiring", () => {
 
   it("renders the approved always-visible power rankings composition", () => {
     expect(source).toContain("export function homeRankingsCard");
-    expect(source).toContain("YOUR RANK");
-    expect(source).toContain("LEAGUE LEADER");
+    expect(source).toContain("home-rank-head");
+    expect(source).toContain('row(item, index, String(item.id) === String(focus.id))');
     expect(source).toContain("home-rank-ellipsis");
     expect(source).toContain("data-home-rankings-slot");
     expect(source).toContain("data-home-rank-toggle");

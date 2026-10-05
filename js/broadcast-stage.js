@@ -97,7 +97,22 @@ function scoreboard(item) {
   fitHeadlines() has nothing to shrink here - the rows are sized by CSS and
   clamp their own names.
 */
-function slate(item) {
+function slate(item, { editorial = false } = {}) {
+  if (editorial && item.fixtures?.length) {
+    const fixture = item.fixtures[0];
+    return `<div class="bx-featured-slate">
+      <span class="bx-kicker">${esc((item.kicker || "League matchups").replace(/^\d{4} · /, "") + " matchups")}</span>
+      <div class="bx-featured-matchup" data-live-matchup="${esc(fixture.key || "matchup")}">
+        ${[fixture.a, fixture.b].map((side, index) => `${index ? '<span class="bx-featured-vs" aria-hidden="true">vs</span>' : ''}<div class="bx-featured-team${side.up ? ' is-up' : ''}">
+          ${teamPortrait({ team_name: side.name, identity: side.identity }, { className: "bx-team-mark" })}
+          <strong>${esc(side.name)}</strong>
+          <b data-live-key="slate:${esc(fixture.key || "matchup")}:${esc(side.id || (index ? "b" : "a"))}" data-live-score="${esc(side.score)}" data-live-state="${esc(side.mode || "projected")}">${esc(side.score)}</b>
+          <small>${esc(side.status || "Projected")}</small>
+        </div>`).join('')}
+      </div>
+      <span class="bx-featured-all">All matchups <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></span>
+    </div>`;
+  }
   const rows = (item.fixtures || []).map((fixture) => `
     <li class="bx-slate-row${fixture.mine ? " is-mine" : ""}" data-live-matchup="${esc(fixture.key || "matchup")}">
       <span class="bx-slate-side${fixture.a.up ? " is-up" : ""}">
@@ -322,17 +337,22 @@ function fitHeadlines(slide) {
 }
 
 /** One item as markup. An unknown treatment degrades to an announcement. */
-export function renderItem(item) {
+export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
   const draw = TREATMENTS[item.treatment] || announcement;
-  const inner = backdrop(item) + draw(item);
+  const media = editorial
+    ? item.background === "image" && item.image
+      ? `<img class="bx-editorial-art" src="${esc(item.image)}" alt="" decoding="async" style="${artworkStyle(item)}">`
+      : ""
+    : backdrop(item);
+  const inner = media + draw(item, { editorial });
   const cls = `bx-slide is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
      works on a tap, a click, a keyboard and a screen reader without any
      gesture handling. The swipe handler cancels the click when the tap
      turned out to be a drag - see startStage(). */
   return item.href
-    ? `<a class="${cls}" href="${esc(item.href)}">${inner}</a>`
+    ? `<a class="${cls}" href="${esc(editorial && item.treatment === "slate" ? "#/clubhouse?tab=matchups" : item.href)}">${inner}</a>`
     : `<div class="${cls}">${inner}</div>`;
 }
 
@@ -349,7 +369,7 @@ export function renderItem(item) {
  * motion, not an announcement. The dots carry the state for anyone
  * navigating by keyboard, and each slide's link text says where it goes.
  */
-export function renderStage(deck) {
+export function renderStage(deck, { editorial = false } = {}) {
   const items = deck || [];
   const first = items[0];
   /* The station ident. OUTSIDE the layer on purpose: it belongs to the
@@ -357,9 +377,9 @@ export function renderStage(deck) {
      rotation - a logo that flickers back in every six seconds is the
      thing that makes a broadcast package look cheap. */
   return `
-    <section class="bx-stage" data-bx-stage>
-      <span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>
-      <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first)}</div>
+    <section class="bx-stage" data-bx-stage${editorial ? ' data-presentation="editorial"' : ''}>
+      ${editorial ? '<span class="bx-editorial-label">League broadcast</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
+      <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial })}</div>
       ${items.length > 1 ? arrows() + controls(items) : ""}
     </section>`;
 }
@@ -553,7 +573,7 @@ export function startStage(root, deck, { refresh } = {}) {
     */
     for (const stale of layer.querySelectorAll(".bx-leaving")) stale.remove();
     const outgoing = layer.firstElementChild;
-    layer.insertAdjacentHTML("beforeend", renderItem(items[i]));
+    layer.insertAdjacentHTML("beforeend", renderItem(items[i], { editorial: root.dataset.presentation === "editorial" }));
     const slide = layer.lastElementChild;
     if (outgoing && outgoing !== slide) {
       outgoing.classList.remove("bx-in", "bx-enter");

@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { fitSize, focusShouldPause, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
+import { fitSize, focusShouldPause, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
+
+describe("editorial Home broadcast", () => {
+  const side = (id, name, score) => ({ id, name, score, status: "Live", mode: "live" });
+  const slate = { treatment: "slate", kicker: "2026 · Week 4", href: "#/analyzer", fixtures: [
+    { key: "a:b", a: side("a", "First & Co", "66.1"), b: side("b", "Second", "75.5") },
+    { key: "c:d", a: side("c", "Third", "80.0"), b: side("d", "Fourth", "90.0") },
+  ] };
+  it("links the compact opening fixture to every league matchup and preserves live score keys", () => {
+    const html = renderStage([slate], { editorial: true });
+    expect(html).toContain('href="#/clubhouse?tab=matchups"');
+    expect(html).toContain('data-live-key="slate:a:b:a"');
+    expect(html).toContain('data-live-score="66.1"');
+    expect(html).toContain("First &amp; Co");
+    expect(html).not.toContain("Third");
+    expect(html).not.toContain("bx-weave");
+  });
+  it("keeps the complete slate and artwork for other broadcast surfaces", () => {
+    const html = renderStage([slate]);
+    expect(html).toContain('href="#/analyzer"');
+    expect(html).toContain("Third");
+    expect(html).toContain("bx-weave");
+  });
+});
 
 /* A stand-in for a DOM node: only closest() is used, and only against the
    control selector, so this is the whole surface the decision touches. */

@@ -127,7 +127,6 @@ export function homeRankingsCard(view, members = []) {
   const board = rankings?.boards?.at(-1);
   if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>POWER RANKINGS</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
   const focus = board.rows.find(row => String(row.id) === String(view.focus?.id)) || board.rows[0];
-  const leader = board.rows[0];
   const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
   const visible = board.rows.slice(0, 3);
   const showFocus = focus && !visible.some(row => String(row.id) === String(focus.id));
@@ -137,10 +136,6 @@ export function homeRankingsCard(view, members = []) {
   </li>`;
   return `<section class="home-rankings-card">
     <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(board.label)} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
-    <div class="home-rank-summary">
-      <div><small>YOUR RANK</small><strong>#${esc(String(focus.rank))}</strong>${rankMove(focus.movement)}</div>
-      <div class="home-rank-leader">${memberAvatar(teamFor(leader), members, "home-rank-face")}<span><small>LEAGUE LEADER</small><strong>${esc(leader.name)}</strong><em>#1&nbsp; | &nbsp;${esc(leader.record)}</em></span></div>
-    </div>
     <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
     <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
     <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></button>
@@ -646,7 +641,7 @@ export async function render(view) {
     const ordered = deck;
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
-    host.innerHTML = renderStage(ordered);
+    host.innerHTML = renderStage(ordered, { editorial: true });
     const root = host.querySelector("[data-bx-stage]");
     if (root) stage = startStage(root, ordered, { refresh });
   };
