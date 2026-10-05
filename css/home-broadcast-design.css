@@ -23,7 +23,7 @@
   --accent-fill: #e90028;
   --accent-2-fill: #f6c542;
   --home-display: "Anton", "Rajdhani", sans-serif;
-  --home-section-space: 12px;
+  --home-section-space: 10px;
   --gd-hot-ink: #ffe4a6;
   --gd-cold-ink: #c5eeff;
   background: var(--bg);
@@ -46,7 +46,7 @@
   letter-spacing: .23em; text-transform: uppercase; pointer-events: none;
 }
 #home-wrap .bx-slide {
-  inset: 42px 0 50px; padding: 0 var(--home-gutter); min-width: 0;
+  inset: 42px 0 48px; padding: 0 var(--home-gutter); min-width: 0;
   display: grid; grid-template-columns: minmax(0,1fr); align-content: center;
   justify-items: start; border: 0; gap: 8px; text-align: left;
   background: transparent; color: #f5f1e6; box-shadow: none; overflow: visible;
@@ -54,7 +54,7 @@
 #home-wrap .bx-slide::before, #home-wrap .bx-slide::after { content: none; }
 #home-wrap .bx-slide:has(.bx-editorial-art) { grid-template-columns: minmax(0,1fr); }
 #home-wrap .bx-editorial-art {
-  position: absolute; inset: 0; width: 100%; height: 100%;
+  position: absolute; inset: -42px 0 -48px; width: 100%; height: calc(100% + 90px);
   object-fit: cover; border-radius: 0; z-index: -1; filter: brightness(.42);
 }
 #home-wrap :is(.bx-champ,.bx-note,.bx-event,.bx-hero,.bx-stat) {
@@ -71,14 +71,14 @@
 #home-wrap .bx-when { color: #d8dcdb; background: #151b1dcc; border: 1px solid #495052; box-shadow: none; font-size: 10px; }
 #home-wrap .bx-figure { color: #f5f1e6; font: 400 44px/1 var(--home-display); text-shadow: none; }
 #home-wrap .bx-statword { font: 400 24px/1.15 var(--home-display); overflow-wrap: anywhere; }
-#home-wrap .bx-home-feature { align-content: center; gap: 6px; }
-#home-wrap .bx-home-week { color: #b9bdbd; font: 700 10px/1.5 var(--font-display); letter-spacing: .16em; text-transform: uppercase; }
-#home-wrap .bx-home-title { display: grid; gap: 2px; margin: 0; font: 400 clamp(27px,8vw,34px)/1.1 var(--home-display); letter-spacing: -.02em; text-transform: uppercase; }
+#home-wrap .bx-home-feature { align-content: center; gap: 4px; }
+#home-wrap .bx-home-week { color: #b9bdbd; font: 700 10px/1.3 var(--font-display); letter-spacing: .16em; text-transform: uppercase; }
+#home-wrap .bx-home-title { display: grid; gap: 2px; margin: 0; font: 400 clamp(27px,8vw,34px)/1.02 var(--home-display); letter-spacing: -.02em; text-transform: uppercase; }
 #home-wrap .bx-home-title > span { color: #f6c542; }
 #home-wrap .bx-home-feature .bx-sub { max-width: 28ch; font-size: 14px; line-height: 1.4; }
 #home-wrap .bx-home-action {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 18px;
-  width: 174px; min-height: 38px; margin-top: 5px; white-space: nowrap; padding: 8px 16px;
+  width: 174px; min-height: 36px; margin-top: 2px; white-space: nowrap; padding: 8px 16px;
   border-radius: 6px; background: #f5f1e6; color: #0b0e0f;
   font: 400 14px/1.1 var(--home-display); text-transform: uppercase;
 }
@@ -111,7 +111,7 @@
 #home-wrap > [data-home-gameday-slot] { padding: 0; margin: 0; }
 #home-wrap .gameday-card { padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
 #home-wrap .gameday-card::before, #home-wrap .gameday-card::after { content: none; }
-#home-wrap .gameday-card > header { min-height: 36px; height: auto; padding: 10px var(--home-gutter) 0; margin: 0; gap: 8px; align-items: center; }
+#home-wrap .gameday-card > header { min-height: 32px; height: auto; padding: 6px var(--home-gutter) 0; margin: 0; gap: 8px; align-items: center; }
 #home-wrap .gameday-card > header > div:first-child { display: flex; gap: 10px; align-items: center; min-width: 0; }
 #home-wrap .gameday-card header small { color: #f5f1e6; font: 400 20px/1 var(--home-display); letter-spacing: -.01em; }
 #home-wrap .gameday-card header h2 { color: #b8bdbd; font: 700 10px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: .14em; margin: 0; border-left: 1px solid #575e5f; padding-left: 10px; }
@@ -134,7 +134,7 @@
 #home-wrap .home-thermal-leaders h2 { margin: 0; font: 400 20px/1.2 var(--home-display); text-transform: uppercase; letter-spacing: -.01em; }
 #home-wrap .home-thermal-leaders header button { padding: 0; color: #f6c542; font: 700 13px/1 var(--font-display); min-height: 30px; }
 #home-wrap .home-thermal-leaders .gameday-players { display: block; margin: 0; padding: 0; border: 0; list-style: none; }
-#home-wrap .home-thermal-leaders .gameday-player { display: grid; grid-template-columns: 18px minmax(0,1fr) auto 10px; align-items: center; gap: 8px; min-height: 46px; padding: 4px 0; border: 0; border-top: 1px solid #343838; border-radius: 0; background: transparent; }
+#home-wrap .home-thermal-leaders .gameday-player { display: grid; grid-template-columns: 18px minmax(0,1fr) auto 10px; align-items: center; gap: 8px; min-height: 44px; padding: 3px 0; border: 0; border-top: 1px solid #343838; border-radius: 0; background: transparent; }
 #home-wrap .home-thermal-leaders .gameday-player:last-child { border-bottom: 1px solid #343838; }
 #home-wrap .home-player-temperature { width: 18px; height: 22px; }
 #home-wrap .home-player-temperature.is-hot { color: #ee1837; }
@@ -216,7 +216,7 @@ body:has(#view[data-route="home"]) { background: #0b0e0f; }
 /* One gutter and natural line boxes keep Home aligned across breakpoints. */
 #view[data-route="home"] #home-wrap { margin-inline: 0; }
 #home-wrap :is(.bx-home-title,.bx-head,.bx-name,.gd-thermal-value) { -webkit-text-stroke: 0; }
-#home-wrap .bx-home-feature .bx-sub { max-width: none; font: 400 13px/1.45 system-ui,sans-serif; }
+#home-wrap .bx-home-feature .bx-sub { max-width: none; font: 400 13px/1.35 system-ui,sans-serif; }
 #home-wrap .bx-home-feature .bx-sub > span { display: block; }
 #home-wrap .bx-home-action .ico { flex: 0 0 18px; fill: none; stroke: currentColor; }
 #home-wrap .gameday-matchup { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; }
@@ -263,7 +263,7 @@ body:has(#view[data-route="home"]) { background: #0b0e0f; }
 
 /* Keep the selected shell without scaling the league seal or its text. */
 body:has(#view[data-route="home"]) .topbar .brand-lockup { display: flex; flex: 0 0 46px; }
-body:has(#view[data-route="home"]) .topbar .brand-mark { transform: none; }
+body:has(#view[data-route="home"]) .topbar .brand-mark { transform: scale(1.35); }
 body:has(#view[data-route="home"]) .topbar .topbar-actions .dfl-preview-toggle { order: 1; margin-left: auto; }
 body:has(#view[data-route="home"]) .topbar .notification-bell { order: 2; min-height: 30px; }
 body:has(#view[data-route="home"]) .topbar .notification-bell svg { width: 20px; height: 20px; }
