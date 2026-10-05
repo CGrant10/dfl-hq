@@ -64,7 +64,8 @@ export function mountScoreVfx(root){
    const mask=document.createElement('canvas');mask.width=Math.ceil(width*scale);mask.height=Math.ceil(height*scale);const context=mask.getContext('2d');if(!context)continue;
    context.scale(scale,scale);context.font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;context.fillStyle='#fff';context.textBaseline='alphabetic';
    if('letterSpacing' in context)context.letterSpacing=style.letterSpacing;
-   const text=value.textContent,metrics=context.measureText(text);context.fillText(text,padX,padTop+(rect.height+metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2);
+   const text=value.textContent,metrics=context.measureText(text),baseline=padTop+(rect.height+metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;context.fillText(text,padX,baseline);
+   const strokeWidth=parseFloat(style.webkitTextStrokeWidth)||0;if(strokeWidth){context.lineWidth=strokeWidth;context.strokeStyle='#fff';context.strokeText(text,padX,baseline)}
    // Pack emission, top and bottom contours into RGB; alpha keeps
    // the exact score silhouette. Typed pixels preserve RGB in transparent areas.
    const pixels=context.getImageData(0,0,mask.width,mask.height).data,columns=[];

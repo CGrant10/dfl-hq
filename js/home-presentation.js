@@ -74,7 +74,7 @@ export function homeThermalBoard(model) {
       </button>
       <span class="gameday-player-score" data-gameday-score-key="${esc(`${player.roster}:${player.id}`)}">
         ${thermalScore(player.points, temperature)}
-        ${player.state === 'final' ? '<small data-player-final>Final</small>' : ''}
+        ${player.state === 'final' && temperature === 'cold' ? '<small data-player-final>Final</small>' : ''}
       </span>
       <svg class="home-player-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg>
     </li>`;

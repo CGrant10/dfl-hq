@@ -3,7 +3,7 @@ const CACHE_NAME = "dfl-hq-v1.298.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
-  "./css/home-broadcast-design.css?v=1.298.0","./assets/home-broadcast-stadium.webp","./js/home-presentation.js",
+  "./css/home-broadcast-design.css?v=1.298.0","./assets/home-broadcast-stadium.webp","./fonts/dfl-broadcast.woff","./js/home-presentation.js",
   "./assets/anniversary-ten.webp",
   "./js/game-day-league.js","./js/game-day-dom.js","./js/game-day-panels.js","./js/game-day-moments.js","./js/game-day-moments-model.js",
   "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js","./css/connected-experience.css?v=1.298.0",

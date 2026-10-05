@@ -241,3 +241,30 @@ body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore):not(.on) { color: #d0
   body:has(#view[data-route="home"]) { padding-top: calc(56px + var(--season-nav-height,67px) + env(safe-area-inset-top)); }
   body:has(#view[data-route="home"]) .bottomline { bottom: 0; }
 }
+
+@font-face { font-family: "DFL Broadcast"; src: url("../fonts/dfl-broadcast.woff") format("woff"); font-weight: 400; font-display: swap; }
+#home-wrap { --home-display: "DFL Broadcast", "Anton", sans-serif; }
+#home-wrap .bx-home-title { font-size: clamp(38px,11.3vw,48px); line-height: .78; letter-spacing: 0; }
+#home-wrap .bx-home-action { font-size: 24px; line-height: .75; }
+#home-wrap .gameday-card > header small { font-size: 30px; line-height: .8; }
+#home-wrap .gameday-card .home-thermal-leaders header h2 { font-size: 30px; line-height: .8; }
+#home-wrap .gameday-faceoff-team .gd-thermal-number { font-size: 40px; line-height: .7; }
+#home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 44px; line-height: .75; }
+#home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 16px; }
+#home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 12px; }
+body:has(#view[data-route="home"]) .topbar .brand-mark { transform: scale(1.45); }
+body:has(#view[data-route="home"]) .topbar .notification-bell svg { width: 20px; height: 20px; }
+body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle,body:has(#view[data-route="home"]) .topbar .whoami { font-size: 16px; }
+body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) { gap: 1px; }
+body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) > span { font-size: 14px; }
+@media (min-width:700px) {
+  #home-wrap .bx-home-title { font-size: 70px; }
+  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 54px; }
+  #home-wrap .bx-home-feature .bx-sub { font-size: 18px; }
+}
+@media (max-width:360px) {
+  #home-wrap .bx-home-title { font-size: 38px; }
+  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 38px; }
+}
+
+#home-wrap :is(.bx-home-title,.home-thermal-leaders h2,.gameday-card > header small,.gd-thermal-value) { -webkit-text-stroke: .4px currentColor; }

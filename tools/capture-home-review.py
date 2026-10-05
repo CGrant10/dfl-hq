@@ -14,7 +14,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?', 1)[0].lstrip('/')
         file = OUT / 'index.html' if path in ['', 'index.html'] else ROOT / path
-        types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.webp': 'image/webp'}
+        types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webp': 'image/webp'}
         if file.is_file():
             body = file.read_bytes()
             self.send_response(200)
@@ -62,6 +62,9 @@ with sync_playwright() as p:
     page.wait_for_timeout(350)
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
     page.locator('.bx-pause').click()
+    assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#home-ui-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
+    assert page.evaluate('document.querySelector("#home-ui-house").namespaceURI') == 'http://www.w3.org/2000/svg'
+    assert metrics['390']['sections'][4]['height'] < 240, 'Leader preview is not compact'
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
     assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 1280]), 'Horizontal overflow'
