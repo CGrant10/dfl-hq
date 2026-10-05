@@ -53,10 +53,13 @@ export function mountScoreVfx(root){
   // Keep the GPU surface inside the padding box, including scrollable dialogs.
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
   const light=getComputedStyle(root).getPropertyValue('--gd-hot-ink').trim()==='#9c3900';
+  const pinnedBottom=root.querySelector('.gd-watch-dashboard')?.getBoundingClientRect().bottom;
   for(const element of emitters){
    // A nested player dialog has its own GPU surface.
    if(element.closest('dialog')!==(root.matches('dialog')?root:null))continue;
    const value=element.querySelector('.gd-thermal-value'),rect=value?.getBoundingClientRect();if(!rect||!rect.width||!rect.height||!element.getClientRects().length)continue;
+   if(pinnedBottom&&!element.closest('.gd-watch-dashboard')&&rect.top<pinnedBottom)continue;
+   if(root.matches('dialog')&&(rect.bottom<box.top-30||rect.top>box.bottom+30))continue;
    const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
    const mask=document.createElement('canvas');mask.width=Math.ceil(width*scale);mask.height=Math.ceil(height*scale);const context=mask.getContext('2d');if(!context)continue;
    context.scale(scale,scale);context.font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;context.fillStyle='#fff';context.textBaseline='alphabetic';
@@ -85,7 +88,7 @@ export function mountScoreVfx(root){
  const schedule=()=>{if(!layoutFrame&&!stopped)layoutFrame=requestAnimationFrame(rebuild)};
  const sync=()=>{if(!enabled())pause();else if(dirty)schedule();else resume()};
  const rootIntersection=new IntersectionObserver(entries=>{rootVisible=entries.some(e=>e.isIntersecting);sync()});rootIntersection.observe(root);
- const mutations=new MutationObserver(records=>{if(records.some(r=>r.target!==canvas&&!canvas.contains(r.target))){dirty=true;schedule()}});mutations.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-motion','open','class']});
+ const mutations=new MutationObserver(records=>{if(records.some(r=>r.target!==canvas&&!canvas.contains(r.target))){dirty=true;schedule()}});mutations.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-motion','data-score-temperature','open','class']});
  const resize=new ResizeObserver(schedule);resize.observe(root);
  const theme=new MutationObserver(schedule);theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette','class','style']});
  const contextLost=event=>{event.preventDefault();lost=true;pause();targets=[];gl=null;dirty=true;canvas.dataset.renderer='lost'};

@@ -1,0 +1,16 @@
+import {esc} from './ui.js';
+import {playerRows} from './game-day-player-rows.js';
+import {leaguePlayers,closeGame} from './game-day-league.js';
+export const WATCH_TABS=[['matchup','Matchup'],['moments','Moments'],['league','League']];
+export function closeGameHtml(game){
+ const view=closeGame(game);if(!view)return'';
+ return `<section class="gd-close-game" aria-label="Close matchup"><small>CLOSE GAME</small><strong>${view.leader?`${esc(view.leader.name)} leads by ${view.gap.toFixed(2)}`:'All tied up'}</strong><details><summary>${view.sides.map(t=>`${esc(t.name)} · ${t.known?t.playing.length+' left':'Status pending'}`).join(' / ')}</summary>${view.sides.map(t=>`<p><b>${esc(t.name)}</b> ${t.known?t.playing.length?t.playing.map(p=>esc(p.name)).join(' · '):'All starters finished':'NFL status unavailable'}</p>`).join('')}</details></section>`;
+}
+export function momentsPanel(timeline,gameId,scope='matchup'){
+ const items=(timeline?.items||[]).filter(m=>scope==='league'||m.matchupId===String(gameId));
+ return `<section class="gd-saved-moments" aria-label="Saved sync moments"><header><h3>Saved moments</h3><div role="group" aria-label="Moment scope">${[['matchup','This matchup'],['league','League']].map(([id,label])=>`<button class="linkbtn" type="button" data-moment-scope="${id}" aria-pressed="${scope===id}">${label}</button>`).join('')}</div></header><ol>${items.map(m=>`<li data-moment-key="${esc(m.key)}" class="is-${esc(m.kind)}"><time datetime="${esc(new Date(m.at).toISOString())}">${esc(new Date(m.at).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}))}</time><p>${esc(m.text)}</p></li>`).join('')}</ol>${timeline?.error?'<p role="status">Saved moments unavailable.</p><button type="button" class="linkbtn" data-moments-retry>Retry</button>':!items.length?`<p role="status">${timeline?.busy?'Loading saved moments…':scope==='matchup'?'No saved moments for this matchup yet.':'No saved moments yet.'}</p>`:''}${timeline?.more?`<button type="button" class="linkbtn" data-moments-more${timeline.busy?' disabled':''}>${timeline.busy?'Loading…':'Earlier moments'}</button>`:''}</section>`;
+}
+export function leaguePanel(model,{filter='all',includeBench=false}={}){
+ const rows=leaguePlayers(model,{filter,includeBench}),hot=leaguePlayers(model,{filter:'hot',includeBench}).length,cold=leaguePlayers(model,{filter:'cold',includeBench}).length;
+ return `<section class="gd-league-board" aria-label="League player board"><header><h3>Player board</h3><span>${rows.length} players</span></header><div class="gd-league-controls"><div role="group" aria-label="Filter league players">${[['all','All'],['hot',`Hot · ${hot}`],['cold',`Cold · ${cold}`]].map(([id,label])=>`<button type="button" class="linkbtn" data-league-filter="${id}" aria-pressed="${id===filter}">${label}</button>`).join('')}</div><label><input type="checkbox" data-league-bench${includeBench?' checked':''}> Include bench</label></div>${rows.length?`<ul class="gameday-players">${playerRows(rows,{showOwner:true})}</ul>`:`<p role="status">${filter==='cold'?'No cold players yet. Cold starts after halftime or at final.':filter==='hot'?'No players over 15 points yet.':'Player scores unavailable.'}</p>`}</section>`;
+}

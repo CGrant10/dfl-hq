@@ -1,61 +1,72 @@
-# Connected app design QA — 1.294.0
+# GameDay design and release QA — 1.295.0
 
 **Findings**
 
-No actionable P0/P1/P2 findings remain in the changed surfaces. One player card now serves Search, GameDay, injuries, Trade, Clubhouse and sportsbook. Navigation memory, unfinished trade packages and rivalry chapters connect the existing experience. History, League Fees, Rules and profile settings use quieter controls and clearer spacing. Home's approved layout and power rankings remain intact.
+No actionable P0/P1/P2 findings remain in the changed surfaces. Watch now has Matchup, Moments and League tabs under a shared sticky scoreboard. The full league player board offers All / Hot / Cold and optional bench players. Close live matchups emphasize the real gap and remaining starters. Home retains its compact Leaders preview with actions into the full board.
 
 **Evidence and normalization**
 
-- Approved app direction: `/workspace/dfl-audit/connected-before-trade.png`. Existing player photos, restrained controls, editorial headings and Medicine Wheel accents are the production target. These utility pages are adaptations of that direction, rather than identical copies of Trade.
-- Before/after page captures: `connected-before-{history,finances,rules,profile}.png` and `connected-final-{history,finances,rules,profile}.png` under `/workspace/dfl-audit/`.
-- Combined final full-view comparison: `connected-comparison-utility.png`, viewport 1660 × 920. Four columns use the same 390 CSS-pixel width and deviceScaleFactor 1. Reference and implementation captures use 390 × 844 with the same member, league data and Light palette.
-- Focused controls comparison: `connected-comparison-controls.png`, region 1220 × 360, same source frames and density. Headline, divider, tab typography and panel alignment were reviewed together.
-- Settings comparison: `connected-comparison-settings.png`, viewport 840 × 920, same expanded disclosure and scroll region. Focused appearance comparison: `connected-comparison-appearance.png`, same 390-pixel column normalization. Appearance element captures include the fixed navigation at their lower edge; control review uses the unobscured upper region.
-- Iteration evidence: `connected-comparison-iteration.png` preserves the initial excessive finance spacing alongside the final layout.
-- New surface evidence: `connected-player-card.png`, `connected-player-card-cold.png`, `connected-final-clubhouse.png`. Actual Josh Allen identity and previous league meetings were inspected. Cold eligibility is additionally verified through state assertions; the screenshot alone is not a timing benchmark for the WebGL effect.
-- Final static comparison captures disable transitions and entrance animation identically for source and implementation to compare settled layouts. Functional and GPU tests separately retain normal motion.
-- Browser state uses an isolated existing-member session. Production-write guards block analytics, presence, votes and other mutations during QA.
+- Production baseline at commit `d60ccbfd637d12c1815811fb86a4995af3cbdc3e`: `/workspace/dfl-audit/gameday-source-watch.png`.
+- Final captures: `gameday-final-matchup.png`, `gameday-final-hot.png`, `gameday-final-moments.png` under `/workspace/dfl-audit/`.
+- Combined full-view comparison: `/workspace/dfl-audit/comparison-gameday.png`, viewport 1660 × 920, four equal 390 CSS-pixel columns at deviceScaleFactor 1. Individual captures use 390 × 844, the same member, matchup and Light palette, with reduced motion for settled layout comparison.
+- Focused comparison: `gameday-comparison-controls.png`, region 1220 × 360 at the same density. Score/name alignment, compact controls and tab hierarchy were reviewed together.
+- Live stats advanced between baseline and final captures (70.12/140.52 to 70.32/140.92); that is actual data refresh, not a visual or scoring regression.
+- Normal-motion captures: `gameday-after-hot.png`, `gameday-after-cold.png`, `gameday-after-matchup.png`. Existing readable fire/ice shaders remain in use.
+- Close-game fixture: `gameday-close-fixture.png`. Synthetic scores isolate the 7.50-point live-gap presentation. Fixtures were never stored in league tables.
+- Browser tests guard all production writes, including presence, reactions and analytics. Database test snapshots run in rolled-back transactions.
 
 **Required fidelity surfaces**
 
-- Fonts/typography: local Rajdhani retains the app's editorial headlines. Utility tabs and small navigation actions use system type at 13 pixels, with 44-pixel interaction heights. Player names remain readable with the existing photo treatment.
-- Spacing/layout: unified utility headers and dividers align to content edges. Finance summaries have a compact value/label hierarchy; historical tables retain readable row spacing. Settings have light borders and separated feedback rows. The player dialog uses a bounded portrait, recent-form columns and compact actions.
-- Colors/tokens: new accents use Medicine Wheel red `#C8102E` and yellow `#EFC94C`; backgrounds and text follow the selected app palette. Existing semantic financial colors and user palette preferences remain respected.
-- Image quality/assets: actual Sleeper player portraits are reused. No replacement illustration or decorative asset was introduced. Fire/ice retain the existing shader and readable score ink.
-- Copy/content: roster ownership, fantasy points, injury sources, three recent weeks and matchup calls come from existing data. Exact identity matching avoids ambiguous player names. Unknown stats stay unknown; zero stays zero. Completed results and ties are recorded correctly. Injury tags do not become unsupported promises that a player will play.
+- Fonts/typography: existing editorial app typography and actual player portraits remain. Watch controls use restrained system typography and 44-pixel interaction heights. Team names wrap inside their columns; enlarged text does not produce horizontal overflow.
+- Spacing/layout: the scoreboard is shorter and remains visible while scrolling the active section. Matchup keeps reactions, rivalry detail and lineups; Moments contains the saved timeline; League holds the player board and existing reel. Desktop player rows use two columns; phones use one.
+- Colors/tokens: app palette preferences remain respected. New selected tabs use Medicine Wheel red; surfaces and copy use existing theme tokens. Score temperature colors and shaders are retained.
+- Image quality/assets: actual Sleeper photos and team identity fallbacks remain. Updating a row preserves its loaded image. No new decorative asset or imitation player portrait is introduced.
+- Copy/content: Hot means strictly over 15 points, at any time. Cold means strictly under 10, only after halftime or final. Unknown stays unknown, zero remains zero, and bench players require an explicit choice. Close-game context requires live starters and a known gap of at most 10 points. No win probability or unsupported touchdown claim is added.
 
-**Comparison history**
+**Comparison and implementation history**
 
-1. [P2] The player portrait inherited only view-scoped styles and expanded outside GameDay. Added explicit shared-dialog portrait sizing and checked the actual identified photo.
-2. [P2] Initial finance summaries added too much vertical space. Reduced statistic padding and reviewed the before/initial/final comparison.
-3. [P2] Earlier History selectors and route presentation rules overrode quiet tabs and Rules headers. Scoped the final utility rules to the view, restored system typography on tabs and aligned all three headers.
-4. [P2] Transparent feedback rows exposed the old gray grid background. Removed the parent background and retained thin dividers. Medicine Wheel Light feedback descriptions also needed higher contrast; corrected the text token.
-5. A preliminary capture sampled entrance fades. Re-captured source and implementation in the same settled motion state before judging fidelity.
-6. Final combined full-view and focused comparisons passed. Utility content differs intentionally from the Trade reference. No actionable P0/P1/P2 findings remain.
+1. Added one focused Watch section at a time and a compact sticky scoreboard, preserving the existing player cards, reactions, rivalry detail and reel.
+2. Replaced full content replacement with keyed DOM updates. Fixed initial empty-container insertion and gave repeated empty lineup slots distinct keys. Focus, open benches, loaded portraits and player nodes survive updates and re-sorting.
+3. [P2] A paused GPU canvas retained its previous width after a reduced-motion resize. Constrained its CSS width to the current root.
+4. [P2] Enlarged team scores and tabs could exceed a 320-pixel viewport. Constrained scoreboard geometry, allowed tab wrapping and verified 200% text. A style-cleanup iteration briefly removed the score constraint; the final rule was restored and the matrix repeated.
+5. Added temperature-attribute observation so halftime can activate frost without a score change. Offscreen rows skip texture construction; sticky-header occlusion prevents effects from appearing through the scoreboard.
+6. A rapid palette matrix sampled a transient color transition. Static accessibility captures disable transitions, while separate normal-motion tests verify effects and live behavior.
+7. Final combined full-view and focused comparisons passed. The section structure and shorter scoreboard are intentional changes from the approved baseline.
 
-**Interactions and validation**
+**Saved timeline and data verification**
 
-- Shared player card: actual identity/portrait, exact-name lookup, ownership, known zero versus unavailable stats, league scoring, source tags, retry and stale-request protection checked. Escape and Close restore focus to Search or GameDay; Search retains its query. Player action opens the correct own-team trade builder with the selected player and partner.
-- Memory: chosen GameDay matchup survives closing, player-card return and navigation. Clubhouse tab/week restore while explicit links override remembered choices. Manual trade players, intent, filters and scroll survive navigation and reload; expired, cross-member and no-longer-owned selections are rejected.
-- Rivalry: real previous meetings, reversed sides, win/loss/tie record, saved calls and final grading tested. No fabricated calls or future/unplayed results enter the story. The extra detail uses an existing expandable section rather than another Home card.
-- Accessibility: axe A/AA passed on the shared card, utility pages, expanded settings and rivalry sections at 320/390/1280 widths across Dark, Light, Medicine Wheel and Medicine Wheel Light. Keyboard interaction, 200% text and horizontal-overflow checks passed. Reduced-motion and existing halftime cold thresholds remain respected. Automated checks cover the changed surfaces, not a claim of a complete manual screen-reader audit.
-- Performance: identical isolated GPU test measured two contexts allocated initially before, zero after for neutral/offscreen surfaces; visible fire still rendered 37 draws over 1.2 seconds (approximately 30 fps). Offscreen draws remained zero. Weekly reads now coalesce in flight and share a 30-second cache; forced refresh, sync invalidation, failed-request retry and vote deadlines are tested. Route warming is sequential and skipped for hidden pages, Save-Data and slow connections. Live backend timing varies; no universal page-speed percentage is claimed.
-- Actual Home, History, League Fees, Rules, Profile, Clubhouse and Trade routes passed under 4× CPU throttling. No JavaScript errors. Production writes were prevented during testing.
-- `pnpm check`: typecheck, unresolved-name checks, 1077 tests in 121 files and production build passed.
-- Logs: `/workspace/dfl-audit/connected-check-final.log`, `connected-browser-final.log`, `connected-interactions-final.log`, `connected-vfx-performance.log`.
+- New `public.gameday_moments` stores compact, append-only observations. `private.gameday_state` holds the last snapshot for each league/season/week. The server detects lead changes, starter scoring jumps of at least six points and the first observed 20-point big day.
+- Only `service_role` can capture or write moments. Browser roles can read the same public league facts as existing score pages. Both tables have RLS; the private state has an explicit service-only policy. Capture uses SECURITY INVOKER with a fixed search path and an advisory transaction lock to prevent concurrent duplicates.
+- Applied migrations: `gameday_saved_sync_moments` and `gameday_capture_access_and_paging_index`. Combined schema source: `gameday_moments_schema.sql`.
+- Deployed `sync-sleeper` version 8 with its existing custom cron authorization intact. The seven configured weekly sync slots were preserved. A failed moment capture logs a warning while the existing league sync continues.
+- Rolled-back service-role SQL tests verified initial zero/unknown scores, bench exclusion, actual zero-to-positive jumps, lead reversals, first big days and unchanged-snapshot deduplication. No fixture rows remain.
+- Verified browser read permission, denied browser insert/capture permission and enabled RLS. The final security advisor scan reported no findings related to the new objects.
+- An initial capture of actual 2026 Week 4 Sleeper data saved 13 big-day observations. The browser loaded those real records with names and owners. No past play times or missed historical lead changes were fabricated.
+- Moments are loaded on demand and cached for a minute. Explicit retry/refresh bypasses that cache. Pagination uses the scoped league/season/week/id index and retains existing items. Timestamps indicate observed syncs; the timeline begins with this release and follows the existing scheduled cadence.
+
+**Interactions, accessibility and performance**
+
+- Home Leaders → Hot / Cold / View all opens the correct Watch tab and filter. Optional benches, full player lists and shared player cards work. Current live data produced more than four hot and cold players; counts update with the data.
+- Watch tabs support arrow keys, Home/End and selected-state semantics. Matchup selection, filter, bench preference and moment scope persist per member. Escape and player-card return preserve the correct parent dialog.
+- Real refresh kept the same player button, keyboard focus and expanded bench. Fixture re-sorting preserved player node identity and repeated empty RB slots. Saved pagination appended earlier events without losing current entries.
+- Axe A/AA passed at 320/390/1280 widths across Dark, Light, Medicine Wheel and Medicine Wheel Light for all three tabs. Enlarged-text checks passed without horizontal overflow. Static palette checks use settled, reduced-motion rendering; normal-motion behavior was tested separately.
+- A 100-hot-player fixture allocated fewer than 25 visible textures across its initial redraws rather than constructing masks for every offscreen row. Frost activated after halftime while the numeric score stayed unchanged. Existing fire/ice quality and reduced-motion controls remain intact.
+- Existing matchup memory, Clubhouse choices, shared player-card cold eligibility and utility-page accessibility regression checks passed. No browser JavaScript errors in the successful checks.
+- `pnpm check`: typecheck, unresolved-name checks, 1084 tests in 122 files and production build passed.
+- Logs: `/workspace/dfl-audit/gameday-check-final.log`, `gameday-browser-final.log`, `gameday-fixture-final.log`, `gameday-regression.log`.
 
 **Implementation Checklist**
 
-- [x] Reuse one player card across existing entry points.
-- [x] Remember navigation choices and validate unfinished trade drafts.
-- [x] Connect rivalry history, actual predictions and final outcomes.
-- [x] Measure GPU behavior and deduplicate weekly reads.
-- [x] Polish utility pages without changing Home's structure.
-- [x] Inspect combined full-view and focused comparisons.
-- [x] Complete functional, accessibility and build checks.
+- [x] Organize Watch into Matchup / Moments / League.
+- [x] Add complete Hot / Cold / All lists with optional benches.
+- [x] Save shared moments through the existing scheduled sync.
+- [x] Highlight close live matchups using actual scores and starters.
+- [x] Preserve DOM identity and focus during live refresh.
+- [x] Bound offscreen GPU work without replacing the effects.
+- [x] Verify source/implementation visuals, database access, responsive behavior and regressions.
 
 **Follow-up Polish**
 
-[P3] Injury and portrait quality depend on current provider data. The card clearly identifies available injury sources and retains existing image fallbacks.
+[P3] More frequent timeline observations would require changing the league's configured sync schedule. The current release preserves those settings; timestamps accurately describe the available observations.
 
 final result: passed

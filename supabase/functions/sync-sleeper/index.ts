@@ -302,6 +302,11 @@ Deno.serve(async (request) => {
     ]);
 
     const signature = await sha256(stable({ league, users, rosters, weeklyMatchups, weeklyTransactions, week }));
+    // Capture shared moments even when no member has GameDay open.
+    const { error: momentsError } = await admin.rpc("capture_gameday_snapshot", {
+      p_league_id: leagueId, p_season: season, p_week: week, p_rows: weeklyMatchups || [],
+    });
+    if (momentsError) console.warn("GameDay moments unavailable:", momentsError.message);
     const earlyNames = new Map<string, Json>((users || []).map((user: Json) => [user.user_id, {
       team: user.metadata?.team_name || "",
       display: user.display_name || user.username || "",
