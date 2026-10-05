@@ -1,12 +1,13 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.295.1";
+const CACHE_NAME = "dfl-hq-v1.296.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
+  "./assets/anniversary-ten.webp",
   "./js/game-day-league.js","./js/game-day-dom.js","./js/game-day-panels.js","./js/game-day-moments.js","./js/game-day-moments-model.js",
-  "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js","./css/connected-experience.css?v=1.295.1",
-  "./js/share-editorial.js","./js/share-layouts.js","./js/share-layout-model.js","./js/share-export-model.js","./css/share-preview.css?v=1.295.1","./fonts/anton-regular.woff2","./images/share/editorial-paper.webp",
-  "./css/game-day-watch.css?v=1.295.1","./js/game-day-watch.js","./js/game-day-experience-model.js","./js/game-day-player-rows.js",
+  "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js","./css/connected-experience.css?v=1.296.0",
+  "./js/share-editorial.js","./js/share-layouts.js","./js/share-layout-model.js","./js/share-export-model.js","./css/share-preview.css?v=1.296.0","./fonts/anton-regular.woff2","./images/share/editorial-paper.webp",
+  "./css/game-day-watch.css?v=1.296.0","./js/game-day-watch.js","./js/game-day-experience-model.js","./js/game-day-player-rows.js",
   "./js/nfl-game-day.js","./js/game-day-model.js","./js/game-day.js","./js/game-day-score-motion.js","./js/game-day-matchup-share.js", "./js/matchup-banter.js", "./js/player-spotlight.js", "./js/player-spotlight-model.js", "./js/score-temperature.js", "./js/score-vfx.js", "./js/score-vfx-shaders.js",
   "./js/clubhouse-matchup-model.js","./js/clubhouse-matchup-cards.js","./js/clubhouse-matchup-live.js",
   "./js/page-disclosure.js", "./js/injury-report-model.js", "./js/injury-report-data.js", "./js/injury-report-ui.js",
@@ -102,7 +103,7 @@ const APP_SHELL = [
   "./js/trade-model-health.js",
   "./js/notification-device-state.js",
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
-  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.295.1","./css/stakes.css",
+  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.296.0","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/nav-neutral.css","./css/update-gate.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",

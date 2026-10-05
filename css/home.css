@@ -2401,6 +2401,31 @@ span) { overflow-wrap: anywhere; }
 }
 :root[data-mode="light"] #home-wrap > .dfl-anniv > .dfl-anniv-copy strong { text-shadow: none; }
 
+/* The approved anniversary artwork includes its lettering, anime energy and
+   Medicine Wheel signature. Keep its native ratio on phones; on desktop
+   only trim the outer texture, never the title or four-color line. */
+:root #home-wrap > .dfl-anniv.dfl-anniv--editorial {
+  display: block;
+  min-height: 0;
+  width: min(100%, 100vw);
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  background: #0d0d0d;
+  box-shadow: none;
+}
+#home-wrap > .dfl-anniv--editorial::before,
+#home-wrap > .dfl-anniv--editorial::after { display: none; }
+#home-wrap .dfl-anniv-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
+  object-position: center;
+}
+
 /* =====================================================================
    HOME POLISH PASS — one rhythm, fewer boxes, readable supporting type.
 

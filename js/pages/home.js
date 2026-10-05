@@ -738,6 +738,13 @@ export async function render(view) {
 export function anniversary() {
   const number = new Date().getFullYear() - LEAGUE_FOUNDED + 1;
   if (number < 2 || number % 10 !== 0) return "";
+  // Keep the approved ten-season artwork together, including its four-color
+  // signature. Later milestones retain their accurate, generated heading.
+  if (number === 10 && LEAGUE_FOUNDED === 2017) {
+    return `<aside class="dfl-anniv dfl-anniv--editorial" role="note" data-assemble>
+      <img class="dfl-anniv-art" src="assets/anniversary-ten.webp" width="2172" height="724" alt="10th anniversary season — ${LEAGUE_FOUNDED}–${new Date().getFullYear()}." decoding="async" fetchpriority="high">
+    </aside>`;
+  }
   return `<aside class="dfl-anniv" role="note" data-assemble>
     <span class="dfl-anniv-copy"><i class="dfl-anniv-branch is-left" aria-hidden="true"></i><span class="dfl-anniv-words"><strong>${esc(ordinal(number))} Anniversary<br>Season</strong><small>${LEAGUE_FOUNDED} — ${new Date().getFullYear()}</small></span><i class="dfl-anniv-branch is-right" aria-hidden="true"></i></span>
     <span class="dfl-anniv-tag">Same guys. Higher stakes. Bigger bragging rights.</span>
