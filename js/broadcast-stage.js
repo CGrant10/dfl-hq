@@ -554,7 +554,7 @@ export function startStage(root, deck, { refresh } = {}) {
     fitHeadlines(slide);
     if (!editorial) return;
     const style = getComputedStyle(slide);
-    const children = [...slide.children].filter(el => !el.classList.contains("bx-editorial-art"));
+    const children = [...slide.children];
     const content = children.reduce((height, el) => {
       const childStyle = getComputedStyle(el);
       return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);

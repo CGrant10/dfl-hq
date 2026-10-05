@@ -167,7 +167,8 @@ function temperatureStories(teams, standings, season, weekly) {
   return stories;
 }
 
-function rivalryStory({ lore, uid, members }) {
+export function homeRivalryStory({ lore, uid, members }) {
+  if (!uid) return null;
   const records = new Map();
   for (const row of lore?.matchups || []) {
     const left = String(row.user1) === String(uid);
@@ -285,7 +286,7 @@ export function clubhouseView({ analysis, lore, members = [], meSleeperId = null
     matchupStory({ lore, uid: meSleeperId, members, weekly }),
     hotSeatStory(teams, weekly),
     ...temperatureStories(teams, standings, analysis.projectionSeason, weekly),
-    rivalryStory({ lore, uid: meSleeperId, members }),
+    homeRivalryStory({ lore, uid: meSleeperId, members }),
   ].filter(Boolean);
   if (!stories.length) return null;
   const dateKey = now instanceof Date ? now.toISOString().slice(0, 10) : String(now);
@@ -401,3 +402,4 @@ export function wireClubhouse(root, view) {
     if (outcome === "failed") toast("Could not share the week recap", true);
   });
 }
+

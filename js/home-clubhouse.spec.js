@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView, clubhouseWeekCard } from "./home-clubhouse.js";
+import { homeRivalryStory, aftermathReportWeek, buildClubhouseWeekly, clubhouseCard, clubhouseView, clubhouseWeekCard } from "./home-clubhouse.js";
 
 const player = (name, expectedPoints) => ({ name, expectedPoints });
 const analysis = {
@@ -226,5 +226,21 @@ describe("Home weekly report", () => {
     const hotSeat = view.stories.find(story => story.key === "hot-seat");
     expect(hotSeat.headline).toContain("Alpha has Bench Heat");
     expect(view.stories.map(story => `${story.headline} ${story.detail}`).join(" ")).not.toContain("undefined");
+  });
+});
+
+
+describe('Home rivalry independent of the weekly model', () => {
+  it('uses historical results without needing current projections', () => {
+    const lore = { matchups: [
+      { user1: 'u1', user2: 'u2', score1: 120, score2: 110 },
+      { user1: 'u2', user2: 'u1', score1: 100, score2: 125 },
+      { user1: 'u1', user2: 'u2', score1: 0, score2: 0 },
+    ] };
+    const story = homeRivalryStory({ lore, uid: 'u1', members: [{ sleeper_user_id: 'u2', display_name: 'Mike' }] });
+    expect(story.headline).toContain('Mike');
+    expect(story.detail).toContain('2-0 all time');
+    expect(homeRivalryStory({ lore, uid: null, members: [] })).toBeNull();
+    expect(homeRivalryStory({ lore: { matchups: lore.matchups.slice(0,1) }, uid: 'u1', members: [] })).toBeNull();
   });
 });

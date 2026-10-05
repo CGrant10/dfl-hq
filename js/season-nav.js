@@ -28,15 +28,16 @@ export const SECONDARY_SEASON_ROUTES = [
 ];
 
 const navLabel=label=>label;
+const primaryIcons = { home: 'house', clubhouse: 'users-round', sportsbook: 'banknote', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
 let navSizeObserver;
 const link = ({ route, label, icon, lead = false }) =>
-  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span>${navLabel(label)}</span></a>`;
+  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#dfl-nav-${primaryIcons[route]}"></use></svg><span>${navLabel(label)}</span></a>`;
 
 const quickLink = ({ route, label, icon }) =>
   `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span class="qn-label">${label}</span></a>`;
 
 export function primarySeasonNavMarkup() {
-  return `${PRIMARY_SEASON_ROUTES.map(link).join("")}<button type="button" id="more-btn" class="tabmore" aria-expanded="false" aria-controls="more"><svg class="ico" aria-hidden="true"><use href="#i-more-steel"></use></svg><span>More</span></button>`;
+  return `${PRIMARY_SEASON_ROUTES.map(link).join("")}<button type="button" id="more-btn" class="tabmore" aria-expanded="false" aria-controls="more"><svg class="ico" aria-hidden="true"><use href="#dfl-nav-ellipsis"></use></svg><span>More</span></button>`;
 }
 
 export function secondarySeasonNavMarkup() {
@@ -54,3 +55,4 @@ export function mountSeasonNavigation(root = document) {
   if(typeof bar.getBoundingClientRect==="function"){syncSize();navSizeObserver?.disconnect();if(globalThis.ResizeObserver){navSizeObserver=new ResizeObserver(syncSize);navSizeObserver.observe(bar)}}
   return true;
 }
+

@@ -71,8 +71,8 @@ with sync_playwright() as p:
     page.wait_for_timeout(350)
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
     page.locator('.bx-pause').click()
-    assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#home-ui-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
-    assert page.evaluate('document.querySelector("#home-ui-house").namespaceURI') == 'http://www.w3.org/2000/svg'
+    assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
+    assert page.evaluate('document.querySelector("#dfl-nav-house").namespaceURI') == 'http://www.w3.org/2000/svg'
     assert metrics['390']['sections'][4]['height'] < 240, 'Leader preview is not compact'
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
@@ -85,6 +85,26 @@ with sync_playwright() as p:
     metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
     assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
+    metrics['refinement'] = page.evaluate("""() => ({bannerHeight:document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,bannerRatio:document.querySelector('.dfl-anniv-art').getBoundingClientRect().width/document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),teamFont:parseFloat(getComputedStyle(document.querySelector('.gameday-faceoff-team .gd-thermal-number')).fontSize),broadcastBackground:getComputedStyle(document.querySelector('.bx-stage')).backgroundImage,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
+    assert metrics['refinement']['bannerHeight'] <= 96 and abs(metrics['refinement']['bannerRatio'] - 3) < .01, 'Banner is oversized or cropped'
+    assert metrics['refinement']['playerFont'] <= 24 and metrics['refinement']['teamFont'] <= 22, 'Points are still oversized'
+    assert metrics['refinement']['broadcastBackground'] == 'none', 'Broadcast text still sits over an image'
+    assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
+    page.screenshot(path=str(OUT / 'home-390-full.png'), full_page=True)
+    metrics['navigation'] = []
+    for width in [320,390,1280]:
+        page.set_viewport_size({'width':width,'height':844})
+        reference = None
+        for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
+            page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
+            page.wait_for_timeout(60)
+            nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
+            if reference is None: reference = nav
+            assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
+            metrics['navigation'].append({'width':width,'route':route,**nav})
+            if width == 390 and route in ['home','clubhouse','golf']:
+                page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
+    page.evaluate("document.querySelector('#view').dataset.route='home';document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));document.querySelector('#tabbar [data-route=home]').classList.add('on')")
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
     for width in [320, 390, 768, 1280]:
@@ -94,7 +114,7 @@ with sync_playwright() as p:
             page.wait_for_timeout(650)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children].filter(e=>!e.classList.contains('bx-editorial-art'));
+                const elements=[...slide.children];
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
