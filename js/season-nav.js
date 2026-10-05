@@ -28,15 +28,16 @@ export const SECONDARY_SEASON_ROUTES = [
 ];
 
 const navLabel=label=>label;
+const primaryIcons = { home: 'house', clubhouse: 'users-round', sportsbook: 'banknote', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
 let navSizeObserver;
 const link = ({ route, label, icon, lead = false }) =>
-  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span>${navLabel(label)}</span></a>`;
+  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#dfl-nav-${primaryIcons[route]}"></use></svg><span>${navLabel(label)}</span></a>`;
 
 const quickLink = ({ route, label, icon }) =>
   `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span class="qn-label">${label}</span></a>`;
 
 export function primarySeasonNavMarkup() {
-  return `${PRIMARY_SEASON_ROUTES.map(link).join("")}<button type="button" id="more-btn" class="tabmore" aria-expanded="false" aria-controls="more"><svg class="ico" aria-hidden="true"><use href="#i-more-steel"></use></svg><span>More</span></button>`;
+  return `${PRIMARY_SEASON_ROUTES.map(link).join("")}<button type="button" id="more-btn" class="tabmore" aria-expanded="false" aria-controls="more"><svg class="ico" aria-hidden="true"><use href="#dfl-nav-ellipsis"></use></svg><span>More</span></button>`;
 }
 
 export function secondarySeasonNavMarkup() {
@@ -50,7 +51,22 @@ export function mountSeasonNavigation(root = document) {
   bar.classList.add("is-in-season");
   bar.innerHTML = primarySeasonNavMarkup();
   more.innerHTML = secondarySeasonNavMarkup();
-  const syncSize=()=>{root.documentElement?.style.setProperty("--season-nav-height",`${Math.ceil(bar.getBoundingClientRect().height)}px`);const active=bar.querySelector(".on");if(active)bar.style.setProperty("--tab-y",`${active.offsetTop}px`)};
-  if(typeof bar.getBoundingClientRect==="function"){syncSize();navSizeObserver?.disconnect();if(globalThis.ResizeObserver){navSizeObserver=new ResizeObserver(syncSize);navSizeObserver.observe(bar)}}
+  const syncSize = () => {
+    // Fractional text metrics and safe-area padding are part of the bar's
+    // rendered height. Keep that exact value so the ticker meets its edge.
+    root.documentElement?.style.setProperty("--season-nav-height", `${bar.getBoundingClientRect().height}px`);
+    const active = bar.querySelector(".on");
+    if (active) bar.style.setProperty("--tab-y", `${active.offsetTop}px`);
+  };
+  if (typeof bar.getBoundingClientRect === "function") {
+    syncSize();
+    navSizeObserver?.disconnect();
+    if (globalThis.ResizeObserver) {
+      navSizeObserver = new ResizeObserver(syncSize);
+      // Safe-area changes can alter padding without resizing the content box.
+      navSizeObserver.observe(bar, { box: "border-box" });
+    }
+  }
   return true;
 }
+

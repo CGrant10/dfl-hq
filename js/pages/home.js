@@ -32,7 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
-import {homeBroadcastDeck,homeNavigationPresentation} from "../home-presentation.js";
+import {homeBroadcastDeck,homeLeagueFile} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
@@ -40,7 +40,8 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
-import { buildClubhouseWeekly } from "../home-clubhouse.js";
+import { factOfTheDay } from "../funfacts.js";
+import { buildClubhouseWeekly, homeRivalryStory } from "../home-clubhouse.js";
 import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlook.js";
 import { buildNextMove } from "../next-move.js";
 import { weekHasStarted } from "../league-trajectory.js";
@@ -288,7 +289,7 @@ function editorialStage(ctx, { custom = [], off = new Set(), overrides = new Map
     if (STAGE_UTILITY.has(it.generator)) return false;
     if ((it.generator === "golf" || it.generator === "fantasy") && it.temporal === "upcoming") return false;
     return true;
-  })).slice(0, 8);
+  }));
   if (picked.length) return picked;
   return ranked.filter((it) => it.generator === "identity").slice(0, 1);
 }
@@ -406,7 +407,6 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
 export async function render(view) {
   leave();
   const mine = ++generation;
-  deferredStops.push(homeNavigationPresentation());
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
   /* These reads do not depend on the core dashboard rows. Starting them now
@@ -479,6 +479,8 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     <div data-home-gameday-slot></div>
+    <div data-home-lore-slot>${homeLeagueFile()}</div>
+    <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse →</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>Read league news →</button>':""}</section>
     ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
@@ -489,8 +491,7 @@ export async function render(view) {
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
     <div data-draft-slot></div>
-    <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>
-    <div data-wall-slot class="home-deferred-slot"></div>`)}
+    <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
@@ -534,6 +535,15 @@ export async function render(view) {
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
   deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  // Archive stories load independently of the live weekly model.
+  lorePromise.then(got => {
+    if (mine !== generation || !view.isConnected || got?.error) return;
+    const slot = view.querySelector('[data-home-lore-slot]');
+    if (slot) slot.innerHTML = homeLeagueFile({
+      fact: factOfTheDay(got, new Date()),
+      rivalry: homeRivalryStory({ lore: got, uid: myMember?.sleeper_user_id, members: memberRows }),
+    });
+  }).catch(error => console.warn('League archive unavailable', error));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireInline(view.querySelector("#home-wrap"), () => render(view));

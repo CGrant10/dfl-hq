@@ -2,8 +2,9 @@
 // sample scores. It lives outside the app and never writes to league data.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup } from '../js/home-presentation.js';
+import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
+import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
 import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
@@ -18,6 +19,11 @@ const model = { season: 2026, week: 5, starters: players, games: [{ isMine: true
   { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant' } },
   { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike' } },
 ] }] };
+const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2', display_name: 'Mike' }], lore: { matchups: [
+  { user1: 'u1', user2: 'u2', score1: 120.5, score2: 109.3, season: 2024, week: 5 },
+  { user1: 'u2', user2: 'u1', score1: 126.2, score2: 111.8, season: 2025, week: 5 },
+] } });
+const leagueFile = homeLeagueFile({ rivalry, fact: { headline: 'The smallest margin still gets the win.', detail: 'Archive stories rotate here from the DFL matchup records.' } });
 const deck = homeBroadcastDeck([
   { id: 'fixture:news', treatment: 'announcement', kicker: 'League news', headline: 'The league gets the last word.', subtitle: 'The weekly recap is here.', body: 'Weekly awards, matchup conversations and the stories everyone will be talking about.', href: '#/clubhouse', temporal: 'recent' },
   { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', temporal: 'historical' },
@@ -39,6 +45,8 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <aside class="dfl-anniv dfl-anniv--editorial"><img class="dfl-anniv-art" src="assets/anniversary-ten.webp" width="2172" height="724" alt="10th anniversary season, 2017–2026"></aside>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="on"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Live</span><button class="linkbtn" data-gameday-watch>Watch →</button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
+  <div data-home-lore-slot>${leagueFile}</div>
+  <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">The Wall<a class="section-link" href="#/wall">Open the Wall →</a></h2><div class="card wall-card"><p class="wall-empty muted">Nothing yet. Be the first idiot.</p></div></section></div></section>
   ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
@@ -50,12 +58,12 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
 <script type="module">
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
-  import { homeNavigationPresentation } from './js/home-presentation.js';
+  import { mountSeasonNavigation } from './js/season-nav.js';
   const deck = ${JSON.stringify(deck)};
   window.reviewDeck = deck;
-  homeNavigationPresentation();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
+  mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
   document.querySelector('#tabbar').classList.add('is-in-season');
   document.querySelectorAll('[data-score-temperature]').forEach(el => el.style.fontVariantNumeric = 'tabular-nums');

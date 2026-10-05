@@ -3,30 +3,14 @@ import { playerIdentity } from './player-presentation.js';
 import { teamPortrait } from './team-presentation.js';
 import { isDefensePlayer, playerScoreTemperature, thermalScore } from './score-temperature.js';
 
-// Lucide icons match the selected navigation; route handlers stay unchanged.
-export function homeNavigationPresentation(root = document) {
-  const icons = { home: 'house', clubhouse: 'users-round', sportsbook: 'banknote', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
-  const changed = [];
-  for (const tab of root.querySelectorAll('#tabbar [data-route], #tabbar .tabmore')) {
-    const icon = icons[tab.dataset.route] || (tab.classList.contains('tabmore') ? 'ellipsis' : null);
-    const use = tab.querySelector('use');
-    if (!icon || !use) continue;
-    changed.push([use, use.getAttribute('href')]);
-    use.setAttribute('href', `#home-ui-${icon}`);
-  }
-  const bell = root.querySelector('.notification-bell use');
-  if (bell) { changed.push([bell, bell.getAttribute('href')]); bell.setAttribute('href', '#home-ui-bell'); }
-  return () => changed.forEach(([use, href]) => { if (use.isConnected) use.setAttribute('href', href); });
-}
-
 /** Keep the existing deck and its refresh behavior behind the illustrated opener. */
 export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } = {}) {
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
     headline: 'Own the week.', subtitle: 'Bring receipts.',
-    body: 'Weekly awards, matchup talk, and the league’s latest.',
-    bodyLines: ['Weekly awards, matchup talk,', 'and the league’s latest.'],
+    body: 'League history, rivalries, and this week’s receipts.',
+    bodyLines: ['League history, rivalries,', 'and this week’s receipts.'],
     kicker: `${week ? `Week ${week} · ` : ''}${day}`,
     href: '#/clubhouse', actionLabel: 'Open Clubhouse', temporal: 'none',
     background: 'default',
@@ -90,5 +74,19 @@ export function homeThermalBoard(model) {
   return `<section class="home-thermal-leaders" aria-label="Player leaders">
     <header><h2>Player leaders</h2><button type="button" class="linkbtn" data-gameday-board="all">View all <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
     ${players.length ? `<ul class="gameday-players">${rows}</ul>` : '<p class="home-thermal-empty">No hot or cold starters yet.</p>'}
+  </section>`;
+}
+
+/** Existing fact and rivalry models supply the receipts; sparse history stays honest. */
+export function homeLeagueFile({ fact = null, rivalry = null } = {}) {
+  const stories = [
+    fact ? { label: 'FROM THE DFL ARCHIVE', headline: fact.headline, detail: fact.detail, href: '#/facts' }
+      : { label: 'FROM THE DFL ARCHIVE', headline: 'Every season leaves receipts.', detail: 'Champions, records and the matchups we still talk about.', href: '#/history' },
+    rivalry,
+  ].filter(Boolean);
+  return `<section class="home-league-file" aria-labelledby="home-league-file-title">
+    <header><h2 id="home-league-file-title">The DFL file</h2><a href="#/history">League history →</a></header>
+    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></a>`).join('')}</div>
+    <nav aria-label="DFL stories"><a href="#/facts">Fun facts</a><a href="#/clubhouse">This week’s receipts</a><a href="#/wall">Talk your shit →</a></nav>
   </section>`;
 }

@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'js/home-presentation*'
+      - 'js/season-nav*'
+      - 'js/home-clubhouse*'
+      - 'js/pages/home.js'
+      - 'css/nav-neutral.css'
       - 'js/broadcast-stage.js'
       - 'js/score-vfx*'
       - 'css/home-broadcast-design.css'
