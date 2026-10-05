@@ -90,7 +90,12 @@ with sync_playwright() as p:
     assert metrics['refinement']['playerFont'] <= 24 and metrics['refinement']['teamFont'] <= 22, 'Points are still oversized'
     assert metrics['refinement']['broadcastBackground'] == 'none', 'Broadcast text still sits over an image'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
+    page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.visibility='hidden')")
     page.screenshot(path=str(OUT / 'home-390-full.png'), full_page=True)
+    page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.removeProperty('visibility'))")
+    page.locator('.home-league-file').scroll_into_view_if_needed()
+    page.screenshot(path=str(OUT / 'home-390-stories.png'))
+    page.evaluate('window.scrollTo(0,0)')
     metrics['navigation'] = []
     for width in [320,390,1280]:
         page.set_viewport_size({'width':width,'height':844})

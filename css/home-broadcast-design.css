@@ -281,7 +281,7 @@ body:has(#view[data-route="home"]) .dfl-preview-toggle:is([data-mode="member"],[
 #home-wrap .home-league-file h2 { margin: 0; font: 400 20px/1.2 var(--home-display); text-transform: uppercase; }
 #home-wrap .home-league-file :is(header,nav) a { color: #f6c542; font: 700 13px/1.3 var(--font-display); }
 #home-wrap .home-league-stories { display: grid; gap: 10px; }
-#home-wrap .home-league-story { display: block; padding: 14px; border: 1px solid #343838; border-left: 2px solid #aa8433; border-radius: 5px; background: #121617; color: #f5f1e6; }
+#home-wrap .home-league-story { display: block; padding: 14px; border: 1px solid #343838; border-left: 2px solid #aa8433; border-radius: 5px; background: #121617; color: #f5f1e6; text-decoration: none; }
 #home-wrap .home-league-story small { color: #f6c542; font: 700 10px/1.3 var(--font-display); letter-spacing: .12em; }
 #home-wrap .home-league-story h3 { margin: 6px 0; font: 700 19px/1.15 var(--font-display); text-transform: none; }
 #home-wrap .home-league-story p { margin: 0; color: #c5cbca; font: 400 13px/1.45 system-ui,sans-serif; }
@@ -290,3 +290,7 @@ body:has(#view[data-route="home"]) .dfl-preview-toggle:is([data-mode="member"],[
 #home-wrap .home-banter .wall-card { border-radius: 5px; background: #121617; box-shadow: none; }
 @media (min-width: 700px) { #home-wrap .home-league-stories { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 
+
+#home-wrap .home-league-story:hover h3 { text-decoration: underline; }
+#home-wrap .home-banter .section-title { font: 400 20px/1.2 var(--home-display); }
+#home-wrap .home-banter .section-link { color: #f6c542; font: 700 13px/1.3 var(--font-display); }
