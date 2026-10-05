@@ -19,6 +19,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
             body = file.read_bytes()
             self.send_response(200)
             self.send_header('Content-Type', types.get(file.suffix, 'application/octet-stream'))
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Content-Length', str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -35,15 +36,14 @@ with urlopen(url) as response:
 
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
-    if not executable and Path('/usr/bin/chromium').exists():
-        executable = '/usr/bin/chromium'
     browser = p.chromium.launch(executable_path=executable, headless=True,
-        args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-crashpad-for-testing', '--enable-unsafe-swiftshader'])
+        args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.goto(url, wait_until='commit')
+    html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
+    page.set_content(html, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
