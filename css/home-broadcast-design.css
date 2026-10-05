@@ -305,3 +305,8 @@ body:has(#view[data-route="home"]) .topbar .brand-lockup { display: flex; }
 body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) { padding-top: 7px; }
 body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) .ico { width: 28px; height: 28px; flex: 0 0 28px; margin-bottom: 3px; }
 @media(min-width:700px) { #home-wrap .bx-home-feature .bx-sub { max-width: 28ch; } }
+
+/* The view already has no gutters; cancel the retired negative bleed. */
+#view[data-route="home"] #home-wrap { margin-left: 0; margin-right: 0; }
+#home-wrap .bx-home-feature .bx-sub { max-width: none; font-size: 13px; line-height: 1.45; }
+#home-wrap .bx-home-feature .bx-sub > span { display: block; white-space: nowrap; }

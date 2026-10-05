@@ -26,6 +26,7 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
     headline: 'Own the week.', subtitle: 'Bring receipts.',
     body: 'Weekly awards, matchup talk, and the league’s latest.',
+    bodyLines: ['Weekly awards, matchup talk,', 'and the league’s latest.'],
     kicker: `${week ? `Week ${week} · ` : ''}${day}`,
     href: '#/clubhouse', actionLabel: 'Open Clubhouse', temporal: 'none',
     background: 'default',

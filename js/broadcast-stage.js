@@ -343,7 +343,7 @@ export function renderItem(item, { editorial = false } = {}) {
     return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
       <span class="bx-home-week">${esc(item.kicker)}</span>
       <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
-      <p class="bx-sub">${esc(item.body)}</p>
+      <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
       <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
   }
