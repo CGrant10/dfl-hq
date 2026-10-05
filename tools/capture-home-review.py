@@ -53,7 +53,7 @@ with sync_playwright() as p:
     for width in [390, 320, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
-        metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.dfl-anniv,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height}))})')
+        metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.dfl-anniv,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
     page.set_viewport_size({'width': 390, 'height': 844})
     page.locator('.bx-next').click()
@@ -69,6 +69,7 @@ with sync_playwright() as p:
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
     assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 1280]), 'Horizontal overflow'
+    assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
     assert page.locator('[data-score-temperature="hot"]').count() == 2
     assert page.locator('[data-score-temperature="cold"]').count() == 2
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
