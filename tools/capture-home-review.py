@@ -3,6 +3,7 @@ import json
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.request import urlopen
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -28,6 +29,9 @@ class ReviewHandler(BaseHTTPRequestHandler):
 
 server = ThreadingHTTPServer(('127.0.0.1', 0), ReviewHandler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
+url = f'http://127.0.0.1:{server.server_port}/'
+with urlopen(url) as response:
+    print('Review document:', response.status, response.headers.get('Content-Type'), len(response.read()), flush=True)
 
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
@@ -39,7 +43,8 @@ with sync_playwright() as p:
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.goto(f'http://127.0.0.1:{server.server_port}/', wait_until='domcontentloaded')
+    page.goto(url, wait_until='commit')
+    page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     page.screenshot(path=str(OUT / 'home-390.png'))

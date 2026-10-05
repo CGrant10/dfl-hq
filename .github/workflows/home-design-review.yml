@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      DFL_REVIEW_DIR: ${{ github.workspace }}/.home-review
+      DFL_REVIEW_DIR: ${{ github.workspace }}/home-review-output
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,5 +35,5 @@ jobs:
         if: always()
         with:
           name: home-design-review
-          path: .home-review/
+          path: home-review-output/
           retention-days: 7
