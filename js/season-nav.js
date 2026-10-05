@@ -51,8 +51,21 @@ export function mountSeasonNavigation(root = document) {
   bar.classList.add("is-in-season");
   bar.innerHTML = primarySeasonNavMarkup();
   more.innerHTML = secondarySeasonNavMarkup();
-  const syncSize=()=>{root.documentElement?.style.setProperty("--season-nav-height",`${Math.ceil(bar.getBoundingClientRect().height)}px`);const active=bar.querySelector(".on");if(active)bar.style.setProperty("--tab-y",`${active.offsetTop}px`)};
-  if(typeof bar.getBoundingClientRect==="function"){syncSize();navSizeObserver?.disconnect();if(globalThis.ResizeObserver){navSizeObserver=new ResizeObserver(syncSize);navSizeObserver.observe(bar)}}
+  const syncSize = () => {
+    // Fractional text metrics and safe-area padding are part of the bar's
+    // rendered height. Keep that exact value so the ticker meets its edge.
+    root.documentElement?.style.setProperty("--season-nav-height", `${bar.getBoundingClientRect().height}px`);
+    const active = bar.querySelector(".on");
+    if (active) bar.style.setProperty("--tab-y", `${active.offsetTop}px`);
+  };
+  if (typeof bar.getBoundingClientRect === "function") {
+    syncSize();
+    navSizeObserver?.disconnect();
+    if (globalThis.ResizeObserver) {
+      navSizeObserver = new ResizeObserver(syncSize);
+      navSizeObserver.observe(bar);
+    }
+  }
   return true;
 }
 

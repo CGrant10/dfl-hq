@@ -115,7 +115,8 @@ with sync_playwright() as p:
     page.locator('#tabbar').evaluate("e=>e.style.paddingBottom='34px'")
     page.wait_for_timeout(300)
     metrics['phoneInset'] = page.evaluate("""() => {const nav=document.querySelector('#tabbar').getBoundingClientRect(),ticker=document.querySelector('.bottomline').getBoundingClientRect();return {navHeight:nav.height,measured:parseFloat(document.documentElement.style.getPropertyValue('--season-nav-height')),navTop:nav.top,tickerBottom:ticker.bottom}}""")
-    assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and abs(metrics['phoneInset']['navTop'] - metrics['phoneInset']['tickerBottom']) < 1, 'Ticker and navigation disagree on phone inset height'
+    print('Phone inset:', metrics['phoneInset'], flush=True)
+    assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and abs(metrics['phoneInset']['navTop'] - metrics['phoneInset']['tickerBottom']) < 1, f"Ticker and navigation disagree on phone inset height: {metrics['phoneInset']}"
     page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
     page.wait_for_timeout(300)
     metrics['slides'] = []
