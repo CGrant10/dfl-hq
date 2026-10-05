@@ -111,6 +111,13 @@ with sync_playwright() as p:
             if width == 390 and route in ['home','clubhouse','golf']:
                 page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
     page.evaluate("document.querySelector('#view').dataset.route='home';document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));document.querySelector('#tabbar [data-route=home]').classList.add('on')")
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('#tabbar').evaluate("e=>e.style.paddingBottom='34px'")
+    page.wait_for_timeout(300)
+    metrics['phoneInset'] = page.evaluate("""() => {const nav=document.querySelector('#tabbar').getBoundingClientRect(),ticker=document.querySelector('.bottomline').getBoundingClientRect();return {navHeight:nav.height,measured:parseFloat(document.documentElement.style.getPropertyValue('--season-nav-height')),navTop:nav.top,tickerBottom:ticker.bottom}}""")
+    assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and abs(metrics['phoneInset']['navTop'] - metrics['phoneInset']['tickerBottom']) < 1, 'Ticker and navigation disagree on phone inset height'
+    page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
+    page.wait_for_timeout(300)
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
     for width in [320, 390, 768, 1280]:

@@ -58,10 +58,12 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
 <script type="module">
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
+  import { mountSeasonNavigation } from './js/season-nav.js';
   const deck = ${JSON.stringify(deck)};
   window.reviewDeck = deck;
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
+  mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
   document.querySelector('#tabbar').classList.add('is-in-season');
   document.querySelectorAll('[data-score-temperature]').forEach(el => el.style.fontVariantNumeric = 'tabular-nums');

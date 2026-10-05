@@ -172,7 +172,7 @@ body:has(#view[data-route="home"]) .notification-bell { border: 0; border-left: 
 body:has(#view[data-route="home"]) .notification-count { min-width: 7px; width: 7px; height: 7px; font-size: 0; top: 2px; right: 9px; border: 0; background: #ec2342; }
 body:has(#view[data-route="home"]) .whoami { padding-inline: 0; border: 0; background: transparent; color: #f5f1e6; font: 700 14px/1 var(--font-display); }
 body:has(#view[data-route="home"]) .whoami-photo { display: none; }
-body:has(#view[data-route="home"]) .bottomline { bottom: calc(var(--season-nav-height,66px) + env(safe-area-inset-bottom)); background: #0b0e0f; border-color: #52595a; color: #d0d5d5; }
+body:has(#view[data-route="home"]) .bottomline { bottom: var(--season-nav-height,67px); background: #0b0e0f; border-color: #52595a; color: #d0d5d5; }
 body:has(#view[data-route="home"]) .bl-label { color: #f6c542; }
 body:has(#view[data-route="home"]) .bl-text { color: #d0d5d5; }
 @media (min-width: 700px) {
