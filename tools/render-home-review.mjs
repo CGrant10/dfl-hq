@@ -1,6 +1,7 @@
 // Browser review fixture: the production renderers with the selected mock's
 // sample scores. It lives outside the app and never writes to league data.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
@@ -45,6 +46,7 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
   document.querySelectorAll('[data-score-temperature]').forEach(el => el.style.fontVariantNumeric = 'tabular-nums');
   document.querySelector('.dfl-preview-toggle').addEventListener('click', e => { e.currentTarget.dataset.mode = e.currentTarget.dataset.mode === 'commissioner' ? 'member' : 'commissioner'; });
 </script></body>`);
-mkdirSync(new URL('../../dfl-review/', import.meta.url), { recursive: true });
-writeFileSync(new URL('../../dfl-review/index.html', import.meta.url), html);
-console.log('Production-component review fixture: /workspace/dfl-review/index.html');
+const output = process.env.DFL_REVIEW_DIR || fileURLToPath(new URL('../../dfl-review/', import.meta.url));
+mkdirSync(output, { recursive: true });
+writeFileSync(`${output}/index.html`, html);
+console.log(`Production-component review fixture: ${output}/index.html`);

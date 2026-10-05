@@ -1,20 +1,33 @@
 """Capture the production-component review without changing league data."""
 import json
 import os
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT.parent / 'dfl-review'
+OUT = Path(os.environ.get('DFL_REVIEW_DIR', ROOT.parent / 'dfl-review'))
 
-def route(request_route):
-    path = request_route.request.url.split('dfl.local/', 1)[-1].split('?', 1)[0]
-    file = OUT / 'index.html' if path in ['', 'index.html'] else ROOT / path
-    types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.webp': 'image/webp'}
-    if file.is_file():
-        request_route.fulfill(body=file.read_bytes(), content_type=types.get(file.suffix, 'application/octet-stream'))
-    else:
-        request_route.fulfill(status=404, body='Missing review asset')
+class ReviewHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = self.path.split('?', 1)[0].lstrip('/')
+        file = OUT / 'index.html' if path in ['', 'index.html'] else ROOT / path
+        types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.webp': 'image/webp'}
+        if file.is_file():
+            body = file.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', types.get(file.suffix, 'application/octet-stream'))
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self.send_error(404)
+    def log_message(self, *args):
+        pass
+
+server = ThreadingHTTPServer(('127.0.0.1', 0), ReviewHandler)
+threading.Thread(target=server.serve_forever, daemon=True).start()
 
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
@@ -23,11 +36,10 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=executable, headless=True,
         args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-crashpad-for-testing', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
-    context.route('http://dfl.local/**', route)
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.goto('http://dfl.local/', wait_until='domcontentloaded')
+    page.goto(f'http://127.0.0.1:{server.server_port}/', wait_until='domcontentloaded')
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     page.screenshot(path=str(OUT / 'home-390.png'))
