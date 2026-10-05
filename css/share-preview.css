@@ -8,11 +8,12 @@
 .dfl-share-styles { display:flex; gap:16px; margin-block:12px; border-bottom:1px solid var(--line); }
 .dfl-share-styles button { background:transparent; color:var(--text); border:0; border-radius:0; padding:6px 2px; }
 .dfl-share-styles button[aria-pressed="true"] { box-shadow:inset 0 -2px var(--accent); }
-.dfl-share-player { display:flex; align-items:center; gap:10px; margin-block:12px; }
+.dfl-share-player,.dfl-share-format { display:flex; align-items:center; gap:10px; margin-block:12px; }
 .dfl-share-player[hidden] { display:none; }
-.dfl-share-player label { font-size:.8125rem; }
-.dfl-share-player select { flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:6px 10px; }
-.dfl-share-art { margin-block:12px; }
+.dfl-share-player label,.dfl-share-format label { font-size:.8125rem; min-width:42px; }
+.dfl-share-player select,.dfl-share-format select { flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:6px 10px; }
+.dfl-share-art { margin-block:12px; max-height:min(54dvh,560px); overflow:auto; overscroll-behavior:contain; }
+.dfl-share-art:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 .dfl-share-art canvas { display:block; width:100%; height:auto; }
 .dfl-share-status { font-size:.75rem; line-height:1.5; color:var(--body-text); margin:8px 0; }
 .dfl-share-status:empty { display:none; }

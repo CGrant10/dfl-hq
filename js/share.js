@@ -51,8 +51,12 @@ export const crestImage = () => (crestReady ? crest : null);
    for an image request without losing Safari's user gesture. */
 const seal = typeof Image === "function" ? new Image() : null;
 let sealReady = false;
+let resolveSeal;
+export const shareSealReady = seal ? new Promise(resolve => { resolveSeal = resolve; }) : Promise.resolve();
 if (seal) {
-  seal.onload = () => { sealReady = true; };
+  const timeout = setTimeout(() => resolveSeal(), 12000);
+  seal.onload = () => { sealReady = true; clearTimeout(timeout); resolveSeal(); };
+  seal.onerror = () => { clearTimeout(timeout); resolveSeal(); };
   seal.src = new URL("../icons/dfl-seal-512.webp", import.meta.url).href;
 }
 export const sealImage = () => (sealReady ? seal : null);

@@ -268,7 +268,7 @@ export function sportsbookRecapText(recap){
 }
 
 export function sportsbookRecapCanvas(recap){
- const data=sportsbookRecapData(recap);if(!data)return null;return editorialShareCanvas({kind:'Sportsbook aftermath',context:data.range,headline:'THE WEEK’S\nRECEIPTS.',summary:`${data.tickets} tickets · ${data.risked} SIN risked`,sections:data.cards.map(c=>({label:c.label,rows:[{name:c.name,value:c.value,detail:c.note}]})),footer:'SIN is play money · No cash value'});
+ const data=sportsbookRecapData(recap);if(!data)return null;const highlights=data.cards.map(c=>({label:c.label,name:c.name,value:c.value,detail:c.note}));return editorialShareCanvas({template:'recap',recap:{title:'THE WEEK’S\nRECEIPTS.',hero:highlights[0]||{label:'Week in SIN',name:`${data.tickets} tickets`,value:`${data.risked} SIN risked`},highlights:highlights.slice(1),allHighlights:highlights,story:`${data.tickets} tickets · ${data.risked} SIN risked`},kind:'Sportsbook aftermath',context:data.range,headline:'THE WEEK’S\nRECEIPTS.',summary:`${data.tickets} tickets · ${data.risked} SIN risked`,sections:data.cards.map(c=>({label:c.label,rows:[{name:c.name,value:c.value,detail:c.note}]})),footer:'SIN is play money · No cash value'});
 }
 
 export async function shareSportsbookRecap(recap){

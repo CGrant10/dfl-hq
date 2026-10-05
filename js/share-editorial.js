@@ -1,5 +1,7 @@
-import {FONT,sealImage,shareCanvasDirect,shareText,saveCanvas} from './share.js';
+import {FONT,sealImage,shareSealReady,shareCanvasDirect,shareText,saveCanvas} from './share.js';
 import {esc} from './ui.js';
+import {tailoredShareCanvas} from './share-layouts.js';
+import {shareImageDescription,shareExportFilename} from './share-layout-model.js';
 const DISPLAY='"DFL Anton",Impact,"Arial Narrow",sans-serif';
 const PAPER='#f4f2ee',BLACK='#0b0b0c',RED='#C8102E',YELLOW='#EFC94C';
 const images=new Map();
@@ -43,14 +45,15 @@ function layout(ctx,spec,style){
  const footerOffset=Math.max(64,38+(lines(ctx,spec.footer||spec.kind,952,20).length-1)*27);
  return {titles,headlineSize,headlineWidth,headlineFont,headlineStretch,headlineLeading,heroTop,heroHeight,resultGroups,status,summary,summaryY,sections,footerOffset,height:Math.max(1350,y+footerOffset+60)};
 }
-function photoHero(ctx,img,top,height){
- const w=1080,h=img.height/img.width*w,x=210,y=top+height-h;
+function photoHero(ctx,img,top,height,{x=210,width=1080}={}){
+ const w=width,h=img.height/img.width*w,y=top+height-h;
  const photo=document.createElement('canvas');photo.width=1080;photo.height=Math.ceil(height);const p=photo.getContext('2d');
  p.filter='grayscale(1) contrast(1.08)';p.shadowColor=RED;p.shadowBlur=10;p.shadowOffsetX=-5;p.drawImage(img,x,y-top,w,h);p.shadowColor=YELLOW;p.shadowOffsetX=5;p.drawImage(img,x,y-top,w,h);p.filter='none';p.shadowBlur=0;p.shadowOffsetX=0;
  p.globalCompositeOperation='destination-out';const fade=p.createLinearGradient(0,height*.79,0,height);fade.addColorStop(0,'#0000');fade.addColorStop(1,'#000');p.fillStyle=fade;p.fillRect(0,0,1080,height);ctx.drawImage(photo,0,top);
 }
-export function editorialShareCanvas(spec,{style='clean',photo=null,attachPreview=true}={}){
+export function editorialShareCanvas(spec,{style='clean',photo=null,photos=new Map(),selected='',format='compact',attachPreview=true}={}){
  if(!spec)return null;
+ if(spec.template){const canvas=tailoredShareCanvas(spec,{style,photo,photos,selected,format,kit:{FONT,DISPLAY,lines,text,display,rule,photoHero,palette,paper,sealImage}});if(attachPreview)canvas.openSharePreview=options=>openSharePreview(spec,options);return canvas}
  if(spec.table)return tableCanvas(spec,attachPreview);
  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;let ctx=canvas.getContext('2d');const l=layout(ctx,spec,style);canvas.height=l.height;ctx=canvas.getContext('2d');ctx.textBaseline='alphabetic';const p=palette(style);canvas.dataset.shareLayout='3';canvas.dataset.shareKind=spec.kind;canvas.dataset.shareStyle=style;
  ctx.fillStyle=p.bg;ctx.fillRect(0,0,1080,canvas.height);if(style==='clean'&&paper)ctx.drawImage(paper,0,0,1080,canvas.height);
@@ -96,27 +99,30 @@ function tableCanvas(spec,attachPreview){
 
 export function openSharePreview(spec,{filename,title,text:shareCopy}={}){
  document.querySelector('.dfl-share-preview')?.close();const restore=document.activeElement,dialog=document.createElement('dialog');dialog.className='dfl-share-preview';dialog.setAttribute('aria-labelledby','dfl-share-preview-title');
- const players=spec.players||[];let style='clean',selected=players[0]?.id||'',canvas=null,request=0,stopped=false;
- try{if(players.length&&localStorage.getItem('dfl.share.style')==='photo')style='photo'}catch{}
- dialog.innerHTML=`<header><h2 id="dfl-share-preview-title" tabindex="-1" autofocus>Share image</h2><button type="button" class="linkbtn" data-share-close aria-label="Close share image preview">Close</button></header>${players.length?'<div class="dfl-share-styles" role="group" aria-label="Share image style"><button type="button" data-share-style="clean" aria-pressed="true">Without player</button><button type="button" data-share-style="photo" aria-pressed="false">With player</button></div>':''}<div class="dfl-share-player"${style==='photo'?'':' hidden'}><label for="dfl-share-player">Player</label><select id="dfl-share-player">${players.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div><div class="dfl-share-art" data-share-art></div><p class="dfl-share-status" role="status" data-share-status>Preparing image…</p><footer><button type="button" class="btn ghost small" data-share-save disabled>Save image</button><button type="button" class="btn small" data-share-send disabled>Share image</button><button type="button" class="linkbtn" data-share-text>Share text</button></footer>`;
+ const players=spec.players||[];let style='clean',format='compact',selected=players[0]?.id||'',canvas=null,request=0,stopped=false;
+ try{if(players.length&&localStorage.getItem('dfl.share.style')==='photo')style='photo';if(spec.template&&localStorage.getItem('dfl.share.format')==='full')format='full'}catch{}
+ dialog.innerHTML=`<header><h2 id="dfl-share-preview-title" tabindex="-1" autofocus>Share image</h2><button type="button" class="linkbtn" data-share-close aria-label="Close share image preview">Close</button></header>${players.length?'<div class="dfl-share-styles" role="group" aria-label="Share image style"><button type="button" data-share-style="clean" aria-pressed="true">Without player</button><button type="button" data-share-style="photo" aria-pressed="false">With player</button></div>':''}${spec.template?'<div class="dfl-share-format"><label for="dfl-share-format">Details</label><select id="dfl-share-format"><option value="compact">Highlights</option><option value="full">Full details</option></select></div>':''}<div class="dfl-share-player"${style==='photo'?'':' hidden'}><label for="dfl-share-player">Player</label><select id="dfl-share-player">${players.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div><div class="dfl-share-art" data-share-art tabindex="0" role="region" aria-label="Image preview"></div><p class="dfl-share-status" role="status" data-share-status>Preparing image…</p><footer><button type="button" class="btn ghost small" data-share-save disabled>Save image</button><button type="button" class="btn small" data-share-send disabled>Share image</button><button type="button" class="linkbtn" data-share-text>Share text</button></footer>`;
  document.body.append(dialog);dialog.showModal();dialog.querySelector('h2').focus({preventScroll:true});
  const status=dialog.querySelector('[data-share-status]'),art=dialog.querySelector('[data-share-art]');
  const render=async()=>{
   const token=++request;canvas=null;dialog.querySelectorAll('[data-share-send],[data-share-save]').forEach(b=>b.disabled=true);status.textContent='Preparing image…';
-  dialog.querySelectorAll('[data-share-style]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.shareStyle===style)));dialog.querySelector('.dfl-share-player').hidden=style!=='photo';
+  dialog.querySelectorAll('button[data-share-style]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.shareStyle===style)));dialog.querySelector('.dfl-share-player').hidden=style!=='photo';if(spec.template)dialog.querySelector('#dfl-share-format').value=format;
   try{
-   await Promise.all([shareFontsReady,paperReady]);let photo=null;if(style==='photo')photo=await image(`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(selected)}.jpg`);
-   if(stopped||token!==request)return;canvas=editorialShareCanvas(spec,{style,photo,attachPreview:false});canvas.setAttribute('role','img');canvas.setAttribute('aria-label',shareCopy||title||`${spec.kind} share image`);art.replaceChildren(canvas);status.textContent='';dialog.querySelectorAll('[data-share-send],[data-share-save]').forEach(b=>b.disabled=false);
+   await Promise.all([shareFontsReady,paperReady,shareSealReady]);let photo=null,photos=new Map();
+   if(style==='photo'){photo=await image(`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(selected)}.jpg`);photos.set(String(selected),photo);if(spec.template==='trade'){const ids=[...new Set(spec.trade.columns.map(c=>c.players[0]?.id).filter(id=>players.some(p=>p.id===String(id))))];const loaded=await Promise.allSettled(ids.map(async id=>[String(id),await image(`https://sleepercdn.com/content/nfl/players/${encodeURIComponent(id)}.jpg`)]));loaded.forEach(result=>{if(result.status==='fulfilled')photos.set(...result.value)})}}
+   if(stopped||token!==request)return;canvas=editorialShareCanvas(spec,{style,photo,photos,selected,format,attachPreview:false});canvas.setAttribute('role','img');canvas.setAttribute('aria-label',spec.template?[shareImageDescription(spec,format),style==='photo'?`Featured player: ${players.find(p=>p.id===String(selected))?.name||'Player'}`:''].filter(Boolean).join('\n'):shareCopy||title||`${spec.kind} share image`);art.replaceChildren(canvas);status.textContent='';dialog.querySelectorAll('[data-share-send],[data-share-save]').forEach(b=>b.disabled=false);
   }catch{if(stopped||token!==request)return;status.textContent='Player photo unavailable. Choose Without player or share text.';art.replaceChildren()}
  };
  dialog.addEventListener('click',event=>{
   const target=event.target,box=dialog.getBoundingClientRect(),outside=event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom;if((target===dialog&&outside)||target.closest('[data-share-close]')){dialog.close();return}
   const choice=target.closest('button[data-share-style]');if(choice){style=choice.dataset.shareStyle;try{localStorage.setItem('dfl.share.style',style)}catch{}void render();return}
-  if(target.closest('[data-share-send]')&&canvas){try{shareCanvasDirect(canvas,filename,{title,text:shareCopy})}catch{status.textContent='Could not share this image. Try Save image or Share text.'}return}
-  if(target.closest('[data-share-save]')&&canvas){try{saveCanvas(canvas,filename);status.textContent='Image saved.'}catch{status.textContent='Could not save this image. Try Share text.'}return}
-  if(target.closest('[data-share-text]'))shareText({title,text:shareCopy||spec.summary||spec.headline});
+  const exportName=spec.template?shareExportFilename(filename,format,style):filename;
+  if(target.closest('[data-share-send]')&&canvas){try{shareCanvasDirect(canvas,exportName,{title,text:shareCopy})}catch{status.textContent='Could not share this image. Try Save image or Share text.'}return}
+  if(target.closest('[data-share-save]')&&canvas){try{saveCanvas(canvas,exportName);status.textContent='Image saved.'}catch{status.textContent='Could not save this image. Try Share text.'}return}
+  if(target.closest('[data-share-text]'))shareText({title,text:spec.template?[shareImageDescription(spec,format),shareCopy].filter(Boolean).join('\n'):shareCopy||spec.summary||spec.headline});
  });
- dialog.querySelector('select').addEventListener('change',event=>{selected=event.target.value;void render()});
+ dialog.querySelector('#dfl-share-player').addEventListener('change',event=>{selected=event.target.value;void render()});
+ dialog.querySelector('#dfl-share-format')?.addEventListener('change',event=>{format=event.target.value;try{localStorage.setItem('dfl.share.format',format)}catch{}void render()});
  const routeChanged=()=>dialog.close();window.addEventListener('hashchange',routeChanged);
  dialog.addEventListener('close',()=>{stopped=true;request++;window.removeEventListener('hashchange',routeChanged);dialog.remove();if(restore?.isConnected)restore.focus({preventScroll:true})},{once:true});
  void render();return 'preview';

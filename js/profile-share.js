@@ -1,4 +1,5 @@
 import {editorialShareCanvas} from './share-editorial.js';
+import {profileShareSpec} from './share-export-model.js';
 import {drawShareFrame,drawShareFooter,shareMonogram} from "./share-card-style.js";
 // =====================================================================
 // profile-share.js - one member's DFL scouting report, as an image.
@@ -194,7 +195,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
 }
 
 export function profileShareCanvas(d) {
- return editorialShareCanvas({kind:'Member profile',context:d.team,headline:d.who,results:[{label:'Record',value:d.record},{label:'Win percentage',value:pct(d.winPct)},{label:'Points',value:d.points},{label:'Average finish',value:d.avgFinish},{label:'Seasons',value:String(d.seasons)}],sections:[{label:'Trophy case',rows:d.trophyCase.map(([name,value])=>({name,value}))},{label:'Crime scene',rows:d.crimeScene.map(([name,value])=>({name,value}))},{label:'DFLyzer verdict',copy:d.verdict}],footer:'Member profile'});
+ return editorialShareCanvas(profileShareSpec(d));
 }
 
 /** Draw it and hand it to the device share sheet. */
