@@ -1,3 +1,4 @@
+import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 // =====================================================================
 // Rules - read only for everyone. An admin sees Edit and Delete on each
 // rule and an Add button under the section they are looking at; the tabs
@@ -39,11 +40,12 @@ export async function render(view) {
     return;
   }
 
+  activeTab=readPageChoice('rules-tab',categories.map(c=>c.key),activeTab);
   if (!categories.some((c) => c.key === activeTab)) activeTab = categories[0].key;
 
   view.innerHTML = `
-    <header class="page-head">
-      <h1>League Rules</h1>
+    <header class="page-head utility-head">
+      <small>LEAGUE HANDBOOK</small><h1>League Rules</h1>
     </header>
 
     <div id="rules-wrap">
@@ -75,7 +77,7 @@ export async function render(view) {
   view.querySelector("#rule-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-cat]");
     if (!btn) return;
-    activeTab = btn.dataset.cat;
+    activeTab = btn.dataset.cat;savePageChoice('rules-tab',activeTab);
     view.querySelectorAll("#rule-tabs button")
         .forEach((b) => b.classList.toggle("on", b.dataset.cat === activeTab));
     paint();

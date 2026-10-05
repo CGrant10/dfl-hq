@@ -10,6 +10,9 @@ import { dflSeasonCount, loadGolfFeatures } from "./config.js";
 import { canEdit } from "./inline.js";
 import { db } from "./supabase.js";
 import { ensureStylesheet } from "./lazy-css.js";
+import { captureView, restoreView, readViewMemory, writeViewMemory } from './view-memory.js';
+import { getMemberId } from './members.js';
+import { canWarmRoutes } from './performance-policy.js';
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -229,6 +232,7 @@ function spectatorArenaLinks(view, name) {
 }
 
 let renderEpoch = 0;
+let mountedHash = '', mountedMember = null, stopRestore = () => {};
 let announcedReady = false;
 function announceReady() {
   if (announcedReady) return;
@@ -286,6 +290,9 @@ export async function renderRoute() {
   const expectedHash = location.hash;
   const previousView = document.getElementById("view");
   if (!previousView) return;
+  stopRestore();
+  if (mountedHash && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
+  const routeMemory = readViewMemory(getMemberId(), `route:${expectedHash}`);
   const changed = name !== lastAnimated;
   if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
@@ -355,6 +362,8 @@ export async function renderRoute() {
   window.scrollTo(0, Number(view.dataset.restoreScrollY) || 0);
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
   if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
+  else if (routeMemory && !view.dataset.restoreScrollY) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
+  mountedHash = expectedHash; mountedMember = getMemberId();
   lastAnimated = name;
   if (changed) {
     view.classList.remove("page-switching");
@@ -373,6 +382,8 @@ export async function renderRoute() {
 
 let lastAnimated = null;
 export function startRouter() {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
   ensureSportsbookNav();
   startMemberLock();
   const bar = document.getElementById("tabbar");
@@ -387,7 +398,17 @@ export function startRouter() {
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
   else renderRoute();
-  const warmWeeklyRoutes = () => ["trade", "analyzer", "keepers", "profile"].forEach(prefetchRoute);
+  const warmWeeklyRoutes = () => {
+    if (!canWarmRoutes({ connection: navigator.connection, hidden: document.hidden })) return;
+    // Warm one destination at a time; avoid competing with Home's data work.
+    let i = 0;
+    const next = () => {
+      if (!canWarmRoutes({ connection: navigator.connection, hidden: document.hidden })) return;
+      const route = ['trade', 'clubhouse'][i++]; if (!route) return;
+      void loadRoute(route).catch(() => {}).finally(() => setTimeout(next, 300));
+    };
+    next();
+  };
   if ("requestIdleCallback" in window) window.requestIdleCallback(warmWeeklyRoutes, { timeout: 5000 });
   else setTimeout(warmWeeklyRoutes, 1800);
 }

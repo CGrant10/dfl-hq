@@ -9,19 +9,21 @@ import {loadClubhouseIndex,loadClubhouseWeek,enrichClubhouseWeek} from '../weekl
 import {buildWeeklyClubhouse,weeklyHref} from '../weekly-clubhouse-model.js';
 import {weeklyAwardsHtml,weeklyVoteHtml,weeklyVoteResults,wireMatchupThreads,wireClubhouseTabs} from '../weekly-clubhouse-ui.js';
 import {shareWeeklyClubhouse} from '../weekly-clubhouse-share.js';
+import {readViewMemory,writeViewMemory} from '../view-memory.js';
 let renderGeneration=0;
 export async function render(view){
  const token=++renderGeneration,active=()=>token===renderGeneration&&view.isConnected&&location.hash.startsWith("#/clubhouse");
  view.innerHTML='<header class="page-head"><h1>Clubhouse</h1></header><p role="status">Loading the league’s receipts…</p><div class="clubhouse-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>';
  try{
   const[index,members]=await Promise.all([loadClubhouseIndex(),loadMemberDirectory()]);if(!active())return;
-  const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||index[0];
+  const remembered=readViewMemory(currentMember()?.id,'clubhouse-choice');
+  const params=new URLSearchParams(location.hash.split('?')[1]||''),wanted=index.find(w=>w.season===Number(params.get('season'))&&w.week===Number(params.get('week'))),selected=wanted||(!params.has('season')&&!params.has('week')&&index.find(w=>w.season===remembered?.season&&w.week===remembered?.week))||index[0];
   if((params.has('season')||params.has('week'))&&!wanted){view.innerHTML='<h1>Weekly clubhouse</h1><p>That week is not available.</p><a class="btn" href="#/clubhouse">Latest completed week</a>';return}
   if(!selected){view.innerHTML='<h1>Weekly clubhouse</h1><p>The first synced matchup will start the clubhouse.</p>';return}
   const data=await loadClubhouseWeek(selected.season,selected.week);if(!active())return;let model=buildWeeklyClubhouse(data,members);
   const threadIds=new Map(data.threads.map(t=>[String(t.matchup_id),t.post_id])),latest=index[0];
   const tabs=[{key:"overview",label:"Overview"},{key:"matchups",label:"Matchups"},{key:"recap",label:"Recap"}];
-  const requestedTab=params.get("tab"),initialTab=tabs.some(t=>t.key===requestedTab)?requestedTab:model.completed?"overview":"matchups";
+  const requestedTab=params.get("tab")||remembered?.tab,initialTab=tabs.some(t=>t.key===requestedTab)?requestedTab:model.completed?"overview":"matchups";
   view.innerHTML=`<div class="clubhouse-page">
    <header class="page-head clubhouse-header"><div><small class="clubhouse-eyebrow">THE LEAGUE’S RECEIPTS</small><h1>Clubhouse</h1><p>Bragging rights. Matchup talk. Weekly receipts.</p><span class="clubhouse-status">${model.season} · Week ${model.week} · ${model.completed?'Final':'In progress'}</span></div><button type="button" class="btn" data-clubhouse-share disabled>Share recap</button></header>
    <section class="card clubhouse-context" aria-label="Choose clubhouse week"><div class="clubhouse-week-picker"><label for="clubhouse-season">Season<select id="clubhouse-season">${[...new Set(index.map(w=>w.season))].map(season=>`<option ${season===selected.season?'selected':''}>${season}</option>`).join('')}</select></label><label for="clubhouse-week">Week<select id="clubhouse-week">${index.filter(w=>w.season===selected.season).map(w=>`<option value="${w.season}:${w.week}" ${w===selected?'selected':''}>Week ${w.week}${w.completed?' · Final':' · In progress'}</option>`).join('')}</select></label></div><div class="clubhouse-context-links">${latest!==selected?`<a href="${weeklyHref(latest.season,latest.week)}&tab=matchups">Week ${latest.week} matchups →</a>`:`<span>Current synced week</span>`}<a href="#/wall">Open Wall →</a></div></section>
@@ -36,6 +38,8 @@ export async function render(view){
   mountMatchupLive(view,model,threadIds,active);
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
+  const remember=()=>writeViewMemory(currentMember()?.id,'clubhouse-choice',{season:selected.season,week:selected.week,tab:activeTab(view)});
+  remember();view.addEventListener('click',event=>{if(event.target.closest('[data-clubhouse-tab]'))remember()});view.addEventListener('keydown',event=>{if(event.target.closest('[data-clubhouse-tab]'))queueMicrotask(remember)});
   view.querySelector('[data-open-matchups]')?.addEventListener('click',()=>view.querySelector('#clubhouse-tab-matchups').click());
   void mountRivalries(view,model);
   if(!model.completed)void mountWeeklyCalls(view.querySelector("[data-weekly-calls]"),model);
@@ -46,7 +50,7 @@ export async function render(view){
   wireMatchupThreads(view,model.season,model.week);
   view.querySelector('[data-clubhouse-share]').addEventListener('click',()=>{Promise.resolve(shareWeeklyClubhouse(model)).then(result=>{if(result==='saved')toast('Recap image saved');else if(result==='copied')toast('Recap copied');else if(result==='failed')toast('Could not share the recap',true)})});
   const repaintAwards=()=>{view.querySelector('[data-clubhouse-awards]').innerHTML=overviewAwardsHtml(model);view.querySelector('[data-clubhouse-recap]').innerHTML=recapHtml(model);view.querySelector('[data-weekly-vote-results]').innerHTML=weeklyVoteResults(model);wirePageDisclosures(view)};
-  const refreshVote=async()=>{const fresh=await loadClubhouseWeek(model.season,model.week);if(!active())return;model={...model,...fresh};model=buildWeeklyClubhouse(model,members,raw,players);repaintAwards()};
+  const refreshVote=async()=>{const fresh=await loadClubhouseWeek(model.season,model.week,{force:true});if(!active())return;model={...model,...fresh};model=buildWeeklyClubhouse(model,members,raw,players);repaintAwards()};
   let raw=[],players={},busy=false;
   const ballot=view.querySelector('[data-weekly-vote]'),status=view.querySelector('[data-weekly-vote-status]');
   const vote=async withdraw=>{if(busy)return;const actor=currentMember();if(!actor){status.textContent='Choose your profile first.';return}const nominee=Number(ballot?.elements.nominee.value);if(!withdraw&&!nominee){status.textContent='Choose a nominee.';return}busy=true;ballot.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=withdraw?'Withdrawing vote…':'Saving your vote…';

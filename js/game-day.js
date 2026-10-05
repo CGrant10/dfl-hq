@@ -38,7 +38,7 @@ export function mountGameDay(root,{members,member,active}){
  const refresh=async(force=false)=>{
   if(busy||!current())return;busy=true;button.disabled=true;
   try{
-   const index=await loadClubhouseIndex();if(!index[0])throw Error('No synced week');const week=await loadClubhouseWeek(index[0].season,index[0].week);
+   const index=await loadClubhouseIndex({force});if(!index[0])throw Error('No synced week');const week=await loadClubhouseWeek(index[0].season,index[0].week,{force});
    if(leagueId!==week.leagueId){leagueId=week.leagueId;leaguePromise=sleeper.league(leagueId)}
    lorePromise ||= loadLore();
    const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise]);if(!current())return;

@@ -5,8 +5,8 @@ import {vertexShader,fragmentShader} from './score-vfx-shaders.js';
 export function mountScoreVfx(root){
  const canvas=document.createElement('canvas');canvas.className='gd-vfx-canvas';canvas.setAttribute('aria-hidden','true');root.append(canvas);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true;
- const enabled=()=>!stopped&&!lost&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
+ let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false;
+ const enabled=()=>!stopped&&!lost&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
  const clear=()=>{if(gl&&!lost)gl.clear(gl.COLOR_BUFFER_BIT)};
  const pause=()=>{cancelAnimationFrame(raf);raf=0;lastFrame=0;clear();canvas.dataset.running='false'};
  const release=()=>{if(gl&&!lost){for(const target of targets)gl.deleteTexture(target.texture)}targets=[]};
@@ -43,6 +43,8 @@ export function mountScoreVfx(root){
  const intersection=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting)visible.add(e.target);else visible.delete(e.target)}resume()});
  const rebuild=()=>{
   layoutFrame=0;if(stopped)return;dirty=true;pause();if(!enabled())return;
+  const emitters=[...root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')].filter(element=>element.closest('dialog')===(root.matches('dialog')?root:null));
+  if(!emitters.length){release();intersection.disconnect();visible.clear();dirty=false;return}
   if(!gl&&!init())return;
   release();intersection.disconnect();visible.clear();
   const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
@@ -51,7 +53,7 @@ export function mountScoreVfx(root){
   // Keep the GPU surface inside the padding box, including scrollable dialogs.
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
   const light=getComputedStyle(root).getPropertyValue('--gd-hot-ink').trim()==='#9c3900';
-  for(const element of root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')){
+  for(const element of emitters){
    // A nested player dialog has its own GPU surface.
    if(element.closest('dialog')!==(root.matches('dialog')?root:null))continue;
    const value=element.querySelector('.gd-thermal-value'),rect=value?.getBoundingClientRect();if(!rect||!rect.width||!rect.height||!element.getClientRects().length)continue;
@@ -82,6 +84,7 @@ export function mountScoreVfx(root){
  };
  const schedule=()=>{if(!layoutFrame&&!stopped)layoutFrame=requestAnimationFrame(rebuild)};
  const sync=()=>{if(!enabled())pause();else if(dirty)schedule();else resume()};
+ const rootIntersection=new IntersectionObserver(entries=>{rootVisible=entries.some(e=>e.isIntersecting);sync()});rootIntersection.observe(root);
  const mutations=new MutationObserver(records=>{if(records.some(r=>r.target!==canvas&&!canvas.contains(r.target))){dirty=true;schedule()}});mutations.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-motion','open','class']});
  const resize=new ResizeObserver(schedule);resize.observe(root);
  const theme=new MutationObserver(schedule);theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette','class','style']});
@@ -91,5 +94,5 @@ export function mountScoreVfx(root){
  const motionChange=()=>{dirty=true;sync()};
  document.addEventListener('visibilitychange',sync);root.addEventListener('close',sync);root.addEventListener('toggle',schedule);root.addEventListener('scroll',schedule,{passive:true});reduced.addEventListener('change',motionChange);
  schedule();document.fonts?.ready.then(()=>{if(!stopped)schedule()});
- return{refresh:schedule,stop(){stopped=true;pause();cancelAnimationFrame(layoutFrame);mutations.disconnect();resize.disconnect();theme.disconnect();intersection.disconnect();document.removeEventListener('visibilitychange',sync);root.removeEventListener('close',sync);root.removeEventListener('toggle',schedule);root.removeEventListener('scroll',schedule);reduced.removeEventListener('change',motionChange);release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);if(gl&&!lost){gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext()}canvas.remove()}};
+ return{refresh:schedule,stop(){stopped=true;pause();cancelAnimationFrame(layoutFrame);mutations.disconnect();resize.disconnect();theme.disconnect();intersection.disconnect();rootIntersection.disconnect();document.removeEventListener('visibilitychange',sync);root.removeEventListener('close',sync);root.removeEventListener('toggle',schedule);root.removeEventListener('scroll',schedule);reduced.removeEventListener('change',motionChange);release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);if(gl&&!lost){gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext()}canvas.remove()}};
 }

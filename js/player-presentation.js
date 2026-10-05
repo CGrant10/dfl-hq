@@ -12,9 +12,11 @@ export function playerPortrait(player = {}) {
   return `<span class="dfl-player-portrait${defense ? " is-team" : ""}"${style}><i>${esc(initials(player.name))}</i>${source ? `<img src="${esc(source)}" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">` : ""}</span>`;
 }
 
-export function playerIdentity(player = {}, { detail = "", signal = "" } = {}) {
+export function playerIdentity(player = {}, { detail = "", signal = "", interactive = false } = {}) {
   const status = signal || player.injuryStatus || "";
   const tone = /out|ir|pup|doubt/i.test(status) ? "danger" : /hot|up/i.test(status) ? "up" : /cold|down/i.test(status) ? "down" : "";
   const meta = detail || [player.position, player.nflTeam || player.team].filter(Boolean).join(" · ");
-  return `<span class="dfl-player">${playerPortrait(player)}<span class="dfl-player-copy"><strong>${esc(player.name || player.id || "Player")}</strong><small>${esc(meta)}</small></span>${status ? `<em class="is-${tone || "neutral"}">${esc(status)}</em>` : ""}</span>`;
+  const name = esc(player.name || player.id || 'Player');
+  const title = interactive && player.id ? `<button type="button" class="player-card-trigger" data-player-card="${esc(player.id)}" aria-label="View ${name} player card">${name}</button>` : `<strong>${name}</strong>`;
+  return `<span class="dfl-player">${playerPortrait(player)}<span class="dfl-player-copy">${title}<small>${esc(meta)}</small></span>${status ? `<em class="is-${tone || "neutral"}">${esc(status)}</em>` : ""}</span>`;
 }

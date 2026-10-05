@@ -8,7 +8,7 @@ export function playerSearchResults(players, query) {
   if(!terms.length)return [];
   return Object.entries(players).filter(([,player])=>terms.every(term=>`${player.n} ${player.p} ${player.t}`.toLowerCase().includes(term)))
     .sort(([,a],[,b])=>Number(b.s==='Active')-Number(a.s==='Active')||a.n.localeCompare(b.n)).slice(0,12)
-    .map(([id,player])=>({kind:'Players',id,title:player.n,detail:`${player.p} · ${player.t} · Find available props`,url:`#/sportsbook?player=${encodeURIComponent(player.n)}`}));
+    .map(([id,player])=>({kind:'Players',id,title:player.n,detail:`${player.p} · ${player.t} · Open player card`,url:`#/sportsbook?player=${encodeURIComponent(player.n)}`}));
 }
 export function mountLeagueSearch(){
   if(document.getElementById('league-search-button'))return;
@@ -38,7 +38,7 @@ export function mountLeagueSearch(){
       // navigating with a keyboard while the slower group is still loading.
       for(const kind of [...new Set(rows.map(row=>row.kind))]){
         if(sections.has(kind))continue;
-        const section=document.createElement('section');section.innerHTML=`<h3>${esc(kind)}</h3><ul>${rows.filter(row=>row.kind===kind).map(row=>`<li><a href="${esc(row.url)}"><strong>${esc(row.title)}</strong><span>${esc(row.detail||'')}</span></a></li>`).join('')}</ul>`;
+        const section=document.createElement('section');section.innerHTML=`<h3>${esc(kind)}</h3><ul>${rows.filter(row=>row.kind===kind).map(row=>`<li>${row.kind==='Players'?`<button type="button" data-player-card="${esc(row.id)}"><strong>${esc(row.title)}</strong><span>${esc(row.detail||'')}</span></button>`:`<a href="${esc(row.url)}"><strong>${esc(row.title)}</strong><span>${esc(row.detail||'')}</span></a>`}</li>`).join('')}</ul>`;
         sections.set(kind,section);results.append(section);
       }
     };

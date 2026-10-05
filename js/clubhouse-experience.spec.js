@@ -16,5 +16,5 @@ describe('Wall mentions',()=>{
 });
 describe('player search',()=>{
  const players={1:{n:'Josh Allen',p:'QB',t:'BUF',s:'Active'},2:{n:'Josh Allen',p:'DE',t:'JAX',s:'Inactive'}};
- it('matches multiple name/team/position terms and opens a specific prop search',()=>{expect(playerSearchResults(players,'allen buf')).toEqual([{kind:'Players',id:'1',title:'Josh Allen',detail:'QB · BUF · Find available props',url:'#/sportsbook?player=Josh%20Allen'}]);expect(playerSearchResults(players,'Josh')[0].id).toBe('1');expect(playerSearchResults(players,'')).toEqual([])});
+ it('matches multiple name/team/position terms and identifies a player card',()=>{expect(playerSearchResults(players,'allen buf')).toEqual([{kind:'Players',id:'1',title:'Josh Allen',detail:'QB · BUF · Open player card',url:'#/sportsbook?player=Josh%20Allen'}]);expect(playerSearchResults(players,'Josh')[0].id).toBe('1');expect(playerSearchResults(players,'')).toEqual([])});
 });

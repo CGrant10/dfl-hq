@@ -7,8 +7,17 @@ export async function loadWeeklyRosters(leagueId,week,{maxAgeMs=600000}={}){
  if(!leagueId)return[];const key=`${leagueId}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<maxAgeMs)return hit.value;
  const promise=sleeper.matchups(leagueId,week).then(rows=>{if(!Array.isArray(rows)||!rows.length)throw Error('Weekly roster data unavailable');return rows}).catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value:promise});return promise;
 }
-export async function loadClubhouseIndex(){const{data,error}=await db().rpc('clubhouse_week_index');if(error)throw error;return data||[]}
-export async function loadClubhouseWeek(season,week){const{data,error}=await db().rpc('clubhouse_week_data',{p_season:season,p_week:week});if(error)throw error;if(!data?.games?.length)throw Error('This week has not been synced yet.');data.voteClosed=Date.now()>=Date.parse(data.voteClosesAt);return data}
+const briefCache=new Map();let briefEpoch=0;
+function loadBrief(key,read,{force=false}={}){
+ const hit=briefCache.get(key);if(hit&&(hit.pending||!force&&Date.now()-hit.at<30000))return hit.value;
+ const epoch=briefEpoch,entry={at:Date.now(),pending:true,value:null};
+ entry.value=Promise.resolve().then(read).catch(error=>{if(briefCache.get(key)===entry)briefCache.delete(key);throw error}).finally(()=>{entry.pending=false;if(epoch!==briefEpoch&&briefCache.get(key)===entry)briefCache.delete(key)});
+ briefCache.set(key,entry);return entry.value;
+}
+export function clearClubhouseBriefCache(){briefEpoch++;briefCache.clear()}
+globalThis.addEventListener?.('dfl:quick-sync-complete',clearClubhouseBriefCache);
+export function loadClubhouseIndex(options={}){return loadBrief('index',async()=>{const{data,error}=await db().rpc('clubhouse_week_index');if(error)throw error;return data||[]},options)}
+export function loadClubhouseWeek(season,week,options={}){return loadBrief(`week:${season}:${week}`,async()=>{const{data,error}=await db().rpc('clubhouse_week_data',{p_season:season,p_week:week});if(error)throw error;if(!data?.games?.length)throw Error('This week has not been synced yet.');return data},options).then(data=>({...data,voteClosed:Date.now()>=Date.parse(data.voteClosesAt)}))}
 export async function enrichClubhouseWeek(data,members){
  const results=await Promise.allSettled([loadWeeklyRosters(data.leagueId,data.week),loadPlayers()]);
  const raw=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:{};

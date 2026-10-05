@@ -4,14 +4,17 @@ import {esc} from './ui.js';
 import {loadLore} from './lore.js';
 import {gradeCall,rivalryFor} from './league-play-model.js';
 import {shareFact} from './fact-share.js';
+import {loadRivalryCalls,rivalryStoryHtml} from './rivalry-story.js';
 export async function mountRivalries(view,model){
- try{const lore=await loadLore();if(!view.isConnected)return;
+ try{const [lore,calls]=await Promise.all([loadLore(),loadRivalryCalls(model.season,model.week).catch(()=>null)]);if(!view.isConnected)return;
   for(const game of model.games){const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;const r=rivalryFor(lore,game,model.season,model.week);
-   if(!r){host.innerHTML='<p class="muted">A new rivalry starts here.</p>';continue}
+   const storyMarkup=rivalryStoryHtml({history:lore.matchups,left:game.left,right:game.right,season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.matchup_id)),members:model.members},{callsAvailable:calls!==null});
+   if(!r){host.innerHTML=storyMarkup;continue}
    const leader=r.streak?.won?game.left.name:game.right.name;
    const summary=`${game.left.name} leads ${r.wins}-${r.losses}${r.ties?`-${r.ties}`:''}`;
    const record=r.wins===r.losses?`Series tied ${r.wins}-${r.losses}${r.ties?`-${r.ties}`:''}`:r.wins>r.losses?summary:`${game.right.name} leads ${r.losses}-${r.wins}${r.ties?`-${r.ties}`:''}`;
-   host.innerHTML=`<details class="rivalry-details"><summary>Rivalry · ${r.meetings} previous meetings</summary><strong>${esc(record)}</strong><p>Last meeting: ${r.last.mine.toFixed(2)}–${r.last.theirs.toFixed(2)} · ${r.last.season} Week ${r.last.week}</p><p>Largest margin: ${r.biggest.margin.toFixed(2)} · ${r.biggest.season} Week ${r.biggest.week}</p>${r.streak?`<p>${esc(leader)} has won ${r.streak.count} straight.</p>`:''}<button class="btn ghost small" type="button" data-rivalry-share>Share rivalry</button></details>`;
+   host.innerHTML=storyMarkup;
+   const details=host.querySelector('.rivalry-story-body');details.insertAdjacentHTML('beforeend','<button class="linkbtn" type="button" data-rivalry-share>Share rivalry</button>');
    host.querySelector('button').addEventListener('click',()=>void shareFact({kicker:'DFL RIVALRY',ask:'TALE OF THE TAPE',headline:record,detail:`${r.meetings} previous meetings. Last: ${game.left.name} ${r.last.mine.toFixed(2)}–${r.last.theirs.toFixed(2)} ${game.right.name}, ${r.last.season} Week ${r.last.week}.${r.streak?` ${leader} has won ${r.streak.count} straight.`:''}`,season:model.season}));
   }
  }catch{for(const host of view.querySelectorAll('[data-rivalry]'))host.textContent='Rivalry history is temporarily unavailable.'}

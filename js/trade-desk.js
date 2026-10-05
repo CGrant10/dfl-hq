@@ -118,7 +118,7 @@ function selectedPlayersMarkup(picked, pool, side) {
   }).join("");
 }
 
-function sideList(team, pool, picked, side, label) {
+function sideList(team, pool, picked, side, label, filter = '') {
   const players = (team?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   return `<div class="td-side">
@@ -128,7 +128,7 @@ function sideList(team, pool, picked, side, label) {
       <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
     <div class="td-selected" data-td-selected="${side}">${selectedPlayersMarkup(picked, pool, side)}</div>
-    <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" placeholder="Search players" autocomplete="off"></label>
+    <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" value="${esc(filter)}" placeholder="Search players" autocomplete="off"></label>
     <div class="td-list">${players.map(p => playerRow(p, side, picked.has(String(p.id)))).join("")
       || `<p class="td-empty">No rated players on this roster.</p>`}</div>
   </div>`;
@@ -479,7 +479,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
         <div class="td-party-controls">${selectors}${add}</div>
         <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>Build any even or uneven package across both sides.</small></div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
-          ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND")).join("")}
+          ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "")).join("")}
         </div>
         <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>
       </div>
@@ -559,6 +559,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   root.addEventListener("input", event => {
     const filter = event.target.closest("[data-td-filter]");
     if (!filter) return;
+    state.filters ||= {}; state.filters[filter.dataset.tdFilter] = filter.value;
     const term = filter.value.trim().toLowerCase();
     const list = filter.closest(".td-side")?.querySelector(".td-list");
     list?.querySelectorAll("[data-td-player-row]").forEach(row => {
@@ -608,5 +609,6 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   });
 
   syncSelectionUi();
+  for(const input of root.querySelectorAll("[data-td-filter]")) input.dispatchEvent(new Event("input",{bubbles:true}));
   update();
 }

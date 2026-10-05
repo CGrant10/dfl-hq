@@ -25,6 +25,8 @@ import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
 import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
 import { loadSharedTradeRecommendations, saveTradeRecommendation } from "../trade-accountability.js";
+import { readViewMemory, writeViewMemory } from '../view-memory.js';
+import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -39,12 +41,14 @@ const tierCopy = {
   steal: { title: "Steal", note: "You win the value. Low-odds asks.", call: "SWING BIG" },
 };
 const OFFER_BATCH_SIZE = 6;
+let saveDraft = null;
+export function leave() { saveDraft?.(); saveDraft = null; }
 
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
     const player = pool.get(String(id));
     const signal = player?.injuryStatus || (player?.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
-    return `<span class="tb-player">${playerIdentity(player || { id, name: String(id) }, { detail: [player?.position, player?.nflTeam].filter(Boolean).join(" · "), signal })}</span>`;
+    return `<span class="tb-player">${playerIdentity(player || { id, name: String(id) }, { detail: [player?.position, player?.nflTeam].filter(Boolean).join(" · "), signal, interactive: true })}</span>`;
   }).join("");
 }
 
@@ -233,6 +237,15 @@ function page(data, tradeAlerts = []) {
   const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
     maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(), customOpen: false, sharedAudit: [] };
+  const draftKey = `trade:${data.projectionSeason}`;
+  const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
+  if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
+  const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
+  if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
+    shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
+    shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';
+  }
+  saveDraft = () => writeViewMemory(me?.id, draftKey, tradeDraft({ selectedId, trade, shop }));
 
   return {
     markup: `${completedTradeMarkup(tradeAlerts, selectedTransactionId)}<main class="ta-report td-page" data-td-body></main>`,
@@ -244,6 +257,7 @@ function page(data, tradeAlerts = []) {
       let deal = null;
 
       const draw = () => {
+        if (!view.isConnected) return;
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}
           <details class="ta-report-section td-custom"${shop.customOpen ? " open" : ""}>
@@ -258,6 +272,7 @@ function page(data, tradeAlerts = []) {
           team, teams: data.teams, pool: data.pool, state: trade, onPartnerChange: draw,
           onDeal: current => {
             deal = current;
+            saveDraft?.();
             /* Nothing to share until both sides have somebody on them, and a
                disabled button says that better than an error would. */
             if (share) share.disabled = !current;
@@ -267,11 +282,13 @@ function page(data, tradeAlerts = []) {
           const open = event.currentTarget.open;
           if (open && !shop.customOpen) { shop.customOpen = true; draw(); return; }
           shop.customOpen = open;
+          saveDraft?.();
         });
         body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
           const tier = event.currentTarget.dataset.tbTier;
           if (event.currentTarget.open) shop.openTiers.add(tier);
           else shop.openTiers.delete(tier);
+          saveDraft?.();
         }));
         if (shop.justRefreshed) {
           const stamp = shop.refreshStamp;
@@ -284,6 +301,7 @@ function page(data, tradeAlerts = []) {
             if (label) label.textContent = label.dataset.defaultLabel || "Show more offers";
           }, 1200);
         }
+        saveDraft?.();
       };
       const refreshOffers = () => {
         shop.visibleCount = OFFER_BATCH_SIZE; shop.justRefreshed = true; shop.refreshStamp = (shop.refreshStamp || 0) + 1; draw();
@@ -435,6 +453,7 @@ export async function render(view) {
       loadAnalyzerData(),
       loadTradeAlerts({ limit: 50 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),
     ]);
+    if (!view.isConnected) return;
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1></header>
         <div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong>

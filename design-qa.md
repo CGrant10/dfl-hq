@@ -1,55 +1,61 @@
-# Shared image design QA — 1.293.0
+# Connected app design QA — 1.294.0
 
 **Findings**
 
-No actionable P0/P1/P2 findings remain. Trade receipts, sportsbook tickets, weekly recaps and profile cards have tailored layouts with Highlights and Full details exports. The selected ivory typography and dark player-photo concepts remain the art direction. Category-specific content intentionally differs from the original matchup concepts.
+No actionable P0/P1/P2 findings remain in the changed surfaces. One player card now serves Search, GameDay, injuries, Trade, Clubhouse and sportsbook. Navigation memory, unfinished trade packages and rivalry chapters connect the existing experience. History, League Fees, Rules and profile settings use quieter controls and clearer spacing. Home's approved layout and power rankings remain intact.
 
 **Evidence and normalization**
 
-- Ivory source: `/workspace/generated_images/exec-80a30495-04d2-440b-9a55-d145f81fe145.png` (1092 × 1440).
-- Photo source: `/workspace/generated_images/exec-332c43a6-2bbc-4c5e-94fc-7e146e1e614c.png` (1122 × 1402).
-- Combined final comparisons: `/workspace/dfl-audit/tailored-comparison-clean.png` and `tailored-comparison-photo.png`. Each source/implementation column is 360 CSS pixels wide, preserving its aspect ratio, deviceScaleFactor 1. Viewports: 1896 × 900 and 1144 × 900.
-- Combined initial comparison: `/workspace/dfl-audit/tailored-comparison-before.png`, viewport 1520 × 900 at the same density.
-- Focused source/photo comparison: `/workspace/dfl-audit/tailored-comparison-photo-detail.png`, viewport 3280 × 1500, screenshot region 3280 × 700, deviceScaleFactor 1. Equal column widths normalize source/export density. Header, typography, real grayscale portrait and edge light were reviewed together.
-- Mobile previews: `/workspace/dfl-audit/tailored-preview-mobile-clean.png` and `tailored-preview-mobile-photo.png`, viewport 390 × 844.
-- Gallery: `/workspace/dfl-audit/tailored-*.png`, 1080-pixel-wide canvases. Ordinary compact exports are approximately 1350–1471 pixels tall. Full exports expand to preserve actual data; stress fixtures include a three-team trade and ten-leg slip.
-- State: isolated 2026 Week 4 fixtures, actual Sleeper photos, trade packages, completed/open betting slips, weekly results and career receipts. Production-write guards prevent storing fixtures in the league.
+- Approved app direction: `/workspace/dfl-audit/connected-before-trade.png`. Existing player photos, restrained controls, editorial headings and Medicine Wheel accents are the production target. These utility pages are adaptations of that direction, rather than identical copies of Trade.
+- Before/after page captures: `connected-before-{history,finances,rules,profile}.png` and `connected-final-{history,finances,rules,profile}.png` under `/workspace/dfl-audit/`.
+- Combined final full-view comparison: `connected-comparison-utility.png`, viewport 1660 × 920. Four columns use the same 390 CSS-pixel width and deviceScaleFactor 1. Reference and implementation captures use 390 × 844 with the same member, league data and Light palette.
+- Focused controls comparison: `connected-comparison-controls.png`, region 1220 × 360, same source frames and density. Headline, divider, tab typography and panel alignment were reviewed together.
+- Settings comparison: `connected-comparison-settings.png`, viewport 840 × 920, same expanded disclosure and scroll region. Focused appearance comparison: `connected-comparison-appearance.png`, same 390-pixel column normalization. Appearance element captures include the fixed navigation at their lower edge; control review uses the unobscured upper region.
+- Iteration evidence: `connected-comparison-iteration.png` preserves the initial excessive finance spacing alongside the final layout.
+- New surface evidence: `connected-player-card.png`, `connected-player-card-cold.png`, `connected-final-clubhouse.png`. Actual Josh Allen identity and previous league meetings were inspected. Cold eligibility is additionally verified through state assertions; the screenshot alone is not a timing benchmark for the WebGL effect.
+- Final static comparison captures disable transitions and entrance animation identically for source and implementation to compare settled layouts. Functional and GPU tests separately retain normal motion.
+- Browser state uses an isolated existing-member session. Production-write guards block analytics, presence, votes and other mutations during QA.
 
 **Required fidelity surfaces**
 
-- Fonts/typography: local Anton preserves bold editorial headlines. System text supports names, picks and facts. Measured wrapping and content heights keep long names and reasons inside the image.
-- Spacing/layout: paired trade packages align totals; slips have numbered picks and an odds/stake/return strip; recaps emphasize leader and MVP before stories; profiles group record and receipts. Full previews scroll inside the art region, keeping controls reachable. Controls retain 44-pixel touch heights.
-- Colors/tokens: ivory/black, Medicine Wheel red `#C8102E` and yellow `#EFC94C`. Export bytes remain independent of app themes. Both styles remain available where actual player data supports a portrait.
-- Image quality/assets: existing transparent DFL seal, local font and ivory texture retained. Real identified player headshots use grayscale with red/yellow rim light. Smaller category portraits leave room for packages/results: an intentional adaptation of the approved direction.
-- Copy/content: highlights explicitly report omitted rows. Full trades preserve packages, values, deltas and reasons; full slips retain every leg and settlement state; full recaps include stories, starters, bench and all matchups; full profiles preserve trophy/crime receipts. Ties remain ties, unknown remains unknown, and zero remains zero. Featured-photo choice does not replace the actual MVP. Accessible descriptions and shared text reflect detail selection.
+- Fonts/typography: local Rajdhani retains the app's editorial headlines. Utility tabs and small navigation actions use system type at 13 pixels, with 44-pixel interaction heights. Player names remain readable with the existing photo treatment.
+- Spacing/layout: unified utility headers and dividers align to content edges. Finance summaries have a compact value/label hierarchy; historical tables retain readable row spacing. Settings have light borders and separated feedback rows. The player dialog uses a bounded portrait, recent-form columns and compact actions.
+- Colors/tokens: new accents use Medicine Wheel red `#C8102E` and yellow `#EFC94C`; backgrounds and text follow the selected app palette. Existing semantic financial colors and user palette preferences remain respected.
+- Image quality/assets: actual Sleeper player portraits are reused. No replacement illustration or decorative asset was introduced. Fire/ice retain the existing shader and readable score ink.
+- Copy/content: roster ownership, fantasy points, injury sources, three recent weeks and matchup calls come from existing data. Exact identity matching avoids ambiguous player names. Unknown stats stay unknown; zero stays zero. Completed results and ties are recorded correctly. Injury tags do not become unsupported promises that a player will play.
 
 **Comparison history**
 
-1. Initial category comparison found [P2] trade verdict-label overlap, [P2] misaligned package totals and [P2] excessive vertical gaps in compact recap/profile cards. Evidence: `tailored-comparison-before.png`. Fixed the baseline, aligned totals to the tallest package and tightened supporting gaps.
-2. Long full previews made actions harder to reach. Added a bounded, keyboard-focusable scrolling art region without cropping the exported bitmap. Browser checks verified controls remain reachable.
-3. Final combined full-view and focused comparisons passed. Typography, assets and palette remain consistent. Category content and portrait scale are intentional production adaptations. No actionable P0/P1/P2 findings remain.
+1. [P2] The player portrait inherited only view-scoped styles and expanded outside GameDay. Added explicit shared-dialog portrait sizing and checked the actual identified photo.
+2. [P2] Initial finance summaries added too much vertical space. Reduced statistic padding and reviewed the before/initial/final comparison.
+3. [P2] Earlier History selectors and route presentation rules overrode quiet tabs and Rules headers. Scoped the final utility rules to the view, restored system typography on tabs and aligned all three headers.
+4. [P2] Transparent feedback rows exposed the old gray grid background. Removed the parent background and retained thin dividers. Medicine Wheel Light feedback descriptions also needed higher contrast; corrected the text token.
+5. A preliminary capture sampled entrance fades. Re-captured source and implementation in the same settled motion state before judging fidelity.
+6. Final combined full-view and focused comparisons passed. Utility content differs intentionally from the Trade reference. No actionable P0/P1/P2 findings remain.
 
 **Interactions and validation**
 
-- Highlights / Full details and Without player / With player work and persist. Actual player switching, unavailable-photo recovery, rapid render changes, Escape, focus restoration and route cleanup passed.
-- Distinct filenames, active native-share gestures, cancellation without download, explicit image save and full-text sharing passed.
-- Axe A/AA passed at 320/390/1280 pixels in dark, light, Medicine Wheel and light Medicine Wheel palettes for both detail levels. Enlarged text preserves controls without horizontal overflow.
-- Thirty gallery canvases passed bounds/content checks, including thirteen existing types and new category/detail/photo variants. Long three-team trades and ten-leg slips preserve full details.
-- Home, Trade, Keepers, Facts, Profile, Golf, Sportsbook and Clubhouse smoke checks passed without browser JavaScript errors; production writes guarded.
-- `pnpm check`: typecheck, unresolved-name checks, 1059 tests in 119 files and production build passed.
-- Logs: `/workspace/dfl-audit/share-tailored-check.log`, `share-tailored-browser.log`, `share-tailored-preview.log`, `share-tailored-app-smoke.log`.
+- Shared player card: actual identity/portrait, exact-name lookup, ownership, known zero versus unavailable stats, league scoring, source tags, retry and stale-request protection checked. Escape and Close restore focus to Search or GameDay; Search retains its query. Player action opens the correct own-team trade builder with the selected player and partner.
+- Memory: chosen GameDay matchup survives closing, player-card return and navigation. Clubhouse tab/week restore while explicit links override remembered choices. Manual trade players, intent, filters and scroll survive navigation and reload; expired, cross-member and no-longer-owned selections are rejected.
+- Rivalry: real previous meetings, reversed sides, win/loss/tie record, saved calls and final grading tested. No fabricated calls or future/unplayed results enter the story. The extra detail uses an existing expandable section rather than another Home card.
+- Accessibility: axe A/AA passed on the shared card, utility pages, expanded settings and rivalry sections at 320/390/1280 widths across Dark, Light, Medicine Wheel and Medicine Wheel Light. Keyboard interaction, 200% text and horizontal-overflow checks passed. Reduced-motion and existing halftime cold thresholds remain respected. Automated checks cover the changed surfaces, not a claim of a complete manual screen-reader audit.
+- Performance: identical isolated GPU test measured two contexts allocated initially before, zero after for neutral/offscreen surfaces; visible fire still rendered 37 draws over 1.2 seconds (approximately 30 fps). Offscreen draws remained zero. Weekly reads now coalesce in flight and share a 30-second cache; forced refresh, sync invalidation, failed-request retry and vote deadlines are tested. Route warming is sequential and skipped for hidden pages, Save-Data and slow connections. Live backend timing varies; no universal page-speed percentage is claimed.
+- Actual Home, History, League Fees, Rules, Profile, Clubhouse and Trade routes passed under 4× CPU throttling. No JavaScript errors. Production writes were prevented during testing.
+- `pnpm check`: typecheck, unresolved-name checks, 1077 tests in 121 files and production build passed.
+- Logs: `/workspace/dfl-audit/connected-check-final.log`, `connected-browser-final.log`, `connected-interactions-final.log`, `connected-vfx-performance.log`.
 
 **Implementation Checklist**
 
-- [x] Tailor trade, sportsbook, recap and profile layouts.
-- [x] Preserve facts and selected visual directions.
-- [x] Offer highlights and complete details.
-- [x] Preserve player selection, keyboard access and native sharing.
-- [x] Review combined source/implementation full and focused captures.
-- [x] Complete visual, functional, accessibility and build checks.
+- [x] Reuse one player card across existing entry points.
+- [x] Remember navigation choices and validate unfinished trade drafts.
+- [x] Connect rivalry history, actual predictions and final outcomes.
+- [x] Measure GPU behavior and deduplicate weekly reads.
+- [x] Polish utility pages without changing Home's structure.
+- [x] Inspect combined full-view and focused comparisons.
+- [x] Complete functional, accessibility and build checks.
 
 **Follow-up Polish**
 
-[P3] A higher-resolution official portrait source could improve large-format sharpness. Current provider portraits remain appropriate in phone previews and preserve actual identity.
+[P3] Injury and portrait quality depend on current provider data. The card clearly identifies available injury sources and retains existing image fallbacks.
 
 final result: passed

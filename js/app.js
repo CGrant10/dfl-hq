@@ -1,4 +1,5 @@
 import { mountLeagueSearch } from "./league-search.js";
+import { mountPlayerCards } from './player-card-actions.js';
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
@@ -32,6 +33,7 @@ import { startExperience, syncExperience } from "./experience.js";
    handlers bind, so the fixed bar reflects what the league uses each week. */
 mountSeasonNavigation();
 mountLeagueSearch();
+mountPlayerCards();
 document.addEventListener("click", event => {
   if (event.target.closest?.("[data-retry-page]")) location.reload();
 });

@@ -1,3 +1,4 @@
+import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 // =====================================================================
 // History - everything backward-looking, in one place.
 //
@@ -45,19 +46,20 @@ let tab = "fame";
 let season = null;
 
 export async function render(view) {
+  tab=readPageChoice('history-tab',['fame','moments','seasons','alltime','records'],'fame');
   const requestedEntry=Number(new URLSearchParams(location.hash.split("?")[1]||"").get("entry"));
   if(requestedEntry)tab="fame";
-  view.innerHTML = `<h1>History</h1>` + loading("Reading the record book…");
+  view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1></header>` + loading("Reading the record book…");
 
   /* ONE LOAD for every tab on this page, and the same one a profile reads.
      The record book used to fetch the matchup table separately the first
      time somebody opened its tab; it is all one fetch now, cached in
      lore.js for the rest of the visit. */
   const data = await loadLore();
-  if (data.error) { view.innerHTML = `<h1>History</h1>` + errorBox(data.error); return; }
+  if (data.error) { view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1></header>` + errorBox(data.error); return; }
 
   if (!data.manual.length && !data.leagues.length) {
-    view.innerHTML = `<h1>History</h1>
+    view.innerHTML = `<header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1></header>
       <div id="hist-body">
         ${empty("No league history yet.")}
         ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
@@ -67,7 +69,7 @@ export async function render(view) {
   }
 
   view.innerHTML = `
-    <h1>History</h1>
+    <header class="utility-head"><small>DFL ARCHIVE</small><h1>History</h1></header>
     <!--
       FIVE TABS DO NOT FIT A PHONE, and .tabs has always been a horizontal
       scroller - the problem was that it did not look like one. At 375px the
@@ -98,7 +100,7 @@ export async function render(view) {
   view.querySelector("#hist-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-tab]");
     if (!btn) return;
-    tab = btn.dataset.tab;
+    tab = btn.dataset.tab;savePageChoice('history-tab',tab);
     view.querySelectorAll("#hist-tabs button").forEach((b) => {
       const on = b.dataset.tab === tab;
       b.classList.toggle("on", on);
@@ -111,7 +113,7 @@ export async function render(view) {
   body.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-season]");
     if (!btn) return;
-    season = Number(btn.dataset.season);
+    season = Number(btn.dataset.season);savePageChoice('history-season',String(season));
     paint();
     /* paint() rebuilt the picker, so the button just clicked is gone - find
        its replacement and keep the choice visible. */
@@ -349,6 +351,7 @@ function yearbookView(data) {
 
   const hasGames = (y) => data.standings.some((s) => s.season === y && (s.wins + s.losses + s.ties) > 0);
   // Open on the newest season actually played, not a pre-draft season of 0-0.
+  season=Number(readPageChoice('history-season',years.map(String),String(season||'')))||season;
   if (!years.includes(season)) season = years.find(hasGames) ?? years[0];
 
   const y = yearbook(data, season);

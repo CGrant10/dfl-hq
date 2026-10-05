@@ -1,3 +1,4 @@
+import {readPageChoice,savePageChoice} from '../page-disclosure.js';
 // =====================================================================
 // League Finances - read only for members, edited from Admin -> Finances
 //
@@ -28,7 +29,7 @@ export async function render(view) {
   const err = seasonsRes.error || paymentsRes.error || payoutsRes.error ||
               expensesRes.error || compsRes.error;
   if (err) {
-    view.innerHTML = `<h1>League Fees</h1>` + errorBox(err) +
+    view.innerHTML = `<header class="utility-head"><small>LEAGUE LEDGER</small><h1>League Fees</h1></header>` + errorBox(err) +
       `<div class="card"><div class="card-body muted">If a table is missing, run
        <strong>finance_schema.sql</strong> in the Supabase SQL editor.</div></div>`;
     return;
@@ -52,14 +53,15 @@ export async function render(view) {
   ])].sort((a, b) => b - a);
 
   if (!years.length) {
-    view.innerHTML = `<h1>League Fees</h1>${empty("No fees on record yet.")}`;
+    view.innerHTML = `<header class="utility-head"><small>LEAGUE LEDGER</small><h1>League Fees</h1></header>${empty("No fees on record yet.")}`;
     return;
   }
 
+  season=Number(readPageChoice('finance-season',years.map(String),String(season||'')))||season;
   if (!years.includes(season)) season = years[0];
 
   view.innerHTML = `
-    <h1>League Fees</h1>
+    <header class="utility-head"><small>LEAGUE LEDGER</small><h1>League Fees</h1></header>
     <div class="tabs" id="fin-years">
       ${years.map((y) => `<button data-year="${y}" class="${y === season ? "on" : ""}">${y}</button>`).join("")}
     </div>
@@ -72,7 +74,7 @@ export async function render(view) {
   view.querySelector("#fin-years").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-year]");
     if (!btn) return;
-    season = Number(btn.dataset.year);
+    season = Number(btn.dataset.year);savePageChoice('finance-season',String(season));
     view.querySelectorAll("#fin-years button")
         .forEach((b) => b.classList.toggle("on", Number(b.dataset.year) === season));
     paint();
