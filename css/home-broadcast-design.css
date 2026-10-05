@@ -299,3 +299,9 @@ body:has(#view[data-route="home"]) .topbar .brand-mark { transform: scale(1.35);
   #view[data-route="home"] #home-wrap :is(.bx-slide,.gameday-card > header,.gameday-matchup,.home-thermal-leaders) { padding-left: 14px; padding-right: 14px; }
   body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) > span { font-size: 11px; }
 }
+
+#home-wrap .bx-home-feature .bx-sub { max-width: 200px; }
+body:has(#view[data-route="home"]) .topbar .brand-lockup { display: flex; }
+body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) { padding-top: 7px; }
+body:has(#view[data-route="home"]) .tabbar :is(a,.tabmore) .ico { width: 28px; height: 28px; flex: 0 0 28px; margin-bottom: 3px; }
+@media(min-width:700px) { #home-wrap .bx-home-feature .bx-sub { max-width: 28ch; } }
