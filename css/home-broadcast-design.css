@@ -101,7 +101,7 @@ body:has(#view[data-route="home"]) { --home-gutter: 18px; background: #0b0e0f; }
 #home-wrap .bx-injuries { width: 100%; padding: 0; }
 #home-wrap .bx-injuries > .bx-kicker { display: none; }
 #home-wrap .bx-injuries h2 { font: 400 22px/1.15 var(--home-display); margin-bottom: 6px; }
-#home-wrap .bx-injuries .injury-player { grid-template-columns: 28px minmax(0,1fr) 86px; gap: 6px; padding-block: 5px; }
+#home-wrap .bx-injuries .injury-player { grid-template-columns: 28px minmax(0,1fr) 100px; gap: 6px; padding-block: 5px; }
 #home-wrap .bx-injuries .dfl-player-portrait { width: 28px; height: 28px; }
 #home-wrap .bx-injuries .injury-player-state { min-width: 0; max-width: none; grid-template-columns: minmax(0,1fr); }
 #home-wrap .bx-injuries .injury-player-state :is(b,small) { white-space: normal; overflow-wrap: anywhere; }
