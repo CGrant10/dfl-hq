@@ -66,13 +66,13 @@ void main(){
   // A low-opacity heat glaze and bright, animated inner rim fuse the fire
   // with the digits. The DOM text stays intact beneath the GPU surface.
   float shimmer=smoothstep(.3,.76,fbm(p*.14+vec2(-t*.2,t*.75)));
-  float surface=glyph*(.065+shimmer*.065)+innerRim*(.24+shimmer*.16);
+  float surface=glyph*(.12+shimmer*.15)+innerRim*(.30+shimmer*.20);
   surface*=mix(1.,.3,u_light);
   vec3 ember=mix(vec3(1.,.38,.04),vec3(1.,.91,.58),shimmer*.65+innerRim*.35);
   color=mix(color,ember,glyph);
   // On white surfaces, retain the hot stroke but soften the detached rim.
   float rimSoftening=mix(1.,1.-edge*.62,u_light);
-  alpha=fire*.74*rimSoftening+halo*mix(.07,.015,u_light)+surface;
+  alpha=fire*.9*rimSoftening+halo*mix(.09,.015,u_light)+surface;
   float sparks=0.;
   for(int i=0;i<8;i++){
    float id=float(i),seed=hash(vec2(id,3.));float life=fract(t*(.24+seed*.18)+seed);
@@ -92,7 +92,7 @@ void main(){
   // Frost lives on the stroke: stable facets with a slow, moving light catch.
   float glint=smoothstep(.48,.82,fbm(p*.075+vec2(u_time*.12,-u_time*.17)));
   float grain=smoothstep(.35,.76,crystal);
-  float surface=glyph*(.045+grain*.065+facets*.06)+innerRim*(.16+glint*.16);
+  float surface=glyph*(.11+grain*.12+facets*.16)+innerRim*(.23+glint*.22);
   surface*=mix(1.,.26,u_light);
   float ice=edge*(.3+crystal*.2)*mix(1.,.42,u_light)
     +halo*(.03+facets*.1)*mix(1.,.16,u_light);
@@ -104,9 +104,18 @@ void main(){
    vec2 d=p-q;float r=.45+hash(vec2(id,5.))*.45;float flake=exp(-dot(d,d)/(r*r*1.6));
    snow+=flake*sin(life*3.14159)*.42;
   }
-  color=mix(vec3(.12,.46,.78),vec3(.82,.96,1.),clamp(facets*.5+innerRim*.45+glint*.25,0.,1.));
+  vec4 frozenColumn=texture2D(u_mask,vec2(p.x/u_size.x,.5));
+  float bottom=frozenColumn.b*u_size.y;
+  float spikeSeed=hash(vec2(floor(p.x/5.),31.));
+  float spikeLength=2.+spikeSeed*5.;
+  float below=max(0.,p.y-bottom);
+  float spikeWidth=(1.-below/spikeLength)*.85;
+  float spikeAxis=abs(fract(p.x/5.)-.5)*5.;
+  float icicle=(1.-smoothstep(spikeWidth,spikeWidth+.7,spikeAxis))
+    *(1.-smoothstep(spikeLength-1.,spikeLength,below))*step(bottom,p.y)*frozenColumn.r;
+  color=mix(vec3(.25,.62,.9),vec3(.9,.99,1.),clamp(facets*.6+innerRim*.45+glint*.25+icicle*.5,0.,1.));
   // Keep the score counters open, with smaller ice dust beyond the outline.
-  alpha=(ice+mist+snow*mix(1.,.5,u_light))*(1.-glyph)+surface;
+  alpha=(ice+icicle*.6+mist+snow*mix(1.,.5,u_light))*(1.-glyph)+surface;
  }
  color=mix(color,color*.75,u_light*.45);
  float fade=smoothstep(0.,7.,p.x)*smoothstep(0.,7.,u_size.x-p.x)*smoothstep(0.,6.,p.y)*smoothstep(0.,6.,u_size.y-p.y);

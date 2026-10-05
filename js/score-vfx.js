@@ -65,19 +65,19 @@ export function mountScoreVfx(root){
    context.scale(scale,scale);context.font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;context.fillStyle='#fff';context.textBaseline='alphabetic';
    if('letterSpacing' in context)context.letterSpacing=style.letterSpacing;
    const text=value.textContent,metrics=context.measureText(text);context.fillText(text,padX,padTop+(rect.height+metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2);
-   // Pack a smooth emission column and its glyph edge into R/G; alpha keeps
+   // Pack emission, top and bottom contours into RGB; alpha keeps
    // the exact score silhouette. Typed pixels preserve RGB in transparent areas.
    const pixels=context.getImageData(0,0,mask.width,mask.height).data,columns=[];
    for(let x=0;x<mask.width;x++){
-    let intensity=0,top=padTop*scale;
-    for(let y=0;y<mask.height;y++){const alpha=pixels[(y*mask.width+x)*4+3];if(alpha>32&&intensity===0)top=y;intensity=Math.max(intensity,alpha/255)}
-    columns.push({intensity,top});
+    let intensity=0,top=padTop*scale,bottom=padTop*scale;
+    for(let y=0;y<mask.height;y++){const alpha=pixels[(y*mask.width+x)*4+3];if(alpha>32){if(intensity===0)top=y;bottom=y}intensity=Math.max(intensity,alpha/255)}
+    columns.push({intensity,top,bottom});
    }
    for(let x=0;x<mask.width;x++){
-    let intensity=0,top=0,weight=0;
-    for(let offset=-2;offset<=2;offset++){const column=columns[Math.max(0,Math.min(mask.width-1,x+offset))],w=3-Math.abs(offset);intensity+=column.intensity*w;top+=column.top*column.intensity*w;weight+=column.intensity*w}
-    intensity/=9;top=weight?top/weight:padTop*scale;
-    for(let y=0;y<mask.height;y++){const index=(y*mask.width+x)*4;pixels[index]=Math.round(intensity*255);pixels[index+1]=Math.round(top/mask.height*255);pixels[index+2]=0}
+    let intensity=0,top=0,bottom=0,weight=0;
+    for(let offset=-2;offset<=2;offset++){const column=columns[Math.max(0,Math.min(mask.width-1,x+offset))],w=3-Math.abs(offset);intensity+=column.intensity*w;top+=column.top*column.intensity*w;bottom+=column.bottom*column.intensity*w;weight+=column.intensity*w}
+    intensity/=9;top=weight?top/weight:padTop*scale;bottom=weight?bottom/weight:padTop*scale;
+    for(let y=0;y<mask.height;y++){const index=(y*mask.width+x)*4;pixels[index]=Math.round(intensity*255);pixels[index+1]=Math.round(top/mask.height*255);pixels[index+2]=Math.round(bottom/mask.height*255)}
    }
    const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask.width,mask.height,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
    targets.push({element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light});

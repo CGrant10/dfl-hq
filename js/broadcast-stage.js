@@ -339,6 +339,14 @@ function fitHeadlines(slide) {
 /** One item as markup. An unknown treatment degrades to an announcement. */
 export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
+  if (editorial && item.homeFeature) {
+    return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
+      <span class="bx-home-week">${esc(item.kicker)}</span>
+      <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
+      <p class="bx-sub">${esc(item.body)}</p>
+      <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#i-chev-right"></use></svg></span>
+    </a>`;
+  }
   const draw = TREATMENTS[item.treatment] || announcement;
   const media = editorial
     ? item.background === "image" && item.image

@@ -1,0 +1,36 @@
+name: Home design review
+
+on:
+  pull_request:
+    paths:
+      - 'js/home-presentation*'
+      - 'js/broadcast-stage.js'
+      - 'js/score-vfx*'
+      - 'css/home-broadcast-design.css'
+      - 'tools/*home-review*'
+      - '.github/workflows/home-design-review.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: node tools/render-home-review.mjs
+      - run: python tools/capture-home-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-design-review
+          path: ../dfl-review/
+          retention-days: 7
