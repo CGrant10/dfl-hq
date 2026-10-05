@@ -8,4 +8,4 @@
 #tabbar::before { top: auto; bottom: 8px; background: #f6c542; height: 2px; box-shadow: none; }
 #more svg { color: var(--muted) !important; filter: none !important; }
 @media (min-width: 900px) { body { padding-top: calc(56px + var(--season-nav-height,67px) + env(safe-area-inset-top)); } }
-@media (max-width: 360px) { #tabbar :is(a,.tabmore) > span { font-size: 11px; } }
+@media (max-width: 360px) { #tabbar :is(a,.tabmore) > span { font-size: 10px; } }

@@ -93,7 +93,7 @@ with sync_playwright() as p:
     page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.visibility='hidden')")
     page.screenshot(path=str(OUT / 'home-390-full.png'), full_page=True)
     page.evaluate("document.querySelectorAll('#tabbar,.bottomline').forEach(e=>e.style.removeProperty('visibility'))")
-    page.locator('.home-league-file').scroll_into_view_if_needed()
+    page.evaluate("window.scrollTo(0,document.querySelector('.home-league-file').getBoundingClientRect().top+scrollY-64)")
     page.screenshot(path=str(OUT / 'home-390-stories.png'))
     page.evaluate('window.scrollTo(0,0)')
     metrics['navigation'] = []
@@ -105,6 +105,7 @@ with sync_playwright() as p:
             page.wait_for_timeout(350)
             nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
             if reference is None: reference = nav
+            assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
             assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
             metrics['navigation'].append({'width':width,'route':route,**nav})
             if width == 390 and route in ['home','clubhouse','golf']:

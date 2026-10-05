@@ -294,3 +294,5 @@ body:has(#view[data-route="home"]) .dfl-preview-toggle:is([data-mode="member"],[
 #home-wrap .home-league-story:hover h3 { text-decoration: underline; }
 #home-wrap .home-banter .section-title { font: 400 20px/1.2 var(--home-display); }
 #home-wrap .home-banter .section-link { color: #f6c542; font: 700 13px/1.3 var(--font-display); }
+
+#home-wrap .bx-injuries .injury-player-state b { font: 700 11px/1.3 system-ui,sans-serif; padding-inline: 4px; overflow-wrap: normal; }
