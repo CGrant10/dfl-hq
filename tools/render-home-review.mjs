@@ -13,8 +13,8 @@ const players = [
   { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 8.2, state: 'final', roster: '2' },
 ];
 const model = { season: 2026, week: 5, starters: players, games: [{ isMine: true, sides: [
-  { roster: '1', name: 'Grant', score: 124.8, identity: { display_name: 'Grant' } },
-  { roster: '2', name: 'Mike', score: 118.2, identity: { display_name: 'Mike' } },
+  { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant' } },
+  { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike' } },
 ] }] };
 const deck = homeBroadcastDeck([
   { key: 'fixture:news', treatment: 'announcement', headline: 'The league gets the last word.', body: 'Weekly stories from the Clubhouse.', href: '#/clubhouse', temporal: 'none' },

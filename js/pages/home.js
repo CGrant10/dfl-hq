@@ -406,6 +406,7 @@ async function weekAheadSlide({ analysis, weekly, meSleeperId }) {
 export async function render(view) {
   leave();
   const mine = ++generation;
+  deferredStops.push(homeNavigationPresentation());
   if (!configured) { view.innerHTML = setupNotice(); return; }
   const today = new Date().toISOString().slice(0, 10);
   /* These reads do not depend on the core dashboard rows. Starting them now
@@ -532,8 +533,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  deferredStops.push(homeNavigationPresentation());
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireInline(view.querySelector("#home-wrap"), () => render(view));

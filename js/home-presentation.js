@@ -52,11 +52,16 @@ export function homeThermalLeaders(model) {
 export function homeGameDayMatchup(model) {
   const game = model?.games?.find(item => item.isMine);
   if (!game) return '';
-  const teams = game.sides.map(team => `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
+  const teams = game.sides.map(team => {
+    const row = model.standings?.find(item => Number(item.season) === Number(model.season) && String(item.sleeper_user_id) === String(team.uid));
+    const known = row?.wins != null && row?.losses != null && [row.wins,row.losses].every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
+    const record = team.record || (known ? `${row.wins} – ${row.losses}${Number(row.ties) > 0 ? ` – ${row.ties}` : ''}` : '');
+    return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
-    <strong>${esc(team.identity?.display_name || team.name)}</strong>
+    <span class="home-team-name"><strong>${esc(team.identity?.display_name || team.name)}</strong>${record ? `<small>${esc(record)}</small>` : ''}</span>
     ${thermalScore(team.score, 'neutral')}
-  </span>`).join('<i aria-hidden="true">vs</i>');
+  </span>`;
+  }).join('<i aria-hidden="true">vs</i>');
   return `<a class="gameday-matchup" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup</span></a>`;
 }
 
