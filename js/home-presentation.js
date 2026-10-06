@@ -9,7 +9,7 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const year = now.getFullYear();
   const season = year - founded + 1;
   const anniversary = season > 0 && season % 10 === 0;
-  return `<header class="home-newspaper-masthead">
+  return `<header class="home-newspaper-masthead page-identity">
     <div class="home-newspaper-name"><small>DFL HQ</small><h1>The clubhouse</h1><p class="home-newspaper-edition"><span>${anniversary ? '10th season' : `Season ${season}`} · ${esc(founded)} – ${esc(year)}</span></p></div>
     <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}"><span>${esc(now.toLocaleDateString('en-US', { weekday: 'short' }))}</span><strong>${esc(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</strong></time></div>
   </header><nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="lead">The lead</button><button type="button" data-home-jump="scores">Scores</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
@@ -21,13 +21,20 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
     headline: 'Bring the', subtitle: 'receipts.',
-    headlineArt: 'assets/dfl-daily-headline.webp',
     body: 'Ten years. Same grudges. New scores.',
     kicker: week ? `Week ${week}` : day,
     href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
     background: 'default',
   };
   return [opener, ...deck.filter(item => item?.key !== opener.key)];
+}
+
+/** Direct entry to the same tools and saved state used by their full pages. */
+export function homeLeagueTools() {
+  return `<nav class="home-league-tools" aria-label="League tools">
+    <a class="home-tool-card" href="#/trade"><small>DFLYZER</small><strong>Trade Board</strong><span>Build a package. See the verdict.</span><b>Build a trade <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
+    <a class="home-tool-card" href="#/sportsbook"><small>DFL SPORTSBOOK</small><strong>The Book</strong><span>Markets, Pick’em and your tickets.</span><b>Open the book <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
+  </nav>`;
 }
 
 /** A starter-only sample of both temperatures, without filling gaps with fake stats. */
@@ -85,7 +92,7 @@ export function homeThermalBoard(model) {
     </li>`;
   }).join('');
   return `<section class="home-thermal-leaders" aria-label="Player leaders">
-    <header><h2>Player leaders</h2><button type="button" class="home-section-action home-leaders-link" data-gameday-board="all" aria-label="View all player leaders" title="View all player leaders"><span>Week ${esc(model?.week || '—')} leaders</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
+    <header><h2 class="section-title">Player leaders</h2><button type="button" class="home-section-action home-leaders-link" data-gameday-board="all" aria-label="View all player leaders" title="View all player leaders"><span>Week ${esc(model?.week || '—')} leaders</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
     ${players.length ? `<ul class="gameday-players">${rows}</ul>` : '<p class="home-thermal-empty">No hot or cold starters yet.</p>'}
   </section>`;
 }
@@ -114,7 +121,7 @@ export function homeLeagueFile({ fact = null, rivalry = null, facts = [] } = {})
     }
   }
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
-    <header><h2 id="home-league-file-title">The archive</h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <header><h2 class="section-title" id="home-league-file-title">The archive<span class="count">${stories.length}</span></h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${story.art}.webp" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }

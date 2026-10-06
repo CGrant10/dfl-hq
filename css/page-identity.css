@@ -1,0 +1,22 @@
+/* One identity plate for Home, the Trade Board and the Sportsbook. */
+.page-identity {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 1px solid var(--card-border); border-radius: var(--r-lg);
+  background:
+    radial-gradient(ellipse 70% 90% at 88% 4%,color-mix(in srgb,var(--accent-2-fill) 34%,transparent),transparent 62%),
+    radial-gradient(ellipse 60% 80% at 2% 100%,color-mix(in srgb,var(--accent-fill) 12%,transparent),transparent 60%),
+    linear-gradient(168deg,color-mix(in srgb,var(--bg) 78%,var(--bg-2)),var(--bg-2) 78%);
+  box-shadow: var(--e-2),inset 0 1px 0 color-mix(in srgb,var(--text) 9%,transparent);
+}
+.page-identity::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 3px;
+  background: var(--accent-sweep); pointer-events: none;
+}
+.page-identity::after {
+  content: ''; position: absolute; right: -34px; bottom: -56px;
+  width: 232px; height: 232px; opacity: .07;
+  background: url('../icons/dfl-seal-64.webp') center / contain no-repeat;
+  pointer-events: none; z-index: -1;
+}
+.tb-head-row.page-identity { padding: 20px; margin-bottom: 16px; }
+.tb-head-row.page-identity .tb-head { margin-bottom: 0; }

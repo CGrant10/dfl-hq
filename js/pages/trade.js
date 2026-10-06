@@ -153,7 +153,7 @@ function tradeLab(team, teams, pool, shop) {
     .filter(count => count >= minimum && count < maxPlayers - shop.memberIds.length)
     .map(count => `<option value="${count}" ${String(selected) === String(count) ? "selected" : ""}>${count}</option>`).join("")}`;
   return `<section class="tb-board">
-    <div class="tb-head-row"><header class="tb-head"><small>DFLYZER</small><h1>Trade Board</h1><p>Pick your pressure. Send something worth answering.</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div>
+    <div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>Trade Board</h1><p>Pick your pressure. Send something worth answering.</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div>
     <section class="tb-layout-section">
       <h2 class="section-title">Build the package<span class="count">Up to 8</span></h2>
       <p class="section-copy">Choose the teams, anchor the players that matter, then set how aggressive the ask should be.</p>

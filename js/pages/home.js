@@ -32,7 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
-import {homeBroadcastDeck,homeLeagueFile,homeNewspaperMasthead,wireHomeNewspaperSections} from "../home-presentation.js";
+import {homeBroadcastDeck,homeLeagueFile,homeLeagueTools,homeNewspaperMasthead,wireHomeNewspaperSections} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
@@ -136,7 +136,7 @@ export function homeRankingsCard(view, members = []) {
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
   return `<section class="home-rankings-card">
-    <header><h2>Power rankings</h2><a class="home-text-action" href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <header><h2 class="section-title">Power rankings</h2><a class="home-text-action" href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <div class="home-rank-head"><span>Rank</span><span>Team</span><span>Record</span><span>Move</span></div>
     <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
     <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button>
@@ -226,9 +226,9 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 }
 
 export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2>Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>'}</section>`;
+ if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2 class="section-title">Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>'}</section>`;
  const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
- return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div></section>`;
+ return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2 class="section-title">Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -474,6 +474,7 @@ export async function render(view) {
     <section class="home-week-desk" aria-label="Your week">
     <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-pickem-slot></div>
+    ${homeLeagueTools()}
     ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     </section>
     <section class="home-league-desk" aria-label="Around the league">

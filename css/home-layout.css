@@ -11,7 +11,7 @@
 #home-wrap :is(.gameday-card,.home-week-desk,.home-league-desk,.home-league-file,.home-banter) {
   padding: var(--home-panel-padding); margin-top: var(--home-section-gap);
   border: 1px solid var(--home-panel-line); border-radius: var(--r-lg);
-  background: var(--card-surface); box-shadow: var(--card-shadow);
+  background: var(--bg-2); box-shadow: var(--card-shadow);
 }
 #home-wrap .gameday-card { margin-bottom: 0; }
 #home-wrap .gameday-card > header { padding: 0; }
@@ -137,9 +137,9 @@
 #home-wrap .gameday-faceoff-team:nth-of-type(2) > .gameday-faceoff-mark { grid-column: 1; grid-row: 1; }
 #home-wrap .gameday-faceoff-team:nth-of-type(2) > .home-team-name { grid-column: 2; grid-row: 1; text-align: left; }
 #home-wrap .gameday-faceoff-team:nth-of-type(2) > .gd-thermal-number { grid-column: 3; grid-row: 1; }
-#home-wrap > .home-newspaper-masthead { margin: 0 0 12px; padding: 16px; border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-surface); box-shadow: var(--card-shadow); }
-.home-newspaper-name > small { color: var(--muted); font: 700 11px/1.4 var(--home-ui-font); letter-spacing: .14em; }
-.home-newspaper-name h1 { margin: 3px 0; color: var(--text); font: 700 24px/1.1 var(--home-ui-font); text-transform: uppercase; letter-spacing: .02em; }
+#home-wrap > .home-newspaper-masthead { margin: 0 0 12px; padding: 20px 16px; }
+.home-newspaper-name > small { color: var(--accent); font: 700 11px/1.4 var(--home-ui-font); letter-spacing: .14em; }
+.home-newspaper-name h1 { margin: 3px 0; color: var(--text); font: 700 clamp(26px,6.8vw,34px)/1.05 var(--home-ui-font); text-transform: uppercase; letter-spacing: .02em; }
 .home-newspaper-edition { color: var(--body-text); font-size: 12px; text-transform: none; }
 .home-newspaper-date { border: 0; color: var(--muted); text-align: right; }
 .home-newspaper-date strong { display: block; color: var(--text); font: 700 16px/1.3 var(--home-ui-font); }
@@ -148,15 +148,31 @@
 .home-newspaper-sections button:hover { background: var(--bg-3); }
 #home-wrap :is(.home-week-focus h2,.home-rankings-card h2,.home-league-file h2,.home-banter .section-title,.home-thermal-leaders h2) { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 #home-wrap .home-broadcast { border: 1px solid var(--card-border); border-radius: var(--r-lg); background: var(--card-surface); box-shadow: var(--card-shadow); }
-#home-wrap :is(.bx-stage,.home-broadcast-loading) { --home-display: 'Rajdhani',sans-serif; --font-display: 'Rajdhani',sans-serif; }
-#home-wrap :is(.bx-head,.bx-name,.bx-figure,.bx-page-count) { font-family: var(--home-ui-font); font-weight: 700; }
 #home-wrap .bx-with-crest :is(.bx-head,.bx-name,.bx-sub,.bx-body,.bx-kicker) { overflow-wrap: anywhere; }
 #home-wrap .bx-with-crest .bx-kicker { display: block; max-width: 100%; letter-spacing: .06em; }
 #home-wrap .bx-with-crest .bx-kicker::after { content: none; }
 #home-wrap .bx-with-crest .bx-kicker .ico-sm { width: 12px; height: 12px; margin-right: 4px; vertical-align: middle; }
 #home-wrap .bx-with-crest :is(.bx-champ,.bx-note,.bx-event,.bx-hero,.bx-stat) { grid-template-columns: minmax(0,1fr); }
 #home-wrap .bx-with-crest .bx-when { max-width: 100%; white-space: normal; letter-spacing: .03em; }
-:root:not([data-mode="light"]) #home-wrap .bx-home-title:has(.bx-home-headline-art) { padding: 4px 6px; border-radius: 4px; background: #efebe1; }
+
+/* Section rules and compact tools use the same hierarchy as the boards. */
+#home-wrap .section-title { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 0; flex: 1; }
+#home-wrap .section-title::after { display: block; content: ''; flex: 1; min-width: 12px; height: 1px; background: var(--accent-sweep); opacity: .65; }
+#home-wrap .section-title .count { color: var(--text); background: var(--bg-3); border-color: var(--line); font: 700 11px/1.4 var(--home-ui-font); }
+#home-wrap :is(.home-week-focus,.home-rankings-card,.home-league-file,.home-thermal-leaders) > header { gap: 12px; }
+#home-wrap .home-week-focus > header small { color: var(--paper-muted); }
+#home-wrap .home-rankings-card > header { flex-wrap: wrap; }
+#home-wrap .home-rankings-card > header h2 { flex-basis: 100%; }
+#home-wrap .home-rankings-card > header > a { min-height: 28px; }
+#home-wrap .home-league-tools { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 16px; }
+#home-wrap .home-tool-card { display: grid; gap: 4px; min-width: 0; padding: 12px; border: 1px solid var(--card-border); border-top: 2px solid var(--accent); border-radius: var(--r-md); background: var(--card-surface); color: var(--text); text-decoration: none; }
+#home-wrap .home-tool-card small { color: var(--paper-muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+#home-wrap .home-tool-card > strong { font: 700 19px/1.1 var(--home-ui-font); text-transform: uppercase; }
+#home-wrap .home-tool-card > span { color: var(--paper-body); font-size: 12px; line-height: 1.4; }
+#home-wrap .home-tool-card > b { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 32px; border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; font: 700 12px/1.3 var(--home-ui-font); }
+#home-wrap .home-tool-card .ico-sm { width: 16px; height: 16px; flex: 0 0 16px; color: inherit; fill: none; stroke: currentColor; }
+#home-wrap .home-tool-card:hover { border-color: var(--accent); background: var(--card-surface-hover); }
+#home-wrap .home-tool-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 999px) {
   #home-wrap [data-home-gameday-slot] .gameday-card { padding: var(--home-panel-padding); border-top: 1px solid var(--home-panel-line); }
 }

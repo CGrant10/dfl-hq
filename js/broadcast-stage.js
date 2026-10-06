@@ -342,9 +342,9 @@ export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
   if (editorial && item.homeFeature) {
     return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
-      <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1200" height="780" alt="" fetchpriority="high">
+      <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1555" height="1011" alt="" fetchpriority="high">
       <span class="bx-home-week">${esc(item.kicker)}</span>
-      <h2 class="bx-home-title">${item.headlineArt ? `<img class="bx-home-headline-art" src="${esc(item.headlineArt)}" width="1200" height="696" alt="${esc(item.headline + ' ' + item.subtitle)}">` : `${esc(item.headline)}<span>${esc(item.subtitle)}</span>`}</h2>
+      <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
       <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
       <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;

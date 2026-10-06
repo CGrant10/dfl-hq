@@ -151,46 +151,8 @@
    top edge is the crest gradient - the one piece of brand that survives
    every palette because theme.js writes it.
    --------------------------------------------------------------------- */
-.sb-masthead {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: var(--s-4);
-  min-height: 156px;
-  margin-bottom: var(--s-4);
-  padding: var(--s-7) var(--s-6) var(--s-6);
-  overflow: hidden;
-  border: 1px solid var(--card-border);
-  border-radius: var(--r-lg);
-  background:
-    radial-gradient(ellipse 70% 90% at 88% 4%,
-      color-mix(in srgb, var(--accent-2-fill) 34%, transparent), transparent 62%),
-    radial-gradient(ellipse 60% 80% at 2% 100%,
-      color-mix(in srgb, var(--accent-fill) 12%, transparent), transparent 60%),
-    linear-gradient(168deg, color-mix(in srgb, var(--bg) 78%, var(--bg-2)) 0%, var(--bg-2) 78%);
-  box-shadow: var(--e-2), inset 0 1px 0 color-mix(in srgb, var(--text) 9%, transparent);
-}
-/* The crest gradient, 3px of it, welded to the top edge. */
-.sb-masthead::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: var(--accent-sweep);
-}
-/* The seal as a watermark rather than as a 40px logo in the corner. It is
-   decorative, so it is a background rather than an <img> anybody can hear. */
-.sb-masthead::after {
-  content: "";
-  position: absolute;
-  right: -34px;
-  bottom: -56px;
-  width: 232px;
-  height: 232px;
-  opacity: .07;
-  background: url("../icons/dfl-seal-64.webp") center / contain no-repeat;
-  pointer-events: none;
-}
+/* Header skin is shared with Home and Trade in page-identity.css. */
+.sb-masthead { display: flex; align-items: flex-end; gap: var(--s-4); min-height: 156px; margin-bottom: var(--s-4); padding: var(--s-7) var(--s-6) var(--s-6); }
 
 .sb-brand { position: relative; z-index: 1; min-width: 0; }
 .sb-brand > small {
