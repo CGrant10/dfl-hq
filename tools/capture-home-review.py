@@ -154,6 +154,9 @@ with sync_playwright() as p:
     }""")
     assert all(x['index']>=0 for x in metrics['readingOrder']) and [x['index'] for x in metrics['readingOrder']] == sorted(x['index'] for x in metrics['readingOrder']), 'Home sections are out of reading order'
     assert page.evaluate("!document.querySelector('[data-home-focus-slot]').closest('details')&&!document.querySelector('[data-home-rankings-slot]').closest('details')"), 'Next actions and standings must be visible without expanding a disclosure'
+    assert page.locator('.home-pickem-card').get_attribute('href') == '#/sportsbook?product=pickem', 'Home Pick’em must open the Pick’em card directly'
+    assert page.locator('.home-week-desk').inner_text().lower().count('locks') == 1, 'Pick’em cutoff is missing or repeated'
+    assert page.locator('[data-home-deadline-slot]').count() == 0, 'Duplicate deadline notice returned'
     metrics['mobileType'] = []
     for width in [320, 390, 768, 1280]:
         page.set_viewport_size({'width':width,'height':844})
@@ -386,6 +389,12 @@ with sync_playwright() as p:
                     targets:[...document.querySelectorAll('.wall-reaction-buttons button')].every(e=>{const b=e.getBoundingClientRect();return b.width>=44 && b.height>=44})};
             }""")
             assert letters['fits'] and letters['targets'] and letters['columns'] == (1 if width < 768 else 3), f'Letters are cramped in {mode}/{width}: {letters}'
+            previews = page.evaluate("""() => ({
+                bodies:[...document.querySelectorAll('.home-banter .wall-body:not(.hidden)')].map(e=>({height:e.clientHeight,line:parseFloat(getComputedStyle(e).lineHeight),hasThread:!!e.closest('.wall-post').querySelector('a[href^="#/wall?post="]')})),
+                headingFits:(()=>{const h=document.querySelector('.home-banter .section-title');return h.scrollWidth<=h.clientWidth})(),
+                actions:[...document.querySelectorAll('.home-focus-links a')].every(e=>{const b=e.getBoundingClientRect();return b.height>=44 && b.width>=44})
+            })""")
+            assert previews['headingFits'] and previews['actions'] and all(b['height'] <= 4*b['line']+1 and b['hasThread'] for b in previews['bodies']), f'Home previews or next actions are cramped in {mode}/{width}: {previews}'
             if mode in ['light','dark']:
                 page.evaluate("window.scrollTo({top:800,behavior:'instant'})")
                 sticky = page.locator('.topbar').evaluate("e=>({top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height,background:getComputedStyle(e).backgroundColor,scroll:scrollY})")
