@@ -137,10 +137,10 @@ export function homeRankingsCard(view, members = []) {
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
   return `<section class="home-rankings-card">
-    <header><h2>Power rankings</h2><a href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    <header><h2>Power rankings</h2><a class="home-text-action" href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <div class="home-rank-head"><span>Rank</span><span>Team</span><span>Record</span><span>Move</span></div>
     <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
-    <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></button>
+    <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button>
   </section>`;
 }
 
@@ -180,7 +180,7 @@ function playerScoreLine(player) {
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
 export function homeWeeklyDigest(outlook, briefing = null, report = null, changes = [], { loading = false } = {}) {
-  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>Week ahead</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn" href="#/analyzer">Open Analyzer →</a>'}</section>`;
+  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>Week ahead</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn home-text-action" href="#/analyzer"><span>Open Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>'}</section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
   const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.story || game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
@@ -188,7 +188,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   const firstGames = predictions.slice(0, 3);
   const moreGames = predictions.slice(3);
   return `<section class="home-weekly-digest">
-    <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>Week ahead</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
+    <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>Week ahead</h2></div><a class="home-text-action" href="#/analyzer"><span>Full Start / Sit</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <nav class="home-week-tabs" role="tablist" aria-label="Week Ahead views">
       <button id="home-week-tab-brief" type="button" role="tab" aria-controls="home-week-panel-brief" aria-selected="true" data-week-tab="brief">Briefing</button>
       <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="false" data-week-tab="picks">Predictions</button>
@@ -197,7 +197,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
     </nav>
     <div class="home-week-panels">
       <section id="home-week-panel-brief" class="home-outlook-block home-week-brief" role="tabpanel" aria-labelledby="home-week-tab-brief" data-week-panel="brief">
-        <div class="home-outlook-title"><div><small>PERSONAL INTELLIGENCE</small><h3>${esc(briefing?.title || "WEEKLY BRIEFING")}</h3></div><a href="#/stakes">PLAYOFF RACE →</a></div>
+        <div class="home-outlook-title"><div><small>PERSONAL INTELLIGENCE</small><h3>${esc(briefing?.title || "WEEKLY BRIEFING")}</h3></div><a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>
         <strong class="home-brief-headline">${esc(briefing?.headline || "Your week is taking shape")}</strong>
         <div class="home-brief-grid">
           <article><small>MATCHUP</small><span>${esc(briefing?.matchup || "Sleeper matchup pending")}</span></article>
@@ -227,9 +227,9 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 }
 
 export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2>Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer">Review lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">Matchup talk →</a></div>'}</section>`;
+ if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2>Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>'}</section>`;
  const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
- return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer">Review lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">Matchup talk →</a></div></section>`;
+ return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -319,7 +319,7 @@ export function homeTradeWire(alerts) {
     </a>`;
   };
   return `<section class="home-trade-wire">
-    <header><h2>TRADE WIRE</h2><a href="#/trade">ALL RECEIPTS <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    <header><h2>Trade wire</h2><a class="home-text-action" href="#/trade"><span>All receipts</span> <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     ${recent.length ? `<div class="home-trade-list">${recent.map(tradeRow).join("")}</div>` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
   </section>`;
 }
@@ -488,7 +488,7 @@ export async function render(view) {
     </section>
     <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
-    ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn" data-open-home-news>Read league news →</button></section>` : ""}
+    ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>` : ""}
     ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
@@ -825,7 +825,7 @@ function homeLeagueFeed(announcements = [], activity = null) {
       ? `<ul class="act-list">${lines.map(line => `<li class="act-row"><span class="act-who">${line.memberId ? `<a class="plainlink" href="#/profile?id=${esc(line.memberId)}">${esc(line.who)}</a>` : esc(line.who)}</span><span class="act-what">${esc(line.text)}</span><span class="act-when">${esc(line.when)}</span></li>`).join("")}</ul>`
       : `<p class="home-feed-state">No recent member activity.</p>`;
   return `<section class="block home-league-feed">
-    <h2 class="section-title">League Feed<a class="section-link" href="#/calendar">Calendar →</a></h2>
+    <h2 class="section-title">League feed<a class="section-link home-text-action" href="#/calendar"><span>Calendar</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2>
     <nav class="home-feed-tabs" role="tablist" aria-label="League feed views">
       <button id="home-feed-tab-news" type="button" role="tab" aria-controls="home-feed-panel-news" aria-selected="true" data-feed-tab="news">Commissioner</button>
       <button id="home-feed-tab-activity" type="button" role="tab" aria-controls="home-feed-panel-activity" aria-selected="false" data-feed-tab="activity">Activity</button>

@@ -16,6 +16,7 @@ on:
       - 'css/home-layout.css'
       - 'js/sportsbook-pickem.js'
       - 'js/member-wall.js'
+      - 'js/game-day.js'
       - 'assets/dfl-daily-*'
       - 'tools/*home-review*'
       - '.github/workflows/home-design-review.yml'

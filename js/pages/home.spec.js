@@ -70,14 +70,14 @@ describe("Home redesign wiring", () => {
     expect(source).toContain("data-position-tab");
     expect(source).toContain("wireHomeWeekHub");
     expect(source).toContain("START / SIT");
-    expect(source).toContain("FULL START/SIT");
+    expect(source).toContain("Full Start / Sit");
     expect(source).toContain("buildHomeWeekOutlook");
     expect(source).toContain("data-home-report-slot");
   });
 
   it("keeps completed trade verdicts on Home after breaking coverage ends", () => {
     expect(source).toContain("export function homeTradeWire");
-    expect(source).toContain("TRADE WIRE");
+    expect(source).toContain("Trade wire");
     expect(source).toContain("DFLYZER VERDICTS");
     expect(source).toContain("data-home-trade-slot");
     expect(source).toContain("tradeAlertViewModel");
