@@ -35,6 +35,8 @@ with urlopen(url) as response:
     print('Review document:', response.status, response.headers.get('Content-Type'), len(response.read()), flush=True)
 
 def check_score_consistency(page):
+    # The earlier review deliberately disables effects to test reduced motion.
+    page.emulate_media(reduced_motion='no-preference')
     results = []
     page.evaluate("document.querySelector('.gameday-home-detail').open=true")
     for mode in ['light', 'dark']:
