@@ -59,6 +59,7 @@
 #view #home-wrap .home-rankings-card ol > li { min-height: 44px; padding: 8px 0; border-bottom-color: var(--home-row-line); }
 #view #home-wrap .home-rankings-card ol > li.is-me { border: 0; border-radius: 6px; margin-top: 0; padding-inline: 0; }
 #home-wrap .home-rankings-card ol > li > :is(em,span:last-child) { justify-self: end; font-variant-numeric: tabular-nums; }
+#home-wrap .home-rankings-card ol > li > em { color: var(--paper-muted); }
 #home-wrap .home-rankings-card ol > li > b { font-variant-numeric: tabular-nums; }
 #home-wrap .gameday-player-score small { font-variant-numeric: tabular-nums; }
 #home-wrap .home-rankings-card ol > li > span strong { overflow-wrap: break-word; }

@@ -2,7 +2,7 @@
 body:has(#view[data-route="home"]) {
   --home-gutter: 16px;
   --paper: var(--bg); --paper-2: var(--bg-2); --paper-3: var(--bg-3);
-  --ink: var(--text); --paper-body: var(--body-text); --paper-muted: color-mix(in srgb,var(--muted) 90%,var(--text));
+  --ink: var(--text); --paper-body: color-mix(in srgb,var(--body-text) 90%,var(--text)); --paper-muted: color-mix(in srgb,var(--muted) 90%,var(--text));
   --paper-rule: var(--line); --paper-soft-rule: var(--line-soft);
   --print-accent: var(--accent); --print-fill: color-mix(in srgb,var(--accent-fill) 85%,#000);
   --print-hover: color-mix(in srgb,var(--accent-fill) 75%,#000);
