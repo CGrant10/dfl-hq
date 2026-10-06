@@ -172,6 +172,7 @@ with sync_playwright() as p:
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
                 page.wait_for_timeout(350)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');return active && getComputedStyle(active).color === getComputedStyle(active,'::before').backgroundColor}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
                 assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'

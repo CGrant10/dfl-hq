@@ -796,8 +796,8 @@ function snapshot({ leagues, members, myMember, standings, dues, polls }) {
     { label: "Owed", value: owed ? money(owed) : "Settled", href: "#/finances" },
     { label: "Polls open", value: String((polls || []).length), href: "#/polls" },
   ];
-  return `<div class="fp-snap">${cells.map((c) =>
-    `<a href="${c.href}"><b>${esc(c.value)}</b><small>${esc(c.label)}</small></a>`).join("")}</div>`;
+  return `<section class="home-league-snapshot" aria-labelledby="home-snapshot-title"><h2 id="home-snapshot-title">League at a glance</h2><div class="fp-snap">${cells.map((c) =>
+    `<a href="${c.href}"><b>${esc(c.value)}</b><small>${esc(c.label)}</small></a>`).join("")}</div></section>`;
 }
 
 function newsList(allRows) {

@@ -1,3 +1,21 @@
+# Clearer Home reading hierarchy — v1.312.0
+
+Final result: passed
+
+Home now separates section titles, story headings, body copy, supporting details, and metadata. Major titles use 28px on phones and 32px on wider screens; story/subsection headings use 22/24px, body copy 16px, supporting details 14px, and scoped metadata 12px. Score numerals retain the shared 24px scale.
+
+Major regions use stronger 3px rules and 24/32px spacing, while item rows retain thinner separators. The archive heading is visible and matches the Archive jump control. The summary counters now have a semantic “League at a glance” heading. GameDay, the archive, More from the league, and Letters have clearer boundaries in both themes.
+
+Before/after phone captures, wider-screen and Light captures, measured type sizes, and complete browser output are retained under `/workspace/dfl-readability/before/` and `/workspace/dfl-readability/after/`. The CI Home design review retains rendered captures as an Actions artifact.
+
+Validation: `pnpm check` passed typechecking, name checks, 1,102 tests across 124 files, and build. Typechecking and name checks also passed after the release/cache version update. The production-component Chromium review passed 60 broadcast layouts, 48 navigation states, 24 expanded-section states, and 18 palette/viewport states. All 7,365 measured theme text observations passed, with minimum contrast 5.57:1. The review also passed sticky bars, section jumps, reduced motion, score consistency across ten states, and unchanged-texture reuse during expansion; no page errors were observed. The capture waits for the selected navigation label to match its marker before measuring its settled color.
+
+An additional before/after capture reviewed archive, rankings, forecasts and Letters at 320/390/768/1280px in Light and Dark. No horizontal overflow was found. Screenshots confirm visible archive headings, larger primary titles, smaller metadata, and stronger boundaries.
+
+These are production-component fixtures with representative league data, including illustrative rankings. They do not authenticate a PIN-protected member view, exercise live writes, or establish physical-phone frame rates. The previously observed live Wall reaction error is outside this typography change.
+
+---
+
 # Official records, consistent player scores, and disclosure performance — v1.311.0
 
 Final result: passed
