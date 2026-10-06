@@ -515,10 +515,9 @@
    crops, which is exactly the behaviour the framed box below replaces. */
 .wall-photo {
   display: block; width: 100%; height: auto;
-  max-height: 340px; object-fit: cover;
+  max-height: none; object-fit: contain;
   border-radius: var(--r-md); border: 1px solid var(--line);
 }
-@media (min-width: 760px) { .wall-photo { max-height: 460px; } }
 
 /* The edit form. It was a textarea and two buttons with no styling of its own;
    now it holds the same picture control the composer does, so it needs the same

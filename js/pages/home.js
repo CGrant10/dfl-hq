@@ -40,7 +40,7 @@ import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
-import { factOfTheDay } from "../funfacts.js";
+import { factOfTheDay, funFacts } from "../funfacts.js";
 import { buildClubhouseWeekly, homeRivalryStory } from "../home-clubhouse.js";
 import { buildHomeWeekOutlook, HOME_OUTLOOK_POSITIONS } from "../home-week-outlook.js";
 import { buildNextMove } from "../next-move.js";
@@ -547,6 +547,7 @@ export async function render(view) {
     const slot = view.querySelector('[data-home-lore-slot]');
     if (slot) slot.innerHTML = homeLeagueFile({
       fact: factOfTheDay(got, new Date()),
+      facts: funFacts(got),
       rivalry: homeRivalryStory({ lore: got, uid: myMember?.sleeper_user_id, members: memberRows }),
     });
   }).catch(error => console.warn('League archive unavailable', error));

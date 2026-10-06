@@ -67,9 +67,9 @@
 #home-wrap .home-weekly-clubhouse .linkbtn { padding: 6px 0; }
 #home-wrap .home-weekly-clubhouse p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 #home-wrap .home-league-file > header { min-height: 44px; padding: 0; margin-bottom: 8px; border: 0; }
-#home-wrap .home-league-story { grid-template-columns: min(20%,80px) minmax(0,1fr) 18px; padding-block: 12px; }
+#home-wrap .home-league-story { grid-template-columns: clamp(80px,24vw,96px) minmax(0,1fr) 18px; padding-block: 12px; }
 #home-wrap .home-league-story + .home-league-story { border-top-color: var(--home-row-line); }
-#home-wrap .home-story-art { border-radius: 6px; }
+#home-wrap .home-story-art { border-radius: 8px; aspect-ratio: 4 / 3; }
 #home-wrap .home-league-story h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 #home-wrap .home-league-story p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-right: 0; }
 #home-wrap .home-story-chevron { position: static; width: 18px; height: 18px; align-self: center; color: var(--paper-muted); }
@@ -79,8 +79,7 @@
 #home-wrap .home-banter .wall-post + .wall-post { border-color: var(--home-row-line); }
 #home-wrap .home-banter .wall-head { margin-bottom: 8px; }
 #home-wrap .home-banter .wall-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
-#home-wrap .home-banter .wall-photo { max-height: 180px; width: 100%; object-fit: cover; border-radius: 8px; }
-#home-wrap .home-banter .wall-photo-frame { max-height: 180px; overflow: hidden; border-radius: 8px; }
+#home-wrap .home-banter .wall-photo { max-height: none; width: 100%; height: auto; object-fit: contain; border-radius: 8px; }
 #home-wrap .home-banter .wall-reaction-buttons :is(button,.btn) { border: 1px solid var(--home-row-line); border-radius: var(--home-control-radius); }
 #home-wrap .home-banter .wall-post > .btn { font-size: 12px; }
 #home-wrap .page-detail-body :is(.home-weekly-digest > header,.home-outlook-title,.home-week-tabs,.home-position-tabs,.home-feed-tabs,.home-trade-wire > header,.home-league-feed .section-title,.home-brief-grid article) { border-color: var(--home-row-line); }
@@ -113,6 +112,11 @@
 #home-wrap :is(.bx-stage,.home-broadcast-loading) { border-bottom: 0; }
 #home-wrap .bx-home-action { border-radius: var(--home-control-radius); }
 #home-wrap .bx-pause { border-radius: var(--home-control-radius); }
+/* These subjects fill the right half as quiet artwork, without a paint layer. */
+#home-wrap .bx-with-crest .bx-editorial-copy { width: 44%; }
+#home-wrap .bx-with-crest .bx-editorial-illustration { top: -48px; bottom: -42px; right: 0; width: 50%; }
+#home-wrap .bx-with-crest .bx-editorial-subject { inset: 0; width: 100%; height: 100%; opacity: .64; }
+#home-wrap .bx-with-crest :is(.bx-editorial-crest,.bx-editorial-portrait) { object-position: center bottom; }
 @media (max-width: 999px) {
   #home-wrap [data-home-gameday-slot] .gameday-card { padding: var(--home-panel-padding); border-top: 1px solid var(--home-panel-line); }
 }
@@ -130,6 +134,8 @@
   #home-wrap .home-frontpage { padding-bottom: 0; }
   #home-wrap .home-frontpage > [data-home-gameday-slot] { border-left: 0; padding-left: 0; }
   #home-wrap .home-frontpage .gameday-card { margin-top: 0; }
-  #home-wrap .home-league-stories { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
-  #home-wrap .home-league-story + .home-league-story { border-top: 0; padding-left: 20px; }
+  #home-wrap .home-league-stories { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 24px; }
+  #home-wrap .home-league-story { grid-template-columns: 112px minmax(0,1fr) 18px; }
+  #home-wrap .home-league-story + .home-league-story { border-top: 0; padding-left: 0; }
+  #home-wrap .home-league-story:nth-child(n+3) { border-top: 1px solid var(--home-row-line); }
 }

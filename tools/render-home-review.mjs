@@ -50,8 +50,8 @@ const wallMarkup = wallSource.slice(wallSource.indexOf('function stamp('), wallS
 const reviewWallPost = Function('esc', 'icon', 'identityByline', 'accentOf', 'artworkStyle', 'currentMember', 'isAdmin', `${reactionMarkup}\n${wallMarkup}\nreturn postHtml;`)(esc, icon, identityByline, accentOf, artworkStyle, () => null, () => false);
 const wallPosts = [
   {id: 1, member_id: 'u1', created_at: '2026-10-06T12:00:00Z', body: 'That .60 still hurts. Bring the receipts next time.', reply_count: 2, members: {display_name:'Commish',profile_title:'League commissioner',favorite_team:'KC'}},
-  {id: 2, member_id: 'u2', created_at: '2026-10-05T12:00:00Z', body: 'Same story every year. Mike’s lucky. A full weekend of football, a last-minute lineup change, and somehow it still comes down to a fraction of a point. Save the screenshots. We’re going to need those receipts when the rematch rolls around.', reply_count: 1, image:'assets/dfl-daily-rivalry.webp', members: {display_name:'League Vet',profile_title:'Keeper of the receipts',featured_achievement:'A decade of rivalry wins'}},
-  {id: 3, member_id: 'u3', created_at: '2026-10-04T12:00:00Z', body: 'Decimal mafia never sleeps.', reply_count: 0, members: {display_name:'The Analyst'}},
+  {id: 2, member_id: 'u2', created_at: '2026-10-05T12:00:00Z', body: 'Same story every year. Mike’s lucky. A full weekend of football, a last-minute lineup change, and somehow it still comes down to a fraction of a point. Save the screenshots. We’re going to need those receipts when the rematch rolls around.', reply_count: 1, image:'assets/dfl-daily-rivalry.webp', image_fit:'cover', image_zoom:2, image_position_x:0, image_position_y:0, members: {display_name:'League Vet',profile_title:'Keeper of the receipts',featured_achievement:'A decade of rivalry wins'}},
+  {id: 3, member_id: 'u3', created_at: '2026-10-04T12:00:00Z', body: 'Decimal mafia never sleeps.', reply_count: 0, image:'images/share/editorial-paper.webp', members: {display_name:'The Analyst'}},
 ].map(row => reviewWallPost(row, true)).join('');
 
 // Include the real expanded Home sections, without booting database modules.
@@ -92,7 +92,7 @@ const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2',
   { user1: 'u1', user2: 'u2', score1: 120.5, score2: 109.3, season: 2024, week: 5 },
   { user1: 'u2', user2: 'u1', score1: 126.2, score2: 111.8, season: 2025, week: 5 },
 ] } });
-const leagueFile = homeLeagueFile({ rivalry, fact: { headline: 'The smallest margin still gets the win.', detail: 'Archive stories rotate here from the DFL matchup records.' } });
+const leagueFile = homeLeagueFile({ rivalry, fact: { kind:'nailbiter', headline: 'The smallest margin still gets the win.', detail: 'Archive stories rotate here from the DFL matchup records.' }, facts:[{kind:'title',headline:'Jack-HAMMER’s championship season.',detail:'A title remembered in the league record book.'},{kind:'high',headline:'The week the scoreboard caught fire.',detail:'A record score from the DFL archive.'},{kind:'nailbiter',headline:'Another close call.',detail:'A finish separated by a fraction of a point.'}] });
 const deck = homeBroadcastDeck([
   { id: 'fixture:news', treatment: 'announcement', kicker: 'League news', headline: 'The league gets the last word.', subtitle: 'The weekly recap is here.', body: 'Weekly awards, matchup conversations and the stories everyone will be talking about.', href: '#/clubhouse', temporal: 'recent' },
   { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', temporal: 'historical' },
@@ -131,11 +131,11 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.319.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.320.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
-html = html.replace('<div class="topbar-actions">', '<div class="topbar-actions"><button class="dfl-preview-toggle is-available" data-mode="commissioner" type="button"><span class="dfl-preview-track"><span class="dfl-preview-knob"></span></span><span>Commish</span></button><button class="notification-bell" type="button" aria-label="Notifications"><svg class="ico" aria-hidden="true"><use href="#i-bell-steel"></use></svg></button>');
+html = html.replace('<div class="topbar-actions">', '<div class="topbar-actions"><button class="dfl-preview-toggle is-available" data-mode="commissioner" type="button"><span class="dfl-preview-track"><span class="dfl-preview-knob"></span></span><span>Commish</span></button><button class="notification-bell" type="button" aria-label="Notifications"><svg class="ico" aria-hidden="true"><use href="#i-bell-steel"></use></svg><span id="notification-count" class="notification-count">99+</span></button>');
 const previewCss = readFileSync(new URL('../js/member-preview.js', import.meta.url), 'utf8').match(/style.textContent = `([\s\S]*?)`;/)?.[1]?.replace(/\$\{[^}]+\}/g, '500') || '';
 html = html.replace('</head>', `<style>${previewCss}</style><link rel="stylesheet" href="css/profile-neutral.css"></head>`);
 html = html.replace('</body>', `<script type="module">

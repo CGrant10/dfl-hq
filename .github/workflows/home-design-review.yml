@@ -14,6 +14,7 @@ on:
       - 'css/home-broadcast-design.css'
       - 'css/home-newspaper.css'
       - 'css/home-layout.css'
+      - 'css/home.css'
       - 'js/sportsbook-pickem.js'
       - 'js/member-wall.js'
       - 'js/game-day.js'

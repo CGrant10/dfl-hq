@@ -40,6 +40,13 @@ body:has(#view) { padding-top: var(--topbar-h); }
   padding: 12px; color: var(--shell-ink); background: transparent;
 }
 .topbar .notification-bell :is(svg,.ico) { width: 18px; height: 18px; color: var(--shell-ink) !important; }
+.topbar .notification-count {
+  top: 2px; right: 1px; min-width: 22px; height: 20px; padding: 0 4px;
+  box-sizing: border-box; border: 2px solid var(--shell-bg);
+  background: var(--shell-active); color: var(--shell-bg);
+  font: 700 11px/14px system-ui,sans-serif; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .topbar .topbar-actions .dfl-preview-toggle[data-mode] {
   order: 1; margin: 0 auto 0 0; padding: 0; gap: 6px;
   font: 600 11px/1.3 system-ui,sans-serif; letter-spacing: 0;
