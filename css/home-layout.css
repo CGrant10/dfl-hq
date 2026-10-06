@@ -82,6 +82,8 @@
 #home-wrap .home-banter .wall-photo { max-height: none; width: 100%; height: auto; object-fit: contain; border-radius: 8px; }
 #home-wrap .home-banter .wall-reaction-buttons :is(button,.btn) { border: 1px solid var(--home-row-line); border-radius: var(--home-control-radius); }
 #home-wrap .home-banter .wall-post > .btn { font-size: 12px; }
+#home-wrap .home-banter .wall-post > .btn { color: var(--body-text); }
+#home-wrap .home-league-story:hover h3 { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 #home-wrap .page-detail-body :is(.home-weekly-digest > header,.home-outlook-title,.home-week-tabs,.home-position-tabs,.home-feed-tabs,.home-trade-wire > header,.home-league-feed .section-title,.home-brief-grid article) { border-color: var(--home-row-line); }
 #home-wrap > .hero { margin-top: 20px; padding-block: 12px; border-top: 0; }
 #home-wrap .dfl-alive { margin-top: 0; }
@@ -153,6 +155,7 @@
 #home-wrap .bx-with-crest .bx-kicker .ico-sm { width: 12px; height: 12px; margin-right: 4px; vertical-align: middle; }
 #home-wrap .bx-with-crest :is(.bx-champ,.bx-note,.bx-event,.bx-hero,.bx-stat) { grid-template-columns: minmax(0,1fr); }
 #home-wrap .bx-with-crest .bx-when { max-width: 100%; white-space: normal; letter-spacing: .03em; }
+:root:not([data-mode="light"]) #home-wrap .bx-home-headline-art { filter: invert(1) hue-rotate(180deg); }
 @media (max-width: 999px) {
   #home-wrap [data-home-gameday-slot] .gameday-card { padding: var(--home-panel-padding); border-top: 1px solid var(--home-panel-line); }
 }
