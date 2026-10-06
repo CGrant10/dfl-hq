@@ -475,10 +475,12 @@ export async function render(view) {
     <h1 class="sr-only">DFL HQ</h1>
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div data-home-deadline-slot></div>
+    <div class="home-frontpage">
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     <div data-home-gameday-slot></div>
+    </div>
     <div data-home-lore-slot>${homeLeagueFile()}</div>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>News</button>':""}</section>
     ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`

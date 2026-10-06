@@ -206,12 +206,12 @@ function sameColour(a, b) {
   this file copied these values and left two places to edit the same thing.
 */
 export const MEDICINE_GROUND = Object.freeze({
-  bg: "#3b3b37", bg2: "#46463f", bg3: "#4d4d44",
+  bg: "#191817", bg2: "#22201d", bg3: "#2b2822",
   line: "#8a8678", lineSoft: "#615e52",
   text: "#f4f1eb", muted: "#ddd8cb", chalk: "#ffffff",
   bodyText: "#e9e5df",
-  hover: "#4d4d44", hoverSoft: "rgba(255,255,255,.03)",
-  controlLine: "#aaa58f", controlBg: "rgba(70,70,63,.9)",
+  hover: "#2b2822", hoverSoft: "rgba(255,255,255,.03)",
+  controlLine: "#aaa58f", controlBg: "rgba(34,32,29,.9)",
   /*
     STATUSES ARE NOT TEAM COLOURS. "Paid" and "unpaid" have to be tellable
     apart at a glance on the fees screen whichever club somebody supports,
@@ -228,10 +228,10 @@ export const MEDICINE_GROUND = Object.freeze({
      plain accent link were coming out identical. */
   dangerInk: "#ffbfb6", dangerBg: "rgba(200,16,46,.14)", dangerLine: "#7d2029",
   scUnder: "#b0ebbf", scOver: "#ffbfb6", scBad: "#ffbfb6",
-  /* The shell shares the softer charcoal ground instead of a black band. */
-  topbarA: "#46463f", topbarB: "#3b3b37",
-  heroA: "#46463f", heroWash: "rgba(255,255,255,.05)",
-  toastBg: "#4d4d44", onToast: "#f4f1eb",
+  /* The shell shares the near-black, warm Medicine ground. */
+  topbarA: "#22201d", topbarB: "#191817",
+  heroA: "#22201d", heroWash: "rgba(255,255,255,.05)",
+  toastBg: "#2b2822", onToast: "#f4f1eb",
   /* Gold is the occasion colour - a champion badge - and stays gold. */
   milestone: "#EFC94C",
   shadow: "0 1px 3px rgba(0,0,0,.18)",

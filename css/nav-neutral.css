@@ -1,6 +1,6 @@
 /* Shared navigation follows light/dark mode without taking team accent hues. */
 #tabbar {
-  --nav-bg: #4a4842; --nav-ink: #f4f1eb; --nav-active: #efc94c; --nav-line: #827d70;
+  --nav-bg: #22201d; --nav-ink: #f4f1eb; --nav-active: #efc94c; --nav-line: #827d70;
   background: var(--nav-bg); border-color: var(--nav-line); box-shadow: none; backdrop-filter: none;
 }
 :root[data-mode="light"] #tabbar { --nav-bg: #f6f4ef; --nav-ink: #343b3e; --nav-active: #a50e26; --nav-line: #b8bcb7; }

@@ -151,7 +151,7 @@ with sync_playwright() as p:
     page.evaluate("document.querySelector('#view').dataset.route='home'")
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
-    for width in [320, 390, 768, 1280]:
+    for width in [320, 390, 768, 1000, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         stage_height = None
         gameday_top = None
@@ -294,8 +294,18 @@ with sync_playwright() as p:
                 assert page.locator('.topbar .brand-edition').count() == 0
                 assert not page.locator('.topbar .brand-lockup').is_visible()
                 assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
-                assert page.locator('.home-newspaper-name img:visible').get_attribute('alt') == 'DFL Daily'
+                assert page.locator('.home-newspaper-name > img:visible').get_attribute('alt') == 'DFL Daily'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
+                composition = page.evaluate('''() => {
+                    const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name > img:not([style])' + (document.documentElement.dataset.mode === 'light' ? '.home-wordmark-light' : '.home-wordmark-dark')), ten=box('.home-newspaper-anniversary'), edition=box('.home-newspaper-edition > span'), stage=box('.home-broadcast'), desk=box('[data-home-gameday-slot]'), matchup=box('.gameday-matchup'), leaders=box('.home-thermal-leaders');
+                    const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),score:e.querySelector('.gd-thermal-number').getBoundingClientRect().toJSON()}));
+                    return {nameLeft:name.left,tenLeft:ten.left,below:ten.top>=name.bottom,inline:Math.abs((ten.top+ten.bottom)-(edition.top+edition.bottom))<2,leadersBelow:leaders.top>=matchup.bottom-1,sideBySide:desk.left>=stage.right && Math.abs(desk.top-stage.top)<1,stacked:desk.top>=stage.bottom-1,rows};
+                }''')
+                assert abs(composition['nameLeft']-composition['tenLeft'])<1 and composition['below'] and composition['inline'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
+                assert composition['sideBySide'] if width>=1000 else composition['stacked'], f'Score desk grouping broken: {composition}'
+                if width>=1000:
+                    assert all(r['portrait']['right']<=r['name']['left'] and r['name']['right']<=r['score']['left']+1 for r in composition['rows']), f'Matchup scores overlap team names: {composition}'
+                metrics.setdefault('frontPageGrouping',[]).append({'mode':mode,'width':width,**composition})
             checks = []
             # Scroll every region into view: deferred Wall content and CSS
             # transitions are evaluated after the browser actually paints them.

@@ -1,3 +1,28 @@
+# Grouped score desk and darker Medicine edition — v1.310.0
+
+Final result: passed
+
+The requested refinement keeps DFL Daily left-aligned, with the existing distressed gold 10 reduced to a small mark beside Anniversary Edition on the line below. The top utility bar remains fixed, with the established masthead clearance. Dark and Medicine now share near-black warm surfaces (#191817 page, #22201d cards, #2b2822 controls); Home adds quiet, static Medicine crimson and yellow background glows. The cream broadcast insert and readable ivory/gold dark ink remain.
+
+At 1000px and wider, the broadcast and GameDay share a two-column front page. The GameDay column groups each head-to-head score beside its team portrait/name, with player leaders directly beneath the scores. Phones and tablets retain a stacked reading order. Existing data slots, score refresh, player actions, navigation, disclosures, and Wall placement remain functional.
+
+## Findings and fixes
+
+- The large standalone 10 displaced the wordmark. It now sits on the anniversary line, aligned to the wordmark's left edge.
+- Broad charcoal surfaces felt too light. Shared dark theme surfaces and navigation now use a deeper warm ground, with subtle red/yellow glows behind Home.
+- Desktop scoring and broadcast felt disconnected. A responsive front-page grid places GameDay alongside the artwork, with compact typography appropriate to its column.
+- At the 1000px breakpoint, the rotated crest overlapped its copy column by approximately 2px. Dedicated wide-layout illustration/copy widths restore clearance; all slides were rechecked at 1000, 1024 and 1280px.
+
+## Evidence and verification
+
+Before: `/workspace/dfl-medicine-review/final-dark-390.png`. After: `/workspace/dfl-night-review/final-dark-390.png`, `final-light-390.png`, and corresponding 1280px captures. Screenshots were opened and compared, including the final desktop matchup rows and light/dark masthead. The user's written refinements govern the intentional layout changes.
+
+`pnpm check` passed typechecking, name checks, 1,095 tests across 123 files, and build. The Chromium production-component review passed 48 broadcast layouts, 48 navigation states, 18 palette/viewport combinations, 7,578 visible text checks (minimum 5.25:1), six sticky-bar checks, and six masthead/score hierarchy checks, plus expanded Home controls, density, reduced motion and deck refresh. A focused desktop review passed 36 slide layouts across 1000/1024/1280px with stable sizing and clear illustration bounds. An additional 48 role/name/viewport states passed utility-bar bounds and touch targets. Standard dark, Medicine and team-theme samples confirmed the new shared page/card colors. Score effects retained 49,711 visible pixels with zero off-palette blue pixels. No page errors were observed.
+
+CI browser coverage now includes the new 1000px breakpoint and assertions for the anniversary baseline, left alignment, score-desk grouping and non-overlapping matchup portraits/names/scores. Fixtures use representative records and production presentation/wiring; authenticated league-data operations are unchanged and were not exercised by this UI review. CSS text contrast is measured; background texture and glows are inspected visually.
+
+---
+
 # Medicine newspaper palette and separated masthead — v1.309.0
 
 Final result: passed

@@ -11,13 +11,15 @@ body:has(#view[data-route="home"]) {
   padding-bottom: calc(var(--season-nav-height,49px) + 20px);
 }
 :root:not([data-mode="light"]) body:has(#view[data-route="home"]) {
-  --paper: #42423e; --paper-2: #4a4842; --paper-3: #55534b;
+  --paper: #1a1918; --paper-2: #22201d; --paper-3: #2b2822;
   --ink: #f6f1e8; --paper-body: #efeae2; --paper-muted: #ddd8cb;
   --paper-rule: #b1ab9b; --paper-soft-rule: #827d70;
   --print-accent: #efc94c; --print-hover: #ffe090;
   --paper-badge: #5a4d36; --paper-badge-ink: #ffe090;
   --paper-hot: #f5d66c; --paper-cold: #f4f1eb;
-  background-blend-mode: multiply; color-scheme: dark;
+  background-image: radial-gradient(ellipse at 0% 16%,rgba(200,16,46,.09),transparent 58%), radial-gradient(ellipse at 100% 64%,rgba(239,201,76,.065),transparent 58%), url('../assets/dfl-daily-paper.webp');
+  background-size: 100% 100%,100% 100%,600px; background-repeat: no-repeat,no-repeat,repeat;
+  background-attachment: fixed,fixed,scroll; background-blend-mode: normal,normal,multiply; color-scheme: dark;
 }
 #home-wrap {
   --bg: var(--paper); --bg-2: var(--paper-2); --bg-3: var(--paper-3); --text: var(--ink);
@@ -42,15 +44,16 @@ body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commis
 body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob { background: #f6f1e8; }
 body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob { transform: translateX(10px); }
 body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { background: var(--paper-3); }
-.home-newspaper-masthead { display: grid; grid-template-columns: 20% minmax(0,1fr) 17%; align-items: center; gap: 10px; padding: 16px 0 10px; border-bottom: 1px solid var(--ink); }
-.home-newspaper-anniversary { display: block; width: 100%; height: auto; max-height: 166px; object-fit: contain; filter: brightness(.75); }
+.home-newspaper-masthead { display: grid; grid-template-columns: minmax(0,1fr) 17%; align-items: center; gap: 10px; padding: 16px 0 10px; border-bottom: 1px solid var(--ink); }
+.home-newspaper-anniversary { display: block; width: 24px; height: 25px; flex: 0 0 24px; object-fit: contain; filter: brightness(.75); }
 :root:not([data-mode="light"]) .home-newspaper-anniversary { filter: brightness(1.15); }
 .home-newspaper-name { min-width: 0; }
 .home-newspaper-name > img { display: block; width: 100%; height: auto; }
 .home-newspaper-name > .home-wordmark-dark { display: none; }
 :root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-light { display: none; }
 :root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-dark { display: block; }
-.home-newspaper-name > p { margin: 5px 0 0; font: 400 clamp(7px,1.8vw,13px)/1.3 'Anton',sans-serif; text-transform: uppercase; letter-spacing: .16em; white-space: nowrap; }
+.home-newspaper-edition { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font: 400 clamp(8px,2vw,13px)/1.3 'Anton',sans-serif; text-transform: uppercase; letter-spacing: .12em; }
+.home-newspaper-edition > span { min-width: 0; }
 .home-newspaper-date { border-left: 1px solid var(--ink); padding-left: 9px; text-transform: uppercase; font: 400 clamp(9px,2.6vw,20px)/1.25 'Anton',sans-serif; }
 .home-newspaper-date time { display: block; }
 .home-newspaper-date time > span { display: block; font-size: .8em; margin-bottom: 4px; }
@@ -216,6 +219,8 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 body:has(#view[data-route="home"]) .bottomline { display: none; }
 @media (min-width: 600px) {
   body:has(#view[data-route="home"]) { --home-gutter: 30px; }
+  .home-newspaper-anniversary { width: 32px; height: 34px; flex-basis: 32px; }
+  .home-newspaper-edition { gap: 12px; }
   .home-newspaper-masthead { gap: 18px; padding-top: 24px; padding-bottom: 14px; }
   #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 490px; }
   #home-wrap .bx-slide { inset: 20px 0 12px; gap: 12px; }
@@ -399,3 +404,40 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
 #home-wrap .page-detail-body .wn { border: 0; border-bottom: 1px solid var(--paper-rule); border-radius: 0; background: transparent; box-shadow: none; }
 #home-wrap .page-detail-body .wn-title { font: 700 20px/1.2 Georgia,serif; color: var(--ink); }
 #home-wrap .page-priority-note { margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--paper-rule); border-radius: 0; background: transparent; color: var(--print-accent); font: 400 13px/1.4 Georgia,serif; box-shadow: none; }
+
+/* Keep the lead artwork and its live score desk together on wide screens.
+   A single-column reading order remains on phones and tablets. */
+#home-wrap .home-frontpage { min-width: 0; }
+#home-wrap .home-frontpage > :is(.home-broadcast,[data-home-gameday-slot]) { min-width: 0; padding: 0; margin: 0; }
+@media (min-width: 1000px) {
+  #view.view[data-route="home"] { width: min(100%,1200px); max-width: 1200px; }
+  body:has(#view[data-route="home"]) .topbar-inner { max-width: 1200px; }
+  .home-newspaper-name { max-width: 640px; }
+  #home-wrap .home-frontpage { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr); gap: 24px; padding-block: 16px; align-items: start; }
+  #home-wrap .home-frontpage > [data-home-gameday-slot] { border-left: 1px solid var(--paper-soft-rule); padding-left: 24px; }
+  #home-wrap .bx-editorial-copy { width: 56%; }
+  #home-wrap .bx-editorial-illustration { width: 34%; right: 18px; }
+  #home-wrap .gameday-card > header { padding-top: 0; }
+  #home-wrap .gameday-card header small { font-size: 28px; }
+  #home-wrap .gameday-card header h2 { font-size: 11px; }
+  #home-wrap .home-game-phase { font-size: 11px; }
+  #home-wrap .gameday-matchup { grid-template-columns: minmax(0,1fr); gap: 12px; padding-block: 12px 16px; }
+  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 44px minmax(0,1fr) auto; gap: 10px; }
+  #home-wrap .gameday-faceoff-team + .gameday-faceoff-team { border-left: 0; padding-left: 0; }
+  #home-wrap .gameday-faceoff-team:nth-of-type(2) > .gameday-faceoff-mark { grid-column: 1; grid-row: 1; }
+  #home-wrap .gameday-faceoff-team:nth-of-type(2) > .home-team-name { grid-column: 2; grid-row: 1; text-align: left; }
+  #home-wrap .gameday-faceoff-team:nth-of-type(2) > .gd-thermal-number { grid-column: 3; grid-row: 1; }
+  #home-wrap .gameday-faceoff-team .gameday-faceoff-mark { grid-column: 1; width: 44px; height: 44px; }
+  #home-wrap .gameday-faceoff-team .home-team-name { grid-column: 2; text-align: left; font-size: 26px; }
+  #home-wrap .gameday-faceoff-team .gd-thermal-number { grid-column: 3; font-size: 42px; }
+  #home-wrap .home-team-name small { font-size: 12px; }
+  #home-wrap .gameday-card .home-thermal-leaders header h2 { font-size: 28px; }
+  #home-wrap .home-leaders-link { font-size: 10px; }
+  #home-wrap .home-thermal-leaders .gameday-player { grid-template-columns: 18px minmax(0,1fr) auto; gap: 8px; min-height: 54px; }
+  #home-wrap .home-thermal-leaders .dfl-player-copy { display: grid; gap: 3px; }
+  #home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 18px; }
+  #home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 12px; }
+  #home-wrap .home-thermal-leaders .dfl-player-portrait { width: 38px; height: 44px; flex-basis: 38px; }
+  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 36px; }
+  #home-wrap .home-player-rank { font-size: 18px; }
+}
