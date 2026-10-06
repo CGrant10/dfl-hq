@@ -156,7 +156,7 @@
 #home-wrap .bx-with-crest .bx-kicker .ico-sm { width: 12px; height: 12px; margin-right: 4px; vertical-align: middle; }
 #home-wrap .bx-with-crest :is(.bx-champ,.bx-note,.bx-event,.bx-hero,.bx-stat) { grid-template-columns: minmax(0,1fr); }
 #home-wrap .bx-with-crest .bx-when { max-width: 100%; white-space: normal; letter-spacing: .03em; }
-:root:not([data-mode="light"]) #home-wrap .bx-home-headline-art { filter: invert(1) hue-rotate(180deg); }
+:root:not([data-mode="light"]) #home-wrap .bx-home-title:has(.bx-home-headline-art) { padding: 4px 6px; border-radius: 4px; background: #efebe1; }
 @media (max-width: 999px) {
   #home-wrap [data-home-gameday-slot] .gameday-card { padding: var(--home-panel-padding); border-top: 1px solid var(--home-panel-line); }
 }
