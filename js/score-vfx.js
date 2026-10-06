@@ -5,11 +5,11 @@ import {vertexShader,fragmentShader} from './score-vfx-shaders.js';
 export function mountScoreVfx(root){
  const canvas=document.createElement('canvas');canvas.className='gd-vfx-canvas';canvas.setAttribute('aria-hidden','true');root.append(canvas);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false;
+ let gl=null,program=null,buffer=null,locations={},targets=[],visible=new Set(),masks=new Map(),raf=0,layoutFrame=0,lastFrame=0,stopped=false,lost=false,dirty=true,rootVisible=false;
  const enabled=()=>!stopped&&!lost&&rootVisible&&!reduced.matches&&root.dataset.motion!=='off'&&document.visibilityState==='visible'&&(!root.matches('dialog')||root.open);
  const clear=()=>{if(gl&&!lost)gl.clear(gl.COLOR_BUFFER_BIT)};
  const pause=()=>{cancelAnimationFrame(raf);raf=0;lastFrame=0;clear();canvas.dataset.running='false'};
- const release=()=>{if(gl&&!lost){for(const target of targets)gl.deleteTexture(target.texture)}targets=[]};
+ const release=()=>{if(gl&&!lost){for(const {target} of masks.values())gl.deleteTexture(target.texture)}masks.clear();targets=[]};
  const init=()=>{
   try{
    gl=canvas.getContext('webgl',{alpha:true,antialias:false,depth:false,stencil:false,powerPreference:'low-power',preserveDrawingBuffer:false});if(!gl){canvas.dataset.renderer='unavailable';return false;}
@@ -46,7 +46,9 @@ export function mountScoreVfx(root){
   const emitters=[...root.querySelectorAll('[data-score-temperature="hot"], [data-score-temperature="cold"]')].filter(element=>element.closest('dialog')===(root.matches('dialog')?root:null));
   if(!emitters.length){release();intersection.disconnect();visible.clear();dirty=false;return}
   if(!gl&&!init())return;
-  release();intersection.disconnect();visible.clear();
+  const existing=new Set(emitters);
+  for(const [element,{target}] of masks)if(!existing.has(element)){gl.deleteTexture(target.texture);masks.delete(element)}
+  targets=[];intersection.disconnect();visible.clear();
   const box=root.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
   // Match phone density while bounding the shared surface for long scoreboards.
   const pixelBudgetScale=Math.sqrt(6000000/Math.max(1,root.clientWidth*root.clientHeight));
@@ -65,8 +67,18 @@ export function mountScoreVfx(root){
    if(pinnedBottom&&!element.closest('.gd-watch-dashboard')&&rect.top<pinnedBottom)continue;
    if(root.matches('dialog')&&(rect.bottom<box.top-30||rect.top>box.bottom+30))continue;
    const style=getComputedStyle(value),padX=10,padTop=element.closest('.gameday-player-score')?14:Math.min(26,rect.height),padBottom=10,width=Math.ceil(rect.width+padX*2),height=Math.ceil(rect.height+padTop+padBottom);
+   // Disclosures and scroll change geometry, not glyphs. Reuse the GPU mask
+   // until the score, type metrics or device scale actually changes.
+   const font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+   const maskKey=JSON.stringify([value.textContent,font,style.letterSpacing,style.webkitTextStrokeWidth,rect.width,rect.height,padTop,scale]);
+   const cached=masks.get(element);
+   if(cached?.key===maskKey){
+    const target={...cached.target,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),cold:element.dataset.scoreTemperature==='cold',light,medicine};
+    targets.push(target);intersection.observe(element);continue;
+   }
+   if(cached){gl.deleteTexture(cached.target.texture);masks.delete(element)}
    const mask=document.createElement('canvas');mask.width=Math.ceil(width*scale);mask.height=Math.ceil(height*scale);const context=mask.getContext('2d');if(!context)continue;
-   context.scale(scale,scale);context.font=style.font||`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;context.fillStyle='#fff';context.textBaseline='alphabetic';
+   context.scale(scale,scale);context.font=font;context.fillStyle='#fff';context.textBaseline='alphabetic';
    if('letterSpacing' in context)context.letterSpacing=style.letterSpacing;
    const text=value.textContent,metrics=context.measureText(text),baseline=padTop+(rect.height+metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;context.fillText(text,padX,baseline);
    const strokeWidth=parseFloat(style.webkitTextStrokeWidth)||0;if(strokeWidth){context.lineWidth=strokeWidth;context.strokeStyle='#fff';context.strokeText(text,padX,baseline)}
@@ -85,7 +97,8 @@ export function mountScoreVfx(root){
     for(let y=0;y<mask.height;y++){const index=(y*mask.width+x)*4;pixels[index]=Math.round(intensity*255);pixels[index+1]=Math.round(top/mask.height*255);pixels[index+2]=Math.round(bottom/mask.height*255)}
    }
    const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask.width,mask.height,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
-   targets.push({element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light,medicine});
+   const target={element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light,medicine};
+   masks.set(element,{key:maskKey,target});targets.push(target);
    intersection.observe(element);
   }
   dirty=false;resume();
@@ -96,7 +109,7 @@ export function mountScoreVfx(root){
  const mutations=new MutationObserver(records=>{if(records.some(r=>r.target!==canvas&&!canvas.contains(r.target))){dirty=true;schedule()}});mutations.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['data-motion','data-score-temperature','open','class']});
  const resize=new ResizeObserver(schedule);resize.observe(root);
  const theme=new MutationObserver(schedule);theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-mode','data-palette','class','style']});
- const contextLost=event=>{event.preventDefault();lost=true;pause();targets=[];gl=null;dirty=true;canvas.dataset.renderer='lost'};
+ const contextLost=event=>{event.preventDefault();lost=true;pause();targets=[];masks.clear();gl=null;dirty=true;canvas.dataset.renderer='lost'};
  const contextRestored=()=>{lost=false;gl=null;schedule()};
  canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('webglcontextrestored',contextRestored);
  const motionChange=()=>{dirty=true;sync()};

@@ -1,3 +1,23 @@
+# Official records, consistent player scores, and disclosure performance — v1.311.0
+
+Final result: passed
+
+Sleeper's public Week 4 results and official rosters confirm Grant at 3–1 and Jack-HAMMER as the sole 4–0 team. Stored standings were still one week behind, and several stored Week 4 totals were provisional. Home and GameDay now share a cached public read of the most recently completed week, validated against the full roster set and season. Complete official records replace stale records; incomplete or unavailable public results retain the stored fallback. Power rankings use record first and total points to break ties, so Jack-HAMMER is #1. Live weeks remain excluded. Historical weekly boards remain available.
+
+Player leaders now use a right-aligned score column with the phase underneath. All final players, including hot players and actual zeros, show Final; live players retain Live. Leader and detailed player scores share 24px type and the same hot/cold theme colors. Team totals keep their larger hierarchy.
+
+The performance audit reproduced a half-second disclosure height tween, with score glyph rasterization and GPU uploads repeated as the card resized. Disclosures now change height immediately. The renderer caches each score's mask until its text, font metrics or render scale changes; scrolling and disclosure changes reuse textures, hidden scores retain their masks, and removed scores/context loss release or clear resources.
+
+Evidence: `/workspace/dfl-consistency-before/collapse-profile.json`, `/workspace/dfl-consistency-review/collapse-profile.json`, theme screenshots and `browser-checks.json`, `score-consistency.json`, `leaders-final-dark.png`, and `live-rankings.json`. The production reconciliation/ranking functions were also run against public results for all 12 actual teams: Jack-HAMMER #1, 4–0; Grant #2, 3–1. No league data was edited.
+
+On the 390px, density-3, 4× CPU-throttled Chromium fixture, the original GameDay toggles sampled 3–4 intermediate heights and uploaded 24–32 textures per toggle. After the change, all toggles sampled one final height and uploaded zero unchanged masks. More from the league similarly went from 5–6 sampled heights to one. These are layout/resource measurements under software WebGL, not physical-device frame-rate claims; background effect rendering still produces long tasks in that environment.
+
+Verification: `pnpm check` passed typechecking, name checks, 1,102 tests across 124 files, and build. The complete production-component browser review passed 60 broadcast layouts, 48 navigation states, 18 palette/viewport states, 7,695 visible text checks (minimum contrast 5.25:1), sticky bar/grouping, density, reduced motion, and deck refresh checks. Score effects retained 36,037 visible pixels with zero off-palette blue pixels. The focused score review checks ten light/dark viewport states for identical 24px size/colors, aligned number and phase edges, all Final labels, actual ranking markup, stable disclosure heights, no uploads for warmed toggles, and exactly one new upload after changing one score. These assertions are included in CI. No page errors were observed in the full review.
+
+Fixtures render production presentation and wiring; authenticated Watch, player actions, and database writes were not exercised. Public reads and read-only database inspection verified the stale-source diagnosis. Version/cache release is 1.311.0.
+
+---
+
 # Grouped score desk and darker Medicine edition — v1.310.0
 
 Final result: passed

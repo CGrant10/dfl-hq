@@ -27,6 +27,7 @@ vi.mock("./members.js", () => ({ loadMemberDirectory: vi.fn(async () => [
 ]) }));
 vi.mock("./sleeper.js", () => ({
   loadPlayers: mocks.loadPlayers,
+  sleeper: { rosters: vi.fn(async () => []), matchups: vi.fn(async () => []) },
   loadSeasonStats: vi.fn(async () => ({ data: {}, fetchedAt: 1 })),
   loadMarketAdp: vi.fn(async () => ({ data: [], fetchedAt: 1 })),
   loadNflState: vi.fn(async () => ({ data: { season: 2026, season_type: "regular", week: 3 }, fetchedAt: 1 })),

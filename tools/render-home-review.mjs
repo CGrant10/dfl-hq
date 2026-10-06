@@ -2,6 +2,7 @@
 // sample scores. It lives outside the app and never writes to league data.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { buildLeaguePowerRankings } from '../js/league-trajectory.js';
 import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeNewspaperMasthead } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
@@ -68,7 +69,9 @@ const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeR
 const forecastPlayer = {id:'7564',name:'Ja’Marr Chase',position:'WR',nflTeam:'CIN',ownerName:'Grant',points:24.6,scoreSource:'actual',complete:true,opponent:'BAL'};
 const outlook = {week:5,predictions:[{winner:{name:'Grant',projection:124.8},loser:{name:'Mike',projection:118.2},margin:6.6,confidence:'LEAN',isMine:true}],leaders:Object.fromEntries(HOME_OUTLOOK_POSITIONS.map(position => [position,[{...forecastPlayer,position}]])),startSit:{teamName:'Grant',lineupIsSet:true,swaps:[],alarms:[]}};
 const briefing = {title:'Weekly briefing',headline:'Every point counts this week.',matchup:'Grant faces Mike in the rematch.',playoff:'Win to hold your spot',playoffDetail:'The middle of the table is getting crowded.',lineup:'Keep your starters ready for kickoff.',action:'Check the injury report before locking your lineup.'};
-const rankings = {weeks:5,focus:{id:'1'},allTeams:[{id:'1',name:'Grant',identity:{display_name:'Grant'}},{id:'2',name:'Mike',identity:{display_name:'Mike'}}],powerRankings:{boards:[{label:'Week 5',rows:[{id:'1',rank:1,name:'Grant',record:'3–1',movement:1},{id:'2',rank:2,name:'Mike',record:'2–2',movement:-1},{id:'3',rank:3,name:'Dream Enders',record:'2–2',movement:0},{id:'4',rank:4,name:'Klutch Sports Group',record:'1–3',movement:1}]}]}};
+const rankingTeams = ['Grant','Jack-HAMMER','Mike','Klutch Sports Group'].map((team_name,i)=>({id:String(i+1),roster_id:i+1,sleeper_user_id:`fixture${i+1}`,team_name,identity:{display_name:team_name},rank:i+1,lineup:{weeklyPoints:100}}));
+const rankingGames = [[1,3,150,100,2,4,80,70],[1,2,120,130,3,4,100,90],[1,4,180,90,2,3,80,70],[1,3,145.38,101.08,2,4,139.2,121.12]].flatMap((r,i)=>[0,4].map(n=>({season:2026,week:i+1,roster1:r[n],score1:r[n+2],roster2:r[n+1],score2:r[n+3]})));
+const rankings = {weeks:14,focus:{id:'1'},allTeams:rankingTeams,powerRankings:buildLeaguePowerRankings({teams:rankingTeams,matchups:rankingGames,currentWeek:5})};
 const expandedHome = `<div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
   <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
   <div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>
@@ -81,7 +84,7 @@ const players = [
   { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'final', roster: '1' },
   { id: '6794', name: 'Justin Jefferson', position: 'WR', nflTeam: 'MIN', points: 18.4, state: 'final', roster: '2' },
   { id: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', points: 6.8, state: 'final', roster: '1' },
-  { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 8.2, state: 'final', roster: '2' },
+  { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 0, state: 'final', roster: '2' },
 ];
 const model = { season: 2026, week: 5, completed: true, starters: players, games: [{ isMine: true, sides: [
   { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant' } },
@@ -119,7 +122,7 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', expandedHome)}
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.310.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.311.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');

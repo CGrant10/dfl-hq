@@ -34,6 +34,50 @@ url = f'http://127.0.0.1:{server.server_port}/'
 with urlopen(url) as response:
     print('Review document:', response.status, response.headers.get('Content-Type'), len(response.read()), flush=True)
 
+def check_score_consistency(page):
+    # The earlier review deliberately disables effects to test reduced motion.
+    page.emulate_media(reduced_motion='no-preference')
+    results = []
+    page.evaluate("document.querySelector('.gameday-home-detail').open=true")
+    for mode in ['light', 'dark']:
+        page.evaluate('window.reviewSetTheme', mode)
+        for width in [320, 390, 832, 1000, 1280]:
+            page.set_viewport_size({'width': width, 'height': 1200})
+            page.wait_for_timeout(150)
+            rows = page.evaluate('''() => [...document.querySelectorAll('.home-thermal-leaders .gameday-player')].map(row=>{
+                const number=row.querySelector('.gd-thermal-number'),phase=row.querySelector('[data-player-phase]'),id=phase.dataset.playerPhase;
+                const tracker=document.querySelector('.gameday-home-detail [data-player-phase="'+id+'"]').parentElement.querySelector('.gd-thermal-number');
+                return {right:number.getBoundingClientRect().right,phaseRight:phase.getBoundingClientRect().right,phase:phase.textContent,font:getComputedStyle(number).fontSize,trackerFont:getComputedStyle(tracker).fontSize,color:getComputedStyle(number).color,trackerColor:getComputedStyle(tracker).color};
+            })''')
+            assert len(rows) == 4 and all(r['phase'] == 'Final' for r in rows), rows
+            assert max(r['right'] for r in rows)-min(r['right'] for r in rows)<1, rows
+            assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='24px' and r['color']==r['trackerColor'] for r in rows), rows
+            results.append({'mode':mode,'width':width,'rows':rows})
+    board = page.locator('.home-rankings-card > ol > li')
+    assert board.first.locator('strong').text_content().strip() == 'Jack-HAMMER'
+    assert board.first.locator('em').text_content().strip() == '4-0', board.first.inner_html()
+    assert board.nth(1).locator('em').text_content().strip() == '3-1', board.nth(1).inner_html()
+    page.set_viewport_size({'width': 1280, 'height': 1200})
+    page.locator('[data-gameday-card]').scroll_into_view_if_needed()
+    page.evaluate("document.querySelector('[data-gameday-card]').dataset.motion='on'")
+    page.wait_for_timeout(600)
+    page.evaluate('''() => {window.scoreUploads=0;const original=WebGLRenderingContext.prototype.texImage2D;window.restoreScoreUpload=()=>{WebGLRenderingContext.prototype.texImage2D=original;};WebGLRenderingContext.prototype.texImage2D=function(...args){window.scoreUploads++;return original.apply(this,args)}}''')
+    toggles=[]
+    for _ in range(4):
+        sample=page.evaluate('''() => new Promise(resolve=>{
+            const node=document.querySelector('.gameday-home-detail'),heights=[],before=window.scoreUploads;node.open=!node.open;
+            function sample(){heights.push(node.offsetHeight);if(heights.length===8)resolve({heights,uploads:window.scoreUploads-before});else requestAnimationFrame(sample)}requestAnimationFrame(sample);
+        })''')
+        assert len(set(sample['heights']))==1 and sample['uploads']==0, sample
+        toggles.append(sample)
+    page.evaluate("document.querySelector('.home-thermal-leaders .gd-thermal-value').textContent='25.60'")
+    page.wait_for_function('window.scoreUploads === 1')
+    page.wait_for_timeout(200)
+    assert page.evaluate('window.scoreUploads')==1, 'Unchanged score masks were uploaded again'
+    page.evaluate("document.querySelector('.home-thermal-leaders .gd-thermal-value').textContent='24.60';window.restoreScoreUpload()")
+    page.evaluate("document.querySelector('.gameday-home-detail').open=false;document.querySelector('[data-gameday-card]').dataset.motion='off'")
+    return {'states':results,'toggles':toggles,'changedScoreUploads':1}
+
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
     browser = p.chromium.launch(executable_path=executable, headless=True,
@@ -328,6 +372,7 @@ with sync_playwright() as p:
                 page.evaluate("document.querySelector('#tabbar').style.visibility='hidden'")
                 page.screenshot(path=str(OUT / f'theme-{mode.replace(":","-")}-{width}-full.png'),full_page=True)
                 page.evaluate("document.querySelector('#tabbar').style.removeProperty('visibility')")
+    metrics['scoreConsistency'] = check_score_consistency(page)
     page.evaluate("window.reviewSetTheme('light')")
     metrics['consoleErrors'] = errors
     assert not errors, errors

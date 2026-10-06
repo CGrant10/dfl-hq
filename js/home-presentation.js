@@ -1,3 +1,4 @@
+import { playerScorePhase } from './game-day-player-rows.js';
 import { esc } from './ui.js';
 import { playerIdentity } from './player-presentation.js';
 import { teamPortrait } from './team-presentation.js';
@@ -78,7 +79,7 @@ export function homeThermalBoard(model) {
       </button>
       <span class="gameday-player-score" data-gameday-score-key="${esc(`${player.roster}:${player.id}`)}">
         ${thermalScore(player.points, temperature)}
-        ${player.state === 'final' && temperature === 'cold' && !model.completed ? '<small data-player-final>Final</small>' : ''}
+        <small data-player-phase="${esc(player.id)}"${player.state === 'final' ? ' data-player-final' : ''}>${esc(playerScorePhase(player))}</small>
       </span>
       <svg class="home-player-chevron" aria-hidden="true"><use href="#home-ui-chevron-right"></use></svg>
     </li>`;

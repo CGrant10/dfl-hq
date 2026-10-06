@@ -3,6 +3,7 @@ import { loadMarketAdp, loadPlayers, loadSeasonStats, loadTrendingPlayers, loadW
 import { loadLeagueState } from "./league-state.js";
 import { scoringFormat } from "./dfl-scoring.js";
 import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
+import { loadLatestLeagueResults, reconcileLeagueResults } from './league-results.js';
 import { loadMemberDirectory } from "./members.js";
 
 const ANALYZER_CACHE_MS = 60 * 1000;
@@ -58,7 +59,7 @@ async function fetchAnalyzerData() {
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
-  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending]] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults] = await Promise.all([
     loadPlayers(),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
@@ -70,6 +71,7 @@ async function fetchAnalyzerData() {
       .select("season,week,roster1,user1,score1,roster2,user2,score2")
       .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
     liveSignals,
+    liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
   ]);
   const pool = buildPlayerPool({
     rosters: namedRosters,
@@ -84,11 +86,13 @@ async function fetchAnalyzerData() {
     scoringFormat: format,
   });
   const teams = analyzeLeague({ rosters: namedRosters, pool });
+  const results = reconcileLeagueResults({ season: projectionSeason, teams,
+    standings: standingRes?.error ? [] : standingRes.data || [],
+    matchups: matchupRes?.error ? [] : matchupRes.data || [], snapshot: latestResults });
   return {
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool, members,
-    standings: standingRes?.error ? [] : (standingRes?.data || []),
-    matchups: matchupRes?.error ? [] : (matchupRes?.data || []),
+    ...results,
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
     liveSignalsUpdatedAt: Math.max(weeklyProjectionRes.fetchedAt || 0,
