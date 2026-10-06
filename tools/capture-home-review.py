@@ -51,7 +51,7 @@ def check_score_consistency(page):
             })''')
             assert len(rows) == 4 and all(r['phase'] == 'Final' for r in rows), rows
             assert max(r['right'] for r in rows)-min(r['right'] for r in rows)<1, rows
-            assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='24px' and r['color']==r['trackerColor'] for r in rows), rows
+            assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='20px' and r['color']==r['trackerColor'] for r in rows), rows
             results.append({'mode':mode,'width':width,'rows':rows})
     board = page.locator('.home-rankings-card > ol > li')
     assert board.first.locator('strong').text_content().strip() == 'Jack-HAMMER'

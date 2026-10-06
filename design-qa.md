@@ -1,3 +1,17 @@
+# Compact Home scale — v1.313.0
+
+Home's hierarchy is retained at a smaller scale: section titles are 22px on phones and 24px on wider screens, story/subsection headings 18/20px, body copy 14px, supporting details 12/13px, and metadata 11px. Home player scores use a shared 20px size in the preview and detailed rows. Team totals remain larger than player scores, with reduced phone/tablet/desktop sizes.
+
+The masthead, illustrated headline, archive thumbnails, and carousel illustrations now have width caps. Tablet names and supporting text no longer jump to oversized display sizes. The broadcast reserves at least 246px on phones and 320px on wider screens, and still measures the tallest slide so rotation does not move the sections below it. Illustrations are capped to fit the shorter stage. Major sections use 2px rules and 28/32px gaps, while internal headers and padding are smaller. Navigation, carousel, and section actions retain their 44px touch targets.
+
+Before/after fixtures and captures are retained under `/workspace/dfl-compact/before/` and `/workspace/dfl-compact/after/`. In the Dark fixture the phone archive decreased from 417.7px to 319.4px high; at 1280px the capped thumbnails reduced it from 632.4px to 293.5px. Focused Light/Dark captures cover 320/390/768/1280px without horizontal overflow.
+
+Validation: `pnpm check` passed typechecking, name checks, 1,102 tests across 124 files, and build. The existing Home browser review checks carousel content bounds, contrast, sticky controls, section links, expanded panels, score alignment, and texture reuse. Its player-score assertion now expects the intentional 20px Home size. The PR's Home design review workflow retains full browser captures as an Actions artifact.
+
+These captures use production components with representative fixture data; they do not authenticate a protected member or exercise live writes. Release and cache markers advance to v1.313.0.
+
+---
+
 # Clearer Home reading hierarchy — v1.312.0
 
 Final result: passed
