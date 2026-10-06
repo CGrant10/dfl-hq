@@ -140,7 +140,10 @@ async function paintSinceAway() {
 
 async function paintReactions(root = document) {
   if (!homeNow()) return;
-  const posts = [...root.querySelectorAll(".wall-post[data-wall-post]")];
+  // The Wall owns posts with its current reaction controls. Never replace
+  // their DOM while its asynchronous loader is still painting counts/status.
+  const posts = [...root.querySelectorAll(".wall-post[data-wall-post]")]
+    .filter(post => !post.querySelector(".wall-reaction-buttons"));
   const ids = posts.map((p) => Number(p.dataset.wallPost)).filter(Number.isFinite);
   if (!ids.length) return;
   const signature = ids.join(",");
@@ -164,6 +167,7 @@ async function paintReactions(root = document) {
   const me = currentMember();
   const rows = data || [];
   for (const post of posts) {
+    if (post.querySelector(".wall-reaction-buttons")) continue;
     const id = Number(post.dataset.wallPost);
     const mine = rows.find((r) => me && String(r.member_id) === String(me.id) && Number(r.post_id) === id)?.reaction || "";
     const counts = new Map(REACTIONS.map((r) => [r, 0]));
