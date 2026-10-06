@@ -102,24 +102,11 @@ export const CREST = { red: "#E5011B", blue: "#003396", black: "#0A0A0A", white:
 */
 const MODES = {
   dark: {
-    // Softer slate surfaces keep dark mode readable without a black shell.
-    bg: "#303a40", bg2: "#354148", bg3: "#3b4850",
-    line: "#718089", lineSoft: "#53616a",
-    text: "#f4f1eb", muted: "#d0d5d3", chalk: "#ffffff",
-    bodyText: "#e9e5df",
-    hover: "#3b4850", hoverSoft: "rgba(255,255,255,.03)",
-    controlLine: "#9aa6ac", controlBg: "rgba(53,65,72,.9)",
-    accent: "#ffc1c7", accent2: "#bdd5ff",
+    // Standard dark and OS dark share the league's Medicine foundation.
+    ...MEDICINE_GROUND,
+    accent: "#f5d66c", accent2: "#f4f1eb",
+    fill: "#C8102E", fill2: "#EFC94C",
     onAccent: "#FFFFFF",
-    ok: "#b0ebbf", okBg: "rgba(47,191,95,.12)", okLine: "#5b9a70",
-    warnInk: "#f8d6a0", warnBg: "rgba(240,167,66,.12)", warnLine: "#a48249",
-    dangerInk: "#ffbfb6", dangerBg: "rgba(224,87,74,.12)", dangerLine: "#ac726a",
-    scUnder: "#b0ebbf", scOver: "#ffbfb6", scBad: "#ffbfb6",
-    topbarA: "#354148", topbarB: "#303a40",
-    heroA: "#354148", heroWash: "rgba(255,255,255,.05)",
-    toastBg: "#3b4850", onToast: "#f4f1eb",
-    milestone: "#efcf78",
-    shadow: "0 1px 3px rgba(0,0,0,.18)",
   },
   light: {
     /* Not white-on-white: the page is a shade cooler than the cards so a card
@@ -208,8 +195,8 @@ const MODES = {
   */
   medicine: {
     ...MEDICINE_GROUND,
-    /* text pair: the red lifted to clear 6:1, the yellow already there */
-    accent: "#ffc0b8", accent2: "#f5d66c",
+    /* Yellow and ivory carry text; Medicine crimson stays on action fills. */
+    accent: "#f5d66c", accent2: "#f4f1eb",
     /* fill pair: the wheel's own red and yellow */
     fill: "#C8102E", fill2: "#EFC94C",
     onAccent: "#FFFFFF",

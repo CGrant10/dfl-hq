@@ -16,6 +16,7 @@ uniform vec4 u_glyph;
 uniform float u_time;
 uniform float u_cold;
 uniform float u_light;
+uniform float u_medicine;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
 float fbm(vec2 p){return noise(p)*.57+noise(p*2.03+7.1)*.28+noise(p*4.01-3.7)*.15;}
@@ -63,12 +64,17 @@ void main(){
   color=mix(vec3(.88,.075,.008),vec3(1.,.43,.035),smoothstep(.18,.65,heat));
   color=mix(color,vec3(1.,.78,.25),smoothstep(.58,.88,heat));
   color=mix(color,vec3(1.,.97,.78),smoothstep(.86,1.,heat)*.9);
+  if(u_medicine>.5){
+   color=mix(vec3(.78,.06,.18),vec3(.94,.79,.30),smoothstep(.18,.85,heat));
+   color=mix(color,vec3(.97,.95,.90),smoothstep(.86,1.,heat)*.9);
+  }
   // A low-opacity heat glaze and bright, animated inner rim fuse the fire
   // with the digits. The DOM text stays intact beneath the GPU surface.
   float shimmer=smoothstep(.3,.76,fbm(p*.14+vec2(-t*.2,t*.75)));
   float surface=glyph*(.12+shimmer*.15)+innerRim*(.30+shimmer*.20);
   surface*=mix(1.,.3,u_light);
   vec3 ember=mix(vec3(1.,.38,.04),vec3(1.,.91,.58),shimmer*.65+innerRim*.35);
+  if(u_medicine>.5)ember=mix(vec3(.94,.79,.30),vec3(.97,.95,.90),shimmer*.65+innerRim*.35);
   color=mix(color,ember,glyph);
   // On white surfaces, retain the hot stroke but soften the detached rim.
   float rimSoftening=mix(1.,1.-edge*.62,u_light);
@@ -113,7 +119,9 @@ void main(){
   float spikeAxis=abs(fract(p.x/5.)-.5)*5.;
   float icicle=(1.-smoothstep(spikeWidth,spikeWidth+.7,spikeAxis))
     *(1.-smoothstep(spikeLength-1.,spikeLength,below))*step(bottom,p.y)*frozenColumn.r;
-  color=mix(vec3(.25,.62,.9),vec3(.9,.99,1.),clamp(facets*.6+innerRim*.45+glint*.25+icicle*.5,0.,1.));
+  float sheen=clamp(facets*.6+innerRim*.45+glint*.25+icicle*.5,0.,1.);
+  color=mix(vec3(.25,.62,.9),vec3(.9,.99,1.),sheen);
+  if(u_medicine>.5)color=mix(vec3(.55,.54,.49),vec3(.97,.95,.90),sheen);
   // Keep the score counters open, with smaller ice dust beyond the outline.
   alpha=(ice+icicle*.6+mist+snow*mix(1.,.5,u_light))*(1.-glyph)+surface;
  }

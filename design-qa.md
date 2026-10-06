@@ -1,3 +1,21 @@
+# Medicine newspaper palette and separated masthead — v1.309.0
+
+Final result: passed
+
+The user chose Medicine colors over the blue/green/brown mock palettes and requested space beneath the fixed top bar, better control spacing, and removal of its duplicate DFL Daily mark. The accepted direction uses warm charcoal, ivory, Medicine yellow/gold highlights, and crimson actions/print accents. The gold anniversary 10 stays beside the dated newspaper masthead.
+
+Dark Home now uses a distressed ivory/yellow DFL Daily wordmark, replacing the inverted pink/red lettering. Gold ink carries headings, score highlights, section markers, and navigation; action fills use Medicine crimson `#C8102E`. Light Home keeps legible black/crimson lettering on cream paper. Standard dark/OS dark and Medicine share the Medicine foundation, while generated team palettes keep their accents on the warmer shared ground. No stored theme preferences are overwritten.
+
+The duplicate top-bar wordmark was removed from the markup. Home's brand lockup remains hidden, with the role toggle grouped left and notifications/profile grouped right. The compact sticky bar retains its 44/56px height and safe-area offsets. Profile names truncate inside available width, the notification target is 44px, and the commissioner switch has a crimson track with an ivory knob. Masthead top padding is 16px on phones and 24px from 600px up, clear of the desktop nav row. Section links retain their scroll offsets.
+
+Home score ink and optional GPU effects follow the palette: hot scores/fire use crimson/yellow/ivory; cold scores/frost use neutral ivory. The renderer obtains light/dark state from color-scheme rather than a specific hot-ink hex. Other score-effect palettes retain their existing treatment.
+
+Reference and evidence: the revised Medicine mock `/workspace/generated_images/exec-13fa90e8-0af3-4f48-9157-7c6abd45f318.png` was generated and opened before implementation, based on the existing app capture. Wordmark source `/workspace/generated_images/exec-8ffae448-5cff-47f8-962a-d7f4bec364a0.png` was opened and optimized as `assets/dfl-daily-wordmark-medicine.webp` (1300 × 434, 86,770 bytes, transparency retained). Before: `/workspace/dfl-print-slate-review/theme-dark-390.png`. After: `/workspace/dfl-medicine-review/medicine-comparison.jpg`, `final-dark-390.png`, `final-light-390.png`, desktop equivalents, and focused/status/global palette captures. Before/after comparison uses the same width, opener, archive selection, and 13-slide deck state. The mock, asset, comparison, phone themes, and desktop rendering were opened and inspected.
+
+Verification: `pnpm check` passed typechecking, names, 1,095 tests across 123 files, and build. The Chromium matrix passed 48 broadcast layouts, 48 route/navigation states, 18 palette/width combinations, 7,360 visible text checks (minimum contrast 4.65:1), 18 masthead clearance checks, six sticky-bar checks, section links, expanded Home controls, density, reduced motion, and deck refresh, with zero page errors. A GPU readback measured 58,368 visible effect pixels and zero off-palette blue samples. A focused review passed 48 status states across light/dark, 320/390/832/1280px, short/long names, and commissioner/member/locked modes, including the final crimson/ivory switch. Team palette tests cover all 32 clubs and their real page/card/recessed/hover surfaces. Updated global samples confirm the shared warm Dark/Medicine foundation.
+
+Fixture records are representative, not live league data. Authenticated mutations and preference persistence are not exercised and their handlers are unchanged. CSS text is measured; raster print ink is visually inspected. No actionable P0/P1/P2 findings remain in the reviewed states.
+
 # Printed anniversary mark, fitted status bar, and softer dark palettes — v1.308.0
 
 Final result: passed

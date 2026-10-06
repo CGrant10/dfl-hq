@@ -1,9 +1,9 @@
 /* Shared navigation follows light/dark mode without taking team accent hues. */
 #tabbar {
-  --nav-bg: #354148; --nav-ink: #d0d5d3; --nav-active: #ffc1c7; --nav-line: #69767d;
+  --nav-bg: #4a4842; --nav-ink: #f4f1eb; --nav-active: #efc94c; --nav-line: #827d70;
   background: var(--nav-bg); border-color: var(--nav-line); box-shadow: none; backdrop-filter: none;
 }
-:root[data-mode="light"] #tabbar { --nav-bg: #f6f4ef; --nav-ink: #343b3e; --nav-active: #b01827; --nav-line: #b8bcb7; }
+:root[data-mode="light"] #tabbar { --nav-bg: #f6f4ef; --nav-ink: #343b3e; --nav-active: #a50e26; --nav-line: #b8bcb7; }
 #tabbar :is(a,.tabmore) {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; padding: 5px 2px 6px; min-height: 48px; color: var(--nav-ink) !important;
