@@ -51,12 +51,12 @@ with sync_playwright() as p:
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     metrics_visibility = page.evaluate('''() => {
-        const logo=document.querySelector('.home-newspaper-seal').getBoundingClientRect();
+        const logo=document.querySelector('.home-newspaper-anniversary').getBoundingClientRect();
         const last=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();
         const ticker=document.querySelector('#tabbar').getBoundingClientRect();
         return {logoLeft:logo.left,logoRight:logo.right,lastRowBottom:last.bottom,tickerTop:ticker.top};
     }''')
-    assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'League seal is clipped'
+    assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'Anniversary number is clipped'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
     metrics = {'visibility': metrics_visibility}
     for width in [390, 320, 832, 1280]:
@@ -220,7 +220,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(800)
         assert page.locator(f'[data-home-jump="{section}"]').get_attribute('aria-current') == 'location'
         assert page.evaluate('location.hash') == section_hash, 'Section navigation changed the app route'
-        assert 0 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation did not reach its content'
+        assert page.locator('.topbar').bounding_box()['height'] + 15 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation is obscured by the top bar'
     page.locator('[data-page-detail="home-league"] summary').click()
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'More from the league did not open'
     metrics['sectionNavigation'] = 'passed'
@@ -253,6 +253,7 @@ with sync_playwright() as p:
                 assert not contrast['failures'], f'Unreadable feed in {mode}/{width}/{feed}: {contrast["failures"]}'
             page.locator('[data-week-tab="brief"]').click()
     metrics['themes'] = []
+    metrics['stickyTopbar'] = []
     for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
         page.evaluate('mode=>window.reviewSetTheme(mode)', mode)
         page.locator('.gameday-home-detail').evaluate('e=>e.open=true')
@@ -278,6 +279,16 @@ with sync_playwright() as p:
                     targets:[...document.querySelectorAll('.wall-reaction-buttons button')].every(e=>{const b=e.getBoundingClientRect();return b.width>=44 && b.height>=44})};
             }""")
             assert letters['fits'] and letters['targets'] and letters['columns'] == (1 if width < 768 else 3), f'Letters are cramped in {mode}/{width}: {letters}'
+            if mode in ['light','dark']:
+                page.evaluate("window.scrollTo({top:800,behavior:'instant'})")
+                sticky = page.locator('.topbar').evaluate("e=>({top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height,background:getComputedStyle(e).backgroundColor,scroll:scrollY})")
+                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == (44 if width < 900 else 56) and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
+                metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
+                page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
+                badge = page.locator('.home-newspaper-anniversary')
+                assert badge.text_content() == '10' and badge.get_attribute('aria-label') == 'DFL 10th anniversary'
+                assert page.locator('.home-newspaper-name img').get_attribute('alt') == 'DFL Daily'
+                assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
             checks = []
             # Scroll every region into view: deferred Wall content and CSS
             # transitions are evaluated after the browser actually paints them.
