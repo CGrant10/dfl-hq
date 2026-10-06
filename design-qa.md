@@ -1,3 +1,37 @@
+# Letters and broadcast cleanup — v1.305.0
+
+Final result: passed
+
+The user-requested refinement keeps the selected DFL Daily newspaper direction. Home Letters now use one readable column below 768px and three editorial columns on wider screens, with the author above the letter, roomier serif text, predictable photo placement, thin separators, and compact reaction controls that retain 44px targets. The Wall remains below More from the league.
+
+Broadcast copy and controls now have 12px horizontal breathing room. Short narrative slides reserve a separate right-hand illustration column for a distressed black-and-white version of the supplied heritage crest. The image uses the opener's halftone/print style; dense copy, scoreboards, matchups, injury reports, and slides with authored images keep their existing content width. Headline fitting measures the actual copy column. Deck measurement still reserves the tallest slide at the current width, so rotating cards cannot move GameDay.
+
+## Findings and fixes
+
+- **P1: Three Letters columns squeezed authors, metadata, reactions, and bodies on phones.** Responsive columns and natural author/body/image ordering replace the old reordered narrow layout. Long bylines wrap, photos retain their existing framing, and reactions remain usable.
+- **P2: Broadcast copy and controls hugged the right edge.** A 12px internal gutter keeps them off the edge without reducing the full-width paper surface.
+- **P2: Sparse story slides left an unused right-hand area.** The supplied crest is rendered as a dedicated monochrome print illustration with no copy overlap. Dense data stays full width.
+- **P1: Team-gradient byline text inherited transparent text fill on paper.** Newspaper metadata uses readable surface tokens and resets gradient text fill; championship titles retain a readable warm ink color.
+- **P2: Rotating the crest could extend its bounds beyond a wide slide.** The wider illustration uses a 22px right inset and a slightly smaller width; browser checks verify its transformed bounds.
+
+## Evidence and fidelity
+
+Original reference: `/workspace/generated_images/exec-d6d9a89a-09fe-41f1-805b-2d9e0d456ff5.png` (832 × 1890). The opener and supplied crest were opened and inspected before generating `/workspace/generated_images/exec-8703498e-613b-43c2-b7e7-ba36c814228d.png`; the optimized transparent asset is `assets/dfl-daily-crest.webp` (768 × 768, approximately 185 KiB).
+
+Focused implementation evidence lives in `/workspace/dfl-letters-review`: `letters-comparison.jpg` compares before/after CSS with identical production post markup; `letters-light-390.png`, `letters-dark-390.png`, and their 1280px versions show responsive typography and metadata. `broadcast-light-390-1.png`, `broadcast-light-1280-1.png`, and dark equivalents show padded copy and the new illustration. Focused Letters captures hide fixed utility/nav overlays only while capturing; broadcast captures scroll clear of those overlays. Full Home screenshots preserve the layout and hide navigation only where the existing capture routine documents it.
+
+The copy is representative fixture content, not live league records. The fixture now evaluates the actual production Wall post, byline, and reaction markup with local reader identities, avoiding session and database imports. Both light and dark surrounding surfaces remain readable; the broadcast remains a cream print insert in either theme. Masthead, player illustration, archive/rivalry art, page order, compact nav, routes, and carousel interactions are preserved. User-requested responsive Letters and logo placement are intentional changes from the selected mock.
+
+## Verification and limits
+
+`pnpm check` passed: typecheck, unresolved-name scan, 1,095 tests across 123 files, and production build. The full Chromium review passed 48 broadcast layouts with stable deck height and crest bounds, 48 navigation route states, 18 palette/width combinations, 4,614 visible text checks (minimum contrast 5.25:1), expanded controls, section navigation, safe-area sizing, deck refresh, density, reduced motion, and zero page errors.
+
+The focused Chromium review passed eight Letters theme/width states (light/dark × 320/390/768/1280), 64 story-slide checks, maximum-length and empty posts, author ordering, image/byline containment, crest/copy separation, and 44px reaction targets. The production Home browser workflow now includes Letters layout and crest bounds checks alongside the existing theme, navigation, carousel stability, density, and reduced-motion checks.
+
+Authenticated posting, editing, reactions, and live database writes are outside this presentation review; their production handlers are unchanged. Raster artwork and textured paper are assessed visually; CSS text contrast uses computed composited colors. No actionable P0/P1/P2 findings remain in the focused reviewed states.
+
+---
+
 # Theme readability and navigation — v1.304.0
 
 Final result: passed

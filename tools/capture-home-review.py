@@ -161,10 +161,12 @@ with sync_playwright() as p:
             page.wait_for_timeout(650)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children].filter(e=>getComputedStyle(e).position!=='absolute');
+                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
+                const crest=slide.querySelector('.bx-editorial-crest'), copy=slide.querySelector('.bx-editorial-copy'), artwork=crest?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -173,6 +175,9 @@ with sync_playwright() as p:
             assert layout['stageHeight'] == stage_height and abs(layout['gamedayTop'] - gameday_top) < 1, f'Broadcast rotation moves the page: {layout}'
             assert layout['scroll'] <= width, f'Slide overflow: {layout}'
             assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
+            if layout['crest']:
+                crest = layout['crest']
+                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= layout['contentTop'] and crest['bottom'] <= layout['contentBottom'], f'Crest overlaps broadcast copy or controls: {layout}'
             page.evaluate("window.scrollTo({top:document.querySelector('.bx-stage').getBoundingClientRect().top+scrollY-115,behavior:'instant'})")
             contrast = page.evaluate('window.reviewTextContrast()')
             assert not contrast['failures'], f'Unreadable broadcast text: {contrast["failures"]}'
@@ -236,6 +241,15 @@ with sync_playwright() as p:
             assert nav['markerDisplay'] == 'block' and nav['markerColor'] == nav['color'] and nav['markerHeight'] == '3px' and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
             assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'Theme overflows at {mode}/{width}'
+            page.locator('.home-banter').scroll_into_view_if_needed()
+            page.wait_for_timeout(300)
+            letters = page.evaluate("""() => {
+                const posts=[...document.querySelectorAll('.wall-post')];
+                return {columns:getComputedStyle(document.querySelector('.wall-posts')).gridTemplateColumns.split(' ').length,
+                    fits:posts.every(post=>{const b=post.getBoundingClientRect(),head=post.querySelector('.wall-head').getBoundingClientRect(),body=post.querySelector('.wall-body').getBoundingClientRect();return head.bottom<=body.top+1 && [...post.querySelectorAll('.wall-head,.identity-byline,.wall-body,.wall-photo,.wall-reaction-buttons')].every(e=>{const c=e.getBoundingClientRect();return c.left>=b.left-1 && c.right<=b.right+1})}),
+                    targets:[...document.querySelectorAll('.wall-reaction-buttons button')].every(e=>{const b=e.getBoundingClientRect();return b.width>=44 && b.height>=44})};
+            }""")
+            assert letters['fits'] and letters['targets'] and letters['columns'] == (1 if width < 768 else 3), f'Letters are cramped in {mode}/{width}: {letters}'
             checks = []
             # Scroll every region into view: deferred Wall content and CSS
             # transitions are evaluated after the browser actually paints them.
@@ -250,7 +264,7 @@ with sync_playwright() as p:
             page.locator('#more').evaluate("e=>e.classList.add('hidden')")
             failures = [c for c in checks if c['ratio']+.01<c['required']]
             assert not failures, f'Unreadable text in {mode}/{width}: {failures}'
-            metrics['themes'].append({'mode':mode,'width':width,'textChecks':len(checks),'minimumContrast':min(c['ratio'] for c in checks),'nav':nav})
+            metrics['themes'].append({'mode':mode,'width':width,'textChecks':len(checks),'minimumContrast':min(c['ratio'] for c in checks),'nav':nav,'letters':letters})
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             if width in [390,1280]:
                 page.screenshot(path=str(OUT / f'theme-{mode.replace(":","-")}-{width}.png'))

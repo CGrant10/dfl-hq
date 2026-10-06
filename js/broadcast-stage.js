@@ -299,7 +299,7 @@ function fitHeadlines(slide) {
        exists because shrinking can change the width by a pixel or two. */
     for (let pass = 0; pass < 2; pass += 1) {
       /*
-        MEASURED AGAINST THE SLIDE, NOT THE PARENT, and this is the subtle part.
+        Measure against a definite width: the slide, or its editorial column.
 
         .bx-champ is a content-sized grid. Setting nowrap on its child makes the
         child's max-content width the container's width too, so the container
@@ -308,13 +308,14 @@ function fitHeadlines(slide) {
         so believed a 366px name fitted a 267px box: it was comparing the string
         against itself.
 
-        The slide is position:inset-0 inside a fixed-size stage, so its width is
-        definite and cannot be pushed around by its own contents. Its padding is
+        The slide is inset inside a fixed-size stage; an editorial copy column
+        has an explicit percentage of that width. Neither can be pushed around
+        by its contents. Its padding is
         the margin the design reserves, which is the whole point of measuring
         here - a name that overflows into the padding is the bug too, not just
         one that wraps.
       */
-      const box = el.closest(".bx-slide") || el.parentElement;
+      const box = el.closest(".bx-editorial-copy, .bx-slide") || el.parentElement;
       const pad = getComputedStyle(box);
       const avail = box.clientWidth
         - (parseFloat(pad.paddingLeft) || 0)
@@ -354,8 +355,16 @@ export function renderItem(item, { editorial = false } = {}) {
       ? `<img class="bx-editorial-art" src="${esc(item.image)}" alt="" decoding="async" style="${artworkStyle(item)}">`
       : ""
     : backdrop(item);
-  const inner = media + draw(item, { editorial });
-  const cls = `bx-slide is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
+  // Short editorial stories leave a real illustration column. Dense data and
+  // authored imagery keep their full width rather than competing with a crest.
+  const crest = editorial && !media && ["announcement", "champion", "event", "hero", "stat"].includes(item.treatment)
+    && String(item.headline || "").length <= 80
+    && [item.subtitle, item.body].filter(Boolean).join(" ").length <= 220;
+  const copy = draw(item, { editorial });
+  const inner = crest
+    ? `<img class="bx-editorial-crest" src="assets/dfl-daily-crest.webp" width="768" height="768" alt="" aria-hidden="true" decoding="async"><div class="bx-editorial-copy">${copy}</div>`
+    : media + copy;
+  const cls = `bx-slide${crest ? " bx-with-crest" : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
      works on a tap, a click, a keyboard and a screen reader without any
      gesture handling. The swipe handler cancels the click when the tap
