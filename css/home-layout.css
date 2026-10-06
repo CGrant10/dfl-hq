@@ -1,0 +1,91 @@
+/* Home's reading surface: one panel per purpose, quiet rows within it. */
+#home-wrap {
+  --home-surface: #faf8f3;
+  --home-panel-line: color-mix(in srgb,var(--paper-rule) 30%,transparent);
+  --home-section-gap: 20px;
+  --home-panel-padding: 14px;
+}
+:root:not([data-mode="light"]) #home-wrap { --home-surface: #242321; }
+#home-wrap :is(.gameday-card,.home-week-desk,.home-league-desk,.home-league-file,.home-banter) {
+  padding: var(--home-panel-padding); margin-top: var(--home-section-gap);
+  border: 1px solid var(--home-panel-line); border-radius: 12px;
+  background: var(--home-surface); box-shadow: none;
+}
+#home-wrap .gameday-card { margin-bottom: 0; }
+#home-wrap .gameday-card > header { padding: 0; }
+#home-wrap .gameday-card > header small { font-size: 18px; text-transform: none; }
+#home-wrap .gameday-matchup { padding-block: 4px 12px; border-bottom-color: var(--home-panel-line); }
+#home-wrap .home-thermal-leaders > header { min-height: 40px; border-bottom: 0; }
+#home-wrap .home-thermal-leaders .gameday-player { border-color: var(--home-panel-line); }
+#home-wrap .home-thermal-empty { padding: 14px 0; margin: 0; min-height: 0; font-size: 14px; }
+#home-wrap .gameday-home-detail > summary { margin-top: 8px; padding-block: 8px; border-top-color: var(--home-panel-line); }
+#home-wrap .home-week-desk .home-week-focus,
+#home-wrap .home-league-desk .home-rankings-card { padding: 0; border: 0; }
+#home-wrap .home-focus-links { align-items: center; gap: 4px 14px; margin-top: 12px; }
+#home-wrap .home-focus-links .btn {
+  padding: 10px 14px; border-radius: 8px;
+  background: var(--print-fill); color: #fff; font-weight: 600;
+}
+#home-wrap .home-focus-links .btn:hover { background: #a50e26; color: #fff; }
+#home-wrap .home-pickem-card {
+  margin-top: 14px; padding: 12px; gap: 12px; border: 0; border-radius: 8px;
+  background: color-mix(in srgb,var(--print-accent) 7%,var(--home-surface));
+}
+#home-wrap .home-pickem-card div { min-width: 0; }
+#home-wrap .home-pickem-card strong { font: 600 15px/1.4 var(--home-ui-font); }
+#home-wrap .home-pickem-card span { font-size: 12px; line-height: 1.5; }
+#home-wrap .home-pickem-card > b { flex-shrink: 0; font-size: 12px; }
+#home-wrap :is(.home-week-desk,.home-league-desk) > .page-disclosure {
+  margin: 14px 0 0; border: 0; border-top: 1px solid var(--home-panel-line);
+}
+#home-wrap .page-disclosure > summary { min-height: 44px; padding: 12px 0 2px; }
+#home-wrap .page-disclosure > summary strong { font: 600 15px/1.4 var(--home-ui-font); }
+#home-wrap .page-disclosure > summary small { color: var(--paper-muted); }
+#home-wrap .page-disclosure > summary::after { font-size: 18px; font-weight: 400; }
+#home-wrap .page-disclosure[open] > summary { padding-bottom: 12px; }
+#home-wrap .home-rankings-card > header { padding: 0; margin-bottom: 8px; border: 0; }
+#home-wrap .home-rank-head { border-bottom-color: var(--home-panel-line); }
+#view #home-wrap .home-rankings-card ol > li { min-height: 44px; padding-block: 8px; border-bottom-color: var(--home-panel-line); }
+#view #home-wrap .home-rankings-card ol > li.is-me { border-left: 0; border-radius: 6px; margin-top: 0; padding-inline: 0; }
+#home-wrap .home-rankings-card ol > li > span strong { overflow-wrap: break-word; }
+#home-wrap .home-rank-all { margin: 8px 0 0; padding: 6px 0; }
+#home-wrap .home-weekly-clubhouse { margin-top: 14px; padding: 14px 0 0; gap: 4px; border-top-color: var(--home-panel-line); }
+#home-wrap .home-weekly-clubhouse .linkbtn { padding: 6px 0; }
+#home-wrap .home-weekly-clubhouse p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+#home-wrap .home-league-file > header { padding: 0 0 8px; border: 0; }
+#home-wrap .home-league-story { padding-block: 12px; }
+#home-wrap .home-league-story + .home-league-story { border-top-color: var(--home-panel-line); }
+#home-wrap .home-story-art { border-radius: 6px; }
+#home-wrap .home-league-story h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+#home-wrap .home-league-story p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+#home-wrap .home-banter .section-title { margin: 0; padding: 0 0 8px; border: 0; }
+#home-wrap .home-banter .wall-post { padding: 12px 0; }
+#home-wrap .home-banter .wall-post + .wall-post { border-color: var(--home-panel-line); }
+#home-wrap .home-banter .wall-head { margin-bottom: 8px; }
+#home-wrap .home-banter .wall-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+#home-wrap .home-banter .wall-photo { max-height: 180px; width: 100%; object-fit: cover; border-radius: 8px; }
+#home-wrap .home-banter .wall-photo-frame { max-height: 180px; overflow: hidden; border-radius: 8px; }
+#home-wrap .home-banter .wall-reaction-buttons .btn { border-color: var(--home-panel-line); border-radius: 6px; }
+#home-wrap .home-banter .wall-post > .btn { font-size: 12px; }
+#home-wrap > .hero { margin-top: 20px; padding-block: 12px; border-top: 0; }
+#home-wrap .dfl-alive { margin-top: 0; }
+#home-wrap .version-line { margin-top: 8px; }
+#home-wrap .bx-injuries :is(.injury-player-copy small,.injury-player-state small,.injury-page) { color: var(--paper-body); }
+@media (max-width: 999px) {
+  #home-wrap [data-home-gameday-slot] .gameday-card { padding: var(--home-panel-padding); border-top: 1px solid var(--home-panel-line); }
+}
+@media (max-width: 360px) {
+  #home-wrap { --home-panel-padding: 12px; }
+  #home-wrap .gameday-faceoff-team { grid-template-columns: 24px minmax(0,1fr) auto; gap: 4px; }
+  #home-wrap .gameday-faceoff-mark { width: 24px; height: 24px; }
+}
+@media (min-width: 768px) {
+  #home-wrap .home-banter .wall-post + .wall-post { padding-left: 16px; }
+  #home-wrap .home-banter .wall-posts { gap: 16px; }
+}
+@media (min-width: 1000px) {
+  #home-wrap .home-frontpage > [data-home-gameday-slot] { border-left: 0; padding-left: 0; }
+  #home-wrap .home-frontpage .gameday-card { margin-top: 0; }
+  #home-wrap .home-league-stories { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+  #home-wrap .home-league-story + .home-league-story { border-top: 0; padding-left: 20px; }
+}

@@ -62,6 +62,6 @@ export function homePickemMarkup(board,esc){
   if(!board?.available)return"";
   const { chosen: count, total, isLocked, entered, correct, wrong, pending } = pickemState(board);
   const headline=isLocked ? entered ? `${correct} right · ${wrong} wrong` : "You missed this week’s cutoff" : !entered ? "Your card is waiting" : count===total ? "Card locked and loaded" : `${Math.max(0,total-count)} picks left`;
-  const detail=isLocked ? entered ? `${pending} games still pending` : "View results · check back for the next card" : !entered ? `Week ${Number(board.week)} locks ${fmt(board.locksAt)}` : `${count} of ${total} games picked`;
-  return `<a class="home-pickem-card" href="#/sportsbook" data-assemble><div><small>NFL PICK'EM · WEEK ${Number(board.week)}</small><strong>${esc(headline)}</strong><span>${esc(detail)}</span></div><b>${isLocked ? entered ? `${correct}–${wrong}` : "RESULTS" : !entered ? "PLAY" : `${count}/${total}`}</b></a>`;
+  const detail=isLocked ? entered ? `${pending} games still pending` : "View results · check back for the next card" : !entered ? `Locks ${fmt(board.locksAt)}` : `${count} of ${total} games picked · locks ${fmt(board.locksAt)}`;
+  return `<a class="home-pickem-card" href="#/sportsbook?product=pickem" data-assemble><div><small>NFL PICK'EM · WEEK ${Number(board.week)}</small><strong>${esc(headline)}</strong><span>${esc(detail)}</span></div><b>${isLocked ? entered ? `${correct}–${wrong}` : "RESULTS" : !entered ? "PLAY" : `${count}/${total}`}</b></a>`;
 }

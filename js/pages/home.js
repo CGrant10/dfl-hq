@@ -482,15 +482,14 @@ export async function render(view) {
     <div data-home-gameday-slot></div>
     </div>
     <section class="home-week-desk" aria-label="Your week">
-    <div data-home-deadline-slot></div>
     <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-pickem-slot></div>
-    ${disclosure("home-week","Plan your week","Briefing, predictions, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
+    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     </section>
     <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
     ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn" data-open-home-news>Read league news →</button></section>` : ""}
-    ${disclosure("home-league","League news & activity","Announcements, trades, fees and league updates",`
+    ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
@@ -560,8 +559,6 @@ export async function render(view) {
     if (mine !== generation || !view.isConnected) return;
     const slot = view.querySelector("[data-home-pickem-slot]");
     if (slot) slot.innerHTML = homePickemMarkup(board, esc);
-    const notice=view.querySelector('[data-home-deadline-slot]');
-    if(notice&&board?.available&&Date.parse(board.locksAt)>Date.now())notice.innerHTML=`<a class="page-priority-note" href="#/sportsbook?product=pickem">NFL Pick’em · Week ${Number(board.week)} locks ${esc(new Date(board.locksAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))} →</a>`;
   });
 
   /* Lower-page social and draft data no longer compete with the broadcast,
