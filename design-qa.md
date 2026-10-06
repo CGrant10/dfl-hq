@@ -1,3 +1,13 @@
+# Anniversary 10 and persistent top bar — v1.307.0
+
+The user requested a gold 10 in the masthead logo's existing position, keeping DFL Daily unchanged, and a top bar that stays visible on scroll. The numeral uses the newspaper's Anton typography with gold ink tuned for each theme. The original wordmark, masthead columns, date, broadcast illustrations, and footer crest are retained.
+
+Home's utility bar is fixed to the viewport with an opaque paper background, a thin separator, and its existing 44px phone / 56px desktop height. Body spacing and section jump offsets include the top safe area; desktop spacing also accounts for the navigation row.
+
+Reference: the selected newspaper mock `/workspace/generated_images/exec-d6d9a89a-09fe-41f1-805b-2d9e0d456ff5.png`, with this explicit anniversary refinement. Before evidence: `/workspace/dfl-splatter-review/theme-light-390.png`. After evidence: `/workspace/dfl-anniversary-review/masthead-comparison.jpg`, `theme-dark-390.png`, `theme-light-1280.png`, and `sticky-light-390.png` / `sticky-dark-390.png`. These screenshots were opened to verify the unchanged title, gold ink in both themes, readable controls after scrolling, and desktop navigation placement.
+
+Final result: passed. `pnpm check` passed typechecking, name checks, all 1,095 tests across 123 files, and the build. The full Chromium review passed 48 broadcast layouts, 48 navigation route states, 18 palette/width combinations, 7,342 visible text checks (minimum measured contrast 4.04:1, meeting the applicable large-text threshold), section navigation, expanded Home controls, density, reduced motion, and deck refresh, with zero page errors. Six light/dark scroll checks confirmed the bar at viewport y=0 after scrolling 800px, with opaque backgrounds and the expected 44/56px heights. Fixtures exercise production presentation/wiring with representative records; authenticated data mutations are unchanged and outside this UI review.
+
 # Splatter and a consistent Home edition — v1.306.0
 
 Final result: passed
