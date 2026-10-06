@@ -341,8 +341,9 @@ export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
   if (editorial && item.homeFeature) {
     return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
+      <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1200" height="780" alt="" fetchpriority="high">
       <span class="bx-home-week">${esc(item.kicker)}</span>
-      <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
+      <h2 class="bx-home-title">${item.headlineArt ? `<img class="bx-home-headline-art" src="${esc(item.headlineArt)}" width="1200" height="696" alt="${esc(item.headline + ' ' + item.subtitle)}">` : `${esc(item.headline)}<span>${esc(item.subtitle)}</span>`}</h2>
       <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
       <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
@@ -386,7 +387,7 @@ export function renderStage(deck, { editorial = false } = {}) {
      thing that makes a broadcast package look cheap. */
   return `
     <section class="bx-stage" data-bx-stage${editorial ? ' data-presentation="editorial"' : ''}>
-      ${editorial ? '<span class="bx-editorial-label">League broadcast</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
+      ${editorial ? '<span class="bx-editorial-label">League broadcast</span><span class="bx-page-count" aria-hidden="true">1 of '+items.length+'</span>' : '<span class="bx-ident" aria-hidden="true">DFL<i>HQ</i></span>'}
       <div class="bx-layer" data-bx-layer aria-live="off" aria-atomic="true">${renderItem(first, { editorial })}</div>
       ${items.length > 1 ? arrows(editorial) + controls(items) : ""}
     </section>`;
@@ -550,7 +551,7 @@ export function startStage(root, deck, { refresh } = {}) {
   let deckHeight = 0;
   function contentHeight(slide) {
     const style = getComputedStyle(slide);
-    const children = [...slide.children];
+    const children = [...slide.children].filter(el => !['absolute', 'fixed'].includes(getComputedStyle(el).position));
     return children.reduce((height, el) => {
       const childStyle = getComputedStyle(el);
       return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
@@ -694,6 +695,8 @@ export function startStage(root, deck, { refresh } = {}) {
        it over as a custom property keeps the animation declarative while
        the clock stays here, which is the same split as everywhere else. */
     const ms = items[i]?.dwell || DWELL_FALLBACK;
+    const pageCount = root.querySelector('.bx-page-count');
+    if (pageCount) pageCount.textContent = `${i + 1} of ${items.length}`;
     root.querySelectorAll("[data-bx-go]").forEach((d) => {
       const on = Number(d.dataset.bxGo) === i;
       d.classList.toggle("on", on);
@@ -939,6 +942,8 @@ export function startStage(root, deck, { refresh } = {}) {
   }
 
   function rebuildDots() {
+    const pageCount = root.querySelector('.bx-page-count');
+    if (pageCount) pageCount.textContent = `${i + 1} of ${items.length}`;
     const wrap = root.querySelector("[data-bx-controls]");
     if (items.length < 2) {
       wrap?.remove();
