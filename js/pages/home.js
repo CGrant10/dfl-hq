@@ -10,7 +10,7 @@ import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
 //
 //   THE STAGE     the DFL Broadcast billboard. Curated commissioner slides,
 //                 genuinely important live competition, and league lore.
-//                 Routine utility belongs to the BottomLine and its pages.
+//                 Routine utility belongs to the league desk and its pages.
 //   THE SNAPSHOT  three visible figures - your record, the leader and dues -
 //                 each a link to where it came from.
 //   THE CREED     DRAFT * GOLF * SIN * FOLD, still the navigation.
@@ -179,8 +179,8 @@ function playerScoreLine(player) {
 }
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
-export function homeWeeklyDigest(outlook, briefing = null, report = null, changes = []) {
-  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p>Building this week's matchup and Start/Sit model…</p></section>`;
+export function homeWeeklyDigest(outlook, briefing = null, report = null, changes = [], { loading = false } = {}) {
+  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn" href="#/analyzer">Open Analyzer →</a>'}</section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
   const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.story || game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
@@ -226,8 +226,8 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   </section>`;
 }
 
-export function homeWeeklyFocus(outlook,briefing=null){
- if(!outlook)return '<section class="card home-week-focus"><small>YOUR WEEK</small><h2>Your next move</h2><p role="status">Checking your lineup…</p></section>';
+export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
+ if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2>Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer">Review lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">Matchup talk →</a></div>'}</section>`;
  const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
  return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2>Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer">Review lineup</a><a class="clubhouse-text-link" href="#/clubhouse?tab=matchups">Matchup talk →</a></div></section>`;
 }
@@ -458,8 +458,9 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    The personal stage, next lineup action and one league highlight lead.
-    Rankings, forecasts and activity sit in a remembered disclosure.
+    The broadcast and live scores lead, then the reader's next lineup action.
+    Forecasts expand within Your week; standings and league news follow.
+    Archive stories come after current information, then the Wall closes.
     Draft, League Feed and the Wall still load as the reader approaches them.
     The Wall closes the newspaper; a compact identity and update footer follows.
 
@@ -467,32 +468,36 @@ export async function render(view) {
     here and then hidden with a positional `display:none` in
     splash-loading.css - the data was still fetched, the DOM still built,
     and the admin "Add" buttons still wired, all to be painted over. The
-    snapshot, the doors and the BottomLine already carry both facts, and
+    snapshot already carries both facts, and
     Calendar and Polls each have their own add control, so deleting the
     sections loses nothing and takes the CSS hack with it.
   */
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
-    <div data-home-deadline-slot></div>
     <div class="home-frontpage">
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     <div data-home-gameday-slot></div>
     </div>
-    <div data-home-lore-slot>${homeLeagueFile()}</div>
-    <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>News</button>':""}</section>
-    ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
-    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
-    <div data-home-focus-slot>${homeWeeklyFocus(null)}</div>
+    <section class="home-week-desk" aria-label="Your week">
+    <div data-home-deadline-slot></div>
+    <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
     <div data-home-pickem-slot></div>
-    <div data-home-report-slot>${homeWeeklyDigest(null)}</div>
+    ${disclosure("home-week","Plan your week","Briefing, predictions, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
+    </section>
+    <section class="home-league-desk" aria-label="Around the league">
+    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn" data-open-home-news>Read league news →</button></section>` : ""}
+    ${disclosure("home-league","League news & activity","Announcements, trades, fees and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
     ${strip}
     <div data-draft-slot></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
+    </section>
+    <div data-home-lore-slot>${homeLeagueFile()}</div>
     <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
@@ -732,7 +737,12 @@ export async function render(view) {
     startHomeStage(build(golfDayNow));
   }).catch((err) => {
     console.warn("clubhouse unavailable", err);
-    if(mine===generation&&view.isConnected){const focus=view.querySelector("[data-home-focus-slot]");if(focus)focus.innerHTML='<section class="card home-week-focus"><small>YOUR WEEK</small><h2>Review your lineup</h2><p role="status">Weekly data could not load. Open Analyzer to retry.</p><a class="btn" href="#/analyzer">Open Analyzer</a></section>'}
+    if (mine === generation && view.isConnected) {
+      const focus = view.querySelector("[data-home-focus-slot]");
+      const report = view.querySelector("[data-home-report-slot]");
+      if (focus) focus.innerHTML = homeWeeklyFocus(null);
+      if (report) report.innerHTML = homeWeeklyDigest(null);
+    }
     startHomeStage(fallbackDeck);
   });
   view.querySelector("#install-app")?.addEventListener("click", async () => {

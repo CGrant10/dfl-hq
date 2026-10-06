@@ -72,11 +72,9 @@ const briefing = {title:'Weekly briefing',headline:'Every point counts this week
 const rankingTeams = ['Grant','Jack-HAMMER','Mike','Klutch Sports Group'].map((team_name,i)=>({id:String(i+1),roster_id:i+1,sleeper_user_id:`fixture${i+1}`,team_name,identity:{display_name:team_name},rank:i+1,lineup:{weeklyPoints:100}}));
 const rankingGames = [[1,3,150,100,2,4,80,70],[1,2,120,130,3,4,100,90],[1,4,180,90,2,3,80,70],[1,3,145.38,101.08,2,4,139.2,121.12]].flatMap((r,i)=>[0,4].map(n=>({season:2026,week:i+1,roster1:r[n],score1:r[n+2],roster2:r[n+1],score2:r[n+3]})));
 const rankings = {weeks:14,focus:{id:'1'},allTeams:rankingTeams,powerRankings:buildLeaguePowerRankings({teams:rankingTeams,matchups:rankingGames,currentWeek:5})};
-const expandedHome = `<div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
-  <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
-  <div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>
-  <div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,{title:'A finish for the archive',season:2026,week:4,highlights:[{title:'Closest game',detail:'A fraction of a point separated the league.'}]},[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>
-  ${renderHomeReview.snapshot({leagues:[],members:[{display_name:'Grant'},{display_name:'Mike'}],standings:[],dues:[{season:2026,amount_due:100,amount_paid:80}],polls:[]})}
+const weeklyHome = `<div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,{title:'A finish for the archive',season:2026,week:4,highlights:[{title:'Closest game',detail:'A fraction of a point separated the league.'}]},[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>`;
+const pickemHome = `<div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>`;
+const expandedHome = `  ${renderHomeReview.snapshot({leagues:[],members:[{display_name:'Grant'},{display_name:'Mike'}],standings:[],dues:[{season:2026,amount_due:100,amount_paid:80}],polls:[]})}
   <div data-home-trade-slot>${renderHomeReview.homeTradeWire([{week:5,href:'#/trade?id=7',teams:[{teamName:'Dream Enders'},{teamName:'Klutch Sports Group'}],packages:[{teamName:'Dream Enders',players:[{name:'Justin Jefferson'}]},{teamName:'Klutch Sports Group',players:[{name:'Travis Kelce'}]}],outcome:{grade:'Close call',tone:'close',closeness:64,detail:'Both teams fill a need heading into the next kickoff.'}}])}</div>
   <div data-home-feed-slot>${renderHomeReview.homeLeagueFeed([{title:'Anniversary golf weekend',content:'The next chapter starts on the first tee. Watch the calendar for the league schedule.',created_at:'2026-10-05T12:00:00Z'}],[{display_name:'Grant',member_id:'u1',action:'insert',entity:'wall post',label:'Wall post',last_at:'2026-10-06T12:00:00Z'}])}</div>`;
 
@@ -98,6 +96,8 @@ const leagueFile = homeLeagueFile({ rivalry, fact: { headline: 'The smallest mar
 const deck = homeBroadcastDeck([
   { id: 'fixture:news', treatment: 'announcement', kicker: 'League news', headline: 'The league gets the last word.', subtitle: 'The weekly recap is here.', body: 'Weekly awards, matchup conversations and the stories everyone will be talking about.', href: '#/clubhouse', temporal: 'recent' },
   { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', temporal: 'historical' },
+  { id: 'fixture:chip', treatment: 'champion', variant: 'chip', kicker: '2025 · Chip Eater', headline: 'Dream Enders', subtitle: 'Last place. One very hot chip.', temporal: 'historical', href: '#/history' },
+  { id: 'fixture:champion-art', treatment: 'champion', kicker: '2024 · League champion', headline: 'Jack-HAMMER', subtitle: 'A season to remember.', image: 'assets/dfl-daily-champion.webp', background: 'image', imageFit: 'contain', imageX: 50, imageY: 100, imageZoom: 1, temporal: 'historical', href: '#/history' },
   tradeAlertSlide({ season: 2026, week: 5, fairness: 64, winner: 'Dream Enders', balanced: false, reason: { title: 'Dream Enders takes the better back.' }, lineupDeltas: [{ teamName: 'Dream Enders', weekly: 4.2 }], href: '#/trade?id=7' }),
   nextMoveSlide({ week: 5, need: { position: 'WR', urgent: true }, mine: { sleeper_user_id: 'u1' }, trade: { team: { name: 'Klutch Sports Group' }, player: { name: 'Justin Jefferson' } }, waiver: null }),
   matchupPreviewSlide({ pairing: { mine: { sleeper_user_id: 'me', name: 'Klutch Sports Group' }, theirs: { sleeper_user_id: 'them', name: 'Dream Enders' } }, weekly: { teams: [{ sleeper_user_id: 'me', projection: 124.8 }, { sleeper_user_id: 'them', projection: 118.2 }] }, meSleeperId: 'me', season: 2026, week: 5 }),
@@ -118,11 +118,21 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></section></div>
   </div>
+  <section class="home-week-desk" aria-label="Your week">
+    <div data-home-deadline-slot></div>
+    <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
+    ${pickemHome}
+    ${disclosure('home-week','Plan your week','Briefing, predictions, player outlook and Start / Sit',weeklyHome)}
+  </section>
+  <section class="home-league-desk" aria-label="Around the league">
+    <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
+    <section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>Anniversary golf weekend</h2><p>The next chapter starts on the first tee.</p></div><button type="button" class="linkbtn" data-open-home-news>Read league news →</button></section>
+    ${disclosure('home-league','League news & activity','Announcements, trades, fees and league updates',expandedHome)}
+  </section>
   <div data-home-lore-slot>${leagueFile}</div>
-  ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', expandedHome)}
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.314.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.315.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
@@ -151,6 +161,7 @@ html = html.replace('</body>', `<script type="module">
   document.querySelectorAll('[data-wall-reaction]').forEach(button => button.disabled = false);
   document.querySelectorAll('[data-reaction-status]').forEach(status => status.textContent = '');
   window.reviewTextContrast = reviewTextContrast;
+  window.reviewEmptyWeek = ${JSON.stringify({focus:renderHomeReview.homeWeeklyFocus(null),forecast:renderHomeReview.homeWeeklyDigest(null)})};
   ${homeReviewWiring}
   wireHomeRankings(document.querySelector('#home-wrap'));
   wireHomeWeekHub(document.querySelector('#home-wrap'));

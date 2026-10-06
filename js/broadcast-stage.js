@@ -350,8 +350,9 @@ export function renderItem(item, { editorial = false } = {}) {
     </a>`;
   }
   const draw = TREATMENTS[item.treatment] || announcement;
+  const illustratedChampion = editorial && item.treatment === "champion";
   const media = editorial
-    ? item.background === "image" && item.image
+    ? !illustratedChampion && item.background === "image" && item.image
       ? `<img class="bx-editorial-art" src="${esc(item.image)}" alt="" decoding="async" style="${artworkStyle(item)}">`
       : ""
     : backdrop(item);
@@ -361,10 +362,15 @@ export function renderItem(item, { editorial = false } = {}) {
     && String(item.headline || "").length <= 80
     && [item.subtitle, item.body].filter(Boolean).join(" ").length <= 220;
   const copy = draw(item, { editorial });
-  const inner = crest
-    ? `<span class="bx-editorial-illustration" aria-hidden="true"><img class="bx-editorial-splatter" src="assets/dfl-daily-splatter.webp" width="768" height="768" alt="" decoding="async"><img class="bx-editorial-crest" src="assets/dfl-daily-crest.webp" width="768" height="768" alt="" decoding="async"></span><div class="bx-editorial-copy">${copy}</div>`
+  const illustrated = illustratedChampion || crest;
+  const artKind = illustratedChampion ? item.variant === "chip" ? "chip" : "champion" : "logo";
+  const art = illustratedChampion
+    ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"
+    : "assets/dfl-daily-crest.webp";
+  const inner = illustrated
+    ? `<span class="bx-editorial-illustration" aria-hidden="true"><img class="bx-editorial-splatter" src="assets/dfl-daily-splatter.webp" width="768" height="768" alt="" decoding="async"><span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"${illustratedChampion && artKind !== "chip" && item.image ? ` style="${artworkStyle(item)}"` : ""}></span></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;
-  const cls = `bx-slide${crest ? " bx-with-crest" : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
+  const cls = `bx-slide${illustrated ? ` bx-with-crest bx-art-${artKind}` : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
      works on a tap, a click, a keyboard and a screen reader without any
      gesture handling. The swipe handler cancels the click when the tap
