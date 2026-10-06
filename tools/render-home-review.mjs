@@ -9,6 +9,11 @@ import { primarySeasonNavMarkup } from '../js/season-nav.js';
 import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
 import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
+import { esc } from '../js/ui.js';
+import { icon } from '../js/icons.js';
+import { accentOf, isChampionTitle, displayAchievement, ringCount } from '../js/identity-rules.js';
+import { teamCode, teamLogo, teamGradientVars } from '../js/nfl-teams.js';
+import { artworkStyle } from '../js/broadcast-artwork.js';
 import { playerRows } from '../js/game-day-player-rows.js';
 import { team as nflTeam } from '../js/nfl-teams.js';
 
@@ -24,6 +29,23 @@ const reviewThemes = Object.fromEntries(Object.entries(palettes).map(([name, pal
   values: { ...Object.fromEntries(themeAssignments.map(([, property, field]) => [property, palette[field]])),
     '--accent-fill': palette.fill || '#E5011B', '--accent-2-fill': palette.fill2 || '#003396' },
 }]));
+
+// Evaluate only the pure production markup functions: no auth, session, or DB
+// module is loaded. Review identities are readers, so management forms stay out.
+const identitySource = readFileSync(new URL('../js/profile-identity.js', import.meta.url), 'utf8');
+const ringsMarkup = identitySource.slice(identitySource.indexOf('function rings('), identitySource.indexOf('export function profileIdentityDisplay'));
+const bylineMarkup = identitySource.slice(identitySource.indexOf('export function identityByline('), identitySource.indexOf('// -------------------------------------------------------------- editor')).replace('export ', '');
+const identityByline = Function('esc', 'icon', 'isChampionTitle', 'displayAchievement', 'ringCount', 'teamCode', 'teamLogo', 'teamGradientVars', `${ringsMarkup}\n${bylineMarkup}\nreturn identityByline;`)(esc, icon, isChampionTitle, displayAchievement, ringCount, teamCode, teamLogo, teamGradientVars);
+const wallSource = readFileSync(new URL('../js/member-wall.js', import.meta.url), 'utf8');
+const reactionSource = readFileSync(new URL('../js/wall-reactions.js', import.meta.url), 'utf8');
+const reactionMarkup = reactionSource.slice(reactionSource.indexOf('export const WALL_REACTIONS'), reactionSource.indexOf('export async function wireReactions')).replaceAll('export ', '');
+const wallMarkup = wallSource.slice(wallSource.indexOf('function stamp('), wallSource.indexOf('async function mutatePost'));
+const reviewWallPost = Function('esc', 'icon', 'identityByline', 'accentOf', 'artworkStyle', 'currentMember', 'isAdmin', `${reactionMarkup}\n${wallMarkup}\nreturn postHtml;`)(esc, icon, identityByline, accentOf, artworkStyle, () => null, () => false);
+const wallPosts = [
+  {id: 1, member_id: 'u1', created_at: '2026-10-06T12:00:00Z', body: 'That .60 still hurts. Bring the receipts next time.', reply_count: 2, members: {display_name:'Commish',profile_title:'League commissioner',favorite_team:'KC'}},
+  {id: 2, member_id: 'u2', created_at: '2026-10-05T12:00:00Z', body: 'Same story every year. Mike’s lucky. A full weekend of football, a last-minute lineup change, and somehow it still comes down to a fraction of a point. Save the screenshots. We’re going to need those receipts when the rematch rolls around.', reply_count: 1, image:'assets/dfl-daily-rivalry.webp', members: {display_name:'League Vet',profile_title:'Keeper of the receipts',featured_achievement:'A decade of rivalry wins'}},
+  {id: 3, member_id: 'u3', created_at: '2026-10-04T12:00:00Z', body: 'Decimal mafia never sleeps.', reply_count: 0, members: {display_name:'The Analyst'}},
+].map(row => reviewWallPost(row, true)).join('');
 
 const players = [
   { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'final', roster: '1' },
@@ -63,9 +85,9 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></section></div>
   <div data-home-lore-slot>${leagueFile}</div>
   ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
-  <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts"><article class="wall-post"><div class="wall-head"><strong class="wall-name">Commish</strong></div><p class="wall-body">That .60 still hurts. Bring the receipts next time.</p><a class="btn ghost small" href="#/wall">Replies · 2</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">League Vet</strong></div><p class="wall-body">Same story every year. Mike’s lucky.</p><a class="btn ghost small" href="#/wall">Replies · 1</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">The Analyst</strong></div><p class="wall-body">Decimal mafia never sleeps.</p><a class="btn ghost small" href="#/wall">Replies · 0</a></article></div></div></section></div></section>
+  <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.304.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.305.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
@@ -90,6 +112,9 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
     for (const [property, value] of Object.entries(theme.values)) document.documentElement.style.setProperty(property, value);
   };
   window.reviewSetTheme('light');
+  // Model already loaded reactions without calling the live database.
+  document.querySelectorAll('[data-wall-reaction]').forEach(button => button.disabled = false);
+  document.querySelectorAll('[data-reaction-status]').forEach(status => status.textContent = '');
   window.reviewTextContrast = reviewTextContrast;
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));
   window.reviewDeck = deck;
