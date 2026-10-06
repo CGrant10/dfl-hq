@@ -1,11 +1,27 @@
-/* One fixed navigation presentation across Home, member palettes and golf. */
-#tabbar { background: #0b0e0f; border-color: #52595a; box-shadow: none; backdrop-filter: none; }
-#tabbar :is(a,.tabmore) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px 6px; min-height: 48px; color: #d0d5d5 !important; opacity: 1; font: 600 11px/1.2 var(--font-display); transform: none; }
+/* Shared navigation follows light/dark mode without taking team accent hues. */
+#tabbar {
+  --nav-bg: #0b0e0f; --nav-ink: #d0d5d5; --nav-active: #ff7b85; --nav-line: #52595a;
+  background: var(--nav-bg); border-color: var(--nav-line); box-shadow: none; backdrop-filter: none;
+}
+:root[data-mode="light"] #tabbar { --nav-bg: #f6f4ef; --nav-ink: #343b3e; --nav-active: #b01827; --nav-line: #b8bcb7; }
+#tabbar :is(a,.tabmore) {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 5px 2px 6px; min-height: 48px; color: var(--nav-ink) !important;
+  opacity: 1; font: 600 12px/1.2 var(--font-display); text-transform: none; transform: none;
+}
 #tabbar :is(a,.tabmore) > span { white-space: nowrap; font: inherit; letter-spacing: 0; }
 #tabbar :is(a,.tabmore) .ico { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; fill: none; stroke: currentColor; color: inherit !important; filter: none !important; opacity: 1; }
-#tabbar :is(a,.tabmore):is(.on,:hover) { color: #d82f35 !important; transform: none; }
-#tabbar :is(a,.tabmore).on::after { background: #d82f35; }
-#tabbar::before { top: auto; bottom: 8px; background: #d82f35; height: 2px; box-shadow: none; }
+#tabbar :is(a,.tabmore):is(.on,:hover) { color: var(--nav-active) !important; transform: none; }
+#tabbar :is(a,.tabmore).on { background: color-mix(in srgb,var(--nav-active) 10%,var(--nav-bg)); }
+/* The legacy splash hides per-tab markers; the neutral chrome also assigns
+   an important gradient. This is the sole, theme-readable active marker. */
+#tabbar :is(a,.tabmore).on::before { display: block !important; content: ''; position: absolute; top: 0; left: 24%; right: 24%; height: 3px; border-radius: 0 0 2px 2px; background: var(--nav-active) !important; }
+#tabbar :is(a,.tabmore).on::after, #tabbar::before { display: none; }
+#tabbar :is(a,.tabmore):focus-visible { outline: 2px solid var(--nav-active); outline-offset: -4px; }
 #more svg { color: var(--muted) !important; filter: none !important; }
-@media (min-width: 900px) { body { padding-top: calc(56px + var(--season-nav-height,67px) + env(safe-area-inset-top)); } }
+@media (min-width: 900px) {
+  body { padding-top: calc(56px + var(--season-nav-height,49px) + env(safe-area-inset-top)); }
+  #tabbar.is-in-season { display: flex; justify-content: center; }
+  #tabbar :is(a,.tabmore) { flex: 0 1 150px; flex-direction: row; gap: 8px; padding-inline: 12px; font-size: 14px; }
+}
 @media (max-width: 360px) { #tabbar :is(a,.tabmore) > span { font-size: 10px; } }

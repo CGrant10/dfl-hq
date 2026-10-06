@@ -1,3 +1,43 @@
+# Theme readability and navigation — v1.304.0
+
+Final result: passed
+
+Home now follows the app's light/dark selection. Light uses dark ink and deep red on cream paper; dark uses cream ink and a brighter red on charcoal. Body text, muted metadata, scores, section controls, expanded trackers, disclosures, letters, and the footer use the corresponding surface tokens. The illustrated broadcast remains a cream printed insert with its own dark ink, preserving the selected artwork's readability in both themes. Dark masthead lettering reverses to cream with a readable red tint; the actual crest stays unchanged.
+
+The navigation uses a neutral surface for each mode, readable labels and icons, a subtle active background, and one 3px active marker at the top. Its content row remains approximately 49px, including its border, with 44px minimum targets. Desktop now uses a centered horizontal icon/label arrangement. The important rules in splash-loading.css and profile-neutral.css are included in the browser fixture to verify they cannot hide or recolor the marker.
+
+## Findings and fixes
+
+- **P1: Home forced a light surface even when the app selected dark.** Hardcoded paper, ink, muted text, red, and native-control scheme are replaced by mode-aware tokens. Captured dark Home now has a charcoal surface and cream text.
+- **P1: Mixed inherited colors could make controls unreadable.** Home binds its existing theme aliases to newspaper tokens; the printed broadcast scopes its own paper/ink pair. Expanded score controls and representative More content are included in the review. Their text clears the contrast checks.
+- **P2: Navigation's dark red text had insufficient contrast, and a legacy important rule hid the per-tab marker.** Light uses deep red; dark uses a brighter red. The sole top marker explicitly overrides those legacy rules, and the duplicate shell/bottom indicators are disabled. Post-fix captures show readable active labels and one visible marker.
+
+## Captured evidence and fidelity surfaces
+
+Baseline evidence: `/workspace/dfl-theme-review-before/newspaper-390-full.png`. The original selected mock remains `/workspace/generated_images/exec-d6d9a89a-09fe-41f1-805b-2d9e0d456ff5.png` (832 × 1890).
+
+Latest light and dark evidence: `/workspace/dfl-theme-review/theme-light-390-full.png` and `theme-dark-390-full.png`, both 390 × 2356 pixels at 390 CSS px, deviceScaleFactor 1. Expanded trackers, score tools, and More are shown, with the paused opener and deterministic Week 5 final data. Fixed navigation is hidden only during full-page captures and captured separately. There is no device bezel, density conversion, or browser chrome.
+
+Both implementations were composed and inspected together in `/workspace/dfl-theme-review/home-theme-comparison.jpg`. Focused navigation evidence is `/workspace/dfl-theme-review/nav-theme-comparison.png`, containing light/dark phone and desktop bars. Additional 1280px captures and all palette states are in the same directory.
+
+- **Typography:** Newspaper families, display hierarchy, letter spacing, and story wrapping remain. Nav labels use 12px on ordinary phones, 10px at 320px, and 14px on desktop. Font weights and focus states were inspected.
+- **Spacing:** Masthead, broadcast, score, article, disclosure, and Wall ordering remain. Nav preserves a compact row and safe-area sizing; desktop links occupy a centered 900px-wide row. No viewport overflow was observed.
+- **Colors:** Each text role follows its surface. The browser checks composited CSS colors for visible text at each scrolled region, using 4.5:1 for ordinary text and 3:1 for large text. All 3,984 text observations across 18 palette/width combinations passed; the lowest measured ratio was 5.25:1. Raster texture and artwork were reviewed visually rather than treated as uniform measured backgrounds.
+- **Images:** Existing optimized raster assets are unchanged. Dark wordmark coloring uses a CSS filter; the crest, football illustration, archive, and rivalry art retain their source pixels. Real portrait requests may fall back in the local fixture.
+- **Copy:** Dynamic production copy and routes are unchanged. The fixture derives its palettes from the actual production theme definitions without starting session or database requests.
+
+## Verification and limits
+
+`pnpm check` passed: typecheck, unresolved-name scan, 1,095 tests across 123 files, and build. Chromium passed all 48 broadcast layouts, the navigation route-state checks, 18 theme/width combinations (light, dark, Medicine Wheel, Medicine Wheel Light, Fairway, and Chiefs; 320/390/1280px), expanded controls, More sheet contrast, touch targets, single active indicator, safe-area measurement, deck refresh, section navigation, density and reduced-motion behavior, and zero page errors.
+
+Text contrast is evaluated after scrolling deferred content into view; evaluating offscreen transition states would report stale colors. The fixture uses production renderers and palette literals with representative data. It does not write to league data or exercise authenticated posting, every conditional Home module, or all 32 team palettes. The CSS follows the shared light/dark token, so individual team hues do not recolor the newspaper or main nav.
+
+No actionable P0/P1/P2 findings remain in the reviewed states. The new checks run in the Home design review workflow for future changes.
+
+Final result: passed
+
+---
+
 # DFL Daily newspaper — v1.303.0
 
 Final result: passed
