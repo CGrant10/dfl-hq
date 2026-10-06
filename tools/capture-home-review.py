@@ -90,8 +90,8 @@ with sync_playwright() as p:
     assert metrics['pause'] == 'Play the broadcast'
     assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 832, 1280]), 'Horizontal overflow'
     assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,832,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
-    assert page.locator('[data-score-temperature="hot"]').count() == 2
-    assert page.locator('[data-score-temperature="cold"]').count() == 2
+    assert page.locator('.home-thermal-leaders [data-score-temperature="hot"]').count() == 2
+    assert page.locator('.home-thermal-leaders [data-score-temperature="cold"]').count() == 2
     page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
     page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
@@ -120,21 +120,24 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT / 'home-390-stories.png'))
     page.evaluate('window.scrollTo(0,0)')
     metrics['navigation'] = []
-    for width in [320,390,1280]:
-        page.set_viewport_size({'width':width,'height':844})
-        reference = None
-        for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
-            page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
-            page.wait_for_timeout(350)
-            nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
-            assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
-            assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
-            if reference is None: reference = nav
-            assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
-            assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
-            metrics['navigation'].append({'width':width,'route':route,**nav})
-            if width == 390 and route in ['home','clubhouse','golf']:
-                page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
+    for nav_mode in ['light','dark']:
+        page.evaluate('mode=>window.reviewSetTheme(mode)',nav_mode)
+        for width in [320,390,1280]:
+            page.set_viewport_size({'width':width,'height':844})
+            reference = None
+            for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
+                page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
+                page.wait_for_timeout(350)
+                nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
+                assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
+                assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
+                if reference is None: reference = nav
+                assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
+                assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
+                metrics['navigation'].append({'mode':nav_mode,'width':width,'route':route,**nav})
+                if width == 390 and route in ['home','clubhouse','golf']:
+                    page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
+    page.evaluate("window.reviewSetTheme('light')")
     page.evaluate("document.querySelector('#view').dataset.route='home';document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));document.querySelector('#tabbar [data-route=home]').classList.add('on')")
     page.set_viewport_size({'width':390,'height':844})
     page.evaluate("document.querySelector('#view').dataset.route='clubhouse'")
@@ -170,6 +173,9 @@ with sync_playwright() as p:
             assert layout['stageHeight'] == stage_height and abs(layout['gamedayTop'] - gameday_top) < 1, f'Broadcast rotation moves the page: {layout}'
             assert layout['scroll'] <= width, f'Slide overflow: {layout}'
             assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
+            page.evaluate("window.scrollTo({top:document.querySelector('.bx-stage').getBoundingClientRect().top+scrollY-115,behavior:'instant'})")
+            contrast = page.evaluate('window.reviewTextContrast()')
+            assert not contrast['failures'], f'Unreadable broadcast text: {contrast["failures"]}'
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
@@ -213,6 +219,46 @@ with sync_playwright() as p:
     page.locator('[data-page-detail="home-league"] summary').click()
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'More from the league did not open'
     metrics['sectionNavigation'] = 'passed'
+    metrics['themes'] = []
+    for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
+        page.evaluate('mode=>window.reviewSetTheme(mode)', mode)
+        page.locator('.gameday-home-detail').evaluate('e=>e.open=true')
+        page.locator('.home-score-tools').evaluate('e=>e.open=true')
+        for width in [320,390,1280]:
+            page.set_viewport_size({'width':width,'height':844})
+            page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
+            page.wait_for_timeout(350)
+            nav = page.evaluate("""() => {
+                const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(link,'::before');
+                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerColor:marker.backgroundColor,markerHeight:marker.height,extraMarker:getComputedStyle(bar,'::before').display};
+            }""")
+            assert 44 <= nav['height'] <= 50 and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
+            assert nav['markerDisplay'] == 'block' and nav['markerColor'] == nav['color'] and nav['markerHeight'] == '3px' and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
+            assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
+            assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'Theme overflows at {mode}/{width}'
+            checks = []
+            # Scroll every region into view: deferred Wall content and CSS
+            # transitions are evaluated after the browser actually paints them.
+            height = page.evaluate('document.scrollingElement.scrollHeight')
+            for top in range(0,height,600):
+                page.evaluate("top=>window.scrollTo({top,behavior:'instant'})",top)
+                page.wait_for_timeout(300)
+                checks.extend(page.evaluate('window.reviewTextContrast()')['checks'])
+            page.locator('#more').evaluate("e=>e.classList.remove('hidden')")
+            page.wait_for_timeout(300)
+            checks.extend(page.evaluate('window.reviewTextContrast()')['checks'])
+            page.locator('#more').evaluate("e=>e.classList.add('hidden')")
+            failures = [c for c in checks if c['ratio']+.01<c['required']]
+            assert not failures, f'Unreadable text in {mode}/{width}: {failures}'
+            metrics['themes'].append({'mode':mode,'width':width,'textChecks':len(checks),'minimumContrast':min(c['ratio'] for c in checks),'nav':nav})
+            page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
+            if width in [390,1280]:
+                page.screenshot(path=str(OUT / f'theme-{mode.replace(":","-")}-{width}.png'))
+                page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{mode.replace(":","-")}-{width}.png'))
+                page.evaluate("document.querySelector('#tabbar').style.visibility='hidden'")
+                page.screenshot(path=str(OUT / f'theme-{mode.replace(":","-")}-{width}-full.png'),full_page=True)
+                page.evaluate("document.querySelector('#tabbar').style.removeProperty('visibility')")
+    page.evaluate("window.reviewSetTheme('light')")
     metrics['consoleErrors'] = errors
     assert not errors, errors
     (OUT / 'browser-checks.json').write_text(json.dumps(metrics, indent=2))

@@ -8,6 +8,22 @@ import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
 import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
+import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
+import { playerRows } from '../js/game-day-player-rows.js';
+import { team as nflTeam } from '../js/nfl-teams.js';
+
+// Read the actual production palette literals and assignments without loading
+// the browser theme module's session/database dependencies into this fixture.
+const themeSource = readFileSync(new URL('../js/theme.js', import.meta.url), 'utf8');
+const paletteLiteral = themeSource.match(/const MODES = (\{[\s\S]*?\n\});/)[1];
+const palettes = Function('MEDICINE_GROUND', `return (${paletteLiteral})`)(MEDICINE_GROUND);
+palettes['team:KC'] = teamPalette(nflTeam('KC'));
+const themeAssignments = [...themeSource.matchAll(/s\.setProperty\("([^"]+)", m\.([a-zA-Z0-9]+)\);/g)];
+const reviewThemes = Object.fromEntries(Object.entries(palettes).map(([name, palette]) => [name, {
+  mode: ['light', 'fairway', 'medicine-light'].includes(name) ? 'light' : name.startsWith('team:') ? 'team' : name,
+  values: { ...Object.fromEntries(themeAssignments.map(([, property, field]) => [property, palette[field]])),
+    '--accent-fill': palette.fill || '#E5011B', '--accent-2-fill': palette.fill2 || '#003396' },
+}]));
 
 const players = [
   { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'final', roster: '1' },
@@ -40,29 +56,41 @@ const deck = homeBroadcastDeck([
 let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
-html = html.replace('<html lang="en">', '<html lang="en" data-mode="medicine">');
+html = html.replace('<html lang="en">', '<html lang="en" data-mode="light">');
 html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
   ${homeNewspaperMasthead({ now: new Date('2026-10-06T12:00:00Z') })}
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
-  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
+  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></section></div>
   <div data-home-lore-slot>${leagueFile}</div>
   ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts"><article class="wall-post"><div class="wall-head"><strong class="wall-name">Commish</strong></div><p class="wall-body">That .60 still hurts. Bring the receipts next time.</p><a class="btn ghost small" href="#/wall">Replies · 2</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">League Vet</strong></div><p class="wall-body">Same story every year. Mike’s lucky.</p><a class="btn ghost small" href="#/wall">Replies · 1</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">The Analyst</strong></div><p class="wall-body">Decimal mafia never sleeps.</p><a class="btn ghost small" href="#/wall">Replies · 0</a></article></div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.303.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.304.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
 html = html.replace('<div class="topbar-actions">', '<div class="topbar-actions"><button class="dfl-preview-toggle is-available" data-mode="commissioner" type="button"><span class="dfl-preview-track"><span class="dfl-preview-knob"></span></span><span>Commish</span></button><button class="notification-bell" type="button" aria-label="Notifications"><svg class="ico" aria-hidden="true"><use href="#i-bell-steel"></use></svg></button>');
 const previewCss = readFileSync(new URL('../js/member-preview.js', import.meta.url), 'utf8').match(/style.textContent = `([\s\S]*?)`;/)?.[1]?.replace(/\$\{[^}]+\}/g, '500') || '';
-html = html.replace('</head>', `<style>${previewCss}</style></head>`);
+html = html.replace('</head>', `<style>${previewCss}</style><link rel="stylesheet" href="css/profile-neutral.css"></head>`);
 html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b class="bl-label">NFL</b><span class="bl-text">CHI 17 – 27 WAS · Final</span></span><span class="bl-item"><span class="bl-text">DET 24 – 20 MIN · Final</span></span></div>
 <script type="module">
   import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
+  import { reviewTextContrast } from './tools/home-review-contrast.js';
   const deck = ${JSON.stringify(deck)};
+  const themes = ${JSON.stringify(reviewThemes)};
+  window.reviewSetTheme = name => {
+    const theme = themes[name];
+    document.documentElement.dataset.mode = theme.mode;
+    document.documentElement.dataset.palette = name;
+    document.body.dataset.mode = theme.mode;
+    document.documentElement.style.colorScheme = theme.mode === 'light' ? 'light' : 'dark';
+    for (const [property, value] of Object.entries(theme.values)) document.documentElement.style.setProperty(property, value);
+  };
+  window.reviewSetTheme('light');
+  window.reviewTextContrast = reviewTextContrast;
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));
   window.reviewDeck = deck;
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
