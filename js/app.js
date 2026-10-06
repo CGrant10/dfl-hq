@@ -14,7 +14,6 @@ import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
 import { mountMemberPreview } from "./member-preview.js";
 import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
-import { paintBottomline, startBottomline } from "./bottomline.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { setupNotifyNudge } from "./notify-nudge.js";
@@ -272,21 +271,19 @@ paintName();mountMemberPreview();
      other device, and is deliberately not awaited so it cannot delay boot. */
   void syncThemeFromMember();
   /*
-    THE TAB INDICATOR AND THE BOTTOMLINE, both hung off the router's own
-    notification rather than off hashchange - so they update after the page has
+    THE TAB INDICATOR, hung off the router's own
+    notification rather than off hashchange - so it updates after the page has
     swapped rather than racing it, and Back/Forward get the same treatment as a
     tap because the router handles all three identically.
   */
-  onRoute((name) => { moveTabIndicator(); paintBottomline(name, location.hash); syncExperience(document.getElementById("view"), name); });
+  onRoute((name) => { moveTabIndicator(); syncExperience(document.getElementById("view"), name); });
   /* Background conveniences used to compete with Home for the same Supabase
-     connection: the ticker alone repeats five dashboard reads. Let the first
-     route settle, then start presence, updates and notification nudges.
+     connection. Let the first route settle, then start presence, updates and notification nudges.
      Worker registration starts independently so a push page cannot deadlock. */
   window.addEventListener("dfl:app-ready", () => {
     const readyAt=performance.now();
     void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});
     startPresence();
-    void startBottomline(currentRoute);
     setupUpdates();
     void setupNotifyNudge();
 

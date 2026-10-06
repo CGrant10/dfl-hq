@@ -8,6 +8,7 @@ on:
       - 'js/home-clubhouse*'
       - 'js/pages/home.js'
       - 'css/nav-neutral.css'
+      - 'css/app-shell.css'
       - 'js/broadcast-stage.js'
       - 'js/score-vfx*'
       - 'css/home-broadcast-design.css'

@@ -1,3 +1,21 @@
+# Smaller Home and shared header — v1.314.0
+
+Final result: passed
+
+All app pages now use one fixed 44px utility header with the same neutral colors, spacing, identity, notification control, and role toggle. Route-specific Home overrides are removed. Desktop navigation begins immediately below that header; phone safe-area and navigation spacing remain measured. Header buttons retain 44px touch targets.
+
+The global BottomLine ticker is removed from app startup, route updates, service-worker precaching, and Admin refresh. The obsolete Admin Ticker panel is also removed. Existing stored ticker data is not modified.
+
+Home's wordmark is reduced from 240/340/380px to 160/220/240px across phone/tablet/desktop widths. Headline artwork is capped at 180px, hero artwork occupies the right half, story thumbnails are capped at 80px, and editorial illustrations at 120px. Section titles use 20/22px, story/subsection titles 16/18px, player scores 18px, and body text 14px. Section rules and spacing preserve reading boundaries. The broadcast still reserves the tallest actual slide so rotation cannot shift the page; measured fixture height is 308px at 390px and 297px at 1280px.
+
+Evidence: baseline captures under `/workspace/dfl-shell/before/`; final phone/desktop, carousel, theme, expanded-section, sticky-header, and navigation captures plus `browser-checks.json` under `/workspace/dfl-shell/after/`. Screenshots are local and retained by the CI review artifact, rather than committed to the repository.
+
+Validation: `pnpm check` passed typechecking, unresolved-name checks, 1,102 tests across 124 files, and build. After removing the obsolete Admin panel, typechecking, name checks, and all 54 module-export/cache tests passed again. The production-component browser review passed 60 carousel layouts, 48 navigation states, 48 identical-header comparisons across eight route states, 24 expanded-section states, and 18 theme/viewport states. All 7,473 measured text observations passed with minimum contrast 5.57:1. Player-score consistency, stable disclosure heights, score-mask reuse, deck refresh, section jumps, reduced motion, and phone density passed. No page errors occurred.
+
+This browser review uses production components with representative data and changes route attributes to verify shared chrome. It does not authenticate member views or verify every destination's live contents. Existing live Wall-reaction errors remain outside this change. Release and service-worker cache markers advance to v1.314.0.
+
+---
+
 # Compact Home scale — v1.313.0
 
 Home's hierarchy is retained at a smaller scale: section titles are 22px on phones and 24px on wider screens, story/subsection headings 18/20px, body copy 14px, supporting details 12/13px, and metadata 11px. Home player scores use a shared 20px size in the preview and detailed rows. Team totals remain larger than player scores, with reduced phone/tablet/desktop sizes.

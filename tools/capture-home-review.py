@@ -51,7 +51,7 @@ def check_score_consistency(page):
             })''')
             assert len(rows) == 4 and all(r['phase'] == 'Final' for r in rows), rows
             assert max(r['right'] for r in rows)-min(r['right'] for r in rows)<1, rows
-            assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='20px' and r['color']==r['trackerColor'] for r in rows), rows
+            assert all(abs(r['right']-r['phaseRight'])<1 and r['font']==r['trackerFont']=='18px' and r['color']==r['trackerColor'] for r in rows), rows
             results.append({'mode':mode,'width':width,'rows':rows})
     board = page.locator('.home-rankings-card > ol > li')
     assert board.first.locator('strong').text_content().strip() == 'Jack-HAMMER'
@@ -113,7 +113,7 @@ with sync_playwright() as p:
         metrics[str(width)]['masthead'] = masthead
         if width < 900:
             # The full-width banner adds natural scroll. Every player must
-            # remain reachable above the persistent ticker and navigation.
+            # remain reachable above the persistent navigation.
             page.evaluate("window.scrollTo({top:Math.max(0,scrollY+document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect().bottom-document.querySelector('#tabbar').getBoundingClientRect().top+20),behavior:'instant'})")
             visible = page.evaluate("""() => {const row=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();return {top:row.top,bottom:row.bottom,headerBottom:document.querySelector('.topbar').getBoundingClientRect().bottom,tickerTop:document.querySelector('#tabbar').getBoundingClientRect().top}}""")
             assert visible['top'] > visible['headerBottom'] and visible['bottom'] < visible['tickerTop'] - 1, f'Last player cannot be reached above persistent controls: {visible}'
@@ -164,11 +164,13 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT / 'home-390-stories.png'))
     page.evaluate('window.scrollTo(0,0)')
     metrics['navigation'] = []
+    metrics['sharedHeader'] = []
     for nav_mode in ['light','dark']:
         page.evaluate('mode=>window.reviewSetTheme(mode)',nav_mode)
         for width in [320,390,1280]:
             page.set_viewport_size({'width':width,'height':844})
             reference = None
+            header_reference = None
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
                 page.wait_for_timeout(350)
@@ -180,6 +182,16 @@ with sync_playwright() as p:
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
                 assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
                 metrics['navigation'].append({'mode':nav_mode,'width':width,'route':route,**nav})
+                header = page.evaluate("""() => {
+                    const bar=document.querySelector('.topbar'),inner=bar.querySelector('.topbar-inner');
+                    return {height:bar.getBoundingClientRect().height,background:getComputedStyle(bar).backgroundColor,color:getComputedStyle(bar).color,innerHeight:inner.getBoundingClientRect().height,controls:[...bar.querySelectorAll('.topbar-actions > button')].map(e=>{const b=e.getBoundingClientRect(),c=getComputedStyle(e);return {left:b.left,right:b.right,height:b.height,font:c.fontSize,color:c.color,order:c.order}})};
+                }""")
+                if header_reference is None: header_reference = header
+                assert header == header_reference and header['height'] == 44, f'Header changes on {route} at {width}: {header}'
+                assert all(c['height'] >= 44 and c['left'] >= 0 and c['right'] <= width for c in header['controls']), header
+                assert page.locator('.bottomline').count() == 0, f'Ticker returned on {route}'
+                metrics['sharedHeader'].append({'mode':nav_mode,'width':width,'route':route,**header})
+
                 if width == 390 and route in ['home','clubhouse','golf']:
                     page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
     page.evaluate("window.reviewSetTheme('light')")
@@ -188,9 +200,9 @@ with sync_playwright() as p:
     page.evaluate("document.querySelector('#view').dataset.route='clubhouse'")
     page.locator('#tabbar').evaluate("e=>e.style.paddingBottom='34px'")
     page.wait_for_timeout(300)
-    metrics['phoneInset'] = page.evaluate("""() => {const nav=document.querySelector('#tabbar').getBoundingClientRect(),ticker=document.querySelector('.bottomline').getBoundingClientRect();return {navHeight:nav.height,measured:parseFloat(document.documentElement.style.getPropertyValue('--season-nav-height')),navTop:nav.top,tickerBottom:ticker.bottom}}""")
+    metrics['phoneInset'] = page.evaluate("""() => {const nav=document.querySelector('#tabbar').getBoundingClientRect();return {navHeight:nav.height,measured:parseFloat(document.documentElement.style.getPropertyValue('--season-nav-height')),paddingBottom:parseFloat(getComputedStyle(document.body).paddingBottom),tickerAbsent:!document.querySelector('.bottomline')&&!document.body.classList.contains('has-bottomline')}}""")
     print('Phone inset:', metrics['phoneInset'], flush=True)
-    assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and abs(metrics['phoneInset']['navTop'] - metrics['phoneInset']['tickerBottom']) < 1, f"Ticker and navigation disagree on phone inset height: {metrics['phoneInset']}"
+    assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and metrics['phoneInset']['paddingBottom'] >= metrics['phoneInset']['navHeight'] + 19 and metrics['phoneInset']['tickerAbsent'], f"Page spacing does not clear phone navigation: {metrics['phoneInset']}"
     page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
     page.wait_for_timeout(300)
     page.evaluate("document.querySelector('#view').dataset.route='home'")
@@ -347,7 +359,7 @@ with sync_playwright() as p:
             if mode in ['light','dark']:
                 page.evaluate("window.scrollTo({top:800,behavior:'instant'})")
                 sticky = page.locator('.topbar').evaluate("e=>({top:e.getBoundingClientRect().top,height:e.getBoundingClientRect().height,background:getComputedStyle(e).backgroundColor,scroll:scrollY})")
-                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == (44 if width < 900 else 56) and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
+                assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == 44 and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-anniversary')

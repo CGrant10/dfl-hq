@@ -178,9 +178,10 @@ describe("the initial app shell", () => {
     const app = fs.readFileSync("js/app.js", "utf8");
     const ready = app.indexOf('window.addEventListener("dfl:app-ready"');
     expect(ready).toBeGreaterThan(0);
-    for (const work of ["startPresence()", "startBottomline(currentRoute)", "setupUpdates()"]) {
+    for (const work of ["startPresence()", "setupUpdates()"]) {
       expect(app.indexOf(work)).toBeGreaterThan(ready);
     }
+    expect(app).not.toContain("./bottomline.js");
     // Worker registration must begin before routing: a fresh Notifications
     // deep link reads device settings before it can announce app-ready.
     expect(app.indexOf("void registerAppWorker()")).toBeLessThan(ready);
