@@ -1,3 +1,19 @@
+# Printed anniversary mark, fitted status bar, and softer dark palettes — v1.308.0
+
+Final result: passed
+
+The gold 10 now uses a transparent distressed letterpress raster matched to the existing DFL Daily wordmark. The title stays unchanged. The asset uses rough printed edges, thick condensed strokes, and worn ink; mode-specific brightness keeps the gold readable against cream and slate.
+
+Home's persistent utility bar now carries a small DFL Daily wordmark on the left, with compact uppercase role text, a smaller switch, a quiet profile separator, consistent spacing, and flat theme-aware controls. It retains its 44px mobile / 56px desktop height, sticky behavior, safe-area spacing, keyboard focus, and existing handlers. Long profile names truncate within the available space.
+
+Dark Home uses textured slate instead of the nearly black paper. Shared navigation, standard Dark, Medicine Wheel, and generated team palettes also use softer slate surfaces. Body, muted, status, and accent ink were lifted for readability. Team accents are generated against the lightest surface and tested on page, card, recessed, and hover backgrounds; team fills and profile choices retain their existing behavior. Light palettes retain their surfaces.
+
+Reference and evidence: `assets/dfl-daily-wordmark.webp` and the selected newspaper mock `/workspace/generated_images/exec-d6d9a89a-09fe-41f1-805b-2d9e0d456ff5.png`. Generated source: `/workspace/generated_images/exec-0dc50f79-4fb5-4f4d-82d0-e69c2c583c5b.png`; optimized asset: `assets/dfl-daily-ten.webp` (732 × 768, 75,972 bytes, transparency retained). Before: `/workspace/dfl-anniversary-review/theme-dark-390.png`. After: `/workspace/dfl-print-slate-review/dark-comparison.jpg`, `theme-light-1280.png`, phone/desktop theme and sticky captures, and `global-dark-390.png` / `global-medicine-390.png` / `global-team-KC-390.png`. The reference, asset, before/after comparison, and rendered Home/global palette captures were opened and inspected.
+
+Verification: `pnpm check` passed typechecking, identifier checks, 1,095 tests across 123 files, and build. Chromium passed 48 broadcast layouts, 48 route/navigation states, 18 palette/width combinations, 7,324 visible text checks (minimum measured contrast 5.25:1), six sticky-bar scroll checks, section links, expanded Home controls, density, reduced motion, and deck refresh, with zero page errors. A focused review passed 48 status-bar states across light/dark, 320/390/832/1280px, commissioner/member/locked states, and short/long names. Global Dark, Medicine Wheel, and KC samples confirmed the new actual page/card colors. All 32 team palettes clear 6:1 for both accents across all four surfaces, retain visible fills, and select readable ink for filled controls.
+
+Fixture data is representative, not live league data. Global samples use standard app component classes and production theme assignments; authenticated routes and mutations are not exercised. No authentication/database behavior changed. Raster ink is visually inspected; CSS text is measured. No actionable P0/P1/P2 findings remain in the reviewed states.
+
 # Anniversary 10 and persistent top bar — v1.307.0
 
 The user requested a gold 10 in the masthead logo's existing position, keeping DFL Daily unchanged, and a top bar that stays visible on scroll. The numeral uses the newspaper's Anton typography with gold ink tuned for each theme. The original wordmark, masthead columns, date, broadcast illustrations, and footer crest are retained.

@@ -206,35 +206,35 @@ function sameColour(a, b) {
   this file copied these values and left two places to edit the same thing.
 */
 export const MEDICINE_GROUND = Object.freeze({
-  bg: "#0b0b0c", bg2: "#141416", bg3: "#1d1d20",
-  line: "#2f2f34", lineSoft: "#212125",
-  text: "#f4f2ee", muted: "#a8a096", chalk: "#ffffff",
-  bodyText: "#ddd8d0",
-  hover: "#1d1d20", hoverSoft: "rgba(255,255,255,.03)",
-  controlLine: "#736b60", controlBg: "rgba(24,24,27,.74)",
+  bg: "#303a40", bg2: "#354148", bg3: "#3b4850",
+  line: "#718089", lineSoft: "#53616a",
+  text: "#f4f1eb", muted: "#d0d5d3", chalk: "#ffffff",
+  bodyText: "#e9e5df",
+  hover: "#3b4850", hoverSoft: "rgba(255,255,255,.03)",
+  controlLine: "#9aa6ac", controlBg: "rgba(53,65,72,.9)",
   /*
     STATUSES ARE NOT TEAM COLOURS. "Paid" and "unpaid" have to be tellable
     apart at a glance on the fees screen whichever club somebody supports,
     and a Dolphins fan whose ok-green and accent-teal were the same colour
     could not read that screen at all. These stay put.
   */
-  ok: "#8fd6a4", okBg: "rgba(96,176,123,.13)", okLine: "#3f7a52",
+  ok: "#b0ebbf", okBg: "rgba(96,176,123,.13)", okLine: "#3f7a52",
   /* An amber, NOT the wheel's yellow. An earlier cut used #EFC94C for both
      this and milestone, which made an OPEN badge and a CHAMPION badge the
      same colour - and gold is the occasion colour, so warn is the one that
      had to move. */
-  warnInk: "#E8A33D", warnBg: "rgba(232,163,61,.12)", warnLine: "#7a5a20",
+  warnInk: "#f8d6a0", warnBg: "rgba(232,163,61,.12)", warnLine: "#7a5a20",
   /* Lighter and pinker than any accent for the same reason: UNPAID and a
      plain accent link were coming out identical. */
-  dangerInk: "#F5A39B", dangerBg: "rgba(200,16,46,.14)", dangerLine: "#7d2029",
-  scUnder: "#7fd39a", scOver: "#f0897e", scBad: "#d93b3b",
-  /* The bar keeps the crest's black banner, as it does in every palette. */
-  topbarA: "#101012", topbarB: "#0b0b0c",
-  heroA: "#17171a", heroWash: "rgba(255,255,255,.05)",
-  toastBg: "#232327", onToast: "#f4f2ee",
+  dangerInk: "#ffbfb6", dangerBg: "rgba(200,16,46,.14)", dangerLine: "#7d2029",
+  scUnder: "#b0ebbf", scOver: "#ffbfb6", scBad: "#ffbfb6",
+  /* The shell shares the softer slate ground instead of a black band. */
+  topbarA: "#354148", topbarB: "#303a40",
+  heroA: "#354148", heroWash: "rgba(255,255,255,.05)",
+  toastBg: "#3b4850", onToast: "#f4f1eb",
   /* Gold is the occasion colour - a champion badge - and stays gold. */
   milestone: "#EFC94C",
-  shadow: "0 1px 3px rgba(0,0,0,.42)",
+  shadow: "0 1px 3px rgba(0,0,0,.18)",
 });
 
 /* Local alias so the rest of this file reads as it did. */
@@ -256,8 +256,9 @@ export function teamPalette(team) {
     of theme.js uses, and the reason ~60 `color: var(--accent)` rules stay
     correct without being touched.
   */
-  const accent = liftForText(primary, GROUND.bg2, 6);
-  let accent2 = liftForText(secondary, GROUND.bg2, 6);
+  // Lift against the lightest surface, so hover and recessed rows read too.
+  const accent = liftForText(primary, GROUND.bg3, 6);
+  let accent2 = liftForText(secondary, GROUND.bg3, 6);
 
   /*
     A CLUB WHOSE TWO COLOURS LIFT TO THE SAME PLACE would give the app one

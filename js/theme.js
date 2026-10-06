@@ -95,31 +95,31 @@ export const CREST = { red: "#E5011B", blue: "#003396", black: "#0A0A0A", white:
   Per-mode values. Only two things actually differ: the surfaces, and which
   end of each hue is readable against them.
 
-  dark  : text reds/blues lightened  - #E67582 is 6.5:1 on #0d1117
+  dark  : text reds/blues lightened for the softer slate surfaces
   light : text reds/blues darkened   - #B8001B is 6.4:1 on #ffffff
           (the crest red itself is only 4.4:1 there, and it is the colour
            Grant called hard to read, so light mode does not use it for text)
 */
 const MODES = {
   dark: {
-    bg: "#0d1117", bg2: "#131a24", bg3: "#1b2432",
-    line: "#222b3a", lineSoft: "#1a222e",
-    text: "#e8edf5", muted: "#8b98ab", chalk: "#f5f7fa",
-    bodyText: "#cdd6e2",
-    hover: "#1b2432", hoverSoft: "rgba(255,255,255,.025)",
-    controlLine: "#616F80", controlBg: "rgba(20,27,38,.72)",
-    accent: "#E67582", accent2: "#7098E6",
+    // Softer slate surfaces keep dark mode readable without a black shell.
+    bg: "#303a40", bg2: "#354148", bg3: "#3b4850",
+    line: "#718089", lineSoft: "#53616a",
+    text: "#f4f1eb", muted: "#d0d5d3", chalk: "#ffffff",
+    bodyText: "#e9e5df",
+    hover: "#3b4850", hoverSoft: "rgba(255,255,255,.03)",
+    controlLine: "#9aa6ac", controlBg: "rgba(53,65,72,.9)",
+    accent: "#ffc1c7", accent2: "#bdd5ff",
     onAccent: "#FFFFFF",
-    // Marks and statuses. Light on dark.
-    ok: "#86e6a8", okBg: "rgba(47,191,95,.12)", okLine: "#1d7a3d",
-    warnInk: "#f3c887", warnBg: "rgba(240,167,66,.12)", warnLine: "#7a5a1d",
-    dangerInk: "#f0a79b", dangerBg: "rgba(224,87,74,.12)", dangerLine: "#7a2f27",
-    scUnder: "#35d06f", scOver: "#ff766d", scBad: "#e33d35",
-    topbarA: "#101823", topbarB: "#0d1117",
-    heroA: "#141c27", heroWash: "rgba(255,255,255,.05)",
-    toastBg: "#1f2937", onToast: "#e8edf5",
-    milestone: "#d6b254",
-    shadow: "0 1px 3px rgba(0,0,0,.28)",
+    ok: "#b0ebbf", okBg: "rgba(47,191,95,.12)", okLine: "#5b9a70",
+    warnInk: "#f8d6a0", warnBg: "rgba(240,167,66,.12)", warnLine: "#a48249",
+    dangerInk: "#ffbfb6", dangerBg: "rgba(224,87,74,.12)", dangerLine: "#ac726a",
+    scUnder: "#b0ebbf", scOver: "#ffbfb6", scBad: "#ffbfb6",
+    topbarA: "#354148", topbarB: "#303a40",
+    heroA: "#354148", heroWash: "rgba(255,255,255,.05)",
+    toastBg: "#3b4850", onToast: "#f4f1eb",
+    milestone: "#efcf78",
+    shadow: "0 1px 3px rgba(0,0,0,.18)",
   },
   light: {
     /* Not white-on-white: the page is a shade cooler than the cards so a card
@@ -183,7 +183,7 @@ const MODES = {
     MEDICINE WHEEL.
 
     Built on the four directional colours - black, red, yellow, white - with
-    black as the ground, which is also what makes it hold together as an app:
+    slate as the ground, keeping the wheel accents on a softer dark app:
     this is a dark palette, so every surface, divider and status below is the
     same shape as the dark one and only the hues move.
 
@@ -209,7 +209,7 @@ const MODES = {
   medicine: {
     ...MEDICINE_GROUND,
     /* text pair: the red lifted to clear 6:1, the yellow already there */
-    accent: "#F08279", accent2: "#EFC94C",
+    accent: "#ffc0b8", accent2: "#f5d66c",
     /* fill pair: the wheel's own red and yellow */
     fill: "#C8102E", fill2: "#EFC94C",
     onAccent: "#FFFFFF",

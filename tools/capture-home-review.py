@@ -286,7 +286,9 @@ with sync_playwright() as p:
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-anniversary')
-                assert badge.text_content() == '10' and badge.get_attribute('aria-label') == 'DFL 10th anniversary'
+                assert badge.get_attribute('alt') == 'DFL 10th anniversary' and badge.evaluate('e=>e.complete && e.naturalWidth>0')
+                assert page.locator('.topbar .brand-edition').is_visible()
+                assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button,.topbar .brand-edition')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
                 assert page.locator('.home-newspaper-name img').get_attribute('alt') == 'DFL Daily'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
             checks = []
