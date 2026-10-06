@@ -19,7 +19,7 @@ export function mountScoreVfx(root){
    if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('Score VFX program failed');
    gl.useProgram(program);buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
    const position=gl.getAttribLocation(program,'a_position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
-   for(const name of ['mask','size','glyph','time','cold','light'])locations[name]=gl.getUniformLocation(program,`u_${name}`);
+   for(const name of ['mask','size','glyph','time','cold','light','medicine'])locations[name]=gl.getUniformLocation(program,`u_${name}`);
    gl.uniform1i(locations.mask,0);gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);
    canvas.dataset.renderer='webgl';return true;
   }catch{canvas.dataset.renderer='unavailable';return false}
@@ -31,9 +31,9 @@ export function mountScoreVfx(root){
    gl.uniform1f(locations.time,(time%120000)/1000);
    for(const target of targets){
     if(!visible.has(target.element))continue;
-    const {x,y,width,height,scale,glyph,texture,cold,light}=target;
+    const {x,y,width,height,scale,glyph,texture,cold,light,medicine}=target;
     gl.viewport(x,y,width,height);gl.scissor(x,y,width,height);gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.drawArrays(gl.TRIANGLES,0,6);
+    gl.uniform2f(locations.size,width/scale,height/scale);gl.uniform4f(locations.glyph,...glyph);gl.uniform1f(locations.cold,cold?1:0);gl.uniform1f(locations.light,light?1:0);gl.uniform1f(locations.medicine,medicine?1:0);gl.drawArrays(gl.TRIANGLES,0,6);
    }
    gl.disable(gl.SCISSOR_TEST);if(canvas.dataset.running!=='true')canvas.dataset.running='true';
   }
@@ -54,7 +54,9 @@ export function mountScoreVfx(root){
   canvas.width=Math.ceil(root.clientWidth*scale);canvas.height=Math.ceil(root.clientHeight*scale);
   // Keep the GPU surface inside the padding box, including scrollable dialogs.
   canvas.style.width=`${root.clientWidth}px`;canvas.style.height=`${root.clientHeight}px`;canvas.style.left=`${root.scrollLeft}px`;canvas.style.top=`${root.scrollTop}px`;
-  const light=getComputedStyle(root).getPropertyValue('--gd-hot-ink').trim()==='#9c3900';
+  const style=getComputedStyle(root);
+  const light=style.colorScheme==='light';
+  const medicine=style.getPropertyValue('--gd-effects-medicine').trim()==='1';
   const pinnedBottom=root.querySelector('.gd-watch-dashboard')?.getBoundingClientRect().bottom;
   for(const element of emitters){
    // A nested player dialog has its own GPU surface.
@@ -83,7 +85,7 @@ export function mountScoreVfx(root){
     for(let y=0;y<mask.height;y++){const index=(y*mask.width+x)*4;pixels[index]=Math.round(intensity*255);pixels[index+1]=Math.round(top/mask.height*255);pixels[index+2]=Math.round(bottom/mask.height*255)}
    }
    const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask.width,mask.height,0,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
-   targets.push({element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light});
+   targets.push({element,texture,x:Math.round((rect.left-box.left-root.clientLeft-padX)*scale),y:canvas.height-Math.round((rect.top-box.top-root.clientTop+rect.height+padBottom)*scale),width:mask.width,height:mask.height,scale,glyph:[padX,padTop,rect.width,rect.height],cold:element.dataset.scoreTemperature==='cold',light,medicine});
    intersection.observe(element);
   }
   dirty=false;resume();

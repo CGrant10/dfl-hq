@@ -64,7 +64,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(300)
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
-        masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,wordmark:e.querySelector('.home-newspaper-name img').complete})")
+        masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,wordmark:[...e.querySelectorAll('.home-newspaper-name img')].every(i=>i.complete&&i.naturalWidth>0)})")
         assert masthead['wordmark'] and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
         metrics[str(width)]['masthead'] = masthead
         if width < 900:
@@ -198,6 +198,8 @@ with sync_playwright() as p:
     density_page.wait_for_timeout(650)
     metrics['phoneDensity'] = density_page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>({pixels:e.width,css:e.clientWidth,ratio:e.width/e.clientWidth})')
     assert metrics['phoneDensity']['ratio'] >= 2.9, 'Score effects are below phone screen resolution'
+    metrics['medicineEffects'] = density_page.evaluate("""() => new Promise(resolve=>requestAnimationFrame(()=>{const canvas=document.querySelector('canvas.gd-vfx-canvas'),gl=canvas.getContext('webgl'),pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let visible=0,blue=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]>20){visible++;if(pixels[i+2]>pixels[i]+4)blue++}}resolve({visible,blue})}))""")
+    assert metrics['medicineEffects']['visible'] > 30 and metrics['medicineEffects']['blue'] == 0, f'Score effects retain off-palette blue: {metrics["medicineEffects"]}'
     density_page.screenshot(path=str(OUT / 'home-390@3x.png'))
     density_context.close()
     page.emulate_media(reduced_motion='reduce')
@@ -262,6 +264,8 @@ with sync_playwright() as p:
             page.set_viewport_size({'width':width,'height':844})
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             page.wait_for_timeout(350)
+            spacing = page.evaluate("""() => {const top=document.querySelector('.topbar').getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();const visible=[...document.querySelectorAll('.home-newspaper-name img')].find(e=>getComputedStyle(e).display!=='none').getBoundingClientRect();return {gap:visible.top-(innerWidth>=900?nav.bottom:top.bottom),expected:innerWidth>=600?24:16}}""")
+            assert spacing['gap'] >= spacing['expected'] - 1, f'Masthead touches fixed controls: {spacing}'
             nav = page.evaluate("""() => {
                 const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(link,'::before');
                 return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerColor:marker.backgroundColor,markerHeight:marker.height,extraMarker:getComputedStyle(bar,'::before').display};
@@ -287,9 +291,10 @@ with sync_playwright() as p:
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-anniversary')
                 assert badge.get_attribute('alt') == 'DFL 10th anniversary' and badge.evaluate('e=>e.complete && e.naturalWidth>0')
-                assert page.locator('.topbar .brand-edition').is_visible()
-                assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button,.topbar .brand-edition')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
-                assert page.locator('.home-newspaper-name img').get_attribute('alt') == 'DFL Daily'
+                assert page.locator('.topbar .brand-edition').count() == 0
+                assert not page.locator('.topbar .brand-lockup').is_visible()
+                assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
+                assert page.locator('.home-newspaper-name img:visible').get_attribute('alt') == 'DFL Daily'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
             checks = []
             # Scroll every region into view: deferred Wall content and CSS
