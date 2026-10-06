@@ -480,7 +480,6 @@ export async function render(view) {
     </section>
     <div data-home-gameday-slot></div>
     <div data-home-lore-slot>${homeLeagueFile()}</div>
-    <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE HIGHLIGHT</small><h2>${esc(announcements.data?.[0]?.title || "Own the week. Bring receipts.")}</h2><p>${esc(announcements.data?.[0]?.title ? String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news, awards and matchup conversations.").slice(0,160) : "Awards, matchup conversations and the weekly recap.")}</p></div><a class="btn ghost" href="#/clubhouse">Clubhouse</a>${announcements.data?.length?'<button type="button" class="linkbtn" data-open-home-news>News</button>':""}</section>
     ${disclosure("home-league","More from the league","Weekly forecasts, side games and activity",`
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
@@ -492,6 +491,7 @@ export async function render(view) {
     ${strip}
     <div data-draft-slot></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
+    <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
