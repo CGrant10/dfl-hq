@@ -167,6 +167,7 @@
   #home-wrap .home-banter .wall-posts { gap: 16px; }
 }
 @media (min-width: 1000px) {
+  #home-wrap .gameday-matchup > .gameday-faceoff-team { grid-template-columns: 44px minmax(0,1fr) auto; gap: 10px; }
   #home-wrap .home-frontpage { padding-bottom: 0; }
   #home-wrap .home-frontpage > [data-home-gameday-slot] { border-left: 0; padding-left: 0; }
   #home-wrap .home-frontpage .gameday-card { margin-top: 0; }
