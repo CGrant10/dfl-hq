@@ -1,0 +1,63 @@
+/* Share-card hierarchy, with live text and the selected app palette. The
+   illustrations retain their ink colors; their former paper plate is gone. */
+#home-wrap .bx-stage {
+  --home-display: 'Anton',sans-serif;
+  --font-display: var(--home-ui-font);
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 65% 100% at 100% 0%,color-mix(in srgb,var(--accent-2-fill) 14%,transparent),transparent 70%),
+    linear-gradient(150deg,var(--bg-2),var(--bg));
+}
+#home-wrap .bx-stage::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 3px;
+  background: var(--accent-sweep); z-index: 5; pointer-events: none;
+}
+#home-wrap .bx-slide { background: transparent; color: var(--text); }
+#home-wrap .bx-home-feature { inset: 16px 0 44px; align-content: center; gap: 6px; }
+#home-wrap .bx-home-art {
+  inset: -16px 0 -44px auto; width: 100%; height: calc(100% + 60px);
+  opacity: .72; object-fit: contain; object-position: right bottom;
+}
+#home-wrap .bx-home-week {
+  max-width: 44%; color: var(--paper-muted);
+  font: 700 10px/1.3 var(--home-ui-font); letter-spacing: .1em; text-transform: uppercase;
+}
+#home-wrap .bx-home-title {
+  width: 44%; max-width: 44%; margin: 0;
+  font: 400 clamp(25px,6.4vw,36px)/1.1 'Anton',sans-serif;
+  letter-spacing: -.015em; color: var(--text);
+}
+#home-wrap .bx-home-title > span { color: var(--accent); }
+#home-wrap .bx-home-feature .bx-sub {
+  width: 44%; max-width: 44%; padding: 0; background: transparent;
+  color: var(--paper-body); font: 500 12px/1.4 var(--home-ui-font);
+}
+#home-wrap .bx-home-action {
+  max-width: 44%; min-height: 44px; padding: 7px 10px; gap: 6px;
+  border: 1px solid var(--line); border-radius: var(--r-control);
+  background: var(--bg-2); color: var(--text);
+  font: 700 12px/1.3 var(--home-ui-font); text-transform: uppercase; letter-spacing: .03em;
+}
+#home-wrap .bx-home-action .ico { color: currentColor; width: 16px; height: 16px; flex: 0 0 16px; }
+#home-wrap :is(.bx-head,.bx-name,.bx-figure,.bx-statword) {
+  font-family: 'Anton',sans-serif; font-weight: 400; color: var(--text);
+}
+#home-wrap :is(.bx-sub,.bx-body,.bx-when-text,.bx-statlabel,.bx-featured-vs,.bx-featured-team > small) { color: var(--paper-body); }
+#home-wrap :is(.bx-kicker,.bx-featured-all) { color: var(--accent); }
+#home-wrap .bx-when { color: var(--paper-body); background: var(--bg-3); border-color: var(--line); }
+#home-wrap .bx-page-count { color: var(--paper-muted); font-family: var(--home-ui-font); font-weight: 700; }
+#home-wrap .bx-arrow {
+  background: var(--bg-3); color: var(--text); border: 1px solid var(--line);
+  border-radius: var(--r-control);
+}
+#home-wrap .bx-arrow:hover { background: var(--hover); border-color: var(--accent); }
+#home-wrap .bx-arrow .ico-sm { color: currentColor !important; }
+#home-wrap .bx-pause { color: var(--paper-muted); background: var(--bg-2); border-radius: var(--r-control); }
+#home-wrap .bx-dot::after { background: var(--line); }
+#home-wrap .bx-dot.on::after { background: var(--accent); }
+#home-wrap .bx-home-feature:hover .bx-home-action { border-color: var(--accent); }
+#home-wrap .bx-stage :is(a,button):focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+@media (min-width: 600px) {
+  #home-wrap .bx-home-title { font-size: 38px; }
+  #home-wrap .bx-home-feature .bx-sub { font-size: 14px; }
+}

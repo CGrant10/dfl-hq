@@ -456,6 +456,37 @@ with sync_playwright() as p:
     assert 'Checking' not in metrics['emptyWeek']['focus'] and 'Building' not in metrics['emptyWeek']['forecast'] and metrics['emptyWeek']['statuses'] == 0, 'Unavailable weekly data must not remain in a loading state'
     assert metrics['emptyWeek']['focusLink'] == metrics['emptyWeek']['forecastLink'] == '#/analyzer', 'Unavailable forecasts need a usable next action'
     metrics['scoreConsistency'] = check_score_consistency(page)
+    metrics['pageIdentity'] = []
+    metrics['themedSlides'] = []
+    for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
+        page.evaluate('window.reviewSetTheme',mode)
+        for width in [320,390,1280]:
+            page.set_viewport_size({'width':width,'height':900})
+            page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
+            identity = page.evaluate('''() => {
+              const fixture=document.createElement('div');fixture.innerHTML=Object.values(window.reviewHeaderSources).join('');document.querySelector('#view').append(fixture);
+              const skin=e=>{const s=getComputedStyle(e),r=getComputedStyle(e,'::before'),seal=getComputedStyle(e,'::after');return {background:s.backgroundImage,border:s.borderColor,radius:s.borderRadius,rail:r.backgroundImage,height:r.height,seal:seal.backgroundImage}};
+              const home=skin(document.querySelector('.home-newspaper-masthead')),others=[...fixture.querySelectorAll('.page-identity')].map(skin);fixture.remove();
+              return {home,others,tools:[...document.querySelectorAll('.home-tool-card')].map(e=>({href:e.getAttribute('href'),width:e.offsetWidth,height:e.offsetHeight})),divider:getComputedStyle(document.querySelector('.home-league-file h2'),'::after').display};
+            }''')
+            assert all(s==identity['home'] for s in identity['others']), f'Page header skins differ: {mode}/{width}: {identity}'
+            assert [t['href'] for t in identity['tools']]==['#/trade','#/sportsbook'] and all(t['width']>=44 and t['height']>=44 for t in identity['tools']), identity
+            assert identity['divider']=='block', identity
+            metrics['pageIdentity'].append({'mode':mode,'width':width,**identity})
+            for index in range(count):
+                page.locator(f'[data-bx-go="{index}"]').evaluate('e=>e.click()')
+                page.wait_for_timeout(500)
+                check=page.evaluate('''() => {
+                  const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
+                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
+                  return {headline:slide.querySelector('h2')?.textContent,fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
+                }''')
+                assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
+                if index==0:
+                    assert 'Bring the' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'Opener text must follow the theme'
+                metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})
+                if width==390 and index in [0,2,3]:
+                    page.locator('.bx-stage').screenshot(path=str(OUT/f'themed-{mode.replace(":","-")}-slide-{index}.png'))
     page.evaluate("window.reviewSetTheme('light')")
     metrics['consoleErrors'] = errors
     assert not errors, errors

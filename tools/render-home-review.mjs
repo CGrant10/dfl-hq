@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildLeaguePowerRankings } from '../js/league-trajectory.js';
-import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeNewspaperMasthead } from '../js/home-presentation.js';
+import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeLeagueTools, homeNewspaperMasthead } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
@@ -121,6 +121,7 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <section class="home-week-desk" aria-label="Your week">
     <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
     ${pickemHome}
+    ${homeLeagueTools()}
     ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
   </section>
   <section class="home-league-desk" aria-label="Around the league">
@@ -131,13 +132,16 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.321.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.322.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
 html = html.replace('<div class="topbar-actions">', '<div class="topbar-actions"><button class="dfl-preview-toggle is-available" data-mode="commissioner" type="button"><span class="dfl-preview-track"><span class="dfl-preview-knob"></span></span><span>Commish</span></button><button class="notification-bell" type="button" aria-label="Notifications"><svg class="ico" aria-hidden="true"><use href="#i-bell-steel"></use></svg><span id="notification-count" class="notification-count">99+</span></button>');
 const previewCss = readFileSync(new URL('../js/member-preview.js', import.meta.url), 'utf8').match(/style.textContent = `([\s\S]*?)`;/)?.[1]?.replace(/\$\{[^}]+\}/g, '500') || '';
-html = html.replace('</head>', `<style>${previewCss}</style><link rel="stylesheet" href="css/profile-neutral.css"></head>`);
+html = html.replace('</head>', `<style>${previewCss}</style><link rel="stylesheet" href="css/profile-neutral.css"><link rel="stylesheet" href="css/sportsbook.css"><link rel="stylesheet" href="css/team-analyzer.css"></head>`);
+// Compare the actual page header templates; fixture bankroll is only review data.
+const sportsbookHeader = readFileSync(new URL('../js/pages/sportsbook.js',import.meta.url),'utf8').match(/<header class="sb-masthead page-identity">[\s\S]*?<\/header>/)[0].replace('${esc(sportsbookWeekCaption(leagueWeek))}','Week 5').replace('${num(wallet?.balance)}','100');
+const tradeHeader = readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8').match(/<div class="tb-head-row page-identity">[\s\S]*?<\/div>/)[0];
 html = html.replace('</body>', `<script type="module">
   import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
@@ -167,6 +171,7 @@ html = html.replace('</body>', `<script type="module">
   wireHomeLeagueFeed(document.querySelector('#home-wrap'));
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));
   window.reviewDeck = deck;
+  window.reviewHeaderSources = ${JSON.stringify({sportsbook:sportsbookHeader,trade:tradeHeader})};
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
   mountSeasonNavigation();
