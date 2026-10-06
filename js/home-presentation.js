@@ -10,9 +10,9 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const season = year - founded + 1;
   const anniversary = season > 0 && season % 10 === 0;
   return `<header class="home-newspaper-masthead">
-    <div class="home-newspaper-name"><img class="home-wordmark-light" src="assets/dfl-daily-wordmark.webp" width="1300" height="423" alt="DFL Daily"><img class="home-wordmark-dark" src="assets/dfl-daily-wordmark-medicine.webp" width="1300" height="434" alt="DFL Daily"><p class="home-newspaper-edition"><img class="home-newspaper-anniversary" src="assets/dfl-daily-ten.webp" width="732" height="768" alt="DFL 10th anniversary"><span>${anniversary ? 'Anniversary edition' : 'The league edition'} · ${esc(founded)} – ${esc(year)}</span></p></div>
-    <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}"><span>${esc(now.toLocaleDateString('en-US', { weekday: 'long' }))}</span><strong>${esc(now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))}<br>${esc(year)}</strong></time><small>The DFL<br>back page</small></div>
-  </header><nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="lead" aria-current="location">The lead</button><button type="button" data-home-jump="scores">Scores</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
+    <div class="home-newspaper-name"><small>DFL HQ</small><h1>The clubhouse</h1><p class="home-newspaper-edition"><span>${anniversary ? '10th season' : `Season ${season}`} · ${esc(founded)} – ${esc(year)}</span></p></div>
+    <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}"><span>${esc(now.toLocaleDateString('en-US', { weekday: 'short' }))}</span><strong>${esc(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</strong></time></div>
+  </header><nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="lead">The lead</button><button type="button" data-home-jump="scores">Scores</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
 }
 
 /** Keep the existing deck and its refresh behavior behind the illustrated opener. */
@@ -124,7 +124,5 @@ export function wireHomeNewspaperSections(root) {
   root.querySelectorAll('[data-home-jump]').forEach(button => button.addEventListener('click', () => {
     const selectors = { lead: '.home-broadcast', scores: '[data-home-gameday-slot]', week: '.home-week-desk', league: '.home-league-desk', archive: '[data-home-lore-slot]' };
     root.querySelector(selectors[button.dataset.homeJump])?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    root.querySelectorAll('[data-home-jump]').forEach(item => item.removeAttribute('aria-current'));
-    button.setAttribute('aria-current', 'location');
   }));
 }

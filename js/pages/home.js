@@ -34,7 +34,6 @@ import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
 import {homeBroadcastDeck,homeLeagueFile,homeNewspaperMasthead,wireHomeNewspaperSections} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
-import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
 import { draftView, draftCard } from "../draft-order.js";
@@ -425,7 +424,6 @@ export async function render(view) {
   const events = { data: bootstrap.events || [] }, announcements = { data: bootstrap.announcements || [] };
   const polls = { data: bootstrap.polls || [] }, leagues = { data: bootstrap.leagues || [] };
   const dues = { data: bootstrap.dues || [] }, standings = { data: bootstrap.standings || [] };
-  const golfDone = { data: bootstrap.golf_done || [] };
   const memberRows = bootstrap.members || [];
   const golfRow = (bootstrap.golf || [])[0] || null;
   const me = currentMember();
@@ -446,14 +444,6 @@ export async function render(view) {
     { custom: manual, off: broadcastOff(), overrides },
   );
 
-  const wn = newsWindow();
-  const changes = wn.firstRun ? [] : changesSince({
-    announcements: announcements.data || [], events: events.data || [],
-    polls: polls.data || [], syncedAt: null,
-    golf: golfDone.data || [], leagues: leagues.data || [], broadcast: manual,
-  }, wn.since);
-  if (wn.firstRun) markSeen(new Date(), leagues.data || []);
-  const strip = whatsNewStrip(changes, wn.since);
 
   /*
     THE ORDER IS THE EDIT.
@@ -492,7 +482,6 @@ export async function render(view) {
     ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
     <div data-home-trade-slot>${homeTradeWire(null)}</div>
-    ${strip}
     <div data-draft-slot></div>
     <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
     </section>
@@ -555,7 +544,6 @@ export async function render(view) {
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
   wireHomeNewspaperSections(view);
   wireInline(view.querySelector("#home-wrap"), () => render(view));
-  wireWhatsNew(view, leagues.data || []);
   pickemPromise.then(board => {
     if (mine !== generation || !view.isConnected) return;
     const slot = view.querySelector("[data-home-pickem-slot]");
