@@ -127,7 +127,7 @@ function memberAvatar(team, members, cls) {
 export function homeRankingsCard(view, members = []) {
   const rankings = view?.powerRankings;
   const board = rankings?.boards?.at(-1);
-  if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>POWER RANKINGS</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
+  if (!board?.rows?.length) return `<section class="home-rankings-card is-loading"><strong>Power rankings</strong><p>Run a Sleeper sync to build the weekly board.</p></section>`;
   const focus = board.rows.find(row => String(row.id) === String(view.focus?.id)) || board.rows[0];
   const teamFor = row => view.allTeams?.find(team => String(team.id) === String(row.id));
   const visible = board.rows.slice(0, 3);
@@ -137,8 +137,8 @@ export function homeRankingsCard(view, members = []) {
     <span><strong>${esc(item.name)}</strong></span><em>${esc(item.record)}</em>${rankMove(item.movement)}
   </li>`;
   return `<section class="home-rankings-card">
-    <header><h2>POWER RANKINGS</h2><a href="#/analyzer">${esc(board.label)} OF ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
-    <div class="home-rank-head"><span>RANK</span><span>TEAM</span><span>RECORD</span><span>MOVE</span></div>
+    <header><h2>Power rankings</h2><a href="#/analyzer">${esc(board.label)} of ${esc(String(view.weeks || 14))}<svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></a></header>
+    <div class="home-rank-head"><span>Rank</span><span>Team</span><span>Record</span><span>Move</span></div>
     <ol>${board.rows.slice(0, 3).map((item, index) => row(item, index, String(item.id) === String(focus.id))).join("")}${showFocus ? `<li class="home-rank-ellipsis" aria-hidden="true">•••</li>` : ""}${board.rows.slice(3).map((item, offset) => row(item, offset + 3, String(item.id) === String(focus.id))).join("")}</ol>
     <button class="home-rank-all" type="button" data-home-rank-toggle aria-expanded="false"><span>View all ${board.rows.length}</span><svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg></button>
   </section>`;
@@ -180,7 +180,7 @@ function playerScoreLine(player) {
 
 /** A living current-week forecast: games, player leaders, and your lineup. */
 export function homeWeeklyDigest(outlook, briefing = null, report = null, changes = [], { loading = false } = {}) {
-  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>WEEK AHEAD</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn" href="#/analyzer">Open Analyzer →</a>'}</section>`;
+  if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>Week ahead</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn" href="#/analyzer">Open Analyzer →</a>'}</section>`;
   const swaps = outlook.startSit?.swaps || [];
   const alarms = outlook.startSit?.alarms || [];
   const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.story || game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
@@ -188,7 +188,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
   const firstGames = predictions.slice(0, 3);
   const moreGames = predictions.slice(3);
   return `<section class="home-weekly-digest">
-    <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>WEEK AHEAD</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
+    <header><div><small>WEEK ${esc(outlook.week)} · LIVE MODEL</small><h2>Week ahead</h2></div><a href="#/analyzer">FULL START/SIT →</a></header>
     <nav class="home-week-tabs" role="tablist" aria-label="Week Ahead views">
       <button id="home-week-tab-brief" type="button" role="tab" aria-controls="home-week-panel-brief" aria-selected="true" data-week-tab="brief">Briefing</button>
       <button id="home-week-tab-picks" type="button" role="tab" aria-controls="home-week-panel-picks" aria-selected="false" data-week-tab="picks">Predictions</button>

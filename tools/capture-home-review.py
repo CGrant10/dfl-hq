@@ -154,6 +154,19 @@ with sync_playwright() as p:
     }""")
     assert all(x['index']>=0 for x in metrics['readingOrder']) and [x['index'] for x in metrics['readingOrder']] == sorted(x['index'] for x in metrics['readingOrder']), 'Home sections are out of reading order'
     assert page.evaluate("!document.querySelector('[data-home-focus-slot]').closest('details')&&!document.querySelector('[data-home-rankings-slot]').closest('details')"), 'Next actions and standings must be visible without expanding a disclosure'
+    metrics['mobileType'] = []
+    for width in [320, 390, 768, 1280]:
+        page.set_viewport_size({'width':width,'height':844})
+        typography = page.evaluate('''() => {
+            const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
+            const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "DFL Home"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary small'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+        }''')
+        assert typography['fontLoaded'] and all('DFL Home' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
+        assert typography['heading']['size'] == (18 if width < 600 else 20) and typography['body']['size'] == 14 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['weight'] == typography['name']['weight'] == 600 and typography['heading']['transform'] == typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
+        metrics['mobileType'].append(typography)
+    page.set_viewport_size({'width':390,'height':844})
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>!e.open') and page.locator('[data-page-detail="home-league"]').evaluate('e=>!e.open'), 'Secondary detail should start collapsed'
     assert page.evaluate("document.querySelector('.home-banter').previousElementSibling.matches('[data-home-lore-slot]')"), 'History should lead into league conversation'
     metrics['cleanup'] = page.evaluate("""() => ({stories:[...document.querySelectorAll('.home-league-story')].map(e=>({border:getComputedStyle(e).borderLeftWidth,background:getComputedStyle(e).backgroundColor,decoration:getComputedStyle(e).textDecorationLine})),actions:[...document.querySelectorAll('.home-section-action')].map(e=>({label:e.getAttribute('aria-label'),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),storyLinks:document.querySelectorAll('.home-league-file > nav').length})""")
