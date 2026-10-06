@@ -409,7 +409,7 @@ with sync_playwright() as p:
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-date')
-                assert badge.get_attribute('alt') == 'DFL 10th anniversary' and badge.evaluate('e=>e.complete && e.naturalWidth>0')
+                assert badge.locator('time').get_attribute('datetime') == '2026-10-06'
                 assert page.locator('.topbar .brand-edition').count() == 0
                 assert not page.locator('.topbar .brand-lockup').is_visible()
                 assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
