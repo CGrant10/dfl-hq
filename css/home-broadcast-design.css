@@ -160,21 +160,6 @@ body:has(#view[data-route="home"]) { --home-gutter: 18px; background: #0b0e0f; }
 #home-wrap :is(.home-rankings-card,.home-week-focus) { border-radius: 0; box-shadow: none; background: #121617; }
 
 /* The top bar and bottom navigation belong to the selected composition. */
-body:has(#view[data-route="home"]) .topbar { background: #0b0e0f; border-bottom-color: #313637; box-shadow: none; }
-body:has(#view[data-route="home"]) .topbar-inner { padding-inline: var(--home-gutter); height: 56px; gap: 10px; }
-body:has(#view[data-route="home"]) .brand-mark { width: 46px; height: 46px; }
-body:has(#view[data-route="home"]) .brand-text { display: none; }
-body:has(#view[data-route="home"]) .topbar-actions { gap: 10px; }
-body:has(#view[data-route="home"]) .dfl-preview-toggle[data-mode] { flex-direction: row-reverse; gap: 7px; padding: 0; border: 0; border-radius: 0; background: transparent; color: #f5f1e6; font: 600 13px/1 var(--font-display); letter-spacing: 0; text-transform: none; }
-body:has(#view[data-route="home"]) .dfl-preview-track { width: 26px; height: 16px; border-color: #f6c542; background: transparent; }
-body:has(#view[data-route="home"]) .dfl-preview-knob { width: 12px; height: 12px; background: #f6c542; box-shadow: none; }
-body:has(#view[data-route="home"]) .notification-bell { border: 0; border-left: 1px solid #606869; border-right: 1px solid #606869; border-radius: 0; background: transparent; color: #f5f1e6; width: 40px; height: 30px; flex-basis: 40px; }
-body:has(#view[data-route="home"]) .notification-count { min-width: 7px; width: 7px; height: 7px; font-size: 0; top: 2px; right: 9px; border: 0; background: #ec2342; }
-body:has(#view[data-route="home"]) .whoami { padding-inline: 0; border: 0; background: transparent; color: #f5f1e6; font: 700 14px/1 var(--font-display); }
-body:has(#view[data-route="home"]) .whoami-photo { display: none; }
-body:has(#view[data-route="home"]) .bottomline { bottom: var(--season-nav-height,67px); background: #0b0e0f; border-color: #52595a; color: #d0d5d5; }
-body:has(#view[data-route="home"]) .bl-label { color: #f6c542; }
-body:has(#view[data-route="home"]) .bl-text { color: #d0d5d5; }
 @media (min-width: 700px) {
   body:has(#view[data-route="home"]) { --home-gutter: 32px; }
   #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 300px; }
@@ -257,20 +242,6 @@ body:has(#view[data-route="home"]) { background: #0b0e0f; }
 #home-wrap .bx-featured-team .bx-team-mark { width: 30px; height: 30px; }
 #home-wrap .bx-featured-all { font-size: 11px; }
 
-/* Keep the selected shell without scaling the league seal or its text. */
-body:has(#view[data-route="home"]) .topbar .brand-lockup { display: flex; flex: 0 0 46px; }
-body:has(#view[data-route="home"]) .topbar .brand-mark { transform: scale(1.35); }
-body:has(#view[data-route="home"]) .topbar .topbar-actions .dfl-preview-toggle { order: 1; margin-left: auto; }
-body:has(#view[data-route="home"]) .topbar .notification-bell { order: 2; min-height: 30px; }
-body:has(#view[data-route="home"]) .topbar .notification-bell svg { width: 20px; height: 20px; }
-body:has(#view[data-route="home"]) .topbar .whoami { order: 3; flex: 0 1 auto; padding: 0; }
-body:has(#view[data-route="home"]) #league-search-button { display: none; }
-body:has(#view[data-route="home"]) .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob { transform: translateX(12px); }
-body:has(#view[data-route="home"]) .dfl-preview-toggle:is([data-mode="member"],[data-mode="locked"]) .dfl-preview-knob { transform: translateX(0); }
-@media (min-width: 900px) {
-  body:has(#view[data-route="home"]) { padding-top: calc(56px + var(--season-nav-height,67px) + env(safe-area-inset-top)); }
-  body:has(#view[data-route="home"]) .bottomline { bottom: 0; }
-}
 @media (max-width: 360px) {
   #home-wrap .home-thermal-leaders .gameday-player { gap: 5px; }
 }

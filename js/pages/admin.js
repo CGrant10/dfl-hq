@@ -8,7 +8,7 @@ import {
 } from "../supabase.js";
 import { currentMember } from "../members.js";
 import { renderManager } from "../crud.js";
-import { renderBroadcastPanel, renderTickerPanel } from "./admin_broadcast.js";
+import { renderBroadcastPanel } from "./admin_broadcast.js";
 import { renderCommissionerPanel } from "./admin_commissioners.js";
 import { specFor } from "../sections.js";
 import { renderSleeperPanel } from "./admin_sleeper.js";
@@ -32,12 +32,6 @@ const PANELS = [
   { id: "performance", tab: "Performance", permission: "sleeper", render: renderPerformancePanel },
   { id: "broadcast", tab: "Broadcast", permission: "broadcast", render: renderBroadcastPanel },
   { id: "notifications", tab: "Notifications", permission: "broadcast", render: renderNotificationPanel },
-  /* The ticker is the same job as the slides, so it answers to the same
-     permission. It was a plain table tab - the CRUD list is still the right
-     shape for five fields - and is now a panel only so it can carry the same
-     Refresh button. renderTickerPanel() wraps renderManager() and adds nothing
-     else. */
-  { id: "ticker_items", tab: "Ticker", permission: "broadcast", render: renderTickerPanel },
   { id: "commissioners", tab: "Commissioner Access", ownerOnly: true, render: renderCommissionerPanel },
 ];
 

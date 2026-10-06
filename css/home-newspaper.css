@@ -7,7 +7,7 @@ body:has(#view[data-route="home"]) {
   --paper-badge: #e4ded1; --paper-badge-ink: #a50e26;
   --paper-hot: #6e4b00; --paper-cold: #534f47;
   background: var(--paper) url('../assets/dfl-daily-paper.webp') repeat;
-  background-size: 600px; color: var(--ink); padding-top: calc(44px + env(safe-area-inset-top)); color-scheme: light;
+  background-size: 600px; color: var(--ink); color-scheme: light;
   padding-bottom: calc(var(--season-nav-height,49px) + 20px);
 }
 :root:not([data-mode="light"]) body:has(#view[data-route="home"]) {
@@ -22,9 +22,9 @@ body:has(#view[data-route="home"]) {
   background-attachment: fixed,fixed,scroll; background-blend-mode: normal,normal,multiply; color-scheme: dark;
 }
 #home-wrap {
-  --home-section-title: 22px; --home-subsection-title: 18px;
+  --home-section-title: 20px; --home-subsection-title: 16px;
   --home-body-size: 14px; --home-meta-size: 11px; --home-section-gap: 28px;
-  --gd-player-score-size: 20px;
+  --gd-player-score-size: 18px;
   --bg: var(--paper); --bg-2: var(--paper-2); --bg-3: var(--paper-3); --text: var(--ink);
   --body-text: var(--paper-body); --muted: var(--paper-muted); --line: var(--paper-rule); --line-soft: var(--paper-soft-rule);
   --accent: var(--print-accent); --accent-2: var(--print-accent); --accent-fill: var(--print-fill);
@@ -32,32 +32,17 @@ body:has(#view[data-route="home"]) {
   background: transparent; color: var(--text); padding-inline: var(--home-gutter);
   font: 400 var(--home-body-size)/1.5 Georgia, 'Times New Roman', serif;
 }
-body:has(#view[data-route="home"]) .topbar { position: fixed !important; top: 0; background: var(--paper-2); border: 0; color: var(--ink); box-shadow: 0 1px 0 var(--paper-soft-rule); }
-body:has(#view[data-route="home"]) .topbar-inner { height: 44px; max-width: 900px; padding-inline: var(--home-gutter); gap: 12px; }
-body:has(#view[data-route="home"]) .topbar .brand-lockup { display: none; }
-body:has(#view[data-route="home"]) .topbar-actions { width: 100%; flex: 1 1 auto; min-width: 0; justify-content: flex-end; gap: 16px; }
-body:has(#view[data-route="home"]) .topbar :is(.whoami,.notification-bell,.dfl-preview-toggle[data-mode]) { color: var(--ink); min-height: 44px; }
-body:has(#view[data-route="home"]) .topbar .notification-bell { border: 0; width: 44px; flex-basis: 44px; background: transparent; border-radius: 0; }
-body:has(#view[data-route="home"]) .topbar .topbar-actions .dfl-preview-toggle[data-mode] { margin-left: 0; margin-right: auto; font: 400 11px/1.2 'Anton',sans-serif; letter-spacing: .06em; text-transform: uppercase; gap: 6px; background: transparent; }
-body:has(#view[data-route="home"]) .topbar .topbar-actions .whoami { min-width: 44px; max-width: min(170px,46vw); border: 0; border-radius: 0; padding-inline: 0; font: 600 13px/1.2 var(--font-display); }
-body:has(#view[data-route="home"]) .topbar #whoami-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body:has(#view[data-route="home"]) .topbar .dfl-preview-track { border-color: var(--print-accent); background: transparent; width: 24px; height: 14px; flex-basis: 24px; }
-body:has(#view[data-route="home"]) .topbar .dfl-preview-knob { background: var(--print-accent); width: 10px; height: 10px; top: 1px; left: 1px; }
-body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-track { background: var(--print-fill); }
-body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob { background: #f6f1e8; }
-body:has(#view[data-route="home"]) .topbar .dfl-preview-toggle[data-mode="commissioner"] .dfl-preview-knob { transform: translateX(10px); }
-body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { background: var(--paper-3); }
 .home-newspaper-masthead { display: grid; grid-template-columns: minmax(0,1fr) 17%; align-items: center; gap: 10px; padding: 16px 0 10px; border-bottom: 1px solid var(--ink); }
 .home-newspaper-anniversary { display: block; width: 24px; height: 25px; flex: 0 0 24px; object-fit: contain; filter: brightness(.75); }
 :root:not([data-mode="light"]) .home-newspaper-anniversary { filter: brightness(1.15); }
-.home-newspaper-name { min-width: 0; max-width: 240px; }
+.home-newspaper-name { min-width: 0; max-width: 160px; }
 .home-newspaper-name > img { display: block; width: 100%; height: auto; }
 .home-newspaper-name > .home-wordmark-dark { display: none; }
 :root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-light { display: none; }
 :root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-dark { display: block; }
 .home-newspaper-edition { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font: 400 clamp(8px,2vw,13px)/1.3 'Anton',sans-serif; text-transform: uppercase; letter-spacing: .12em; }
 .home-newspaper-edition > span { min-width: 0; }
-.home-newspaper-date { border-left: 1px solid var(--ink); padding-left: 9px; text-transform: uppercase; font: 400 clamp(9px,2.6vw,20px)/1.25 'Anton',sans-serif; }
+.home-newspaper-date { border-left: 1px solid var(--ink); padding-left: 9px; text-transform: uppercase; font: 400 clamp(9px,2.6vw,14px)/1.25 'Anton',sans-serif; }
 .home-newspaper-date time { display: block; }
 .home-newspaper-date time > span { display: block; font-size: .8em; margin-bottom: 4px; }
 .home-newspaper-date strong { font-weight: 400; }
@@ -67,17 +52,17 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 .home-newspaper-sections button + button::before { content: ''; position: absolute; top: 14px; bottom: 14px; left: 0; border-left: 1px solid var(--paper-rule); }
 .home-newspaper-sections button[aria-current] { color: var(--print-accent); border-bottom: 3px solid var(--print-accent); }
 #home-wrap :is(.home-broadcast,[data-home-gameday-slot],[data-home-lore-slot]) { scroll-margin-top: calc(44px + env(safe-area-inset-top) + 16px); }
-#home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 246px; margin: 0; border-bottom: 2px solid var(--ink); background: transparent; }
+#home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 220px; margin: 0; border-bottom: 2px solid var(--ink); background: transparent; }
 #home-wrap .bx-editorial-label { display: none; }
 #home-wrap .bx-slide { inset: 12px 0 8px; padding: 0 12px; gap: 7px; color: var(--ink); }
 #home-wrap .bx-home-feature { align-content: start; gap: 7px; }
-#home-wrap .bx-home-art { position: absolute; inset: -12px 0 -8px; width: 100%; height: calc(100% + 20px); object-fit: contain; object-position: right bottom; z-index: -1; mix-blend-mode: multiply; }
+#home-wrap .bx-home-art { position: absolute; top: -12px; right: 0; bottom: -8px; width: 52%; height: calc(100% + 20px); object-fit: contain; object-position: right bottom; z-index: -1; mix-blend-mode: multiply; }
 #home-wrap .bx-home-week { color: var(--print-accent); font: 400 12px/1.3 'Anton',sans-serif; letter-spacing: 0; padding-top: 2px; }
-#home-wrap .bx-home-title { display: grid; width: fit-content; max-width: 100%; gap: 0; color: var(--ink); font: 400 clamp(38px,10vw,70px)/1.03 'Anton',sans-serif; letter-spacing: -.025em; }
+#home-wrap .bx-home-title { display: grid; width: fit-content; max-width: 100%; gap: 0; color: var(--ink); font: 400 clamp(30px,8vw,48px)/1.03 'Anton',sans-serif; letter-spacing: -.025em; }
 #home-wrap .bx-home-title > span { color: var(--print-accent); }
-#home-wrap .bx-home-title:has(.bx-home-headline-art) { width: 52%; max-width: 240px; transform: rotate(-2deg); transform-origin: left top; }
+#home-wrap .bx-home-title:has(.bx-home-headline-art) { width: 45%; max-width: 180px; transform: rotate(-2deg); transform-origin: left top; }
 #home-wrap .bx-home-headline-art { display: block; width: 100%; height: auto; }
-#home-wrap .bx-home-feature .bx-sub { max-width: 100%; width: fit-content; padding: 2px 8px 2px 0; font: 700 14px/1.4 Georgia,serif; color: var(--ink); background: color-mix(in srgb,var(--paper) 85%,transparent); }
+#home-wrap .bx-home-feature .bx-sub { max-width: 60%; width: fit-content; padding: 2px 8px 2px 0; font: 700 13px/1.4 Georgia,serif; color: var(--ink); background: color-mix(in srgb,var(--paper) 85%,transparent); }
 #home-wrap .bx-home-action { min-height: 44px; margin-top: 0; border-radius: 2px; padding: 7px 16px; gap: 14px; background: var(--print-fill); color: #fff9ec; font: 400 14px/1.3 Georgia,serif; }
 #home-wrap .bx-home-action .ico { color: #fff9ec; }
 #home-wrap .bx-arrow { top: 5px; bottom: auto; width: 44px; height: 44px; min-width: 44px; background: var(--print-fill); color: #fff; padding: 10px; }
@@ -93,19 +78,19 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 #home-wrap .bx-dot { height: 44px; }
 #home-wrap .bx-dot::after { top: 18px; background: var(--paper-rule); }
 #home-wrap .bx-dot.on::after { background: var(--print-accent); }
-#home-wrap .bx-slide:not(.bx-home-feature) { inset: 52px 0 42px; }
-#home-wrap .bx-editorial-copy { width: 60%; min-width: 0; }
+#home-wrap .bx-slide:not(.bx-home-feature) { inset: 48px 0 42px; }
+#home-wrap .bx-editorial-copy { width: 68%; min-width: 0; }
 #home-wrap .bx-editorial-illustration {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(-7deg);
-  width: min(34%,180px); aspect-ratio: 1; pointer-events: none; mix-blend-mode: multiply;
+  width: min(24%,120px); aspect-ratio: 1; pointer-events: none; mix-blend-mode: multiply;
 }
 #home-wrap .bx-editorial-splatter { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 #home-wrap .bx-editorial-crest { position: absolute; inset: 12%; width: 76%; height: 76%; object-fit: contain; }
-#home-wrap :is(.bx-head,.bx-name) { color: var(--ink); font-size: clamp(22px,5.6vw,32px); }
+#home-wrap :is(.bx-head,.bx-name) { color: var(--ink); font-size: clamp(20px,5vw,26px); }
 #home-wrap :is(.bx-sub,.bx-body,.bx-when-text) { color: var(--paper-body); font-family: Georgia,serif; }
 #home-wrap .bx-kicker { color: var(--print-accent); }
-#home-wrap .bx-figure { color: var(--ink); font-size: 32px; }
-#home-wrap .bx-statword { color: var(--ink); font-size: 20px; }
+#home-wrap .bx-figure { color: var(--ink); font-size: 26px; }
+#home-wrap .bx-statword { color: var(--ink); font-size: 18px; }
 #home-wrap .bx-injuries h2 { font-size: 18px; }
 #home-wrap .bx-featured-team > strong { font-size: 14px; }
 #home-wrap .bx-featured-team > b { font-size: 26px; }
@@ -129,7 +114,7 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 #home-wrap .gameday-faceoff-team .home-team-name { color: var(--ink); font: 400 14px/1.2 'Anton',sans-serif; }
 #home-wrap .home-team-name small { font: 400 11px/1.3 system-ui,sans-serif; color: var(--paper-body); }
 #home-wrap .home-team-name strong { font: inherit; text-transform: uppercase; }
-#home-wrap .gameday-faceoff-team .gd-thermal-number { color: var(--ink); font-size: clamp(22px,5.6vw,32px); }
+#home-wrap .gameday-faceoff-team .gd-thermal-number { color: var(--ink); font-size: clamp(20px,5vw,26px); }
 #home-wrap .gameday-faceoff-team:first-child .gd-thermal-number { color: var(--print-accent); }
 #home-wrap .home-thermal-leaders { padding: 0; }
 #home-wrap .home-thermal-leaders > header { min-height: 44px; margin: 0; border-bottom: 1px solid var(--paper-rule); }
@@ -158,7 +143,7 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 #home-wrap .home-league-file > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 4px 0; border-bottom: 1px solid var(--paper-soft-rule); }
 #home-wrap .home-league-file > header h2 { margin: 0; color: var(--print-accent); font: 400 var(--home-section-title)/1.15 'Anton',sans-serif; }
 #home-wrap .home-league-stories { grid-template-columns: minmax(0,1fr); gap: 0; }
-#home-wrap .home-league-story { position: relative; grid-template-columns: min(24%,120px) minmax(0,1fr); gap: 12px; padding: 12px 0; color: var(--ink); }
+#home-wrap .home-league-story { position: relative; grid-template-columns: min(20%,80px) minmax(0,1fr); gap: 12px; padding: 12px 0; color: var(--ink); }
 #home-wrap .home-league-story + .home-league-story { border-top: 1px solid var(--paper-rule); }
 #home-wrap .home-story-art { width: 100%; height: auto; aspect-ratio: 1.45; object-fit: cover; }
 #home-wrap .home-league-story small { font: 600 var(--home-meta-size)/1.4 system-ui,sans-serif; letter-spacing: .06em; color: var(--print-accent); }
@@ -224,19 +209,18 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 #home-wrap > .hero :is(.hero-creed,.hero-line) { margin: 0; color: var(--paper-muted); font: 400 11px/1.3 Georgia,serif; }
 #home-wrap > .hero .crest-tools { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; margin: 0; }
 #home-wrap :is(button,a,summary):focus-visible { outline: 2px solid var(--print-accent); outline-offset: 3px; }
-body:has(#view[data-route="home"]) .bottomline { display: none; }
 @media (min-width: 600px) {
   body:has(#view[data-route="home"]) { --home-gutter: 30px; }
   .home-newspaper-anniversary { width: 32px; height: 34px; flex-basis: 32px; }
   .home-newspaper-edition { gap: 12px; }
-  .home-newspaper-name { max-width: 340px; }
+  .home-newspaper-name { max-width: 220px; }
   .home-newspaper-masthead { gap: 16px; padding-top: 24px; padding-bottom: 10px; }
-  #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 320px; }
+  #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 260px; }
   #home-wrap .bx-slide { inset: 20px 0 12px; gap: 12px; }
-  #home-wrap .bx-home-art { inset: -20px 0 -12px; height: calc(100% + 32px); }
+  #home-wrap .bx-home-art { top: -20px; right: 0; bottom: -12px; height: calc(100% + 32px); }
   #home-wrap .bx-home-week { font-size: 14px; }
-  #home-wrap .bx-home-feature .bx-sub { font-size: 16px; }
-  #home-wrap .bx-home-action { font-size: 16px; padding-inline: 16px; }
+  #home-wrap .bx-home-feature .bx-sub { font-size: 14px; }
+  #home-wrap .bx-home-action { font-size: 14px; padding-inline: 16px; }
   #home-wrap .bx-page-count { font-size: 12px; top: 20px; }
   #home-wrap .gameday-matchup { padding-block: 8px 16px; gap: 24px; }
   #home-wrap .gameday-faceoff-team { grid-template-columns: 36px minmax(0,1fr) auto; gap: 10px; }
@@ -244,11 +228,11 @@ body:has(#view[data-route="home"]) .bottomline { display: none; }
   #home-wrap .gameday-faceoff-mark { width: 36px; height: 36px; }
   #home-wrap .gameday-faceoff-team .home-team-name { font-size: 22px; }
   #home-wrap .gameday-faceoff-team .home-team-name strong { font: inherit; }
-  #home-wrap .gameday-faceoff-team .gd-thermal-number { font-size: clamp(28px,4vw,36px); }
+  #home-wrap .gameday-faceoff-team .gd-thermal-number { font-size: clamp(24px,3.5vw,28px); }
   #home-wrap .home-team-name small { font-size: 12px; }
   #home-wrap .home-game-phase { font-size: 11px; }
   #home-wrap .gameday-card .home-thermal-leaders header h2 { font-size: var(--home-subsection-title); }
-  #home-wrap .home-thermal-leaders .gameday-player { min-height: 48px; grid-template-columns: 18px minmax(0,1fr) auto; gap: 10px; }
+  #home-wrap .home-thermal-leaders .gameday-player { min-height: 44px; grid-template-columns: 18px minmax(0,1fr) auto; gap: 10px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy { display: flex; align-items: center; gap: 12px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 16px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 11px; }
@@ -262,10 +246,7 @@ body:has(#view[data-route="home"]) .bottomline { display: none; }
   #home-wrap .home-wall-link { font-size: 12px; }
 }
 @media (min-width: 900px) {
-  body:has(#view[data-route="home"]) { padding-top: calc(56px + var(--season-nav-height,49px) + env(safe-area-inset-top)); }
-  body:has(#view[data-route="home"]) .topbar { position: fixed !important; top: 0; }
-  body:has(#view[data-route="home"]) .topbar-inner { height: 56px; }
-  #home-wrap :is(.home-broadcast,[data-home-gameday-slot],[data-home-lore-slot]) { scroll-margin-top: calc(56px + env(safe-area-inset-top) + var(--season-nav-height,49px) + 16px); }
+  #home-wrap :is(.home-broadcast,[data-home-gameday-slot],[data-home-lore-slot]) { scroll-margin-top: calc(var(--topbar-h) + var(--season-nav-height,49px) + 16px); }
 }
 @media (max-width: 360px) {
   .home-newspaper-masthead { gap: 6px; }
@@ -285,11 +266,6 @@ body:has(#view[data-route="home"]) .bottomline { display: none; }
   background: var(--paper) url('../assets/dfl-daily-paper.webp') repeat; background-size: 600px;
   color: var(--ink); color-scheme: light;
 }
-body:has(#view[data-route="home"]) .topbar {
-  --text: var(--ink); --muted: var(--paper-muted); --accent: var(--print-accent);
-  --bg-2: var(--paper-2); --control-line: var(--paper-rule); --hover: var(--paper-3);
-}
-body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(--ink) !important; }
 #home-wrap .gameday-home-detail :is(h2,h3,strong,.gameday-player-tap,.dfl-player-copy) { color: var(--ink); }
 #home-wrap .gameday-home-detail :is(small,p,.gameday-player-copy small) { color: var(--paper-body); }
 #home-wrap .page-detail-body :is(h2,h3,strong,.linkbtn) { color: var(--ink); }
@@ -300,8 +276,8 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
   #home-wrap .home-banter .wall-post + .wall-post { border-top: 0; border-left: 1px solid var(--paper-soft-rule); padding-left: 20px; }
   #home-wrap .home-banter .wall-head { grid-template-columns: auto minmax(0,1fr); grid-template-areas: "av name" ". time"; }
   #home-wrap .home-banter .wall-head.has-byline { grid-template-areas: "av name" ". time" "byline byline"; }
-  #home-wrap .bx-editorial-copy { width: 58%; }
-  #home-wrap .bx-editorial-illustration { width: min(36.5%,180px); right: 22px; }
+  #home-wrap .bx-editorial-copy { width: 68%; }
+  #home-wrap .bx-editorial-illustration { width: min(24%,120px); right: 22px; }
 }
 
 /* The expanded edition uses the same paper, headlines and rules as the lead. */
@@ -392,7 +368,7 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
 #home-wrap .home-banter .wall-reaction-buttons .btn { border: 1px solid var(--paper-soft-rule); border-radius: 0; background: transparent; }
 #home-wrap .home-banter .wall-photo { border-radius: 0; }
 @media (min-width: 600px) {
-  #home-wrap { --home-section-title: 24px; --home-subsection-title: 20px; --home-section-gap: 32px; }
+  #home-wrap { --home-section-title: 22px; --home-subsection-title: 18px; --home-section-gap: 32px; }
   #home-wrap .home-brief-grid article:nth-child(odd) { padding-right: 18px; }
   #home-wrap .home-brief-grid article:nth-child(even) { padding-left: 18px; }
 }
@@ -412,12 +388,11 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
 #home-wrap .home-frontpage > :is(.home-broadcast,[data-home-gameday-slot]) { min-width: 0; padding: 0; margin: 0; }
 @media (min-width: 1000px) {
   #view.view[data-route="home"] { width: min(100%,1200px); max-width: 1200px; }
-  body:has(#view[data-route="home"]) .topbar-inner { max-width: 1200px; }
-  .home-newspaper-name { max-width: 380px; }
+  .home-newspaper-name { max-width: 240px; }
   #home-wrap .home-frontpage { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(0,1fr); gap: 24px; padding-block: 16px; align-items: start; }
   #home-wrap .home-frontpage > [data-home-gameday-slot] { border-left: 1px solid var(--paper-soft-rule); padding-left: 24px; }
-  #home-wrap .bx-editorial-copy { width: 56%; }
-  #home-wrap .bx-editorial-illustration { width: min(34%,180px); right: 18px; }
+  #home-wrap .bx-editorial-copy { width: 68%; }
+  #home-wrap .bx-editorial-illustration { width: min(24%,120px); right: 18px; }
   #home-wrap .gameday-card > header { padding-top: 0; }
   #home-wrap .home-game-phase { font-size: 11px; }
   #home-wrap .gameday-matchup { grid-template-columns: minmax(0,1fr); gap: 12px; padding-block: 12px 16px; }
@@ -428,11 +403,11 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
   #home-wrap .gameday-faceoff-team:nth-of-type(2) > .gd-thermal-number { grid-column: 3; grid-row: 1; }
   #home-wrap .gameday-faceoff-team .gameday-faceoff-mark { grid-column: 1; width: 44px; height: 44px; }
   #home-wrap .gameday-faceoff-team .home-team-name { grid-column: 2; text-align: left; font-size: 20px; }
-  #home-wrap .gameday-faceoff-team .gd-thermal-number { grid-column: 3; font-size: 32px; }
+  #home-wrap .gameday-faceoff-team .gd-thermal-number { grid-column: 3; font-size: 26px; }
   #home-wrap .home-team-name small { font-size: 12px; }
   #home-wrap .gameday-card .home-thermal-leaders header h2 { font-size: var(--home-subsection-title); }
   #home-wrap .home-leaders-link { font-size: 10px; }
-  #home-wrap .home-thermal-leaders .gameday-player { grid-template-columns: 18px minmax(0,1fr) auto; gap: 8px; min-height: 48px; }
+  #home-wrap .home-thermal-leaders .gameday-player { grid-template-columns: 18px minmax(0,1fr) auto; gap: 8px; min-height: 44px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy { display: grid; gap: 3px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 16px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 12px; }
@@ -467,9 +442,9 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
 #home-wrap .home-outlook-title { padding: 16px 0 12px; border-bottom: 1px solid var(--paper-soft-rule); }
 #home-wrap .home-outlook-title h3 { margin-top: 4px; }
 #home-wrap .home-outlook-title > span { color: var(--paper-muted); font: 400 var(--home-meta-size)/1.4 system-ui,sans-serif; }
-#home-wrap .home-brief-grid strong { color: var(--ink); font: 700 16px/1.4 Georgia,serif; }
+#home-wrap .home-brief-grid strong { color: var(--ink); font: 700 15px/1.4 Georgia,serif; }
 #home-wrap .home-brief-grid span { font-size: 13px; }
-#home-wrap .home-tuesday-receipt strong { font: 700 16px/1.4 Georgia,serif; }
+#home-wrap .home-tuesday-receipt strong { font: 700 15px/1.4 Georgia,serif; }
 #home-wrap :is(.home-tuesday-receipt span,.home-signal-changes em,.home-pickem-card span) { font-size: 13px; line-height: 1.5; }
 #home-wrap .home-league-snapshot > h2 { margin-bottom: 12px; }
 #home-wrap .home-league-snapshot .fp-snap { padding-block: 4px 12px; border-bottom: 0; }

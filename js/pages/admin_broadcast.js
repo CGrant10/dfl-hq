@@ -28,7 +28,6 @@ import { renderItem } from "../broadcast-stage.js";
 import { loadSettings, broadcastOff, setGeneratorOff } from "../settings.js";
 import { imageFieldHtml, wireImageFields } from "../image-field.js";
 import { clearLore } from "../lore.js";
-import { refreshBottomlineNow } from "../bottomline.js";
 import { broadcastInboxHtml, wireBroadcastInbox } from "../broadcast-inbox.js";
 import { ensureBroadcastStyles } from "../lazy-css.js";
 
@@ -38,15 +37,13 @@ wireImageFields();
   THE REFRESH BUTTON, and what it is actually for.
 
   Everything on this screen writes straight to Supabase, so the DATA is never
-  stale - what goes stale is what has already been read. Three things cache:
+  stale - what goes stale is what has already been read. Two things cache:
 
     this panel      the running order and the preview were read once when the
                     tab opened, so a slide edited in another tab, or by another
                     commissioner, is not shown here
     lore            js/lore.js keeps one shared copy of the league's history
                     for the whole visit, and the deck is built from it
-    the strip       js/bottomline.js re-reads on a timer, so a new ticker line
-                    can take minutes to appear
 
   So Refresh drops the caches and reads again, in that order. It is not a
   "publish" button: nothing is held back waiting for it, and the front page
@@ -90,19 +87,6 @@ export async function renderBroadcastPanel(host) {
   wireRefresh(host, () => renderBroadcastPanel(host));
 }
 
-/*
-  THE TICKER, with the same button.
-
-  It was a bare table tab, which is still the right shape for five fields - this
-  wraps it rather than replacing it, so the list, the form and the permission are
-  all unchanged and the only new thing on the screen is Refresh.
-*/
-export async function renderTickerPanel(host) {
-  host.innerHTML = `${refreshBar("Refresh the ticker")}<div data-tk-manager></div>`;
-  renderManager(host.querySelector("[data-tk-manager]"), specFor("ticker_items"));
-  wireRefresh(host, () => renderTickerPanel(host));
-}
-
 /**
  * Drop the caches, re-read, and say when.
  *
@@ -119,7 +103,6 @@ function wireRefresh(host, again) {
     btn.textContent = "Refreshing…";
     try {
       clearLore();                       // the deck is built from this
-      await refreshBottomlineNow();      // the strip at the bottom of every page
       await again();                     // and this panel, from the database
       /* again() replaced the markup, so the stamp has to be found afresh - the
          element this handler captured is no longer in the document. */

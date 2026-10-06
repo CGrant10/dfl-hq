@@ -118,12 +118,7 @@
 #home-wrap :is(.home-week-focus,.home-weekly-clubhouse) { margin-inline:var(--home-gutter); padding:20px 0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
 #home-wrap :is(.home-week-focus,.home-weekly-clubhouse) :is(.btn,.clubhouse-text-link,.linkbtn) { border:0; border-radius:4px; padding:6px 0; background:transparent; font:500 12px/1.4 system-ui,sans-serif; text-transform:none; letter-spacing:0; }
 
-/* The shared shell follows the selected quiet chrome, retaining role colors. */
-.topbar { background:var(--bg); box-shadow:none; }
-.topbar .topbar-inner { gap:10px; }
-.topbar .topbar-inner .topbar-actions { gap:4px; }
-.topbar .topbar-actions .dfl-preview-toggle[data-mode] { background:transparent; border-radius:0; padding-inline:6px; }
-.topbar .topbar-inner .topbar-actions .whoami { font-family:var(--font-display); font-size:14px; }
+/* Quiet navigation and neutral member identity controls. */
 .tabbar { background:var(--bg); box-shadow:none; backdrop-filter:none; }
 .tabbar :is(a,.tabmore).on { transform:none; }
 .tabbar :is(a,.tabmore).on svg { filter:none !important; }
