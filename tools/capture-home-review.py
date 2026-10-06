@@ -162,11 +162,11 @@ with sync_playwright() as p:
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
                 const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
-                const crest=slide.querySelector('.bx-editorial-crest'), copy=slide.querySelector('.bx-editorial-copy'), artwork=crest?.getBoundingClientRect();
+                const crest=slide.querySelector('.bx-editorial-crest'), copy=slide.querySelector('.bx-editorial-copy'), artwork=slide.querySelector('.bx-editorial-illustration')?.getBoundingClientRect() || crest?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right} : null,
+                    crest:crest ? {complete:crest.complete && slide.querySelector('.bx-editorial-splatter').complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -224,6 +224,34 @@ with sync_playwright() as p:
     page.locator('[data-page-detail="home-league"] summary').click()
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'More from the league did not open'
     metrics['sectionNavigation'] = 'passed'
+    metrics['expandedHome'] = []
+    for mode in ['light','dark']:
+        page.evaluate('mode=>window.reviewSetTheme(mode)', mode)
+        for width in [320,390,1280]:
+            page.set_viewport_size({'width':width,'height':844})
+            for panel in ['brief','picks','players','startsit']:
+                page.locator(f'[data-week-tab="{panel}"]').click()
+                page.wait_for_timeout(300)
+                assert page.locator(f'[data-week-panel="{panel}"]').is_visible(), f'Week Ahead tab did not open: {panel}'
+                assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true'
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'Forecast overflows in {mode}/{width}/{panel}'
+                contrast = page.evaluate('window.reviewTextContrast()')
+                assert not contrast['failures'], f'Unreadable forecast in {mode}/{width}/{panel}: {contrast["failures"]}'
+                metrics['expandedHome'].append({'mode':mode,'width':width,'panel':panel})
+            page.locator('[data-week-tab="players"]').click()
+            for position in ['QB','RB','WR','TE','K','DEF']:
+                page.locator(f'[data-position-tab="{position}"]').click()
+                assert page.locator(f'[data-position-panel="{position}"]').is_visible(), f'Player position did not open: {position}'
+            page.locator('[data-home-rank-toggle]').click()
+            assert page.locator('.home-rankings-card .is-rank-collapsed').is_visible()
+            page.locator('[data-home-rank-toggle]').click()
+            for feed in ['activity','news']:
+                page.locator(f'[data-feed-tab="{feed}"]').click()
+                page.wait_for_timeout(300)
+                assert page.locator(f'[data-feed-panel="{feed}"]').is_visible()
+                contrast = page.evaluate('window.reviewTextContrast()')
+                assert not contrast['failures'], f'Unreadable feed in {mode}/{width}/{feed}: {contrast["failures"]}'
+            page.locator('[data-week-tab="brief"]').click()
     metrics['themes'] = []
     for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
         page.evaluate('mode=>window.reviewSetTheme(mode)', mode)

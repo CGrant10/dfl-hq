@@ -9,7 +9,13 @@ import { primarySeasonNavMarkup } from '../js/season-nav.js';
 import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-slides.js';
 import { disclosure } from '../js/page-disclosure.js';
 import { MEDICINE_GROUND, teamPalette } from '../js/team-theme.js';
-import { esc } from '../js/ui.js';
+import { activityLine } from '../js/activity.js';
+import { playerIdentity } from '../js/player-presentation.js';
+import { playerLiveState } from '../js/live-score.js';
+import { teamPortrait } from '../js/team-presentation.js';
+import { HOME_OUTLOOK_POSITIONS } from '../js/home-week-outlook.js';
+import { pickemState } from '../js/pickem-state.js';
+import { esc, money, fmtShort } from '../js/ui.js';
 import { icon } from '../js/icons.js';
 import { accentOf, isChampionTitle, displayAchievement, ringCount } from '../js/identity-rules.js';
 import { teamCode, teamLogo, teamGradientVars } from '../js/nfl-teams.js';
@@ -46,6 +52,30 @@ const wallPosts = [
   {id: 2, member_id: 'u2', created_at: '2026-10-05T12:00:00Z', body: 'Same story every year. Mike’s lucky. A full weekend of football, a last-minute lineup change, and somehow it still comes down to a fraction of a point. Save the screenshots. We’re going to need those receipts when the rematch rolls around.', reply_count: 1, image:'assets/dfl-daily-rivalry.webp', members: {display_name:'League Vet',profile_title:'Keeper of the receipts',featured_achievement:'A decade of rivalry wins'}},
   {id: 3, member_id: 'u3', created_at: '2026-10-04T12:00:00Z', body: 'Decimal mafia never sleeps.', reply_count: 0, members: {display_name:'The Analyst'}},
 ].map(row => reviewWallPost(row, true)).join('');
+
+// Include the real expanded Home sections, without booting database modules.
+const homeSource = readFileSync(new URL('../js/pages/home.js', import.meta.url), 'utf8');
+const rankMarkup = homeSource.slice(homeSource.indexOf('function rankMove('), homeSource.indexOf('function wireHomeRankings(')).replaceAll('export ', '');
+const weeklyMarkup = homeSource.slice(homeSource.indexOf('function outlookPlayerRow('), homeSource.indexOf('function wireHomeWeekHub(')).replaceAll('export ', '');
+const tradeMarkup = homeSource.slice(homeSource.indexOf('function tradePackageLine('), homeSource.indexOf('async function weekAheadSlide(')).replaceAll('export ', '');
+const feedMarkup = homeSource.slice(homeSource.indexOf('function snapshot('), homeSource.indexOf('function wireHomeLeagueFeed('));
+const renderHomeReview = Function('esc', 'money', 'fmtShort', 'teamPortrait', 'playerIdentity', 'playerLiveState', 'HOME_OUTLOOK_POSITIONS', 'activityLine', 'visible', 'hiddenClass', 'editControls', 'addControl', 'adminRow', `${rankMarkup}\n${weeklyMarkup}\n${tradeMarkup}\n${feedMarkup}\nreturn {homeRankingsCard,homeWeeklyDigest,homeWeeklyFocus,homeTradeWire,homeLeagueFeed,snapshot};`)(esc, money, fmtShort, teamPortrait, playerIdentity, playerLiveState, HOME_OUTLOOK_POSITIONS, activityLine, (_table, rows) => rows, () => '', () => '', () => '', () => '');
+const pickemSource = readFileSync(new URL('../js/sportsbook-pickem.js', import.meta.url), 'utf8');
+const homePickem = Function('pickemState', 'fmt', `${pickemSource.slice(pickemSource.indexOf('export function homePickemMarkup(')).replace('export ', '')}\nreturn homePickemMarkup;`)(pickemState, value => new Date(value).toLocaleDateString('en-US'));
+const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeRankings('), homeSource.indexOf('function outlookPlayerRow('))
+  + homeSource.slice(homeSource.indexOf('function wireHomeWeekHub('), homeSource.indexOf('export function leave('))
+  + homeSource.slice(homeSource.indexOf('function wireHomeLeagueFeed('), homeSource.indexOf('function identity('));
+const forecastPlayer = {id:'7564',name:'Ja’Marr Chase',position:'WR',nflTeam:'CIN',ownerName:'Grant',points:24.6,scoreSource:'actual',complete:true,opponent:'BAL'};
+const outlook = {week:5,predictions:[{winner:{name:'Grant',projection:124.8},loser:{name:'Mike',projection:118.2},margin:6.6,confidence:'LEAN',isMine:true}],leaders:Object.fromEntries(HOME_OUTLOOK_POSITIONS.map(position => [position,[{...forecastPlayer,position}]])),startSit:{teamName:'Grant',lineupIsSet:true,swaps:[],alarms:[]}};
+const briefing = {title:'Weekly briefing',headline:'Every point counts this week.',matchup:'Grant faces Mike in the rematch.',playoff:'Win to hold your spot',playoffDetail:'The middle of the table is getting crowded.',lineup:'Keep your starters ready for kickoff.',action:'Check the injury report before locking your lineup.'};
+const rankings = {weeks:5,focus:{id:'1'},allTeams:[{id:'1',name:'Grant',identity:{display_name:'Grant'}},{id:'2',name:'Mike',identity:{display_name:'Mike'}}],powerRankings:{boards:[{label:'Week 5',rows:[{id:'1',rank:1,name:'Grant',record:'3–1',movement:1},{id:'2',rank:2,name:'Mike',record:'2–2',movement:-1},{id:'3',rank:3,name:'Dream Enders',record:'2–2',movement:0},{id:'4',rank:4,name:'Klutch Sports Group',record:'1–3',movement:1}]}]}};
+const expandedHome = `<div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
+  <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
+  <div data-home-pickem-slot>${homePickem({available:true,week:5,locksAt:'2099-10-10T16:00:00Z',games:[{provider_event_id:'1'}]},esc)}</div>
+  <div data-home-report-slot>${renderHomeReview.homeWeeklyDigest(outlook,briefing,{title:'A finish for the archive',season:2026,week:4,highlights:[{title:'Closest game',detail:'A fraction of a point separated the league.'}]},[{impact:'up',name:'Ja’Marr Chase',detail:'Ready for kickoff'}])}</div>
+  ${renderHomeReview.snapshot({leagues:[],members:[{display_name:'Grant'},{display_name:'Mike'}],standings:[],dues:[{season:2026,amount_due:100,amount_paid:80}],polls:[]})}
+  <div data-home-trade-slot>${renderHomeReview.homeTradeWire([{week:5,href:'#/trade?id=7',teams:[{teamName:'Dream Enders'},{teamName:'Klutch Sports Group'}],packages:[{teamName:'Dream Enders',players:[{name:'Justin Jefferson'}]},{teamName:'Klutch Sports Group',players:[{name:'Travis Kelce'}]}],outcome:{grade:'Close call',tone:'close',closeness:64,detail:'Both teams fill a need heading into the next kickoff.'}}])}</div>
+  <div data-home-feed-slot>${renderHomeReview.homeLeagueFeed([{title:'Anniversary golf weekend',content:'The next chapter starts on the first tee. Watch the calendar for the league schedule.',created_at:'2026-10-05T12:00:00Z'}],[{display_name:'Grant',member_id:'u1',action:'insert',entity:'wall post',label:'Wall post',last_at:'2026-10-06T12:00:00Z'}])}</div>`;
 
 const players = [
   { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'final', roster: '1' },
@@ -84,10 +114,10 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></section></div>
   <div data-home-lore-slot>${leagueFile}</div>
-  ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
+  ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', expandedHome)}
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.305.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.306.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
@@ -116,6 +146,10 @@ html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b
   document.querySelectorAll('[data-wall-reaction]').forEach(button => button.disabled = false);
   document.querySelectorAll('[data-reaction-status]').forEach(status => status.textContent = '');
   window.reviewTextContrast = reviewTextContrast;
+  ${homeReviewWiring}
+  wireHomeRankings(document.querySelector('#home-wrap'));
+  wireHomeWeekHub(document.querySelector('#home-wrap'));
+  wireHomeLeagueFeed(document.querySelector('#home-wrap'));
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));
   window.reviewDeck = deck;
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
