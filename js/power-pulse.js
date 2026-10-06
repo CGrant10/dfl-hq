@@ -55,7 +55,9 @@ export function powerPulseView({ analysis, meSleeperId = null, standings = [], c
   const powerRankings = buildLeaguePowerRankings({
     teams,
     matchups: analysis.matchups || [],
-    currentWeek,
+    currentWeek: currentWeek ?? analysis.liveWeek,
+    standings: currentStandings,
+    season: analysis.projectionSeason,
     weeks: REGULAR_SEASON_WEEKS,
   });
   const stakes = buildLeagueStakes({

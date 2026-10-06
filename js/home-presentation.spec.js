@@ -44,6 +44,13 @@ describe('selected Home presentation', () => {
     expect(html).toContain('data-player-final');
     expect(homeThermalBoard({ starters: [] })).toContain('No hot or cold starters yet.');
   });
+  it('labels finished hot and cold players consistently, including zero', () => {
+    const html = homeThermalBoard({completed:true,starters:[player('hot',24.6),player('zero',0),player('live',18.4,'live')]});
+    expect((html.match(/data-player-final/g)||[])).toHaveLength(2);
+    expect(html).toContain('data-player-phase="hot" data-player-final>Final');
+    expect(html).toContain('data-player-phase="zero" data-player-final>Final');
+    expect(html).toContain('data-player-phase="live">Live');
+  });
   it('keeps team totals neutral and preserves real custom team photos', () => {
     const html = homeGameDayMatchup({ season: 2026, week: 5, games: [{ isMine: true, sides: [
       { roster: '1', name: 'Team', score: 124.8, identity: { display_name: 'Grant', profile_image: 'https://example.com/grant.webp' } },

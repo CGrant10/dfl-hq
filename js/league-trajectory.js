@@ -18,8 +18,8 @@ function teamForSide(row, side, byUser, byRoster) {
   return byUser.get(key(row?.[`user${side}`])) || byRoster.get(key(row?.[`roster${side}`])) || null;
 }
 
-function ranked(teams, valueOf) {
-  return [...teams].sort((a, b) => valueOf(b) - valueOf(a) || num(a.rank) - num(b.rank));
+function ranked(teams, valueOf, pointsOf) {
+  return [...teams].sort((a, b) => valueOf(b) - valueOf(a) || pointsOf(b) - pointsOf(a) || num(a.rank) - num(b.rank));
 }
 
 function boardRows(ordered, previous, state, weeklyScores) {
@@ -46,10 +46,10 @@ function boardRows(ordered, previous, state, weeklyScores) {
  * analyzer sees today's rosters, so trades can change it during the year.
  *
  * Once games begin, weekly power rank uses completed results only: cumulative
- * points scored (70%) and win percentage (30%). The live week is deliberately
+ * win percentage first, then cumulative points scored. The live week is deliberately
  * absent until Sleeper advances on Tuesday.
  */
-export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, weeks = DEFAULT_WEEKS } = {}) {
+export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWeek = null, season = null, standings = [], weeks = DEFAULT_WEEKS } = {}) {
   const live = teams.filter(team => team?.id != null && Number.isFinite(Number(team?.lineup?.weeklyPoints)));
   if (live.length < 2) return null;
 
@@ -69,24 +69,10 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
     && Number(row?.week) > 0 && Number(row?.week) <= weeks
     && Number.isFinite(Number(row.score1)) && Number.isFinite(Number(row.score2)));
 
-  /*
-    A WEEK IN PROGRESS IS NOT A WEEK PLAYED.
-
-    sync.js writes a week as soon as ANYBODY has points in it, so from the
-    first Thursday-night kickoff the current week is in the table with five
-    of its six fixtures sitting at something-to-zero. Counting that as a
-    played week gave every team a second W or L off a game that had not
-    happened: the board read 2-0 on the Friday of week 2.
-
-    A week counts once every fixture in it has a score on BOTH sides. That
-    needs no clock and no league calendar - the rows say it themselves - and
-    it settles the moment the last game ends.
-
-    The one thing it cannot tell apart is a real 0.00, which would hold a
-    finished week out of the board. A fantasy lineup scoring exactly zero
-    across every starter does not happen; a forfeit recorded as 0-0 would,
-    and would need its own handling if the league ever books one.
-  */
+  /* A synced live slate may contain provisional scores. Require every
+     team exactly once, and use Sleeper's week rollover to accept final
+     results (including a real zero). Without a week boundary, retain the
+     legacy complete/nonzero fallback. */
   const weekRows = new Map();
   for (const row of rows) {
     const week = Number(row.week);
@@ -97,8 +83,14 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
     /* Scores can be non-zero on every side by Sunday night even though
        Monday players remain. Sleeper advancing to the next week is the
        authoritative boundary: the live week can never create a W/L. */
-    .filter(([week, group]) => weekIsFinal(group)
-      && (!Number.isFinite(Number(currentWeek)) || Number(currentWeek) < 1 || week < Number(currentWeek)))
+    .filter(([week, group]) => {
+      const cutoff = Number(currentWeek);
+      if (Number.isFinite(cutoff) && cutoff > 0 && week >= cutoff) return false;
+      const ids = group.flatMap(row => [teamForSide(row,1,byUser,byRoster),teamForSide(row,2,byUser,byRoster)])
+        .filter(Boolean).map(team => key(team.id));
+      const complete = group.length * 2 === live.length && ids.length === live.length && new Set(ids).size === live.length;
+      return complete && (week < cutoff || weekIsFinal(group));
+    })
     .map(([week]) => week)
     .sort((a, b) => a - b);
   let previousWeek = 0;
@@ -117,15 +109,21 @@ export function buildLeaguePowerRankings({ teams = [], matchups = [], currentWee
       else { aa.ties += 1; bb.ties += 1; }
     }
 
-    const totals = live.map(team => state.get(key(team.id)).points);
-    const low = Math.min(...totals), high = Math.max(...totals);
+    if (week === playedWeeks.at(-1)) {
+      const official = live.map(team => standings.find(row => ((team.sleeper_user_id != null && key(row.sleeper_user_id) === key(team.sleeper_user_id)) || (team.roster_id != null && key(row.roster_id) === key(team.roster_id))) && (season == null || Number(row.season) === Number(season))));
+      if (official.every(row => row && ['wins','losses','ties'].every(k => Number.isInteger(Number(row[k])) && Number(row[k]) >= 0) && Number(row.wins) + Number(row.losses) + Number(row.ties) === week)) {
+        live.forEach((team,i) => { const row = official[i], record = state.get(key(team.id));
+          record.wins = Number(row.wins); record.losses = Number(row.losses); record.ties = Number(row.ties); record.games = week;
+          if (row.points_for != null && Number.isFinite(Number(row.points_for))) record.points = Number(row.points_for);
+        });
+      }
+    }
     const power = team => {
       const record = state.get(key(team.id));
-      const scoring = high === low ? .5 : (record.points - low) / (high - low);
       const result = record.games ? (record.wins + record.ties * .5) / record.games : .5;
-      return scoring * .7 + result * .3;
+      return result;
     };
-    const order = ranked(live, power);
+    const order = ranked(live, power, team => state.get(key(team.id)).points);
     const currentRows = boardRows(order, previous, state, weeklyScores);
     boards.push({
       week,
@@ -172,7 +170,7 @@ export function leaguePowerRankingsCard(rankings, focusId = null) {
     <div class="pp-board-viewport" data-pp-board-viewport>
       ${rankings.boards.map((board, index) => rankingBoard(board, focusId, index)).join("")}
     </div>
-    <p class="pp-board-note">Rank uses completed results only: total points (70%) and record (30%). It updates after Sleeper advances the week on Tuesday.</p>
+    <p class="pp-board-note">Rank uses completed results only: record first, then total points to break ties. It updates after Sleeper advances the week on Tuesday.</p>
   </section>`;
 }
 

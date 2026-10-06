@@ -1,3 +1,5 @@
+import {loadLeagueState} from './league-state.js';
+import {loadLatestLeagueResults,reconcileLeagueResults} from './league-results.js';
 import {loadClubhouseIndex,loadClubhouseWeek,loadWeeklyRosters} from './weekly-clubhouse-data.js';
 import {loadPlayers,sleeper} from './sleeper.js';
 import {loadLore} from './lore.js';
@@ -47,14 +49,14 @@ export function mountGameDay(root,{members,member,active,standings=[]}){
  const refresh=async(force=false)=>{
   if(busy||!current())return;busy=true;button.disabled=true;
   try{
-   const index=await loadClubhouseIndex({force});if(!index[0])throw Error('No synced week');const week=await loadClubhouseWeek(index[0].season,index[0].week,{force});
+   const index=await loadClubhouseIndex({force});if(!index[0])throw Error('No synced week');const storedWeek=await loadClubhouseWeek(index[0].season,index[0].week,{force});const state=await loadLeagueState({force}).catch(()=>null);const advanced=Number(state?.season)===Number(storedWeek.season)&&storedWeek.week<state.currentWeek;const week={...storedWeek,completed:storedWeek.completed||advanced};
    if(leagueId!==week.leagueId){leagueId=week.leagueId;leaguePromise=sleeper.league(leagueId)}
    lorePromise ||= loadLore();
-   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise]);if(!current())return;
+   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise,advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}).catch(()=>null):null]);if(!current())return;
    if(results[0].status!=='fulfilled'||!results[0].value.length)throw Error('Scores unavailable');
    const nfl=results[2].status==='fulfilled'?results[2].value:null,players=results[1].status==='fulfilled'?results[1].value:{};
    const next=buildGameDay({week,rows:results[0].value,players,nfl,members,memberId:member?.id,...(results[3].status==='fulfilled'&&Array.isArray(results[3].value?.roster_positions)?{rosterPositions:results[3].value.roster_positions}:{})});
-   next.standings=standings;next.checkedAt=Date.now();playerMeta=players;const tk=`${next.leagueId}:${next.season}:${next.week}`;if(tk!==timelineKey){timelineRequest++;timelineKey=tk;timelineChecked=0;timeline={items:[],busy:false,more:false,cursor:null,error:null}}history=results[4].status==='fulfilled'?results[4].value.matchups||[]:[];banter=matchupBanter(next,history);
+   next.standings=reconcileLeagueResults({season:week.season,teams:next.games.flatMap(g=>g.sides.map(t=>({...t,roster_id:t.roster,sleeper_user_id:t.uid}))),standings,snapshot:results[5].status==='fulfilled'?results[5].value:null}).standings;next.checkedAt=Date.now();playerMeta=players;const tk=`${next.leagueId}:${next.season}:${next.week}`;if(tk!==timelineKey){timelineRequest++;timelineKey=tk;timelineChecked=0;timeline={items:[],busy:false,more:false,cursor:null,error:null}}history=results[4].status==='fulfilled'?results[4].value.matchups||[]:[];banter=matchupBanter(next,history);
    const key=`dfl.gameday.v1.${member?.id||'guest'}.${week.season}.${week.week}`;const sameWeek=key===lastKey;if(key!==lastKey){lastKey=key;moments=[];try{previous=JSON.parse(sessionStorage.getItem(key)||'null')}catch{previous=null}}
    const updates=gameDayHighlights(next,previous).map(m=>({...m,at:Date.now()}));moments=[...updates,...moments.filter(m=>!updates.some(n=>n.key===m.key))].slice(0,3);const animate=!!model&&sameWeek;model=next;paint();if(animate)stopScoreMotion=animateScoreChanges(content,{previous,model,motion});spotlight.update();watch.update(animate?previous:null);if(watch.wantsMoments())void refreshTimeline(false,force);
    if(updates.length&&previous)root.querySelector('[data-gameday-announcement]').textContent=`${updates.length} new league highlights. ${updates[0].text}`;

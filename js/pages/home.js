@@ -674,10 +674,10 @@ export async function render(view) {
     }) || { slides: [], fixtures: [] };
     const pulse = powerPulseView({
       analysis, meSleeperId: myMember?.sleeper_user_id || null,
-      standings: standings.data || [], currentWeek: weekly?.week || null,
+      standings: analysis?.standings?.length ? analysis.standings : standings.data || [], currentWeek: weekly?.week || analysis?.liveWeek || null,
     });
     if (pulse?.stakes) pulse.stakes = buildLeagueStakes({
-      teams: analysis.teams, standings: standings.data || [], projections: pulse.projections,
+      teams: analysis.teams, standings: analysis.standings?.length ? analysis.standings : standings.data || [], projections: pulse.projections,
       fixtures: aheadData.fixtures, season: analysis.projectionSeason, week: weekly?.week,
       playoffTeams: Number(analysis.league?.playoff_teams) || 8,
     });

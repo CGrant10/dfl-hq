@@ -138,8 +138,8 @@ body:has(#view[data-route="home"]) .topbar .topbar-actions > button:hover { back
 #home-wrap .home-thermal-leaders .dfl-player-portrait i { background: transparent; color: var(--paper-muted); }
 #home-wrap .home-thermal-leaders .dfl-player-copy strong { color: var(--ink); font: 400 15px/1.2 'Anton',sans-serif; }
 #home-wrap .home-thermal-leaders .dfl-player-copy small { color: var(--paper-body); font: 400 11px/1.2 system-ui,sans-serif; }
-#home-wrap .home-thermal-leaders .gameday-player-score { display: flex; gap: 6px; min-width: 70px; align-items: center; }
-#home-wrap .home-thermal-leaders .gd-thermal-number { color: var(--print-accent); font-size: 30px; text-shadow: none; }
+#home-wrap .home-thermal-leaders .gameday-player-score { display: grid; grid-template-columns: minmax(0,1fr); gap: 3px; min-width: 5.5rem; align-content: center; justify-items: end; }
+#home-wrap .home-thermal-leaders .gd-thermal-number { color: var(--ink); font-size: var(--gd-player-score-size,1.5rem); text-shadow: none; }
 #home-wrap .home-thermal-leaders .gameday-player-score small { color: var(--paper-muted); }
 #home-wrap .home-thermal-leaders .gd-thermal-value { color: inherit; text-shadow: none; }
 #home-wrap .home-section-action, #home-wrap .gameday-controls .home-section-action { background: transparent; color: var(--print-accent); border-radius: 0; }
@@ -245,7 +245,7 @@ body:has(#view[data-route="home"]) .bottomline { display: none; }
   #home-wrap .home-thermal-leaders .dfl-player-copy { display: flex; align-items: center; gap: 12px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 24px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 14px; }
-  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 52px; }
+  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: var(--gd-player-score-size,1.5rem); }
   #home-wrap .home-thermal-leaders .dfl-player-portrait { width: 50px; height: 54px; flex-basis: 50px; }
   #home-wrap .home-leaders-link { font-size: 13px; }
   #home-wrap .home-league-story { gap: 20px; padding-block: 18px; }
@@ -438,6 +438,12 @@ body:has(#view[data-route="home"]) .topbar .notification-bell .ico { color: var(
   #home-wrap .home-thermal-leaders .dfl-player-copy strong { font-size: 18px; }
   #home-wrap .home-thermal-leaders .dfl-player-copy small { font-size: 12px; }
   #home-wrap .home-thermal-leaders .dfl-player-portrait { width: 38px; height: 44px; flex-basis: 38px; }
-  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: 36px; }
+  #home-wrap .home-thermal-leaders .gd-thermal-number { font-size: var(--gd-player-score-size,1.5rem); }
   #home-wrap .home-player-rank { font-size: 18px; }
 }
+
+/* One score column and the same temperature inks as the detailed GameDay rows. */
+#home-wrap .home-thermal-leaders .gameday-player-score > :is(.gd-thermal-number,small) { grid-column: 1; justify-self: end; }
+#home-wrap .gameday-player-score .gd-thermal-number { font-size: var(--gd-player-score-size,1.5rem); color: var(--ink); }
+#home-wrap .gameday-player-score .gd-thermal-number[data-score-temperature="hot"] { color: var(--gd-hot-ink); }
+#home-wrap .gameday-player-score .gd-thermal-number[data-score-temperature="cold"] { color: var(--gd-cold-ink); }
