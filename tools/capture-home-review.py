@@ -172,6 +172,7 @@ with sync_playwright() as p:
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
                 page.wait_for_timeout(350)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');return active && getComputedStyle(active).color === getComputedStyle(active,'::before').backgroundColor}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
                 assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
@@ -242,7 +243,23 @@ with sync_playwright() as p:
     density_page.wait_for_timeout(650)
     metrics['phoneDensity'] = density_page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>({pixels:e.width,css:e.clientWidth,ratio:e.width/e.clientWidth})')
     assert metrics['phoneDensity']['ratio'] >= 2.9, 'Score effects are below phone screen resolution'
-    metrics['medicineEffects'] = density_page.evaluate("""() => new Promise(resolve=>requestAnimationFrame(()=>{const canvas=document.querySelector('canvas.gd-vfx-canvas'),gl=canvas.getContext('webgl'),pixels=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);let visible=0,blue=0;for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]>20){visible++;if(pixels[i+2]>pixels[i]+4)blue++}}resolve({visible,blue})}))""")
+    # The renderer discards its buffer after compositing. Sample immediately
+    # after a real draw, before the browser can clear the default framebuffer.
+    metrics['medicineEffects'] = density_page.evaluate("""() => new Promise((resolve,reject)=>{
+        const canvas=document.querySelector('canvas.gd-vfx-canvas'),gl=canvas.getContext('webgl'),original=gl.drawArrays;
+        const timeout=setTimeout(()=>{gl.drawArrays=original;reject(Error('Score effects did not draw a frame'))},5000);
+        gl.drawArrays=function(...args){
+            original.apply(this,args);gl.drawArrays=original;
+            queueMicrotask(()=>{
+                clearTimeout(timeout);
+                const pixels=new Uint8Array(canvas.width*canvas.height*4);
+                gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+                let visible=0,blue=0;
+                for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]>20){visible++;if(pixels[i+2]>pixels[i]+4)blue++}}
+                resolve({visible,blue});
+            });
+        };
+    })""")
     assert metrics['medicineEffects']['visible'] > 30 and metrics['medicineEffects']['blue'] == 0, f'Score effects retain off-palette blue: {metrics["medicineEffects"]}'
     density_page.screenshot(path=str(OUT / 'home-390@3x.png'))
     density_context.close()

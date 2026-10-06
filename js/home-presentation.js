@@ -98,7 +98,7 @@ export function homeLeagueFile({ fact = null, rivalry = null } = {}) {
     rivalry,
   ].filter(Boolean);
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
-    <header><h2 id="home-league-file-title">The DFL file</h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <header><h2 id="home-league-file-title">The archive</h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <div class="home-league-stories">${stories.map((story, index) => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${index ? 'rivalry' : 'archive'}.webp" width="600" height="420" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }
