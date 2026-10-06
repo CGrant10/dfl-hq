@@ -147,7 +147,15 @@ with sync_playwright() as p:
     assert metrics['refinement']['paper'] == '#efebe1' and metrics['refinement']['hero'], 'Selected newspaper presentation is missing'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
     page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='off'")
-    assert page.evaluate("document.querySelector('.home-banter').previousElementSibling.matches('[data-page-detail=home-league]')"), 'Wall must follow More from the league'
+    metrics['readingOrder'] = page.evaluate("""() => {
+      const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','[data-home-lore-slot]','.home-banter'];
+      const root=document.querySelector('#home-wrap'),children=[...root.children];
+      return selectors.map(selector=>({selector,index:children.indexOf(root.querySelector(selector))}));
+    }""")
+    assert all(x['index']>=0 for x in metrics['readingOrder']) and [x['index'] for x in metrics['readingOrder']] == sorted(x['index'] for x in metrics['readingOrder']), 'Home sections are out of reading order'
+    assert page.evaluate("!document.querySelector('[data-home-focus-slot]').closest('details')&&!document.querySelector('[data-home-rankings-slot]').closest('details')"), 'Next actions and standings must be visible without expanding a disclosure'
+    assert page.locator('[data-page-detail="home-week"]').evaluate('e=>!e.open') and page.locator('[data-page-detail="home-league"]').evaluate('e=>!e.open'), 'Secondary detail should start collapsed'
+    assert page.evaluate("document.querySelector('.home-banter').previousElementSibling.matches('[data-home-lore-slot]')"), 'History should lead into league conversation'
     metrics['cleanup'] = page.evaluate("""() => ({stories:[...document.querySelectorAll('.home-league-story')].map(e=>({border:getComputedStyle(e).borderLeftWidth,background:getComputedStyle(e).backgroundColor,decoration:getComputedStyle(e).textDecorationLine})),actions:[...document.querySelectorAll('.home-section-action')].map(e=>({label:e.getAttribute('aria-label'),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),storyLinks:document.querySelectorAll('.home-league-file > nav').length})""")
     assert all(s['border'] == '0px' and s['background'] == 'rgba(0, 0, 0, 0)' and s['decoration'] == 'none' for s in metrics['cleanup']['stories']), 'Archive stories still use boxed cards or underlined links'
     assert all(a['label'] and a['width'] >= 44 and a['height'] >= 44 for a in metrics['cleanup']['actions']), 'Section controls need accessible names and phone-sized targets'
@@ -219,11 +227,11 @@ with sync_playwright() as p:
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
                 const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
-                const crest=slide.querySelector('.bx-editorial-crest'), copy=slide.querySelector('.bx-editorial-copy'), artwork=slide.querySelector('.bx-editorial-illustration')?.getBoundingClientRect() || crest?.getBoundingClientRect();
+                const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), artwork=slide.querySelector('.bx-editorial-subject')?.getBoundingClientRect(), splatter=slide.querySelector('.bx-editorial-illustration')?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete && slide.querySelector('.bx-editorial-splatter').complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right} : null,
+                    crest:crest ? {complete:crest.complete && slide.querySelector('.bx-editorial-splatter').complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),splatterWidth:splatter.width,stageWidth:stage.clientWidth,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -234,7 +242,9 @@ with sync_playwright() as p:
             assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
             if layout['crest']:
                 crest = layout['crest']
-                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= layout['contentTop'] and crest['bottom'] <= layout['contentBottom'], f'Crest overlaps broadcast copy or controls: {layout}'
+                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= layout['contentTop'] and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
+            if layout['crest']:
+                assert layout['crest']['splatterWidth'] >= layout['crest']['stageWidth'] * .45, 'Splatter should fill the corner'
             page.evaluate("window.scrollTo({top:document.querySelector('.bx-stage').getBoundingClientRect().top+scrollY-115,behavior:'instant'})")
             contrast = page.evaluate('window.reviewTextContrast()')
             assert not contrast['failures'], f'Unreadable broadcast text: {contrast["failures"]}'
@@ -286,18 +296,20 @@ with sync_playwright() as p:
         window.reviewStage.update([...window.reviewDeck, {id:'fixture:late',treatment:'announcement',headline:'Late league update',body:'A new edition from the league wire.',temporal:'recent'}]);
     }""")
     page.wait_for_timeout(200)
-    assert page.locator('.bx-page-count').text_content() == '1 of 13', 'Page count did not update when the deck grew'
+    assert page.locator('.bx-page-count').text_content() == f'1 of {count + 1}', 'Page count did not update when the deck grew'
     assert page.evaluate("document.querySelector('.bx-home-feature')===window.reviewOpener"), 'Deck refresh replayed the opener'
     metrics['deckRefresh'] = 'passed'
     section_hash = page.evaluate('location.hash')
-    for section, selector in [('scores','[data-home-gameday-slot]'), ('archive','[data-home-lore-slot]')]:
+    for section, selector in [('scores','[data-home-gameday-slot]'), ('week','.home-week-desk'), ('league','.home-league-desk'), ('archive','[data-home-lore-slot]')]:
         page.locator(f'[data-home-jump="{section}"]').click()
         page.wait_for_timeout(800)
         assert page.locator(f'[data-home-jump="{section}"]').get_attribute('aria-current') == 'location'
         assert page.evaluate('location.hash') == section_hash, 'Section navigation changed the app route'
         assert page.locator('.topbar').bounding_box()['height'] + 15 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation is obscured by the top bar'
     page.locator('[data-page-detail="home-league"] summary').click()
-    assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'More from the league did not open'
+    assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
+    page.locator('[data-page-detail="home-week"] summary').click()
+    assert page.locator('[data-page-detail="home-week"]').evaluate('e=>e.open'), 'Weekly planning did not open'
     metrics['sectionNavigation'] = 'passed'
     metrics['expandedHome'] = []
     for mode in ['light','dark']:
@@ -401,6 +413,13 @@ with sync_playwright() as p:
                 page.evaluate("document.querySelector('#tabbar').style.visibility='hidden'")
                 page.screenshot(path=str(OUT / f'theme-{mode.replace(":","-")}-{width}-full.png'),full_page=True)
                 page.evaluate("document.querySelector('#tabbar').style.removeProperty('visibility')")
+    metrics['emptyWeek'] = page.evaluate("""() => {
+      const focus=document.createElement('div'),forecast=document.createElement('div');
+      focus.innerHTML=window.reviewEmptyWeek.focus;forecast.innerHTML=window.reviewEmptyWeek.forecast;
+      return {focus:focus.textContent,forecast:forecast.textContent,focusLink:focus.querySelector('a')?.getAttribute('href'),forecastLink:forecast.querySelector('a')?.getAttribute('href'),statuses:focus.querySelectorAll('[role=status]').length+forecast.querySelectorAll('[role=status]').length};
+    }""")
+    assert 'Checking' not in metrics['emptyWeek']['focus'] and 'Building' not in metrics['emptyWeek']['forecast'] and metrics['emptyWeek']['statuses'] == 0, 'Unavailable weekly data must not remain in a loading state'
+    assert metrics['emptyWeek']['focusLink'] == metrics['emptyWeek']['forecastLink'] == '#/analyzer', 'Unavailable forecasts need a usable next action'
     metrics['scoreConsistency'] = check_score_consistency(page)
     page.evaluate("window.reviewSetTheme('light')")
     metrics['consoleErrors'] = errors

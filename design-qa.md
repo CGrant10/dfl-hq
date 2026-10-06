@@ -1,3 +1,19 @@
+# Purposeful Home order and broadcast illustrations — v1.315.0
+
+Final result: passed
+
+Home now follows current events and scores → your next action → league standings/news → archive → league conversation. Your next move, pick deadlines and picks sit together in Your week; detailed forecasts have a separate Plan your week disclosure. Power rankings stay visible in the league desk, with announcements and trades/fees/activity in League news & activity. Actual announcement headlines get a visible news preview; the duplicate generic Clubhouse promotion is removed. The five section jumps follow that order and retain the app route. Missing weekly data gets a useful lineup/matchup fallback instead of a permanent loading message.
+
+Champion slides use a large football/trophy cutout, or their uploaded artwork, over the shared red splatter. Chip Eater uses a flaming chip in a toilet in the same distressed newspaper style. Other existing illustrated slides use a larger DFL crest and corner splatter. Authored champion crop/zoom values are preserved; dense matchup and injury slides retain their data layouts. Pause and keyboard slide controls move to the lower left, leaving the artwork corner clear. The broadcast's reserved height stays 308px at 390px and 297px at 1280px in the fixture. The shared 44px header, compact type scale, score behavior and absent ticker remain.
+
+Original generated assets remain in `/workspace/generated_images/`; WebP versions are shipped as `assets/dfl-daily-champion.webp` and `assets/dfl-daily-chip-eater.webp`. These are generic illustrations, not portraits of real league winners. Existing uploaded champion art takes precedence. Baseline evidence is under `/workspace/dfl-purpose/before/`; final evidence and metrics are under `/workspace/dfl-purpose/after/`, including full reading-order captures, artwork states, carousel captures and `browser-checks.json`. CI retains screenshots as artifacts instead of committing them.
+
+Validation: `pnpm check` passed typechecking, unresolved-name checks, 1,104 tests across 124 files and build. After the fallback refinement, typechecking, name checks and all 62 Home/module-export/cache tests passed again. Chromium passed 70 carousel layouts (including champion, uploaded champion art, and Chip Eater), 48 navigation states, 48 shared-header comparisons, 24 expanded-section states and 18 theme/viewport states. All 7,383 measured text observations passed, minimum contrast 5.57:1, with no fixture page errors. Reading-order/visible-priority checks, four section jumps, separate disclosures, score consistency, layout stability, texture reuse, density and reduced motion passed. The browser workflow timeout is increased to eight minutes to accommodate installation and the expanded review without dropping assertions.
+
+These are production-component fixtures with representative league data. They do not authenticate member views, modify league data or establish physical-phone performance. Existing live Wall-reaction errors are outside this task. Version and service-worker cache markers advance to v1.315.0, including the two new assets.
+
+---
+
 # Smaller Home and shared header — v1.314.0
 
 Final result: passed

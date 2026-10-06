@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { fitSize, focusShouldPause, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
+import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
+  it("uses champion artwork with the shared splatter while retaining the winner and destination", () => {
+    const item = { treatment: "champion", headline: "Winner & Co", kicker: "2025 Champion", href: "#/history" };
+    const html = renderItem(item, { editorial: true });
+    expect(html).toContain("assets/dfl-daily-champion.webp");
+    expect(html).toContain("assets/dfl-daily-splatter.webp");
+    expect(html).toContain("Winner &amp; Co");
+    expect(html).toContain('href="#/history"');
+    expect(renderItem({ ...item, image: "https://example.com/winner.webp", background: "image", imageZoom: 2 }, { editorial: true })).toContain('--bx-zoom:2');
+  });
+  it("gives the Chip Eater its own illustration even when a member portrait is available", () => {
+    const item = { treatment: "champion", variant: "chip", headline: "Last place", image: "https://example.com/member.webp", background: "image" };
+    expect(renderItem(item, { editorial: true })).toContain("assets/dfl-daily-chip-eater.webp");
+    expect(renderItem(item, { editorial: true })).not.toContain("example.com/member.webp");
+    expect(renderItem(item)).toContain("example.com/member.webp");
+  });
   const side = (id, name, score) => ({ id, name, score, status: "Live", mode: "live" });
   const slate = { treatment: "slate", kicker: "2026 · Week 4", href: "#/analyzer", fixtures: [
     { key: "a:b", a: side("a", "First & Co", "66.1"), b: side("b", "Second", "75.5") },
