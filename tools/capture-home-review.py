@@ -228,7 +228,9 @@ with sync_playwright() as p:
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
                 const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
                 const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), artwork=slide.querySelector('.bx-editorial-subject')?.getBoundingClientRect(), splatter=slide.querySelector('.bx-editorial-illustration')?.getBoundingClientRect();
-                return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
+                const paint=slide.querySelector('.bx-editorial-splatter')?.getBoundingClientRect(), paintSize=paint ? Math.min(paint.width,paint.height) : 0, logoSize=artwork ? Math.min(artwork.width,artwork.height) : 0;
+                const logoBackdrop=slide.classList.contains('bx-art-logo') ? {paintSize,logoSize,centerX:Math.abs((paint.right-paintSize/2)-(artwork.right-logoSize/2)),centerY:Math.abs((paint.bottom-paintSize/2)-(artwork.bottom-logoSize/2)),subjectLayer:Number(getComputedStyle(crest.parentElement).zIndex),paintLayer:Number(getComputedStyle(slide.querySelector('.bx-editorial-splatter')).zIndex),blend:getComputedStyle(crest.parentElement.parentElement).mixBlendMode} : null;
+                return {logoBackdrop,width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
                     crest:crest ? {complete:crest.complete && slide.querySelector('.bx-editorial-splatter').complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),splatterWidth:splatter.width,stageWidth:stage.clientWidth,stageBottom:stage.getBoundingClientRect().bottom} : null,
@@ -245,6 +247,9 @@ with sync_playwright() as p:
                 assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= layout['contentTop'] and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
             if layout['crest']:
                 assert layout['crest']['splatterWidth'] >= layout['crest']['stageWidth'] * .45, 'Splatter should fill the corner'
+            if layout['logoBackdrop']:
+                backdrop = layout['logoBackdrop']
+                assert backdrop['paintSize'] >= backdrop['logoSize'] * 1.1 and max(backdrop['centerX'], backdrop['centerY']) <= backdrop['paintSize'] * .18 and backdrop['subjectLayer'] > backdrop['paintLayer'] and backdrop['blend'] == 'normal', f'Paint is not centered behind the logo or loses its white ink: {layout}'
             page.evaluate("window.scrollTo({top:document.querySelector('.bx-stage').getBoundingClientRect().top+scrollY-115,behavior:'instant'})")
             contrast = page.evaluate('window.reviewTextContrast()')
             assert not contrast['failures'], f'Unreadable broadcast text: {contrast["failures"]}'
