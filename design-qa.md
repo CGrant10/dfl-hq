@@ -1,4 +1,14 @@
-# Home UI cleanup — v1.301.0
+# Home layout stability — v1.302.0
+
+The navigation now has a 48px content row (49px including its border), down from 67px, with readable labels, 20px icons, and at least 44px touch targets. Safe-area padding remains included in the measured height and the ticker follows it.
+
+Editorial broadcast stages measure the entire deck at its rendered width and reserve the tallest card's height. The measurement is cached until the width, deck, minimum height, or loaded fonts change. Rotation does not move the GameDay section. Hidden measurement markup is inert, excluded from screen readers, and removed immediately.
+
+The Wall follows More from the league as the final content section, before the app identity and update footer. Its existing deferred loading remains in place.
+
+Validation: pnpm check passed (1,095 tests across 123 files, typecheck, name scan, and production build). Chromium passed all 48 slide layouts across 320/390/768/1280px, asserting constant stage height and GameDay position for every card, content fit, 24 route-state navigation checks, compact navigation and touch targets, final Wall placement, safe-area alignment, and zero page errors. This uses production components with deterministic fixture data, not authenticated live requests.
+
+## Previous cleanup — v1.301.0
 
 Final result: passed in the production-component review.
 

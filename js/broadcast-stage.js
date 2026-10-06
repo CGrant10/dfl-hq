@@ -546,6 +546,17 @@ export function startStage(root, deck, { refresh } = {}) {
   const layer = root.querySelector("[data-bx-layer]");
   const editorial = root.dataset.presentation === "editorial";
   let layoutFrame = 0;
+  let layoutKey = "";
+  let deckHeight = 0;
+  function contentHeight(slide) {
+    const style = getComputedStyle(slide);
+    const children = [...slide.children];
+    return children.reduce((height, el) => {
+      const childStyle = getComputedStyle(el);
+      return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
+    }, 0) + Math.max(0, children.length - 1) * (parseFloat(style.rowGap) || 0)
+      + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0) + 2;
+  }
   function fitLayout() {
     layoutFrame = 0;
     if (dead || !layer) return;
@@ -553,16 +564,31 @@ export function startStage(root, deck, { refresh } = {}) {
     if (!slide) return;
     fitHeadlines(slide);
     if (!editorial) return;
-    const style = getComputedStyle(slide);
-    const children = [...slide.children];
-    const content = children.reduce((height, el) => {
-      const childStyle = getComputedStyle(el);
-      return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
-    }, 0)
-      + Math.max(0, children.length - 1) * (parseFloat(style.rowGap) || 0);
     const min = parseFloat(getComputedStyle(root).getPropertyValue("--bx-min-height"));
     if (!min) return;
-    const height = Math.ceil(Math.max(min, content + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0) + 2));
+    const key = `${root.clientWidth}:${min}:${JSON.stringify(items)}`;
+    if (key !== layoutKey) {
+      // Reserve the tallest card once per deck/width, so rotation never moves
+      // GameDay. Measure real markup at its actual width without exposing a
+      // second set of links or announcing hidden content to screen readers.
+      const probe = document.createElement("div");
+      probe.setAttribute("aria-hidden", "true");
+      probe.inert = true;
+      probe.style.cssText = "position:absolute;inset:0;visibility:hidden;pointer-events:none";
+      root.append(probe);
+      deckHeight = min;
+      try {
+        for (const item of items) {
+          probe.innerHTML = renderItem(item, { editorial: true });
+          const candidate = probe.firstElementChild;
+          if (!candidate) continue;
+          fitHeadlines(candidate);
+          deckHeight = Math.max(deckHeight, contentHeight(candidate));
+        }
+      } finally { probe.remove(); }
+      layoutKey = key;
+    }
+    const height = Math.ceil(deckHeight);
     if (root.style.height !== `${height}px`) root.style.height = `${height}px`;
     const dot = root.querySelector('[aria-current="true"]');
     const dots = dot?.parentElement;
@@ -571,7 +597,7 @@ export function startStage(root, deck, { refresh } = {}) {
   const scheduleLayout = () => { if (!dead && !layoutFrame) layoutFrame = requestAnimationFrame(fitLayout); };
   const resize = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleLayout) : null;
   resize?.observe(root);
-  document.fonts?.ready.then(scheduleLayout);
+  document.fonts?.ready.then(() => { layoutKey = ""; scheduleLayout(); });
   /* Looked up on demand, never cached: the controls are re-rendered whenever
      the deck length changes, so a captured reference would go stale and the
      button would stop working. Click handling is delegated on root for the
@@ -900,6 +926,7 @@ export function startStage(root, deck, { refresh } = {}) {
       fresh.every((it, n) => it.id === items[n]?.id && it.headline === items[n]?.headline &&
         JSON.stringify(it.sides || null) === JSON.stringify(items[n]?.sides || null));
     items = fresh;
+    scheduleLayout();
     if (same) return;                       // nothing moved; leave the DOM alone
     const found = fresh.findIndex((it) => it.id === currentId);
     const currentUnchanged = found >= 0 && sameStageItem(currentItem, fresh[found]);
