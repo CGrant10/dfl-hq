@@ -20,17 +20,17 @@
 }
 #home-wrap .bx-home-week {
   max-width: 44%; color: var(--paper-muted);
-  font: 700 10px/1.3 var(--home-ui-font); letter-spacing: .1em; text-transform: uppercase;
+  font: 700 12px/1.3 var(--home-ui-font); letter-spacing: .06em; text-transform: uppercase;
 }
 #home-wrap .bx-home-title {
   width: 44%; max-width: 44%; margin: 0;
-  font: 400 clamp(25px,6.4vw,36px)/1.1 'Anton',sans-serif;
+  font: 400 clamp(28px,7vw,36px)/1.1 'Anton',sans-serif;
   letter-spacing: -.015em; color: var(--text);
 }
 #home-wrap .bx-home-title > span { color: var(--accent); }
 #home-wrap .bx-home-feature .bx-sub {
   width: 44%; max-width: 44%; padding: 0; background: transparent;
-  color: var(--paper-body); font: 500 12px/1.4 var(--home-ui-font);
+  color: var(--text); font: 600 15px/1.35 var(--home-ui-font);
 }
 #home-wrap .bx-home-action {
   max-width: 44%; min-height: 44px; padding: 7px 10px; gap: 6px;
@@ -42,6 +42,22 @@
 #home-wrap :is(.bx-head,.bx-name,.bx-figure,.bx-statword) {
   font-family: 'Anton',sans-serif; font-weight: 400; color: var(--text);
 }
+#home-wrap :is(.bx-head,.bx-name) { font-size: clamp(28px,7vw,36px); line-height: 1.12; white-space: normal; text-wrap: balance; }
+#home-wrap .bx-statword { font-size: 26px; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+#home-wrap .bx-figure { font-size: 36px; }
+#home-wrap .bx-with-crest .bx-editorial-copy { width: 48%; }
+#home-wrap :is(.bx-sub,.bx-body,.bx-when-text) { color: var(--text); font: 600 15px/1.35 var(--home-ui-font); }
+#home-wrap .bx-kicker { font-size: 12px; line-height: 1.35; letter-spacing: .05em; }
+#home-wrap .bx-when { font-size: 12px; line-height: 1.35; }
+#home-wrap .bx-featured-team > strong { font-size: 16px; line-height: 1.2; }
+#home-wrap .bx-featured-team > b { font-size: 34px; }
+#home-wrap :is(.bx-featured-all,.bx-featured-team > small,.mq-where,.mq-score-label,.mq-bill,.mq-tag) { font-size: 12px; }
+#home-wrap .mq-side-name { font-size: 16px; }
+#home-wrap .mq-side-score { font-size: 34px; }
+#home-wrap .mq-mood { font-size: 24px; }
+#home-wrap .bx-injuries h2 { font: 700 24px/1.2 var(--home-ui-font); }
+#home-wrap .bx-injuries .injury-player-copy .player-card-trigger { font-size: 14px; }
+#home-wrap .bx-injuries :is(.injury-player-copy small,.injury-player-state b,.injury-player-state small) { font-size: 12px; }
 #home-wrap :is(.bx-sub,.bx-body,.bx-when-text,.bx-statlabel,.bx-featured-vs,.bx-featured-team > small) { color: var(--paper-body); }
 #home-wrap :is(.bx-kicker,.bx-featured-all) { color: var(--accent); }
 #home-wrap .bx-when { color: var(--paper-body); background: var(--bg-3); border-color: var(--line); }
@@ -59,5 +75,5 @@
 #home-wrap .bx-stage :is(a,button):focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 @media (min-width: 600px) {
   #home-wrap .bx-home-title { font-size: 38px; }
-  #home-wrap .bx-home-feature .bx-sub { font-size: 14px; }
+  #home-wrap .bx-home-feature .bx-sub { font-size: 16px; }
 }

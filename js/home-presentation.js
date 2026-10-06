@@ -93,6 +93,7 @@ export function homeThermalBoard(model) {
   }).join('');
   return `<section class="home-thermal-leaders" aria-label="Player leaders">
     <header><h2 class="section-title">Player leaders</h2><button type="button" class="home-section-action home-leaders-link" data-gameday-board="all" aria-label="View all player leaders" title="View all player leaders"><span>Week ${esc(model?.week || '—')} leaders</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></header>
+    ${players.length ? '<p class="home-score-key"><span class="is-hot">Hot: over 15 pts</span><span class="is-cold">Cold: under 10 pts after halftime or final</span></p>' : ''}
     ${players.length ? `<ul class="gameday-players">${rows}</ul>` : '<p class="home-thermal-empty">No hot or cold starters yet.</p>'}
   </section>`;
 }
