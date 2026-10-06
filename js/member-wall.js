@@ -194,7 +194,7 @@ function postHtml(r,compact=false) {
     </div>
     ${r.body ? `<p class="wall-body" data-wall-body-display>${esc(r.body)}</p>` : `<p class="wall-body hidden" data-wall-body-display></p>`}
     ${editForm}
-    ${photoHtml(r, name)}
+    ${photoHtml(r, name, compact)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
     ${reactionHtml(r.id)}
     ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}" aria-label="Join the conversation, ${Number(r.reply_count)||0} replies">Replies · ${Number(r.reply_count)||0}</a>`:threadHtml(r)}
@@ -210,12 +210,13 @@ function postHtml(r,compact=false) {
  * always was, at its natural shape. A framed one gets the fixed box it was
  * framed in and the style the broadcast stage draws with.
  */
-function photoHtml(r, name) {
+function photoHtml(r, name, compact = false) {
   if (!r.image) return "";
   const alt = `Posted by ${esc(name)}`;
   const img = (cls, style) =>
     `<img class="${cls}" ${style ? `style="${style}"` : ""} src="${esc(r.image)}" alt="${alt}" loading="lazy" decoding="async">`;
-  if (!r.image_fit) return img("wall-photo");
+  // Home previews show the entire upload; the full Wall keeps authored framing.
+  if (compact || !r.image_fit) return img("wall-photo");
   /* --bx-zoom is spent on a transform right here: the stage hands it to a drift
      animation instead, and the Wall has no animation to hand it to. */
   const style = `${artworkStyle({

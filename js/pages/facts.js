@@ -37,8 +37,10 @@ export async function render(view) {
   ]);
   if (!lore || lore.error) { view.innerHTML = errorBox(lore?.error || new Error("No league data yet")); return; }
 
-  const today = factOfTheDay(lore);
   const all = funFacts(lore);
+  const factId = new URLSearchParams(location.hash.split('?')[1] || '').get('fact');
+  const selected = all.find(fact => fact.id === factId);
+  const today = selected || factOfTheDay(lore);
   const historyWeek = historyForWeek({ lore, week: leagueState?.currentWeek || 1, members });
 
   if (!today) {
@@ -69,7 +71,7 @@ export async function render(view) {
       </div>
     </section>
 
-    <p class="muted tiny fact-note">A new piece of league history every day — the same one for everybody.</p>
+    <p class="muted tiny fact-note">${selected ? 'From the DFL archive — drawn from the league’s recorded history.' : 'A new piece of league history every day — the same one for everybody.'}</p>
 
     ${historyWeek ? disclosure("facts-history","This week in DFL history",`Week ${historyWeek.week} records and rivalries`, `<h2 class="section-title">This week in DFL history<span class="count">WEEK ${historyWeek.week}</span></h2><section class="history-week-grid">
       <article><small>WEEK'S RECORD</small><strong>${esc(historyWeek.high.name)}</strong><span>${historyWeek.high.score.toFixed(2)} points · ${historyWeek.high.season}</span></article>

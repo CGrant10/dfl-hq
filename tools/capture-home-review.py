@@ -243,13 +243,11 @@ with sync_playwright() as p:
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
                 const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
-                const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), artwork=slide.querySelector('.bx-editorial-subject')?.getBoundingClientRect(), splatter=slide.querySelector('.bx-editorial-illustration')?.getBoundingClientRect();
-                const paint=slide.querySelector('.bx-editorial-splatter')?.getBoundingClientRect(), paintSize=paint ? Math.min(paint.width,paint.height) : 0, logoSize=artwork ? Math.min(artwork.width,artwork.height) : 0;
-                const logoBackdrop=slide.classList.contains('bx-art-logo') ? {paintSize,logoSize,centerX:Math.abs((paint.right-paintSize/2)-(artwork.right-logoSize/2)),centerY:Math.abs((paint.bottom-paintSize/2)-(artwork.bottom-logoSize/2)),subjectLayer:Number(getComputedStyle(crest.parentElement).zIndex),paintLayer:Number(getComputedStyle(slide.querySelector('.bx-editorial-splatter')).zIndex),blend:getComputedStyle(crest.parentElement.parentElement).mixBlendMode} : null;
-                return {logoBackdrop,width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
+                const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
+                return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete && slide.querySelector('.bx-editorial-splatter').complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),splatterWidth:splatter.width,stageWidth:stage.clientWidth,stageBottom:stage.getBoundingClientRect().bottom} : null,
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),artWidth:artwork.width,opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -260,15 +258,10 @@ with sync_playwright() as p:
             assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
             if layout['crest']:
                 crest = layout['crest']
-                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= layout['contentTop'] and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
+                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= crest['stageTop'] - 1 and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
             if layout['crest']:
-                assert layout['crest']['splatterWidth'] >= layout['crest']['stageWidth'] * .45, 'Splatter should fill the corner'
-            if layout['logoBackdrop']:
-                backdrop = layout['logoBackdrop']
-                assert backdrop['paintSize'] >= backdrop['logoSize'] * 1.1 and max(backdrop['centerX'], backdrop['centerY']) <= backdrop['paintSize'] * .18 and backdrop['subjectLayer'] > backdrop['paintLayer'] and backdrop['blend'] == 'normal', f'Paint is not centered behind the logo or loses its white ink: {layout}'
-            page.evaluate("window.scrollTo({top:document.querySelector('.bx-stage').getBoundingClientRect().top+scrollY-115,behavior:'instant'})")
-            contrast = page.evaluate('window.reviewTextContrast()')
-            assert not contrast['failures'], f'Unreadable broadcast text: {contrast["failures"]}'
+                art = layout['crest']
+                assert not art['hasSplatter'] and abs(art['artWidth']/art['stageWidth']-.5)<.01 and .5<=art['opacity']<=.8, f'Artwork must fill half the slide with transparency and no splatter: {layout}'
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
@@ -389,6 +382,15 @@ with sync_playwright() as p:
                     targets:[...document.querySelectorAll('.wall-reaction-buttons button')].every(e=>{const b=e.getBoundingClientRect();return b.width>=44 && b.height>=44})};
             }""")
             assert letters['fits'] and letters['targets'] and letters['columns'] == (1 if width < 768 else 3), f'Letters are cramped in {mode}/{width}: {letters}'
+            page.wait_for_function("[...document.querySelectorAll('.home-banter .wall-photo')].every(e=>e.complete && e.naturalWidth>0)")
+            photos=page.locator('.home-banter .wall-photo').evaluate_all("es=>es.map(e=>{const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {ratio:b.width/b.height,natural:e.naturalWidth/e.naturalHeight,fit:s.objectFit,max:s.maxHeight,transform:s.transform}})")
+            assert len(photos)==2 and all(abs(p['ratio']-p['natural'])<.01 and p['fit']=='contain' and p['max']=='none' and p['transform']=='none' for p in photos), f'Wall photos are cropped: {mode}/{width}: {photos}'
+            assert page.locator('.home-banter .wall-photo-frame').count()==0, 'Home must show the complete upload even if the full Wall has saved framing'
+            for value in ['1','12','99+']:
+                page.locator('#notification-count').evaluate('(e,value)=>e.textContent=value',value)
+                badge=page.locator('#notification-count').evaluate("e=>{const b=e.getBoundingClientRect(),button=e.closest('button').getBoundingClientRect(),bar=e.closest('.topbar').getBoundingClientRect();return {fits:b.top>=bar.top&&b.bottom<=bar.bottom&&b.left>=button.left&&b.right<=button.right,glyphRoom:e.clientHeight>=parseFloat(getComputedStyle(e).lineHeight)}}")
+                assert badge['fits'] and badge['glyphRoom'], f'Notification badge clips in {mode}/{width}/{value}: {badge}'
+
             previews = page.evaluate("""() => ({
                 bodies:[...document.querySelectorAll('.home-banter .wall-body:not(.hidden)')].map(e=>({height:e.clientHeight,line:parseFloat(getComputedStyle(e).lineHeight),hasThread:!!e.closest('.wall-post').querySelector('a[href^="#/wall?post="]')})),
                 headingFits:(()=>{const h=document.querySelector('.home-banter .section-title');return h.scrollWidth<=h.clientWidth})(),

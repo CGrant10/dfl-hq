@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
-  it("uses champion artwork with the shared splatter while retaining the winner and destination", () => {
+  it("uses champion artwork without a splatter while retaining the winner and destination", () => {
     const item = { treatment: "champion", headline: "Winner & Co", kicker: "2025 Champion", href: "#/history" };
     const html = renderItem(item, { editorial: true });
     expect(html).toContain("assets/dfl-daily-champion.webp");
-    expect(html).toContain("assets/dfl-daily-splatter.webp");
+    expect(html).not.toContain("bx-editorial-splatter");
     expect(html).toContain("Winner &amp; Co");
     expect(html).toContain('href="#/history"');
     expect(renderItem({ ...item, image: "https://example.com/winner.webp", background: "image", imageZoom: 2 }, { editorial: true })).toContain('--bx-zoom:2');

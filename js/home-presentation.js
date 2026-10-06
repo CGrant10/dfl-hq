@@ -91,15 +91,31 @@ export function homeThermalBoard(model) {
 }
 
 /** Existing fact and rivalry models supply the receipts; sparse history stays honest. */
-export function homeLeagueFile({ fact = null, rivalry = null } = {}) {
+export function homeLeagueFile({ fact = null, rivalry = null, facts = [] } = {}) {
+  const labels = { title: 'TITLE FILE', high: 'RECORD BOOK', low: 'ROUGH WEEKS', nailbiter: 'CLOSE CALLS', blowout: 'BIG WINS', streak: 'STREAK WATCH', volume: 'LEAGUE HISTORY' };
+  const artFor = kind => kind === 'title' ? 'champion' : kind === 'low' ? 'chip-eater' : ['streak','nailbiter'].includes(kind) ? 'rivalry' : 'archive';
+  const factHref = item => item.id ? `#/facts?fact=${encodeURIComponent(item.id)}` : '#/facts';
   const stories = [
-    fact ? { label: 'FROM THE DFL ARCHIVE', headline: fact.headline, detail: fact.detail, href: '#/facts' }
-      : { label: 'FROM THE DFL ARCHIVE', headline: 'Every season leaves receipts.', detail: 'Champions, records and the matchups we still talk about.', href: '#/history' },
-    rivalry,
+    fact ? { label: 'FROM THE DFL ARCHIVE', headline: fact.headline, detail: fact.detail, href: factHref(fact), art: artFor(fact.kind) }
+      : { label: 'FROM THE DFL ARCHIVE', headline: 'Every season leaves receipts.', detail: 'Champions, records and the matchups we still talk about.', href: '#/history', art: 'archive' },
+    rivalry ? { ...rivalry, art: 'rivalry' } : null,
   ].filter(Boolean);
+  const seen = new Set(stories.map(story => story.headline));
+  const kinds = new Set([fact?.kind].filter(Boolean));
+  // Prefer league-wide records and different kinds of stories, then fill any
+  // remaining places from real facts. Sparse archives stay sparse.
+  const pool = [...facts.filter(item => !item.userIds?.length), ...facts.filter(item => item.userIds?.length)];
+  for (const diverse of [true, false]) {
+    for (const item of pool) {
+      if (stories.length >= 4) break;
+      if (!item.headline || seen.has(item.headline) || diverse && kinds.has(item.kind)) continue;
+      stories.push({ label: labels[item.kind] || 'FROM THE DFL ARCHIVE', headline: item.headline, detail: item.detail, href: factHref(item), art: artFor(item.kind) });
+      seen.add(item.headline); kinds.add(item.kind);
+    }
+  }
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
     <header><h2 id="home-league-file-title">The archive</h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
-    <div class="home-league-stories">${stories.map((story, index) => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${index ? 'rivalry' : 'archive'}.webp" width="600" height="420" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
+    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${story.art}.webp" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }
 

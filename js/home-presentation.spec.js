@@ -65,6 +65,17 @@ describe('selected Home presentation', () => {
 });
 
 describe('DFL archive on Home', () => {
+  it('adds distinct sourced stories and leaves sparse history honest', () => {
+    const fact = { id: 'high&record', kind: 'high', headline: 'A record week.', detail: 'A real league score.' };
+    const facts = [fact, { kind: 'high', headline: 'Another record.', detail: 'A second real score.' }, { kind: 'title', headline: 'The title season.', detail: 'A league champion.' }, { kind: 'nailbiter', headline: 'A close call.', detail: 'A recorded final.' }];
+    const html = homeLeagueFile({ fact, facts });
+    expect(html.match(/class="home-league-story"/g)).toHaveLength(4);
+    expect(html.match(/A record week\./g)).toHaveLength(1);
+    expect(html).toContain('The title season.');
+    expect(html).toContain('A close call.');
+    expect(html).toContain('href="#/facts?fact=high%26record"');
+    expect(homeLeagueFile({ fact, facts: [fact] }).match(/class="home-league-story"/g)).toHaveLength(1);
+  });
   it('offers history without inventing a rivalry when records are missing', () => {
     const html = homeLeagueFile();
     expect(html).toContain('href="#/history"');
