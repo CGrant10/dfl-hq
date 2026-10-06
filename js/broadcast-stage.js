@@ -362,7 +362,7 @@ export function renderItem(item, { editorial = false } = {}) {
     && [item.subtitle, item.body].filter(Boolean).join(" ").length <= 220;
   const copy = draw(item, { editorial });
   const inner = crest
-    ? `<img class="bx-editorial-crest" src="assets/dfl-daily-crest.webp" width="768" height="768" alt="" aria-hidden="true" decoding="async"><div class="bx-editorial-copy">${copy}</div>`
+    ? `<span class="bx-editorial-illustration" aria-hidden="true"><img class="bx-editorial-splatter" src="assets/dfl-daily-splatter.webp" width="768" height="768" alt="" decoding="async"><img class="bx-editorial-crest" src="assets/dfl-daily-crest.webp" width="768" height="768" alt="" decoding="async"></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;
   const cls = `bx-slide${crest ? " bx-with-crest" : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it

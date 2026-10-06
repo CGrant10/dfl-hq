@@ -1,3 +1,35 @@
+# Splatter and a consistent Home edition — v1.306.0
+
+Final result: passed
+
+The existing black-and-white heritage crest now sits over a separate transparent red ink splatter, matching the opener's distressed print treatment. The supplied logo pixels are retained. The complete illustration has a reserved right-hand column, with both layers contained clear of copy and carousel controls. Dense scoreboards, injury reports, and authored images retain their own composition; rotation still reserves a fixed deck height.
+
+The cleanup stays within Home. Expanded rankings, lineup focus, Pick’em, weekly forecasts, league figures, trade wire, commissioner news/activity, draft card surfaces, and update notices now share the front page's paper tokens, Anton section headings, Georgia copy, thin rules, and flat controls. Active tabs keep their clear red underline. Expanded player trackers and Letters reaction/photo styling also follow that treatment. Light/dark ink remains paired with its surrounding surface, and the broadcast remains a cream printed insert.
+
+## Findings and fixes
+
+- **P2: The standalone crest lacked the opener's splatter backdrop.** Added an optimized generated raster ink layer behind the unchanged crest. The two layers share a contained illustration column; the copy remains padded and separate.
+- **P2: More from the league mixed old rounded cards, colored panels, gradient buttons, and app typography with the newspaper.** Removed those surfaces in Home and aligned headings, prose, metadata, tabs, and separators with the lead edition.
+- **P2: The larger splatter column could intrude into copy at tablet widths.** Responsive column widths/insets were adjusted and tested using the entire transformed illustration bounds, including the splatter.
+
+## Reference and captured evidence
+
+The original selected target remains `/workspace/generated_images/exec-d6d9a89a-09fe-41f1-805b-2d9e0d456ff5.png`. The real opener (`assets/dfl-daily-hero.webp`) and crest were opened before editing. The matching abstract ink asset is `/workspace/generated_images/exec-88f36c82-9783-4b8b-9392-6547863b44a4.png`, optimized as `assets/dfl-daily-splatter.webp` (768 × 768, about 276 KiB, transparency retained).
+
+Before evidence uses the expanded production-component fixture in `/workspace/dfl-splatter-before`. After evidence is in `/workspace/dfl-splatter-review`: `more-comparison.jpg` compares the same expanded dark Home state at 390 CSS px; `broadcast-theme-comparison.jpg` compares the logo slide in both themes. Focused `more-light-390.png`, `more-dark-390.png`, 1280px equivalents, and `broadcast-light-1280.png` show fonts, wrapping, ink, controls, and illustration separation. Full Home captures are `home-light-390-full.png`, `home-dark-390-full.png`, and desktop equivalents. Fixed utility/nav overlays are hidden only for focused/full-page screenshots; native navigation is verified separately by the browser matrix. Captures use density 1, no device frame or browser chrome.
+
+Before and after screenshots were opened and compared together. The requested splatter and expanded-section styling are intentional refinements of the selected newspaper mock. Masthead, opener, scores, archive stories, Wall placement, themes, compact navigation, routes, and data handlers retain their behavior.
+
+## Verification and limits
+
+`pnpm check` passed: typecheck, names, 1,095 tests across 123 files, and build. The full Chromium review passed 48 broadcast layouts with stable height, 48 navigation route states, 18 palette/width combinations, 7,106 visible text checks (minimum measured contrast 5.25:1), Letters bounds/targets, expanded score controls, density, reduced motion, deck refresh, and zero page errors.
+
+The focused expanded Home review passed 32 forecast panels, 48 position tabs, 16 feed states, eight rankings toggles, and 48 splatter/copy layouts across light/dark and 320/390/768/1280px. Production Home renderers and wiring are evaluated in the fixture without loading authentication or database modules. The CI browser review now includes forecast, position, rankings, and feed interactions and checks the complete splatter illustration bounds.
+
+Fixture records are representative, not live league data. Authenticated mutations and every conditional season/notice state are outside the browser fixture; their handlers are unchanged. CSS text colors are measured; textured raster art is inspected visually. No actionable P0/P1/P2 findings remain in the reviewed states.
+
+---
+
 # Letters and broadcast cleanup — v1.305.0
 
 Final result: passed
