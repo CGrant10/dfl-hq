@@ -19,6 +19,9 @@
 #home-wrap .gameday-matchup { padding-block: 4px 12px; border-bottom-color: var(--home-row-line); }
 #home-wrap .gameday-faceoff-team + .gameday-faceoff-team { border-left-color: var(--home-row-line); }
 #home-wrap .home-thermal-leaders > header { min-height: 40px; border-bottom: 0; }
+#home-wrap .home-score-key { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 8px; font: 600 12px/1.4 var(--home-ui-font); }
+#home-wrap .home-score-key .is-hot { color: var(--gd-hot-ink); }
+#home-wrap .home-score-key .is-cold { color: var(--gd-cold-ink); }
 #home-wrap .home-thermal-leaders .gameday-player { border-color: var(--home-row-line); }
 #home-wrap .home-thermal-leaders .gameday-player:last-child { border-bottom: 0; }
 #home-wrap .home-thermal-empty { padding: 14px 0; margin: 0; min-height: 0; font-size: 14px; }

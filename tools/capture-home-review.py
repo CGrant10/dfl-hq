@@ -106,6 +106,8 @@ with sync_playwright() as p:
     for width in [390, 320, 832, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
+        if width == 390:
+            metrics['leaderCore'] = page.locator('.home-thermal-leaders').evaluate("e=>{const key=e.querySelector('.home-score-key');return e.offsetHeight-(key?.offsetHeight||0)-(key?8:0)}")
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
         masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,title:e.querySelector('h1').textContent.trim()})")
@@ -129,13 +131,14 @@ with sync_playwright() as p:
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
     assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
     assert page.evaluate('document.querySelector("#dfl-nav-house").namespaceURI') == 'http://www.w3.org/2000/svg'
-    assert metrics['390']['sections'][4]['height'] < 240, 'Leader preview is not compact'
+    assert metrics['leaderCore'] < 240, 'Leader rows must stay compact beneath the color key'
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
     assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 832, 1280]), 'Horizontal overflow'
     assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,832,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
     assert page.locator('.home-thermal-leaders [data-score-temperature="hot"]').count() == 2
     assert page.locator('.home-thermal-leaders [data-score-temperature="cold"]').count() == 2
+    assert 'under 10 pts after halftime or final' in page.locator('.home-score-key').inner_text(), 'Score colors need a visible explanation'
     page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
     page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
@@ -479,9 +482,10 @@ with sync_playwright() as p:
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
                   const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
-                  return {headline:slide.querySelector('h2')?.textContent,fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
+                  return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
+                assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
                     assert 'Bring the' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'Opener text must follow the theme'
                 metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})

@@ -294,6 +294,9 @@ function fitHeadlines(slide) {
       ["font-size", "white-space", "max-width"].forEach((k) => el.style.removeProperty(k));
     };
     off();
+    // Home reserves space for the tallest slide. Keep its display scale and
+    // wrap names instead of squeezing them into a single caption-sized line.
+    if (slide.closest('[data-presentation="editorial"]')) return;
     Object.assign(el.style, FIT_ON);
     /* Two passes. The first gets it close from one measurement; the second
        exists because shrinking can change the width by a pixel or two. */
