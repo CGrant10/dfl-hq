@@ -1,48 +1,30 @@
-@font-face {
-  font-family: 'DFL Home'; font-style: normal; font-weight: 400 700; font-display: swap;
-  src: url('../fonts/inter-latin-variable.woff2') format('woff2');
-}
-
-/* DFL Daily keeps its newspaper hierarchy in both app themes. */
+/* Home follows the shared Sportsbook and Trade palette. */
 body:has(#view[data-route="home"]) {
-  --home-gutter: 16px; --paper: #efebe1; --paper-2: #e7e2d7; --paper-3: #ded8ca;
-  --ink: #131717; --paper-body: #242724; --paper-muted: #535651;
-  --paper-rule: #878981; --paper-soft-rule: #a6a59c;
-  --print-accent: #a50e26; --print-fill: #c8102e; --print-hover: #7f0b1d;
-  --paper-badge: #e4ded1; --paper-badge-ink: #a50e26;
-  --paper-hot: #6e4b00; --paper-cold: #534f47;
-  background: var(--paper); color: var(--ink); color-scheme: light;
+  --home-gutter: 16px;
+  --paper: var(--bg); --paper-2: var(--bg-2); --paper-3: var(--bg-3);
+  --ink: var(--text); --paper-body: color-mix(in srgb,var(--body-text) 90%,var(--text)); --paper-muted: color-mix(in srgb,var(--muted) 90%,var(--text));
+  --paper-rule: var(--line); --paper-soft-rule: var(--line-soft);
+  --print-accent: var(--accent); --print-fill: color-mix(in srgb,var(--accent-fill) 85%,#000);
+  --print-hover: color-mix(in srgb,var(--accent-fill) 75%,#000);
+  --paper-badge: var(--bg-3); --paper-badge-ink: var(--text);
+  --paper-hot: var(--gd-hot-ink,var(--accent-2)); --paper-cold: var(--gd-cold-ink,var(--body-text));
+  background: var(--bg); color: var(--text);
   padding-bottom: calc(var(--season-nav-height,49px) + 20px);
 }
-:root:not([data-mode="light"]) body:has(#view[data-route="home"]) {
-  --paper: #1a1918; --paper-2: #22201d; --paper-3: #2b2822;
-  --ink: #f6f1e8; --paper-body: #efeae2; --paper-muted: #ddd8cb;
-  --paper-rule: #b1ab9b; --paper-soft-rule: #827d70;
-  --print-accent: #efc94c; --print-hover: #ffe090;
-  --paper-badge: #5a4d36; --paper-badge-ink: #ffe090;
-  --paper-hot: #f5d66c; --paper-cold: #f4f1eb;
-  background-image: none; color-scheme: dark;
-}
 #home-wrap {
-  --home-ui-font: 'DFL Home',Inter,system-ui,sans-serif;
+  --home-ui-font: 'Rajdhani','Segoe UI Semibold',system-ui,sans-serif;
   --home-section-title: 18px; --home-subsection-title: 16px;
   --home-body-size: 14px; --home-meta-size: 12px; --home-section-gap: 24px;
   --gd-player-score-size: 18px;
-  --bg: var(--paper); --bg-2: var(--paper-2); --bg-3: var(--paper-3); --text: var(--ink);
-  --body-text: var(--paper-body); --muted: var(--paper-muted); --line: var(--paper-rule); --line-soft: var(--paper-soft-rule);
-  --accent: var(--print-accent); --accent-2: var(--print-accent); --accent-fill: var(--print-fill);
-  --accent-2-fill: var(--print-fill); --gd-effects-medicine: 1; --gd-hot-ink: var(--paper-hot); --gd-cold-ink: var(--paper-cold);
+  --bg: inherit; --bg-2: inherit; --bg-3: inherit; --text: inherit;
+  --body-text: inherit; --muted: inherit; --line: inherit; --line-soft: inherit;
+  --accent: inherit; --accent-2: inherit; --accent-fill: inherit; --accent-2-fill: inherit;
+  --gd-hot-ink: inherit; --gd-cold-ink: inherit;
   background: transparent; color: var(--text); padding-inline: var(--home-gutter);
   font: 400 var(--home-body-size)/1.5 var(--home-ui-font); letter-spacing: 0;
 }
 .home-newspaper-masthead { display: grid; grid-template-columns: minmax(0,1fr) 80px; align-items: center; gap: 10px; padding: 16px 0 10px; border-bottom: 1px solid var(--ink); }
-.home-newspaper-anniversary { display: block; width: 24px; height: 25px; flex: 0 0 24px; object-fit: contain; filter: brightness(.75); }
-:root:not([data-mode="light"]) .home-newspaper-anniversary { filter: brightness(1.15); }
 .home-newspaper-name { min-width: 0; }
-.home-newspaper-name > img { display: block; width: min(100%,140px); height: auto; }
-.home-newspaper-name > .home-wordmark-dark { display: none; }
-:root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-light { display: none; }
-:root:not([data-mode="light"]) .home-newspaper-name > .home-wordmark-dark { display: block; }
 .home-newspaper-edition { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font: 500 10px/1.4 var(--home-ui-font); text-transform: uppercase; letter-spacing: .02em; }
 .home-newspaper-edition > span { min-width: 0; }
 .home-newspaper-date { border-left: 1px solid var(--ink); padding-left: 9px; text-transform: uppercase; font: 500 11px/1.35 var(--home-ui-font); }
@@ -53,13 +35,14 @@ body:has(#view[data-route="home"]) {
 .home-newspaper-sections { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); border-bottom: 1px solid var(--ink); }
 .home-newspaper-sections button { position: relative; min-height: 44px; padding: 8px 4px; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: 600 12px/1.3 var(--home-ui-font); text-transform: none; letter-spacing: 0; cursor: pointer; }
 .home-newspaper-sections button + button::before { content: none; }
-.home-newspaper-sections button[aria-current] { color: var(--print-accent); border-bottom: 3px solid var(--print-accent); }
+.home-newspaper-sections button:hover { color: var(--print-accent); }
+.home-newspaper-sections button:focus-visible { outline: 2px solid var(--print-accent); outline-offset: -3px; }
 #home-wrap :is(.home-broadcast,[data-home-gameday-slot],.home-week-desk,.home-league-desk,[data-home-lore-slot]) { scroll-margin-top: calc(44px + env(safe-area-inset-top) + 16px); }
 #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 220px; margin: 0; border-bottom: 2px solid var(--ink); background: transparent; }
 #home-wrap .bx-editorial-label { display: none; }
 #home-wrap .bx-slide { inset: 12px 0 8px; padding: 0 12px; gap: 7px; color: var(--ink); }
 #home-wrap .bx-home-feature { align-content: start; gap: 7px; }
-#home-wrap .bx-home-art { position: absolute; top: -12px; right: 0; bottom: -8px; width: 100%; height: calc(100% + 20px); object-fit: contain; object-position: right bottom; z-index: -1; mix-blend-mode: multiply; }
+#home-wrap .bx-home-art { position: absolute; top: -12px; right: 0; bottom: -8px; width: 100%; height: calc(100% + 20px); object-fit: contain; object-position: right bottom; z-index: -1; mix-blend-mode: normal; }
 #home-wrap .bx-home-week { color: var(--print-accent); font: 400 12px/1.3 'Anton',sans-serif; letter-spacing: 0; padding-top: 2px; }
 #home-wrap .bx-home-title { display: grid; width: fit-content; max-width: 100%; gap: 0; color: var(--ink); font: 400 clamp(30px,8vw,48px)/1.03 'Anton',sans-serif; letter-spacing: -.025em; }
 #home-wrap .bx-home-title > span { color: var(--print-accent); }
@@ -218,10 +201,8 @@ body:has(#view[data-route="home"]) {
 #home-wrap :is(button,a,summary):focus-visible { outline: 2px solid var(--print-accent); outline-offset: 3px; }
 @media (min-width: 600px) {
   body:has(#view[data-route="home"]) { --home-gutter: 30px; }
-  .home-newspaper-anniversary { width: 32px; height: 34px; flex-basis: 32px; }
   .home-newspaper-edition { gap: 12px; }
   .home-newspaper-name { max-width: 220px; }
-  .home-newspaper-name > img { width: 100%; }
   .home-newspaper-masthead { gap: 16px; padding-top: 24px; padding-bottom: 10px; }
   #home-wrap .bx-stage, #home-wrap .home-broadcast-loading { --bx-min-height: 260px; }
   #home-wrap .bx-slide { inset: 20px 0 12px; gap: 12px; }
@@ -263,17 +244,8 @@ body:has(#view[data-route="home"]) {
   #home-wrap .gameday-card .home-thermal-leaders header h2 { font-size: var(--home-subsection-title); }
 }
 
-/* The illustrated broadcast remains a printed paper insert. Its ink and
-   controls share that surface instead of inheriting the surrounding dark page. */
-#home-wrap .bx-stage {
-  --paper: #efebe1; --paper-2: #e7e2d7; --paper-3: #ded8ca; --ink: #131717;
-  --paper-body: #242724; --paper-muted: #535651; --paper-rule: #878981; --paper-soft-rule: #a6a59c;
-  --print-accent: #b01827; --print-hover: #921721; --paper-badge: #e4ded1; --paper-badge-ink: #a50e26;
-  --bg: var(--paper); --bg-2: var(--paper-2); --bg-3: var(--paper-3); --text: var(--ink);
-  --body-text: var(--paper-body); --muted: var(--paper-muted); --accent: var(--print-accent); --accent-2: var(--print-accent);
-  background: var(--paper) url('../assets/dfl-daily-paper.webp') repeat; background-size: 600px;
-  color: var(--ink); color-scheme: light;
-}
+/* Broadcast artwork lives on the same themed card as the rest of Home. */
+#home-wrap .bx-stage { background: var(--card-surface); color: var(--text); }
 #home-wrap .gameday-home-detail :is(h2,h3,strong,.gameday-player-tap,.dfl-player-copy) { color: var(--ink); }
 #home-wrap .gameday-home-detail :is(small,p,.gameday-player-copy small) { color: var(--paper-body); }
 #home-wrap .page-detail-body :is(h2,h3,strong,.linkbtn) { color: var(--ink); }

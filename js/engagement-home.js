@@ -2,12 +2,10 @@ import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
 import { esc, toast } from "./ui.js";
 import { icon } from "./icons.js";
-import { markSeen, sinceLabel } from "./whatsnew.js";
 
 const REACTIONS = ["😂", "🔥", "💀", "🏆", "🖕"];
 const REACTION_SCHEMA_MISSING = /wall_reactions|schema cache|does not exist|could not find/i;
 let quickToken = 0;
-let sinceToken = 0;
 let reactionToken = 0;
 
 function ensureStyles() {
@@ -18,7 +16,6 @@ function ensureStyles() {
 .dfl-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .dfl-quick-action.is-priority{border-color:color-mix(in srgb,var(--accent) 42%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 11%,var(--bg-2)),var(--bg-2))}
 .dfl-quick-badge{display:inline-flex;width:max-content;margin-top:3px;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg-3));color:var(--text);font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
-.dfl-since-sub{margin:1px 0 0;color:var(--muted);font-size:11px;font-weight:500}
 .wall-reactions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .wall-react{appearance:none;border:1px solid var(--border);background:var(--bg-2);color:var(--text);border-radius:999px;padding:5px 8px;min-width:40px;font:inherit;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer}
 .wall-react:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}.wall-react.on{background:color-mix(in srgb,var(--accent) 15%,var(--bg-2));border-color:color-mix(in srgb,var(--accent) 55%,var(--border));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent)}
@@ -90,52 +87,6 @@ async function paintQuickActions() {
   if (grid) grid.innerHTML = actions.join("");
   section.dataset.engagementLoading = "0";
   section.dataset.engagementPainted = "1";
-}
-
-async function paintSinceAway() {
-  if (!homeNow()) return;
-  const home = document.getElementById("home-wrap");
-  if (!home || home.dataset.engagementSinceLoading === "1" || home.dataset.engagementSincePainted === "1") return;
-  home.dataset.engagementSinceLoading = "1";
-  const token = ++sinceToken;
-  const raw = (() => { try { return localStorage.getItem("dfl.seenAt") || ""; } catch { return ""; } })();
-  const seen = raw ? new Date(raw) : null;
-  if (!seen || Number.isNaN(seen.getTime())) { home.dataset.engagementSinceLoading = "0"; home.dataset.engagementSincePainted = "1"; return; }
-  const floor = new Date(Math.max(seen.getTime(), Date.now() - 14 * 86400000));
-  let wallCount = 0, raceCount = 0;
-  try {
-    const [wall, races] = await Promise.all([
-      db().from("member_wall_posts").select("id", { count: "exact", head: true }).gt("created_at", floor.toISOString()),
-      db().from("arena_events").select("id", { count: "exact", head: true }).gt("completed_at", floor.toISOString()),
-    ]);
-    wallCount = Number(wall.count || 0);
-    raceCount = Number(races.count || 0);
-  } catch (err) { console.warn("engagement: since-away extras unavailable", err); }
-  if (token !== sinceToken || !home.isConnected) { home.dataset.engagementSinceLoading = "0"; return; }
-
-  let strip = home.querySelector("[data-wn]");
-  if (!strip && (wallCount || raceCount)) {
-    const stage = home.querySelector("[data-bx-stage]")?.closest("section") || home.firstElementChild;
-    const section = document.createElement("section");
-    section.className = "wn";
-    section.dataset.wn = "1";
-    section.innerHTML = `<div class="wn-head"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><div><strong id="wn-title" class="wn-title">Since You Were Gone</strong><p class="dfl-since-sub">Since ${esc(sinceLabel(floor))}</p></div><button type="button" class="wn-x" data-engagement-dismiss aria-label="Dismiss what's new"><svg class="ico-sm" aria-hidden="true"><use href="#i-close"></use></svg></button></div><ul class="wn-list"></ul>`;
-    stage?.after(section);
-    strip = section;
-  }
-  if (strip) {
-    const title = strip.querySelector(".wn-title");
-    if (title) title.textContent = "Since You Were Gone";
-    if (!strip.querySelector(".dfl-since-sub")) title?.insertAdjacentHTML("afterend", `<p class="dfl-since-sub">Since ${esc(sinceLabel(floor))}</p>`);
-    const list = strip.querySelector(".wn-list");
-    const extras = [];
-    if (raceCount && !list?.querySelector('[data-engagement-kind="arena"]')) extras.push(`<li data-engagement-kind="arena"><a href="#/arena"><svg class="ico-sm" aria-hidden="true"><use href="#i-arena"></use></svg><span>${raceCount === 1 ? "An Arena race finished" : `${raceCount} Arena races finished`}</span></a></li>`);
-    if (wallCount && !list?.querySelector('[data-engagement-kind="wall"]')) extras.push(`<li data-engagement-kind="wall"><a href="#/wall"><svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg><span>${wallCount === 1 ? "A new Wall post" : `${wallCount} new Wall posts`}</span></a></li>`);
-    if (list && extras.length) list.insertAdjacentHTML("beforeend", extras.join(""));
-    strip.querySelector("[data-engagement-dismiss]")?.addEventListener("click", () => { markSeen(new Date()); strip.remove(); }, { once: true });
-  }
-  home.dataset.engagementSinceLoading = "0";
-  home.dataset.engagementSincePainted = "1";
 }
 
 async function paintReactions(root = document) {
@@ -213,7 +164,6 @@ async function onReactionClick(event) {
 function decorate() {
   if (!homeNow()) return;
   void paintQuickActions();
-  void paintSinceAway();
   void paintReactions(document);
 }
 

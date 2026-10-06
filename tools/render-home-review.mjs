@@ -67,7 +67,7 @@ const homeReviewWiring = homeSource.slice(homeSource.indexOf('function wireHomeR
   + homeSource.slice(homeSource.indexOf('function wireHomeWeekHub('), homeSource.indexOf('export function leave('))
   + homeSource.slice(homeSource.indexOf('function wireHomeLeagueFeed('), homeSource.indexOf('function identity('));
 const forecastPlayer = {id:'7564',name:'Ja’Marr Chase',position:'WR',nflTeam:'CIN',ownerName:'Grant',points:24.6,scoreSource:'actual',complete:true,opponent:'BAL'};
-const outlook = {week:5,predictions:[{winner:{name:'Grant',projection:124.8},loser:{name:'Mike',projection:118.2},margin:6.6,confidence:'LEAN',isMine:true}],leaders:Object.fromEntries(HOME_OUTLOOK_POSITIONS.map(position => [position,[{...forecastPlayer,position}]])),startSit:{teamName:'Grant',lineupIsSet:true,swaps:[],alarms:[]}};
+const outlook = {week:5,predictions:[{winner:{name:'Grant',projection:124.8},loser:{name:'Mike',projection:118.2},margin:6.6,confidence:'LEAN',isMine:true}],leaders:Object.fromEntries(HOME_OUTLOOK_POSITIONS.map(position => [position,[{...forecastPlayer,position}]])),startSit:{teamName:'Grant',lineupIsSet:true,swaps:[{start:{...forecastPlayer,name:'Justin Jefferson'},sit:{...forecastPlayer,name:'Michael Pittman'},gain:4.2},{start:{...forecastPlayer,name:'Travis Kelce'},sit:{...forecastPlayer,name:'Mark Andrews'},gain:2.4}],alarms:[{player:{name:'Questionable starter'},reason:'Check injury status before kickoff.'}]}};
 const briefing = {title:'Weekly briefing',headline:'Every point counts this week.',matchup:'Grant faces Mike in the rematch.',playoff:'Win to hold your spot',playoffDetail:'The middle of the table is getting crowded.',lineup:'Keep your starters ready for kickoff.',action:'Check the injury report before locking your lineup.'};
 const rankingTeams = ['Grant','Jack-HAMMER','Mike','Klutch Sports Group'].map((team_name,i)=>({id:String(i+1),roster_id:i+1,sleeper_user_id:`fixture${i+1}`,team_name,identity:{display_name:team_name},rank:i+1,lineup:{weeklyPoints:100}}));
 const rankingGames = [[1,3,150,100,2,4,80,70],[1,2,120,130,3,4,100,90],[1,4,180,90,2,3,80,70],[1,3,145.38,101.08,2,4,139.2,121.12]].flatMap((r,i)=>[0,4].map(n=>({season:2026,week:i+1,roster1:r[n],score1:r[n+2],roster2:r[n+1],score2:r[n+3]})));
@@ -85,8 +85,8 @@ const players = [
   { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 0, state: 'final', roster: '2' },
 ];
 const model = { season: 2026, week: 5, completed: true, starters: players, games: [{ isMine: true, sides: [
-  { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant' } },
-  { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike' } },
+  { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Klutch Sports Group' } },
+  { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'The Bayou Bombers' } },
 ] }] };
 const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2', display_name: 'Mike' }], lore: { matchups: [
   { user1: 'u1', user2: 'u2', score1: 120.5, score2: 109.3, season: 2024, week: 5 },
@@ -131,7 +131,7 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.320.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.321.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');

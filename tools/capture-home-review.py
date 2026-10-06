@@ -95,12 +95,12 @@ with sync_playwright() as p:
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     metrics_visibility = page.evaluate('''() => {
-        const logo=document.querySelector('.home-newspaper-anniversary').getBoundingClientRect();
+        const logo=document.querySelector('.home-newspaper-date').getBoundingClientRect();
         const last=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();
         const ticker=document.querySelector('#tabbar').getBoundingClientRect();
         return {logoLeft:logo.left,logoRight:logo.right,lastRowBottom:last.bottom,tickerTop:ticker.top};
     }''')
-    assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'Anniversary number is clipped'
+    assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'Home date is clipped'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
     metrics = {'visibility': metrics_visibility}
     for width in [390, 320, 832, 1280]:
@@ -108,8 +108,8 @@ with sync_playwright() as p:
         page.wait_for_timeout(300)
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
-        masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,wordmark:[...e.querySelectorAll('.home-newspaper-name img')].every(i=>i.complete&&i.naturalWidth>0)})")
-        assert masthead['wordmark'] and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
+        masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,title:e.querySelector('h1').textContent.trim()})")
+        assert masthead['title'] == 'The clubhouse' and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
         metrics[str(width)]['masthead'] = masthead
         if width < 900:
             # The full-width banner adds natural scroll. Every player must
@@ -144,7 +144,7 @@ with sync_playwright() as p:
     assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
     metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
-    assert metrics['refinement']['paper'] == '#efebe1' and metrics['refinement']['hero'], 'Selected newspaper presentation is missing'
+    assert metrics['refinement']['hero'] and page.evaluate("getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim()===getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()"), 'Home must use the shared app palette and retain broadcast artwork'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
     page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='off'")
     metrics['readingOrder'] = page.evaluate("""() => {
@@ -163,11 +163,11 @@ with sync_playwright() as p:
         typography = page.evaluate('''() => {
             const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
             const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
-            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "DFL Home"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary small'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary small'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
-        assert typography['fontLoaded'] and all('DFL Home' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
+        assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
         assert typography['heading']['size'] == (18 if width < 600 else 20) and typography['body']['size'] == 14 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
-        assert typography['heading']['weight'] == typography['name']['weight'] == 600 and typography['heading']['transform'] == typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
+        assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'uppercase' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>!e.open') and page.locator('[data-page-detail="home-league"]').evaluate('e=>!e.open'), 'Secondary detail should start collapsed'
@@ -247,7 +247,7 @@ with sync_playwright() as p:
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),artWidth:artwork.width,opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -261,6 +261,7 @@ with sync_playwright() as p:
                 assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= crest['stageTop'] - 1 and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
             if layout['crest']:
                 art = layout['crest']
+                assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and abs(art['artWidth']/art['stageWidth']-.5)<.01 and .5<=art['opacity']<=.8, f'Artwork must fill half the slide with transparency and no splatter: {layout}'
             metrics['slides'].append(layout)
             if width == 390:
@@ -317,7 +318,7 @@ with sync_playwright() as p:
     for section, selector in [('scores','[data-home-gameday-slot]'), ('week','.home-week-desk'), ('league','.home-league-desk'), ('archive','[data-home-lore-slot]')]:
         page.locator(f'[data-home-jump="{section}"]').click()
         page.wait_for_timeout(800)
-        assert page.locator(f'[data-home-jump="{section}"]').get_attribute('aria-current') == 'location'
+        assert page.locator('[data-home-jump][aria-current]').count() == 0, 'Jump buttons must not remain selected'
         assert page.evaluate('location.hash') == section_hash, 'Section navigation changed the app route'
         assert page.locator('.topbar').bounding_box()['height'] + 15 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation is obscured by the top bar'
     page.locator('[data-page-detail="home-league"] summary').click()
@@ -336,6 +337,10 @@ with sync_playwright() as p:
                 assert page.locator(f'[data-week-panel="{panel}"]').is_visible(), f'Week Ahead tab did not open: {panel}'
                 assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true'
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'Forecast overflows in {mode}/{width}/{panel}'
+                if panel == 'startsit':
+                    assert page.locator('.home-outlook-swaps article').count() == 2
+                    assert page.locator('.home-outlook-startsit').evaluate('e=>[...e.querySelectorAll(".home-outlook-swaps,.home-outlook-alarms,.home-outlook-swaps article,.home-outlook-alarms p")].every(e=>getComputedStyle(e).backgroundColor==="rgba(0, 0, 0, 0)")'), 'Start/Sit rows regained filled boxes'
+                    page.screenshot(path=str(OUT / f'startsit-{mode}-{width}.png'))
                 contrast = page.evaluate('window.reviewTextContrast()')
                 assert not contrast['failures'], f'Unreadable forecast in {mode}/{width}/{panel}: {contrast["failures"]}'
                 metrics['expandedHome'].append({'mode':mode,'width':width,'panel':panel})
@@ -363,7 +368,7 @@ with sync_playwright() as p:
             page.set_viewport_size({'width':width,'height':844})
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             page.wait_for_timeout(350)
-            spacing = page.evaluate("""() => {const top=document.querySelector('.topbar').getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();const visible=[...document.querySelectorAll('.home-newspaper-name img')].find(e=>getComputedStyle(e).display!=='none').getBoundingClientRect();return {gap:visible.top-(innerWidth>=900?nav.bottom:top.bottom),expected:innerWidth>=600?24:16}}""")
+            spacing = page.evaluate("""() => {const top=document.querySelector('.topbar').getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();const visible=document.querySelector('.home-newspaper-masthead').getBoundingClientRect();return {gap:visible.top-(innerWidth>=900?nav.bottom:top.bottom),expected:16}}""")
             assert spacing['gap'] >= spacing['expected'] - 1, f'Masthead touches fixed controls: {spacing}'
             nav = page.evaluate("""() => {
                 const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(link,'::before');
@@ -403,21 +408,22 @@ with sync_playwright() as p:
                 assert sticky['scroll'] > 500 and abs(sticky['top']) < 1 and sticky['height'] == 44 and sticky['background'] != 'rgba(0, 0, 0, 0)', f'Top bar does not stay visible: {sticky}'
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
-                badge = page.locator('.home-newspaper-anniversary')
-                assert badge.get_attribute('alt') == 'DFL 10th anniversary' and badge.evaluate('e=>e.complete && e.naturalWidth>0')
+                badge = page.locator('.home-newspaper-date')
+                assert badge.locator('time').get_attribute('datetime') == '2026-10-06'
                 assert page.locator('.topbar .brand-edition').count() == 0
                 assert not page.locator('.topbar .brand-lockup').is_visible()
                 assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
-                assert page.locator('.home-newspaper-name > img:visible').get_attribute('alt') == 'DFL Daily'
+                assert page.locator('.home-newspaper-name h1').inner_text() == 'THE CLUBHOUSE'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
                 composition = page.evaluate('''() => {
-                    const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name > img:not([style])' + (document.documentElement.dataset.mode === 'light' ? '.home-wordmark-light' : '.home-wordmark-dark')), ten=box('.home-newspaper-anniversary'), edition=box('.home-newspaper-edition > span'), stage=box('.home-broadcast'), desk=box('[data-home-gameday-slot]'), matchup=box('.gameday-matchup'), leaders=box('.home-thermal-leaders');
-                    const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),score:e.querySelector('.gd-thermal-number').getBoundingClientRect().toJSON()}));
-                    return {nameLeft:name.left,tenLeft:ten.left,below:ten.top>=name.bottom,inline:Math.abs((ten.top+ten.bottom)-(edition.top+edition.bottom))<2,leadersBelow:leaders.top>=matchup.bottom-1,sideBySide:desk.left>=stage.right && Math.abs(desk.top-stage.top)<1,stacked:desk.top>=stage.bottom-1,rows};
+                    const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), ten=box('.home-newspaper-edition'), edition=box('.home-newspaper-edition > span'), stage=box('.home-broadcast'), desk=box('[data-home-gameday-slot]'), matchup=box('.gameday-matchup'), leaders=box('.home-thermal-leaders');
+                    const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),fullName:e.querySelector('.home-team-name strong').scrollWidth<=e.querySelector('.home-team-name strong').clientWidth+1&&getComputedStyle(e.querySelector('.home-team-name strong')).whiteSpace==='normal',score:e.querySelector('.gd-thermal-number').getBoundingClientRect().toJSON()}));
+                    return {nameLeft:name.left,tenLeft:ten.left,below:ten.top>=name.bottom,inline:Math.abs(ten.left-edition.left)<1,leadersBelow:leaders.top>=matchup.bottom-1,sideBySide:desk.left>=stage.right && Math.abs(desk.top-stage.top)<1,stacked:desk.top>=stage.bottom-1,rows};
                 }''')
                 assert abs(composition['nameLeft']-composition['tenLeft'])<1 and composition['below'] and composition['inline'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
                 assert composition['sideBySide'] if width>=1000 else composition['stacked'], f'Score desk grouping broken: {composition}'
-                if width>=1000:
+                assert all(r['fullName'] for r in composition['rows']), f'Team names must wrap in full: {composition}'
+                if width>=320:
                     assert all(r['portrait']['right']<=r['name']['left'] and r['name']['right']<=r['score']['left']+1 for r in composition['rows']), f'Matchup scores overlap team names: {composition}'
                 metrics.setdefault('frontPageGrouping',[]).append({'mode':mode,'width':width,**composition})
             checks = []
