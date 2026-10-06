@@ -3,9 +3,9 @@
 #tabbar :is(a,.tabmore) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px 6px; min-height: 48px; color: #d0d5d5 !important; opacity: 1; font: 600 11px/1.2 var(--font-display); transform: none; }
 #tabbar :is(a,.tabmore) > span { white-space: nowrap; font: inherit; letter-spacing: 0; }
 #tabbar :is(a,.tabmore) .ico { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; fill: none; stroke: currentColor; color: inherit !important; filter: none !important; opacity: 1; }
-#tabbar :is(a,.tabmore):is(.on,:hover) { color: #f6c542 !important; transform: none; }
-#tabbar :is(a,.tabmore).on::after { background: #f6c542; }
-#tabbar::before { top: auto; bottom: 8px; background: #f6c542; height: 2px; box-shadow: none; }
+#tabbar :is(a,.tabmore):is(.on,:hover) { color: #d82f35 !important; transform: none; }
+#tabbar :is(a,.tabmore).on::after { background: #d82f35; }
+#tabbar::before { top: auto; bottom: 8px; background: #d82f35; height: 2px; box-shadow: none; }
 #more svg { color: var(--muted) !important; filter: none !important; }
 @media (min-width: 900px) { body { padding-top: calc(56px + var(--season-nav-height,67px) + env(safe-area-inset-top)); } }
 @media (max-width: 360px) { #tabbar :is(a,.tabmore) > span { font-size: 10px; } }

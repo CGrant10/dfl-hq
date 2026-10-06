@@ -11,6 +11,8 @@ on:
       - 'js/broadcast-stage.js'
       - 'js/score-vfx*'
       - 'css/home-broadcast-design.css'
+      - 'css/home-newspaper.css'
+      - 'assets/dfl-daily-*'
       - 'tools/*home-review*'
       - '.github/workflows/home-design-review.yml'
 

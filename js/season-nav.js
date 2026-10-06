@@ -3,7 +3,7 @@
 export const PRIMARY_SEASON_ROUTES = [
   { route: "home", label: "Home", icon: "home" },
   { route: "clubhouse", label: "Clubhouse", icon: "record" },
-  { route: "sportsbook", label: "Sportsbook", icon: "versus" },
+  { route: "sportsbook", label: "Book", icon: "versus" },
   /* The trade desk earned the slot Rules had. Rules is a reference you read
      once a season; a trade is a decision with a clock on it, and it was two
      taps deep inside another page. Rules keeps its place in More. */
@@ -28,10 +28,10 @@ export const SECONDARY_SEASON_ROUTES = [
 ];
 
 const navLabel=label=>label;
-const primaryIcons = { home: 'house', clubhouse: 'users-round', sportsbook: 'banknote', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
+const primaryIcons = { home: 'house', clubhouse: 'users-round', sportsbook: 'book-open', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
 let navSizeObserver;
 const link = ({ route, label, icon, lead = false }) =>
-  `<a href="#/${route}" data-route="${route}"${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#dfl-nav-${primaryIcons[route]}"></use></svg><span>${navLabel(label)}</span></a>`;
+  `<a href="#/${route}" data-route="${route}"${route === "sportsbook" ? ' aria-label="Sportsbook"' : ""}${lead ? ' class="season-lead-tab"' : ""}><svg class="ico" aria-hidden="true"><use href="#dfl-nav-${primaryIcons[route]}"></use></svg><span>${navLabel(label)}</span></a>`;
 
 const quickLink = ({ route, label, icon }) =>
   `<a href="#/${route}"><svg class="ico" aria-hidden="true"><use href="#i-${icon}-steel"></use></svg><span class="qn-label">${label}</span></a>`;

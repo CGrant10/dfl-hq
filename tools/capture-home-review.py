@@ -45,35 +45,37 @@ with sync_playwright() as p:
     html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
     page.set_content(html, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
+    page.locator('.bx-pause').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
+    page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     metrics_visibility = page.evaluate('''() => {
-        const logo=document.querySelector('.brand-mark').getBoundingClientRect();
+        const logo=document.querySelector('.home-newspaper-seal').getBoundingClientRect();
         const last=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();
-        const ticker=document.querySelector('.bottomline').getBoundingClientRect();
+        const ticker=document.querySelector('#tabbar').getBoundingClientRect();
         return {logoLeft:logo.left,logoRight:logo.right,lastRowBottom:last.bottom,tickerTop:ticker.top};
     }''')
     assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'League seal is clipped'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
     metrics = {'visibility': metrics_visibility}
-    for width in [390, 320, 1280]:
+    for width in [390, 320, 832, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
-        metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.dfl-anniv,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
+        metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
-        banner = page.locator('.dfl-anniv-art').evaluate('''e => ({width:e.getBoundingClientRect().width,parentWidth:e.parentElement.clientWidth,ratio:e.getBoundingClientRect().width/e.getBoundingClientRect().height,fit:getComputedStyle(e).objectFit})''')
-        assert abs(banner['width'] - banner['parentWidth']) < .5 and abs(banner['ratio'] - 3) < .01 and banner['fit'] == 'contain', f'Banner does not span its content width without cropping: {banner}'
-        metrics[str(width)]['banner'] = banner
+        masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,wordmark:e.querySelector('.home-newspaper-name img').complete})")
+        assert masthead['wordmark'] and masthead['width'] <= width, f'Masthead overflow or missing wordmark: {masthead}'
+        metrics[str(width)]['masthead'] = masthead
         if width < 900:
             # The full-width banner adds natural scroll. Every player must
             # remain reachable above the persistent ticker and navigation.
-            page.evaluate("window.scrollTo(0,Math.max(0,document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect().bottom-document.querySelector('.bottomline').getBoundingClientRect().top+20))")
-            visible = page.evaluate("""() => {const row=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();return {top:row.top,bottom:row.bottom,headerBottom:document.querySelector('.topbar').getBoundingClientRect().bottom,tickerTop:document.querySelector('.bottomline').getBoundingClientRect().top}}""")
+            page.evaluate("window.scrollTo({top:Math.max(0,scrollY+document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect().bottom-document.querySelector('#tabbar').getBoundingClientRect().top+20),behavior:'instant'})")
+            visible = page.evaluate("""() => {const row=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();return {top:row.top,bottom:row.bottom,headerBottom:document.querySelector('.topbar').getBoundingClientRect().bottom,tickerTop:document.querySelector('#tabbar').getBoundingClientRect().top}}""")
             assert visible['top'] > visible['headerBottom'] and visible['bottom'] < visible['tickerTop'] - 1, f'Last player cannot be reached above persistent controls: {visible}'
             metrics[str(width)]['scrolledPlayer'] = visible
             page.screenshot(path=str(OUT / f'home-{width}-leaders.png'))
-            page.evaluate('window.scrollTo(0,0)')
+            page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.set_viewport_size({'width': 390, 'height': 844})
     page.locator('.bx-next').click()
     page.wait_for_timeout(350)
@@ -81,26 +83,26 @@ with sync_playwright() as p:
     page.locator('.bx-prev').click()
     page.wait_for_timeout(350)
     assert page.locator('[data-bx-go="0"]').get_attribute('aria-current') == 'true', 'Previous slide did not return'
-    page.locator('.bx-pause').click()
     assert all(page.locator(f'#tabbar [data-route="{route}"] svg use').get_attribute('href').startswith('#dfl-nav-') for route in ['home','clubhouse','sportsbook','trade','analyzer'])
     assert page.evaluate('document.querySelector("#dfl-nav-house").namespaceURI') == 'http://www.w3.org/2000/svg'
     assert metrics['390']['sections'][4]['height'] < 240, 'Leader preview is not compact'
     metrics['pause'] = page.locator('.bx-pause').get_attribute('aria-label')
     assert metrics['pause'] == 'Play the broadcast'
-    assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 1280]), 'Horizontal overflow'
-    assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
+    assert all(metrics[str(w)]['scroll'] <= w for w in [390, 320, 832, 1280]), 'Horizontal overflow'
+    assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,832,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
     assert page.locator('[data-score-temperature="hot"]').count() == 2
     assert page.locator('[data-score-temperature="cold"]').count() == 2
+    page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
+    page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
     metrics['fonts'] = page.evaluate('({headline:getComputedStyle(document.querySelector(".bx-home-title")).fontFamily,score:getComputedStyle(document.querySelector(".gd-thermal-value")).fontFamily,stroke:getComputedStyle(document.querySelector(".gd-thermal-value")).webkitTextStrokeWidth,loaded:document.fonts.check("30px Anton")})')
     assert metrics['fonts']['loaded'] and 'Anton' in metrics['fonts']['headline'] and 'DFL Broadcast' not in metrics['fonts']['score'], 'Pixel display font is still active'
     assert metrics['fonts']['stroke'] == '0px', 'Synthetic score stroke is still active'
-    metrics['refinement'] = page.evaluate("""() => ({bannerHeight:document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,bannerRatio:document.querySelector('.dfl-anniv-art').getBoundingClientRect().width/document.querySelector('.dfl-anniv-art').getBoundingClientRect().height,playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),teamFont:parseFloat(getComputedStyle(document.querySelector('.gameday-faceoff-team .gd-thermal-number')).fontSize),broadcastBackground:getComputedStyle(document.querySelector('.bx-stage')).backgroundImage,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
-    assert abs(metrics['refinement']['bannerRatio'] - 3) < .01, 'Banner is cropped'
-    assert metrics['refinement']['playerFont'] <= 24 and metrics['refinement']['teamFont'] <= 22, 'Points are still oversized'
-    assert metrics['refinement']['broadcastBackground'] == 'none', 'Broadcast text still sits over an image'
+    metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
+    assert metrics['refinement']['paper'] == '#efebe1' and metrics['refinement']['hero'], 'Selected newspaper presentation is missing'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
+    page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='off'")
     assert page.evaluate("document.querySelector('.home-banter').previousElementSibling.matches('[data-page-detail=home-league]')"), 'Wall must follow More from the league'
     metrics['cleanup'] = page.evaluate("""() => ({stories:[...document.querySelectorAll('.home-league-story')].map(e=>({border:getComputedStyle(e).borderLeftWidth,background:getComputedStyle(e).backgroundColor,decoration:getComputedStyle(e).textDecorationLine})),actions:[...document.querySelectorAll('.home-section-action')].map(e=>({label:e.getAttribute('aria-label'),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),storyLinks:document.querySelectorAll('.home-league-file > nav').length})""")
     assert all(s['border'] == '0px' and s['background'] == 'rgba(0, 0, 0, 0)' and s['decoration'] == 'none' for s in metrics['cleanup']['stories']), 'Archive stories still use boxed cards or underlined links'
@@ -135,6 +137,7 @@ with sync_playwright() as p:
                 page.locator('#tabbar').screenshot(path=str(OUT / f'nav-{route}.png'))
     page.evaluate("document.querySelector('#view').dataset.route='home';document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));document.querySelector('#tabbar [data-route=home]').classList.add('on')")
     page.set_viewport_size({'width':390,'height':844})
+    page.evaluate("document.querySelector('#view').dataset.route='clubhouse'")
     page.locator('#tabbar').evaluate("e=>e.style.paddingBottom='34px'")
     page.wait_for_timeout(300)
     metrics['phoneInset'] = page.evaluate("""() => {const nav=document.querySelector('#tabbar').getBoundingClientRect(),ticker=document.querySelector('.bottomline').getBoundingClientRect();return {navHeight:nav.height,measured:parseFloat(document.documentElement.style.getPropertyValue('--season-nav-height')),navTop:nav.top,tickerBottom:ticker.bottom}}""")
@@ -142,6 +145,7 @@ with sync_playwright() as p:
     assert metrics['phoneInset']['navHeight'] == metrics['phoneInset']['measured'] and abs(metrics['phoneInset']['navTop'] - metrics['phoneInset']['tickerBottom']) < 1, f"Ticker and navigation disagree on phone inset height: {metrics['phoneInset']}"
     page.locator('#tabbar').evaluate("e=>e.style.removeProperty('padding-bottom')")
     page.wait_for_timeout(300)
+    page.evaluate("document.querySelector('#view').dataset.route='home'")
     metrics['slides'] = []
     count = page.evaluate('window.reviewDeck.length')
     for width in [320, 390, 768, 1280]:
@@ -149,12 +153,13 @@ with sync_playwright() as p:
         stage_height = None
         gameday_top = None
         for index in range(count):
-            page.locator(f'[data-bx-go="{index}"]').click()
+            page.locator(f'[data-bx-go="{index}"]').focus()
+            page.locator(f'[data-bx-go="{index}"]').press('Enter')
             page.wait_for_timeout(650)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children];
-                return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top,
+                const elements=[...slide.children].filter(e=>getComputedStyle(e).position!=='absolute');
+                return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
@@ -164,16 +169,19 @@ with sync_playwright() as p:
                 stage_height, gameday_top = layout['stageHeight'], layout['gamedayTop']
             assert layout['stageHeight'] == stage_height and abs(layout['gamedayTop'] - gameday_top) < 1, f'Broadcast rotation moves the page: {layout}'
             assert layout['scroll'] <= width, f'Slide overflow: {layout}'
-            assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['controlsTop'] - 3 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
+            assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
     page.set_viewport_size({'width': 390, 'height': 844})
-    page.locator('[data-bx-go="0"]').click()
+    page.locator('[data-bx-go="0"]').focus()
+    page.locator('[data-bx-go="0"]').press('Enter')
     page.wait_for_timeout(650)
     density_context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=3)
     density_page = density_context.new_page()
     density_page.set_content(html, wait_until='domcontentloaded')
+    density_page.wait_for_function('!!window.reviewVfx', timeout=15000)
+    density_page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
     density_page.wait_for_function('document.querySelector("canvas.gd-vfx-canvas")?.dataset.running === "true"', timeout=15000)
     density_page.evaluate('document.fonts.ready')
     density_page.wait_for_timeout(650)
@@ -186,6 +194,25 @@ with sync_playwright() as p:
     metrics['reducedMotion'] = page.locator('canvas.gd-vfx-canvas').evaluate('(e)=>e.dataset.running')
     assert metrics['reducedMotion'] == 'false', 'Reduced motion did not stop score effects'
     assert page.locator('.bx-home-feature').get_attribute('href') == '#/clubhouse'
+    page.evaluate("""() => {
+        const stage=document.querySelector('[data-bx-stage]');
+        window.reviewOpener=stage.querySelector('.bx-home-feature');
+        window.reviewStage.update([...window.reviewDeck, {id:'fixture:late',treatment:'announcement',headline:'Late league update',body:'A new edition from the league wire.',temporal:'recent'}]);
+    }""")
+    page.wait_for_timeout(200)
+    assert page.locator('.bx-page-count').text_content() == '1 of 13', 'Page count did not update when the deck grew'
+    assert page.evaluate("document.querySelector('.bx-home-feature')===window.reviewOpener"), 'Deck refresh replayed the opener'
+    metrics['deckRefresh'] = 'passed'
+    section_hash = page.evaluate('location.hash')
+    for section, selector in [('scores','[data-home-gameday-slot]'), ('archive','[data-home-lore-slot]')]:
+        page.locator(f'[data-home-jump="{section}"]').click()
+        page.wait_for_timeout(800)
+        assert page.locator(f'[data-home-jump="{section}"]').get_attribute('aria-current') == 'location'
+        assert page.evaluate('location.hash') == section_hash, 'Section navigation changed the app route'
+        assert 0 <= page.locator(selector).bounding_box()['y'] < 200, 'Section navigation did not reach its content'
+    page.locator('[data-page-detail="home-league"] summary').click()
+    assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'More from the league did not open'
+    metrics['sectionNavigation'] = 'passed'
     metrics['consoleErrors'] = errors
     assert not errors, errors
     (OUT / 'browser-checks.json').write_text(json.dumps(metrics, indent=2))

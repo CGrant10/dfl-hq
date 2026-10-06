@@ -32,7 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
-import {homeBroadcastDeck,homeLeagueFile} from "../home-presentation.js";
+import {homeBroadcastDeck,homeLeagueFile,homeNewspaperMasthead,wireHomeNewspaperSections} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { window_ as newsWindow, changesSince, whatsNewStrip, wireWhatsNew, markSeen } from "../whatsnew.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
@@ -460,8 +460,8 @@ export async function render(view) {
 
     The personal stage, next lineup action and one league highlight lead.
     Rankings, forecasts and activity sit in a remembered disclosure.
-    Draft, League Feed and the Wall still load as the reader approaches them. The crest closes
-    the page, since the splash already carries the brand.
+    Draft, League Feed and the Wall still load as the reader approaches them.
+    The Wall closes the newspaper; a compact identity and update footer follows.
 
     UPCOMING AND OPEN POLLS ARE GONE FROM THE MARKUP. They were rendered
     here and then hidden with a positional `display:none` in
@@ -473,7 +473,7 @@ export async function render(view) {
   */
   view.innerHTML = `<div id="home-wrap">
     <h1 class="sr-only">DFL HQ</h1>
-    ${anniversary()}
+    ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div data-home-deadline-slot></div>
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
@@ -546,6 +546,7 @@ export async function render(view) {
   }).catch(error => console.warn('League archive unavailable', error));
   wirePageDisclosures(view);
   view.querySelector('[data-open-home-news]')?.addEventListener('click',()=>{const more=view.querySelector('[data-page-detail="home-league"]');more.open=true;const feed=view.querySelector('[data-home-feed-slot]');feed?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
+  wireHomeNewspaperSections(view);
   wireInline(view.querySelector("#home-wrap"), () => render(view));
   wireWhatsNew(view, leagues.data || []);
   pickemPromise.then(board => {
@@ -563,7 +564,7 @@ export async function render(view) {
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
-      slot.innerHTML = wallCard(await loadWall(1), { compact: true });
+      slot.innerHTML = wallCard(await loadWall(3), { compact: true });
       wireWall(slot, redrawWall);
     } catch (err) {
       console.warn("wall unavailable", err);
@@ -849,4 +850,3 @@ function ordinal(n){const r=n%100;if(r>=11&&r<=13)return `${n}th`;return n+(["th
 
 function adminRow(control){return control?`<div class="row-end">${control}</div>`:""}
 function setupNotice(){return `<header class="page-head"><h1>Almost there</h1></header><div class="card note"><h3 class="card-heading">Connect Supabase</h3><div class="card-body">Open <strong>js/config.js</strong> and paste in your Supabase project URL and anon key, then run <strong>schema.sql</strong> in the Supabase SQL editor.\n\nThe README walks through both steps.</div></div>`}
-

@@ -2,7 +2,7 @@
 // sample scores. It lives outside the app and never writes to league data.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile } from '../js/home-presentation.js';
+import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeNewspaperMasthead } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
@@ -10,12 +10,12 @@ import { matchupPreviewSlide, tradeAlertSlide, nextMoveSlide } from '../js/home-
 import { disclosure } from '../js/page-disclosure.js';
 
 const players = [
-  { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'live', roster: '1' },
+  { id: '7564', name: 'Ja’Marr Chase', position: 'WR', nflTeam: 'CIN', points: 24.6, state: 'final', roster: '1' },
   { id: '6794', name: 'Justin Jefferson', position: 'WR', nflTeam: 'MIN', points: 18.4, state: 'final', roster: '2' },
   { id: '1466', name: 'Travis Kelce', position: 'TE', nflTeam: 'KC', points: 6.8, state: 'final', roster: '1' },
   { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 8.2, state: 'final', roster: '2' },
 ];
-const model = { season: 2026, week: 5, starters: players, games: [{ isMine: true, sides: [
+const model = { season: 2026, week: 5, completed: true, starters: players, games: [{ isMine: true, sides: [
   { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant' } },
   { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike' } },
 ] }] };
@@ -42,12 +42,14 @@ html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="medicine">');
 html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
-  <aside class="dfl-anniv dfl-anniv--editorial"><img class="dfl-anniv-art" src="assets/anniversary-ten.webp" width="2172" height="724" alt="10th anniversary season, 2017–2026"></aside>
+  ${homeNewspaperMasthead({ now: new Date('2026-10-06T12:00:00Z') })}
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
-  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="on"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Live</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
+  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>GAMEDAY</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}</div></section></div>
   <div data-home-lore-slot>${leagueFile}</div>
   ${disclosure('home-league', 'More from the league', 'Weekly forecasts, side games and activity', '<section class="home-week-focus"><header><small>WEEK 5 · YOUR WEEK</small><h2>Your next move</h2></header><p>Review your lineup before the next kickoff.</p><a class="linkbtn" href="#/analyzer">Review lineup</a></section>')}
-  <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">The Wall<a class="section-link home-section-action" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><p class="wall-empty muted">Nothing yet. Be the first idiot.</p></div></section></div></section>
+  <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">Letters from the league<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts"><article class="wall-post"><div class="wall-head"><strong class="wall-name">Commish</strong></div><p class="wall-body">That .60 still hurts. Bring the receipts next time.</p><a class="btn ghost small" href="#/wall">Replies · 2</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">League Vet</strong></div><p class="wall-body">Same story every year. Mike’s lucky.</p><a class="btn ghost small" href="#/wall">Replies · 1</a></article><article class="wall-post"><div class="wall-head"><strong class="wall-name">The Analyst</strong></div><p class="wall-body">Decimal mafia never sleeps.</p><a class="btn ghost small" href="#/wall">Replies · 0</a></article></div></div></section></div></section>
+  <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
+  <p class="version-line">DFL HQ v1.303.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
@@ -56,10 +58,12 @@ const previewCss = readFileSync(new URL('../js/member-preview.js', import.meta.u
 html = html.replace('</head>', `<style>${previewCss}</style></head>`);
 html = html.replace('</body>', `<div class="bottomline"><span class="bl-item"><b class="bl-label">NFL</b><span class="bl-text">CHI 17 – 27 WAS · Final</span></span><span class="bl-item"><span class="bl-text">DET 24 – 20 MIN · Final</span></span></div>
 <script type="module">
+  import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
   const deck = ${JSON.stringify(deck)};
+  wireHomeNewspaperSections(document.querySelector('#home-wrap'));
   window.reviewDeck = deck;
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
