@@ -5,7 +5,7 @@ import {
 } from "./team-theme.js";
 import { nflTeams } from "./nfl-teams.js";
 
-const CARD = "#141416";      // the palette's card surface
+const CARD = "#141416";      // fixed reference for isolated colour maths
 const TEXT_BAR = 6;          // the ratio theme.js holds text to
 const FILL_BAR = 1.85;       // a fill only has to be seen
 
@@ -103,16 +103,18 @@ describe("every one of the 32 clubs produces a usable palette", () => {
   it("clears the text bar for both accents", () => {
     for (const t of clubs) {
       const p = teamPalette(t);
-      expect(contrast(p.accent, CARD), `${t.code} accent`).toBeGreaterThanOrEqual(TEXT_BAR);
-      expect(contrast(p.accent2, CARD), `${t.code} accent2`).toBeGreaterThanOrEqual(TEXT_BAR);
+      for (const surface of [p.bg, p.bg2, p.bg3, p.hover]) {
+        expect(contrast(p.accent, surface), `${t.code} accent on ${surface}`).toBeGreaterThanOrEqual(TEXT_BAR);
+        expect(contrast(p.accent2, surface), `${t.code} accent2 on ${surface}`).toBeGreaterThanOrEqual(TEXT_BAR);
+      }
     }
   });
 
   it("keeps both fills visible against the card", () => {
     for (const t of clubs) {
       const p = teamPalette(t);
-      expect(contrast(p.fill, CARD), `${t.code} fill`).toBeGreaterThanOrEqual(FILL_BAR);
-      expect(contrast(p.fill2, CARD), `${t.code} fill2`).toBeGreaterThanOrEqual(FILL_BAR);
+      expect(contrast(p.fill, p.bg2), `${t.code} fill`).toBeGreaterThanOrEqual(FILL_BAR);
+      expect(contrast(p.fill2, p.bg2), `${t.code} fill2`).toBeGreaterThanOrEqual(FILL_BAR);
     }
   });
 
