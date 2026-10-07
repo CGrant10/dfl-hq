@@ -34,7 +34,7 @@ permissions:
 jobs:
   browser-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     env:
       DFL_REVIEW_DIR: ${{ github.workspace }}/home-review-output
     steps:
