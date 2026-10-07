@@ -29,8 +29,8 @@ export function buildGameDay({week,rows=[],players={},nfl=null,members=[],member
  const nextKickoff=Math.min(...events.filter(e=>e.state==='upcoming'&&e.kickoff>now).map(e=>e.kickoff));
  const live=events.some(e=>e.state==='live');
  const leaders=starters.filter(p=>p.points!==null&&p.points>0).sort((a,b)=>b.points-a.points||a.name.localeCompare(b.name)).slice(0,4);
- const snapshot={points:Object.fromEntries(starters.filter(p=>p.points!==null).map(p=>[`${p.roster}:${p.id}`,p.points])),leaders:Object.fromEntries(games.map(g=>[g.id,g.leader]))};
- return {leagueId:week.leagueId,season:week.season,week:week.week,completed:week.completed,live,nextKickoff:Number.isFinite(nextKickoff)?nextKickoff:null,starters,mine,bench,leaders,games,events,snapshot};
+ const snapshot={points:Object.fromEntries(starters.filter(p=>p.points!==null).map(p=>[`${p.roster}:${p.id}`,p.points])),totals:Object.fromEntries(games.flatMap(g=>g.sides.filter(t=>t.score!==null).map(t=>[t.roster,t.score]))),leaders:Object.fromEntries(games.map(g=>[g.id,g.leader]))};
+ return {leagueId:week.leagueId,season:week.season,week:week.week,memberId,completed:week.completed,live,nextKickoff:Number.isFinite(nextKickoff)?nextKickoff:null,starters,mine,bench,leaders,games,events,snapshot};
 }
 export function gameDayHighlights(model,previous=null){
  const highlights=[];

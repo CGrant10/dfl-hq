@@ -1,5 +1,5 @@
 import { playerScorePhase } from './game-day-player-rows.js';
-import { matchupPhase } from './clubhouse-matchup-model.js';
+import { matchupPhase, matchupSummary } from './clubhouse-matchup-model.js';
 import { esc } from './ui.js';
 import { playerIdentity } from './player-presentation.js';
 import { teamPortrait } from './team-presentation.js';
@@ -86,10 +86,11 @@ export function homeGameDayMatchup(model, weekly = null) {
     return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
     <span class="home-team-name"><small class="home-team-record">${esc(record)}</small><strong>${esc(team.identity?.team_name || team.name || team.identity?.display_name)}</strong><small class="home-team-progress">${esc(remaining)}</small></span>
-    <span class="home-team-total"><small>${scoreLabel}</small>${projected ? `<strong class="home-projected-total">${forecasts[index].projection.toFixed(1)}</strong>` : thermalScore(team.score, 'neutral')}</span>
+    <span class="home-team-total"${projected ? '' : ` data-gameday-total-key="${esc(team.roster)}"`}><small>${scoreLabel}</small>${projected ? `<strong class="home-projected-total">${forecasts[index].projection.toFixed(1)}</strong>` : thermalScore(team.score, 'neutral')}</span>
   </span>`;
   }).join('<i aria-hidden="true">vs</i>');
-  return `<p class="home-matchup-score-label sr-only">${scoreLabel} scores · points</p><a class="gameday-matchup${projected ? ' is-projected' : ''}" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup. ${scoreLabel} scores in points.</span></a>`;
+  const summary=matchupSummary(game.sides[0],game.sides[1],{completed:model.completed,memberId:model.memberId,compact:true});
+  return `<p class="home-matchup-score-label sr-only">${scoreLabel} scores · points</p><a class="gameday-matchup${projected ? ' is-projected' : ''}" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="home-matchup-entry"><span>${esc(summary)}</span><strong>Matchup details <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></strong></span><span class="sr-only">Open matchup. ${scoreLabel} scores in points.</span></a>`;
 }
 
 export function homeThermalBoard(model) {
