@@ -1,16 +1,16 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.324.0";
+const CACHE_NAME = "dfl-hq-v1.325.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
-  "./css/page-identity.css?v=1.324.0","./css/home-broadcast-theme.css?v=1.324.0",
-  "./css/app-shell.css?v=1.324.0","./css/home-layout.css?v=1.324.0",
-  "./css/home-broadcast-design.css?v=1.324.0","./assets/home-broadcast-stadium.webp","./css/home-newspaper.css?v=1.324.0","./assets/dfl-daily-hero.webp","./assets/dfl-daily-crest.webp","./assets/dfl-daily-splatter.webp","./assets/dfl-daily-champion.webp","./assets/dfl-daily-chip-eater.webp","./assets/dfl-daily-archive.webp","./assets/dfl-daily-rivalry.webp","./assets/dfl-daily-paper.webp","./assets/dfl-daily-wordmark.webp","./assets/dfl-daily-wordmark-medicine.webp","./assets/dfl-daily-ten.webp","./assets/dfl-daily-headline.webp","./icons/dfl-seal-heritage-512.webp","./js/home-presentation.js",
+  "./css/page-identity.css?v=1.325.0","./css/home-broadcast-theme.css?v=1.325.0",
+  "./css/app-shell.css?v=1.325.0","./css/home-layout.css?v=1.325.0",
+  "./css/home-broadcast-design.css?v=1.325.0","./assets/home-broadcast-stadium.webp","./css/home-newspaper.css?v=1.325.0","./assets/dfl-daily-hero.webp","./assets/dfl-daily-crest.webp","./assets/dfl-daily-splatter.webp","./assets/dfl-daily-champion.webp","./assets/dfl-daily-chip-eater.webp","./assets/dfl-daily-archive.webp","./assets/dfl-daily-rivalry.webp","./assets/dfl-daily-paper.webp","./assets/dfl-daily-wordmark.webp","./assets/dfl-daily-wordmark-medicine.webp","./assets/dfl-daily-ten.webp","./assets/dfl-daily-headline.webp","./icons/dfl-seal-heritage-512.webp","./js/home-presentation.js",
   "./assets/anniversary-ten.webp",
   "./js/league-results.js","./js/game-day-league.js","./js/game-day-dom.js","./js/game-day-panels.js","./js/game-day-moments.js","./js/game-day-moments-model.js",
-  "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js","./css/connected-experience.css?v=1.324.0",
-  "./js/share-editorial.js","./js/share-layouts.js","./js/share-layout-model.js","./js/share-export-model.js","./css/share-preview.css?v=1.324.0","./fonts/anton-regular.woff2","./fonts/inter-latin-variable.woff2","./images/share/editorial-paper.webp",
-  "./css/game-day-watch.css?v=1.324.0","./js/game-day-watch.js","./js/game-day-experience-model.js","./js/game-day-player-rows.js",
+  "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js","./css/connected-experience.css?v=1.325.0",
+  "./js/share-editorial.js","./js/share-layouts.js","./js/share-layout-model.js","./js/share-export-model.js","./css/share-preview.css?v=1.325.0","./fonts/anton-regular.woff2","./fonts/inter-latin-variable.woff2","./images/share/editorial-paper.webp",
+  "./css/game-day-watch.css?v=1.325.0","./js/game-day-watch.js","./js/game-day-experience-model.js","./js/game-day-player-rows.js",
   "./js/nfl-game-day.js","./js/game-day-model.js","./js/game-day.js","./js/game-day-score-motion.js","./js/game-day-matchup-share.js", "./js/matchup-banter.js", "./js/player-spotlight.js", "./js/player-spotlight-model.js", "./js/score-temperature.js", "./js/score-vfx.js", "./js/score-vfx-shaders.js",
   "./js/clubhouse-matchup-model.js","./js/clubhouse-matchup-cards.js","./js/clubhouse-matchup-live.js",
   "./js/page-disclosure.js", "./js/injury-report-model.js", "./js/injury-report-data.js", "./js/injury-report-ui.js",
@@ -104,8 +104,8 @@ const APP_SHELL = [
   "./js/trade-model-health.js",
   "./js/notification-device-state.js",
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
-  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.324.0","./css/stakes.css",
-  "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/home-editorial.css?v=1.324.0","./css/breaking-trade.css","./css/nav-neutral.css?v=1.324.0","./css/update-gate.css",
+  "./","./index.html","./manifest.json","./css/power-pulse-system.css?v=1.325.0","./css/stakes.css",
+  "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/home-editorial.css?v=1.325.0","./css/breaking-trade.css","./css/nav-neutral.css?v=1.325.0","./css/update-gate.css",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
@@ -150,15 +150,19 @@ function usableCached(response,request){
 self.addEventListener("fetch",event=>{
   const{request}=event;if(request.method!=="GET")return;const url=new URL(request.url);
   if(url.hostname.endsWith("supabase.co")||url.hostname.endsWith("sleeper.app")||url.pathname.endsWith("/version.txt"))return;
-  const shellRequest=url.origin===location.origin&&(request.mode==="navigate"||SHELL_URLS.has(url.href.split("?")[0]));
+  // Only the app entry points use the cached app document. Standalone pages
+  // and directly opened images must receive their own network responses.
+  const scopePath=new URL(self.registration.scope).pathname;
+  const appNavigation=request.mode==="navigate"&&(url.pathname===scopePath||url.pathname===`${scopePath}index.html`);
+  const shellRequest=url.origin===location.origin&&(appNavigation||SHELL_URLS.has(url.href.split("?")[0]));
   if(shellRequest){
-    const refreshRequest=request.mode==="navigate"?new Request(new URL("./index.html",self.registration.scope),{credentials:"same-origin"}):request;
+    const refreshRequest=appNavigation?new Request(new URL("./index.html",self.registration.scope),{credentials:"same-origin"}):request;
     const refresh=refreshCached(refreshRequest);
     event.waitUntil(refresh.then(()=>{}));
     /* The update button deliberately adds ?u=. That navigation must wait for
        the network response instead of immediately handing the old shell back
        from cache, otherwise the same update banner can loop forever. */
-    if(request.mode==="navigate"&&url.searchParams.has("u")){
+    if(appNavigation&&url.searchParams.has("u")){
       event.respondWith((async()=>{
         const fresh=await refresh;
         if(usableCached(fresh,request))return fresh;
@@ -167,7 +171,7 @@ self.addEventListener("fetch",event=>{
       return;
     }
     event.respondWith((async()=>{
-      const candidate=await caches.match(request,{ignoreSearch:true})||request.mode==="navigate"&&await caches.match("./index.html");
+      const candidate=await caches.match(request,{ignoreSearch:true})||appNavigation&&await caches.match("./index.html");
       const cached=usableCached(candidate,request)?candidate:null;
       if(cached)return cached;
       return await refresh||Response.error();
@@ -222,4 +226,3 @@ self.addEventListener("notificationclick", event => {
     return self.clients.openWindow(target);
   }));
 });
-
