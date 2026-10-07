@@ -26,7 +26,10 @@
 // repaints the verdict alone.
 // =====================================================================
 
-import { evaluateMultiTeamTrade, evaluateTrade } from "./team-analyzer.js";
+import {evaluateTradeDeal,findTradeCounteroffers,applyTradeDeal} from './trade-workspace.js';
+import {reconcileTradeDestinations,tradePerspective} from './trade-routing.js';
+import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
+import {playerPortrait} from './player-presentation.js';
 import { esc } from "./ui.js";
 
 const num = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
@@ -102,6 +105,7 @@ function playerRow(player, side, checked) {
   const signal = player.injuryStatus || (player.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
   return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-search="${esc(search)}">
     <input type="checkbox" data-td-pick="${side}" value="${esc(player.id)}" ${checked ? "checked" : ""}>
+    ${playerPortrait(player)}
     <span class="td-player-copy">
       <b>${esc(player.name)}</b>
       <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} pts`].filter(Boolean).join(" · "))}</small>
@@ -110,15 +114,15 @@ function playerRow(player, side, checked) {
   </label>`;
 }
 
-function selectedPlayersMarkup(picked, pool, side) {
+function selectedPlayersMarkup(picked, pool, side,parties=[],destinations={}) {
   if (!picked.size) return `<span class="td-selected-empty">No players added yet.</span>`;
   return [...picked].map(id => {
     const player = pool.get(String(id));
-    return `<button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>`;
+    return `<div class="td-selected-player"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}">${!destinations[id]?'<option value="">Choose recipient</option>':''}${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
   }).join("");
 }
 
-function sideList(team, pool, picked, side, label, filter = '') {
+function sideList(team, pool, picked, side, label, filter = '',parties=[],destinations={},rosterOpen=false) {
   const players = (team?.playerIds || []).map(id => pool.get(String(id))).filter(Boolean)
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   return `<div class="td-side">
@@ -127,10 +131,11 @@ function sideList(team, pool, picked, side, label, filter = '') {
       <strong>${esc(teamName(team))}</strong></div>
       <span class="td-picked-count" data-td-count="${side}">${picked.size} picked</span>
     </div>
-    <div class="td-selected" data-td-selected="${side}">${selectedPlayersMarkup(picked, pool, side)}</div>
+    <div class="td-selected" data-td-selected="${side}">${selectedPlayersMarkup(picked, pool, side,parties,destinations)}</div>
+    <details class="td-roster" data-td-roster="${side}"${rosterOpen?' open':''}><summary>Choose players <small>${players.length} on roster</small></summary>
     <label class="td-search"><span class="sr-only">Search ${esc(teamName(team))}</span><input type="search" data-td-filter="${side}" value="${esc(filter)}" placeholder="Search players" autocomplete="off"></label>
     <div class="td-list">${players.map(p => playerRow(p, side, picked.has(String(p.id)))).join("")
-      || `<p class="td-empty">No rated players on this roster.</p>`}</div>
+      || `<p class="td-empty">No rated players on this roster.</p>`}</div></details>
   </div>`;
 }
 
@@ -328,19 +333,19 @@ function packageRows(ids, pool) {
 function balanceMeter(fairness) {
   const at = Math.max(0, Math.min(100, num(fairness)));
   return `<div class="td-balance">
-    <div class="td-balance-track"><i style="left:${at}%"><b>${at}% balance</b></i></div>
+    <b class="td-balance-label">${at}% balance</b><div class="td-balance-track"><i style="left:${at}%" aria-hidden="true"></i></div>
     <div class="td-balance-scale"><span>Lopsided</span><span>Even split</span></div>
   </div>`;
 }
 
 function reasonList(reasons) {
-  return `<div class="td-reasoning">
-    <h3>What the DFLyzer thinks of this trade</h3>
+  return `<p class="td-top-take">${esc(reasons[0]?.title||'Why this call')}</p><details class="td-reasoning">
+    <summary><span>The DFLyzer’s full take</span><small>Show the reasoning</small></summary><div>
     ${reasons.map(reason => `<article class="td-reason is-${reason.tone}">
       <i aria-hidden="true">${REASON_MARK[reason.tone] || "="}</i>
       <div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div>
     </article>`).join("")}
-  </div>`;
+  </div></details>`;
 }
 
 const REASON_MARK = { good: "↑", bad: "↓", warn: "!", neutral: "=" };
@@ -392,14 +397,14 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     </div>
 
     <div class="td-lines">
-      <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} / wk</b></div>
-      <div class="td-line"><span>Your usable depth</span><b class="${num(result.depthDeltaA) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaA)} / wk</b></div>
-      <div class="td-line"><span>${esc(teamName(teamB))} lineup</span><b class="${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaB)} / wk</b></div>
-      <div class="td-line"><span>${esc(teamName(teamB))} depth</span><b class="${num(result.depthDeltaB) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaB)} / wk</b></div>
+      <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} avg/wk</b></div>
+      <div class="td-line"><span>Your usable depth</span><b class="${num(result.depthDeltaA) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaA)} avg/wk</b></div>
+      <div class="td-line"><span>${esc(teamName(teamB))} lineup</span><b class="${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaB)} avg/wk</b></div>
+      <div class="td-line"><span>${esc(teamName(teamB))} depth</span><b class="${num(result.depthDeltaB) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaB)} avg/wk</b></div>
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div>
 
-    ${balanceMeter(result.fairness)}
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit package values depend on who can use each player. Weekly changes are season averages.</p>
     ${reasonList(reasons)}
   </div>`;
 }
@@ -414,32 +419,18 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
 */
 function multiTicketMarkup(result, parties, pool, sends) {
   if (!result) return idleTicket();
-  const last = parties.length - 1;
-  const perspective = { ...result, valueToA: result.values[0], valueToB: result.values[1],
-    weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[last],
-    depthDeltaA: result.depthDeltas?.[0], depthDeltaB: result.depthDeltas?.[last],
-    rosterImpactA: result.rosterImpacts?.[0], rosterImpactB: result.rosterImpacts?.[last],
-    usefulIncomingA: result.usefulIncoming?.[0], surplusIncomingA: result.surplusIncoming?.[0], cutIncomingA: result.cutIncoming?.[0] };
-  const v = verdictFor(perspective), recommendation = recommendationFor(perspective);
-  const winnerIndex = result.values.reduce((best, value, index, values) => value > values[best] ? index : best, 0);
-  const winner = parties[winnerIndex];
-  const reasons = tradeReasons(perspective, parties[0], parties[last], pool, sends[0], sends[last]);
+  const perspective=tradePerspective(result),v=verdictFor(perspective),recommendation=recommendationFor(perspective);
+  const incoming=result.receives?.[0]||sends.at(-1),others={team_name:'Other members'};
+  const reasons=tradeReasons(perspective,parties[0],others,pool,sends[0],incoming);
   return `<div class="td-ticket is-${v.tone}">
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>${parties.length}-team deal</h2>
-      <span>${esc(v.headline)} &middot; ${esc(teamName(winner))} leads value</span>
+      <span>${esc(v.headline)} for ${esc(teamName(parties[0]))} · ${result.fairness}% group balance</span>
     </div>
 
     <div class="td-legs">
-      ${parties.map((from, index) => {
-        const to = parties[(index + 1) % parties.length];
-        return `<div class="td-leg">
-          <small>${esc(teamName(from))} &rarr; ${esc(teamName(to))}</small>
-          ${packageRows(sends[index], pool)}
-          <div class="td-total"><small>Value</small><b>${num(result.values[(index + 1) % parties.length])}</b></div>
-        </div>`;
-      }).join("")}
+      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Roster-fit value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Roster-fit value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
     <div class="td-stamp is-${recommendation.tone}">
@@ -448,10 +439,10 @@ function multiTicketMarkup(result, parties, pool, sends) {
     </div>
 
     <div class="td-lines">
-      ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} / wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} / wk</b></div>`).join("")}
+      ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
     </div>
 
-    ${balanceMeter(result.fairness)}
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit package values depend on who can use each player. Weekly changes are season averages.</p>
     ${reasonList(reasons)}
   </div>`;
 }
@@ -467,19 +458,20 @@ export function tradeDeskMarkup(team, teams, pool, state) {
   const parties = [team, ...validIds.map(id => teams.find(item => String(item.id) === String(id))).filter(Boolean)];
   while (state.sends.length < parties.length) state.sends.push(new Set());
   state.sends.length = parties.length;
+  state.destinations=reconcileTradeDestinations(parties,state.sends,state.destinations);
   const selectors = validIds.map((id, index) => {
     const usedElsewhere = new Set(validIds.filter((_, otherIndex) => otherIndex !== index).map(String));
     return `<div class="td-member-control"><label class="ta-inline-select"><span>${index === 0 ? "Trade with" : `Member ${index + 2}`}</span><select data-td-member="${index}">${available.filter(item => !usedElsewhere.has(String(item.id))).map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>${index ? `<button type="button" class="td-remove-member" data-td-remove-member="${index}" aria-label="Remove ${esc(teamName(parties[index + 1]))}">×</button>` : ""}</div>`;
   }).join("");
-  const add = parties.length < teams.length ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
+  const add = parties.length < Math.min(8,teams.length) ? `<button type="button" class="btn ghost small td-add-member" data-td-add-member>+ Add member</button>` : "";
   const multi = parties.length > 2;
   return `<details class="td-builder"${state.editing ? " open" : ""}>
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
-        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>Build any even or uneven package across both sides.</small></div>
+        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Choose a recipient for each selected player. Every member needs players in and out.":"Build any even or uneven package across both sides."}</small></div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
-          ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} → ${teamName(parties[(index + 1) % parties.length])}` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "")).join("")}
+          ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} sends` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "",parties,state.destinations,state.rosterOpen?.[index])).join("")}
         </div>
         <div class="td-actions"><button type="button" class="btn ghost small" data-td-clear>Clear the board</button></div>
       </div>
@@ -491,9 +483,10 @@ export function tradeDeskMarkup(team, teams, pool, state) {
  * Wire a rendered trade desk. Repaints only the verdict on each change, so
  * building a deal never redraws the report underneath it.
  */
-export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal }) {
+export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange, onDeal,lockedIds=[] }) {
   if (!root) return;
   const verdictHost = root.querySelector("[data-td-verdict]");
+  let currentDeal=null,counters=[],revision=0;
   root.querySelector(".td-builder")?.addEventListener("toggle", event => {
     state.editing = event.currentTarget.open;
   });
@@ -504,11 +497,12 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     const totalNode = root.querySelector("[data-td-total-count]");
     if (totalNode) totalNode.textContent = String(total);
     root.querySelector("[data-td-limit]")?.classList.toggle("is-full", full);
+    const parties=partiesOf();state.destinations=reconcileTradeDestinations(parties,state.sends,state.destinations);
     state.sends.forEach((set, index) => {
       const count = root.querySelector(`[data-td-count="${index}"]`);
       if (count) count.textContent = `${set.size} picked`;
       const tray = root.querySelector(`[data-td-selected="${index}"]`);
-      if (tray) tray.innerHTML = selectedPlayersMarkup(set, pool, String(index));
+      if (tray) tray.innerHTML = selectedPlayersMarkup(set, pool, String(index),parties,state.destinations);
     });
     root.querySelectorAll("[data-td-pick]").forEach(box => { box.disabled = full && !box.checked; });
   };
@@ -519,21 +513,19 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     rather than re-deriving it is the point: a shared image that disagreed
     with the ticket above it would be worse than no image.
   */
-  const update = () => {
-    const parties = partiesOf(), sends = state.sends.map(set => [...set]);
-    if (parties.length > 2) {
-      const result = sends.every(ids => ids.length) ? evaluateMultiTeamTrade({ teams: parties, sends, pool }) : null;
-      verdictHost.innerHTML = multiTicketMarkup(result, parties, pool, sends);
-      onDeal?.(result ? { result, parties, sends } : null);
-    } else {
-      const [partner] = parties.slice(1), [sendA, sendB] = sends;
-      const result = sendA.length && sendB.length ? evaluateTrade({ teamA: team, teamB: partner, sendA, sendB, pool }) : null;
-      verdictHost.innerHTML = ticketMarkup(result, team, partner, pool, sendA, sendB);
-      onDeal?.(result ? { result, parties: [team, partner], sends: [sendA, sendB] } : null);
-    }
+  const update=()=>{
+    const parties=partiesOf(),sends=state.sends.map(set=>[...set]);revision++;counters=[];
+    currentDeal=evaluateTradeDeal(parties,sends,pool,state.destinations);
+    const result=currentDeal?.result;
+    verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
+      +(currentDeal?lineupComparisonMarkup(currentDeal,pool):parties.length>2?'<p class="td-projection-note" role="status">Choose who receives each player. Every included member must send and receive a player before this deal can be graded.</p>':'')
+      +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
+    onDeal?.(currentDeal);
   };
 
   root.addEventListener("change", event => {
+    const destination=event.target.closest('[data-td-destination]');
+    if(destination){state.destinations[destination.dataset.tdDestination]=destination.value;update();return;}
     const box = event.target.closest("[data-td-pick]");
     if (box) {
       const set = state.sends[Number(box.dataset.tdPick)];
@@ -552,7 +544,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
       const index = Number(event.target.dataset.tdMember);
       state.memberIds[index] = event.target.value;
       state.sends[index + 1] = new Set();
-      onPartnerChange?.();
+      onPartnerChange?.({memberIndex:index});
     }
   });
 
@@ -567,12 +559,16 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     });
   });
 
-  /* A redraw rebuilds the whole desk, so the disclosure remembers itself. */
-  root.querySelector(".td-builder")?.addEventListener("toggle", event => {
-    state.editing = event.currentTarget.open;
-  });
+  for(const section of root.querySelectorAll('[data-td-roster]')) section.addEventListener('toggle',event=>{state.rosterOpen||={};state.rosterOpen[event.currentTarget.dataset.tdRoster]=event.currentTarget.open;});
 
-  root.addEventListener("click", event => {
+  root.addEventListener("click", async event => {
+    const counterButton=event.target.closest('[data-td-find-counter]');
+    if(counterButton&&currentDeal){const at=revision,deal=currentDeal;counterButton.disabled=true;counterButton.setAttribute('aria-busy','true');counterButton.textContent='Checking small changes…';await new Promise(resolve=>setTimeout(resolve,0));if(!root.isConnected||at!==revision)return;
+      try{counters=findTradeCounteroffers(deal,pool,{lockedIds});root.querySelector('[data-td-counter-results]').innerHTML=counterofferMarkup(counters,pool,deal.parties);}
+      catch{root.querySelector('[data-td-counter-results]').innerHTML='<p role="status">Counteroffers could not be checked. Try again.</p>'}
+      finally{if(root.isConnected&&at===revision){counterButton.disabled=false;counterButton.removeAttribute('aria-busy');counterButton.textContent='Find a counteroffer';}}return;}
+    const useCounter=event.target.closest('[data-td-use-counter]');
+    if(useCounter){const counter=counters[Number(useCounter.dataset.tdUseCounter)];if(counter){applyTradeDeal(state,counter);onPartnerChange?.();}return;}
     const removePick = event.target.closest("[data-td-remove-pick]");
     if (removePick) {
       const side = Number(removePick.dataset.tdRemovePick), id = String(removePick.dataset.playerId);
@@ -589,13 +585,13 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     if (event.target.closest("[data-td-add-member]")) {
       const used = new Set([String(team.id), ...state.memberIds.map(String)]);
       const next = teams.find(item => !used.has(String(item.id)));
-      if (next) { state.memberIds.push(next.id); state.sends.push(new Set()); onPartnerChange?.(); }
+      if (next && used.size<8) { state.memberIds.push(next.id); state.sends.push(new Set()); onPartnerChange?.({memberIndex:state.memberIds.length-1}); }
       return;
     }
     const remove = event.target.closest("[data-td-remove-member]");
     if (remove) {
       const index = Number(remove.dataset.tdRemoveMember);
-      state.memberIds.splice(index, 1); state.sends.splice(index + 1, 1); onPartnerChange?.();
+      state.memberIds.splice(index, 1); state.sends.splice(index + 1, 1); state.filters={};state.rosterOpen={};onPartnerChange?.({memberIndex:Math.max(0,index-1)});
       return;
     }
     if (!event.target.closest("[data-td-clear]")) return;

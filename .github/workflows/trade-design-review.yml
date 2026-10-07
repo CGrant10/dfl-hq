@@ -1,0 +1,41 @@
+name: Trade workspace review
+on:
+  pull_request:
+    paths:
+      - 'js/trade-*'
+      - 'js/pages/trade.js'
+      - 'js/team-analyzer.js'
+      - 'css/trade-workspace.css'
+      - 'js/share-export-model.js'
+      - 'tools/*trade-review*'
+      - '.github/workflows/trade-design-review.yml'
+permissions:
+  contents: read
+jobs:
+  browser-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/trade-review-output
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install playwright
+      - name: Use the runner's installed Chrome
+        run: |
+          dfl_review_browser="$(command -v google-chrome)"
+          test -n "$dfl_review_browser"
+          printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
+      - run: node tools/render-trade-review.mjs
+      - run: python tools/capture-trade-review.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trade-workspace-review
+          path: trade-review-output/
+          retention-days: 7

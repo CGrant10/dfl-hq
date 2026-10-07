@@ -13,7 +13,7 @@ export function matchupShareSpec(data){return {
 }}
 export function tradeShareSpec(t){return {
  template:'trade',trade:t,
- kind:'Trade receipt',context:t.multi?`${t.columns.length}-team deal`:`${t.forWhom} / ${t.against}`,
+ kind:'Trade receipt',context:t.multi?`${t.partyCount||t.deltas?.length||t.columns.length}-team deal`:`${t.forWhom} / ${t.against}`,
  headline:`${t.call||'TRADE'}\nTHE DEAL.`,photoHeadline:`${t.call||'TRADE'}\nTHE DEAL.`,
  summary:[t.headline,t.winner?`${t.winner} wins value`:null].filter(Boolean).join(' · '),
  results:[{label:'Trade balance',value:`${t.fairness}%`}],
