@@ -54,4 +54,6 @@
 #view :is(#home-wrap,.clubhouse-page) button[aria-busy="true"] { cursor: wait; opacity: .65; }
 @media (prefers-reduced-motion: reduce) {
   #view :is(#home-wrap,.clubhouse-page) :is(button,a,summary) { transition: none; }
+  #view .clubhouse-page .clubhouse-game-side > b,
+  #view .clubhouse-page .clubhouse-game-side > b * { animation: none !important; transition: none !important; }
 }
