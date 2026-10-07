@@ -277,6 +277,7 @@ with sync_playwright() as p:
     density_page = density_context.new_page()
     density_page.set_content(html, wait_until='domcontentloaded')
     density_page.wait_for_function('!!window.reviewVfx', timeout=15000)
+    density_page.evaluate("window.reviewSetTheme('medicine')")
     density_page.locator('.home-thermal-leaders').scroll_into_view_if_needed()
     density_page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
     density_page.wait_for_function('document.querySelector("canvas.gd-vfx-canvas")?.dataset.running === "true"', timeout=15000)
