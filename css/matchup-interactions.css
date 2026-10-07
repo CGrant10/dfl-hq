@@ -31,8 +31,9 @@
 #home-wrap .home-matchup-recovery button { min-height: 44px; min-width: 44px; color: var(--text); font: 700 14px/1.4 var(--home-ui-font); }
 #home-wrap .home-live-details > summary { min-height: 44px; }
 #view .clubhouse-page .clubhouse-matchup-summary { margin: 0 0 16px; text-align: center; color: var(--text); font: 600 14px/1.4 var(--font-body); overflow-wrap: anywhere; }
-#view .clubhouse-page .clubhouse-game-side > b { position: relative; }
-#view .clubhouse-page .clubhouse-game-side > b > .gd-score-delta { bottom: -14px; right: -8px; }
+#view .clubhouse-page .clubhouse-game-side > b { position: relative; display: grid; width: 100%; justify-items: center; gap: 3px; }
+#view .clubhouse-page .clubhouse-score-kind { color: var(--body-text); font: 600 10px/1.4 var(--font-body); letter-spacing: .1em; text-transform: uppercase; }
+#view .clubhouse-page .clubhouse-game-side > b > .gd-score-delta { top: 0; bottom: auto; right: 0; font: 600 12px/1 var(--font-body); }
 #view .clubhouse-page .clubhouse-game-side > b [data-matchup-score-value] { display: inline-block; font-variant-numeric: tabular-nums; }
 #view .clubhouse-page .clubhouse-matchup-toolbar [data-matchup-freshness] { flex: 1 1 150px; color: var(--body-text); font-size: 12px; line-height: 1.4; }
 #view .clubhouse-page .clubhouse-matchup-toolbar button { min-height: 44px; min-width: 120px; }
