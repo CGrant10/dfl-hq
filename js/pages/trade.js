@@ -267,6 +267,11 @@ function page(data, tradeAlerts = []) {
 
       const draw = () => {
         if (!view.isConnected) return;
+        // Native toggle events can arrive after an immediate control redraw.
+        // Read the current DOM first so an open disclosure never snaps closed.
+        const refine=body.querySelector('.tb-refine'),comparison=body.querySelector('.td-proposals');
+        if(refine)shop.refineOpen=refine.open;
+        if(comparison)proposalsOpen=comparison.open;
         const team = data.teams.find(item => item.id === selectedId) || data.teams[0];
         body.dataset.mode=shop.mode||"offers";
         body.innerHTML = `${tradeLab(team, data.teams, data.pool, shop)}

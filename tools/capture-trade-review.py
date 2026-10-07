@@ -86,8 +86,11 @@ with sync_playwright() as p:
         click('[data-td-delete-proposal]');assert page.locator('.td-proposal-grid article').count()==2
         # Offer anchors must survive adding a member, with their actual owners.
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
-        click('.tb-refine > summary')
-        select('[data-tb-add-anchor="send"]','1-4');select('[data-tb-add-anchor="receive"]','2-6')
+        # Force a control change in the same task as opening the disclosure.
+        # Its native toggle event has not fired yet; a redraw must keep it open.
+        page.evaluate('''()=>{const section=document.querySelector('.tb-refine');section.open=true;const input=document.querySelector('[data-tb-add-anchor="send"]');input.value='1-4';input.dispatchEvent(new Event('change',{bubbles:true}));}''')
+        assert page.locator('.tb-refine').evaluate('e=>e.open')
+        select('[data-tb-add-anchor="receive"]','2-6')
         click('[data-tb-add-member]')
         assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==1
         assert page.locator('[data-td-remove-pick="1"][data-player-id="2-6"]').count()==1
