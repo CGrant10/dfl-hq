@@ -26,3 +26,19 @@ export function matchupPhase(left,right,completed){
  if(all.every(p=>p.state==='upcoming'))return {key:'upcoming',label:'Upcoming'};
  return {key:'ongoing',label:'In progress'};
 }
+
+// A forecast or missing NFL status must never become a claimed live lead.
+export function matchupSummary(left={},right={}, {completed=false,memberId=null,compact=false}={}){
+ const phase=matchupPhase({...left,starters:left.starters||[]},{...right,starters:right.starters||[]},completed).key;
+ if(phase==='upcoming')return 'Ready for kickoff';
+ const scores=[number(left.score),number(right.score)];
+ if(scores.some(score=>score===null))return completed?'Final score pending':'Scores pending';
+ if(phase==='unknown')return 'Player status pending';
+ const difference=Math.round((scores[0]-scores[1])*100)/100;
+ if(!difference)return completed?'Finished level':'All square';
+ const winner=difference>0?left:right,margin=Math.abs(difference).toFixed(2);
+ const participant=memberId!=null&&[left,right].some(team=>team.memberId!=null&&String(team.memberId)===String(memberId));
+ if(participant){const ahead=String(winner.memberId)===String(memberId);return completed?`${ahead?'Won':'Lost'} by ${margin}`:`You ${ahead?'lead':'trail'} by ${margin}`;}
+ if(compact)return completed?`Decided by ${margin}`:`${margin}-point game`;
+ return `${winner.name} ${completed?'finishes ahead':'leads'} by ${margin}`;
+}

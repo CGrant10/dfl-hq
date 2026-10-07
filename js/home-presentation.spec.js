@@ -88,6 +88,8 @@ describe('selected Home presentation', () => {
     const weekly = {season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]};
     expect(homeGameDayMatchup(model,weekly)).toContain('Projected scores');
     expect(homeGameDayMatchup(model,weekly)).toContain('124.8');
+    expect(homeGameDayMatchup(model,weekly)).not.toContain('data-gameday-total-key');
+    expect(homeGameDayMatchup(model,weekly)).toContain('Ready for kickoff');
     for(const stale of [{...weekly,week:4},{...weekly,season:2025},{...weekly,teams:weekly.teams.slice(0,1)}])expect(homeGameDayMatchup(model,stale)).toContain('Actual scores');
     weekly.teams[0].lineupIsSet=false;
     expect(homeGameDayMatchup(model,weekly)).toContain('Actual scores');
@@ -106,6 +108,10 @@ describe('selected Home presentation', () => {
     const html=homeGameDayMatchup({games:[{isMine:true,sides:[{name:'Fallback name',score:0,identity:{display_name:'Owner',team_name:'The Bayou Bombers <script>'}}]}]});
     expect(html).toContain('The Bayou Bombers &lt;script&gt;');
     expect(html).not.toContain('<strong>Owner</strong>');
+  });
+  it('makes the current matchup reachable with an honest personal lead and actual-total feedback',()=>{
+    const html=homeGameDayMatchup({season:2026,week:5,memberId:2,games:[{isMine:true,sides:[{roster:'1',name:'The Boys',memberId:1,score:100,live:1},{roster:'2',name:'The Rivals',memberId:2,score:94,live:0}]}]});
+    expect(html).toContain('You trail by 6.00');expect(html).toContain('Matchup details');expect(html).toContain('#/clubhouse?season=2026&week=5&tab=matchups');expect(html).toContain('data-gameday-total-key="2"');
   });
 });
 
