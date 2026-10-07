@@ -5,8 +5,7 @@ import {loadWeeklyRosters} from './weekly-clubhouse-data.js';
 import {matchupTeamView,matchupPhase,matchupSummary} from './clubhouse-matchup-model.js';
 import {animateScoreChanges} from './game-day-score-motion.js';
 import {readPageChoice} from './page-disclosure.js';
-import {keyPlayersHtml} from './clubhouse-matchup-cards.js';
-import {esc} from './ui.js';
+import {keyPlayersHtml,matchupTalkHtml} from './clubhouse-matchup-cards.js';
 let stopCurrent=null;
 async function previews(root,threads,active){
  const ids=[...threads.values()];if(!ids.length)return;
@@ -15,7 +14,7 @@ async function previews(root,threads,active){
   const {data,error}=await db().from('member_wall_replies').select('id,body,created_at,members(display_name)').eq('post_id',post).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(1);
   if(!active())return;const slot=root.querySelector(`[data-chat-preview="${matchup}"]`);if(!slot)return;
   const row=data?.[0],count=counts.data?.find(r=>String(r.post_id)===String(post))?.reply_count;
-  slot.innerHTML=`<small>MATCHUP TALK${count!=null?` · ${Number(count)} ${Number(count)===1?'REPLY':'REPLIES'}`:''}</small>${error?'<p>Preview unavailable. Open the conversation to catch up.</p>':row?`<p><strong>${esc(row.members?.display_name||'Member')}</strong> ${esc(String(row.body).slice(0,160))}${String(row.body).length>160?'…':''}</p>`:'<p>No replies yet. Set the tone.</p>'}`;
+  const talk=matchupTalkHtml({reply:row,count,error:!!error});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;
  }));
 }
 export function mountMatchupLive(root,model,threads,active){
@@ -23,7 +22,7 @@ export function mountMatchupLive(root,model,threads,active){
  const status=root.querySelector('[data-matchup-freshness]'),button=root.querySelector('[data-matchup-refresh]');
  const refresh=async(force=false)=>{
   if(busy||!current())return;busy=true;button.disabled=true;button.setAttribute('aria-busy','true');if(force){button.textContent='Refreshing…';status.textContent='Checking the latest scores…';}
-   void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.textContent.includes('Loading conversation'))slot.innerHTML='<small>MATCHUP TALK</small><p>Preview unavailable. Open the conversation to catch up.</p>'});
+   void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.dataset.talkState==='loading'){const talk=matchupTalkHtml({error:true});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;}});
   try{
    const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers(),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}).then(result=>result.teams)]);
    if(!current())return;

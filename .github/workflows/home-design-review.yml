@@ -18,6 +18,7 @@ on:
       - 'css/home-league-desk.css'
       - 'css/matchup-interactions.css'
       - 'js/clubhouse-matchup*'
+      - 'js/weekly-clubhouse-ui.js'
       - 'js/game-day-score-motion*'
       - 'js/game-day-model*'
       - 'css/home.css'
@@ -46,7 +47,11 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright
-      - run: python -m playwright install --with-deps chromium
+      - name: Use the runner's installed Chrome
+        run: |
+          dfl_review_browser="$(command -v google-chrome)"
+          test -n "$dfl_review_browser"
+          printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
       - run: python tools/capture-home-review.py
       - uses: actions/upload-artifact@v4
