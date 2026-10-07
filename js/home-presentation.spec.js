@@ -57,7 +57,7 @@ describe('selected Home presentation', () => {
       { roster: '2', name: 'Opponent', score: 118.2, identity: { display_name: 'Mike' } },
     ] }] });
     expect(html).toContain('124.80');
-    expect(html).toContain('Grant');
+    expect(html).toContain('<strong>Team</strong>');
     expect(html).toContain('https://example.com/grant.webp');
     expect(html).not.toContain('data-score-temperature="hot"');
     expect(homeGameDayMatchup({ games: [] })).toBe('');
@@ -81,6 +81,31 @@ describe('selected Home presentation', () => {
     expect(html).toContain('3 left · 1 playing');
     expect(html).toContain('Player status pending');
     expect(homeGameDayMatchup({ ...model, completed: true })).toContain('Final scores');
+  });
+  it('shows submitted-lineup projections only for the matching upcoming week', () => {
+    const side = uid => ({uid,name:`Team ${uid}`,known:true,live:0,score:0,starters:[{state:'upcoming'}]});
+    const model = {season:2026,week:5,games:[{isMine:true,sides:[side('a'),side('b')]}]};
+    const weekly = {season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]};
+    expect(homeGameDayMatchup(model,weekly)).toContain('Projected scores');
+    expect(homeGameDayMatchup(model,weekly)).toContain('124.8');
+    for(const stale of [{...weekly,week:4},{...weekly,season:2025},{...weekly,teams:weekly.teams.slice(0,1)}])expect(homeGameDayMatchup(model,stale)).toContain('Actual scores');
+    weekly.teams[0].lineupIsSet=false;
+    expect(homeGameDayMatchup(model,weekly)).toContain('Actual scores');
+  });
+  it('never replaces live or final scores with a forecast', () => {
+    const sides = ['a','b'].map(uid=>({uid,name:`Team ${uid}`,known:true,live:1,score:31.25,starters:[{state:'live'}]}));
+    const model = {season:2026,week:5,games:[{isMine:true,sides}]};
+    const weekly = {season:2026,week:5,teams:sides.map(team=>({sleeper_user_id:team.uid,projection:100,lineupIsSet:true}))};
+    expect(homeGameDayMatchup(model,weekly)).toContain('Actual scores');
+    expect(homeGameDayMatchup(model,weekly)).toContain('31.25');
+    expect(homeGameDayMatchup({...model,completed:true},weekly)).toContain('Final scores');
+    sides.forEach(team=>{team.known=false;team.live=0;team.starters=[{state:'unknown'}]});
+    expect(homeGameDayMatchup(model,weekly)).toContain('Actual scores');
+  });
+  it('keeps the full custom team name ahead of the owner name', () => {
+    const html=homeGameDayMatchup({games:[{isMine:true,sides:[{name:'Fallback name',score:0,identity:{display_name:'Owner',team_name:'The Bayou Bombers <script>'}}]}]});
+    expect(html).toContain('The Bayou Bombers &lt;script&gt;');
+    expect(html).not.toContain('<strong>Owner</strong>');
   });
 });
 

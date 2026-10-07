@@ -32,7 +32,7 @@ import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } f
 import { loadSettings, saveSetting, KEY_LOGO, broadcastOff } from "../settings.js";
 import { loadLore } from "../lore.js";
 import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroadcastOverrides } from "../broadcast-deck.js";
-import {homeBroadcastDeck,homeLeagueFile,homeLeagueTools,homeNewspaperMasthead,wireHomeNewspaperSections} from "../home-presentation.js";
+import {homeBroadcastDeck,homeLeagueFile,homeLeagueTools,homeNewspaperMasthead,homeSectionLinks,wireHomeNewspaperSections} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
 import { loadWall, wallCard, wireWall } from "../member-wall.js";
@@ -225,9 +225,9 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 }
 
 export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- if(!outlook)return `<section class="card home-week-focus"><header><small>YOUR WEEK</small><h2 class="section-title">Your next move</h2></header><p${loading?' role="status"':''}>${loading?'Checking your lineup…':'Review your starters and matchup before kickoff.'}</p>${loading?'':'<div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>'}</section>`;
- const alarms=outlook.startSit?.alarms||[],lineup=briefing?.lineup||(outlook.startSit?.lineupIsSet?'No lineup move worth forcing':'Set your lineup');
- return `<section class="card home-week-focus"><header><small>WEEK ${esc(outlook.week)} · YOUR WEEK</small><h2 class="section-title">Your next move</h2></header>${alarms.length?`<div class="home-outlook-alarms">${alarms.map(alarm=>`<p><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join('')}</div>`:''}<p class="home-focus-action">${esc(lineup)}</p><div class="home-focus-links"><a class="btn ghost" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><a class="clubhouse-text-link home-text-action" href="#/clubhouse?tab=matchups"><span>Matchup talk</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div></section>`;
+ const alarm=outlook?.startSit?.alarms?.[0];
+ const lineup=loading?'Checking your lineup…':alarm?`${alarm.player.name}: ${alarm.reason}`:briefing?.lineup||'Set your lineup, compare projections and get ready for the week.';
+ return `<section class="home-week-focus" aria-label="Lineup action"><a class="home-lineup-primary" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><p class="home-focus-action"${loading?' role="status"':''}>${esc(lineup)}</p></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -460,7 +460,7 @@ export async function render(view) {
   /*
     THE ORDER IS THE EDIT.
 
-    The broadcast and live scores lead, then the reader's next lineup action.
+    The personal matchup and lineup action lead, then the broadcast.
     Forecasts expand within Your week; standings and league news follow.
     Archive stories come after current information, then the Wall closes.
     Draft, League Feed and the Wall still load as the reader approaches them.
@@ -475,19 +475,22 @@ export async function render(view) {
     sections loses nothing and takes the CSS hack with it.
   */
   view.innerHTML = `<div id="home-wrap">
-    <h1 class="sr-only">DFL HQ</h1>
     ${homeNewspaperMasthead({ founded: LEAGUE_FOUNDED })}
     <div class="home-frontpage">
+    <div class="home-personal-desk">
+    <div data-home-gameday-slot></div>
+    <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
+    </div>
     <section class="home-broadcast is-loading" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
-    <div data-home-gameday-slot></div>
     </div>
     <section class="home-week-desk" aria-label="Your week">
-    <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
+    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
+    <div data-home-live-slot></div>
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
-    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
+    ${homeSectionLinks()}
     </section>
     <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
@@ -542,7 +545,7 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;
