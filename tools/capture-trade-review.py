@@ -63,7 +63,9 @@ with sync_playwright() as p:
         assert page.locator('.td-proposal-grid article').count()==3
         click('[data-td-compare]')
         click('[data-td-load-proposal="'+page.locator('[data-td-load-proposal]').first.get_attribute('data-td-load-proposal')+'"]')
+        click('.td-proposals > summary')
         click('[data-td-remove-member="1"]')
+        assert not page.locator('.td-proposals').evaluate('e=>e.open')
         assert page.locator('[data-td-destination]').count()==0
         if page.locator('[data-td-remove-pick="0"][data-player-id="1-3"]').count():click('[data-td-remove-pick="0"][data-player-id="1-3"]')
         if page.locator('[data-td-remove-pick="1"][data-player-id="2-7"]').count():click('[data-td-remove-pick="1"][data-player-id="2-7"]')
@@ -82,6 +84,18 @@ with sync_playwright() as p:
         page.evaluate("window.reviewData.teams[0].playerIds=window.reviewData.teams[0].playerIds.filter(id=>id!=='1-4');window.renderReview()")
         click('[data-td-compare]');assert 'Rosters changed' in page.locator('.td-proposals').inner_text()
         click('[data-td-delete-proposal]');assert page.locator('.td-proposal-grid article').count()==2
+        # Offer anchors must survive adding a member, with their actual owners.
+        page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
+        click('.tb-refine > summary')
+        select('[data-tb-add-anchor="send"]','1-4');select('[data-tb-add-anchor="receive"]','2-6')
+        click('[data-tb-add-member]')
+        assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==1
+        assert page.locator('[data-td-remove-pick="1"][data-player-id="2-6"]').count()==1
+        assert page.locator('[data-td-destination="2-6"]').input_value()=='1'
+        page.goto(url+'?partner=2&target=2-6');page.reload();page.wait_for_function('window.reviewReady===true')
+        assert page.locator('.tb-refine').evaluate('e=>e.open')
+        assert page.locator('[data-tb-remove-anchor="receive"][data-player-id="2-6"]').count()==1
+        assert not page.locator('.td-custom').is_visible()
         assert not errors,errors
         results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'pageErrors':errors,'overflow':False})
         context.close()

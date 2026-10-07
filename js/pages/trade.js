@@ -248,7 +248,7 @@ function page(data, tradeAlerts = []) {
   const target = params.get('target'), partner = data.teams.find(t => String(t.id) === params.get('partner'));
   if (target && partner && String(partner.id) !== String(selectedId) && partner.playerIds.map(String).includes(target)) {
     shop.partnerId = partner.id; shop.memberIds = []; shop.anchorPartnerId = partner.id;
-    shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';
+    shop.receiveAnchors = [target]; shop.sendAnchors = []; shop.sendCount = 'any'; shop.receiveCount = 'any';shop.mode='offers';shop.customOpen=false;shop.refineOpen=true;
   }
   saveDraft = () => writeViewMemory(me?.id, draftKey, tradeDraft({ selectedId, trade, shop }));
 
@@ -260,6 +260,10 @@ function page(data, tradeAlerts = []) {
       /* Whatever the ticket is currently showing, so Share renders the same
          deal the reader is looking at rather than re-deriving one. */
       let deal = null,proposals=readTradeProposals(me?.id,data.projectionSeason),proposalsOpen=false,transactionScrolled=false;
+      body.addEventListener('toggle',event=>{
+        if(event.target.matches('.td-proposals'))proposalsOpen=event.target.open;
+        if(event.target.matches('.tb-refine')){shop.refineOpen=event.target.open;saveDraft?.();}
+      },true);
 
       const draw = () => {
         if (!view.isConnected) return;
@@ -308,8 +312,6 @@ function page(data, tradeAlerts = []) {
             if (label) label.textContent = label.dataset.defaultLabel || "Show more offers";
           }, 1200);
         }
-        body.querySelector('.tb-refine')?.addEventListener('toggle',e=>{shop.refineOpen=e.currentTarget.open;saveDraft?.();});
-        body.querySelector('.td-proposals')?.addEventListener('toggle',e=>{proposalsOpen=e.currentTarget.open});
         if(selectedTransactionId&&!transactionScrolled){transactionScrolled=true;requestAnimationFrame(()=>document.getElementById('trade-'+selectedTransactionId)?.scrollIntoView({block:'start',behavior:'instant'}));}
         saveDraft?.();
       };
@@ -328,7 +330,7 @@ function page(data, tradeAlerts = []) {
         }
         if (event.target.matches("[data-td-team]")) {
           selectedId = event.target.value;
-          trade.memberIds = []; trade.sends = [new Set(), new Set()];trade.destinations={}; trade.editing = true;
+          trade.memberIds = []; trade.sends = [new Set(), new Set()];trade.destinations={};trade.filters={};trade.rosterOpen={}; trade.editing = true;
           const mode=shop.mode;resetBlueprint();shop.mode=mode;shop.customOpen=mode==='manual';
           draw(); return;
         }
@@ -397,7 +399,25 @@ function page(data, tradeAlerts = []) {
           if (shop.partnerId === "all") shop.partnerId = data.teams.find(t => String(t.id) !== String(team.id))?.id;
           const used = new Set([team.id, shop.partnerId, ...shop.memberIds].map(String));
           const next = data.teams.find(t => !used.has(String(t.id)));
-          if(next){const oldIds=[String(selectedId),...trade.memberIds.map(String)],oldSends=trade.sends;shop.memberIds.push(next.id);shop.maxPlayers=Math.min(8,Math.max(shop.maxPlayers,shop.memberIds.length+2));shop.anchorPartnerId='';trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[selectedId,...trade.memberIds].map(id=>new Set(oldSends[oldIds.indexOf(String(id))]||[]));trade.editing=true;shop.mode='manual';shop.customOpen=true;draw();body.querySelectorAll('[data-td-member]')[trade.memberIds.length-1]?.focus();}
+          if(next){
+            const oldIds=[String(selectedId),...trade.memberIds.map(String)],oldSends=trade.sends;
+            const hadPicks=oldSends.some(ids=>ids.size),returnOwner=shop.memberIds.at(-1)||shop.partnerId;
+            shop.memberIds.push(next.id);
+            shop.maxPlayers=Math.min(8,Math.max(shop.maxPlayers,shop.memberIds.length+2));
+            shop.anchorPartnerId='';trade.memberIds=[shop.partnerId,...shop.memberIds];
+            trade.sends=[selectedId,...trade.memberIds].map(id=>new Set(oldSends[oldIds.indexOf(String(id))]||[]));
+            if(!hadPicks){
+              trade.sends[0]=new Set(shop.sendAnchors);
+              const returnIndex=trade.memberIds.findIndex(id=>String(id)===String(returnOwner))+1;
+              if(returnIndex>0)trade.sends[returnIndex]=new Set(shop.receiveAnchors);
+              trade.destinations=Object.fromEntries([
+                ...shop.sendAnchors.map(id=>[id,String(shop.partnerId)]),
+                ...shop.receiveAnchors.map(id=>[id,String(selectedId)]),
+              ]);
+            }
+            trade.editing=true;shop.mode='manual';shop.customOpen=true;draw();
+            body.querySelectorAll('[data-td-member]')[trade.memberIds.length-1]?.focus();
+          }
           return;
         }
         const removeMember = event.target.closest("[data-tb-remove-member]");
