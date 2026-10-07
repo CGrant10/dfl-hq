@@ -1,4 +1,5 @@
 import { scorePlayer } from "./dfl-scoring.js";
+import {tradeTransfers} from './trade-routing.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -433,6 +434,7 @@ function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient) {
   const value = ranked.reduce((sum, item, index) => sum + item.adjusted * (packageWeights[index] ?? .22), 0);
   return {
     value: round(value),
+    pieces: ranked.map((item,index)=>({id:item.player.id,value:item.adjusted*(packageWeights[index]??.22)})),
     usefulIds: ranked.filter(item => item.role >= .5).map(item => item.player.id),
     starterIds: ranked.filter(item => item.role === 1).map(item => item.player.id),
     surplusIds: ranked.filter(item => item.role > 0 && item.role < .5).map(item => item.player.id),
@@ -483,35 +485,41 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   };
 }
 
-export function evaluateMultiTeamTrade({ teams = [], sends = [], pool = new Map() } = {}) {
-  if (teams.length < 2 || teams.length !== sends.length || teams.some(team => !team || !Array.isArray(team.playerIds))
-    || new Set(teams.map(team => String(team.id))).size !== teams.length) return null;
-  const packages = sends.map(ids => (ids || []).map(String));
-  if (packages.some(ids => !ids.length) || teams.some((team, index) => {
-    const owned = new Set(team.playerIds.map(String));
-    return packages[index].some(id => !owned.has(id));
-  })) return null;
-  const count = teams.length;
+export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = null, pool = new Map() } = {}) {
+  const transfer=tradeTransfers(teams,sends,destinations);if(!transfer)return null;
+  const packages=transfer.sends,receives=transfer.receives;
   const bases = teams.map((team, index) => team.playerIds.filter(id => !packages[index].includes(String(id))));
   const next = teams.map((team, index) => trimRoster(
-    bases[index].concat(packages[(index + count - 1) % count]), pool, team.playerIds.length));
+    bases[index].concat(receives[index]), pool, team.playerIds.length));
   const before = teams.map(team => optimalLineup(team.playerIds, pool));
   const after = next.map(ids => optimalLineup(ids, pool));
-  const fits = teams.map((team, index) => packageFit(packages[(index + count - 1) % count], bases[index], next[index], pool, team));
+  const fits = teams.map((team, index) => packageFit(receives[index], bases[index], next[index], pool, team));
   const values = fits.map(fit => fit.value);
-  const high = Math.max(...values, 1), low = Math.min(...values);
+  const outgoingValues=packages.map(ids=>round(fits.flatMap(f=>f.pieces).filter(p=>ids.includes(String(p.id))).reduce((sum,p)=>sum+p.value,0)));
+  const partyBalances=values.map((value,i)=>Math.round(Math.min(value,outgoingValues[i])/Math.max(value,outgoingValues[i],1)*100));
   const impacts = teams.map((_, index) => rosterImpact(before[index], after[index]));
   const weekly = impacts.map(impact => impact.weekly);
   return {
-    sends: packages, values, weeklyDeltas: weekly,
+    sends: packages, receives, destinations:transfer.destinations, routeValues:Object.fromEntries(fits.flatMap(f=>f.pieces).map(p=>[p.id,p.value])), outgoingValues, values, weeklyDeltas: weekly,
     depthDeltas: impacts.map(impact => impact.depth),
     rosterImpacts: impacts.map(impact => impact.useful),
     usefulIncoming: fits.map(fit => fit.usefulIds),
     surplusIncoming: fits.map(fit => fit.surplusIds),
     cutIncoming: fits.map(fit => fit.cutIds),
     deltas: teams.map((_, index) => round(after[index].score - before[index].score)),
-    fairness: Math.max(0, Math.round(low / high * 100)),
+    partyBalances, fairness: Math.max(0, Math.min(...partyBalances)),
   };
+}
+
+// Uses the same optimized offensive lineup and roster cuts as the evaluator.
+export function tradeLineupPreviews({teams=[],sends=[],receives=[],pool=new Map()}={}){
+ const slots=lineup=>{
+  const byPosition=Object.fromEntries(ANALYZER_POSITIONS.map(p=>[p,lineup.starters.filter(x=>x.position===p&&String(x.id)!==String(lineup.flexId))]));
+  return ['QB','RB','RB','WR','WR','TE','FLEX'].map((slot,i)=>({slot:slot==='RB'||slot==='WR'?`${slot}${i===1||i===3?1:2}`:slot,player:slot==='FLEX'?lineup.starters.find(p=>String(p.id)===String(lineup.flexId))||null:byPosition[slot].shift()||null}));
+ };
+ return teams.map((team,i)=>{const original=team.playerIds.map(String),base=original.filter(id=>!(sends[i]||[]).map(String).includes(id)),incoming=(receives[i]||[]).map(String),all=[...base,...incoming],next=trimRoster(all,pool,original.length),before=optimalLineup(original,pool),after=optimalLineup(next,pool);
+  return {teamId:String(team.id),before:slots(before),after:slots(after),beforePoints:before.weeklyPoints,afterPoints:after.weeklyPoints,benchBefore:before.bench,benchAfter:after.bench,drops:all.filter(id=>!next.includes(id)).map(id=>pool.get(id)).filter(Boolean)};
+ });
 }
 
 export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], pool = new Map() } = {}) {

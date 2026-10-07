@@ -63,7 +63,6 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
       value: num(player.tradeValue),
     }));
   const multi = parties.length > 2;
-  const last = parties.length - 1;
   const supplied = Array.isArray(remarks) && remarks.length ? remarks : remark ? [remark] : [];
   const fullRemarks = supplied.length ? supplied.map(item => ({
     title: String(item?.title || ""),
@@ -72,24 +71,31 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
   })).filter(item => item.title || item.copy) : [{
     title: savageFallback(recommendation), copy: "", tone: recommendation.tone === "pass" ? "bad" : recommendation.tone === "accept" ? "good" : "neutral",
   }];
+  const columns = parties.flatMap((from, index) => {
+    const groups = new Map();
+    for (const id of sends[index] || []) {
+      const toId = String(result.destinations?.[id] ?? parties[(index + 1) % parties.length].id);
+      if (!groups.has(toId)) groups.set(toId, []);
+      groups.get(toId).push(String(id));
+    }
+    return [...groups].map(([toId, ids]) => ({
+      from: teamName(from), to: teamName(parties.find(p => String(p.id) === toId)),
+      players: named(ids),
+      total: multi ? result.routeValues ? num(ids.reduce((sum,id) => sum + Number(result.routeValues[id] || 0),0))
+        : num(result.values?.[(index + 1) % parties.length])
+        : index === 0 ? num(result.valueToB) : num(result.valueToA),
+    }));
+  });
   return {
-    multi,
+    multi, partyCount:parties.length,
     who: member?.display_name || teamName(parties[0]),
     /* Every column is "this side hands these over", which is the only framing
        that stays true for a three-way. */
-    columns: parties.map((from, index) => ({
-      from: teamName(from),
-      to: teamName(parties[(index + 1) % parties.length]),
-      players: named(sends[index]),
-      /* The value a package is worth TO ITS RECIPIENT, which is what
-         evaluateTrade already reports and what makes the totals comparable. */
-      total: multi ? num(result.values?.[(index + 1) % parties.length])
-        : index === 0 ? num(result.valueToB) : num(result.valueToA),
-    })),
+    columns,
     call: String(recommendation.action || "").toUpperCase(),
     callTone: String(recommendation.tone || "negotiate"),
     headline: verdict?.headline || "",
-    winner: verdict?.who === "a" ? teamName(parties[0]) : verdict?.who === "b" ? teamName(parties[1]) : null,
+    winner: verdict?.who === "a" ? teamName(parties[0]) : verdict?.who === "b" ? multi?"The other side":teamName(parties[1]) : null,
     fairness: Math.max(0, Math.min(100, num(result.fairness))),
     deltas: parties.map((party, index) => ({
       team: teamName(party),
@@ -103,7 +109,7 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
     remark: fullRemarks[0]?.title || "",
     remarkTone: fullRemarks[0]?.tone || "neutral",
     forWhom: teamName(parties[0]),
-    against: teamName(parties[multi ? last : 1]),
+    against: multi?"Other members":teamName(parties[1]),
   };
 }
 
@@ -113,9 +119,10 @@ export function dealCardText(t) {
   const out = t.columns[0]?.players.map(p => p.name).join(" + ") || "nobody";
   const back = t.columns[1]?.players.map(p => p.name).join(" + ") || "nobody";
   const remark = (t.remarks || []).map(item => [item.title, item.copy].filter(Boolean).join(" ")).join(" ");
-  return `${t.call} — ${t.forWhom} sends ${out} for ${back}. `
+  const packages = t.multi ? t.columns.map(c => `${c.from} sends ${c.players.map(p=>p.name).join(' + ')} to ${c.to}`).join('; ') : `${t.forWhom} sends ${out} for ${back}`;
+  return `${t.call} — ${packages}. `
     + `${remark}${remark && !/[.!?]$/.test(remark) ? "." : ""} `
-    + `${t.fairness}% balance, ${signed(t.deltas[0]?.delta)} a week to my lineup. `
+    + `${t.fairness}% balance, ${signed(t.deltas[0]?.delta)} average projected points/week to my lineup. `
     + `DFLyzer, which is a model and not a promise.`;
 }
 
