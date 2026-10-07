@@ -157,13 +157,18 @@ def check_matchup_interactions(page):
       const until=async condition=>{for(let i=0;i<100&&!condition();i++)await new Promise(r=>setTimeout(r,10));check(condition(),'Matchup refresh did not settle')};
       const model={season:2026,week:5,leagueId:'fixture',completed:false,members:[],games:[{matchup_id:1,left:{roster:1,name:'The Very Long Bayou Championship Fantasy Football Bombers',score:0},right:{roster:2,name:'The Boys',score:0}}]};
       const region=document.createElement('section');region.className='view';region.dataset.route='clubhouse';
-      region.innerHTML=`<div class="clubhouse-page"><div class="clubhouse-matchup-toolbar"><span data-matchup-freshness role="status">Checking scores…</span><button type="button" class="btn ghost small" data-matchup-refresh>Refresh scores</button></div>${helpers.matchupCardHtml(model.games[0],model,new Map())}</div>`;
+      region.innerHTML=`<div class="clubhouse-page"><div class="clubhouse-matchup-toolbar"><span data-matchup-freshness role="status">Checking scores…</span><button type="button" class="btn ghost small" data-matchup-refresh>Refresh scores</button></div>${helpers.matchupCardHtml(model.games[0],model,new Map([['1',91]]))}</div>`;
       document.querySelector('#view').append(region);
-      let fail=false,points=0,active=true,release=null,calls=0;
-      const providers={loadPlayers:async()=>({'1':{n:'One',p:'QB',t:'KC'},'2':{n:'Two',p:'QB',t:'NO'}}),loadWeeklyRosters:async()=>{calls++;if(release)await new Promise(r=>release=r);if(fail)throw Error('Fixture offline');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players_points:{[n]:n===1?points:0}}))},loadNflGameDay:async()=>({teams:new Map(['KC','NO'].map(t=>[t,{key:'live'}]))})};
+      let fail=false,points=0,active=true,release=null,calls=0,reply=null,replyCount=0,previewError=false;
+      const threads=new Map([['1',91]]);
+      const fixtureDb=()=>({from:table=>({select:()=>{
+        if(table==='member_wall_reply_counts')return {in:async()=>({data:[{post_id:91,reply_count:replyCount}]})};
+        return {eq:()=>({order(){return this},limit:async()=>({data:reply?[reply]:[],error:previewError?Error('Fixture offline'):null})})};
+      }})});
+      const providers={db:fixtureDb,loadPlayers:async()=>({'1':{n:'David Montgomery',p:'RB',t:'DET'},'2':{n:'Amon-Ra St. Brown',p:'WR',t:'DET'}}),loadWeeklyRosters:async()=>{calls++;if(release)await new Promise(r=>release=r);if(fail)throw Error('Fixture offline');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players_points:{[n]:n===1?points:0}}))},loadNflGameDay:async()=>({teams:new Map(['DET'].map(t=>[t,{key:'live'}]))})};
       const deps={...helpers,...providers};const mount=Function(...Object.keys(deps),source+';return mountMatchupLive')(...Object.values(deps));
       helpers.savePageChoice('gameday-motion','on');
-      const stop=mount(region,model,new Map(),()=>active),button=region.querySelector('[data-matchup-refresh]'),value=region.querySelector('[data-score-left] [data-matchup-score-value]');
+      const stop=mount(region,model,threads,()=>active),button=region.querySelector('[data-matchup-refresh]'),value=region.querySelector('[data-score-left] [data-matchup-score-value]');
       try{
         await until(()=>!button.disabled);check(value.textContent==='0.00'&&!region.querySelector('.gd-score-delta'),'Initial scores manufactured a gain');
         points=6.2;button.click();check(button.disabled&&button.getAttribute('aria-busy')==='true'&&button.textContent==='Refreshing…','Busy feedback missing');
@@ -174,13 +179,26 @@ def check_matchup_interactions(page):
         points=5.8;button.click();await until(()=>!button.disabled);check(region.querySelector('.gd-score-delta').textContent==='−0.40','Stat correction mislabeled');
         fail=true;button.click();await until(()=>!button.disabled);check(value.textContent==='5.80'&&region.querySelector('[data-matchup-freshness]').textContent.includes('last scores'),'Failure discarded the last score');
         fail=false;points=10;button.click();await until(()=>!button.disabled);check(value.textContent==='10.00'&&button.textContent==='Refresh scores'&&!button.hasAttribute('aria-busy'),'Retry did not recover');
+        const preview=region.querySelector('[data-chat-preview]');await until(()=>preview.dataset.talkState==='empty');check(preview.textContent.includes('No replies yet.')&&!preview.textContent.includes('0 REPLIES'),'Quiet conversation is noisy');
+        reply={body:'<img src=x onerror=alert(1)> '+('Long reply '.repeat(24)),members:{display_name:'<b>The Boys</b>'}};replyCount=2;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='active');check(!preview.querySelector('img,b')&&preview.querySelector('.clubhouse-talk-author').textContent==='<b>The Boys</b>'&&preview.querySelector('.clubhouse-talk-body span').textContent.endsWith('…')&&preview.textContent.includes('2 REPLIES'),'Reply preview lost safe content or metadata');window.reviewActiveTalkHTML=region.innerHTML;
+        previewError=true;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='error');check(preview.textContent.includes('Preview unavailable.'),'Unavailable preview masquerades as empty');
+        previewError=false;reply=null;replyCount=0;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='empty');check(!preview.querySelector('.clubhouse-talk-author')&&!preview.textContent.includes('REPLIES'),'Recovered empty preview keeps stale reply');
         stop();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));check(!region.querySelector('.gd-score-delta')&&[...region.querySelectorAll('[data-gameday-total-key]')].every(e=>e.getAnimations({subtree:true}).filter(a=>a.constructor===Animation&&a.playState==='running').length===0),'Stopping left score feedback alive: '+JSON.stringify({badges:region.querySelectorAll('.gd-score-delta').length,animations:[...region.querySelectorAll('[data-gameday-total-key]')].flatMap(e=>e.getAnimations({subtree:true}).filter(a=>a.playState==='running').map(a=>({type:a.constructor.name,name:a.animationName,property:a.transitionProperty,target:a.effect?.target?.className,timing:a.effect?.getTiming()})))}));
         const count=calls;button.click();await new Promise(r=>setTimeout(r,30));check(calls===count,'Stopped refresh listener still ran');
-        window.reviewMatchupCardHTML=region.innerHTML;return {initialLoad:true,actualGain:true,scoreCorrection:true,reducedMotion:true,liveSummary:true,busyState:true,failurePreservesScores:true,retryRecovery:true,cleanup:true};
+        window.reviewMatchupCardHTML=region.innerHTML;return {initialLoad:true,actualGain:true,scoreCorrection:true,reducedMotion:true,liveSummary:true,busyState:true,failurePreservesScores:true,retryRecovery:true,cleanup:true,quietConversation:true,safeReply:true,previewRecovery:true};
       }finally{active=false;stop();region.remove();helpers.savePageChoice('gameday-motion','off')}
     }''',source)
+    thread_source=(ROOT/'js/weekly-clubhouse-ui.js').read_text()
+    thread_source=thread_source[thread_source.index('export function wireMatchupThreads'):thread_source.index('export function memberWeeklyAwardsHtml')].replace('export function','function')
+    result['conversationStart']=page.evaluate('''async source=>{
+      const {matchupCardHtml}=await import('./js/clubhouse-matchup-cards.js');
+      const root=document.createElement('div');root.innerHTML=matchupCardHtml({matchup_id:1,left:{name:'The Boys'},right:{name:'League Champs'}},{week:5,members:[]},new Map());document.body.append(root);
+      let member=null,calls=0,notices=0;const wire=Function('db','currentMember','toast',source+';return wireMatchupThreads')(()=>({rpc:async()=>{calls++;return {error:Error('Fixture offline')}}}),()=>member,()=>notices++);
+      try{wire(root,2026,5);const button=root.querySelector('[data-matchup-thread]'),status=root.querySelector('[data-matchup-status]');button.click();if(calls!==0||notices!==1||button.disabled)throw Error('Profile-less conversation mutated league data');member={id:1};button.click();if(!button.disabled||button.getAttribute('aria-busy')!=='true')throw Error('Conversation start has no busy state');await new Promise(r=>setTimeout(r,0));if(calls!==1||button.disabled||button.hasAttribute('aria-busy')||!status.textContent.includes('Try again.'))throw Error('Conversation failure lost feedback');button.click();if(status.textContent)throw Error('Retry retains stale conversation error');await new Promise(r=>setTimeout(r,0));if(calls!==2||button.disabled)throw Error('Conversation retry failed');return {profileRequired:true,busyState:true,accessibleFailure:true,retry:true};}finally{root.remove()}
+    }''',thread_source)
     page.evaluate("""() => {const node=document.createElement('section');node.className='view';node.dataset.route='clubhouse';node.innerHTML=window.reviewMatchupCardHTML;document.querySelector('#view').append(node);window.reviewClubhouseCard=node;}""")
     result['responsiveCards']=[]
+    result['conversationLayouts']=[]
     try:
         for mode in ['light','dark','medicine']:
             page.evaluate('window.reviewSetTheme',mode)
@@ -190,10 +208,20 @@ def check_matchup_interactions(page):
                 layout=page.evaluate("""() => {const n=window.reviewClubhouseCard,names=[...n.querySelectorAll('.clubhouse-matchup-name')],scores=[...n.querySelectorAll('[data-matchup-score-value]')],summary=n.querySelector('[data-matchup-summary]');return {aligned:Math.abs(scores[0].getBoundingClientRect().top-scores[1].getBoundingClientRect().top)<1,namesFit:names.every(e=>e.scrollWidth<=e.clientWidth+1&&getComputedStyle(e.querySelector('strong')).whiteSpace==='normal'),summaryFits:summary.scrollWidth<=summary.clientWidth+1,contained:[...n.querySelectorAll('.clubhouse-game-side')].every(e=>{const b=e.getBoundingClientRect();return [...e.children].every(c=>{const r=c.getBoundingClientRect();return r.top>=b.top-1&&r.bottom<=b.bottom+1&&r.left>=b.left-1&&r.right<=b.right+1})}),scoresBelowNames:scores.every((e,i)=>e.getBoundingClientRect().top>=names[i].getBoundingClientRect().bottom-1),buttons:[...n.querySelectorAll('button')].map(e=>({height:e.offsetHeight,width:e.offsetWidth})),overflow:document.documentElement.scrollWidth>innerWidth};}""")
                 assert layout['aligned'] and layout['namesFit'] and layout['summaryFits'] and layout['contained'] and layout['scoresBelowNames'] and not layout['overflow'] and all(b['height']>=44 and b['width']>=44 for b in layout['buttons']),f'Matchup card layout: {mode}/{width}: {layout}'
                 result['responsiveCards'].append({'mode':mode,'width':width,**layout})
+                players=page.evaluate('''()=>[...window.reviewClubhouseCard.querySelectorAll('.player-card-trigger')].map(e=>{const lines=new Map(),walk=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);let text;while(text=walk.nextNode())for(let i=0;i<text.length;i++){const r=document.createRange();r.setStart(text,i);r.setEnd(text,i+1);const b=r.getBoundingClientRect(),key=Math.round(b.top);lines.set(key,(lines.get(key)||'')+text.textContent[i]);}return {name:e.textContent,lines:[...lines.values()].map(s=>s.trim()).filter(Boolean),size:parseFloat(getComputedStyle(e).fontSize),fits:e.scrollWidth<=e.clientWidth+1}})''')
+                assert all(p['fits'] and p['size']>=14 and all(len(line)>1 for line in p['lines']) for p in players),f'Player surname breaks into a fragment: {mode}/{width}: {players}'
+                result['responsiveCards'][-1]['players']=players
+                quiet=page.locator('[data-route="clubhouse"] .clubhouse-matchup-talk').evaluate('e=>({height:e.offsetHeight,border:getComputedStyle(e.querySelector(".clubhouse-chat-preview")).borderTopWidth,buttonHeight:e.querySelector(".btn").offsetHeight})')
+                page.evaluate('window.reviewClubhouseCard.innerHTML=window.reviewActiveTalkHTML')
+                active=page.locator('[data-route="clubhouse"] .clubhouse-matchup-talk').evaluate('e=>({height:e.offsetHeight,bodyFits:e.querySelector(".clubhouse-talk-body").scrollWidth<=e.querySelector(".clubhouse-talk-body").clientWidth+1,buttonFits:e.querySelector(".btn").getBoundingClientRect().right<=e.getBoundingClientRect().right+1})')
+                assert quiet['height']<100 and quiet['border']=='0px' and quiet['buttonHeight']>=44 and active['bodyFits'] and active['buttonFits'],f'Conversation layout: {mode}/{width}: {quiet}/{active}'
+                result['conversationLayouts'].append({'mode':mode,'width':width,'quiet':quiet,'active':active})
+                page.evaluate('window.reviewClubhouseCard.innerHTML=window.reviewMatchupCardHTML')
+
                 if width==390:
                     page.locator('[data-route="clubhouse"] .clubhouse-page').screenshot(path=str(OUT/f'matchup-{mode}-390.png'))
     finally:
-        page.evaluate('window.reviewClubhouseCard.remove();delete window.reviewClubhouseCard;delete window.reviewMatchupCardHTML')
+        page.evaluate('window.reviewClubhouseCard.remove();delete window.reviewClubhouseCard;delete window.reviewMatchupCardHTML;delete window.reviewActiveTalkHTML')
     result['homeTotalFeedback']=[]
     for width in [320,390,1280]:
         page.set_viewport_size({'width':width,'height':900})

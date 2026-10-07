@@ -18,6 +18,7 @@ on:
       - 'css/home-league-desk.css'
       - 'css/matchup-interactions.css'
       - 'js/clubhouse-matchup*'
+      - 'js/weekly-clubhouse-ui.js'
       - 'js/game-day-score-motion*'
       - 'js/game-day-model*'
       - 'css/home.css'
