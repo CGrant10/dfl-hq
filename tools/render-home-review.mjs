@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildLeaguePowerRankings } from '../js/league-trajectory.js';
-import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeLeagueTools, homeNewspaperMasthead } from '../js/home-presentation.js';
+import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeLeagueTools, homeNewspaperMasthead, homeSectionLinks } from '../js/home-presentation.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
@@ -85,9 +85,13 @@ const players = [
   { id: '6819', name: 'Michael Pittman', position: 'WR', nflTeam: 'IND', points: 0, state: 'final', roster: '2' },
 ];
 const model = { season: 2026, week: 5, completed: true, starters: players, games: [{ isMine: true, sides: [
-  { roster: '1', name: 'Grant', record: '3 – 1', score: 124.8, identity: { display_name: 'Klutch Sports Group' } },
-  { roster: '2', name: 'Mike', record: '2 – 2', score: 118.2, identity: { display_name: 'The Bayou Bombers' } },
+  { roster: '1', name: 'Klutch Sports Group', record: '3 – 1', score: 124.8, identity: { display_name: 'Grant',team_name:'Klutch Sports Group' } },
+  { roster: '2', name: 'The Bayou Bombers', record: '2 – 2', score: 118.2, identity: { display_name: 'Mike',team_name:'The Bayou Bombers' } },
 ] }] };
+const reviewUpcoming = process.env.DFL_REVIEW_STATE === 'upcoming';
+const reviewWeekly = {season:2026,week:5,teams:[{sleeper_user_id:'me',projection:124.8,lineupIsSet:true},{sleeper_user_id:'them',projection:118.2,lineupIsSet:true}]};
+const reviewBriefing = reviewUpcoming ? {lineup:'Set your lineup, compare projections and get ready for Week 5.'} : briefing;
+if(reviewUpcoming){model.completed=false;model.games[0].sides.forEach((team,index)=>Object.assign(team,{uid:index?'them':'me',known:true,live:0,remaining:9,score:0,starters:[{state:'upcoming'}]}));outlook.startSit.alarms=[];}
 const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2', display_name: 'Mike' }], lore: { matchups: [
   { user1: 'u1', user2: 'u2', score1: 120.5, score2: 109.3, season: 2024, week: 5 },
   { user1: 'u2', user2: 'u1', score1: 126.2, score2: 111.8, season: 2025, week: 5 },
@@ -113,16 +117,20 @@ html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="light">');
 html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
-  ${homeNewspaperMasthead({ now: new Date('2026-10-06T12:00:00Z') })}
+  ${homeNewspaperMasthead({ now: new Date('2026-10-07T12:00:00Z') })}
   <div class="home-frontpage">
+  <div class="home-personal-desk">
+  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small class="sr-only">Your matchup</small><h2>Week 5</h2></div><div class="gameday-controls"><span class="home-game-phase">${reviewUpcoming?'Upcoming':'Final'}</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model,reviewWeekly)}</div><details class="home-live-details" data-page-detail="gameday-live"><summary>Game day &amp; player leaders</summary><div data-gameday-extra-content>${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></details></section></div>
+    <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,reviewBriefing)}</div>
+  </div>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
-  <div data-home-gameday-slot><section class="gameday-card" data-gameday-card data-motion="off"><header><div><small>Game day</small><h2>Week 5 · Monday</h2></div><div class="gameday-controls"><span class="home-game-phase">Final</span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day"><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content>${homeGameDayMatchup(model)}${homeThermalBoard(model)}<details class="gameday-home-detail"><summary>Player trackers &amp; score controls</summary><div class="gameday-status"><strong>Final whistle</strong><span>2026 · Week 5</span></div><ul class="gameday-players">${playerRows(players)}</ul></details></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion>Motion off</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details></section></div>
   </div>
   <section class="home-week-desk" aria-label="Your week">
-    <div data-home-focus-slot>${renderHomeReview.homeWeeklyFocus(outlook,briefing)}</div>
+    ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
+    <div data-home-live-slot class="gameday-card home-live-desk"></div>
     ${pickemHome}
     ${homeLeagueTools()}
-    ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
+    ${homeSectionLinks()}
   </section>
   <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
@@ -132,7 +140,7 @@ html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
-  <p class="version-line">DFL HQ v1.324.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
+  <p class="version-line">DFL HQ v1.326.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');
 html = html.replace('id="whoami-name">…', 'id="whoami-name">Grant');
@@ -159,6 +167,7 @@ html = html.replace('</body>', `<script type="module">
     document.documentElement.style.colorScheme = theme.mode === 'light' ? 'light' : 'dark';
     for (const [property, value] of Object.entries(theme.values)) document.documentElement.style.setProperty(property, value);
   };
+  document.querySelector('[data-home-live-slot]').append(document.querySelector('.home-live-details'));
   window.reviewSetTheme('light');
   // Model already loaded reactions without calling the live database.
   document.querySelectorAll('[data-wall-reaction]').forEach(button => button.disabled = false);
@@ -173,7 +182,7 @@ html = html.replace('</body>', `<script type="module">
   window.reviewDeck = deck;
   window.reviewHeaderSources = ${JSON.stringify({sportsbook:sportsbookHeader,trade:tradeHeader})};
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
-  window.reviewVfx = mountScoreVfx(document.querySelector('[data-gameday-card]'));
+  window.reviewVfx = mountScoreVfx(document.querySelector('[data-home-live-slot]'));
   mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
   document.querySelector('#tabbar').classList.add('is-in-season');

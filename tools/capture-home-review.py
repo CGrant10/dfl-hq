@@ -58,8 +58,8 @@ def check_score_consistency(page):
     assert board.first.locator('em').text_content().strip() == '4-0', board.first.inner_html()
     assert board.nth(1).locator('em').text_content().strip() == '3-1', board.nth(1).inner_html()
     page.set_viewport_size({'width': 1280, 'height': 1200})
-    page.locator('[data-gameday-card]').scroll_into_view_if_needed()
-    page.evaluate("document.querySelector('[data-gameday-card]').dataset.motion='on'")
+    page.locator('[data-home-live-slot]').scroll_into_view_if_needed()
+    page.evaluate("document.querySelector('[data-home-live-slot]').dataset.motion='on'")
     page.wait_for_timeout(600)
     page.evaluate('''() => {window.scoreUploads=0;const original=WebGLRenderingContext.prototype.texImage2D;window.restoreScoreUpload=()=>{WebGLRenderingContext.prototype.texImage2D=original;};WebGLRenderingContext.prototype.texImage2D=function(...args){window.scoreUploads++;return original.apply(this,args)}}''')
     toggles=[]
@@ -75,8 +75,60 @@ def check_score_consistency(page):
     page.wait_for_timeout(200)
     assert page.evaluate('window.scoreUploads')==1, 'Unchanged score masks were uploaded again'
     page.evaluate("document.querySelector('.home-thermal-leaders .gd-thermal-value').textContent='24.60';window.restoreScoreUpload()")
-    page.evaluate("document.querySelector('.gameday-home-detail').open=false;document.querySelector('[data-gameday-card]').dataset.motion='off'")
+    page.evaluate("document.querySelector('.gameday-home-detail').open=false;document.querySelector('[data-home-live-slot]').dataset.motion='off'")
     return {'states':results,'toggles':toggles,'changedScoreUploads':1}
+
+def check_game_day_scope(page):
+    """Verify the real mount function after moving controls below the broadcast."""
+    source = (ROOT / 'js/game-day.js').read_text()
+    source = source[source.index('const score='):].replace('export function', 'function')
+    return page.evaluate('''async source => {
+      const helpers = Object.assign({}, ...await Promise.all([
+        import('./js/home-presentation.js'), import('./js/game-day-dom.js'),
+        import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
+        import('./js/page-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js')
+      ]));
+      const check=(condition,message)=>{if(!condition)throw Error(message)};
+      const region=document.createElement('div');region.innerHTML='<div></div><div></div>';document.body.append(region);
+      const root=region.firstElementChild,detailsRoot=region.lastElementChild;
+      const members=[{id:'scope-a',sleeper_user_id:'a',team_name:'Scope A'},{id:'scope-b',sleeper_user_id:'b',team_name:'Scope B'}];
+      const week={leagueId:'fixture',season:2026,week:5,completed:false,games:[{matchup_id:1,user1:'a',roster1:1,user2:'b',roster2:2}]};
+      let refreshes=0,opens=0,resolveWeekly;const weekly=new Promise(resolve=>resolveWeekly=resolve),noop=()=>{};
+      const providers={
+        loadLeagueState:async()=>({season:2026,currentWeek:5}),
+        loadClubhouseIndex:async()=>{refreshes++;return [{season:2026,week:5}]},loadClubhouseWeek:async()=>week,
+        loadWeeklyRosters:async()=>[1,2].map(n=>({roster_id:n,points:0,starters:[String(n)],players:[String(n)],players_points:{[n]:0}})),
+        loadPlayers:async()=>({'1':{n:'Scope One',p:'QB',t:'KC'},'2':{n:'Scope Two',p:'QB',t:'NO'}}),
+        loadNflGameDay:async()=>({teams:new Map(['KC','NO'].map(t=>[t,{key:'upcoming'}])),payload:{events:[]}}),
+        sleeper:{league:async()=>({roster_positions:['QB']})},loadLore:async()=>({matchups:[]}),
+        reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
+        matchupBanter:()=>[],matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
+        loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
+        mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
+        mountGameDayWatch:()=>({open:()=>opens++,update:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
+      };
+      helpers.savePageChoice('gameday-motion','off');helpers.savePageChoice('gameday-tab','mine');
+      const deps={...helpers,...providers};
+      const mount=Function(...Object.keys(deps),source+';return mountGameDay')(...Object.values(deps));
+      const until=async condition=>{for(let i=0;i<50&&!condition();i++)await new Promise(resolve=>setTimeout(resolve,10));check(condition(),'Game-day fixture did not settle')};
+      const stop=mount(root,{members,member:members[0],active:()=>true,weekly,detailsRoot});
+      try{
+        await until(()=>!!root.querySelector('.gameday-matchup'));check(root.textContent.includes('Actual'),'Missing forecast must show actual scores');
+        resolveWeekly({season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]});
+        await until(()=>!!root.querySelector('.home-projected-total'));check(root.textContent.includes('124.8'),'Forecast did not reach the matchup');
+        check(!root.querySelector('[data-gameday-refresh]')&&!!detailsRoot.querySelector('[data-gameday-refresh]'),'Details stayed in the hero');
+        detailsRoot.querySelector('.home-live-details').open=true;detailsRoot.querySelector('.gameday-home-detail').open=true;
+        detailsRoot.querySelector('[data-gameday-tab="opponent"]').click();
+        check(detailsRoot.querySelector('#gameday-player-panel').textContent.includes('Scope Two'),'Opponent tab lost its handler');
+        const tab=detailsRoot.querySelector('[data-gameday-tab="mine"]');tab.click();tab.focus();tab.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+        check(detailsRoot.querySelector('[data-gameday-tab="opponent"]').getAttribute('aria-selected')==='true','Keyboard tabs stopped working');
+        detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='on','Moved effects missed the motion choice');
+        detailsRoot.querySelector('[data-gameday-board]').click();root.querySelector('[data-gameday-watch]').click();check(opens===2,'Watch entries stopped working');
+        detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>refreshes===2&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
+        check(detailsRoot.querySelector('.gameday-home-detail').open,'Refresh closed the player details');
+        return {forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true};
+      }finally{stop();region.remove()}
+    }''', source)
 
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
@@ -94,6 +146,9 @@ with sync_playwright() as p:
     page.wait_for_timeout(1600)
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
+    # Player leaders are secondary to the matchup and lineup action. Open the
+    # game-day disclosure for its existing detailed checks.
+    page.locator('.home-live-details').evaluate('e=>e.open=true')
     metrics_visibility = page.evaluate('''() => {
         const logo=document.querySelector('.home-newspaper-date').getBoundingClientRect();
         const last=document.querySelector('.home-thermal-leaders .gameday-player:last-child').getBoundingClientRect();
@@ -139,7 +194,8 @@ with sync_playwright() as p:
     assert page.locator('.home-thermal-leaders [data-score-temperature="hot"]').count() == 2
     assert page.locator('.home-thermal-leaders [data-score-temperature="cold"]').count() == 2
     assert 'under 10 pts after halftime or final' in page.locator('.home-score-key').inner_text(), 'Score colors need a visible explanation'
-    page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
+    page.locator('[data-home-live-slot]').scroll_into_view_if_needed()
+    page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='on'")
     page.wait_for_timeout(300)
     metrics['renderer'] = page.locator('canvas.gd-vfx-canvas').get_attribute('data-renderer')
     assert metrics['renderer'] == 'webgl', 'Animated score renderer did not start'
@@ -149,7 +205,7 @@ with sync_playwright() as p:
     metrics['refinement'] = page.evaluate("""() => ({playerFont:parseFloat(getComputedStyle(document.querySelector('.home-thermal-leaders .gd-thermal-number')).fontSize),paper:getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim(),hero:document.querySelector('.bx-home-art').complete,visibleLore:!document.querySelector('[data-home-lore-slot]').closest('details'),visibleWall:!document.querySelector('[data-wall-slot]').closest('details')})""")
     assert metrics['refinement']['hero'] and page.evaluate("getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim()===getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()"), 'Home must use the shared app palette and retain broadcast artwork'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
-    page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='off'")
+    page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='off'")
     metrics['readingOrder'] = page.evaluate("""() => {
       const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','[data-home-lore-slot]','.home-banter'];
       const root=document.querySelector('#home-wrap'),children=[...root.children];
@@ -245,7 +301,7 @@ with sync_playwright() as p:
             page.wait_for_timeout(650)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
+                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&getComputedStyle(e).display!=='none');
                 const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
@@ -277,9 +333,10 @@ with sync_playwright() as p:
     density_page = density_context.new_page()
     density_page.set_content(html, wait_until='domcontentloaded')
     density_page.wait_for_function('!!window.reviewVfx', timeout=15000)
+    density_page.locator('.home-live-details').evaluate('e=>e.open=true')
     density_page.evaluate("window.reviewSetTheme('light')")
     density_page.locator('.home-thermal-leaders').scroll_into_view_if_needed()
-    density_page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
+    density_page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='on'")
     density_page.wait_for_function('document.querySelector("canvas.gd-vfx-canvas")?.dataset.running === "true"', timeout=15000)
     density_page.evaluate('document.fonts.ready')
     density_page.wait_for_timeout(650)
@@ -422,22 +479,21 @@ with sync_playwright() as p:
                 metrics['stickyTopbar'].append({'mode':mode,'width':width,**sticky})
                 page.screenshot(path=str(OUT / f'sticky-{mode}-{width}.png'))
                 badge = page.locator('.home-newspaper-date')
-                assert badge.locator('time').get_attribute('datetime') == '2026-10-06'
+                assert badge.locator('time').get_attribute('datetime') == '2026-10-07'
                 assert page.locator('.topbar .brand-edition').count() == 0
                 assert not page.locator('.topbar .brand-lockup').is_visible()
                 assert page.evaluate("[...document.querySelectorAll('.topbar-actions > button')].every(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.top>=0&&b.bottom<=document.querySelector('.topbar').getBoundingClientRect().bottom+1})"), 'Status bar content is clipped'
                 assert page.locator('.home-newspaper-name h1').inner_text() == 'THE CLUBHOUSE'
                 assert page.locator('.home-newspaper-masthead .home-newspaper-seal').count() == 0
                 composition = page.evaluate('''() => {
-                    const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), ten=box('.home-newspaper-edition'), edition=box('.home-newspaper-edition > span'), stage=box('.home-broadcast'), desk=box('[data-home-gameday-slot]'), matchup=box('.gameday-matchup'), leaders=box('.home-thermal-leaders');
-                    const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),fullName:e.querySelector('.home-team-name strong').scrollWidth<=e.querySelector('.home-team-name strong').clientWidth+1&&getComputedStyle(e.querySelector('.home-team-name strong')).whiteSpace==='normal',score:e.querySelector('.gd-thermal-number').getBoundingClientRect().toJSON()}));
-                    return {nameLeft:name.left,tenLeft:ten.left,below:ten.top>=name.bottom,inline:Math.abs(ten.left-edition.left)<1,leadersBelow:leaders.top>=matchup.bottom-1,sideBySide:desk.left>=stage.right && Math.abs(desk.top-stage.top)<1,stacked:desk.top>=stage.bottom-1,rows};
+                    const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), date=box('.home-newspaper-date'), stage=box('.home-broadcast'), desk=box('.home-personal-desk'), focus=box('.home-week-focus'), leaders=box('.home-thermal-leaders');
+                    const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),fullName:e.querySelector('.home-team-name strong').scrollWidth<=e.querySelector('.home-team-name strong').clientWidth+1&&getComputedStyle(e.querySelector('.home-team-name strong')).whiteSpace==='normal',score:e.querySelector('.home-team-total').getBoundingClientRect().toJSON()}));
+                    return {dateAbove:date.bottom<=name.top+1,leadersBelow:leaders.top>=stage.bottom-1,sideBySide:stage.left>=desk.right+20,stacked:stage.top>=focus.bottom+16,rows};
                 }''')
-                assert abs(composition['nameLeft']-composition['tenLeft'])<1 and composition['below'] and composition['inline'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
+                assert composition['dateAbove'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
                 assert composition['sideBySide'] if width>=1000 else composition['stacked'], f'Score desk grouping broken: {composition}'
                 assert all(r['fullName'] for r in composition['rows']), f'Team names must wrap in full: {composition}'
-                if width>=320:
-                    assert all(r['portrait']['right']<=r['name']['left'] and r['name']['right']<=r['score']['left']+1 for r in composition['rows']), f'Matchup scores overlap team names: {composition}'
+                assert all(r['score']['top']>=max(r['name']['bottom'],r['portrait']['bottom'])-1 and (r['portrait']['right']<=r['name']['left']+1 or r['name']['right']<=r['portrait']['left']+1) for r in composition['rows']), f'Matchup scores overlap team names: {composition}'
                 metrics.setdefault('frontPageGrouping',[]).append({'mode':mode,'width':width,**composition})
             checks = []
             # Scroll every region into view: deferred Wall content and CSS
@@ -480,18 +536,21 @@ with sync_playwright() as p:
               const fixture=document.createElement('div');fixture.innerHTML=Object.values(window.reviewHeaderSources).join('');document.querySelector('#view').append(fixture);
               const skin=e=>{const s=getComputedStyle(e),r=getComputedStyle(e,'::before'),seal=getComputedStyle(e,'::after');return {background:s.backgroundImage,border:s.borderColor,radius:s.borderRadius,rail:r.backgroundImage,height:r.height,seal:seal.backgroundImage}};
               const home=skin(document.querySelector('.home-newspaper-masthead')),others=[...fixture.querySelectorAll('.page-identity')].map(skin);fixture.remove();
-              return {home,others,tools:[...document.querySelectorAll('.home-tool-card')].map(e=>({href:e.getAttribute('href'),width:e.offsetWidth,height:e.offsetHeight})),divider:getComputedStyle(document.querySelector('.home-league-file h2'),'::after').display};
+              return {home,others,tools:[...document.querySelectorAll('.home-tool-card')].map(e=>({href:e.getAttribute('href'),width:e.offsetWidth,height:e.offsetHeight})),divider:getComputedStyle(document.querySelector('.home-league-file h2'),'::after').content};
             }''')
-            assert all(s==identity['home'] for s in identity['others']), f'Page header skins differ: {mode}/{width}: {identity}'
+            # Option 2 uses an open masthead. Shared shell, palette and tool
+            # routes stay consistent; the other pages retain their identity plate.
+            assert identity['home']['background']=='none' and identity['home']['radius']=='0px', identity
+            assert identity['others'][0]==identity['others'][1], identity
             assert [t['href'] for t in identity['tools']]==['#/trade','#/sportsbook'] and all(t['width']>=44 and t['height']>=44 for t in identity['tools']), identity
-            assert identity['divider']=='block', identity
+            assert identity['divider']=='none', identity
             metrics['pageIdentity'].append({'mode':mode,'width':width,**identity})
             for index in range(count):
                 page.locator(f'[data-bx-go="{index}"]').evaluate('e=>e.click()')
                 page.wait_for_timeout(500)
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
-                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute');
+                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&getComputedStyle(e).display!=='none');
                   return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
@@ -502,6 +561,7 @@ with sync_playwright() as p:
                 if width==390 and index in [0,2,3]:
                     page.locator('.bx-stage').screenshot(path=str(OUT/f'themed-{mode.replace(":","-")}-slide-{index}.png'))
     page.evaluate("window.reviewSetTheme('light')")
+    metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['consoleErrors'] = errors
     assert not errors, errors
     (OUT / 'browser-checks.json').write_text(json.dumps(metrics, indent=2))

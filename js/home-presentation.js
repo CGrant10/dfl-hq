@@ -10,10 +10,14 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const year = now.getFullYear();
   const season = year - founded + 1;
   const anniversary = season > 0 && season % 10 === 0;
-  return `<header class="home-newspaper-masthead page-identity">
-    <div class="home-newspaper-name"><small>DFL HQ</small><h1>The clubhouse</h1><p class="home-newspaper-edition"><span>${anniversary ? '10th season' : `Season ${season}`} · ${esc(founded)} – ${esc(year)}</span></p></div>
-    <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}"><span>${esc(now.toLocaleDateString('en-US', { weekday: 'short' }))}</span><strong>${esc(now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))}</strong></time></div>
-  </header><nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="lead">The lead</button><button type="button" data-home-jump="scores">Scores</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
+  return `<header class="home-newspaper-masthead">
+    <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}">${esc(now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }))}</time></div>
+    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition">${anniversary ? '10th season' : `Season ${season}`} · Est. ${esc(founded)}</p></div>
+  </header>`;
+}
+
+export function homeSectionLinks() {
+  return `<nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="scores">Matchup</button><button type="button" data-home-jump="lead">Broadcast</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
 }
 
 /** Keep the existing deck and its refresh behavior behind the illustrated opener. */
@@ -65,10 +69,15 @@ export function homeGameDayPhase(model) {
   return matchupPhase(sides[0] || { starters: [] }, sides[1] || { starters: [] }, model.completed);
 }
 
-export function homeGameDayMatchup(model) {
+export function homeGameDayMatchup(model, weekly = null) {
   const game = model?.games?.find(item => item.isMine);
   if (!game) return '';
-  const teams = game.sides.map(team => {
+  const forecasts = Number(weekly?.season) === Number(model.season) && Number(weekly?.week) === Number(model.week)
+    ? game.sides.map(team => weekly.teams?.find(item => team.uid != null && item.sleeper_user_id != null && String(item.sleeper_user_id) === String(team.uid))) : [];
+  const projected = homeGameDayPhase(model).key === 'upcoming' && forecasts.length === 2
+    && forecasts.every(team => team?.lineupIsSet && Number.isFinite(team.projection));
+  const scoreLabel = projected ? 'Projected' : model.completed ? 'Final' : 'Actual';
+  const teams = game.sides.map((team, index) => {
     const row = model.standings?.find(item => Number(item.season) === Number(model.season) && String(item.sleeper_user_id) === String(team.uid));
     const known = row?.wins != null && row?.losses != null && [row.wins,row.losses].every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
     const record = team.record || (known ? `${row.wins} – ${row.losses}${Number(row.ties) > 0 ? ` – ${row.ties}` : ''}` : '');
@@ -76,11 +85,11 @@ export function homeGameDayMatchup(model) {
       ? `${team.remaining} left${team.live > 0 ? ` · ${team.live} playing` : ''}` : 'Player status pending';
     return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
-    <span class="home-team-name"><strong>${esc(team.identity?.display_name || team.name)}</strong><small>${record ? `${esc(record)} · ` : ''}${esc(remaining)}</small></span>
-    ${thermalScore(team.score, 'neutral')}
+    <span class="home-team-name"><small class="home-team-record">${esc(record)}</small><strong>${esc(team.identity?.team_name || team.name || team.identity?.display_name)}</strong><small class="home-team-progress">${esc(remaining)}</small></span>
+    <span class="home-team-total"><small>${scoreLabel}</small>${projected ? `<strong class="home-projected-total">${forecasts[index].projection.toFixed(1)}</strong>` : thermalScore(team.score, 'neutral')}</span>
   </span>`;
   }).join('<i aria-hidden="true">vs</i>');
-  return `<p class="home-matchup-score-label">${model.completed ? 'Final scores' : 'Actual scores'} · points</p><a class="gameday-matchup" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup. ${model.completed ? 'Final' : 'Actual'} scores in points.</span></a>`;
+  return `<p class="home-matchup-score-label sr-only">${scoreLabel} scores · points</p><a class="gameday-matchup${projected ? ' is-projected' : ''}" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup. ${scoreLabel} scores in points.</span></a>`;
 }
 
 export function homeThermalBoard(model) {
