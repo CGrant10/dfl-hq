@@ -277,7 +277,7 @@ with sync_playwright() as p:
     density_page = density_context.new_page()
     density_page.set_content(html, wait_until='domcontentloaded')
     density_page.wait_for_function('!!window.reviewVfx', timeout=15000)
-    density_page.evaluate("window.reviewSetTheme('medicine')")
+    density_page.evaluate("window.reviewSetTheme('light')")
     density_page.locator('.home-thermal-leaders').scroll_into_view_if_needed()
     density_page.locator('[data-gameday-card]').evaluate("e=>e.dataset.motion='on'")
     density_page.wait_for_function('document.querySelector("canvas.gd-vfx-canvas")?.dataset.running === "true"', timeout=15000)
@@ -287,7 +287,7 @@ with sync_playwright() as p:
     assert metrics['phoneDensity']['ratio'] >= 2.9, 'Score effects are below phone screen resolution'
     # The renderer discards its buffer after compositing. Sample immediately
     # after a real draw, before the browser can clear the default framebuffer.
-    metrics['medicineEffects'] = density_page.evaluate("""() => new Promise((resolve,reject)=>{
+    metrics['scoreEffects'] = density_page.evaluate("""() => new Promise((resolve,reject)=>{
         const canvas=document.querySelector('canvas.gd-vfx-canvas'),gl=canvas.getContext('webgl'),original=gl.drawArrays;
         const timeout=setTimeout(()=>{gl.drawArrays=original;reject(Error('Score effects did not draw a frame'))},5000);
         gl.drawArrays=function(...args){
@@ -296,13 +296,13 @@ with sync_playwright() as p:
                 clearTimeout(timeout);
                 const pixels=new Uint8Array(canvas.width*canvas.height*4);
                 gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
-                let visible=0,blue=0;
-                for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]>20){visible++;if(pixels[i+2]>pixels[i]+4)blue++}}
-                resolve({visible,blue});
+                let visible=0,blue=0,warm=0;
+                for(let i=0;i<pixels.length;i+=4){if(pixels[i+3]>20){visible++;if(pixels[i+2]>pixels[i]+4)blue++;if(pixels[i]>pixels[i+2]+4)warm++}}
+                resolve({visible,blue,warm});
             });
         };
     })""")
-    assert metrics['medicineEffects']['visible'] > 30 and metrics['medicineEffects']['blue'] == 0, f'Score effects retain off-palette blue: {metrics["medicineEffects"]}'
+    assert metrics['scoreEffects']['visible'] > 30 and metrics['scoreEffects']['blue'] > 30 and metrics['scoreEffects']['warm'] > 30, f'Hot and cold score effects did not render: {metrics["scoreEffects"]}'
     density_page.screenshot(path=str(OUT / 'home-390@3x.png'))
     density_context.close()
     page.emulate_media(reduced_motion='reduce')
