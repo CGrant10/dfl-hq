@@ -206,6 +206,18 @@ with sync_playwright() as p:
     assert metrics['refinement']['hero'] and page.evaluate("getComputedStyle(document.querySelector('#home-wrap')).getPropertyValue('--bg').trim()===getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()"), 'Home must use the shared app palette and retain broadcast artwork'
     assert metrics['refinement']['visibleLore'] and metrics['refinement']['visibleWall'], 'DFL stories are hidden in More'
     page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='off'")
+    metrics['unevenTeamNames'] = []
+    for width in [320,390,832,1280]:
+        page.set_viewport_size({'width':width,'height':844})
+        names = page.evaluate('''() => {
+            const names=[...document.querySelectorAll('.home-team-name strong')],saved=names.map(e=>e.textContent);
+            names[0].textContent='Short';names[1].textContent='The Very Long Bayou Championship Fantasy Football Bombers';
+            const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({scoreY:e.querySelector('.home-team-total').getBoundingClientRect().top,fullName:e.querySelector('strong').scrollWidth<=e.querySelector('strong').clientWidth+1}));
+            names.forEach((e,i)=>e.textContent=saved[i]);return rows;
+        }''')
+        assert abs(names[0]['scoreY']-names[1]['scoreY'])<1 and all(row['fullName'] for row in names), f'Uneven team names misalign or clip scores: {width}: {names}'
+        metrics['unevenTeamNames'].append({'width':width,'rows':names})
+    page.set_viewport_size({'width':390,'height':844})
     metrics['readingOrder'] = page.evaluate("""() => {
       const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','[data-home-lore-slot]','.home-banter'];
       const root=document.querySelector('#home-wrap'),children=[...root.children];

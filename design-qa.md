@@ -17,6 +17,7 @@ The source is 853 × 1844 px. It was normalized to the 390 × 844 CSS viewport a
 - **P2, intermediate composition:** 54% copy width overlapped the 50% illustration region on narrow screens. Limited illustrated copy to 46%; retained complete, contained champion/chip/logo subjects at 50% with 0.64 opacity. The browser gate verifies image containment and no copy overlap at 320, 390, 768, 1000 and 1280 px.
 - **P2, intermediate density:** the lineup caption wrapped onto two lines at 390 px, and redundant space below the scores pushed weekly tools too far down. Restored the native boxy font at 14 px for supporting copy, reduced the score-to-action gap, and kept the action 46 px tall. The final caption fits on one line at 390 px and wraps naturally on smaller phones. Evidence: `league-desk-compare-v3.png` → final matchup comparison.
 - **P2, intermediate control placement:** the game-day watch target overlapped its phase label. Kept a 44 px target at the edge and placed the phase beside the week. The final browser capture shows separate bounds.
+- **P2, uneven team names:** a short name beside a much longer name produced different score baselines. Assigned remaining grid height to the name row while keeping each score row intrinsic. Browser scenarios at 320, 390, 832 and 1280 px verify aligned totals and complete names.
 
 No actionable P0/P1/P2 findings remain.
 

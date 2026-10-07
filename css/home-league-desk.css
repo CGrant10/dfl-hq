@@ -26,7 +26,7 @@
 }
 #home-wrap .gameday-matchup > i { display: block; position: absolute; left: 50%; top: 48%; transform: translateX(-50%); color: var(--paper-muted); font: 600 10px/1 var(--home-ui-font); text-transform: uppercase; }
 #home-wrap .gameday-matchup > .gameday-faceoff-team {
-  display: grid; grid-template-columns: 48px minmax(0,1fr); grid-template-rows: minmax(56px,auto) auto;
+  display: grid; grid-template-columns: 48px minmax(0,1fr); grid-template-rows: minmax(56px,1fr) auto;
   align-items: center; gap: 12px 8px; padding: 0; border: 0; min-width: 0;
 }
 #home-wrap .gameday-matchup > .gameday-faceoff-team:nth-of-type(2) { grid-template-columns: minmax(0,1fr) 48px; }
