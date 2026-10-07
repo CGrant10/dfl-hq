@@ -1,4 +1,5 @@
 import { playerScorePhase } from './game-day-player-rows.js';
+import { matchupPhase } from './clubhouse-matchup-model.js';
 import { esc } from './ui.js';
 import { playerIdentity } from './player-presentation.js';
 import { teamPortrait } from './team-presentation.js';
@@ -55,6 +56,15 @@ export function homeThermalLeaders(model) {
   return [...hot.slice(0, hotCount), ...cold.slice(0, 4 - hotCount)];
 }
 
+/** A league-wide live game does not make this member's matchup live. */
+export function homeGameDayPhase(model) {
+  const game = model?.games?.find(item => item.isMine);
+  if (!game) return model?.completed ? { key: 'final', label: 'Final' }
+    : model?.live ? { key: 'live', label: 'NFL live' } : { key: 'unknown', label: 'Status pending' };
+  const sides = game.sides.map(team => ({ ...team, starters: team.starters || [] }));
+  return matchupPhase(sides[0] || { starters: [] }, sides[1] || { starters: [] }, model.completed);
+}
+
 export function homeGameDayMatchup(model) {
   const game = model?.games?.find(item => item.isMine);
   if (!game) return '';
@@ -62,13 +72,15 @@ export function homeGameDayMatchup(model) {
     const row = model.standings?.find(item => Number(item.season) === Number(model.season) && String(item.sleeper_user_id) === String(team.uid));
     const known = row?.wins != null && row?.losses != null && [row.wins,row.losses].every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
     const record = team.record || (known ? `${row.wins} – ${row.losses}${Number(row.ties) > 0 ? ` – ${row.ties}` : ''}` : '');
+    const remaining = model.completed ? 'Final' : Number.isInteger(team.remaining) && team.remaining >= 0
+      ? `${team.remaining} left${team.live > 0 ? ` · ${team.live} playing` : ''}` : 'Player status pending';
     return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
-    <span class="home-team-name"><strong>${esc(team.identity?.display_name || team.name)}</strong>${record ? `<small>${esc(record)}</small>` : ''}</span>
+    <span class="home-team-name"><strong>${esc(team.identity?.display_name || team.name)}</strong><small>${record ? `${esc(record)} · ` : ''}${esc(remaining)}</small></span>
     ${thermalScore(team.score, 'neutral')}
   </span>`;
   }).join('<i aria-hidden="true">vs</i>');
-  return `<a class="gameday-matchup" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup</span></a>`;
+  return `<p class="home-matchup-score-label">${model.completed ? 'Final scores' : 'Actual scores'} · points</p><a class="gameday-matchup" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="sr-only">Open matchup. ${model.completed ? 'Final' : 'Actual'} scores in points.</span></a>`;
 }
 
 export function homeThermalBoard(model) {

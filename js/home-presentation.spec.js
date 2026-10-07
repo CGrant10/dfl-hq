@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { homeBroadcastDeck, homeThermalLeaders, homeThermalBoard, homeGameDayMatchup, homeLeagueFile } from './home-presentation.js';
+import { homeBroadcastDeck, homeThermalLeaders, homeThermalBoard, homeGameDayMatchup, homeGameDayPhase, homeLeagueFile } from './home-presentation.js';
 import { playerScoreTemperature } from './score-temperature.js';
 import { leaguePlayers } from './game-day-league.js';
 
@@ -61,6 +61,26 @@ describe('selected Home presentation', () => {
     expect(html).toContain('https://example.com/grant.webp');
     expect(html).not.toContain('data-score-temperature="hot"');
     expect(homeGameDayMatchup({ games: [] })).toBe('');
+  });
+  it('uses this matchup’s status even when other NFL games are live', () => {
+    const upcoming = { known: true, live: 0, starters: [{ state: 'upcoming' }] };
+    const model = { live: true, games: [{ isMine: true, sides: [upcoming, upcoming] }] };
+    expect(homeGameDayPhase(model)).toEqual({ key: 'upcoming', label: 'Upcoming' });
+    expect(homeGameDayPhase({ ...model, completed: true })).toEqual({ key: 'final', label: 'Final' });
+    expect(homeGameDayPhase({ ...model, games: [{ isMine: true, sides: [upcoming, { live: 1, starters: [] }] }] }).key).toBe('live');
+    expect(homeGameDayPhase({ ...model, games: [{ isMine: true, sides: [{}, {}] }] }).key).toBe('unknown');
+  });
+  it('labels actual points and keeps zero distinct from a missing score or status', () => {
+    const model = { season: 2026, week: 5, games: [{ isMine: true, sides: [
+      { roster: '1', name: 'Zero team', score: 0, remaining: 3, live: 1 },
+      { roster: '2', name: 'Pending team', score: null, remaining: null },
+    ] }] };
+    const html = homeGameDayMatchup(model);
+    expect(html).toContain('Actual scores');
+    expect(html).toContain('0.00');
+    expect(html).toContain('3 left · 1 playing');
+    expect(html).toContain('Player status pending');
+    expect(homeGameDayMatchup({ ...model, completed: true })).toContain('Final scores');
   });
 });
 
