@@ -1,0 +1,135 @@
+/* Shared reading rhythm for the audited screens. Keep the DFL palette and
+   artwork; spend less space on setup and keep primary controls touchable. */
+#view[data-pulse-system="1"]:is([data-route="clubhouse"],[data-route="analyzer"],[data-route="facts"],[data-route="wall"],[data-route="stakes"],[data-route="notifications"],[data-route="sportsbook"]) .page-head {
+  min-height:0; padding:12px 16px; margin:0 0 16px; gap:12px;
+}
+#view[data-pulse-system="1"]:is([data-route="clubhouse"],[data-route="analyzer"],[data-route="facts"],[data-route="wall"],[data-route="stakes"],[data-route="notifications"],[data-route="sportsbook"]) .page-head h1 {
+  font:700 24px/1.15 var(--font-display); letter-spacing:.025em; margin:0;
+}
+#view[data-pulse-system="1"]:is([data-route="clubhouse"],[data-route="analyzer"],[data-route="facts"],[data-route="wall"],[data-route="stakes"],[data-route="notifications"],[data-route="sportsbook"]) .page-head p {
+  margin:5px 0 0; font:500 13px/1.45 var(--font-body); color:var(--body-text);
+}
+#view[data-route="clubhouse"] .clubhouse-eyebrow { font-size:11px; }
+#view[data-route="clubhouse"] .clubhouse-header { justify-content:space-between; align-items:center; }
+#view[data-route="clubhouse"] .clubhouse-header .clubhouse-status { margin-top:7px; font-size:12px; }
+#view[data-route="clubhouse"] .clubhouse-context.card { padding:12px; margin:0 0 12px; }
+#view[data-route="clubhouse"] .clubhouse-week-picker { gap:12px; }
+#view[data-route="clubhouse"] .clubhouse-week-picker label { gap:4px; font:600 12px/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .clubhouse-week-picker select { min-height:44px; padding:8px 10px; font:600 14px/1.4 var(--font-body); }
+#view[data-route="clubhouse"] .clubhouse-context-links { margin-top:4px; font-size:12px; }
+#view[data-route="clubhouse"] .clubhouse-tabs { margin:0 0 12px; gap:16px; }
+#view[data-route="clubhouse"] .clubhouse-section.card { padding:12px; margin:0 0 16px; }
+#view[data-route="clubhouse"] .clubhouse-heading { margin-bottom:8px; gap:8px; }
+#view[data-route="clubhouse"] .clubhouse-heading h2 { font-size:18px; margin:3px 0 0; }
+#view[data-route="clubhouse"] .clubhouse-heading small { font-size:11px; }
+#view[data-route="clubhouse"] .clubhouse-matchup-toolbar { margin:4px 0 12px; gap:4px 10px; }
+#view[data-route="clubhouse"] .clubhouse-matchup-card { padding:14px; }
+#view[data-route="clubhouse"] .clubhouse-matchup-focus > small { font-size:11px; }
+#view[data-route="clubhouse"] .clubhouse-section-copy { margin:12px 0 4px; font-size:13px; line-height:1.5; }
+#view[data-route="clubhouse"] .clubhouse-play-links { margin:0; gap:16px; }
+#view[data-route="analyzer"] .ta-toolbar-section { margin:0 0 16px; }
+#view[data-route="analyzer"] .ta-toolbar { padding:10px 12px; margin:0; }
+#view[data-route="analyzer"] .ta-toolbar > label { width:100%; display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:12px; }
+#view[data-route="analyzer"] .ta-toolbar > label > span { font:600 12px/1.4 var(--font-body); }
+#view[data-route="analyzer"] .ta-toolbar select { min-width:0; min-height:44px; font:600 14px/1.4 var(--font-body); }
+#view[data-route="trade"] .tb-head-row { min-height:0; display:flex; flex-direction:row; align-items:center; justify-content:space-between; padding:12px 16px; margin:0 0 12px; }
+#view[data-route="trade"] .tb-head { min-width:0; }
+#view[data-route="trade"] .tb-head h1 { font-size:24px; }
+#view[data-route="trade"] .tb-head p { margin-top:4px; font-size:13px; }
+#view[data-route="trade"] .tb-head-row > .btn { flex:none; align-self:center; }
+#view[data-route="trade"] .td-entry-actions { gap:6px; margin-bottom:12px; }
+#view[data-route="trade"] .td-entry-actions button { flex:1 1 auto; padding:8px; font-size:13px; }
+#view[data-route="trade"] .td-entry-actions button:last-child { flex:1 1 auto; }
+#view[data-route="trade"] .tb-setup-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+#view[data-route="trade"] .tb-setup-head .section-title { flex:1; margin:0; font-size:16px; }
+#view[data-route="trade"] .tb-setup-head .count { display:none; }
+#view[data-route="trade"] [data-tb-view-offers] { flex:none; min-height:44px; padding:0 4px; font:600 13px/1.4 var(--font-body); color:var(--accent); }
+#view[data-route="trade"] .tb-workbench-card { gap:8px; padding:10px 12px; }
+#view[data-route="trade"] .tb-team-select { gap:4px; padding:6px 0; }
+#view[data-route="trade"] .tb-team-select > span { font-size:11px; }
+#view[data-route="trade"] .tb-team-select select { min-height:44px; font-size:14px; }
+#view[data-route="trade"] .tb-members { gap:8px; }
+#view[data-route="trade"] .tb-intent { margin:4px 0 0; }
+#view[data-route="trade"] .tb-layout-section { margin-bottom:16px; }
+#view[data-route="trade"] [data-tb-offers] { scroll-margin-top:70px; }
+#view[data-route="trade"] .td-custom { margin-top:12px; }
+#view[data-route="trade"] .td-working-as { margin-bottom:8px; }
+#view[data-route="trade"] .td-custom > summary { padding:8px 12px; }
+#view[data-route="facts"] .trivia-hub.card { padding:12px 16px; margin:0 0 16px; }
+#view[data-route="facts"] .trivia-hub > summary { min-height:44px; font-size:14px; }
+#view[data-route="facts"] .trivia-hub > summary span { font-size:12px; }
+#view[data-route="facts"] .factcard { padding:16px; margin:0 0 12px; }
+#view[data-route="facts"] .fact-head { font:700 18px/1.3 var(--font-display); }
+#view[data-route="facts"] .fact-detail { font:500 14px/1.5 var(--font-body); }
+#view[data-route="facts"] :is(.fact-kicker,.fact-ask,.fact-note) { font-size:11px; }
+#view[data-route="wall"] .wall-page .wall { margin:0; }
+#view[data-route="wall"] .wall-page .wall-card { padding:12px; }
+#view[data-route="wall"] .wall-signin { margin:0 0 10px; font-size:12px; }
+#view[data-route="stakes"] .stakes-page { gap:12px; }
+#view[data-route="stakes"] .stakes-page .page-head { margin:0; }
+#view[data-route="stakes"] .stakes-game { padding:14px; border-radius:12px; }
+#view[data-route="stakes"] .stakes-game > small { font-size:11px; }
+#view[data-route="stakes"] .stakes-game > div strong { font-size:20px; line-height:1.25; overflow-wrap:anywhere; }
+#view[data-route="stakes"] .stakes-game > span { font-size:13px; }
+#view[data-route="stakes"] .stakes-model-note { margin:0; color:var(--body-text); font:500 12px/1.5 var(--font-body); }
+#view[data-route="stakes"] .stakes-team summary { min-height:44px; display:flex; align-items:center; padding:6px 0; font:600 12px/1.4 var(--font-body); cursor:pointer; }
+#view[data-route="stakes"] .stakes-team summary::before { content:'▸'; margin-right:6px; }
+#view[data-route="stakes"] .stakes-team details[open] summary::before { content:'▾'; }
+#view[data-route="stakes"] .stakes-team-copy span { font-size:12px; line-height:1.5; }
+#view[data-route="stakes"] .stakes-status { font-size:11px; letter-spacing:.025em; }
+#view[data-route="stakes"] .stakes-seed small { font-size:10px; }
+#view[data-route="stakes"] .stakes-opponents { grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); }
+#view[data-route="stakes"] .stakes-opponents li { font-size:12px; }
+#view[data-route="stakes"] .stakes-opponents li span { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+#view[data-route="stakes"] .stakes-leverage article strong { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+#view[data-pulse-system="1"] .profile-entry.card { padding:16px; }
+#view .profile-entry h2 { font:700 18px/1.3 var(--font-display); margin:0 0 8px; }
+#view .profile-entry p { font:500 14px/1.5 var(--font-body); margin:0 0 12px; color:var(--body-text); }
+#view .profile-entry button { min-height:44px; }
+/* Groups retain every destination while giving the More sheet a reading order. */
+#more .quicknav { display:block; margin-top:8px; }
+#more .quicknav-group + .quicknav-group { margin-top:16px; }
+#more .quicknav-group h2 { margin:0 0 6px; color:var(--body-text); font:600 11px/1.4 var(--font-body); letter-spacing:.07em; text-transform:uppercase; }
+#more .quicknav-group > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+#more .quicknav-group a { min-height:44px; padding:8px 10px; border-radius:8px; gap:8px; }
+#more .quicknav-group .qn-label { font:600 14px/1.3 var(--font-body); }
+#more .sheet-card { padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+#view :is([data-open-profile],[data-tb-view-offers],.stakes-team summary):focus-visible,
+#more .quicknav-group a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(min-width:700px) { #more .quicknav-group > div { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+/* Keep table semantics and all editing controls; each season reflows vertically. */
+@media(max-width:600px) {
+  #view[data-route="history"] .champions-wrap { overflow:visible; }
+  #view[data-route="history"] .champions-table { min-width:0; width:100%; table-layout:fixed; }
+  #view[data-route="history"] .champions-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  #view[data-route="history"] .champions-table :is(tbody,tr) { display:block; }
+  #view[data-route="history"] .champions-table tr { padding:10px 0; border-bottom:1px solid var(--line); }
+  #view.view[data-pulse-system="1"][data-route="history"] .champions-table td { font-size:14px; line-height:1.45; display:grid; grid-template-columns:76px minmax(0,1fr); gap:8px; min-width:0; padding:6px 10px; border:0; white-space:normal; overflow-wrap:anywhere; background:none; }
+  #view[data-route="history"] .champions-table td::before { content:attr(data-label); color:var(--body-text); font:600 12px/1.5 var(--font-body); }
+  #view[data-route="history"] .champions-table td.champions-season { display:block; font-size:16px; font-weight:700; }
+  #view[data-route="history"] .champions-table td.champions-season::before { display:none; }
+  #view[data-route="history"] .champions-table td > :is(a,button) { min-width:0; max-width:100%; white-space:normal; }
+  #view[data-route="history"] .champions-table td > .tiny { grid-column:2; }
+  #view[data-route="history"] .champions-table td a { line-height:1.45; }
+}
+/* Alert coverage belongs to Home and scrolls away instead of covering content. */
+body .breaking-trade { position:relative; top:auto; grid-template-columns:26px minmax(0,1fr) auto auto; gap:8px; min-height:60px; box-shadow:none; }
+body .breaking-trade-copy small { font-size:10px; letter-spacing:.08em; line-height:1.2; }
+body .breaking-trade-copy em { font-size:11px; line-height:1.3; }
+body .breaking-trade > button { min-height:44px; min-width:44px; font-size:11px; }
+body .breaking-trade > .breaking-trade-dismiss { display:block; width:44px; padding:0; border:0; background:transparent; font-size:24px; }
+body .breaking-trade-beacon { width:26px; }
+@media(max-width:370px) { body .breaking-trade > [data-end-trade-coverage] { display:none; } }
+/* Narrow phones keep week controls side by side and avoid a disabled action
+   consuming a second header row before kickoff. */
+#view[data-route="clubhouse"] .clubhouse-header > div { flex:1 1 120px; min-width:0; }
+#view[data-route="clubhouse"] .clubhouse-week-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#view[data-route="clubhouse"] .clubhouse-context-links { justify-content:flex-end; }
+#view[data-route="clubhouse"] .clubhouse-heading { flex-direction:row; align-items:center; justify-content:space-between; }
+#view[data-route="clubhouse"] .clubhouse-heading > div { min-width:0; }
+#view[data-route="clubhouse"] .clubhouse-page .clubhouse-matchup-toolbar [data-matchup-freshness] { flex:1 1 100px; }
+#view[data-route="clubhouse"] .clubhouse-page .clubhouse-matchup-toolbar button { min-width:104px; flex:none; padding-inline:8px; }
+#view[data-route="clubhouse"] [data-clubhouse-share][hidden] { display:none; }
+#view[data-route="clubhouse"] .clubhouse-week-picker label { margin:0; }
+#view[data-route="clubhouse"] .clubhouse-week-picker select { margin:0; }
+#view[data-route="clubhouse"] .clubhouse-context-links:empty { display:none; }

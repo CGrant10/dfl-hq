@@ -93,7 +93,7 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeBoardHeader(mode='offers'){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='manual'?'Check a trade':'Trade Board'}</h1><p>${mode==='manual'?'Build the deal. Choose who gets each player.':'Pick your pressure. Send something worth answering.'}</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-compare>Compare saved deals</button></div>`;
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='manual'?'Check a trade':'Trade Board'}</h1><p>${mode==='manual'?'Build the deal. Choose who gets each player.':'Pick your pressure. Send something worth answering.'}</p></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
@@ -163,8 +163,7 @@ function tradeLab(team, teams, pool, shop) {
   return `<section class="tb-board">
     ${tradeBoardHeader(shop.mode)}
     <section class="tb-layout-section">
-      <h2 class="section-title">Build the package<span class="count">Up to 8</span></h2>
-      <p class="section-copy">Choose the teams, anchor the players that matter, then set how aggressive the ask should be.</p>
+      <div class="tb-setup-head"><h2 class="section-title">Build the package<span class="count">Up to 8</span></h2><button type="button" class="linkbtn" data-tb-view-offers>View offers ↓</button></div>
       <div class="tb-workbench-card">
         <label class="tb-team-select"><span>Trading as</span><select data-td-team>${teams.map(item => `<option value="${esc(item.id)}" ${String(item.id) === String(team.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
         <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner><option value="all" ${allPartners ? "selected" : ""}>All teams · Shop league-wide</option>${otherTeams.map(item => `<option value="${esc(item.id)}" ${!allPartners && String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
@@ -183,16 +182,16 @@ function tradeLab(team, teams, pool, shop) {
         </details><div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
       </div>
     </section>
-    <section class="tb-layout-section">
+    <section class="tb-layout-section" data-tb-offers tabindex="-1">
       <h2 class="section-title">Generated offers<span class="count">Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
       <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
       <div class="tb-offers-card">
+        <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
+        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
         <div class="tb-offer-actions">
           <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
           ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
         </div>
-        <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
-        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers match those anchors and split. Raise the maximum, choose Any, or remove an anchor.</div>`}
       </div>
     </section>
   </section>`;
@@ -385,6 +384,12 @@ function page(data, tradeAlerts = []) {
         if (note) note.textContent = `Up to ${value} total players—not a required total.`;
       });
       body.addEventListener("click", async event => {
+        if (event.target.closest("[data-tb-view-offers]")) {
+          const offers = body.querySelector("[data-tb-offers]");
+          offers?.scrollIntoView({ block: "start", behavior: "instant" });
+          offers?.focus({ preventScroll: true });
+          return;
+        }
         const modeButton=event.target.closest('[data-td-mode]');
         if(modeButton){if(modeButton.dataset.tdMode==='manual'&&!trade.sends.some(ids=>ids.size)&&shop.partnerId&&shop.partnerId!=='all'){trade.memberIds=[shop.partnerId,...shop.memberIds];trade.sends=[new Set(shop.sendAnchors),...trade.memberIds.map((_,i)=>new Set(i===trade.memberIds.length-1?shop.receiveAnchors:[]))];trade.destinations={};}shop.mode=modeButton.dataset.tdMode;shop.customOpen=shop.mode==='manual';draw();body.querySelector(shop.customOpen?'.td-working-as select':'[data-td-mode="offers"]')?.focus({preventScroll:true});return;}
         if(event.target.closest('[data-td-compare]')){proposalsOpen=true;const slot=body.querySelector('[data-td-proposals-slot]');slot.innerHTML=proposalsMarkup(proposals,data.teams,data.pool,true);slot.scrollIntoView({block:'start',behavior:'instant'});return;}

@@ -87,7 +87,7 @@ async function loadSportsbookIdentities(){
 
 export async function render(view){
   const me=currentMember();
-  if(!me){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body">Pick your league member first.</div></div>`;return}
+  if(!me){view.innerHTML=`<header class="page-head"><h1>Sportsbook</h1></header><section class="card profile-entry"><h2>Open your book</h2><p>Choose your league profile to see your bankroll, picks and tickets.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;return}
   const canBook=hasPermission("sportsbook");
   view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
   let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};

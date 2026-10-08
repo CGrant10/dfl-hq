@@ -13,7 +13,7 @@ export const PRIMARY_SEASON_ROUTES = [
 
 export const SECONDARY_SEASON_ROUTES = [
   { route: "wall", label: "Wall", icon: "polls" },
-  { route: "facts", label: "Fun Facts", icon: "record" },
+  { route: "facts", label: "DFL Lore", icon: "record" },
   { route: "finances", label: "Fees", icon: "finances" },
   { route: "rules", label: "Rules", icon: "rules" },
   { route: "notifications", label: "Notifications", icon: "bell" },
@@ -24,9 +24,17 @@ export const SECONDARY_SEASON_ROUTES = [
   { route: "golf", label: "Golf", icon: "golf" },
   { route: "polls", label: "Polls", icon: "polls" },
   { route: "arena", label: "Arena", icon: "arena" },
+  { route: "proposals", label: "Proposals", icon: "rules" },
+  { route: "stakes", label: "Playoff Race", icon: "record" },
   { route: "admin", label: "Admin", icon: "admin" },
 ];
 
+export const SECONDARY_SEASON_GROUPS = [
+  { label: "League life", routes: ["wall", "polls", "arena", "golf"] },
+  { label: "Football & records", routes: ["stakes", "history", "facts", "keepers"] },
+  { label: "League business", routes: ["calendar", "finances", "rules", "proposals"] },
+  { label: "Your account", routes: ["notifications", "profile", "admin"] },
+];
 const navLabel=label=>label;
 const primaryIcons = { home: 'house', clubhouse: 'users-round', sportsbook: 'book-open', trade: 'arrow-left-right', analyzer: 'chart-no-axes-column-increasing' };
 let navSizeObserver;
@@ -41,7 +49,7 @@ export function primarySeasonNavMarkup() {
 }
 
 export function secondarySeasonNavMarkup() {
-  return SECONDARY_SEASON_ROUTES.map(quickLink).join("");
+  return SECONDARY_SEASON_GROUPS.map((group, index) => `<section class="quicknav-group" aria-labelledby="quicknav-group-${index}"><h2 id="quicknav-group-${index}">${group.label.replace('&', '&amp;')}</h2><div>${group.routes.map(route => quickLink(SECONDARY_SEASON_ROUTES.find(item => item.route === route))).join("")}</div></section>`).join("");
 }
 
 export function mountSeasonNavigation(root = document) {

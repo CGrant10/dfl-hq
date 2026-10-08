@@ -52,7 +52,7 @@ export async function render(view) {
   await ensureStylesheet("css/notifications.css");
   const member = currentMember();
   if (!member) {
-    view.innerHTML = `<h1>Notifications</h1><div class="card"><div class="card-body">Pick your member identity first.</div></div>`;
+    view.innerHTML = `<header class="page-head"><h1>Notifications</h1></header><section class="card profile-entry"><h2>Your league inbox</h2><p>Choose your league profile to see your mentions, replies and updates.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;
     return;
   }
   let rows = [], preferences = null, deviceError = "";

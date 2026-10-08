@@ -37,9 +37,12 @@ export function buildLeagueStakes({ teams = [], standings = [], projections = ne
   const ordered = [...rows].sort((a, b) => number(b.projection?.playoffOdds) - number(a.projection?.playoffOdds)
     || b.wins - a.wins || b.points - a.points || number(a.rank) - number(b.rank));
   ordered.forEach((row, index) => {
-    row.projectedSeed = Math.max(1, Math.round(number(row.projection?.seed) || index + 1));
+    // A seed is a position in this ordered field, not a rounded simulation
+    // average (several teams can share that average).
+    row.projectedSeed = index + 1;
+    row.expectedFinish = number(row.projection?.seed) || null;
     row.playoffOdds = row.status === "clinched" ? 1 : row.status === "eliminated" ? 0
-      : Math.max(0, Math.min(1, number(row.projection?.playoffOdds)));
+      : row.projection?.playoffOdds == null ? null : Math.max(0, Math.min(1, number(row.projection.playoffOdds)));
   });
   const cutline = ordered[Math.min(berths - 1, ordered.length - 1)] || null;
   rows.forEach(row => {
@@ -79,9 +82,18 @@ export function scenarioLine(row, berths = 8) {
   if (!row) return "No playoff scenario yet.";
   if (row.status === "clinched") return `Seed #${row.projectedSeed} projection · playing for position.`;
   if (row.status === "eliminated") return "The postseason path is closed.";
-  const odds = Math.round(number(row.playoffOdds ?? row.projection?.playoffOdds) * 100);
+  const odds = playoffChance(row);
   const need = number(row.winsNeeded);
-  if (!row.remaining) return `${odds}% playoff chance · awaiting the final table.`;
-  if (!need) return `${odds}% playoff chance · currently inside the top ${berths}.`;
-  return `${odds}% playoff chance · target ${need} win${need === 1 ? "" : "s"} over the final ${row.remaining}.`;
+  if (!row.remaining) return `${odds} playoff chance · awaiting the final table.`;
+  if (!need) return `${odds} playoff chance · currently inside the top ${berths}.`;
+  return `${odds} playoff chance · target ${need} win${need === 1 ? "" : "s"} over the final ${row.remaining}.`;
+}
+
+export function playoffChance(row) {
+  if (row?.status === "clinched") return "100%";
+  if (row?.status === "eliminated") return "0%";
+  const value = row?.playoffOdds ?? row?.projection?.playoffOdds;
+  if (value == null || !Number.isFinite(Number(value))) return "—";
+  const odds = Math.round(Math.max(0, Math.min(1, Number(value))) * 100);
+  return odds === 100 ? ">99%" : odds === 0 ? "<1%" : `${odds}%`;
 }

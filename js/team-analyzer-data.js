@@ -44,8 +44,10 @@ async function fetchAnalyzerData() {
     return {
       ...roster,
       identity: member || null,
-      ownerName: roster.display_name || member?.display_name || "Unassigned owner",
-      team_name: roster.team_name || member?.team_name || roster.display_name || member?.display_name || `Team ${roster.roster_id}`,
+      ownerName: member?.display_name || roster.display_name || "Unassigned owner",
+      // Current tools share Clubhouse's directory names. Historical names
+      // remain in the season rosters used by the archive.
+      team_name: member?.team_name || member?.display_name || roster.team_name || roster.display_name || `Team ${roster.roster_id}`,
     };
   });
   const projectionSeason = Number(league.season) || rosterSeason;

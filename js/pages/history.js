@@ -174,19 +174,19 @@ function fameView(data) {
     ${titled.length ? `
       <div class="card accent">
         <div class="card-title">${icon("Champion")} Champions</div>
-        <div class="tblwrap">
-          <table class="tbl">
-            <thead><tr><th>Season</th><th>Champion</th><th>Runner up</th></tr></thead>
+        <div class="tblwrap champions-wrap">
+          <table role="table" class="tbl champions-table" aria-label="Champions and runners-up by season">
+            <thead><tr><th scope="col">Season</th><th scope="col">Champion</th><th scope="col">Runner-up</th></tr></thead>
             <tbody>
               ${titled.map((l) => `
                 <tr>
-                  <td>${esc(l.season)}</td>
-                  <td>${canEdit() ? editableName({
+                  <td class="champions-season" data-label="Season">${esc(l.season)}</td>
+                  <td data-label="Champion">${canEdit() ? editableName({
                     text: name(l.champion_user_id, l.season, l.champion_roster_id).label,
                     field: "champion", key: l.season, canEdit: true,
                   }) : nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}${
                     l.champion_locked ? `<div class="muted tiny">set by hand</div>` : ""}</td>
-                  <td class="muted">${l.runner_up_user_id || l.runner_up_roster_id
+                  <td class="muted" data-label="Runner-up">${l.runner_up_user_id || l.runner_up_roster_id
                     ? nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))
                     : "—"}</td>
                 </tr>`).join("")}

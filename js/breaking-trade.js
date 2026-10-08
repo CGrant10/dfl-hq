@@ -9,7 +9,11 @@ let currentId = null;
 let currentAlert = null;
 let announcedId = null;
 let loading = false;
-const excludedRoute = () => /^#\/(golf|broadcast|arena(?:-|\?|$))/.test(location.hash || "");
+const excludedRoute = () => !/^#\/home(?:\?|$)/.test(location.hash || "");
+const dismissed = alert => {
+  try { return localStorage.getItem("dfl.alert.dismissed") === String(alert?.id); }
+  catch { return false; }
+};
 
 const names = alert => (alert?.teams || []).map(team => team.teamName).filter(Boolean);
 
@@ -37,6 +41,7 @@ function markup(alert) {
       <strong>${esc(headline(alert))}</strong>
       <em>${esc(verdict(alert))}${custom ? "" : " · Tap for the full receipt"}</em>
     </a>
+    <button type="button" class="breaking-trade-dismiss" data-dismiss-alert aria-label="Dismiss this alert">×</button>
     ${commissioner ? `<button type="button" data-end-trade-coverage="${esc(alert.id)}" data-alert-kind="${custom ? "custom" : "trade"}" data-alert-raw-id="${esc(alert.rawId || alert.id)}">End alert</button>` : ""}`;
 }
 
@@ -60,7 +65,7 @@ async function refresh({ force = false } = {}) {
     ]);
     const alert = candidates.filter(Boolean).sort((a, b) => Date.parse(b.breakingStartedAt || b.occurredAt || 0)
       - Date.parse(a.breakingStartedAt || a.occurredAt || 0))[0] || null;
-    if (!alert?.breakingActive) return hide();
+    if (excludedRoute() || !alert?.breakingActive || dismissed(alert)) return hide();
     if (!force && String(alert.id) === String(currentId) && !host.hidden) return;
     currentId = alert.id;
     currentAlert = alert;
@@ -88,6 +93,11 @@ export function mountBreakingTradeCoverage() {
   topbar?.insertAdjacentElement("afterend", host);
 
   host.addEventListener("click", async event => {
+    if (event.target.closest("[data-dismiss-alert]")) {
+      try { localStorage.setItem("dfl.alert.dismissed", String(currentId)); } catch {}
+      hide();
+      return;
+    }
     const button = event.target.closest("[data-end-trade-coverage]");
     if (!button) return;
     /* The banner can survive while the commissioner/member transition is in

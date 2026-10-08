@@ -8,7 +8,7 @@ import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason 
 import { buildFindings } from "../analyzer-findings.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
-import { buildLeagueStakes, stakeLine } from "../league-stakes.js";
+import { buildLeagueStakes, stakeLine, playoffChance } from "../league-stakes.js";
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -199,7 +199,7 @@ function seasonOutlook(team, projections, teams, stakes) {
       <div><h2>${esc(teamName(team))}</h2>${stake ? `<span class="so-stake is-${esc(stake.status)}">${esc(stakeLine(stake))}</span>` : ""}</div>
       <div class="so-record">
         <strong>${projection.wins}<i>-</i>${projection.losses}</strong>
-        <span>projected · ${ordinal(Math.round(projection.seed))} of ${teams.length}</span>
+        <span>average finish · ${stat(projection.seed)} of ${teams.length}</span>
       </div>
     </header>
     <div class="so-body">
@@ -210,7 +210,7 @@ function seasonOutlook(team, projections, teams, stakes) {
           : ""}${team.lineup.sleeperProjectedCount < team.lineup.starters.length
           ? ` · ${team.lineup.starters.length - team.lineup.sleeperProjectedCount} starter(s) unprojected` : ""}</p>
       <div class="so-odds">
-        <div class="so-odd"><small>Playoffs</small><b>${pct(projection.playoffOdds)}</b><i>8 of ${teams.length}</i></div>
+        <div class="so-odd"><small>Playoffs</small><b>${esc(playoffChance(stake || {projection}))}</b><i>${stakes?.berths || Math.min(8, teams.length)} advance · estimate</i></div>
         <div class="so-odd is-title"><small>Championship</small><b>${pct(projection.titleOdds)}</b><i>${titleRank ? `${ordinal(titleRank)} best` : "—"}</i></div>
         <div class="so-odd is-chip"><small>Chip Eater</small><b>${pct(projection.lastOdds)}</b><i>finishing last</i></div>
       </div>
@@ -261,7 +261,7 @@ function page(data) {
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section"><h2 class="section-title">Read a roster<span class="count">${data.teams.length} teams</span></h2><p class="section-copy">Your weekly lineup comes first. Open the season analysis when you need it.</p><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {
