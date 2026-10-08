@@ -2,11 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   PRIMARY_SEASON_ROUTES,
   SECONDARY_SEASON_ROUTES,
+  SECONDARY_SEASON_GROUPS,
   primarySeasonNavMarkup,
   secondarySeasonNavMarkup,
 } from "./season-nav.js";
 
 describe("regular-season navigation", () => {
+  it("keeps every secondary destination in exactly one named group", () => {
+    const grouped = SECONDARY_SEASON_GROUPS.flatMap(group => group.routes);
+    expect([...grouped].sort()).toEqual(SECONDARY_SEASON_ROUTES.map(item => item.route).sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+    expect(grouped).toEqual(expect.arrayContaining(["stakes","proposals"]));
+    expect(SECONDARY_SEASON_ROUTES.find(item => item.route === "facts").label).toBe("DFL Lore");
+    expect(secondarySeasonNavMarkup().match(/href="#\/stakes"/g)).toHaveLength(1);
+  });
   it("puts the analyzer in the primary bar with the weekly league tools", () => {
     expect(PRIMARY_SEASON_ROUTES.map((item) => item.route))
       .toEqual(["home", "clubhouse", "sportsbook", "trade", "analyzer"]);

@@ -35,6 +35,7 @@ mountLeagueSearch();
 mountPlayerCards();
 document.addEventListener("click", event => {
   if (event.target.closest?.("[data-retry-page]")) location.reload();
+  if (event.target.closest?.("[data-open-profile]")) void openPicker({cancellable:true});
 });
 /* welcomeForm and welcomeInput used to be looked up here and have never
    existed in index.html - leftovers from the free-text name box that the
@@ -161,17 +162,6 @@ function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()
   a link inside it just changes the hash and the sheet closes itself.
 */
 const moreSheet=document.getElementById("more"),moreBtn=document.getElementById("more-btn");
-/* Playoff Race is a weekly destination, not another permanent bottom-tab.
-   Insert it into the existing More grid so the shell stays stable on phones. */
-const quicknav=moreSheet?.querySelector(".quicknav");
-if(quicknav&&!quicknav.querySelector('a[href="#/stakes"]')){
-  const link=document.createElement("a");
-  link.href="#/stakes";
-  link.innerHTML='<svg class="ico" aria-hidden="true"><use href="#i-record-steel"></use></svg><span class="qn-label">Playoff Race</span>';
-  const admin=quicknav.querySelector('a[href="#/admin"]');
-  quicknav.insertBefore(link,admin||null);
-}
-
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
 const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));

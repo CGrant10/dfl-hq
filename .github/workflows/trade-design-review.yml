@@ -5,6 +5,7 @@ on:
       - 'js/trade-*'
       - 'js/pages/trade.js'
       - 'js/team-analyzer.js'
+      - 'css/app-reading.css'
       - 'css/trade-workspace.css'
       - 'js/share-export-model.js'
       - 'tools/*trade-review*'

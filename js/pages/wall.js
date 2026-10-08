@@ -14,7 +14,7 @@ export async function render(view) {
         if(error)throw error;
         if(data){const counts=await db().from("member_wall_reply_counts").select("reply_count").eq("post_id",postId).maybeSingle();data.reply_count=counts.data?.reply_count||0;rows.unshift(data);}
       }
-      slot.innerHTML = wallCard(rows);
+      slot.innerHTML = wallCard(rows, {heading:false});
       if(postId){const post=slot.querySelector(`[data-wall-post="${postId}"]`);if(post){post.setAttribute("data-wall-focus","");post.querySelector("[data-wall-thread]").open=true}else slot.insertAdjacentHTML("afterbegin",'<p role="status" class="card">That post is no longer available.</p>');}
       wireWall(slot, redraw);
     } catch (error) {

@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => {
     };
     return builder;
   });
-  return { from, loadPlayers: vi.fn(async () => ({ p1: {}, p2: {} })) };
+  return { tableRows, from, loadPlayers: vi.fn(async () => ({ p1: {}, p2: {} })) };
 });
 
 vi.mock("./supabase.js", () => ({ db: () => ({ from: mocks.from }) }));
@@ -41,9 +41,10 @@ vi.mock("./league-state.js", () => ({
 vi.mock("./dfl-scoring.js", () => ({ scoringFormat: () => "ppr" }));
 vi.mock("./team-analyzer.js", () => ({
   buildPlayerPool: () => ({}),
-  analyzeLeague: ({ rosters }) => rosters.map(roster => ({ sleeper_user_id: roster.sleeper_user_id })),
+  analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
+import { loadMemberDirectory } from "./members.js";
 import { clearAnalyzerDataCache, loadAnalyzerData } from "./team-analyzer-data.js";
 
 describe("shared analyzer model", () => {
@@ -57,5 +58,21 @@ describe("shared analyzer model", () => {
     await loadAnalyzerData();
     expect(mocks.from.mock.calls.filter(([table]) => table === "sleeper_leagues")).toHaveLength(2);
     expect(mocks.loadPlayers).toHaveBeenCalledTimes(2);
+  });
+  it("uses Clubhouse's directory names while retaining a fallback for unmapped owners", async () => {
+    clearAnalyzerDataCache();
+    mocks.tableRows.sleeper_rosters[0].team_name = "Old synced team";
+    mocks.tableRows.sleeper_rosters[0].display_name = "Old owner";
+    mocks.tableRows.sleeper_rosters[1].team_name = "Unmapped team";
+    mocks.tableRows.sleeper_rosters[1].display_name = "Unmapped owner";
+    loadMemberDirectory.mockResolvedValueOnce([{id:1,sleeper_user_id:"a",team_name:"Current team",display_name:"Current owner"}]);
+    const data = await loadAnalyzerData();
+    expect(data.teams[0]).toMatchObject({team_name:"Current team",ownerName:"Current owner"});
+    expect(data.teams[1]).toMatchObject({team_name:"Unmapped team",ownerName:"Unmapped owner"});
+    expect(mocks.tableRows.sleeper_rosters[0].team_name).toBe("Old synced team");
+    clearAnalyzerDataCache();
+    loadMemberDirectory.mockResolvedValueOnce([{id:1,sleeper_user_id:"a",display_name:"Directory owner"}]);
+    const withoutTeamName = await loadAnalyzerData();
+    expect(withoutTeamName.teams[0].team_name).toBe("Directory owner");
   });
 });

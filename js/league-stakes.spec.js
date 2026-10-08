@@ -1,10 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { buildLeagueStakes, scenarioLine, stakeLine } from "./league-stakes.js";
+import { buildLeagueStakes, scenarioLine, stakeLine, playoffChance } from "./league-stakes.js";
 
 const teams = Array.from({ length: 4 }, (_, i) => ({ id: `t${i + 1}`, sleeper_user_id: `u${i + 1}`, team_name: `Team ${i + 1}` }));
 const standing = (id, wins, losses, rank) => ({ season: 2026, sleeper_user_id: id, wins, losses, ties: 0, rank, points_for: wins * 100 });
 
 describe("league stakes", () => {
+  it("keeps bracket positions unique when simulated finishes round to the same value", () => {
+    const projections = new Map(teams.map((team, i) => [team.id, { playoffOdds: .9 - i * .1, seed: 2.2 + i * .1 }]));
+    const stakes = buildLeagueStakes({ teams, projections, season: 2026, playoffTeams: 2 });
+    expect(stakes.projected.map(row => row.projectedSeed)).toEqual([1, 2, 3, 4]);
+    expect(stakes.projected[0].expectedFinish).toBe(2.2);
+    expect(stakes.cutline.id).toBe(stakes.projected[1].id);
+  });
+
+  it("distinguishes rounded simulated odds from mathematically certain outcomes", () => {
+    expect(playoffChance({status:"alive",playoffOdds:.9999})).toBe(">99%");
+    expect(playoffChance({status:"alive",playoffOdds:0})).toBe("<1%");
+    expect(playoffChance({status:"clinched",playoffOdds:.7})).toBe("100%");
+    expect(playoffChance({status:"eliminated",playoffOdds:.3})).toBe("0%");
+    expect(playoffChance({status:"alive",playoffOdds:null})).toBe("—");
+    expect(playoffChance({status:"alive",playoffOdds:.46})).toBe("46%");
+  });
   it("only calls a team clinched or eliminated when the record makes it certain", () => {
     const standings = [standing("u1", 12, 0, 1), standing("u2", 8, 4, 2), standing("u3", 2, 10, 3), standing("u4", 1, 11, 4)];
     const stakes = buildLeagueStakes({ teams, standings, season: 2026, playoffTeams: 2, week: 13 });

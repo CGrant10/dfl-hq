@@ -63,12 +63,12 @@ export async function loadWall(limit = 12) {
   throw last;
 }
 
-export function wallCard(rows, { compact = false } = {}) {
+export function wallCard(rows, { compact = false, heading = true } = {}) {
   if (rows == null) return "";
   const me = currentMember();
   const visibleRows = compact ? rows.slice(0, 3) : rows;
   return `<section class="block wall${compact ? " is-preview" : ""}">
-    <h2 class="section-title">${compact ? "League talk" : "The Wall"}${compact ? `<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>` : ""}</h2>
+    ${heading ? `<h2 class="section-title">${compact ? "League talk" : "The Wall"}${compact ? `<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>` : ""}</h2>` : ""}
     <div class="card wall-card">
       ${compact ? "" : me ? composer() : `<p class="muted tiny wall-signin">Pick your name in the top bar to post.</p>`}
       <div class="wall-posts">${visibleRows.length ? visibleRows.map(row=>postHtml(row,compact)).join("") : `<p class="wall-empty muted">Nothing yet. Be the first idiot.</p>`}</div>
