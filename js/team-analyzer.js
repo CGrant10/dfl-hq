@@ -395,6 +395,7 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
    starter or depth hole. This is deliberately recipient-specific: the same RB
    can be a starter for one manager and roster clutter for another. */
 const uniqueIds = ids => [...new Set((ids || []).map(String))];
+const packagePositions = (ids, pool) => [...new Set(ids.map(id=>pool.get(String(id))?.position).filter(Boolean))];
 
 // Trade decisions value the unplayed season. Keep completed production in the
 // league report, but never give a new owner credit for points already scored.
@@ -509,6 +510,7 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   return {
     projectionEvidence: projectionEvidence([...sendA, ...sendB], pool),
     sendA: sendA.map(String), sendB: sendB.map(String),
+    incomingPositionsA: packagePositions(sendB,pool),
     deltaA: round(afterA.score - beforeA.score),
     deltaB: round(afterB.score - beforeB.score),
     weeklyDeltaA: impactA.weekly,
@@ -551,6 +553,7 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = 
   const weekly = impacts.map(impact => impact.weekly);
   return {
     projectionEvidence: projectionEvidence(transfer.sends.flat(), pool),
+    incomingPositions: receives.map(ids=>packagePositions(ids,pool)),
     sends: packages, receives, destinations:transfer.destinations, routeValues:Object.fromEntries(packages.flat().map(id=>[id,Number(pool.get(id)?.tradeValue)||0])), outgoingValues, values, weeklyDeltas: weekly,
     incomingEvidence, outgoingEvidence, fitValues:fits.map(f=>f.value),
     comparableStarPremium: packages.map((ids,i)=>comparableStarPremium(ids,receives[i],pool)),
@@ -582,6 +585,7 @@ export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB =
   return {
     ...result,
     sendA: result.sends[0], sendB: result.sends[1], sendC: result.sends[2],
+    incomingPositionsA: result.incomingPositions[0],
     valueToA: result.values[0], valueToB: result.values[1], valueToC: result.values[2], valueOutA: result.outgoingValues[0],
     weeklyDeltaA: result.weeklyDeltas[0], weeklyDeltaB: result.weeklyDeltas[1], weeklyDeltaC: result.weeklyDeltas[2],
     depthDeltaA: result.depthDeltas[0], depthDeltaB: result.depthDeltas[1], depthDeltaC: result.depthDeltas[2],
@@ -707,7 +711,10 @@ export function tradeSuggestionTier(result) {
   const supported=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length;
   const clearsBand=result.incomingEvidence && result.outgoingEvidence
     ? result.incomingEvidence.low > result.outgoingEvidence.high : edge>=12;
-  if (edge >= 12 && clearsBand && supported && !result.comparableStarPremium && fitA >= -.25) return "steal";
+  // DFL starts one QB. Any incoming QB (including an elite QB or a throw-in)
+  // keeps the offer out of Steal; its rating and actual lineup gain still apply.
+  const receivesQuarterback=(result.incomingPositionsA||result.incomingPositions?.[0])?.includes("QB");
+  if (edge >= 12 && clearsBand && supported && !receivesQuarterback && !result.comparableStarPremium && fitA >= -.25) return "steal";
   return "aggressive";
 }
 
@@ -868,7 +875,8 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
       || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
     const tier=tradeSuggestionTier({...result, fairness:result.partyBalances[0],valueToA:result.values[0],valueToB:result.outgoingValues[0],
       rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.max(...result.rosterImpacts.slice(1)),
-      incomingEvidence:result.incomingEvidence[0],outgoingEvidence:result.outgoingEvidence[0],comparableStarPremium:result.comparableStarPremium[0]});
+      incomingEvidence:result.incomingEvidence[0],outgoingEvidence:result.outgoingEvidence[0],comparableStarPremium:result.comparableStarPremium[0],
+      incomingPositionsA:result.incomingPositions[0]});
     return { ...result, parties, tier, other: parties[1], sendA: candidate.sends[0], sendB: candidate.sends.at(-1),
       valueToA: result.values[0], valueToB: result.outgoingValues[0], weeklyDeltaA: result.weeklyDeltas[0], depthDeltaA: result.depthDeltas[0],
       score: result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5 };
