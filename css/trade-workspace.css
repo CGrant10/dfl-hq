@@ -103,3 +103,9 @@
 #view[data-route="trade"] .tb-identity-rail .dfl-team-copy :is(strong,small) { white-space:normal; overflow:visible; text-overflow:clip; }
 #view[data-route="trade"] .tb-members .btn { min-height:44px; }
 #view[data-route="trade"] :is(.td-lineup-preview,.td-proposals,.td-data-context) { scroll-margin-top:80px; }
+/* Player choices are primary offer controls; package preferences stay optional. */
+#view[data-route="trade"] .tb-player-pickers { grid-column:1 / -1; margin:0; }
+#view[data-route="trade"] .tb-player-pickers select { width:100%; min-width:0; min-height:44px; font:600 14px/1.4 var(--font-body); }
+#view[data-route="trade"] .tb-player-pickers header small { font-size:11px; }
+#view[data-route="trade"] .tb-player-pickers .tb-player-help { margin:6px 0 0; color:var(--body-text); font:500 12px/1.45 var(--font-body); }
+#view[data-route="trade"] .tb-player-pickers .tb-league-return > .tb-anchor-chips { display:flex; min-height:30px; padding:0; border:0; border-radius:0; background:transparent; }
