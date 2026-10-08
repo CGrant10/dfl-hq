@@ -3,7 +3,7 @@ import { evaluateTrade } from "./team-analyzer.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { tradeReasons, verdictFor } from "./trade-desk.js";
 
-export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v2-forward";
+export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v3-player-value";
 
 const list = value => Array.isArray(value) ? value : [];
 const rosterId = value => value == null ? "" : String(value);
@@ -42,6 +42,21 @@ export function tradeOutcomeSummary(alert) {
   if (alert?.analysis_status !== "graded" || !alert?.result || alert.result.projectionEvidence?.missing?.length) {
     return { grade: "Review", tone: "review", winner: null, loser: null, closeness: null,
       detail: alert?.limitations?.[0] || "The model needs a complete two-team player exchange." };
+  }
+  // Preserve older frozen receipts. New receipts use asset value for the winner;
+  // lineup usefulness remains a separate consequence, just like the trade desk.
+  if(alert.model_version==="dflyzer-trade-v3-player-value"){
+    const result=alert.result,evidence=result.projectionEvidence;
+    if(evidence?.stale?.length||evidence?.injuries?.length||evidence?.fallback?.length)
+      return {grade:'Review',tone:'review',winner:null,loser:null,closeness:result.fairness,detail:'Current data or availability needs review before declaring a winner.'};
+    const verdict=verdictFor(result),teams=list(alert.teams),winnerIndex=verdict.who==='a'?0:verdict.who==='b'?1:-1;
+    const close=verdict.headline==='Close call',fair=winnerIndex<0;
+    const winner=fair?null:teams[winnerIndex]?.team_name||`Team ${winnerIndex+1}`;
+    const loser=fair?null:teams[1-winnerIndex]?.team_name||`Team ${2-winnerIndex}`;
+    const suffix=winnerIndex===1?'B':'A',lineup=Number(result[`weeklyDelta${suffix}`])||0,depth=Number(result[`depthDelta${suffix}`])||0;
+    return {grade:close?'Close call':fair?'Fair deal':verdict.headline==='FLEECE'?'Robbery':verdict.headline==='Slight edge'?'Close win':'Clear win',
+      tone:close?'close':fair?'fair':verdict.headline==='FLEECE'?'robbery':verdict.headline==='Slight edge'?'close':'clear',winner,loser,closeness:result.fairness,lineup,depth,
+      detail:close?'Value sensitivity ranges overlap; no clear winner.':fair?`${result.fairness}% balanced · player values are close`:`${winner} wins player value · lineup ${lineup>=0?'+':'−'}${Math.abs(lineup).toFixed(1)} · depth ${depth>=0?'+':'−'}${Math.abs(depth).toFixed(1)}`};
   }
   const teams = list(alert.teams);
   const a = teams[0]?.team_name || `Team ${teams[0]?.roster_id || 1}`;
@@ -84,6 +99,7 @@ export function tradeOutcomeReason(outcome) {
   if (!outcome || outcome.grade === "Review") {
     return { tone: "neutral", title: outcome?.detail || "Completed trade recorded." };
   }
+  if(outcome.grade=== "Close call")return {tone:"neutral",title:"Too close to call. Keep the receipt.",copy:outcome.detail};
   if (outcome.grade === "Fair deal") {
     return { tone: "neutral", title: "Fair deal. Nobody got robbed.", copy: outcome.detail };
   }
@@ -284,7 +300,7 @@ export function tradeAlertViewModel(alert) {
     packages,
     winner,
     balanced,
-    verdict: balanced ? "Balanced" : winner ? (alert.verdict?.headline || "Winner") : "Review needed",
+    verdict: outcome.grade === "Close call" ? "Close call" : balanced ? "Balanced" : winner ? (alert.verdict?.headline || "Winner") : "Review needed",
     headline: tradeBreakingHeadline(alert),
     outcome,
     fairness: alert.analysis_status === "graded" ? Number(alert.result?.fairness) || 0 : null,

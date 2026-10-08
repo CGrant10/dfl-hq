@@ -109,3 +109,14 @@
 #view[data-route="trade"] .tb-player-pickers header small { font-size:11px; }
 #view[data-route="trade"] .tb-player-pickers .tb-player-help { margin:6px 0 0; color:var(--body-text); font:500 12px/1.45 var(--font-body); }
 #view[data-route="trade"] .tb-player-pickers .tb-league-return > .tb-anchor-chips { display:flex; min-height:30px; padding:0; border:0; border-radius:0; background:transparent; }
+
+#view[data-route="trade"] .td-player-evidence { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:12px; margin:14px 0; }
+#view[data-route="trade"] .td-player-evidence article { min-width:0; padding:12px; border:1px solid var(--line); border-radius:8px; }
+#view[data-route="trade"] .td-player-evidence h3 { font-size:16px; line-height:1.3; margin:0 0 6px; overflow-wrap:anywhere; }
+#view[data-route="trade"] .td-player-evidence dl { margin:12px 0; }
+#view[data-route="trade"] .td-player-evidence dl div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 10px; margin:8px 0; font-size:13px; line-height:1.4; }
+#view[data-route="trade"] .td-player-evidence dt { color:var(--muted); }
+#view[data-route="trade"] .td-player-evidence dd { margin:0; font-weight:700; }
+
+/* Rotating a full-width arrow row covered the Analyze tap target on phones. */
+#view[data-route="trade"] .tb-offer-flow > i { width:22px; justify-self:center; pointer-events:none; }

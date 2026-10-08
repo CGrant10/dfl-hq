@@ -30,6 +30,7 @@ export function tradePerspective(result){
  if(!Array.isArray(result?.values))return result;
  const last=result.values.length-1,others=values=>result.receives?(values||[]).slice(1).reduce((sum,v)=>sum+Number(v||0),0):values?.[last];
  return {...result,fairness:result.partyBalances?.[0]??result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues?.[0]??result.values[1],
+  incomingEvidence:result.incomingEvidence?.[0],outgoingEvidence:result.outgoingEvidence?.[0],comparableStarPremium:Array.isArray(result.comparableStarPremium)?result.comparableStarPremium[0]:result.comparableStarPremium,
   weeklyDeltaA:result.weeklyDeltas[0],weeklyDeltaB:others(result.weeklyDeltas),depthDeltaA:result.depthDeltas?.[0],depthDeltaB:others(result.depthDeltas),
   rosterImpactA:result.rosterImpacts?.[0],rosterImpactB:others(result.rosterImpacts),usefulIncomingA:result.usefulIncoming?.[0],surplusIncomingA:result.surplusIncoming?.[0],cutIncomingA:result.cutIncoming?.[0]};
 }

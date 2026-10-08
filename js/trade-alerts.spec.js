@@ -148,6 +148,11 @@ describe("completed trade alerts", () => {
     expect(robbery).toMatchObject({ grade: "Robbery", winner: "Alpha", loser: "Bravo" });
   });
 
+  it("does not let lineup fit reverse the asset winner on new receipts",()=>{
+    const alert={analysis_status:'graded',model_version:TRADE_ALERT_MODEL_VERSION,teams:[{team_name:'Alpha'},{team_name:'Bravo'}],result:{valueToA:65,valueToB:100,fairness:65,rosterImpactA:10,rosterImpactB:-1,weeklyDeltaA:10,weeklyDeltaB:-1}};
+    expect(tradeOutcomeSummary(alert)).toMatchObject({winner:'Bravo',loser:'Alpha',grade:'Clear win'});
+    expect(tradeOutcomeSummary({...alert,result:{...alert.result,projectionEvidence:{stale:['player']}}})).toMatchObject({winner:null,grade:'Review'});
+  });
   it("uses a league-wide outcome line instead of team A's private negotiation roast", () => {
     const outcome = { grade: "Fair deal", winner: null, detail: "94% balanced" };
     expect(tradeOutcomeReason(outcome).title).toBe("Fair deal. Nobody got robbed.");

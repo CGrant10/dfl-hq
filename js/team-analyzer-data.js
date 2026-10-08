@@ -54,18 +54,19 @@ async function fetchAnalyzerData() {
   const format = scoringFormat(league.scoring_settings);
   const liveWeek = Number(leagueState?.season) === projectionSeason
     ? Math.max(0, Math.min(18, Number(leagueState?.currentWeek) || 0)) : 0;
-  const recentWeeks = liveWeek ? Array.from({ length: Math.min(3, liveWeek) }, (_, index) => liveWeek - index).reverse() : [];
+  // Exclude the ongoing week: partial totals are not a full game sample.
+  const completedWeeks = Array.from({length:Math.max(0,liveWeek-1)},(_,i)=>i+1);
   const liveSignals = liveWeek ? Promise.all([
     loadWeeklyProjections(projectionSeason, liveWeek).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
-    Promise.all(recentWeeks.map(week => loadWeeklyStats(projectionSeason, week)
+    Promise.all(completedWeeks.map(week => loadWeeklyStats(projectionSeason, week)
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
   const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults] = await Promise.all([
     loadPlayers(),
-    loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0 })),
-    loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0 })),
-    loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0 })),
+    loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
+    loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
+    loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     /* Power Pulse builds its weekly ranking boards from final scores. Keep
        this season-scoped and column-scoped: the board needs at most 84 small
        matchup rows, not the full multi-season history payload. */
@@ -82,7 +83,10 @@ async function fetchAnalyzerData() {
     currentStats: currentStatsRes.data || {},
     projections: projectionRes.data || [],
     weeklyProjections: weeklyProjectionRes.data || [],
-    recentStats: recentStatsRes.map(result => result.data || []),
+    recentStats: recentStatsRes.slice(-3).map(result => result.data || []),
+    seasonWeeklyStats: recentStatsRes.map(result => result.data || []),
+    dataSignals: {projections:projectionRes,production:currentStatsRes,availability:weeklyProjectionRes,
+      weeklyResults:{stale:recentStatsRes.some(r=>r.stale)}},
     trending,
     scoringSettings: league.scoring_settings || {},
     currentWeek: liveWeek,
@@ -98,8 +102,13 @@ async function fetchAnalyzerData() {
     ...results,
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
-    liveSignalsUpdatedAt: Math.max(weeklyProjectionRes.fetchedAt || 0,
-      ...recentStatsRes.map(result => result.fetchedAt || 0), trending.fetchedAt || 0),
+    availabilityUpdatedAt: weeklyProjectionRes.fetchedAt || 0,
+    weeklyResultsUpdatedAt: recentStatsRes.length ? Math.min(...recentStatsRes.map(r=>r.fetchedAt||0)) : 0,
+    liveSignalsUpdatedAt: weeklyProjectionRes.fetchedAt || 0,
+    staleSources: [projectionRes.stale?'Season projections':null,currentStatsRes.stale?'Production':null,
+      weeklyProjectionRes.stale?'Availability':null,recentStatsRes.some(r=>r.stale)?'Weekly results':null].filter(Boolean),
+    completedWeeks: completedWeeks.length,
+    expertConsensus: {status:'Not connected',url:'https://www.fantasypros.com/nfl/rankings/ros-ppr.php'},
     liveWeek,
   };
 }

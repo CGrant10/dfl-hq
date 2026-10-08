@@ -44,6 +44,7 @@ vi.mock("./team-analyzer.js", () => ({
   analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
+import { loadWeeklyStats, loadWeeklyProjections } from "./sleeper.js";
 import { loadMemberDirectory } from "./members.js";
 import { clearAnalyzerDataCache, loadAnalyzerData } from "./team-analyzer-data.js";
 
@@ -58,6 +59,21 @@ describe("shared analyzer model", () => {
     await loadAnalyzerData();
     expect(mocks.from.mock.calls.filter(([table]) => table === "sleeper_leagues")).toHaveLength(2);
     expect(mocks.loadPlayers).toHaveBeenCalledTimes(2);
+  });
+  it("loads every completed week while excluding the in-progress week", async()=>{
+    clearAnalyzerDataCache();loadWeeklyStats.mockClear();
+    const data=await loadAnalyzerData();
+    expect(loadWeeklyStats.mock.calls.map(args=>args[1])).toEqual([1,2]);
+    expect(data.completedWeeks).toBe(2);
+    expect(data.expertConsensus.status).toBe('Not connected');
+  });
+  it("reports failed availability separately from newer production", async()=>{
+    clearAnalyzerDataCache();
+    loadWeeklyProjections.mockResolvedValueOnce({data:[],fetchedAt:0,stale:true});
+    const data=await loadAnalyzerData();
+    expect(data.availabilityUpdatedAt).toBe(0);
+    expect(data.staleSources).toContain('Availability');
+    expect(data.productionUpdatedAt).toBe(1);
   });
   it("uses Clubhouse's directory names while retaining a fallback for unmapped owners", async () => {
     clearAnalyzerDataCache();
