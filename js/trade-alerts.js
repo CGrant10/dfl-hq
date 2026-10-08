@@ -3,7 +3,7 @@ import { evaluateTrade } from "./team-analyzer.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { tradeReasons, verdictFor } from "./trade-desk.js";
 
-export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v1";
+export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v2-forward";
 
 const list = value => Array.isArray(value) ? value : [];
 const rosterId = value => value == null ? "" : String(value);
@@ -39,7 +39,7 @@ const impactFor = (result, side) => {
  * roster. The same 55/8 blend used by recommendationFor() is applied to both
  * sides, then compared so the Home verdict and full ticket speak one language. */
 export function tradeOutcomeSummary(alert) {
-  if (alert?.analysis_status !== "graded" || !alert?.result) {
+  if (alert?.analysis_status !== "graded" || !alert?.result || alert.result.projectionEvidence?.missing?.length) {
     return { grade: "Review", tone: "review", winner: null, loser: null, closeness: null,
       detail: alert?.limitations?.[0] || "The model needs a complete two-team player exchange." };
   }
@@ -193,6 +193,10 @@ export function buildTradeAlertSnapshot({ transaction, season, week, rosterState
   if (classification.analysisStatus === "graded") {
     result = evaluateTrade({ teamA: parties[0], teamB: parties[1], sendA: sends[0], sendB: sends[1], pool });
     if (result) {
+      if (result.projectionEvidence?.missing?.length) {
+        classification.analysisStatus = 'review';
+        classification.limitations.push(`Missing player projections and production: ${result.projectionEvidence.missing.join(', ')}.`);
+      }
       verdict = verdictFor(result);
       reasons = tradeReasons(result, parties[0], parties[1], pool, sends[0], sends[1]).slice(0, 3);
     } else {

@@ -303,7 +303,7 @@ export function funFacts(lore) {
     if(peak)out.push({id:`owner-high-${user}`,kind:'high',headline:`${who(user)}’s personal best is ${peak.score.toFixed(2)} points.`,detail:`${peak.season} Week ${peak.week}. A score to chase.`,season:peak.season,figure:peak.score,userIds:[String(user)]});
     const rival=headToHead(lore,user)[0];
     const pair=rival?[String(user),String(rival.user)].sort().join(':'):'';
-    if(rival&&!seenPersonalRivals.has(pair)&&name(rival.user).label!=='Unknown')out.push({id:`owner-rival-${user}`,kind:'rivalry',headline:`${who(user)} has faced ${who(rival.user)} ${rival.meetings} times.`,detail:`The series stands ${rival.wins}-${rival.losses}${rival.ties?`-${rival.ties}`:''} from ${who(user)}’s side.`,season:null,figure:rival.meetings,userIds:[String(user),String(rival.user)]});
+    if(rival&&!seenPersonalRivals.has(pair)&&name(rival.user).label!=='Unknown')out.push({id:`owner-rival-${user}`,kind:'rivalry',headline:`${who(user)} has faced ${who(rival.user)} ${rival.meetings} times.`,detail:`The series stands ${rival.wins}-${rival.losses}${rival.ties?`-${rival.ties}`:''} from ${who(user)}’s side.`,season:null,figure:rival.meetings,series:`${rival.wins}-${rival.losses}${rival.ties?`-${rival.ties}`:""}`,userIds:[String(user),String(rival.user)]});
     if(pair)seenPersonalRivals.add(pair);
   }
   cached = out;

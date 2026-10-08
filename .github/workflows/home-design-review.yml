@@ -14,6 +14,7 @@ on:
       - 'js/broadcast-stage.js'
       - 'js/score-vfx*'
       - 'css/home-broadcast-design.css'
+      - 'css/home-broadcast-stories.css'
       - 'css/home-newspaper.css'
       - 'css/home-layout.css'
       - 'css/home-league-desk.css'

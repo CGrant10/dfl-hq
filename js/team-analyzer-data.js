@@ -85,6 +85,7 @@ async function fetchAnalyzerData() {
     recentStats: recentStatsRes.map(result => result.data || []),
     trending,
     scoringSettings: league.scoring_settings || {},
+    currentWeek: liveWeek,
     scoringFormat: format,
   });
   const teams = analyzeLeague({ rosters: namedRosters, pool });

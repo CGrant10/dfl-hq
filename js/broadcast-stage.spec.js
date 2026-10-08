@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
+  it('shows actual traded players with a labeled balance instead of a generic crest', () => {
+    const item={kind:'trade',treatment:'stat',figure:'82%',href:'#/trade?id=3',tradeStory:{packages:[{teamName:'A & B',players:[{id:'7564',name:'Chase'}]},{teamName:'C',players:[{id:'6794',name:'Jefferson'}]}],outcome:{grade:'Close win'}}};
+    const html=renderItem(item,{editorial:true});
+    expect(html).toContain('value balance');
+    expect(html).toContain('thumb/7564.jpg');
+    expect(html).toContain('A &amp; B sends');
+    expect(html).not.toContain('dfl-daily-crest');
+  });
+  it('keeps an archive number readable without making a long username the headline', () => {
+    const html=renderItem({kind:'record',storyKind:'nailbiter',treatment:'stat',figure:.04000000001,headline:'Won by 0.04',subtitle:'Winner — long_handle 102.00 – 101.96 Opponent',href:'#/history'},{editorial:true});
+    expect(html).toContain('>0.04</strong>');
+    expect(html).toContain('Closest finish');
+    expect(html).toContain('long_handle');
+    expect(html).not.toContain('dfl-daily-crest');
+  });
   it("uses champion artwork without a splatter while retaining the winner and destination", () => {
     const item = { treatment: "champion", headline: "Winner & Co", kicker: "2025 Champion", href: "#/history" };
     const html = renderItem(item, { editorial: true });

@@ -1,4 +1,4 @@
-const number = value => Number.isFinite(Number(value)) ? Number(value) : null;
+const number = value => value == null || value === '' ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const AUDIT_KEY = "dfl.trade.recommendationAudit.v1";
 
 function auditRows(storage = localStorage) {
@@ -30,7 +30,7 @@ export function recommendationOutcomes(pool, storage = localStorage, sharedRows 
 export function tradeModelHealth(pool) {
   const players = [...(pool?.values?.() || [])];
   const rostered = players.filter(player => ["QB", "RB", "WR", "TE"].includes(player.position));
-  const projected = rostered.filter(player => number(player.expectedPerGame) != null);
+  const projected = rostered.filter(player => player.modelSource ? player.modelSource === 'projection' : number(player.expectedPerGame) != null);
   const live = rostered.filter(player => Number(player.currentGames) > 0);
   const recent = rostered.filter(player => Number(player.recentGames) >= 2 && number(player.recentAverage) != null);
   const injured = rostered.filter(player => player.injuryStatus || player.isOut || player.isRisky);

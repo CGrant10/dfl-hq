@@ -253,6 +253,7 @@ with sync_playwright() as p:
     page.set_content(html, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.locator('.bx-pause').click()
+    page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
@@ -440,11 +441,11 @@ with sync_playwright() as p:
             assert all(c['left'] >= layout['left'] - 1 and c['right'] <= layout['right'] + 1 and c['top'] >= layout['contentTop'] - 1 and c['bottom'] <= layout['contentBottom'] + 1 and c['scroll'] <= c['width'] + 1 for c in layout['content']), f'Slide does not fit its content area: {layout}'
             if layout['crest']:
                 crest = layout['crest']
-                assert crest['complete'] and crest['natural'] > 0 and crest['left'] >= crest['copyRight'] and crest['right'] <= layout['right'] + 1 and crest['top'] >= crest['stageTop'] - 1 and crest['bottom'] <= crest['stageBottom'], f'Illustration overlaps copy or leaves the stage: {layout}'
+                assert crest['complete'] and crest['natural'] > 0 and crest['right'] <= layout['right'] + 1 and crest['top'] >= crest['stageTop'] - 1 and crest['bottom'] <= layout['controlsTop'], f'Illustration leaves the stage or runs behind controls: {layout}'
             if layout['crest']:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
-                assert not art['hasSplatter'] and abs(art['artWidth']/art['stageWidth']-.5)<.01 and .5<=art['opacity']<=.8, f'Artwork must fill half the slide with transparency and no splatter: {layout}'
+                assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))

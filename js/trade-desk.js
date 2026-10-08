@@ -45,6 +45,7 @@ export function tradePlayerCount(sends = []) {
    how lopsided a deal is rather than how big it is. */
 export function verdictFor(result) {
   if (!result) return null;
+  if (result.projectionEvidence?.missing?.length) return { tone: 'even', headline: 'Projection gap', who: null };
   const gap = num(result.valueToA) - num(result.valueToB);
   const fairness = num(result.fairness);
   if (fairness >= 88) return { tone: "even", headline: "Balanced", who: null };
@@ -62,6 +63,7 @@ export function verdictFor(result) {
    band instead of pretending every small model difference is decisive. */
 export function recommendationFor(result) {
   if (!result) return null;
+  if (result.projectionEvidence?.missing?.length) return { action: 'REVIEW', tone: 'negotiate', signal: 0, valueEdge: 0 };
   const valueGap = num(result.valueToA) - num(result.valueToB);
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
@@ -159,6 +161,7 @@ function sideList(team, pool, picked, side, label, filter = '',parties=[],destin
   boring even swap the interesting remark is whatever else is true.
 */
 export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
+  if (result?.projectionEvidence?.missing?.length) return [{ tone: 'warn', title: 'No clean call yet.', copy: `Missing projections and production for ${result.projectionEvidence.missing.join(', ')}. Review those players before calling this a win or a fleece.` }];
   const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
   const outgoing = sendA.map(id => pool.get(String(id))).filter(Boolean);
   const need = teamA?.need;
@@ -348,6 +351,18 @@ function reasonList(reasons) {
   </div></details>`;
 }
 
+function evidenceMarkup(result) {
+  const evidence = result.projectionEvidence;
+  if (!evidence) return '';
+  return `<details class="td-data-context td-deal-evidence"><summary><span>Data support</span><small>${esc(evidence.label)}</small></summary>
+    <p>Lineup impact looks ahead using DFL scoring, projections, current production and recent form. Points already earned stay with their original owner.</p>
+    ${evidence.missing.length ? `<p>Missing production and projections: ${esc(evidence.missing.join(', '))}. Review this deal before relying on its grade.</p>` : ''}
+    ${evidence.fallback.length ? `<p>Production fallback: ${esc(evidence.fallback.join(', '))}. These players have no season projection.</p>` : ''}
+    ${evidence.injuries.length ? `<p>Availability assumptions: ${esc(evidence.injuries.join(', '))}. Injury tags reduce the remaining-season estimate; they do not establish a return date.</p>` : ''}
+    <p>Value balance measures the exchange. Data support describes the selected players’ inputs; neither is an acceptance probability.</p>
+  </details>`;
+}
+
 const REASON_MARK = { good: "↑", bad: "↓", warn: "!", neutral: "=" };
 
 function idleTicket() {
@@ -404,7 +419,8 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit package values depend on who can use each player. Weekly changes are season averages.</p>
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit values depend on who can use each player. Weekly changes estimate the remaining season.</p>
+    ${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
@@ -442,7 +458,8 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit package values depend on who can use each player. Weekly changes are season averages.</p>
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit values depend on who can use each player. Weekly changes estimate the remaining season.</p>
+    ${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
