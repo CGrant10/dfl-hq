@@ -1,3 +1,4 @@
+import {matchupChirpHtml,clubhouseChirp} from './matchup-chirp-ui.js';
 import {loadNflGameDay} from "./nfl-game-day.js";
 import {db} from './supabase.js';
 import {loadPlayers} from './sleeper.js';
@@ -37,6 +38,10 @@ export function mountMatchupLive(root,model,threads,active){
      root.querySelector(`[data-remaining-${side}="${game.matchup_id}"]`).textContent=model.completed?'Final score':team.remaining===null?'Player status unavailable':`${team.remaining} remaining${team.live?` · ${team.live} live`:''}`;
      root.querySelector(`[data-players-${side}="${game.matchup_id}"]`).innerHTML=keyPlayersHtml(team);
     }
+    model.chirpScores ||= new Map();
+    model.chirpScores.set(String(game.matchup_id),[{...game.left,...sides[0]},{...game.right,...sides[1]}]);
+    const chirp=root.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);
+    if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));
     const phase=matchupPhase(sides[0],sides[1],model.completed),badge=root.querySelector(`[data-matchup-phase="${game.matchup_id}"]`);badge.textContent=phase.label;badge.dataset.state=phase.key;
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }
