@@ -244,12 +244,12 @@ def check_matchup_interactions(page):
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
       const portrait=row.querySelector('.dfl-player-portrait').getBoundingClientRect(),copy=row.querySelector('.injury-player-copy'),text=copy.getBoundingClientRect(),state=row.querySelector('.injury-player-state').getBoundingClientRect(),box=row.getBoundingClientRect();
-      return {portrait:portrait.toJSON(),text:text.toJSON(),state:state.toJSON(),box:box.toJSON(),copyFits:copy.scrollWidth<=copy.clientWidth+1};
+      return {portrait:portrait.toJSON(),text:text.toJSON(),state:state.toJSON(),box:box.toJSON(),copyFits:copy.scrollWidth<=copy.clientWidth+1,stateFits:row.querySelector('.injury-player-state').scrollWidth<=row.querySelector('.injury-player-state').clientWidth+1,rowFits:row.scrollWidth<=row.clientWidth+1};
     })""")
     for row in rows:
         assert row['portrait']['right']+6<=row['text']['left'], f"Injury portrait overlaps player text: {row}"
         assert row['text']['right']+6<=row['state']['left'] or row['text']['bottom']+4<=row['state']['top'], f"Injury status overlaps player text: {row}"
-        assert row['copyFits'] and row['state']['right']<=row['box']['right']+1, f"Injury information leaves its row: {row}"
+        assert row['copyFits'] and row['stateFits'] and row['rowFits'] and row['state']['right']<=row['box']['right']+1, f"Injury information leaves its row: {row}"
     return rows
 
 def check_home_replies(page):
