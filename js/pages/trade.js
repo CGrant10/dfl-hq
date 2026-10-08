@@ -40,8 +40,8 @@ const edge = offer => {
 };
 const tierCopy = {
   fair: { title: "Fair", note: "Balanced value. Both sides have a reason.", call: "FAIR SHOT" },
-  aggressive: { title: "Aggressive", note: "You pay a premium to land your target.", call: "WORTH A TEXT" },
-  steal: { title: "Steal", note: "A clear player-value win after risk checks.", call: "SWING BIG" },
+  aggressive: { title: "Aggressive", note: "A target-driven offer. Check the price and fit.", call: "WORTH A TEXT" },
+  steal: { title: "Steal", note: "A clear value win after risk checks. QB returns excluded.", call: "SWING BIG" },
 };
 const OFFER_BATCH_SIZE = 6;
 let saveDraft = null;
@@ -187,7 +187,7 @@ function tradeLab(team, teams, pool, shop) {
       <p class="section-copy">${allPartners ? `Showing only ${tierCopy[intent].title.toLowerCase()} offers across matching teams.` : `Showing only ${tierCopy[intent].title.toLowerCase()} offers.`}</p>
       <div class="tb-offers-card">
         <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
-        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers pass these checks. ${intent === "steal" ? "A lineup upgrade or a similar star plus extra does not count as a steal. Try Fair, change the target, or remove an anchor." : "Raise the maximum, choose Any, or remove an anchor."}</div>`}
+        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers pass these checks. ${intent === "steal" ? "Quarterback returns are excluded in this 1QB league. A lineup upgrade or a similar star plus extra does not count as a steal. Try Fair, change the target, or remove an anchor." : "Raise the maximum, choose Any, or remove an anchor."}</div>`}
         <div class="tb-offer-actions">
           <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
           ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
