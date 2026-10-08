@@ -52,6 +52,7 @@ export function tradeAlertSlide(alert) {
     kicker: `BREAKING TRADE · ${alert.week ? `WEEK ${alert.week}` : "COMPLETED"}`,
     figure: alert.fairness == null ? null : `${alert.fairness}%`,
     headline: call,
+    tradeStory: { packages: alert.packages || [], outcome: alert.outcome || null },
     subtitle: delta ? `${reason} ${delta.teamName} ${signed(delta.weekly)}/wk.` : reason,
     href: alert.href || "#/trade",
   };

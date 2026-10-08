@@ -402,7 +402,7 @@ function applyOverride(it, ov) {
   else if (ov.background && BACKGROUNDS.has(ov.background)) out.background = ov.background;
 
   if (ov.dwell_seconds) out.dwell = dwellMs(ov.dwell_seconds, out.treatment);
-  if (ov.featured) out.priority = P.FEATURED + (Number(ov.weight) || 0);
+  if (ov.featured) { out.featured = true; out.priority = P.FEATURED + (Number(ov.weight) || 0); }
   else if (ov.weight) out.priority = (Number(it.priority) || 0) + Number(ov.weight);
   return out;
 }
@@ -757,7 +757,8 @@ function recordItems(ctx) {
   return picks.map((m) => item({
     kind: "record", treatment: "stat", temporal: "historical", priority: P.HISTORY,
     kicker: m.kind === "high" ? "Highest week ever" : "From the record book",
-    figure: m.figure != null ? String(m.figure).slice(0, 7) : null,
+    figure: m.figure != null ? Number(m.figure).toFixed(Number.isInteger(Number(m.figure)) ? 0 : 2) : null,
+    storyKind: m.kind,
     headline: m.headline, subtitle: m.detail, href: "#/history",
   }));
 }
@@ -828,6 +829,9 @@ function funFactItem(ctx) {
     priority: P.HISTORY + 20,
     kicker: "Did you know?",
     headline: f.headline,
+    storyKind: f.kind, figure: f.figure,
+    storyNames: f.kind === 'rivalry' ? (f.userIds || []).map(id => ctx.name(id).label) : [],
+    storySeries: f.series || '',
     body: f.detail,
     subtitle: f.season ? String(f.season) : "",
     href: "#/facts",

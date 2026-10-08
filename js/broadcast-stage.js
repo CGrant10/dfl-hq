@@ -32,6 +32,7 @@ import { injurySlideMarkup } from "./injury-report-ui.js";
 import { marquee } from "./marquee.js";
 import { artworkStyle } from "./broadcast-artwork.js";
 import { teamPortrait } from "./team-presentation.js";
+import { playerPortrait } from "./player-presentation.js";
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -352,6 +353,37 @@ export function renderItem(item, { editorial = false } = {}) {
       <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
   }
+  if (editorial && item.kind === 'trade' && item.tradeStory?.packages?.length) {
+    const story = item.tradeStory, outcome = story.outcome;
+    const headline = outcome?.grade || (item.figure == null ? 'Review needed' : 'The trade receipt');
+    return `<a class="bx-slide bx-trade-story is-stat" href="${esc(item.href || '#/trade')}">
+      <span class="bx-kicker">${esc(item.kicker)}</span>
+      <div class="bx-trade-heading"><h2 class="bx-head">${esc(headline)}</h2>${item.figure != null ? `<span class="bx-trade-balance">${esc(item.figure)}<small>value balance</small></span>` : ''}</div>
+      <div class="bx-trade-sides">${story.packages.slice(0, 2).map(pkg => `<div class="bx-trade-side">
+        ${pkg.players?.[0] ? playerPortrait(pkg.players[0]) : ''}
+        <small>${esc(pkg.teamName)} sends</small><strong>${esc(pkg.players?.map(p => p.name).filter(Boolean).join(' + ') || 'Package details in receipt')}</strong>
+      </div>`).join('')}</div>
+      <span class="bx-story-action">Open trade receipt <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
+    </a>`;
+  }
+  if (editorial && ['fact', 'record'].includes(item.kind) && ['stat', 'announcement'].includes(item.treatment)) {
+    const labels = { high: 'Highest score', blowout: 'Biggest beating', nailbiter: 'Closest finish', streak: 'Streak watch', heartbreak: 'Heartbreak', rivalry: 'Rivalry ledger', title: 'Title history', volume: 'League history', low: 'Rough weeks' };
+    const rivalry = item.storyKind === 'rivalry';
+    const headline = labels[item.storyKind] || 'From the record book';
+    const value = item.figure == null ? '' : Number.isFinite(Number(item.figure)) ? Number(item.figure).toFixed(Number.isInteger(Number(item.figure)) ? 0 : 2) : String(item.figure);
+    return `<a class="bx-slide bx-archive-story${rivalry ? ' bx-rivalry-story' : ''} is-${esc(item.treatment)}" href="${esc(item.href || '#/history')}">
+      <div class="bx-story-copy"><span class="bx-kicker">${esc(item.kicker)}</span>
+        <div class="bx-record-heading">${value ? `<strong class="bx-figure">${esc(value)}</strong>` : ''}<h2 class="bx-head">${esc(headline)}${rivalry && value ? '<small>meetings</small>' : ''}</h2></div>
+        <p class="bx-body">${esc(rivalry && item.storyNames?.length ? item.storyNames.join(' vs ') : item.treatment === 'stat' ? item.subtitle : item.headline)}</p>
+        ${rivalry && item.storySeries ? `<p class="bx-body">Series: ${esc(item.storySeries)}</p>` : ''}
+        ${chip(item)}</div>
+      <img class="bx-story-image" src="${esc(item.image || `assets/dfl-daily-${rivalry ? 'rivalry' : 'archive'}.webp`)}" alt="" decoding="async"${item.image ? ` style="${artworkStyle(item)}"` : ''}>
+    </a>`;
+  }
+  if (editorial && item.treatment === 'announcement' && !item.image) {
+    const content = `<div class="bx-story-copy">${announcement(item)}</div><img class="bx-story-image" src="assets/dfl-daily-headline.webp" alt="" decoding="async">`;
+    return item.href ? `<a class="bx-slide bx-news-story is-announcement" href="${esc(item.href)}">${content}</a>` : `<div class="bx-slide bx-news-story is-announcement">${content}</div>`;
+  }
   const draw = TREATMENTS[item.treatment] || announcement;
   const illustratedChampion = editorial && item.treatment === "champion";
   const media = editorial
@@ -361,11 +393,12 @@ export function renderItem(item, { editorial = false } = {}) {
     : backdrop(item);
   // Short editorial stories leave a real illustration column. Dense data and
   // authored imagery keep their full width rather than competing with a crest.
-  const crest = editorial && !media && ["announcement", "champion", "event", "hero", "stat"].includes(item.treatment)
+  const crest = editorial && !media && (item.treatment === 'hero' || item.kind === 'season');
+  const brand = crest
     && String(item.headline || "").length <= 80
     && [item.subtitle, item.body].filter(Boolean).join(" ").length <= 220;
   const copy = draw(item, { editorial });
-  const illustrated = illustratedChampion || crest;
+  const illustrated = illustratedChampion || brand;
   const artKind = illustratedChampion ? item.variant === "chip" ? "chip" : "champion" : "logo";
   const art = illustratedChampion
     ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"

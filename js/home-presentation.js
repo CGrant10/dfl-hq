@@ -20,7 +20,7 @@ export function homeSectionLinks() {
   return `<nav class="home-newspaper-sections" aria-label="Home sections"><button type="button" data-home-jump="scores">Matchup</button><button type="button" data-home-jump="lead">Broadcast</button><button type="button" data-home-jump="week">Your week</button><button type="button" data-home-jump="league">League</button><button type="button" data-home-jump="archive">Archive</button></nav>`;
 }
 
-/** Keep the existing deck and its refresh behavior behind the illustrated opener. */
+/** Current stories lead; the archive gets one dated, rotating feature. */
 export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } = {}) {
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });
   const opener = {
@@ -31,7 +31,18 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
     href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
     background: 'default',
   };
-  return [opener, ...deck.filter(item => item?.key !== opener.key)];
+  const stories = deck.filter(item => item && item.key !== opener.key);
+  const archive = stories.filter(item => !item.pinned && !item.featured && item.source !== 'manual'
+    && ['past', 'record', 'fact'].includes(item.kind));
+  const date = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const feature = archive.length ? archive[Math.floor(date / 86400000) % archive.length] : null;
+  const brand = stories.find(item => item.kind === 'season') || stories.find(item => item.kind === 'identity');
+  return [opener, ...stories.filter(item => {
+    if (item.pinned || item.featured || item.source === 'manual') return true;
+    if (archive.includes(item)) return item === feature;
+    if (['season', 'identity'].includes(item.kind)) return item === brand;
+    return true;
+  })];
 }
 
 /** Direct entry to the same tools and saved state used by their full pages. */

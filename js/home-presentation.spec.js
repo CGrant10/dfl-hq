@@ -7,6 +7,16 @@ const player = (id, points, state = 'final', position = 'WR', afterHalftime = fa
   ({ id, roster: '1', name: `Player ${id}`, points, state, position, afterHalftime });
 
 describe('selected Home presentation', () => {
+  it('keeps current awards and authored stories while rotating one archive slot per day', () => {
+    const current = [{id:'champ',kind:'champion'}, {id:'chip',kind:'chip'}, {id:'trade',pinned:true,kind:'trade'}, {id:'custom',source:'manual',kind:'record'}, {id:'featured',featured:true,kind:'record'}, {id:'ten',kind:'season'}, {id:'brand',kind:'identity'}];
+    const archive = [{id:'past',kind:'past'}, {id:'record',kind:'record'}, {id:'fact',kind:'fact'}];
+    const now = new Date('2026-10-08T12:00:00');
+    const deck = homeBroadcastDeck([...current,...archive],{now});
+    expect(deck.filter(item=>archive.includes(item))).toHaveLength(1);
+    expect(deck.slice(1).filter(item=>current.includes(item))).toEqual(current.slice(0,-1));
+    expect(homeBroadcastDeck(deck,{now})).toEqual(deck);
+    expect(homeBroadcastDeck([...current,...archive],{now:new Date('2026-10-09T12:00:00')}).at(-1)).not.toBe(deck.at(-1));
+  });
   it('keeps the original broadcast slides through refresh without duplicating the opener', () => {
     const original = [{ key: 'manual', headline: 'Commissioner update' }, { key: 'slate' }];
     const deck = homeBroadcastDeck(original, { week: 5, now: new Date('2026-10-05T12:00:00Z') });
