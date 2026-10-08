@@ -174,15 +174,22 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
   // Price actual point gaps above replacement across the NFL projection feed.
   // Rank percentiles made bench depth almost as valuable as elite starters.
   const replacement = new Map(), leagueSize=Math.max(2,rosters.length);
+  let qbStarterBaseline=0;
   for(const position of ANALYZER_POSITIONS){
     const options=list.filter(p=>p.position===position&&p.tradePerGame!=null)
       .map(p=>p.tradePerGame).sort((a,b)=>b-a);
     const depth=Math.ceil(leagueSize*(['RB','WR'].includes(position)?3:1.5));
     const floor=options.length>=depth ? options[depth-1] : (options[0]||0)*.55;
     replacement.set(position,floor);
+    if(position==='QB')qbStarterBaseline=options.length>=leagueSize ? options[leagueSize-1] : (options[0]||0)*.8;
   }
   const surplus=p=>Math.max(0,(p.tradePerGame||0)-(replacement.get(p.position)||0));
-  const topSurplus=Math.max(1,...list.map(surplus));
+  // One QB slot and plentiful streamers make ordinary QB points cheap in DFL.
+  // Retain 35% of ordinary QB surplus/ADP; earn the rest from a 2–6
+  // point weekly edge over the typical starting QB. Names never set premiums.
+  const oneQbFactor=p=>p.position!=='QB'?1:.35+.65*Math.min(1,Math.max(0,(p.tradePerGame||0)-qbStarterBaseline-2)/4);
+  const pricedSurplus=p=>surplus(p)*oneQbFactor(p);
+  const topSurplus=Math.max(1,...list.map(pricedSurplus));
   const bestAdp=Math.min(...list.map(p=>p.adp).filter(v=>v>0),999);
   const positionRanks = new Map();
   for (const position of ANALYZER_POSITIONS) {
@@ -193,8 +200,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
 
   const pool = new Map();
   for (const player of list.filter(p=>rostered.has(p.id))) {
-    const production = player.tradePerGame == null ? null : (surplus(player)/topSurplus)**1.25;
-    const market = player.adp ? Math.sqrt(bestAdp/player.adp) : null;
+    const production = player.tradePerGame == null ? null : (pricedSurplus(player)/topSurplus)**1.25;
+    const market = player.adp ? Math.sqrt(bestAdp/player.adp)*oneQbFactor(player) : null;
     const known = [production, market].filter(value => value != null);
     /* ADP is useful before kickoff, but every completed game makes it less
        relevant than what the player is doing now. */
@@ -221,6 +228,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       trendBasis: recentTrend ? "recent" : lastPerGame == null ? "projection" : "year-over-year",
       marketTrend: marketBalance > .2 ? "up" : marketBalance < -.2 ? "down" : "steady",
       replacementPerGame: replacement.get(player.position)||0,
+      oneQbValueFactor: player.position==='QB'?round(oneQbFactor(player),3):null,
+      oneQbStarterBaseline: player.position==='QB'?round(qbStarterBaseline,2):null,
       valuationBasis: "replacement-points",
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
