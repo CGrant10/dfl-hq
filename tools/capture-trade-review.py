@@ -54,6 +54,8 @@ with sync_playwright() as p:
         assert all('1-4' in package['send'] and '3-3' in package['receive'] for package in packages),packages
         page.locator('.tb-player-pickers').scroll_into_view_if_needed()
         page.screenshot(path=str(output/f'trade-{width}-player-pickers.png'))
+        click('[data-td-load-offer]')
+        assert page.locator('.td-ticket').count(),f'{width}: Analyze offer did not open a ticket'
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
 
         page.screenshot(path=str(output/f'trade-{width}-offers.png'))
@@ -91,6 +93,10 @@ with sync_playwright() as p:
         assert page.locator('[data-td-destination]').count()==0
         if page.locator('[data-td-remove-pick="0"][data-player-id="1-3"]').count():click('[data-td-remove-pick="0"][data-player-id="1-3"]')
         if page.locator('[data-td-remove-pick="1"][data-player-id="2-7"]').count():click('[data-td-remove-pick="1"][data-player-id="2-7"]')
+        if page.locator('.td-deal-evidence > summary').count():
+            click('.td-deal-evidence > summary')
+            assert 'Expert consensus: not connected.' in page.locator('.td-deal-evidence').inner_text()
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),f'{width}: expanded evidence overflow'
         click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()==2
         page.locator('[data-td-verdict]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")

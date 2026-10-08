@@ -35,8 +35,8 @@ export function tradeModelHealth(pool) {
   const recent = rostered.filter(player => Number(player.recentGames) >= 2 && number(player.recentAverage) != null);
   const injured = rostered.filter(player => player.injuryStatus || player.isOut || player.isRisky);
   const differences = recent.map(player => ({ id: player.id, name: player.name, position: player.position,
-    expected: number(player.expectedPerGame) || 0, recent: number(player.recentAverage) || 0,
-    gap: Math.abs((number(player.expectedPerGame) || 0) - (number(player.recentAverage) || 0)) }))
+    expected: number(player.tradePerGame??player.expectedPerGame) || 0, recent: number(player.recentAverage) || 0,
+    gap: Math.abs((number(player.tradePerGame??player.expectedPerGame) || 0) - (number(player.recentAverage) || 0)) }))
     .sort((a, b) => b.gap - a.gap);
   const meanGap = differences.length ? differences.reduce((sum, row) => sum + row.gap, 0) / differences.length : null;
   const coverage = rostered.length ? projected.length / rostered.length : 0;
@@ -47,5 +47,5 @@ export function tradeModelHealth(pool) {
 
 export function tradeModelHealthMarkup(health, esc = value => String(value)) {
   const audit = health.accountability || {};
-  return `<details class="trade-model-health"><summary><span><small>MODEL CHECK</small><strong>Trade intelligence</strong></span><b>${esc(health.grade)}</b></summary><div><p><small>PROJECTION COVERAGE</small><strong>${health.projectionCoverage}%</strong></p><p><small>LIVE SAMPLES</small><strong>${health.liveSamples}</strong></p><p><small>TRACKED CALLS</small><strong>${audit.tracked || 0}</strong></p><p><small>OUTCOME HIT RATE</small><strong>${audit.hitRate == null ? "—" : `${audit.hitRate}%`}</strong></p></div>${health.meanGap == null ? "" : `<section><small>BIGGEST MODEL / FORM DISAGREEMENTS</small>${health.disagreements.map(row => `<span><b>${esc(row.name)}</b><em>${row.expected.toFixed(1)} model · ${row.recent.toFixed(1)} recent</em></span>`).join("")}</section>`}</details>`;
+  return `<details class="trade-model-health"><summary><span><small>MODEL CHECK</small><strong>Trade intelligence</strong></span><b>${esc(health.grade)}</b></summary><div><p><small>PROJECTION COVERAGE</small><strong>${health.projectionCoverage}%</strong></p><p><small>LIVE SAMPLES</small><strong>${health.liveSamples}</strong></p><p><small>TRACKED CALLS</small><strong>${audit.tracked || 0}</strong></p><p><small>OBSERVED DIRECTION</small><strong>${audit.hitRate == null ? "—" : `${audit.hitRate}%`}</strong></p></div><p>Sources: Sleeper projections and DFL-scored results. Expert consensus is not connected. Observed direction compares exchanged players’ accumulated points after a saved call; it does not measure lineup impact or calibrated model accuracy.</p>${health.meanGap == null ? "" : `<section><small>BIGGEST MODEL / FORM DISAGREEMENTS</small>${health.disagreements.map(row => `<span><b>${esc(row.name)}</b><em>${row.expected.toFixed(1)} model · ${row.recent.toFixed(1)} recent</em></span>`).join("")}</section>`}</details>`;
 }

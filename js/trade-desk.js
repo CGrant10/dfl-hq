@@ -46,8 +46,12 @@ export function tradePlayerCount(sends = []) {
 export function verdictFor(result) {
   if (!result) return null;
   if (result.projectionEvidence?.missing?.length) return { tone: 'even', headline: 'Projection gap', who: null };
+  if(result.projectionEvidence?.stale?.length||result.projectionEvidence?.injuries?.length)return {tone:'even',headline:'Review needed',who:null};
   const gap = num(result.valueToA) - num(result.valueToB);
   const fairness = num(result.fairness);
+  const incoming=result.incomingEvidence,outgoing=result.outgoingEvidence;
+  if(incoming&&outgoing&&fairness>=72&&fairness<88&&incoming.low<=outgoing.high&&outgoing.low<=incoming.high)
+    return {tone:'even',headline:'Close call',who:null};
   if (fairness >= 88) return { tone: "even", headline: "Balanced", who: null };
   const who = gap > 0 ? "a" : "b";
   if (fairness >= 72) return { tone: "slight", headline: "Slight edge", who };
@@ -80,7 +84,15 @@ export function recommendationFor(result) {
     ? Number(result.rosterImpactA)
     : num(result.weeklyDeltaA) + num(result.depthDeltaA) * .35;
   const signal = valueEdge * .55 + rosterImpact * 8;
+  if(result.projectionEvidence?.stale?.length || result.projectionEvidence?.fallback?.length || result.projectionEvidence?.injuries?.length)
+    return {action:'REVIEW',tone:'negotiate',signal,valueEdge};
   if (valueGap < 0 && fairness < 55) return { action: "FLEECE", tone: "pass", signal, valueEdge };
+  // A helpful lineup must not erase a meaningful overpayment.
+  if(valueEdge < -20) return {action:'PASS',tone:'pass',signal,valueEdge};
+  if(valueEdge < -12 || result.comparableStarPremium) return {action:'NEGOTIATE',tone:'negotiate',signal,valueEdge};
+  const incoming=result.incomingEvidence,outgoing=result.outgoingEvidence;
+  if(incoming&&outgoing&&incoming.low<=outgoing.high&&outgoing.low<=incoming.high&&Math.abs(valueEdge)<12)
+    return {action:'NEGOTIATE',tone:'negotiate',signal,valueEdge};
   if (signal >= 7) return { action: "ACCEPT", tone: "accept", signal, valueEdge };
   if (signal <= -7) return { action: "PASS", tone: "pass", signal, valueEdge };
   return { action: "NEGOTIATE", tone: "negotiate", signal, valueEdge };
@@ -178,6 +190,11 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
     && weakIncoming >= 2 && valueGap < 0 && fairness < 75;
   const them = teamName(teamB);
   const reasons = [];
+  if(result.comparableStarPremium)reasons.push({tone:'warn',weight:105,title:'Similar star. Extra player. Check the price.',
+    copy:'The main players have comparable forecast and value ratings. Adding useful depth is a premium for a small upgrade, not a steal. Try the stars straight up or ask for something back.'});
+  if(result.incomingEvidence&&result.outgoingEvidence&&result.fairness>=72&&result.fairness<88&&result.incomingEvidence.low<=result.outgoingEvidence.high&&result.outgoingEvidence.low<=result.incomingEvidence.high)reasons.push({tone:'warn',weight:103,title:'Close call. Don’t declare a robbery.',copy:'The value sensitivity ranges overlap. The model leans one way, but the current evidence does not establish a clear winner.'});
+  if(result.projectionEvidence?.injuries?.length||result.projectionEvidence?.fallback?.length)reasons.push({tone:'warn',weight:112,title:'Check the assumptions before talking shit.',copy:'An injury designation or missing season projection makes this estimate less certain. Review the selected-player evidence before calling anyone a winner.'});
+  if(result.projectionEvidence?.stale?.length)reasons.push({tone:'warn',weight:110,title:'The data needs a fresh look.',copy:`Stale inputs affect ${result.projectionEvidence.stale.join(', ')}. Review current news before treating this as a win.`});
 
   /* ---- who is fleecing whom ------------------------------------------ */
   if (fairness < 55 && valueGap > 0) {
@@ -195,7 +212,7 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   } else if (valueGap > 0) {
     reasons.push({ tone: "good", weight: 84,
       title: "Damn, you actually won this one.",
-      copy: `The incoming side grades ${gap} points higher after roster cuts, at ${fairness}% balance. A sexy little piece of business without getting reckless.` });
+      copy: `The incoming side grades ${gap} player-value points higher, at ${fairness}% balance. A sexy little piece of business without getting reckless.` });
   } else if (result.weeklyDeltaA >= .25) {
     reasons.push({ tone: "warn", weight: 86,
       title: result.weeklyDeltaA >= 1 ? "You are buying points at a premium." : "It helps the lineup, but you are overpaying.",
@@ -203,7 +220,7 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   } else {
     reasons.push({ tone: "bad", weight: 84,
       title: "This deal is dogshit. Stop negotiating.",
-      copy: `Your outgoing side grades ${gap} points higher after roster cuts, at ${fairness}% balance. You are paying the dumbass tax so ${them} can upgrade for free.` });
+      copy: `Your outgoing side grades ${gap} player-value points higher, at ${fairness}% balance. You are paying the dumbass tax so ${them} can upgrade for free.` });
   }
 
   /* ---- what it does to the only lineup you can actually start -------- */
@@ -244,7 +261,7 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
     const names = deadPieces.map(id => pool.get(String(id))?.name).filter(Boolean);
     reasons.push({ tone: "warn", weight: 88,
       title: deadPieces.length === 1 ? "One incoming name has no damn job." : `${deadPieces.length} incoming names have no damn job.`,
-      copy: `${names.join(", ") || `${deadPieces.length} package pieces`} ${deadPieces.length === 1 ? "does" : "do"} not crack your starters or useful depth after roster cuts. Extra names are not extra value.` });
+      copy: `${names.join(", ") || `${deadPieces.length} package pieces`} ${deadPieces.length === 1 ? "does" : "do"} not crack your starters or useful depth after roster cuts. Their asset prices still count, but extra names are not extra starting points.` });
   }
 
   /* ---- a real player for spare parts --------------------------------- */
@@ -255,7 +272,7 @@ export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
         ? "Three bench turds in a trench coat are not a starter"
         : "Two pieces of shit still do not make a star";
     reasons.push({ tone: "bad", weight: 92, title,
-      copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. After cuts, this shit sandwich still costs you ${gap} value points.` });
+      copy: `${them} sent ${sendB.length} names, but the best is worth ${bestIn} against the ${bestOut} leaving your roster. This shit sandwich still costs you ${gap} value points.` });
   } else if (bestIn >= bestOut * 1.8 && bestOut > 0) {
     reasons.push({ tone: "good", weight: 74,
       title: "Less crap, more star power.",
@@ -352,6 +369,7 @@ function reasonList(reasons) {
 }
 
 function evidenceMarkup(result) {
+  result=tradePerspective(result);
   const evidence = result.projectionEvidence;
   if (!evidence) return '';
   return `<details class="td-data-context td-deal-evidence"><summary><span>Data support</span><small>${esc(evidence.label)}</small></summary>
@@ -359,7 +377,21 @@ function evidenceMarkup(result) {
     ${evidence.missing.length ? `<p>Missing production and projections: ${esc(evidence.missing.join(', '))}. Review this deal before relying on its grade.</p>` : ''}
     ${evidence.fallback.length ? `<p>Production fallback: ${esc(evidence.fallback.join(', '))}. These players have no season projection.</p>` : ''}
     ${evidence.injuries.length ? `<p>Availability assumptions: ${esc(evidence.injuries.join(', '))}. Injury tags reduce the remaining-season estimate; they do not establish a return date.</p>` : ''}
-    <p>Value balance measures the exchange. Data support describes the selected players’ inputs; neither is an acceptance probability.</p>
+    ${evidence.stale?.length?`<p>Stale inputs: ${esc(evidence.stale.join(', '))}. Cached data is being used after a feed failure.</p>`:''}
+    ${result.incomingEvidence && result.outgoingEvidence ? `<p>Value sensitivity: sent ${result.outgoingEvidence.low}–${result.outgoingEvidence.high} · received ${result.incomingEvidence.low}–${result.incomingEvidence.high}. These are model assumptions, not statistical confidence intervals. A Steal must clear both ranges with a meaningful value gain.</p>`:''}
+    <section class="td-player-evidence" aria-label="Selected player evidence">${(evidence.players||[]).map(p=>{
+      const fmt=v=>v==null?'Unavailable':Number(v).toFixed(1),sample=p.consistency||{};
+      return `<article><h3>${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
+        <div><dt>Forward DFL points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
+        <div><dt>Season points / game</dt><dd>${fmt(p.currentPerGame)} · ${p.currentGames||0} games</dd></div>
+        <div><dt>Recent points / game</dt><dd>${fmt(p.recentAverage)} · ${p.recentGames||0} games</dd></div>
+        <div><dt>Weekly floor / ceiling</dt><dd>${sample.games>=3?`${fmt(sample.floor)} / ${fmt(sample.ceiling)}`:'Not enough games'}</dd></div>
+        <div><dt>Targets / carries per game</dt><dd>${fmt(p.targetsPerGame)} / ${fmt(p.carriesPerGame)}</dd></div>
+        <div><dt>This week</dt><dd>${esc(p.noGameProjected?'No game projected':p.opponent||'Opponent unavailable')}</dd></div>
+      </dl><p>${sample.games||0} completed-game results. Floor and ceiling are the observed 25th / 75th percentiles. Forecast source: ${esc(p.modelSource||'Fixture')}.</p></article>`;
+    }).join('')}</section>
+    <p>Expert consensus: not connected. <a href="https://www.fantasypros.com/nfl/rankings/ros-ppr.php" target="_blank" rel="noopener">Cross-check FantasyPros ROS rankings</a>. Expert opinions are not included in this grade.</p>
+    <p>Value balance measures the exchange. Data support describes the selected players’ inputs; neither is an acceptance probability. Future opponents and exact injury return dates are not modeled.</p>
   </details>`;
 }
 
@@ -398,12 +430,12 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       <div class="td-col">
         <small>You send</small>
         ${packageRows(sendA, pool)}
-        <div class="td-total"><small>Worth to them</small><b>${Math.round(num(result.valueToB))}</b></div>
+        <div class="td-total"><small>Player value sent</small><b>${Math.round(num(result.valueToB))}</b></div>
       </div>
       <div class="td-col">
         <small>You get</small>
         ${packageRows(sendB, pool)}
-        <div class="td-total"><small>Worth to you</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
+        <div class="td-total"><small>Player value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
     <div class="td-stamp is-${recommendation.tone}">
@@ -419,7 +451,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit values depend on who can use each player. Weekly changes estimate the remaining season.</p>
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
     ${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
@@ -446,7 +478,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
     </div>
 
     <div class="td-legs">
-      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Roster-fit value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Roster-fit value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
+      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Player value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Player value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
     <div class="td-stamp is-${recommendation.tone}">
@@ -458,7 +490,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Roster-fit values depend on who can use each player. Weekly changes estimate the remaining season.</p>
+    ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
     ${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;

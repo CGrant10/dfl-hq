@@ -94,12 +94,8 @@ describe("evaluating a hand-built trade", () => {
   /*
     A REALISTIC LEAGUE, not a handful of players.
 
-    tradeValue is percentile-based, so in a twelve-player pool the gap between
-    first and second at a position is most of the scale - a 300-point RB and a
-    295-point RB came out 33 points apart and the evaluator called an even swap
-    a clear win. That was the fixture being unrepresentative, not the maths, so
-    the fixture is now twelve rosters deep enough to make percentiles mean
-    something.
+    A full league of starters and reserves exercises replacement baselines,
+    similar-player swaps and package consequences at realistic roster depth.
   */
   const POSITIONS = [["QB", 2], ["RB", 5], ["WR", 5], ["TE", 2]];
   const spec = {};
