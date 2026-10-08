@@ -34,6 +34,28 @@ with sync_playwright() as p:
         def select(selector,value):
             page.locator(selector).select_option(value)
         assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
+        # Primary player selectors stay visible with advanced preferences closed.
+        assert not page.locator('.tb-refine').evaluate('e=>e.open')
+        assert page.locator('[data-tb-add-anchor="send"]').is_visible()
+        assert page.locator('[data-tb-add-anchor="receive"]').is_visible()
+        select('[data-tb-add-anchor="send"]','1-4')
+        select('[data-ta-shop-partner]','all')
+        assert page.locator('[data-tb-league-target]').is_visible()
+        select('[data-tb-league-target]','3-3')
+        assert page.locator('[data-ta-shop-partner]').input_value()=='3'
+        assert page.locator('[data-tb-remove-anchor="send"][data-player-id="1-4"]').count()==1
+        assert page.locator('[data-tb-remove-anchor="receive"][data-player-id="3-3"]').count()==1
+        assert not page.locator('.tb-refine').evaluate('e=>e.open')
+        assert page.locator('[data-tb-add-anchor="receive"]').evaluate('e=>e===document.activeElement')
+        click('[data-tb-intent="fair"]')
+        page.wait_for_function("document.querySelector('[data-tb-tier]')?.dataset.tbTier==='fair'")
+        packages=page.locator('[data-td-load-offer]').evaluate_all('(cards)=>cards.map(card=>({send:card.dataset.sendA.split(","),receive:card.dataset.sendB.split(",")}))')
+        assert packages
+        assert all('1-4' in package['send'] and '3-3' in package['receive'] for package in packages),packages
+        page.locator('.tb-player-pickers').scroll_into_view_if_needed()
+        page.screenshot(path=str(output/f'trade-{width}-player-pickers.png'))
+        page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
+
         page.screenshot(path=str(output/f'trade-{width}-offers.png'))
         click('[data-td-mode="manual"]');assert page.locator('.td-custom').evaluate('e=>e.open')
         assert page.locator('.td-roster[open]').count()==0

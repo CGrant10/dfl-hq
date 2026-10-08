@@ -80,7 +80,7 @@ function anchorChips(ids, pool, side) {
 }
 
 function anchorOptions(players, selected, label) {
-  return `<option value="">${label}</option>${players.filter(player => !selected.includes(String(player.id)))
+  return `${label == null ? "" : `<option value="">${label}</option>`}${players.filter(player => !selected.includes(String(player.id)))
     .map(player => `<option value="${esc(player.id)}">${esc(player.name)} · ${player.position} · ${Math.round(player.tradeValue)}</option>`).join("")}`;
 }
 
@@ -169,12 +169,12 @@ function tradeLab(team, teams, pool, shop) {
         <label class="tb-team-select"><span>Trade with</span><select data-ta-shop-partner><option value="all" ${allPartners ? "selected" : ""}>All teams · Shop league-wide</option>${otherTeams.map(item => `<option value="${esc(item.id)}" ${!allPartners && String(item.id) === String(partner?.id) ? "selected" : ""}>${esc(teamName(item))}</option>`).join("")}</select></label>
         <div class="tb-members">${shop.memberIds.map((id, index) => `<div class="td-member-control"><label class="tb-team-select"><span>Member ${index + 3}</span><select data-tb-member="${index}">${otherTeams.filter(t => String(t.id) !== String(partner?.id) && (!shop.memberIds.includes(t.id) || String(t.id) === String(id))).map(t => `<option value="${esc(t.id)}" ${String(t.id) === String(id) ? "selected" : ""}>${esc(teamName(t))}</option>`).join("")}</select></label><button type="button" class="td-remove-member" data-tb-remove-member="${index}" aria-label="Remove ${esc(teamName(parties[index + 2]))}">×</button></div>`).join("")}${parties.length < Math.min(8, teams.length) ? `<button type="button" class="btn ghost small" data-tb-add-member>+ Add member</button>` : ""}</div>
         ${multi ? `<div class="tb-trade-route"><p>Generated offers suggest a starting route. Change each player’s recipient in the builder.</p><button type="button" class="btn ghost small" data-td-mode="manual">Choose destinations</button></div>` : ""}
-        <details class="tb-refine"${shop.refineOpen?' open':''}><summary><span>Players &amp; package size</span><small>${shop.sendAnchors.length+shop.receiveAnchors.length} anchored · up to ${maxPlayers}</small></summary><div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(returnTeam, { meta: multi ? "RETURN FROM" : "TRADE WITH", compact: true })}</div>
-        <div class="tb-blueprint">
-          <section><header><small>YOU CAN SEND</small><span>Optional anchors</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
-          ${allPartners ? `<section class="tb-league-return"><header><small>YOU WANT</small><span>Any team</span></header><div><b>Best league-wide return</b><small>We will match your outgoing package against every roster. Pick one team above to require a specific player.</small></div></section>`
-            : `<section><header><small>YOU WANT</small><span>Must be included</span></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add one of their players…")}</select></section>`}
+        <div class="tb-blueprint tb-player-pickers">
+          <section><header><small>PLAYERS TO OFFER</small><span>Include in offers</span></header><div class="tb-anchor-chips">${anchorChips(shop.sendAnchors, pool, "send")}</div><select aria-label="Add one of your players to send" data-tb-add-anchor="send">${anchorOptions(minePlayers, shop.sendAnchors, "Add one of your players…")}</select></section>
+          ${allPartners ? `<section class="tb-league-return"><header><small>PLAYERS YOU WANT</small><span>Any team</span></header><div class="tb-anchor-chips"><span class="tb-anchor-empty">Best league-wide return</span></div><select aria-label="Choose a player you want from any team" aria-describedby="tb-league-target-help" data-tb-league-target><option value="">Add a player from any team…</option>${otherTeams.map(owner => `<optgroup label="${esc(teamName(owner))}">${anchorOptions((owner.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a,b) => b.tradeValue-a.tradeValue), [], null)}</optgroup>`).join('')}</select><p class="tb-player-help" id="tb-league-target-help">Pick a player to shop with their team, or leave this open for league-wide offers.</p></section>`
+            : `<section><header><small>PLAYERS YOU WANT</small><span>Include in offers</span></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add one of their players…")}</select></section>`}
         </div>
+        <details class="tb-refine"${shop.refineOpen?' open':''}><summary><span>Package size &amp; counts</span><small>Up to ${maxPlayers} players</small></summary><div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(returnTeam, { meta: multi ? "RETURN FROM" : "TRADE WITH", compact: true })}</div>
         <div class="tb-package-controls">
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max><small>Up to ${maxPlayers} total players—not a required total.</small></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
@@ -341,6 +341,19 @@ function page(data, tradeAlerts = []) {
         if (event.target.matches("[data-ta-shop-partner]")) {
           shop.partnerId = event.target.value; shop.anchorPartnerId = ""; shop.receiveAnchors = [];
           shop.openTiers=new Set([shop.intent]); refreshOffers(); return;
+        }
+        if (event.target.matches("[data-tb-league-target]") && event.target.value) {
+          const targetId = event.target.value;
+          const owner = data.teams.find(item => String(item.id) !== String(selectedId)
+            && (item.playerIds || []).some(id => String(id) === targetId));
+          if (!owner) { toast("That player is no longer on an available roster. Choose another player.", true); return; }
+          shop.partnerId = owner.id;
+          shop.memberIds = [];
+          shop.anchorPartnerId = String(owner.id);
+          shop.receiveAnchors = [targetId];
+          refreshOffers();
+          body.querySelector('[data-tb-add-anchor="receive"]')?.focus({ preventScroll: true });
+          return;
         }
         const anchorSelect = event.target.closest("[data-tb-add-anchor]");
         if (anchorSelect && anchorSelect.value) {
