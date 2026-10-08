@@ -241,6 +241,17 @@ def check_matchup_interactions(page):
     }''')
     return result
 
+def check_injury_layout(page):
+    rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
+      const portrait=row.querySelector('.dfl-player-portrait').getBoundingClientRect(),copy=row.querySelector('.injury-player-copy'),text=copy.getBoundingClientRect(),state=row.querySelector('.injury-player-state').getBoundingClientRect(),box=row.getBoundingClientRect();
+      return {portrait:portrait.toJSON(),text:text.toJSON(),state:state.toJSON(),box:box.toJSON(),copyFits:copy.scrollWidth<=copy.clientWidth+1,stateFits:row.querySelector('.injury-player-state').scrollWidth<=row.querySelector('.injury-player-state').clientWidth+1,rowFits:row.scrollWidth<=row.clientWidth+1};
+    })""")
+    for row in rows:
+        assert row['portrait']['right']+6<=row['text']['left'], f"Injury portrait overlaps player text: {row}"
+        assert row['text']['right']+6<=row['state']['left'] or row['text']['bottom']+4<=row['state']['top'], f"Injury status overlaps player text: {row}"
+        assert row['copyFits'] and row['stateFits'] and row['rowFits'] and row['state']['right']<=row['box']['right']+1, f"Injury information leaves its row: {row}"
+    return rows
+
 def check_home_replies(page):
     source=(ROOT/'js/wall-conversations.js').read_text()
     source=source[source.index('// Braces keep'):].replace('export ', '')
@@ -478,6 +489,7 @@ with sync_playwright() as p:
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
                 assert art['copyRight'] <= art['left'] - 8, f'Broadcast art overlaps the text column: {layout}'
+            layout['injuryRows'] = check_injury_layout(page)
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
@@ -713,6 +725,7 @@ with sync_playwright() as p:
                 assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
                     assert 'Bring the' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'Opener text must follow the theme'
+                check['injuryRows'] = check_injury_layout(page)
                 metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})
                 if width==390 and index in [0,2,3]:
                     page.locator('.bx-stage').screenshot(path=str(OUT/f'themed-{mode.replace(":","-")}-slide-{index}.png'))

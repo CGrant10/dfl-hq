@@ -35,6 +35,7 @@
 #home-wrap .bx-trade-side > small { font: 600 12px/1.35 var(--home-ui-font); color: var(--paper-body); overflow-wrap: anywhere; }
 #home-wrap .bx-trade-side > strong { font: 700 15px/1.3 var(--home-ui-font); color: var(--text); overflow-wrap: anywhere; }
 #home-wrap .bx-story-action { display: flex; align-items: center; gap: 8px; font: 700 13px/1.35 var(--home-ui-font); color: var(--accent); }
+#home-wrap .bx-injuries .injury-player { grid-template-columns: 42px minmax(0,1fr) 100px; column-gap: 10px; }
 #home-wrap .bx-injuries .dfl-player-portrait { width: 42px; height: 42px; }
 #home-wrap .home-archive-paths { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 #home-wrap .home-archive-paths a { min-height: 44px; display: inline-flex; align-items: center; }
