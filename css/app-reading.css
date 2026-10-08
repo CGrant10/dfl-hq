@@ -133,6 +133,13 @@ body .breaking-trade-beacon { width:26px; }
 #view[data-route="clubhouse"] .clubhouse-week-picker label { margin:0; }
 #view[data-route="clubhouse"] .clubhouse-week-picker select { margin:0; }
 #view[data-route="clubhouse"] .clubhouse-context-links:empty { display:none; }
+#view[data-route="clubhouse"] .clubhouse-context h2 { margin:0; font-size:18px; }
+#view[data-route="clubhouse"] .clubhouse-context > div:first-child > p { margin:6px 0; font-size:13px; }
+#view[data-route="clubhouse"] .clubhouse-context > div:first-child > a { display:inline-flex; align-items:center; min-height:44px; font-size:13px; }
+#view[data-route="clubhouse"] [data-rivalry-share] { margin-top:8px; min-height:44px; }
+#league-week-archive { scroll-margin-top:64px; }
+#league-week-archive .lore-tools { align-items:end; }
+[data-share-rivalry-owner] { min-height:44px; margin-top:8px; }
 /* The voice has one quiet editorial treatment: evidence first, punchline
    second. It never competes with scores, buttons or member conversations. */
 #view .dfl-chirp { margin:12px 0 0; padding:10px 0 10px 12px; border:0; border-left:2px solid var(--accent); border-radius:0; background:transparent; box-shadow:none; }

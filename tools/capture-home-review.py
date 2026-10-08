@@ -241,6 +241,35 @@ def check_matchup_interactions(page):
     }''')
     return result
 
+def check_home_replies(page):
+    source=(ROOT/'js/wall-conversations.js').read_text()
+    source=source[source.index('// Braces keep'):].replace('export ', '')
+    return page.evaluate('''async source=>{
+      const check=(ok,message)=>{if(!ok)throw Error(message)},until=async fn=>{for(let i=0;i<100&&!fn();i++)await new Promise(r=>setTimeout(r,10));check(fn(),'Reply fixture timed out')};
+      let reads=0,writes=0,cleared=0,member={id:7};
+      const members=[{id:7,display_name:'The Boys'}],rows=Array.from({length:51},(_,i)=>({id:i+1,member_id:7,body:'Receipt '+i,created_at:'2026-10-08T12:00:00Z',members:{display_name:'The Boys'}}));
+      const db=()=>({from:table=>{check(table==='member_wall_replies','Unexpected reply table');return {
+        select(){return this},eq(){return this},order(){return this},
+        async limit(count){reads++;return reads===1?{error:Error('Fixture offline')}:{data:rows.slice(0,count)}},
+        async insert(row){writes++;check(row.post_id===91&&row.member_id===7&&row.body==='Bring the receipts','Reply targets the wrong post/member');return writes===1?{error:Error('Fixture offline')}:{data:null}}
+      }}});
+      const root=document.createElement('div');root.id='home-wrap';root.className='home-banter';document.body.append(root);
+      const helpers=Function('db','isAdmin','currentMember','loadMemberDirectory','esc','toast','wireWallDraft','clearWallDraft',source+';return {threadHtml,wireConversations}')(
+        db,()=>false,()=>member,async()=>members,v=>String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),()=>{},()=>{},()=>cleared++);
+      try{
+        root.innerHTML=helpers.threadHtml({id:91,reply_count:51});await helpers.wireConversations(root);
+        const thread=root.querySelector('details');check(reads===0&&!thread.open,'Closed Home threads must not fetch replies');thread.querySelector('summary').click();await until(()=>!!root.querySelector('[data-thread-retry]'));
+        root.querySelector('[data-thread-retry]').click();await until(()=>!!root.querySelector('[data-replies-more]'));check(root.querySelectorAll('.wall-reply').length===50,'Replies must paginate');
+        root.querySelector('[data-replies-more]').click();await until(()=>root.querySelectorAll('.wall-reply').length===51);check(!root.querySelector('[data-replies-more]'),'Pagination did not finish');
+        let form=root.querySelector('form');form.elements.body.value='Bring the receipts';form.requestSubmit();await until(()=>root.querySelector('[data-reply-status]').textContent.includes('Could not post'));
+        check(form.elements.body.value==='Bring the receipts'&&!form.querySelector('button').disabled,'Failed reply lost the draft or prevented retry');form.requestSubmit();await until(()=>cleared===1&&thread.querySelector('summary').textContent==='Replies (52)');
+        check(writes===2&&root.querySelector('[data-mention-picker]'),'Home replies must support posting and mentions');
+        thread.querySelector('summary').click();thread.querySelector('summary').click();await new Promise(r=>setTimeout(r,20));check(reads===4,'Reopening a loaded thread duplicated its fetch');
+        member=null;root.innerHTML=helpers.threadHtml({id:91});await helpers.wireConversations(root);root.querySelector('summary').click();await until(()=>root.textContent.includes('Pick your name'));check(!root.querySelector('form'),'Guests can read replies but need a profile to post');
+        return {lazyLoad:true,inlineOpen:true,retry:true,pagination:true,draftOnFailure:true,postAndCount:true,mentions:true,guestRead:true};
+      }finally{root.remove()}
+    }''',source)
+
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
     browser = p.chromium.launch(executable_path=executable, headless=True,
@@ -270,6 +299,7 @@ with sync_playwright() as p:
     assert metrics_visibility['logoLeft'] >= 0 and metrics_visibility['logoRight'] <= 390, 'Home date is clipped'
     print('Home gutters:', page.evaluate('[...document.querySelectorAll(".bx-slide,.home-thermal-leaders,.gameday-matchup")].map(e=>({class:e.className,padding:getComputedStyle(e).padding,left:e.getBoundingClientRect().left,gutter:getComputedStyle(e).getPropertyValue("--home-gutter")}))'), flush=True)
     metrics = {'visibility': metrics_visibility}
+    metrics['homeReplies'] = check_home_replies(page)
     for width in [390, 320, 832, 1280]:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
@@ -358,7 +388,8 @@ with sync_playwright() as p:
     metrics['cleanup'] = page.evaluate("""() => ({stories:[...document.querySelectorAll('.home-league-story')].map(e=>({border:getComputedStyle(e).borderLeftWidth,background:getComputedStyle(e).backgroundColor,decoration:getComputedStyle(e).textDecorationLine})),actions:[...document.querySelectorAll('.home-section-action')].map(e=>({label:e.getAttribute('aria-label'),width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height})),storyLinks:document.querySelectorAll('.home-league-file > nav').length})""")
     assert all(s['border'] == '0px' and s['background'] == 'rgba(0, 0, 0, 0)' and s['decoration'] == 'none' for s in metrics['cleanup']['stories']), 'Archive stories still use boxed cards or underlined links'
     assert all(a['label'] and a['width'] >= 44 and a['height'] >= 44 for a in metrics['cleanup']['actions']), 'Section controls need accessible names and phone-sized targets'
-    assert metrics['cleanup']['storyLinks'] == 0, 'Redundant story link strip is still present'
+    assert metrics['cleanup']['storyLinks'] == 1, 'Home must expose its weekly archive paths'
+    assert page.locator('.home-archive-paths a').count() == 2, 'Both weekly recap and historical-week archives need direct links'
     page.locator('.home-league-file > header .home-section-action').focus()
     page.keyboard.press('Shift+Tab')
     page.keyboard.press('Tab')
@@ -446,6 +477,7 @@ with sync_playwright() as p:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
+                assert art['copyRight'] <= art['left'] - 8, f'Broadcast art overlaps the text column: {layout}'
             metrics['slides'].append(layout)
             if width == 390:
                 page.locator('.bx-stage').screenshot(path=str(OUT / f'slide-{index}-{layout["treatment"]}.png'))
@@ -591,7 +623,7 @@ with sync_playwright() as p:
                 assert badge['fits'] and badge['glyphRoom'], f'Notification badge clips in {mode}/{width}/{value}: {badge}'
 
             previews = page.evaluate("""() => ({
-                bodies:[...document.querySelectorAll('.home-banter .wall-body:not(.hidden)')].map(e=>({height:e.clientHeight,line:parseFloat(getComputedStyle(e).lineHeight),hasThread:!!e.closest('.wall-post').querySelector('a[href^="#/wall?post="]')})),
+                bodies:[...document.querySelectorAll('.home-banter .wall-body:not(.hidden)')].map(e=>({height:e.clientHeight,line:parseFloat(getComputedStyle(e).lineHeight),hasThread:!!e.closest('.wall-post').querySelector('[data-wall-thread] summary')})),
                 headingFits:(()=>{const h=document.querySelector('.home-banter .section-title');return h.scrollWidth<=h.clientWidth})(),
                 actions:[...document.querySelectorAll('.home-focus-links a')].every(e=>{const b=e.getBoundingClientRect();return b.height>=44 && b.width>=44})
             })""")

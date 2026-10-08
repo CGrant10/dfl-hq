@@ -12,6 +12,8 @@ import {memberWeeklyAwardsHtml,wireMemberWeeklyAwards} from "../weekly-clubhouse
 
 import { db } from "../supabase.js";
 import { shareProfile } from "../profile-share.js";
+import { shareFact } from "../fact-share.js";
+import { rivalryLedgerFact } from "../rivalry-story-model.js";
 import { esc, empty, money, errorBox, groupBy } from "../ui.js";
 import { currentMember, loadMembers, refreshMember } from "../members.js";
 import { wireInline } from "../inline.js";
@@ -185,6 +187,12 @@ export async function render(view) {
     rather than re-reading anything. A share image that queried for itself could
     disagree with the page it was launched from.
   */
+  view.querySelectorAll('[data-share-rivalry-owner]').forEach(button=>button.addEventListener('click',()=>{
+    const series=foes.find(row=>String(row.user)===button.dataset.shareRivalryOwner);
+    if(!series||!loreName)return;
+    const fact=rivalryLedgerFact({left:loreName(member.sleeper_user_id).label,right:loreName(series.user).label,series});
+    Promise.resolve(shareFact(fact)).then(result=>{if(result==='failed')toast('Could not share the rivalry stats',true)});
+  }));
   view.querySelector("[data-share-profile]")?.addEventListener("click", async (e) => {
     const btn = e.currentTarget;
     btn.disabled = true;
@@ -752,6 +760,7 @@ function rivalryCard(rows, name, members) {
                     ${mem ? `<a href="#/profile?id=${mem.id}">${teamIdentity({ team_name: who.label, ownerName: mem.display_name, identity: mem }, { meta: r.streak ? `${r.streak.won ? "Won" : "Lost"} last ${r.streak.count}` : "Series history", compact: true })}</a>` : esc(who.label)}
                     ${level ? `<span class="pill warn tiny">dead level</span>` : ""}
                     ${owned ? `<span class="pill red tiny">never beaten them</span>` : ""}
+                    <button type="button" class="btn ghost small" data-share-rivalry-owner="${esc(r.user)}" aria-label="Share rivalry stats against ${esc(who.label)}">Share rivalry stats</button>
                   </td>
                   <td>${r.wins}-${r.losses}${r.ties ? "-" + r.ties : ""}</td>
                   <td class="${r.differential > 0 ? "good" : r.differential < 0 ? "bad" : "muted"}">${r.differential > 0 ? "+" : ""}${r.differential.toFixed(1)}<small class="rival-avg">${r.averageMargin > 0 ? "+" : ""}${r.averageMargin.toFixed(1)}/game</small></td>

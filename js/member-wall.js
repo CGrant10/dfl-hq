@@ -197,7 +197,7 @@ function postHtml(r,compact=false) {
     ${photoHtml(r, name, compact)}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
     ${reactionHtml(r.id)}
-    ${compact?`<a class="btn ghost small" href="#/wall?post=${esc(r.id)}" aria-label="Join the conversation, ${Number(r.reply_count)||0} replies">Replies · ${Number(r.reply_count)||0}</a>`:threadHtml(r)}
+    ${threadHtml(r)}
   </article>`;
 }
 
