@@ -133,3 +133,14 @@ body .breaking-trade-beacon { width:26px; }
 #view[data-route="clubhouse"] .clubhouse-week-picker label { margin:0; }
 #view[data-route="clubhouse"] .clubhouse-week-picker select { margin:0; }
 #view[data-route="clubhouse"] .clubhouse-context-links:empty { display:none; }
+/* The voice has one quiet editorial treatment: evidence first, punchline
+   second. It never competes with scores, buttons or member conversations. */
+#view .dfl-chirp { margin:12px 0 0; padding:10px 0 10px 12px; border:0; border-left:2px solid var(--accent); border-radius:0; background:transparent; box-shadow:none; }
+#view .dfl-chirp header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+#view .dfl-chirp header small { color:var(--accent); font:700 11px/1.4 var(--font-body); letter-spacing:.05em; }
+#view .dfl-chirp header a { display:flex; align-items:center; min-height:44px; flex:none; color:var(--accent); font:600 12px/1.4 var(--font-body); text-decoration:none; }
+#view .dfl-chirp .dfl-chirp-receipt { margin:4px 0; color:var(--body-text); font:500 12px/1.5 var(--font-body); overflow-wrap:anywhere; }
+#view .dfl-chirp .dfl-chirp-roast { margin:0; color:var(--text); font:600 14px/1.5 var(--font-body); overflow-wrap:anywhere; }
+#view .dfl-chirp a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+#home-wrap [data-gameday-chirp] { margin-top:12px; }
+@media(max-width:370px) { #view .dfl-chirp header { align-items:flex-start; flex-wrap:wrap; gap:0 8px; } }

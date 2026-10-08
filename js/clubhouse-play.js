@@ -1,3 +1,4 @@
+import {matchupChirpHtml,clubhouseChirp} from './matchup-chirp-ui.js';
 import {db} from './supabase.js';
 import {currentMember} from './members.js';
 import {esc} from './ui.js';
@@ -7,7 +8,8 @@ import {shareFact} from './fact-share.js';
 import {loadRivalryCalls,rivalryStoryHtml} from './rivalry-story.js';
 export async function mountRivalries(view,model){
  try{const [lore,calls]=await Promise.all([loadLore(),loadRivalryCalls(model.season,model.week).catch(()=>null)]);if(!view.isConnected)return;
-  for(const game of model.games){const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;const r=rivalryFor(lore,game,model.season,model.week);
+  model.chirpHistory=lore.matchups;
+  for(const game of model.games){const chirp=view.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;const r=rivalryFor(lore,game,model.season,model.week);
    const storyMarkup=rivalryStoryHtml({history:lore.matchups,left:game.left,right:game.right,season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.matchup_id)),members:model.members},{callsAvailable:calls!==null});
    if(!r){host.innerHTML=storyMarkup;continue}
    const leader=r.streak?.won?game.left.name:game.right.name;

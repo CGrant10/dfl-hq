@@ -86,7 +86,7 @@ def check_game_day_scope(page):
       const helpers = Object.assign({}, ...await Promise.all([
         import('./js/home-presentation.js'), import('./js/game-day-dom.js'),
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
-        import('./js/game-day-score-motion.js'),
+        import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
         import('./js/page-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js')
       ]));
       const check=(condition,message)=>{if(!condition)throw Error(message)};
@@ -103,7 +103,7 @@ def check_game_day_scope(page):
         loadNflGameDay:async()=>({teams:new Map(['KC','NO'].map(t=>[t,{key:state}])),payload:{events:[]}}),
         sleeper:{league:async()=>({roster_positions:['QB']})},loadLore:async()=>({matchups:[]}),
         reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
-        matchupBanter:()=>[],matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
+        matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
         loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
         mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
         mountGameDayWatch:()=>({open:()=>opens++,update:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
@@ -118,6 +118,7 @@ def check_game_day_scope(page):
         await until(()=>!!root.querySelector('.gameday-matchup'));check(root.textContent.includes('Actual'),'Missing forecast must show actual scores');
         resolveWeekly({season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]});
         await until(()=>!!root.querySelector('.home-projected-total'));check(root.textContent.includes('124.8'),'Forecast did not reach the matchup');
+        check(!!root.querySelector('[data-gameday-chirp] .dfl-chirp')&&!root.querySelector('[data-gameday-chirp]').closest('details'),'DFL chirp must stay beside the scores');
         check(!root.querySelector('[data-gameday-refresh]')&&!!detailsRoot.querySelector('[data-gameday-refresh]'),'Details stayed in the hero');
         detailsRoot.querySelector('.home-live-details').open=true;detailsRoot.querySelector('.gameday-home-detail').open=true;
         detailsRoot.querySelector('[data-gameday-tab="opponent"]').click();
@@ -152,7 +153,7 @@ def check_matchup_interactions(page):
     source=source[source.index('let stopCurrent='):].replace('export function','function')
     page.emulate_media(reduced_motion='reduce')
     result=page.evaluate('''async source=>{
-      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js')]));
+      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/matchup-chirp-ui.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js')]));
       const check=(ok,message)=>{if(!ok)throw Error(message)};
       const until=async condition=>{for(let i=0;i<100&&!condition();i++)await new Promise(r=>setTimeout(r,10));check(condition(),'Matchup refresh did not settle')};
       const model={season:2026,week:5,leagueId:'fixture',completed:false,members:[],games:[{matchup_id:1,left:{roster:1,name:'The Very Long Bayou Championship Fantasy Football Bombers',score:0},right:{roster:2,name:'The Boys',score:0}}]};
