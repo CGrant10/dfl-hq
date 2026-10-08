@@ -156,6 +156,7 @@ export function homeLeagueFile({ fact = null, rivalry = null, facts = [] } = {})
   }
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
     <header><h2 class="section-title" id="home-league-file-title">The archive<span class="count">${stories.length}</span></h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <nav class="home-archive-paths" aria-label="League archives"><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Week-by-week recaps</a><a class="btn ghost small" href="#/facts?archive=weekly">This week in DFL history</a></nav>
     <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${story.art}.webp" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }

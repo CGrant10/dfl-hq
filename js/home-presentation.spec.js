@@ -140,6 +140,9 @@ describe('DFL archive on Home', () => {
   it('offers history without inventing a rivalry when records are missing', () => {
     const html = homeLeagueFile();
     expect(html).toContain('href="#/history"');
+    expect(html).toContain('Week-by-week recaps');
+    expect(html).toContain('#/clubhouse?archive=1&amp;tab=recap');
+    expect(html).toContain('#/facts?archive=weekly');
     expect(html).not.toContain('RIVALRY FILE');
   });
   it('preserves sourced facts and rivalry receipts and escapes member content', () => {

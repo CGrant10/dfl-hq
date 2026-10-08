@@ -14,7 +14,7 @@ import { teamPortrait } from "../team-presentation.js";
 import { filterFacts } from "../league-play-model.js";
 import { mountTrivia } from "../league-trivia.js";
 import { esc, errorBox, loading, toast } from "../ui.js";
-import { loadLore, clearLore } from "../lore.js";
+import { loadLore, clearLore, namer } from "../lore.js";
 import { funFacts, factOfTheDay } from "../funfacts.js";
 import { shareFact } from "../fact-share.js";
 import { canEdit } from "../inline.js";
@@ -41,7 +41,10 @@ export async function render(view) {
   const factId = new URLSearchParams(location.hash.split('?')[1] || '').get('fact');
   const selected = all.find(fact => fact.id === factId);
   const today = selected || factOfTheDay(lore);
-  const historyWeek = historyForWeek({ lore, week: leagueState?.currentWeek || 1, members });
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const requestedWeek = Number(params.get('week')), currentWeek = Number(leagueState?.currentWeek) || 1;
+  const selectedWeek = Number.isInteger(requestedWeek) && requestedWeek >= 1 && requestedWeek <= 18 ? requestedWeek : currentWeek;
+  const historyWeek = historyForWeek({ lore, week: selectedWeek, members, historicalName: namer(lore) });
 
   if (!today) {
     view.innerHTML = `<header class="page-head"><h1>DFL Lore</h1></header>
@@ -73,12 +76,17 @@ export async function render(view) {
 
     <p class="muted tiny fact-note">${selected ? 'From the DFL archive — drawn from the league’s recorded history.' : 'A new piece of league history every day — the same one for everybody.'}</p>
 
-    ${historyWeek ? disclosure("facts-history","This week in DFL history",`Week ${historyWeek.week} records and rivalries`, `<h2 class="section-title">This week in DFL history<span class="count">WEEK ${historyWeek.week}</span></h2><section class="history-week-grid">
+    <section class="card" id="league-week-archive" aria-labelledby="league-week-title">
+      <h2 class="section-title" id="league-week-title" tabindex="-1">This week in DFL history</h2>
+      <div class="lore-tools"><label for="history-week">Historical week<select id="history-week">${Array.from({length:18},(_,i)=>i+1).map(week=>`<option value="${week}" ${week===selectedWeek?'selected':''}>Week ${week}</option>`).join('')}</select></label><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Season-specific recaps →</a></div>
+      <p class="muted">${historyWeek ? `${historyWeek.games} recorded games across ${historyWeek.seasons} seasons · Week ${historyWeek.week}` : `No finished scores saved for Week ${selectedWeek} yet.`}</p>
+      ${historyWeek ? `<section class="history-week-grid">
       <article><small>WEEK'S RECORD</small><strong>${esc(historyWeek.high.name)}</strong><span>${historyWeek.high.score.toFixed(2)} points · ${historyWeek.high.season}</span></article>
       <article><small>BIGGEST ASS-WHIPPING</small><strong>${esc(historyWeek.blowout.winner.name)}</strong><span>Beat ${esc(historyWeek.blowout.loser.name)} by ${historyWeek.blowout.margin.toFixed(2)} · ${historyWeek.blowout.season}</span></article>
       <article><small>DECIMAL HELL</small><strong>${esc(historyWeek.close.winner.name)}</strong><span>Escaped ${esc(historyWeek.close.loser.name)} by ${historyWeek.close.margin.toFixed(2)} · ${historyWeek.close.season}</span></article>
-      <article><small>WEEK ${historyWeek.week} RIVALS</small><strong>${esc(historyWeek.rivalry.names.join(" vs "))}</strong><span>${historyWeek.rivalry.games} meetings across ${historyWeek.seasons} seasons</span></article>
-    </section>`) : ""}
+      <article><small>WEEK ${historyWeek.week} RIVALS</small><strong>${esc(historyWeek.rivalry.names.join(" vs "))}</strong><span>${historyWeek.rivalry.games} meetings in Week ${historyWeek.week}</span></article>
+      </section>` : ''}
+    </section>
 
     ${canEdit() ? `
       <section class="card lore-admin">
@@ -104,6 +112,8 @@ export async function render(view) {
     </section>`)}
   `;
 
+  view.querySelector('#history-week').addEventListener('change',event=>{params.set('week',event.target.value);params.set('archive','weekly');location.hash='#/facts?'+params.toString()});
+  if(params.get('archive')==='weekly'){view.querySelector('#league-week-title').focus({preventScroll:true});view.querySelector('#league-week-archive').scrollIntoView({block:'start'})}
   wirePageDisclosures(view);
   let shown=6;
   const drawFacts=()=>{

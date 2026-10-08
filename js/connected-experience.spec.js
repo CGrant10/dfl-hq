@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { playerCardView, resolvePlayerId } from './player-card-model.js';
-import { rivalryStory } from './rivalry-story-model.js';
+import { rivalryStory, rivalryShareFact, rivalryLedgerFact } from './rivalry-story-model.js';
 import { tradeDraft, restoreTradeDraft } from './trade-draft.js';
 import { readViewMemory, writeViewMemory } from './view-memory.js';
 import { canWarmRoutes } from './performance-policy.js';
@@ -20,6 +20,16 @@ describe('Rivalry season chapters', () => {
   const history=[{season:2025,week:2,user1:'b',user2:'a',score1:100,score2:90},{season:2026,week:1,user1:'a',user2:'b',score1:120,score2:110},{season:2026,week:4,user1:'a',user2:'b',score1:110,score2:100},{season:2026,week:5,user1:'a',user2:'b',score1:140,score2:100}];
   it('normalizes sides and excludes the current and future week before kickoff', () => { const s=rivalryStory({...base,history}); expect(s.meetings).toBe(2); expect(s.record).toBe('Series tied 1–1'); expect(s.previous[1].mine).toBe(90); expect(s.final).toBe(false); });
   it('counts this final exactly once and carries the streak into banter', () => { const s=rivalryStory({...base,history,completed:true}); expect(s.meetings).toBe(3); expect(s.record).toBe('A leads 2–1'); expect(s.outcome).toContain('10.00'); expect(s.banter).toContain('2 straight'); });
+  it('shares the same series as the open story, with normalized totals and only recorded finals', () => {
+    const final=rivalryShareFact({...base,history,completed:true});
+    expect(final.headline).toBe('A leads 2–1');expect(final.detail).toContain('3 recorded meetings');expect(final.detail).toContain('A 320.00–310.00 B');expect(final.detail).toContain('Last final: 110.00–100.00, 2026 Week 4');
+    const live=rivalryShareFact({...base,history});expect(live.headline).toBe('Series tied 1–1');expect(live.detail).toContain('A 210.00–210.00 B');expect(live.detail).not.toContain('140.00');
+    expect(rivalryShareFact({...base,history:[]})).toBeNull();expect(rivalryShareFact({...base,history:[],completed:true}).detail).toContain('1 recorded meeting');
+  });
+  it('shares any profile opponent using exactly the displayed ledger',()=>{
+    const series={meetings:8,wins:3,losses:4,ties:1,pf:800,pa:812,averageMargin:-1.5,last:{mine:100,theirs:100,season:2025,week:7}};
+    const fact=rivalryLedgerFact({left:'A',right:'B',series});expect(fact.headline).toBe('B leads 4–3 · 1 tie');expect(fact.detail).toContain('A 800.00–812.00 B');expect(fact.detail).toContain('-1.50 per game');expect(fact.detail).toContain('100.00–100.00, 2025 Week 7');expect(rivalryLedgerFact({left:'A',right:'B',series:null})).toBeNull();
+  });
   it('never calls live totals final and does not turn missing or 0–0 history into a win', () => { const s=rivalryStory({...base,history:[{season:2025,week:1,user1:'a',user2:'b',score1:0,score2:0}]}); expect(s.meetings).toBe(0); expect(s.current).toBeNull(); expect(rivalryStory({...base,completed:true,left:{...base.left,score:null}}).final).toBe(false); });
   it('grades actual calls only after final and handles ties', () => { const calls=[{member_id:7,roster_id:1,kind:'winner'},{member_id:8,roster_id:2,kind:'winner'}]; const args={...base,calls,members:[{id:7,display_name:'Grant'}]}; expect(rivalryStory(args).receipts[0].grade).toBe('Called'); expect(rivalryStory({...args,completed:true}).receipts.map(r=>r.grade)).toEqual(['Called it','Missed it']); expect(rivalryStory({...args,completed:true,right:{...base.right,score:110}}).receipts[0].grade).toBe('Tie'); });
 });

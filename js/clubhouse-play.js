@@ -1,25 +1,24 @@
 import {matchupChirpHtml,clubhouseChirp} from './matchup-chirp-ui.js';
 import {db} from './supabase.js';
 import {currentMember} from './members.js';
-import {esc} from './ui.js';
+import {esc,toast} from './ui.js';
 import {loadLore} from './lore.js';
-import {gradeCall,rivalryFor} from './league-play-model.js';
+import {gradeCall} from './league-play-model.js';
 import {shareFact} from './fact-share.js';
 import {loadRivalryCalls,rivalryStoryHtml} from './rivalry-story.js';
-export async function mountRivalries(view,model){
- try{const [lore,calls]=await Promise.all([loadLore(),loadRivalryCalls(model.season,model.week).catch(()=>null)]);if(!view.isConnected)return;
+import {rivalryShareFact} from './rivalry-story-model.js';
+export async function mountRivalries(view,model,active=()=>view.isConnected){
+ try{const [lore,calls]=await Promise.all([loadLore(),loadRivalryCalls(model.season,model.week).catch(()=>null)]);if(!active())return;
   model.chirpHistory=lore.matchups;
-  for(const game of model.games){const chirp=view.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;const r=rivalryFor(lore,game,model.season,model.week);
-   const storyMarkup=rivalryStoryHtml({history:lore.matchups,left:game.left,right:game.right,season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.matchup_id)),members:model.members},{callsAvailable:calls!==null});
-   if(!r){host.innerHTML=storyMarkup;continue}
-   const leader=r.streak?.won?game.left.name:game.right.name;
-   const summary=`${game.left.name} leads ${r.wins}-${r.losses}${r.ties?`-${r.ties}`:''}`;
-   const record=r.wins===r.losses?`Series tied ${r.wins}-${r.losses}${r.ties?`-${r.ties}`:''}`:r.wins>r.losses?summary:`${game.right.name} leads ${r.losses}-${r.wins}${r.ties?`-${r.ties}`:''}`;
+  for(const game of model.games){const chirp=view.querySelector(`[data-matchup-chirp="${game.matchup_id}"]`);if(chirp)chirp.innerHTML=matchupChirpHtml(clubhouseChirp(game,model));const host=view.querySelector(`[data-rivalry="${game.matchup_id}"]`);if(!host)continue;
+   const input={history:lore.matchups,left:game.left,right:game.right,season:model.season,week:model.week,completed:model.completed,calls:(calls||[]).filter(c=>Number(c.matchup_id)===Number(game.matchup_id)),members:model.members};
+   const storyMarkup=rivalryStoryHtml(input,{callsAvailable:calls!==null}),fact=rivalryShareFact(input);
    host.innerHTML=storyMarkup;
-   const details=host.querySelector('.rivalry-story-body');details.insertAdjacentHTML('beforeend','<button class="linkbtn" type="button" data-rivalry-share>Share rivalry</button>');
-   host.querySelector('button').addEventListener('click',()=>void shareFact({kicker:'DFL RIVALRY',ask:'TALE OF THE TAPE',headline:record,detail:`${r.meetings} previous meetings. Last: ${game.left.name} ${r.last.mine.toFixed(2)}–${r.last.theirs.toFixed(2)} ${game.right.name}, ${r.last.season} Week ${r.last.week}.${r.streak?` ${leader} has won ${r.streak.count} straight.`:''}`,season:model.season}));
+   if(!fact)continue;
+   host.insertAdjacentHTML('beforeend','<button class="btn ghost small" type="button" data-rivalry-share>Share rivalry stats</button>');
+   host.querySelector('[data-rivalry-share]').addEventListener('click',()=>{Promise.resolve(shareFact(fact)).then(result=>{if(result==='failed')toast('Could not share the rivalry stats',true);else if(result==='saved')toast('Rivalry image saved');else if(result==='copied')toast('Rivalry stats copied')})});
   }
- }catch{for(const host of view.querySelectorAll('[data-rivalry]'))host.textContent='Rivalry history is temporarily unavailable.'}
+ }catch{if(active())for(const host of view.querySelectorAll('[data-rivalry]'))host.textContent='Rivalry history is temporarily unavailable.'}
 }
 export async function mountWeeklyCalls(host,model){
  if(!host)return;let rows=[],standings=[],lock,busy=false;

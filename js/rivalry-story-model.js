@@ -20,5 +20,22 @@ export function rivalryStory({ history = [], left, right, season, week, complete
   let streak = 0;
   if (streakWinner) for (const g of [...all].reverse()) { if ((streakWinner === 'left' ? g.mine > g.theirs : g.mine < g.theirs)) streak++; else break; }
   const banter = final ? streak >= 2 ? `${streakWinner === 'left' ? left.name : right.name} has taken ${streak} straight. Bring a response next time.` : 'Receipt filed. Save the excuses for the rematch.' : previous.length ? `Meeting ${previous.length + 1}. The group chat remembers the last one.` : 'First recorded meeting. Someone starts the story this week.';
-  return { record: record + (ties ? ` · ${ties} tie${ties === 1 ? '' : 's'}` : ''), meetings: all.length, previous: previous.slice(-3).reverse(), last, receipts, outcome, banter, final, current };
+  return { record: record + (ties ? ` · ${ties} tie${ties === 1 ? '' : 's'}` : ''), meetings: all.length, pointsFor: all.reduce((total,g)=>total+g.mine,0), pointsAgainst: all.reduce((total,g)=>total+g.theirs,0), previous: previous.slice(-3).reverse(), last, receipts, outcome, banter, final, current };
+}
+
+export function rivalryShareFact(input) {
+  const story = rivalryStory(input);
+  if (!story?.meetings) return null;
+  const last = story.current || story.last;
+  return { kicker: 'DFL RIVALRY', ask: 'TALE OF THE TAPE', headline: story.record,
+    detail: `${input.left.name} vs ${input.right.name}. ${story.meetings} recorded meeting${story.meetings === 1 ? '' : 's'} through ${input.season} Week ${input.week}. Total points: ${input.left.name} ${story.pointsFor.toFixed(2)}–${story.pointsAgainst.toFixed(2)} ${input.right.name}. Last final: ${last.mine.toFixed(2)}–${last.theirs.toFixed(2)}, ${last.season} Week ${last.week}. ${story.banter}`,
+    season: input.season };
+}
+
+export function rivalryLedgerFact({left,right,series}) {
+  if (!series?.meetings) return null;
+  const record=series.wins===series.losses ? `Series tied ${series.wins}–${series.losses}` : `${series.wins>series.losses?left:right} leads ${Math.max(series.wins,series.losses)}–${Math.min(series.wins,series.losses)}`;
+  const last=series.last;
+  return {kicker:'DFL RIVALRY',ask:'TALE OF THE TAPE',headline:record+(series.ties?` · ${series.ties} tie${series.ties===1?'':'s'}`:''),
+    detail:`${left} vs ${right}. ${series.meetings} recorded meetings. Total points: ${left} ${series.pf.toFixed(2)}–${series.pa.toFixed(2)} ${right}. Average point edge for ${left}: ${series.averageMargin>0?'+':''}${series.averageMargin.toFixed(2)} per game.${last?` Last: ${last.mine.toFixed(2)}–${last.theirs.toFixed(2)}, ${last.season} Week ${last.week}.`:''}`};
 }

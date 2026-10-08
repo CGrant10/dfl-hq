@@ -3,11 +3,13 @@ const key = value => String(value ?? "");
 const nameFor = (members, id) => members.find(member => key(member.sleeper_user_id) === key(id))?.team_name
   || members.find(member => key(member.sleeper_user_id) === key(id))?.display_name || "Unknown";
 
-export function historyForWeek({ lore, week, members = [] } = {}) {
+export function historyForWeek({ lore, week, members = [], historicalName = null } = {}) {
   const games = (lore?.matchups || []).filter(game => Number(game.week) === Number(week)
-    && Number.isFinite(Number(game.score1)) && Number.isFinite(Number(game.score2))).map(game => {
-    const left = { id: game.user1, name: nameFor(members, game.user1), score: number(game.score1) };
-    const right = { id: game.user2, name: nameFor(members, game.user2), score: number(game.score2) };
+    && game.score1 != null && game.score2 != null
+    && Number.isFinite(Number(game.score1)) && Number.isFinite(Number(game.score2))
+    && (Number(game.score1) !== 0 || Number(game.score2) !== 0)).map(game => {
+    const left = { id: game.user1 || `deleted:${game.season}:${game.roster1}`, name: historicalName?.(game.user1, game.season, game.roster1)?.label || nameFor(members, game.user1), score: number(game.score1) };
+    const right = { id: game.user2 || `deleted:${game.season}:${game.roster2}`, name: historicalName?.(game.user2, game.season, game.roster2)?.label || nameFor(members, game.user2), score: number(game.score2) };
     return { season: Number(game.season), left, right, margin: Math.abs(left.score - right.score),
       winner: left.score >= right.score ? left : right, loser: left.score >= right.score ? right : left };
   });

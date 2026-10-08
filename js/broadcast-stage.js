@@ -404,7 +404,7 @@ export function renderItem(item, { editorial = false } = {}) {
     ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"
     : "assets/dfl-daily-crest.webp";
   const inner = illustrated
-    ? `<span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"${illustratedChampion && artKind !== "chip" && item.image ? ` style="${artworkStyle(item)}"` : ""}></span></span><div class="bx-editorial-copy">${copy}</div>`
+    ? `<span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;
   const cls = `bx-slide${illustrated ? ` bx-with-crest bx-art-${artKind}` : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it

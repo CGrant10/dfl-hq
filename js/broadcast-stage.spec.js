@@ -24,7 +24,10 @@ describe("editorial Home broadcast", () => {
     expect(html).not.toContain("bx-editorial-splatter");
     expect(html).toContain("Winner &amp; Co");
     expect(html).toContain('href="#/history"');
-    expect(renderItem({ ...item, image: "https://example.com/winner.webp", background: "image", imageZoom: 2 }, { editorial: true })).toContain('--bx-zoom:2');
+    const custom={ ...item, image: "https://example.com/winner.webp", background: "image", imageZoom: 2 };
+    expect(renderItem(custom, { editorial: true })).toContain('src="https://example.com/winner.webp"');
+    expect(renderItem(custom, { editorial: true })).not.toContain('--bx-zoom:2');
+    expect(renderItem(custom)).toContain('--bx-zoom:2');
   });
   it("gives the Chip Eater its own illustration even when a member portrait is available", () => {
     const item = { treatment: "champion", variant: "chip", headline: "Last place", image: "https://example.com/member.webp", background: "image" };
