@@ -383,6 +383,7 @@ function evidenceMarkup(result) {
       const fmt=v=>v==null?'Unavailable':Number(v).toFixed(1),sample=p.consistency||{};
       return `<article><h3>${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
         <div><dt>Forward DFL points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
+        ${p.position==='QB'&&p.oneQbValueFactor!=null?`<div><dt>1QB trade value</dt><dd>${p.oneQbValueFactor>=1?'Elite weekly edge':p.oneQbValueFactor>.35?'Starter premium reduced':'Streamer discount'}</dd></div>`:''}
         <div><dt>Season points / game</dt><dd>${fmt(p.currentPerGame)} · ${p.currentGames||0} games</dd></div>
         <div><dt>Recent points / game</dt><dd>${fmt(p.recentAverage)} · ${p.recentGames||0} games</dd></div>
         <div><dt>Weekly floor / ceiling</dt><dd>${sample.games>=3?`${fmt(sample.floor)} / ${fmt(sample.ceiling)}`:'Not enough games'}</dd></div>
