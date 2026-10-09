@@ -250,6 +250,58 @@ def check_matchup_interactions(page):
     }''')
     return result
 
+def check_game_day_moments(page):
+    """Preview genuine update triggers with clearly labeled, isolated demo scores."""
+    page.emulate_media(reduced_motion='no-preference')
+    setup=page.evaluate("""async()=>{
+      const {homeGameDayMatchup,homeThermalBoard}=await import('./js/home-presentation.js');
+      const {animateScoreChanges}=await import('./js/game-day-score-motion.js');
+      const original=document.querySelector('#home-wrap');original.hidden=true;original.id='inactive-home';
+      const root=document.createElement('div');root.id='home-wrap';root.className='gameday-card';root.dataset.motion='on';root.style.position='relative';
+      const players=[{id:'7547',name:'Amon-Ra St. Brown',position:'WR',nflTeam:'DET',roster:'1',slot:'WR',state:'live',points:20.5},{id:'6786',name:'CeeDee Lamb',position:'WR',nflTeam:'DAL',roster:'2',slot:'WR',state:'live',points:30.5},{id:'8137',name:'Garrett Wilson',position:'WR',nflTeam:'NYJ',roster:'1',slot:'WR',state:'live',points:16}];
+      const sides=[{roster:'1',uid:'a',memberId:1,name:'The Bayou Bombers',identity:{team_name:'The Bayou Bombers',accent_color:'#c8102e'},score:100.5,live:1,known:true,remaining:2,starters:[players[0]],lineup:[players[0]]},{roster:'2',uid:'b',memberId:2,name:'The Rivals',identity:{team_name:'The Rivals',accent_color:'#efc94c'},score:97,live:1,known:true,remaining:2,starters:[players[1]],lineup:[players[1]]}];
+      const model={season:2099,week:5,memberId:1,completed:false,starters:players,games:[{id:'1',isMine:true,leader:'1',sides}],snapshot:{totals:{'1':100.5,'2':97},points:{'1:7547':20.5,'2:6786':30.5,'1:8137':16}}};
+      const previous={leaders:{'1':'2'},totals:{'1':94,'2':97},points:{'1:7547':14,'2:6786':29,'1:8137':10}};
+      root.innerHTML='<p>Animation preview · Demo scores</p>'+homeGameDayMatchup(model)+homeThermalBoard(model);
+      document.querySelector('#view').append(root);root.scrollIntoView({block:'start'});
+      const measure=()=>[...root.querySelectorAll('.gd-thermal-value')].map(e=>{const r=e.getBoundingClientRect();return {text:e.textContent,x:r.x,y:r.y,width:r.width,height:r.height}});
+      const before=measure();let stop=animateScoreChanges(root,{previous,model,motion:true,feedback:true});
+      const after=measure(),labels=[...root.querySelectorAll('.gd-moment-caption')].map(e=>e.textContent);
+      if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Moment animation moved score glyphs');
+      if(root.querySelectorAll('.gd-moment-clip').length!==4||!['New lead','20-point game','30-point game','Score surge'].every(s=>labels.includes(s)))throw Error('Missing lead/player stings: '+JSON.stringify(labels));
+      window.momentFixture={root,model,previous,stop,measure,before,original,animateScoreChanges};
+      return {glyphGeometryStable:true,leadChange:true,milestones:true,scoreSurge:true,labels};
+    }""")
+    page.wait_for_timeout(300)
+    page.evaluate("""()=>{for(const a of document.querySelector('#home-wrap').getAnimations({subtree:true}).filter(a=>a.constructor===Animation)){a.pause();a.currentTime=Math.min(650,Number(a.effect.getTiming().duration)||650)}}""")
+    page.screenshot(path=str(OUT/'gameday-moment-demo.png'))
+    checks=page.evaluate("""()=>{
+      const f=window.momentFixture,check=(value,message)=>{if(!value)throw Error(message)};
+      check([...f.root.querySelectorAll('.gd-moment-caption')].every(e=>e.scrollWidth<=e.clientWidth+1),'Moment caption is clipped');
+      check(document.documentElement.scrollWidth<=innerWidth,'Moment effect overflows the viewport');
+      f.stop();check(!f.root.querySelector('.gd-moment-clip,.gd-moment-caption'),'Moment cleanup left decorations');
+      const run=(model=f.model,previous=f.previous,motion=true)=>{const stop=f.animateScoreChanges(f.root,{previous,model,motion,feedback:true});const count=f.root.querySelectorAll('.gd-moment-clip').length;stop();return count};
+      check(run(f.model,null)===0,'Initial load manufactured a moment');
+      check(run({...f.model,completed:true})===0,'Final stat correction celebrated a moment');
+      check(run(f.model,f.previous,false)===0,'Motion off played a moment');
+      check(run(f.model,{...f.previous,leaders:{'1':'1'},points:f.model.snapshot.points})===0,'Unchanged refresh replayed a moment');
+      check(run({...f.model,starters:f.model.starters.map(p=>({...p,state:'final'})),games:[]})===0,'Finished-player correction played a moment');
+      f.root.hidden=true;check(run()===0,'Hidden rows played a moment');f.root.hidden=false;
+      const modal=document.createElement('dialog');document.body.append(modal);modal.showModal();check(run()===0,'Covered Home played a moment');modal.close();modal.remove();
+      f.root.style.left='200vw';check(run()===0,'Offscreen rows played a moment');f.root.style.left='';
+      f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:f.model,motion:true,feedback:true});
+      return {captionsFit:true,noOverflow:true,cleanup:true,noInitialOrRepeat:true,noFinalCorrection:true,motionOff:true,hiddenPaused:true,coveredPaused:true,offscreenPaused:true};
+    }""")
+    page.wait_for_timeout(4300)
+    assert page.evaluate("!window.momentFixture.root.querySelector('.gd-moment-clip,.gd-moment-caption')"),'Finished effects left decorations'
+    page.evaluate("()=>{const f=window.momentFixture;f.stop();f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:f.model,motion:true,feedback:true})}")
+    page.emulate_media(reduced_motion='reduce')
+    page.wait_for_timeout(80)
+    reduced=page.evaluate("""()=>{const f=window.momentFixture,stopped=!f.root.querySelector('.gd-moment-clip,.gd-moment-caption');f.stop();f.root.remove();f.original.id='home-wrap';f.original.hidden=false;delete window.momentFixture;return stopped}""")
+    assert reduced,'Reduced motion did not stop moment effects'
+    page.emulate_media(reduced_motion='no-preference')
+    return {**setup,**checks,'reducedMotionStops':True,'naturalCleanup':True}
+
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
       const portrait=row.querySelector('.dfl-player-portrait').getBoundingClientRect(),copy=row.querySelector('.injury-player-copy'),text=copy.getBoundingClientRect(),state=row.querySelector('.injury-player-state').getBoundingClientRect(),box=row.getBoundingClientRect();
@@ -305,6 +357,7 @@ with sync_playwright() as p:
     page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
+    moment_effects=check_game_day_moments(page)
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     # Player leaders are secondary to the matchup and lineup action. Open the
@@ -739,6 +792,7 @@ with sync_playwright() as p:
                 if width==390 and index in [0,2,3]:
                     page.locator('.bx-stage').screenshot(path=str(OUT/f'themed-{mode.replace(":","-")}-slide-{index}.png'))
     page.evaluate("window.reviewSetTheme('light')")
+    metrics['momentEffects']=moment_effects
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['consoleErrors'] = errors

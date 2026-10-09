@@ -3,8 +3,6 @@
  border-radius:12px;
 }
 .gameday-faceoff-team { position:relative; }
-.gd-lead-ring { position:absolute; inset:0; pointer-events:none; border:1px solid var(--faceoff-accent,var(--accent)); border-radius:10px; }
-.gd-lead-celebration { position:absolute; top:0; right:0; padding:3px 7px; border:1px solid var(--line); border-radius:5px; background:var(--bg-2); color:var(--text); font:500 .6875rem/1.3 system-ui,sans-serif; }
 .gameday-watch { position:fixed; inset:0; margin:0; width:100%; height:100dvh; max-width:none; max-height:none; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; padding:0 max(16px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); border:0; background:radial-gradient(ellipse at 0 15%,color-mix(in srgb,var(--watch-left,var(--accent-fill)) 8%,transparent),transparent 55%),radial-gradient(ellipse at 100% 15%,color-mix(in srgb,var(--watch-right,var(--accent-2-fill)) 8%,transparent),transparent 55%),var(--bg); color:var(--text); }
 .gameday-watch::backdrop { background:var(--bg); }
 .gameday-watch > [data-watch-content],.gd-watch-header { width:100%; max-width:1120px; margin-inline:auto; }
@@ -119,3 +117,28 @@
 /* A paused GPU surface must also fit after a reduced-motion viewport resize. */
 .gd-vfx-canvas { max-width:100%; }
 .gd-watch-score-team > small { max-width:100%; overflow-wrap:anywhere; }
+
+/* One short event sting; its clipped graphics never cover a score or button. */
+.gd-moment-active { position:relative; isolation:isolate; }
+.gd-moment-active > :not(.gd-moment-clip) { position:relative; z-index:1; }
+.gd-moment-clip { position:absolute; inset:0; z-index:0; overflow:hidden; border-radius:inherit; pointer-events:none; }
+.gd-moment-sweep { position:absolute; top:-50%; left:0; width:32%; height:200%; opacity:0; background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gd-moment-color) 55%,var(--text)),transparent); }
+.gd-moment-frame { position:absolute; inset:0; width:100%; height:100%; fill:none; stroke:color-mix(in srgb,var(--gd-moment-color) 40%,var(--text)); stroke-width:1; pointer-events:none; }
+.gd-moment-frame rect { stroke-dasharray:1; stroke-dashoffset:1; opacity:0; }
+.is-milestone .gd-moment-frame { stroke-width:1.5; }
+.gd-moment-caption { font-weight:700!important; }
+.gd-moment-active .dfl-player-portrait { overflow:hidden; }
+
+/* Team crests meet across a colored split, with every name left readable. */
+.gd-entrance-teams { position:relative; isolation:isolate; overflow:hidden; padding:24px 0; }
+.gd-entrance-team,.gd-entrance-vs { position:relative; z-index:1; }
+.gd-entrance-crossfire { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+.gd-entrance-beam { position:absolute; top:0; bottom:0; width:65%; opacity:0; }
+.gd-entrance-beam.is-left { left:-8%; background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--watch-left,var(--accent)) 24%,transparent),transparent); }
+.gd-entrance-beam.is-right { right:-8%; background:linear-gradient(260deg,transparent,color-mix(in srgb,var(--watch-right,var(--accent)) 24%,transparent),transparent); }
+.gd-entrance-seam { position:absolute; width:1px; top:10%; bottom:10%; left:50%; opacity:0; background:linear-gradient(transparent,var(--text),transparent); transform:rotate(14deg); }
+.gd-entrance-team h3 { font-family:var(--font-display); font-weight:700; }
+.gameday-watch .gd-entrance-crest { display:grid; place-items:center; background:transparent; border:0; padding:4px; border-radius:12px; cursor:pointer; }
+.gd-entrance-crest .dfl-team-mark { width:clamp(80px,24vw,120px); height:clamp(80px,24vw,120px); }
+.gd-watch-entrance[data-rivalry="1"] [data-entrance-banter] { color:var(--text); font-family:var(--font-display); font-weight:700; font-size:clamp(18px,5vw,24px); }
+@media(prefers-reduced-motion:reduce) { .gd-moment-clip,.gd-entrance-crossfire { display:none; } }
