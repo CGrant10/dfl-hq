@@ -633,13 +633,13 @@ with sync_playwright() as p:
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
                 page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on');window.reviewSyncNav()}""", route)
                 page.wait_for_timeout(350)
-                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');return active && Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('#tabbar'),'::before').transform).m41-active.offsetLeft)<1}""", timeout=5000)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && marker.backgroundImage.includes(getComputedStyle(active).color) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
                 assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
                 if reference is None: reference = nav
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
-                assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
+                assert nav == reference, f'Navigation changes on {route} at {width}: {nav} / {reference}'
                 metrics['navigation'].append({'mode':nav_mode,'width':width,'route':route,**nav})
                 header = page.evaluate("""() => {
                     const bar=document.querySelector('.topbar'),inner=bar.querySelector('.topbar-inner');
