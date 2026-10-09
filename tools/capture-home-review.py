@@ -600,7 +600,7 @@ with sync_playwright() as p:
             return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary small'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == (18 if width < 600 else 20) and typography['body']['size'] == 12 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['size'] == 18 and typography['body']['size'] == 12 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
         assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'uppercase' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
