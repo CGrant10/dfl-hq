@@ -160,7 +160,13 @@ export function mountPageMotion(root) {
     const selector = event.target.matches('[data-ta-team-select]') ? '[data-ta-body]' : selectors[event.target.id];
     if (selector) { pending.set(selector, performance.now() + 15000); schedule(); }
   };
-  const reset = () => { cancelUiMotion(root); sync(false); };
+  const entryEnd = event => {
+    // Release the completed effect instead of retaining a whole-page layer.
+    // Clearing the class also prevents preference changes replaying the fade.
+    if (event.target === root && event.animationName === 'ui-page-in') root.classList.remove('page-in');
+  };
+  const reset = () => { cancelUiMotion(root); root.classList.remove('page-in'); sync(false); };
+  root.addEventListener('animationend', entryEnd);
   root.addEventListener('click', click, true);
   root.addEventListener('toggle', toggle, true);
   root.addEventListener('change', change, true);
@@ -179,6 +185,7 @@ export function mountPageMotion(root) {
   return () => {
     stopped = true; cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); cancelUiMotion(root);
     root.removeEventListener('click', click, true); root.removeEventListener('toggle', toggle, true); root.removeEventListener('change', change, true);
+    root.removeEventListener('animationend', entryEnd);
     window.removeEventListener('dfl:ui-motion-change', reset);
     for (const state of states.values()) { cancelUiMotion(state.marker); state.marker.remove(); delete state.bar.dataset.uiRail; }
     pending.clear();

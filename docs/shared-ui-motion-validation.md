@@ -1,4 +1,4 @@
-# Shared UI motion — v1.349.0
+# Shared UI motion — v1.350.0
 
 The app now extends the Clubhouse's restrained motion into ordinary navigation and controls. Destination-shaped loading placeholders replace the plain route-loading flash. The header and bottom navigation remain fixed, incoming content remains inert until ready, and a completed route fades in once. Slow/stale route renders remain isolated; error states remove the placeholder and expose Retry.
 
@@ -11,6 +11,8 @@ The existing per-member Motion setting and OS reduced-motion setting suppress th
 Keepers now separates the title and subtitle and wraps full team labels in a wider identity column. Pick'em wraps full team names with scores and pick percentages below. Calendar, Polls, and Proposals use compact empty states; guest profile actions remain available. Broadcast artwork, share-card layouts, trade valuation, and league data are unchanged.
 
 The Sportsbook's persistent slip preview now sits above mobile navigation instead of covering it. Desktop retains its bottom-corner placement because navigation is at the top.
+
+Completed page fades now have backwards fill only and remove their entrance class on completion. Preference changes also clear that class, preventing a completed route entrance from replaying when motion is re-enabled. The effect releases its page layer without moving scores or changing the entrance duration.
 
 Validation:
 
