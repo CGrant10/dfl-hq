@@ -27,5 +27,5 @@ window.renderReview();window.reviewReady=true;
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 let head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>'));
 head=head.replace('<link rel="stylesheet" href="css/trade-workspace.css', '<link rel="stylesheet" href="css/team-analyzer.css"><link rel="stylesheet" href="css/trade-workspace.css');
-writeFileSync(`${output}/index.html`,`<!doctype html><html lang="en" data-theme="dark"><head><base href="/">${head}</head><body><div class="app"><header class="topbar" style="height:44px"><b>DFL HQ</b></header><main id="view" class="view" data-route="trade" data-pulse-system="1"></main><nav class="bottomnav" style="height:54px">Trade review · isolated sample rosters</nav></div><script type="module" src="/trade-review/fixture.js"></script></body></html>`);
+writeFileSync(`${output}/index.html`,`<!doctype html><html lang="en" data-theme="dark"><head><base href="/">${head}</head><body><div class="app"><header class="topbar" style="height:44px"><b>DFL HQ</b></header><main id="view" class="view" data-route="trade" data-pulse-system="1" data-page-system></main><nav class="bottomnav" style="height:54px">Trade review · isolated sample rosters</nav></div><script type="module" src="/trade-review/fixture.js"></script></body></html>`);
 console.log(`Trade review rendered to ${output}`);

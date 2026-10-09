@@ -13,7 +13,7 @@ let tab = "events";
 
 export async function render(view) {
   view.innerHTML = `
-    <h1>Calendar</h1>
+    <header class="utility-head"><small>LEAGUE SCHEDULE</small><h1>Calendar</h1></header>
     <div class="tabs" id="cal-tabs">
       <button data-tab="events" class="${tab === "events" ? "on" : ""}">Events</button>
       <button data-tab="side"   class="${tab === "side" ? "on" : ""}">Side Events</button>

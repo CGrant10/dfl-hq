@@ -8,6 +8,7 @@ on:
       - 'css/app-reading.css'
       - 'css/trade-workspace.css'
       - 'css/receipt-polish.css'
+      - 'css/page-system.css'
       - 'css/ui-motion.css'
       - 'js/share-export-model.js'
       - 'tools/*trade-review*'

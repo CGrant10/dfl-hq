@@ -244,6 +244,10 @@ function announceReady() {
    opt out here, not merely in a few CSS selectors, otherwise newly added
    shared components can silently restyle it later. */
 const pulseOptOutRoutes = new Set(["broadcast", "arena-beta", "golf"]);
+const standardPageRoutes = new Set([
+  "trade", "sportsbook", "analyzer", "profile", "wall", "history", "facts",
+  "rules", "calendar", "keepers", "finances", "polls", "proposals", "notifications", "stakes"
+]);
 function decoratePulseSystem(view, name) {
   view.dataset.route = name;
   if (pulseOptOutRoutes.has(name)) return;
@@ -294,6 +298,7 @@ export async function renderRoute() {
   delete view.dataset.pulseSystem;
   view.dataset.route = name;
   view.classList.remove("page-in");
+  view.toggleAttribute("data-page-system", standardPageRoutes.has(name));
   view.classList.add("is-route-loading");
   view.inert = true;
   view.setAttribute('aria-busy', 'true');
