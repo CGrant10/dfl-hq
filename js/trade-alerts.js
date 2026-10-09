@@ -2,6 +2,8 @@ import { db, edge, privilegedFunctionHeaders } from "./supabase.js";
 import { evaluateTrade } from "./team-analyzer.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { tradeReasons, verdictFor } from "./trade-desk.js";
+import {loadMemberDirectory} from './members.js';
+import {currentTradeNames} from './current-team-names.js';
 
 export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v4-one-qb";
 
@@ -231,6 +233,7 @@ export function buildTradeAlertSnapshot({ transaction, season, week, rosterState
     teams: parties.map((team, index) => ({
       roster_id: Number(classification.rosterIds[index]),
       team_name: teamName(team),
+      sleeper_user_id:team.sleeper_user_id||null,
       owner_name: team.ownerName || team.display_name || "",
     })),
     packages: sends.map((ids, index) => ({
@@ -268,7 +271,8 @@ export async function loadTradeAlerts({ limit = 20 } = {}) {
     if (schemaMissing(error)) return [];
     throw error;
   }
-  return data || [];
+  const members=await loadMemberDirectory().catch(()=>[]);
+  return (data||[]).map(alert=>currentTradeNames(alert,members));
 }
 
 export function tradeAlertViewModel(alert) {
@@ -342,7 +346,8 @@ export async function loadLatestTradeAlert({ hours = 72, activeOnly = false } = 
     if (schemaMissing(error)) return null;
     throw error;
   }
-  return tradeAlertViewModel(data);
+  const members=data?await loadMemberDirectory().catch(()=>[]):[];
+  return tradeAlertViewModel(currentTradeNames(data,members));
 }
 
 export const loadActiveTradeAlert = options => loadLatestTradeAlert({ ...options, activeOnly: true });

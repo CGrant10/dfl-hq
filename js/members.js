@@ -35,12 +35,15 @@
 
 import { db, configured } from "./supabase.js";
 import { setUsername } from "./store.js";
+import {sleeper} from './sleeper.js';
+import {currentTeamMembers} from './current-team-names.js';
 
 const KEY = "dfl.memberId";
 
 let directoryCache = null;
 let directoryInFlight = null; // every member, shared by Home, Lore and Analyzer
 let directoryEpoch = 0;
+let directoryExpiresAt = 0;
 let current = null;    // the member using this device
 
 export function getMemberId() {
@@ -52,14 +55,14 @@ export function currentMember() {
 }
 
 /**
- * The complete member directory, loaded once per page visit.
+ * The complete member directory, refreshed once a minute with current names.
  *
  * Home, Lore and Analyzer previously selected slightly different member
  * columns independently. With only twelve owners the row size is negligible;
  * sharing the complete rows removes several round trips from every Home load.
  */
 export async function loadMemberDirectory({ force = false } = {}) {
-  if (directoryCache && !force) return directoryCache;
+  if (directoryCache && !force && Date.now()<directoryExpiresAt) return directoryCache;
   if (!configured) return [];
   /*
     The cache was read before the request and written after it resolved, so
@@ -70,8 +73,9 @@ export async function loadMemberDirectory({ force = false } = {}) {
   */
   if (directoryInFlight && !force) return directoryInFlight;
 
+  if(force)directoryEpoch++;
   const requestEpoch = directoryEpoch;
-  directoryInFlight = (async () => {
+  const request = (async () => {
     const { data, error } = await db()
       .from("members")
       .select("*")
@@ -79,22 +83,38 @@ export async function loadMemberDirectory({ force = false } = {}) {
       .order("display_name", { ascending: true });
 
     if (error) throw error;
-    const members = data || [];
-    if (requestEpoch === directoryEpoch) directoryCache = members;
+    let members = data || [];
+    if(members.some(m=>m.sleeper_user_id)){
+      const [leagueRes,rosterRes]=await Promise.allSettled([
+        db().from('sleeper_leagues').select('sleeper_league_id,season').order('season',{ascending:false}).limit(1),
+        db().from('sleeper_rosters').select('season,roster_id,sleeper_user_id,team_name'),
+      ]);
+      const leagueId=leagueRes.status==='fulfilled'&&!leagueRes.value.error?leagueRes.value.data?.[0]?.sleeper_league_id:null;
+      const rosters=rosterRes.status==='fulfilled'&&!rosterRes.value.error?rosterRes.value.data||[]:[];
+      const users=leagueId?await sleeper.users(leagueId).catch(()=>[]):[];
+      members=currentTeamMembers(members,Array.isArray(users)?users:[],rosters);
+    }
+    if (requestEpoch === directoryEpoch) {
+      directoryCache = members;
+      directoryExpiresAt=Date.now()+60000;
+      if(current)current=members.find(m=>String(m.id)===String(current.id))||current;
+    }
     return members;
   })();
+  directoryInFlight=request;
 
   try {
-    return await directoryInFlight;
+    return await request;
   } finally {
     /* Cleared either way: a rejected fetch must not be cached as the answer. */
-    directoryInFlight = null;
+    if(directoryInFlight===request)directoryInFlight = null;
   }
 }
 
 export function clearMemberDirectoryCache() {
   directoryEpoch += 1;
   directoryCache = null;
+  directoryExpiresAt = 0;
   directoryInFlight = null;
 }
 

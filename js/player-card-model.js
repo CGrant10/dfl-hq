@@ -14,7 +14,7 @@ export function playerCardView({ id, players = {}, rosters = [], members = [], s
   const player = { id: String(id), name: raw.n, position: raw.p, nflTeam: raw.t, injuryStatus: raw.i || '' };
   const ownerRow = rosters.find(r => Number(r.season) === Number(season) && (r.players || []).map(String).includes(String(id)));
   const member = members.find(m => String(m.sleeper_user_id) === String(ownerRow?.sleeper_user_id));
-  const owner = ownerRow ? { id: String(ownerRow.roster_id), memberId: member?.id, name: ownerRow.team_name || member?.team_name || member?.display_name || ownerRow.display_name || `Roster ${ownerRow.roster_id}` } : null;
+  const owner = ownerRow ? { id: String(ownerRow.roster_id), memberId: member?.id, name: member?.team_name || ownerRow.team_name || member?.display_name || ownerRow.display_name || `Roster ${ownerRow.roster_id}` } : null;
   const myRosterId = sleeperUserId ? rosters.find(r => Number(r.season) === Number(season) && String(r.sleeper_user_id) === String(sleeperUserId))?.roster_id : null;
   const recent = weeks.map(bundle => {
     const row = (bundle.data || []).find(r => String(r.player_id) === String(id) && Number(r.season) === Number(season) && Number(r.week) === Number(bundle.week) && r.season_type === 'regular');

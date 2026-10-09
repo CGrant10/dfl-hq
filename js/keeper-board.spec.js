@@ -81,6 +81,16 @@ describe("what each keeper row shows", () => {
     expect(board.also).toEqual([]);
   });
 
+  it("keeps a renamed owner's legacy keeper attached to their current share-board name", () => {
+    const directory=[{...members[0],team_name_aliases:['Old team','Shared']},{...members[1],team_name_aliases:['Shared']}];
+    const rows=[{year:2026,team:'Old team',player:'Saquon',round_cost:1},{year:2026,team:'Shared',player:'Chase',round_cost:2}];
+    const renamed=boardData({season:2026,members:directory,keeperRows:rows,players,rules});
+    expect(renamed.rows[0]).toMatchObject({team:'Team Lafountain',keepers:[{name:'Saquon',round:1}]});
+    expect(renamed.rows[1].keepers).toEqual([]);
+    expect(renamed.also).toHaveLength(1);
+    expect(rows[0].team).toBe('Old team');
+  });
+
   it("places a legacy first name against exactly one member, or not at all", () => {
     const shey = [{ id: 9, display_name: "sheyg2014", team_name: "Deadly" }];
     const one = boardData({ season: 2026, members: shey, players, rules,

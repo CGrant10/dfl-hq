@@ -8,6 +8,7 @@
 import { db } from "./supabase.js";
 import { currentMember, loadMembers } from "./members.js";
 import { icon } from "./icons.js";
+import {currentTeamMember} from './current-team-names.js';
 
 /** The punishment history starts after 2021. */
 export const FIRST_SEASON = 2022;
@@ -48,7 +49,7 @@ function automatic(d) {
         season,
         memberId: m?.id || null,
         name: m?.display_name || teamNameOf.get(`${season}:${uid}`) || "Unknown",
-        team: teamNameOf.get(`${season}:${uid}`) || m?.team_name || "",
+        team: m?.team_name || teamNameOf.get(`${season}:${uid}`) || "",
       };
     });
 }
@@ -58,9 +59,7 @@ function chipEaters(d) {
   for (const h of d.manual) {
     const y = Number(h.year);
     if (y < FIRST_SEASON || auto.has(y)) continue;
-    const m = d.members.find(x =>
-      String(x.display_name).toLowerCase() === String(h.winner || "").toLowerCase() ||
-      String(x.team_name || "").toLowerCase() === String(h.winner || "").toLowerCase());
+    const m = currentTeamMember(h.winner,d.members);
     auto.set(y, {
       season: y,
       memberId: m?.id || null,

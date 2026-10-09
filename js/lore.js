@@ -34,6 +34,7 @@
 
 import { db } from "./supabase.js";
 import { loadMemberDirectory } from "./members.js";
+import {currentTeamLabel,currentTeamMember} from "./current-team-names.js";
 
 // ---------------------------------------------------------------- naming
 
@@ -46,17 +47,15 @@ import { loadMemberDirectory } from "./members.js";
  * this year's team name while the record book calls them by the name they
  * used in 2019 is two different stories about one person.
  *
- * Owners are matched on Sleeper user id ONLY, never on a name, because
- * names are exactly what change from year to year.
+ * Owners are matched on Sleeper user IDs, or verified season/roster IDs
+ * when an old matchup is missing its user ID. Names never establish ownership.
  *
- * `season` picks the name in use THAT year, from the standings snapshot.
- * Without a season it falls back to the person's current identity.
- * `rosterId` is the last resort: it names a team whose owner account no
- * longer exists, which is how the 2019 champion is still identifiable.
+ * Current owner names apply to every season. Season/roster IDs provide a
+ * fallback for deleted accounts with no current identity.
  */
 export function namer(data) {
-  const byMember  = new Map((data.members || []).map((m) => [m.sleeper_user_id, m]));
-  const bySleeper = new Map((data.users || []).map((u) => [u.sleeper_user_id, u]));
+  const byMember  = new Map((data.members || []).filter(m=>m.sleeper_user_id).map((m) => [m.sleeper_user_id, m]));
+  const bySleeper = new Map((data.users || []).filter(u=>u.sleeper_user_id).map((u) => [u.sleeper_user_id, u]));
 
   const snapshot = new Map();          // "season:userId"   -> team name
   const byRoster = new Map();          // "season:rosterId" -> team name
@@ -73,14 +72,14 @@ export function namer(data) {
   const clean = (v) => String(v ?? "").trim();
 
   return (userId, season = null, rosterId = null) => {
-    const member = byMember.get(userId);
+    const member = byMember.get(userId) || (userId==null?currentTeamMember('',data.members||[],{season,roster_id:rosterId}):null);
     const user   = bySleeper.get(userId);
     const person = member?.display_name || user?.display_name || null;
 
     const historic = season != null ? snapshot.get(`${season}:${userId}`) : null;
 
     if (person) {
-      const label = clean(historic || member?.team_name || user?.team_name || person);
+      const label = clean(member?.team_name || user?.team_name || person || historic);
       return { label, sub: clean(person), memberId: member?.id ?? null };
     }
 
@@ -98,15 +97,12 @@ export function namer(data) {
 /*
   "THE FIGHTING MONGOOSES — SLAW"
 
-  namer() has always returned both halves: `label` is the team name in use
-  that season, `sub` is the person. Callers were taking .label and throwing
+  namer() has always returned both halves: `label` is the current team name, `sub` is the person. Callers were taking .label and throwing
   the person away, which is fine on the History page where the owner is in
   the next column and useless everywhere else - a fun fact about "Irked by
   Kirk" tells a member who joined in 2024 nothing at all.
 
-  THE HISTORICAL NAME IS NEVER REPLACED. It is the true name of that team
-  in that year and renaming it to somebody's current team would be a lie
-  about the record. The owner is appended, not substituted.
+  Current team labels are used for every year; the owner is appended.
 
   Three cases where appending would be noise, and all three return the
   label alone:
@@ -138,7 +134,11 @@ let cache = null;
 export function clearLoreCache() { cache = null; }
 
 export async function loadLore({ force = false } = {}) {
-  if (cache && !force) return cache;
+  if (cache && !force) {
+    const members=await loadMemberDirectory().catch(()=>cache.members);
+    cache={...cache,members,manual:cache.manual.map(row=>({...row,winner:currentTeamLabel(row.winner,members)||row.winner}))};
+    return cache;
+  }
 
   const [leagues, standings, users, members, matchups, manual, arenaEvents, arenaResults, golf, config] =
     await Promise.all([
@@ -173,7 +173,7 @@ export async function loadLore({ force = false } = {}) {
     users:     (users.data || []).filter((u) => u.hidden !== true),
     members:   members.data   || [],
     matchups:  matchups.data  || [],
-    manual:    manual.data    || [],
+    manual:    (manual.data||[]).map(row=>({...row,winner:currentTeamLabel(row.winner,members.data||[])||row.winner})),
     arenaEvents:  arenaEvents.data  || [],
     arenaResults: arenaResults.data || [],
     golf:      golf.data || [],
