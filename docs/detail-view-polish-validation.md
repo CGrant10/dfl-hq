@@ -1,0 +1,9 @@
+# Detail view polish — v1.351.0
+
+Player cards group the larger, team-tinted portrait and current roster identity, give availability tags distinct neutral/questionable/out tones, separate recent form from the recorded week’s box score, and retain thermal scores and player actions. Close remains in a fixed header while the body scrolls. Missing photos retain initials; missing stats remain explicitly unavailable.
+
+Team labels stick beneath the app navigation through side-by-side Clubhouse lineup comparisons and at the top of GameDay Watch’s comparison. The relevant ancestor uses overflow:clip so it does not create a competing scroll container. Trade recommendations precede player packages in both two-team and routed multi-team tickets, with aligned totals and supporting metrics.
+
+Bet slips keep their header and full-width review action outside the scrollable content. Opening focuses the heading, and closing restores focus to the slip opener. Stake entry still resets review and requires a separate confirmation. Native dialog bounds use VisualViewport height/offset so a keyboard can shrink or pan the visible area; listeners abort on close or route detachment. Existing Motion and reduced-motion handling remain in use.
+
+Validation: TypeScript, identifier checks, 1,291 tests in 144 files and production build pass. Read-only browser checks cover 320/390/768px player cards and slips in Medicine Wheel dark/light, 200% text, real injury tags and recorded box scores, initial focus and Escape/opener return, two-team and routed three-team verdict ordering, pick removal and the review-only step. Sticky comparison labels are checked at 320/390/1280px, including desktop navigation. A controlled VisualViewport fixture verifies keyboard-sized bounds and visible Close/Review controls; this is not a physical iOS keyboard test. No production league changes or wagers are made. Screenshots/logs are in /workspace/dfl-detail-1351.

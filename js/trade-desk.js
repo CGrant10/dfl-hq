@@ -426,6 +426,11 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins value` : ""}</span>
     </div>
 
+    <div class="td-stamp is-${recommendation.tone}">
+      <strong>${recommendation.action}</strong>
+      <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
+    </div>
+
     <div class="td-cols">
       <div class="td-col">
         <small>You send</small>
@@ -438,11 +443,6 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
         <div class="td-total"><small>Value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
-    <div class="td-stamp is-${recommendation.tone}">
-      <strong>${recommendation.action}</strong>
-      <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
-    </div>
-
     <div class="td-lines">
       <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} avg/wk</b></div>
       <div class="td-line"><span>Your usable depth</span><b class="${num(result.depthDeltaA) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaA)} avg/wk</b></div>
@@ -477,13 +477,13 @@ function multiTicketMarkup(result, parties, pool, sends) {
       <span>${esc(v.headline)} for ${esc(teamName(parties[0]))} · ${result.fairness}% group balance</span>
     </div>
 
-    <div class="td-legs">
-      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
-    </div>
-
     <div class="td-stamp is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
       <span>${esc(recommendationCaption(perspective, parties[0], recommendation))}</span>
+    </div>
+
+    <div class="td-legs">
+      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
     <div class="td-lines">
