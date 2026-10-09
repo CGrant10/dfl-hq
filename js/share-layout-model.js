@@ -28,6 +28,7 @@ export function shareImageDescription(spec,format='compact') {
  const rows=[spec.kind,spec.context,v.full?'Full details':'Highlights'];
  if(v.template==='trade') {
   const t=v.trade;rows.push(`Verdict: ${t.call}. Trade balance: ${t.fairness}%.`);
+  if(t.confidence)rows.push(`Verdict confidence: ${t.confidence.label}. ${t.confidence.reasons.join(' ')} Evidence quality, not a win probability.`);
   for(const c of v.columns)rows.push(`${c.from} sends to ${c.to}: ${c.players.map(p=>`${p.name}, ${p.meta||''}, value ${p.value}`).join('; ')||'No players'}. ${c.omitted?`${c.omitted} more players. `:''}Package value ${c.total}.`);
   rows.push(...t.deltas.map(d=>`${d.team}: ${signed(d.delta)} points per week.`),...v.remarks.map(r=>[r.title,v.full?r.copy:''].filter(Boolean).join('. ')));
  }else if(v.template==='ticket') {

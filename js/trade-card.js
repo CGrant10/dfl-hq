@@ -26,6 +26,7 @@ import {drawShareFrame,drawShareFooter,wrapShareText} from "./share-card-style.j
 
 import { FONT, roundRect, fitText, shareCanvas, shareText } from "./share.js";
 import { SHARE_INK } from "./brand-ink.js";
+import {tradeConfidence} from './trade-confidence.js';
 
 const W = 1080;
 const { BG, CARD, CARD_2, LINE, INK, MUTED, GOLD, ACCENT, OK, BRAND_RED, BRAND_YELLOW } = SHARE_INK;
@@ -71,6 +72,8 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
   })).filter(item => item.title || item.copy) : [{
     title: savageFallback(recommendation), copy: "", tone: recommendation.tone === "pass" ? "bad" : recommendation.tone === "accept" ? "good" : "neutral",
   }];
+  const confidence=tradeConfidence(result);
+  if(confidence)fullRemarks.push({title:confidence.label,copy:`${confidence.reasons.join(' ')}${confidence.updatedAt?` ${confidence.source} PPR ROS · updated ${new Date(confidence.updatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · ${confidence.experts} experts.`:''} Evidence quality, not a win probability.`,tone:confidence.level==='strong'?'neutral':'warn'});
   const columns = parties.flatMap((from, index) => {
     const groups = new Map();
     for (const id of sends[index] || []) {
@@ -87,7 +90,7 @@ export function dealCardData({ result, parties = [], sends = [], pool = new Map(
     }));
   });
   return {
-    multi, partyCount:parties.length,
+    multi, partyCount:parties.length,confidence,
     who: member?.display_name || teamName(parties[0]),
     /* Every column is "this side hands these over", which is the only framing
        that stays true for a three-way. */

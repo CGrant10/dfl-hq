@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("./supabase.js", () => ({ db: () => ({ from: mocks.from }) }));
+vi.mock('./expert-rankings-data.js',()=>({loadExpertRankings:vi.fn(async()=>({status:'Unavailable',players:[]}))}));
 vi.mock("./members.js", () => ({ loadMemberDirectory: vi.fn(async () => [
   { id: 1, sleeper_user_id: "a", display_name: "A", active: true },
   { id: 2, sleeper_user_id: "b", display_name: "B", active: true },
@@ -40,7 +41,7 @@ vi.mock("./league-state.js", () => ({
 }));
 vi.mock("./dfl-scoring.js", () => ({ scoringFormat: () => "ppr" }));
 vi.mock("./team-analyzer.js", () => ({
-  buildPlayerPool: () => ({}),
+  buildPlayerPool: () => new Map(),
   analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
@@ -65,7 +66,7 @@ describe("shared analyzer model", () => {
     const data=await loadAnalyzerData();
     expect(loadWeeklyStats.mock.calls.map(args=>args[1])).toEqual([1,2]);
     expect(data.completedWeeks).toBe(2);
-    expect(data.expertConsensus.status).toBe('Not connected');
+    expect(data.expertConsensus.status).toBe('Unavailable');
   });
   it("reports failed availability separately from newer production", async()=>{
     clearAnalyzerDataCache();

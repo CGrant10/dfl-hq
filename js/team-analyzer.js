@@ -1,6 +1,8 @@
 import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
 import {productionProfile, packageEvidence, comparableStarPremium} from './trade-player-evidence.js';
+import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
+import {tradeConfidence} from './trade-confidence.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -14,7 +16,7 @@ const round = (value, digits = 1) => {
   return Math.round((Number(value) || 0) * scale) / scale;
 };
 const finite = value => value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
-const playerPosition = player => String(player?.p || player?.position || "").toUpperCase();
+const playerPosition = player => {const primary=String(player?.p || player?.position || '').toUpperCase();return ANALYZER_POSITIONS.includes(primary)?primary:(player?.fp||player?.fantasy_positions||[]).find(p=>ANALYZER_POSITIONS.includes(p))||primary;};
 const projectionId = row => row?.player_id == null ? "" : String(row.player_id);
 
 function recentProduction(weeks = [], scoringSettings = null) {
@@ -63,7 +65,7 @@ function adpFrom(row, scoringFormat = "ppr") {
 export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}, currentStats = {},
                                   projections = [], weeklyProjections = [], recentStats = [], seasonWeeklyStats = recentStats, trending = null, dataSignals = {},
                                   scoringSettings = null,
-                                  currentWeek = 0,
+                                  currentWeek = 0, expertRankings = null,
                                   scoringFormat = "ppr" } = {}) {
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
   const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
@@ -199,6 +201,8 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
   }
 
   const pool = new Map();
+  const expertMatches=matchExpertRankings(list,expertRankings||{}),modelRanks=new Map();
+  for(const position of ANALYZER_POSITIONS){const ranked=list.filter(p=>p.position===position&&p.tradePerGame!=null).sort((a,b)=>b.tradePerGame-a.tradePerGame);ranked.forEach((p,i)=>modelRanks.set(p.id,{rank:i+1,count:ranked.length}));}
   for (const player of list.filter(p=>rostered.has(p.id))) {
     const production = player.tradePerGame == null ? null : (pricedSurplus(player)/topSurplus)**1.25;
     const market = player.adp ? Math.sqrt(bestAdp/player.adp)*oneQbFactor(player) : null;
@@ -218,6 +222,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const marketActivity = player.marketAdds + player.marketDrops;
     const marketBalance = marketActivity >= 25 ? (player.marketAdds - player.marketDrops) / marketActivity : 0;
     const marketFactor = 1 + marketBalance * .02;
+    const modelValue=Math.max(1,Math.min(100,baseTradeValue*marketFactor)),expert=expertMatches.get(player.id)||null;
+    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? .15 : 0;
+    const expertValue=expert?expertValueIndex(expert.rank)*oneQbFactor(player):null;
+    const modelRank=modelRanks.get(player.id);
     pool.set(player.id, {
       ...player,
       expectedPoints: player.expectedPoints == null ? 0 : round(player.expectedPoints, 2),
@@ -231,9 +239,14 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       oneQbValueFactor: player.position==='QB'?round(oneQbFactor(player),3):null,
       oneQbStarterBaseline: player.position==='QB'?round(qbStarterBaseline,2):null,
       valuationBasis: "replacement-points",
+      expert,expertFeedStatus:expertRankings?.status||'Unavailable',expertSource:expertRankings?.source||'FantasyPros',expertUpdatedAt:expertRankings?.updatedAt||0,expertCount:expertRankings?.experts||0,expertWeight,
+      modelTradeValue:round(modelValue,2),modelPositionRank:modelRank?.rank||null,
+      expertDisagreement:!!(expertWeight&&modelRank?.count>=12&&Math.abs(modelRank.rank-expert.positionRank)>Math.max(6,Math.min(modelRank.rank,expert.positionRank)*.5)),
+      expertSplit:!!(expertWeight&&(expert.stdDev/Math.max(expert.rank,10)>.4||expert.maxRank-expert.minRank>Math.max(16,expert.rank*.8))),
+      requiredResultSamples:Math.min(3,Math.max(0,currentWeek-1)),
       positionRank: positionRanks.get(player.id)?.rank || null,
       positionCount: positionRanks.get(player.id)?.count || null,
-      tradeValue: Math.max(1, Math.min(100, Math.round(baseTradeValue * marketFactor))),
+      tradeValue: Math.max(1, Math.min(100, Math.round(modelValue*(1-expertWeight)+(expertValue||0)*expertWeight))),
     });
   }
   return pool;
@@ -421,12 +434,17 @@ function tradePlayerPool(pool) {
 }
 
 function projectionEvidence(ids, pool) {
-  const players = [...new Set(ids.map(String))].map(id => pool.get(id)).filter(Boolean);
-  const missing = players.filter(p => p.modelSource === 'unrated').map(p => p.name);
+  const unique=[...new Set(ids.map(String))],players = unique.map(id => pool.get(id)).filter(Boolean);
+  const missing = [...players.filter(p => p.modelSource === 'unrated').map(p => p.name),...unique.filter(id=>!pool.has(id)).map(id=>`Unrated player ${id}`)];
   const fallback = players.filter(p => ['current', 'previous'].includes(p.modelSource)).map(p => p.name);
   const injuries = players.filter(p => p.injuryStatus || p.isOut || p.isRisky).map(p => p.name);
   const stale = players.filter(p=>p.staleSignals?.length).map(p=>p.name);
-  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, players, expertConsensus: 'Not connected' };
+  const required=players.some(p=>Object.hasOwn(p,'expertFeedStatus'));
+  const timestamps=players.map(p=>p.expertUpdatedAt).filter(at=>Number.isFinite(at)&&at>0);
+  const expert={required,status:players.find(p=>p.expertFeedStatus&&p.expertFeedStatus!=='Fresh')?.expertFeedStatus|| (required?'Fresh':'Not connected'),source:players[0]?.expertSource||'FantasyPros',updatedAt:timestamps.length?Math.min(...timestamps):0,experts:players[0]?.expertCount||0,
+    missing:players.filter(p=>!p.expert).map(p=>p.name),disagreements:players.filter(p=>p.expertDisagreement).map(p=>p.name),split:players.filter(p=>p.expertSplit).map(p=>p.name)};
+  const thinSamples=players.filter(p=>(p.requiredResultSamples||0)>(p.consistency?.games||0)).map(p=>p.name);
+  return { label: missing.length ? 'Limited' : fallback.length || injuries.length || stale.length ? 'Mixed' : 'Complete', missing, fallback, injuries, stale, players,thinSamples,expert,expertConsensus:expert.status };
 }
 
 function depthHoles(ids, pool) {
@@ -715,9 +733,11 @@ export function tradeSuggestionTier(result) {
   /* Fair means both the asset exchange and the lineup consequence are close.
      A steal requires a substantial asset gain beyond the sensitivity bands;
      a roster-fit gain alone never establishes a cheap purchase. */
-  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(fitA, fitB) >= -.75) return "fair";
+  const confidence=tradeConfidence(result);
   const evidence=result.projectionEvidence;
-  const supported=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length;
+  const dataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length&&!confidence?.needsReview;
+  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(fitA, fitB) >= -.75&&dataReady) return "fair";
+  const supported=dataReady&&(!confidence||confidence.level==='strong');
   const clearsBand=result.incomingEvidence && result.outgoingEvidence
     ? result.incomingEvidence.low > result.outgoingEvidence.high : edge>=12;
   // DFL starts one QB. Any incoming QB (including an elite QB or a throw-in)

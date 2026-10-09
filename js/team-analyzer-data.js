@@ -6,6 +6,7 @@ import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
 import { loadLatestLeagueResults, reconcileLeagueResults } from './league-results.js';
 import { loadMemberDirectory } from "./members.js";
 import {currentAnalyzerLeague,currentAnalyzerRoster,matchesDflStartingSlots,DFL_STARTING_SLOTS} from './analyzer-league-context.js';
+import {loadExpertRankings} from './expert-rankings-data.js';
 
 const ANALYZER_CACHE_MS = 60 * 1000;
 let analyzerValue = null;
@@ -67,7 +68,7 @@ async function fetchAnalyzerData() {
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
-  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults] = await Promise.all([
+  const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings] = await Promise.all([
     loadPlayers(),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
@@ -80,6 +81,7 @@ async function fetchAnalyzerData() {
       .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
     liveSignals,
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
+    loadExpertRankings({season:projectionSeason,scoring:format}),
   ]);
   const pool = buildPlayerPool({
     rosters: namedRosters,
@@ -96,6 +98,7 @@ async function fetchAnalyzerData() {
     scoringSettings: league.scoring_settings || {},
     currentWeek: liveWeek,
     scoringFormat: format,
+    expertRankings,
   });
   const teams = analyzeLeague({ rosters: namedRosters, pool });
   const results = reconcileLeagueResults({ season: projectionSeason, teams,
@@ -116,7 +119,7 @@ async function fetchAnalyzerData() {
       weeklyProjectionRes.stale?'Availability':null,recentStatsRes.some(r=>r.stale)?'Weekly results':null,
       league===storedLeague?'League settings':null,!currentNamesComplete?'Team names':null].filter(Boolean),
     completedWeeks: completedWeeks.length,
-    expertConsensus: {status:'Not connected',url:'https://www.fantasypros.com/nfl/rankings/ros-ppr.php'},
+    expertConsensus: {...expertRankings,players:undefined,matched:[...pool.values()].filter(p=>p.expertWeight>0).length,total:pool.size},
     liveWeek,
   };
 }

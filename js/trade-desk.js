@@ -31,6 +31,8 @@ import {reconcileTradeDestinations,tradePerspective} from './trade-routing.js';
 import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
 import {playerPortrait} from './player-presentation.js';
 import { esc } from "./ui.js";
+import {tradeConfidence,confidenceMarkup} from './trade-confidence.js';
+import {expertSourceMarkup} from './expert-rankings-model.js';
 
 const num = value => (Number.isFinite(Number(value)) ? Number(value) : 0);
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(num(value)).toFixed(1)}`;
@@ -46,6 +48,8 @@ export function tradePlayerCount(sends = []) {
 export function verdictFor(result) {
   if (!result) return null;
   if (result.projectionEvidence?.missing?.length) return { tone: 'even', headline: 'Projection gap', who: null };
+  const confidence=tradeConfidence(result);
+  if(confidence?.needsReview)return {tone:'even',headline:'Review needed',who:null};
   if(result.projectionEvidence?.stale?.length||result.projectionEvidence?.injuries?.length)return {tone:'even',headline:'Review needed',who:null};
   const gap = num(result.valueToA) - num(result.valueToB);
   const fairness = num(result.fairness);
@@ -53,6 +57,7 @@ export function verdictFor(result) {
   if(incoming&&outgoing&&fairness>=72&&fairness<88&&incoming.low<=outgoing.high&&outgoing.low<=incoming.high)
     return {tone:'even',headline:'Close call',who:null};
   if (fairness >= 88) return { tone: "even", headline: "Balanced", who: null };
+  if(confidence&&confidence.level!=='strong')return {tone:'even',headline:'Close call',who:null};
   const who = gap > 0 ? "a" : "b";
   if (fairness >= 72) return { tone: "slight", headline: "Slight edge", who };
   /* The middle band is a meaningful value edge, not automatically a fleece.
@@ -68,6 +73,8 @@ export function verdictFor(result) {
 export function recommendationFor(result) {
   if (!result) return null;
   if (result.projectionEvidence?.missing?.length) return { action: 'REVIEW', tone: 'negotiate', signal: 0, valueEdge: 0 };
+  const confidence=tradeConfidence(result);
+  if(confidence?.needsReview)return {action:'REVIEW',tone:'negotiate',signal:0,valueEdge:0};
   const valueGap = num(result.valueToA) - num(result.valueToB);
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
@@ -86,6 +93,7 @@ export function recommendationFor(result) {
   const signal = valueEdge * .55 + rosterImpact * 8;
   if(result.projectionEvidence?.stale?.length || result.projectionEvidence?.fallback?.length || result.projectionEvidence?.injuries?.length)
     return {action:'REVIEW',tone:'negotiate',signal,valueEdge};
+  if(confidence&&confidence.level!=='strong')return {action:'NEGOTIATE',tone:'negotiate',signal,valueEdge};
   if (valueGap < 0 && fairness < 55) return { action: "FLEECE", tone: "pass", signal, valueEdge };
   // A helpful lineup must not erase a meaningful overpayment.
   if(valueEdge < -20) return {action:'PASS',tone:'pass',signal,valueEdge};
@@ -174,6 +182,8 @@ function sideList(team, pool, picked, side, label, filter = '',parties=[],destin
 */
 export function tradeReasons(result, teamA, teamB, pool, sendA, sendB) {
   if (result?.projectionEvidence?.missing?.length) return [{ tone: 'warn', title: 'No clean call yet.', copy: `Missing projections and production for ${result.projectionEvidence.missing.join(', ')}. Review those players before calling this a win or a fleece.` }];
+  const confidence=tradeConfidence(result);
+  if(confidence&&confidence.level!=='strong')return [{tone:'warn',title:confidence.needsReview?'Hold the victory lap.':'Close call. Save the robbery speech.',copy:`${confidence.reasons.join(' ')} Check the evidence before talking shit.`}];
   const incoming = sendB.map(id => pool.get(String(id))).filter(Boolean);
   const outgoing = sendA.map(id => pool.get(String(id))).filter(Boolean);
   const need = teamA?.need;
@@ -378,11 +388,13 @@ function evidenceMarkup(result) {
     ${evidence.fallback.length ? `<p>Production fallback: ${esc(evidence.fallback.join(', '))}. These players have no season projection.</p>` : ''}
     ${evidence.injuries.length ? `<p>Availability assumptions: ${esc(evidence.injuries.join(', '))}. Injury tags reduce the remaining-season estimate; they do not establish a return date.</p>` : ''}
     ${evidence.stale?.length?`<p>Stale inputs: ${esc(evidence.stale.join(', '))}. Cached data is being used after a feed failure.</p>`:''}
+    ${tradeConfidence(result)?.reasons.map(reason=>`<p>${esc(reason)}</p>`).join('')||''}
     ${result.incomingEvidence && result.outgoingEvidence ? `<p>Value sensitivity: sent ${result.outgoingEvidence.low}–${result.outgoingEvidence.high} · received ${result.incomingEvidence.low}–${result.incomingEvidence.high}. These are model assumptions, not statistical confidence intervals. A Steal must clear both ranges with a meaningful value gain.</p>`:''}
     <section class="td-player-evidence" aria-label="Selected player evidence">${(evidence.players||[]).map(p=>{
       const fmt=v=>v==null?'Unavailable':Number(v).toFixed(1),sample=p.consistency||{};
       return `<article><h3>${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
         <div><dt>Forward DFL points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
+        ${p.expert?`<div><dt>Expert ROS rank</dt><dd>#${p.expert.rank} · ${esc(p.expert.position)}${p.expert.positionRank}${p.expertWeight?'':' · excluded'}</dd></div><div><dt>Expert rank range</dt><dd>${p.expert.minRank}–${p.expert.maxRank}</dd></div>${p.expertDisagreement?`<div><dt>DFL forecast rank</dt><dd>${esc(p.position)}${p.modelPositionRank} · disagrees with experts</dd></div>`:''}`:`<div><dt>Expert ROS rank</dt><dd>No verified match</dd></div>`}
         ${p.position==='QB'&&p.oneQbValueFactor!=null?`<div><dt>1QB trade value</dt><dd>${p.oneQbValueFactor>=1?'Elite weekly edge':p.oneQbValueFactor>.35?'Starter premium reduced':'Streamer discount'}</dd></div>`:''}
         <div><dt>Season points / game</dt><dd>${fmt(p.currentPerGame)} · ${p.currentGames||0} games</dd></div>
         <div><dt>Recent points / game</dt><dd>${fmt(p.recentAverage)} · ${p.recentGames||0} games</dd></div>
@@ -391,7 +403,7 @@ function evidenceMarkup(result) {
         <div><dt>This week</dt><dd>${esc(p.noGameProjected?'No game projected':p.opponent||'Opponent unavailable')}</dd></div>
       </dl><p>${sample.games||0} completed-game results. Floor and ceiling are the observed 25th / 75th percentiles. Forecast source: ${esc(p.modelSource||'Fixture')}.</p></article>`;
     }).join('')}</section>
-    <p>Expert consensus: not connected. <a href="https://www.fantasypros.com/nfl/rankings/ros-ppr.php" target="_blank" rel="noopener">Cross-check FantasyPros ROS rankings</a>. Expert opinions are not included in this grade.</p>
+    ${expertSourceMarkup(evidence.expert,esc)}
     <p>Value balance measures the exchange. Data support describes the selected players’ inputs; neither is an acceptance probability. Future opponents and exact injury return dates are not modeled.</p>
   </details>`;
 }
@@ -453,7 +465,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     </div>
 
     ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
-    ${evidenceMarkup(result)}
+    ${confidenceMarkup(result,esc)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
@@ -492,7 +504,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
     </div>
 
     ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
-    ${evidenceMarkup(result)}
+    ${confidenceMarkup(result,esc)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
