@@ -24,8 +24,9 @@ export function matchExpertRankings(players=[],feed={}){
  }));
 }
 export function expertValueIndex(rank){return Math.max(1,Math.min(100,100/(1+(rank-1)/30)));}
-export function expertSourceMarkup(feed,esc=value=>String(value)){
+export function expertSourceMarkup(feed,esc=value=>String(value),compact=false){
  const fresh=feed?.status==='Fresh',date=feed?.updatedAt?new Date(feed.updatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):null;
  const status=feed?.status==='Not connected'?'not connected':feed?.status||'not connected';
+ if(compact)return `<p>Expert ranks · ${esc(feed?.source||'FantasyPros')} · ${esc(status)}${date?` · ${esc(date)}`:''}${feed?.experts?` · ${Number(feed.experts)} experts`:''} · <a href="${EXPERT_SOURCE_URL}" target="_blank" rel="noopener">Source</a></p>`;
  return `<p>Expert consensus: ${fresh?'FantasyPros PPR rest-of-season':esc(status)}${date?` · updated ${esc(date)}`:''}${feed?.experts?` · ${Number(feed.experts)} experts`:''}. ${fresh?'Fresh, matched rankings contribute up to 15% of player value; DFL projections and production lead.':'Excluded from player values until a fresh PPR feed for this season is available.'} <a href="${EXPERT_SOURCE_URL}" target="_blank" rel="noopener">View source rankings</a>. Expert ranks are opinions, not injury return dates or trade prices.</p>`;
 }

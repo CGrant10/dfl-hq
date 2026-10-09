@@ -23,7 +23,7 @@ export function tradeConfidence(result){
  const level=limited?'limited':reasons.length?'mixed':'strong';
  return {level,label:level==='strong'?'Strong support':level==='mixed'?'Mixed support':'Limited support',needsReview:review.length>0,reasons:reasons.length?reasons:['Fresh expert rankings and DFL inputs support this estimate.'],source:evidence.expert.source,updatedAt:evidence.expert.updatedAt,experts:evidence.expert.experts};
 }
-export function confidenceMarkup(result,esc=value=>String(value)){
+export function confidenceMarkup(result,esc=value=>String(value),compact=false){
  const confidence=tradeConfidence(result);if(!confidence)return '';
- return `<section class="td-confidence is-${confidence.level}" data-trade-confidence="${confidence.level}" aria-label="Verdict confidence"><header><span>VERDICT CONFIDENCE</span><strong>${esc(confidence.label)}</strong></header><p>${esc(confidence.reasons[0])}</p><small>Evidence quality, not a win probability.</small></section>`;
+ return `<section class="td-confidence is-${confidence.level}" data-trade-confidence="${confidence.level}" aria-label="Data quality"><header><span>DATA QUALITY</span><strong>${esc(confidence.label)}</strong></header>${compact?'':`<p>${esc(confidence.reasons[0])}</p><small>Evidence quality, not a win probability.</small>`}</section>`;
 }

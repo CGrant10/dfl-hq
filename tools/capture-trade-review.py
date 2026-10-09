@@ -64,7 +64,16 @@ with sync_playwright() as p:
         click('[data-td-add-member]');assert page.locator('[data-td-member]').count()==2
         for side,pid in [(0,'1-4'),(0,'1-3'),(1,'2-6'),(2,'3-3')]:pick(side,pid)
         select('[data-td-destination="1-3"]','3');select('[data-td-destination="2-6"]','1')
+        assert page.locator('.td-reasoning,.td-reason').count()==0
+        assert page.locator('.td-top-take').count()==1
+        assert page.locator('.td-confidence p,.td-confidence > small').count()==0
+        assert page.locator('.td-player-evidence article dl').count()==4
+        assert 'Projected ROS points / game' in page.locator('.td-player-evidence').text_content()
+        assert all('Player values reflect' not in text and 'Forecast source:' not in text for text in page.locator('.td-data-context').evaluate_all('es=>es.map(e=>e.textContent)'))
+        assert '1 QB' in page.locator('[data-trade-league-format]').text_content()
         assert not page.locator('[data-td-share]').is_disabled()
+        page.locator('.td-ticket').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
+        page.screenshot(path=str(output/f'trade-{width}-ticket.png'))
         click('[data-td-share]')
         shared=page.evaluate('({routes:window.reviewSharedDeal.destinations,incoming:window.reviewSharedDeal.receives})')
         assert shared['routes']=={'1-4':'2','1-3':'3','2-6':'1','3-3':'1'},shared
@@ -95,7 +104,7 @@ with sync_playwright() as p:
         if page.locator('[data-td-remove-pick="1"][data-player-id="2-7"]').count():click('[data-td-remove-pick="1"][data-player-id="2-7"]')
         if page.locator('.td-deal-evidence > summary').count():
             click('.td-deal-evidence > summary')
-            assert 'Expert consensus: not connected.' in page.locator('.td-deal-evidence').inner_text()
+            assert 'Expert ranks · FantasyPros · not connected' in page.locator('.td-deal-evidence').inner_text()
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),f'{width}: expanded evidence overflow'
         click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()==2

@@ -369,53 +369,40 @@ function balanceMeter(fairness) {
 }
 
 function reasonList(reasons) {
-  return `<p class="td-top-take">${esc(reasons[0]?.title||'Why this call')}</p><details class="td-reasoning">
-    <summary><span>The DFLyzer’s full take</span><small>Show the reasoning</small></summary><div>
-    ${reasons.map(reason => `<article class="td-reason is-${reason.tone}">
-      <i aria-hidden="true">${REASON_MARK[reason.tone] || "="}</i>
-      <div><strong>${esc(reason.title)}</strong><p>${esc(reason.copy)}</p></div>
-    </article>`).join("")}
-  </div></details>`;
+  return `<p class="td-top-take">${esc(reasons[0]?.title||'')}</p>`;
 }
 
 function evidenceMarkup(result) {
   result=tradePerspective(result);
   const evidence = result.projectionEvidence;
   if (!evidence) return '';
-  return `<details class="td-data-context td-deal-evidence"><summary><span>Data support</span><small>${esc(evidence.label)}</small></summary>
-    <p>Lineup impact looks ahead using DFL scoring, projections, current production and recent form. Points already earned stay with their original owner.</p>
-    ${evidence.missing.length ? `<p>Missing production and projections: ${esc(evidence.missing.join(', '))}. Review this deal before relying on its grade.</p>` : ''}
-    ${evidence.fallback.length ? `<p>Production fallback: ${esc(evidence.fallback.join(', '))}. These players have no season projection.</p>` : ''}
-    ${evidence.injuries.length ? `<p>Availability assumptions: ${esc(evidence.injuries.join(', '))}. Injury tags reduce the remaining-season estimate; they do not establish a return date.</p>` : ''}
-    ${evidence.stale?.length?`<p>Stale inputs: ${esc(evidence.stale.join(', '))}. Cached data is being used after a feed failure.</p>`:''}
-    ${tradeConfidence(result)?.reasons.map(reason=>`<p>${esc(reason)}</p>`).join('')||''}
-    ${result.incomingEvidence && result.outgoingEvidence ? `<p>Value sensitivity: sent ${result.outgoingEvidence.low}–${result.outgoingEvidence.high} · received ${result.incomingEvidence.low}–${result.incomingEvidence.high}. These are model assumptions, not statistical confidence intervals. A Steal must clear both ranges with a meaningful value gain.</p>`:''}
+  return `<details class="td-data-context td-deal-evidence"><summary><span>Player stats</span><small>${esc(evidence.label)}</small></summary>
+    ${evidence.missing.length ? `<p>Missing data: ${esc(evidence.missing.join(', '))}</p>` : ''}
+    ${evidence.fallback.length ? `<p>Production fallback: ${esc(evidence.fallback.join(', '))}</p>` : ''}
+    ${evidence.injuries.length ? `<p>Injury flags: ${esc(evidence.injuries.join(', '))}</p>` : ''}
+    ${evidence.stale?.length?`<p>Stale inputs: ${esc(evidence.stale.join(', '))}</p>`:''}
     <section class="td-player-evidence" aria-label="Selected player evidence">${(evidence.players||[]).map(p=>{
       const fmt=v=>v==null?'Unavailable':Number(v).toFixed(1),sample=p.consistency||{};
       return `<article><h3>${esc(p.name)}</h3><p>${esc([p.position,p.nflTeam,p.injuryStatus||'No injury designation',p.practiceParticipation].filter(Boolean).join(' · '))}</p><dl>
-        <div><dt>Forward DFL points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
+        <div><dt>Projected ROS points / game</dt><dd>${fmt(p.tradePerGame)}</dd></div>
         ${p.expert?`<div><dt>Expert ROS rank</dt><dd>#${p.expert.rank} · ${esc(p.expert.position)}${p.expert.positionRank}${p.expertWeight?'':' · excluded'}</dd></div><div><dt>Expert rank range</dt><dd>${p.expert.minRank}–${p.expert.maxRank}</dd></div>${p.expertDisagreement?`<div><dt>DFL forecast rank</dt><dd>${esc(p.position)}${p.modelPositionRank} · disagrees with experts</dd></div>`:''}`:`<div><dt>Expert ROS rank</dt><dd>No verified match</dd></div>`}
-        ${p.position==='QB'&&p.oneQbValueFactor!=null?`<div><dt>1QB trade value</dt><dd>${p.oneQbValueFactor>=1?'Elite weekly edge':p.oneQbValueFactor>.35?'Starter premium reduced':'Streamer discount'}</dd></div>`:''}
         <div><dt>Season points / game</dt><dd>${fmt(p.currentPerGame)} · ${p.currentGames||0} games</dd></div>
         <div><dt>Recent points / game</dt><dd>${fmt(p.recentAverage)} · ${p.recentGames||0} games</dd></div>
         <div><dt>Weekly floor / ceiling</dt><dd>${sample.games>=3?`${fmt(sample.floor)} / ${fmt(sample.ceiling)}`:'Not enough games'}</dd></div>
         <div><dt>Targets / carries per game</dt><dd>${fmt(p.targetsPerGame)} / ${fmt(p.carriesPerGame)}</dd></div>
         <div><dt>This week</dt><dd>${esc(p.noGameProjected?'No game projected':p.opponent||'Opponent unavailable')}</dd></div>
-      </dl><p>${sample.games||0} completed-game results. Floor and ceiling are the observed 25th / 75th percentiles. Forecast source: ${esc(p.modelSource||'Fixture')}.</p></article>`;
+      </dl></article>`;
     }).join('')}</section>
-    ${expertSourceMarkup(evidence.expert,esc)}
-    <p>Value balance measures the exchange. Data support describes the selected players’ inputs; neither is an acceptance probability. Future opponents and exact injury return dates are not modeled.</p>
+    ${expertSourceMarkup(evidence.expert,esc,true)}
   </details>`;
 }
-
-const REASON_MARK = { good: "↑", bad: "↓", warn: "!", neutral: "=" };
 
 function idleTicket() {
   return `<div class="td-ticket is-idle">
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>No deal yet</h2>
-      <span>Pick at least one player from each side and the ticket fills in.</span>
+      <span>Pick players from each team.</span>
     </div>
   </div>`;
 }
@@ -464,8 +451,8 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
-    ${confidenceMarkup(result,esc)}${evidenceMarkup(result)}
+    ${balanceMeter(result.fairness)}
+    ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
@@ -503,8 +490,8 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
     </div>
 
-    ${balanceMeter(result.fairness)}<p class="td-projection-note">Player values use the same price on every roster. Lineup, depth and required cuts are evaluated separately.</p>
-    ${confidenceMarkup(result,esc)}${evidenceMarkup(result)}
+    ${balanceMeter(result.fairness)}
+    ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
 }
@@ -531,7 +518,7 @@ export function tradeDeskMarkup(team, teams, pool, state) {
       <summary><span>Build your trade</span><i aria-hidden="true"></i></summary>
       <div class="td-builder-body">
         <div class="td-party-controls">${selectors}${add}</div>
-        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Choose a recipient for each selected player. Every member needs players in and out.":"Build any even or uneven package across both sides."}</small></div>
+        <div class="td-package-limit" data-td-limit><span><b data-td-total-count>${tradePlayerCount(state.sends)}</b> of ${MAX_TRADE_PLAYERS} players selected</span><small>${multi?"Choose each player’s recipient.":""}</small></div>
         <div class="td-board ${multi ? "is-multi" : ""}" style="--td-party-count:${parties.length}">
           ${parties.map((party, index) => sideList(party, pool, state.sends[index], String(index), multi ? `${teamName(party)} sends` : index ? "YOU GET" : "YOU SEND", state.filters?.[index] || "",parties,state.destinations,state.rosterOpen?.[index])).join("")}
         </div>
@@ -580,7 +567,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     currentDeal=evaluateTradeDeal(parties,sends,pool,state.destinations);
     const result=currentDeal?.result;
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
-      +(currentDeal?lineupComparisonMarkup(currentDeal,pool):parties.length>2?'<p class="td-projection-note" role="status">Choose who receives each player. Every included member must send and receive a player before this deal can be graded.</p>':'')
+      +(currentDeal?lineupComparisonMarkup(currentDeal,pool):parties.length>2?'<p class="td-projection-note" role="status">Each team must send and receive a player.</p>':'')
       +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
     onDeal?.(currentDeal);
   };
