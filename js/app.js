@@ -14,7 +14,7 @@ import { initTheme, syncThemeFromMember } from "./theme.js";
 import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
 import { mountMemberPreview } from "./member-preview.js";
-import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
+import { startRouter, renderRoute, go, currentRoute, onRoute, syncTabIndicator } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { setupNotifyNudge } from "./notify-nudge.js";
@@ -166,7 +166,7 @@ function initials(name){return String(name||"?").trim().slice(0,2).toUpperCase()
 const moreSheet=document.getElementById("more"),moreBtn=document.getElementById("more-btn");
 /* The button says whether the sheet is open, because "More" on its own tells
    a screen reader nothing about what tapping it just did. */
-const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));
+const syncMore=()=>{moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.classList.contains("hidden")));syncTabIndicator()};
 /*
   Closing gives focus back to the More button. That is the right place even
   when the close was a link: the sheet is the app's navigation, so a keyboard
@@ -225,32 +225,6 @@ document.getElementById("whoami")?.addEventListener("click",()=>{
 });
 window.addEventListener("dfl:pick-member",event=>{if(event.detail?.forgetMemberId)forgetVerifiedPin(event.detail.forgetMemberId);openPicker({cancellable:true})});
 
-/*
-  THE SLIDING TAB INDICATOR.
-
-  The CSS owns the transition; this only ever measures. Two custom properties
-  on the bar - the active tab's offset and its width - and the ::before slides
-  between them. Measured rather than computed from an index because the bar
-  scrolls horizontally on a narrow phone and the tabs are not equal width.
-
-  offsetLeft is relative to the bar, and the bar is the offsetParent (it is
-  position:fixed), so a scrolled bar needs no correction - which is exactly why
-  this is not done with getBoundingClientRect.
-*/
-function moveTabIndicator(){
-  const bar=document.getElementById("tabbar");
-  if(!bar)return;
-  const active=bar.querySelector("a.on")||document.getElementById("more-btn")?.classList.contains("on")
-    ?bar.querySelector("a.on")||document.getElementById("more-btn"):null;
-  if(!active){bar.classList.remove("has-indicator");return;}
-  bar.style.setProperty("--tab-x",`${active.offsetLeft}px`);
-  bar.style.setProperty("--tab-w",`${active.offsetWidth}px`);
-  bar.style.setProperty("--tab-y",`${active.offsetTop}px`);
-  bar.classList.add("has-indicator");
-}
-/* A rotate or a keyboard opening changes the tab widths under it. */
-window.addEventListener("resize",moveTabIndicator);
-
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 async function boot(){void registerAppWorker();console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(navigator.onLine===false){
   initialView.innerHTML='<section class="state is-error" role="alert"><h1 class="state-title">You’re offline</h1><p>DFL HQ is ready on this device. Reconnect to load league data, post or place a bet.</p><button class="btn" type="button" data-retry-page>Retry</button></section>';
@@ -268,13 +242,7 @@ paintName();mountMemberPreview();
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */
   void syncThemeFromMember();
-  /*
-    THE TAB INDICATOR, hung off the router's own
-    notification rather than off hashchange - so it updates after the page has
-    swapped rather than racing it, and Back/Forward get the same treatment as a
-    tap because the router handles all three identically.
-  */
-  onRoute((name) => { moveTabIndicator(); syncExperience(document.getElementById("view"), name); });
+  onRoute((name) => { syncExperience(document.getElementById("view"), name); });
   /* Background conveniences used to compete with Home for the same Supabase
      connection. Let the first route settle, then start presence, updates and notification nudges.
      Worker registration starts independently so a push page cannot deadlock. */

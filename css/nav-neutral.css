@@ -12,11 +12,27 @@
 #tabbar :is(a,.tabmore) > span { white-space: nowrap; font: inherit; letter-spacing: 0; }
 #tabbar :is(a,.tabmore) .ico { width: 20px; height: 20px; flex: 0 0 20px; margin: 0; fill: none; stroke: currentColor; color: inherit !important; filter: none !important; opacity: 1; }
 #tabbar :is(a,.tabmore):is(.on,:hover) { color: var(--nav-active) !important; transform: none; }
-#tabbar :is(a,.tabmore).on { background: color-mix(in srgb,var(--nav-active) 10%,var(--nav-bg)); }
-/* The legacy splash hides per-tab markers; the neutral chrome also assigns
-   an important gradient. This is the sole, theme-readable active marker. */
-#tabbar :is(a,.tabmore).on::before { display: block !important; content: ''; position: absolute; top: 0; left: 24%; right: 24%; height: 3px; border-radius: 0 0 2px 2px; background: var(--nav-active) !important; }
-#tabbar :is(a,.tabmore).on::after, #tabbar::before { display: none; }
+/* One shared surface slides beneath the controls. The top line travels with
+   the tint; per-tab markers and backgrounds would make it look like a redraw. */
+#tabbar { isolation: isolate; }
+#tabbar :is(a,.tabmore) { z-index: 1; transition: color 180ms ease; }
+#tabbar :is(a,.tabmore).on { background: transparent; }
+#tabbar :is(a,.tabmore)::before, #tabbar :is(a,.tabmore)::after { display: none !important; }
+#tabbar::before {
+  content: ''; display: block; position: absolute; z-index: 0;
+  left: 0; top: var(--tab-y,0px); width: var(--tab-w,0px); height: var(--tab-h,48px);
+  transform: translateX(var(--tab-x,0px)); border-radius: 0; box-shadow: none;
+  background: linear-gradient(var(--nav-active),var(--nav-active)) center top / 52% 3px no-repeat,
+    color-mix(in srgb,var(--nav-active) 10%,var(--nav-bg));
+  opacity: 0; pointer-events: none;
+  transition: transform 280ms cubic-bezier(.2,.75,.25,1), width 280ms cubic-bezier(.2,.75,.25,1) !important;
+}
+#tabbar.has-indicator::before { opacity: 1; }
+#tabbar.indicator-still::before, html[data-ui-motion="off"] #tabbar::before,
+html[data-ui-motion="off"] #tabbar :is(a,.tabmore) { transition: none !important; }
+#tabbar #more-btn[aria-expanded="true"] { color: var(--nav-active) !important; }
+#tabbar:has(#more-btn[aria-expanded="true"]) a.on { color: var(--nav-ink) !important; }
+@media (prefers-reduced-motion: reduce) { #tabbar::before, #tabbar :is(a,.tabmore) { transition: none !important; } }
 #tabbar :is(a,.tabmore):focus-visible { outline: 2px solid var(--nav-active); outline-offset: -4px; }
 #more svg { color: var(--muted) !important; filter: none !important; }
 @media (min-width: 900px) {

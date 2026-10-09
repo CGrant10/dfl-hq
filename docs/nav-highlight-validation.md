@@ -1,0 +1,7 @@
+# Navigation highlight — v1.352.0
+
+The shared navigation uses a single tinted surface with a short top line. Both travel together for 280ms using the same restrained ease as other DFL controls. A transform moves the highlight while icon/label color changes stay independent; the marker does not change bar geometry or pointer targeting. Existing theme-specific navigation colors are retained.
+
+The router owns indicator measurement; the duplicate app-level implementation is removed. Opening More temporarily moves the surface to that control, closing returns it to the actual route, and secondary routes keep More selected. Route activation, keyboard navigation and Back/Forward all use the same target. Initial paint, resized controls, rotation, visibility changes and motion preference changes settle without travel. Reduced motion and Motion off disable the transitions.
+
+Validation: TypeScript, identifier checks, 1,291 tests in 144 files and the build pass. Read-only Chromium checks exercise both Medicine Wheel themes at 320/390/768/1280px, intermediate transition positions, correct settled alignment, 44px control heights, unchanged bar height, rapid retargeting, Back/Forward, More open/close and secondary routes, Enter activation, Motion off and reduced-motion cancellation. Screenshots are inspected; no production league changes or wagers are made. Local artifacts: /workspace/dfl-nav-1352/. Native-device animation was not tested.
