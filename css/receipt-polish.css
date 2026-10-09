@@ -1,0 +1,41 @@
+/* Saved trades: scan the archive first, then open a readable receipt. */
+.td-completed .td-alert-list { gap:12px; }
+.td-completed .td-alert-receipt { border-radius:12px; transform:none!important; }
+.td-alert-receipt > .td-receipt-summary { display:grid; grid-template-columns:minmax(0,1fr) 18px; align-items:center; gap:14px; padding:14px 16px; min-height:44px; list-style:none; cursor:pointer; transform:none!important; }
+.td-receipt-summary::-webkit-details-marker { display:none; }
+.td-receipt-summary small { color:var(--body-text); font:700 .6875rem/1.4 var(--font-body); letter-spacing:.06em; }
+.td-receipt-summary h3 { margin:4px 0; color:var(--text); font:700 1.125rem/1.25 var(--font-body); overflow-wrap:anywhere; }
+.td-receipt-summary p { margin:0; color:var(--body-text); font-size:.8125rem; line-height:1.5; overflow-wrap:anywhere; }
+.td-receipt-summary p span { padding-inline:4px; }
+.td-receipt-chevron { width:8px; height:8px; justify-self:center; border-right:2px solid var(--body-text); border-bottom:2px solid var(--body-text); transform:rotate(45deg); transition:transform 160ms ease; }
+.td-alert-receipt[open] > summary .td-receipt-chevron { transform:rotate(225deg); }
+.td-receipt-summary:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; border-radius:11px; }
+.td-receipt-status { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 16px; border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); color:var(--body-text); font-size:.6875rem; font-weight:700; letter-spacing:.05em; }
+.td-receipt-status strong { color:var(--text); font-size:1rem; font-variant-numeric:tabular-nums; letter-spacing:0; }
+.td-receipt-body .td-alert-packages { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); }
+.td-receipt-body .td-alert-packages > section { padding:12px 16px; }
+.td-receipt-body .td-alert-packages > section > .dfl-team { margin:0 0 10px; }
+.td-receipt-body .dfl-team-copy strong { font-size:.875rem; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+.td-receipt-body .dfl-team-copy small { font-size:.6875rem; white-space:normal; overflow:visible; }
+.td-receipt-body .td-alert-packages .td-receipt-column-head { margin:0; padding:0 0 5px; border-bottom:1px solid var(--line-soft); color:var(--body-text); font-size:.6875rem; }
+.td-receipt-body .td-alert-packages .td-receipt-player { margin:0; min-height:58px; gap:10px; }
+.td-receipt-body .dfl-player { flex:1; gap:10px; }
+.td-completed .td-receipt-body .dfl-player-portrait { width:40px; height:40px; flex:0 0 40px; }
+.td-receipt-body .dfl-player-copy { flex:1; min-width:0; }
+.td-receipt-body .player-card-trigger { display:flex; flex:1; min-width:0; min-height:44px; padding:4px 0; font-size:.875rem; line-height:1.3; text-align:left; white-space:normal; overflow-wrap:anywhere; }
+.td-completed .td-receipt-body .dfl-player-copy strong { font-size:.875rem; line-height:1.3; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+.td-receipt-body .dfl-team-mark i { font-size:12px; }
+.td-receipt-body .dfl-player-copy small { font-size:.6875rem; line-height:1.5; white-space:normal; overflow:visible; }
+.td-receipt-body .td-receipt-value { min-width:32px; }
+.td-receipt-body .td-receipt-value b { color:var(--text); font:700 1.0625rem/1.3 var(--font-body); font-variant-numeric:tabular-nums; }
+.td-receipt-footer { padding:12px 16px; border-top:1px solid var(--line-soft); }
+.td-receipt-footer > p { margin:0; color:var(--body-text); font-size:.8125rem; line-height:1.5; overflow-wrap:anywhere; }
+.td-receipt-impact { width:100%; margin-top:12px; border-collapse:collapse; table-layout:auto; font-size:.8125rem; color:var(--text); }
+.td-receipt-impact caption { padding:0 0 6px; text-align:left; color:var(--body-text); font-size:.75rem; font-weight:700; }
+.td-receipt-impact :is(th,td) { padding:6px 0; border-bottom:1px solid var(--line-soft); }
+.td-receipt-impact thead th { color:var(--body-text); font-size:.6875rem; font-weight:500; white-space:nowrap; overflow-wrap:normal; }
+.td-receipt-impact th:first-child { width:50%; padding-right:12px; text-align:left; overflow-wrap:anywhere; font-weight:500; }
+.td-receipt-impact :is(th,td):not(:first-child) { width:25%; padding-left:8px; text-align:right; font-variant-numeric:tabular-nums; }
+.td-receipt-impact tr:last-child :is(th,td) { border-bottom:0; }
+html[data-ui-motion="off"] .td-receipt-chevron { transition:none; }
+@media(prefers-reduced-motion:reduce) { .td-receipt-chevron { transition:none; } }

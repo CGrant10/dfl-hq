@@ -217,13 +217,16 @@ export function completedTradeMarkup(alerts = [], selectedTransactionId = "") {
     - (String(b.transactionId) === String(selectedTransactionId) ? -1 : 0));
   return `<details class="ta-report-section td-completed" ${selectedTransactionId ? "open" : ""}>
     <summary class="ta-report-title"><div><small>COMPLETED DEALS</small><h2>DFLyzer trade receipts</h2></div><span class="ta-fold-hint">${views.length} saved</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
-    <div class="ta-section-body td-alert-list">${views.map(alert => {
+    <div class="ta-section-body td-alert-list">${views.map((alert, receiptIndex) => {
       const call = alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED";
-      return `<article class="td-alert-receipt" id="trade-${esc(alert.transactionId)}">
-        <header><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3></div><span class="td-receipt-balance">${alert.fairness == null ? "MODEL REVIEW" : `${alert.fairness}% balance`}</span></header>
-        <div class="td-alert-packages">${alert.packages.map(pkg => `<section>${teamIdentity({ team_name: pkg.teamName }, { meta: "SENT", compact: true })}${pkg.players.map(player => `<div class="td-receipt-player">${playerIdentity(player)}<span class="td-receipt-value"><b>${Math.round(player.value)}</b><small>VALUE</small></span></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
-        <footer><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.fairness == null ? "" : alert.lineupDeltas.filter(delta => delta.weekly != null).map((delta, index) => `<small>${esc(delta.teamName)} <b>lineup ${alertSigned(delta.weekly)} · depth ${alertSigned(alert.depthDeltas?.[index]?.weekly)}</b></small>`).join("")}</footer>
-      </article>`;
+      const open = selectedTransactionId ? String(alert.transactionId) === String(selectedTransactionId) : receiptIndex === 0;
+      const impacts = alert.lineupDeltas.map((delta, index) => ({ ...delta, depth:alert.depthDeltas?.[index]?.weekly })).filter(delta => delta.weekly != null);
+      return `<details class="td-alert-receipt" id="trade-${esc(alert.transactionId)}" data-receipt-tone="${esc(alert.outcome?.tone || 'review')}"${open ? " open" : ""}>
+        <summary class="td-receipt-summary"><div><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${esc(call)}</h3><p>${alert.teams.map(team => esc(team.teamName)).join(' <span aria-hidden="true">↔</span> ')}</p></div><span class="td-receipt-chevron" aria-hidden="true"></span></summary>
+        <div class="td-receipt-body"><div class="td-receipt-status"><span>${alert.fairness == null ? "MODEL REVIEW" : "VALUE BALANCE"}</span>${alert.fairness == null ? "" : `<strong>${alert.fairness}%</strong>`}</div>
+        <div class="td-alert-packages">${alert.packages.map(pkg => `<section aria-label="${esc(pkg.teamName)} sent">${teamIdentity({ team_name: pkg.teamName }, { meta: `SENT · ${pkg.players.length} PLAYER${pkg.players.length === 1 ? '' : 'S'}`, compact: true })}<div class="td-receipt-column-head" aria-hidden="true"><span>Player</span><span>Value</span></div>${pkg.players.map(player => `<div class="td-receipt-player"><button type="button" class="player-card-trigger td-receipt-player-action" data-player-card="${esc(player.id)}" aria-label="View ${esc(player.name)} player card">${playerIdentity(player)}</button><span class="td-receipt-value"><span class="sr-only">Trade value </span><b>${Math.round(player.value)}</b></span></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
+        <footer class="td-receipt-footer"><p>${esc(alert.reason?.title || alert.limitations?.[0] || "Completed trade recorded.")}</p>${alert.fairness == null || !impacts.length ? "" : `<table class="td-receipt-impact"><caption>Roster impact · pts/wk</caption><thead><tr><th scope="col">Team</th><th scope="col">Lineup</th><th scope="col">Depth</th></tr></thead><tbody>${impacts.map(delta => `<tr><th scope="row">${esc(delta.teamName)}</th><td>${alertSigned(delta.weekly)}</td><td>${delta.depth == null ? '—' : alertSigned(delta.depth)}</td></tr>`).join("")}</tbody></table>`}</footer></div>
+      </details>`;
     }).join("")}</div>
   </details>`;
 }
