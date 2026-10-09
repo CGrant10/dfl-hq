@@ -1,4 +1,4 @@
-# Shared UI motion — v1.349.1
+# Shared UI motion — v1.350.0
 
 The app now extends the Clubhouse's restrained motion into ordinary navigation and controls. Destination-shaped loading placeholders replace the plain route-loading flash. The header and bottom navigation remain fixed, incoming content remains inert until ready, and a completed route fades in once. Slow/stale route renders remain isolated; error states remove the placeholder and expose Retry.
 

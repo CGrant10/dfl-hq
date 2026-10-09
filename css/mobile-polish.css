@@ -1,0 +1,126 @@
+/* A shared reading rhythm, with each page keeping its own primary surface.
+   Scoped to the football desks; broadcast artwork and score effects own
+   their geometry. All measurements reflow with the reader's text size. */
+#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) {
+  --desk-title: 1.875rem;
+  --desk-section: 1.125rem;
+  --desk-copy: .875rem;
+  --desk-meta: .75rem;
+}
+
+/* Home: an editorial feed. The matchup leads, section titles mark the
+   scroll, and supporting stories use a quieter body scale. */
+#home-wrap { padding-top:18px; }
+#home-wrap > .home-newspaper-masthead { gap:6px; margin-bottom:12px; }
+#home-wrap .home-newspaper-name h1 { font-size:var(--desk-title); line-height:1.15; }
+#home-wrap .home-newspaper-date { letter-spacing:.075em; }
+#home-wrap .home-frontpage { gap:18px; }
+#home-wrap .gameday-matchup { padding-block:12px 6px; }
+#home-wrap .home-team-total > small { font-size:.6875rem; letter-spacing:.09em; }
+#home-wrap .home-matchup-entry { border-top:1px solid var(--home-panel-line); padding-top:10px; margin-top:2px; }
+#home-wrap .home-lineup-primary { font-size:1rem; min-height:44px; }
+#home-wrap .home-week-focus .home-focus-action { font-size:var(--desk-meta); margin-top:6px; }
+#home-wrap :is(.home-league-desk,.home-league-file,.home-banter) { padding-top:18px; margin-top:20px; }
+#home-wrap :is(.section-title,.home-league-file .section-title) { font-size:var(--desk-section); line-height:1.3; letter-spacing:.025em; }
+#home-wrap .page-disclosure > summary { min-height:60px; padding-block:12px; }
+#home-wrap .page-disclosure > summary strong { font-size:var(--desk-section); }
+#home-wrap .page-disclosure > summary small { font-size:var(--desk-meta); line-height:1.45; }
+#home-wrap .home-tool-card { padding-block:12px; }
+#home-wrap .home-tool-card > small { font-size:.6875rem; letter-spacing:.06em; }
+#home-wrap .home-tool-card > strong { font-size:1.25rem; line-height:1.2; }
+#home-wrap .home-tool-card > span { font-size:var(--desk-meta); line-height:1.45; }
+#home-wrap .home-tool-card > b { font-size:var(--desk-copy); }
+#home-wrap .home-league-story h3 { font-size:1.0625rem; line-height:1.3; }
+#home-wrap .home-league-story p { font-size:var(--desk-meta); line-height:1.5; }
+#home-wrap .home-league-story small { font-size:.6875rem; letter-spacing:.06em; }
+#home-wrap .home-newspaper-sections button { min-height:44px; font-size:var(--desk-meta); }
+#home-wrap .home-banter .wall-body { font-size:var(--desk-copy); line-height:1.5; }
+#home-wrap .dfl-chirp { padding-block:6px 10px; }
+#home-wrap .dfl-chirp header { min-height:44px; }
+#home-wrap .dfl-chirp .dfl-chirp-roast { font-size:var(--desk-copy); }
+
+/* Clubhouse: scores have more weight than phase labels and archive controls.
+   Team names always wrap, including the smaller matchup switcher. */
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-header h1 { font-size:var(--desk-title); }
+#view .clubhouse-command-center .clubhouse-header { padding-block:6px 12px; }
+#view .clubhouse-command-center .clubhouse-eyebrow { font-size:.6875rem; letter-spacing:.07em; }
+#view .clubhouse-command-center .clubhouse-context.card { padding-bottom:12px; }
+#view .clubhouse-command-center .clubhouse-tabs { margin-bottom:16px; }
+#view .clubhouse-command-center .clubhouse-heading h2 { font-size:var(--desk-section); }
+#view .clubhouse-command-center .clubhouse-scoreboard-game { padding:10px 8px; gap:7px; }
+#view .clubhouse-command-center .clubhouse-mini-phase { font-size:.6875rem; }
+#view .clubhouse-command-center .clubhouse-mini-team > span:not(.dfl-team-mark) { font-size:var(--desk-meta); line-height:1.25; }
+#view .clubhouse-command-center .clubhouse-mini-team > b { font-size:1rem; line-height:1.1; }
+#view[data-route="clubhouse"] .clubhouse-command-center .clubhouse-matchup-toolbar [data-clubhouse-motion] { min-width:0; margin-left:0; padding-inline:6px; font-size:var(--desk-meta); }
+#view .clubhouse-command-center .clubhouse-matchup-focus > small { font-size:.6875rem; }
+#view .clubhouse-command-center .clubhouse-pulse-grid small { font-size:.6875rem; letter-spacing:.04em; }
+#view .clubhouse-command-center .clubhouse-pulse-grid strong { font-size:1rem; line-height:1.3; }
+#view .clubhouse-command-center .clubhouse-pulse-grid article > span { font-size:var(--desk-meta); line-height:1.45; }
+
+/* Trade: a deal desk. Quiet mode controls lead into a clearly bounded
+   workbench; the ticket verdict remains the strongest result. */
+#view[data-route="trade"] .tb-head-row { padding:14px 16px; }
+#view[data-route="trade"] .tb-head h1 { font-size:var(--desk-title); }
+#view[data-route="trade"] .td-entry-actions { gap:0; border-bottom:1px solid var(--line); margin-bottom:16px; }
+#view[data-route="trade"] .td-entry-actions > button { border:0; border-radius:0; background:transparent; box-shadow:none; color:var(--body-text); font-size:var(--desk-copy); padding:10px 6px; }
+#view[data-route="trade"] .td-entry-actions > button[aria-pressed="true"] { background:transparent; color:var(--text); font-weight:700; }
+#view[data-route="trade"] .td-entry-actions:not([data-ui-rail]) > button[aria-pressed="true"] { box-shadow:inset 0 -2px var(--accent); }
+#view[data-route="trade"] .tb-workbench-card { border-radius:8px; padding:12px; gap:10px; box-shadow:none; }
+#view[data-route="trade"] :is(.tb-team-select > span,.tb-player-pickers header small) { font-size:.6875rem; letter-spacing:.055em; }
+#view[data-route="trade"] .tb-player-pickers header > span { font-size:var(--desk-meta); }
+#view[data-route="trade"] .tb-anchor-empty { font-size:var(--desk-meta); }
+#view[data-route="trade"] .tb-setup-head .section-title { font-size:var(--desk-section); }
+#view[data-route="trade"] .tb-offer-owner strong { font-size:var(--desk-copy); white-space:normal; overflow-wrap:anywhere; }
+#view[data-route="trade"] .tb-offer-owner i { font-size:.6875rem; line-height:1.4; }
+#view[data-route="trade"] .td-ticket { border-radius:8px; }
+#view[data-route="trade"] .td-ticket-head h2 { font-size:1.25rem; }
+#view[data-route="trade"] .td-stamp strong { font-size:2rem; line-height:1.1; }
+#view[data-route="trade"] .td-custom { margin-top:0; }
+#view[data-route="trade"] .td-custom > summary { background:transparent; border-bottom:1px solid var(--line); padding:10px 0; }
+#view[data-route="trade"] .td-custom > summary small { display:none; }
+#view[data-route="trade"] .td-custom > summary h2 { font-size:var(--desk-section); }
+
+/* Sportsbook: a compact masthead and tab strip, then aligned lines. */
+#view[data-route="sportsbook"] .sb-masthead { min-height:0; padding:16px; gap:12px; align-items:center; }
+#view[data-route="sportsbook"] .sb-brand h1 { font-size:var(--desk-title); line-height:1.15; letter-spacing:.015em; margin:2px 0 6px; }
+#view[data-route="sportsbook"] .sb-brand > small { font-size:.6875rem; letter-spacing:.09em; }
+#view[data-route="sportsbook"] .sb-brand > span { padding:0; border:0; border-radius:0; background:transparent; font-size:var(--desk-meta); letter-spacing:.03em; }
+#view[data-route="sportsbook"] .sb-masthead .sb-wallet { padding:0 0 0 12px; border:0; border-left:1px solid var(--line); border-radius:0; background:transparent; backdrop-filter:none; }
+#view[data-route="sportsbook"] .sb-wallet strong { font-size:1.75rem; }
+#view[data-route="sportsbook"] .sb-wallet small { font-size:.6875rem; letter-spacing:.05em; }
+#view[data-route="sportsbook"] .sb-wallet span { font-size:.6875rem; margin-left:4px; }
+#view[data-route="sportsbook"] .sb-product-tabs { gap:0; padding:0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; margin-bottom:12px; }
+#view[data-route="sportsbook"] .sb-product-tabs > button { min-height:44px; border-radius:0; background:transparent; box-shadow:none; font-size:var(--desk-copy); color:var(--body-text); }
+#view[data-route="sportsbook"] .sb-product-tabs > button[aria-selected="true"] { color:var(--text); }
+#view[data-route="sportsbook"] .sb-product-tabs:not([data-ui-rail]) > button[aria-selected="true"] { box-shadow:inset 0 -2px var(--accent); }
+#view[data-route="sportsbook"] .sb-board-head h2 { font-size:var(--desk-section); }
+#view[data-route="sportsbook"] .sb-pickem-hero { padding:14px; gap:12px; box-shadow:none; border-radius:8px; }
+#view[data-route="sportsbook"] .sb-pickem-hero h2 { font-size:1.5rem; line-height:1.15; }
+#view[data-route="sportsbook"] .sb-pickem-hero p { font-size:var(--desk-meta); line-height:1.45; }
+#view[data-route="sportsbook"] .sb-pickem-hero > span { min-width:44px; min-height:44px; font-size:1.25rem; }
+#view[data-route="sportsbook"] .sb-outcome.is-picked { box-shadow:inset 2px 0 var(--accent-2); }
+
+/* Press feedback lives on actions, never on changing score values. */
+#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) :is(.btn,.home-lineup-primary,.home-tool-card,.home-league-story,.tb-generate,.tb-show-all) {
+  transition:background-color 160ms ease,border-color 160ms ease,transform 120ms ease;
+}
+#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all):active:not(:disabled) { transform:translateY(1px); }
+#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) :is(.home-tool-card,.home-league-story):active { background:color-mix(in srgb,var(--accent) 7%,transparent); }
+#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"]) :is(button,a,select,input,summary):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+body:has(#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"])) #toast { max-width:calc(100vw - 32px); padding:12px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--bg-2); color:var(--text); font:600 .875rem/1.45 var(--font-body); animation:none; }
+body:has(#view:is([data-route="home"],[data-route="clubhouse"],[data-route="trade"],[data-route="sportsbook"])) #toast.bad { border-left-color:var(--danger); }
+@media(max-width:600px) {
+  #view .clubhouse-command-center .clubhouse-pulse-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
+  #view .clubhouse-command-center .clubhouse-pulse-grid article:first-child { grid-column:1 / -1; }
+}
+@media(max-width:360px) {
+  #view .clubhouse-command-center .clubhouse-scoreboard-grid { grid-template-columns:minmax(0,1fr); }
+  #view[data-route="sportsbook"] .sb-masthead { padding:12px; gap:8px; }
+  #view[data-route="sportsbook"] .sb-brand h1 { font-size:1.625rem; }
+  #view[data-route="sportsbook"] .sb-wallet strong { font-size:1.5rem; }
+}
+html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all):active { transform:none; }
+@media(prefers-reduced-motion:reduce) {
+  #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all) { transition:none; }
+  #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all):active { transform:none; }
+}

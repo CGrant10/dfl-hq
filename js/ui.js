@@ -130,6 +130,7 @@ export function toast(message, bad = false) {
   el.textContent = message;
   el.classList.toggle("bad", !!bad);
   el.classList.remove("hidden");
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('dfl:toast'));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add("hidden"), 2600);
 }

@@ -174,6 +174,10 @@ const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.clas
   it has just navigated to.
 */
 const closeMore=()=>{if(moreSheet)cancelUiMotion(moreSheet);moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
+window.addEventListener('dfl:toast', () => {
+  if (!['home', 'clubhouse', 'trade', 'sportsbook'].includes(document.getElementById('view')?.dataset.route)) return;
+  animateUi(document.getElementById('toast'), [{ opacity:0, transform:'translate(-50%,6px)' }, { opacity:1, transform:'translate(-50%,0)' }], { duration:180 });
+});
 const openMore=()=>{
   void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
