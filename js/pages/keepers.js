@@ -24,11 +24,12 @@ import { normalizeSleeperMarket } from "../keeper-market.js";
 import { openKeeperEntry } from "../keeper-entry.js";
 import { boardData, shareKeeperBoard } from "../keeper-board.js";
 import { currentMember, loadMembers } from "../members.js";
+import {currentTeamLabel} from '../current-team-names.js';
 
 let year = null;   // remembered while the app stays open
 
 export async function render(view) {
-  const rows = await selectAll("keepers", { order: "team", asc: true });
+  const [rows,members] = await Promise.all([selectAll("keepers", { order: "team", asc: true }),loadMembers().catch(()=>[])]);
   /* The hold length is the league's own rule, not a 3 written into this page.
      An un-migrated league has no keeper_rules table, which is not worth
      failing the board over - the default is the same three seasons. */
@@ -90,7 +91,7 @@ export async function render(view) {
     const maxYears = configFor(ruleRows, year)?.max_keeper_seasons
                   ?? DEFAULT_RULES.max_keeper_seasons;
 
-    body.innerHTML = teamList(mine, maxYears)
+    body.innerHTML = teamList(mine, maxYears, members)
       + `<div class="row-end ke-actions">
            <button type="button" class="btn ghost small" data-keeper-share>Share keeper board</button>
            ${canEdit() ? `<button type="button" class="btn" data-keeper-entry>Add keeper</button>
@@ -685,7 +686,7 @@ function compareTable(all, context) {
  * are both arithmetic on it, so there is one stored fact and no second column
  * to keep in step with it.
  */
-function teamList(allRows, maxYears) {
+function teamList(allRows, maxYears, members) {
   const rows = visible("keepers", allRows);
   if (!rows.length) return empty("No keepers for this year.");
 
@@ -699,7 +700,7 @@ function teamList(allRows, maxYears) {
       </div>
       ${byTeam.map(([team, list]) => list.map((k, i) => `
         <div class="kp-row ${i === 0 ? "kp-new" : ""} ${hiddenClass("keepers", k)}">
-          <span class="kp-team">${i === 0 ? esc(team) : ""}</span>
+          <span class="kp-team">${i === 0 ? esc(currentTeamLabel(team,members,{member_id:k.member_id})) : ""}</span>
           <span class="kp-player">
             ${esc(k.player)}
             ${k.notes ? `<span class="kp-note">${esc(k.notes)}</span>` : ""}

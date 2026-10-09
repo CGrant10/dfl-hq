@@ -1,3 +1,4 @@
+import {currentSportsbookNames} from './current-team-names.js';
 const id=value=>String(value??'');
 const finite=value=>value!==null&&value!==undefined&&Number.isFinite(Number(value));
 const round=value=>Math.round(Number(value)*100)/100;
@@ -25,7 +26,7 @@ export function buildWeeklyClubhouse(data,members=[],raw=[],players={}){
  const max=counts.size?Math.max(...counts.values()):0;
  const clown=[...counts].filter(([,count])=>count===max).map(([memberId])=>{const m=byId.get(memberId);return{memberId:m?.id,name:m?.team_name||m?.display_name||'Member'}});
  if(max&&data.completed&&!data.voteOpen&&data.voteClosed!==false)award('clown','Clown of the Week',clown,`${max} vote${max===1?'':'s'}${clown.length>1?' · tied ballot':''}`);
- return{...data,games,awards,counts,clown,clownVotes:max,benchAvailable:raw.length>0&&raw.every(row=>row.players_points),members};
+ return{...data,sportsbook:currentSportsbookNames({recap:data.sportsbook},members).recap,games,awards,counts,clown,clownVotes:max,benchAvailable:raw.length>0&&raw.every(row=>row.players_points),members};
 }
 export function weeklyRecapLines(model){
  const lines=[`${model.season} · Week ${model.week} · ${model.completed?'Final receipts':'Matchups in progress'}`];

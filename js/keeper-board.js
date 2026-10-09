@@ -76,8 +76,8 @@ export function boardData({ season, members = [], keeperRows = [], players = {},
   const byMember = new Map(members.map((m) => [String(m.id), []]));
   const nameKey = new Map();
   for (const m of members) {
-    for (const label of [m.team_name, m.display_name]) {
-      if (label) nameKey.set(String(label).trim().toLowerCase(), String(m.id));
+    for (const label of [m.team_name, m.display_name,...(m.team_name_aliases||[])]) {
+      if(label){const key=String(label).trim().toLowerCase(),owner=String(m.id);nameKey.set(key,nameKey.has(key)&&nameKey.get(key)!==owner?null:owner);}
     }
   }
 
@@ -100,7 +100,7 @@ export function boardData({ season, members = [], keeperRows = [], players = {},
     const q = String(label || "").trim().toLowerCase();
     if (q.length < 3) return null;
     const hits = members.filter((m) =>
-      [m.display_name, m.team_name].some((v) =>
+      [m.display_name, m.team_name,...(m.team_name_aliases||[])].some((v) =>
         String(v || "").trim().toLowerCase().startsWith(q)));
     return hits.length === 1 ? String(hits[0].id) : null;
   };

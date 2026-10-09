@@ -1,3 +1,4 @@
+import {currentTeamMember} from '../current-team-names.js';
 import {memberWeeklyAwardsHtml,wireMemberWeeklyAwards} from "../weekly-clubhouse-ui.js";
 // =====================================================================
 // Profile - one member, everything the app knows about them.
@@ -78,8 +79,7 @@ export async function render(view) {
   const loreName = lore && !lore.error ? namer(lore) : null;
 
   // The name to show at the top is the CURRENT one: whatever the member
-  // profile says, otherwise the latest name Sleeper has. Historic names
-  // live in the season table further down and are never used up here.
+  // directory resolves from Sleeper. Every season uses that same name.
   const currentTeam = member.team_name || sleeperUser?.data?.team_name || "";
 
   const seasons = (standings.data || []).sort((a, b) => b.season - a.season);
@@ -88,10 +88,10 @@ export async function render(view) {
   if (dfl) { careerStats.titles = dfl.titles.length; careerStats.runnerUps = dfl.seconds.length; }
 
   const myKeepers = (keepers.data || []).filter((k) =>
-    sameName(k.team, member.team_name) || sameName(k.team, member.display_name));
+    String(currentTeamMember(k.team,members,{member_id:k.member_id})?.id)===String(member.id));
 
   const myDues = (payments.data || []).filter((p) =>
-    sameName(p.owner_name, member.display_name) || sameName(p.team_name, member.team_name))
+    sameName(p.owner_name, member.display_name) || String(currentTeamMember(p.team_name,members,{member_id:p.member_id})?.id)===String(member.id))
     .sort((a, b) => b.season - a.season);
 
   /*
@@ -126,7 +126,7 @@ export async function render(view) {
   const reference = [
     memberWeeklyAwardsHtml(),
     awardsCard(member),
-    historyCard(seasons, leagues.data || [], member.sleeper_user_id),
+    historyCard(seasons, leagues.data || [], member.sleeper_user_id, currentTeam),
     loreName ? rivalryCard(foes, loreName, members) : "",
     keepersCard(myKeepers),
     duesCard(myDues),
@@ -147,7 +147,7 @@ export async function render(view) {
                           <div class="card-body">${esc(member.notes)}</div></div>` : ""}
       ${dfl ? cabinetCard(dfl) : ""}
       ${careerCard(careerStats, seasons.length)}
-      ${dfl && loreName ? extremesCard(dfl, loreName) : ""}
+      ${dfl && loreName ? extremesCard(dfl, loreName, currentTeam) : ""}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
       ${isMe ? `<details class="profile-settings" id="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance, notifications and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-notifications-slot></div><div data-profile-privacy-slot></div></div></details>` : ""}
@@ -333,7 +333,7 @@ function awardsCard(m) {
 
 // ------------------------------ history -------------------------------
 
-function historyCard(seasons, leagues, userId) {
+function historyCard(seasons, leagues, userId, currentTeam) {
   if (!seasons.length) return "";
   const champYears  = new Set(seasonsWon(leagues, "champion_user_id", userId).map((l) => l.season));
   const runnerYears = new Set(seasonsWon(leagues, "runner_up_user_id", userId).map((l) => l.season));
@@ -345,14 +345,14 @@ function historyCard(seasons, leagues, userId) {
       <div class="tblwrap">
         <table class="tbl">
           <thead><tr>
-            <th>Season</th><th>Team that year</th><th>Record</th>
+            <th>Season</th><th>Team</th><th>Record</th>
             <th class="num">Points</th><th>Finish</th>
           </tr></thead>
           <tbody>
             ${seasons.map((s) => `
               <tr>
                 <td>${esc(s.season)}</td>
-                <td class="muted">${esc(s.team_name || "—")}</td>
+                <td class="muted">${esc(currentTeam || s.team_name || "—")}</td>
                 <td>${s.wins}-${s.losses}${s.ties ? "-" + s.ties : ""}</td>
                 <td class="num">${Math.round(s.points_for).toLocaleString()}</td>
                 <td>
@@ -649,19 +649,10 @@ function cabinetCard(c) {
   scored the most points and missed the playoffs is a different story that
   the season table below already tells.
 */
-function extremesCard(c, name) {
+function extremesCard(c, name, currentTeam) {
   const groups = { seasons: [], scoring: [], streaks: [] };
-  /*
-    ONLY THE NAME USED THAT YEAR, or none.
-
-    The first cut of this fell back to the owner's CURRENT team name when a
-    season had no snapshot, which put "🏆DaGrapeApes🏆" against a 2020 row -
-    a name that did not exist in 2020. A season either kept its name or it
-    did not; where it did not, the year and the record say enough. Reaching
-    for today's value because it is easier to get is how a record book stops
-    being one.
-  */
-  const seasonLabel = (s) => String(s.team_name || "").trim();
+  // Career records use the same current team name as the profile.
+  const seasonLabel = (s) => String(currentTeam || s.team_name || "").trim();
 
   if (c.bestSeason) {
     groups.seasons.push(careerMoment("Best season", ordinalPlace(c.bestSeason.rank),

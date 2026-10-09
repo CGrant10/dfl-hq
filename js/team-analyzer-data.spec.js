@@ -99,7 +99,7 @@ describe("shared analyzer model", () => {
     expect(data.teams[0].team_name).toBe('Latest A');expect(data.teams[1].team_name).toBe('Latest B');
     expect(data.league.scoring_settings.rec).toBe(1);expect(data.leagueFormat).toMatchObject({teams:2,verified:true});
     expect(data.teamNamesSource).toBe('Current Sleeper');expect(data.staleSources).not.toContain('Team names');
-    expect(loadMemberDirectory).toHaveBeenLastCalledWith({force:true});
+    expect(loadMemberDirectory).toHaveBeenLastCalledWith();
     clearAnalyzerDataCache();sleeper.users.mockResolvedValueOnce([{user_id:'a',metadata:{team_name:'Renamed A'}},{user_id:'b',metadata:{team_name:'Latest B'}}]);
     expect((await loadAnalyzerData()).teams[0].team_name).toBe('Renamed A');
   });

@@ -25,7 +25,7 @@ async function fetchAnalyzerData() {
   const [leagueRes, rosterRes, memberRes, leagueState, standingRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
-    loadMemberDirectory({force:true}).then(data => ({ data, error: null }), error => ({ data: [], error })),
+    loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
     loadLeagueState().catch(() => null),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
   ]);

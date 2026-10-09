@@ -1,3 +1,4 @@
+import {currentSportsbookNames} from '../current-team-names.js';
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
@@ -128,6 +129,7 @@ export async function render(view){
     ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
   }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
 
+  ({markets,outcomes,bets,trends,recap}=currentSportsbookNames({markets,outcomes,bets,trends,recap},members));
   const byMarket=new Map();
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
