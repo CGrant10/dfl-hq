@@ -1,10 +1,11 @@
 import { db } from "./supabase.js";
-import { loadMarketAdp, loadPlayers, loadSeasonStats, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } from "./sleeper.js";
+import { sleeper, loadMarketAdp, loadPlayers, loadSeasonStats, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } from "./sleeper.js";
 import { loadLeagueState } from "./league-state.js";
 import { scoringFormat } from "./dfl-scoring.js";
 import { analyzeLeague, buildPlayerPool } from "./team-analyzer.js";
 import { loadLatestLeagueResults, reconcileLeagueResults } from './league-results.js';
 import { loadMemberDirectory } from "./members.js";
+import {currentAnalyzerLeague,currentAnalyzerRoster,matchesDflStartingSlots,DFL_STARTING_SLOTS} from './analyzer-league-context.js';
 
 const ANALYZER_CACHE_MS = 60 * 1000;
 let analyzerValue = null;
@@ -24,31 +25,35 @@ async function fetchAnalyzerData() {
   const [leagueRes, rosterRes, memberRes, leagueState, standingRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
-    loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
+    loadMemberDirectory({force:true}).then(data => ({ data, error: null }), error => ({ data: [], error })),
     loadLeagueState().catch(() => null),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
   ]);
   const error = leagueRes.error || rosterRes.error || memberRes.error;
   if (error) throw error;
-  const league = leagueRes.data?.[0] || null;
+  const storedLeague = leagueRes.data?.[0] || null;
   const allRosters = rosterRes.data || [];
   const seasons = [...new Set(allRosters.map(row => Number(row.season)).filter(Number.isFinite))].sort((a, b) => b - a);
   const rosterSeason = seasons.find(season => allRosters.filter(row => Number(row.season) === season && row.players?.length).length >= 2);
   const rosters = allRosters.filter(row => Number(row.season) === rosterSeason && row.players?.length);
-  if (!league || !rosters.length) return { state: "empty", league, rosterSeason };
+  if (!storedLeague || !rosters.length) return { state: "empty", league:storedLeague, rosterSeason };
+
+  const [liveLeagueRes,liveUsersRes]=await Promise.allSettled([
+    sleeper.league(storedLeague.sleeper_league_id),sleeper.users(storedLeague.sleeper_league_id),
+  ]);
+  const liveLeague=liveLeagueRes.status==='fulfilled'?liveLeagueRes.value:null;
+  const liveUsers=liveUsersRes.status==='fulfilled'&&Array.isArray(liveUsersRes.value)?liveUsersRes.value:[];
+  const league=currentAnalyzerLeague(storedLeague,liveLeague);
+  if(!matchesDflStartingSlots(league.roster_positions))throw new Error('Sleeper’s starting lineup differs from the supported DFL format. Review the league settings before analyzing trades.');
+  if(Number(league.total_rosters)>0&&rosters.length!==Number(league.total_rosters))throw new Error('The synced roster count does not match the current league. Refresh the Sleeper sync before analyzing trades.');
+  if(Number(rosterSeason)!==Number(league.season))throw new Error('Current-season rosters are not available. Refresh the Sleeper sync before analyzing trades.');
+  const currentNamesComplete=rosters.every(r=>liveUsers.some(u=>String(u.user_id)===String(r.sleeper_user_id)));
 
   const members = memberRes.data || [];
   const bySleeper = new Map(members.filter(member => member.sleeper_user_id).map(member => [String(member.sleeper_user_id), member]));
   const namedRosters = rosters.map(roster => {
     const member = bySleeper.get(String(roster.sleeper_user_id));
-    return {
-      ...roster,
-      identity: member || null,
-      ownerName: member?.display_name || roster.display_name || "Unassigned owner",
-      // Current tools share Clubhouse's directory names. Historical names
-      // remain in the season rosters used by the archive.
-      team_name: member?.team_name || member?.display_name || roster.team_name || roster.display_name || `Team ${roster.roster_id}`,
-    };
+    return currentAnalyzerRoster(roster,member,liveUsers);
   });
   const projectionSeason = Number(league.season) || rosterSeason;
   const format = scoringFormat(league.scoring_settings);
@@ -99,6 +104,8 @@ async function fetchAnalyzerData() {
   return {
     state: teams.length ? "ready" : "empty",
     league, rosterSeason, projectionSeason, teams, pool, members,
+    leagueFormat:{teams:rosters.length,scoring:format,startingSlots:(league.roster_positions||DFL_STARTING_SLOTS).filter(p=>p!=='BN'),verified:league!==storedLeague},
+    teamNamesSource:currentNamesComplete?'Current Sleeper':liveUsers.length?'Current Sleeper (partial)':'Synced roster',
     ...results,
     projectionUpdatedAt: projectionRes.fetchedAt || 0,
     productionUpdatedAt: currentStatsRes.fetchedAt || statsRes.fetchedAt || 0,
@@ -106,7 +113,8 @@ async function fetchAnalyzerData() {
     weeklyResultsUpdatedAt: recentStatsRes.length ? Math.min(...recentStatsRes.map(r=>r.fetchedAt||0)) : 0,
     liveSignalsUpdatedAt: weeklyProjectionRes.fetchedAt || 0,
     staleSources: [projectionRes.stale?'Season projections':null,currentStatsRes.stale?'Production':null,
-      weeklyProjectionRes.stale?'Availability':null,recentStatsRes.some(r=>r.stale)?'Weekly results':null].filter(Boolean),
+      weeklyProjectionRes.stale?'Availability':null,recentStatsRes.some(r=>r.stale)?'Weekly results':null,
+      league===storedLeague?'League settings':null,!currentNamesComplete?'Team names':null].filter(Boolean),
     completedWeeks: completedWeeks.length,
     expertConsensus: {status:'Not connected',url:'https://www.fantasypros.com/nfl/rankings/ros-ppr.php'},
     liveWeek,
