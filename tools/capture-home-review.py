@@ -302,6 +302,44 @@ def check_game_day_moments(page):
     page.emulate_media(reduced_motion='no-preference')
     return {**setup,**checks,'reducedMotionStops':True,'naturalCleanup':True}
 
+def check_matchup_lineups(page):
+    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("""async()=>{
+      const {matchupLineupHtml}=await import('./js/game-day-lineup-comparison.js');
+      const {patchGameDay}=await import('./js/game-day-dom.js');
+      const {animateScoreChanges}=await import('./js/game-day-score-motion.js');
+      const slots=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'];
+      const names=['Patrick Mahomes','Christian McCaffrey','Kenneth Walker III','Amon-Ra St. Brown','Marvin Harrison Jr.','George Kittle','Jaxon Smith-Njigba','Brandon Aubrey','San Francisco 49ers'];
+      const side=roster=>({roster,name:roster==='1'?'The Bayou Bombers':'A Long Rival Team Name',lineup:slots.map((slot,i)=>({id:`demo-${roster}-${i}`,roster,slot,slotType:slot,slotIndex:i,position:slot==='FLEX'?'WR':slot,name:names[i],nflTeam:'SF',state:'live',points:i===0?20.5:i===1?null:0})),bench:[]});
+      const game={id:'demo',sides:[side('1'),side('2')]};game.sides[0].lineup[3].injuryStatus='Questionable';game.sides[1].lineup[6].injuryStatus='Questionable';game.sides[1].lineup[2]={...game.sides[1].lineup[2],empty:true,points:null};
+      const dialog=document.createElement('dialog');dialog.className='gameday-watch';dialog.dataset.motion='on';document.querySelector('#view').append(dialog);
+      const markup=()=>'<header class="gd-watch-header"><h2>Demo lineup preview</h2></header><div data-watch-content>'+matchupLineupHtml(game)+'</div>';
+      dialog.innerHTML=markup();dialog.showModal();
+      window.lineupFixture={dialog,game,markup,patchGameDay,animateScoreChanges};
+    }""")
+    results=[]
+    for width in [320,390,768]:
+        page.set_viewport_size({'width':width,'height':844})
+        checks=page.evaluate("""()=>{
+          const f=window.lineupFixture,check=(v,m)=>{if(!v)throw Error(m)},root=f.dialog;
+          const rows=[...root.querySelectorAll('.gd-lineup-comparison > .gd-lineup-pairs > .gd-compare-row')];
+          check(rows.length===9,'Missing starting slot');
+          for(const row of rows){const cells=[...row.querySelectorAll('.gd-compare-player')],r=cells.map(e=>e.getBoundingClientRect());check(r[0].right<r[1].left,'Comparison stacked');const scores=cells.map(e=>e.querySelector('.gameday-player-score').getBoundingClientRect());check(Math.abs(scores[0].bottom-scores[1].bottom)<1,'Paired scores are not aligned');}
+          check([...root.querySelectorAll('.dfl-player-copy strong,.gd-compare-head strong')].every(e=>e.scrollWidth<=e.clientWidth+1),'Player/team name clipped');
+          check(root.scrollWidth<=root.clientWidth,'Matchup comparison overflows');
+          const measure=()=>[...root.querySelectorAll('.gd-thermal-value')].map(e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]});
+          const model={completed:false,games:[],starters:f.game.sides.flatMap(t=>t.lineup),snapshot:{points:{'1:demo-1-0':20.5},totals:{}}};
+          const before=measure(),stop=f.animateScoreChanges(root,{previous:{points:{'1:demo-1-0':19},totals:{}},model,motion:true});
+          check(root.querySelector('.gd-moment-caption')?.textContent==='20-point game','Comparison lost player moment');check(JSON.stringify(before)===JSON.stringify(measure()),'Comparison moment moves score glyphs');stop();
+          const button=root.querySelector('[data-gameday-player]');button.focus();const identity=button;f.game.sides[0].lineup[0].points=22.75;f.patchGameDay(root,f.markup());check(document.activeElement===identity&&identity.isConnected,'Refresh lost player focus');check(root.querySelector('[data-gameday-score-key="1:demo-1-0"]').textContent.includes('22.75'),'Refresh failed to patch points');f.game.sides[0].lineup[0].points=20.5;f.patchGameDay(root,f.markup());
+          return {width:innerWidth,pairedSlots:9,namesFit:true,scoresAligned:true,noOverflow:true,scoreGeometryStable:true,momentPreserved:true,refreshPreservesFocus:true};
+        }""")
+        page.screenshot(path=str(OUT/f'matchup-comparison-{width}.png'))
+        results.append(checks)
+    page.evaluate("()=>{window.lineupFixture.dialog.close();window.lineupFixture.dialog.remove();delete window.lineupFixture}")
+    page.set_viewport_size({'width':390,'height':844})
+    return results
+
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
       const portrait=row.querySelector('.dfl-player-portrait').getBoundingClientRect(),copy=row.querySelector('.injury-player-copy'),text=copy.getBoundingClientRect(),state=row.querySelector('.injury-player-state').getBoundingClientRect(),box=row.getBoundingClientRect();
@@ -358,6 +396,7 @@ with sync_playwright() as p:
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
     moment_effects=check_game_day_moments(page)
+    matchup_lineups=check_matchup_lineups(page)
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     # Player leaders are secondary to the matchup and lineup action. Open the
@@ -377,7 +416,7 @@ with sync_playwright() as p:
         page.set_viewport_size({'width': width, 'height': 844})
         page.wait_for_timeout(300)
         if width == 390:
-            metrics['leaderCore'] = page.locator('.home-thermal-leaders').evaluate("e=>{const key=e.querySelector('.home-score-key');return e.offsetHeight-(key?.offsetHeight||0)-(key?8:0)}")
+            metrics['leaderCore'] = page.locator('.home-thermal-leaders').evaluate("e=>e.offsetHeight")
         metrics[str(width)] = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth,canvas:!!document.querySelector("canvas"), sections:[...document.querySelectorAll(".topbar,.home-newspaper-masthead,.bx-stage,.gameday-matchup,.home-thermal-leaders,.tabbar")].map(e=>({class:e.className,top:e.getBoundingClientRect().top,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,height:e.getBoundingClientRect().height}))})')
         page.screenshot(path=str(OUT / f'home-{width}.png'))
         masthead = page.locator('.home-newspaper-masthead').evaluate("e=>({width:e.getBoundingClientRect().width,title:e.querySelector('h1').textContent.trim()})")
@@ -408,7 +447,7 @@ with sync_playwright() as p:
     assert all(-0.5 <= section['left'] and section['right'] <= width + 0.5 for width in [390,320,832,1280] for section in metrics[str(width)]['sections']), 'A primary section is clipped at the viewport edge'
     assert page.locator('.home-thermal-leaders [data-score-temperature="hot"]').count() == 2
     assert page.locator('.home-thermal-leaders [data-score-temperature="cold"]').count() == 2
-    assert 'under 10 pts after halftime or final' in page.locator('.home-score-key').inner_text(), 'Score colors need a visible explanation'
+    assert page.locator('.home-score-key').count() == 0, 'The hot/cold info text should be removed'
     page.locator('[data-home-live-slot]').scroll_into_view_if_needed()
     page.locator('[data-home-live-slot]').evaluate("e=>e.dataset.motion='on'")
     page.wait_for_timeout(300)
@@ -793,6 +832,7 @@ with sync_playwright() as p:
                     page.locator('.bx-stage').screenshot(path=str(OUT/f'themed-{mode.replace(":","-")}-slide-{index}.png'))
     page.evaluate("window.reviewSetTheme('light')")
     metrics['momentEffects']=moment_effects
+    metrics['matchupLineups']=matchup_lineups
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['consoleErrors'] = errors
