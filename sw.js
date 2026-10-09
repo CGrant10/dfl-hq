@@ -3,6 +3,7 @@ const CACHE_NAME = "dfl-hq-v1.352.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
+  "./js/nav-highlight.js",
   "./css/detail-polish.css?v=1.352.0","./js/dialog-viewport.js",
   "./css/mobile-polish.css?v=1.352.0","./css/ui-motion.css?v=1.352.0","./js/ui-motion.js","./js/route-placeholder.js",
   "./css/clubhouse-polish.css?v=1.352.0","./js/clubhouse-polish.js",

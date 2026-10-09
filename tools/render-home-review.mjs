@@ -158,6 +158,7 @@ html = html.replace('</body>', `<script type="module">
   import { startStage } from './js/broadcast-stage.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
+  import { syncTabIndicator, mountNavHighlight } from './js/nav-highlight.js';
   import { reviewTextContrast } from './tools/home-review-contrast.js';
   const deck = ${JSON.stringify(deck)};
   const themes = ${JSON.stringify(reviewThemes)};
@@ -189,6 +190,8 @@ html = html.replace('</body>', `<script type="module">
   mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');
   document.querySelector('#tabbar').classList.add('is-in-season');
+  mountNavHighlight(document.querySelector('#tabbar'));
+  window.reviewSyncNav = () => syncTabIndicator({ animate: false });
   document.querySelectorAll('[data-score-temperature]').forEach(el => el.style.fontVariantNumeric = 'tabular-nums');
   document.querySelector('.dfl-preview-toggle').addEventListener('click', e => { e.currentTarget.dataset.mode = e.currentTarget.dataset.mode === 'commissioner' ? 'member' : 'commissioner'; });
 </script></body>`);

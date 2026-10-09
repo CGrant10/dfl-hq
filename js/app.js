@@ -1,3 +1,4 @@
+import { syncTabIndicator } from './nav-highlight.js';
 import { mountLeagueSearch } from "./league-search.js";
 import { mountPlayerCards } from './player-card-actions.js';
 import { startUiMotion, animateUi, cancelUiMotion } from './ui-motion.js';
@@ -14,7 +15,7 @@ import { initTheme, syncThemeFromMember } from "./theme.js";
 import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
 import { mountMemberPreview } from "./member-preview.js";
-import { startRouter, renderRoute, go, currentRoute, onRoute, syncTabIndicator } from "./router.js";
+import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { setupNotifyNudge } from "./notify-nudge.js";
