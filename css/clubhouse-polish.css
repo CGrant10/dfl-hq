@@ -24,7 +24,7 @@
 #view .clubhouse-command-center .clubhouse-mini-team > b { font-weight:700; }
 #view .clubhouse-command-center .clubhouse-matchup-focus > small { display:block; padding-bottom:8px; font-size:10px; letter-spacing:.08em; }
 #view .clubhouse-command-center .clubhouse-matchup-card { border-top:1px solid var(--line); padding:12px 0 0; }
-#view .clubhouse-command-center .clubhouse-matchup-card > header { align-items:center; padding-bottom:12px; }
+#view .clubhouse-command-center .clubhouse-matchup-card > header { scroll-margin-top:60px; align-items:center; padding-bottom:12px; }
 #view .clubhouse-command-center .clubhouse-game-teams { gap:24px; padding:18px 8px 20px; margin-bottom:14px; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:radial-gradient(ellipse at 12% 8%,color-mix(in srgb,var(--clubhouse-left,var(--accent)) 17%,transparent),transparent 63%),radial-gradient(ellipse at 88% 8%,color-mix(in srgb,var(--clubhouse-right,var(--accent)) 17%,transparent),transparent 63%),color-mix(in srgb,var(--bg) 65%,var(--bg-2)); }
 #view .clubhouse-command-center .clubhouse-game-teams::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(90deg,transparent calc(50% - .5px),var(--line) 50%,transparent calc(50% + .5px)),linear-gradient(115deg,color-mix(in srgb,var(--text) 3%,transparent),transparent 45%); mask-image:linear-gradient(transparent,black 25%,black 65%,transparent); }
 #view .clubhouse-command-center .clubhouse-game-teams::after { top:46%; padding:5px 4px; border:1px solid var(--line); border-radius:50%; background:var(--bg-2); font-size:9px; }
