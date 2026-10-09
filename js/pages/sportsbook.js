@@ -1,3 +1,4 @@
+import { fitDialogToViewport } from '../dialog-viewport.js';
 import {currentSportsbookNames} from '../current-team-names.js';
 import { animateUi, cancelUiMotion } from '../ui-motion.js';
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
@@ -818,8 +819,8 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   dialog.addEventListener('close',()=>cancelUiMotion(dialog));
   dialog.setAttribute("aria-labelledby","sb-slip-title");
   dialog.innerHTML=`<form novalidate>
-    <div class="sb-slip-head"><h2 id="sb-slip-title">Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div>
-    <ol class="sb-slip-picks" data-picks></ol>
+    <div class="sb-slip-head"><h2 id="sb-slip-title" tabindex="-1" autofocus>Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div>
+    <div class="sb-slip-content"><ol class="sb-slip-picks" data-picks></ol>
     <div class="sb-slip-price"><span>Combined price</span><strong data-combined>—</strong></div>
     <div class="sb-slip-fields">
       <label>Stake <span>SIN</span><input name="stake" inputmode="numeric" autocomplete="off" value="${Math.min(50,available)||""}" aria-describedby="sb-slip-error"></label>
@@ -827,7 +828,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
     </div>
     <p class="sb-slip-available">${num(available)} SIN available &middot; Return includes your stake</p>
     <p id="sb-slip-error" role="status"></p>
-    <button type="submit" class="btn sb-slip-submit">Review bet</button>
+    </div><footer class="sb-slip-footer"><button type="submit" class="btn sb-slip-submit">Review bet</button></footer>
   </form>`;
   view.append(dialog);
 
@@ -837,7 +838,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
 
   /* Closing repaints the board rather than reloading it: dropping picks in
      here has to show up out there, and nothing in the database moved. */
-  const close=()=>{if(busy)return;dialog.close();dialog.remove();refresh()};
+  const close=()=>{if(busy)return;dialog.close();dialog.remove();refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})};
   dialog.querySelector("[data-close]").addEventListener("click",close);
   dialog.addEventListener("cancel",event=>{event.preventDefault();close()});
 
@@ -869,7 +870,8 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   paint();
   dialog.showModal();
   animateUi(dialog,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],{duration:240});
-  input.focus();input.select();
+  fitDialogToViewport(dialog);
+  dialog.querySelector("#sb-slip-title").focus({preventScroll:true});
 
   form.addEventListener("submit",async event=>{
     event.preventDefault();
