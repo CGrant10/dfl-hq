@@ -19,6 +19,7 @@ import {patchGameDay} from './game-day-dom.js';
 import {loadGameDayMoments} from './game-day-moments.js';
 import {readPageChoice,savePageChoice,wirePageDisclosures} from './page-disclosure.js';
 import {homeThermalBoard,homeGameDayMatchup,homeGameDayPhase} from './home-presentation.js';
+import {gameDayOpeningWeek,mountGameDayDisclosure} from './game-day-disclosure.js';
 const score=v=>v==null?'—':Number(v).toFixed(2);
 const mineSides=model=>model.games.find(game=>game.isMine)?.sides||[];
 export function mountGameDay(root,{members,member,active,standings=[],weekly=null,detailsRoot=null}){
@@ -29,6 +30,7 @@ export function mountGameDay(root,{members,member,active,standings=[],weekly=nul
  const current=()=>!stopped&&root.isConnected&&active();
  root.innerHTML=`<section class="gameday-card" data-gameday-card><header><div><small class="sr-only">Your matchup</small><h2 data-gameday-week>Checking your matchup</h2></div><div class="gameday-controls"><span class="home-game-phase" data-home-game-phase></span><button type="button" class="home-section-action" data-gameday-watch aria-label="Watch game day" title="Watch game day" disabled><svg class="ico-sm" aria-hidden="true"><use href="#i-play"></use></svg></button></div></header><div data-gameday-content><p role="status">Checking the league’s game-day stats…</p><div class="gameday-loading home-matchup-loading" aria-hidden="true"><span></span><span></span></div></div><div data-gameday-chirp></div><p class="home-matchup-recovery" data-gameday-recovery role="status" hidden><span data-gameday-recovery-message></span><button type="button" class="linkbtn" data-gameday-retry>Retry</button></p><span class="sr-only" data-gameday-announcement role="status"></span><details class="home-live-details" data-page-detail="gameday-live"><summary>Game day &amp; player leaders</summary><div data-gameday-extra-content></div><details class="home-score-tools"><summary>Score controls</summary><div><button type="button" class="linkbtn" data-gameday-motion aria-pressed="${motion}">Motion ${motion?'on':'off'}</button><button type="button" class="btn ghost small" data-gameday-refresh>Refresh</button></div></details><p class="gameday-freshness" data-gameday-freshness></p></details></section>`;
  if(detailsRoot){detailsRoot.classList.add('gameday-card','home-live-desk');detailsRoot.append(root.querySelector('.home-live-details'));}
+ const liveDisclosure=mountGameDayDisclosure(query('.home-live-details'));
  const card=query('[data-gameday-card]'),content=query('[data-gameday-content]'),extra=query('[data-gameday-extra-content]'),freshness=query('[data-gameday-freshness]'),button=query('[data-gameday-refresh]'),recovery=query('[data-gameday-recovery]'),retry=query('[data-gameday-retry]');
  const spotlight=mountPlayerSpotlight(detailsRoot||root,{getModel:()=>model,getMotion:()=>motion});
  const effectsRoot=detailsRoot||card;
@@ -61,9 +63,12 @@ export function mountGameDay(root,{members,member,active,standings=[],weekly=nul
   if(busy||!current())return;const restoreRetryFocus=document.activeElement===retry;busy=true;button.disabled=retry.disabled=true;button.setAttribute('aria-busy','true');if(force){button.textContent='Refreshing…';retry.textContent='Retrying…';freshness.textContent='Checking the latest scores…';}
   try{
    const index=await loadClubhouseIndex({force});if(!index[0])throw Error('No synced week');const storedWeek=await loadClubhouseWeek(index[0].season,index[0].week,{force});const state=await loadLeagueState({force}).catch(()=>null);const advanced=Number(state?.season)===Number(storedWeek.season)&&storedWeek.week<state.currentWeek;const week={...storedWeek,completed:storedWeek.completed||advanced};
+   const openingWeek=gameDayOpeningWeek(week,state);
    if(leagueId!==week.leagueId){leagueId=week.leagueId;leaguePromise=sleeper.league(leagueId)}
    lorePromise ||= loadLore();
-   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise,advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}).catch(()=>null):null]);if(!current())return;
+   const results=await Promise.allSettled([loadWeeklyRosters(week.leagueId,week.week,{maxAgeMs:force?0:60000}),loadPlayers(),loadNflGameDay(week.season,week.week,{force}),leaguePromise,lorePromise,advanced?loadLatestLeagueResults(week.leagueId,week.season,state.currentWeek,{force}).catch(()=>null):null,openingWeek!==Number(week.week)?loadNflGameDay(week.season,openingWeek,{force}):null]);if(!current())return;
+   const openingResult=results[openingWeek===Number(week.week)?2:6];
+   liveDisclosure.update({leagueId:week.leagueId,season:week.season,week:openingWeek,nfl:openingResult.status==='fulfilled'?openingResult.value:null,completed:openingWeek===Number(week.week)&&week.completed});
    if(results[0].status!=='fulfilled'||!results[0].value.length)throw Error('Scores unavailable');
    const nfl=results[2].status==='fulfilled'?results[2].value:null,players=results[1].status==='fulfilled'?results[1].value:{};
    const next=buildGameDay({week,rows:results[0].value,players,nfl,members,memberId:member?.id,...(results[3].status==='fulfilled'&&Array.isArray(results[3].value?.roster_positions)?{rosterPositions:results[3].value.roster_positions}:{})});
@@ -87,5 +92,5 @@ export function mountGameDay(root,{members,member,active,standings=[],weekly=nul
  query('[data-gameday-motion]').addEventListener('click',event=>{motion=!motion;stopScoreMotion();savePageChoice('gameday-motion',motion?'on':'off');event.currentTarget.setAttribute('aria-pressed',String(motion));event.currentTarget.textContent=`Motion ${motion?'on':'off'}`;card.dataset.motion=effectsRoot.dataset.motion=motion?'on':'off';spotlight.setMotion(motion);watch.setMotion()});
  button.addEventListener('click',()=>void refresh(true));retry.addEventListener('click',()=>void refresh(true));content.setAttribute('aria-busy','true');
  const tick=()=>{if(!current())return;if(document.visibilityState==='visible')void refresh();timer=setTimeout(tick,60000)};
- void refresh();timer=setTimeout(tick,60000);return()=>{stopped=true;clearTimeout(timer);reducedMotion.removeEventListener('change',onReducedMotion);stopScoreMotion();vfx.stop();spotlight.stop();watch.stop()};
+ void refresh();timer=setTimeout(tick,60000);return()=>{stopped=true;clearTimeout(timer);reducedMotion.removeEventListener('change',onReducedMotion);stopScoreMotion();liveDisclosure.stop();vfx.stop();spotlight.stop();watch.stop()};
 }

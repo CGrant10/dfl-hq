@@ -87,20 +87,20 @@ def check_game_day_scope(page):
         import('./js/home-presentation.js'), import('./js/game-day-dom.js'),
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
-        import('./js/page-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js')
+        import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js')
       ]));
       const check=(condition,message)=>{if(!condition)throw Error(message)};
       const region=document.createElement('div');region.innerHTML='<div></div><div></div>';document.body.append(region);
       const root=region.firstElementChild,detailsRoot=region.lastElementChild;
       const members=[{id:'scope-a',sleeper_user_id:'a',team_name:'Scope A'},{id:'scope-b',sleeper_user_id:'b',team_name:'Scope B'}];
       const week={leagueId:'fixture',season:2026,week:5,completed:false,games:[{matchup_id:1,user1:'a',roster1:1,user2:'b',roster2:2}]};
-      let refreshes=0,opens=0,resolveWeekly,fail=false,points=0,state='upcoming';const weekly=new Promise(resolve=>resolveWeekly=resolve),noop=()=>{};
+      let refreshes=0,opens=0,resolveWeekly,fail=false,points=0,state='upcoming',openingState='pre',currentWeek=5;const weekly=new Promise(resolve=>resolveWeekly=resolve),noop=()=>{};
       const providers={
-        loadLeagueState:async()=>({season:2026,currentWeek:5}),
+        loadLeagueState:async()=>({season:2026,currentWeek}),
         loadClubhouseIndex:async()=>{refreshes++;return [{season:2026,week:5}]},loadClubhouseWeek:async()=>week,
         loadWeeklyRosters:async()=>{if(fail)throw Error('Fixture unavailable');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players:[String(n)],players_points:{[n]:n===1?points:0}}))},
         loadPlayers:async()=>({'1':{n:'Scope One',p:'QB',t:'KC'},'2':{n:'Scope Two',p:'QB',t:'NO'}}),
-        loadNflGameDay:async()=>({teams:new Map(['KC','NO'].map(t=>[t,{key:state}])),payload:{events:[]}}),
+        loadNflGameDay:async(season,week)=>({teams:new Map(['KC','NO'].map(t=>[t,{key:state}])),payload:{events:[{id:`opening-${week}`,date:'2099-10-09T00:15:00Z',status:{type:{state:week===5?openingState:'pre'}}}]}}),
         sleeper:{league:async()=>({roster_positions:['QB']})},loadLore:async()=>({matchups:[]}),
         reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
         matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
@@ -116,6 +116,7 @@ def check_game_day_scope(page):
       try{
         check(root.querySelector('.home-matchup-loading').children.length===2&&root.querySelector('[data-gameday-content]').getAttribute('aria-busy')==='true','Loading must reserve a two-team matchup');
         await until(()=>!!root.querySelector('.gameday-matchup'));check(root.textContent.includes('Actual'),'Missing forecast must show actual scores');
+        check(!detailsRoot.querySelector('.home-live-details').open,'Player leaders must start collapsed before kickoff');
         resolveWeekly({season:2026,week:5,teams:[{sleeper_user_id:'a',projection:124.8,lineupIsSet:true},{sleeper_user_id:'b',projection:118.2,lineupIsSet:true}]});
         await until(()=>!!root.querySelector('.home-projected-total'));check(root.textContent.includes('124.8'),'Forecast did not reach the matchup');
         check(!!root.querySelector('[data-gameday-chirp] .dfl-chirp')&&!root.querySelector('[data-gameday-chirp]').closest('details'),'DFL chirp must stay beside the scores');
@@ -136,16 +137,22 @@ def check_game_day_scope(page):
         check(detailsRoot.querySelector('[data-gameday-refresh]').getAttribute('aria-busy')==='true'&&detailsRoot.querySelector('[data-gameday-refresh]').textContent==='Refreshing…','Manual refresh lacks busy feedback');
         await until(()=>!root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
         check(!!root.querySelector('.home-projected-total'),'Failed refresh discarded the last matchup');
-        fail=false;state='live';points=15.8;root.querySelector('[data-gameday-retry]').focus();root.querySelector('[data-gameday-retry]').click();
+        detailsRoot.querySelector('.home-live-details').open=false;await new Promise(resolve=>setTimeout(resolve,10));
+        fail=false;state='live';openingState='in';points=15.8;root.querySelector('[data-gameday-retry]').focus();root.querySelector('[data-gameday-retry]').click();
         await until(()=>root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
+        check(detailsRoot.querySelector('.home-live-details').open,'First kickoff must open player leaders even after a pregame collapse');
         check(!root.querySelector('.home-projected-total')&&root.querySelector('.home-matchup-entry').textContent.includes('You lead by 15.80'),'Retry failed to restore actual live scores');
         check(document.activeElement===root.querySelector('.gameday-matchup'),'Retry hid the focused control without a destination');
         check(root.querySelector('.home-matchup-entry strong').textContent.includes('Matchup details'),'Matchup detail entry is missing');
+        openingState='post';detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
+        check(detailsRoot.querySelector('.home-live-details').open,'Thursday final must keep player leaders open between games');
+        currentWeek=6;detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
+        check(!detailsRoot.querySelector('.home-live-details').open,'Last week’s final must not open the new week before kickoff');
         stop();detailsRoot.replaceChildren();fail=true;stop=mount(root,{members,member:members[0],active:()=>true,detailsRoot});
         await until(()=>!root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
         check(!root.querySelector('.home-matchup-loading'),'Failed initial load left a loading skeleton');
         fail=false;root.querySelector('[data-gameday-retry]').click();await until(()=>!!root.querySelector('.gameday-matchup')&&root.querySelector('[data-gameday-recovery]').hidden);
-        return {forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true};
+        return {forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true,kickoffOpens:true,betweenGamesOpen:true,activeWeekResets:true};
       }finally{stop();region.remove()}
     }''', source)
 
