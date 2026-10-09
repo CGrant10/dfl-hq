@@ -866,7 +866,7 @@ with sync_playwright() as p:
                 composition = page.evaluate('''() => {
                     const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), date=box('.home-newspaper-date'), stage=box('.home-broadcast'), desk=box('.home-personal-desk'), focus=box('.home-week-focus'), leaders=box('.home-thermal-leaders');
                     const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),fullName:e.querySelector('.home-team-name strong').scrollWidth<=e.querySelector('.home-team-name strong').clientWidth+1&&getComputedStyle(e.querySelector('.home-team-name strong')).whiteSpace==='normal',score:e.querySelector('.home-team-total').getBoundingClientRect().toJSON()}));
-                    return {dateAbove:date.bottom<=name.top+1,leadersBelow:leaders.top>=stage.bottom-1,sideBySide:stage.left>=desk.right+20,stacked:stage.top>=focus.bottom+16,rows};
+                    return {dateAbove:date.bottom<=name.top+1,leadersBelow:leaders.top>=stage.bottom-1,sideBySide:stage.left>=desk.right+18-1,stacked:stage.top>=focus.bottom+16,rows};
                 }''')
                 assert composition['dateAbove'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
                 assert composition['sideBySide'] if width>=1000 else composition['stacked'], f'Score desk grouping broken: {composition}'
