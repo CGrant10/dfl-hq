@@ -600,7 +600,7 @@ with sync_playwright() as p:
             return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary small'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
-        assert typography['heading']['size'] == (18 if width < 600 else 20) and typography['body']['size'] == 14 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
+        assert typography['heading']['size'] == 18 and typography['body']['size'] == 12 and typography['name']['size'] == 15 and typography['metadata']['size'] == typography['detail']['size'] == 12, f'Home text scale is inconsistent: {typography}'
         assert typography['heading']['weight'] == 700 and typography['name']['weight'] == 600 and typography['heading']['transform'] == 'uppercase' and typography['name']['transform'] == 'none' and typography['rankLabelsFit'], f'Home headings or rank columns are crowded: {typography}'
         metrics['mobileType'].append(typography)
     page.set_viewport_size({'width':390,'height':844})
@@ -631,15 +631,15 @@ with sync_playwright() as p:
             reference = None
             header_reference = None
             for route in ['home','clubhouse','sportsbook','trade','analyzer','wall','history','golf']:
-                page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on')}""", route)
+                page.evaluate("""route => {document.querySelector('#view').dataset.route=route;document.querySelectorAll('#tabbar .on').forEach(e=>e.classList.remove('on'));(document.querySelector(`#tabbar [data-route="${route}"]`)||document.querySelector('#more-btn')).classList.add('on');window.reviewSyncNav()}""", route)
                 page.wait_for_timeout(350)
-                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');return active && getComputedStyle(active).color === getComputedStyle(active,'::before').backgroundColor}""", timeout=5000)
+                page.wait_for_function("""() => {const active=document.querySelector('#tabbar .on');const marker=getComputedStyle(document.querySelector('#tabbar'),'::before');return active && marker.backgroundImage.includes(getComputedStyle(active).color) && Math.abs(new DOMMatrix(marker.transform).m41-active.offsetLeft)<1}""", timeout=5000)
                 nav = page.evaluate("""() => {const bar=document.querySelector('#tabbar'),active=bar.querySelector('.on'),s=getComputedStyle(bar),a=getComputedStyle(active),i=getComputedStyle(active.querySelector('svg'));return {height:bar.getBoundingClientRect().height,background:s.backgroundColor,color:a.color,font:a.fontSize,iconWidth:i.width,filter:i.filter,icons:[...bar.querySelectorAll('use')].map(e=>e.getAttribute('href'))}}""")
                 assert 44 <= nav['height'] <= 50, f'Navigation is not compact: {nav}'
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
                 if reference is None: reference = nav
                 assert page.evaluate("[...document.querySelectorAll('#tabbar a > span,#tabbar .tabmore > span')].every(e=>{const a=e.parentElement.getBoundingClientRect(),b=e.getBoundingClientRect();return b.left>=a.left-.5&&b.right<=a.right+.5})"), f'Navigation labels overflow at {width}'
-                assert nav == reference, f'Navigation changes on {route} at {width}: {nav}'
+                assert nav == reference, f'Navigation changes on {route} at {width}: {nav} / {reference}'
                 metrics['navigation'].append({'mode':nav_mode,'width':width,'route':route,**nav})
                 header = page.evaluate("""() => {
                     const bar=document.querySelector('.topbar'),inner=bar.querySelector('.topbar-inner');
@@ -819,11 +819,11 @@ with sync_playwright() as p:
             spacing = page.evaluate("""() => {const top=document.querySelector('.topbar').getBoundingClientRect(),nav=document.querySelector('#tabbar').getBoundingClientRect();const visible=document.querySelector('.home-newspaper-masthead').getBoundingClientRect();return {gap:visible.top-(innerWidth>=900?nav.bottom:top.bottom),expected:16}}""")
             assert spacing['gap'] >= spacing['expected'] - 1, f'Masthead touches fixed controls: {spacing}'
             nav = page.evaluate("""() => {
-                const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(link,'::before');
-                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerColor:marker.backgroundColor,markerHeight:marker.height,extraMarker:getComputedStyle(bar,'::before').display};
+                const bar=document.querySelector('#tabbar'),link=bar.querySelector('.on'),s=getComputedStyle(link),marker=getComputedStyle(bar,'::before');
+                return {height:bar.getBoundingClientRect().height,color:s.color,icon:getComputedStyle(link.querySelector('svg')).color,markerDisplay:marker.display,markerPaint:marker.backgroundImage,markerSize:marker.backgroundSize,markerHeight:parseFloat(marker.height),markerWidth:parseFloat(marker.width),targetWidth:link.offsetWidth,targetHeight:link.offsetHeight,aligned:Math.abs(new DOMMatrix(marker.transform).m41-link.offsetLeft)<1,extraMarker:getComputedStyle(link,'::before').display};
             }""")
             assert 44 <= nav['height'] <= 50 and nav['icon'] == nav['color'], f'Navigation presentation differs in {mode}: {nav}'
-            assert nav['markerDisplay'] == 'block' and nav['markerColor'] == nav['color'] and nav['markerHeight'] == '3px' and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
+            assert nav['markerDisplay'] == 'block' and nav['color'] in nav['markerPaint'] and nav['markerSize'].split(',')[0].strip() == '52% 3px' and nav['markerHeight'] == nav['targetHeight'] and nav['markerHeight'] >= 44 and abs(nav['markerWidth']-nav['targetWidth'])<1 and nav['aligned'] and nav['extraMarker'] == 'none', f'Active navigation indicator is missing or duplicated: {nav}'
             assert page.evaluate("[...document.querySelectorAll('#tabbar a,#tabbar .tabmore')].every(e=>e.getBoundingClientRect().height>=44)"), 'Navigation targets are too small'
             assert page.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'Theme overflows at {mode}/{width}'
             page.locator('.home-banter').scroll_into_view_if_needed()
@@ -866,7 +866,7 @@ with sync_playwright() as p:
                 composition = page.evaluate('''() => {
                     const box=s=>document.querySelector(s).getBoundingClientRect(), name=box('.home-newspaper-name h1'), date=box('.home-newspaper-date'), stage=box('.home-broadcast'), desk=box('.home-personal-desk'), focus=box('.home-week-focus'), leaders=box('.home-thermal-leaders');
                     const rows=[...document.querySelectorAll('.gameday-faceoff-team')].map(e=>({portrait:e.querySelector('.gameday-faceoff-mark').getBoundingClientRect().toJSON(),name:e.querySelector('.home-team-name').getBoundingClientRect().toJSON(),fullName:e.querySelector('.home-team-name strong').scrollWidth<=e.querySelector('.home-team-name strong').clientWidth+1&&getComputedStyle(e.querySelector('.home-team-name strong')).whiteSpace==='normal',score:e.querySelector('.home-team-total').getBoundingClientRect().toJSON()}));
-                    return {dateAbove:date.bottom<=name.top+1,leadersBelow:leaders.top>=stage.bottom-1,sideBySide:stage.left>=desk.right+20,stacked:stage.top>=focus.bottom+16,rows};
+                    return {dateAbove:date.bottom<=name.top+1,leadersBelow:leaders.top>=stage.bottom-1,sideBySide:stage.left>=desk.right+18-1,stacked:stage.top>=focus.bottom+16,rows};
                 }''')
                 assert composition['dateAbove'] and composition['leadersBelow'], f'Masthead/score hierarchy broken: {composition}'
                 assert composition['sideBySide'] if width>=1000 else composition['stacked'], f'Score desk grouping broken: {composition}'

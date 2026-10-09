@@ -14,6 +14,7 @@ import { captureView, restoreView, readViewMemory, writeViewMemory } from './vie
 import { getMemberId } from './members.js';
 import { canWarmRoutes } from './performance-policy.js';
 import { mountPageMotion } from './ui-motion.js';
+import { syncTabIndicator, mountNavHighlight } from './nav-highlight.js';
 import { routePlaceholder } from './route-placeholder.js';
 
 // Pages are loaded on demand, so the first paint stays fast.
@@ -99,22 +100,6 @@ let leaving = null;
 const listeners = new Set();
 export function onRoute(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-function setTabIndicatorTarget(target) {
-  const bar = document.getElementById("tabbar");
-  if (!bar || !target) return;
-  bar.style.setProperty("--tab-x", `${target.offsetLeft}px`);
-  bar.style.setProperty("--tab-w", `${target.offsetWidth}px`);
-  bar.style.setProperty("--tab-y", `${target.offsetTop}px`);
-  bar.classList.add("has-indicator");
-}
-function syncTabIndicator() {
-  const bar = document.getElementById("tabbar");
-  if (!bar) return;
-  const active = bar.querySelector("a.on") ||
-    (document.getElementById("more-btn")?.classList.contains("on") ? document.getElementById("more-btn") : null);
-  if (!active) { bar.classList.remove("has-indicator"); return; }
-  setTabIndicatorTarget(active);
-}
 
 /*
   THE TAB BAR MUST NAVIGATE BEFORE IT ANIMATES.
@@ -415,7 +400,7 @@ export function startRouter() {
   };
   bar?.addEventListener("pointerover", warm, { passive: true });
   bar?.addEventListener("touchstart", warm, { passive: true });
-  window.addEventListener("resize", syncTabIndicator);
+  mountNavHighlight(bar);
   window.addEventListener("hashchange", renderRoute);
   if (!location.hash) location.hash = "#/home";
   else renderRoute();

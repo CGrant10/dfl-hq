@@ -20,6 +20,7 @@
 #home-wrap .home-matchup-entry { border-top:1px solid var(--home-panel-line); padding-top:10px; margin-top:2px; }
 #home-wrap .home-lineup-primary { font-size:1rem; min-height:44px; }
 #home-wrap .home-week-focus .home-focus-action { font-size:var(--desk-meta); margin-top:6px; }
+#home-wrap :is(.home-text-action,.home-week-tabs button[aria-selected="false"]) { color:var(--body-text); }
 #home-wrap :is(.home-league-desk,.home-league-file,.home-banter) { padding-top:18px; margin-top:20px; }
 #home-wrap :is(.section-title,.home-league-file .section-title) { font-size:var(--desk-section); line-height:1.3; letter-spacing:.025em; }
 #home-wrap .page-disclosure > summary { min-height:60px; padding-block:12px; }
