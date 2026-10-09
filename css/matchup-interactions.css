@@ -78,3 +78,71 @@
   #view .clubhouse-page .clubhouse-game-side > b,
   #view .clubhouse-page .clubhouse-game-side > b * { animation: none !important; transition: none !important; }
 }
+
+/* Clubhouse borrows the broadcast pace while keeping its archive and talk. */
+#view .clubhouse-command-center [data-clubhouse-matchup][hidden] { display:none!important; }
+#view .clubhouse-command-center .clubhouse-header { border:0; padding:2px 0 14px; background:transparent; box-shadow:none; }
+#view .clubhouse-command-center .clubhouse-header h1 { font:700 26px/1.1 var(--font-display); }
+#view .clubhouse-command-center .clubhouse-header .clubhouse-status { border:0; background:transparent; padding:0; font-weight:400; }
+#view .clubhouse-command-center .clubhouse-context.card { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; padding:0 0 12px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; }
+#view .clubhouse-command-center .clubhouse-archive-label { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+#view .clubhouse-command-center .clubhouse-archive-label h2 { font:600 12px/1.4 var(--font-display); color:var(--body-text); }
+#view .clubhouse-command-center .clubhouse-archive-label > a { min-height:32px; font-size:12px; }
+#view .clubhouse-command-center .clubhouse-week-picker select { font-size:13px; padding:6px 9px; }
+#view .clubhouse-command-center .clubhouse-section.card { border:0; border-radius:0; padding:0; background:transparent; box-shadow:none; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar { gap:4px 8px; margin-bottom:10px; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] { flex-basis:100%; font-size:11px; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar button { min-height:44px; min-width:0; padding:5px 9px; font-size:12px; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar [data-clubhouse-motion] { border:0; background:transparent; color:var(--body-text); }
+#view .clubhouse-command-center .clubhouse-scoreboard-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:4px 0 18px; }
+#view .clubhouse-command-center .clubhouse-scoreboard-game { position:relative; display:grid; gap:5px; min-width:0; min-height:44px; padding:9px 8px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--text); text-align:left; cursor:pointer; }
+#view .clubhouse-command-center .clubhouse-scoreboard-game[aria-pressed="true"] { border-color:var(--accent); box-shadow:inset 2px 0 var(--accent); }
+#view .clubhouse-command-center .clubhouse-scoreboard-game:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.clubhouse-mini-phase { color:var(--body-text); font:500 10px/1.3 var(--font-display); }
+.clubhouse-mini-phase[data-state="live"] { color:var(--accent); font-weight:700; }
+.clubhouse-mini-phase[data-state="live"]::before { content:''; display:inline-block; width:4px; height:4px; border-radius:50%; margin-right:4px; background:currentColor; vertical-align:2px; }
+#view .clubhouse-command-center .clubhouse-mini-team { display:grid; grid-template-columns:18px minmax(0,1fr) auto; gap:4px; align-items:center; min-width:0; }
+#view .clubhouse-command-center .clubhouse-mini-team .dfl-team-mark { width:18px; height:18px; }
+#view .clubhouse-command-center .clubhouse-mini-team > span:not(.dfl-team-mark) { min-width:0; font:500 11px/1.3 var(--font-display); overflow-wrap:anywhere; }
+#view .clubhouse-command-center .clubhouse-mini-team > b { font:700 12px/1 var(--font-display); font-variant-numeric:tabular-nums; }
+#view .clubhouse-command-center .clubhouse-matchup-card { position:relative; overflow:hidden; border:0; border-top:1px solid var(--line); border-radius:0; padding:14px 0 0; margin:0; background:transparent; box-shadow:none; }
+#view .clubhouse-command-center .clubhouse-matchup-card > header { padding-bottom:8px; }
+#view .clubhouse-command-center .clubhouse-matchup-state { border:0; padding:0; background:transparent; font-size:11px; }
+#view .clubhouse-command-center .clubhouse-game-teams { position:relative; isolation:isolate; gap:24px; padding:12px 6px 16px; margin-bottom:8px; border-radius:8px; background:radial-gradient(ellipse at 5% 20%,color-mix(in srgb,var(--clubhouse-left,var(--accent)) 11%,transparent),transparent 65%),radial-gradient(ellipse at 95% 20%,color-mix(in srgb,var(--clubhouse-right,var(--accent)) 11%,transparent),transparent 65%); }
+#view .clubhouse-command-center .clubhouse-game-teams::after { content:'VS'; position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); color:var(--body-text); font:700 10px/1 var(--font-display); }
+#view .clubhouse-command-center .clubhouse-game-side { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; justify-items:center; }
+#view .clubhouse-command-center .clubhouse-key-players { display:none; }
+#view .clubhouse-command-center .clubhouse-matchup-name { min-height:3.1em; }
+#view .clubhouse-command-center .clubhouse-matchup-name strong { font:700 14px/1.3 var(--font-display); overflow-wrap:anywhere; }
+#view .clubhouse-command-center .clubhouse-matchup-name > small { font-size:10px; }
+#view .clubhouse-command-center .clubhouse-game-side > b { font-size:32px; }
+#view .clubhouse-command-center .clubhouse-remaining { font-size:11px; }
+#view .clubhouse-command-center .clubhouse-matchup-summary { margin:4px 0 12px; font-size:13px; }
+.clubhouse-battle-stats { padding-bottom:10px; border-bottom:1px solid var(--line); }
+.clubhouse-pressure-label { display:block; margin:0 0 10px; color:var(--accent); font:700 12px/1.4 var(--font-display); }
+.clubhouse-starter-progress { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.clubhouse-starter-progress > div { display:grid; gap:4px; min-width:0; }
+.clubhouse-starter-progress strong { font:600 11px/1.4 var(--font-display); overflow-wrap:anywhere; }
+.clubhouse-starter-progress > div > span:not(.clubhouse-finish-track) { font-size:11px; color:var(--body-text); }
+.clubhouse-finish-track { display:flex; gap:3px; height:3px; margin-top:3px; }
+.clubhouse-finish-track i { flex:1; background:var(--line); border-radius:2px; }
+.clubhouse-finish-track i.is-finished { background:var(--accent); }
+.clubhouse-position-stats { border-bottom:1px solid var(--line); margin-bottom:18px; }
+.clubhouse-position-stats > summary { display:flex; align-items:center; min-height:44px; cursor:pointer; font:600 12px/1.4 var(--font-display); }
+.clubhouse-position-stats table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px; }
+.clubhouse-position-stats :is(th,td) { padding:8px 4px; border-bottom:1px solid var(--line-soft); text-align:right; overflow-wrap:anywhere; }
+.clubhouse-position-stats th:first-child { width:60px; text-align:left; }
+.clubhouse-position-stats tbody th { color:var(--body-text); }
+.clubhouse-stat-status { color:var(--body-text); font-size:12px; line-height:1.5; margin:8px 0; }
+.clubhouse-stat-status:empty { display:none; }
+.clubhouse-league-pulse { margin:6px 0 22px; }
+.clubhouse-pulse-heading { display:grid; gap:5px; padding-block:8px 14px; }
+.clubhouse-pulse-heading > small { color:var(--body-text); font-size:11px; }
+.clubhouse-pulse-heading > strong { font:700 22px/1.2 var(--font-display); }
+.clubhouse-pulse-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding:12px 0; border-block:1px solid var(--line); }
+.clubhouse-pulse-grid article { display:grid; align-content:start; gap:5px; min-width:0; }
+.clubhouse-pulse-grid small { color:var(--body-text); font-size:10px; }
+.clubhouse-pulse-grid strong { font:600 13px/1.3 var(--font-display); overflow-wrap:anywhere; }
+.clubhouse-pulse-grid article > span { color:var(--body-text); font-size:11px; line-height:1.4; overflow-wrap:anywhere; }
+@media(min-width:701px) { #view .clubhouse-command-center .clubhouse-scoreboard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(prefers-reduced-motion:reduce) { .clubhouse-command-center * { scroll-behavior:auto!important; } }

@@ -340,6 +340,90 @@ def check_matchup_lineups(page):
     page.set_viewport_size({'width':390,'height':844})
     return results
 
+def check_clubhouse_center(page):
+    """Read-only, labeled demo: real controller, data model, rendering and motion."""
+    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("""async()=>{
+      const {mountClubhouseCenter}=await import('./js/clubhouse-center.js'),{matchupCardHtml}=await import('./js/clubhouse-matchup-cards.js'),{savePageChoice}=await import('./js/page-disclosure.js');
+      const slots=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'],names=['Patrick Mahomes','Christian McCaffrey','Kenneth Walker III','Amon-Ra St. Brown','Marvin Harrison Jr.','George Kittle','Jaxon Smith-Njigba','Brandon Aubrey','San Francisco 49ers'];
+      const members=[1,2,3,4].map(id=>({id,sleeper_user_id:'demo-user-'+id,team_name:id===1?'The Very Long Championship Bayou Bombers':'Demo Team '+id,display_name:'Demo Owner '+id}));
+      const games=[1,2].map(id=>({matchup_id:id,user1:'demo-user-'+(id*2-1),user2:'demo-user-'+(id*2),roster1:id*2-1,roster2:id*2,left:{roster:id*2-1,name:members[id*2-2].team_name,memberId:id*2-1,score:40},right:{roster:id*2,name:members[id*2-1].team_name,memberId:id*2,score:45}}));
+      const week={season:2099,week:5,leagueId:'demo',completed:false,members,games};
+      const players={},rows=[1,2,3,4].map(roster=>{const ids=slots.map((slot,i)=>{const id=`demo-${roster}-${i}`;players[id]={n:names[i],p:slot==='FLEX'?'WR':slot,t:i<7?'SF':i===7?'DAL':'SF',is:roster===1&&i===3?'Questionable':null};return id});const bench=`bench-${roster}`;players[bench]={n:'Demo Bench Player',p:'RB',t:'SF'};return {roster_id:roster,points:roster%2?40:45,starters:ids,players:[...ids,bench],players_points:Object.fromEntries([...ids,bench].map((id,i)=>[id,i===0?19:0]))}});
+      const nfl=new Map([['SF',{key:'live'}],['DAL',{key:'upcoming'}]]);
+      const region=document.createElement('section');region.className='view';region.dataset.route='clubhouse';region.dataset.pulseSystem='1';
+      region.innerHTML=`<div class="clubhouse-page clubhouse-command-center"><h2>Demo Clubhouse preview · simulated stats</h2><div class="clubhouse-matchup-toolbar"><button type="button" data-clubhouse-motion>Motion on</button></div><div data-clubhouse-scoreboard></div><p class="clubhouse-stat-status" data-clubhouse-stats-state role="status"></p>${games.map(g=>`<section data-clubhouse-matchup="${g.matchup_id}">${matchupCardHtml(g,week,new Map())}</section>`).join('')}</div>`;
+      document.querySelector('#view').append(region);
+      savePageChoice('gameday-motion','on');savePageChoice('clubhouse-matchup-2099-5','1');
+      let active=true,pending=null,failed=false,statsCalls=0;
+      const loadStats=async()=>{statsCalls++;if(failed)throw Error('Demo offline');if(statsCalls===1)return {data:[]};return new Promise(resolve=>pending=resolve)};
+      const center=mountClubhouseCenter(region,week,{active:()=>active,loadStats,loadLeague:async()=>({roster_positions:slots})});
+      center.update({rows,players,nfl});
+      window.clubhouseFixture={center,region,rows,players,nfl,savePageChoice,get pending(){return pending},get statsCalls(){return statsCalls},failStats(){failed=true},restoreStats(){failed=false},stop(){active=false;center.stop()},bundle:{data:rows.flatMap(row=>row.starters.map(id=>({player_id:id,season:2099,week:5,season_type:'regular',stats:players[id].p==='QB'?{pass_yd:205,pass_td:2,pass_int:0}:players[id].p==='RB'?{rush_yd:63,rush_td:1,rec:4,rec_yd:30}:players[id].p==='K'?{}:players[id].p==='DEF'?{sack:2,int:1,pts_allow:14}:{rec:6,rec_yd:98,rec_td:1}})))}};
+    }""")
+    page.wait_for_timeout(1000)
+    result={'layouts':[]}
+    try:
+        for width in [320,390,768]:
+            page.set_viewport_size({'width':width,'height':844})
+            for mode in ['light','dark','medicine']:
+                page.evaluate('window.reviewSetTheme',mode)
+                layout=page.evaluate("""()=>{
+                  const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},card=root.querySelector('[data-clubhouse-matchup]:not([hidden])');
+                  check(root.querySelectorAll('[data-clubhouse-game]').length===2,'Missing matchup button');
+                  const rows=[...card.querySelectorAll('.gd-lineup-comparison > .gd-lineup-pairs > .gd-compare-row')];check(rows.length===9,'Missing Clubhouse starting slot');
+                  for(const row of rows){const cells=[...row.querySelectorAll('.gd-compare-player')],boxes=cells.map(e=>e.getBoundingClientRect()),scores=cells.map(e=>e.querySelector('.gameday-player-score').getBoundingClientRect());check(boxes[0].right<boxes[1].left,'Clubhouse lineups stack');check(Math.abs(scores[0].bottom-scores[1].bottom)<1,'Clubhouse scores misalign');}
+                  check([...card.querySelectorAll('.dfl-player-copy strong,.clubhouse-matchup-name strong,.gd-compare-head strong')].every(e=>e.scrollWidth<=e.clientWidth+1),'Clubhouse player/team name clips');
+                  check([...root.querySelectorAll('[data-clubhouse-game],[data-clubhouse-motion]')].every(e=>e.offsetHeight>=44&&e.offsetWidth>=44),'Clubhouse controls too small');
+                  check(!root.querySelector('.gd-moment-caption'),'Initial Clubhouse snapshot celebrated');
+                  check(document.documentElement.scrollWidth<=innerWidth,'Clubhouse overflows phone');
+                  return {width:innerWidth,pairedSlots:rows.length,namesFit:true,scoresAligned:true,allGamesVisible:true,touchTargets:true,initialQuiet:true,noOverflow:true};
+                }""")
+                result['layouts'].append({'mode':mode,**layout})
+            if width==390:
+                page.locator('[data-clubhouse-matchup]:not([hidden]) .clubhouse-game-teams').scroll_into_view_if_needed()
+                page.screenshot(path=str(OUT/'clubhouse-demo-head-to-head-390.png'))
+        result['updates']=page.evaluate("""async()=>{
+          const f=window.clubhouseFixture,root=f.region,check=(v,m)=>{if(!v)throw Error(m)},settle=()=>new Promise(r=>setTimeout(r,30));
+          root.querySelector('[data-clubhouse-game="2"]').click();check(root.querySelector('[data-clubhouse-matchup]:not([hidden])').dataset.clubhouseMatchup==='2'&&root.querySelector('[data-clubhouse-game="2"]').getAttribute('aria-pressed')==='true','Matchup switch did not select');
+          root.querySelector('[data-clubhouse-game="1"]').click();
+          const card=root.querySelector('[data-clubhouse-matchup="1"]'),button=card.querySelector('[data-gameday-player]'),identity=button,bench=card.querySelector('.gd-compare-bench'),positions=card.querySelector('.clubhouse-position-stats');
+          check(bench&&positions,'Bench/positional stats missing');bench.open=true;positions.open=true;button.focus();
+          f.rows[0].points=48;f.rows[0].players_points['demo-1-0']=25;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});
+          check(document.activeElement===identity&&identity.isConnected&&bench.open&&positions.open,'Refresh lost focus or expanded stats');
+          check(card.querySelector('.gd-moment-caption')&&card.querySelector('.clubhouse-pressure-label'),'Actual live moment/close-game context missing');
+          f.pending(f.bundle);await settle();
+          check(card.querySelector('.gd-moment-caption'),'Stats arriving cancelled live score effect');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-0"]').textContent==='205 pass yd · 2 pass TD · 0 INT','Actual scoped QB box score missing');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"]').textContent==='6 rec · 98 rec yd · 1 rec TD','Actual scoped WR box score missing');
+          check(card.querySelector('[data-clubhouse-stat-key="1:demo-1-7"]').textContent==='Yet to play','Future kicker shows stale stats');
+          check(positions.querySelector('tbody tr td').textContent==='25.00','Positional points do not follow starters');
+          root.querySelector('[data-clubhouse-motion]').click();check(root.querySelector('[data-clubhouse-motion]').getAttribute('aria-pressed')==='false'&&!card.querySelector('.gd-moment-caption'),'Motion off left moment running');
+          f.failStats();f.rows[0].players_points['demo-1-0']=31;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});await settle();
+          check(!card.querySelector('.gd-moment-caption'),'Motion off creates celebration');
+          check(root.querySelector('[data-clubhouse-stats-state]').textContent.includes('last checked stats')&&card.querySelector('[data-clubhouse-stat-key="1:demo-1-3"]').textContent.includes('98 rec yd'),'Stats failure discarded known values');
+          f.center.fail();check(card.querySelector('.gd-lineup-comparison'),'Score failure discarded lineup');
+          root.querySelector('[data-clubhouse-motion]').click();f.rows[0].players_points['demo-1-0']=42;f.center.update({rows:f.rows,players:f.players,nfl:f.nfl});check(card.querySelector('.gd-moment-caption'),'Motion on did not restore live effect');return {selectableMatchups:true,refreshPreservesFocus:true,expandedStatsPreserved:true,realBoxScores:true,upcomingExplicit:true,positionalPoints:true,liveMoment:true,statsDoNotCancelMoment:true,motionOff:true,failureKeepsData:true};
+        }""")
+        result['boxScoreLayouts']=[]
+        for width in [320,390,768]:
+            page.set_viewport_size({'width':width,'height':844})
+            box=page.evaluate("""()=>{const root=window.clubhouseFixture.region,card=root.querySelector('[data-clubhouse-matchup]:not([hidden])'),lines=[...card.querySelectorAll('[data-clubhouse-stat-key]')].filter(e=>e.getClientRects().length);return {width:innerWidth,lines:lines.length,fit:lines.every(e=>e.scrollWidth<=e.clientWidth+1&&e.getBoundingClientRect().left>=root.getBoundingClientRect().left&&e.getBoundingClientRect().right<=root.getBoundingClientRect().right+1),overflow:document.documentElement.scrollWidth>innerWidth}}""")
+            assert box['lines']>=18 and box['fit'] and not box['overflow'],box
+            result['boxScoreLayouts'].append(box)
+            if width==390:
+                page.locator('[data-clubhouse-matchup]:not([hidden]) .gd-lineup-comparison h3').evaluate("e=>window.scrollBy({top:e.getBoundingClientRect().top-70,behavior:'instant'})")
+                page.screenshot(path=str(OUT/'clubhouse-demo-box-scores-390.png'))
+        page.emulate_media(reduced_motion='reduce')
+        page.wait_for_function("window.clubhouseFixture.region.querySelectorAll('.gd-moment-caption').length===0",timeout=5000)
+        result['cleanup']=page.evaluate("""async()=>{const f=window.clubhouseFixture,check=(v,m)=>{if(!v)throw Error(m)};check(f.region.querySelectorAll('.gd-moment-caption').length===0,'Reduced motion left celebration');f.restoreStats();f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});const line=f.region.querySelector('[data-clubhouse-stat-key]'),known=line.textContent;f.stop();f.pending({data:[]});await new Promise(r=>setTimeout(r,30));check(line.textContent===known,'Late stats mutated stopped Clubhouse');check(!f.region.querySelector('canvas')&&f.region.getAnimations({subtree:true}).filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Clubhouse stop left rendering alive');return {reducedMotion:true,canvasRemoved:true,animationsStopped:true,lateStatsIgnored:true}}""")
+    finally:
+        page.evaluate("window.clubhouseFixture.stop();window.clubhouseFixture.region.remove();window.clubhouseFixture.savePageChoice('gameday-motion','off');delete window.clubhouseFixture")
+        page.emulate_media(reduced_motion='no-preference')
+        page.evaluate("window.reviewSetTheme('light')")
+        page.set_viewport_size({'width':390,'height':844})
+    return result
+
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
       const portrait=row.querySelector('.dfl-player-portrait').getBoundingClientRect(),copy=row.querySelector('.injury-player-copy'),text=copy.getBoundingClientRect(),state=row.querySelector('.injury-player-state').getBoundingClientRect(),box=row.getBoundingClientRect();
@@ -397,6 +481,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(1600)
     moment_effects=check_game_day_moments(page)
     matchup_lineups=check_matchup_lineups(page)
+    clubhouse_center=check_clubhouse_center(page)
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.screenshot(path=str(OUT / 'home-390.png'))
     # Player leaders are secondary to the matchup and lineup action. Open the
@@ -833,6 +918,7 @@ with sync_playwright() as p:
     page.evaluate("window.reviewSetTheme('light')")
     metrics['momentEffects']=moment_effects
     metrics['matchupLineups']=matchup_lineups
+    metrics['clubhouseCenter']=clubhouse_center
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['consoleErrors'] = errors
