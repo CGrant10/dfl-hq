@@ -2,6 +2,7 @@ import { readPageChoice } from './page-disclosure.js';
 
 const easing = 'cubic-bezier(.2,.75,.25,1)';
 const running = new Set();
+const exits = new Map();
 let started = false;
 
 export function motionAllowed({ preference = 'on', reduced = false, hidden = false, explicit = true } = {}) {
@@ -31,6 +32,36 @@ export function animateUi(node, frames, { motion = true, ...options } = {}) {
   running.add(animation);
   animation.onfinish = () => { running.delete(animation); animation.cancel(); };
   return animation;
+}
+export function cancelUiExit(node) {
+  if (!exits.has(node)) return;
+  exits.delete(node);
+  delete node.dataset.uiClosing;
+  cancelUiMotion(node);
+}
+// A dismissal completes once, even if Escape repeats or motion is switched
+// off mid-flight. Reopening cancels the old completion, not the new surface.
+export function exitUi(node, complete, { immediate = false, surface = node } = {}) {
+  const existing = exits.get(node);
+  if (existing) { if (immediate) existing(); return; }
+  if (immediate || !canPlay(node)) { complete(); return; }
+  const finish = () => {
+    if (exits.get(node) !== finish) return;
+    exits.delete(node);
+    delete node.dataset.uiClosing;
+    cancelUiMotion(node);
+    complete();
+  };
+  exits.set(node, finish);
+  const opacity = getComputedStyle(node).opacity;
+  const transform = getComputedStyle(surface).transform;
+  node.dataset.uiClosing = '1';
+  const current = animateUi(node, surface === node
+    ? [{ opacity, transform }, { opacity:0, transform:'translateY(8px)' }]
+    : [{ opacity }, { opacity:0 }], { duration:160, fill:'forwards' });
+  if (surface !== node) animateUi(surface, [{ transform }, { transform:'translateY(8px)' }], { duration:160, fill:'forwards' });
+  if (current) current.finished.then(finish, finish);
+  else finish();
 }
 export function startUiMotion() {
   if (started) return;

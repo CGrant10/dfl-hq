@@ -7,6 +7,8 @@ on:
       - 'js/team-analyzer.js'
       - 'css/app-reading.css'
       - 'css/trade-workspace.css'
+      - 'css/receipt-polish.css'
+      - 'css/ui-motion.css'
       - 'js/share-export-model.js'
       - 'tools/*trade-review*'
       - '.github/workflows/trade-design-review.yml'

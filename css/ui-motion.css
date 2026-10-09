@@ -46,3 +46,15 @@ html[data-ui-motion="off"] .view[data-ui-polished] * { scroll-behavior:auto!impo
   .view[data-ui-polished],.view[data-ui-polished] *,.dfl-player-card::backdrop,.sb-slip::backdrop { animation:none!important; transition:none!important; }
 }
 @media(min-width:900px) { .route-placeholder { top:calc(var(--topbar-h,44px) + 60px); bottom:0; padding-top:28px; } }
+
+/* Explicit actions press gently without moving tabs or live score rows. */
+html[data-ui-motion="on"] :is(.view[data-ui-polished],.dfl-player-card,.sb-slip,#more) :is(.btn,.linkbtn,.player-card-trigger):not(:disabled):not([aria-disabled="true"]) { transform:none!important; filter:none!important; scale:1; transition:scale 150ms ease,background-color 150ms ease,border-color 150ms ease,color 150ms ease; }
+html[data-ui-motion="on"] :is(.view[data-ui-polished],.dfl-player-card,.sb-slip,#more) :is(.btn,.linkbtn,.player-card-trigger):not(:disabled):not([aria-disabled="true"]):active { scale:.985; }
+:is(.dfl-player-card,.sb-slip,#more)[data-ui-closing] { pointer-events:none; }
+:is(.dfl-player-card,.sb-slip)[data-ui-closing]::backdrop { animation:ui-backdrop-out 160ms ease forwards; }
+@keyframes ui-backdrop-out { to { background-color:transparent; } }
+html[data-ui-motion="off"] :is(.view[data-ui-polished],.dfl-player-card,.sb-slip,#more) :is(.btn,.linkbtn,.player-card-trigger) { transform:none!important; scale:1!important; transition:none!important; }
+html[data-ui-motion="off"] #more * { transition:none!important; }
+@media(prefers-reduced-motion:reduce) {
+  :is(.view[data-ui-polished],.dfl-player-card,.sb-slip,#more) :is(.btn,.linkbtn,.player-card-trigger) { transform:none!important; scale:1!important; transition:none!important; }
+}

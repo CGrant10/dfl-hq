@@ -1,7 +1,7 @@
 import { syncTabIndicator } from './nav-highlight.js';
 import { mountLeagueSearch } from "./league-search.js";
 import { mountPlayerCards } from './player-card-actions.js';
-import { startUiMotion, animateUi, cancelUiMotion } from './ui-motion.js';
+import { startUiMotion, animateUi, cancelUiMotion, cancelUiExit, exitUi } from './ui-motion.js';
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
@@ -174,12 +174,13 @@ const syncMore=()=>{moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.cla
   lands back on the control that opens it rather than at the top of a document
   it has just navigated to.
 */
-const closeMore=()=>{if(moreSheet)cancelUiMotion(moreSheet);moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
+const closeMore=(options={})=>{if(!moreSheet||moreSheet.classList.contains("hidden"))return;exitUi(moreSheet,()=>{moreSheet.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null},{...options,surface:moreSheet.querySelector('.sheet-card')||moreSheet})};
 window.addEventListener('dfl:toast', () => {
   if (!['home', 'clubhouse', 'trade', 'sportsbook'].includes(document.getElementById('view')?.dataset.route)) return;
   animateUi(document.getElementById('toast'), [{ opacity:0, transform:'translate(-50%,6px)' }, { opacity:1, transform:'translate(-50%,0)' }], { duration:180 });
 });
 const openMore=()=>{
+  cancelUiExit(moreSheet);
   void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
   animateUi(moreSheet,[{backgroundColor:'transparent'},{backgroundColor:getComputedStyle(moreSheet).backgroundColor}],{duration:160});
@@ -191,14 +192,14 @@ const openMore=()=>{
   releaseMore=trapFocus(moreSheet.querySelector(".sheet-card")||moreSheet,{initial:"#more-close"});
 };
 moreBtn?.addEventListener("click",()=>{
-  if(moreSheet?.classList.contains("hidden"))openMore();else closeMore();
+  if(moreSheet?.classList.contains("hidden")||moreSheet?.dataset.uiClosing)openMore();else closeMore();
 });
 document.getElementById("more-close")?.addEventListener("click",closeMore);
 // Tapping the backdrop closes it; tapping the card must not.
 moreSheet?.addEventListener("click",e=>{if(e.target===moreSheet)closeMore()});
-moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore()});
-window.addEventListener("hashchange",closeMore);
-window.addEventListener("dfl:quick-sync-complete",()=>{closeMore();renderRoute();});
+moreSheet?.addEventListener("click",e=>{if(e.target.closest("a"))closeMore({immediate:true})});
+window.addEventListener("hashchange",()=>closeMore({immediate:true}));
+window.addEventListener("dfl:quick-sync-complete",()=>{closeMore({immediate:true});renderRoute();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMore()});
 if(memberList)memberList.addEventListener("click",async e=>{const btn=e.target.closest("button[data-member]");if(!btn)return;const members=await loadMembers();const member=members.find(m=>String(m.id)===btn.dataset.member);if(!member)return;const previous=currentMember();if(previous&&String(previous.id)!==String(member.id))forgetVerifiedPin(previous.id);selectMember(member);await adoptSelectedMemberTheme();paintName();closeWelcome();await registerUser(member.display_name);toast(`Welcome, ${member.display_name}`);renderRoute()});
 welcomeCancel?.addEventListener("click",closeWelcome);

@@ -1,6 +1,6 @@
 import { fitDialogToViewport } from '../dialog-viewport.js';
 import {currentSportsbookNames} from '../current-team-names.js';
-import { animateUi, cancelUiMotion } from '../ui-motion.js';
+import { animateUi, cancelUiMotion, cancelUiExit, exitUi } from '../ui-motion.js';
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
@@ -809,7 +809,8 @@ function wireFeedRefresh(view){
   was on screen when they started.
 */
 function openSlip(view,outcomeMap,marketMap,wallet,refresh){
-  view.querySelector(".sb-slip")?.remove();
+  const previous=view.querySelector(".sb-slip");
+  if(previous){cancelUiExit(previous);cancelUiMotion(previous);previous.remove()}
   let picks=slip.map(id=>outcomeMap.get(String(id))).filter(Boolean);
   if(!picks.length){toast("Choose a line first",true);return}
 
@@ -838,7 +839,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
 
   /* Closing repaints the board rather than reloading it: dropping picks in
      here has to show up out there, and nothing in the database moved. */
-  const close=()=>{if(busy)return;dialog.close();dialog.remove();refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})};
+  const close=()=>{if(busy)return;exitUi(dialog,()=>{dialog.close();dialog.remove();if(view.isConnected){refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})}})};
   dialog.querySelector("[data-close]").addEventListener("click",close);
   dialog.addEventListener("cancel",event=>{event.preventDefault();close()});
 
@@ -875,7 +876,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
 
   form.addEventListener("submit",async event=>{
     event.preventDefault();
-    if(busy)return;
+    if(busy||dialog.dataset.uiClosing)return;
     const stake=parseStake(input.value,available);
     if(stake===null){status.textContent="Enter a whole SIN amount within your available balance.";input.focus();return}
     if(!reviewed){
