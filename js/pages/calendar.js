@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { db, insertRow } from "../supabase.js";
-import { esc, empty, fmtDate, fmtWhen, relDate, toast, errorBox, loading } from "../ui.js";
+import { esc, compactEmpty, fmtDate, fmtWhen, relDate, toast, errorBox, loading } from "../ui.js";
 import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
@@ -79,7 +79,7 @@ async function paintEvents(body) {
   body.innerHTML = `
     ${upcoming.length
       ? `<div class="card schedule">${upcoming.map((e, i) => eventRow(e, true, i === 0)).join("")}</div>`
-      : empty("Nothing on the schedule.")}
+      : compactEmpty("Nothing scheduled", past.length ? "Past events are below." : "")}
     ${canEdit() ? `<div class="row-end">${addControl("events", "Add event")}</div>` : ""}
     ${past.length ? `
       <h2 class="section-title">Past<span class="count">${past.length}</span></h2>
@@ -207,7 +207,7 @@ async function paintSide(body, view) {
 
   if (!events.length) {
     body.innerHTML =
-      empty("No side events yet.") + addRow;
+      compactEmpty("No side events yet.") + addRow;
     return;
   }
 

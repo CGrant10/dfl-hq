@@ -1,7 +1,7 @@
 // DFL Rule Proposals - submit ideas, vote, and record commissioner rulings.
 import { db, isAdmin } from "../supabase.js";
 import { currentMember } from "../members.js";
-import { esc, toast, errorBox } from "../ui.js";
+import { esc, toast, errorBox, compactEmpty } from "../ui.js";
 
 const statusLabel={open:"Open",passed:"Passed",rejected:"Rejected",adopted:"Adopted",withdrawn:"Withdrawn"};
 const statusTone={open:"green",passed:"warn",rejected:"grey",adopted:"green",withdrawn:"grey"};
@@ -22,8 +22,8 @@ export async function render(view){
   const proposals=pr.data||[],votes=vr.data||[],members=new Map((mr.data||[]).map(m=>[String(m.id),m]));
   const open=proposals.filter(p=>p.status==="open"),closed=proposals.filter(p=>p.status!=="open");
   view.innerHTML=`<div id="proposal-wrap"><header class="page-head"><h1>Proposals</h1></header>
-    ${me?submitCard():`<div class="card note"><div class="card-body">Pick your name to submit or vote.</div></div>`}
-    ${open.length?`<section class="block"><h2 class="section-title">Open<span class="count">${open.length}</span></h2>${open.map(p=>proposalCard(p,votes,members,me,admin)).join("")}</section>`:`<div class="card"><div class="card-body muted">No open proposals.</div></div>`}
+    ${me?submitCard():open.length?`<div class="card note"><div class="card-body">Pick your name to submit or vote.</div></div>`:""}
+    ${open.length?`<section class="block"><h2 class="section-title">Open<span class="count">${open.length}</span></h2>${open.map(p=>proposalCard(p,votes,members,me,admin)).join("")}</section>`:compactEmpty("No open proposals", me ? "" : "Choose your profile to propose a rule or vote.", me ? "" : '<button type="button" class="linkbtn" data-open-profile>Choose profile →</button>')}
     ${closed.length?`<section class="block" data-collapse="proposal-archive" data-collapse-default="folded" data-collapse-title="Decided proposals" data-collapse-badge="${closed.length}">${closed.map(p=>proposalCard(p,votes,members,me,admin)).join("")}</section>`:""}
   </div>`;
   wire(view,me,admin);
