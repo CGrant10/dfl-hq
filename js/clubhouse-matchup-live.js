@@ -45,7 +45,7 @@ export function mountMatchupLive(root,model,threads,active){
     const phase=matchupPhase(sides[0],sides[1],model.completed),badge=root.querySelector(`[data-matchup-phase="${game.matchup_id}"]`);badge.textContent=phase.label;badge.dataset.state=phase.key;
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }
-   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{}},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'off')==='on',feedback:true});previous={totals};
+   stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{}},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals};
    status.textContent=`Scores checked ${new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}${!model.completed&&!nfl?' · NFL status unavailable':''}`;
 
   }catch{if(current()){status.textContent='Refresh unavailable. Showing the last scores; retry when connected.';for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}}

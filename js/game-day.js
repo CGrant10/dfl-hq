@@ -22,7 +22,7 @@ import {homeThermalBoard,homeGameDayMatchup,homeGameDayPhase} from './home-prese
 const score=v=>v==null?'—':Number(v).toFixed(2);
 const mineSides=model=>model.games.find(game=>game.isMine)?.sides||[];
 export function mountGameDay(root,{members,member,active,standings=[],weekly=null,detailsRoot=null}){
- let stopped=false,busy=false,timer,model=null,previous=null,moments=[],tab=readPageChoice('gameday-tab',['mine','opponent','leaders'],'mine'),motion=readPageChoice('gameday-motion',['on','off'],'off')==='on',lastKey='',leagueId='',leaguePromise=null,lorePromise=null,banter=[],history=[];
+ let stopped=false,busy=false,timer,model=null,previous=null,moments=[],tab=readPageChoice('gameday-tab',['mine','opponent','leaders'],'mine'),motion=readPageChoice('gameday-motion',['on','off'],'on')==='on',lastKey='',leagueId='',leaguePromise=null,lorePromise=null,banter=[],history=[];
  let forecast=null;
  const query=selector=>root.querySelector(selector)||detailsRoot?.querySelector(selector);
  const listen=(type,handler)=>[root,...(detailsRoot?[detailsRoot]:[])].forEach(node=>node.addEventListener(type,handler));

@@ -108,7 +108,7 @@ def check_game_day_scope(page):
         mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
         mountGameDayWatch:()=>({open:()=>opens++,update:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
       };
-      helpers.savePageChoice('gameday-motion','off');helpers.savePageChoice('gameday-tab','mine');
+      helpers.savePageChoice('gameday-motion','on');helpers.savePageChoice('gameday-tab','mine');
       const deps={...helpers,...providers};
       const mount=Function(...Object.keys(deps),source+';return mountGameDay')(...Object.values(deps));
       const until=async condition=>{for(let i=0;i<50&&!condition();i++)await new Promise(resolve=>setTimeout(resolve,10));check(condition(),'Game-day fixture did not settle')};
@@ -125,7 +125,9 @@ def check_game_day_scope(page):
         check(detailsRoot.querySelector('#gameday-player-panel').textContent.includes('Scope Two'),'Opponent tab lost its handler');
         const tab=detailsRoot.querySelector('[data-gameday-tab="mine"]');tab.click();tab.focus();tab.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
         check(detailsRoot.querySelector('[data-gameday-tab="opponent"]').getAttribute('aria-selected')==='true','Keyboard tabs stopped working');
-        detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='on','Moved effects missed the motion choice');
+        check(detailsRoot.dataset.motion==='on'&&detailsRoot.querySelector('[data-gameday-motion]').getAttribute('aria-pressed')==='true','Game-day motion must start on');
+        detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='off','Moved effects missed the off choice');
+        detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='on','Moved effects missed the on choice');
         detailsRoot.querySelector('[data-gameday-board]').click();root.querySelector('[data-gameday-watch]').click();check(opens===2,'Watch entries stopped working');
         detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>refreshes===2&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
         check(root.querySelector('[data-gameday-recovery]').hidden&&detailsRoot.querySelector('[data-gameday-freshness]').textContent.startsWith('Checked'),'Successful refresh did not clear busy/error state');
