@@ -1,0 +1,63 @@
+/* Clubhouse surfaces stay compact. Effects live behind readable identities. */
+#view .clubhouse-command-center { --clubhouse-ease:cubic-bezier(.2,.75,.25,1); }
+#view .clubhouse-command-center .clubhouse-header { padding:8px 0 14px; margin-bottom:12px; }
+#view .clubhouse-command-center .clubhouse-header h1 { font:700 26px/1.1 var(--font-display); letter-spacing:.025em; }
+#view .clubhouse-command-center .clubhouse-eyebrow { font-size:10px; letter-spacing:.09em; }
+#view .clubhouse-command-center .clubhouse-context.card { padding:0 0 14px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; }
+#view .clubhouse-command-center .clubhouse-archive-label h2 { font:600 12px/1.3 var(--font-display); letter-spacing:.04em; margin:0; }
+#view .clubhouse-command-center .clubhouse-week-picker select { border-color:var(--line); border-radius:6px; background:var(--bg-2); font-size:13px; transition:border-color 160ms ease,background-color 160ms ease; }
+#view .clubhouse-command-center .clubhouse-week-picker select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-color:var(--accent); }
+#view .clubhouse-command-center .clubhouse-tabs { position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; overflow:visible; margin:0 0 18px; padding:0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; }
+#view .clubhouse-command-center .clubhouse-tabs > button { min-height:44px; min-width:0; padding:10px 4px; margin:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:var(--body-text); font:500 13px/1.4 var(--font-display); transform:none; transition:color 160ms ease,background-color 160ms ease; }
+#view .clubhouse-command-center .clubhouse-tabs > button[aria-selected="true"] { background:transparent; color:var(--text); font-weight:700; box-shadow:inset 0 -2px var(--accent); }
+#view .clubhouse-command-center .clubhouse-tabs[data-clubhouse-polished] > button[aria-selected="true"] { box-shadow:none; }
+#view .clubhouse-command-center .clubhouse-tab-indicator { position:absolute; bottom:-1px; height:2px; min-height:0; min-width:0; margin:0; padding:0; border:0; background:var(--accent); pointer-events:none; transform-origin:left center; transition:none; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar { gap:4px 8px; margin:2px 0 12px; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar button { min-height:44px; min-width:44px; padding:6px 10px; border-radius:6px; font-size:12px; }
+#view .clubhouse-command-center .clubhouse-matchup-toolbar [data-clubhouse-motion] { margin-left:auto; }
+#view .clubhouse-command-center .clubhouse-section.card { padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+#view .clubhouse-command-center .clubhouse-scoreboard-grid { gap:8px; margin-bottom:22px; }
+#view .clubhouse-command-center .clubhouse-scoreboard-game { isolation:isolate; border-color:var(--line); border-radius:6px; background:linear-gradient(150deg,color-mix(in srgb,var(--text) 3%,transparent),transparent 65%),var(--bg-2); transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease,transform 180ms var(--clubhouse-ease); }
+#view .clubhouse-command-center .clubhouse-scoreboard-game[aria-pressed="true"] { border-color:var(--accent); background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,transparent),transparent 80%),var(--bg-2); box-shadow:inset 2px 0 var(--accent),0 3px 12px color-mix(in srgb,var(--accent) 5%,transparent); }
+#view .clubhouse-command-center .clubhouse-scoreboard-game:active { transform:scale(.985); background-color:var(--bg-3); }
+#view .clubhouse-command-center .clubhouse-mini-phase { letter-spacing:.025em; }
+#view .clubhouse-command-center .clubhouse-mini-team > b { font-weight:700; }
+#view .clubhouse-command-center .clubhouse-matchup-focus > small { display:block; padding-bottom:8px; font-size:10px; letter-spacing:.08em; }
+#view .clubhouse-command-center .clubhouse-matchup-card { border-top:1px solid var(--line); padding:12px 0 0; }
+#view .clubhouse-command-center .clubhouse-matchup-card > header { align-items:center; padding-bottom:12px; }
+#view .clubhouse-command-center .clubhouse-game-teams { gap:24px; padding:18px 8px 20px; margin-bottom:14px; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:radial-gradient(ellipse at 12% 8%,color-mix(in srgb,var(--clubhouse-left,var(--accent)) 17%,transparent),transparent 63%),radial-gradient(ellipse at 88% 8%,color-mix(in srgb,var(--clubhouse-right,var(--accent)) 17%,transparent),transparent 63%),color-mix(in srgb,var(--bg) 65%,var(--bg-2)); }
+#view .clubhouse-command-center .clubhouse-game-teams::before { content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(90deg,transparent calc(50% - .5px),var(--line) 50%,transparent calc(50% + .5px)),linear-gradient(115deg,color-mix(in srgb,var(--text) 3%,transparent),transparent 45%); mask-image:linear-gradient(transparent,black 25%,black 65%,transparent); }
+#view .clubhouse-command-center .clubhouse-game-teams::after { top:46%; padding:5px 4px; border:1px solid var(--line); border-radius:50%; background:var(--bg-2); font-size:9px; }
+.clubhouse-stage-light { display:none; }
+#view .clubhouse-command-center .clubhouse-stage-light { display:block; position:absolute; inset:0; z-index:-1; opacity:0; pointer-events:none; background:linear-gradient(110deg,transparent 20%,color-mix(in srgb,var(--clubhouse-left,var(--accent)) 20%,transparent) 42%,color-mix(in srgb,var(--text) 10%,transparent) 50%,color-mix(in srgb,var(--clubhouse-right,var(--accent)) 20%,transparent) 58%,transparent 80%); }
+#view .clubhouse-command-center .clubhouse-game-side > .clubhouse-team-mark { outline:1px solid color-mix(in srgb,var(--team-accent,var(--accent)) 35%,var(--line)); outline-offset:4px; box-shadow:0 4px 14px color-mix(in srgb,var(--team-accent,var(--accent)) 12%,transparent); }
+#view .clubhouse-command-center .clubhouse-matchup-name strong { font-size:14px; letter-spacing:.01em; }
+#view .clubhouse-command-center .clubhouse-game-side > b { font-size:32px; letter-spacing:-.015em; }
+#view .clubhouse-command-center .clubhouse-battle-stats { margin-bottom:6px; padding-bottom:14px; }
+#view .clubhouse-command-center .clubhouse-starter-progress { gap:24px; }
+#view .clubhouse-command-center .clubhouse-finish-track { gap:3px; height:3px; margin-top:5px; }
+#view .clubhouse-command-center .clubhouse-finish-track .is-finished { background:var(--team-accent,var(--accent)); }
+#view .clubhouse-command-center .gd-lineup-comparison > h3 { display:flex; align-items:center; gap:12px; margin:18px 0 12px; font:700 14px/1.3 var(--font-display); }
+#view .clubhouse-command-center .gd-lineup-comparison > h3::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent); }
+#view .clubhouse-command-center .gd-compare-head { padding-bottom:10px; }
+#view .clubhouse-command-center .gd-compare-row { border-color:var(--line-soft); }
+#view .clubhouse-command-center .gd-compare-player .gameday-player-tap { border-radius:4px; transition:background-color 160ms ease; }
+#view .clubhouse-command-center .gd-compare-player .gameday-player-tap:active { background:color-mix(in srgb,var(--accent) 7%,transparent); }
+#view .clubhouse-command-center :is(.clubhouse-position-stats,.gd-compare-bench) > summary { gap:10px; color:var(--text); font-weight:600; }
+#view .clubhouse-command-center :is(.clubhouse-position-stats,.gd-compare-bench) > summary::after { content:''; flex:none; width:6px; height:6px; margin-left:auto; margin-right:3px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); transition:transform 180ms var(--clubhouse-ease); }
+#view .clubhouse-command-center :is(.clubhouse-position-stats,.gd-compare-bench)[open] > summary::after { transform:rotate(225deg); }
+#view .clubhouse-command-center .clubhouse-pulse-grid { gap:14px; }
+#view .clubhouse-command-center .clubhouse-pulse-grid article { padding-left:10px; border-left:2px solid var(--line); }
+#view .clubhouse-command-center .clubhouse-pulse-grid article:first-child { border-color:var(--accent); }
+@media(hover:hover) {
+ #view .clubhouse-command-center .clubhouse-scoreboard-game:hover { border-color:var(--accent); transform:translateY(-1px); }
+ #view .clubhouse-command-center :is(.clubhouse-tabs > button,.gd-compare-player .gameday-player-tap):hover { background-color:color-mix(in srgb,var(--accent) 6%,transparent); }
+}
+#view .clubhouse-command-center[data-motion="off"] :is(button,select),
+#view .clubhouse-command-center[data-motion="off"] summary::after { transition:none!important; }
+#view .clubhouse-command-center[data-motion="off"] .clubhouse-scoreboard-game { transform:none!important; }
+@media(prefers-reduced-motion:reduce) {
+ #view .clubhouse-command-center :is(button,select),
+ #view .clubhouse-command-center summary::after { transition:none!important; }
+ #view .clubhouse-command-center .clubhouse-scoreboard-game { transform:none!important; }
+}
