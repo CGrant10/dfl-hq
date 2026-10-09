@@ -128,3 +128,7 @@
 #view[data-route="trade"] .td-confidence p { font-size:13px; line-height:1.5; margin:8px 0 4px; overflow-wrap:anywhere; }
 #view[data-route="trade"] .td-confidence small { color:var(--muted); font-size:11px; }
 #view[data-route="trade"] .td-confidence.is-limited strong { color:var(--warn-ink); }
+
+/* Keep package totals intact beside labels on narrow phones. */
+#view[data-route="trade"] .td-total small { min-width:0; }
+#view[data-route="trade"] .td-total b { flex:0 0 auto; white-space:nowrap; }

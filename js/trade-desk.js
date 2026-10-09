@@ -430,12 +430,12 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       <div class="td-col">
         <small>You send</small>
         ${packageRows(sendA, pool)}
-        <div class="td-total"><small>Player value sent</small><b>${Math.round(num(result.valueToB))}</b></div>
+        <div class="td-total"><small>Value sent</small><b>${Math.round(num(result.valueToB))}</b></div>
       </div>
       <div class="td-col">
         <small>You get</small>
         ${packageRows(sendB, pool)}
-        <div class="td-total"><small>Player value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
+        <div class="td-total"><small>Value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
     <div class="td-stamp is-${recommendation.tone}">
@@ -478,7 +478,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
     </div>
 
     <div class="td-legs">
-      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Player value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Player value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
+      ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
     <div class="td-stamp is-${recommendation.tone}">

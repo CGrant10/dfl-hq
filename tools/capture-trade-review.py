@@ -66,6 +66,7 @@ with sync_playwright() as p:
         select('[data-td-destination="1-3"]','3');select('[data-td-destination="2-6"]','1')
         assert page.locator('.td-reasoning,.td-reason').count()==0
         assert page.locator('.td-top-take').count()==1
+        assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: package value wrapped'
         assert page.locator('.td-confidence p,.td-confidence > small').count()==0
         assert page.locator('.td-player-evidence article dl').count()==4
         assert 'Projected ROS points / game' in page.locator('.td-player-evidence').text_content()
@@ -109,6 +110,7 @@ with sync_playwright() as p:
         click('[data-td-find-counter]');page.locator('[data-td-use-counter]').first.wait_for()
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()==2
         page.locator('[data-td-verdict]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
+        assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: bilateral value wrapped'
         page.screenshot(path=str(output/f'trade-{width}-verdict.png'))
         label=page.locator('.td-balance-label').bounding_box();ticket=page.locator('.td-ticket').bounding_box()
         assert label['x']>=ticket['x'] and label['x']+label['width']<=ticket['x']+ticket['width']
