@@ -10,6 +10,8 @@ The existing per-member Motion setting and OS reduced-motion setting suppress th
 
 Keepers now separates the title and subtitle and wraps full team labels in a wider identity column. Pick'em wraps full team names with scores and pick percentages below. Calendar, Polls, and Proposals use compact empty states; guest profile actions remain available. Broadcast artwork, share-card layouts, trade valuation, and league data are unchanged.
 
+The Sportsbook's persistent slip preview now sits above mobile navigation instead of covering it. Desktop retains its bottom-corner placement because navigation is at the top.
+
 Validation:
 
 - `pnpm check`: typecheck, identifier check, 143 test files / 1,288 tests, and production Arena build passed.
