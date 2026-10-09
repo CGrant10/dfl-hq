@@ -247,10 +247,10 @@ function sortedPlayers(ids, pool, position = null) {
 
 function setLineup(playerIds, starterIds, pool) {
   const roster = new Set((playerIds || []).map(String));
-  const starters = (starterIds || []).map(String).filter(id => roster.has(id)).map(id => pool.get(id)).filter(Boolean)
+  const starters = [...new Set((starterIds || []).map(String))].filter(id => roster.has(id)).map(id => pool.get(id)).filter(Boolean)
     .filter(player => ANALYZER_POSITIONS.includes(player.position));
   const counts = Object.fromEntries(ANALYZER_POSITIONS.map(position => [position, starters.filter(player => player.position === position).length]));
-  const legal = starters.length === 7 && counts.QB === 1 && counts.TE === 1 && counts.RB >= 2 && counts.WR >= 2;
+  const legal = starters.length === 7 && counts.QB === 1 && counts.TE >= 1 && counts.RB >= 2 && counts.WR >= 2;
   if (!legal) return null;
   const baseCounts = { QB: 0, RB: 0, WR: 0, TE: 0 };
   let flexId = null;
@@ -331,7 +331,7 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
     const ids = Array.isArray(roster.players) ? roster.players.map(String) : [];
     const lineup = optimalLineup(ids, pool, { starterIds: Array.isArray(roster.starters) ? roster.starters : [] });
     const unitScores = Object.fromEntries(ANALYZER_POSITIONS.map(position => {
-      const options = lineup.starters.filter(player => player.position === position)
+      const options = lineup.starters.filter(player => player.position === position && player.id !== lineup.flexId)
         .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]);
       const score = options.reduce((sum, player) => sum + player.expectedPoints, 0);
       return [position, round(score)];
@@ -366,7 +366,7 @@ export function analyzeLeague({ rosters = [], pool = new Map() } = {}) {
       grade: grade(team.unitPercentiles[position]),
       starters: position === "FLEX"
         ? team.lineup.starters.filter(player => player.id === team.lineup.flexId)
-        : team.lineup.starters.filter(player => player.position === position)
+        : team.lineup.starters.filter(player => player.position === position && player.id !== team.lineup.flexId)
           .sort((a, b) => b.expectedPoints - a.expectedPoints).slice(0, STARTERS[position]),
       depth: position === "FLEX" ? [] : team.lineup.bench.filter(player => player.position === position).slice(0, 2),
     }]));
