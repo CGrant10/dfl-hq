@@ -17,7 +17,7 @@
 .is-story .route-placeholder-tabs { display:none; }
 .is-story .route-placeholder-head { margin-bottom:20px; }
 .is-archive .route-placeholder-panel { min-height:160px; }
-.view[data-ui-polished].page-in { animation:ui-page-in 220ms ease-out both!important; transform:none; }
+.view[data-ui-polished].page-in { animation:ui-page-in 220ms ease-out backwards!important; transform:none; }
 .view[data-ui-polished].page-in :is(.dfl-pulse-surface,.card) { animation:none!important; }
 @keyframes ui-page-in { from { opacity:.35; } to { opacity:1; } }
 [data-ui-rail] { position:relative; }
