@@ -421,6 +421,7 @@ def check_clubhouse_center(page):
         page.evaluate("window.clubhouseFixture.stop();window.clubhouseFixture.region.remove();window.clubhouseFixture.savePageChoice('gameday-motion','off');delete window.clubhouseFixture")
         page.emulate_media(reduced_motion='no-preference')
         page.evaluate("window.reviewSetTheme('light')")
+        page.set_viewport_size({'width':390,'height':844})
     return result
 
 def check_injury_layout(page):
