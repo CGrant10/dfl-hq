@@ -5,7 +5,7 @@ import { tradeReasons, verdictFor } from "./trade-desk.js";
 import {loadMemberDirectory} from './members.js';
 import {currentTradeNames} from './current-team-names.js';
 
-export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v4-one-qb";
+export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v5-expert-evidence";
 
 const list = value => Array.isArray(value) ? value : [];
 const rosterId = value => value == null ? "" : String(value);
@@ -47,7 +47,7 @@ export function tradeOutcomeSummary(alert) {
   }
   // Preserve older frozen receipts. New receipts use asset value for the winner;
   // lineup usefulness remains a separate consequence, just like the trade desk.
-  if(["dflyzer-trade-v3-player-value",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
+  if(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
     const result=alert.result,evidence=result.projectionEvidence;
     if(evidence?.stale?.length||evidence?.injuries?.length||evidence?.fallback?.length)
       return {grade:'Review',tone:'review',winner:null,loser:null,closeness:result.fairness,detail:'Current data or availability needs review before declaring a winner.'};

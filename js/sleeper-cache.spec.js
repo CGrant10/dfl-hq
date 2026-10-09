@@ -14,7 +14,7 @@ describe("Sleeper analyzer cache", () => {
     expect(remove).toHaveBeenCalledWith("sleeper-market-v1");
     expect(remove).toHaveBeenCalledWith("sleeper-weekly-v1");
     expect(remove).toHaveBeenCalledWith("sleeper-trending-v1");
-    expect(remove).toHaveBeenCalledWith("sleeper-players-v2");
+    expect(remove).toHaveBeenCalledWith("sleeper-players-v3");
   });
 
   it("shares an identical in-flight Sleeper payload", async () => {

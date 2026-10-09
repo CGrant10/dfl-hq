@@ -148,7 +148,7 @@ describe("completed trade alerts", () => {
     expect(robbery).toMatchObject({ grade: "Robbery", winner: "Alpha", loser: "Bravo" });
   });
 
-  it.each(["dflyzer-trade-v3-player-value",TRADE_ALERT_MODEL_VERSION])("preserves asset-winner semantics on %s receipts",modelVersion=>{
+  it.each(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb",TRADE_ALERT_MODEL_VERSION])("preserves asset-winner semantics on %s receipts",modelVersion=>{
     const alert={analysis_status:'graded',model_version:modelVersion,teams:[{team_name:'Alpha'},{team_name:'Bravo'}],result:{valueToA:65,valueToB:100,fairness:65,rosterImpactA:10,rosterImpactB:-1,weeklyDeltaA:10,weeklyDeltaB:-1}};
     expect(tradeOutcomeSummary(alert)).toMatchObject({winner:'Bravo',loser:'Alpha',grade:'Clear win'});
     expect(tradeOutcomeSummary({...alert,result:{...alert.result,projectionEvidence:{stale:['player']}}})).toMatchObject({winner:null,grade:'Review'});

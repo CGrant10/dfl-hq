@@ -12,14 +12,21 @@ function poolOf(spec) {
   const players = {};
   const previousStats = {};
   const rosters = [];
+  const projections=[],opinions=[];
   for (const [team, list] of Object.entries(spec)) {
     rosters.push({ roster_id: team, players: list.map(p => p.id) });
     for (const p of list) {
       players[p.id] = { n: `Player ${p.id}`, p: p.position, t: "AAA" };
       previousStats[p.id] = { rec: p.points, gp: 17 };
+      projections.push({player_id:p.id,stats:{rec:p.points}});
+      opinions.push({name:`Player ${p.id}`,position:p.position,team:'AAA',points:p.points});
     }
   }
-  return { rosters, pool: buildPlayerPool({ rosters, players, previousStats, scoringSettings: PPR }) };
+  // These value-verdict tests provide clean projections and matching expert
+  // opinions. Missing/stale evidence is exercised by trade-confidence.spec.js.
+  opinions.sort((a,b)=>b.points-a.points);const counts={};
+  const rankingRows=opinions.map((p,i)=>({...p,rank:i+1,positionRank:counts[p.position]=(counts[p.position]||0)+1,minRank:i+1,maxRank:i+1,stdDev:0}));
+  return { rosters, pool: buildPlayerPool({ rosters, players, previousStats,projections,expertRankings:{status:'Fresh',usable:true,source:'Fixture consensus',players:rankingRows,updatedAt:Date.UTC(2026,9,8),experts:8}, scoringSettings: PPR }) };
 }
 
 const team = (rosters, pool, id) => {

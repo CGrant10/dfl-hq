@@ -40,6 +40,7 @@ export function tailoredShareCanvas(spec,{style='clean',photo=null,photos=new Ma
   if(style==='photo'){big(`${t.fairness}%`,64,397,200,76,YELLOW);tiny('TRADE BALANCE',270,391,255)}
   else{tiny('TRADE BALANCE',1016,182,280,{align:'right'});big(`${t.fairness}%`,1016,289,280,108,p.ink,'right')}
   divider(heroEnd-12);let y=heroEnd+24;
+  if(t.confidence){y+=tiny('VERDICT CONFIDENCE',64,y+18)+18;y+=block(t.confidence.label,64,y+25,952,28,{weight:600})+22;y+=block('Evidence quality, not a win probability.',64,y+22,952,23,{color:p.muted})+38;}
   for(let i=0;i<view.columns.length;i+=2){
    const group=view.columns.slice(i,i+2),width=group.length===1?952:456,ends=[];
    group.forEach((c,j)=>{

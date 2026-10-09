@@ -120,3 +120,11 @@
 
 /* Rotating a full-width arrow row covered the Analyze tap target on phones. */
 #view[data-route="trade"] .tb-offer-flow > i { width:22px; justify-self:center; pointer-events:none; }
+
+#view[data-route="trade"] .td-confidence { border-block:1px solid var(--line); padding:12px 0; margin:12px 0; }
+#view[data-route="trade"] .td-confidence header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px; }
+#view[data-route="trade"] .td-confidence header span { color:var(--muted); font-size:10px; letter-spacing:.08em; }
+#view[data-route="trade"] .td-confidence strong { font-size:14px; color:var(--text); }
+#view[data-route="trade"] .td-confidence p { font-size:13px; line-height:1.5; margin:8px 0 4px; overflow-wrap:anywhere; }
+#view[data-route="trade"] .td-confidence small { color:var(--muted); font-size:11px; }
+#view[data-route="trade"] .td-confidence.is-limited strong { color:var(--warn-ink); }

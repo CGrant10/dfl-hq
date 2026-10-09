@@ -1,5 +1,6 @@
 const number = value => value == null || value === '' ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const AUDIT_KEY = "dfl.trade.recommendationAudit.v1";
+import {expertSourceMarkup} from './expert-rankings-model.js';
 
 function auditRows(storage = localStorage) {
   try { const rows = JSON.parse(storage.getItem(AUDIT_KEY) || "[]"); return Array.isArray(rows) ? rows : []; } catch { return []; }
@@ -42,10 +43,11 @@ export function tradeModelHealth(pool) {
   const coverage = rostered.length ? projected.length / rostered.length : 0;
   const grade = coverage >= .95 && live.length >= Math.min(80, rostered.length * .45) ? "LIVE" : coverage >= .8 ? "READY" : "LIMITED";
   return { grade, players: rostered.length, projectionCoverage: Math.round(coverage * 100), liveSamples: live.length,
-    recentSamples: recent.length, injured: injured.length, meanGap, disagreements: differences.slice(0, 5) };
+    recentSamples: recent.length, injured: injured.length, meanGap, disagreements: differences.slice(0, 5),
+    expertConsensus:{status:rostered[0]?.expertFeedStatus||'not connected',source:'FantasyPros',updatedAt:rostered[0]?.expertUpdatedAt||0,experts:rostered[0]?.expertCount||0},expertCoverage:rostered.length?Math.round(rostered.filter(p=>p.expertWeight>0).length/rostered.length*100):0 };
 }
 
 export function tradeModelHealthMarkup(health, esc = value => String(value)) {
   const audit = health.accountability || {};
-  return `<details class="trade-model-health"><summary><span><small>MODEL CHECK</small><strong>Trade intelligence</strong></span><b>${esc(health.grade)}</b></summary><div><p><small>PROJECTION COVERAGE</small><strong>${health.projectionCoverage}%</strong></p><p><small>LIVE SAMPLES</small><strong>${health.liveSamples}</strong></p><p><small>TRACKED CALLS</small><strong>${audit.tracked || 0}</strong></p><p><small>OBSERVED DIRECTION</small><strong>${audit.hitRate == null ? "—" : `${audit.hitRate}%`}</strong></p></div><p>Sources: Sleeper projections and DFL-scored results. Expert consensus is not connected. Observed direction compares exchanged players’ accumulated points after a saved call; it does not measure lineup impact or calibrated model accuracy.</p>${health.meanGap == null ? "" : `<section><small>BIGGEST MODEL / FORM DISAGREEMENTS</small>${health.disagreements.map(row => `<span><b>${esc(row.name)}</b><em>${row.expected.toFixed(1)} model · ${row.recent.toFixed(1)} recent</em></span>`).join("")}</section>`}</details>`;
+  return `<details class="trade-model-health"><summary><span><small>MODEL CHECK</small><strong>Trade intelligence</strong></span><b>${esc(health.grade)}</b></summary><div><p><small>PROJECTION COVERAGE</small><strong>${health.projectionCoverage}%</strong></p><p><small>LIVE SAMPLES</small><strong>${health.liveSamples}</strong></p><p><small>TRACKED CALLS</small><strong>${audit.tracked || 0}</strong></p><p><small>OBSERVED DIRECTION</small><strong>${audit.hitRate == null ? "—" : `${audit.hitRate}%`}</strong></p></div><p>Sources: Sleeper projections and DFL-scored results. ${health.expertCoverage||0}% of rated rostered players have a fresh expert match. Observed direction compares exchanged players’ accumulated points after a saved call; it does not measure lineup impact or calibrated model accuracy.</p>${expertSourceMarkup(health.expertConsensus,esc)}${health.meanGap == null ? "" : `<section><small>BIGGEST MODEL / FORM DISAGREEMENTS</small>${health.disagreements.map(row => `<span><b>${esc(row.name)}</b><em>${row.expected.toFixed(1)} model · ${row.recent.toFixed(1)} recent</em></span>`).join("")}</section>`}</details>`;
 }

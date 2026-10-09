@@ -283,7 +283,7 @@ export async function loadTrendingPlayers({ hours = 24, limit = 200 } = {}) {
 // recommendation for this large endpoint.
 // ---------------------------------------------------------------------
 
-const PLAYER_CACHE = "sleeper-players-v2";
+const PLAYER_CACHE = "sleeper-players-v3";
 const PLAYER_URL   = `${BASE}/players/nfl`;
 const PLAYER_CACHE_MS = 24 * 60 * 60 * 1000;
 
@@ -330,6 +330,7 @@ function trim(map) {
     out[id] = {
       n: p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || id,
       p: p.position || "",
+      fp:p.fantasy_positions||[],
       t: p.team || "FA",
       i: p.injury_status || null,
       s: p.status || null,
