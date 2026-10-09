@@ -18,7 +18,7 @@ async function previews(root,threads,active){
   const talk=matchupTalkHtml({reply:row,count,error:!!error});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;
  }));
 }
-export function mountMatchupLive(root,model,threads,active){
+export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{},onError=()=>{},onStop=()=>{}}={}){
  stopCurrent?.();let stopped=false,busy=false,timer,previous=null,stopScoreMotion=()=>{};const current=()=>!stopped&&root.isConnected&&active();
  const status=root.querySelector('[data-matchup-freshness]'),button=root.querySelector('[data-matchup-refresh]');
  const refresh=async(force=false)=>{
@@ -45,14 +45,15 @@ export function mountMatchupLive(root,model,threads,active){
     const phase=matchupPhase(sides[0],sides[1],model.completed),badge=root.querySelector(`[data-matchup-phase="${game.matchup_id}"]`);badge.textContent=phase.label;badge.dataset.state=phase.key;
     root.querySelector(`[data-matchup-summary="${game.matchup_id}"]`).textContent=matchupSummary({...game.left,...sides[0]},{...game.right,...sides[1]},{completed:model.completed});
    }
+   onUpdate({rows,players,nfl,force});
    stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{}},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals};
    status.textContent=`Scores checked ${new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}${!model.completed&&!nfl?' · NFL status unavailable':''}`;
 
-  }catch{if(current()){status.textContent='Refresh unavailable. Showing the last scores; retry when connected.';for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}}
+  }catch{if(current()){onError();status.textContent='Refresh unavailable. Showing the last scores; retry when connected.';for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}}
   finally{busy=false;if(current()){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Refresh scores';}}
  };
  const tick=()=>{if(!current()){stopped=true;clearTimeout(timer);return}if(document.visibilityState==='visible'&&!root.querySelector('#clubhouse-panel-matchups')?.hidden)void refresh();timer=setTimeout(tick,60000)};
- const click=()=>void refresh(true);button.addEventListener('click',click);stopCurrent=()=>{stopped=true;clearTimeout(timer);stopScoreMotion();button.removeEventListener('click',click)};
+ const click=()=>void refresh(true);button.addEventListener('click',click);stopCurrent=()=>{stopped=true;clearTimeout(timer);stopScoreMotion();button.removeEventListener('click',click);onStop()};
  void refresh();if(!model.completed)timer=setTimeout(tick,60000);
  return stopCurrent;
 }
