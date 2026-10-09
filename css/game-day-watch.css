@@ -31,16 +31,6 @@
 .gd-watch-reactions button b { font-size:.6875rem; font-weight:600; min-width:1ch; }
 .gd-watch-reactions > p { margin:6px 0 0; text-align:center; color:var(--body-text); font-size:.75rem; line-height:1.5; }
 .gd-watch-reactions > p:empty { display:none; }
-.gd-watch-rosters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:40px; }
-.gd-watch-rosters > section { min-width:0; }
-.gd-watch-rosters > section > header { display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--line); }
-.gd-watch-rosters header .dfl-team-mark { width:32px; height:32px; flex:none; }
-.gd-watch-rosters h3 { margin:0; font:600 .875rem/1.4 system-ui,sans-serif; overflow-wrap:anywhere; }
-.gd-watch-rosters .gameday-player-tap { min-height:44px; }
-.gd-watch-rosters .gameday-player-tap .dfl-player { display:flex; align-items:center; gap:8px; min-width:0; }
-.gd-watch-rosters .gameday-player .dfl-player-portrait { width:40px; height:40px; flex:none; }
-.gd-watch-rosters .gameday-player-score b { font-size:1.5rem; }
-.gd-watch-rosters .gameday-bench > summary { min-height:44px; box-sizing:border-box; padding-block:12px; font-weight:500; }
 .gd-watch-reel { margin-top:36px; border-top:1px solid var(--line); padding-top:16px; }
 .gd-watch-reel > header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
 .gd-watch-reel h3 { margin:0; font:600 .875rem/1.4 system-ui,sans-serif; }
@@ -64,7 +54,6 @@
 .gd-watch-entrance > button { margin-top:16px; }
 @media(max-width:700px) {
  .gd-watch-toolbar select { flex-basis:100%; margin-bottom:2px; }
- .gd-watch-rosters { grid-template-columns:minmax(0,1fr); gap:32px; }
  .gd-watch-scoreboard { padding-block:28px; }
  .gd-watch-reel > article { gap:12px; padding:20px 14px; }
  .gd-watch-reel article > :is(.dfl-team-mark,.dfl-player-portrait) { width:56px; height:56px; }
@@ -142,3 +131,34 @@
 .gd-entrance-crest .dfl-team-mark { width:clamp(80px,24vw,120px); height:clamp(80px,24vw,120px); }
 .gd-watch-entrance[data-rivalry="1"] [data-entrance-banter] { color:var(--text); font-family:var(--font-display); font-weight:700; font-size:clamp(18px,5vw,24px); }
 @media(prefers-reduced-motion:reduce) { .gd-moment-clip,.gd-entrance-crossfire { display:none; } }
+
+/* Shared rows keep opposing players together, including on narrow phones. */
+.gd-lineup-comparison { padding-top:18px; }
+.gd-lineup-comparison > h3 { margin:0 0 12px; font:700 .875rem/1.4 var(--font-display); }
+.gd-compare-head,.gd-compare-row { display:grid; grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr); gap:6px; }
+.gd-compare-head { padding-bottom:10px; border-bottom:1px solid var(--line); }
+.gd-compare-head strong { min-width:0; font:600 .75rem/1.4 var(--font-display); overflow-wrap:anywhere; }
+.gd-compare-head > :last-child { text-align:right; }
+.gd-lineup-pairs { list-style:none; margin:0; padding:0; }
+.gd-compare-row { align-items:stretch; border-bottom:1px solid var(--line-soft); }
+.gameday-watch .gd-compare-player { display:grid; grid-template-rows:1fr auto; align-items:stretch; gap:5px; min-width:0; padding:9px 0; border:0; }
+.gameday-watch .gd-compare-player .gameday-player-tap { min-width:0; width:100%; padding:0; border:0; border-radius:0; background:transparent; text-align:left; }
+.gameday-watch .gd-lineup-comparison .gd-compare-player .dfl-player { display:grid; grid-template-columns:30px minmax(0,1fr); align-items:start; gap:4px 6px; min-width:0; }
+.gameday-watch .gd-compare-player .dfl-player-portrait { width:30px; height:34px; flex:0 0 30px; }
+.gd-compare-player .dfl-player-copy { display:grid; gap:2px; min-width:0; }
+.gameday-watch .gd-compare-player .dfl-player-copy strong { min-height:1.3em; font:600 13px/1.3 var(--font-display); white-space:normal; overflow-wrap:anywhere; }
+.gameday-watch .gd-compare-player .dfl-player-copy small { min-height:1.3em; font:400 11px/1.3 var(--font-display); white-space:normal; overflow-wrap:anywhere; }
+.gameday-watch .gd-lineup-comparison .gd-compare-player .dfl-player > em { grid-column:2; justify-self:start; max-width:100%; margin:0; padding:1px 3px; font-size:10px; white-space:normal; overflow-wrap:anywhere; }
+.gameday-watch .gd-compare-player .gameday-player-score { position:relative; display:flex; align-items:baseline; justify-content:space-between; gap:4px; min-width:0; }
+.gameday-watch .gd-compare-player .gameday-player-score b { font-size:20px; }
+.gd-compare-player .gameday-player-score > small { font-size:10px; overflow-wrap:anywhere; }
+.gd-compare-slot { align-self:center; text-align:center; color:var(--body-text); font:600 10px/1.4 var(--font-display); overflow-wrap:anywhere; }
+.gd-lineup-missing,.gd-compare-player .gameday-empty-slot { align-self:center; color:var(--body-text); font-size:12px; line-height:1.4; }
+.gd-lineup-missing-score { color:var(--body-text); font-size:20px; }
+.gd-compare-bench > summary { display:flex; align-items:center; min-height:44px; padding-block:10px; color:var(--body-text); font-size:12px; cursor:pointer; }
+@media(min-width:701px) {
+ .gd-compare-head,.gd-compare-row { grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr); gap:20px; }
+ .gameday-watch .gd-compare-player .dfl-player-portrait { width:40px; height:40px; flex-basis:40px; }
+ .gameday-watch .gd-compare-player .dfl-player-copy strong { font-size:14px; }
+ .gameday-watch .gd-lineup-comparison .gd-compare-player .dfl-player { grid-template-columns:40px minmax(0,1fr); }
+}
