@@ -1,4 +1,5 @@
 import {currentSportsbookNames} from '../current-team-names.js';
+import { animateUi, cancelUiMotion } from '../ui-motion.js';
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
@@ -814,6 +815,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   const available=Number(wallet?.balance||0);
   const dialog=document.createElement("dialog");
   dialog.className="sb-slip";
+  dialog.addEventListener('close',()=>cancelUiMotion(dialog));
   dialog.setAttribute("aria-labelledby","sb-slip-title");
   dialog.innerHTML=`<form novalidate>
     <div class="sb-slip-head"><h2 id="sb-slip-title">Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div>
@@ -866,6 +868,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   input.addEventListener("input",paint);
   paint();
   dialog.showModal();
+  animateUi(dialog,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],{duration:240});
   input.focus();input.select();
 
   form.addEventListener("submit",async event=>{

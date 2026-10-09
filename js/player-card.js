@@ -4,6 +4,7 @@ import { currentMember } from './members.js';
 import { thermalScore, playerScoreTemperature } from './score-temperature.js';
 import { mountScoreVfx } from './score-vfx.js';
 import { loadPlayerCard } from './player-card-data.js';
+import { animateUi, cancelUiMotion } from './ui-motion.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null;
 function setup() {
@@ -17,6 +18,7 @@ function setup() {
   dialog.querySelector('[data-player-card-close]').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => {
+    cancelUiMotion(dialog);
     request++; activeContext = null;
     const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
     const replacement = selector && returnContainer?.isConnected ? returnContainer.querySelector(selector) : null;
@@ -35,7 +37,10 @@ export async function openPlayerCard(selection, { context = null, motion = true,
   setup(); const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
   dialog.dataset.motion = motion ? 'on' : 'off';
   body.innerHTML = '<p role="status">Loading player…</p>';
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) {
+    dialog.showModal();
+    animateUi(dialog, [{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'translateY(0)'}], { duration:220, motion });
+  }
   dialog.querySelector('h2').focus({ preventScroll: true });
   try { const model = await loadPlayerCard(selection, context); if (token === request && dialog.open) render(model); }
   catch (error) { if (token === request && dialog.open) { body.innerHTML = `<p role="status">${esc(error.message || 'Player data unavailable.')}</p><button type="button" class="linkbtn" data-player-card-retry>Retry</button>`; body.querySelector('button').onclick = () => void openPlayerCard(selection, { context, motion, source }); } }

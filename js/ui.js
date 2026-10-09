@@ -93,6 +93,11 @@ export function empty(message) {
   return `<div class="empty">${esc(message)}</div>`;
 }
 
+/** A compact, readable empty state with an optional existing page action. */
+export function compactEmpty(title, message = '', action = '') {
+  return `<section class="ui-empty-state"><strong>${esc(title)}</strong>${message ? `<p>${esc(message)}</p>` : ''}${action}</section>`;
+}
+
 /**
  * Standard loading placeholder. `is-loading` is what puts the moving
  * hairline on it - the app's one designed loading treatment, which until now

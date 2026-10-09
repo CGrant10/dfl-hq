@@ -15,7 +15,7 @@
 // =====================================================================
 
 import { db, isAdmin } from "../supabase.js";
-import { esc, empty, toArray, toast, errorBox } from "../ui.js";
+import { esc, compactEmpty, toArray, toast, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
 import { addControl, editControls, wireInline, canEdit, visible, hiddenClass } from "../inline.js";
 
@@ -107,11 +107,11 @@ export async function render(view) {
           <strong>polls_schema.sql</strong> in the Supabase SQL editor, then reload.</div>
         </div>` : ""}
 
-      ${me ? "" : `<div class="card note">
+      ${me || !polls.length ? "" : `<div class="card note">
           <div class="card-body">Pick your name in the top right to vote.</div>
         </div>`}
 
-      ${polls.length ? "" : empty("No polls yet.")}
+      ${polls.length ? "" : compactEmpty("No polls yet", me ? "" : "Choose your profile to vote when a poll opens.", me ? "" : '<button type="button" class="linkbtn" data-open-profile>Choose profile →</button>')}
 
       ${openBlock}
       ${closedBlock}

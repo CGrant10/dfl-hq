@@ -13,6 +13,8 @@ import { ensureStylesheet } from "./lazy-css.js";
 import { captureView, restoreView, readViewMemory, writeViewMemory } from './view-memory.js';
 import { getMemberId } from './members.js';
 import { canWarmRoutes } from './performance-policy.js';
+import { mountPageMotion } from './ui-motion.js';
+import { routePlaceholder } from './route-placeholder.js';
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -232,6 +234,7 @@ function spectatorArenaLinks(view, name) {
 }
 
 let renderEpoch = 0;
+let stopPageMotion = () => {};
 let mountedHash = '', mountedMember = null, stopRestore = () => {};
 let announcedReady = false;
 function announceReady() {
@@ -291,9 +294,10 @@ export async function renderRoute() {
   const previousView = document.getElementById("view");
   if (!previousView) return;
   stopRestore();
+  stopPageMotion();
   if (mountedHash && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
   const routeMemory = readViewMemory(getMemberId(), `route:${expectedHash}`);
-  const changed = name !== lastAnimated;
+  const changed = name !== lastAnimated || expectedHash !== mountedHash;
   if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
   leaving = null;
@@ -301,11 +305,21 @@ export async function renderRoute() {
 
   const view = previousView.cloneNode(false);
   delete view.dataset.restoreScrollY;
+  delete view.dataset.uiPolished;
+  delete view.dataset.pulseSystem;
+  view.dataset.route = name;
   view.classList.remove("page-in");
   view.classList.add("is-route-loading");
+  view.inert = true;
+  view.setAttribute('aria-busy', 'true');
   document.body.classList.add("route-loading");
   setRouteCanvas("var(--bg)");
   previousView.replaceWith(view);
+  document.getElementById('route-placeholder')?.remove();
+  const template = document.createElement('template');
+  template.innerHTML = routePlaceholder(name);
+  const placeholder = template.content.firstElementChild;
+  view.before(placeholder);
   const isCurrent = () => epoch === renderEpoch && currentRoute() === name && document.getElementById("view") === view;
 
   if (await redirectFinishedArenaSpectator(name, expectedHash)) return;
@@ -335,6 +349,9 @@ export async function renderRoute() {
     view.dataset.routeModuleMs = String(moduleDuration);
     if (!isCurrent()) return;
     view.classList.remove("is-route-loading");
+    view.inert = false;
+    view.removeAttribute('aria-busy');
+    placeholder.remove();
     document.body.classList.remove("route-loading");
     setRouteCanvas("var(--bg)");
     decorateDflSeasonCounts(view, name);
@@ -348,6 +365,9 @@ export async function renderRoute() {
   } catch (err) {
     if (isCurrent()) {
       view.classList.remove("is-route-loading");
+      view.inert = false;
+      view.removeAttribute('aria-busy');
+      placeholder.remove();
       document.body.classList.remove("route-loading");
       setRouteCanvas("var(--bg)");
       console.error(err);
@@ -364,6 +384,7 @@ export async function renderRoute() {
   if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
   else if (routeMemory && !view.dataset.restoreScrollY) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
   mountedHash = expectedHash; mountedMember = getMemberId();
+  stopPageMotion = mountPageMotion(view);
   lastAnimated = name;
   if (changed) {
     view.classList.remove("page-switching");

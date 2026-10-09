@@ -1,5 +1,6 @@
 import { mountLeagueSearch } from "./league-search.js";
 import { mountPlayerCards } from './player-card-actions.js';
+import { startUiMotion, animateUi, cancelUiMotion } from './ui-motion.js';
 // =====================================================================
 // app.js - start-up: theme, "Who are you?", admin restore, router, SW
 // =====================================================================
@@ -31,6 +32,7 @@ import { startExperience, syncExperience } from "./experience.js";
 /* Draft and golf are complete. Rebuild the shell before any navigation
    handlers bind, so the fixed bar reflects what the league uses each week. */
 mountSeasonNavigation();
+startUiMotion();
 mountLeagueSearch();
 mountPlayerCards();
 document.addEventListener("click", event => {
@@ -171,10 +173,12 @@ const syncMore=()=>moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.clas
   lands back on the control that opens it rather than at the top of a document
   it has just navigated to.
 */
-const closeMore=()=>{moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
+const closeMore=()=>{if(moreSheet)cancelUiMotion(moreSheet);moreSheet?.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null};
 const openMore=()=>{
   void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
+  animateUi(moreSheet,[{backgroundColor:'transparent'},{backgroundColor:getComputedStyle(moreSheet).backgroundColor}],{duration:160});
+  animateUi(moreSheet?.querySelector('.sheet-card'),[{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:260});
   syncMore();
   releaseMore?.();
   /* Close first, not the first nav link: it is the one control in here whose

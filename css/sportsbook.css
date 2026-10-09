@@ -83,9 +83,10 @@
 .sb-pickem-gamehead small { color:inherit; font:inherit; font-weight:var(--fw-bold); }
 .sb-pickem-sides { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:var(--s-2); align-items:center; }
 .sb-pickem-sides>span { color:var(--muted); font-size:var(--fs-micro); }
-.sb-pickem-sides button { display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); min-width:0; min-height:48px; padding:var(--s-2) var(--s-3); border:1px solid var(--line); border-radius:var(--r-md); background:var(--card-surface); color:var(--body-text); font:inherit; font-weight:var(--fw-bold); cursor:pointer; }
-.sb-pickem-sides button span { overflow:hidden; text-overflow:ellipsis; }
-.sb-pickem-sides button small { margin-left:auto; color:var(--muted); font-size:var(--fs-micro); font-weight:var(--fw-bold); }
+.sb-pickem-sides button { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px 8px; min-width:0; min-height:56px; padding:var(--s-2) var(--s-3); border:1px solid var(--line); border-radius:var(--r-md); background:var(--card-surface); color:var(--body-text); font:inherit; font-weight:var(--fw-bold); cursor:pointer; }
+.sb-pickem-sides button span { grid-column:1/-1; min-width:0; overflow:visible; white-space:normal; overflow-wrap:anywhere; text-align:left; line-height:1.2; }
+.sb-pickem-sides button b { grid-column:1; grid-row:2; text-align:left; }
+.sb-pickem-sides button small { grid-column:2; grid-row:2; color:var(--muted); font-size:var(--fs-micro); font-weight:var(--fw-bold); }
 .sb-pickem-sides button[aria-pressed="true"] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 13%,var(--card-surface)); color:var(--text); box-shadow:inset 3px 0 var(--accent); }
 .sb-pickem-lock { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--s-3); align-items:end; margin:var(--s-5) 0; padding:var(--s-4); border:1px solid var(--line); border-radius:var(--r-md); }
 .sb-pickem-lock label span { display:block; margin-bottom:var(--s-2); font-weight:var(--fw-bold); }

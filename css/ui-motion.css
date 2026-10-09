@@ -1,0 +1,48 @@
+/* One restrained interaction language. The live score geometry stays fixed. */
+.view.is-route-loading { opacity:0!important; pointer-events:none; transform:none!important; }
+.route-placeholder { position:fixed; inset:var(--topbar-h,44px) 0 60px; z-index:20; overflow:hidden; background:var(--bg); padding:20px 14px; }
+.route-placeholder-inner { max-width:860px; margin:0 auto; }
+.route-placeholder-label { margin:0 0 16px; color:var(--muted); font:700 13px var(--font-body); letter-spacing:.08em; text-transform:uppercase; }
+.route-placeholder-art i { display:block; height:10px; border-radius:3px; background:color-mix(in srgb,var(--muted) 16%,var(--bg-2)); }
+.route-placeholder-head { display:grid; align-content:center; gap:14px; min-height:90px; padding:20px; border:1px solid var(--line-soft); border-radius:var(--r-lg); }
+.route-placeholder-head i:first-child { width:42%; height:22px; }
+.route-placeholder-head i:last-child { width:64%; }
+.route-placeholder-tabs { display:flex; gap:18px; padding:22px 0; }
+.route-placeholder-tabs i { width:22%; }
+.route-placeholder-panel { display:grid; align-content:start; gap:18px; min-height:130px; padding:20px; margin-bottom:16px; border:1px solid var(--line-soft); border-radius:var(--r-lg); }
+.route-placeholder-panel i:nth-child(2) { width:82%; }
+.route-placeholder-panel i:nth-child(3) { width:58%; }
+.is-matchup .route-placeholder-tabs + .route-placeholder-panel { grid-template-columns:1fr 1fr; min-height:160px; }
+.is-workbench .route-placeholder-tabs + .route-placeholder-panel { min-height:220px; }
+.is-story .route-placeholder-tabs { display:none; }
+.is-story .route-placeholder-head { margin-bottom:20px; }
+.is-archive .route-placeholder-panel { min-height:160px; }
+.view[data-ui-polished].page-in { animation:ui-page-in 220ms ease-out both!important; transform:none; }
+.view[data-ui-polished].page-in :is(.dfl-pulse-surface,.card) { animation:none!important; }
+@keyframes ui-page-in { from { opacity:.35; } to { opacity:1; } }
+[data-ui-rail] { position:relative; }
+[data-ui-rail] > .dfl-selection-rail { position:absolute!important; display:block; height:2px; min-height:0!important; padding:0!important; margin:0!important; border:0!important; border-radius:2px!important; background:var(--accent)!important; pointer-events:none; transform-origin:left; z-index:1; }
+[data-ui-rail] > button[aria-selected="true"]::after { opacity:0!important; }
+.view [data-ui-rail] > button { transition:color 180ms ease,background-color 180ms ease,border-color 180ms ease; }
+.view [data-ui-rail] > button.on { border-bottom-color:transparent; }
+.dfl-player-card[open]::backdrop,.sb-slip[open]::backdrop { animation:ui-backdrop-in 160ms ease-out; }
+.dfl-player-card[data-motion="off"]::backdrop { animation:none; }
+@keyframes ui-backdrop-in { from { background-color:transparent; } }
+.ui-empty-state { margin:0 0 16px; padding:18px 0; border-top:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); }
+.ui-empty-state strong { display:block; font:700 18px var(--font-body); color:var(--text); }
+.ui-empty-state p { margin:6px 0 0; color:var(--muted); font-size:14px; }
+.ui-empty-state .linkbtn { display:inline-block; margin-top:10px; }
+.view[data-route="keepers"] .page-head { flex-direction:column; align-items:flex-start; justify-content:center; gap:6px; }
+.view[data-route="keepers"] .page-head h1,.view[data-route="keepers"] .page-head .page-sub { margin:0; }
+.view[data-route="keepers"] .kp-team { white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; line-height:1.3; }
+.view[data-route="keepers"] :is(.kp-head,.kp-row) { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 2.7rem 2.2rem; align-items:start; }
+.view[data-route="keepers"] .kp-player { overflow-wrap:anywhere; }
+@media(max-width:380px) { .view[data-route="keepers"] :is(.kp-head,.kp-row) { gap:7px; padding-left:10px; padding-right:10px; } }
+html[data-ui-motion="off"] .view[data-ui-polished],html[data-ui-motion="off"] .view[data-ui-polished] *,
+html[data-ui-motion="off"] :is(.dfl-player-card,.sb-slip)::backdrop { animation:none!important; transition:none!important; }
+html[data-ui-motion="off"] .view[data-ui-polished] :is(.card,button,summary,tr) { transform:none!important; }
+html[data-ui-motion="off"] .view[data-ui-polished] * { scroll-behavior:auto!important; }
+@media(prefers-reduced-motion:reduce) {
+  .view[data-ui-polished],.view[data-ui-polished] *,.dfl-player-card::backdrop,.sb-slip::backdrop { animation:none!important; transition:none!important; }
+}
+@media(min-width:900px) { .route-placeholder { top:calc(var(--topbar-h,44px) + 60px); bottom:0; padding-top:28px; } }
