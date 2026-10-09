@@ -10,11 +10,12 @@ import {loadWeeklyStats,sleeper} from './sleeper.js';
 import {currentMember} from './members.js';
 import {readPageChoice,savePageChoice} from './page-disclosure.js';
 import {accentOf} from './identity-rules.js';
+import {mountClubhousePolish} from './clubhouse-polish.js';
 
 let stopCurrent=null;
 export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,loadStats=loadWeeklyStats,loadLeague=id=>sleeper.league(id)}={}) {
  stopCurrent?.();
- let stopped=false,last=null,model=null,stats={loading:true},statsBusy=false,statsChecked=0,statsRequest=0,statsTimer=null,slots=null,vfx=null,fxCard=null,stopScores=()=>{},animations=[];
+ let stopped=false,last=null,model=null,stats={loading:true},statsBusy=false,statsChecked=0,statsRequest=0,statsTimer=null,slots=null,vfx=null,fxCard=null,stopScores=()=>{};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),current=()=>!stopped&&root.isConnected&&active();
  let motion=readPageChoice('gameday-motion',['on','off'],'on')==='on';
  const scope=`clubhouse-matchup-${week.season}-${week.week}`;
@@ -23,19 +24,16 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const requested=new URLSearchParams(location.hash.split('?')[1]||'').get('matchup');
  let selected=model.games.find(g=>g.id===requested)?.id||readPageChoice(scope,model.games.map(g=>g.id),(model.games.find(g=>g.isMine)||model.games[0])?.id);
  const selectedGame=()=>model.games.find(g=>g.id===selected),cardOf=id=>root.querySelector(`[data-clubhouse-matchup="${CSS.escape(id)}"] .clubhouse-matchup-card`);
- const stopAnimations=()=>{stopScores();stopScores=()=>{};animations.forEach(a=>a.cancel());animations=[]};
+ const polish=mountClubhousePolish(root,{getMotion:()=>motion,active:current});
+ const stopAnimations=()=>{stopScores();stopScores=()=>{};polish.stopTransient()};
  const spotlight=mountPlayerSpotlight(root,{getModel:()=>model,getMotion:()=>motion});
  const setMotion=()=>{
   root.querySelector('.clubhouse-page').dataset.motion=motion?'on':'off';
   for(const card of root.querySelectorAll('.clubhouse-matchup-card'))card.dataset.motion=motion?'on':'off';
   const button=root.querySelector('[data-clubhouse-motion]');if(button){button.textContent=`Motion ${motion?'on':'off'}`;button.setAttribute('aria-pressed',String(motion))}
-  if(!motion||reduced.matches)stopAnimations();spotlight.setMotion(motion);
+  if(!motion||reduced.matches)stopAnimations();polish.motionChanged();spotlight.setMotion(motion);
  };
- const enter=card=>{
-  if(!motion||reduced.matches||document.visibilityState!=='visible')return;
-  for(const [i,mark] of [...card.querySelectorAll('.clubhouse-game-side > .clubhouse-team-mark')].entries())if(mark.animate)animations.push(mark.animate([{opacity:.25,transform:`translateX(${i?10:-10}px) scale(.94)`},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:650,delay:i*80,easing:'cubic-bezier(.18,.75,.3,1)'}));
-  const faceoff=card.querySelector('.clubhouse-game-teams');if(faceoff?.animate)animations.push(faceoff.animate([{backgroundColor:'color-mix(in srgb,var(--accent) 10%,transparent)'},{backgroundColor:'transparent'}],{duration:900,easing:'ease-out'}));
- };
+ const enter=card=>polish.enter(card);
  const paintActive=()=>{
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
   stopScores();stopScores=()=>{};
@@ -76,7 +74,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  const onRoute=()=>{if(!active())stop()};
  const onReduce=()=>{if(reduced.matches)stopAnimations()};
  const onVisibility=()=>{if(document.visibilityState!=='visible')stopAnimations()};
- const stop=()=>{if(stopped)return;stopped=true;statsRequest++;clearTimeout(statsTimer);stopAnimations();vfx?.stop();spotlight.stop();root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
+ const stop=()=>{if(stopped)return;stopped=true;statsRequest++;clearTimeout(statsTimer);stopAnimations();polish.stop();vfx?.stop();spotlight.stop();root.removeEventListener('click',click);window.removeEventListener('hashchange',onRoute);reduced.removeEventListener('change',onReduce);document.removeEventListener('visibilitychange',onVisibility)};
  root.addEventListener('click',click);window.addEventListener('hashchange',onRoute);reduced.addEventListener('change',onReduce);document.addEventListener('visibilitychange',onVisibility);
  paintBoard();paintActive();stopCurrent=stop;
  // Box scores and league slot metadata load independently of the score feed.

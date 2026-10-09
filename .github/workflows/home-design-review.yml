@@ -21,6 +21,8 @@ on:
       - 'css/matchup-interactions.css'
       - 'js/clubhouse-matchup*'
       - 'js/clubhouse-center*'
+      - 'js/clubhouse-polish.js'
+      - 'css/clubhouse-polish.css'
       - 'js/game-day-lineup-comparison*'
       - 'css/game-day-watch.css'
       - 'js/weekly-clubhouse-ui.js'
