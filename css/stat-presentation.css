@@ -1,0 +1,62 @@
+/* Player identity and recorded form share a compact, readable sports desk. */
+.dfl-player-card .player-card-hero {
+  grid-template-columns:96px minmax(0,1fr); gap:8px 16px;
+  padding:14px; border:1px solid var(--line); border-radius:10px;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--player-primary,var(--accent)) 9%,transparent),transparent 75%),var(--bg-2);
+}
+.dfl-player-card .player-card-hero .dfl-player-portrait { width:96px; height:116px; border-radius:7px; box-shadow:none; }
+.dfl-player-card .player-card-hero .dfl-player-copy strong { font-size:1.5rem; line-height:1.15; overflow-wrap:anywhere; }
+.dfl-player-card .player-card-owner :is(a,strong) { overflow-wrap:anywhere; }
+.dfl-player-card .player-card-availability { margin-top:6px; }
+.dfl-player-card .player-form-heading { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.dfl-player-card .player-form-heading > small { color:var(--body-text); font-size:.6875rem; text-align:right; }
+.dfl-player-card .player-form-chart { display:block; width:100%; height:84px; margin:12px 0 0; overflow:visible; }
+.player-form-zero { stroke:var(--line); stroke-width:1; vector-effect:non-scaling-stroke; }
+.player-form-guide { stroke:var(--line-soft); stroke-dasharray:2 4; stroke-width:1; vector-effect:non-scaling-stroke; }
+.player-form-line { fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+.player-form-dot { fill:var(--bg-2); stroke:var(--accent); stroke-width:2; vector-effect:non-scaling-stroke; }
+.player-form-dot.is-stale { stroke-dasharray:2 2; }
+.dfl-player-card .player-card-recent dl { display:grid; grid-template-columns:repeat(var(--form-count,3),minmax(0,1fr)); gap:0; margin-top:3px; }
+.dfl-player-card .player-card-recent dl > div { padding:0 4px; border:0; text-align:center; min-width:0; }
+.dfl-player-card .player-card-recent dl > div + div { padding-left:4px; border:0; }
+.dfl-player-card .player-card-recent dt { font-size:.75rem; }
+.dfl-player-card .player-card-recent dd { font-size:1.25rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.dfl-player-card .player-card-recent dd small { display:block; margin-top:3px; min-height:1.4em; }
+.dfl-player-card .player-form-empty { margin:12px 0; color:var(--body-text); font-size:.8125rem; }
+
+/* The lead is an actual-score cue, never a forecast or a win probability. */
+#view .clubhouse-command-center .clubhouse-score-lead { display:block; min-height:1.4em; margin-top:4px; color:var(--text); font:700 .625rem/1.4 var(--font-display); letter-spacing:.075em; }
+#view .clubhouse-command-center .clubhouse-game-side[data-lead="true"] > b [data-matchup-score-value] { text-decoration:underline; text-decoration-color:var(--accent); text-decoration-thickness:2px; text-underline-offset:6px; }
+#view .clubhouse-command-center .clubhouse-mini-team.is-leading > b { text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:4px; }
+#view .clubhouse-command-center .clubhouse-status-table { width:100%; table-layout:fixed; border-collapse:collapse; margin:0 0 8px; }
+#view .clubhouse-command-center .clubhouse-status-table th { overflow-wrap:anywhere; }
+#view .clubhouse-command-center .clubhouse-status-table thead th { width:39%; padding:0 0 8px; font:600 .6875rem/1.4 var(--font-display); text-align:left; vertical-align:bottom; }
+#view .clubhouse-command-center .clubhouse-status-table thead th:nth-child(2) { width:22%; }
+#view .clubhouse-command-center .clubhouse-status-table thead th:last-child { text-align:right; }
+#view .clubhouse-command-center .clubhouse-status-table tbody :is(th,td) { border-top:1px solid var(--line-soft); padding:7px 0; }
+#view .clubhouse-command-center .clubhouse-status-table tbody th { color:var(--body-text); text-align:center; font:500 .6875rem/1.4 var(--font-display); }
+#view .clubhouse-command-center .clubhouse-status-table td { font:700 1rem/1.3 var(--font-display); font-variant-numeric:tabular-nums; }
+#view .clubhouse-command-center .clubhouse-status-table td:last-child { text-align:right; }
+#view .clubhouse-command-center .clubhouse-starter-progress > div:first-child .is-finished { background:var(--clubhouse-left,var(--accent)); }
+#view .clubhouse-command-center .clubhouse-starter-progress > div:last-child .is-finished { background:var(--clubhouse-right,var(--accent)); }
+#view .clubhouse-command-center .clubhouse-position-stats tbody td { font-variant-numeric:tabular-nums; }
+#view .clubhouse-command-center .clubhouse-position-stats td.is-ahead { font-weight:700; background:color-mix(in srgb,var(--accent) 7%,transparent); box-shadow:inset 0 -2px var(--accent); }
+#view .clubhouse-command-center .gd-compare-row { padding-inline:2px; }
+#view .clubhouse-command-center .gd-compare-player .gameday-player-score b { font-variant-numeric:tabular-nums; }
+#view .clubhouse-command-center .gd-compare-player:nth-child(3) .gameday-player-score { flex-direction:row-reverse; }
+#view .clubhouse-command-center .gd-player-stat-line { font-size:.75rem; line-height:1.5; }
+#view .clubhouse-command-center .gd-player-stat-line.is-right { text-align:right; }
+
+/* The recommendation leads the receipt; package values remain easy to compare. */
+#view[data-route="trade"] .td-ticket .td-stamp { border-width:1px; border-left-width:3px; border-radius:8px; text-align:left; box-shadow:none; }
+#view[data-route="trade"] .td-ticket .td-stamp strong { font-size:1.625rem; line-height:1.15; letter-spacing:.025em; }
+#view[data-route="trade"] .td-ticket .td-cols > .td-col { display:flex; flex-direction:column; }
+#view[data-route="trade"] .td-ticket .td-col > .td-total { margin-top:auto; padding-top:10px; }
+#view[data-route="trade"] .td-ticket .td-total b { color:var(--text); font-variant-numeric:tabular-nums; }
+#view[data-route="trade"] .td-ticket .td-item-value { color:var(--body-text); font-weight:500; }
+#view[data-route="trade"] .td-ticket .td-line b { font-weight:600; }
+@media(max-width:360px) {
+  .dfl-player-card .player-card-hero { grid-template-columns:76px minmax(0,1fr); padding:10px; gap:6px 12px; }
+  .dfl-player-card .player-card-hero .dfl-player-portrait { width:76px; height:104px; }
+  .dfl-player-card .player-card-hero .dfl-player-copy strong { font-size:1.25rem; }
+}

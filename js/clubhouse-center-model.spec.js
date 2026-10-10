@@ -1,10 +1,18 @@
 import {describe,it,expect} from 'vitest';
 import {clubhouseGameMetrics,clubhouseLeaguePulse,clubhousePlayerStatLine} from './clubhouse-center-model.js';
-import {clubhouseScoreboardHtml} from './clubhouse-center-ui.js';
+import {clubhouseScoreboardHtml,clubhouseTeamStatsHtml,clubhousePositionStatsHtml} from './clubhouse-center-ui.js';
 const player=(id,slot,points,state='live')=>({id,roster:'1',slot,slotType:slot,position:slot,name:id,points,state});
 const team=(roster,score,lineup)=>({roster,name:`Team ${roster}`,score,lineup,starters:lineup,known:lineup.every(p=>p.state!=='unknown'),live:lineup.filter(p=>p.state==='live').length});
 const game=(score1=50,score2=54,state='live')=>({id:'1',sides:[team('1',score1,[player('a','RB',10,state),player('b','RB',20,state),player('c','FLEX',5,state)]),team('2',score2,[player('d','RB',15,state),player('e','RB',15,state),player('f','FLEX',0,state)])]});
 describe('Clubhouse matchup context',()=>{
+ it('only calls an actual lead after kickoff or for a completed matchup',()=>{
+  expect(clubhouseGameMetrics(game(50,54)).lead).toEqual({side:'right',margin:4,label:'Leading'});
+  expect(clubhouseGameMetrics(game(54,50,'final'),true).lead).toEqual({side:'left',margin:4,label:'Winner'});
+  for(const state of ['upcoming','unknown'])expect(clubhouseGameMetrics(game(50,54,state)).lead).toBeNull();
+  expect(clubhouseGameMetrics(game(50,50)).lead).toBeNull();
+  expect(clubhouseGameMetrics(game(null,50)).lead).toBeNull();
+  expect(clubhouseGameMetrics(game(-3,-1)).lead).toEqual({side:'right',margin:2,label:'Leading'});
+ });
  it('shows close-game pressure only for real live, known scores',()=>{
   expect(clubhouseGameMetrics(game()).pressure).toBe(true);
   expect(clubhouseGameMetrics(game(50,70)).pressure).toBe(false);
@@ -17,6 +25,15 @@ describe('Clubhouse matchup context',()=>{
   expect(clubhouseGameMetrics(g).teams[0]).toMatchObject({live:1,upcoming:1,finished:1,total:3});
   g.sides[0].lineup.push(player('pending','WR',null,'unknown'));
   expect(clubhouseGameMetrics(g).teams[0]).toMatchObject({live:null,upcoming:null,finished:null});
+ });
+ it('leaves unavailable starter status blank and only emphasizes reported positional points after kickoff',()=>{
+  const pending=game(50,54,'unknown');
+  expect(clubhouseTeamStatsHtml(pending)).toContain('<td>—</td>');
+  expect(clubhousePositionStatsHtml(pending)).not.toContain('is-ahead');
+  expect(clubhousePositionStatsHtml(game(50,54,'upcoming'))).not.toContain('is-ahead');
+  expect(clubhousePositionStatsHtml(game())).toContain('is-ahead');
+  const missing=game();missing.sides[0].lineup[2].points=null;
+  expect(clubhousePositionStatsHtml(missing)).not.toContain('is-ahead');
  });
  it('totals starting slots, including Flex, and keeps missing points unknown',()=>{
   const g=game(),rows=clubhouseGameMetrics(g).positional;
