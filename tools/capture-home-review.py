@@ -879,11 +879,13 @@ with sync_playwright() as p:
         page.keyboard.press('Escape')
         page.wait_for_timeout(250)
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
-    page.evaluate('window.reviewCardDelay=1200')
+    page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
     player.click()
     page.locator('[data-player-card-loading]').wait_for()
+    page.wait_for_function('!!window.reviewCardRelease')
     page.keyboard.press('Escape')
-    page.wait_for_timeout(1400)
+    page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
+    page.wait_for_timeout(300)
     assert page.locator('.dfl-player-card').evaluate('e=>!e.open') and page.locator('.dfl-player-card .player-card-hero').count()==0, 'Late player response replaced a dismissed card'
     assert player.evaluate('e=>e===document.activeElement'), 'Pending card dismissal lost focus'
     page.evaluate('window.reviewCardDelay=75')
