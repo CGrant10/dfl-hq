@@ -142,12 +142,12 @@ export async function render(view) {
   view.innerHTML = `
     <div id="profile-wrap">
       <div data-dfl-host></div>
-      ${othersCard(members, member)}
       ${member.notes ? `<div class="card"><h3 class="card-heading">Notes</h3>
                           <div class="card-body">${esc(member.notes)}</div></div>` : ""}
-      ${dfl ? cabinetCard(dfl) : ""}
       ${careerCard(careerStats, seasons.length)}
+      ${dfl ? cabinetCard(dfl) : ""}
       ${dfl && loreName ? extremesCard(dfl, loreName, currentTeam) : ""}
+      ${othersCard(members, member)}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
       ${isMe ? `<details class="profile-settings" id="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance, notifications and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-notifications-slot></div><div data-profile-privacy-slot></div></div></details>` : ""}

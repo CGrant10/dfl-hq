@@ -273,13 +273,6 @@ function wireRecapShare(view,recap){
 function bankrollCard(me,wallet,open,autoReady){
   const claimable=Number(wallet?.claimable||0),days=Number(wallet?.claimable_days||0);
   return `<section class="sb-bankroll">
-    <div class="card-title-row">
-      <div>
-        <div class="card-title">${esc(me.display_name)}</div>
-
-      </div>
-
-    </div>
     <div class="sb-claim-row">
       ${claimable>0
         ? `<button type="button" class="btn sb-claim" id="sb-claim">Claim ${claimable} SIN${days>1?` &middot; ${days} days`:""}</button>`
@@ -364,7 +357,9 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   const cats=[...groups.keys()].sort((a,b)=>{const ai=preferred.indexOf(a),bi=preferred.indexOf(b);return(ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b)});
   return cats.map(cat=>{
     const group=groups.get(cat);
-    if(cat==="Fantasy"&&group.every(matchupKey))return fantasyWeekGroups(group,leagueWeek).map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members)).join("");
+    if(cat==="Fantasy"&&group.every(matchupKey))return fantasyWeekGroups(group,leagueWeek)
+      .sort((a,b)=>Number(b.markets.some(isOpen))-Number(a.markets.some(isOpen)))
+      .map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members,memberId)).join("");
     if(cat==="Player Props"){
       const favorites=readPropFavorites(memberId),games=new Map(),gameNamesById=propGameNames(markets);group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id))),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:market._lazy?null:marketCard(market,choices,canBook,picked,held,members,meta,favorites.has(meta.key))});games.set(key,bucket)});
       for(const[key,game]of games)propGameCache.set(key,sortPropRows(game.rows,"player"));
@@ -390,13 +385,19 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
   }).join("");
 }
 
-function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members){
+function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,memberId){
  const openCount=slate.markets.filter(isOpen).length,allLocked=!openCount,upcoming=slate.period==='upcoming';
  const heading=upcoming?`Week ${slate.week} early lines`:`Week ${slate.week} fantasy matchups`;
  const note=upcoming?`These are next week’s games. Week ${Number(clock.week)} is still the current NFL week.`:allLocked?'Winner bets locked at the first NFL kickoff. These games stay visible while the week plays out.':'Pick a team to win and add it to your slip. Winner bets lock at the first NFL kickoff of the week.';
- const cards=slate.markets.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
+ const member=memberId==null?null:members.find(m=>String(m.id)===String(memberId));
+ const ownNames=new Set([member?.team_name,member?.display_name].filter(Boolean).map(identityKey));
+ const ownIndex=slate.markets.findIndex(m=>isOpen(m)&&(byMarket.get(String(m.id))||[]).some(o=>ownNames.has(identityKey(o.label))));
+ const featuredIndex=ownIndex>=0?ownIndex:slate.markets.findIndex(isOpen);
+ const featured=featuredIndex<0?'':`<div class="sb-featured-line"><small class="sb-featured-caption">${ownIndex>=0?'YOUR MATCHUP':'FEATURED MATCHUP'}</small>${marketCard(slate.markets[featuredIndex],byMarket.get(String(slate.markets[featuredIndex].id))||[],canBook,picked,held,members)}</div>`;
+ const remaining=slate.markets.filter((_,index)=>index!==featuredIndex);
+ const cards=remaining.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
  const grid=`<div class="sb-market-grid">${cards}</div>`;
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${upcoming||allLocked?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${upcoming?`Pick Week ${slate.week} winners`:`View Week ${slate.week} matchups`}<span>${slate.markets.length} games</span></summary>${grid}</details>`:grid}</section>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${featured}${remaining.length?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${featured?`More Week ${slate.week} matchups`:`View Week ${slate.week} matchups`}<span>${remaining.length} games</span></summary>${grid}</details>`:''}</section>`;
 }
 
 function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketMap,members}){

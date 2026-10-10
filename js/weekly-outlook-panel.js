@@ -94,7 +94,7 @@ function lineupRow(slot, max, trending, defense) {
   </li>`;
 }
 
-function markup({ week, team, advice, trending, defense, stale }) {
+function markup({ week, team, advice, trending, defense, stale, showScore }) {
   const max = Math.max(...advice.lineup.slots.map(slot => slot.score || 0), 1);
   const bench = advice.pointsOnBench;
   /* "Optimal" is only true of a lineup that exists. An empty lineup has
@@ -106,8 +106,9 @@ function markup({ week, team, advice, trending, defense, stale }) {
     <header class="wo-head">
       <div>
         <small>WEEK ${esc(week)} · THIS WEEK</small>
-        <h2>${esc(team)}</h2>
+        <h2>${showScore ? "Weekly lineup" : esc(team)}</h2>
       </div>
+      ${showScore ? `<div class="wo-projection"><strong>${pts(advice.bestTotal)}</strong><small>Best lineup · proj.</small></div>` : ""}
       <div class="wo-verdict ${clean ? "is-clean" : unset || bench > 0 ? "is-warn" : ""}">
         <strong>${unset ? "Not set" : clean ? "Lineup is optimal" : pts(bench)}</strong>
         <span>${unset ? "no lineup submitted" : clean ? "nothing to change" : "points on your bench"}</span>
@@ -168,6 +169,7 @@ async function draw(host) {
     week,
     team: team.team_name || team.ownerName || "Your team",
     advice, trending, defense, stale: projections.stale,
+    showScore: !!host.closest('[data-route="analyzer"]'),
   });
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
   const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;

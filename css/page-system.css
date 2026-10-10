@@ -162,3 +162,107 @@
 }
 html[data-ui-motion="off"] #view.view[data-page-system][data-route] summary::after { transition:none; }
 @media(prefers-reduced-motion:reduce) { #view.view[data-page-system][data-route] summary::after { transition:none; } }
+
+/* Identity leads the task. Native selectors keep their keyboard and phone UI. */
+#view.view[data-page-system][data-route][data-route="trade"] .tb-team-choices { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-identity-select { position:relative; padding:0; border:0; gap:6px; align-content:start; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice { display:grid; grid-template-columns:32px minmax(0,1fr) 10px; align-items:center; gap:8px; min-height:64px; padding:8px 0; border-bottom:1px solid var(--line); color:var(--text); text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice strong { font:700 1rem/1.25 var(--font-body); overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice > i { color:var(--body-text); font-style:normal; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice .dfl-team-mark { width:32px; height:32px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-identity-select > select { position:absolute; inset:20px 0 0; width:100%; height:calc(100% - 20px); padding:0; opacity:0; cursor:pointer; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-identity-select:focus-within .tb-team-choice { outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-player-pickers { grid-template-columns:repeat(2,minmax(0,1fr)); }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-player-pickers > section { padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-player-pickers > section + section { padding-left:12px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-player-pickers header { min-height:18px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-anchor-chips { min-height:24px; margin-bottom:6px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-anchor-chips button { display:flex; align-items:center; gap:6px; min-height:44px; max-width:100%; padding:6px; white-space:normal; overflow-wrap:anywhere; font:600 .8125rem/1.35 var(--font-body); }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-anchor-chips button > span:not(.dfl-player-portrait) { min-width:0; white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-anchor-chips .dfl-player-portrait { flex:none; width:28px; height:28px; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-members { padding:0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-workbench-card { padding:16px; }
+
+/* An open line is visible before the archives. Only one matchup leads. */
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-bankroll { padding:0; margin:0 0 12px; border:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-claim-row { margin:0; min-height:28px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-product-tabs { display:flex; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-product-tabs > button { flex:1; text-align:center; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-tabs { display:flex; gap:20px; margin-bottom:8px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-fantasy-note { margin:0 0 12px; font-size:.75rem; line-height:1.5; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-caption { display:block; margin-bottom:6px; color:var(--body-text); font:700 .6875rem/1.4 var(--font-body); letter-spacing:.07em; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-market { padding:14px; border-top:2px solid var(--accent); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .card-title-row { min-height:0; align-items:center; padding-bottom:10px; margin-bottom:12px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-market-status { flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-locks { padding:0; border:0; background:transparent; font-size:.6875rem; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .card-heading { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcomes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:48px minmax(48px,auto) auto; gap:8px; align-items:start; align-content:start; min-width:0; padding:10px; text-align:left; border-radius:6px; background:transparent; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome + .sb-outcome { border-left:1px solid var(--line); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-team-mark { position:static; grid-column:1; grid-row:1; width:48px; height:48px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome-label { grid-column:1; grid-row:2; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome-name { white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere; font:700 1rem/1.25 var(--font-body); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome-label small { margin-top:5px; font-size:.75rem; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-price { position:static; grid-column:1; grid-row:3; justify-self:start; min-width:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; color:var(--text); font:700 1.5rem/1.1 var(--font-body); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-featured-line .sb-outcome.is-picked { background:color-mix(in srgb,var(--accent) 8%,var(--bg-2)); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-fantasy-games { margin-bottom:20px; }
+
+/* The Analyzer's selected team is an identity, rather than a form row. */
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar { display:block; padding:0 0 16px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar .ta-team-picker { display:block; position:relative; width:100%; padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-identity { display:flex; align-items:center; gap:12px; padding-right:28px; min-width:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-identity .dfl-team-mark { flex:none; width:48px; height:48px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-picker-copy { display:grid; gap:4px; min-width:0; text-transform:none; letter-spacing:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-picker-copy strong { color:var(--text); font:700 1.25rem/1.2 var(--font-body); overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-picker-copy small { color:var(--body-text); font:500 .75rem/1.4 var(--font-body); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-picker > i { position:absolute; right:4px; top:50%; font-style:normal; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-picker > select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-picker:focus-within { outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 12px; align-items:center; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head > div:first-child { grid-column:1/-1; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head h2 { font-size:1rem; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict { grid-column:1; grid-row:2; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict strong { font-size:1rem; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-projection { grid-column:2; grid-row:2; display:grid; text-align:right; gap:3px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-projection strong { color:var(--text); font:700 2rem/1 var(--font-body); font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-projection small { color:var(--body-text); font:500 .6875rem/1.4 var(--font-body); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel:has(.wo-verdict.is-clean) .wo-clean { display:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict.is-clean span { display:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel > .page-disclosure { margin:0; border-top:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel > .page-disclosure > summary { padding:8px 0; min-height:52px; }
+
+/* A profile puts the career first; browsing other members follows it. */
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head { padding:16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--bg-2); }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-career-card { padding-top:4px; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr)); align-items:center; gap:12px; background:transparent; border:0; border-radius:0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record { padding:10px 12px 10px 0; border:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record strong { font-size:2.25rem; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-record small { white-space:normal; font-size:.75rem; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes { border:0; background:transparent; gap:0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes > div { padding:10px 4px; border:0; border-left:1px solid var(--line); }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes strong { font-size:1.5rem; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-outcomes span { font-size:.625rem; letter-spacing:.025em; white-space:normal; }
+#view.view[data-page-system][data-route][data-route="profile"] .cabinet { padding:12px 0; margin:16px 0; border:0; border-block:1px solid var(--line); border-radius:0; background:transparent; }
+
+/* The archive distinguishes the winner from the supporting result. */
+#view.view[data-page-system][data-route][data-route="history"] .hist-honor { display:flex; align-items:center; gap:10px; min-width:0; }
+#view.view[data-page-system][data-route][data-route="history"] .hist-honor > :is(a,button) { min-width:0; overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route][data-route="history"] .hist-honor .dfl-team-mark { flex:none; width:40px; height:40px; }
+#view.view[data-page-system][data-route][data-route="history"] td[data-label="Runner-up"] .dfl-team-mark { width:28px; height:28px; }
+#view.view[data-page-system][data-route][data-route="history"] .champions-table tbody tr { background:transparent; }
+@media(max-width:899px) {
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table tbody tr { display:grid; grid-template-columns:3rem minmax(0,1fr); gap:8px 12px; padding:18px 0; }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td { padding:0; display:block; }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td::before { display:block; margin-bottom:5px; font-size:.6875rem; }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td.champions-season { grid-row:1/3; color:var(--text); font:700 1.375rem/1.25 var(--font-body); }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td.champions-season::before { display:none; }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td[data-label="Champion"] { grid-column:2; grid-row:1; }
+  #view.view[data-page-system][data-route][data-route="history"] .champions-table td[data-label="Runner-up"] { grid-column:2; grid-row:2; }
+  #view.view[data-page-system][data-route][data-route="history"] td[data-label="Champion"] .hist-honor { color:var(--text); font-size:1rem; font-weight:600; }
+}
+@media(max-width:360px) {
+  #view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice { grid-template-columns:minmax(0,1fr) 10px; }
+  #view.view[data-page-system][data-route][data-route="trade"] .tb-team-choice .dfl-team-mark { grid-column:1/-1; }
+  #view.view[data-page-system][data-route][data-route="profile"] .career-overview { grid-template-columns:minmax(0,1fr); }
+  #view.view[data-page-system][data-route][data-route="profile"] .career-outcomes { border-top:1px solid var(--line); }
+}

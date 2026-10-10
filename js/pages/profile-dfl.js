@@ -113,7 +113,7 @@ function viewCard(m, isMe, ctx) {
     ${recordStrip(m)}
     ${bio
       ? `<p class="dfl-bio">${esc(bio)}</p>`
-      : isMe ? `<p class="muted tiny">No bio yet — say something about yourself.</p>` : ""}
+      : ""}
     <div class="row ph-actions">${ctx.actions || ""}</div>
   </section>`;
 }
