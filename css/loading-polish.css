@@ -1,0 +1,74 @@
+/* Pending content keeps the same compact sports-desk proportions as the page. */
+.route-placeholder { bottom:var(--season-nav-height,calc(60px + env(safe-area-inset-bottom))); padding:16px max(16px,env(safe-area-inset-left)) 16px max(16px,env(safe-area-inset-right)); }
+.route-placeholder-inner { max-width:868px; }
+.route-placeholder-inner.is-home { max-width:1088px; }
+.route-placeholder-label { font-size:.6875rem; margin-bottom:8px; letter-spacing:.06em; }
+:is(.route-placeholder-art,[data-player-card-loading],.home-wall-loading) i { display:block; min-width:0; height:10px; border-radius:3px; background:color-mix(in srgb,var(--muted) 16%,var(--bg-2)); }
+.home-wall-loading { padding:16px; border-block:1px solid var(--line-soft); }
+.loading-masthead { display:grid; gap:10px; padding:6px 0 18px; border-bottom:1px solid var(--line-soft); margin-bottom:16px; }
+.loading-masthead i:first-child { width:42%; height:26px; }
+.loading-masthead i:last-child { width:64%; max-width:340px; }
+.loading-tabs { display:flex; gap:10px; padding:0 0 16px; }
+.loading-tabs i { flex:1; height:38px; }
+.loading-panel { display:grid; align-content:start; gap:14px; padding:16px; margin-bottom:16px; border:1px solid var(--line-soft); border-radius:10px; background:var(--bg-2); min-width:0; }
+.loading-panel > i { max-width:70%; }
+.loading-panel > i:nth-child(2) { max-width:48%; }
+.loading-panel i.loading-action { width:100%; max-width:none; height:40px; margin-top:4px; }
+.loading-row { display:grid; grid-template-columns:32px minmax(0,1fr) 44px; align-items:center; gap:12px; min-height:50px; }
+.loading-row + .loading-row { border-top:1px solid var(--line-soft); padding-top:10px; }
+.loading-row > span { display:grid; gap:8px; }
+.loading-row > span i:first-child { width:78%; }
+.loading-row > span i:last-child { width:48%; height:8px; }
+i.loading-avatar { width:32px; height:32px; border-radius:50%; }
+.loading-faceoff { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; min-height:106px; }
+.loading-faceoff > div { display:grid; gap:12px; align-content:center; }
+.loading-faceoff > div:last-child { justify-items:end; }
+.loading-faceoff i:not(.loading-avatar) { width:80%; }
+.loading-faceoff i:last-child { width:48%; height:20px; }
+.loading-broadcast { min-height:248px; align-content:end; }
+.loading-broadcast > i:first-child { height:26px; }
+.loading-broadcast > i:last-child { max-width:38%; }
+.loading-mini-games { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.loading-mini-games .loading-panel { padding:12px; gap:12px; }
+.loading-packages { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.loading-packages .loading-row { grid-template-columns:24px minmax(0,1fr); gap:8px; }
+.loading-packages .loading-avatar { width:24px; height:24px; }
+.loading-packages .loading-value { display:none; }
+.loading-wallet,.loading-setup { grid-template-columns:minmax(0,1fr) minmax(80px,30%); align-items:center; }
+.loading-composer { min-height:140px; }
+.loading-story { display:grid; gap:12px; padding:6px 0; }
+.loading-story i:last-child { width:60%; }
+
+/* A stable sheet height avoids a jump between pending, ready, and retry states. */
+dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewport-height,100dvh)); }
+.dfl-player-card [data-player-card-body] { flex:1; }
+.loading-player-identity { display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--bg-2); }
+.loading-player-identity i.loading-player-portrait { width:96px; height:116px; border-radius:7px; }
+.loading-player-identity > div { display:grid; align-content:center; gap:16px; min-width:0; }
+.loading-player-identity strong { font:700 1.5rem/1.15 var(--font-display); overflow-wrap:anywhere; color:var(--text); }
+.loading-player-identity > div > i { height:24px; width:85%; }
+.loading-player-identity > div > div { display:grid; gap:12px; }
+.loading-player-identity > div > div > i:last-child { width:70%; }
+.loading-player-details { display:grid; gap:18px; padding-top:18px; }
+.loading-player-details > i { width:65%; }
+.loading-player-score { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:10px 0; }
+.loading-player-score i:first-child { width:80px; height:32px; }
+.loading-player-score i:last-child { width:90px; }
+.loading-player-form { display:grid; gap:16px; padding:16px 0; border-block:1px solid var(--line-soft); }
+.loading-player-form > i { width:36%; }
+.loading-player-form > div { display:flex; justify-content:space-between; align-items:end; height:84px; gap:20px; }
+.loading-player-form > div i { width:22%; height:10px; }
+.loading-player-stats { display:grid; gap:12px; }
+@media(max-width:540px) { dialog.dfl-player-card { height:min(82dvh,var(--dialog-viewport-height,82dvh)); } }
+@media(max-width:360px) {
+  .loading-player-identity { grid-template-columns:76px minmax(0,1fr); padding:10px; gap:12px; }
+  .loading-player-identity i.loading-player-portrait { width:76px; height:104px; }
+  .loading-player-identity strong { font-size:1.25rem; }
+  .loading-packages .loading-panel { padding:10px; }
+}
+@media(min-width:768px) { .loading-broadcast { min-height:300px; } }
+@media(min-width:900px) {
+  .route-placeholder { top:calc(var(--topbar-h,44px) + var(--season-nav-height,49px)); bottom:0; padding-top:16px; }
+  .loading-home-front { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:20px; }
+  .loading-home-front .loading-broadcast { height:calc(100% - 16px); }
+}
