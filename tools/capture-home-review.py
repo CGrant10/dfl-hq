@@ -497,7 +497,7 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
-    page.set_content(html, wait_until='domcontentloaded')
+    page.goto(url, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.locator('.bx-pause').click()
     page.locator('[data-bx-go="0"]').click()
@@ -766,6 +766,8 @@ with sync_playwright() as p:
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
     page.locator('[data-page-detail="home-week"] summary').click()
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>e.open'), 'Weekly planning did not open'
+    page.bring_to_front()
+    page.wait_for_function("document.visibilityState==='visible'")
     page.emulate_media(reduced_motion='no-preference')
     page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
     # Real touch events catch implicit pointer-capture handoffs on child text.
@@ -809,7 +811,11 @@ with sync_playwright() as p:
             page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
         else:
             player.click()
-        frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
+        try:
+            frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
+        except Exception:
+            print('Connected detail diagnostic:', {'errors':errors,'state':page.evaluate("()=>({visible:document.visibilityState,motion:document.documentElement.dataset.uiMotion,source:document.querySelector('[data-position-panel]:not([hidden]) .dfl-player-portrait')?.getBoundingClientRect().toJSON(),target:document.querySelector('.player-card-hero .dfl-player-portrait')?.getBoundingClientRect().toJSON(),dialogOpen:document.querySelector('.dfl-player-card')?.open})")}, flush=True)
+            raise
         assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
         page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
         page.wait_for_timeout(400)
