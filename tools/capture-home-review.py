@@ -898,6 +898,7 @@ with sync_playwright() as p:
     starts = page.evaluate('window.reviewPortraitStarts')
     page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','off');dispatchEvent(new Event('dfl:route-performance'))}")
     player.click()
+    page.locator('.player-card-hero').wait_for()
     page.wait_for_timeout(500)
     assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.player-card-hero').is_visible(), 'Motion-off player details failed'
     page.keyboard.press('Escape')
@@ -905,6 +906,7 @@ with sync_playwright() as p:
     page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
     page.emulate_media(reduced_motion='reduce')
     player.click()
+    page.locator('.player-card-hero').wait_for()
     page.wait_for_timeout(500)
     assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
     page.keyboard.press('Escape')
