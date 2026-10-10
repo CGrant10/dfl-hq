@@ -805,10 +805,13 @@ with sync_playwright() as p:
     player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
     for delay in [75,350]:
         page.evaluate('delay=>window.reviewCardDelay=delay', delay)
-        player.click()
-        page.wait_for_selector('.dfl-connected-portrait:popover-open', timeout=10000)
-        frames = page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].effect.getKeyframes()')
+        if delay == 75:
+            page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
+        else:
+            player.click()
+        frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
         assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
+        page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
         page.wait_for_timeout(400)
         assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
         page.keyboard.press('Escape')
@@ -816,7 +819,7 @@ with sync_playwright() as p:
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
     page.evaluate('window.reviewCardDelay=75')
     player.click()
-    page.wait_for_selector('.dfl-connected-portrait:popover-open', timeout=10000)
+    page.wait_for_function("()=>{const a=document.querySelector('.dfl-connected-portrait:popover-open')?.getAnimations()[0];if(!a)return false;a.pause();return true}", timeout=10000)
     page.keyboard.press('Escape')
     page.wait_for_timeout(300)
     assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.dfl-player-card').evaluate('e=>!e.open'), 'Dismissal left a traveling portrait'
@@ -834,7 +837,7 @@ with sync_playwright() as p:
     assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
     page.keyboard.press('Escape')
     page.wait_for_timeout(220)
-    page.evaluate("Element.prototype.animate=window.reviewOriginalAnimate")
+    page.evaluate("()=>{Element.prototype.animate=window.reviewOriginalAnimate}")
     metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
 
     metrics['sectionNavigation'] = 'passed'

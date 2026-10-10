@@ -34,7 +34,7 @@ row and keep their existing artwork contained below it.
 
 ## Validation
 
-- TypeScript, identifier checks, all **1,304 tests**, and production build pass.
+- TypeScript, identifier checks, all **1,307 tests**, and production build pass.
   The full suite used two workers after a heavily concurrent run timed out in
   an unchanged Arena timing test.
 - 335 browser assertions cover real touch input, highlight alignment, keyboard
@@ -46,7 +46,7 @@ row and keep their existing artwork contained below it.
 - 16 checks against the real app cover player data loading, connected portrait
   motion, focus return and receipt expansion/rapid toggles. All reads were
   guarded; no league writes or wagers were submitted.
-- Added six swipe regressions, including the browser's implicit capture transfer
+- Added three player-entry regressions and six swipe regressions, including the browser's implicit capture transfer
   from child text to the panel. The Home browser workflow now exercises actual
   touch swipes and fast/slow player-card loading.
 - The offline shell includes both new modules.
@@ -59,8 +59,8 @@ Fresh captures from this review; each linked image was inspected.
 - [After: lineup content](/workspace/dfl-connected-1357/after-startsit.png)
 - [After: player leaders](/workspace/dfl-connected-1357/after-players.png)
 - [Before: narrow champion name](/workspace/dfl-connected-1357/before-champion.png)
-- [Phone champion composition](/workspace/dfl-connected-1357/broadcast-light-320-2.png)
-- [Phone Chip Eater composition](/workspace/dfl-connected-1357/fixture/slide-3-champion.png)
+- [Phone champion composition](/workspace/dfl-connected-1357/final-broadcast-320-2.png)
+- [Phone Chip Eater composition](/workspace/dfl-connected-1357/final-broadcast-390-3.png)
 - [Real player details](/workspace/dfl-connected-1357/real-player-detail.png)
 - [Real receipt details](/workspace/dfl-connected-1357/receipt-detail.png)
 
