@@ -8,6 +8,7 @@ import { LEAGUE_WEEKLY_SD, REGULAR_SEASON_WEEKS, outlookSentence, projectSeason 
 import { buildFindings } from "../analyzer-findings.js";
 import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
+import { animateUi } from "../ui-motion.js";
 import { buildLeagueStakes, stakeLine, playoffChance } from "../league-stakes.js";
 
 const ordinal = value => {
@@ -261,7 +262,7 @@ function page(data) {
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
   return {
-    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label><span>Reading team</span><select data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
+    markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label class="ta-team-picker"><span class="sr-only">Reading team</span><span class="ta-team-identity" data-ta-identity></span><i aria-hidden="true">⌄</i><select aria-label="Reading team" data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
     wire(view) {
       const body = view.querySelector("[data-ta-body]");
       const draw = () => {
@@ -271,6 +272,7 @@ function page(data) {
         body.innerHTML = `${disclosure("analyzer-season-report","Season report",`${team.overallGrade} roster · grades, comparisons and season outlook`,briefing(team, data.teams, projections, data.teams.length))}${positionReport(team)}${rosterReport(team, data.pool)}${disclosure("analyzer-outlook","Season outlook","Playoff odds, projected finish and championship chances",seasonOutlook(team, projections, data.teams, stakes))}${comparison(team, opponent, data.teams)}${trendReport(team)}${rankings(data.teams, team.id, myTeamId)}<details class="ta-method"><summary>How this is calculated</summary><p> projected finish uses the current record and points, then simulates only the remaining regular-season games from the submitted legal offensive lineup (1 QB, 2 RB, 2 WR, 1 TE and 1 flex), with an optimized lineup used only when the submitted starters are incomplete. Clinched and eliminated labels use conservative record math; ties at the cutoff are never assumed. Starter grade equally averages the league-relative QB, RB, WR, TE and flex units shown above. Depth receives its own grade. Overall roster grade blends starters (72%), depth (18%) and top-12 roster value (10%). Estimates are not guarantees.</p></details>`;
         wirePageDisclosures(body);
         view.querySelector("[data-ta-team-select]").value = team.id;
+        view.querySelector("[data-ta-identity]").innerHTML = `${teamPortrait(team)}<span class="ta-picker-copy"><strong>${esc(teamName(team))}</strong><small>${esc(team.overallGrade)} roster · ${ordinal(team.overallRank)} of ${data.teams.length}</small></span>`;
         wireTrendPanel(body.querySelector("[data-trend-panel]"), {
           team, pool: data.pool,
           season: Number(data.projectionSeason),
@@ -280,6 +282,7 @@ function page(data) {
       view.querySelector("[data-ta-team-select]").addEventListener("change", event => {
         selectedId = event.currentTarget.value;
         draw();
+        animateUi(view.querySelector("[data-ta-identity]"), [{opacity:0,transform:"translateX(8px)"},{opacity:1,transform:"translateX(0)"}], {duration:180});
       });
       body.addEventListener("click", event => {
         /* A finding or a jump chip: open the section if it is folded, then

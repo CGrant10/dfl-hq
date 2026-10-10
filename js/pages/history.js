@@ -15,6 +15,7 @@ import { db } from "../supabase.js";
 import { loadPlayers, loadSeasonStats } from "../sleeper.js";
 import { rankTradeFleeces } from "../trade-fleeces.js";
 import { editableName, wireNamePick } from "../name-pick.js";
+import { teamPortrait } from "../team-presentation.js";
 import { setSeasonResult } from "../season-result.js";
 import { LEAGUE_FOUNDED, FIRST_SYNCED_SEASON } from "../config.js";
 import { esc, empty, errorBox, groupBy, loading } from "../ui.js";
@@ -161,6 +162,7 @@ function nameCell(who) {
 
 function fameView(data) {
   const name = namer(data);
+  const portrait = who => teamPortrait({team_name:who.label,identity:(data.members || []).find(m=>String(m.id)===String(who.memberId)) || {}});
   // Every completed season, not just those with a known owner. A season
   // whose winner deleted their account still belongs in the record book.
   const titled = data.leagues
@@ -181,13 +183,13 @@ function fameView(data) {
               ${titled.map((l) => `
                 <tr>
                   <td class="champions-season" data-label="Season">${esc(l.season)}</td>
-                  <td data-label="Champion">${canEdit() ? editableName({
+                  <td data-label="Champion"><div class="hist-honor">${portrait(name(l.champion_user_id, l.season, l.champion_roster_id))}${canEdit() ? editableName({
                     text: name(l.champion_user_id, l.season, l.champion_roster_id).label,
                     field: "champion", key: l.season, canEdit: true,
-                  }) : nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}${
+                  }) : nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}</div>${
                     l.champion_locked ? `<div class="muted tiny">set by hand</div>` : ""}</td>
                   <td class="muted" data-label="Runner-up">${l.runner_up_user_id || l.runner_up_roster_id
-                    ? nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))
+                    ? `<div class="hist-honor">${portrait(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))}${nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))}</div>`
                     : "—"}</td>
                 </tr>`).join("")}
             </tbody>
