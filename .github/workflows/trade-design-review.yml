@@ -11,6 +11,7 @@ on:
       - 'js/team-presentation.js'
       - 'js/season-nav.js'
       - 'css/secondary-page-polish.css'
+      - 'css/everyday-premium.css'
       - 'js/member-wall.js'
       - 'js/wall-composer.js'
       - 'js/wall-photo-viewer*'

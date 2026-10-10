@@ -89,8 +89,27 @@ with sync_playwright() as p:
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             page.locator('[data-wall-form]').scroll_into_view_if_needed()
             page.screenshot(path=str(output/f'05-wall-{width}-{mode.replace(":","-")}.png'))
+        # Primary actions remain readable in every supported palette. This uses
+        # the real composer and theme engine, with league writes blocked above.
+        page.evaluate("document.documentElement.style.fontSize='100%'")
+        colors=page.evaluate('''async()=>{
+            const {saveMode}=await import('/js/theme.js');
+            const {nflTeams}=await import('/js/nfl-teams.js');
+            const {contrast}=await import('/js/team-theme.js');
+            const canvas=document.createElement('canvas');canvas.width=canvas.height=1;
+            const ctx=canvas.getContext('2d');
+            const hex=color=>{ctx.fillStyle=color;ctx.fillRect(0,0,1,1);return '#'+[...ctx.getImageData(0,0,1,1).data].slice(0,3).map(v=>v.toString(16).padStart(2,'0')).join('')};
+            const modes=['dark','light','medicine','medicine-light','fairway',...nflTeams().map(t=>'team:'+t.code)];
+            return modes.map(mode=>{saveMode(mode);const e=document.querySelector('.wall-send'),s=getComputedStyle(e),r=e.getBoundingClientRect();return {mode,ratio:contrast(hex(s.color),hex(s.backgroundColor)),gradient:s.backgroundImage,height:r.height}});
+        }''')
+        assert all(c['ratio']>=4.5 and c['gradient']=='none' and c['height']>=44 for c in colors),colors
+        assert page.locator('[data-wall-reaction]').evaluate_all('es=>es.every(e=>e.getBoundingClientRect().height>=44)')
+        assert page.locator('[data-wall-reaction]:not(:hover)').first.evaluate("e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'")
+        page.locator('[data-wall-reaction]').first.evaluate("e=>e.setAttribute('aria-pressed','true')")
+        assert page.locator('[data-wall-reaction]').first.evaluate('e=>getComputedStyle(e).backgroundColor!==getComputedStyle(e.parentElement).backgroundColor')
+        page.screenshot(path=str(output/f'06-controls-{width}.png'))
         assert not errors,errors
-        report.append({'width':width,'draftAndMentionPreserved':True,'attachedPhotoSurvivesCollapse':True,'fullUncroppedImages':True,'zoom':True,'focusReturn':True,'homePreviewAndReplies':True,'offAndReducedMotion':True,'largeText':True,'errors':errors})
+        report.append({'width':width,'draftAndMentionPreserved':True,'attachedPhotoSurvivesCollapse':True,'fullUncroppedImages':True,'zoom':True,'focusReturn':True,'homePreviewAndReplies':True,'offAndReducedMotion':True,'largeText':True,'primaryContrast':colors,'reactionTargets':True,'errors':errors})
         print('PASS Wall '+str(width),flush=True);context.close()
     browser.close()
-server.shutdown();(output/'wall-review.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
+server.shutdown();(output/'wall-review.json').write_text(json.dumps(report,indent=2));print(json.dumps([{**r,'primaryContrast':{'palettes':len(r['primaryContrast']),'minimum':min(c['ratio'] for c in r['primaryContrast'])}} for r in report],indent=2))
