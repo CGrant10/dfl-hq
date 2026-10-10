@@ -174,29 +174,21 @@ function fameView(data) {
 
   return `
     ${titled.length ? `
-      <div class="card accent">
-        <div class="card-title">${icon("Champion")} Champions</div>
-        <div class="tblwrap champions-wrap">
-          <table role="table" class="tbl champions-table" aria-label="Champions and runners-up by season">
-            <thead><tr><th scope="col">Season</th><th scope="col">Champion</th><th scope="col">Runner-up</th></tr></thead>
-            <tbody>
-              ${titled.map((l) => `
-                <tr>
-                  <td class="champions-season" data-label="Season">${esc(l.season)}</td>
-                  <td data-label="Champion"><div class="hist-honor">${portrait(name(l.champion_user_id, l.season, l.champion_roster_id))}${canEdit() ? editableName({
-                    text: name(l.champion_user_id, l.season, l.champion_roster_id).label,
-                    field: "champion", key: l.season, canEdit: true,
-                  }) : nameCell(name(l.champion_user_id, l.season, l.champion_roster_id))}</div>${
-                    l.champion_locked ? `<div class="muted tiny">set by hand</div>` : ""}</td>
-                  <td class="muted" data-label="Runner-up">${l.runner_up_user_id || l.runner_up_roster_id
-                    ? `<div class="hist-honor">${portrait(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))}${nameCell(name(l.runner_up_user_id, l.season, l.runner_up_roster_id))}</div>`
-                    : "—"}</td>
-                </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
-        <div class="card-meta">Taken from the Sleeper playoff brackets, except where a season is marked <em>set by hand</em> — 2017 and 2018 were played on another app and 2019’s winner was removed from the league after winning it.</div>
-      </div>` : ""}
+      <section class="archive-cabinet" aria-label="League champions">
+        <header class="archive-cabinet-head"><small>THE TROPHY CASE</small><h2>Champions</h2><span>${titled.length} seasons</span></header>
+        <ol class="archive-seasons">
+          ${titled.map((l, index) => {
+            const champion = name(l.champion_user_id, l.season, l.champion_roster_id);
+            const runner = l.runner_up_user_id || l.runner_up_roster_id ? name(l.runner_up_user_id, l.season, l.runner_up_roster_id) : null;
+            return `<li class="archive-season${index === 0 ? " is-featured" : ""}">
+              <header class="archive-season-head"><span><strong>${esc(l.season)}</strong><small>SEASON</small></span><span class="archive-title-label">${icon("Champion")} DFL CHAMPION</span></header>
+              <div class="archive-winner">${portrait(champion)}<div>${canEdit() ? editableName({text:champion.label,field:"champion",key:l.season,canEdit:true}) : nameCell(champion)}${l.champion_locked ? `<small class="archive-lock">Set by hand</small>` : ""}</div></div>
+              ${runner ? `<div class="archive-runner"><small>RUNNER-UP</small><div>${portrait(runner)}${nameCell(runner)}</div></div>` : `<div class="archive-runner"><small>RUNNER-UP</small><span>Not recorded</span></div>`}
+            </li>`;
+          }).join("")}
+        </ol>
+        <p class="archive-source">Sleeper playoff results · manually corrected seasons are marked. 2017–18 were played on another app; 2019’s winner was later removed from the league.</p>
+      </section>` : ""}
 
     ${byYear.length
       ? byYear.map(([year, list]) => `
@@ -205,7 +197,7 @@ function fameView(data) {
             ${addControl("history", "Add entry", { year })}
           </div>
           <div class="card schedule">${sortRows(list).map(entry).join("")}</div>`).join("")
-      : `<div class="card"><div class="card-body muted">No league history yet.</div>
+      : `<div class="card"><div class="card-body muted">${titled.length ? "No additional stories yet." : "No league history yet."}</div>
            ${canEdit() ? `<div class="row-end">${addControl("history", "Add entry")}</div>` : ""}
          </div>`}
   `;
