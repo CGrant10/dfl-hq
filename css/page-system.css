@@ -1,0 +1,164 @@
+/* The ordinary league pages use the compact rhythm of Home and Clubhouse.
+   Route-specific scores, artwork and transactional controls retain their geometry. */
+#view.view[data-page-system][data-route] {
+  --desk-title:1.875rem;
+  --desk-section:1.125rem;
+  --desk-copy:.875rem;
+  --desk-meta:.75rem;
+  --page-gap:20px;
+  --page-radius:8px;
+  font:500 var(--desk-copy)/1.5 var(--font-body);
+  letter-spacing:0;
+}
+
+/* Titles are part of the page, with one quiet dividing rule. */
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head,.tb-head-row,.sb-masthead,.dfl-page-title) {
+  min-height:0; margin:0 0 16px; padding:6px 0 16px;
+  border:0; border-bottom:1px solid var(--line); border-radius:0;
+  background:transparent; box-shadow:none; overflow:visible; gap:8px 16px; text-align:left;
+}
+#view.view[data-page-system][data-route] :is(.page-head,.notification-head,.tb-head-row,.sb-masthead) { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+#view.view[data-page-system][data-route] .utility-head { display:flex; flex-direction:column; align-items:flex-start; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head,.tb-head-row,.sb-masthead,.dfl-page-title)::before,
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head,.tb-head-row,.sb-masthead,.dfl-page-title)::after { display:none; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head,.tb-head-row,.sb-masthead) > div { min-width:0; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head,.tb-head-row,.sb-masthead) h1,
+#view.view[data-page-system][data-route] > .dfl-page-title { margin:0; color:var(--text); background:none; -webkit-text-fill-color:var(--text); font:700 var(--desk-title)/1.15 var(--font-display); letter-spacing:.025em; overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route] :is(.page-head,.utility-head,.notification-head) :is(p,.page-sub) { margin:5px 0 0; color:var(--body-text); font:500 var(--desk-meta)/1.5 var(--font-body); }
+#view.view[data-page-system][data-route] :is(.utility-head > small,.eyebrow,.sb-brand > small,.tb-head > small) { color:var(--body-text); font:700 .6875rem/1.4 var(--font-body); letter-spacing:.07em; }
+#view.view[data-page-system][data-route] :is(.section-title,.section-head,.card-title,.card-heading,.notification-section-title) { font:700 var(--desk-section)/1.3 var(--font-display); letter-spacing:.025em; }
+#view.view[data-page-system][data-route] :is(.section-title,.section-head,.notification-section-title) { margin:var(--page-gap) 0 12px; min-height:0; padding:0; }
+#view.view[data-page-system][data-route] :is(.section-title,.section-head,.notification-section-title)::after { height:1px; background:var(--line); }
+#view.view[data-page-system][data-route] .section-title .count { color:var(--body-text); font-size:var(--desk-meta); }
+
+/* One panel per purpose; ordinary content inside uses rows. */
+#view.view[data-page-system][data-route] :is(.card,.factcard,.notification-item,.profile-settings) { border-color:var(--line); border-radius:var(--page-radius); box-shadow:none; }
+#view.view[data-page-system][data-route] .card { margin-bottom:16px; padding:16px; background:var(--bg-2); }
+#view.view[data-page-system][data-route] :is(.card-body,.rule-text,.evnote,.fact-detail) { font:500 var(--desk-copy)/1.55 var(--font-body); }
+#view.view[data-page-system][data-route] :is(.card-meta,.page-sub,.tiny,.muted.tiny) { font-size:var(--desk-meta); line-height:1.5; }
+#view.view[data-page-system][data-route] .card .card { padding:12px 0; margin:0; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route] .page-disclosure { margin:0 0 16px; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route] .page-disclosure > summary { padding:12px 0; min-height:56px; gap:12px; transform:none!important; }
+#view.view[data-page-system][data-route] .page-disclosure > summary strong { font:600 1rem/1.35 var(--font-body); }
+#view.view[data-page-system][data-route] .page-disclosure > summary small { margin-top:3px; color:var(--body-text); font-size:var(--desk-meta); }
+#view.view[data-page-system][data-route] .page-disclosure > summary::after { content:''; width:7px; height:7px; margin-right:4px; border-right:1.5px solid var(--body-text); border-bottom:1.5px solid var(--body-text); transform:rotate(45deg); transition:transform 160ms ease; }
+#view.view[data-page-system][data-route] .page-disclosure[open] > summary::after { transform:rotate(225deg); }
+#view.view[data-page-system][data-route] .page-detail-body { padding:0 0 12px; }
+
+/* Controls share their footprint, focus treatment and readable labels. */
+#view.view[data-page-system][data-route] .btn { min-height:44px; padding:8px 12px; border-radius:6px; font:600 .8125rem/1.4 var(--font-body); letter-spacing:0; text-transform:none; box-shadow:none; }
+#view.view[data-page-system][data-route] .btn:is(.ghost,.secondary) { color:var(--text); background:transparent; border-color:var(--line); }
+#view.view[data-page-system][data-route] .linkbtn { min-height:44px; font:600 .8125rem/1.4 var(--font-body); letter-spacing:0; }
+#view.view[data-page-system][data-route] :is(select,textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"])):not(.sb-slip *) { min-height:44px; min-width:0; max-width:100%; border-color:var(--line); border-radius:6px; color:var(--text); background:var(--bg-2); font:500 var(--desk-copy)/1.45 var(--font-body); letter-spacing:0; }
+#view.view[data-page-system][data-route] :is(button,a,select,input,textarea,summary):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+#view.view[data-page-system][data-route] :is(.tabs,.sb-tabs,.sb-product-tabs,.td-entry-actions,.page-activity-tabs) { gap:0 18px; margin:0 0 16px; padding:0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route] :is(.tabs,.sb-tabs,.sb-product-tabs,.td-entry-actions,.page-activity-tabs) > button { flex:0 0 auto; min-height:44px; padding:10px 0; border:0; border-bottom:2px solid transparent; border-radius:0; color:var(--body-text); background:transparent; box-shadow:none; font:500 .8125rem/1.4 var(--font-body); text-transform:none; letter-spacing:0; transform:none!important; }
+#view.view[data-page-system][data-route] :is(.tabs,.sb-tabs,.sb-product-tabs,.td-entry-actions,.page-activity-tabs) > button:is(.on,.active,[aria-selected="true"],[aria-pressed="true"]) { color:var(--text); background:transparent; box-shadow:none; font-weight:700; }
+#view.view[data-page-system][data-route] :is(.tabs,.sb-tabs,.sb-product-tabs,.td-entry-actions,.page-activity-tabs):not([data-ui-rail]) > button:is(.on,.active,[aria-selected="true"],[aria-pressed="true"]) { border-bottom-color:var(--accent); }
+#view.view[data-page-system][data-route] .tabcount { border:0; background:transparent; color:var(--body-text); font-size:.6875rem; }
+#view.view[data-page-system][data-route] .tabs.tabscroll { padding-right:22px; }
+#view.view[data-page-system][data-route] [data-ui-rail] > button::after { display:none; }
+
+/* Older archive styles use ID selectors; keep these rails on the same system. */
+#view.view[data-page-system][data-route] :is(#hist-tabs,#year-picker) { gap:18px; padding:0 22px 0 0; margin-bottom:16px; border-bottom:1px solid var(--line); }
+#view.view[data-page-system][data-route] :is(#hist-tabs,#year-picker) > button { padding:10px 0; background:transparent; font-family:var(--font-body); }
+#view.view[data-page-system][data-route] :is(#hist-tabs,#year-picker) > [aria-selected="true"] { background:transparent; border-bottom-color:transparent; }
+
+/* States have the same hierarchy as a populated section. */
+#view.view[data-page-system][data-route] :is(.state,.ui-empty-state) { margin:0 0 16px; padding:18px 0; border:0; border-block:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route] :is(.state-title,.ui-empty-state strong) { font:700 var(--desk-section)/1.3 var(--font-display); letter-spacing:0; }
+#view.view[data-page-system][data-route] :is(.state p,.state-sub,.ui-empty-state p) { color:var(--body-text); font-size:var(--desk-copy); }
+#view.view[data-page-system][data-route] :is(.tbl,.ta-table) { font-size:var(--desk-copy); }
+#view.view[data-page-system][data-route] :is(.tbl,.ta-table) th { color:var(--body-text); font-size:var(--desk-meta); letter-spacing:.025em; }
+
+/* Trade and Sportsbook lead with the work, as Clubhouse leads with a matchup. */
+#view.view[data-page-system][data-route][data-route="trade"] .tb-head { margin:0; }
+#view.view[data-page-system][data-route][data-route="trade"] .tb-workbench-card { background:var(--bg-2); border-color:var(--line); }
+#view.view[data-page-system][data-route][data-route="trade"] :is(.tb-team-select > span,.tb-player-pickers header small) { color:var(--body-text); font-size:.6875rem; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-masthead .sb-wallet { padding:0 0 0 12px; border:0; border-left:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-brand > span { color:var(--body-text); font-size:var(--desk-meta); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] :is(.sb-fantasy-games,.sb-market) { border-radius:var(--page-radius); box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-fantasy-games > summary { padding:12px 14px; min-height:52px; font-size:var(--desk-copy); }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-board-head { margin-block:16px 10px; }
+#view.view[data-page-system][data-route][data-route="sportsbook"] .sb-board-head h2 { font-size:var(--desk-section); }
+
+/* Analyzer gives the current lineup one clear surface, then compact sections. */
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar-section { margin-bottom:16px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar { padding:0 0 16px; margin:0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-toolbar label > span { color:var(--body-text); font:600 var(--desk-meta)/1.4 var(--font-body); letter-spacing:0; text-transform:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] :is(.wo-panel,.ta-report-section) { padding:14px 0; margin:0 0 16px; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel { padding:14px; border:1px solid var(--line); border-radius:var(--page-radius); background:var(--bg-2); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head { padding:0 0 12px; margin-bottom:12px; border-bottom:1px solid var(--line); background:transparent; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head::after { display:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head h2 { font-size:var(--desk-section); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-head small { font-size:.6875rem; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict { padding:0; background:transparent; border:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict strong { font-size:1.25rem; }
+#view.view[data-page-system][data-route][data-route="analyzer"] :is(.wo-clean,.wo-verdict span,.ta-inline-note) { font-size:var(--desk-meta); line-height:1.5; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-report-title { min-height:44px; margin:0; padding:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-report-title h2 { font-size:var(--desk-section); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-report-title::after { height:1px; background:var(--line); }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-report-title small { font-size:.6875rem; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .ta-section-body { margin-top:12px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .dfl-player-copy :is(strong,.player-card-trigger) { white-space:normal; overflow:visible; text-overflow:clip; font-size:var(--desk-copy); }
+
+/* Profile identity keeps the photo prominent and actions within the header. */
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head { padding:4px 0 16px; margin-bottom:16px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head::before,
+#view.view[data-page-system][data-route][data-route="profile"] .profile-head::after { display:none; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-top { grid-template-columns:auto minmax(0,1fr) auto; gap:12px; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-id h1 { font:700 1.5rem/1.15 var(--font-display); letter-spacing:.025em; overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route][data-route="profile"] .ph-edit { grid-column:3; grid-row:1; margin:0; align-self:start; }
+#view.view[data-page-system][data-route][data-route="profile"] :is(.ph-handle,.dfl-bio,.ph-record,.ph-photo-note) { font-size:var(--desk-meta); }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-career-card { padding:0; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-career-card > .card-title-row { display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; }
+#view.view[data-page-system][data-route][data-route="profile"] .career-overview { border-radius:8px; }
+#view.view[data-page-system][data-route][data-route="profile"] .profile-settings { margin-top:20px; }
+
+/* The Wall reads as a conversation with a compact composer at the top. */
+#view.view[data-page-system][data-route][data-route="wall"] .wall-card { padding:0; border:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="wall"] .wall-post { margin:0; padding:16px 0; border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="wall"] :is(.wall-body,.wall-reply-body) { font-size:var(--desk-copy); line-height:1.55; }
+#view.view[data-page-system][data-route][data-route="wall"] .wall-photo { max-height:none; height:auto; object-fit:contain; border-radius:8px; }
+#view.view[data-page-system][data-route][data-route="wall"] .wall-form { padding:14px; margin-bottom:16px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); }
+
+/* Archive and utility content keeps each page's existing reading order. */
+#view.view[data-page-system][data-route="keepers"] .page-head { flex-direction:column; align-items:flex-start; }
+#view.view[data-page-system][data-route][data-route="history"] #hist-body .card { border-radius:8px; box-shadow:none; }
+#view.view[data-page-system][data-route][data-route="history"] #hist-body .page-sub { padding:0 0 10px; border:0; border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="history"] #hist-body .section-title { border:0; padding:0; }
+#view.view[data-page-system][data-route][data-route="facts"] :is(.factcard,.trivia-hub) { padding:16px; margin-bottom:16px; }
+#view.view[data-page-system][data-route][data-route="facts"] .fact-head { font-size:var(--desk-section); line-height:1.35; }
+#view.view[data-page-system][data-route][data-route="facts"] .trivia-hub > summary { min-height:44px; font-size:var(--desk-copy); }
+#view.view[data-page-system][data-route][data-route="rules"] .rulecard { padding:0; border:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="rules"] .rule { padding:16px 0; border-top:1px solid var(--line); }
+#view.view[data-page-system][data-route][data-route="rules"] .rule-title { font-size:1rem; }
+#view.view[data-page-system][data-route][data-route="calendar"] .schedule { padding:0; border:0; background:transparent; }
+#view.view[data-page-system][data-route][data-route="calendar"] .evrow { padding:14px 0; }
+#view.view[data-page-system][data-route][data-route="calendar"] .evtitle { font-size:1rem; }
+#view.view[data-page-system][data-route][data-route="finances"] .stat-v { font-size:1.5rem; }
+#view.view[data-page-system][data-route][data-route="finances"] .stat-k { color:var(--body-text); font-size:.6875rem; }
+#view.view[data-page-system][data-route="notifications"] .notify-setup { padding:16px; margin-bottom:16px; border-color:var(--line); border-radius:8px; background:var(--bg-2); box-shadow:none; }
+#view.view[data-page-system][data-route="notifications"] .notify-setup::before { display:none; }
+#view.view[data-page-system][data-route="notifications"] .notify-setup-copy h2 { font-size:var(--desk-section); }
+#view.view[data-page-system][data-route="notifications"] .notify-setup-copy p { font-size:var(--desk-copy); }
+#view.view[data-page-system][data-route="notifications"] .notification-list { border:0; border-top:1px solid var(--line); border-radius:0; background:transparent; }
+#view.view[data-page-system][data-route="notifications"] .notification-item { padding:0; margin:0; border-radius:0; border-bottom:1px solid var(--line); }
+#view.view[data-page-system][data-route="notifications"] .notification-row { padding:14px 8px; gap:10px; }
+#view.view[data-page-system][data-route="notifications"] .notification-copy :is(strong,span) { font-size:var(--desk-copy); line-height:1.5; }
+#view.view[data-page-system][data-route="notifications"] .notification-copy small { font-size:var(--desk-meta); }
+#view.view[data-page-system][data-route="notifications"] .notify-empty { padding:18px 0; border:0; border-block:1px solid var(--line); border-radius:0; text-align:left; }
+#view.view[data-page-system][data-route] :is(.poll-q,.proposal-title) { font-size:var(--desk-section); line-height:1.35; }
+
+@media(max-width:899px) {
+  /* Native phone fields stay at 16px so focusing them does not zoom the page. */
+  #view.view[data-page-system][data-route] :is(select,textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"])):not(.sb-slip *) { font-size:1rem; }
+}
+@media(max-width:360px) {
+  #view.view[data-page-system][data-route] { --desk-title:1.625rem; }
+  #view.view[data-page-system][data-route="analyzer"] .ta-toolbar label { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; width:100%; }
+  #view.view[data-page-system][data-route][data-route="profile"] .ph-top { grid-template-columns:auto minmax(0,1fr); }
+  #view.view[data-page-system][data-route][data-route="profile"] .ph-edit { grid-column:2; grid-row:2; justify-self:start; }
+}
+html[data-ui-motion="off"] #view.view[data-page-system][data-route] summary::after { transition:none; }
+@media(prefers-reduced-motion:reduce) { #view.view[data-page-system][data-route] summary::after { transition:none; } }
