@@ -843,14 +843,14 @@ with sync_playwright() as p:
     # Exercise the real player-card controller with isolated fast/slow data.
     # Slow data must still connect after the sheet entrance has been released.
     card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
-    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));return '+json.dumps(card_model)+'}'))
+    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards();window.reviewPortraitStarts=0;window.reviewOriginalAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.classList.contains('dfl-connected-portrait'))window.reviewPortraitStarts++;return window.reviewOriginalAnimate.apply(this,args)}}")
     page.locator('[data-week-tab="players"]').click()
     player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
     player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
     stable_sheets=[]
     for delay in [75,900]:
-        page.evaluate('delay=>window.reviewCardDelay=delay', delay)
+        page.evaluate('delay=>{window.reviewCardDelay=delay;window.reviewCardHold=delay===900;delete window.reviewCardRelease}', delay)
         if delay == 75:
             page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
         else:
@@ -860,6 +860,8 @@ with sync_playwright() as p:
             pending=page.locator('.dfl-player-card').bounding_box()
             assert page.locator('[data-player-card-body]').get_attribute('aria-busy')=='true', 'Player loading is not announced'
             assert page.locator('[data-player-card-loading] .gd-thermal-number').count()==0, 'Pending card fabricated a score'
+            page.wait_for_function('!!window.reviewCardRelease')
+            page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
         try:
             frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
         except Exception:
