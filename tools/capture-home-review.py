@@ -843,29 +843,51 @@ with sync_playwright() as p:
     # Exercise the real player-card controller with isolated fast/slow data.
     # Slow data must still connect after the sheet entrance has been released.
     card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
-    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));return '+json.dumps(card_model)+'}'))
+    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards();window.reviewPortraitStarts=0;window.reviewOriginalAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.classList.contains('dfl-connected-portrait'))window.reviewPortraitStarts++;return window.reviewOriginalAnimate.apply(this,args)}}")
     page.locator('[data-week-tab="players"]').click()
     player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
     player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
-    for delay in [75,350]:
-        page.evaluate('delay=>window.reviewCardDelay=delay', delay)
+    stable_sheets=[]
+    for delay in [75,900]:
+        page.evaluate('delay=>{window.reviewCardDelay=delay;window.reviewCardHold=delay===900;delete window.reviewCardRelease}', delay)
         if delay == 75:
             page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
         else:
             player.click()
+            page.locator('[data-player-card-loading]').wait_for()
+            page.wait_for_timeout(250)
+            pending=page.locator('.dfl-player-card').bounding_box()
+            assert page.locator('[data-player-card-body]').get_attribute('aria-busy')=='true', 'Player loading is not announced'
+            assert page.locator('[data-player-card-loading] .gd-thermal-number').count()==0, 'Pending card fabricated a score'
+            page.wait_for_function('!!window.reviewCardRelease')
+            page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
         try:
             frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
         except Exception:
             print('Connected detail diagnostic:', {'errors':errors,'state':page.evaluate("()=>({visible:document.visibilityState,motion:document.documentElement.dataset.uiMotion,source:document.querySelector('[data-position-panel]:not([hidden]) .dfl-player-portrait')?.getBoundingClientRect().toJSON(),target:document.querySelector('.player-card-hero .dfl-player-portrait')?.getBoundingClientRect().toJSON(),dialogOpen:document.querySelector('.dfl-player-card')?.open})")}, flush=True)
             raise
         assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
+        if delay==900:
+            ready=page.locator('.dfl-player-card').bounding_box()
+            assert all(abs(pending[k]-ready[k])<1 for k in ['x','y','width','height']), f'Player sheet jumped on completion: {pending} -> {ready}'
+            assert page.locator('[data-player-card-body]').get_attribute('aria-busy') is None, 'Ready player card remains busy'
+            stable_sheets.append({'pending':pending,'ready':ready})
         page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
         page.wait_for_timeout(400)
         assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
         page.keyboard.press('Escape')
         page.wait_for_timeout(250)
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
+    page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
+    player.click()
+    page.locator('[data-player-card-loading]').wait_for()
+    page.wait_for_function('!!window.reviewCardRelease')
+    page.keyboard.press('Escape')
+    page.evaluate('window.reviewCardHold=false;window.reviewCardRelease()')
+    page.wait_for_timeout(300)
+    assert page.locator('.dfl-player-card').evaluate('e=>!e.open') and page.locator('.dfl-player-card .player-card-hero').count()==0, 'Late player response replaced a dismissed card'
+    assert player.evaluate('e=>e===document.activeElement'), 'Pending card dismissal lost focus'
     page.evaluate('window.reviewCardDelay=75')
     player.click()
     page.wait_for_function("()=>{const a=document.querySelector('.dfl-connected-portrait:popover-open')?.getAnimations()[0];if(!a)return false;a.pause();return true}", timeout=10000)
@@ -887,7 +909,7 @@ with sync_playwright() as p:
     page.keyboard.press('Escape')
     page.wait_for_timeout(220)
     page.evaluate("()=>{Element.prototype.animate=window.reviewOriginalAnimate}")
-    metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
+    metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'stableSheets':stable_sheets,'dismissedPending':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
 
     metrics['sectionNavigation'] = 'passed'
     metrics['expandedHome'] = []

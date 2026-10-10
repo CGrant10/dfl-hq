@@ -60,6 +60,7 @@ import {loadNflInjuries} from "../injury-report-data.js";
 import {buildInjuryReport,injuryReportSlides} from "../injury-report-model.js";
 import {mountInjuryReport} from "../injury-report-ui.js";
 import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
+import { finishLoadingContent, loadingRows } from "../loading-presentation.js";
 
 let stage = null;
 let generation = 0;
@@ -483,28 +484,28 @@ export async function render(view) {
     <div data-home-gameday-slot></div>
     <div data-home-focus-slot>${homeWeeklyFocus(null,null,{loading:true})}</div>
     </div>
-    <section class="home-broadcast is-loading" aria-label="League broadcast">
+    <section class="home-broadcast is-loading" data-content-state="loading" aria-busy="true" aria-label="League broadcast">
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
     <section class="home-week-desk" aria-label="Your week">
-    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot>${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
+    ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-live-slot></div>
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
     ${homeSectionLinks()}
     </section>
     <section class="home-league-desk" aria-label="Around the league">
-    <div data-home-rankings-slot>${homeRankingsCard(null)}</div>
+    <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${homeRankingsCard(null)}</div>
     ${announcements.data?.[0] ? `<section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>${esc(announcements.data[0].title)}</h2><p>${esc(String(announcements.data[0].body || announcements.data[0].content || "Catch the latest league news.").slice(0,160))}</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>` : ""}
     ${disclosure("home-league","More from the league","News, trades and league updates",`
     ${snapshot({ leagues: leagues.data || [], members: memberRows, myMember, standings: standings.data || [], dues: dues.data || [], polls: polls.data || [] })}
-    <div data-home-trade-slot>${homeTradeWire(null)}</div>
+    <div data-home-trade-slot data-content-state="loading" aria-busy="true">${homeTradeWire(null)}</div>
     <div data-draft-slot></div>
-    <div data-home-feed-slot class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
+    <div data-home-feed-slot data-content-state="loading" aria-busy="true" class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
     </section>
     <div data-home-lore-slot>${homeLeagueFile()}</div>
-    <section class="home-banter" aria-label="League banter"><div data-wall-slot class="home-deferred-slot"></div></section>
+    <section class="home-banter" aria-label="League banter"><div data-wall-slot data-content-state="loading" aria-busy="true" class="home-deferred-slot"><div class="home-wall-loading" role="status" aria-label="Loading league wall"><span class="sr-only">Loading league wall.</span><div aria-hidden="true">${loadingRows(2)}</div></div></div></section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}
     <p class="dfl-alive" data-alive>${presenceHtml(presenceNow())}</p>
     <p class="version-line">DFL HQ v${esc(APP_VERSION)} · <button class="linkbtn" id="check-update">Check for updates</button>${isInstalled() ? "" : ` · <button class="linkbtn" id="install-app">Install app</button>`}</p>
@@ -575,11 +576,16 @@ export async function render(view) {
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
-      slot.innerHTML = wallCard(await loadWall(3), { compact: true });
+      const posts = await loadWall(3);
+      if (mine !== generation || !slot.isConnected) return;
+      slot.innerHTML = wallCard(posts, { compact: true });
       wireWall(slot, redrawWall);
+      finishLoadingContent(slot);
     } catch (err) {
       console.warn("wall unavailable", err);
+      if (mine !== generation || !slot.isConnected) return;
       slot.innerHTML = "";
+      finishLoadingContent(slot);
     }
   };
   const wallSlot = view.querySelector("[data-wall-slot]");
@@ -599,6 +605,7 @@ export async function render(view) {
     if (mine !== generation || !feedSlot?.isConnected) return;
     feedSlot.innerHTML = homeLeagueFeed(announcements.data || [], activity);
     wireHomeLeagueFeed(feedSlot);
+    finishLoadingContent(feedSlot);
   }));
   wireHomeLeagueFeed(feedSlot);
 
@@ -669,6 +676,7 @@ export async function render(view) {
     host.innerHTML = renderStage(ordered, { editorial: true });
     const root = host.querySelector("[data-bx-stage]");
     if (root) stage = startStage(root, ordered, { refresh });
+    finishLoadingContent(host);
   };
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
@@ -717,12 +725,14 @@ export async function render(view) {
     if (homeRankingsSlot) {
       homeRankingsSlot.innerHTML = homeRankingsCard(pulse, memberRows);
       wireHomeRankings(homeRankingsSlot);
+      finishLoadingContent(homeRankingsSlot);
     }
     if (homeReportSlot) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
       wireHomeWeekHub(homeReportSlot);
+      finishLoadingContent(homeReportSlot);
     }
-    if (homeTradeSlot) homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews);
+    if (homeTradeSlot) { homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews); finishLoadingContent(homeTradeSlot); }
     /* Both slots just replaced their contents, so the parts the driver was
        holding are detached. Re-bind against what is actually on the page. */
     try { dropAssembly?.(); } catch { }
@@ -746,6 +756,7 @@ export async function render(view) {
       const report = view.querySelector("[data-home-report-slot]");
       if (focus) focus.innerHTML = homeWeeklyFocus(null);
       if (report) report.innerHTML = homeWeeklyDigest(null);
+      for (const selector of ['[data-home-report-slot]', '[data-home-rankings-slot]', '[data-home-trade-slot]']) finishLoadingContent(view.querySelector(selector));
     }
     startHomeStage(fallbackDeck);
   });
