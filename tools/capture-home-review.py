@@ -675,14 +675,15 @@ with sync_playwright() as p:
             page.locator(f'[data-bx-go="{index}"]').focus()
             page.locator(f'[data-bx-go="{index}"]').press('Enter')
             page.wait_for_timeout(650)
+            page.wait_for_function("[...document.querySelector('.bx-stage').getAnimations({subtree:true})].every(a=>a.effect.getTiming().iterations===Infinity||a.effect.getComputedTiming().endTime>1500||!['running','pending'].includes(a.playState))", timeout=10000)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&getComputedStyle(e).display!=='none');
+                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
                 const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyBoxes:(getComputedStyle(copy).display==='contents'?[...copy.querySelectorAll('.bx-champ > *')]:[copy]).map(e=>e.getBoundingClientRect().toJSON()),src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -698,7 +699,7 @@ with sync_playwright() as p:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
-                assert art['copyRight'] <= art['left'] - 8, f'Broadcast art overlaps the text column: {layout}'
+                assert all(b['right'] <= art['left'] - 8 or b['bottom'] <= art['top'] or b['top'] >= art['bottom'] for b in art['copyBoxes']), f'Broadcast art overlaps text: {layout}'
             layout['injuryRows'] = check_injury_layout(page)
             metrics['slides'].append(layout)
             if width == 390:
@@ -765,6 +766,67 @@ with sync_playwright() as p:
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
     page.locator('[data-page-detail="home-week"] summary').click()
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>e.open'), 'Weekly planning did not open'
+    # Real touch events catch implicit pointer-capture handoffs on child text.
+    touch = context.new_cdp_session(page)
+    def swipe_week(dx, dy=0):
+        panel = page.locator('[data-week-panel]:not([hidden])')
+        panel.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-150,behavior:"instant"})')
+        page.wait_for_timeout(100)
+        box = panel.bounding_box()
+        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 30
+        touch.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+        for step in range(1,6):
+            touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
+            page.wait_for_timeout(20)
+        touch.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
+        page.wait_for_timeout(350)
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('[data-week-tab="brief"]').click()
+    for panel in ['picks','players','startsit']:
+        swipe_week(-120)
+        assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true', f'Touch swipe failed to open {panel}'
+        assert page.locator('.home-week-tabs').evaluate('e=>{const tab=e.querySelector("[aria-selected=true]").getBoundingClientRect(),rail=e.querySelector(".dfl-selection-rail").getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}'), 'Swipe highlight did not land'
+    swipe_week(-120)
+    assert page.locator('[data-week-tab="startsit"]').get_attribute('aria-selected') == 'true', 'Last touch tab should not wrap'
+    swipe_week(120)
+    assert page.locator('[data-week-tab="players"]').get_attribute('aria-selected') == 'true', 'Reverse touch swipe failed'
+    swipe_week(0,-90)
+    assert page.locator('[data-week-tab="players"]').get_attribute('aria-selected') == 'true', 'Vertical scrolling changed tabs'
+    metrics['weekTouchNavigation'] = 'passed'
+    # Exercise the real player-card controller with isolated fast/slow data.
+    # Slow data must still connect after the sheet entrance has been released.
+    card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
+    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));return '+json.dumps(card_model)+'}'))
+    page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards()}")
+    page.locator('[data-week-tab="players"]').click()
+    player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
+    player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
+    for delay in [75,350]:
+        page.evaluate('delay=>window.reviewCardDelay=delay', delay)
+        player.click()
+        page.wait_for_selector('.dfl-connected-portrait:popover-open', timeout=10000)
+        frames = page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].effect.getKeyframes()')
+        assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
+        page.wait_for_timeout(400)
+        assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
+        page.keyboard.press('Escape')
+        page.wait_for_timeout(250)
+        assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
+    page.evaluate('window.reviewCardDelay=75')
+    player.click()
+    page.wait_for_selector('.dfl-connected-portrait:popover-open', timeout=10000)
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(300)
+    assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.dfl-player-card').evaluate('e=>!e.open'), 'Dismissal left a traveling portrait'
+    page.emulate_media(reduced_motion='reduce')
+    player.click()
+    page.wait_for_timeout(500)
+    assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(220)
+    page.emulate_media(reduced_motion='no-preference')
+    metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
+
     metrics['sectionNavigation'] = 'passed'
     metrics['expandedHome'] = []
     for mode in ['light','dark']:

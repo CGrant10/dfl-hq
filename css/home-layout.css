@@ -253,3 +253,10 @@
   #home-wrap .home-league-story + .home-league-story { border-top: 0; padding-left: 0; }
   #home-wrap .home-league-story:nth-child(n+3) { border-top: 1px solid var(--home-row-line); }
 }
+
+/* The selected tab supplies context; the panel starts with useful content. */
+#home-wrap .home-week-panels { touch-action:pan-y pinch-zoom; }
+#home-wrap .home-week-brief > .home-brief-headline { display:block; margin-top:20px; }
+#home-wrap .home-week-brief > .home-text-action { display:inline-flex; margin-block:12px; min-height:44px; }
+#home-wrap .home-outlook-title > h3 { margin:0; font:700 .9375rem/1.35 var(--home-ui-font); text-transform:none; letter-spacing:0; overflow-wrap:anywhere; }
+#home-wrap .home-outlook-players [data-position-panel] > ol { margin-top:0; }

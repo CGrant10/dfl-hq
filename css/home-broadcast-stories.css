@@ -71,3 +71,18 @@
 #home-wrap .bx-controls { right:calc(var(--home-gutter) + 100px); height:44px; }
 #home-wrap .bx-dot { height:44px; }
 #home-wrap .bx-dot::after { top:18px; }
+
+/* On phones the name gets the whole first row; art and season detail share
+   the lower row. The transparent subject stays contained, including its arm. */
+@media(max-width:480px) {
+  #home-wrap .bx-with-crest:is(.bx-art-champion,.bx-art-chip) {
+    display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); grid-template-rows:auto auto auto 1fr; gap:10px 12px;
+  }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) :is(.bx-editorial-copy,.bx-champ) { display:contents; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-kicker { grid-column:1 / -1; grid-row:1; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-name { grid-column:1 / -1; grid-row:2; font-size:1.875rem; text-align:left; text-wrap:balance; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-sub { grid-column:1; grid-row:3; text-align:left; font-size:.9375rem; line-height:1.4; align-self:start; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-when { grid-column:1; grid-row:4; justify-self:start; align-self:start; max-width:100%; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-editorial-illustration { position:relative; inset:auto; grid-column:2; grid-row:3 / 5; width:100%; height:180px; align-self:end; }
+  #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-editorial-subject { opacity:.92; }
+}

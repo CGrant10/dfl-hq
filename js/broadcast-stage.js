@@ -612,6 +612,14 @@ export function startStage(root, deck, { refresh } = {}) {
   let deckHeight = 0;
   function contentHeight(slide) {
     const style = getComputedStyle(slide);
+    // Narrow champion layouts flatten the copy into the slide's grid. Measure
+    // the actual grid extent, including its illustration, rather than a
+    // display:contents wrapper with no box.
+    if (slide.matches('.bx-art-champion,.bx-art-chip') && getComputedStyle(slide.querySelector('.bx-editorial-copy')).display === 'contents') {
+      const top = slide.getBoundingClientRect().top;
+      const bottom = Math.max(top, ...[...slide.querySelectorAll('.bx-champ > *, .bx-editorial-illustration')].map(el => el.getBoundingClientRect().bottom));
+      return bottom - top + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0) + 2;
+    }
     const children = [...slide.children].filter(el => !['absolute', 'fixed'].includes(getComputedStyle(el).position));
     return children.reduce((height, el) => {
       const childStyle = getComputedStyle(el);
