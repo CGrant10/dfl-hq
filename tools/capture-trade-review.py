@@ -197,11 +197,16 @@ with sync_playwright() as p:
         # and the offer visibly asks for review before it reaches the desk.
         page.evaluate("""()=>{sessionStorage.clear();localStorage.clear();history.replaceState(null,'',location.pathname+'#/trade');for(const player of window.reviewData.pool.values()){player.expertFeedStatus='Fresh';player.expert={rank:12};player.expertDisagreement=true}window.renderReview()}""")
         click('[data-tb-intent="fair"]')
+        page.locator('[data-tb-tier="fair"] .tb-offer').first.wait_for()
         assert page.locator('[data-tb-tier="fair"] .tb-offer').count()>0
         assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.includes('REVIEW DATA'))")
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         page.locator('[data-tb-tier="fair"]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-fair-review.png'))
+        click('[data-tb-intent="aggressive"]')
+        page.wait_for_function("document.querySelector('[data-tb-tier]')?.dataset.tbTier==='aggressive'")
+        page.reload();page.wait_for_function('window.reviewReady===true')
+        assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
         # Reflow at enlarged type and themes; closing keeps package state.
         page.evaluate("document.documentElement.style.fontSize='200%'")
         for mode in ['dark','light','team:KC']:
