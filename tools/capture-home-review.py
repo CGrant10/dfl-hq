@@ -536,6 +536,9 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=executable, headless=True,
         args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    # Install before Clubhouse imports the shared player controller.
+    card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
+    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
@@ -842,8 +845,6 @@ with sync_playwright() as p:
     metrics['weekTouchNavigation'] = 'passed'
     # Exercise the real player-card controller with isolated fast/slow data.
     # Slow data must still connect after the sheet entrance has been released.
-    card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
-    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards();window.reviewPortraitStarts=0;window.reviewOriginalAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.classList.contains('dfl-connected-portrait'))window.reviewPortraitStarts++;return window.reviewOriginalAnimate.apply(this,args)}}")
     page.locator('[data-week-tab="players"]').click()
     player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
