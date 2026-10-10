@@ -1,0 +1,96 @@
+/* The daily desks share one control hierarchy. Artwork and live scores keep
+   their own palette and geometry; action fills use the selected theme. */
+:root { --action-fill:var(--accent-fill,#C8102E); --action-ink:var(--on-accent,#fff); }
+:root[data-palette="light"] { --action-fill:#B8001B; }
+:root[data-palette="fairway"] { --action-fill:#056936; }
+
+:is(#view.view[data-page-system][data-route]:where(:not([data-route^="arena"],[data-route="golf"],[data-route="broadcast"])),.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn {
+  min-height:44px; padding:10px 14px; border:1px solid transparent;
+  border-radius:8px; font:700 .875rem/1.3 var(--font-body);
+  letter-spacing:.01em; text-transform:none; box-shadow:none;
+}
+:is(#view.view[data-page-system][data-route]:where(:not([data-route^="arena"],[data-route="golf"],[data-route="broadcast"])),.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn:not(:is(.ghost,.secondary,.danger)) {
+  background:var(--action-fill); color:var(--action-ink);
+}
+:is(#view.view[data-page-system][data-route]:where(:not([data-route^="arena"],[data-route="golf"],[data-route="broadcast"])),.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn:is(.ghost,.secondary):not(.danger) {
+  border-color:transparent; color:var(--text);
+  background:color-mix(in srgb,var(--text) 5%,var(--bg-2));
+}
+#view[data-route="sportsbook"] :is(.sb-slipbar-go,.sb-slip-submit) {
+  background:var(--action-fill); color:var(--action-ink); border-radius:8px; box-shadow:none;
+}
+#home-wrap .home-lineup-primary { background:var(--action-fill); color:var(--action-ink); border-radius:8px; }
+
+/* Quiet fields and secondary actions leave the primary action recognizable. */
+:is(#view.view[data-page-system][data-route],.dfl-player-card,.trade-player-picker,.sb-slip) :is(select,textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])) {
+  border-radius:8px; border-color:var(--line); background:var(--bg-2);
+}
+:is(#view.view[data-page-system][data-route],.dfl-player-card,.trade-player-picker,.sb-slip,#more) :is(button,a,select,input,textarea,summary):focus-visible {
+  outline:2px solid var(--accent); outline-offset:3px;
+}
+@media(hover:hover) {
+  :is(#view.view[data-page-system][data-route],.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn:is(.ghost,.secondary):not(.danger):hover:not(:disabled) {
+    background:color-mix(in srgb,var(--text) 9%,var(--bg-2)); color:var(--text);
+  }
+  :is(#view.view[data-page-system][data-route],.dfl-player-card,.trade-player-picker,.sb-slip,#more) .btn:not(:is(.ghost,.secondary,.danger)):hover:not(:disabled) { color:var(--action-ink); }
+}
+
+/* One reaction row for both the Wall and its Home preview. Counts stay inside
+   the existing accessible controls and the same 44px targets. */
+#view.view[data-page-system][data-route] .wall-reactions { margin:10px 0 4px; }
+#view.view[data-page-system][data-route] .wall-reaction-buttons {
+  display:inline-flex; flex-wrap:wrap; max-width:100%; gap:2px;
+  padding:3px; border:1px solid var(--line-soft); border-radius:10px;
+  background:var(--bg-2);
+}
+#view.view[data-page-system][data-route] .wall-reaction-buttons .btn.ghost {
+  min-width:52px; min-height:44px; padding:8px 10px; gap:7px;
+  border-color:transparent; background:transparent; color:var(--body-text);
+  font:600 .8125rem/1.3 var(--font-body); letter-spacing:0;
+}
+#view.view[data-page-system][data-route] .wall-reaction-buttons .btn > span:first-child { font-size:1rem; }
+#view.view[data-page-system][data-route] .wall-reaction-buttons [data-reaction-count] { min-width:1ch; font-variant-numeric:tabular-nums; }
+#view.view[data-page-system][data-route] .wall-reaction-buttons .btn.ghost[aria-pressed="true"] {
+  color:var(--text); background:color-mix(in srgb,var(--accent) 12%,var(--bg-2));
+  border-color:color-mix(in srgb,var(--accent) 45%,var(--line));
+}
+@media(hover:hover) {
+  #view.view[data-page-system][data-route] .wall-reaction-buttons .btn.ghost:hover:not(:disabled) { background:var(--bg-3); }
+  #view.view[data-page-system][data-route] .wall-reaction-buttons .btn.ghost[aria-pressed="true"]:hover:not(:disabled) { background:color-mix(in srgb,var(--accent) 16%,var(--bg-2)); }
+}
+#view.view[data-page-system][data-route] .wall-reactions [data-reaction-status]:empty { display:none; }
+#view.view[data-page-system][data-route] .wall-reactions [data-reaction-people] > summary { font-size:.75rem; color:var(--body-text); }
+
+/* Detail sheets use the same surface, header rhythm and dismiss control. */
+dialog:is(.dfl-player-card,.trade-player-picker,.sb-slip) {
+  border-color:var(--line); background:var(--bg-2); color:var(--text);
+  box-shadow:0 12px 48px #0003;
+}
+body :is(.dfl-player-card,.trade-player-picker) > header,.sb-slip .sb-slip-head {
+  padding:12px 16px; gap:12px; background:var(--bg-2); border-bottom:1px solid var(--line);
+}
+body :is(.dfl-player-card,.trade-player-picker) > header h2,.sb-slip .sb-slip-head h2 { font:700 1.125rem/1.3 var(--font-display); letter-spacing:.025em; }
+body :is(.dfl-player-card,.trade-player-picker) > header button,.sb-slip .sb-slip-head button {
+  min-height:44px; min-width:44px; padding:8px 12px; border:1px solid transparent;
+  border-radius:8px; background:color-mix(in srgb,var(--text) 5%,var(--bg-2));
+  color:var(--text); font:700 .875rem/1.3 var(--font-body); text-decoration:none;
+}
+.dfl-player-card [data-player-card-body] { padding-bottom:max(16px,env(safe-area-inset-bottom)); }
+:is(.dfl-player-card,.trade-player-picker,.sb-slip)::backdrop { background:#0009; }
+#more .sheet-card { background:var(--bg-2); border-color:var(--line); }
+.toast { max-width:min(420px,calc(100vw - 32px)); padding:12px 16px; border-radius:12px; font:600 .875rem/1.4 var(--font-body); overflow-wrap:anywhere; }
+
+@media(max-width:540px) {
+  dialog.dfl-player-card {
+    width:100%; max-width:none; margin:0; top:auto;
+    bottom:var(--dialog-viewport-bottom,0px);
+    max-height:min(82dvh,var(--dialog-viewport-height,82dvh));
+    border-radius:18px 18px 0 0;
+  }
+  dialog:is(.trade-player-picker,.sb-slip) { border-radius:18px 18px 0 0; }
+  #more .sheet-card { border-radius:18px 18px 0 0; }
+}
+
+/* Trade buttons already provide a full touch target; the older inset plate
+   is removed when the shared control itself supplies the visible surface. */
+#view[data-route="trade"] .td-page .btn::before { content:none; }

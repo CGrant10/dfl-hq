@@ -789,7 +789,7 @@ with sync_playwright() as p:
     for panel in ['picks','players','startsit']:
         swipe_week(-120)
         assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true', f'Touch swipe failed to open {panel}'
-        assert page.locator('.home-week-tabs').evaluate('e=>{const tab=e.querySelector("[aria-selected=true]").getBoundingClientRect(),rail=e.querySelector(".dfl-selection-rail").getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}'), 'Swipe highlight did not land'
+        page.wait_for_function('''()=>{const e=document.querySelector('.home-week-tabs'),selected=e?.querySelector('[aria-selected=true]'),marker=e?.querySelector('.dfl-selection-rail');if(!selected||!marker)return false;const tab=selected.getBoundingClientRect(),rail=marker.getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}''',timeout=2500)
     swipe_week(-120)
     assert page.locator('[data-week-tab="startsit"]').get_attribute('aria-selected') == 'true', 'Last touch tab should not wrap'
     swipe_week(120)
