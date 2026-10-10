@@ -49,3 +49,25 @@
   #home-wrap .bx-trade-side .dfl-player-portrait { height: 112px; }
   #home-wrap .bx-story-image { height: 118px; }
 }
+
+/* Scout artwork belongs to the recommendation, never a cropped headline. */
+#home-wrap .bx-scout-story { align-content:center; gap:14px; }
+#home-wrap .bx-scout-target { width:100%; display:grid; grid-template-columns:104px minmax(0,1fr); gap:16px; align-items:center; }
+#home-wrap .bx-scout-target .dfl-player-portrait { width:104px; height:120px; border-radius:8px; background:var(--bg-3); overflow:hidden; }
+#home-wrap .bx-scout-target .dfl-player-portrait img { width:100%; height:100%; object-fit:cover; object-position:center top; }
+#home-wrap .bx-scout-target > div { min-width:0; display:grid; gap:6px; }
+#home-wrap .bx-scout-target small { color:var(--accent); font:600 .8125rem/1.35 var(--home-ui-font); }
+#home-wrap .bx-scout-target strong { color:var(--text); font:700 1.375rem/1.15 var(--home-ui-font); overflow-wrap:anywhere; }
+#home-wrap .bx-scout-target span { color:var(--body-text); font:500 .75rem/1.4 var(--home-ui-font); }
+#home-wrap .bx-scout-story .bx-body { max-width:100%; font-size:.9375rem; line-height:1.4; }
+#home-wrap .bx-news-story .bx-story-image { object-fit:contain; object-position:center; }
+@media(max-width:360px) {
+  #home-wrap .bx-scout-target { grid-template-columns:84px minmax(0,1fr); gap:12px; }
+  #home-wrap .bx-scout-target .dfl-player-portrait { width:84px; height:104px; }
+}
+/* Keep transport controls comfortable to tap without entering the story area. */
+#home-wrap :is(.bx-arrow,.bx-pause) { width:44px; min-width:44px; height:44px; padding:12px; }
+#home-wrap .bx-prev { right:calc(var(--home-gutter) + 50px); }
+#home-wrap .bx-controls { right:calc(var(--home-gutter) + 100px); height:44px; }
+#home-wrap .bx-dot { height:44px; }
+#home-wrap .bx-dot::after { top:18px; }

@@ -125,3 +125,14 @@ html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-
   #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all) { transition:none; }
   #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-show-all):active { transform:none; }
 }
+
+/* One edge gutter; landscape safe areas are resolved separately on each side. */
+:root { --app-gutter:16px; }
+#view.view[data-ui-polished]:not([data-route="home"]) {
+  padding-left:max(var(--app-gutter),env(safe-area-inset-left));
+  padding-right:max(var(--app-gutter),env(safe-area-inset-right));
+}
+#view.view[data-route="home"] #home-wrap {
+  padding-left:max(var(--app-gutter),env(safe-area-inset-left));
+  padding-right:max(var(--app-gutter),env(safe-area-inset-right));
+}

@@ -63,10 +63,11 @@ export function nextMoveSlide(move) {
   const target = move.trade?.player?.name || move.waiver?.player?.name;
   if (!target) return null;
   const lane = move.trade
-    ? `Ask ${move.trade.team?.name || "a rival"} about ${move.trade.player.name}.`
+    ? `Ask ${move.trade.team?.team_name || move.trade.team?.ownerName || move.trade.team?.name || "a rival"} about ${move.trade.player.name}.`
     : `${move.waiver.player.name} is unrostered.`;
   return {
     source: "auto", pinned: true, id: "next-move", generator: "nextMove",
+    scoutPlayer: move.trade?.player || move.waiver?.player,
     kind: "move", treatment: "announcement", temporal: "upcoming",
     priority: P.MINE - 10, dwell: 8000,
     kicker: `WEEK ${move.week} · AUTO-SCOUT`,

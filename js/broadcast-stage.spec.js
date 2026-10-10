@@ -1,7 +1,23 @@
 import { describe, expect, it } from "vitest";
+import { nextMoveSlide } from "./home-slides.js";
 import { fitSize, focusShouldPause, renderItem, renderStage, sameStageItem, shouldRun, STAGE_CONTROL } from "./broadcast-stage.js";
 
 describe("editorial Home broadcast", () => {
+  it('uses the scouted player rather than a cropped editorial wordmark, with an initials fallback', () => {
+    const move = {week:5,need:{position:'WR',urgent:true},mine:{sleeper_user_id:'u1'},trade:{player:{id:'6794',name:'Justin Jefferson',position:'WR',team:'MIN'},team:{name:'Rival'}}};
+    const item = nextMoveSlide(move);
+    const html = renderItem(item,{editorial:true});
+    expect(html).toContain('thumb/6794.jpg');
+    expect(html).toContain('WR · MIN');
+    expect(html).toContain('Ask Rival about Justin Jefferson.');
+    expect(html).toContain('href="#/analyzer?owner=u1"');
+    expect(html).not.toContain('dfl-daily-headline.webp');
+    const fallback = renderItem({...item,scoutPlayer:{name:'Unsigned Player'}},{editorial:true});
+    expect(fallback).toContain('<i>UP</i>');
+    expect(fallback).not.toContain('thumb/undefined');
+    expect(renderItem(item)).not.toContain('bx-scout-story');
+  });
+
   it('shows actual traded players with a labeled balance instead of a generic crest', () => {
     const item={kind:'trade',treatment:'stat',figure:'82%',href:'#/trade?id=3',tradeStory:{packages:[{teamName:'A & B',players:[{id:'7564',name:'Chase'}]},{teamName:'C',players:[{id:'6794',name:'Jefferson'}]}],outcome:{grade:'Close win'}}};
     const html=renderItem(item,{editorial:true});
