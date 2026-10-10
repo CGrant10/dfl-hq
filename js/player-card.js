@@ -9,6 +9,7 @@ import { connectPortrait } from './connected-portrait.js';
 import { fitDialogToViewport } from './dialog-viewport.js';
 import { playerFormHtml } from './player-form.js';
 import { team } from './nfl-teams.js';
+import { playerCardPlaceholder, finishLoadingContent } from './loading-presentation.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null, stopConnection = () => {};
 function setup() {
@@ -25,7 +26,7 @@ function setup() {
   dialog.addEventListener('cancel', e => { e.preventDefault(); dismiss(); });
   dialog.addEventListener('close', () => {
     stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
-    request++; activeContext = null;
+    request++; activeContext = null; body.removeAttribute('aria-busy');
     const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
     const replacement = selector && returnContainer?.isConnected ? returnContainer.querySelector(selector) : null;
     (opener?.isConnected ? opener : replacement)?.focus({ preventScroll: true });
@@ -43,9 +44,10 @@ function render(model) {
   body.innerHTML = `<section class="player-card-hero"${heroStyle} aria-label="Player identity">${playerIdentity({ ...p, injuryStatus: '' })}<div class="player-card-owner"><small>DFL ROSTER</small>${model.owner?.memberId ? `<a href="#/profile?id=${esc(model.owner.memberId)}">${esc(model.ownerLabel)}</a>` : `<strong>${esc(model.ownerLabel)}</strong>`}</div></section><div class="player-card-availability" data-availability="${availability}"><b>${esc(model.injury.tag)}</b><span>${esc([model.injury.availability, model.injury.body].filter(Boolean).join(' · '))}</span></div><div class="gameday-spotlight-score"><span>${thermalScore(model.points, playerScoreTemperature({ ...p, points: model.points, state: model.state, afterHalftime: model.afterHalftime }), { tag: 'strong' })}<small>Fantasy points</small></span><span>${esc(state)} · Week ${model.week}</span></div>${playerFormHtml(model)}${model.stats.items.length ? `<section class="player-card-game-stats" aria-label="Game stats"><h3>Week ${model.week} box score</h3><dl class="gameday-stat-grid">${model.stats.items.map(s => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd></div>`).join('')}</dl></section>` : '<p class="player-card-empty">Game stats unavailable.</p>'}<nav class="player-card-actions" aria-label="Player actions">${props ? `<a class="linkbtn" href="#/sportsbook?player=${encodeURIComponent(p.name)}">Player props</a>` : ''}${trade ? `<a class="linkbtn" href="#/trade?team=${encodeURIComponent(model.myRosterId)}&target=${encodeURIComponent(p.id)}&partner=${encodeURIComponent(model.owner.id)}">Explore a trade</a>` : ''}<a class="linkbtn" href="#/analyzer">Team analyzer</a></nav>${model.stats.updatedAt ? `<time class="gameday-stat-time" datetime="${esc(new Date(model.stats.updatedAt).toISOString())}">Stats · ${esc(new Date(model.stats.updatedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }))}</time>` : ''}`;
 }
 export async function openPlayerCard(selection, { context = null, motion = true, source = document.activeElement } = {}) {
-  setup(); stopConnection(); cancelUiExit(dialog); const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
+  setup(); stopConnection(); cancelUiExit(dialog); cancelUiMotion(body); const token = ++request; opener = source; returnContainer = source?.closest('dialog') || source?.closest('#view'); activeContext = context;
   dialog.dataset.motion = motion ? 'on' : 'off';
-  body.innerHTML = '<p role="status">Loading player…</p>';
+  body.dataset.contentState = 'loading'; body.setAttribute('aria-busy', 'true'); body.scrollTop = 0;
+  body.innerHTML = playerCardPlaceholder(context?.name || selection.name || source?.textContent?.trim());
   let entranceDone = Promise.resolve();
   if (!dialog.open) {
     dialog.showModal();
@@ -58,14 +60,15 @@ export async function openPlayerCard(selection, { context = null, motion = true,
   dialog.querySelector('h2').focus({ preventScroll: true });
   try {
     const model = await loadPlayerCard(selection, context);
-    if (token !== request || !dialog.open) return;
+    if (token !== request || !dialog.open || dialog.dataset.uiClosing) return;
     render(model);
+    finishLoadingContent(body);
     animateUi(body.querySelector('.player-form-chart'), [{ opacity:0, transform:'translateY(4px)' }, { opacity:1, transform:'translateY(0)' }], { duration:240, motion:dialog.dataset.motion !== 'off' });
     // Wait for the sheet to settle so the portrait lands at its final position.
     await entranceDone;
-    if (token === request && dialog.open && !dialog.dataset.uiClosing) stopConnection = connectPortrait(source, body.querySelector('.dfl-player-portrait'), { motion });
+    if (token === request && dialog.open && !dialog.dataset.uiClosing) stopConnection = connectPortrait(source, body.querySelector('.dfl-player-portrait'), { motion:dialog.dataset.motion !== 'off' });
   }
-  catch (error) { if (token === request && dialog.open) { body.innerHTML = `<p role="status">${esc(error.message || 'Player data unavailable.')}</p><button type="button" class="linkbtn" data-player-card-retry>Retry</button>`; body.querySelector('button').onclick = () => void openPlayerCard(selection, { context, motion, source }); } }
+  catch (error) { if (token === request && dialog.open && !dialog.dataset.uiClosing) { body.innerHTML = `<p role="status">${esc(error.message || 'Player data unavailable.')}</p><button type="button" class="linkbtn" data-player-card-retry>Retry</button>`; finishLoadingContent(body); body.querySelector('button').onclick = () => void openPlayerCard(selection, { context, motion:dialog.dataset.motion !== 'off', source }); } }
 }
 export function updatePlayerCard(context, motion = true) {
   if (!dialog?.open || !activeContext || String(activeContext.id) !== String(context?.id)) return;
