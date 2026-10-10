@@ -33,14 +33,12 @@ import { shrinkToDataUri } from "../image-field.js";
 import { PRESETS, describeValue, fmtBytes, MAX_SOURCE_BYTES } from "../image-shrink.js";
 import { identitySettingsCard, profileIdentityDisplay, wireProfileIdentity } from "../profile-identity.js";
 import { icon } from "../icons.js";
+import { teamPortrait } from "../team-presentation.js";
 import { loadLore, career } from "../lore.js";
 
 const BIO_MAX = 500;
 const PHOTO_PX = PRESETS.avatar.maxPx;
 const PHOTO_MAX_BYTES = MAX_SOURCE_BYTES;
-
-const initials = (name) =>
-  String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
 /**
  * The avatar, with its own change button when it is yours.
@@ -49,10 +47,8 @@ const initials = (name) =>
  * click on the badge opens the picker - no intermediate state, no second
  * control appearing somewhere else on the card.
  */
-function avatar(m, photo, isMe) {
-  const img = photo
-    ? `<img class="avatar" src="${esc(photo)}" alt="">`
-    : `<div class="avatar avatar-fallback">${esc(initials(m.display_name))}</div>`;
+function avatar(m, photo, isMe, ctx) {
+  const img = teamPortrait({team_name:ctx.currentTeam || m.team_name || m.display_name, identity:{...m, profile_image:photo}}, {className:"avatar ph-team-mark"});
   if (!isMe) return `<div class="ph-avatar">${img}</div>`;
   return `<div class="ph-avatar">
     ${img}
@@ -105,7 +101,7 @@ function viewCard(m, isMe, ctx) {
   const bio = String(m.bio || "").trim();
   return `<section class="card profile-head accent">
     <div class="ph-top">
-      ${avatar(m, m.profile_image, isMe)}
+      ${avatar(m, m.profile_image, isMe, ctx)}
       ${nameBlock(m, ctx)}
       ${isMe ? `<button type="button" class="btn ghost small ph-edit" data-dfl-edit>Edit</button>` : ""}
     </div>
@@ -114,7 +110,7 @@ function viewCard(m, isMe, ctx) {
     ${bio
       ? `<p class="dfl-bio">${esc(bio)}</p>`
       : ""}
-    <div class="row ph-actions">${ctx.actions || ""}</div>
+    ${ctx.actions ? `<div class="row ph-actions">${ctx.actions}</div>` : ""}
   </section>`;
 }
 
@@ -122,7 +118,7 @@ function editCard(m, draft, ctx) {
   const photo = draft.image !== undefined ? draft.image : m.profile_image;
   return `<section class="card profile-head accent is-editing">
     <div class="ph-top">
-      ${avatar(m, photo, true)}
+      ${avatar(m, photo, true, ctx)}
       ${nameBlock(m, ctx)}
       <button type="button" class="btn ghost small ph-edit" data-dfl-cancel>Cancel</button>
     </div>

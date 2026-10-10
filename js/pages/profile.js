@@ -150,7 +150,7 @@ export async function render(view) {
       ${othersCard(members, member)}
       ${reference.length ? `<h2 class="section-title">Record &amp; reference</h2>` : ""}
       ${reference.join("")}
-      ${isMe ? `<details class="profile-settings" id="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance, notifications and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-notifications-slot></div><div data-profile-privacy-slot></div></div></details>` : ""}
+      ${isMe ? `<details class="profile-settings" id="profile-settings"><summary><span><small>YOUR PROFILE</small><strong>Settings &amp; privacy</strong></span><em>Golf name, appearance, notifications and access</em></summary><div class="profile-settings-body">${golfNameCard(member)}${appearanceCard()}<div data-profile-notifications-slot></div><div data-profile-privacy-slot></div><div class="profile-account-actions"><button type="button" class="btn ghost small" id="switch-member">Sign out / Switch</button></div></div></details>` : ""}
     </div>
   `;
 
@@ -176,7 +176,7 @@ export async function render(view) {
       admin page, which is where editing somebody ELSE's row belongs.
     */
     actions: isMe
-      ? `<button class="btn ghost small" id="switch-member">Sign out / Switch</button>`
+      ? ""
       : `<a class="btn ghost small" href="#/profile">Back to my profile</a>`,
     onRepaint: () => { void decorateChipEaters(view); },
   });

@@ -1,0 +1,95 @@
+/* Shared team marks retain uploaded photos and a complete fallback. */
+.dfl-team-mark:not(.has-photo) {
+  border-radius:28%;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--team-accent) 18%,var(--bg-2)),var(--bg-2));
+  border-color:color-mix(in srgb,var(--team-accent) 50%,var(--line));
+}
+.dfl-team-mark:not(.has-photo)::before {
+  content:""; position:absolute; inset:10%; border:1px solid color-mix(in srgb,var(--team-accent) 35%,transparent); border-radius:20%; pointer-events:none;
+}
+.dfl-team-mark:not(.has-photo) i { position:relative; color:var(--text); font-family:var(--font-display); font-weight:700; letter-spacing:.03em; }
+
+/* A season earns a banner, with the current champion leading the cabinet. */
+#view.view[data-page-system][data-route="history"] .archive-cabinet { margin:18px 0 28px; }
+.archive-cabinet-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 12px; margin-bottom:14px; }
+.archive-cabinet-head > small { flex-basis:100%; font:700 .65rem/1.4 var(--font-display); color:var(--muted); letter-spacing:.12em; }
+.archive-cabinet-head h2 { margin:0; overflow-wrap:anywhere; font:700 1.2rem/1.2 var(--font-display); text-transform:uppercase; letter-spacing:.06em; }
+.archive-cabinet-head > span { margin-left:auto; font:500 .75rem/1.4 var(--font-body); color:var(--body-text); }
+.archive-seasons { display:grid; gap:14px; list-style:none; padding:0; margin:0; }
+.archive-season { padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--bg-2); min-width:0; }
+.archive-season.is-featured { border-top:3px solid var(--gold,#cda746); background:linear-gradient(135deg,color-mix(in srgb,var(--gold,#cda746) 7%,var(--bg-2)),var(--bg-2) 60%); }
+.archive-season-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
+.archive-season-head > span:first-child { display:flex; align-items:baseline; gap:8px; }
+.archive-season-head strong { font:700 1.9rem/1 var(--font-display); letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+.archive-season-head small,.archive-title-label { color:var(--body-text); font:700 .65rem/1.3 var(--font-display); letter-spacing:.08em; }
+.archive-title-label { display:flex; align-items:center; gap:5px; text-align:right; }
+.archive-title-label .ico-sm { width:16px; height:16px; flex:none; }
+.archive-winner { display:flex; align-items:center; gap:12px; min-width:0; }
+#view.view[data-page-system][data-route="history"] .archive-winner > .dfl-team-mark { width:48px; height:48px; flex:none; }
+#view.view[data-page-system][data-route="history"] .archive-season.is-featured .archive-winner > .dfl-team-mark { width:64px; height:64px; }
+.archive-winner > div { min-width:0; font:700 1.05rem/1.25 var(--font-body); overflow-wrap:anywhere; }
+.archive-season.is-featured .archive-winner > div { font-size:1.3rem; }
+.archive-winner .tiny { margin-top:4px; font:500 .75rem/1.4 var(--font-body); }
+.archive-winner .archive-lock { display:block; color:var(--muted); font:500 .7rem/1.4 var(--font-body); margin-top:4px; }
+.archive-runner { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:18px; padding-top:12px; border-top:1px solid var(--line); }
+.archive-runner > small { color:var(--muted); font:700 .65rem/1.4 var(--font-display); letter-spacing:.08em; }
+.archive-runner > div { display:flex; align-items:center; gap:8px; font:600 .8rem/1.3 var(--font-body); min-width:0; overflow-wrap:anywhere; }
+#view.view[data-page-system][data-route="history"] .archive-runner .dfl-team-mark { width:28px; height:28px; flex:none; }
+.archive-runner .tiny { display:none; }
+.archive-source { margin:12px 0 0; color:var(--muted); font:500 .7rem/1.5 var(--font-body); }
+
+/* Five actual grades, a quiet league-relative meter and one route to detail. */
+.scout-summary { margin:0 0 20px; padding:16px 0; border-block:1px solid var(--line); }
+.scout-summary > header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+.scout-summary header small { color:var(--muted); font:700 .65rem/1.4 var(--font-display); letter-spacing:.1em; }
+.scout-summary h2 { margin:4px 0 0; font:700 1.05rem/1.3 var(--font-body); }
+.scout-overall { display:grid; gap:3px; text-align:right; }
+.scout-overall > strong { font:700 1.9rem/1 var(--font-display); }
+.scout-units { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+.scout-unit { min-width:0; display:grid; gap:6px; }
+.scout-unit > small { font:700 .7rem/1.3 var(--font-display); color:var(--muted); letter-spacing:.06em; }
+.scout-unit > strong { font:700 1.4rem/1 var(--font-display); }
+.scout-meter { display:block; height:3px; border-radius:3px; background:var(--line); overflow:hidden; }
+.scout-meter i { display:block; height:100%; background:var(--accent); }
+.scout-rank { font:500 .65rem/1.4 var(--font-body); color:var(--body-text); }
+.scout-summary footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; }
+.scout-summary footer > span { font:700 .8rem/1.3 var(--font-body); }
+.scout-summary footer small { display:block; margin-top:3px; font:700 .6rem/1.4 var(--font-display); letter-spacing:.07em; color:var(--muted); }
+.scout-summary footer button { flex:none; min-height:44px; padding:8px 0 8px 12px; border:0; background:transparent; color:var(--text); font:600 .8rem/1.4 var(--font-body); cursor:pointer; }
+.scout-summary footer button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+
+/* Profile uses the same team mark as matchups and the archive. */
+#view.view[data-page-system][data-route="profile"] .ph-avatar .ph-team-mark { width:68px; height:68px; }
+#view.view[data-page-system][data-route="profile"] .ph-team-mark i { font-size:1.45rem; line-height:1; }
+#view.view[data-page-system][data-route="profile"] .ph-photo-btn { width:44px; height:44px; right:-12px; bottom:-12px; border:0; background:transparent; box-shadow:none; display:grid; place-items:center; isolation:isolate; }
+#view.view[data-page-system][data-route="profile"] .ph-photo-btn::before { content:""; position:absolute; width:28px; height:28px; border:2px solid var(--bg-2); border-radius:50%; background:var(--accent); z-index:-1; }
+#view.view[data-page-system][data-route="profile"] .ph-photo-btn::after { display:none; }
+#view.view[data-page-system][data-route="profile"] .profile-account-actions { padding:16px 0 0; border-top:1px solid var(--line); margin-top:16px; }
+
+/* More uses familiar grouped rows and retains the existing sheet controls. */
+#more .sheet-head { position:sticky; top:-16px; background:var(--bg-2); z-index:2; padding-block:8px 12px; }
+#more .quicknav-group + .quicknav-group { margin-top:14px; }
+#more .quicknav-group h2 { color:var(--muted); margin-bottom:4px; }
+#more .quicknav-group > div { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
+#more .quicknav-group a { border:0; border-bottom:1px solid var(--line); border-radius:0; min-height:44px; padding:10px 2px; background:transparent; gap:12px; }
+#more .quicknav-group a:last-child { border-bottom:0; }
+#more .quicknav-group a:hover { background:var(--bg-3); }
+#more .quicknav-group a::after { content:""; flex:none; margin-left:auto; margin-right:4px; width:6px; height:6px; border-right:1.5px solid var(--muted); border-top:1.5px solid var(--muted); transform:rotate(45deg); }
+#more .quicknav-group .qn-label { font:600 .85rem/1.4 var(--font-body); min-width:0; overflow-wrap:anywhere; }
+#more .quicknav-group .ico { width:18px; height:18px; }
+@media(min-width:700px) {
+  .archive-seasons { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .archive-season.is-featured { grid-column:1/-1; }
+  #more .quicknav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+  #more .quicknav-group + .quicknav-group { margin-top:0; }
+}
+@media(max-width:360px) {
+  .scout-units { gap:8px; }
+  .archive-season { padding:14px; }
+  .archive-season-head { gap:8px; }
+  .archive-title-label { font-size:.6rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #more .quicknav-group a { transition:none; transform:none; }
+}
+html[data-ui-motion="off"] #more .quicknav-group a { transition:none; transform:none; }
