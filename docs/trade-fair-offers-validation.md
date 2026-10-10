@@ -4,7 +4,7 @@ The Fair tab previously rejected balanced exchanges unless both rosters gained a
 
 Fair now requires at least 90% asset balance, useful incoming players for each roster, roster impact of at least −0.75 for each owner, and no more than a 1-point weekly lineup loss. Different gains are allowed: roster needs differ. Missing projections, production fallbacks, injuries, stale inputs, missing expert matches, and unavailable expert feeds still exclude an offer from Fair. Expert disagreement and limited samples remain review flags, shown as `FAIR · REVIEW DATA`; analyzing those offers still asks for review.
 
-The selected intent receives the full result budget before other categories. Shape and partner diversity remain. Multi-team Fair uses the least-balanced participant and the weakest roster/weekly impact, rather than checking only the first owner. Fair scoring rewards overall balance and mutual roster benefit.
+New and reset searches open Fair by default; an existing saved type choice is preserved. The selected intent receives the full result budget before other categories. Shape and partner diversity remain. Multi-team Fair uses the least-balanced participant and the weakest roster/weekly impact, rather than checking only the first owner. Fair scoring rewards overall balance and mutual roster benefit.
 
 Player prices, PPR settings, 1QB discounts, quarterback exclusions from Steal, sensitivity-band requirements, and frozen receipt interpretations are unchanged.
 

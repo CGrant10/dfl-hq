@@ -131,7 +131,7 @@ function tradeLab(team, teams, pool, shop) {
   const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length) + Math.max(0, parties.length - 2);
   const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
   shop.maxPlayers = maxPlayers;
-  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "aggressive";
+  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "fair";
   const shapeKeys = [];
   for (let send = 1; send < maxPlayers; send++) {
     for (let receive = 1; send + receive <= maxPlayers; receive++) {
@@ -249,8 +249,8 @@ function page(data, tradeAlerts = []) {
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true, destinations:{} };
   const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
-    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
-    openTiers: new Set(["aggressive"]), mode:"offers", customOpen: false, sharedAudit: [] };
+    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
+    openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
   const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
@@ -336,7 +336,7 @@ function page(data, tradeAlerts = []) {
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
-        shop.intent = "aggressive"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["aggressive"]); shop.customOpen = false;shop.mode="offers";
+        shop.intent = "fair"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["fair"]); shop.customOpen = false;shop.mode="offers";
       };
       body.addEventListener("change", event => {
         if (event.target.matches("[data-tb-member]")) {

@@ -49,7 +49,7 @@ with sync_playwright() as p:
                 sheet.locator(f'[data-picker-player="{value}"]').click()
                 page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
             else:node.select_option(value)
-        assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
+        assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
         # Primary player selectors stay visible with advanced preferences closed.
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
         assert page.locator('[data-trade-picker="send"]').is_visible()
