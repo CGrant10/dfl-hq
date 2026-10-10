@@ -1,6 +1,6 @@
 import {buildGameDay} from './game-day-model.js';
 import {matchupLineupHtml} from './game-day-lineup-comparison.js';
-import {clubhousePlayerStatLine} from './clubhouse-center-model.js';
+import {clubhousePlayerStatLine,clubhouseGameMetrics} from './clubhouse-center-model.js';
 import {clubhouseScoreboardHtml,clubhousePulseHtml,clubhouseTeamStatsHtml,clubhousePositionStatsHtml} from './clubhouse-center-ui.js';
 import {patchGameDay} from './game-day-dom.js';
 import {mountPlayerSpotlight} from './player-spotlight.js';
@@ -38,8 +38,9 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
   stopScores();stopScores=()=>{};
   card.style.setProperty('--clubhouse-left',accentOf(game.sides[0].identity));card.style.setProperty('--clubhouse-right',accentOf(game.sides[1].identity));
+  const {lead}=clubhouseGameMetrics(game,model.completed);
   for(const [i,side] of ['left','right'].entries()){
-   const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
+   const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.lead=String(lead?.side===side);const badge=surface.querySelector('.clubhouse-score-lead');if(badge){badge.textContent=lead?.side===side?lead.label:'';badge.setAttribute('aria-hidden',String(lead?.side!==side))}surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
   }
   const lines=new Map(game.sides.flatMap(t=>[...t.lineup,...t.bench]).map(p=>[`${p.roster}:${p.id}`,clubhousePlayerStatLine(p,stats,model)]));
   const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,last?matchupLineupHtml(game,{statLines:lines}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>');

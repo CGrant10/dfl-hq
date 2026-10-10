@@ -146,6 +146,7 @@ with sync_playwright() as p:
         click('[data-td-use-counter]');assert page.locator('[data-td-remove-pick="1"]').count()==2
         page.locator('[data-td-verdict]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: bilateral value wrapped'
+        assert page.locator('.td-cols').evaluate("e=>{const totals=[...e.querySelectorAll('.td-total b')].map(n=>n.getBoundingClientRect());return totals.length===2&&Math.abs(totals[0].bottom-totals[1].bottom)<1}"),f'{width}: unequal package totals do not align'
         page.screenshot(path=str(output/f'trade-{width}-verdict.png'))
         label=page.locator('.td-balance-label').bounding_box();ticket=page.locator('.td-ticket').bounding_box()
         assert label['x']>=ticket['x'] and label['x']+label['width']<=ticket['x']+ticket['width']

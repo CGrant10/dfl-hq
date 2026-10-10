@@ -12,6 +12,7 @@ on:
       - 'js/season-nav.js'
       - 'css/secondary-page-polish.css'
       - 'css/everyday-premium.css'
+      - 'css/stat-presentation.css'
       - 'js/member-wall.js'
       - 'js/wall-composer.js'
       - 'js/wall-photo-viewer*'

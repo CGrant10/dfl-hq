@@ -8,6 +8,7 @@ export function clubhouseGameMetrics(game,completed=false) {
  const [a,b]=game.sides,scores=[numeric(a.score),numeric(b.score)],phase=matchupPhase(a,b,completed);
  const margin=scores.some(v=>v===null)?null:rounded(Math.abs(scores[0]-scores[1]));
  const leader=margin?scores[0]>scores[1]?a:b:null;
+ const lead=margin&&!['unknown','upcoming'].includes(phase.key)?{side:scores[0]>scores[1]?'left':'right',margin,label:completed?'Winner':'Leading'}:null;
  const teams=game.sides.map(t=>{
   const players=(t.lineup||[]).filter(p=>!p.empty),known=players.length>0&&players.every(p=>p.state!=='unknown');
   return {team:t,live:known?players.filter(p=>p.state==='live').length:null,upcoming:known?players.filter(p=>p.state==='upcoming').length:null,finished:known?players.filter(p=>p.state==='final').length:null,total:players.length};
@@ -19,7 +20,7 @@ export function clubhouseGameMetrics(game,completed=false) {
   for(const side of ['left','right']){const points=numeric(row[side]?.points);entry[side]=entry[side]===null||points===null?null:rounded(entry[side]+points)}
   return result;
  },[]);
- return {phase,margin,leader,pressure,teams,positional};
+ return {phase,margin,leader,lead,pressure,teams,positional};
 }
 
 export function clubhouseLeaguePulse(model) {

@@ -34,6 +34,37 @@ url = f'http://127.0.0.1:{server.server_port}/'
 with urlopen(url) as response:
     print('Review document:', response.status, response.headers.get('Content-Type'), len(response.read()), flush=True)
 
+def check_player_form(page):
+    """Production form widget and sheet styles; fixture is explicitly labeled."""
+    page.evaluate("""async()=>{
+      const {playerFormHtml}=await import('./js/player-form.js'),{playerIdentity}=await import('./js/player-presentation.js');
+      const dialog=document.createElement('dialog');dialog.className='gameday-spotlight dfl-player-card';
+      dialog.innerHTML=`<header><h2>Demo player form</h2><button type="button">Close</button></header><div data-player-card-body><section class="player-card-hero"><span class="sr-only">Simulated stats</span>${playerIdentity({name:'Amon-Ra St. Brown',id:'demo-form',position:'WR',nflTeam:'DET'})}<div class="player-card-owner"><small>DFL ROSTER</small><strong>The Very Long Championship Bayou Bombers</strong></div></section>${playerFormHtml({season:2099,week:5,state:'live',recent:[{week:3,points:-2.5},{week:4,points:0},{week:5,points:24.62}]})}</div>`;
+      document.body.append(dialog);dialog.showModal();window.formReviewDialog=dialog;
+    }""")
+    results=[]
+    try:
+        for mode in ['light','dark','medicine','medicine-light','fairway','team:DET']:
+            page.evaluate('window.reviewSetTheme',mode)
+            for width in [320,390,768]:
+                page.set_viewport_size({'width':width,'height':844})
+                for size in ['100%','200%']:
+                    page.evaluate('size=>document.documentElement.style.fontSize=size',size)
+                    result=page.evaluate("""()=>{
+                      const d=window.formReviewDialog,body=d.querySelector('[data-player-card-body]'),chart=d.querySelector('svg'),b=d.getBoundingClientRect(),values=[...d.querySelectorAll('dd')];
+                      return {fits:b.left>=-1&&b.right<=innerWidth+1&&b.top>=-1&&b.bottom<=innerHeight+1,contentFits:body.scrollWidth<=body.clientWidth+1,valuesFit:values.every(e=>e.scrollWidth<=e.clientWidth+1),values:values.map(e=>e.childNodes[0].textContent),decorative:chart.getAttribute('aria-hidden')==='true',close:d.querySelector('button').offsetHeight};
+                    }""")
+                    assert result['fits'] and result['contentFits'] and result['valuesFit'] and result['decorative'] and result['close']>=44,result
+                    assert result['values']==['-2.50','0.00','24.62'],result
+                    results.append({'theme':mode,'width':width,'text':size,**result})
+                page.evaluate("document.documentElement.style.fontSize='100%'")
+            if mode in ['light','medicine']:
+                page.set_viewport_size({'width':390,'height':844})
+                page.screenshot(path=str(OUT/f'player-form-demo-{mode}-390.png'))
+    finally:
+        page.evaluate("window.formReviewDialog.close();window.formReviewDialog.remove();delete window.formReviewDialog;document.documentElement.style.fontSize='100%';window.reviewSetTheme('light')")
+    return results
+
 def check_score_consistency(page):
     # The earlier review deliberately disables effects to test reduced motion.
     page.emulate_media(reduced_motion='no-preference')
@@ -378,6 +409,8 @@ def check_clubhouse_center(page):
                   check([...card.querySelectorAll('.dfl-player-copy strong,.clubhouse-matchup-name strong,.gd-compare-head strong')].every(e=>e.scrollWidth<=e.clientWidth+1),'Clubhouse player/team name clips');
                   check([...root.querySelectorAll('[data-clubhouse-game],[data-clubhouse-motion]')].every(e=>e.offsetHeight>=44&&e.offsetWidth>=44),'Clubhouse controls too small');
                   check(!root.querySelector('.gd-moment-caption'),'Initial Clubhouse snapshot celebrated');
+                  check(card.querySelectorAll('.clubhouse-status-table tbody tr').length===3,'Starter status comparison is incomplete');
+                  check(card.querySelector('[data-lead="true"]')===card.querySelectorAll('.clubhouse-game-side')[1],'Actual leader cue points at the wrong side');
                   check(document.documentElement.scrollWidth<=innerWidth,'Clubhouse overflows phone');
                   return {width:innerWidth,pairedSlots:rows.length,namesFit:true,scoresAligned:true,allGamesVisible:true,touchTargets:true,initialQuiet:true,noOverflow:true};
                 }""")
@@ -438,6 +471,16 @@ def check_clubhouse_center(page):
             if width==390:
                 page.locator('[data-clubhouse-matchup]:not([hidden]) .gd-lineup-comparison h3').evaluate("e=>window.scrollBy({top:e.getBoundingClientRect().top-70,behavior:'instant'})")
                 page.screenshot(path=str(OUT/'clubhouse-demo-box-scores-390.png'))
+        result['leadTruth']=page.evaluate("""()=>{
+          const f=window.clubhouseFixture,check=(v,m)=>{if(!v)throw Error(m)},card=f.region.querySelector('[data-clubhouse-matchup="1"]');
+          const rows=f.rows.map(r=>({...r,points:r.roster_id%2?60:45}));
+          const statuses=key=>new Map([...f.nfl].map(([team,status])=>[team,{...status,key}]));
+          for(const state of ['upcoming','unknown']){f.center.update({rows,players:f.players,nfl:statuses(state)});check(!card.querySelector('[data-lead="true"]')&&!card.querySelector('td.is-ahead')&&!f.region.querySelector('.clubhouse-mini-team.is-leading'),'Pending/pregame snapshot claims a lead');}
+          f.center.update({rows,players:f.players,nfl:statuses('live')});check(card.querySelector('[data-lead="true"]')===card.querySelectorAll('.clubhouse-game-side')[0],'Lead flip did not move the cue');
+          f.center.update({rows:rows.map(r=>({...r,points:45})),players:f.players,nfl:statuses('live')});check(!card.querySelector('[data-lead="true"]'),'Tied game claims a lead');
+          f.center.update({rows:rows.map(r=>({...r,points:r.roster_id%2?null:45})),players:f.players,nfl:statuses('live')});check(!card.querySelector('[data-lead="true"]'),'Missing actual score claims a lead');
+          f.center.update({rows:f.rows,players:f.players,nfl:f.nfl});return {pregameQuiet:true,unknownQuiet:true,leadFlip:true,tiesQuiet:true,missingScoresQuiet:true};
+        }""")
         page.emulate_media(reduced_motion='reduce')
         page.wait_for_function("window.clubhouseFixture.region.querySelectorAll('.gd-moment-caption').length===0",timeout=5000)
         result['cleanup']=page.evaluate("""async()=>{const f=window.clubhouseFixture,check=(v,m)=>{if(!v)throw Error(m)};check(f.region.querySelectorAll('.gd-moment-caption').length===0,'Reduced motion left celebration');f.restoreStats();f.center.update({rows:f.rows,players:f.players,nfl:f.nfl,force:true});const line=f.region.querySelector('[data-clubhouse-stat-key]'),known=line.textContent;f.stop();f.pending({data:[]});await new Promise(r=>setTimeout(r,30));check(line.textContent===known,'Late stats mutated stopped Clubhouse');check(!f.region.querySelector('canvas')&&f.region.getAnimations({subtree:true}).filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Clubhouse stop left rendering alive');return {reducedMotion:true,canvasRemoved:true,animationsStopped:true,lateStatsIgnored:true}}""")
@@ -1024,6 +1067,7 @@ with sync_playwright() as p:
     metrics['momentEffects']=moment_effects
     metrics['matchupLineups']=matchup_lineups
     metrics['clubhouseCenter']=clubhouse_center
+    metrics['playerForm']=check_player_form(page)
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['consoleErrors'] = errors
