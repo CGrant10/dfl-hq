@@ -88,6 +88,8 @@ export function startUiMotion() {
 // Explicitly opt in ordinary control strips. Clubhouse and the event stages
 // keep their own motion controllers; no live score mutation is an entrance.
 const rails = [
+  { bar: '.home-week-tabs' }, { bar: '.home-position-tabs', panel: '[data-position-panel]:not([hidden])' },
+  { bar: '.home-feed-tabs' }, { bar: '.gd-watch-tabs' },
   { bar: '.sb-product-tabs' }, { bar: '.sb-tabs' }, { bar: '.page-activity-tabs' },
   { bar: '.td-entry-actions', panel: '.tb-custom,[data-tb-offers]' },
   { bar: '#hist-tabs', panel: '#hist-body' }, { bar: '#year-picker', panel: '#hist-body' },
@@ -126,9 +128,10 @@ export function mountPageMotion(root) {
       const bar = root.querySelector(spec.bar), button = bar?.querySelector(selectedSelector);
       if (!button || !bar.getClientRects().length) continue;
       let state = states.get(spec.bar);
-      if (!state || state.bar !== bar) {
+      if (!state || state.bar !== bar || !state.marker.isConnected) {
         if (state) { cancelUiMotion(state.marker); resize.unobserve(state.bar); for (const tab of state.buttons) resize.unobserve(tab); }
         const marker = document.createElement('span');
+        state?.marker?.remove();
         marker.className = 'dfl-selection-rail'; marker.setAttribute('aria-hidden', 'true');
         bar.dataset.uiRail = '1'; bar.append(marker); resize.observe(bar);
         const buttons = [...bar.querySelectorAll(':scope > button')];
@@ -163,12 +166,23 @@ export function mountPageMotion(root) {
     if (records.some(record => record.type === 'childList'
       ? [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1 && !node.matches('.dfl-selection-rail') && (node.matches(barSelector) || node.querySelector(barSelector))) || pending.size > 0
       : record.target.matches('button') && record.target.closest(barSelector))) schedule();
+    // Renderers that reconcile a live panel can remove our decorative marker.
+    // Reattach it without treating an unchanged selection as another entrance.
+    if (records.some(record => record.type === 'childList' && [...record.removedNodes].some(node => node.nodeType === 1 && node.matches('.dfl-selection-rail')))) schedule();
+    if (records.some(record => record.attributeName === 'hidden' || record.attributeName === 'open')) schedule(false);
   });
-  observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-selected', 'aria-pressed', 'class'] });
-  const click = event => {
+  observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-selected', 'aria-pressed', 'class', 'hidden', 'open'] });
+  const recordIntent = event => {
     const button = event.target.closest?.('button'), bar = button?.closest(barSelector);
     const spec = bar && rails.find(item => bar.matches(item.bar));
     if (spec) { intent = { bar: spec.bar, at: performance.now() }; schedule(); }
+  };
+  const keydown = event => {
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key)) recordIntent(event);
+  };
+  const click = event => {
+    const button = event.target.closest?.('button');
+    recordIntent(event);
     if (button?.matches('[data-tb-view-offers]')) { pending.set('[data-tb-offers]', performance.now() + 15000); schedule(); }
     const summary = event.target.closest?.('summary');
     if (summary?.parentElement.tagName === 'DETAILS') userDetails.add(summary.parentElement);
@@ -196,9 +210,12 @@ export function mountPageMotion(root) {
     // Clearing the class also prevents preference changes replaying the fade.
     if (event.target === root && event.animationName === 'ui-page-in') root.classList.remove('page-in');
   };
+  const settle = () => schedule(false);
+  document.fonts?.addEventListener('loadingdone', settle);
   const reset = () => { cancelUiMotion(root); root.classList.remove('page-in'); sync(false); };
   root.addEventListener('animationend', entryEnd);
   root.addEventListener('click', click, true);
+  root.addEventListener('keydown', keydown, true);
   root.addEventListener('toggle', toggle, true);
   root.addEventListener('change', change, true);
   window.addEventListener('dfl:ui-motion-change', reset);
@@ -215,9 +232,11 @@ export function mountPageMotion(root) {
   }
   return () => {
     stopped = true; cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); cancelUiMotion(root);
+    root.removeEventListener('keydown', keydown, true);
     root.removeEventListener('click', click, true); root.removeEventListener('toggle', toggle, true); root.removeEventListener('change', change, true);
     root.removeEventListener('animationend', entryEnd);
     window.removeEventListener('dfl:ui-motion-change', reset);
+    document.fonts?.removeEventListener('loadingdone', settle);
     for (const state of states.values()) { cancelUiMotion(state.marker); state.marker.remove(); delete state.bar.dataset.uiRail; }
     pending.clear();
   };

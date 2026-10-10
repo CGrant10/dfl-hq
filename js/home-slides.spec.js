@@ -63,15 +63,23 @@ describe("next move as a stage slide", () => {
     expect(slide.treatment).toBe("announcement");
     expect(slide.body).toContain("Dream Enders");
     expect(slide.body).toContain("A. Receiver");
+    expect(slide.scoutPlayer).toBe(move.trade.player);
     expect(slide.subtitle).toBe("WR need");
     expect(slide.href).toBe("#/analyzer?owner=u1");
     expect(slide.pinned).toBe(true);
+  });
+
+  it("uses the current team name for the scout's trade contact", () => {
+    const slide = nextMoveSlide({...move,trade:{...move.trade,team:{team_name:"Current Team",name:"Old Team"}}});
+    expect(slide.body).toContain("Ask Current Team");
+    expect(slide.body).not.toContain("Old Team");
   });
 
   it("falls back to the waiver lane when no trade candidate exists", () => {
     const slide = nextMoveSlide({ ...move, trade: null, waiver: { player: { name: "B. Sleeper" } } });
     expect(slide.body).toContain("B. Sleeper");
     expect(slide.body).toContain("unrostered");
+    expect(slide.scoutPlayer.name).toBe("B. Sleeper");
   });
 
   it("calls it an upgrade rather than a need when nothing is urgent", () => {

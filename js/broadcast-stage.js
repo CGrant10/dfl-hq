@@ -353,6 +353,16 @@ export function renderItem(item, { editorial = false } = {}) {
       <span class="bx-home-action">${esc(item.actionLabel)}<svg class="ico" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
     </a>`;
   }
+  if (editorial && item.generator === 'nextMove' && item.scoutPlayer) {
+    const player = item.scoutPlayer;
+    return `<a class="bx-slide bx-scout-story is-announcement" href="${esc(item.href || '#/analyzer')}">
+      <span class="bx-kicker">${esc(item.kicker)}</span>
+      <h2 class="bx-head">${esc(item.headline)}</h2>
+      <div class="bx-scout-target">${playerPortrait(player)}<div><small>${esc(item.subtitle)}</small><strong>${esc(player.name)}</strong><span>${esc([player.position, player.nflTeam || player.team].filter(Boolean).join(' · '))}</span></div></div>
+      <p class="bx-body">${esc(item.body)}</p>
+      <span class="bx-story-action">Review roster move <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></span>
+    </a>`;
+  }
   if (editorial && item.kind === 'trade' && item.tradeStory?.packages?.length) {
     const story = item.tradeStory, outcome = story.outcome;
     const headline = outcome?.grade || (item.figure == null ? 'Review needed' : 'The trade receipt');
@@ -618,7 +628,7 @@ export function startStage(root, deck, { refresh } = {}) {
     if (!editorial) return;
     const min = parseFloat(getComputedStyle(root).getPropertyValue("--bx-min-height"));
     if (!min) return;
-    const key = `${root.clientWidth}:${min}:${JSON.stringify(items)}`;
+    const key = `${root.clientWidth}:${min}:${getComputedStyle(document.documentElement).fontSize}:${JSON.stringify(items)}`;
     if (key !== layoutKey) {
       // Reserve the tallest card once per deck/width, so rotation never moves
       // GameDay. Measure real markup at its actual width without exposing a

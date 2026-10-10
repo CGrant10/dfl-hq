@@ -58,3 +58,7 @@ html[data-ui-motion="off"] #more * { transition:none!important; }
 @media(prefers-reduced-motion:reduce) {
   :is(.view[data-ui-polished],.dfl-player-card,.sb-slip,#more) :is(.btn,.linkbtn,.player-card-trigger) { transform:none!important; scale:1!important; transition:none!important; }
 }
+
+/* A single travelling line replaces each selected tab's static underline. */
+#home-wrap :is(.home-week-tabs,.home-position-tabs,.home-feed-tabs)[data-ui-rail] > button:is([aria-selected="true"],[aria-pressed="true"]) { box-shadow:none; }
+#view .gd-watch-tabs[data-ui-rail] > button[aria-selected="true"] { border-bottom-color:transparent; box-shadow:none; }

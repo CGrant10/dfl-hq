@@ -105,7 +105,7 @@ const deck = homeBroadcastDeck([
   { id: 'fixture:chip', treatment: 'champion', variant: 'chip', kicker: '2025 · Chip Eater', headline: 'Dream Enders', subtitle: 'Last place. One very hot chip.', temporal: 'historical', href: '#/history' },
   { id: 'fixture:champion-art', treatment: 'champion', kicker: '2024 · League champion', headline: 'Jack-HAMMER', subtitle: 'A season to remember.', image: 'assets/dfl-daily-champion.webp', background: 'image', imageFit: 'cover', imageX: 0, imageY: 0, imageZoom: 4, temporal: 'historical', href: '#/history' },
   tradeAlertSlide({ season: 2026, week: 5, fairness: 64, winner: 'Dream Enders', balanced: false, packages:[{teamName:'Dream Enders',players:[{id:'7564',name:'Ja’Marr Chase',nflTeam:'CIN'}]},{teamName:'Klutch Sports Group',players:[{id:'6794',name:'Justin Jefferson',nflTeam:'MIN'}]}],outcome:{grade:'Clear win'}, reason: { title: 'Dream Enders takes the better back.' }, lineupDeltas: [{ teamName: 'Dream Enders', weekly: 4.2 }], href: '#/trade?id=7' }),
-  nextMoveSlide({ week: 5, need: { position: 'WR', urgent: true }, mine: { sleeper_user_id: 'u1' }, trade: { team: { name: 'Klutch Sports Group' }, player: { name: 'Justin Jefferson' } }, waiver: null }),
+  nextMoveSlide({ week: 5, need: { position: 'WR', urgent: true }, mine: { sleeper_user_id: 'u1' }, trade: { team: { name: 'Klutch Sports Group' }, player: { id:'6794', name: 'Justin Jefferson', position:'WR', nflTeam:'MIN' } }, waiver: null }),
   matchupPreviewSlide({ pairing: { mine: { sleeper_user_id: 'me', name: 'Klutch Sports Group' }, theirs: { sleeper_user_id: 'them', name: 'Dream Enders' } }, weekly: { teams: [{ sleeper_user_id: 'me', projection: 124.8 }, { sleeper_user_id: 'them', projection: 118.2 }] }, meSleeperId: 'me', season: 2026, week: 5 }),
   { id: 'fixture:golf', treatment: 'scoreboard', kicker: 'Round 2 · 2v2', headline: 'Anniversary golf weekend', sides: [{ name: 'Grant & Mike', score: '6', identity: { display_name: 'Grant' } }, { name: 'Nick & Chris', score: '4', identity: { display_name: 'Nick' } }], scoreLabel: 'Holes', moodText: 'Down to the wire', whereText: 'Through 16 · Team Grant leads by two', temporal: 'live' },
   { id: 'fixture:slate', treatment: 'slate', kicker: '2026 · Week 5', fixtures: [{ key: 'fixture:matchup', a: { name: 'Klutch Sports Group', score: '124.80', status: '3 still playing', identity: { display_name: 'Grant' } }, b: { name: 'Dream Enders', score: '118.20', status: 'Final', identity: { display_name: 'Mike' } } }], temporal: 'live', href: '#/clubhouse' },
@@ -156,6 +156,7 @@ const tradeHeader = readFileSync(new URL('../js/pages/trade.js',import.meta.url)
 html = html.replace('</body>', `<script type="module">
   import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
+  import { mountPageMotion, startUiMotion } from './js/ui-motion.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
   import { syncTabIndicator, mountNavHighlight } from './js/nav-highlight.js';
@@ -183,6 +184,8 @@ html = html.replace('</body>', `<script type="module">
   wireHomeWeekHub(document.querySelector('#home-wrap'));
   wireHomeLeagueFeed(document.querySelector('#home-wrap'));
   wireHomeNewspaperSections(document.querySelector('#home-wrap'));
+  startUiMotion();
+  window.reviewPageMotion = mountPageMotion(document.querySelector('#view'));
   window.reviewDeck = deck;
   window.reviewHeaderSources = ${JSON.stringify({sportsbook:sportsbookHeader,trade:tradeHeader})};
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
