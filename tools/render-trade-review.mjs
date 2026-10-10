@@ -6,6 +6,7 @@ const production=source.slice(source.indexOf('const teamName'),source.indexOf('e
 const imports=`
 import {esc,errorBox,toast} from '/js/ui.js';
 import {mountTradeDesk,recommendationFor,tradeDeskMarkup,tradeReasons,verdictFor} from '/js/trade-desk.js';
+import {tradeConfidence} from '/js/trade-confidence.js';
 import {suggestMultiTeamTrades,suggestTrades} from '/js/team-analyzer.js';
 import {playerIdentity,playerPortrait} from '/js/player-presentation.js';
 import {teamIdentity,teamPortrait} from '/js/team-presentation.js';

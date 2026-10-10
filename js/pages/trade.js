@@ -18,6 +18,7 @@ import { esc, errorBox, toast } from "../ui.js";
 import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
+import { tradeConfidence } from "../trade-confidence.js";
 import { shareDeal } from "../trade-card.js";
 import { suggestMultiTeamTrades, suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
@@ -57,8 +58,9 @@ function offerPlayerRows(ids, pool) {
 }
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
-  const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
+  const review = tradeConfidence(offer)?.needsReview;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE${review ? " · REVIEW DATA" : ""}</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
+  const valueEdge = edge(offer), call = offer.tier === "fair" ? review ? "FAIR · REVIEW DATA" : "FAIR SHOT"
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
   const depth = Number(offer.depthDeltaA) || 0;
   return `<article class="tb-offer">
@@ -129,7 +131,7 @@ function tradeLab(team, teams, pool, shop) {
   const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length) + Math.max(0, parties.length - 2);
   const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
   shop.maxPlayers = maxPlayers;
-  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "aggressive";
+  const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "fair";
   const shapeKeys = [];
   for (let send = 1; send < maxPlayers; send++) {
     for (let receive = 1; send + receive <= maxPlayers; receive++) {
@@ -247,8 +249,8 @@ function page(data, tradeAlerts = []) {
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true, destinations:{} };
   const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
-    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "aggressive", visibleCount: OFFER_BATCH_SIZE,
-    openTiers: new Set(["aggressive"]), mode:"offers", customOpen: false, sharedAudit: [] };
+    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
+    openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
   const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
   if (saved) { selectedId = saved.selectedId; Object.assign(trade, saved.trade); Object.assign(shop, saved.shop); }
@@ -334,7 +336,7 @@ function page(data, tradeAlerts = []) {
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
         shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
-        shop.intent = "aggressive"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["aggressive"]); shop.customOpen = false;shop.mode="offers";
+        shop.intent = "fair"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["fair"]); shop.customOpen = false;shop.mode="offers";
       };
       body.addEventListener("change", event => {
         if (event.target.matches("[data-tb-member]")) {

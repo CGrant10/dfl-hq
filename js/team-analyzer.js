@@ -729,14 +729,15 @@ export function tradeSuggestionTier(result) {
     : weeklyA + (Number(result.depthDeltaA) || 0) * .35;
   const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB)
     : weeklyB + (Number(result.depthDeltaB) || 0) * .35;
-  const lineupGap = fitA - fitB;
-  /* Fair means both the asset exchange and the lineup consequence are close.
-     A steal requires a substantial asset gain beyond the sensitivity bands;
-     a roster-fit gain alone never establishes a cheap purchase. */
+  /* Fair describes a balanced asset exchange that works for both rosters.
+     Different roster needs can produce different gains from the same value.
+     Expert disagreement is a review flag, not an unfair price. */
   const confidence=tradeConfidence(result);
   const evidence=result.projectionEvidence;
   const dataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length&&!confidence?.needsReview;
-  if (result.fairness >= 90 && Math.abs(lineupGap) <= 1.25 && Math.min(fitA, fitB) >= -.75&&dataReady) return "fair";
+  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length
+    &&(!confidence||confidence.level!=="limited");
+  if (result.fairness >= 90 && Math.min(fitA, fitB) >= -.75 && Math.min(weeklyA, weeklyB) >= -1 && fairDataReady) return "fair";
   const supported=dataReady&&(!confidence||confidence.level==='strong');
   const clearsBand=result.incomingEvidence && result.outgoingEvidence
     ? result.incomingEvidence.low > result.outgoingEvidence.high : edge>=12;
@@ -856,15 +857,14 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
-  const quota = Math.max(1, Math.floor(limit / 3));
   const chooseDiverse = partnerId ? diverseOffers : diverseOffersAcrossPartners;
-  const selected = ["fair", "aggressive", "steal"].flatMap(tier => chooseDiverse(ranked.filter(offer => offer.tier === tier), quota));
-  if (selected.length < limit) {
-    for (const offer of ranked) {
-      if (selected.includes(offer)) continue;
-      selected.push(offer);
-      if (selected.length === limit) break;
-    }
+  // The page displays only the selected intent. Spend its full result budget
+  // on that tier before filling any remaining space with other categories.
+  const tiers = [intent, ...["fair", "aggressive", "steal"].filter(tier => tier !== intent)];
+  const selected = [];
+  for (const tier of tiers) {
+    selected.push(...chooseDiverse(ranked.filter(offer => offer.tier === tier), Math.max(0, limit - selected.length)));
+    if (selected.length >= limit) break;
   }
   return selected;
 }
@@ -902,14 +902,16 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
     const result = evaluateMultiTeamTrade({ teams: parties, sends: candidate.sends, pool });
     if (!result || result.projectionEvidence?.missing?.length || result.fairness < 40 || result.weeklyDeltas.some(n => n < -2.5)
       || result.rosterImpacts.some(n => n < -2.25) || result.usefulIncoming.some(ids => !ids.length)) return null;
-    const tier=tradeSuggestionTier({...result, fairness:result.partyBalances[0],valueToA:result.values[0],valueToB:result.outgoingValues[0],
-      rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.max(...result.rosterImpacts.slice(1)),
+    const tier=tradeSuggestionTier({...result, fairness:result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues[0],
+      rosterImpactA:result.rosterImpacts[0],rosterImpactB:Math.min(...result.rosterImpacts.slice(1)),
+      weeklyDeltaA:result.weeklyDeltas[0],weeklyDeltaB:Math.min(...result.weeklyDeltas.slice(1)),
       incomingEvidence:result.incomingEvidence[0],outgoingEvidence:result.outgoingEvidence[0],comparableStarPremium:result.comparableStarPremium[0],
       incomingPositionsA:result.incomingPositions[0]});
     return { ...result, parties, tier, other: parties[1], sendA: candidate.sends[0], sendB: candidate.sends.at(-1),
       valueToA: result.values[0], valueToB: result.outgoingValues[0], weeklyDeltaA: result.weeklyDeltas[0], depthDeltaA: result.depthDeltas[0],
-      score: result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5 };
-  }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, limit);
+      score: intent === "fair" ? result.fairness * 1.5 + result.rosterImpacts.reduce((a, b) => a + b, 0) * 10
+        : result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5 };
+  }).filter(Boolean).sort((a, b) => Number(b.tier === intent) - Number(a.tier === intent) || b.score - a.score).slice(0, limit);
 }
 
 export function isPlausibleTradeSuggestion(result) {
