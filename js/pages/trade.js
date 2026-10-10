@@ -18,6 +18,7 @@ import { esc, errorBox, toast } from "../ui.js";
 import { currentMember } from "../members.js";
 import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
+import { tradeConfidence } from "../trade-confidence.js";
 import { shareDeal } from "../trade-card.js";
 import { suggestMultiTeamTrades, suggestTrades } from "../team-analyzer.js";
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
@@ -57,8 +58,9 @@ function offerPlayerRows(ids, pool) {
 }
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
-  const valueEdge = edge(offer), call = offer.tier === "fair" ? "FAIR SHOT"
+  const review = tradeConfidence(offer)?.needsReview;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE${review ? " · REVIEW DATA" : ""}</b></header><div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
+  const valueEdge = edge(offer), call = offer.tier === "fair" ? review ? "FAIR · REVIEW DATA" : "FAIR SHOT"
     : offer.tier === "steal" ? "LONG SHOT" : valueEdge >= 8 ? "STRONG ASK" : "WORTH A TEXT";
   const depth = Number(offer.depthDeltaA) || 0;
   return `<article class="tb-offer">

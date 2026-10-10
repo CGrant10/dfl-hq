@@ -193,6 +193,15 @@ with sync_playwright() as p:
         click('[data-trade-picker="send"]');assert page.evaluate('window.pickerAnimations.length')>0
         page.locator('[data-picker-close]').click()
         page.evaluate("async()=>{const {savePageChoice}=await import('/js/page-disclosure.js');savePageChoice('gameday-motion','off');window.dispatchEvent(new Event('dfl:route-performance'))}");page.wait_for_function('!document.querySelector(".trade-player-picker").open')
+        # Balanced estimates with mixed expert support remain discoverable,
+        # and the offer visibly asks for review before it reaches the desk.
+        page.evaluate("""()=>{sessionStorage.clear();localStorage.clear();history.replaceState(null,'',location.pathname+'#/trade');for(const player of window.reviewData.pool.values()){player.expertFeedStatus='Fresh';player.expert={rank:12};player.expertDisagreement=true}window.renderReview()}""")
+        click('[data-tb-intent="fair"]')
+        assert page.locator('[data-tb-tier="fair"] .tb-offer').count()>0
+        assert page.locator('[data-tb-tier="fair"] .tb-offer > header > b').evaluate_all("es=>es.every(e=>e.textContent.includes('REVIEW DATA'))")
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+        page.locator('[data-tb-tier="fair"]').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
+        page.screenshot(path=str(output/f'trade-{width}-fair-review.png'))
         # Reflow at enlarged type and themes; closing keeps package state.
         page.evaluate("document.documentElement.style.fontSize='200%'")
         for mode in ['dark','light','team:KC']:

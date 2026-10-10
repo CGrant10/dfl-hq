@@ -231,7 +231,7 @@ describe("team analyzer", () => {
     expect(tradeSuggestionTier({ fairness: 94, valueToA: 94, valueToB: 100, weeklyDeltaA: .2, weeklyDeltaB: .1 })).toBe("fair");
     expect(tradeSuggestionTier({ fairness: 78, valueToA: 78, valueToB: 100, weeklyDeltaA: .8, weeklyDeltaB: .3 })).toBe("aggressive");
     expect(tradeSuggestionTier({ fairness: 78, valueToA: 100, valueToB: 78, weeklyDeltaA: .8, weeklyDeltaB: -.3 })).toBe("steal");
-    expect(tradeSuggestionTier({ fairness: 92, valueToA: 100, valueToB: 92, weeklyDeltaA: 2, weeklyDeltaB: -.2 })).toBe("aggressive");
+    expect(tradeSuggestionTier({ fairness: 92, valueToA: 100, valueToB: 92, weeklyDeltaA: 2, weeklyDeltaB: -.2 })).toBe("fair");
     expect(isPlausibleTradeSuggestion({ fairness: 25, weeklyDeltaA: 4, weeklyDeltaB: -4 })).toBe(false);
     expect(isPlausibleTradeSuggestion({ fairness: 82, weeklyDeltaA: 1.2, weeklyDeltaB: -.8 })).toBe(true);
     expect(isPlausibleTradeSuggestion({ fairness: 90, weeklyDeltaA: 1, weeklyDeltaB: 0,
