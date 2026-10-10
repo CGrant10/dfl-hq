@@ -497,7 +497,7 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
-    page.set_content(html, wait_until='domcontentloaded')
+    page.goto(url, wait_until='domcontentloaded')
     page.wait_for_function('!!window.reviewVfx', timeout=15000)
     page.locator('.bx-pause').click()
     page.locator('[data-bx-go="0"]').click()
@@ -675,14 +675,15 @@ with sync_playwright() as p:
             page.locator(f'[data-bx-go="{index}"]').focus()
             page.locator(f'[data-bx-go="{index}"]').press('Enter')
             page.wait_for_timeout(650)
+            page.wait_for_function("[...document.querySelector('.bx-stage').getAnimations({subtree:true})].every(a=>a.effect.getTiming().iterations===Infinity||a.effect.getComputedTiming().endTime>1500||!['running','pending'].includes(a.playState))", timeout=10000)
             layout = page.evaluate('''() => {
                 const stage=document.querySelector('.bx-stage'), slide=stage.querySelector('.bx-slide:not(.bx-leaving)'), box=slide.getBoundingClientRect();
-                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&getComputedStyle(e).display!=='none');
+                const elements=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
                 const crest=slide.querySelector('.bx-editorial-subject img'), copy=slide.querySelector('.bx-editorial-copy'), subject=slide.querySelector('.bx-editorial-subject'), artwork=subject?.getBoundingClientRect();
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyRight:copy.getBoundingClientRect().right,src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyBoxes:(getComputedStyle(copy).display==='contents'?[...copy.querySelectorAll('.bx-champ > *')]:[copy]).map(e=>e.getBoundingClientRect().toJSON()),src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -698,7 +699,7 @@ with sync_playwright() as p:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
                 assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
-                assert art['copyRight'] <= art['left'] - 8, f'Broadcast art overlaps the text column: {layout}'
+                assert all(b['right'] <= art['left'] - 8 or b['bottom'] <= art['top'] or b['top'] >= art['bottom'] for b in art['copyBoxes']), f'Broadcast art overlaps text: {layout}'
             layout['injuryRows'] = check_injury_layout(page)
             metrics['slides'].append(layout)
             if width == 390:
@@ -765,6 +766,86 @@ with sync_playwright() as p:
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
     page.locator('[data-page-detail="home-week"] summary').click()
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>e.open'), 'Weekly planning did not open'
+    page.bring_to_front()
+    page.wait_for_function("document.visibilityState==='visible'")
+    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
+    # Real touch events catch implicit pointer-capture handoffs on child text.
+    touch = context.new_cdp_session(page)
+    def swipe_week(dx, dy=0):
+        panel = page.locator('[data-week-panel]:not([hidden])')
+        panel.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-150,behavior:"instant"})')
+        page.wait_for_timeout(100)
+        box = panel.bounding_box()
+        x, y = box['x'] + box['width'] * (.8 if dx < 0 else .2), box['y'] + 30
+        touch.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+        for step in range(1,6):
+            touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
+            page.wait_for_timeout(20)
+        touch.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
+        page.wait_for_timeout(350)
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('[data-week-tab="brief"]').click()
+    for panel in ['picks','players','startsit']:
+        swipe_week(-120)
+        assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true', f'Touch swipe failed to open {panel}'
+        assert page.locator('.home-week-tabs').evaluate('e=>{const tab=e.querySelector("[aria-selected=true]").getBoundingClientRect(),rail=e.querySelector(".dfl-selection-rail").getBoundingClientRect();return Math.abs(tab.left-rail.left)<1&&Math.abs(tab.width-rail.width)<1}'), 'Swipe highlight did not land'
+    swipe_week(-120)
+    assert page.locator('[data-week-tab="startsit"]').get_attribute('aria-selected') == 'true', 'Last touch tab should not wrap'
+    swipe_week(120)
+    assert page.locator('[data-week-tab="players"]').get_attribute('aria-selected') == 'true', 'Reverse touch swipe failed'
+    swipe_week(0,-90)
+    assert page.locator('[data-week-tab="players"]').get_attribute('aria-selected') == 'true', 'Vertical scrolling changed tabs'
+    metrics['weekTouchNavigation'] = 'passed'
+    # Exercise the real player-card controller with isolated fast/slow data.
+    # Slow data must still connect after the sheet entrance has been released.
+    card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
+    context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));return '+json.dumps(card_model)+'}'))
+    page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards();window.reviewPortraitStarts=0;window.reviewOriginalAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.classList.contains('dfl-connected-portrait'))window.reviewPortraitStarts++;return window.reviewOriginalAnimate.apply(this,args)}}")
+    page.locator('[data-week-tab="players"]').click()
+    player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
+    player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
+    for delay in [75,350]:
+        page.evaluate('delay=>window.reviewCardDelay=delay', delay)
+        if delay == 75:
+            page.locator('[data-position-panel]:not([hidden]) .dfl-player-portrait').first.click()
+        else:
+            player.click()
+        try:
+            frames = page.wait_for_function("()=>{const e=document.querySelector('.dfl-connected-portrait:popover-open'),a=e?.getAnimations()[0];if(!a)return false;a.pause();return a.effect.getKeyframes()}", timeout=10000).json_value()
+        except Exception:
+            print('Connected detail diagnostic:', {'errors':errors,'state':page.evaluate("()=>({visible:document.visibilityState,motion:document.documentElement.dataset.uiMotion,source:document.querySelector('[data-position-panel]:not([hidden]) .dfl-player-portrait')?.getBoundingClientRect().toJSON(),target:document.querySelector('.player-card-hero .dfl-player-portrait')?.getBoundingClientRect().toJSON(),dialogOpen:document.querySelector('.dfl-player-card')?.open})")}, flush=True)
+            raise
+        assert 'scale(' in frames[0]['transform'] and frames[0]['transform'] != frames[-1]['transform'], 'Portrait does not travel from the source'
+        page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
+        page.wait_for_timeout(400)
+        assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
+        page.keyboard.press('Escape')
+        page.wait_for_timeout(250)
+        assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
+    page.evaluate('window.reviewCardDelay=75')
+    player.click()
+    page.wait_for_function("()=>{const a=document.querySelector('.dfl-connected-portrait:popover-open')?.getAnimations()[0];if(!a)return false;a.pause();return true}", timeout=10000)
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(300)
+    assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.dfl-player-card').evaluate('e=>!e.open'), 'Dismissal left a traveling portrait'
+    starts = page.evaluate('window.reviewPortraitStarts')
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','off');dispatchEvent(new Event('dfl:route-performance'))}")
+    player.click()
+    page.wait_for_timeout(500)
+    assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.player-card-hero').is_visible(), 'Motion-off player details failed'
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(220)
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
+    page.emulate_media(reduced_motion='reduce')
+    player.click()
+    page.wait_for_timeout(500)
+    assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(220)
+    page.evaluate("()=>{Element.prototype.animate=window.reviewOriginalAnimate}")
+    metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
+
     metrics['sectionNavigation'] = 'passed'
     metrics['expandedHome'] = []
     for mode in ['light','dark']:
@@ -928,7 +1009,7 @@ with sync_playwright() as p:
                 page.wait_for_timeout(500)
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
-                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&getComputedStyle(e).display!=='none');
+                  const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));
                   return {headline:slide.querySelector('h2')?.textContent,displaySizes:[...slide.querySelectorAll('.bx-head,.bx-name,.bx-home-title')].map(e=>parseFloat(getComputedStyle(e).fontSize)),copySizes:[...slide.querySelectorAll('.bx-sub,.bx-body,.bx-when-text')].map(e=>parseFloat(getComputedStyle(e).fontSize)),fit:content.every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom+1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures};
                 }''')
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'

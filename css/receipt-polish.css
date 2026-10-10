@@ -51,3 +51,6 @@
 }
 html[data-ui-motion="off"] .td-receipt-chevron { transition:none; }
 @media(prefers-reduced-motion:reduce) { .td-receipt-chevron { transition:none; } }
+
+/* Receipt expansion animates from its summary height, then returns to auto. */
+.td-completed .td-alert-receipt { box-sizing:border-box; }

@@ -108,7 +108,7 @@ const visible = node => {
 export function mountPageMotion(root) {
   if (['broadcast', 'arena-beta', 'golf'].includes(root.dataset.route) || root.dataset.route?.startsWith('arena')) return () => {};
   root.dataset.uiPolished = '1';
-  const states = new Map(), pending = new Map(), userDetails = new WeakSet();
+  const states = new Map(), pending = new Map(), userDetails = new WeakSet(), receiptOrigins = new WeakMap();
   let stopped = false, frame = null, intent = null;
   const current = () => !stopped && root.isConnected;
   const reveal = node => { if (visible(node)) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
@@ -185,7 +185,15 @@ export function mountPageMotion(root) {
     recordIntent(event);
     if (button?.matches('[data-tb-view-offers]')) { pending.set('[data-tb-offers]', performance.now() + 15000); schedule(); }
     const summary = event.target.closest?.('summary');
-    if (summary?.parentElement.tagName === 'DETAILS') userDetails.add(summary.parentElement);
+    if (summary?.parentElement.tagName === 'DETAILS') {
+      const details = summary.parentElement;
+      userDetails.add(details);
+      if (details.matches('.td-alert-receipt')) {
+        const height = details.getBoundingClientRect().height;
+        cancelUiMotion(details);
+        receiptOrigins.set(details, height);
+      }
+    }
     const fold = event.target.closest?.('.dfl-fold');
     if (fold) requestAnimationFrame(() => {
       if (current() && fold.getAttribute('aria-expanded') === 'true') {
@@ -197,6 +205,14 @@ export function mountPageMotion(root) {
     const details = event.target;
     if (!current() || !details.matches?.('details') || !userDetails.has(details)) return;
     userDetails.delete(details);
+    if (details.matches('.td-alert-receipt')) {
+      cancelUiMotion(details);
+      if (details.open && visible(details)) animateUi(details, [
+        { height:`${receiptOrigins.get(details) || details.querySelector('summary').offsetHeight}px` },
+        { height:`${details.offsetHeight}px` },
+      ], { duration:260 });
+      receiptOrigins.delete(details);
+    }
     if (!details.open || details.closest('.clubhouse-command-center')) return;
     for (const child of details.children) if (child.tagName !== 'SUMMARY') reveal(child);
   };

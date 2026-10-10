@@ -1,3 +1,4 @@
+import { mountSwipeTabs } from '../swipe-tabs.js';
 import {mountGameDay} from "../game-day.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
@@ -167,7 +168,7 @@ function outlookPlayerRow(player, index) {
     : player.opponent ? ` · vs ${player.opponent}` : "";
   const state = playerLiveState(player);
   const source = player.scoreSource === "actual" ? "Actual pts" : "Projected pts";
-  return `<li><b>${index + 1}</b>${playerIdentity(player, { detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource} is-${state.key}"><strong data-live-key="player:${esc(player.id)}" data-live-score="${Number(player.points).toFixed(1)}" data-live-state="${state.key}">${Number(player.points).toFixed(1)}</strong><small><span>${source}</span><span>${state.label}</span></small></em></li>`;
+  return `<li><b>${index + 1}</b>${playerIdentity(player, { interactive: true, detail: `${player.nflTeam || "FA"} · ${player.ownerName}${matchup}` })}<em class="is-${player.scoreSource} is-${state.key}"><strong data-live-key="player:${esc(player.id)}" data-live-score="${Number(player.points).toFixed(1)}" data-live-state="${state.key}">${Number(player.points).toFixed(1)}</strong><small><span>${source}</span><span>${state.label}</span></small></em></li>`;
 }
 
 function playerScoreLine(player) {
@@ -195,7 +196,6 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
     </nav>
     <div class="home-week-panels">
       <section id="home-week-panel-brief" class="home-outlook-block home-week-brief" role="tabpanel" aria-labelledby="home-week-tab-brief" data-week-panel="brief">
-        <div class="home-outlook-title"><div><small>PERSONAL INTELLIGENCE</small><h3>${esc(briefing?.title || "WEEKLY BRIEFING")}</h3></div><a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></div>
         <strong class="home-brief-headline">${esc(briefing?.headline || "Your week is taking shape")}</strong>
         <div class="home-brief-grid">
           <article><small>MATCHUP</small><span>${esc(briefing?.matchup || "Sleeper matchup pending")}</span></article>
@@ -203,22 +203,23 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
           <article><small>LINEUP CALL</small><span>${esc(briefing?.lineup || "Checking your starters")}</span></article>
           <article><small>NEXT MOVE</small><span>${esc(briefing?.action || "Keep the roster ready")}</span></article>
         </div>
+        <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
         ${changes.length ? `<aside class="home-signal-changes"><small>CHANGED SINCE LAST SYNC</small>${changes.slice(0, 3).map(change => `<span class="is-${change.impact}"><strong>${esc(change.name)}</strong><em>${esc(change.detail)}</em></span>`).join("")}</aside>` : ""}
       </section>
-      <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><div><small>CURRENT FORECAST</small><h3>WHO TAKES THE WEEK</h3></div><span>${predictions.length} MATCHUPS</span></div>
+      <section id="home-week-panel-picks" class="home-outlook-block home-outlook-games" role="tabpanel" aria-labelledby="home-week-tab-picks" data-week-panel="picks" hidden><div class="home-outlook-title"><h3>${predictions.length} matchups</h3></div>
         <div>${firstGames.map(gameRow).join("") || `<p class="home-outlook-empty">Matchups will appear when Sleeper publishes the slate.</p>`}</div>
         ${moreGames.length ? `<details class="home-outlook-more"><summary>VIEW ALL ${predictions.length} MATCHUPS</summary><div>${moreGames.map(gameRow).join("")}</div></details>` : ""}
       </section>
-      <section id="home-week-panel-players" class="home-outlook-block home-outlook-players" role="tabpanel" aria-labelledby="home-week-tab-players" data-week-panel="players" hidden><div class="home-outlook-title"><div><small>PLAYER FORECAST</small><h3>TOP 3 BY POSITION</h3></div><span>ACTUAL / PROJ</span></div>
+      <section id="home-week-panel-players" class="home-outlook-block home-outlook-players" role="tabpanel" aria-labelledby="home-week-tab-players" data-week-panel="players" hidden><div class="home-outlook-title"><h3>Top 3 by position</h3></div>
         <nav class="home-position-tabs" aria-label="Player position">${HOME_OUTLOOK_POSITIONS.map((position, index) => `<button type="button" data-position-tab="${position}" aria-pressed="${index === 0}">${position}</button>`).join("")}</nav>
-        <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><header><strong>${position}</strong><small>ACTUAL / PROJ</small></header><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
+        <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
       </section>
-      <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden><div class="home-outlook-title"><div><small>YOUR LINEUP</small><h3>START / SIT</h3></div><span>${esc(outlook.startSit?.teamName || "YOUR TEAM")}</span></div>
+      <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden><div class="home-outlook-title"><h3>${esc(outlook.startSit?.teamName || "Your team")}</h3></div>
         ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
         ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong>${playerScoreLine(swap.start)}</div><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong>${playerScoreLine(swap.sit)}</div><b class="home-lineup-gain">+${Number(swap.gain).toFixed(1)} <small>projected pts</small></b></article>`).join("")}</div>`
-          : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "NO MOVE WORTH FORCING" : "SET YOUR LINEUP"}</strong><span>${outlook.startSit?.lineupIsSet ? "The model sees no bench swap worth at least 1.5 points right now." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
-        <footer><span>Injuries, opponent difficulty and DFL scoring included.</span><a class="home-text-action" href="#/analyzer"><span>Review lineup in Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></footer>
+          : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "Lineup looks set" : "Set your lineup"}</strong><span>${outlook.startSit?.lineupIsSet ? "No bench swap projects a gain of 1.5+ points." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
+        <footer><a class="home-text-action" href="#/analyzer"><span>Review lineup in Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></footer>
       </section>
     </div>
   </section>`;
@@ -249,6 +250,7 @@ function wireHomeWeekHub(root) {
     setWeekPanel(next.dataset.weekTab);
     next.focus();
   }));
+  mountSwipeTabs(root.querySelector(".home-week-panels"), root.querySelector(".home-week-tabs"));
   root.querySelectorAll("[data-position-tab]").forEach(button => button.addEventListener("click", () => {
     const position = button.dataset.positionTab;
     root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));

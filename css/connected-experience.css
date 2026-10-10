@@ -90,3 +90,5 @@
 #view.view[data-pulse-system="1"][data-route="profile"] .profile-settings .experience-settings label small { color:var(--text); font-weight:400; }
 
 #view.view[data-pulse-system="1"][data-route="profile"] .profile-settings .experience-settings { background:transparent; border:0; }
+
+.dfl-player:has([data-player-card]) > .dfl-player-portrait { cursor:pointer; }

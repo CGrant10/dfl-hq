@@ -157,6 +157,7 @@ html = html.replace('</body>', `<script type="module">
   import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountPageMotion, startUiMotion } from './js/ui-motion.js';
+  import { mountSwipeTabs } from './js/swipe-tabs.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
   import { syncTabIndicator, mountNavHighlight } from './js/nav-highlight.js';
