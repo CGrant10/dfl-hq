@@ -60,7 +60,7 @@ Fresh captures from this review; each linked image was inspected.
 - [After: player leaders](/workspace/dfl-connected-1357/after-players.png)
 - [Before: narrow champion name](/workspace/dfl-connected-1357/before-champion.png)
 - [Phone champion composition](/workspace/dfl-connected-1357/broadcast-light-320-2.png)
-- [Phone Chip Eater composition](/workspace/dfl-connected-1357/broadcast-light-390-3.png)
+- [Phone Chip Eater composition](/workspace/dfl-connected-1357/fixture/slide-3-champion.png)
 - [Real player details](/workspace/dfl-connected-1357/real-player-detail.png)
 - [Real receipt details](/workspace/dfl-connected-1357/receipt-detail.png)
 

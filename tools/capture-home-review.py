@@ -766,6 +766,8 @@ with sync_playwright() as p:
     assert page.locator('[data-page-detail="home-league"]').evaluate('e=>e.open'), 'League news and activity did not open'
     page.locator('[data-page-detail="home-week"] summary').click()
     assert page.locator('[data-page-detail="home-week"]').evaluate('e=>e.open'), 'Weekly planning did not open'
+    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
     # Real touch events catch implicit pointer-capture handoffs on child text.
     touch = context.new_cdp_session(page)
     def swipe_week(dx, dy=0):
@@ -797,7 +799,7 @@ with sync_playwright() as p:
     # Slow data must still connect after the sheet entrance has been released.
     card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
     context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));return '+json.dumps(card_model)+'}'))
-    page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards()}")
+    page.evaluate("async()=>{const {mountPlayerCards}=await import('./js/player-card-actions.js');mountPlayerCards();window.reviewPortraitStarts=0;window.reviewOriginalAnimate=Element.prototype.animate;Element.prototype.animate=function(...args){if(this.classList.contains('dfl-connected-portrait'))window.reviewPortraitStarts++;return window.reviewOriginalAnimate.apply(this,args)}}")
     page.locator('[data-week-tab="players"]').click()
     player = page.locator('[data-position-panel]:not([hidden]) [data-player-card]').first
     player.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-240,behavior:"instant"})')
@@ -818,13 +820,21 @@ with sync_playwright() as p:
     page.keyboard.press('Escape')
     page.wait_for_timeout(300)
     assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.dfl-player-card').evaluate('e=>!e.open'), 'Dismissal left a traveling portrait'
+    starts = page.evaluate('window.reviewPortraitStarts')
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','off');dispatchEvent(new Event('dfl:route-performance'))}")
+    player.click()
+    page.wait_for_timeout(500)
+    assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.player-card-hero').is_visible(), 'Motion-off player details failed'
+    page.keyboard.press('Escape')
+    page.wait_for_timeout(220)
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
     page.emulate_media(reduced_motion='reduce')
     player.click()
     page.wait_for_timeout(500)
-    assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
+    assert page.evaluate('window.reviewPortraitStarts') == starts and page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero').is_visible(), 'Reduced-motion player details failed'
     page.keyboard.press('Escape')
     page.wait_for_timeout(220)
-    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("Element.prototype.animate=window.reviewOriginalAnimate")
     metrics['connectedPlayerDetails'] = {'fastData':True,'slowData':True,'cancelledTravel':True,'focusReturn':True,'reducedMotion':True}
 
     metrics['sectionNavigation'] = 'passed'
