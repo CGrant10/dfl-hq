@@ -44,7 +44,7 @@ def check_player_form(page):
     }""")
     results=[]
     try:
-        for mode in ['light','dark','medicine','medicine-light','fairway','team:DET']:
+        for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
             page.evaluate('window.reviewSetTheme',mode)
             for width in [320,390,768]:
                 page.set_viewport_size({'width':width,'height':844})
