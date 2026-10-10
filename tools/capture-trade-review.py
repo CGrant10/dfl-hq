@@ -6,6 +6,14 @@ from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1]
 output=Path(os.environ.get('DFL_TRADE_REVIEW_DIR','/workspace/dfl-trade-review'))
 class Handler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        # Theme rendering uses the real palette module with an isolated data
+        # boundary, just like the Trade page's roster and sharing fixtures.
+        name=self.path.split('?')[0]
+        body="export const db=()=>{throw Error('Review database writes are blocked')};" if name=='/js/supabase.js' else "export const currentMember=()=>null;" if name=='/js/members.js' else None
+        if body is not None:
+            self.send_response(200);self.send_header('Content-Type','text/javascript');self.end_headers();self.wfile.write(body.encode());return
+        super().do_GET()
     def translate_path(self,path):
         clean=path.split('?')[0].split('#')[0]
         return str(output/clean.removeprefix('/trade-review/')) if clean.startswith('/trade-review/') else str(root/clean.lstrip('/'))
@@ -32,21 +40,48 @@ with sync_playwright() as p:
             if not page.locator(summary).evaluate('e=>e.open'):click(summary+' > summary')
             click(f'[data-td-pick="{side}"][value="{pid}"]')
         def select(selector,value):
-            page.locator(selector).select_option(value)
+            node=page.locator(selector)
+            if node.get_attribute('hidden') is not None:
+                trigger=node.locator('xpath=preceding-sibling::button[1]')
+                trigger.click()
+                sheet=page.locator('.trade-player-picker[open]')
+                sheet.locator('input').fill(value if value.startswith('unknown') else page.evaluate('(id)=>window.reviewData.pool.get(id)?.name||id',value))
+                sheet.locator(f'[data-picker-player="{value}"]').click()
+                page.wait_for_function('!document.querySelector(".trade-player-picker")?.open')
+            else:node.select_option(value)
         assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
         # Primary player selectors stay visible with advanced preferences closed.
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
-        assert page.locator('[data-tb-add-anchor="send"]').is_visible()
-        assert page.locator('[data-tb-add-anchor="receive"]').is_visible()
+        assert page.locator('[data-trade-picker="send"]').is_visible()
+        assert page.locator('[data-trade-picker="receive"]').is_visible()
+        # Real sheet controls: search, position, keyboard and cancellation.
+        click('[data-trade-picker="send"]')
+        sheet=page.locator('.trade-player-picker[open]')
+        assert sheet.locator('h2').evaluate('e=>e===document.activeElement')
+        page.keyboard.press('Tab');assert sheet.locator('[data-picker-close]').evaluate('e=>e===document.activeElement')
+        page.keyboard.press('Tab');assert sheet.locator('input').evaluate('e=>e===document.activeElement')
+        sheet.locator('[data-picker-position="QB"]').click()
+        assert sheet.locator('[data-picker-player]').count()==1
+        sheet.locator('input').fill('Jefferson');assert sheet.locator('[data-picker-player]').count()==0
+        assert 'No matching' in sheet.locator('[data-picker-list]').inner_text()
+        sheet.locator('[data-picker-position="all"]').click();assert sheet.locator('[data-picker-player]').count()==1
+        sheet.locator('input').fill('st brown');assert sheet.locator('[data-picker-player="1-4"]').count()==1
+        assert sheet.locator('.dfl-player-portrait').first.evaluate('e=>e.offsetWidth===44&&e.offsetHeight===54')
+        assert sheet.locator('.dfl-player-copy').first.evaluate('e=>{const a=e.querySelector("strong").getBoundingClientRect(),b=e.querySelector("small").getBoundingClientRect();return a.bottom<=b.top+1}')
+        page.screenshot(path=str(output/f'trade-{width}-search-sheet.png'))
+        page.keyboard.press('Escape');page.wait_for_function('selector=>document.querySelector(selector)===document.activeElement',arg='[data-trade-picker="send"]')
+        assert page.locator('[data-tb-remove-anchor="send"]').count()==0
         select('[data-tb-add-anchor="send"]','1-4')
+        click('[data-trade-picker="send"]');assert page.locator('.trade-player-picker[open] [data-picker-player="1-4"]').count()==0
+        page.keyboard.press('Escape')
         select('[data-ta-shop-partner]','all')
-        assert page.locator('[data-tb-league-target]').is_visible()
+        assert page.locator('[data-trade-picker="league"]').is_visible()
         select('[data-tb-league-target]','3-3')
         assert page.locator('[data-ta-shop-partner]').input_value()=='3'
         assert page.locator('[data-tb-remove-anchor="send"][data-player-id="1-4"]').count()==1
         assert page.locator('[data-tb-remove-anchor="receive"][data-player-id="3-3"]').count()==1
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
-        assert page.locator('[data-tb-add-anchor="receive"]').evaluate('e=>e===document.activeElement')
+        assert page.locator('[data-trade-picker="receive"]').evaluate('e=>e===document.activeElement')
         click('[data-tb-intent="fair"]')
         page.wait_for_function("document.querySelector('[data-tb-tier]')?.dataset.tbTier==='fair'")
         packages=page.locator('[data-td-load-offer]').evaluate_all('(cards)=>cards.map(card=>({send:card.dataset.sendA.split(","),receive:card.dataset.sendB.split(",")}))')
@@ -138,6 +173,37 @@ with sync_playwright() as p:
         assert page.locator('.tb-refine').evaluate('e=>e.open')
         assert page.locator('[data-tb-remove-anchor="receive"][data-player-id="2-6"]').count()==1
         assert not page.locator('.td-custom').is_visible()
+        # A choice that disappears while the sheet is open cannot be applied.
+        anchor_count=page.locator('[data-tb-remove-anchor="send"]').count()
+        click('[data-trade-picker="send"]')
+        candidate=page.locator('.trade-player-picker[open] [data-picker-player]').first
+        invalid=candidate.get_attribute('data-picker-player')
+        page.evaluate("(id)=>{const select=document.querySelector('[data-tb-add-anchor=\"send\"]');[...select.options].find(o=>o.value===id).remove()}",invalid)
+        candidate.click();page.wait_for_function('!document.querySelector(".trade-player-picker").open')
+        assert page.locator('[data-tb-remove-anchor="send"]').count()==anchor_count
+        # Both motion preferences suppress sheet animations; changing the
+        # preference during dismissal still closes the sheet once.
+        page.evaluate("async()=>{const {startUiMotion}=await import('/js/ui-motion.js');startUiMotion();window.pickerAnimations=[];const original=Element.prototype.animate;Element.prototype.animate=function(frames,options){if(this.classList.contains('trade-player-picker'))window.pickerAnimations.push(frames);return original.call(this,frames,options)};}")
+        for preference,reduced in [('off','no-preference'),('on','reduce')]:
+            page.emulate_media(reduced_motion=reduced)
+            page.evaluate("async preference=>{const {savePageChoice}=await import('/js/page-disclosure.js');savePageChoice('gameday-motion',preference);window.dispatchEvent(new Event('dfl:route-performance'));window.pickerAnimations=[]}",preference)
+            click('[data-trade-picker="send"]');assert page.evaluate('window.pickerAnimations.length')==0
+            page.keyboard.press('Escape');page.wait_for_function('!document.querySelector(".trade-player-picker").open')
+        page.emulate_media(reduced_motion='no-preference');page.evaluate("async()=>{const {savePageChoice}=await import('/js/page-disclosure.js');savePageChoice('gameday-motion','on');window.dispatchEvent(new Event('dfl:route-performance'));window.pickerAnimations=[]}")
+        click('[data-trade-picker="send"]');assert page.evaluate('window.pickerAnimations.length')>0
+        page.locator('[data-picker-close]').click()
+        page.evaluate("async()=>{const {savePageChoice}=await import('/js/page-disclosure.js');savePageChoice('gameday-motion','off');window.dispatchEvent(new Event('dfl:route-performance'))}");page.wait_for_function('!document.querySelector(".trade-player-picker").open')
+        # Reflow at enlarged type and themes; closing keeps package state.
+        page.evaluate("document.documentElement.style.fontSize='200%'")
+        for mode in ['dark','light','team:KC']:
+            page.evaluate("async mode=>{const theme=await import('/js/theme.js');theme.saveMode(mode)}",mode)
+            click('[data-trade-picker="send"]')
+            modal=page.locator('.trade-player-picker[open]')
+            assert modal.evaluate('e=>e.scrollWidth<=e.clientWidth+1')
+            assert modal.locator('[data-picker-close]').is_visible()
+            assert modal.locator('[data-picker-list]').evaluate('e=>e.clientHeight>60')
+            page.screenshot(path=str(output/f'trade-{width}-large-{mode.replace(":","-")}.png'))
+            page.keyboard.press('Escape')
         assert not errors,errors
         results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'pageErrors':errors,'overflow':False})
         context.close()

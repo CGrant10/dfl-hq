@@ -15,6 +15,7 @@ import {tradeDraft,restoreTradeDraft} from '/js/trade-draft.js';
 import {tradePerspective,reconcileTradeDestinations} from '/js/trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '/js/trade-workspace.js';
 import {proposalsMarkup,tradeDataContext} from '/js/trade-workspace-ui.js';
+import {mountTradePlayerPickers,focusTradePicker} from '/js/trade-player-picker.js';
 import {tradeReviewFixture} from '/tools/trade-review-fixture.mjs';
 const currentMember=()=>({id:'trade-review'}),loadSharedTradeRecommendations=async()=>[],saveTradeRecommendation=async()=>{},tradeAlertViewModel=()=>null;
 const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};

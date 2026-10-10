@@ -25,6 +25,8 @@ import { imageFieldHtml, setImageFraming, setImageValue, wireImageFields } from 
    defined it rather than by a second reading of the same four columns. */
 import { artworkStyle } from "./broadcast-artwork.js";
 import { icon } from "./icons.js";
+import { mountWallComposer } from './wall-composer.js';
+import { mountWallPhotoViewer } from './wall-photo-viewer.js';
 import { identityByline, accentOf } from "./profile-identity.js";
 
 /* The crop surface is drawn as a string into the card, and its listeners are
@@ -104,14 +106,15 @@ const WALL_FRAMING = {
 };
 
 function composer() {
-  return `<form class="wall-form" data-wall-form>
-    <textarea name="body" maxlength="500" rows="2" placeholder="Talk your shit…" aria-label="Wall post" data-wall-body></textarea>
-    <div class="wall-picture">
+  return `<form class="wall-form wall-composer" data-wall-form>
+    <div class="wall-composer-entry">
+      <textarea name="body" maxlength="500" rows="1" placeholder="Talk your shit…" aria-label="Wall post" data-wall-body></textarea>
+      <button type="button" class="wall-photo-toggle" data-wall-photo-toggle aria-label="Add a photo" aria-expanded="false" aria-controls="wall-photo-tools">${icon('camera', { size:18 })}</button>
+      <button class="btn small wall-send" type="submit">Post</button>
+    </div>
+    <div class="wall-picture" id="wall-photo-tools" data-wall-photo-tools hidden>
       <span class="wall-picture-label">${icon("camera", { size: 15 })}<span>Picture (optional)</span></span>
       ${imageFieldHtml({ id: "wall-image", name: "image", preset: "backdrop", framing: WALL_FRAMING })}
-    </div>
-    <div class="wall-actions">
-      <button class="btn small wall-send" type="submit">Post</button>
     </div>
   </form>`;
 }
@@ -194,7 +197,7 @@ function postHtml(r,compact=false) {
     </div>
     ${r.body ? `<p class="wall-body" data-wall-body-display>${esc(r.body)}</p>` : `<p class="wall-body hidden" data-wall-body-display></p>`}
     ${editForm}
-    ${photoHtml(r, name, compact)}
+    ${r.image ? `<button type="button" class="wall-photo-open" data-wall-photo-open aria-label="Open photo posted by ${esc(name)}">${photoHtml(r, name, compact)}</button>` : ''}
     ${controls ? `<div class="wall-post-actions">${controls}</div>` : ""}
     ${reactionHtml(r.id)}
     ${threadHtml(r)}
@@ -295,6 +298,8 @@ export function wireWall(root, onChanged) {
   void wireReactions(root);
   const form = root.querySelector("[data-wall-form]");
   wireWallDraft(form,currentMember()?.id,"post");
+  mountWallComposer(form, signal);
+  mountWallPhotoViewer(root, signal);
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();

@@ -30,6 +30,7 @@ import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
 import {tradePerspective,reconcileTradeDestinations} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
 import {proposalsMarkup,tradeDataContext} from '../trade-workspace-ui.js';
+import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -290,6 +291,7 @@ function page(data, tradeAlerts = []) {
           <div data-td-health>${tradeModelHealthMarkup({ ...tradeModelHealth(data.pool), accountability: recommendationOutcomes(data.pool, localStorage,
             shop.sharedAudit.filter(row => !row.season || Number(row.season) === Number(data.projectionSeason))) }, esc, true)}</div>`;
         const share = body.querySelector("[data-td-share]");
+        mountTradePlayerPickers(body, data.pool, data.teams);
         mountTradeDesk(body.querySelector("[data-trade-desk]"), {
           team, teams: data.teams, pool: data.pool, state: trade, lockedIds:[...shop.sendAnchors,...shop.receiveAnchors], onPartnerChange: (focus={}) => {draw();if(focus.memberIndex!=null)body.querySelector(`[data-td-member="${focus.memberIndex}"]`)?.focus();else body.querySelector("[data-td-verdict]")?.scrollIntoView({behavior:"instant",block:"start"});},
           onDeal: current => {
@@ -359,7 +361,7 @@ function page(data, tradeAlerts = []) {
           shop.anchorPartnerId = String(owner.id);
           shop.receiveAnchors = [targetId];
           refreshOffers();
-          body.querySelector('[data-tb-add-anchor="receive"]')?.focus({ preventScroll: true });
+          focusTradePicker(body.querySelector('[data-tb-add-anchor="receive"]'));
           return;
         }
         const anchorSelect = event.target.closest("[data-tb-add-anchor]");
@@ -375,7 +377,7 @@ function page(data, tradeAlerts = []) {
             const countKey = side === "send" ? "sendCount" : "receiveCount";
             if (shop[countKey] !== "any" && Number(shop[countKey]) < list.length) shop[countKey] = "any";
           }
-          refreshOffers(); return;
+          refreshOffers(); focusTradePicker(body.querySelector(`[data-tb-add-anchor="${side}"]`)); return;
         }
         if (event.target.matches("[data-tb-send-count], [data-tb-receive-count]")) {
           const isSend = event.target.matches("[data-tb-send-count]");
