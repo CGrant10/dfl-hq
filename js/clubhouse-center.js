@@ -1,7 +1,7 @@
 import {buildGameDay} from './game-day-model.js';
 import {matchupLineupHtml} from './game-day-lineup-comparison.js';
 import {clubhousePlayerStatLine,clubhouseGameMetrics} from './clubhouse-center-model.js';
-import {clubhouseScoreboardHtml,clubhousePulseHtml,clubhouseTeamStatsHtml,clubhousePositionStatsHtml} from './clubhouse-center-ui.js';
+import {clubhouseScoreboardHtml,clubhousePulseHtml,clubhouseTeamStatsHtml,clubhousePositionStatsHtml,clubhouseScoreStripHtml} from './clubhouse-center-ui.js';
 import {patchGameDay} from './game-day-dom.js';
 import {mountPlayerSpotlight} from './player-spotlight.js';
 import {mountScoreVfx} from './score-vfx.js';
@@ -39,6 +39,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   stopScores();stopScores=()=>{};
   card.style.setProperty('--clubhouse-left',accentOf(game.sides[0].identity));card.style.setProperty('--clubhouse-right',accentOf(game.sides[1].identity));
   const {lead}=clubhouseGameMetrics(game,model.completed);
+  const scoreStrip=card.querySelector('[data-clubhouse-score-strip]');if(scoreStrip)patchGameDay(scoreStrip,clubhouseScoreStripHtml(game,model.completed));
   for(const [i,side] of ['left','right'].entries()){
    const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.lead=String(lead?.side===side);const badge=surface.querySelector('.clubhouse-score-lead');if(badge){badge.textContent=lead?.side===side?lead.label:'';badge.setAttribute('aria-hidden',String(lead?.side!==side))}surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
   }

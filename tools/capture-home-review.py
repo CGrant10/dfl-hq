@@ -435,6 +435,21 @@ def check_clubhouse_center(page):
             if width==390:
                 page.locator('[data-clubhouse-matchup]:not([hidden]) .clubhouse-game-teams').scroll_into_view_if_needed()
                 page.screenshot(path=str(OUT/'clubhouse-demo-head-to-head-390.png'))
+        result['scoreStrip']=[]
+        for width in [320,390,768,1000]:
+            page.set_viewport_size({'width':width,'height':844})
+            page.locator('[data-clubhouse-matchup]:not([hidden]) .gd-compare-row').nth(5).scroll_into_view_if_needed()
+            page.wait_for_timeout(250)
+            pinned=page.evaluate("""()=>{
+              const root=window.clubhouseFixture.region,strip=root.querySelector('[data-clubhouse-matchup]:not([hidden]) .clubhouse-pinned-score'),r=strip.getBoundingClientRect(),chrome=[...document.querySelectorAll('.topbar,.tabbar')].filter(e=>{const b=e.getBoundingClientRect();return b.top<150&&b.bottom>0}).reduce((bottom,e)=>Math.max(bottom,e.getBoundingClientRect().bottom),0),check=(v,m)=>{if(!v)throw Error(m)};
+              check(Math.abs(r.top-chrome)<2,'Clubhouse score strip overlaps app navigation or fails to pin');
+              check([...strip.querySelectorAll('strong')].every(e=>e.scrollWidth<=e.clientWidth+1&&e.scrollHeight<=e.clientHeight+1),'Clubhouse strip clips names');
+              check(strip.scrollWidth<=strip.clientWidth+1,'Clubhouse strip overflows');
+              check(strip.textContent.includes('40.00')&&strip.textContent.includes('45.00'),'Pinned scores differ from actual teams');
+              return {width:innerWidth,top:r.top,chrome,namesFit:true,scoresMatch:true,pinned:true};
+            }""")
+            result['scoreStrip'].append(pinned)
+            if width==390:page.screenshot(path=str(OUT/'clubhouse-score-strip-390.png'))
         page.set_viewport_size({'width':390,'height':844})
         page.evaluate("window.reviewSetTheme('light');window.clubhouseFixture.region.querySelector('.clubhouse-tabs').scrollIntoView({behavior:'instant',block:'start'})")
         result['polish']=page.evaluate("""async()=>{
@@ -508,7 +523,84 @@ def check_clubhouse_center(page):
         page.set_viewport_size({'width':390,'height':844})
     return result
 
+def check_watch_score_strip(page):
+    """Real Watch controller, with isolated reads and labeled sample teams."""
+    source=(ROOT/'js/game-day-watch.js').read_text().split('export function mountGameDayWatch')[1]
+    page.evaluate("""async source=>{
+      const helpers=Object.assign({},...await Promise.all(['ui','team-presentation','player-presentation','identity-rules','score-temperature','game-day-lineup-comparison','game-day-score-motion','game-day-experience-model','page-disclosure','game-day-dom','score-freshness','game-day-panels','clubhouse-matchup-model','watch-score-collapse'].map(name=>import(`./js/${name}.js`))));
+      const {buildGameDay}=await import('./js/game-day-model.js');
+      const members=[1,2,3,4].map(id=>({id,sleeper_user_id:`strip-${id}`,team_name:id===1?'The Very Long Championship Bayou Bombers':id===2?'Klutch Sports Group':`Demo Team ${id}`}));
+      const week={season:2099,week:6,leagueId:'strip-demo',completed:false,games:[1,2].map(id=>({matchup_id:id,user1:`strip-${id*2-1}`,user2:`strip-${id*2}`,roster1:id*2-1,roster2:id*2}))};
+      const players={},slots=['QB','RB','RB','WR','WR','TE','WR','K','DEF'];
+      const rows=members.map(m=>{const ids=slots.map((p,i)=>{const id=`strip-${m.id}-${i}`;players[id]={n:i===3?'Amon-Ra St. Brown':`Demo Player ${i+1}`,p,t:m.id<3?'SF':'DAL'};return id});const bench=`strip-bench-${m.id}`;players[bench]={n:'Demo Bench Player',p:'RB',t:'SF'};return {roster_id:m.id,points:m.id*20,starters:ids,players:[...ids,bench],players_points:Object.fromEntries([...ids,bench].map(id=>[id,4]))}});
+      let model=buildGameDay({week,rows,players,members,nfl:{teams:new Map([['SF',{key:'live'}],['DAL',{key:'upcoming'}]])}});model.live=true;model.checkedAt=Date.now();
+      let motion=true;
+      const root=document.createElement('section');document.querySelector('#view').append(root);
+      const mount=Function(...Object.keys(helpers),'db','currentMember','mountScoreVfx','mountPlayerSpotlight','loadRivalryCalls','rivalryStoryHtml','return function mountGameDayWatch'+source)(...Object.values(helpers),()=>({from:()=>({select:()=>({match:()=>({order:()=>({order:()=>({limit:async()=>({data:[]})})})})})})}),()=>null,()=>({stop(){}}),()=>({stop(){},update(){},setMotion(){}}),async()=>[],()=>'<p>Demo rivalry · sample matchup only</p>');
+      helpers.savePageChoice('watch-matchup-2099-6','1');helpers.savePageChoice('watch-tab','matchup');
+      const watch=mount(root,{getModel:()=>model,getHistory:()=>[],getMotion:()=>motion,members,onRefresh:async()=>{},onMotion:()=>{motion=!motion;watch.setMotion()}});
+      watch.open({tab:'matchup'});
+      const dialog=root.querySelector('dialog');
+      window.watchStripFixture={root,watch,dialog,get model(){return model},setMotion(value){motion=value;watch.setMotion()},setPhase(state){model.games[0].sides.forEach(t=>{t.live=state==='live'?9:0;t.known=state!=='unknown';t.starters.forEach(p=>p.state=state);t.lineup.forEach(p=>p.state=state)});watch.update()},final(){model.completed=true;watch.update()},stop(){watch.stop();root.remove()}};
+    }""",source)
+    page.wait_for_timeout(250)
+    result={'layouts':[]}
+    try:
+        for width in [320,390,768,1000]:
+            page.set_viewport_size({'width':width,'height':844})
+            for theme in ['light','dark','medicine','medicine-light','fairway','team:KC']:
+                page.evaluate('window.reviewSetTheme',theme)
+                page.evaluate("window.watchStripFixture.dialog.scrollTo({top:0,behavior:'instant'})")
+                page.wait_for_function("()=>{const d=window.watchStripFixture.dialog;return !d.classList.contains('is-score-compact')&&getComputedStyle(d.querySelector('.gd-watch-scoreboard')).paddingTop==='18px'&&getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight==='36px'}")
+                before=page.evaluate("""()=>{const d=window.watchStripFixture.dialog;return {score:getComputedStyle(d.querySelector('.gd-watch-scoreboard')).padding,number:getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).fontSize,mark:getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight,trans:getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).transition,compact:d.classList.contains('is-score-compact'),scroll:d.scrollTop,anchor:d.querySelector('[data-watch-score-anchor]').getBoundingClientRect().top,dialog:d.getBoundingClientRect().top,height:d.querySelector('.gd-watch-dashboard-inner').offsetHeight,row:d.querySelector('.gd-compare-row').getBoundingClientRect().top+d.scrollTop,total:d.scrollHeight}}""")
+                page.evaluate("window.watchStripFixture.dialog.scrollTo({top:420,behavior:'instant'})")
+                page.wait_for_function("()=>{const d=window.watchStripFixture.dialog;return d.classList.contains('is-score-compact')&&getComputedStyle(d.querySelector('.gd-watch-scoreboard')).paddingTop==='8px'&&getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight==='0px'&&getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).fontSize==='24px'}")
+                layout=page.evaluate("""()=>{
+                  const f=window.watchStripFixture,d=f.dialog,surface=d.querySelector('.gd-watch-dashboard-inner'),check=(v,m)=>{if(!v)throw Error(m)};
+                  check(d.classList.contains('is-score-compact'),'Score surface did not collapse');
+                  check(Math.abs(surface.getBoundingClientRect().top-d.getBoundingClientRect().top)<1,'Score strip is not pinned');
+                  check(d.scrollWidth<=d.clientWidth,'Watch overflows '+JSON.stringify({width:innerWidth,scroll:d.scrollWidth,client:d.clientWidth,children:[...d.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>d.getBoundingClientRect().right+1).slice(0,8).map(e=>({tag:e.tagName,parent:e.parentElement.outerHTML.slice(0,400),class:e.className,text:e.textContent.slice(0,50),rect:e.getBoundingClientRect().toJSON()}))}));
+                  check([...d.querySelectorAll('.gd-watch-score-team h3')].every(e=>e.scrollWidth<=e.clientWidth+1&&e.scrollHeight<=e.clientHeight+1),'Compact strip clips team names');
+                  check([...d.querySelectorAll('[data-watch-tab]')].every(e=>e.offsetHeight>=44),'Compact tabs lose touch target');
+                  return {width:innerWidth,height:surface.offsetHeight,row:d.querySelector('.gd-compare-row').getBoundingClientRect().top+d.scrollTop,total:d.scrollHeight,compact:true,pinned:true,namesFit:true,touchTargets:true,noOverflow:true};
+                }""")
+                assert layout['height']<before['height']-50,(before,layout)
+                assert abs(layout['row']-before['row'])<1 and layout['total']==before['total'],(before,layout)
+                result['layouts'].append({'theme':theme,**layout})
+                if width==390 and theme in ['light','medicine']:page.screenshot(path=str(OUT/f'watch-score-strip-{theme}-390.png'))
+        page.set_viewport_size({'width':390,'height':844})
+        page.wait_for_timeout(300)
+        result['refresh']=page.evaluate("""async()=>{
+          const f=window.watchStripFixture,d=f.dialog,check=(v,m)=>{if(!v)throw Error(m)},pause=()=>new Promise(r=>setTimeout(r,260));
+          const bench=d.querySelector('[data-watch-bench]');if(bench)bench.open=true;
+          const player=d.querySelector('[data-gameday-player]');player.focus({preventScroll:true});const top=d.scrollTop,row=player.getBoundingClientRect().top,debug={width:d.clientWidth,style:d.querySelector('.gd-watch-dashboard').style.cssText,surface:d.querySelector('.gd-watch-dashboard-inner').offsetHeight,score:getComputedStyle(d.querySelector('.gd-thermal-number')).fontSize};
+          f.model.games[0].sides[0].score=41.25;f.watch.update();await pause();
+          check(d.classList.contains('is-score-compact'),'Refresh expanded score strip');
+          check(d.scrollTop===top&&Math.abs(player.getBoundingClientRect().top-row)<1,'Score update moves scrolled lineup '+JSON.stringify({debug,before:top,after:d.scrollTop,rowBefore:row,rowAfter:player.getBoundingClientRect().top,height:d.querySelector('.gd-watch-dashboard').style.cssText}));
+          check(document.activeElement===player&&player.isConnected,'Score update drops focused player');
+          if(bench)check(bench.open,'Score update closes bench');
+          const select=d.querySelector('[data-watch-matchup]');select.value='2';select.dispatchEvent(new Event('change',{bubbles:true}));d.querySelector('[data-watch-start]')?.click();await pause();
+          check(d.dataset.phase==='upcoming'&&d.querySelector('.gd-watch-live').textContent.includes('Upcoming'),'Unrelated NFL live activity labels upcoming matchup live');
+          check(d.querySelector('.gd-watch-scoreboard').textContent.includes('Demo Team 3'),'Matchup switch retains old score');
+          const currentSelect=d.querySelector('[data-watch-matchup]');currentSelect.value='1';currentSelect.dispatchEvent(new Event('change',{bubbles:true}));f.setPhase('unknown');check(d.dataset.phase==='unknown','Unavailable schedule claims live');
+          f.setPhase('final');check(d.dataset.phase==='ongoing','Unfinished week marked officially final');
+          f.final();check(d.dataset.phase==='final'&&d.querySelector('.gd-watch-live').textContent.includes('Final'),'Completed matchup not final');
+          f.setMotion(false);check(getComputedStyle(d.querySelector('.gd-watch-scoreboard')).transitionDuration==='0s','Motion off still animates strip');
+          return {compactPreserved:true,scrollPreserved:true,focusPreserved:true,benchPreserved:true,selectedMatchupStatus:true,unknownHonest:true,completedFinal:true,motionOff:true};
+        }""")
+        page.emulate_media(reduced_motion='reduce')
+        assert page.locator('.gd-watch-scoreboard').evaluate("e=>getComputedStyle(e).transitionDuration")=='0s'
+        result['reducedMotion']=True
+    finally:
+        page.evaluate('window.watchStripFixture.stop();delete window.watchStripFixture')
+        page.emulate_media(reduced_motion='no-preference')
+        page.evaluate("window.reviewSetTheme('light')")
+        page.set_viewport_size({'width':390,'height':844})
+    return result
+
 def check_lineup_readiness(page):
+    # Contrast measures the settled palette, never an animated theme blend.
+    page.emulate_media(reduced_motion="reduce")
     """Exercise actual warning markup without inventing live league scores."""
     page.evaluate("""async()=>{
       const {matchupLineupHtml}=await import('./js/game-day-lineup-comparison.js');
@@ -553,6 +645,7 @@ def check_lineup_readiness(page):
         return {'layouts':results,'initiallyCollapsed':True,'warningRemovalPreservesFocus':True,'finalWarningsHidden':True}
     finally:
         page.evaluate('window.readinessFixture.root.remove();window.reviewSetTheme("light")')
+        page.emulate_media(reduced_motion="no-preference")
 
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
@@ -1156,6 +1249,7 @@ with sync_playwright() as p:
     metrics['matchupLineups']=matchup_lineups
     metrics['clubhouseCenter']=clubhouse_center
     metrics['playerForm']=check_player_form(page)
+    metrics['watchScoreStrip'] = check_watch_score_strip(page)
     metrics['lineupReadiness'] = check_lineup_readiness(page)
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)

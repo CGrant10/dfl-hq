@@ -30,3 +30,9 @@ export function clubhousePositionStatsHtml(game,completed=false) {
  const leader=row=>!['unknown','upcoming'].includes(phase.key)&&row.left!=null&&row.right!=null&&row.left!==row.right?(row.left>row.right?'left':'right'):null;
  return `<details class="clubhouse-position-stats"><summary>Points by position</summary><table><caption class="sr-only">Actual starting-lineup points by position</caption><thead><tr><th scope="col">Position</th>${game.sides.map(t=>`<th scope="col">${esc(t.name)}</th>`).join('')}</tr></thead><tbody>${positional.map(r=>`<tr><th scope="row">${esc(r.label)}</th>${['left','right'].map(side=>`<td${leader(r)===side?' class="is-ahead"':''}>${pts(r[side])}</td>`).join('')}</tr>`).join('')}</tbody></table></details>`;
 }
+
+// This is a score reference at the start of the lineup, not a second hero.
+export function clubhouseScoreStripHtml(game,completed=false) {
+ const {phase,lead}=clubhouseGameMetrics(game,completed);
+ return `<div class="clubhouse-score-strip" role="group" aria-label="Selected matchup scores"><span class="clubhouse-strip-phase" data-state="${esc(phase.key)}">${esc(phase.label)}</span><div class="clubhouse-strip-teams">${game.sides.map((team,index)=>`<div class="clubhouse-strip-team"${lead?.side===(index?'right':'left')?' data-leading="true"':''}>${teamPortrait({team_name:team.name,identity:team.identity})}<strong>${esc(team.name)}</strong><b aria-label="${esc(team.name)}: ${pts(team.score)} ${completed?'final':'actual'} points">${pts(team.score)}</b></div>`).join('')}</div></div>`;
+}

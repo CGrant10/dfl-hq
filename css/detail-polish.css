@@ -47,12 +47,11 @@
 .dfl-player-card .player-card-actions a { font-weight:700; }
 .dfl-player-card :is(button,a):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 
-/* A single team-label row follows the lineup, including an expanded bench.
+/* Score strips keep team context pinned; lineup labels stay in normal flow.
    clip keeps the hero contained without creating a sticky scroll container. */
 #view .clubhouse-command-center :is(.clubhouse-section,.clubhouse-matchup-card) { overflow:clip; }
-#view .clubhouse-command-center .gd-compare-head { position:sticky; top:var(--topbar-h,44px); z-index:5; padding:10px 0; background:var(--bg); border-bottom:1px solid var(--line); box-shadow:0 3px 0 color-mix(in srgb,var(--bg) 92%,transparent); }
-.gameday-watch .gd-compare-head { position:sticky; top:0; z-index:5; padding-block:10px; background:var(--bg); }
-@media(min-width:900px) { #view .clubhouse-command-center .gd-compare-head { top:calc(var(--topbar-h,44px) + var(--season-nav-height,49px)); } }
+#view .clubhouse-command-center .gd-compare-head { position:static; padding:10px 0; background:var(--bg); border-bottom:1px solid var(--line); box-shadow:0 3px 0 color-mix(in srgb,var(--bg) 92%,transparent); }
+.gameday-watch .gd-compare-head { position:static; padding-block:10px; background:var(--bg); }
 
 /* The recommendation is read before the package; numbers align underneath. */
 #view[data-route="trade"] .td-ticket { padding:14px; }
