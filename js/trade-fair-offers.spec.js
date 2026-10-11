@@ -23,10 +23,12 @@ describe('fair offer discovery',()=>{
  it.each(['missing','fallback','injuries','stale'])('does not call %s player inputs fair',field=>{
   expect(tradeSuggestionTier(balanced({[field]:['Player']}))).toBe('aggressive');
  });
- it('withholds fair for unavailable expert evidence or an unmatched player',()=>{
+ it('retains fair balance and flags unavailable expert evidence or an unmatched player for review',()=>{
   const r=balanced();
   for(const expert of [{...r.projectionEvidence.expert,status:'Stale'},{...r.projectionEvidence.expert,missing:['Player']}]){
-   expect(tradeSuggestionTier(balanced({expert}))).toBe('aggressive');
+   const offer=balanced({expert});
+   expect(tradeSuggestionTier(offer)).toBe('fair');
+   expect(tradeConfidence(offer)).toMatchObject({level:'limited',needsReview:true});
   }
  });
  it('spends the Fair search budget on fair offers and respects small limits',()=>{

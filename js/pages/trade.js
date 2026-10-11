@@ -32,7 +32,7 @@ import { readViewMemory, writeViewMemory } from '../view-memory.js';
 import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
 import {tradePerspective,reconcileTradeDestinations} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
-import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy} from '../trade-workspace-ui.js';
+import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '../trade-workspace-ui.js';
 import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
@@ -152,6 +152,7 @@ function tradeLab(team, teams, pool, shop) {
   const result=shop.findOffers(cacheKey,query);
   const allOffers=result.offers||[],searching=result.state==='loading',failed=result.state==='error';
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
+  const closestOffers=closestTradeOffers(allOffers,intent),closestTier=closestOffers[0]?.tier;
   const representedTeams = new Set(tierOffers.map(offer => String(offer.other.id))).size;
   /* Keep earlier results on screen. The old four-card carousel reported the
      full generated count but silently replaced one batch with the next, so a
@@ -192,15 +193,18 @@ function tradeLab(team, teams, pool, shop) {
       </div>
     </section>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
-      <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
+      <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':closestOffers.length?`${closestOffers.length} alternatives`:`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
       <div class="tb-offers-card" aria-busy="${searching}">
         ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
-        <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
-        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position))}</div>`}
+        ${tierOffers.length || !closestOffers.length ? `<div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>` : ""}
+        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position),allOffers)}</div>`}
+        ${closestOffers.length ? `<div data-tb-closest><p class="tb-search-status">Closest available</p><div class="tb-tiers">${tierMarkup(closestTier,closestOffers,pool,true)}</div><button type="button" class="btn ghost small" data-tb-intent="${closestTier}">See all ${tierCopy[closestTier].title} offers</button></div>` : ""}
+        ${closestOffers.length ? "" : `
         <div class="tb-offer-actions">
           <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
           ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
         </div>
+        `}
         `}
       </div>
     </section>
@@ -548,9 +552,9 @@ function page(data, tradeAlerts = []) {
           shop.intent = value;
           offerGeneration++;search.cancel();shop.offerState=null;
           shop.openTiers=new Set([value]);
-          const options = intent.closest(".tb-intent-options");
+          const options = body.querySelector(".tb-intent-options");
           if (options) options.dataset.intent = value;
-          options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button === intent));
+          options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button.dataset.tbIntent === value));
           const offers=body.querySelector('[data-tb-offers]');if(offers){offers.inert=true;offers.setAttribute('aria-busy','true');}
           const stamp = shop.intentStamp = (shop.intentStamp || 0) + 1;
           setTimeout(() => { if (current()&&stamp === shop.intentStamp) refreshOffers(); }, 260);

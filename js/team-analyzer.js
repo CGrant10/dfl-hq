@@ -787,8 +787,11 @@ export function tradeSuggestionTier(result) {
   });
   // Questionable availability is already priced and still requires review.
   // Out/reserve players and unsupported inputs retain the stricter exclusion.
-  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&fairAvailability&&!evidence?.stale?.length
-    &&(!confidence||confidence.level!=="limited");
+  // Fair is a balanced modeled price and roster fit. An optional expert feed
+  // outage must not turn every balanced exchange into an aggressive ask.
+  // Keep its review flag and exclude stale expert ranks from player values;
+  // Steal still requires fresh, strong support below.
+  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&fairAvailability&&!evidence?.stale?.length;
   if (result.fairness >= 90 && Math.min(fitA, fitB) >= -.75 && Math.min(weeklyA, weeklyB) >= -1 && fairDataReady) return "fair";
   const supported=dataReady&&(!confidence||confidence.level==='strong');
   const clearsBand=result.incomingEvidence && result.outgoingEvidence
