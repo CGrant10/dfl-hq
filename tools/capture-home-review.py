@@ -551,10 +551,10 @@ def check_watch_score_strip(page):
             for theme in ['light','dark','medicine','medicine-light','fairway','team:KC']:
                 page.evaluate('window.reviewSetTheme',theme)
                 page.evaluate("window.watchStripFixture.dialog.scrollTo({top:0,behavior:'instant'})")
-                page.wait_for_timeout(260)
-                before=page.evaluate("""()=>{const d=window.watchStripFixture.dialog;return {compact:d.classList.contains('is-score-compact'),scroll:d.scrollTop,anchor:d.querySelector('[data-watch-score-anchor]').getBoundingClientRect().top,dialog:d.getBoundingClientRect().top,height:d.querySelector('.gd-watch-dashboard-inner').offsetHeight,row:d.querySelector('.gd-compare-row').getBoundingClientRect().top+d.scrollTop,total:d.scrollHeight}}""")
+                page.wait_for_function("()=>{const d=window.watchStripFixture.dialog;return !d.classList.contains('is-score-compact')&&getComputedStyle(d.querySelector('.gd-watch-scoreboard')).paddingTop==='18px'&&getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight==='36px'}")
+                before=page.evaluate("""()=>{const d=window.watchStripFixture.dialog;return {score:getComputedStyle(d.querySelector('.gd-watch-scoreboard')).padding,number:getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).fontSize,mark:getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight,trans:getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).transition,compact:d.classList.contains('is-score-compact'),scroll:d.scrollTop,anchor:d.querySelector('[data-watch-score-anchor]').getBoundingClientRect().top,dialog:d.getBoundingClientRect().top,height:d.querySelector('.gd-watch-dashboard-inner').offsetHeight,row:d.querySelector('.gd-compare-row').getBoundingClientRect().top+d.scrollTop,total:d.scrollHeight}}""")
                 page.evaluate("window.watchStripFixture.dialog.scrollTo({top:420,behavior:'instant'})")
-                page.wait_for_timeout(280)
+                page.wait_for_function("()=>{const d=window.watchStripFixture.dialog;return d.classList.contains('is-score-compact')&&getComputedStyle(d.querySelector('.gd-watch-scoreboard')).paddingTop==='8px'&&getComputedStyle(d.querySelector('.gd-watch-score-team > .dfl-team-mark')).maxHeight==='0px'&&getComputedStyle(d.querySelector('.gd-watch-score-team .gd-thermal-number')).fontSize==='24px'}")
                 layout=page.evaluate("""()=>{
                   const f=window.watchStripFixture,d=f.dialog,surface=d.querySelector('.gd-watch-dashboard-inner'),check=(v,m)=>{if(!v)throw Error(m)};
                   check(d.classList.contains('is-score-compact'),'Score surface did not collapse');
