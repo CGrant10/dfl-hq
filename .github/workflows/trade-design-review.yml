@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'js/trade-*'
+      - 'js/waiver-*'
+      - 'js/roster-coach-*'
+      - 'css/weekly-outlook.css'
+      - 'tools/*waiver-review*'
       - 'js/pages/trade.js'
       - 'js/pages/history.js'
       - 'js/pages/analyzer.js'
@@ -41,6 +45,7 @@ jobs:
       DFL_TRADE_REVIEW_DIR: ${{ github.workspace }}/trade-review-output
       DFL_WALL_REVIEW_DIR: ${{ github.workspace }}/trade-review-output/wall
       DFL_SECONDARY_REVIEW_DIR: ${{ github.workspace }}/trade-review-output/secondary
+      DFL_WAIVER_REVIEW_DIR: ${{ github.workspace }}/trade-review-output/waivers
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -60,6 +65,8 @@ jobs:
       - run: python tools/capture-wall-review.py
       - run: node tools/render-secondary-review.mjs
       - run: python tools/capture-secondary-review.py
+      - run: node tools/render-waiver-review.mjs
+      - run: python tools/capture-waiver-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

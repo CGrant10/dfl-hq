@@ -28,7 +28,7 @@ export const sleeper = {
   users:        (id)          => get(`/league/${id}/users`),
   rosters:      (id)          => get(`/league/${id}/rosters`, {signal:AbortSignal.timeout(12000)}),
   matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`, {signal:AbortSignal.timeout(12000)}),
-  transactions: (id, week)    => get(`/league/${id}/transactions/${week}`),
+  transactions: (id, week)    => get(`/league/${id}/transactions/${week}`, {signal:AbortSignal.timeout(12000)}),
   winnersBracket: (id)        => get(`/league/${id}/winners_bracket`),
   /* Last place is decided here, not by the regular-season table. See
      js/sleeper-bracket.js readLastPlace(). */
