@@ -22,6 +22,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Verify notification database filter with its production SDK
+        env:
+          DENO_TLS_CA_STORE: system
+        run: npx --yes deno@2.5.4 test --no-config --node-modules-dir=none --no-lock --allow-import supabase/functions/tests/matchup-moments-filter_test.ts
       - name: Sync built Arena runtime
         if: github.event_name == 'push'
         run: |

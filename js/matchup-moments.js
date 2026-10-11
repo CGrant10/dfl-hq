@@ -1,6 +1,8 @@
 import {matchupTeamView} from './clubhouse-matchup-model.js';
 
 export const MATCHUP_MOMENTS_CATEGORY='matchup_moments';
+// categories is JSONB. A JS array makes PostgREST serialize a Postgres array instead.
+export const MATCHUP_MOMENTS_FILTER=JSON.stringify([MATCHUP_MOMENTS_CATEGORY]);
 const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
 const hour=3600000;
 const rounded=value=>Math.round(value*100)/100;

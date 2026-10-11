@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
-import {MATCHUP_MOMENTS_CATEGORY,optedMatchupRecipients} from '../../../js/matchup-moments.js';
+import {MATCHUP_MOMENTS_CATEGORY,MATCHUP_MOMENTS_FILTER,optedMatchupRecipients} from '../../../js/matchup-moments.js';
 
 /*
   THE PREFLIGHT HAS TO ECHO WHAT THE BROWSER ASKS FOR, NOT A LIST WE MAINTAIN.
@@ -129,7 +129,7 @@ Deno.serve(async request => {
       targetIds = (commissioners || []).map(row => Number(row.member_id)).filter(Number.isSafeInteger);
     }
     if(moment){
-      const {data:opted,error}=await admin.from('push_subscriptions').select('member_id,enabled,categories').eq('enabled',true).in('member_id',targetIds).contains('categories',[MATCHUP_MOMENTS_CATEGORY]);
+      const {data:opted,error}=await admin.from('push_subscriptions').select('member_id,enabled,categories').eq('enabled',true).in('member_id',targetIds).contains('categories',MATCHUP_MOMENTS_FILTER);
       if(error)throw error;
       targetIds=optedMatchupRecipients(opted||[],targetIds);
       if(!targetIds.length)return json({ok:true,skipped:'no-opted-recipients',delivered:0});
