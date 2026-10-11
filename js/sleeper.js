@@ -11,8 +11,8 @@
 const BASE = "https://api.sleeper.app/v1";
 
 /** GET a Sleeper endpoint and return parsed JSON (or null for 404). */
-async function get(path) {
-  const res = await fetch(`${BASE}${path}`);
+async function get(path, options = {}) {
+  const res = await fetch(`${BASE}${path}`, options);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Sleeper API ${res.status} on ${path}`);
   return res.json();
@@ -24,7 +24,7 @@ export const sleeper = {
   league:       (id)          => get(`/league/${id}`),
   users:        (id)          => get(`/league/${id}/users`),
   rosters:      (id)          => get(`/league/${id}/rosters`),
-  matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`),
+  matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`, {signal:AbortSignal.timeout(12000)}),
   transactions: (id, week)    => get(`/league/${id}/transactions/${week}`),
   winnersBracket: (id)        => get(`/league/${id}/winners_bracket`),
   /* Last place is decided here, not by the regular-season table. See
@@ -192,6 +192,7 @@ const STATE_MS      = 15 * 60 * 1000;
 /** A manual league sync is an explicit request for a fresh analyzer model. */
 export async function clearSleeperAnalysisCache() {
   playersPromise = null;
+  playersFetchedAt = 0; playersPending = false; playerEpoch++;
   await Promise.all([
     caches.delete(STATS_CACHE), caches.delete(MARKET_CACHE), caches.delete(WEEKLY_CACHE),
     caches.delete(TREND_CACHE), caches.delete(PLAYER_CACHE),
@@ -288,34 +289,48 @@ const PLAYER_URL   = `${BASE}/players/nfl`;
 const PLAYER_CACHE_MS = 24 * 60 * 60 * 1000;
 
 let playersPromise = null;
+let playersFetchedAt = 0, playersPending = false, playerEpoch = 0;
 
 /**
  * Returns a { player_id: {name, position, team} } map.
  * First call may take a few seconds; after that it is instant.
  */
-export function loadPlayers() {
-  if (playersPromise) return playersPromise;
+export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
+  if (playersPromise && (playersPending || Date.now() - playersFetchedAt < maxAgeMs)) return playersPromise;
 
-  playersPromise = (async () => {
+  const epoch = playerEpoch;
+  playersPending = true;
+  const request = (async () => {
     const cache = await caches.open(PLAYER_CACHE);
     const hit = await cache.match(PLAYER_URL);
 
     if (hit) {
       const age = Date.now() - Number(hit.headers.get("x-fetched-at") || 0);
-      if (age < PLAYER_CACHE_MS) return trim(await hit.json());
+      if (age < maxAgeMs) {
+        const slim = trim(await hit.json());
+        if (epoch === playerEpoch) playersFetchedAt = Date.now() - age;
+        return slim;
+      }
     }
 
-    const res = await fetch(PLAYER_URL);
+    const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000)});
     if (!res.ok) throw new Error(`Could not load the Sleeper player list (${res.status})`);
     const raw = await res.json();
 
     // Store a slimmed copy - the full payload is mostly fields we never use.
     const slim = trim(raw);
-    await cache.put(PLAYER_URL, new Response(JSON.stringify(slim), {
-      headers: { "Content-Type": "application/json", "x-fetched-at": String(Date.now()) },
-    }));
+    const fetchedAt = Date.now();
+    if (epoch === playerEpoch) {
+      await cache.put(PLAYER_URL, new Response(JSON.stringify(slim), {
+        headers: { "Content-Type": "application/json", "x-fetched-at": String(fetchedAt) },
+      }));
+      playersFetchedAt = fetchedAt;
+    }
     return slim;
-  })().catch(error=>{playersPromise=null;throw error;});
+  })();
+  const pending = request.catch(error=>{if(playersPromise===pending)playersPromise=null;throw error;})
+    .finally(()=>{if(playersPromise===pending)playersPending=false;});
+  playersPromise = pending;
 
   return playersPromise;
 }

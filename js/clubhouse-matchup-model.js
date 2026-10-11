@@ -11,7 +11,7 @@ export function nflWeekStatuses(payload,season,week){
 }
 export function matchupTeamView(row,players={},schedule=null,{completed=false}={}){
  const ids=(row?.starters||[]).map(String).filter(id=>id!=='0');
- const starters=ids.map(id=>{const meta=players[id]||{},state=schedule?.get(club(meta.t));return{id,name:meta.n||`Player ${id}`,position:meta.p||'',nflTeam:meta.t||'',injuryStatus:completed?'':meta.i||'',points:number(row?.players_points?.[id]),state:completed?'final':state?.key||'unknown',afterHalftime:completed||state?.afterHalftime===true}});
+ const starters=ids.map(id=>{const meta=players[id]||{},state=schedule?.get(club(meta.t));return{id,name:meta.n||`Player ${id}`,position:meta.p||'',nflTeam:meta.t||'',injuryStatus:completed?'':meta.i||'',availabilityStatus:completed?'':meta.s||'',kickoff:state?.kickoff||null,gameLabel:state?.label||'',points:number(row?.players_points?.[id]),state:completed?'final':state?.key||'unknown',afterHalftime:completed||state?.afterHalftime===true}});
  const known=starters.length>0&&starters.every(p=>p.state!=='unknown');
  const remaining=completed?0:known?starters.filter(p=>p.state!=='final').length:null;
  const live=starters.filter(p=>p.state==='live').length;

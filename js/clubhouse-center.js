@@ -43,7 +43,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
    const surface=card.querySelector(`[data-score-${side}]`)?.closest('.clubhouse-game-side');if(surface){surface.dataset.lead=String(lead?.side===side);const badge=surface.querySelector('.clubhouse-score-lead');if(badge){badge.textContent=lead?.side===side?lead.label:'';badge.setAttribute('aria-hidden',String(lead?.side!==side))}surface.dataset.gamedayTeam=game.sides[i].roster;surface.querySelector('.clubhouse-remaining')?.classList.add('home-team-progress')}
   }
   const lines=new Map(game.sides.flatMap(t=>[...t.lineup,...t.bench]).map(p=>[`${p.roster}:${p.id}`,clubhousePlayerStatLine(p,stats,model)]));
-  const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,last?matchupLineupHtml(game,{statLines:lines}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>');
+  const lineup=card.querySelector('[data-clubhouse-lineup]');if(lineup)patchGameDay(lineup,last?matchupLineupHtml(game,{statLines:lines,completed:model.completed}):'<p class="clubhouse-stat-status">Checking the starting lineups…</p>');
   const teamStats=card.querySelector('[data-clubhouse-team-stats]');if(teamStats)patchGameDay(teamStats,last?clubhouseTeamStatsHtml(game,model.completed):'');
   const position=card.querySelector('[data-clubhouse-position-stats]');if(position)patchGameDay(position,last?clubhousePositionStatsHtml(game,model.completed):'');
   if(fxCard!==card){vfx?.stop();fxCard=card;vfx=mountScoreVfx(card)}

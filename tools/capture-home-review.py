@@ -118,26 +118,27 @@ def check_game_day_scope(page):
         import('./js/home-presentation.js'), import('./js/game-day-dom.js'),
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
-        import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js')
+        import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js'),
+        import('./js/live-score-refresh.js'), import('./js/score-freshness.js'), import('./js/game-day-readiness.js')
       ]));
       const check=(condition,message)=>{if(!condition)throw Error(message)};
       const region=document.createElement('div');region.innerHTML='<div></div><div></div>';document.body.append(region);
       const root=region.firstElementChild,detailsRoot=region.lastElementChild;
       const members=[{id:'scope-a',sleeper_user_id:'a',team_name:'Scope A'},{id:'scope-b',sleeper_user_id:'b',team_name:'Scope B'}];
       const week={leagueId:'fixture',season:2026,week:5,completed:false,games:[{matchup_id:1,user1:'a',roster1:1,user2:'b',roster2:2}]};
-      let refreshes=0,opens=0,resolveWeekly,fail=false,points=0,state='upcoming',openingState='pre',currentWeek=5;const weekly=new Promise(resolve=>resolveWeekly=resolve),noop=()=>{};
+      let refreshes=0,opens=0,resolveWeekly,fail=false,points=0,state='upcoming',openingState='pre',currentWeek=5,availability='Questionable';const weekly=new Promise(resolve=>resolveWeekly=resolve),noop=()=>{};
       const providers={
         loadLeagueState:async()=>({season:2026,currentWeek}),
         loadClubhouseIndex:async()=>{refreshes++;return [{season:2026,week:5}]},loadClubhouseWeek:async()=>week,
-        loadWeeklyRosters:async()=>{if(fail)throw Error('Fixture unavailable');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players:[String(n)],players_points:{[n]:n===1?points:0}}))},
-        loadPlayers:async()=>({'1':{n:'Scope One',p:'QB',t:'KC'},'2':{n:'Scope Two',p:'QB',t:'NO'}}),
+        loadWeeklyRosters:async()=>{if(fail)throw Error('Fixture unavailable');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:n===1?[String(n),'0']:[String(n)],players:[String(n)],players_points:{[n]:n===1?points:0}}))},
+        loadPlayers:async()=>({'1':{n:'Scope One',p:'QB',t:'KC',i:availability},'2':{n:'Scope Two',p:'QB',t:'NO'}}),
         loadNflGameDay:async(season,week)=>({teams:new Map(['KC','NO'].map(t=>[t,{key:state}])),payload:{events:[{id:`opening-${week}`,date:'2099-10-09T00:15:00Z',status:{type:{state:week===5?openingState:'pre'}}}]}}),
-        sleeper:{league:async()=>({roster_positions:['QB']})},loadLore:async()=>({matchups:[]}),
+        sleeper:{league:async()=>({roster_positions:['QB','RB']})},loadLore:async()=>({matchups:[]}),
         reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
         matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
         loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
         mountPlayerSpotlight:()=>({update:noop,setMotion:noop,stop:noop}),
-        mountGameDayWatch:()=>({open:()=>opens++,update:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
+        mountGameDayWatch:()=>({open:()=>opens++,update:noop,updateFreshness:noop,redraw:noop,setMotion:noop,wantsMoments:()=>false,stop:noop}),
       };
       helpers.savePageChoice('gameday-motion','on');helpers.savePageChoice('gameday-tab','mine');
       const deps={...helpers,...providers};
@@ -162,8 +163,18 @@ def check_game_day_scope(page):
         detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='on','Moved effects missed the on choice');
         detailsRoot.querySelector('[data-gameday-board]').click();root.querySelector('[data-gameday-watch]').click();check(opens===2,'Watch entries stopped working');
         detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>refreshes===2&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
-        check(root.querySelector('[data-gameday-recovery]').hidden&&detailsRoot.querySelector('[data-gameday-freshness]').textContent.startsWith('Checked'),'Successful refresh did not clear busy/error state');
+        check(root.querySelector('[data-gameday-recovery]').hidden&&root.querySelector('[data-gameday-freshness]').textContent.startsWith('Checked'),'Successful refresh did not clear busy/error state');
         check(detailsRoot.querySelector('.gameday-home-detail').open,'Refresh closed the player details');
+        const warning=root.querySelector('[data-lineup-check]'),stamp=root.querySelector('[data-gameday-freshness]');
+        check(!warning.open&&warning.querySelector('summary').textContent.includes('1 open slot · 1 status flag'),'Pregame lineup check is missing or expanded');
+        warning.open=true;availability='Out';const beforeCatchup=refreshes;
+        window.dispatchEvent(new Event('online'));window.dispatchEvent(new Event('online'));
+        await until(()=>refreshes===beforeCatchup+1&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
+        check(root.querySelector('[data-lineup-check]').open&&root.querySelector('[data-lineup-check]').textContent.includes('Out'),'Catch-up lost expanded warnings or current availability');
+        check(stamp.dataset.scoreFreshness==='ready'&&getComputedStyle(stamp).display!=='none','Fresh score status must stay visible outside disclosures');
+        window.dispatchEvent(new Event('offline'));check(stamp.dataset.scoreFreshness==='offline'&&!!root.querySelector('.home-projected-total'),'Offline state discarded scores or claimed freshness');
+        window.dispatchEvent(new Event('online'));await until(()=>stamp.dataset.scoreFreshness==='ready');
+
         fail=true;detailsRoot.querySelector('[data-gameday-refresh]').click();
         check(detailsRoot.querySelector('[data-gameday-refresh]').getAttribute('aria-busy')==='true'&&detailsRoot.querySelector('[data-gameday-refresh]').textContent==='Refreshing…','Manual refresh lacks busy feedback');
         await until(()=>!root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
@@ -183,7 +194,7 @@ def check_game_day_scope(page):
         await until(()=>!root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
         check(!root.querySelector('.home-matchup-loading'),'Failed initial load left a loading skeleton');
         fail=false;root.querySelector('[data-gameday-retry]').click();await until(()=>!!root.querySelector('.gameday-matchup')&&root.querySelector('[data-gameday-recovery]').hidden);
-        return {forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true,kickoffOpens:true,betweenGamesOpen:true,activeWeekResets:true};
+        return {instantCatchup:true,offlineState:true,lineupWarnings:true,warningOpenPreserved:true,visibleFreshness:true,forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true,kickoffOpens:true,betweenGamesOpen:true,activeWeekResets:true};
       }finally{stop();region.remove()}
     }''', source)
 
@@ -193,7 +204,7 @@ def check_matchup_interactions(page):
     source=source[source.index('let stopCurrent='):].replace('export function','function')
     page.emulate_media(reduced_motion='reduce')
     result=page.evaluate('''async source=>{
-      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/matchup-chirp-ui.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js')]));
+      const helpers=Object.assign({},...await Promise.all([import('./js/clubhouse-matchup-model.js'),import('./js/clubhouse-matchup-cards.js'),import('./js/matchup-chirp-ui.js'),import('./js/game-day-score-motion.js'),import('./js/page-disclosure.js'),import('./js/ui.js'),import('./js/live-score-refresh.js'),import('./js/score-freshness.js')]));
       const check=(ok,message)=>{if(!ok)throw Error(message)};
       const until=async condition=>{for(let i=0;i<100&&!condition();i++)await new Promise(r=>setTimeout(r,10));check(condition(),'Matchup refresh did not settle')};
       const model={season:2026,week:5,leagueId:'fixture',completed:false,members:[],games:[{matchup_id:1,left:{roster:1,name:'The Very Long Bayou Championship Fantasy Football Bombers',score:0},right:{roster:2,name:'The Boys',score:0}}]};
@@ -218,15 +229,21 @@ def check_matchup_interactions(page):
         check(region.querySelector('[data-matchup-summary]').textContent.includes('leads by 6.20'),'Live lead summary missing');
         check(region.querySelector('[data-matchup-phase]').dataset.state==='live','Live badge missing');
         points=5.8;button.click();await until(()=>!button.disabled);check(region.querySelector('.gd-score-delta').textContent==='−0.40','Stat correction mislabeled');
-        fail=true;button.click();await until(()=>!button.disabled);check(value.textContent==='5.80'&&region.querySelector('[data-matchup-freshness]').textContent.includes('last scores'),'Failure discarded the last score');
+        fail=true;button.click();await until(()=>!button.disabled);check(value.textContent==='5.80'&&region.querySelector('[data-matchup-freshness]').textContent.includes('last checked'),'Failure discarded the last score');
         fail=false;points=10;button.click();await until(()=>!button.disabled);check(value.textContent==='10.00'&&button.textContent==='Refresh scores'&&!button.hasAttribute('aria-busy'),'Retry did not recover');
+        const beforeCatchup=calls;points=12;window.dispatchEvent(new Event('online'));window.dispatchEvent(new Event('online'));
+        await until(()=>calls===beforeCatchup+1&&!button.disabled);check(value.textContent==='12.00','Clubhouse did not catch up on reconnect');
+        const panel=document.createElement('div');panel.id='clubhouse-panel-matchups';panel.hidden=true;region.append(panel);
+        const beforeHidden=calls;window.dispatchEvent(new Event('online'));await new Promise(r=>setTimeout(r,120));check(calls===beforeHidden,'Hidden matchup panel refreshed');
+        panel.hidden=false;region.dispatchEvent(new CustomEvent('dfl:clubhouse-tab',{detail:{tab:'matchups'}}));await until(()=>calls===beforeHidden+1&&!button.disabled);panel.remove();
+
         const preview=region.querySelector('[data-chat-preview]');await until(()=>preview.dataset.talkState==='empty');check(preview.textContent.includes('No replies yet.')&&!preview.textContent.includes('0 REPLIES'),'Quiet conversation is noisy');
         reply={body:'<img src=x onerror=alert(1)> '+('Long reply '.repeat(24)),members:{display_name:'<b>The Boys</b>'}};replyCount=2;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='active');check(!preview.querySelector('img,b')&&preview.querySelector('.clubhouse-talk-author').textContent==='<b>The Boys</b>'&&preview.querySelector('.clubhouse-talk-body span').textContent.endsWith('…')&&preview.textContent.includes('2 REPLIES'),'Reply preview lost safe content or metadata');window.reviewActiveTalkHTML=region.innerHTML;
         previewError=true;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='error');check(preview.textContent.includes('Preview unavailable.'),'Unavailable preview masquerades as empty');
         previewError=false;reply=null;replyCount=0;button.click();await until(()=>!button.disabled&&preview.dataset.talkState==='empty');check(!preview.querySelector('.clubhouse-talk-author')&&!preview.textContent.includes('REPLIES'),'Recovered empty preview keeps stale reply');
         stop();await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));check(!region.querySelector('.gd-score-delta')&&[...region.querySelectorAll('[data-gameday-total-key]')].every(e=>e.getAnimations({subtree:true}).filter(a=>a.constructor===Animation&&a.playState==='running').length===0),'Stopping left score feedback alive: '+JSON.stringify({badges:region.querySelectorAll('.gd-score-delta').length,animations:[...region.querySelectorAll('[data-gameday-total-key]')].flatMap(e=>e.getAnimations({subtree:true}).filter(a=>a.playState==='running').map(a=>({type:a.constructor.name,name:a.animationName,property:a.transitionProperty,target:a.effect?.target?.className,timing:a.effect?.getTiming()})))}));
         const count=calls;button.click();await new Promise(r=>setTimeout(r,30));check(calls===count,'Stopped refresh listener still ran');
-        window.reviewMatchupCardHTML=region.innerHTML;return {initialLoad:true,actualGain:true,scoreCorrection:true,reducedMotion:true,liveSummary:true,busyState:true,failurePreservesScores:true,retryRecovery:true,cleanup:true,quietConversation:true,safeReply:true,previewRecovery:true};
+        window.reviewMatchupCardHTML=region.innerHTML;return {instantCatchup:true,hiddenPanelPaused:true,tabCatchup:true,initialLoad:true,actualGain:true,scoreCorrection:true,reducedMotion:true,liveSummary:true,busyState:true,failurePreservesScores:true,retryRecovery:true,cleanup:true,quietConversation:true,safeReply:true,previewRecovery:true};
       }finally{active=false;stop();region.remove();helpers.savePageChoice('gameday-motion','off')}
     }''',source)
     thread_source=(ROOT/'js/weekly-clubhouse-ui.js').read_text()
@@ -490,6 +507,52 @@ def check_clubhouse_center(page):
         page.evaluate("window.reviewSetTheme('light')")
         page.set_viewport_size({'width':390,'height':844})
     return result
+
+def check_lineup_readiness(page):
+    """Exercise actual warning markup without inventing live league scores."""
+    page.evaluate("""async()=>{
+      const {matchupLineupHtml}=await import('./js/game-day-lineup-comparison.js');
+      const {lineupCheckHtml}=await import('./js/game-day-readiness.js');
+      const {patchGameDay}=await import('./js/game-day-dom.js');
+      const root=document.createElement('section');root.className='view';root.id='readiness-fixture';
+      const side=(roster,name)=>({roster,name,lineup:[
+        {id:'7547',name:'Amon-Ra St. Brown',position:'WR',slot:'WR',slotType:'WR',slotIndex:3,roster,state:'upcoming',points:0,injuryStatus:'Questionable',kickoff:'2026-10-11T17:00:00Z'},
+        {id:'6786',name:'CeeDee Lamb',position:'WR',slot:'WR',slotType:'WR',slotIndex:4,roster,state:'upcoming',points:0,injuryStatus:'Out',kickoff:'2026-10-11T20:25:00Z'},
+        {id:'empty',empty:true,name:'Empty slot',slot:'Flex',slotType:'FLEX',slotIndex:6,roster,state:'unknown',points:null}
+      ],bench:[]});
+      const game={id:'readiness',sides:[side('1','The Very Long Bayou Championship Fantasy Football Bombers'),side('2','Klutch Sports Group')]};
+      let completed=false;
+      const markup=()=>`<div id="home-wrap"><section class="gameday-card"><p>Lineup check preview · Demo lineups</p>${lineupCheckHtml([game.sides[0]],{completed})}<p class="live-score-freshness" data-score-freshness="ready">Checked just now</p></section></div><div class="clubhouse-page clubhouse-command-center"><article class="clubhouse-matchup-card">${matchupLineupHtml(game,{completed})}</article></div>`;
+      root.innerHTML=markup();document.querySelector('#view').append(root);
+      if([...root.querySelectorAll('[data-lineup-check]')].some(e=>e.open))throw Error('Lineup warnings must start collapsed');
+      root.querySelectorAll('[data-lineup-check]').forEach(e=>e.open=true);
+      const button=root.querySelector('[data-gameday-player]');button.focus();
+      const warnings=game.sides.map(t=>t.lineup.map(p=>({...p})));
+      game.sides.forEach(t=>t.lineup=t.lineup.filter(p=>!p.empty).map(p=>({...p,injuryStatus:''})));patchGameDay(root,markup());
+      if(document.activeElement!==button||!button.isConnected)throw Error('Removing warnings lost player focus');
+      game.sides.forEach((t,i)=>t.lineup=warnings[i]);patchGameDay(root,markup());root.querySelectorAll('[data-lineup-check]').forEach(e=>e.open=true);
+      window.readinessFixture={root,finish(){completed=true;patchGameDay(root,markup());if(root.querySelector('[data-lineup-check]'))throw Error('Final week still has actionable warnings')}};
+    }""")
+    results=[]
+    try:
+        for mode in ['light','dark','medicine','medicine-light','fairway','team:KC']:
+            page.evaluate('window.reviewSetTheme',mode)
+            for width in [320,390,768]:
+                page.set_viewport_size({'width':width,'height':1100})
+                page.locator('#readiness-fixture').scroll_into_view_if_needed()
+                layout=page.evaluate("""()=>{const root=window.readinessFixture.root;return {
+                  overflow:document.documentElement.scrollWidth>innerWidth,
+                  warningFits:[...root.querySelectorAll('[data-lineup-check]')].every(e=>e.scrollWidth<=e.clientWidth+1&&e.querySelector('summary').offsetHeight>=44),
+                  paired:[...root.querySelectorAll('.gd-compare-row')].every(e=>{const cells=[...e.querySelectorAll('.gd-compare-player')].map(c=>c.getBoundingClientRect());return cells[0].right<cells[1].left&&e.scrollWidth<=e.clientWidth+1}),
+                  freshnessVisible:getComputedStyle(root.querySelector('.live-score-freshness')).display!=='none',
+                  contrast:window.reviewTextContrast(root).failures};}""")
+                assert not layout['overflow'] and layout['warningFits'] and layout['paired'] and layout['freshnessVisible'] and not layout['contrast'],(mode,width,layout)
+                results.append({'mode':mode,'width':width,**layout})
+                if width==390:page.locator('#readiness-fixture').screenshot(path=str(OUT/f'lineup-readiness-{mode.replace(":","-")}.png'))
+        page.evaluate('window.readinessFixture.finish()')
+        return {'layouts':results,'initiallyCollapsed':True,'warningRemovalPreservesFocus':True,'finalWarningsHidden':True}
+    finally:
+        page.evaluate('window.readinessFixture.root.remove();window.reviewSetTheme("light")')
 
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
@@ -1093,6 +1156,7 @@ with sync_playwright() as p:
     metrics['matchupLineups']=matchup_lineups
     metrics['clubhouseCenter']=clubhouse_center
     metrics['playerForm']=check_player_form(page)
+    metrics['lineupReadiness'] = check_lineup_readiness(page)
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
     metrics['consoleErrors'] = errors
