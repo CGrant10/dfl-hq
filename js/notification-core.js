@@ -3,6 +3,7 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
   ["wall", "The Wall", "Replies and mentions · optional on this phone"],
   ["trades", "Trades", "Completed deals and breaking trade alerts"],
   ["matchups", "Matchups", "Live scores, injury backups and kickoff reminders"],
+  ["matchup_moments", "Matchup moments", "Late close games and your final score · optional"],
   ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
   ["sportsbook", "Sportsbook", "Settled tickets, wins and losses"],
   ["waivers", "Waivers", "Useful pickups and roster movement"],
@@ -13,6 +14,7 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
 ]);
 
 export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) => id);
+export const BROADCAST_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.filter(([id]) => id !== "matchup_moments");
 /*
   WHAT A NEW DEVICE GETS, which is not everything.
 
@@ -23,19 +25,19 @@ export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) =>
   because of it loses the trades and the fee reminders too. Releases stay
   visible in What's New and behind Check for updates either way.
 
-  Wall conversations are also opt-in, so an existing phone never receives
-  unexpected chat pushes. The All preset explicitly opts in to Wall alerts.
+  Wall conversations and matchup moments are also opt-in. All explicitly
+  opts in to both; Game day opts in to matchup moments.
 
   Off by default, still one tap away in "What should reach this phone?".
   Existing devices keep whatever they already chose - this is the default for
   a NEW enrolment, not a migration.
 */
 export const DEFAULT_NOTIFICATION_CATEGORIES =
-  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates" && id !== "wall");
+  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates" && id !== "wall" && id !== "matchup_moments");
 
 export const NOTIFICATION_PRESETS = Object.freeze({
   essential: ["announcements", "trades", "fees", "matchups"],
-  gameday: ["matchups", "weekly", "sportsbook", "waivers"],
+  gameday: ["matchups", "matchup_moments", "weekly", "sportsbook", "waivers"],
   all: ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates"),
 });
 
