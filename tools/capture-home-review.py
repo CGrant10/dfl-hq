@@ -599,6 +599,8 @@ def check_watch_score_strip(page):
     return result
 
 def check_lineup_readiness(page):
+    # Contrast measures the settled palette, never an animated theme blend.
+    page.emulate_media(reduced_motion="reduce")
     """Exercise actual warning markup without inventing live league scores."""
     page.evaluate("""async()=>{
       const {matchupLineupHtml}=await import('./js/game-day-lineup-comparison.js');
@@ -643,6 +645,7 @@ def check_lineup_readiness(page):
         return {'layouts':results,'initiallyCollapsed':True,'warningRemovalPreservesFocus':True,'finalWarningsHidden':True}
     finally:
         page.evaluate('window.readinessFixture.root.remove();window.reviewSetTheme("light")')
+        page.emulate_media(reduced_motion="no-preference")
 
 def check_injury_layout(page):
     rows=page.locator('.bx-slide:not(.bx-leaving) .injury-player').evaluate_all("""rows=>rows.map(row=>{
