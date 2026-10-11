@@ -6,6 +6,7 @@ import {buildWatchlistRows} from './player-watchlist-model.js';
 import {playerIdentity} from './player-presentation.js';
 import {ensureStylesheet} from './lazy-css.js';
 import {team as nflClub} from './nfl-teams.js';
+import {createPlayerSearchIndex,searchPlayerIndex} from './player-search-index.js';
 const date=value=>value?new Date(value).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}):'';
 export function watchlistRowHtml(p,rosterId){
  const gain=p.offer?.gains.find(g=>g.week===p.offer.targetWeek)?.gain;
@@ -26,7 +27,7 @@ export function mountWatchButton(button,id){
 }
 export function mountPlayerWatchlist(host,{data,season,week}){
  const memberId=getMemberId(),member=currentMember();if(!memberId)return ()=>{};
- let snapshot=null,saved=[],items=[],busy=false,stopped=false,generation=0;
+ let snapshot=null,saved=[],items=[],busy=false,stopped=false,generation=0,indexedPlayers=null,searchIndex=[];
  const current=()=>!stopped&&host.isConnected&&String(getMemberId())===String(memberId);
  const ownRoster=()=>snapshot?.rosters.find(r=>String(r.owner_id)===String(member?.sleeper_user_id));
  void ensureStylesheet('css/player-watchlist.css');
@@ -42,8 +43,9 @@ export function mountPlayerWatchlist(host,{data,season,week}){
  const find=()=>{
   const query=search.value.trim().toLowerCase();
   if(!query||!snapshot){results.innerHTML='';return;}
-  const words=query.split(/\s+/),ids=new Set(saved.map(r=>r.player_id));
-  const matches=Object.entries(snapshot.players).filter(([id,p])=>['QB','RB','WR','TE','K','DEF'].includes(p.p)&&nflClub(p.t)&&words.every(w=>`${p.n} ${p.t} ${p.p}`.toLowerCase().includes(w))).slice(0,8);
+  const ids=new Set(saved.map(r=>r.player_id));
+  if(indexedPlayers!==snapshot.players){searchIndex=createPlayerSearchIndex(snapshot.players,{eligible:p=>['QB','RB','WR','TE','K','DEF'].includes(p.p)&&nflClub(p.t),fields:['n','t','p']});indexedPlayers=snapshot.players}
+  const matches=searchPlayerIndex(searchIndex,query,8);
   results.innerHTML=matches.length?matches.map(([id,p])=>`<button type="button" class="player-watch-result" data-watch-add="${esc(id)}" ${ids.has(id)?'disabled':''}><span>${esc(p.n)}<small>${esc(p.p)} · ${esc(p.t||'No NFL team')}</small></span><b>${ids.has(id)?'Watching':'+ Watch'}</b></button>`).join(''):'<p>No matching players.</p>';
  };
  const load=async(force=false)=>{
