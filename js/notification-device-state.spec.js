@@ -10,4 +10,20 @@ describe("notification device state", () => {
     expect(shouldRepairMissingSubscription({ permission: "denied", desired: true, hasDeviceToken: true })).toBe(false);
   });
   it("remembers alert categories through endpoint rotation", () => { const storage = memory(); rememberNotificationCategories(7, ["trades", "scores"], storage); expect(rememberedNotificationCategories(7, storage)).toEqual(["trades", "scores"]); });
+  it("upgrades legacy cached categories once without overriding a later opt-out", () => {
+    const storage = memory();
+    storage.setItem("dfl.notification.categories.7", JSON.stringify(["trades", "matchups"]));
+    expect(rememberedNotificationCategories(7, storage)).toEqual(["trades", "matchups", "matchup_moments"]);
+    rememberNotificationCategories(7, ["trades", "matchups"], storage);
+    expect(rememberedNotificationCategories(7, storage)).toEqual(["trades", "matchups"]);
+    expect(rememberedNotificationCategories(7, storage)).toEqual(["trades", "matchups"]);
+  });
+  it("includes moments for new devices while preserving deliberately empty current preferences", () => {
+    const storage = memory();
+    expect(rememberedNotificationCategories(7, storage)).toContain("matchup_moments");
+    rememberNotificationCategories(7, [], storage);
+    expect(rememberedNotificationCategories(7, storage)).toEqual([]);
+    expect(rememberedNotificationCategories(8, storage)).toContain("matchup_moments");
+  });
+
 });

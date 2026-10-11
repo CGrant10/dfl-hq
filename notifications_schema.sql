@@ -60,7 +60,7 @@ create table if not exists public.push_subscriptions (
   /* "updates" is app release notes and is deliberately absent - see
      DEFAULT_NOTIFICATION_CATEGORIES in js/notification-core.js. */
   categories jsonb not null default
-    '["announcements","trades","polls","fees","matchups","weekly","sportsbook","waivers","events"]'::jsonb,
+    '["announcements","trades","polls","fees","matchups","matchup_moments","weekly","sportsbook","waivers","events"]'::jsonb,
   device_label text,
   user_agent text,
   enabled boolean not null default true,
@@ -75,7 +75,7 @@ create table if not exists public.push_subscriptions (
    still have the original untouched all-categories default move to the quieter
    default; customized category lists are preserved exactly as chosen. */
 alter table public.push_subscriptions alter column categories set default
-  '["announcements","trades","polls","fees","matchups","weekly","sportsbook","waivers","events"]'::jsonb;
+  '["announcements","trades","polls","fees","matchups","matchup_moments","weekly","sportsbook","waivers","events"]'::jsonb;
 update public.push_subscriptions
    set categories = categories - 'updates', updated_at = now()
  where categories = '["announcements","trades","polls","fees","matchups","events","updates"]'::jsonb;

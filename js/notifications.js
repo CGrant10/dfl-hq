@@ -215,10 +215,12 @@ export async function pushPreferences() {
     row = Array.isArray(data) ? data[0] : data;
     return { subscription: active, enabled: !!row?.enabled, categories, ...await pushDeliveryStatus(active.endpoint) };
   }
+  const categories = Array.isArray(row?.categories) ? row.categories : DEFAULT_NOTIFICATION_CATEGORIES;
+  if (row) rememberNotificationCategories(member?.id, categories);
   return {
     subscription,
     enabled: !!row?.enabled,
-    categories: Array.isArray(row?.categories) ? row.categories : DEFAULT_NOTIFICATION_CATEGORIES,
+    categories,
     ...await pushDeliveryStatus(subscription.endpoint),
   };
 }

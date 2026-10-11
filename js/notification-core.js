@@ -3,7 +3,7 @@ export const NOTIFICATION_CATEGORIES = Object.freeze([
   ["wall", "The Wall", "Replies and mentions · optional on this phone"],
   ["trades", "Trades", "Completed deals and breaking trade alerts"],
   ["matchups", "Matchups", "Live scores, injury backups and kickoff reminders"],
-  ["matchup_moments", "Matchup moments", "Late close games and your final score · optional"],
+  ["matchup_moments", "Matchup moments", "Late close games and your final score"],
   ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
   ["sportsbook", "Sportsbook", "Settled tickets, wins and losses"],
   ["waivers", "Waivers", "Useful pickups and roster movement"],
@@ -25,15 +25,15 @@ export const BROADCAST_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.filter(
   because of it loses the trades and the fee reminders too. Releases stay
   visible in What's New and behind Check for updates either way.
 
-  Wall conversations and matchup moments are also opt-in. All explicitly
-  opts in to both; Game day opts in to matchup moments.
+  Wall conversations are opt-in. Matchup moments are included when
+  notifications are enabled; members can turn the category off afterward.
 
-  Off by default, still one tap away in "What should reach this phone?".
-  Existing devices keep whatever they already chose - this is the default for
-  a NEW enrolment, not a migration.
+  Wall and app updates remain off by default. The separate one-time release
+  migration adds matchup moments to enabled devices; future saved opt-outs
+  remain authoritative.
 */
 export const DEFAULT_NOTIFICATION_CATEGORIES =
-  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates" && id !== "wall" && id !== "matchup_moments");
+  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates" && id !== "wall");
 
 export const NOTIFICATION_PRESETS = Object.freeze({
   essential: ["announcements", "trades", "fees", "matchups"],
