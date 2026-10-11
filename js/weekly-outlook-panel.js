@@ -19,6 +19,7 @@ import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // always showing the same team as the report underneath it.
 // =====================================================================
 
+import {mountPlayerWatchlist} from './player-watchlist-ui.js';
 import {mountAdviceReceipts} from "./advice-receipts-ui.js";
 import { mountLineupLab } from "./lineup-lab-ui.js";
 import {mountRosterCoach} from './roster-coach-ui.js';
@@ -167,12 +168,15 @@ async function draw(host) {
     defense,
   });
   if (!host.isConnected || host.drawGeneration !== token) return;
+  host.stopWatchlist?.();
   host.innerHTML = markup({
     week,
     team: team.team_name || team.ownerName || "Your team",
     advice, trending, defense, stale: projections.stale,
     showScore: !!host.closest('[data-route="analyzer"]'),
   });
+  const watch=document.createElement('div');host.append(watch);host.stopWatchlist=mountPlayerWatchlist(watch,{data,season,week});
+  if(new URLSearchParams(location.hash.split('?')[1]||'').get('watchlist')==='1'&&!host.dataset.watchJumped){host.dataset.watchJumped='1';watch.querySelector('.player-watchlist')?.scrollIntoView({block:'start'});}
   const coach=document.createElement('div');host.append(coach);mountRosterCoach(coach,{data,team,season,week});
   const receipts=document.createElement('div');host.append(receipts);mountAdviceReceipts(receipts,{leagueId:data.league.sleeper_league_id,season,week,rosterId:team.id,history:true,teamNames:new Map(data.teams.map(t=>[String(t.id),t.team_name||t.ownerName]))});
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
@@ -181,6 +185,7 @@ async function draw(host) {
   wirePageDisclosures(host);
 }
 
+let activeWatchHost=null;
 let selectorBound=false;
 function attach() {
   const report = document.querySelector("[data-ta-body]");
@@ -199,13 +204,15 @@ function attach() {
       if(currentHost&&event.target?.matches?.("[data-ta-team-select]"))void draw(currentHost).catch(()=>{});
     });
   }
-  void draw(host).catch(() => { host.innerHTML = ""; });
+  if(activeWatchHost!==host)activeWatchHost?.stopWatchlist?.();
+  activeWatchHost=host;
+  void draw(host).catch(() => { host.stopWatchlist?.();host.innerHTML = ""; });
   return true;
 }
 
 export function mountWeeklyOutlook() {
   const enter = async (name) => {
-    if (name !== "analyzer") return;
+    if (name !== "analyzer") { activeWatchHost?.stopWatchlist?.();activeWatchHost=null;return; }
     await ensureStylesheet("css/weekly-outlook.css");
     /* analyzer.js paints a loading shell first and swaps in the real markup
        after its data resolves, so the mount point may not exist yet. */

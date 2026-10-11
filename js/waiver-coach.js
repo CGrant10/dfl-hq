@@ -21,7 +21,7 @@ export function rosterLineupScore(ids,pool,{locked=[],includeLineup=false}={}) {
   return [...states.values()].sort((a,b)=>b.filled-a.filled||b.total-a.total)[0];
 }
 
-export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,values=new Map(),trending=null,league={},now=Date.now(),fresh=true}={}){
+export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,values=new Map(),trending=null,league={},now=Date.now(),fresh=true,candidateIds=null}={}){
   const mine=rosters.find(r=>String(r.roster_id)===String(rosterId)),count=Number(league.total_rosters)||12;
   if(!fresh||!mine||rosters.length!==count||new Set(rosters.map(r=>String(r.roster_id))).size!==count||rosters.some(r=>!Array.isArray(r.players))||!(weekly[0]?.pool instanceof Map))return {state:'unavailable',offers:[]};
   if(!schedule)return {state:'schedule-unavailable',offers:[]};
@@ -38,7 +38,8 @@ export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,val
     .sort((a,b)=>a.value.tradeValue-b.value.tradeValue||Number(a.p.points)-Number(b.p.points)).slice(0,8);
   const bases=weekly.map((w,i)=>({week:w.week,pool:w.pool,weight:[1,.7,.45][w.week-weekly[0].week],base:rosterLineupScore(ids,w.pool,{locked:i?[]:locked}),locked:i?[]:locked}));
   const futureCount=weekly.length;
-  const candidates=[...current.values()].filter(p=>!owned.has(String(p.id))&&usable(p)&&!p.isRisky&&canMove(p)).sort((a,b)=>b.points-a.points).slice(0,90);
+  const wanted=candidateIds?new Set(candidateIds.map(String)):null;
+  const candidates=[...current.values()].filter(p=>(!wanted||wanted.has(String(p.id)))&&!owned.has(String(p.id))&&usable(p)&&!p.isRisky&&canMove(p)).sort((a,b)=>b.points-a.points).slice(0,wanted?20:90);
   const offers=[];
   for(const player of candidates){
     let best=null;
@@ -63,6 +64,7 @@ export function buildWaiverPlan({rosters=[],rosterId,weekly=[],schedule=null,val
     offers.push({...best,kind,adds,faab,targetWeek:strongest.week});
   }
   offers.sort((a,b)=>b.score-a.score||b.adds-a.adds||a.player.name.localeCompare(b.player.name));
+  if(wanted)return {state:'ready',offers,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
   const counts=new Map(),shortlist=offers.filter(o=>{const position=o.player.position,count=counts.get(position)||0,limit=['QB','K','DEF'].includes(position)?1:2;if(count>=limit)return false;counts.set(position,count+1);return true}).slice(0,4);
   return {state:'ready',offers:shortlist,futureCount,week:weekly[0].week,rosterId:mine.roster_id};
 }

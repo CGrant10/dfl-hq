@@ -1,0 +1,32 @@
+import {describe,it,expect} from 'vitest';
+import {watchOwnership,watchInjury,watchlistChanges,buildWatchlistRows} from './player-watchlist-model.js';
+import {DFL_SLOTS} from './lineup-alert-model.js';
+const now=Date.parse('2026-10-11T16:00:00Z');
+const roster=()=>Array.from({length:12},(_,i)=>({roster_id:i+1,owner_id:'owner'+(i+1),players:i?[]:['p'],starters:[]}));
+const input=()=>({now,season:2026,week:5,rosters:roster(),watched:[{league_id:'league',member_id:1,player_id:'p',sleeper_user_id:'owner1',created_at:'2026-10-11T15:00:00Z'}],previous:[{member_id:1,player_id:'p',owner_roster:1,injury:'Healthy',season:2026,week:5,revision:0,checked_at:'2026-10-11T15:50:00Z'}],players:{p:{full_name:'Player',position:'WR',team:'CHI',injury_status:null}},schedule:new Map([['CHI',{key:'upcoming',kickoff:'2026-10-11T17:00:00Z'}]])});
+describe('private player radar observations',()=>{
+ it('requires a complete unambiguous ownership snapshot',()=>{const r=roster();expect(watchOwnership(r.slice(0,11))).toBe(null);r[1].reserve=['p'];expect(watchOwnership(r)).toBe(null);expect(()=>watchlistChanges({...input(),rosters:r})).toThrow();});
+ it('includes reserve and taxi ownership',()=>{for(const field of ['reserve','taxi']){const i=input();i.rosters[0].players=[];i.rosters[1][field]=['p'];expect(watchlistChanges(i).changes).toEqual([]);expect(watchOwnership(i.rosters).get('p').roster_id).toBe(2)}});
+ it('treats first observations as baselines',()=>{expect(watchlistChanges({...input(),previous:[]}).changes).toEqual([]);expect(watchlistChanges({...input(),previous:[]}).states).toHaveLength(1)});
+ it('reports an observed drop once and not pickups or trades',()=>{const i=input();i.rosters[0].players=[];const r=watchlistChanges(i);expect(r.changes).toMatchObject([{id:'p',copy:'Dropped · available in DFL',revision:1}]);expect(watchlistChanges({...i,previous:r.states,now:now+600000}).changes).toEqual([]);i.rosters[1].players=['p'];expect(watchlistChanges(i).changes).toEqual([])});
+ it('reports meaningful known injury changes and recoveries',()=>{const i=input();i.players.p.injury_status='Out';const r=watchlistChanges(i);expect(r.changes[0].copy).toBe('Healthy → Out');i.players.p.injury_status=null;expect(watchlistChanges({...i,previous:r.states,now:now+600000}).changes[0].copy).toBe('Out → Healthy')});
+ it('withholds missing, unsupported and unknown injury statuses',()=>{for(const value of ['Made up',undefined]){const i=input();i.players.p.injury_status=value;if(value===undefined)delete i.players.p.injury_status;expect(watchlistChanges(i).changes).toEqual([])}expect(watchInjury({})).toBe('unknown');expect(watchInjury({injury_status:'injured reserve'})).toBe('IR')});
+ it('does not announce stale changes, week rollovers or re-added players',()=>{for(const patch of [{checked_at:'2026-10-11T10:00:00Z'},{week:4},{season:2025},{checked_at:'2026-10-11T16:10:00Z'}]){const i=input();i.rosters[0].players=[];i.previous[0]={...i.previous[0],...patch};expect(watchlistChanges(i).changes).toEqual([])}const i=input();i.rosters[0].players=[];i.watched[0].created_at='2026-10-11T15:55:00Z';expect(watchlistChanges(i).changes).toEqual([])});
+ it('keeps missing players from becoming fake healthy or available alerts',()=>{const i=input();i.players={};expect(watchlistChanges(i)).toEqual({changes:[],states:[]})});
+ it('defers own starter injury updates to enabled matchup alerts',()=>{const i=input();i.players.p.injury_status='Out';i.rosters[0].starters=['p'];expect(watchlistChanges({...i,matchupMembers:[1]}).changes).toEqual([]);expect(watchlistChanges({...i,matchupMembers:[]}).changes).toHaveLength(1);i.rosters[0].starters=[];expect(watchlistChanges({...i,matchupMembers:[1]}).changes).toHaveLength(1)});
+ it('withholds in-game, final and unknown kickoff injury updates',()=>{for(const key of ['live','final','unknown']){const i=input();i.players.p.injury_status='Out';i.schedule.get('CHI').key=key;expect(watchlistChanges(i).changes).toEqual([])}});
+ it('deduplicates a watched player across devices',()=>{const i=input();i.players.p.injury_status='Questionable';i.watched.push({...i.watched[0]});const r=watchlistChanges(i);expect(r.changes).toHaveLength(1);expect(r.states).toHaveLength(1)});
+});
+describe('targeted watchlist roster fit',()=>{
+ const p=(id,position,points)=>({id,name:id,team:'CHI',position,points,hasGame:true,isOut:false});
+ const starters=DFL_SLOTS.map((slot,i)=>p('s'+i,slot==='FLEX'?'WR':slot,10));
+ const rosters=roster();rosters[0]={...rosters[0],players:starters.map(p=>p.id).concat('depth'),starters:starters.map(p=>p.id)};
+ const pool=new Map([...starters,p('depth','WR',2),p('target','WR',14),...Array.from({length:95},(_,i)=>p('better'+i,'WR',20))].map(p=>[p.id,p]));
+ const snapshot={rosters,rows:[],players:{target:{n:'Target',p:'WR',t:'CHI'},s0:{n:'My QB',p:'QB',t:'CHI'}},weekly:[{week:5,pool}],nfl:{teams:new Map([['CHI',{key:'upcoming',kickoff:'2026-10-11T17:00:00Z'}]])},league:{total_rosters:12,roster_positions:[...DFL_SLOTS,'BN']},users:[]};
+ const options={rosterId:1,values:new Map([['depth',{tradeValue:5,positionRank:80}]]),now};
+ it('checks a watched player outside the usual top-90 shortlist',()=>{const r=buildWatchlistRows(['target'],snapshot,options)[0];expect(r.offer).toMatchObject({player:{id:'target'},drop:{id:'depth'},gains:[{gain:4}]});expect(r.ownerId).toBe(null)});
+ it('never offers to drop valuable depth or claims an upgrade for missing values',()=>{for(const values of [new Map(),new Map([['depth',{tradeValue:90,positionRank:2}]])]){expect(buildWatchlistRows(['target'],snapshot,{...options,values})[0].offer).toBeUndefined()}});
+ it('shows current team names and keeps an owned target out of pickup advice',()=>{const s={...snapshot,rosters:rosters.map(r=>r.roster_id===2?{...r,players:['target']}:r),users:[{user_id:'owner2',metadata:{team_name:'Latest name'}}]};const r=buildWatchlistRows(['target'],s,options)[0];expect(r.owner).toBe('Latest name');expect(r.offer).toBeUndefined()});
+ it('withholds fit without verified NFL schedule or mapped member roster',()=>{expect(buildWatchlistRows(['target'],{...snapshot,nfl:null},options)[0].fit).toBe('Roster fit unavailable');expect(buildWatchlistRows(['target'],snapshot,{...options,rosterId:null})[0].fit).toBe('Roster fit unavailable')});
+ it('does not claim an expired kickoff is available',()=>{expect(buildWatchlistRows(['target'],snapshot,{...options,now:now+3600000})[0].fit).toBe('Wait for the next unlocked game')});
+});
