@@ -26,6 +26,8 @@ with sync_playwright() as p:
   context.route('**/*',lambda route:route.continue_() if route.request.url.startswith('http://127.0.0.1:') else route.abort())
   page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   page.goto(f'http://127.0.0.1:{server.server_port}/waiver-review/index.html');page.wait_for_selector('.coach-market')
+  assert page.locator('.roster-coach .wo-head').evaluate('e=>getComputedStyle(e).display')=='flex'
+  assert page.locator('[data-coach-refresh]').evaluate('e=>e.getBoundingClientRect().top<e.parentElement.querySelector("div").getBoundingClientRect().bottom')
   assert 'Waiver order' in page.locator('.coach-market').inner_text()
   assert 'FAAB guide' not in page.locator('.roster-coach').inner_text()
   page.locator('.coach-more > summary').click();page.locator('[data-coach-detail="offer-rb"] summary').click();page.locator('.coach-drops summary').click()
