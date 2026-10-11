@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
+import {WATCHLIST_NOTIFICATION_FILTER} from '../../../js/watchlist-alerts.js';
 import {MATCHUP_MOMENTS_CATEGORY,MATCHUP_MOMENTS_FILTER,optedMatchupRecipients} from '../../../js/matchup-moments.js';
 
 /*
@@ -116,7 +117,10 @@ Deno.serve(async request => {
     const lineupAlert=internalSync&&sourceKey?.startsWith('weekly:lineup:')&&category==='matchups';
     const moment=category===MATCHUP_MOMENTS_CATEGORY;
     if(moment&&(!internalSync||!/^weekly:matchup:[0-9]{4}:[0-9]{1,2}:[0-9]+:(close|final)$/.test(sourceKey||'')||input.audience!=='members'))return json({error:'Matchup moments require targeted internal delivery'},403);
-    const expiring=lineupAlert||moment,expiresAt=expiring?Date.parse(input.expiresAt):NaN;
+    const watch=internalSync&&category==='waivers'&&/^weekly:watch:[0-9]{4}:[0-9]{1,2}:[0-9]+:[a-f0-9]{64}$/.test(sourceKey||'');
+    if(sourceKey?.startsWith('weekly:watch:')&&!watch)return json({error:'Watchlist updates require internal delivery'},403);
+    if(watch&&input.audience!=='members')return json({error:'Watchlist updates require targeted delivery'},403);
+    const expiring=lineupAlert||moment||watch,expiresAt=expiring?Date.parse(input.expiresAt):NaN;
     if(expiring&&(!Number.isFinite(expiresAt)||expiresAt<=Date.now()))return json({ok:true,skipped:'expired',delivered:0});
     const lineupKeys=lineupAlert?[...new Set((Array.isArray(input.lineupKeys)?input.lineupKeys:[])
       .filter((key:unknown)=>typeof key==='string'&&/^weekly:lineup:[0-9]{4}:[0-9]{1,2}:[0-9]+:[a-z0-9_-]+:(out|questionable)$/i.test(key)))].slice(0,9):[];
@@ -133,6 +137,21 @@ Deno.serve(async request => {
       if(error)throw error;
       targetIds=optedMatchupRecipients(opted||[],targetIds);
       if(!targetIds.length)return json({ok:true,skipped:'no-opted-recipients',delivered:0});
+    }
+    let watchKeys:string[]=[];
+    if(watch){
+      const ids=(Array.isArray(input.watchPlayerIds)?input.watchPlayerIds:[]).filter((id:unknown)=>typeof id==='string'&&/^[A-Za-z0-9_-]{1,32}$/.test(id)).slice(0,20);
+      const {data:opted,error}=await admin.from('push_subscriptions').select('member_id').eq('enabled',true).in('member_id',targetIds).contains('categories',WATCHLIST_NOTIFICATION_FILTER);
+      if(error)throw error;
+      const devices=await admin.from('player_watch_devices').select('id,member_id').in('member_id',targetIds).gte('updated_at',new Date(Date.now()-90*86400000).toISOString());
+      if(devices.error)throw devices.error;
+      const watched=devices.data?.length&&ids.length?await admin.from('player_watch_items').select('device_id,player_id').in('device_id',devices.data.map(d=>d.id)).in('player_id',ids):{data:[],error:null};
+      if(watched.error)throw watched.error;
+      watchKeys=[...new Set<string>((Array.isArray(input.watchKeys)?input.watchKeys:[]).filter((key:unknown)=>typeof key==='string'&&/^weekly:watch:[0-9]{4}:[0-9]{1,2}:[0-9]+:[A-Za-z0-9_-]{1,32}:[0-9]+$/.test(key)))].slice(0,20);
+      if(targetIds.length!==1||String(targetIds[0])!==sourceKey?.split(':')[4]||watchKeys.length!==ids.length||watchKeys.some(key=>!ids.includes(key.split(':')[5])||!targetIds.includes(Number(key.split(':')[4]))))return json({error:'Watchlist event keys required'},422);
+      // Recheck settings and removal before writing an inbox item or pushing.
+      targetIds=targetIds.filter(mid=>(opted||[]).some(o=>Number(o.member_id)===mid)&&ids.every((id:string)=>(watched.data||[]).some(w=>w.player_id===id&&devices.data?.some(d=>d.id===w.device_id&&Number(d.member_id)===mid))));
+      if(!targetIds.length||!ids.length)return json({ok:true,skipped:'no-watched-opted-recipients',delivered:0});
     }
     const targeted = input.audience === "members" || (internalSync && input.audience === "commissioners");
     const audience = targeted && targetIds.length ? "members" : "all";
@@ -152,6 +171,7 @@ Deno.serve(async request => {
       target_member_ids: audience === "members" ? targetIds : [], sent_by_member_id: sender,
       ...(sourceKey ? { source_key: sourceKey } : {}),
       ...(lineupKeys.length ? {lineup_alert_keys:lineupKeys} : {}),
+      ...(watchKeys.length ? {watch_alert_keys:watchKeys} : {}),
     };
     let { data: message, error: insertError } = await admin.from("notification_messages").insert(messageRow).select("id").single();
     /* Two sync tabs can discover the same trade together. The unique source

@@ -10,7 +10,7 @@ import {buildWaiverIntelligence} from './waiver-intelligence.js';
 const cache=new Map();
 export function clearRosterCoachCache(){cache.clear();clearWaiverHistoryCache();}
 globalThis.addEventListener?.('dfl:quick-sync-complete',clearRosterCoachCache);
-function read(leagueId,season,week){
+export function loadRosterCoachSnapshot(leagueId,season,week){
   const key=`${leagueId}:${season}:${week}`,hit=cache.get(key);if(hit&&Date.now()-hit.at<60000)return hit.value;
   const value=(async()=>{
     const results=await Promise.allSettled([sleeper.league(leagueId),sleeper.rosters(leagueId),sleeper.matchups(leagueId,week),loadPlayers({maxAgeMs:300000}),loadNflGameDay(season,week),sleeper.users(leagueId),loadWaiverHistory({leagueId,season,week}),
@@ -24,7 +24,7 @@ function read(leagueId,season,week){
   })().catch(error=>{cache.delete(key);throw error});cache.set(key,{at:Date.now(),value});return value;
 }
 export async function loadRosterCoach({data,team,season,week}){
-  const snapshot=await read(data.league.sleeper_league_id,season,week);
+  const snapshot=await loadRosterCoachSnapshot(data.league.sleeper_league_id,season,week);
   const {league,rosters,rows,players,nfl,weekly}=snapshot;
   const roster=rosters.find(r=>String(r.roster_id)===String(team.id)),row=rows.find(r=>String(r.roster_id)===String(team.id));
   if(!roster||!row)throw Error('This team’s current lineup is unavailable');
