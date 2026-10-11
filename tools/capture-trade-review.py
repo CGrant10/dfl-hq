@@ -232,17 +232,17 @@ with sync_playwright() as p:
         click('[data-td-mode="manual"]');pick(0,'1-4');pick(1,'2-6')
         # The share handler must stop on a fresh injury and show the updated ticket.
         page.evaluate("""()=>{window.reviewSharedDeal=null;const pool=new Map(window.reviewData.pool);pool.set('2-6',{...pool.get('2-6'),injuryStatus:'Out',isOut:true});window.reviewFreshData={...window.reviewData,pool}}""")
-        click('[data-td-share]');page.wait_for_function("document.querySelector('.toast')?.textContent.includes('Player status or value changed')")
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('Player status or value changed')")
         assert page.evaluate('window.reviewSharedDeal===null')
         assert not page.locator('[data-td-share]').is_disabled()
         click('[data-td-share]');page.wait_for_function('!!window.reviewSharedDeal')
         assert page.evaluate("window.reviewSharedDeal.pool.get('2-6').injuryStatus==='Out'")
         # Provider failure and traded-away ownership must never share the old card.
         page.evaluate('window.reviewSharedDeal=null;window.reviewRefreshError=true')
-        click('[data-td-share]');page.wait_for_function("document.querySelector('.toast')?.textContent.includes('Current injuries unavailable')")
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('Current injuries unavailable')")
         assert page.evaluate('window.reviewSharedDeal===null')
         page.evaluate("""()=>{window.reviewRefreshError=false;window.reviewFreshData={...window.reviewFreshData,teams:window.reviewFreshData.teams.map(t=>({...t,playerIds:t.playerIds.filter(id=>id!=='1-4')}))}}""")
-        click('[data-td-share]');page.wait_for_function("document.querySelector('.toast')?.textContent.includes('A player changed teams')")
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('A player changed teams')")
         assert page.evaluate('window.reviewSharedDeal===null')
         assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==0
         assert not errors,errors
