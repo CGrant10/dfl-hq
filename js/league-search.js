@@ -2,12 +2,15 @@ import { trapFocus } from "./focus-trap.js";
 import { db } from './supabase.js';
 import { loadPlayers } from './sleeper.js';
 import { esc } from './ui.js';
+import {createPlayerSearchIndex, searchPlayerIndex} from './player-search-index.js';
+
+const playerIndexes = new WeakMap();
 
 export function playerSearchResults(players, query) {
-  const terms=String(query).toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if(!terms.length)return [];
-  return Object.entries(players).filter(([,player])=>terms.every(term=>`${player.n} ${player.p} ${player.t}`.toLowerCase().includes(term)))
-    .sort(([,a],[,b])=>Number(b.s==='Active')-Number(a.s==='Active')||a.n.localeCompare(b.n)).slice(0,12)
+  if(!String(query).trim())return [];
+  let index=playerIndexes.get(players);
+  if(!index){index=createPlayerSearchIndex(players,{compare:(a,b)=>Number(b.s==='Active')-Number(a.s==='Active')||a.n.localeCompare(b.n)});playerIndexes.set(players,index)}
+  return searchPlayerIndex(index,query,12)
     .map(([id,player])=>({kind:'Players',id,title:player.n,detail:`${player.p} · ${player.t} · Open player card`,url:`#/sportsbook?player=${encodeURIComponent(player.n)}`}));
 }
 export function mountLeagueSearch(){
