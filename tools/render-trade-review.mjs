@@ -4,6 +4,8 @@ const output=process.env.DFL_TRADE_REVIEW_DIR||'/workspace/dfl-trade-review';mkd
 const source=readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8');
 const production=source.slice(source.indexOf('const teamName'),source.indexOf('export async function render('));
 const imports=`
+import {offerPlayerLimit} from '/js/trade-package-limits.js';
+import {recheckTradeOffer} from '/js/trade-offer-recheck.js';
 import {esc,errorBox,toast} from '/js/ui.js';
 import {mountTradeDesk,recommendationFor,tradeDeskMarkup,tradeReasons,verdictFor} from '/js/trade-desk.js';
 import {tradeConfidence} from '/js/trade-confidence.js';
@@ -19,6 +21,7 @@ import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy} from '/js/trade-wo
 import {mountTradePlayerPickers,focusTradePicker} from '/js/trade-player-picker.js';
 import {tradeReviewFixture} from '/tools/trade-review-fixture.mjs';
 const currentMember=()=>({id:'trade-review'}),loadSharedTradeRecommendations=async()=>[],saveTradeRecommendation=async()=>{},tradeAlertViewModel=()=>null;
+const loadAnalyzerData=async()=>{if(window.reviewRefreshError)throw Error('Current injuries unavailable');return {...(window.reviewFreshData||window.reviewData),state:'ready'}};
 const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};
 `;
 writeFileSync(`${output}/fixture.js`,imports+production+`

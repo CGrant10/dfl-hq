@@ -208,7 +208,7 @@ describe("team analyzer", () => {
     const offers = suggestTrades({ teams, teamId: "1", playerId: "r1", pool });
     expect(offers.every(offer => offer.sendA.includes("r1") && offer.other.id === "2")).toBe(true);
     expect(offers.every(offer => tradeSuggestionTier(offer))).toBe(true);
-    expect(offers.every(offer => offer.sendA.length + offer.sendB.length <= 4)).toBe(true);
+    expect(offers.every(offer => offer.sendA.length + offer.sendB.length <= 8)).toBe(true);
   });
 
   it("shops a two-player package from either side", () => {
@@ -240,7 +240,7 @@ describe("team analyzer", () => {
 
   it("builds varied package shapes around a selected target without forcing implausible shapes", () => {
     const teams = analyzeLeague({ rosters, pool });
-    const offers = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", partnerId: "2", playerId: "w1", pool, limit: 100 });
+    const offers = suggestTrades({ teams, teamId: "1", anchorTeamId: "2", partnerId: "2", playerId: "w1", pool, maxPlayers: 4, limit: 100 });
     const shapes = new Set(offers.map(offer => offer.shape));
     // Three depth names do not automatically buy a star with the stricter prices.
     expect(shapes).toEqual(new Set(["1-1", "1-2", "2-1", "2-2"]));

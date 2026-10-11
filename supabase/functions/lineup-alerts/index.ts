@@ -1,5 +1,6 @@
+import {leagueHealth} from '../../../js/league-health.js';
 import {createClient} from 'npm:@supabase/supabase-js@2.57.4';
-import {lineupAlertDrafts} from '../../../js/lineup-alert-model.js';
+import {lineupAlertDrafts,lineupAlertSourceKey} from '../../../js/lineup-alert-model.js';
 import {nflWeekStatuses} from '../../../js/clubhouse-matchup-model.js';
 import {gameDayLineup} from '../../../js/game-day-model.js';
 import {matchesDflStartingSlots} from '../../../js/analyzer-league-context.js';
@@ -31,20 +32,25 @@ Deno.serve(async request=>{
       get(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),admin.from('members').select('id,sleeper_user_id'),
     ]);
     if(members.error)throw members.error;
-    if(!Array.isArray(rosters)||rosters.length!==Number(league.total_rosters)||!Array.isArray(rows)||!Array.isArray(projections))throw Error('Incomplete roster alert data');
+    const health=leagueHealth({league,state,rosters,rows,week});
+    if(!health.ok)throw Error(`League health check failed: ${health.issues.join(', ')}`);
+    if(!Array.isArray(projections))throw Error('Incomplete roster alert data');
+    const {data:previous,error:previousError}=await admin.from('notification_messages').select('source_key,lineup_alert_keys').like('source_key',`weekly:lineup:${season}:${week}:%`);
+    if(previousError)throw previousError;
+    const notifiedKeys=(previous||[]).flatMap(row=>row.lineup_alert_keys||[row.source_key]);
     const pool:Map<string,any>=buildWeeklyPool(projections,league.scoring_settings),players=Object.fromEntries([...pool].map(([id,p])=>[id,{n:p.name,p:p.position,t:p.team,i:p.injuryStatus}]));
     const teams=rosters.flatMap((r:any)=>{
       const member=members.data?.find((m:any)=>String(m.sleeper_user_id)===String(r.owner_id)),row=rows.find((s:any)=>String(s.roster_id)===String(r.roster_id));if(!member||!row)return [];
       const lineup=gameDayLineup({...row,players:r.players},players,schedule,{rosterPositions:league.roster_positions});
       return [{...lineup,bench:lineup.bench.map((p:any)=>({...p,activeRoster:![...(r.reserve||[]),...(r.taxi||[])].map(String).includes(p.id),projection:pool.get(p.id)?.points})),memberId:member.id,uid:r.owner_id,roster:r.roster_id}];
     });
-    const drafts=lineupAlertDrafts({season,week,teams,now});
-    if(dryRun)return Response.json({ok:true,dryRun,season,week,windowOpen,rostersChecked:rosters.length,drafts});
+    const drafts=lineupAlertDrafts({season,week,teams,now,notifiedKeys});
+    if(dryRun)return Response.json({ok:true,dryRun,season,week,windowOpen,rostersChecked:rosters.length,health,drafts});
     let created=0,duplicates=0;
     for(const draft of drafts){
-      const response=await fetch(`${url}/functions/v1/send-notification`,{method:'POST',headers:{'Content-Type':'application/json','x-dfl-cron-token':token},body:JSON.stringify(draft),signal:AbortSignal.timeout(15000)});
+      const response=await fetch(`${url}/functions/v1/send-notification`,{method:'POST',headers:{'Content-Type':'application/json','x-dfl-cron-token':token},body:JSON.stringify({...draft,sourceKey:await lineupAlertSourceKey(draft)}),signal:AbortSignal.timeout(15000)});
       const result=await response.json();if(!response.ok||!result.ok)throw Error(`Lineup alert delivery ${response.status}`);
-      if(result.duplicate)duplicates++;else created++;
+      if(result.duplicate)duplicates++;else if(!result.skipped)created++;
     }
     return Response.json({ok:true,season,week,created,duplicates});
   }catch(error){console.error('lineup-alerts',error);const detail=error&&typeof error==='object'&&'message' in error?String(error.message).slice(0,240):'Roster alerts unavailable';return Response.json({error:detail},{status:500})}

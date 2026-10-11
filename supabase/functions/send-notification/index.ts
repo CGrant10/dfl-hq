@@ -115,6 +115,8 @@ Deno.serve(async request => {
     const lineupAlert=internalSync&&sourceKey?.startsWith('weekly:lineup:')&&category==='matchups';
     const expiresAt=lineupAlert?Date.parse(input.expiresAt):NaN;
     if(lineupAlert&&(!Number.isFinite(expiresAt)||expiresAt<=Date.now()))return json({ok:true,skipped:'expired',delivered:0});
+    const lineupKeys=lineupAlert?[...new Set((Array.isArray(input.lineupKeys)?input.lineupKeys:[])
+      .filter((key:unknown)=>typeof key==='string'&&/^weekly:lineup:[0-9]{4}:[0-9]{1,2}:[0-9]+:[a-z0-9_-]+:(out|questionable)$/i.test(key)))].slice(0,9):[];
     let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];
     if (internalSync && input.audience === "commissioners") {
@@ -140,6 +142,7 @@ Deno.serve(async request => {
       title, body, category, target_url: targetUrl, audience,
       target_member_ids: audience === "members" ? targetIds : [], sent_by_member_id: sender,
       ...(sourceKey ? { source_key: sourceKey } : {}),
+      ...(lineupKeys.length ? {lineup_alert_keys:lineupKeys} : {}),
     };
     let { data: message, error: insertError } = await admin.from("notification_messages").insert(messageRow).select("id").single();
     /* Two sync tabs can discover the same trade together. The unique source
