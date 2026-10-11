@@ -1,3 +1,4 @@
+import {reportAppIssue} from './app-diagnostics.js';
 // =====================================================================
 // supabase.js - database access
 // =====================================================================
@@ -37,6 +38,7 @@ function makePublicClient() {
   if (publicClient && publicClientKey === key) return publicClient;
   publicClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
+      fetch: reliabilityFetch,
       headers: {
         ...(memberId ? { "x-member-id": memberId } : {}),
         ...notificationHeaders(memberId),
@@ -92,6 +94,7 @@ function makeAdminClient(token) {
   const memberId = memberIdNow();
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
+      fetch: reliabilityFetch,
       headers: {
         "x-admin-token": token,
         ...(memberId ? { "x-member-id": memberId } : {}),
@@ -105,6 +108,7 @@ function makeAdminClient(token) {
 function makeCommissionerClient(memberId, pin) {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
+      fetch: reliabilityFetch,
       headers: {
         "x-member-id": String(memberId),
         ...notificationHeaders(memberId),
@@ -245,6 +249,7 @@ export function edge() {
   if (edgeClient && edgeClientKey === key) return edgeClient;
   edgeClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
+      fetch: reliabilityFetch,
       headers: {
         ...(memberId ? { "x-member-id": memberId } : {}),
         ...notificationHeaders(memberId),
@@ -431,4 +436,10 @@ export async function registerUser(username) {
   try {
     await makePublicClient().from("users").upsert({ username }, { onConflict: "username", ignoreDuplicates: true });
   } catch {}
+}
+
+async function reliabilityFetch(input,options){
+  const diagnostics=String(input?.url||input).includes('/rpc/record_app_issues');
+  try{const response=await fetch(input,options);if(response.status>=500&&!diagnostics)reportAppIssue('request_error','supabase');return response}
+  catch(error){if(!diagnostics)reportAppIssue('request_error','supabase');throw error}
 }

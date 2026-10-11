@@ -1,3 +1,5 @@
+import {loadRosterCoach} from '../roster-coach-data.js';
+import {mountLiveScoreRefresh} from '../live-score-refresh.js';
 import { mountSwipeTabs } from '../swipe-tabs.js';
 import {mountGameDay} from "../game-day.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
@@ -201,8 +203,8 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         <div class="home-brief-grid">
           <article><small>MATCHUP</small><span>${esc(briefing?.matchup || "Sleeper matchup pending")}</span></article>
           <article><small>PLAYOFF PATH</small><strong>${esc(briefing?.playoff || "Model pending")}</strong><span>${esc(briefing?.playoffDetail || "Sync the league to build your path.")}</span></article>
-          <article><small>LINEUP CALL</small><span>${esc(briefing?.lineup || "Checking your starters")}</span></article>
-          <article><small>NEXT MOVE</small><span>${esc(briefing?.action || "Keep the roster ready")}</span></article>
+          <article><small>LINEUP CALL</small><span data-brief-lineup>${esc(briefing?.lineup || "Checking your starters")}</span></article>
+          <article><small>NEXT MOVE</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}" data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked>${briefing?.checkedAt?`Roster checked ${esc(new Date(briefing.checkedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}))}`:''}</small></article>
         </div>
         <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
@@ -731,6 +733,21 @@ export async function render(view) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
       wireHomeWeekHub(homeReportSlot);
       finishLoadingContent(homeReportSlot);
+      const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
+      if(briefTeam&&outlook?.week){
+        const briefRefresh=mountLiveScoreRefresh({active:()=>mine===generation&&view.isConnected,
+          refresh:async()=>{
+            const coach=await loadRosterCoach({data:analysis,team:briefTeam,season:analysis.projectionSeason,week:outlook.week});
+            if(mine!==generation||!view.isConnected)return;
+            const next=buildWeeklyBriefing({outlook,stakes:pulse?.stakes,move,coach,meSleeperId:myMember.sleeper_user_id});
+            const line=homeReportSlot.querySelector('[data-brief-lineup]'),action=homeReportSlot.querySelector('[data-brief-action]'),stamp=homeReportSlot.querySelector('[data-brief-checked]');
+            if(line)line.textContent=next.lineup;
+            if(action){action.textContent=next.action;action.href=next.actionUrl}
+            if(stamp)stamp.textContent=next.checkedAt?`Roster checked ${new Date(next.checkedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`:'';
+          },onError:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]'),action=homeReportSlot.querySelector('[data-brief-action]'),line=homeReportSlot.querySelector('[data-brief-lineup]');if(stamp)stamp.textContent='Fresh roster check unavailable';if(action)action.textContent='Refresh roster advice in Analyzer';if(line)line.textContent='Check your current lineup in Analyzer';},
+        });
+        briefRefresh.start();deferredStops.push(()=>briefRefresh.stop());
+      }
     }
     if (homeTradeSlot) { homeTradeSlot.innerHTML = homeTradeWire(seasonTradeViews); finishLoadingContent(homeTradeSlot); }
     /* Both slots just replaced their contents, so the parts the driver was

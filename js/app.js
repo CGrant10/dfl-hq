@@ -1,3 +1,4 @@
+import {startAppDiagnostics} from './app-diagnostics.js';
 import { syncTabIndicator } from './nav-highlight.js';
 import { mountLeagueSearch } from "./league-search.js";
 import { mountPlayerCards } from './player-card-actions.js';
@@ -248,6 +249,7 @@ paintName();mountMemberPreview();
   /* Background conveniences used to compete with Home for the same Supabase
      connection. Let the first route settle, then start presence, updates and notification nudges.
      Worker registration starts independently so a push page cannot deadlock. */
+  startAppDiagnostics();
   window.addEventListener("dfl:app-ready", () => {
     const readyAt=performance.now();
     void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});

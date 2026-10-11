@@ -1,4 +1,6 @@
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import {backgroundSyncPolicy} from '../../../js/background-sync-policy.js';
+import {nflWeekStatuses} from '../../../js/clubhouse-matchup-model.js';
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const SLEEPER = "https://api.sleeper.app/v1";
 const TOKEN_HASH = "c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091";
@@ -129,7 +131,7 @@ function american(probability: number) {
   return rounded > -100 && rounded < 100 ? (rounded < 0 ? -100 : 100) : rounded;
 }
 
-async function matchupClose(admin: ReturnType<typeof createClient>, season: number, week: number) {
+async function matchupClose(admin: SupabaseClient, season: number, week: number) {
   const { data: slate } = await admin.from("nfl_pickem_games").select("starts_at")
     .eq("season", season).eq("week", week).order("starts_at").limit(1);
   if (slate?.[0]?.starts_at) return new Date(slate[0].starts_at);
@@ -148,7 +150,7 @@ async function matchupClose(admin: ReturnType<typeof createClient>, season: numb
 }
 
 async function ensureMatchupMarkets(
-  admin: ReturnType<typeof createClient>, league: Json, season: number, week: number,
+  admin: SupabaseClient, league: Json, season: number, week: number,
   raw: Json[], rosters: Json[], names: Map<string, Json>, projectionRows: Json[],
 ) {
   const close = await matchupClose(admin, season, week);
@@ -206,7 +208,7 @@ async function ensureMatchupMarkets(
   return created;
 }
 
-async function upsert(admin: ReturnType<typeof createClient>, table: string, rows: Json[], onConflict: string) {
+async function upsert(admin: SupabaseClient, table: string, rows: Json[], onConflict: string) {
   if (!rows.length) return;
   const { error } = await admin.from(table).upsert(rows, { onConflict });
   if (error) throw new Error(`${table}: ${error.message}`);
@@ -245,7 +247,7 @@ async function notifyWeeklyReport(url: string, token: string, season: number, co
   if (!response.ok) throw new Error(`Weekly report notification failed (${response.status})`);
 }
 
-async function refreshMemberTeamNames(admin: ReturnType<typeof createClient>) {
+async function refreshMemberTeamNames(admin: SupabaseClient) {
   const [members, currentUsers, historicalRosters] = await Promise.all([
     admin.from("members").select("id,team_name,sleeper_user_id"),
     admin.from("sleeper_users").select("sleeper_user_id,team_name"),
@@ -279,10 +281,13 @@ Deno.serve(async (request) => {
   if (!url || !secret) return Response.json({ error: "Server configuration unavailable" }, { status: 500 });
   const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
   const checkedAt = new Date().toISOString();
+  const input = await request.json().catch(() => ({}));
+  const adaptive = input.adaptive === true;
+  const dryRun = input.dryRun === true;
 
   try {
     const { data: config, error: configError } = await admin.from("sleeper_config")
-      .select("sleeper_league_id,last_auto_signature,auto_sync_enabled").eq("id", 1).single();
+      .select("sleeper_league_id,last_auto_signature,auto_sync_enabled,last_background_started_at").eq("id", 1).single();
     if (configError) throw configError;
     if (!config.auto_sync_enabled) return Response.json({ ok: true, skipped: "disabled" });
     const leagueId = String(config.sleeper_league_id || "").trim();
@@ -293,15 +298,38 @@ Deno.serve(async (request) => {
     const season = Number(league.season);
     const nflState = await sleeper("/state/nfl");
     const week = Math.max(1, Math.min(18, Number(league.settings?.leg || nflState?.week || 1)));
-    const [users, rosters, weeklyMatchups, weeklyTransactions, weeklyProjections] = await Promise.all([
+    let policy = {enabled:true,mode:'scheduled',intervalMs:0};
+    if(adaptive){
+      if(!backgroundSyncPolicy({state:nflState,league}).enabled)return Response.json({ok:true,skipped:"inactive"});
+      const response=await fetch(`https://cdn.espn.com/core/nfl/scoreboard?xhr=1&limit=50&dates=${season}&seasontype=2&week=${week}`,{headers:{'User-Agent':'Mozilla/5.0 DFL-HQ-Sync/1.0'},signal:AbortSignal.timeout(12000)});
+      if(!response.ok)throw Error(`NFL sync schedule unavailable (${response.status})`);
+      const payload=await response.json();
+      policy=backgroundSyncPolicy({state:nflState,league,schedule:nflWeekStatuses(payload?.content?.sbData,season,week)}) as typeof policy;
+      if(!policy.enabled)return Response.json({ok:true,skipped:policy.mode});
+      if(!dryRun){
+        const cutoff=new Date(Date.now()-policy.intervalMs).toISOString();
+        const {data:claim,error}=await admin.from('sleeper_config').update({last_background_started_at:checkedAt,last_background_mode:policy.mode})
+          .eq('id',1).eq('auto_sync_enabled',true).or(`last_background_started_at.is.null,last_background_started_at.lte.${cutoff}`).select('id');
+        if(error)throw error;
+        if(!claim?.length)return Response.json({ok:true,skipped:'cadence',mode:policy.mode});
+      }
+    }
+    const [users, rosters, weeklyMatchups, weeklyTransactions, weeklyProjections, previousMatchups] = await Promise.all([
       sleeper(`/league/${leagueId}/users`),
       sleeper(`/league/${leagueId}/rosters`),
       sleeper(`/league/${leagueId}/matchups/${week}`),
       sleeper(`/league/${leagueId}/transactions/${week}`),
-      sleeperAbsolute(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
+      adaptive || dryRun ? Promise.resolve([]) : sleeperAbsolute(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
+      adaptive && week > 1 && policy.mode === 'rosters' ? sleeper(`/league/${leagueId}/matchups/${week-1}`) : Promise.resolve(null),
     ]);
 
+    if(!Array.isArray(rosters)||rosters.length!==Number(league.total_rosters)||!Array.isArray(users)||!Array.isArray(weeklyMatchups)||weeklyMatchups.length!==rosters.length||!Array.isArray(weeklyTransactions))throw Error('Incomplete Sleeper sync data');
+    if(dryRun)return Response.json({ok:true,dryRun,mode:policy.mode,season,week,rostersChecked:rosters.length,matchupsChecked:weeklyMatchups.length,previousWeekChecked:Array.isArray(previousMatchups)?week-1:null});
     const signature = await sha256(stable({ league, users, rosters, weeklyMatchups, weeklyTransactions, week }));
+    if(Array.isArray(previousMatchups)&&previousMatchups.length===rosters.length){
+      const previousOwners=new Map<number,string>(rosters.map((row:Json)=>[row.roster_id,row.owner_id]));
+      await upsert(admin,'sleeper_matchups',matchups(previousMatchups,season,week-1,leagueId,previousOwners),'season,week,matchup_id');
+    }
     // Capture shared moments even when no member has GameDay open.
     const { error: momentsError } = await admin.rpc("capture_gameday_snapshot", {
       p_league_id: leagueId, p_season: season, p_week: week, p_rows: weeklyMatchups || [],
@@ -314,12 +342,12 @@ Deno.serve(async (request) => {
     const earlyOwners = new Map<number, string>((rosters || []).map((roster: Json) => [roster.roster_id, roster.owner_id]));
     const earlyMatchups = matchups(weeklyMatchups || [], season, week, leagueId, earlyOwners);
     await upsert(admin, "sleeper_matchups", earlyMatchups, "season,week,matchup_id");
-    let sportsbookMarketsCreated = await ensureMatchupMarkets(
+    let sportsbookMarketsCreated = adaptive ? 0 : await ensureMatchupMarkets(
       admin, league, season, week, weeklyMatchups || [], rosters || [], earlyNames, weeklyProjections || [],
     );
     // Once this week's winner markets lock, keep a playable fantasy board
     // available for next week. Existing prices and accepted tickets stay put.
-    if (week < 18 && (await matchupClose(admin, season, week)).getTime() <= Date.now()) {
+    if (!adaptive && week < 18 && (await matchupClose(admin, season, week)).getTime() <= Date.now()) {
       const nextWeek = week + 1;
       const [nextMatchups, nextProjections] = await Promise.all([
         sleeper(`/league/${leagueId}/matchups/${nextWeek}`),
@@ -329,7 +357,7 @@ Deno.serve(async (request) => {
         admin, league, season, nextWeek, nextMatchups || [], rosters || [], earlyNames, nextProjections || [],
       );
     }
-    if (week > 1) {
+    if (!adaptive && week > 1) {
       await notifyWeeklyReport(url, cronToken, season, week - 1)
         .catch(error => console.warn("Weekly report notification skipped:", error));
     }
@@ -340,7 +368,7 @@ Deno.serve(async (request) => {
         last_auto_error: "",
       }).eq("id", 1);
       if (error) throw error;
-      await notifyCommissioners(url, cronToken, `Checked ${season} Week ${week}. No Sleeper changes found.`);
+      if(!adaptive)await notifyCommissioners(url, cronToken, `Checked ${season} Week ${week}. No Sleeper changes found.`);
       return Response.json({ ok: true, changed: false, season, week, sportsbookMarketsCreated });
     }
 
@@ -411,7 +439,7 @@ Deno.serve(async (request) => {
     }).eq("id", 1);
     if (updateError) throw updateError;
 
-    await notifyCommissioners(url, cronToken,
+    if(!adaptive)await notifyCommissioners(url, cronToken,
       `Updated ${season} Week ${week}: ${rosters?.length || 0} rosters and ${transactionRows.length} transactions checked.`);
 
     return Response.json({
@@ -424,7 +452,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await admin.from("sleeper_config").update({ last_auto_checked_at: checkedAt, last_auto_error: message }).eq("id", 1);
+    if(!dryRun)await admin.from("sleeper_config").update({ last_auto_checked_at: checkedAt, last_auto_error: message, ...(adaptive ? {last_background_started_at:null} : {}) }).eq("id", 1);
     console.error("Sleeper auto-sync failed", message);
     return Response.json({ ok: false, error: message }, { status: 500 });
   }

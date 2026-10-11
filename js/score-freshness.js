@@ -1,3 +1,4 @@
+import {reportAppIssue} from './app-diagnostics.js';
 export function scoreFreshness({checkedAt=null,state='ready',nflAvailable=true,playersAvailable=true,completed=false,now=Date.now()}={}) {
   const minutes=checkedAt==null?null:Math.max(0,Math.floor((now-checkedAt)/60000));
   const age=minutes==null?'':minutes<1?'just now':`${minutes}m ago`;
@@ -12,7 +13,7 @@ export function scoreFreshness({checkedAt=null,state='ready',nflAvailable=true,p
 
 export function mountScoreFreshness(node,{onChange=(_values)=>{}}={}) {
   let values={},stopped=false;
-  const paint=()=>{if(stopped)return;const view=scoreFreshness(values);if(node){if(node.textContent!==view.text)node.textContent=view.text;node.dataset.scoreFreshness=view.state}onChange(values)};
+  const paint=()=>{if(stopped)return;const view=scoreFreshness(values);if(view.state==='delayed'&&values.checkedAt&&Date.now()-values.checkedAt>=120000)reportAppIssue('stale_scores','sleeper');if(node){if(node.textContent!==view.text)node.textContent=view.text;node.dataset.scoreFreshness=view.state}onChange(values)};
   const timer=setInterval(paint,30000);
   return {update(next){values={...values,...next};paint()},stop(){stopped=true;clearInterval(timer)}};
 }

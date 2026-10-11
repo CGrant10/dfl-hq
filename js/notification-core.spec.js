@@ -4,6 +4,8 @@ import { cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_P
 describe("notification helpers", () => {
   it("keeps app updates off by default while leaving them available", () => {
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("updates");
+    expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("wall");
+    expect(NOTIFICATION_PRESETS.all).toContain("wall");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("announcements");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("sportsbook");
     expect(NOTIFICATION_PRESETS.gameday).toContain("weekly");
