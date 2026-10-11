@@ -15,6 +15,7 @@ influence, including the existing one-QB scarcity discount.
   instead of 30. Final trade checks bypass both caches and retain current roster
   and league-setting verification. Previous-season stats and large season market
   projections retain their existing caches for mobile efficiency.
+- Explicit zero-age Sleeper reads also revalidate the browser's HTTP cache.
 - Block final sharing when current production cannot be verified. A failed
   expert reread requires review rather than claiming the cached opinion was
   verified against the latest publication.
