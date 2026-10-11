@@ -146,3 +146,16 @@
 .clubhouse-pulse-grid article > span { color:var(--body-text); font-size:11px; line-height:1.4; overflow-wrap:anywhere; }
 @media(min-width:701px) { #view .clubhouse-command-center .clubhouse-scoreboard-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(prefers-reduced-motion:reduce) { .clubhouse-command-center * { scroll-behavior:auto!important; } }
+
+/* The selected score follows its own card and stops before another section. */
+.clubhouse-pinned-score { position:sticky; top:var(--topbar-h,44px); z-index:5; margin-top:12px; scroll-margin-top:var(--topbar-h,44px); }
+.clubhouse-score-strip { padding:7px 0 9px; border-block:1px solid var(--line); background:var(--bg); }
+.clubhouse-strip-phase { display:block; margin-bottom:5px; color:var(--body-text); font:600 10px/1.3 var(--font-display); }
+.clubhouse-strip-phase[data-state="live"]::before { content:''; display:inline-block; width:5px; height:5px; margin-right:5px; border-radius:50%; background:var(--ok); }
+.clubhouse-strip-teams { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.clubhouse-strip-team { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:center; gap:3px 6px; min-width:0; }
+.clubhouse-strip-team > .dfl-team-mark { width:18px; height:18px; }
+.clubhouse-strip-team > strong { min-width:0; font:600 12px/1.3 var(--font-display); overflow-wrap:anywhere; }
+.clubhouse-strip-team > b { grid-column:2; font:700 20px/1.1 var(--font-display); font-variant-numeric:tabular-nums; }
+.clubhouse-strip-team[data-leading="true"] > b { text-decoration:underline; text-decoration-color:var(--accent); text-decoration-thickness:2px; text-underline-offset:4px; }
+@media(min-width:900px) { .clubhouse-pinned-score { top:calc(var(--topbar-h,44px) + var(--season-nav-height,49px)); } }
