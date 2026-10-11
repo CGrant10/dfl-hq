@@ -1,5 +1,6 @@
 export const NOTIFICATION_CATEGORIES = Object.freeze([
   ["announcements", "Announcements", "Commissioner and league-wide news"],
+  ["wall", "The Wall", "Replies and mentions · optional on this phone"],
   ["trades", "Trades", "Completed deals and breaking trade alerts"],
   ["matchups", "Matchups", "Live scores, injury backups and kickoff reminders"],
   ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
@@ -22,17 +23,20 @@ export const ALL_NOTIFICATION_CATEGORIES = NOTIFICATION_CATEGORIES.map(([id]) =>
   because of it loses the trades and the fee reminders too. Releases stay
   visible in What's New and behind Check for updates either way.
 
+  Wall conversations are also opt-in, so an existing phone never receives
+  unexpected chat pushes. The All preset explicitly opts in to Wall alerts.
+
   Off by default, still one tap away in "What should reach this phone?".
   Existing devices keep whatever they already chose - this is the default for
   a NEW enrolment, not a migration.
 */
 export const DEFAULT_NOTIFICATION_CATEGORIES =
-  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates");
+  ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates" && id !== "wall");
 
 export const NOTIFICATION_PRESETS = Object.freeze({
   essential: ["announcements", "trades", "fees", "matchups"],
   gameday: ["matchups", "weekly", "sportsbook", "waivers"],
-  all: DEFAULT_NOTIFICATION_CATEGORIES,
+  all: ALL_NOTIFICATION_CATEGORIES.filter(id => id !== "updates"),
 });
 
 export function safeNotificationUrl(value) {

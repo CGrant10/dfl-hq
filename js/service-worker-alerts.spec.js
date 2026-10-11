@@ -16,5 +16,6 @@ describe('injury alert expiry on the device',()=>{
   const sw=push({title:'Starter is out',body:'Start Backup',expiresAt:'2100-01-01T00:00:00Z',url:'#/analyzer?owner=a',messageId:12});
   await Promise.all(sw.promises);expect(sw.showNotification).toHaveBeenCalledWith('Starter is out',expect.objectContaining({body:'Start Backup',data:{url:'#/analyzer?owner=a',messageId:12}}));
  });
+ it('opens the exact Wall conversation without buzzing twice for a retry',()=>{const sw=push({title:'Wall reply',category:'wall',url:'#/wall?post=50',messageId:51});expect(sw.showNotification).toHaveBeenCalledWith('Wall reply',expect.objectContaining({renotify:false,data:{url:'#/wall?post=50',messageId:51}}))});
  it('keeps ordinary league notifications working without an expiry',()=>{expect(push({title:'League news'}).showNotification).toHaveBeenCalledTimes(1)});
 });

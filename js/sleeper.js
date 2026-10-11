@@ -1,3 +1,4 @@
+import {reportAppIssue} from './app-diagnostics.js';
 // =====================================================================
 // sleeper.js - a thin wrapper around the public Sleeper API
 // ---------------------------------------------------------------------
@@ -12,10 +13,12 @@ const BASE = "https://api.sleeper.app/v1";
 
 /** GET a Sleeper endpoint and return parsed JSON (or null for 404). */
 async function get(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Sleeper API ${res.status} on ${path}`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}${path}`, options);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Sleeper API ${res.status} on ${path}`);
+    return await res.json();
+  } catch(error) { reportAppIssue('request_error','sleeper'); throw error; }
 }
 
 export const sleeper = {
@@ -128,6 +131,7 @@ async function readCachedJson(cacheName, url, maxAgeMs) {
     }));
     return { data, fetchedAt, fromCache: false };
   } catch (err) {
+    reportAppIssue("request_error","sleeper");
     if (hit) return { data: await hit.json(), fetchedAt: hitAt, fromCache: true, stale: true };
     throw err;
   }

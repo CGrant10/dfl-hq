@@ -6,7 +6,7 @@ import { ensureStylesheet } from "../lazy-css.js";
 
 const labelFor = id => NOTIFICATION_CATEGORIES.find(([key]) => key === id)?.[1] || "League";
 
-function settingsMarkup(state) {
+export function settingsMarkup(state) {
   const capability = pushCapability();
   const active = state?.enabled && !!state?.subscription;
   const selected = new Set(state?.categories || DEFAULT_NOTIFICATION_CATEGORIES);
@@ -67,7 +67,7 @@ export async function render(view) {
     view.querySelector("[data-retry-inbox]")?.addEventListener("click", () => render(view));
     return;
   }
-  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<p class="muted tiny">Wall replies and @mentions appear in your inbox even without push enabled. Wall alerts currently stay in the app.</p><section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
+  view.innerHTML = `<header class="notification-head"><div><small>DFL HQ</small><h1>Notifications</h1><p>${esc(member.display_name)} · your league inbox</p></div><div class="notification-head-actions">${rows.some(r => !r.is_read) ? `<button class="btn ghost small" type="button" data-read-all>Mark all read</button>` : ""}${rows.length ? `<button class="btn ghost small" type="button" data-clear-all>Clear all</button>` : ""}</div></header>${deviceError ? `<p class="card-body" role="status">${esc(deviceError)}</p>` : ""}${settingsMarkup(preferences)}<p class="muted tiny">Wall replies and @mentions appear in your inbox even without push enabled. Turn on The Wall above for phone alerts that open the conversation.</p><section class="notification-inbox"><div class="notification-section-title"><h2>Inbox</h2><span>${rows.length} recent</span></div>${inboxMarkup(rows)}</section>`;
 
   view.querySelector("[data-push-toggle]")?.addEventListener("click", async e => {
     const btn = e.currentTarget;

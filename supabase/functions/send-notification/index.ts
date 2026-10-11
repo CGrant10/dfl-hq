@@ -29,7 +29,7 @@ const corsHeaders = (request?: Request) => ({
   Vary: "Access-Control-Request-Headers",
 });
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: corsHeaders() });
-const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "weekly", "sportsbook", "waivers", "events", "updates"]);
+const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "weekly", "sportsbook", "waivers", "events", "updates", "wall"]);
 
 async function internalSyncRequest(request: Request) {
   const token = request.headers.get("x-dfl-cron-token") || "";
