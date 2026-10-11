@@ -30,7 +30,7 @@ import { readViewMemory, writeViewMemory } from '../view-memory.js';
 import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
 import {tradePerspective,reconcileTradeDestinations} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
-import {proposalsMarkup,tradeDataContext} from '../trade-workspace-ui.js';
+import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy} from '../trade-workspace-ui.js';
 import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
@@ -73,7 +73,7 @@ function tierMarkup(tier, offers, pool, open, total = offers.length) {
   const copy = tierCopy[tier];
   return `<details class="tb-tier is-${tier}" data-tb-tier="${tier}"${open ? " open" : ""}>
     <summary><span class="tb-tier-mark" aria-hidden="true"></span><span><b>${copy.title} (${total})</b></span><svg class="ico tb-tier-chevron" aria-hidden="true"><use href="#i-chev-right"></use></svg></summary>
-    <div>${offers.length ? offers.map(offer => offerMarkup(offer, pool)).join("") : `<p class="tb-tier-empty">No ${copy.title.toLowerCase()} in this set.</p>`}</div>
+    <div>${offers.map(offer => offerMarkup(offer, pool)).join("")}</div>
   </details>`;
 }
 
@@ -194,7 +194,7 @@ function tradeLab(team, teams, pool, shop) {
       <h2 class="section-title">Generated offers<span class="count">Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
       <div class="tb-offers-card">
         <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
-        ${tierOffers.length ? "" : `<div class="ta-empty">No ${tierCopy[intent].title.toLowerCase()} offers found. Try another type or different players.</div>`}
+        ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position))}</div>`}
         <div class="tb-offer-actions">
           <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
           ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
