@@ -22,7 +22,7 @@ import { loadAnalyzerData } from "../team-analyzer-data.js";
 import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdictFor } from "../trade-desk.js";
 import { tradeConfidence } from "../trade-confidence.js";
 import { shareDeal } from "../trade-card.js";
-import { suggestMultiTeamTrades, suggestTrades } from "../team-analyzer.js";
+import {createTradeOfferSearch} from '../trade-offer-search.js';
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity, playerPortrait } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
@@ -49,7 +49,8 @@ const tierCopy = {
 };
 const OFFER_BATCH_SIZE = 6;
 let saveDraft = null;
-export function leave() { saveDraft?.(); saveDraft = null; }
+let stopOffers = null;
+export function leave() { saveDraft?.(); saveDraft = null; stopOffers?.(); stopOffers=null; }
 
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
@@ -145,13 +146,11 @@ function tradeLab(team, teams, pool, shop) {
   }
   shop.offerCache ||= new Map();
   const cacheKey = [team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
-  let allOffers = shop.offerCache.get(cacheKey);
-  if (!allOffers) {
-    allOffers = multi ? suggestMultiTeamTrades({ parties, pool, maxPlayers, sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, sendCount, receiveCount, intent }) : otherTeams.length ? suggestTrades({ teams, teamId: team.id, partnerId: allPartners ? undefined : partner?.id,
-      sendAnchorIds: shop.sendAnchors, receiveAnchorIds: shop.receiveAnchors, maxPlayers,
-      pool, limit: allPartners ? 132 : 96, shapes: shapeKeys, intent }) : [];
-    shop.offerCache.set(cacheKey, allOffers);
-  }
+  const query={teamId:team.id,partnerId: allPartners ? undefined : partner?.id,partyIds:multi?parties.map(t=>t.id):null,
+    maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
+    limit:allPartners?132:96,shapes:shapeKeys};
+  const result=shop.findOffers(cacheKey,query);
+  const allOffers=result.offers||[],searching=result.state==='loading',failed=result.state==='error';
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const representedTeams = new Set(tierOffers.map(offer => String(offer.other.id))).size;
   /* Keep earlier results on screen. The old four-card carousel reported the
@@ -193,14 +192,16 @@ function tradeLab(team, teams, pool, shop) {
       </div>
     </section>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
-      <h2 class="section-title">Generated offers<span class="count">Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}</span></h2>
-      <div class="tb-offers-card">
+      <h2 class="section-title">Generated offers<span class="count">${searching?'Finding offers…':failed?'Try again':`Showing ${visibleOffers.length} of ${tierOffers.length}${allPartners ? ` · ${representedTeams} teams` : ""}`}</span></h2>
+      <div class="tb-offers-card" aria-busy="${searching}">
+        ${searching?'<p class="tb-search-status" role="status">Finding offers…</p><div class="tb-search-placeholder" aria-hidden="true"><i></i><i></i><i></i></div>':failed?'<p class="tb-search-status" role="status">Couldn’t find offers.</p><button type="button" class="btn ghost small" data-tb-retry>Try again</button>':`
         <div class="tb-tiers">${tierMarkup(intent, visibleOffers, pool, shop.openTiers.has(intent), tierOffers.length)}</div>
         ${tierOffers.length ? "" : `<div class="ta-empty" role="status">${tradeOfferEmptyCopy(intent, shop.receiveAnchors.map(id=>pool.get(String(id))?.position))}</div>`}
         <div class="tb-offer-actions">
           <button type="button" class="tb-generate${shop.justRefreshed ? " is-refreshed" : ""}" data-tb-generate ${remainingOffers ? "" : "disabled"}><i class="tb-refresh-mark" aria-hidden="true"></i><span data-tb-generate-label data-default-label="${esc(moreLabel)}">${shop.justRefreshed ? "Offers refreshed" : esc(moreLabel)}</span></button>
           ${remainingOffers > OFFER_BATCH_SIZE ? `<button type="button" class="tb-show-all" data-tb-show-all>Show all ${tierOffers.length}</button>` : ""}
         </div>
+        `}
       </div>
     </section>
   </section>`;
@@ -267,7 +268,47 @@ function page(data, tradeAlerts = []) {
     markup: `<main class="ta-report td-page" data-td-body></main>${completedTradeMarkup(tradeAlerts, selectedTransactionId)}`,
 
     wire(view) {
+      stopOffers?.();
       const body = view.querySelector("[data-td-body]");
+      const search=createTradeOfferSearch({teams:data.teams,pool:data.pool});
+      let stopped=false,offerGeneration=0;
+      const current=()=>!stopped&&view.isConnected;
+      stopOffers=()=>{stopped=true;offerGeneration++;shop.intentStamp=(shop.intentStamp||0)+1;search.stop();};
+      const wireOfferTiers=scope=>scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
+        if(!current()||!body.contains(section))return;
+        const tier=section.dataset.tbTier;
+        if(section.open)shop.openTiers.add(tier);else shop.openTiers.delete(tier);
+        saveDraft?.();
+      }));
+      const paintOffers=()=>{
+        if(!current()||shop.mode==='manual')return;
+        const old=body.querySelector('[data-tb-offers]');if(!old)return;
+        const focused=old.contains(document.activeElement);
+        const template=document.createElement('template');
+        template.innerHTML=tradeLab(data.teams.find(t=>String(t.id)===String(selectedId))||data.teams[0],data.teams,data.pool,shop);
+        const next=template.content.querySelector('[data-tb-offers]');
+        old.replaceWith(next);wireOfferTiers(next);
+        if(focused)next.focus({preventScroll:true});
+      };
+      shop.findOffers=(key,query)=>{
+        if(shop.offerCache.has(key)){
+          if(shop.offerState?.key!==key){offerGeneration++;search.cancel();}
+          return shop.offerState={key,state:'ready',offers:shop.offerCache.get(key)};
+        }
+        if(shop.offerState?.key===key)return shop.offerState;
+        const token=++offerGeneration;
+        shop.offerState={key,state:'loading',offers:[]};
+        search.run(query).then(offers=>{
+          if(!current()||token!==offerGeneration)return;
+          shop.offerCache.set(key,offers);
+          while(shop.offerCache.size>12)shop.offerCache.delete(shop.offerCache.keys().next().value);
+          shop.offerState={key,state:'ready',offers};paintOffers();
+        },error=>{
+          if(!current()||token!==offerGeneration||error.name==='AbortError')return;
+          shop.offerState={key,state:'error',offers:[]};paintOffers();
+        });
+        return shop.offerState;
+      };
       /* Whatever the ticket is currently showing, so Share renders the same
          deal the reader is looking at rather than re-deriving one. */
       let deal = null,proposals=readTradeProposals(me?.id,data.projectionSeason),proposalsOpen=false,transactionScrolled=false;
@@ -278,7 +319,8 @@ function page(data, tradeAlerts = []) {
 
       let sharing = false;
       const draw = () => {
-        if (!view.isConnected) return;
+        if (!current()) return;
+        if(shop.mode==='manual'&&shop.offerState?.state==='loading'){offerGeneration++;shop.offerState=null;search.cancel();}
         // Native toggle events can arrive after an immediate control redraw.
         // Read the current DOM first so an open disclosure never snaps closed.
         const refine=body.querySelector('.tb-refine'),comparison=body.querySelector('.td-proposals');
@@ -313,12 +355,7 @@ function page(data, tradeAlerts = []) {
           shop.customOpen = open;
           saveDraft?.();
         });
-        body.querySelectorAll("[data-tb-tier]").forEach(section => section.addEventListener("toggle", event => {
-          const tier = event.currentTarget.dataset.tbTier;
-          if (event.currentTarget.open) shop.openTiers.add(tier);
-          else shop.openTiers.delete(tier);
-          saveDraft?.();
-        }));
+        wireOfferTiers(body);
         if (shop.justRefreshed) {
           const stamp = shop.refreshStamp;
           setTimeout(() => {
@@ -410,6 +447,7 @@ function page(data, tradeAlerts = []) {
         if (output) output.textContent = value;
       });
       body.addEventListener("click", async event => {
+        if(event.target.closest('[data-tb-retry]')){shop.offerState=null;refreshOffers();return;}
         if (event.target.closest("[data-tb-view-offers]")) {
           const offers = body.querySelector("[data-tb-offers]");
           offers?.scrollIntoView({ block: "start", behavior: "instant" });
@@ -508,12 +546,14 @@ function page(data, tradeAlerts = []) {
           const value = intent.dataset.tbIntent;
           if (value === shop.intent) return;
           shop.intent = value;
+          offerGeneration++;search.cancel();shop.offerState=null;
           shop.openTiers=new Set([value]);
           const options = intent.closest(".tb-intent-options");
           if (options) options.dataset.intent = value;
           options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button === intent));
+          const offers=body.querySelector('[data-tb-offers]');if(offers){offers.inert=true;offers.setAttribute('aria-busy','true');}
           const stamp = shop.intentStamp = (shop.intentStamp || 0) + 1;
-          setTimeout(() => { if (stamp === shop.intentStamp) refreshOffers(); }, 260);
+          setTimeout(() => { if (current()&&stamp === shop.intentStamp) refreshOffers(); }, 260);
           return;
         }
         if (event.target.closest("[data-tb-show-all]")) { shop.visibleCount = Number.MAX_SAFE_INTEGER; draw(); return; }

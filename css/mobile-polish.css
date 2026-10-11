@@ -136,3 +136,18 @@ html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-
   padding-left:max(var(--app-gutter),env(safe-area-inset-left));
   padding-right:max(var(--app-gutter),env(safe-area-inset-right));
 }
+
+/* A quiet cue at the viewport edge, without covering a touch target. */
+.dfl-scroll-cue{position:absolute;z-index:3;display:grid;place-items:center;width:22px;pointer-events:none;color:var(--body-text);font:600 22px/1 var(--font-body);background:linear-gradient(to left,var(--bg) 50%,transparent)}
+.dfl-scroll-cue[data-side="start"]{background:linear-gradient(to right,var(--bg) 50%,transparent)}
+.dfl-scroll-cue[hidden]{display:none}
+/* Keep member colors recognizable while making small Wall labels readable. */
+#view[data-route="wall"] .identity-byline :is(.ib-feat,.ib-title:not(.is-champion)){color:var(--text);color:color-mix(in srgb,var(--ident,var(--accent)) 30%,var(--text));opacity:1}
+.tb-search-status{margin:0 0 14px;font-size:13px;color:var(--body-text)}
+.tb-search-placeholder{display:grid;gap:14px;padding:4px 0 12px}
+.tb-search-placeholder i{display:block;height:14px;border-radius:3px;background:var(--line)}
+.tb-search-placeholder i:last-child{width:65%}
+
+#view[data-route="wall"] .identity-byline{font-size:.6875rem;line-height:1.45;letter-spacing:.04em}
+#view[data-route="wall"] .identity-byline > *{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
+#view[data-route="wall"] .ib-title > span{min-width:0}
