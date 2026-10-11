@@ -9,6 +9,7 @@ import {currentAnalyzerLeague,currentAnalyzerRoster,matchesDflStartingSlots,DFL_
 import {loadExpertRankings} from './expert-rankings-data.js';
 
 const ANALYZER_CACHE_MS = 60 * 1000;
+const TRADE_SIGNALS_CACHE_MS = 5 * 60 * 1000;
 let analyzerValue = null;
 let analyzerExpiresAt = 0;
 let analyzerInFlight = null;
@@ -75,7 +76,7 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   // Exclude the ongoing week: partial totals are not a full game sample.
   const completedWeeks = Array.from({length:Math.max(0,liveWeek-1)},(_,i)=>i+1);
   const liveSignals = liveWeek ? Promise.all([
-    loadWeeklyProjections(projectionSeason, liveWeek, freshTrade?{maxAgeMs:0}:{}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    loadWeeklyProjections(projectionSeason, liveWeek, {maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     Promise.all(completedWeeks.map(week => loadWeeklyStats(projectionSeason, week)
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
@@ -83,7 +84,7 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings] = await Promise.all([
     loadPlayers(freshTrade?{maxAgeMs:0}:{}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
-    loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
+    loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     /* Power Pulse builds its weekly ranking boards from final scores. Keep
        this season-scoped and column-scoped: the board needs at most 84 small
@@ -93,9 +94,10 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
       .eq("season", projectionSeason).lte("week", 14).order("week", { ascending: true }),
     liveSignals,
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
-    loadExpertRankings({season:projectionSeason,scoring:format}),
+    loadExpertRankings({season:projectionSeason,scoring:format},{force:freshTrade}),
   ]);
   if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');
+  if(freshTrade&&(!currentStatsRes.fetchedAt||currentStatsRes.stale))throw new Error('Could not verify current player stats. Try sharing again.');
   const pool = buildPlayerPool({
     rosters: namedRosters,
     players,

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
   const tableRows = {
@@ -45,11 +45,35 @@ vi.mock("./team-analyzer.js", () => ({
   analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
-import { sleeper, loadWeeklyStats, loadWeeklyProjections } from "./sleeper.js";
+import { sleeper, loadSeasonStats, loadWeeklyStats, loadWeeklyProjections } from "./sleeper.js";
+import {loadExpertRankings} from './expert-rankings-data.js';
 import { loadMemberDirectory } from "./members.js";
 import { clearAnalyzerDataCache, loadAnalyzerData } from "./team-analyzer-data.js";
 
 describe("shared analyzer model", () => {
+  beforeEach(()=>{clearAnalyzerDataCache();vi.clearAllMocks();});
+  const liveLeague=()=>({league_id:'league',season:2026,total_rosters:2,scoring_settings:{rec:1},roster_positions:['QB','RB','RB','WR','WR','TE','FLEX','K','DEF','BN']});
+  const freshRosters=()=>[{roster_id:1,owner_id:'a',players:['p1'],starters:['p1']},{roster_id:2,owner_id:'b',players:['p2'],starters:['p2']}];
+  it('bounds ordinary stats and availability caching to five minutes',async()=>{
+    clearAnalyzerDataCache();loadSeasonStats.mockClear();loadWeeklyProjections.mockClear();
+    await loadAnalyzerData();
+    expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:300000});
+    expect(loadWeeklyProjections).toHaveBeenCalledWith(2026,3,{maxAgeMs:300000});
+  });
+  it('fetches current stats, injuries and expert facts together before a final trade check',async()=>{
+    clearAnalyzerDataCache();sleeper.league.mockResolvedValueOnce(liveLeague());sleeper.rosters.mockResolvedValueOnce(freshRosters());
+    loadSeasonStats.mockClear();loadExpertRankings.mockClear();
+    const data=await loadAnalyzerData({freshTrade:true});
+    expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:0});
+    expect(loadWeeklyProjections).toHaveBeenLastCalledWith(2026,3,{maxAgeMs:0});
+    expect(loadExpertRankings).toHaveBeenLastCalledWith({season:2026,scoring:'ppr'},{force:true});
+    expect(data.leagueFormat.verified).toBe(true);
+  });
+  it('blocks final sharing when a current-stat refresh falls back to stale data',async()=>{
+    clearAnalyzerDataCache();sleeper.league.mockResolvedValueOnce(liveLeague());sleeper.rosters.mockResolvedValueOnce(freshRosters());
+    loadSeasonStats.mockImplementationOnce(async()=>({data:{},fetchedAt:1})).mockImplementationOnce(async()=>({data:{},fetchedAt:1,stale:true}));
+    await expect(loadAnalyzerData({freshTrade:true})).rejects.toThrow('current player stats');
+  });
   it("shares in-flight work and refreshes after explicit invalidation", async () => {
     const [first, second] = await Promise.all([loadAnalyzerData(), loadAnalyzerData()]);
     expect(second).toBe(first);

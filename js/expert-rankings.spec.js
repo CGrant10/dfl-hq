@@ -42,4 +42,28 @@ describe('external ROS opinions',()=>{
   vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');const loading=loadExpertRankings({season:2026});await vi.advanceTimersByTimeAsync(2501);
   expect((await loading).status).toBe('Fresh');expect(vi.getTimerCount()).toBe(0);
  });
+ it('rechecks published facts after fifteen minutes and immediately for a final trade check',async()=>{
+  vi.useFakeTimers();vi.setSystemTime(now);let updated=now-3600000;
+  const fetch=vi.fn(async()=>({ok:true,json:async()=>payload({updatedAt:updated})}));vi.stubGlobal('fetch',fetch);
+  vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');
+  expect((await loadExpertRankings({season:2026})).updatedAt).toBe(updated);
+  await loadExpertRankings({season:2026});expect(fetch).toHaveBeenCalledTimes(2);
+  updated=now;expect((await loadExpertRankings({season:2026},{force:true})).updatedAt).toBe(now);expect(fetch).toHaveBeenCalledTimes(4);
+  vi.setSystemTime(now+15*60*1000);await loadExpertRankings({season:2026});expect(fetch).toHaveBeenCalledTimes(6);
+ });
+ it('checks a stale feed again after five minutes without inventing a fresh publication date',async()=>{
+  vi.useFakeTimers();vi.setSystemTime(now);const source=payload({updatedAt:now-EXPERT_MAX_AGE_MS-1});
+  const fetch=vi.fn(async()=>({ok:true,json:async()=>source}));vi.stubGlobal('fetch',fetch);
+  vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');
+  expect((await loadExpertRankings({season:2026})).status).toBe('Stale');
+  vi.setSystemTime(now+5*60*1000);const next=await loadExpertRankings({season:2026});
+  expect(fetch).toHaveBeenCalledTimes(4);expect(next).toMatchObject({status:'Stale',updatedAt:source.updatedAt,usable:false});
+ });
+ it('requires review when both final-recheck reads fail even if an earlier cached feed was fresh',async()=>{
+  vi.useFakeTimers();vi.setSystemTime(now);const fetch=vi.fn(async()=>({ok:true,json:async()=>payload()}));vi.stubGlobal('fetch',fetch);
+  vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');
+  await loadExpertRankings({season:2026});fetch.mockRejectedValue(new Error('offline'));
+  expect((await loadExpertRankings({season:2026},{force:true}))).toMatchObject({status:'Unavailable',usable:false});
+  expect((await loadExpertRankings({season:2026})).status).toBe('Fresh');
+ });
 });
