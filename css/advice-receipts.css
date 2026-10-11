@@ -1,0 +1,25 @@
+.advice-receipts{margin-block:12px;padding:16px;min-width:0;color:var(--text,#e6edf3)}
+.advice-receipts>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.advice-receipts>header>div{min-width:0}
+.advice-receipts>header small{font-size:10px;letter-spacing:.13em;color:var(--muted,#8b949e)}
+.advice-receipts h2{margin:4px 0;font-size:20px;line-height:1.2}
+.advice-receipts>header p,.advice-empty{font-size:12px;line-height:1.55;color:var(--muted,#8b949e);margin:5px 0}
+.advice-receipts>header button{min-height:44px;flex-shrink:0}
+.advice-receipt-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.advice-receipt{min-width:0;border-top:2px solid var(--line,#30363d);padding-top:10px}
+.advice-receipt.is-hit{border-color:#67bd97}.advice-receipt.is-miss{border-color:#e48479}
+.advice-receipt-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.advice-receipt-top small{color:var(--muted,#8b949e);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.advice-receipt-top>span{font-size:11px;letter-spacing:.08em;font-weight:700;flex-shrink:0;color:var(--text,#e6edf3)}
+
+.advice-receipt>strong{display:block;line-height:1.45;font-size:13px;overflow-wrap:anywhere}
+.advice-receipt-result{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.advice-receipt-result b{font-size:24px;font-variant-numeric:tabular-nums;line-height:1.1}
+.advice-receipt-result small{font-size:10px;color:var(--muted,#8b949e)}
+.advice-receipt>p{font-size:12px;line-height:1.5;margin:6px 0}
+.advice-receipts summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:12px;color:var(--muted,#8b949e)}
+.advice-receipts summary:before{content:'›';margin-right:8px}.advice-receipts details[open]>summary:before{content:'⌄'}
+.advice-receipts summary:focus-visible{outline:2px solid var(--accent,#d5aa55);outline-offset:2px;border-radius:3px}
+.advice-receipt details p,.advice-footnote{font-size:11px;line-height:1.55;color:var(--muted,#8b949e);overflow-wrap:anywhere}
+.advice-footnote{margin:12px 0 0}.advice-more{border-top:1px solid var(--line,#30363d);margin-top:10px}
+@media(max-width:600px){.advice-receipt-list{grid-template-columns:1fr}.advice-receipts{padding:14px}.advice-receipts h2{font-size:19px}}

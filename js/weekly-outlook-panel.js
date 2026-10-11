@@ -19,6 +19,7 @@ import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // always showing the same team as the report underneath it.
 // =====================================================================
 
+import {mountAdviceReceipts} from "./advice-receipts-ui.js";
 import { mountLineupLab } from "./lineup-lab-ui.js";
 import {mountRosterCoach} from './roster-coach-ui.js';
 import { onRoute } from "./router.js";
@@ -173,6 +174,7 @@ async function draw(host) {
     showScore: !!host.closest('[data-route="analyzer"]'),
   });
   const coach=document.createElement('div');host.append(coach);mountRosterCoach(coach,{data,team,season,week});
+  const receipts=document.createElement('div');host.append(receipts);mountAdviceReceipts(receipts,{leagueId:data.league.sleeper_league_id,season,week,rosterId:team.id,history:true,teamNames:new Map(data.teams.map(t=>[String(t.id),t.team_name||t.ownerName]))});
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
   const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;
   const lab=document.createElement('div');lab.innerHTML=disclosure("analyzer-tools","Try a lineup swap or read this week’s strategy","Lineup lab and weekly lesson",'<div data-lab-tools></div>');host.append(lab);mountLineupLab(lab.querySelector("[data-lab-tools]"),{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});
