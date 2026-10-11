@@ -7,16 +7,18 @@ const club=t=>({WSH:'WAS',JAC:'JAX',LA:'LAR'}[t]||t);
 const number=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
 const round=n=>Math.round(n*100)/100;
 const changed=(after,before)=>after.filter(id=>id!=='0'&&!before.includes(id));
+const nflClubs=new Set('ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LAC LAR LV MIA MIN NE NO NYG NYJ PHI PIT SEA SF TB TEN WAS'.split(' '));
+const verifiedNoGame=(p,schedule)=>p?.hasGame===false&&nflClubs.has(club(p.team))&&schedule?.size>=24&&!schedule.has(club(p.team));
 const gameFor=(p,schedule)=>schedule?.get(club(p?.team));
 const movable=(p,schedule,now)=>availableBeforeKickoff({...p,state:gameFor(p,schedule)?.key,kickoff:gameFor(p,schedule)?.kickoff},now);
 function snapshot({kind,roster,before,after,pool,schedule,league,season,week,now,label,dropId=null,projectedGain}){
   const added=changed(after,before),removed=changed(before,after);
   if(!added.length||new Set(after.filter(id=>id!=='0')).size!==after.filter(id=>id!=='0').length)return null;
   const diff=[...added,...removed].map(id=>pool.get(id));
-  if(diff.some(p=>!p||number(p.points)===null||p.hasGame&&!movable(p,schedule,now)))return null;
+  if(diff.some(p=>!p||number(p.points)===null||p.hasGame&&!movable(p,schedule,now)||p?.hasGame===false&&!verifiedNoGame(p,schedule)))return null;
   const kickoffs=diff.filter(p=>p.hasGame).map(p=>Date.parse(gameFor(p,schedule)?.kickoff));
   if(!kickoffs.length||kickoffs.some(t=>!Number.isFinite(t)||t<=now)||(number(projectedGain)===null||projectedGain<=0))return null;
-  const playerSnapshot=p=>({id:p.id,name:p.name,position:p.position,team:p.team,projected:p.hasGame&&!p.isOut?p.points:0,noGame:p.hasGame===false,injury:p.injuryStatus||''});
+  const playerSnapshot=p=>({id:p.id,name:p.name,position:p.position,team:p.team,projected:p.hasGame&&!p.isOut?p.points:0,noGame:verifiedNoGame(p,schedule),injury:p.injuryStatus||''});
   return {league_id:String(league.league_id),season,week,roster_id:Number(roster.roster_id),kind,
     source_version:'1.373.0',before_lineup:before,after_lineup:after,
     added_players:added.map(id=>playerSnapshot(pool.get(id))),removed_players:removed.map(id=>playerSnapshot(pool.get(id))),

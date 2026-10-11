@@ -29,6 +29,15 @@ describe('pregame advice receipts',()=>{
   const input=fixture();input.weekly[0].pool.get('bench').points=null;
   expect(buildAdviceReceipts(input).some(r=>r.kind==='lineup')).toBe(false);
  });
+ it('requires a verified bye rather than treating missing opponent metadata as a zero',()=>{
+  const input=fixture();input.weekly[0].pool.get('s3').hasGame=false;
+  expect(buildAdviceReceipts(input).some(r=>r.kind==='lineup')).toBe(false);
+  input.weekly[0].pool.get('s3').team='MIA';
+  const clubs='ARI ATL BAL BUF CAR CHI CIN CLE DAL DEN DET GB HOU IND JAX KC LAC LAR LV MIN NE NO NYG NYJ'.split(' ');
+  input.schedule=new Map(clubs.map(t=>[t,{key:'upcoming',kickoff:'2026-10-11T17:00:00Z'}]));
+  const row=buildAdviceReceipts(input).find(r=>r.kind==='lineup');
+  expect(row.removed_players[0]).toMatchObject({id:'s3',noGame:true,projected:0});
+ });
  it('never records an illegal or reserve/taxi start/sit swap',()=>{
   const input=fixture();input.rosters[0].reserve=['bench'];
   expect(buildAdviceReceipts(input).some(r=>r.kind==='lineup')).toBe(false);
