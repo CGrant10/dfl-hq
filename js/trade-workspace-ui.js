@@ -6,6 +6,13 @@ const name=t=>t?.team_name||t?.ownerName||`Team ${t?.id||''}`;
 const signed=n=>`${Number(n)>0?'+':Number(n)<0?'−':''}${Math.abs(Number(n)||0).toFixed(1)}`;
 const player=p=>p?`<strong>${esc(p.name)}</strong><small>${esc([p.position,p.nflTeam,p.injuryStatus].filter(Boolean).join(' · '))}</small>`:'<span class="muted">Empty slot</span>';
 
+export function tradeOfferEmptyCopy(intent, incomingPositions = []) {
+ if(intent==='steal'&&incomingPositions.includes('QB'))return 'Incoming QBs are excluded from Steal in this 1-QB league. Try Fair or Aggressive.';
+ if(intent==='steal')return 'No clear Steal for this setup. Fair or Aggressive may have offers.';
+ if(intent==='fair')return 'No Fair match for this setup. Try another team or adjust the package.';
+ return 'No usable offers for this setup. Try another team or adjust the package.';
+}
+
 export function lineupComparisonMarkup(deal,pool){
  const previews=lineupPreviewsFor(deal,pool);
  return `<details class="td-lineup-preview"><summary><span>Before &amp; after lineups</span><small>Starters, bench and drops</small></summary><div class="td-lineup-teams">${previews.map((p,i)=>`<section><h3>${esc(name(deal.parties[i]))}</h3><div class="td-lineup-labels"><span>Slot</span><span>Before</span><span>After</span></div>${p.before.map((before,index)=>{const after=p.after[index],changed=String(before.player?.id)!==String(after.player?.id);return `<div class="td-lineup-slot${changed?' is-changed':''}"><small>${before.slot}</small><div>${player(before.player)}</div><div>${player(after.player)}${changed?'<em>Changed</em>':''}</div></div>`}).join('')}<div class="td-lineup-total"><small>Projected ROS avg / wk</small><b>${p.beforePoints.toFixed(1)} → ${p.afterPoints.toFixed(1)}</b></div><details class="td-bench-preview"><summary>Bench &amp; required drops${p.drops.length?` · ${p.drops.length} to drop`:''}</summary><div><small>BENCH BEFORE</small><p>${esc(p.benchBefore.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>BENCH AFTER</small><p>${esc(p.benchAfter.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>REQUIRED DROPS</small><p>${esc(p.drops.map(p=>p.name).join(', ')||'None')}</p></div></details></section>`).join('')}</div></details>`;

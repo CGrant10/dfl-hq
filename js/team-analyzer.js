@@ -631,24 +631,33 @@ function tradeShapes(maxPlayers = 4, shapes = []) {
   return result;
 }
 
-function tradePackages(players, size, required = [], cap = 40) {
+function tradePackages(players, size, required = [], cap = 100) {
   const requiredIds = [...new Set(required.map(String))];
   if (requiredIds.length > size) return [];
   const available = players.map(player => String(player.id)).filter(id => !requiredIds.includes(id));
   if (size === requiredIds.length) return [requiredIds];
-  const packages = [];
   const needed = size - requiredIds.length;
-  const visit = (start, chosen) => {
-    if (chosen.length === needed) { packages.push([...requiredIds, ...chosen]); return; }
-    for (let index = start; index <= available.length - (needed - chosen.length); index++) {
-      visit(index + 1, [...chosen, available[index]]);
-    }
+  const combinations = (count, take) => {
+    if (take < 0 || take > count) return 0;
+    let total = 1;
+    for (let n = 1; n <= Math.min(take, count - take); n++) total = total * (count - n + 1) / n;
+    return Math.round(total);
   };
-  visit(0, []);
-  if (packages.length <= cap) return packages;
-  const sampled = [];
-  for (let index = 0; index < cap; index++) sampled.push(packages[Math.round(index * (packages.length - 1) / (cap - 1))]);
-  return sampled.filter((pkg, index, all) => index === all.findIndex(other => other.join(",") === pkg.join(",")));
+  const total = combinations(available.length, needed), count = Math.min(total, cap);
+  // Sample combination ranks directly. Full rosters and eight-player packages
+  // must not allocate every possible combination just to discard most of them.
+  return Array.from({ length: count }, (_, sample) => {
+    let rank = count === 1 ? 0 : Math.round(sample * (total - 1) / (count - 1)), start = 0;
+    const chosen = [];
+    for (let remaining = needed; remaining > 0; remaining--) {
+      for (let index = start; index <= available.length - remaining; index++) {
+        const group = combinations(available.length - index - 1, remaining - 1);
+        if (rank >= group) { rank -= group; continue; }
+        chosen.push(available[index]); start = index + 1; break;
+      }
+    }
+    return [...requiredIds, ...chosen];
+  });
 }
 
 function rawPackageValue(ids, pool) {
@@ -673,6 +682,7 @@ function evaluationCandidates(possibilities, pool, cap = 900) {
    combinations than 1-for-2 or 3-for-1. Give every requested shape its own
    evaluation budget first, then let value proximity choose within the shape. */
 function shapeBalancedCandidates(possibilities, pool, cap = 1200) {
+  if (cap <= 0) return [];
   if (possibilities.length <= cap) return possibilities;
   const groups = new Map();
   for (const candidate of possibilities) {
@@ -687,19 +697,44 @@ function shapeBalancedCandidates(possibilities, pool, cap = 1200) {
 /* Before evaluation gets expensive, reserve a candidate budget for every
    opponent. Without this pass a league-wide search can spend its entire cap
    on the first few rosters that happen to produce the most combinations. */
-function partnerBalancedCandidates(possibilities, pool, cap = 1800) {
+function partnerBalancedCandidates(possibilities, pool, intent, cap = 1800) {
   const groups = new Map();
+  const evidenceCache = new Map();
+  const evidenceFor = ids => {
+    const key = JSON.stringify(ids);
+    if (!evidenceCache.has(key)) evidenceCache.set(key, packageEvidence(ids, pool));
+    return evidenceCache.get(key);
+  };
   for (const candidate of possibilities) {
     const partner = String(candidate.other?.id ?? "");
     if (!groups.has(partner)) groups.set(partner, []);
     groups.get(partner).push(candidate);
   }
-  if (groups.size <= 1) return shapeBalancedCandidates(possibilities, pool, Math.min(cap, 1200));
+  const select = (group, budget) => {
+    if (intent !== 'fair' && intent !== 'steal') return shapeBalancedCandidates(group, pool, budget).slice(0, budget);
+    const preferred = [], other = [];
+    for (const candidate of group) {
+      const incomingEvidence = evidenceFor(candidate.sendB), outgoingEvidence = evidenceFor(candidate.sendA);
+      const high = Math.max(incomingEvidence.value, outgoingEvidence.value, 1);
+      const fairness = Math.max(0, Math.round(100 - Math.abs(incomingEvidence.value - outgoingEvidence.value) / high * 100));
+      const eligiblePrice = intent === 'fair' ? fairness >= 90 : intent === 'steal'
+        ? (incomingEvidence.value - outgoingEvidence.value) / high >= .12 && incomingEvidence.low > outgoingEvidence.high : false;
+      const tier = eligiblePrice ? tradeSuggestionTier({ fairness, valueToA: incomingEvidence.value, valueToB: outgoingEvidence.value,
+        incomingEvidence, outgoingEvidence, incomingPositionsA: packagePositions(candidate.sendB, pool),
+        comparableStarPremium: comparableStarPremium(candidate.sendA, candidate.sendB, pool),
+        projectionEvidence: projectionEvidence([...candidate.sendA, ...candidate.sendB], pool) }) : null;
+      (tier === intent ? preferred : other).push(candidate);
+    }
+    const selected = shapeBalancedCandidates(preferred, pool, budget).slice(0, budget);
+    const remaining = Math.max(0, budget - selected.length);
+    return [...selected, ...shapeBalancedCandidates(other, pool, remaining).slice(0, remaining)];
+  };
+  if (groups.size <= 1) return select(possibilities, Math.min(cap, 1200));
   const perPartner = Math.max(120, Math.floor(cap / groups.size));
-  return [...groups.values()].flatMap(group => shapeBalancedCandidates(group, pool, perPartner));
+  return [...groups.values()].flatMap(group => select(group, perPartner));
 }
 
-function pairPackages(sendPackages, receivePackages, pool) {
+function pairPackages(sendPackages, receivePackages, pool, intent) {
   if (!sendPackages.length || !receivePackages.length) return [];
   if (sendPackages.length * receivePackages.length <= 320) {
     return sendPackages.flatMap(sendA => receivePackages.map(sendB => ({ sendA, sendB })));
@@ -715,6 +750,15 @@ function pairPackages(sendPackages, receivePackages, pool) {
     }
     const indices = new Set([0, right.length - 1]);
     for (let offset = -2; offset <= 2; offset++) indices.add(Math.max(0, Math.min(right.length - 1, low + offset)));
+    if (intent === 'steal') {
+      // A Steal search needs supported favorable gaps, not only equal prices
+      // and the two extremes. Keep the nearest-value pairs for other tiers.
+      for (const ratio of [1.3, 1.55, 1.85]) {
+        let left = 0, end = right.length;
+        while (left < end) { const mid = (left + end) >> 1; if (right[mid].value < target * ratio) left = mid + 1; else end = mid; }
+        for (let offset = -1; offset <= 1; offset++) indices.add(Math.max(0, Math.min(right.length - 1, left + offset)));
+      }
+    }
     for (const index of indices) pairs.push({ sendA, sendB: right[index].ids });
   }
   return pairs;
@@ -735,7 +779,13 @@ export function tradeSuggestionTier(result) {
   const confidence=tradeConfidence(result);
   const evidence=result.projectionEvidence;
   const dataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length&&!confidence?.needsReview;
-  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length
+  const fairAvailability = !evidence?.injuries?.length || evidence.injuries.every(name => {
+    const players = evidence.players?.filter(player => player.name === name) || [];
+    return players.length && players.every(player => !player.isOut && /^(questionable|q)$/i.test(player.injuryStatus || ''));
+  });
+  // Questionable availability is already priced and still requires review.
+  // Out/reserve players and unsupported inputs retain the stricter exclusion.
+  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&fairAvailability&&!evidence?.stale?.length
     &&(!confidence||confidence.level!=="limited");
   if (result.fairness >= 90 && Math.min(fitA, fitB) >= -.75 && Math.min(weeklyA, weeklyB) >= -1 && fairDataReady) return "fair";
   const supported=dataReady&&(!confidence||confidence.level==='strong');
@@ -826,27 +876,19 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
   const allowedShapes = tradeShapes(Math.max(2, Math.min(8, Number(maxPlayers) || 4)), shapes);
   const possibilities = [];
+  const minePlayers = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
-    const candidatePool = (team, required) => {
-      const ranked = sortedPlayers(team.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
-      const selected = ranked.slice(0, 11);
-      for (const id of required) if (!selected.some(player => String(player.id) === id)) {
-        const anchored = ranked.find(player => String(player.id) === id);
-        if (anchored) selected.push(anchored);
-      }
-      return selected;
-    };
-    const theirs = candidatePool(other, receiveRequired), minePlayers = candidatePool(mine, sendRequired);
+    const theirs = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
     for (const [sendCount, receiveCount] of allowedShapes) {
       const sendPackages = tradePackages(minePlayers, sendCount, sendRequired);
       const receivePackages = tradePackages(theirs, receiveCount, receiveRequired);
-      for (const pair of pairPackages(sendPackages, receivePackages, pool)) {
+      for (const pair of pairPackages(sendPackages, receivePackages, pool, intent)) {
         possibilities.push({ other, ...pair, shape: `${sendCount}-${receiveCount}` });
       }
     }
   }
-  const ranked = partnerBalancedCandidates(possibilities, pool).map(candidate => {
+  const ranked = partnerBalancedCandidates(possibilities, pool, intent).map(candidate => {
     const result = evaluateTrade({ teamA: mine, teamB: candidate.other, sendA: candidate.sendA, sendB: candidate.sendB, pool });
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
