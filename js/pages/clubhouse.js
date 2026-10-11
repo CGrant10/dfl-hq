@@ -12,8 +12,10 @@ import {buildWeeklyClubhouse,weeklyHref} from '../weekly-clubhouse-model.js';
 import {weeklyAwardsHtml,weeklyVoteHtml,weeklyVoteResults,wireMatchupThreads,wireClubhouseTabs} from '../weekly-clubhouse-ui.js';
 import {shareWeeklyClubhouse} from '../weekly-clubhouse-share.js';
 import {readViewMemory,writeViewMemory} from '../view-memory.js';
-let renderGeneration=0;
+let renderGeneration=0,stopLive=null;
+export function leave(){renderGeneration++;stopLive?.();stopLive=null}
 export async function render(view){
+ stopLive?.();stopLive=null;
  const token=++renderGeneration,active=()=>token===renderGeneration&&view.isConnected&&location.hash.startsWith("#/clubhouse");
  view.innerHTML='<header class="page-head"><h1>Clubhouse</h1></header><p role="status">Loading the league’s receipts…</p><div class="clubhouse-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>';
  try{
@@ -38,7 +40,7 @@ export async function render(view){
    <div id="clubhouse-panel-recap" role="tabpanel" aria-labelledby="clubhouse-tab-recap" ${initialTab==='recap'?'':'hidden'}><section class="card clubhouse-section"><div class="clubhouse-heading"><div><small>WEEK ${model.week} · ${model.season}</small><h2>Week in review</h2></div><span class="clubhouse-status">${model.completed?'Final receipts':'In progress'}</span></div><p class="clubhouse-section-copy">${model.completed?'The scores, side bets and best of the Wall. Use Share recap to send the card to your group chat.':'The recap will be ready after the NFL slate finishes.'}</p><div data-clubhouse-recap>${recapHtml(model)}</div></section><section class="card clubhouse-section" data-recap-calls><p role="status">Loading prediction receipts…</p></section></div>
   </div>`;
   const center=mountClubhouseCenter(view,model,{active});
-  mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:center.stop});
+  stopLive=mountMatchupLive(view,model,threadIds,active,{onUpdate:center.update,onError:center.fail,onStop:center.stop});
   wirePageDisclosures(view);
   wireClubhouseTabs(view,initialTab);
   const remember=()=>writeViewMemory(currentMember()?.id,'clubhouse-choice',{season:selected.season,week:selected.week,tab:activeTab(view)});

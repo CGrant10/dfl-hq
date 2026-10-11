@@ -7,6 +7,8 @@ import {matchupTeamView,matchupPhase,matchupSummary} from './clubhouse-matchup-m
 import {animateScoreChanges} from './game-day-score-motion.js';
 import {readPageChoice} from './page-disclosure.js';
 import {keyPlayersHtml,matchupTalkHtml} from './clubhouse-matchup-cards.js';
+import {mountLiveScoreRefresh} from './live-score-refresh.js';
+import {mountScoreFreshness} from './score-freshness.js';
 let stopCurrent=null;
 async function previews(root,threads,active){
  const ids=[...threads.values()];if(!ids.length)return;
@@ -19,17 +21,20 @@ async function previews(root,threads,active){
  }));
 }
 export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{},onError=()=>{},onStop=()=>{}}={}){
- stopCurrent?.();let stopped=false,busy=false,timer,previous=null,stopScoreMotion=()=>{};const current=()=>!stopped&&root.isConnected&&active();
+ stopCurrent?.();let stopped=false,busy=false,previous=null,playerMeta={},stopScoreMotion=()=>{};const current=()=>!stopped&&root.isConnected&&active();
  const status=root.querySelector('[data-matchup-freshness]'),button=root.querySelector('[data-matchup-refresh]');
+ status.classList.add('live-score-freshness');const freshness=mountScoreFreshness(status);
  const refresh=async(force=false)=>{
-  if(busy||!current())return;busy=true;button.disabled=true;button.setAttribute('aria-busy','true');if(force){button.textContent='Refreshing…';status.textContent='Checking the latest scores…';}
+  if(busy||!current())return;busy=true;button.disabled=true;button.setAttribute('aria-busy','true');freshness.update({state:'checking'});if(force)button.textContent='Refreshing…';
    void previews(root,threads,current).catch(()=>{if(current())for(const slot of root.querySelectorAll('[data-chat-preview]'))if(slot.dataset.talkState==='loading'){const talk=matchupTalkHtml({error:true});slot.dataset.talkState=talk.state;slot.innerHTML=talk.html;}});
   try{
-   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers(),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}).then(result=>result.teams)]);
+   const results=await Promise.allSettled([loadWeeklyRosters(model.leagueId,model.week,{maxAgeMs:force?0:60000}),loadPlayers({maxAgeMs:model.completed?86400000:300000}),model.completed?Promise.resolve(null):loadNflGameDay(model.season,model.week,{force}).then(result=>result.teams)]);
    if(!current())return;
-   const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:{},nfl=results[2].status==='fulfilled'?results[2].value:null;
+   const rows=results[0].status==='fulfilled'?results[0].value:[],players=results[1].status==='fulfilled'?results[1].value:playerMeta,nfl=results[2].status==='fulfilled'?results[2].value:null;
    if(!rows.length)throw Error('Weekly scores unavailable');
-   const rosters=new Map(rows.map(row=>[String(row.roster_id),row])),totals={};stopScoreMotion();
+   const rosters=new Map(rows.map(row=>[String(row.roster_id),row])),totals={};
+   if(model.games.some(game=>[game.left,game.right].some(team=>!rosters.has(String(team.roster)))))throw Error('Incomplete weekly scores');
+   playerMeta=players;stopScoreMotion();
    for(const game of model.games){
     const sides=['left','right'].map(side=>matchupTeamView(rosters.get(String(game[side].roster)),players,nfl,{completed:model.completed}));
     for(const [i,side]of ['left','right'].entries()){
@@ -47,13 +52,15 @@ export function mountMatchupLive(root,model,threads,active,{onUpdate=(_data)=>{}
    }
    onUpdate({rows,players,nfl,force});
    stopScoreMotion=animateScoreChanges(root,{previous,model:{snapshot:{totals,points:{}},games:[]},motion:readPageChoice('gameday-motion',['on','off'],'on')==='on',feedback:true});previous={totals};
-   status.textContent=`Scores checked ${new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}${!model.completed&&!nfl?' · NFL status unavailable':''}`;
+   freshness.update({state:navigator.onLine===false?'offline':'ready',checkedAt:Date.now(),nflAvailable:!!nfl,playersAvailable:results[1].status==='fulfilled',completed:model.completed});
 
-  }catch{if(current()){onError();status.textContent='Refresh unavailable. Showing the last scores; retry when connected.';for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}}
+  }catch{if(current()){onError();freshness.update({state:navigator.onLine===false?'offline':'error'});for(const slot of root.querySelectorAll('[data-players-left],[data-players-right]'))if(slot.textContent.includes('Loading lineup'))slot.innerHTML='<small>KEY STARTERS</small><p>Lineup unavailable. Try refreshing.</p>';for(const slot of root.querySelectorAll('[data-remaining-left],[data-remaining-right]'))if(slot.textContent.includes('Checking'))slot.textContent='Player status unavailable'}}
   finally{busy=false;if(current()){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Refresh scores';}}
  };
- const tick=()=>{if(!current()){stopped=true;clearTimeout(timer);return}if(document.visibilityState==='visible'&&!root.querySelector('#clubhouse-panel-matchups')?.hidden)void refresh();timer=setTimeout(tick,60000)};
- const click=()=>void refresh(true);button.addEventListener('click',click);stopCurrent=()=>{stopped=true;clearTimeout(timer);stopScoreMotion();button.removeEventListener('click',click);onStop()};
- void refresh();if(!model.completed)timer=setTimeout(tick,60000);
+ const refreshLoop=mountLiveScoreRefresh({refresh,active:current,enabled:()=>!model.completed&&!root.querySelector('#clubhouse-panel-matchups')?.hidden,onOffline:()=>freshness.update({state:'offline'})});
+ const click=()=>void refreshLoop.request(true),onTab=event=>{if(event.detail?.tab==='matchups')refreshLoop.wake()};
+ button.addEventListener('click',click);root.addEventListener('dfl:clubhouse-tab',onTab);
+ stopCurrent=()=>{stopped=true;refreshLoop.stop();freshness.stop();stopScoreMotion();button.removeEventListener('click',click);root.removeEventListener('dfl:clubhouse-tab',onTab);onStop()};
+ refreshLoop.start();
  return stopCurrent;
 }

@@ -1,5 +1,6 @@
 import {esc} from './ui.js';
 import {playerRowContent} from './game-day-player-rows.js';
+import {lineupCheckHtml} from './game-day-readiness.js';
 
 const order=['QB','RB','WR','TE','FLEX','SUPER_FLEX','K','DEF'];
 const typeOf=p=>({WRRB_FLEX:'FLEX',REC_FLEX:'FLEX',Flex:'FLEX',Superflex:'SUPER_FLEX',Kicker:'K',Def:'DEF',DST:'DEF','D/ST':'DEF'}[p.slotType||p.slot||p.position]||p.slotType||p.slot||p.position||'Starter');
@@ -24,10 +25,10 @@ export function matchupPlayerPairs(left=[],right=[]) {
 const playerCell=(player,team,key)=>`<div class="gameday-player gd-compare-player" data-gameday-row="${esc(player?`${player.roster}:${player.id}`:`missing:${team.roster}:${key}`)}" role="group" aria-label="${esc(team.name)} player">${player?playerRowContent(player,{showSlot:false}):`<span class="gd-lineup-missing">${team.lineup?.length?'No player in slot':'Lineup unavailable'}</span><span class="gd-lineup-missing-score" aria-label="Points unavailable">—</span>`}</div>`;
 const pairedRows=(pairs,a,b,statLines=null)=>`<ul class="gd-lineup-pairs">${pairs.map(row=>`<li class="gd-compare-row" data-compare-slot="${esc(row.key)}" aria-label="${esc(row.label)} comparison">${playerCell(row.left,a,row.key)}<span class="gd-compare-slot">${esc(row.label)}</span>${playerCell(row.right,b,row.key)}${statLines?[row.left,row.right].map((p,i)=>`<p data-clubhouse-stat-key="${esc(p?`${p.roster}:${p.id}`:'')}" class="gd-player-stat-line is-${i?'right':'left'}">${esc(p&&!p.empty?statLines.get(`${p.roster}:${p.id}`)||'No box score yet':'')}</p>`).join(''):''}</li>`).join('')}</ul>`;
 
-export function matchupLineupHtml(game,{statLines=null}={}) {
+export function matchupLineupHtml(game,{statLines=null,completed=false}={}) {
   const [a,b]=game.sides,pairs=matchupPlayerPairs(a.lineup,b.lineup);
   const bench=side=>(side.bench||[]).map(p=>({...p,slot:p.position,slotType:p.position}));
   const benches=matchupPlayerPairs(bench(a),bench(b));
   const header=`<div class="gd-compare-head">${[a,b].map((t,i)=>`${i?'<span aria-hidden="true"></span>':''}<strong>${esc(t.name)}</strong>`).join('')}</div>`;
-  return `<section class="gd-lineup-comparison" aria-label="Side-by-side player comparison"><h3>Starting lineups</h3>${header}${pairs.length?pairedRows(pairs,a,b,statLines):'<p role="status">Starting lineups unavailable.</p>'}${benches.length?`<details class="gameday-bench gd-compare-bench" data-watch-bench="${esc(game.id)}"><summary>Bench · ${a.bench?.length||0} / ${b.bench?.length||0} players</summary>${pairedRows(benches,a,b,statLines)}</details>`:''}</section>`;
+  return `<section class="gd-lineup-comparison" aria-label="Side-by-side player comparison"><h3>Starting lineups</h3><div class="gd-lineup-check-slot">${lineupCheckHtml(game.sides,{completed})}</div>${header}${pairs.length?pairedRows(pairs,a,b,statLines):'<p role="status">Starting lineups unavailable.</p>'}${benches.length?`<details class="gameday-bench gd-compare-bench" data-watch-bench="${esc(game.id)}"><summary>Bench · ${a.bench?.length||0} / ${b.bench?.length||0} players</summary>${pairedRows(benches,a,b,statLines)}</details>`:''}</section>`;
 }

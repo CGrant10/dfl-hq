@@ -1,6 +1,6 @@
 // Browser evidence: measure actual visible text against composited CSS surfaces.
 // Raster illustration contrast still requires the accompanying visual review.
-export function reviewTextContrast() {
+export function reviewTextContrast(root=document.body) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -11,10 +11,10 @@ export function reviewTextContrast() {
   const over = (front, back) => front.slice(0, 3).map((v, i) => v * front[3] / 255 + back[i] * (1 - front[3] / 255));
   const luminance = rgb => rgb.slice(0, 3).map(v => { const s = v / 255; return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
   const checks = [];
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   while (walker.nextNode()) {
     const node = walker.currentNode, e = node.parentElement, text = node.textContent.trim();
-    if (!text || !e.closest('#home-wrap,.topbar,#tabbar,#more') || e.closest('.sr-only,[aria-hidden="true"],.bx-leaving,[disabled]')) continue;
+    if (!text || root===document.body&&!e.closest('#home-wrap,.topbar,#tabbar,#more') || e.closest('.sr-only,[aria-hidden="true"],.bx-leaving,[disabled]')) continue;
     const ancestors = [];
     for (let a = e; a; a = a.parentElement) ancestors.push(a);
     if (ancestors.some(a => { const s = getComputedStyle(a); return s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) < .1 || s.clipPath === 'inset(50%)'; })) continue;
