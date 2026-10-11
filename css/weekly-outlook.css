@@ -168,3 +168,18 @@
   .wo-slot { grid-template-columns: 38px minmax(0, 1fr) 70px; }
   .wo-bar { display: none; }
 }
+
+/* Roster advice uses the existing report density. */
+.coach-pickups { padding:0; list-style:none; margin:12px 0; }
+.coach-pickups li { border-top:1px solid var(--line); padding:12px 0; }
+.coach-pickups li div { display:grid; gap:3px; }
+.coach-pickups strong { font-size:.875rem; overflow-wrap:anywhere; }
+.coach-pickups small,.roster-coach footer small { color:var(--muted); font-size:.6875rem; }
+.coach-pickups span,.coach-pickups p { font-size:.8125rem; line-height:1.45; }
+.coach-pickups p { margin:5px 0; }
+.coach-alerts li { display:grid; gap:3px; }
+.coach-alerts span { font-size:.8125rem; }
+.roster-coach footer { display:grid; gap:8px; }
+.roster-coach footer a { justify-self:start; }
+
+.coach-more > summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:.8125rem; font-weight:600; }

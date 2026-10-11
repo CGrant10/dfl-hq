@@ -1,7 +1,7 @@
 export const NOTIFICATION_CATEGORIES = Object.freeze([
   ["announcements", "Announcements", "Commissioner and league-wide news"],
   ["trades", "Trades", "Completed deals and breaking trade alerts"],
-  ["matchups", "Matchups", "Live, final and matchup reminders"],
+  ["matchups", "Matchups", "Live scores, injury backups and kickoff reminders"],
   ["weekly", "Weekly reports", "Tuesday recap and next-week outlook"],
   ["sportsbook", "Sportsbook", "Settled tickets, wins and losses"],
   ["waivers", "Waivers", "Useful pickups and roster movement"],

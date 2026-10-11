@@ -20,6 +20,7 @@ import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // =====================================================================
 
 import { mountLineupLab } from "./lineup-lab-ui.js";
+import {mountRosterCoach} from './roster-coach-ui.js';
 import { onRoute } from "./router.js";
 import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { loadTrendingPlayers, loadWeeklyProjections } from "./sleeper.js";
@@ -171,6 +172,7 @@ async function draw(host) {
     advice, trending, defense, stale: projections.stale,
     showScore: !!host.closest('[data-route="analyzer"]'),
   });
+  const coach=document.createElement('div');host.append(coach);mountRosterCoach(coach,{data,team,season,week});
   const game=(data.matchups||[]).find(g=>Number(g.season)===season&&Number(g.week)===week&&[g.roster1,g.roster2].map(String).includes(String(team.id)));
   const opponent=game?data.teams.find(t=>String(t.id)===String(String(game.roster1)===String(team.id)?game.roster2:game.roster1)):null;
   const lab=document.createElement('div');lab.innerHTML=disclosure("analyzer-tools","Try a lineup swap or read this week’s strategy","Lineup lab and weekly lesson",'<div data-lab-tools></div>');host.append(lab);mountLineupLab(lab.querySelector("[data-lab-tools]"),{team,opponent,weekly:pool,week,season,defense,fetchedAt:projections.fetchedAt,stale:projections.stale});

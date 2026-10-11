@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
 
 /*
@@ -65,7 +65,7 @@ async function maySend(request: Request, url: string, publishableKey: string) {
   return !error && data === true;
 }
 
-async function vapidKeys(admin: ReturnType<typeof createClient>) {
+async function vapidKeys(admin: SupabaseClient) {
   const fromEnvironment = {
     publicKey: Deno.env.get("VAPID_PUBLIC_KEY") || "",
     privateKey: Deno.env.get("VAPID_PRIVATE_KEY") || "",
@@ -112,6 +112,9 @@ Deno.serve(async request => {
     const targetUrl = /^#\/[a-z0-9-]+(?:\?[^\s]*)?$/i.test(input.targetUrl || "") ? input.targetUrl : "#/home";
     const sourceKey = /^(?:trade|weekly|sportsbook):[a-z0-9:_-]{1,140}$/i.test(String(input.sourceKey || ""))
       ? String(input.sourceKey) : null;
+    const lineupAlert=internalSync&&sourceKey?.startsWith('weekly:lineup:')&&category==='matchups';
+    const expiresAt=lineupAlert?Date.parse(input.expiresAt):NaN;
+    if(lineupAlert&&(!Number.isFinite(expiresAt)||expiresAt<=Date.now()))return json({ok:true,skipped:'expired',delivered:0});
     let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];
     if (internalSync && input.audience === "commissioners") {
@@ -148,6 +151,7 @@ Deno.serve(async request => {
       return json({ ok: true, messageId: winner.data.id, delivered: 0, failed: 0, pushConfigured: true, duplicate: true });
     }
     if (insertError) throw insertError;
+    if(!message)throw new Error('Notification could not be recorded');
 
     let query = admin.from("push_subscriptions").select("id,member_id,endpoint,p256dh,auth,categories").eq("enabled", true);
     if (audience === "members") query = query.in("member_id", targetIds);
@@ -161,6 +165,7 @@ Deno.serve(async request => {
       webpush.setVapidDetails(subject, keys.publicKey, keys.privateKey);
       const payload = JSON.stringify({
         title, body, category, url: targetUrl, messageId: message.id,
+        ...(lineupAlert?{expiresAt:new Date(expiresAt).toISOString()}:{}),
         /* badge must be a transparent silhouette - Android keeps only its
            alpha channel. The service worker pins this anyway; it is correct
            here too so the payload does not carry a value that would be wrong
@@ -169,12 +174,14 @@ Deno.serve(async request => {
       });
       await Promise.all((subscriptions || []).filter(row => Array.isArray(row.categories) && row.categories.includes(category)).map(async row => {
         try {
-          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: 86400, urgency: category === "trades" ? "high" : "normal" });
+          if(lineupAlert&&expiresAt<=Date.now())return;
+          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: lineupAlert?Math.max(1,Math.min(5400,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: category === "trades" || lineupAlert ? "high" : "normal" });
           delivered++;
           await admin.from("push_subscriptions").update({ failure_count: 0, last_success_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", row.id);
         } catch (error) {
           failed++;
-          const gone = error?.statusCode === 404 || error?.statusCode === 410;
+          const statusCode=error&&typeof error==='object'&&'statusCode' in error?Number(error.statusCode):0;
+          const gone = statusCode === 404 || statusCode === 410;
           await admin.from("push_subscriptions").update({ enabled: gone ? false : true, failure_count: gone ? 99 : 1, updated_at: new Date().toISOString() }).eq("id", row.id);
         }
       }));

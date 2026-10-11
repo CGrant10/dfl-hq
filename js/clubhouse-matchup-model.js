@@ -4,7 +4,7 @@ const club=v=>({WSH:'WAS',JAC:'JAX',LA:'LAR'}[v]||v);
 export function nflWeekStatuses(payload,season,week){
  if(Number(payload?.season?.year)!==Number(season)||Number(payload?.season?.type)!==2||Number(payload?.week?.number)!==Number(week)||!payload.events?.length)throw Error('NFL week status unavailable');
  const teams=new Map();
- for(const event of payload.events){const type=event.status?.type||{},key=type.completed||type.state==='post'?'final':type.state==='in'?'live':type.state==='pre'?'upcoming':'unknown';
+ for(const event of payload.events){const type=event.status?.type||{},key=/cancel|postpon/i.test(type.name||'')?'unknown':type.completed||type.state==='post'?'final':type.state==='in'?'live':type.state==='pre'?'upcoming':'unknown';
   for(const team of event.competitions?.[0]?.competitors||[])teams.set(club(team.team?.abbreviation),{key,label:type.shortDetail||type.description||'',kickoff:event.date,afterHalftime:key==='final'||key==='live'&&Number(event.status?.period)>=3});
  }
  return teams;

@@ -9,7 +9,7 @@ import {currentMember,loadMemberDirectory} from '../members.js';
 import {esc,errorBox,toast} from '../ui.js';
 import {loadClubhouseIndex,loadClubhouseWeek,enrichClubhouseWeek} from '../weekly-clubhouse-data.js';
 import {buildWeeklyClubhouse,weeklyHref} from '../weekly-clubhouse-model.js';
-import {weeklyAwardsHtml,weeklyVoteHtml,weeklyVoteResults,wireMatchupThreads,wireClubhouseTabs} from '../weekly-clubhouse-ui.js';
+import {weeklyAwardsHtml,weeklyReceiptsHtml,weeklyVoteHtml,weeklyVoteResults,wireMatchupThreads,wireClubhouseTabs} from '../weekly-clubhouse-ui.js';
 import {shareWeeklyClubhouse} from '../weekly-clubhouse-share.js';
 import {readViewMemory,writeViewMemory} from '../view-memory.js';
 let renderGeneration=0,stopLive=null;
@@ -77,7 +77,7 @@ export async function render(view){
 }
 function overviewAwardsHtml(model){
  if(!model.awards.length)return weeklyAwardsHtml(model);
- return weeklyAwardsHtml({...model,awards:model.awards.slice(0,1)})+disclosure('clubhouse-awards','View all weekly awards',`${model.awards.length} awards · blowouts, close calls and bench regret`,weeklyAwardsHtml({...model,awards:model.awards.slice(1)}));
+ return weeklyAwardsHtml({...model,awards:model.awards.slice(0,1)})+weeklyReceiptsHtml(model)+disclosure('clubhouse-awards','View all weekly awards',`${model.awards.length} awards · blowouts, close calls and bench regret`,weeklyAwardsHtml({...model,awards:model.awards.slice(1)}));
 }
 function matchupFocusHtml(model,threadIds){
  const member=currentMember(),focus=model.games.find(g=>[g.left.memberId,g.right.memberId].some(id=>id&&String(id)===String(member?.id)))||model.games[0];

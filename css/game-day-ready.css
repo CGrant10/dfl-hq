@@ -26,3 +26,16 @@
 .gd-watch-live .live-score-freshness::before { display:none; }
 @media (max-width:360px) { .gd-lineup-check > summary small { margin-left:0; } }
 @media (prefers-reduced-motion:reduce) { .gd-lineup-check > summary::after { transition:none; } }
+
+.matchup-targets { border-top:1px solid var(--line); margin:10px 0; padding:10px 0; }
+.matchup-targets > small { color:var(--muted); font-size:.625rem; font-weight:700; letter-spacing:.06em; }
+.matchup-targets p { display:grid; gap:2px; margin:6px 0; font-size:.75rem; line-height:1.45; overflow-wrap:anywhere; }
+.matchup-targets strong { font-size:.75rem; }
+.matchup-targets span { color:var(--body-text); }
+.weekly-roast-receipts { border-top:1px solid var(--line); margin:12px 0; padding-top:12px; }
+.weekly-roast-receipts h3 { font-size:1rem; margin:0 0 10px; }
+.weekly-roast-receipts article { padding:10px 0; border-top:1px solid var(--line); }
+.weekly-roast-receipts article > small { color:var(--muted); font-size:.625rem; font-weight:700; text-transform:uppercase; }
+.weekly-roast-receipts p { margin:4px 0; font-size:.8125rem; line-height:1.5; overflow-wrap:anywhere; }
+.weekly-roast-receipts summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-size:.75rem; }
+.weekly-roast-receipts details p { color:var(--muted); font-size:.75rem; }

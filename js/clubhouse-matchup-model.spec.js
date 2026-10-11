@@ -4,6 +4,9 @@ const players={a:{n:'QB',p:'QB',t:'PIT'},b:{n:'RB',p:'RB',t:'WAS'},c:{n:'WR',p:'
 const row={starters:['a','b','c','0'],points:12,players_points:{a:0,b:12}};
 const schedule=new Map([['PIT',{key:'final'}],['WAS',{key:'live'}],['SEA',{key:'upcoming'}]]);
 describe('matchup game-day states',()=>{
+ it('does not treat postponed or cancelled games as unlocked upcoming games',()=>{
+  for(const name of ['STATUS_POSTPONED','STATUS_CANCELED']){const payload={season:{year:2026,type:2},week:{number:5},events:[{date:'2026-10-11T17:00:00Z',status:{type:{name,state:'pre'}},competitions:[{competitors:[{team:{abbreviation:'CHI'}}]}]}]};expect(nflWeekStatuses(payload,2026,5).get('CHI').key).toBe('unknown')}
+ });
  it('counts live and upcoming starters remaining, including a final player scoring zero',()=>{const t=matchupTeamView(row,players,schedule);expect(t.remaining).toBe(2);expect(t.live).toBe(1);expect(t.score).toBe(12);expect(t.featured.map(p=>p.id)).toEqual(['a','b'])});
  it('keeps missing schedule status unknown instead of treating everyone as finished',()=>{expect(matchupTeamView(row,players,null).remaining).toBeNull();expect(matchupTeamView(row,players,new Map()).remaining).toBeNull()});
  it('does not invent a starting lineup or score',()=>{const t=matchupTeamView(undefined,players,schedule);expect(t.remaining).toBeNull();expect(t.score).toBeNull();expect(t.featured).toEqual([])});

@@ -119,7 +119,7 @@ def check_game_day_scope(page):
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
         import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js'),
-        import('./js/live-score-refresh.js'), import('./js/score-freshness.js'), import('./js/game-day-readiness.js')
+        import('./js/live-score-refresh.js'), import('./js/score-freshness.js'), import('./js/game-day-readiness.js'), import('./js/matchup-targets.js')
       ]));
       const check=(condition,message)=>{if(!condition)throw Error(message)};
       const region=document.createElement('div');region.innerHTML='<div></div><div></div>';document.body.append(region);
@@ -133,7 +133,7 @@ def check_game_day_scope(page):
         loadWeeklyRosters:async()=>{if(fail)throw Error('Fixture unavailable');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:n===1?[String(n),'0']:[String(n)],players:[String(n)],players_points:{[n]:n===1?points:0}}))},
         loadPlayers:async()=>({'1':{n:'Scope One',p:'QB',t:'KC',i:availability},'2':{n:'Scope Two',p:'QB',t:'NO'}}),
         loadNflGameDay:async(season,week)=>({teams:new Map(['KC','NO'].map(t=>[t,{key:state}])),payload:{events:[{id:`opening-${week}`,date:'2099-10-09T00:15:00Z',status:{type:{state:week===5?openingState:'pre'}}}]}}),
-        sleeper:{league:async()=>({roster_positions:['QB','RB']})},loadLore:async()=>({matchups:[]}),
+        sleeper:{league:async()=>({roster_positions:['QB','RB']}),rosters:async()=>[1,2].map(n=>({roster_id:n,players:[String(n)],reserve:[],taxi:[]}))},loadLore:async()=>({matchups:[]}),
         reconcileLeagueResults:()=>({standings:[]}),loadLatestLeagueResults:async()=>null,
         matchupReceiptData:()=>null,shareMatchupReceipt:async()=>{},
         loadGameDayMoments:async()=>({items:[]}),animateScoreChanges:()=>noop,mountScoreVfx:()=>({stop:noop}),
@@ -217,7 +217,7 @@ def check_matchup_interactions(page):
         if(table==='member_wall_reply_counts')return {in:async()=>({data:[{post_id:91,reply_count:replyCount}]})};
         return {eq:()=>({order(){return this},limit:async()=>({data:reply?[reply]:[],error:previewError?Error('Fixture offline'):null})})};
       }})});
-      const providers={db:fixtureDb,loadPlayers:async()=>({'1':{n:'David Montgomery',p:'RB',t:'DET'},'2':{n:'Amon-Ra St. Brown',p:'WR',t:'DET'}}),loadWeeklyRosters:async()=>{calls++;if(release)await new Promise(r=>release=r);if(fail)throw Error('Fixture offline');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players_points:{[n]:n===1?points:0}}))},loadNflGameDay:async()=>({teams:new Map(['DET'].map(t=>[t,{key:'live'}]))})};
+      const providers={db:fixtureDb,sleeper:{rosters:async()=>[1,2].map(n=>({roster_id:n,players:[String(n)],reserve:[],taxi:[]}))},loadPlayers:async()=>({'1':{n:'David Montgomery',p:'RB',t:'DET'},'2':{n:'Amon-Ra St. Brown',p:'WR',t:'DET'}}),loadWeeklyRosters:async()=>{calls++;if(release)await new Promise(r=>release=r);if(fail)throw Error('Fixture offline');return [1,2].map(n=>({roster_id:n,points:n===1?points:0,starters:[String(n)],players_points:{[n]:n===1?points:0}}))},loadNflGameDay:async()=>({teams:new Map(['DET'].map(t=>[t,{key:'live'}]))})};
       const deps={...helpers,...providers};const mount=Function(...Object.keys(deps),source+';return mountMatchupLive')(...Object.values(deps));
       helpers.savePageChoice('gameday-motion','on');
       const stop=mount(region,model,threads,()=>active),button=region.querySelector('[data-matchup-refresh]'),value=region.querySelector('[data-score-left] [data-matchup-score-value]');
