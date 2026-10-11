@@ -6,8 +6,15 @@ const name=t=>t?.team_name||t?.ownerName||`Team ${t?.id||''}`;
 const signed=n=>`${Number(n)>0?'+':Number(n)<0?'−':''}${Math.abs(Number(n)||0).toFixed(1)}`;
 const player=p=>p?`<strong>${esc(p.name)}</strong><small>${esc([p.position,p.nflTeam,p.injuryStatus].filter(Boolean).join(' · '))}</small>`:'<span class="muted">Empty slot</span>';
 
-export function tradeOfferEmptyCopy(intent, incomingPositions = []) {
+export function closestTradeOffers(offers, intent, limit = 3) {
+ if(offers.some(offer=>offer.tier===intent))return [];
+ const tier=['aggressive','fair','steal'].find(tier=>tier!==intent&&offers.some(offer=>offer.tier===tier));
+ return offers.filter(offer=>offer.tier===tier).slice(0,limit);
+}
+
+export function tradeOfferEmptyCopy(intent, incomingPositions = [], offers = []) {
  if(intent==='steal'&&incomingPositions.includes('QB'))return 'Incoming QBs are excluded from Steal in this 1-QB league. Try Fair or Aggressive.';
+ if(intent==='steal'&&offers.length&&offers.every(offer=>offer.projectionEvidence?.expert?.required&&offer.projectionEvidence.expert.status!=='Fresh'))return 'Steal needs fresh expert rankings. Closest available offers below.';
  if(intent==='steal')return 'No clear Steal for this setup. Fair or Aggressive may have offers.';
  if(intent==='fair')return 'No Fair match for this setup. Try another team or adjust the package.';
  return 'No usable offers for this setup. Try another team or adjust the package.';
