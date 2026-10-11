@@ -12,3 +12,8 @@ verify_jwt = false
 # Authorization is re-checked against DFL commissioner permissions, or the
 # scheduled job's dedicated token. The provider key never reaches the browser.
 verify_jwt = false
+
+[functions.roster-advice]
+# The worker accepts only the existing Vault cron token, checked by SHA-256.
+# Browsers cannot supply recommendations, timestamps or write receipts.
+verify_jwt = false

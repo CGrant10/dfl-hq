@@ -4,17 +4,17 @@ const usable=p=>p&&finite(p.points)&&p.hasGame&&!p.isOut;
 const round=n=>Math.round(n*10)/10;
 
 // Maximum-weight slot assignment; a flex never steals a needed second RB/WR.
-export function rosterLineupScore(ids,pool,{locked=[]}={}) {
-  let mask=0,total=0;const used=new Set();
-  for(const {id,slotIndex} of locked){if(mask&(1<<slotIndex))continue;mask|=1<<slotIndex;used.add(String(id));const p=pool.get(String(id));if(!p||!finite(p.points))return null;total+=p.hasGame&&!p.isOut?Number(p.points):0}
-  let states=new Map([[mask,{total,filled:locked.length}]]);
+export function rosterLineupScore(ids,pool,{locked=[],includeLineup=false}={}) {
+  let mask=0,total=0;const used=new Set(),slots=Array(DFL_SLOTS.length).fill("0");
+  for(const {id,slotIndex} of locked){if(mask&(1<<slotIndex))continue;mask|=1<<slotIndex;used.add(String(id));slots[slotIndex]=String(id);const p=pool.get(String(id));if(!p||!finite(p.points))return null;total+=p.hasGame&&!p.isOut?Number(p.points):0}
+  let states=new Map([[mask,{total,filled:locked.length,...(includeLineup?{slots}: {})}]]);
   for(const id of [...new Set(ids.map(String))]){
     if(used.has(id))continue;const p=pool.get(id);if(!usable(p))continue;
     const next=new Map(states);
     for(const [bits,value]of states)for(let i=0;i<DFL_SLOTS.length;i++){
       if(bits&(1<<i)||!slotEligible(p,DFL_SLOTS[i]))continue;
       const key=bits|1<<i,candidate={total:value.total+Number(p.points),filled:value.filled+1};
-      if(!next.has(key)||candidate.total>next.get(key).total)next.set(key,candidate);
+      if(!next.has(key)||candidate.total>next.get(key).total){if(includeLineup){candidate.slots=[...value.slots];candidate.slots[i]=id}next.set(key,candidate);}
     }
     states=next;
   }
