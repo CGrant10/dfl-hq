@@ -66,4 +66,11 @@ describe('external ROS opinions',()=>{
   expect((await loadExpertRankings({season:2026},{force:true}))).toMatchObject({status:'Unavailable',usable:false});
   expect((await loadExpertRankings({season:2026})).status).toBe('Fresh');
  });
+ it('backs off unavailable sources for five minutes while allowing an explicit immediate retry',async()=>{
+  vi.useFakeTimers();vi.setSystemTime(now);const fetch=vi.fn(async()=>{throw Error('offline')});vi.stubGlobal('fetch',fetch);
+  vi.resetModules();const {loadExpertRankings}=await import('./expert-rankings-data.js');
+  await loadExpertRankings({season:2026});await loadExpertRankings({season:2026});expect(fetch).toHaveBeenCalledTimes(2);
+  await loadExpertRankings({season:2026},{force:true});expect(fetch).toHaveBeenCalledTimes(4);
+  vi.setSystemTime(now+5*60*1000);await loadExpertRankings({season:2026});expect(fetch).toHaveBeenCalledTimes(6);
+ });
 });

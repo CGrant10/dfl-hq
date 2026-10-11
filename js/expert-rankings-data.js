@@ -5,7 +5,7 @@ let cached=null,inFlight=null,expiresAt=0;
 async function read(url){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2500);try{const response=await fetch(url,{signal:controller.signal,cache:'no-cache'});if(!response.ok)throw new Error('Expert rankings unavailable');return await response.json()}finally{clearTimeout(timer)}}
 export async function loadExpertRankings(context={}, {force=false}={}){
  let verified=true;
- if(force||!cached||Date.now()>=expiresAt){
+ if(force||Date.now()>=expiresAt){
   if(!inFlight)inFlight=(async()=>{
    const results=await Promise.allSettled([read(published),read(snapshot)]);
    const valid=results.filter(r=>r.status==='fulfilled'&&assessExpertRankings(r.value,{...context,season:r.value?.season}).updatedAt).map(r=>r.value);
