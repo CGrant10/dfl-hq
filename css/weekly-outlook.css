@@ -183,3 +183,21 @@
 .roster-coach footer a { justify-self:start; }
 
 .coach-more > summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:.8125rem; font-weight:600; }
+.roster-coach [data-coach-refresh] { min-height:44px; flex-shrink:0; font-size:.75rem; }
+#view.view[data-page-system][data-route="analyzer"] .roster-coach .wo-head { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:10px; }
+.roster-coach .wo-head > div { min-width:0; }
+.coach-market { padding:0 0 10px; border-bottom:1px solid var(--line); }
+.coach-market + .coach-pickups > li:first-child { border-top:0; }
+.coach-market > div { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; }
+.coach-market small { flex-basis:100%; color:var(--muted); font-size:.625rem; letter-spacing:.08em; }
+.coach-market span,.coach-market-status { font-size:.75rem; }
+.coach-market p { display:flex; gap:16px; flex-wrap:wrap; margin:6px 0 0; color:var(--muted); }
+.coach-market p strong { color:var(--text); }
+.coach-intel summary,.coach-drops summary { min-height:44px; padding:8px 0; font-size:.75rem; line-height:1.5; cursor:pointer; overflow-wrap:anywhere; }
+.coach-intel > div,.coach-drops > ul { padding:0 0 10px; }
+.coach-intel ul,.coach-drops ul { list-style:none; padding-left:0; margin:0; }
+.coach-intel li,.coach-drops li { display:grid; gap:3px; border-top:1px solid var(--line); padding:9px 0; }
+.coach-intel li span,.coach-drops li span { font-size:.75rem; color:var(--muted); }
+.coach-drops li div { display:grid; gap:3px; }
+.coach-drops strong { font-size:.8125rem; overflow-wrap:anywhere; }
+.coach-drops small,.coach-intel > div > small { font-size:.6875rem; color:var(--muted); }
