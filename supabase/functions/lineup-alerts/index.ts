@@ -5,7 +5,7 @@ import {nflWeekStatuses} from '../../../js/clubhouse-matchup-model.js';
 import {gameDayLineup} from '../../../js/game-day-model.js';
 import {matchesDflStartingSlots} from '../../../js/analyzer-league-context.js';
 import {buildWeeklyPool} from '../../../js/weekly-outlook.js';
-import {MATCHUP_MOMENTS_CATEGORY,matchupMomentDrafts,matchupMomentWindow} from '../../../js/matchup-moments.js';
+import {MATCHUP_MOMENTS_FILTER,matchupMomentDrafts,matchupMomentWindow} from '../../../js/matchup-moments.js';
 const TOKEN_HASH='c7429c5c8cfd182e13e7f1b537b0f671b0b99dcb004b19f8580b960f8f957091';
 const get=async(url:string)=>{const response=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 DFL-HQ-Roster-Coach/1.0'},signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error(`Roster alert provider ${new URL(url).hostname}: ${response.status}`);return response.json()};
 function secretKey(){try{return JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default||Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}catch{return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''}}
@@ -29,7 +29,7 @@ Deno.serve(async request=>{
     const windowOpen=[...schedule.values()].some(s=>s.key==='upcoming'&&Date.parse(s.kickoff)>now&&Date.parse(s.kickoff)-now<=90*60000);
     const momentWindow=matchupMomentWindow(schedule,now);
     if(!windowOpen&&!momentWindow.live&&!momentWindow.final&&!dryRun)return Response.json({ok:true,skipped:'no-game-window'});
-    const opted=await admin.from('push_subscriptions').select('member_id').eq('enabled',true).contains('categories',[MATCHUP_MOMENTS_CATEGORY]);
+    const opted=await admin.from('push_subscriptions').select('member_id').eq('enabled',true).contains('categories',MATCHUP_MOMENTS_FILTER);
     if(opted.error)console.warn('Matchup moment preferences unavailable; keeping lineup checks');
     const optedMemberIds=[...new Set((opted.error?[]:opted.data||[]).map(row=>Number(row.member_id)))];
     if(!windowOpen&&!optedMemberIds.length&&!dryRun)return Response.json({ok:true,skipped:'no-opted-moments'});

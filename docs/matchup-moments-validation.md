@@ -1,4 +1,4 @@
-# Optional matchup moments — v1.371.0
+# Optional matchup moments — v1.371.1
 
 Notifications adds a separate **Matchup moments** category for late close games and the current final result. It is off by default, including on existing devices. Choosing Game day or Everything explicitly includes it; Essential does not. Existing kickoff injury alerts retain their separate Matchups setting.
 
@@ -20,5 +20,7 @@ The existing protected `lineup-alerts` worker handles both kickoff injury checks
 ## Verification
 
 The focused tests cover opt-in targeting, legal pairing, actual scores, close-game timing, missing/stale provider data, finals, byes, ties, per-owner/week deduplication, device opt-out rechecks, payload expiry, exact destinations and category defaults/presets. Full project checks include identifiers, types, the unit suite and production build; Deno checks both workers and their actual dependencies.
+
+CI also runs an isolated request through the same pinned Supabase SDK as production and verifies that category containment serializes as a JSONB array. Both workers use the shared explicit JSON filter; a JavaScript array would instead produce a Postgres array literal.
 
 Read-only real-app browser checks exercise all live screens, the exact matchup link, simulated existing-device settings, explicit Game day selection, and 320/390/768 px layouts. All diagnostic writes are intercepted. Backend live checks use authenticated dry runs and sender requests that are already expired or have no opted-in recipients. No test notifications are sent to members.
