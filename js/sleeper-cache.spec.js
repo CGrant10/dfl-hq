@@ -27,4 +27,12 @@ describe("Sleeper analyzer cache", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     expect(first.data).toEqual(second.data);
   });
+  it('revalidates browser HTTP caches as well as stored stats during an explicit fresh check',async()=>{
+    const cached=new Response(JSON.stringify({x:{rec:10}}),{headers:{'x-fetched-at':String(Date.now())}});
+    const cache={match:vi.fn().mockResolvedValue(cached),put:vi.fn().mockResolvedValue(undefined)};
+    globalThis.caches={open:vi.fn().mockResolvedValue(cache)};
+    globalThis.fetch=vi.fn().mockResolvedValue(new Response(JSON.stringify({x:{rec:12}})));
+    expect((await loadSeasonStats(2098,{maxAgeMs:0})).data.x.rec).toBe(12);
+    expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('/regular/2098'),{cache:'no-cache'});
+  });
 });

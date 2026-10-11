@@ -122,7 +122,7 @@ async function readCachedJson(cacheName, url, maxAgeMs) {
   }
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, {cache:maxAgeMs===0?'no-cache':'default'});
     if (!res.ok) throw new Error(`Sleeper API ${res.status}`);
     const data = await res.json();
     const fetchedAt = Date.now();
@@ -317,7 +317,7 @@ export function loadPlayers({maxAgeMs = PLAYER_CACHE_MS} = {}) {
       }
     }
 
-    const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000)});
+    const res = await fetch(PLAYER_URL, {signal:AbortSignal.timeout(12000),cache:maxAgeMs===0?'no-cache':'default'});
     if (!res.ok) throw new Error(`Could not load the Sleeper player list (${res.status})`);
     const raw = await res.json();
 

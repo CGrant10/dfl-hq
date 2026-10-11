@@ -29,4 +29,8 @@ describe('live player availability caching',()=>{
     await expect(loadPlayers({maxAgeMs:300000})).rejects.toThrow('Offline');
     expect((await loadPlayers({maxAgeMs:300000})).x.i).toBe('Out');expect(fetch).toHaveBeenCalledTimes(2);
   });
+  it('revalidates HTTP-cached player status during a final trade check',async()=>{
+    const {loadPlayers,fetch}=await setup();await loadPlayers({maxAgeMs:0});
+    expect(fetch.mock.calls[0][1].cache).toBe('no-cache');
+  });
 });
