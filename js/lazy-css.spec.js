@@ -17,6 +17,12 @@ async function setup(initial=[]) {
 }
 
 describe('lazy stylesheet reuse',()=>{
+  it('reuses source sheets supplied by the shared shell bundle',async()=>{
+    const {ensureStylesheet,links,marker}=await setup();
+    links.push({href:'https://example.com/dfl-hq/css/app-shared.css?v=1.376.0',dataset:{dflStylesheets:'css/player-watchlist.css css/page-system.css'}});
+    await ensureStylesheet('./css/player-watchlist.css');
+    expect(links).toHaveLength(1);expect(marker.parentNode.insertBefore).not.toHaveBeenCalled();
+  });
   it('reuses a release-versioned shell stylesheet without inserting a second copy',async()=>{
     const {ensureStylesheet,links,marker,head}=await setup(['https://example.com/dfl-hq/css/player-watchlist.css?v=1.375.0']);
     await ensureStylesheet('css/player-watchlist.css');

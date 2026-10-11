@@ -42,7 +42,7 @@ export function ensureStylesheet(href, { anchor = ORDER_ANCHOR } = {}) {
   if (pending.has(key)) return pending.get(key);
 
   const existing = [...document.querySelectorAll('link[rel="stylesheet"]')]
-    .find(link => stylesheetKey(link.href) === key);
+    .find(link => stylesheetKey(link.href) === key || (link.dataset?.dflStylesheets||'').split(/\s+/).some(path=>path&&stylesheetKey(path)===key));
   if (existing) {
     const settled = Promise.resolve();
     pending.set(key, settled);

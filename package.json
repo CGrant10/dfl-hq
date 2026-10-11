@@ -1,6 +1,6 @@
 {
   "name": "dfl-hq",
-  "version": "1.375.0",
+  "version": "1.376.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.19.0",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "names": "node tools/check-names.mjs",
     "test": "vitest run",
-    "build": "vite build",
+    "build": "node tools/build-shared-css.mjs && vite build --config vite.trade.config.js && vite build",
     "check": "pnpm typecheck && pnpm names && pnpm test && pnpm build"
   },
   "dependencies": {

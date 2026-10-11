@@ -3,6 +3,11 @@ name: Home design review
 on:
   pull_request:
     paths:
+      - 'css/app-shared.css'
+      - 'css/shared-styles.json'
+      - 'js/tab-scroll-cues.js'
+      - 'js/ui-motion.js'
+      - 'tools/build-shared-css.mjs'
       - 'js/home-presentation*'
       - 'js/season-nav*'
       - 'js/home-clubhouse*'

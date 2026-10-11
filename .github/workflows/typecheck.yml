@@ -22,6 +22,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Verify shipped shared styles and trade worker
+        run: git diff --exit-code -- css/app-shared.css js/workers
       - name: Verify notification database filter with its production SDK
         env:
           DENO_TLS_CA_STORE: system

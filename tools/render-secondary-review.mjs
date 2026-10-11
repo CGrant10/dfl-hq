@@ -5,7 +5,7 @@ const fame=history.slice(history.indexOf('function nameCell('),history.indexOf('
 const icons=history.slice(history.indexOf('const ICON ='),history.indexOf('let tab ='));
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 let head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>'));
-head+=`<link rel="stylesheet" href="/css/team-analyzer.css"><link rel="stylesheet" href="/css/secondary-page-polish.css">`;
+head=head.replace('<link rel="stylesheet" href="css/update-gate.css"','<link rel="stylesheet" href="css/team-analyzer.css"><link rel="stylesheet" href="css/update-gate.css"');
 const script=`
 import {esc,groupBy} from '/js/ui.js';
 import {teamPortrait} from '/js/team-presentation.js';
