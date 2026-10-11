@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, safeNotificationUrl, timeAgo } from "./notification-core.js";
+import { BROADCAST_NOTIFICATION_CATEGORIES, cleanNotificationDraft, DEFAULT_NOTIFICATION_CATEGORIES, NOTIFICATION_PRESETS, safeNotificationUrl, timeAgo } from "./notification-core.js";
 
 describe("notification helpers", () => {
   it("keeps app updates off by default while leaving them available", () => {
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("updates");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("wall");
+    expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("matchup_moments");
+    expect(NOTIFICATION_PRESETS.essential).not.toContain("matchup_moments");
+    expect(NOTIFICATION_PRESETS.gameday).toContain("matchup_moments");
+    expect(NOTIFICATION_PRESETS.all).toContain("matchup_moments");
+    expect(BROADCAST_NOTIFICATION_CATEGORIES.some(([id])=>id==='matchup_moments')).toBe(false);
     expect(NOTIFICATION_PRESETS.all).toContain("wall");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("announcements");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("sportsbook");

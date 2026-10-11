@@ -1,7 +1,7 @@
 import { edge, privilegedFunctionHeaders } from "../supabase.js";
 import { loadMembers } from "../members.js";
 import { esc, toast } from "../ui.js";
-import { cleanNotificationDraft, NOTIFICATION_CATEGORIES } from "../notification-core.js";
+import { cleanNotificationDraft, BROADCAST_NOTIFICATION_CATEGORIES as NOTIFICATION_CATEGORIES } from "../notification-core.js";
 import { ensureStylesheet } from "../lazy-css.js";
 
 export async function renderNotificationPanel(host) {

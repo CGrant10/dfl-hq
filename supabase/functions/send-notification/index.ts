@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
+import {MATCHUP_MOMENTS_CATEGORY,optedMatchupRecipients} from '../../../js/matchup-moments.js';
 
 /*
   THE PREFLIGHT HAS TO ECHO WHAT THE BROWSER ASKS FOR, NOT A LIST WE MAINTAIN.
@@ -29,7 +30,7 @@ const corsHeaders = (request?: Request) => ({
   Vary: "Access-Control-Request-Headers",
 });
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers: corsHeaders() });
-const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "weekly", "sportsbook", "waivers", "events", "updates", "wall"]);
+const categories = new Set(["announcements", "trades", "polls", "fees", "matchups", "weekly", "sportsbook", "waivers", "events", "updates", "wall",MATCHUP_MOMENTS_CATEGORY]);
 
 async function internalSyncRequest(request: Request) {
   const token = request.headers.get("x-dfl-cron-token") || "";
@@ -113,17 +114,25 @@ Deno.serve(async request => {
     const sourceKey = /^(?:trade|weekly|sportsbook):[a-z0-9:_-]{1,140}$/i.test(String(input.sourceKey || ""))
       ? String(input.sourceKey) : null;
     const lineupAlert=internalSync&&sourceKey?.startsWith('weekly:lineup:')&&category==='matchups';
-    const expiresAt=lineupAlert?Date.parse(input.expiresAt):NaN;
-    if(lineupAlert&&(!Number.isFinite(expiresAt)||expiresAt<=Date.now()))return json({ok:true,skipped:'expired',delivered:0});
+    const moment=category===MATCHUP_MOMENTS_CATEGORY;
+    if(moment&&(!internalSync||!/^weekly:matchup:[0-9]{4}:[0-9]{1,2}:[0-9]+:(close|final)$/.test(sourceKey||'')||input.audience!=='members'))return json({error:'Matchup moments require targeted internal delivery'},403);
+    const expiring=lineupAlert||moment,expiresAt=expiring?Date.parse(input.expiresAt):NaN;
+    if(expiring&&(!Number.isFinite(expiresAt)||expiresAt<=Date.now()))return json({ok:true,skipped:'expired',delivered:0});
     const lineupKeys=lineupAlert?[...new Set((Array.isArray(input.lineupKeys)?input.lineupKeys:[])
       .filter((key:unknown)=>typeof key==='string'&&/^weekly:lineup:[0-9]{4}:[0-9]{1,2}:[0-9]+:[a-z0-9_-]+:(out|questionable)$/i.test(key)))].slice(0,9):[];
-    let targetIds = [...new Set((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
+    let targetIds = [...new Set<number>((Array.isArray(input.targetMemberIds) ? input.targetMemberIds : [])
       .map(Number).filter(Number.isSafeInteger))];
     if (internalSync && input.audience === "commissioners") {
       const { data: commissioners, error } = await admin.from("commissioner_access")
         .select("member_id").eq("active", true);
       if (error) throw error;
       targetIds = (commissioners || []).map(row => Number(row.member_id)).filter(Number.isSafeInteger);
+    }
+    if(moment){
+      const {data:opted,error}=await admin.from('push_subscriptions').select('member_id,enabled,categories').eq('enabled',true).in('member_id',targetIds).contains('categories',[MATCHUP_MOMENTS_CATEGORY]);
+      if(error)throw error;
+      targetIds=optedMatchupRecipients(opted||[],targetIds);
+      if(!targetIds.length)return json({ok:true,skipped:'no-opted-recipients',delivered:0});
     }
     const targeted = input.audience === "members" || (internalSync && input.audience === "commissioners");
     const audience = targeted && targetIds.length ? "members" : "all";
@@ -168,7 +177,7 @@ Deno.serve(async request => {
       webpush.setVapidDetails(subject, keys.publicKey, keys.privateKey);
       const payload = JSON.stringify({
         title, body, category, url: targetUrl, messageId: message.id,
-        ...(lineupAlert?{expiresAt:new Date(expiresAt).toISOString()}:{}),
+        ...(expiring?{expiresAt:new Date(expiresAt).toISOString()}:{}),
         /* badge must be a transparent silhouette - Android keeps only its
            alpha channel. The service worker pins this anyway; it is correct
            here too so the payload does not carry a value that would be wrong
@@ -177,8 +186,8 @@ Deno.serve(async request => {
       });
       await Promise.all((subscriptions || []).filter(row => Array.isArray(row.categories) && row.categories.includes(category)).map(async row => {
         try {
-          if(lineupAlert&&expiresAt<=Date.now())return;
-          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: lineupAlert?Math.max(1,Math.min(5400,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: category === "trades" || lineupAlert ? "high" : "normal" });
+          if(expiring&&expiresAt<=Date.now())return;
+          await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, payload, { TTL: expiring?Math.max(1,Math.min(7200,Math.floor((expiresAt-Date.now())/1000))):86400, urgency: category === "trades" || lineupAlert ? "high" : "normal" });
           delivered++;
           await admin.from("push_subscriptions").update({ failure_count: 0, last_success_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", row.id);
         } catch (error) {

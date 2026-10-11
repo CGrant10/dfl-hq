@@ -17,5 +17,11 @@ describe('injury alert expiry on the device',()=>{
   await Promise.all(sw.promises);expect(sw.showNotification).toHaveBeenCalledWith('Starter is out',expect.objectContaining({body:'Start Backup',data:{url:'#/analyzer?owner=a',messageId:12}}));
  });
  it('opens the exact Wall conversation without buzzing twice for a retry',()=>{const sw=push({title:'Wall reply',category:'wall',url:'#/wall?post=50',messageId:51});expect(sw.showNotification).toHaveBeenCalledWith('Wall reply',expect.objectContaining({renotify:false,data:{url:'#/wall?post=50',messageId:51}}))});
+ it('expires optional matchup moments and opens their exact week and game without buzzing twice',()=>{
+  const url='#/clubhouse?season=2026&week=5&tab=matchups&matchup=4';
+  const sw=push({title:'Close game',category:'matchup_moments',url,messageId:52,expiresAt:'2100-01-01T00:00:00Z'});
+  expect(sw.showNotification).toHaveBeenCalledWith('Close game',expect.objectContaining({renotify:false,data:{url,messageId:52}}));
+  expect(push({title:'Close game',category:'matchup_moments',expiresAt:'2000-01-01T00:00:00Z'}).showNotification).not.toHaveBeenCalled();
+ });
  it('keeps ordinary league notifications working without an expiry',()=>{expect(push({title:'League news'}).showNotification).toHaveBeenCalledTimes(1)});
 });
