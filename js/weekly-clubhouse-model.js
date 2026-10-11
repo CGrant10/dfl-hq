@@ -1,4 +1,5 @@
 import {currentSportsbookNames} from './current-team-names.js';
+import {weeklyRoasts} from './weekly-roasts.js';
 const id=value=>String(value??'');
 const finite=value=>value!==null&&value!==undefined&&Number.isFinite(Number(value));
 const round=value=>Math.round(Number(value)*100)/100;
@@ -26,11 +27,12 @@ export function buildWeeklyClubhouse(data,members=[],raw=[],players={}){
  const max=counts.size?Math.max(...counts.values()):0;
  const clown=[...counts].filter(([,count])=>count===max).map(([memberId])=>{const m=byId.get(memberId);return{memberId:m?.id,name:m?.team_name||m?.display_name||'Member'}});
  if(max&&data.completed&&!data.voteOpen&&data.voteClosed!==false)award('clown','Clown of the Week',clown,`${max} vote${max===1?'':'s'}${clown.length>1?' · tied ballot':''}`);
- return{...data,sportsbook:currentSportsbookNames({recap:data.sportsbook},members).recap,games,awards,counts,clown,clownVotes:max,benchAvailable:raw.length>0&&raw.every(row=>row.players_points),members};
+ return{...data,sportsbook:currentSportsbookNames({recap:data.sportsbook},members).recap,games,awards,receipts:weeklyRoasts({...data,games,raw,players}),counts,clown,clownVotes:max,benchAvailable:raw.length>0&&raw.every(row=>row.players_points),members};
 }
 export function weeklyRecapLines(model){
  const lines=[`${model.season} · Week ${model.week} · ${model.completed?'Final receipts':'Matchups in progress'}`];
  for(const a of model.awards)lines.push(`${a.label}: ${a.winners.map(w=>w.name+(w.playerName?` (${w.playerName})`:'')).join(' & ')} — ${a.detail}`);
+ for(const receipt of model.receipts||[])lines.push(`${receipt.kind}: ${receipt.text}${receipt.kind==='Bench disaster'?` ${receipt.detail}`:''}`);
  for(const g of model.games)lines.push(`${g.left.name} ${g.left.score?.toFixed(2)??'—'} · ${g.right.name} ${g.right.score?.toFixed(2)??'—'}`);
  const pickem=(model.pickem||[]).filter(row=>Number(row.rank)===1);for(const row of pickem){const member=model.members.find(m=>id(m.id)===id(row.member_id));lines.push(`Pick’em: ${member?.display_name||'Member'} · ${Number(row.correct)} right`)}
  const book=model.sportsbook?.mostProfitable;if(model.sportsbook?.available&&book)lines.push(`Sportsbook: ${book.display_name} · ${Number(book.net)>0?'+':''}${Number(book.net)} SIN net`);

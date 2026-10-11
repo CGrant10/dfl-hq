@@ -23,7 +23,7 @@ export const sleeper = {
   state:        ()            => get(`/state/nfl`),
   league:       (id)          => get(`/league/${id}`),
   users:        (id)          => get(`/league/${id}/users`),
-  rosters:      (id)          => get(`/league/${id}/rosters`),
+  rosters:      (id)          => get(`/league/${id}/rosters`, {signal:AbortSignal.timeout(12000)}),
   matchups:     (id, week)    => get(`/league/${id}/matchups/${week}`, {signal:AbortSignal.timeout(12000)}),
   transactions: (id, week)    => get(`/league/${id}/transactions/${week}`),
   winnersBracket: (id)        => get(`/league/${id}/winners_bracket`),
@@ -216,7 +216,7 @@ export function loadNflState() {
  *
  * @returns {Promise<{data:Object[], fetchedAt:number}>}
  */
-export function loadWeeklyProjections(season, week) {
+export function loadWeeklyProjections(season, week, {maxAgeMs=THIRTY_MIN_MS}={}) {
   const year = Number(season), wk = Number(week);
   if (!Number.isFinite(year) || !Number.isFinite(wk) || wk < 1) {
     return Promise.resolve({ data: [], fetchedAt: 0 });
@@ -224,7 +224,7 @@ export function loadWeeklyProjections(season, week) {
   const positions = WEEKLY_POSITIONS.map((p) => `position[]=${p}`).join("&");
   const url = `https://api.sleeper.app/projections/nfl/${year}/${wk}`
             + `?season_type=regular&${positions}`;
-  return cachedJson(WEEKLY_CACHE, url, THIRTY_MIN_MS);
+  return cachedJson(WEEKLY_CACHE, url, maxAgeMs);
 }
 
 /**

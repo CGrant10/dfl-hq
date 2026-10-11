@@ -2,6 +2,7 @@ import {matchupTeamView} from './clubhouse-matchup-model.js';
 const DEFAULT_SLOTS=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'];
 const slotName=s=>({FLEX:'Flex',K:'Kicker',DEF:'Def',SUPER_FLEX:'Superflex',WRRB_FLEX:'Flex',REC_FLEX:'Flex'}[s]||s);
 const slotOrder=s=>({QB:0,RB:1,WR:2,TE:3,FLEX:4,WRRB_FLEX:4,REC_FLEX:4,SUPER_FLEX:4,K:5,DEF:6}[s]??7);
+/** @param {any} row @param {Object} players @param {Map<string,any>|null} schedule */
 export function gameDayLineup(row,players={},schedule=null,{completed=false,rosterPositions=DEFAULT_SLOTS}={}){
  const slots=rosterPositions.filter(s=>s!=='BN'),started=new Set((row?.starters||[]).map(String));
  const named=matchupTeamView(row,players,schedule,{completed}).starters,byId=new Map(named.map(p=>[p.id,p]));
@@ -11,7 +12,7 @@ export function gameDayLineup(row,players={},schedule=null,{completed=false,rost
  return {lineup,bench};
 }
 const finite=v=>v!==null&&v!==undefined&&Number.isFinite(Number(v));
-export function buildGameDay({week,rows=[],players={},nfl=null,members=[],memberId=null,rosterPositions=DEFAULT_SLOTS,now=Date.now()}){
+export function buildGameDay({week,rows=[],rosters=[],players={},nfl=null,members=[],memberId=null,rosterPositions=DEFAULT_SLOTS,now=Date.now()}){
  const rosterMap=new Map(rows.map(r=>[String(r.roster_id),r]));
  const memberMap=new Map(members.map(m=>[String(m.sleeper_user_id),m]));
  const starters=[],games=[];let mine=[],bench=[];
@@ -19,7 +20,7 @@ export function buildGameDay({week,rows=[],players={},nfl=null,members=[],member
   const sides=[['user1','roster1'],['user2','roster2']].map(([uid,rid])=>{
    const member=memberMap.get(String(game[uid])),row=rosterMap.get(String(game[rid])),team=matchupTeamView(row,players,nfl?.teams,{completed:week.completed}),name=member?.team_name||member?.display_name||`Team ${game[rid]}`;
    for(const p of team.starters)starters.push({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId),points:finite(p.points)?Number(p.points):null});
-   const roster=gameDayLineup(row,players,nfl?.teams,{completed:week.completed,rosterPositions});const context=p=>({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId)});const lineup=roster.lineup.map(context),teamBench=roster.bench.map(context);
+   const roster=gameDayLineup(row,players,nfl?.teams,{completed:week.completed,rosterPositions});const context=p=>({...p,memberId:member?.id,owner:name,roster:String(game[rid]),isMine:memberId!=null&&String(member?.id)===String(memberId)});const lineup=roster.lineup.map(context),teamBench=roster.bench.map(p=>{const actual=rosters.find(r=>String(r.roster_id)===String(game[rid]));return context({...p,activeRoster:!!actual&&![...(actual.reserve||[]),...(actual.taxi||[])].map(String).includes(p.id)})});
    if(memberId!=null&&String(member?.id)===String(memberId)){mine=lineup;bench=teamBench}
    return {...team,name,uid:game[uid],identity:member||{},memberId:member?.id,roster:String(game[rid]),lineup,bench:teamBench};
   });

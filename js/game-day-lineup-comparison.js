@@ -1,6 +1,7 @@
 import {esc} from './ui.js';
 import {playerRowContent} from './game-day-player-rows.js';
 import {lineupCheckHtml} from './game-day-readiness.js';
+import {matchupTargetsHtml} from './matchup-targets.js';
 
 const order=['QB','RB','WR','TE','FLEX','SUPER_FLEX','K','DEF'];
 const typeOf=p=>({WRRB_FLEX:'FLEX',REC_FLEX:'FLEX',Flex:'FLEX',Superflex:'SUPER_FLEX',Kicker:'K',Def:'DEF',DST:'DEF','D/ST':'DEF'}[p.slotType||p.slot||p.position]||p.slotType||p.slot||p.position||'Starter');
@@ -30,5 +31,5 @@ export function matchupLineupHtml(game,{statLines=null,completed=false}={}) {
   const bench=side=>(side.bench||[]).map(p=>({...p,slot:p.position,slotType:p.position}));
   const benches=matchupPlayerPairs(bench(a),bench(b));
   const header=`<div class="gd-compare-head">${[a,b].map((t,i)=>`${i?'<span aria-hidden="true"></span>':''}<strong>${esc(t.name)}</strong>`).join('')}</div>`;
-  return `<section class="gd-lineup-comparison" aria-label="Side-by-side player comparison"><h3>Starting lineups</h3><div class="gd-lineup-check-slot">${lineupCheckHtml(game.sides,{completed})}</div>${header}${pairs.length?pairedRows(pairs,a,b,statLines):'<p role="status">Starting lineups unavailable.</p>'}${benches.length?`<details class="gameday-bench gd-compare-bench" data-watch-bench="${esc(game.id)}"><summary>Bench · ${a.bench?.length||0} / ${b.bench?.length||0} players</summary>${pairedRows(benches,a,b,statLines)}</details>`:''}</section>`;
+  return `<section class="gd-lineup-comparison" aria-label="Side-by-side player comparison">${matchupTargetsHtml(game,{completed})}<h3>Starting lineups</h3><div class="gd-lineup-check-slot">${lineupCheckHtml(game.sides,{completed})}</div>${header}${pairs.length?pairedRows(pairs,a,b,statLines):'<p role="status">Starting lineups unavailable.</p>'}${benches.length?`<details class="gameday-bench gd-compare-bench" data-watch-bench="${esc(game.id)}"><summary>Bench · ${a.bench?.length||0} / ${b.bench?.length||0} players</summary>${pairedRows(benches,a,b,statLines)}</details>`:''}</section>`;
 }
