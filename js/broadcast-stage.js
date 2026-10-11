@@ -569,7 +569,7 @@ export function focusShouldPause(el) {
  * Is the deck allowed to advance on its own right now?
  *
  * One expression, four inputs, no DOM. `softSize` is the number of soft pauses
- * held - hover, focus, hidden - and any one of them stops the clock.
+ * held - hover, focus, hidden, offscreen - and any one stops the clock.
  */
 export function shouldRun({ dead = false, userPaused = false, softSize = 0, count = 0 } = {}) {
   return !dead && !userPaused && softSize === 0 && count > 1;
@@ -592,7 +592,7 @@ const LIVE_POLL_MS = 15000;
  * @param {Array}   deck     the deck it was rendered from
  * @param {object}  opts
  * @param {Function} [opts.refresh]  async () => newDeck, called every 15s
- *                                   while a live item is on the deck
+ *                                   while the visible deck has a live item
  * @returns {{stop: Function, update: Function}} stop() MUST be called when
  *          the page is left, or the timer outlives the DOM it draws into.
  */
@@ -604,6 +604,9 @@ export function startStage(root, deck, { refresh } = {}) {
   let userPaused = reduced();   // reduced motion starts still, not broken
   const soft = new Set();
   let dead = false;
+  let inViewport = typeof IntersectionObserver !== 'function';
+  let refreshing = false;
+  if (!inViewport) soft.add('offscreen');
 
   const layer = root.querySelector("[data-bx-layer]");
   const editorial = root.dataset.presentation === "editorial";
@@ -648,10 +651,10 @@ export function startStage(root, deck, { refresh } = {}) {
       root.append(probe);
       deckHeight = min;
       try {
-        for (const item of items) {
-          probe.innerHTML = renderItem(item, { editorial: true });
-          const candidate = probe.firstElementChild;
-          if (!candidate) continue;
+        // Insert every overlaid candidate together so measuring them does not
+        // force a fresh page layout after each separate innerHTML replacement.
+        probe.innerHTML = items.map(item => renderItem(item, { editorial: true })).join('');
+        for (const candidate of probe.children) {
           fitHeadlines(candidate);
           deckHeight = Math.max(deckHeight, contentHeight(candidate));
         }
@@ -860,7 +863,15 @@ export function startStage(root, deck, { refresh } = {}) {
     if (e.key === "ArrowLeft")  { e.preventDefault(); step(-1); }
     if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
   };
-  const onVis = () => softPause("hidden", document.hidden);
+  const onVis = () => { softPause("hidden", document.hidden); armPoll(); };
+  const intersection = typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
+    const entry = entries.find(entry => entry.target === root);
+    if (!entry || dead) return;
+    inViewport = entry.isIntersecting;
+    softPause('offscreen', !inViewport);
+    armPoll();
+  }) : null;
+  intersection?.observe(root);
   /* =====================================================================
      THE TWO LATCHES THAT KILLED AUTOPLAY AFTER ONE ARROW PRESS.
 
@@ -1032,13 +1043,15 @@ export function startStage(root, deck, { refresh } = {}) {
 
   function armPoll() {
     if (!refresh) return;
-    const live = items.some((it) => it.temporal === "live");
+    const live = !dead && inViewport && !document.hidden && items.some((it) => it.temporal === "live");
     if (!live) { if (poll) { clearInterval(poll); poll = null; } return; }
     if (poll) return;
     poll = setInterval(async () => {
-      if (dead || document.hidden) return;  // a hidden tab does not poll
-      try { update(await refresh()); } catch (err) { console.warn("broadcast: refresh failed", err); }
-      armPoll();
+      if (dead || !inViewport || document.hidden || refreshing) return;
+      refreshing = true;
+      try { const next = await refresh(); if (!dead) update(next); }
+      catch (err) { if (!dead) console.warn("broadcast: refresh failed", err); }
+      finally { refreshing = false; armPoll(); }
     }, LIVE_POLL_MS);
   }
 
@@ -1054,6 +1067,7 @@ export function startStage(root, deck, { refresh } = {}) {
       dead = true;
       cancelAnimationFrame(layoutFrame);
       resize?.disconnect();
+      intersection?.disconnect();
       clear();
       if (poll) { clearInterval(poll); poll = null; }
       root.removeEventListener("click", onClick);

@@ -220,6 +220,8 @@ html[data-ui-motion="off"] #view.view[data-page-system][data-route] summary::aft
 #view.view[data-page-system][data-route][data-route="analyzer"] .ta-team-picker:focus-within { outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 12px; align-items:center; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-head > div:first-child { grid-column:1/-1; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .player-watchlist .wo-head > div:first-child { grid-column:auto; min-width:0; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .player-watchlist [data-watch-refresh] { min-height:44px; min-width:64px; font-size:.75rem; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-head h2 { font-size:1rem; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict { grid-column:1; grid-row:2; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict strong { font-size:1rem; }
@@ -228,6 +230,11 @@ html[data-ui-motion="off"] #view.view[data-page-system][data-route] summary::aft
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-projection small { color:var(--body-text); font:500 .6875rem/1.4 var(--font-body); }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel:has(.wo-verdict.is-clean) .wo-clean { display:none; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-verdict.is-clean span { display:none; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel:has(.wo-projection) { container-type:inline-size; container-name:weekly-lineup; }
+@container weekly-lineup (max-width:14rem) {
+ #view.view[data-page-system][data-route][data-route="analyzer"] .wo-head { grid-template-columns:minmax(0,1fr); }
+ #view.view[data-page-system][data-route][data-route="analyzer"] .wo-projection { grid-column:1; grid-row:3; text-align:left; }
+}
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel > .page-disclosure { margin:0; border-top:0; }
 #view.view[data-page-system][data-route][data-route="analyzer"] .wo-panel > .page-disclosure > summary { padding:8px 0; min-height:52px; }
 

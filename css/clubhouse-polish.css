@@ -15,6 +15,12 @@
 #view .clubhouse-command-center .clubhouse-matchup-toolbar { gap:4px 8px; margin:2px 0 12px; }
 #view .clubhouse-command-center .clubhouse-matchup-toolbar button { min-height:44px; min-width:44px; padding:6px 10px; border-radius:6px; font-size:12px; }
 #view .clubhouse-command-center .clubhouse-matchup-toolbar [data-clubhouse-motion] { margin-left:auto; }
+@media (max-width:360px) {
+ #view .clubhouse-command-center .clubhouse-matchup-toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 8px; }
+ #view .clubhouse-command-center .clubhouse-matchup-toolbar [data-matchup-freshness] { grid-column:1/-1; }
+ #view .clubhouse-command-center .clubhouse-matchup-toolbar [data-clubhouse-motion] { margin-left:0; }
+ #view .clubhouse-command-center .clubhouse-matchup-toolbar button { width:100%; min-width:0; }
+}
 #view .clubhouse-command-center .clubhouse-section.card { padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
 #view .clubhouse-command-center .clubhouse-scoreboard-grid { gap:8px; margin-bottom:22px; }
 #view .clubhouse-command-center .clubhouse-scoreboard-game { isolation:isolate; border-color:var(--line); border-radius:6px; background:linear-gradient(150deg,color-mix(in srgb,var(--text) 3%,transparent),transparent 65%),var(--bg-2); transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease,transform 180ms var(--clubhouse-ease); }

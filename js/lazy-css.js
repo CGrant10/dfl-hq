@@ -24,17 +24,28 @@
 const ORDER_ANCHOR = 'link[rel="stylesheet"][href*="css/golf.css"],link[rel="stylesheet"][href*="css/ui.css"]';
 const pending = new Map();
 
+// Static sheets use ?v= for cache busting; lazy callers use the plain path.
+// Keep other query parameters and the origin, which can select different CSS.
+function stylesheetKey(href) {
+  const url = new URL(href, document.baseURI);
+  url.searchParams.delete('v');
+  url.hash = '';
+  return url.href;
+}
+
 /**
  * Load a stylesheet once, in its original cascade position.
  * Resolves when it has applied, so a caller can paint without a flash.
  */
 export function ensureStylesheet(href, { anchor = ORDER_ANCHOR } = {}) {
-  if (pending.has(href)) return pending.get(href);
+  const key = stylesheetKey(href);
+  if (pending.has(key)) return pending.get(key);
 
-  const existing = document.querySelector(`link[rel="stylesheet"][href="${href}"]`);
+  const existing = [...document.querySelectorAll('link[rel="stylesheet"]')]
+    .find(link => stylesheetKey(link.href) === key);
   if (existing) {
     const settled = Promise.resolve();
-    pending.set(href, settled);
+    pending.set(key, settled);
     return settled;
   }
 
@@ -53,7 +64,7 @@ export function ensureStylesheet(href, { anchor = ORDER_ANCHOR } = {}) {
   if (marker && marker.parentNode) marker.parentNode.insertBefore(link, marker);
   else document.head.appendChild(link);
 
-  pending.set(href, ready);
+  pending.set(key, ready);
   return ready;
 }
 
