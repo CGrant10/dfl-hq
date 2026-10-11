@@ -184,7 +184,7 @@
 
 .coach-more > summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:.8125rem; font-weight:600; }
 .roster-coach [data-coach-refresh] { min-height:44px; flex-shrink:0; font-size:.75rem; }
-#view.view[data-page-system][data-route="analyzer"] .roster-coach .wo-head { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:10px; }
+#view.view[data-page-system][data-route][data-route="analyzer"] .roster-coach .wo-head { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:10px; }
 .roster-coach .wo-head > div { min-width:0; }
 .coach-market { padding:0 0 10px; border-bottom:1px solid var(--line); }
 .coach-market + .coach-pickups > li:first-child { border-top:0; }

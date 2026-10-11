@@ -1,7 +1,8 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 const output=process.env.DFL_WAIVER_REVIEW_DIR||'/workspace/dfl-waiver-review';mkdirSync(output,{recursive:true});
 const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-const head=index.slice(index.indexOf('<head>')+6,index.indexOf('</head>'))+'<link rel="stylesheet" href="css/team-analyzer.css"><link rel="stylesheet" href="css/weekly-outlook.css">';
+const routeStyles=[['team-analyzer','update-gate'],['weekly-outlook','ui']];
+const head=routeStyles.reduce((html,[sheet,anchor])=>html.replace(`<link rel="stylesheet" href="css/${anchor}.css">`,`<link rel="stylesheet" href="css/${sheet}.css"><link rel="stylesheet" href="css/${anchor}.css">`),index.slice(index.indexOf('<head>')+6,index.indexOf('</head>')));
 writeFileSync(`${output}/index.html`,`<!doctype html><html lang="en" data-theme="dark"><head><base href="/">${head}</head><body><div class="app"><header class="topbar" style="height:44px"><b>DFL HQ</b></header><main id="view" class="view" data-route="analyzer" data-page-system><div id="coach"></div></main><nav class="bottomnav" style="height:54px">Waiver review · isolated sample data</nav></div><script type="module" src="/waiver-review/fixture.js"></script></body></html>`);
 writeFileSync(`${output}/fixture.js`,`import {waiverReviewFixture} from '/tools/waiver-review-fixture.mjs';
 import {mountRosterCoach} from '/js/roster-coach-ui.js';
