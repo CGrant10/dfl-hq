@@ -111,6 +111,7 @@ with sync_playwright() as p:
         page.locator('.td-ticket').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-ticket.png'))
         click('[data-td-share]')
+        page.wait_for_function('!!window.reviewSharedDeal');
         shared=page.evaluate('({routes:window.reviewSharedDeal.destinations,incoming:window.reviewSharedDeal.receives})')
         assert shared['routes']=={'1-4':'2','1-3':'3','2-6':'1','3-3':'1'},shared
         assert shared['incoming']==[['2-6','3-3'],['1-4'],['1-3']],shared
@@ -219,8 +220,33 @@ with sync_playwright() as p:
             assert modal.locator('[data-picker-list]').evaluate('e=>e.clientHeight>60')
             page.screenshot(path=str(output/f'trade-{width}-large-{mode.replace(":","-")}.png'))
             page.keyboard.press('Escape')
+        # Larger required packages remain available in the actual page handlers.
+        page.evaluate("document.documentElement.style.fontSize='';sessionStorage.clear();localStorage.clear();window.renderReview()")
+        assert page.locator('[data-tb-max]').input_value()=='8'
+        for pid in ['1-1','1-2','1-3','1-4','1-6']:select('[data-tb-add-anchor="send"]',pid)
+        assert page.locator('[data-tb-remove-anchor="send"]').count()==5
+        assert page.locator('[data-tb-max]').input_value()=='8'
+        page.reload();page.wait_for_function('window.reviewReady===true')
+        assert page.locator('[data-tb-remove-anchor="send"]').count()==5
+        page.evaluate('sessionStorage.clear();localStorage.clear();window.renderReview()')
+        click('[data-td-mode="manual"]');pick(0,'1-4');pick(1,'2-6')
+        # The share handler must stop on a fresh injury and show the updated ticket.
+        page.evaluate("""()=>{window.reviewSharedDeal=null;const pool=new Map(window.reviewData.pool);pool.set('2-6',{...pool.get('2-6'),injuryStatus:'Out',isOut:true});window.reviewFreshData={...window.reviewData,pool}}""")
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('Player status or value changed')")
+        assert page.evaluate('window.reviewSharedDeal===null')
+        assert not page.locator('[data-td-share]').is_disabled()
+        click('[data-td-share]');page.wait_for_function('!!window.reviewSharedDeal')
+        assert page.evaluate("window.reviewSharedDeal.pool.get('2-6').injuryStatus==='Out'")
+        # Provider failure and traded-away ownership must never share the old card.
+        page.evaluate('window.reviewSharedDeal=null;window.reviewRefreshError=true')
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('Current injuries unavailable')")
+        assert page.evaluate('window.reviewSharedDeal===null')
+        page.evaluate("""()=>{window.reviewRefreshError=false;window.reviewFreshData={...window.reviewFreshData,teams:window.reviewFreshData.teams.map(t=>({...t,playerIds:t.playerIds.filter(id=>id!=='1-4')}))}}""")
+        click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('A player changed teams')")
+        assert page.evaluate('window.reviewSharedDeal===null')
+        assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==0
         assert not errors,errors
-        results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'pageErrors':errors,'overflow':False})
+        results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'fiveRequiredPlayersPersist':True,'freshInjuryRequiresReview':True,'shareProviderFailureBlocked':True,'shareOwnershipRechecked':True,'pageErrors':errors,'overflow':False})
         context.close()
     browser.close()
 server.shutdown()

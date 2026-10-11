@@ -1,3 +1,5 @@
+import {recheckTradeOffer} from '../trade-offer-recheck.js';
+import {offerPlayerLimit} from '../trade-package-limits.js';
 // =====================================================================
 // pages/trade.js - the Trade Desk, on its own page
 // ---------------------------------------------------------------------
@@ -129,7 +131,7 @@ function tradeLab(team, teams, pool, shop) {
     shop.receiveAnchors = (shop.receiveAnchors || []).filter(id => theirPlayers.some(player => String(player.id) === String(id)));
   }
   const anchorMinimum = Math.max(1, shop.sendAnchors.length) + Math.max(1, shop.receiveAnchors.length) + Math.max(0, parties.length - 2);
-  const maxPlayers = Math.max(anchorMinimum, Math.min(8, Number(shop.maxPlayers) || 4));
+  const maxPlayers = offerPlayerLimit(shop.maxPlayers, shop.sendAnchors, shop.receiveAnchors, parties.length);
   shop.maxPlayers = maxPlayers;
   const sendCount = shop.sendCount || "any", receiveCount = shop.receiveCount || "any", intent = shop.intent || "fair";
   const shapeKeys = [];
@@ -249,7 +251,7 @@ function page(data, tradeAlerts = []) {
     || data.teams[0].id;
   const trade = { memberIds: [], sends: [new Set(), new Set()], editing: true, destinations:{} };
   const shop = { partnerId: "", memberIds: [], anchorPartnerId: "", sendAnchors: [], receiveAnchors: [],
-    maxPlayers: 4, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
+    maxPlayers: 8, sendCount: "any", receiveCount: "any", intent: "fair", visibleCount: OFFER_BATCH_SIZE,
     openTiers: new Set(["fair"]), mode:"offers", customOpen: false, sharedAudit: [] };
   const draftKey = `trade:${data.projectionSeason}`;
   const saved = restoreTradeDraft(readViewMemory(me?.id, draftKey), data.teams, routeTeam);
@@ -274,6 +276,7 @@ function page(data, tradeAlerts = []) {
         if(event.target.matches('.tb-refine')){shop.refineOpen=event.target.open;saveDraft?.();}
       },true);
 
+      let sharing = false;
       const draw = () => {
         if (!view.isConnected) return;
         // Native toggle events can arrive after an immediate control redraw.
@@ -301,7 +304,7 @@ function page(data, tradeAlerts = []) {
             saveDraft?.();
             /* Nothing to share until both sides have somebody on them, and a
                disabled button says that better than an error would. */
-            if (share) share.disabled = !current;
+            if (share) share.disabled = !current || sharing;
           },
         });
         body.querySelector(".td-custom")?.addEventListener("toggle", event => {
@@ -335,7 +338,7 @@ function page(data, tradeAlerts = []) {
       };
       const resetBlueprint = () => {
         shop.partnerId = ""; shop.memberIds = []; shop.anchorPartnerId = ""; shop.sendAnchors = []; shop.receiveAnchors = [];
-        shop.maxPlayers = 4; shop.sendCount = "any"; shop.receiveCount = "any";
+        shop.maxPlayers = 8; shop.sendCount = "any"; shop.receiveCount = "any";
         shop.intent = "fair"; shop.visibleCount = OFFER_BATCH_SIZE; shop.openTiers=new Set(["fair"]); shop.customOpen = false;shop.mode="offers";
       };
       body.addEventListener("change", event => {
@@ -372,10 +375,11 @@ function page(data, tradeAlerts = []) {
           const list = side === "send" ? shop.sendAnchors : shop.receiveAnchors;
           const nextSend = shop.sendAnchors.length + (side === "send" ? 1 : 0);
           const nextReceive = shop.receiveAnchors.length + (side === "receive" ? 1 : 0);
-          if (Math.max(1, nextSend) + Math.max(1, nextReceive) + shop.memberIds.length > shop.maxPlayers) {
-            toast(`This package is capped at ${shop.maxPlayers} players. Raise the slider or remove an anchor.`, true);
+          if (Math.max(1, nextSend) + Math.max(1, nextReceive) + shop.memberIds.length > 8) {
+            toast("Offers support up to 8 total players. Remove an anchor to add another.", true);
           } else if (!list.includes(anchorSelect.value)) {
             list.push(anchorSelect.value);
+            shop.maxPlayers = offerPlayerLimit(shop.maxPlayers, shop.sendAnchors, shop.receiveAnchors, shop.memberIds.length + 2);
             const countKey = side === "send" ? "sendCount" : "receiveCount";
             if (shop[countKey] !== "any" && Number(shop[countKey]) < list.length) shop[countKey] = "any";
           }
@@ -457,10 +461,25 @@ function page(data, tradeAlerts = []) {
         const shareButton = event.target.closest("[data-td-share]");
         if (shareButton) {
           if (!deal) return;
+          const original = deal;
+          sharing = true;
           shareButton.disabled = true;
           try {
+            const fresh = await loadAnalyzerData({force:true,freshTrade:true});
+            if(!view.isConnected)return;
+            if(deal!==original){toast('The package changed. Share the updated ticket.',true);return;}
+            if(fresh.state!=='ready'||fresh.projectionSeason!==data.projectionSeason)throw new Error('Current rosters are unavailable. Refresh the trade page.');
+            const review=recheckTradeOffer(original,data.pool,fresh.teams,fresh.pool);
+            data=fresh;shop.offerCache?.clear();
+            if(review.status==='invalid'){
+              const restored=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),fresh.teams,selectedId);
+              if(restored){Object.assign(trade,restored.trade);Object.assign(shop,restored.shop);}
+              draw();toast('A player changed teams. Review the updated package before sharing.',true);return;
+            }
+            applyTradeDeal(trade,review.deal);draw();
+            if(review.status==='changed'){toast('Player status or value changed. Review the updated ticket before sharing.',true);return;}
             await shareDeal({
-              ...deal,
+              ...review.deal,
               pool: data.pool,
               verdict: verdictFor(perspectiveOf(deal)),
               recommendation: recommendationFor(perspectiveOf(deal)),
@@ -471,7 +490,9 @@ function page(data, tradeAlerts = []) {
           } catch (error) {
             toast(error?.message || "Could not build that card", true);
           } finally {
-            shareButton.disabled = false;
+            sharing = false;
+            const currentShare=body.querySelector("[data-td-share]");
+            if(currentShare)currentShare.disabled=!deal;
           }
           return;
         }

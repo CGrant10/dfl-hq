@@ -54,7 +54,7 @@ describe('supported offer discovery', () => {
       });
       return { id, playerIds, need: 'RB' };
     });
-    const offers = suggestTrades({ teams, teamId: 'a', partnerId: 'b', pool, intent: 'fair', maxPlayers: 8, shapes: ['4-4'], limit: 12 });
+    const offers = suggestTrades({ teams, teamId: 'a', partnerId: 'b', pool, intent: 'fair', shapes: ['4-4'], limit: 12 });
     expect(offers.length).toBeGreaterThan(0); expect(offers.length).toBeLessThanOrEqual(12);
     for (const offer of offers) {
       expect(new Set(offer.sendA).size).toBe(4); expect(new Set(offer.sendB).size).toBe(4);
@@ -62,4 +62,15 @@ describe('supported offer discovery', () => {
       expect(offer.sendB.every(id => teams[1].playerIds.includes(id))).toBe(true);
     }
   });
+  it('retains all five required players in an eight-player search', () => {
+    const pool=new Map();
+    const teams=['a','b'].map(id=>({id,playerIds:Array.from({length:18},(_,i)=>{
+      const pid=`${id}-${i}`;pool.set(pid,{id:pid,name:pid,position:['RB','WR','TE'][i%3],expectedPoints:id==='b'?(i<3?205:170):200,tradeValue:id==='b'?(i<3?50:10):30});return pid;
+    })}));
+    const anchors=teams[0].playerIds.slice(8,13);
+    const offers=suggestTrades({teams,teamId:'a',partnerId:'b',playerIds:anchors,pool,shapes:['5-3'],limit:12});
+    expect(offers.length).toBeGreaterThan(0);
+    for(const offer of offers){expect(offer.sendA).toEqual(expect.arrayContaining(anchors));expect(offer.sendA).toHaveLength(5);expect(offer.sendB).toHaveLength(3);}
+  });
+
 });

@@ -22,7 +22,7 @@ let analyzerEpoch = 0;
  * cached by sleeper.js, and Home calls this only after its useful shell has
  * already painted.
  */
-async function fetchAnalyzerData() {
+async function fetchAnalyzerData({freshTrade=false} = {}) {
   const [leagueRes, rosterRes, memberRes, leagueState, standingRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
@@ -36,7 +36,7 @@ async function fetchAnalyzerData() {
   const allRosters = rosterRes.data || [];
   const seasons = [...new Set(allRosters.map(row => Number(row.season)).filter(Number.isFinite))].sort((a, b) => b - a);
   const rosterSeason = seasons.find(season => allRosters.filter(row => Number(row.season) === season && row.players?.length).length >= 2);
-  const rosters = allRosters.filter(row => Number(row.season) === rosterSeason && row.players?.length);
+  let rosters = allRosters.filter(row => Number(row.season) === rosterSeason && row.players?.length);
   if (!storedLeague || !rosters.length) return { state: "empty", league:storedLeague, rosterSeason };
 
   const [liveLeagueRes,liveUsersRes]=await Promise.allSettled([
@@ -45,6 +45,18 @@ async function fetchAnalyzerData() {
   const liveLeague=liveLeagueRes.status==='fulfilled'?liveLeagueRes.value:null;
   const liveUsers=liveUsersRes.status==='fulfilled'&&Array.isArray(liveUsersRes.value)?liveUsersRes.value:[];
   const league=currentAnalyzerLeague(storedLeague,liveLeague);
+  if(freshTrade){
+    if(league===storedLeague)throw new Error('Could not verify current league settings. Try sharing again.');
+    const current=await sleeper.rosters(storedLeague.sleeper_league_id);
+    if(!Array.isArray(current)||current.length!==Number(league.total_rosters)||new Set(current.map(r=>String(r.roster_id))).size!==current.length
+      ||new Set(current.map(r=>String(r.owner_id))).size!==current.length||current.some(r=>!r.owner_id||!Array.isArray(r.players)))throw new Error('Could not verify current rosters. Try sharing again.');
+    const owners=new Map();
+    for(const r of current)for(const id of new Set([...(r.players||[]),...(r.reserve||[]),...(r.taxi||[])].map(String))){
+      if(owners.has(id)&&owners.get(id)!==r.roster_id)throw new Error('Roster ownership changed. Refresh the trade page.');
+      owners.set(id,r.roster_id);
+    }
+    rosters=current.map(r=>({...r,season:Number(league.season),sleeper_user_id:r.owner_id}));
+  }
   if(!matchesDflStartingSlots(league.roster_positions))throw new Error('Sleeper’s starting lineup differs from the supported DFL format. Review the league settings before analyzing trades.');
   if(Number(league.total_rosters)>0&&rosters.length!==Number(league.total_rosters))throw new Error('The synced roster count does not match the current league. Refresh the Sleeper sync before analyzing trades.');
   if(Number(rosterSeason)!==Number(league.season))throw new Error('Current-season rosters are not available. Refresh the Sleeper sync before analyzing trades.');
@@ -63,13 +75,13 @@ async function fetchAnalyzerData() {
   // Exclude the ongoing week: partial totals are not a full game sample.
   const completedWeeks = Array.from({length:Math.max(0,liveWeek-1)},(_,i)=>i+1);
   const liveSignals = liveWeek ? Promise.all([
-    loadWeeklyProjections(projectionSeason, liveWeek).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    loadWeeklyProjections(projectionSeason, liveWeek, freshTrade?{maxAgeMs:0}:{}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     Promise.all(completedWeeks.map(week => loadWeeklyStats(projectionSeason, week)
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
   ]) : Promise.resolve([{ data: [], fetchedAt: 0 }, [], { adds: new Map(), drops: new Map(), fetchedAt: 0 }]);
   const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings] = await Promise.all([
-    loadPlayers(),
+    loadPlayers(freshTrade?{maxAgeMs:0}:{}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadSeasonStats(projectionSeason, { maxAgeMs: 30 * 60 * 1000 }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
@@ -83,6 +95,7 @@ async function fetchAnalyzerData() {
     liveWeek > 1 ? loadLatestLeagueResults(league.sleeper_league_id, projectionSeason, liveWeek).catch(() => null) : null,
     loadExpertRankings({season:projectionSeason,scoring:format}),
   ]);
+  if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');
   const pool = buildPlayerPool({
     rosters: namedRosters,
     players,
@@ -137,13 +150,14 @@ export function clearAnalyzerDataCache() {
  * A one-minute result cache makes quick route changes instant; `force` is for
  * the sync pipeline, where a newly completed trade must never use old rosters.
  */
-export function loadAnalyzerData({ force = false } = {}) {
+export function loadAnalyzerData({ force = false, freshTrade = false } = {}) {
   const now = Date.now();
-  if (!force && analyzerValue && now < analyzerExpiresAt) return Promise.resolve(analyzerValue);
-  if (!force && analyzerInFlight) return analyzerInFlight;
+  if (!force && !freshTrade && analyzerValue && now < analyzerExpiresAt) return Promise.resolve(analyzerValue);
+  if (!force && !freshTrade && analyzerInFlight) return analyzerInFlight;
 
+  if(freshTrade)clearAnalyzerDataCache();
   const requestEpoch = analyzerEpoch;
-  const request = fetchAnalyzerData().then((value) => {
+  const request = fetchAnalyzerData({freshTrade}).then((value) => {
     if (requestEpoch === analyzerEpoch) {
       analyzerValue = value;
       analyzerExpiresAt = Date.now() + ANALYZER_CACHE_MS;

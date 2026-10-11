@@ -1,3 +1,4 @@
+import {leagueHealth} from '../../../js/league-health.js';
 import {backgroundSyncPolicy} from '../../../js/background-sync-policy.js';
 import {nflWeekStatuses} from '../../../js/clubhouse-matchup-model.js';
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -323,8 +324,14 @@ Deno.serve(async (request) => {
       adaptive && week > 1 && policy.mode === 'rosters' ? sleeper(`/league/${leagueId}/matchups/${week-1}`) : Promise.resolve(null),
     ]);
 
-    if(!Array.isArray(rosters)||rosters.length!==Number(league.total_rosters)||!Array.isArray(users)||!Array.isArray(weeklyMatchups)||weeklyMatchups.length!==rosters.length||!Array.isArray(weeklyTransactions))throw Error('Incomplete Sleeper sync data');
-    if(dryRun)return Response.json({ok:true,dryRun,mode:policy.mode,season,week,rostersChecked:rosters.length,matchupsChecked:weeklyMatchups.length,previousWeekChecked:Array.isArray(previousMatchups)?week-1:null});
+    const health = leagueHealth({league,state:nflState,rosters,rows:weeklyMatchups,users,week});
+    if(!dryRun){
+      const {error:healthError}=await admin.from('sleeper_config').update({last_league_health:health}).eq('id',1);
+      if(healthError)throw healthError;
+    }
+    if(!health.ok)throw Error(`League health check failed: ${health.issues.join(', ')}`);
+    if(!Array.isArray(weeklyTransactions))throw Error('Incomplete Sleeper transaction data');
+    if(dryRun)return Response.json({ok:true,dryRun,mode:policy.mode,season,week,health,rostersChecked:rosters.length,matchupsChecked:weeklyMatchups.length,previousWeekChecked:Array.isArray(previousMatchups)?week-1:null});
     const signature = await sha256(stable({ league, users, rosters, weeklyMatchups, weeklyTransactions, week }));
     if(Array.isArray(previousMatchups)&&previousMatchups.length===rosters.length){
       const previousOwners=new Map<number,string>(rosters.map((row:Json)=>[row.roster_id,row.owner_id]));

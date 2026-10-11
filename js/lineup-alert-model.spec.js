@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {lineupRescuePlan,lineupAlertDrafts,slotEligible} from './lineup-alert-model.js';
+import {lineupRescuePlan,lineupAlertDrafts,lineupAlertSourceKey,slotEligible} from './lineup-alert-model.js';
 const now=Date.parse('2026-10-11T16:00:00Z');
 const p=(id,position='WR',extra={})=>({id,name:id,position,state:'upcoming',kickoff:'2026-10-11T17:00:00Z',...extra});
 const team={memberId:1,uid:'a',roster:2,lineup:[p('starter','WR',{slotType:'WR',injuryStatus:'Out'})],bench:[p('backup')]};
@@ -29,14 +29,31 @@ describe('actionable lineup rescue',()=>{
   expect(result[0].actionable).toBe(false);
   expect(lineupAlertDrafts({season:2026,week:6,teams:[{...team,lineup:result.map(r=>r.player)}],now})).toEqual([]);
  });
- it('targets only the owner in a 90-minute window and escalates Out once',()=>{
+ it('targets only the owner in a 90-minute window and escalates Out once',async()=>{
   const first=lineupAlertDrafts({season:2026,week:6,teams:[team],now})[0];
-  expect(first).toMatchObject({targetMemberIds:[1],category:'matchups',audience:'members',expiresAt:team.lineup[0].kickoff});
-  expect(first.body).toContain('backup');expect(first.sourceKey).toContain(':out');
+  expect(first).toMatchObject({targetMemberIds:[1],category:'matchups',audience:'members',expiresAt:new Date(team.lineup[0].kickoff).toISOString()});
+  expect(first.body).toContain('backup');expect(first.lineupKeys[0]).toContain(':out');
   const q=lineupAlertDrafts({season:2026,week:6,teams:[{...team,lineup:[{...team.lineup[0],injuryStatus:'Questionable'}]}],now})[0];
-  expect(q.sourceKey).not.toBe(first.sourceKey);
+  expect(await lineupAlertSourceKey(q)).not.toBe(await lineupAlertSourceKey(first));
   expect(lineupAlertDrafts({season:2026,week:6,teams:[team],now:now-3600000})).toEqual([]);
   expect(lineupAlertDrafts({season:2026,week:6,teams:[{...team,memberId:null}],now})).toEqual([]);
+ });
+ it('groups simultaneous problems into one owner alert and does not repeat partial groups',()=>{
+  const t={...team,lineup:[...team.lineup,p('second','WR',{slotType:'WR',injuryStatus:'Questionable',kickoff:'2026-10-11T17:15:00Z'})]};
+  const first=lineupAlertDrafts({season:2026,week:6,teams:[t],now});
+  expect(first).toHaveLength(1);expect(first[0].title).toBe('2 starters need attention');expect(first[0].lineupKeys).toHaveLength(2);expect(first[0].body.length).toBeLessThanOrEqual(240);
+  expect(first[0].expiresAt).toBe('2026-10-11T17:00:00.000Z');
+  expect(lineupAlertDrafts({season:2026,week:6,teams:[t],now,notifiedKeys:first[0].lineupKeys})).toEqual([]);
+  expect(lineupAlertDrafts({season:2026,week:6,teams:[t],now:now+65*60000,notifiedKeys:first[0].lineupKeys})).toEqual([]);
+  t.lineup[1].injuryStatus='Out';
+  const escalated=lineupAlertDrafts({season:2026,week:6,teams:[t],now,notifiedKeys:first[0].lineupKeys});
+  expect(escalated).toHaveLength(1);expect(escalated[0].lineupKeys).toEqual(['weekly:lineup:2026:6:2:second:out']);
+ });
+ it('produces the same dedupe key when lineup ordering changes',async()=>{
+  const t={...team,lineup:[...team.lineup,p('second','WR',{slotType:'WR',injuryStatus:'Out'})]};
+  const a=lineupAlertDrafts({season:2026,week:6,teams:[t],now})[0];
+  const b=lineupAlertDrafts({season:2026,week:6,teams:[{...t,lineup:[...t.lineup].reverse()}],now})[0];
+  expect(await lineupAlertSourceKey(a)).toBe(await lineupAlertSourceKey(b));
  });
  it('supports flex and dual eligibility while rejecting a QB in flex',()=>{
   expect(slotEligible({position:'QB'},'FLEX')).toBe(false);

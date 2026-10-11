@@ -35,16 +35,30 @@ export function lineupRescuePlan(team, {completed=false,now=Date.now(),windowMs=
       actionable:player.empty||availableBeforeKickoff(player,now)}];
   });
 }
-/** @param {{season:number,week:number,teams?:Array<any>,completed?:boolean,now?:number}} input */
-export function lineupAlertDrafts({season,week,teams=[],completed=false,now=Date.now()}) {
+/** One owner notification for new problems; earlier polls and legacy alerts count.
+ * @param {{season:number,week:number,teams?:Array<any>,completed?:boolean,now?:number,notifiedKeys?:Array<string>}} input */
+export function lineupAlertDrafts({season,week,teams=[],completed=false,now=Date.now(),notifiedKeys=[]}) {
   if(completed)return [];
-  return teams.filter(t=>Number.isSafeInteger(Number(t.memberId))&&Number(t.memberId)>0).flatMap(team=>
-    lineupRescuePlan(team,{now,windowMs:90*60000}).map(alert=>({
-      title:`${alert.player.name}: ${alert.status}`,
-      body:alert.backup?`${alert.severity==='out'?'Replace with':'Backup option:'} ${alert.backup.name} (${alert.slot}). ${alert.severity==='questionable'&&!alert.lateCover?'Backup kicks off earlier. ':''}Set changes in Sleeper before kickoff.`:`No healthy, unlocked ${alert.slot} backup on your bench. Check waivers in Team Analyzer.`,
-      category:'matchups',audience:'members',targetMemberIds:[Number(team.memberId)],
+  const notified=new Set(notifiedKeys);
+  return teams.filter(t=>Number.isSafeInteger(Number(t.memberId))&&Number(t.memberId)>0).flatMap(team=>{
+    const alerts=lineupRescuePlan(team,{now,windowMs:90*60000}).map(alert=>({...alert,
+      key:`weekly:lineup:${season}:${week}:${team.roster}:${alert.player.id}:${alert.severity}`}))
+      .filter(alert=>!notified.has(alert.key)&&!(alert.severity==='questionable'&&notified.has(alert.key.replace(/questionable$/, 'out'))));
+    if(!alerts.length)return [];
+    const first=alerts[0];
+    const detail=alerts.map(alert=>`${alert.player.name} (${alert.status})${alert.backup?` → ${alert.backup.name}${alert.severity==='questionable'&&!alert.lateCover?' [earlier kickoff]':''}`:`: no healthy ${alert.slot} backup`}`).join('; ');
+    const suffix=' Open Team Analyzer before kickoff.';
+    const body=detail.length+suffix.length<=240?detail+suffix:`${alerts.length} lineup problems. ${first.player.name}: ${first.status}${first.backup?` → ${first.backup.name}`:''}. Open Team Analyzer for all backups before kickoff.`;
+    return [{title:alerts.length===1?`${first.player.name}: ${first.status}`:`${alerts.length} starters need attention`,
+      body,category:'matchups',audience:'members',targetMemberIds:[Number(team.memberId)],
       targetUrl:'#/analyzer?owner='+encodeURIComponent(team.uid),
-      sourceKey:`weekly:lineup:${season}:${week}:${team.roster}:${alert.player.id}:${alert.severity}`,
-      expiresAt:alert.player.kickoff,
-    })));
+      lineupKeys:alerts.map(alert=>alert.key).sort(),
+      expiresAt:new Date(Math.min(...alerts.map(alert=>Date.parse(alert.player.kickoff)))).toISOString(),
+    }];
+  });
+}
+export async function lineupAlertSourceKey(draft) {
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(draft.lineupKeys.join('|')));
+  const hash=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  return draft.lineupKeys[0].split(':').slice(0,5).join(':')+':group:'+hash;
 }

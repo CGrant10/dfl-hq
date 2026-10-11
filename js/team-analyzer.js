@@ -1,3 +1,4 @@
+import {offerPlayerLimit} from './trade-package-limits.js';
 import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
 import {productionProfile, packageEvidence, comparableStarPremium} from './trade-player-evidence.js';
@@ -72,6 +73,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
   const recentById = recentProduction(recentStats, scoringSettings);
   const seasonById = recentProduction(seasonWeeklyStats, scoringSettings);
   const ids = [...new Set(rosters.flatMap(roster => Array.isArray(roster?.players) ? roster.players.map(String) : []))];
+  const reserveIds = new Set(rosters.flatMap(roster => roster.reserve || []).map(String));
   const rostered = new Set(ids);
   const universeIds = [...new Set([...ids, ...projectionById.keys()])];
   const list = universeIds.map(id => {
@@ -83,7 +85,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const weekly = weeklyById.get(id) || null;
     const weeklyMeta = weekly?.player || {};
     const availability = injuryProfile(weekly?.injury_status || weeklyMeta.injury_status || meta?.i || meta?.injury_status,
-      weeklyMeta.status || meta?.s || meta?.status);
+      reserveIds.has(id) ? 'Injured Reserve' : weeklyMeta.status || meta?.s || meta?.status);
     const lastPoints = priorLine ? scorePlayer(priorLine, scoringSettings) : null;
     const projectedPoints = projection?.stats ? scorePlayer(projection.stats, scoringSettings) : null;
     const games = finite(priorLine?.gp);
@@ -621,7 +623,7 @@ export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB =
   };
 }
 
-function tradeShapes(maxPlayers = 4, shapes = []) {
+function tradeShapes(maxPlayers = 8, shapes = []) {
   if (shapes.length) return shapes.map(shape => String(shape).split("-").map(Number))
     .filter(([send, receive]) => send > 0 && receive > 0 && send + receive <= maxPlayers);
   const result = [];
@@ -861,12 +863,12 @@ function diverseOffersAcrossPartners(offers, limit) {
  * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
 export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
-  pool = new Map(), limit = 12, shapes = [], maxPlayers = 4, intent = "aggressive" } = {}) {
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive" } = {}) {
   pool = tradePlayerPool(pool);
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
   const anchorId = String(anchorTeamId ?? teamId), anchorTeam = teams.find(team => String(team.id) === anchorId);
-  const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String).slice(0, 2);
+  const anchors = (playerIds?.length ? playerIds : [playerId]).filter(Boolean).map(String);
   const sendRequired = [...new Set((sendAnchorIds ?? (anchorId === String(mine.id) ? anchors : [])).map(String))];
   const receiveRequired = [...new Set((receiveAnchorIds ?? (anchorId !== String(mine.id) ? anchors : [])).map(String))];
   if (sendRequired.some(id => !mine.playerIds.map(String).includes(id))) return [];
@@ -874,7 +876,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const partners = partnerId
     ? teams.filter(team => String(team.id) === String(partnerId) && String(team.id) !== String(mine.id))
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
-  const allowedShapes = tradeShapes(Math.max(2, Math.min(8, Number(maxPlayers) || 4)), shapes);
+  const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes);
   const possibilities = [];
   const minePlayers = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
@@ -912,11 +914,11 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 }
 
 /** Bounded package search for a circular exchange, matching the manual desk. */
-export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 4,
+export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 8,
   sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96 } = {}) {
   pool = tradePlayerPool(pool);
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
-  const cap = Math.min(8, Math.max(parties.length, Number(maxPlayers) || 4));
+  const cap = offerPlayerLimit(maxPlayers, sendAnchorIds, receiveAnchorIds, parties.length);
   const choices = parties.map((team, index) => {
     const required = index === 0 ? sendAnchorIds : index === parties.length - 1 ? receiveAnchorIds : [];
     if (required.some(id => !team.playerIds.map(String).includes(String(id)))) return [];
