@@ -5,7 +5,7 @@ describe("notification helpers", () => {
   it("keeps app updates off by default while leaving them available", () => {
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("updates");
     expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("wall");
-    expect(DEFAULT_NOTIFICATION_CATEGORIES).not.toContain("matchup_moments");
+    expect(DEFAULT_NOTIFICATION_CATEGORIES).toContain("matchup_moments");
     expect(NOTIFICATION_PRESETS.essential).not.toContain("matchup_moments");
     expect(NOTIFICATION_PRESETS.gameday).toContain("matchup_moments");
     expect(NOTIFICATION_PRESETS.all).toContain("matchup_moments");
