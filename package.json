@@ -8,12 +8,13 @@
     "node": ">=20.19.0"
   },
   "scripts": {
+    "release:check": "node tools/check-release-version.mjs",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "names": "node tools/check-names.mjs",
     "test": "vitest run",
     "build": "node tools/build-shared-css.mjs && vite build --config vite.trade.config.js && vite build",
-    "check": "pnpm typecheck && pnpm names && pnpm test && pnpm build"
+    "check": "pnpm release:check && pnpm typecheck && pnpm names && pnpm test && pnpm build"
   },
   "dependencies": {
     "pixi.js": "^8.20.0"
