@@ -1,3 +1,4 @@
+import {captureScheduledTrades} from "./trade-alerts.ts";
 import {leagueHealth} from '../../../js/league-health.js';
 import {backgroundSyncPolicy} from '../../../js/background-sync-policy.js';
 import {nflWeekStatuses} from '../../../js/clubhouse-matchup-model.js';
@@ -369,6 +370,11 @@ Deno.serve(async (request) => {
         .catch(error => console.warn("Weekly report notification skipped:", error));
     }
 
+    // Check receipts before the unchanged-signature exit: failed notifications
+    // and model fetches must retry even when the ownership ledger is unchanged.
+    const tradeAlerts = await captureScheduledTrades({admin, league, users, rosters,
+      transactions: weeklyTransactions, season, week, url, cronToken});
+
     if (signature === config.last_auto_signature) {
       const { error } = await admin.from("sleeper_config").update({
         last_auto_checked_at: checkedAt,
@@ -376,7 +382,7 @@ Deno.serve(async (request) => {
       }).eq("id", 1);
       if (error) throw error;
       if(!adaptive)await notifyCommissioners(url, cronToken, `Checked ${season} Week ${week}. No Sleeper changes found.`);
-      return Response.json({ ok: true, changed: false, season, week, sportsbookMarketsCreated });
+      return Response.json({ ok: true, changed: false, season, week, sportsbookMarketsCreated, tradeAlerts });
     }
 
     const now = new Date().toISOString();
@@ -455,6 +461,7 @@ Deno.serve(async (request) => {
       season,
       week,
       sportsbookMarketsCreated,
+      tradeAlerts,
       counts: { users: users?.length || 0, rosters: rosters?.length || 0, matchups: matchupRows.length, transactions: transactionRows.length },
     });
   } catch (error) {

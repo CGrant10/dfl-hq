@@ -1,0 +1,59 @@
+import {buildPlayerPool} from '../../../js/team-analyzer.js';
+import {assessExpertRankings} from '../../../js/expert-rankings-model.js';
+import {captureTradeReceipts} from '../../../js/trade-alert-capture.js';
+import {scheduledTradeNotification} from '../../../js/trade-receipt-model.js';
+
+const get = async (url: string) => {
+  const response = await fetch(url, {headers: {'User-Agent': 'DFL-HQ-Trade-Alerts/1.0'}, signal: AbortSignal.timeout(12000)});
+  if (!response.ok) throw Error(`Trade provider ${new URL(url).hostname}: ${response.status}`);
+  return response.json();
+};
+
+export async function captureScheduledTrades({admin, league, users, rosters, transactions, season, week, url, cronToken}: any) {
+  return captureTradeReceipts({transactions, currentRosters: rosters, season, week, database: admin,
+    log: (message: string) => console.warn(message),
+    loadAnalyzer: async () => {
+      // Runs only for missing receipts. Ordinary score polls never fetch this
+      // model; existing receipts and their original valuations are immutable.
+      const completedWeeks = Array.from({length: Math.max(0, Math.min(week - 1, 17))}, (_, i) => i + 1);
+      const [players, prior, current, market, availability, results, experts] = await Promise.all([
+        get('https://api.sleeper.app/v1/players/nfl'),
+        get(`https://api.sleeper.app/v1/stats/nfl/regular/${season - 1}`),
+        get(`https://api.sleeper.app/v1/stats/nfl/regular/${season}`),
+        get(`https://api.sleeper.app/projections/nfl/${season}?season_type=regular&order_by=adp_ppr&position[]=QB&position[]=RB&position[]=WR&position[]=TE`),
+        get(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
+        Promise.all(completedWeeks.map(w => get(`https://api.sleeper.app/stats/nfl/${season}/${w}?season_type=regular`))),
+        get('https://raw.githubusercontent.com/CGrant10/dfl-hq/main/data/expert-ros-ppr.json').catch(() => null),
+      ]);
+      if (!players || Array.isArray(players) || !prior || !current || !Array.isArray(market) || !market.length
+        || !Array.isArray(availability) || !availability.length || results.some(r => !Array.isArray(r))) throw Error('Incomplete trade inputs');
+      const owners = new Map((users || []).map((u: any) => [String(u.user_id), u]));
+      const named = rosters.map((r: any) => {
+        const owner: any = owners.get(String(r.owner_id));
+        return {...r, id: String(r.roster_id), sleeper_user_id: r.owner_id,
+          team_name: r.metadata?.team_name || owner?.metadata?.team_name || owner?.display_name || `Team ${r.roster_id}`,
+          ownerName: owner?.display_name || owner?.username || '', playerIds: r.players || []};
+      });
+      const now = Date.now(), signals = {fetchedAt: now, stale: false};
+      const pool = buildPlayerPool({rosters: named, players, previousStats: prior, currentStats: current,
+        projections: market, weeklyProjections: availability, recentStats: results.slice(-3), seasonWeeklyStats: results,
+        scoringSettings: league.scoring_settings, currentWeek: week, scoringFormat: 'ppr',
+        expertRankings: assessExpertRankings(experts, {season, scoring: 'ppr', now} as any),
+        dataSignals: {projections: signals, production: signals, availability: signals, weeklyResults: signals}} as any);
+      return {state: 'ready', teams: named, pool};
+    },
+    notifyTradeAlert: async (alert: any, database: any) => {
+      const response = await fetch(`${url}/functions/v1/send-notification`, {
+        method: 'POST', headers: {'Content-Type': 'application/json', 'x-dfl-cron-token': cronToken},
+        body: JSON.stringify({action: 'send', ...scheduledTradeNotification(alert), category: 'trades', audience: 'all',
+          sourceKey: `trade:${alert.sleeper_transaction_id}`, targetUrl: `#/trade?tx=${encodeURIComponent(alert.sleeper_transaction_id)}`}),
+        signal: AbortSignal.timeout(20000),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok || !data.messageId) throw Error(data.error || `Trade alert ${response.status}`);
+      const saved = await database.from('trade_alerts').update({notification_message_id: data.messageId, notified_at: new Date().toISOString()})
+        .eq('sleeper_transaction_id', alert.sleeper_transaction_id).is('notification_message_id', null);
+      if (saved.error) throw saved.error;
+    },
+  } as any);
+}
