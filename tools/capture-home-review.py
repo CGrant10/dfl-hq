@@ -1249,7 +1249,7 @@ with sync_playwright() as p:
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
                 assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
-                    assert 'Bring the' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'Opener text must follow the theme'
+                assert 'Win your' in check['headline'] and 'fucking matchup.' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'New opener must remain live theme-aware text'
                 check['injuryRows'] = check_injury_layout(page)
                 metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})
                 if width==390 and index in [0,2,3]:
