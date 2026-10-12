@@ -35,3 +35,45 @@ Unit coverage checks the collapse dead zone and real chrome/safe-area boundary.
 Full unit, name, type and build gates run before release, including deterministic
 shared CSS regeneration and offline precaching of the new controller. Browser
 checks block league writes.
+
+## Refinements — 1.381.0
+
+The compact reference now reverses an interrupted entrance/exit from its actual
+opacity and position. It no longer resets to an invisible or fully visible
+frame when the reader changes direction. Section captions glide 4px into place
+in the direction of scrolling, with an 8px dead zone that prevents label chatter
+near heading boundaries. A fixed tracking boundary prevents caption wrapping or
+the scoreboard's changing height from switching section labels by themselves.
+The thin reading-progress line settles over 100ms instead of stepping directly.
+
+When a Clubhouse reader passes the full matchup panel, the already-visible
+compact reference expands into its score row over 240ms. Scrolling back contracts
+it from its current height, including during an interrupted transition. The
+bar returns to natural height on completion; document space remains unchanged.
+Score-row entrances fade/lift subtly, while score digits always mirror the
+actual source. Refreshes do not replay the caption, bar or score-row motion.
+A source change cancels an obsolete resize rather than clipping new content
+inside a stale animated height. Motion off and reduced motion cancel the added
+effects and progress transition while retaining the reference and scores.
+
+Geometry reads still share the existing scheduled frame. A natural-height
+measurement happens only when a scroll changes the compact context's layout;
+there is no new timer, perpetual animation loop, poller or data request. All new
+animations are canceled on preference changes and route teardown. The existing
+GameDay scoreboard uses its original controller.
+
+Read-only actual-data review again covers all nine routes at 320/390/1024px,
+checking chrome alignment, complete selected team names, actual score parity,
+bankroll context and horizontal overflow. The original controller lifecycle
+suite covers focus, large text, reduced motion, hidden details, renderer
+replacement, source changes and teardown. A separate 25-check browser review
+covers interrupted frame continuity, caption hysteresis, genuine intermediate
+scoreboard heights, document-position stability, reversing mid-expansion,
+source-update suppression and preference changes. Artifacts are recorded in
+`/workspace/dfl-scroll-1381/`.
+
+The refinements passed 1,559 tests across 182 files, type checking, unresolved
+name checks and the production build. Both 23 original lifecycle checks and 25
+new motion/performance checks passed. A settled context performs zero idle
+geometry reads, and a burst of 100 scroll events still shares a scheduled paint.
+All 27 actual-route width checks passed without runtime errors or overflow.
