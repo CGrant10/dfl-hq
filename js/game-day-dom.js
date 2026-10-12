@@ -1,5 +1,5 @@
 // Keep live rows, focused controls and open disclosures in place while text changes.
-const key=node=>!node||node.nodeType!==1?null:node.id?`id:${node.id}`:node.matches('.gameday-player')?node.dataset.gamedayRow?`player:${node.dataset.gamedayRow}`:`player:${node.querySelector('[data-player-roster]')?.dataset.playerRoster}:${node.querySelector('[data-gameday-player]')?.dataset.gamedayPlayer||node.querySelector('.gameday-slot')?.textContent}`:node.matches('[data-moment-key]')?`moment:${node.dataset.momentKey}`:null;
+const key=node=>!node||node.nodeType!==1?null:node.id?`id:${node.id}`:node.matches('[data-injury-id]')?`injury:${node.dataset.injuryId}`:node.matches('.gameday-player')?node.dataset.gamedayRow?`player:${node.dataset.gamedayRow}`:`player:${node.querySelector('[data-player-roster]')?.dataset.playerRoster}:${node.querySelector('[data-gameday-player]')?.dataset.gamedayPlayer||node.querySelector('.gameday-slot')?.textContent}`:node.matches('[data-moment-key]')?`moment:${node.dataset.momentKey}`:null;
 const compatible=(a,b)=>a?.nodeType===b.nodeType&&(a.nodeType!==1||a.tagName===b.tagName);
 function update(node,fresh){
  if(node.nodeType!==1){if(node.nodeValue!==fresh.nodeValue)node.nodeValue=fresh.nodeValue;return}

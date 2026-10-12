@@ -1,6 +1,7 @@
 import { readPageChoice } from './page-disclosure.js';
 import {mountTabScrollCues} from './tab-scroll-cues.js';
 import {mountPageScrollMotion} from './page-scroll-motion.js';
+import {mountSwipeTabs} from './swipe-tabs.js';
 
 const easing = 'cubic-bezier(.2,.75,.25,1)';
 const running = new Set();
@@ -107,10 +108,34 @@ const visible = node => {
   return box.bottom > 44 && box.top < innerHeight - 48 && box.right > 0 && box.left < innerWidth;
 };
 
+// Lazy and rebuilt views share one delegated gesture controller per page.
+// An inner position/market group owns its swipe before the enclosing group.
+export function mountPageSwipeTabs(root) {
+  const specs = [...rails.filter(spec => spec.bar !== '.td-entry-actions'), {bar:'.clubhouse-tabs'}];
+  let group = null;
+  const selected = button => button.getAttribute('aria-selected') === 'true' || button.getAttribute('aria-pressed') === 'true' || button.classList.contains('on') || button.classList.contains('active');
+  const buttons = spec => [...(root.querySelector(spec.bar)?.querySelectorAll(':scope > button:not([disabled]):not([hidden])') || [])];
+  const pane = spec => {
+    const button = buttons(spec).find(selected), id = button?.getAttribute('aria-controls');
+    return id ? root.querySelector(`#${CSS.escape(id)}`) : spec.panel ? root.querySelector(spec.panel) : null;
+  };
+  const depth = node => { let count=0; for (;node;node=node.parentElement) count++; return count; };
+  return mountSwipeTabs(root,null,{
+    exclude:'button:not(.player-card-trigger):not(.gameday-player-tap),input,select,textarea,summary,form,[contenteditable],canvas,[data-no-swipe],.table-scroll,.table-wrap,.tabscroll,.gd-watch-reel',
+    selected, getButtons:()=>group?buttons(group):[], getPanel:()=>group?pane(group):null,
+    accepts(target) {
+      group=specs.filter(spec=>buttons(spec).length>1&&pane(spec)?.contains(target))
+        .sort((a,b)=>depth(root.querySelector(b.bar))-depth(root.querySelector(a.bar)))[0] || null;
+      return Boolean(group);
+    },
+  });
+}
+
 export function mountPageMotion(root) {
   if (['broadcast', 'arena-beta', 'golf'].includes(root.dataset.route) || root.dataset.route?.startsWith('arena')) return () => {};
   const stopScrollCues=mountTabScrollCues(root);
   const stopPageScroll=mountPageScrollMotion(root,{animate:animateUi,cancel:cancelUiMotion});
+  const stopSwipe=mountPageSwipeTabs(root);
   root.dataset.uiPolished = '1';
   const states = new Map(), pending = new Map(), userDetails = new WeakSet(), receiptOrigins = new WeakMap();
   let stopped = false, frame = null, intent = null;
@@ -253,6 +278,7 @@ export function mountPageMotion(root) {
   return () => {
     stopScrollCues();
     stopPageScroll();
+    stopSwipe();
     stopped = true; cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); cancelUiMotion(root);
     root.removeEventListener('keydown', keydown, true);
     root.removeEventListener('click', click, true); root.removeEventListener('toggle', toggle, true); root.removeEventListener('change', change, true);
