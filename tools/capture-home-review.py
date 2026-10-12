@@ -984,8 +984,15 @@ with sync_playwright() as p:
         for step in range(1,6):
             touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
             page.wait_for_timeout(20)
+        if dx and not dy:
+            assert panel.evaluate('e=>getComputedStyle(e).transform!=="none"'), 'Tab content did not follow the finger'
         touch.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
+        if dx and not dy:
+            page.wait_for_timeout(50)
+            active=page.locator('[data-week-panel]:not([hidden])')
+            assert active.evaluate('e=>e.getAnimations().some(a=>a.effect.getKeyframes().some(f=>f.transform))'), 'Swipe settling was cancelled by the shared fade'
         page.wait_for_timeout(350)
+        assert panel.evaluate('e=>!e.style.transform&&!e.dataset.uiSwipeSettling'), 'Swipe left a transform or stale motion flag'
     page.set_viewport_size({'width':390,'height':844})
     page.locator('[data-week-tab="brief"]').click()
     for panel in ['picks','players','startsit']:
@@ -1034,7 +1041,10 @@ with sync_playwright() as p:
         page.wait_for_timeout(400)
         assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
         page.keyboard.press('Escape')
+        page.wait_for_timeout(30)
+        assert page.locator('.dfl-connected-portrait').count()==1, 'Dismissal did not return the portrait to its row'
         page.wait_for_timeout(250)
+        assert page.locator('.dfl-connected-portrait').count()==0, 'Dismissal left a portrait overlay'
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
     page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
     player.click()

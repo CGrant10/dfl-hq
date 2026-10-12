@@ -115,7 +115,7 @@ export function mountPageMotion(root) {
   const states = new Map(), pending = new Map(), userDetails = new WeakSet(), receiptOrigins = new WeakMap();
   let stopped = false, frame = null, intent = null;
   const current = () => !stopped && root.isConnected;
-  const reveal = node => { if (visible(node)) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
+  const reveal = node => { if (visible(node) && !node.dataset.uiSwipeSettling) animateUi(node, [{ opacity: .45 }, { opacity: 1 }], { duration: 180 }); };
   const drain = () => {
     for (const [selector, expires] of pending) {
       const panel = root.querySelector(selector);

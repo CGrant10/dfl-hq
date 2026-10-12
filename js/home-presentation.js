@@ -25,8 +25,8 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
-    headline: 'Bring the', subtitle: 'receipts.',
-    body: 'Ten years. Same grudges. New scores.',
+    headline: 'Win your', subtitle: 'fucking matchup.',
+    body: 'Nobody gives a shit about your projected points.',
     kicker: week ? `Week ${week}` : day,
     href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
     background: 'default',

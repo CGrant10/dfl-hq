@@ -1,6 +1,7 @@
 import {db} from './supabase.js';
 import {currentMember,loadMemberDirectory} from './members.js';
 import {esc} from './ui.js';
+import {animateUi} from './ui-motion.js';
 export const WALL_REACTIONS=[['😂','Laugh'],['🔥','Fire'],['💀','Dead'],['🧂','Salty']];
 export function reactionHtml(postId){return `<div class="wall-reactions" data-wall-reactions="${esc(postId)}"><div class="wall-reaction-buttons" role="group" aria-label="Post reactions">${WALL_REACTIONS.map(([emoji,label])=>`<button type="button" class="btn ghost small" data-wall-reaction="${emoji}" aria-label="${label} reaction" aria-pressed="false" disabled><span aria-hidden="true">${emoji}</span> <span data-reaction-count>0</span></button>`).join('')}</div><details data-reaction-people hidden><summary>Who reacted</summary><div data-reaction-names></div></details><p class="muted tiny" role="status" data-reaction-status>Loading reactions…</p></div>`;}
 export async function wireReactions(root){
@@ -30,7 +31,7 @@ export async function wireReactions(root){
      const button=event.target.closest('[data-wall-reaction]');if(!button||busy)return;
      const member=currentMember(),status=group.querySelector('[data-reaction-status]');if(!member){status.textContent='Choose your profile to react.';return}
      const row={post_id:Number(group.dataset.wallReactions),member_id:member.id,emoji:button.dataset.wallReaction},active=button.getAttribute('aria-pressed')==='true';busy=true;button.disabled=true;
-     try{const {error}=active?await db().from('member_wall_reactions').delete().match(row):await db().from('member_wall_reactions').insert(row);if(error&&error.code!=='23505')throw error;await load()}
+     try{const {error}=active?await db().from('member_wall_reactions').delete().match(row):await db().from('member_wall_reactions').insert(row);if(error&&error.code!=='23505')throw error;await load();if(!active)animateUi(button.querySelector('[aria-hidden]'),[{transform:'scale(1)'},{transform:'translateY(-2px) scale(1.22)',offset:.4},{transform:'scale(1)'}],{duration:280})}
      catch{status.textContent='Could not save that reaction. Try again.'}
      finally{busy=false;button.disabled=false}
    });

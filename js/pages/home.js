@@ -253,13 +253,13 @@ function wireHomeWeekHub(root) {
     setWeekPanel(next.dataset.weekTab);
     next.focus();
   }));
-  mountSwipeTabs(root.querySelector(".home-week-panels"), root.querySelector(".home-week-tabs"));
+  const stopSwipe = mountSwipeTabs(root.querySelector(".home-week-panels"), root.querySelector(".home-week-tabs"));
   root.querySelectorAll("[data-position-tab]").forEach(button => button.addEventListener("click", () => {
     const position = button.dataset.positionTab;
     root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
     root.querySelectorAll("[data-position-panel]").forEach(panel => { panel.hidden = panel.dataset.positionPanel !== position; });
   }));
-
+  return stopSwipe;
 }
 
 export function leave() {
@@ -731,7 +731,7 @@ export async function render(view) {
     }
     if (homeReportSlot) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
-      wireHomeWeekHub(homeReportSlot);
+      deferredStops.push(wireHomeWeekHub(homeReportSlot));
       finishLoadingContent(homeReportSlot);
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
       if(briefTeam&&outlook?.week){
