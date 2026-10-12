@@ -186,7 +186,7 @@ function tradeLab(team, teams, pool, shop) {
           ${allPartners ? `<section class="tb-league-return"><header><small>YOU WANT</small><span>Any team</span></header><div class="tb-anchor-chips"><span class="tb-anchor-empty">Best league-wide return</span></div><select aria-label="Choose a player you want from any team" data-tb-league-target><option value="">Add player…</option>${otherTeams.map(owner => `<optgroup label="${esc(teamName(owner))}">${anchorOptions((owner.playerIds || []).map(id => pool.get(String(id))).filter(Boolean).sort((a,b) => b.tradeValue-a.tradeValue), [], null)}</optgroup>`).join('')}</select></section>`
             : `<section><header><small>YOU WANT</small></header><div class="tb-anchor-chips">${anchorChips(shop.receiveAnchors, pool, "receive")}</div><select aria-label="Add a player you want to receive" data-tb-add-anchor="receive">${anchorOptions(theirPlayers, shop.receiveAnchors, "Add player…")}</select></section>`}
         </div>
-        <details class="tb-refine"${shop.refineOpen?' open':''}><summary><span>Package size &amp; counts</span><small>Up to ${maxPlayers} players</small></summary><div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(returnTeam, { meta: multi ? "RETURN FROM" : "TRADE WITH", compact: true })}</div>
+        <details class="tb-refine"${shop.refineOpen?' open':''}><summary><span class="tb-refine-action">Adjust trade size<i aria-hidden="true"></i></span><small class="tb-refine-settings"><span>Up to <b data-tb-max-summary>${maxPlayers}</b> total</span><span>Send ${sendCount === 'any' ? 'any' : Number(sendCount)} · Get ${receiveCount === 'any' ? 'any' : Number(receiveCount)}</span></small></summary><div class="tb-identity-rail">${teamIdentity(team, { meta: "TRADING AS", compact: true })}<b aria-hidden="true">↔</b>${allPartners ? `<div class="dfl-team is-compact"><span class="dfl-team-mark"><i>ALL</i></span><span class="dfl-team-copy"><strong>All league teams</strong><small>SHOPPING WITH</small></span></div>` : teamIdentity(returnTeam, { meta: multi ? "RETURN FROM" : "TRADE WITH", compact: true })}</div>
         <div class="tb-package-controls">
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
@@ -456,6 +456,8 @@ function page(data, tradeAlerts = []) {
         const value = event.target.value;
         const output = body.querySelector("[data-tb-max-output]");
         if (output) output.textContent = value;
+        const summary = body.querySelector("[data-tb-max-summary]");
+        if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
         if(event.target.closest('[data-tb-retry]')){shop.offerState=null;refreshOffers();return;}
