@@ -113,7 +113,7 @@ function playerRow(player, side, checked) {
     ${playerPortrait(player)}
     <span class="td-player-copy">
       <b>${esc(player.name)}</b>
-      <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} pts`].filter(Boolean).join(" · "))}</small>
+      <small>${esc([player.position, player.nflTeam, signal, `${Math.round(num(player.expectedPoints))} projected`].filter(Boolean).join(" · "))}</small>
     </span>
     <span class="td-value">${Math.round(num(player.tradeValue))}</span>
   </label>`;
