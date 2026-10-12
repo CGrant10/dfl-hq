@@ -1,3 +1,5 @@
+import {mountAnalyzerLiveRefresh} from "../analyzer-live-refresh.js";
+import {analyzerPlayerSignal} from "../analyzer-player-form.js";
 import {disclosure,wirePageDisclosures,revealDetails} from "../page-disclosure.js";
 import { esc, errorBox } from "../ui.js";
 import { currentMember } from "../members.js";
@@ -11,6 +13,9 @@ import { playerIdentity } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
 import { animateUi } from "../ui-motion.js";
 import { buildLeagueStakes, stakeLine, playoffChance } from "../league-stakes.js";
+
+let stopRefresh=null,renderEpoch=0;
+export function leave(){renderEpoch++;stopRefresh?.();stopRefresh=null;}
 
 const ordinal = value => {
   const n = Number(value), mod100 = n % 100;
@@ -131,7 +136,7 @@ function rosterReport(team, pool) {
     const starting = starters.has(player.id);
     const role = starting ? (player.id === flexId ? "Flex" : "Starter") : "Bench";
     const divider = index === team.lineup.starters.length && team.lineup.bench.length ? `<tr class="ta-roster-divider"><td colspan="9">DEPTH · GRADED SEPARATELY FROM THE STARTING LINEUP</td></tr>` : "";
-    const status = player.injuryStatus || (player.trendBasis === "recent" ? `${trendLabel(player.trend)} · last ${player.recentGames}` : "");
+    const status = analyzerPlayerSignal(player);
     return `${divider}<tr class="${starting ? "is-starter" : "is-bench"}"><td><div class="ta-player">${playerIdentity(player, { detail: [player.position, player.nflTeam].filter(Boolean).join(" · "), signal: status, interactive:true })}</div></td><td data-label="Role"><span class="ta-role">${role}</span></td><td data-label="Expected"><strong class="ta-expected">${stat(player.expectedPoints)}</strong></td><td data-label="Per game">${stat(player.expectedPerGame, 2)}</td><td data-label="Trend"><span class="ta-trend is-${esc(player.trend)}">${esc(trendLabel(player.trend))}</span></td><td data-label="Projection">${stat(player.projectedPoints)}</td><td data-label="Prior pace">${stat(player.priorPace)}</td><td data-label="Pos rank"><strong>${rankText(player.positionRank, player.positionCount)}</strong></td><td data-label="Value"><b class="ta-value">${player.tradeValue}</b></td></tr>`;
   }).join("")}</tbody></table></div>` });
 }
@@ -248,7 +253,7 @@ function page(data) {
      it differently from whichever row you happen to be reading. */
   const myTeamId = data.teams.find(team => me?.sleeper_user_id && String(team.sleeper_user_id) === String(me.sleeper_user_id))?.id ?? null;
   /* Once per page load. Seeded, so it is stable across redraws too. */
-  const projections = projectSeason({
+  const project = () => projectSeason({
     teams: data.teams.map(team => {
       const standing = (data.standings || []).find(row => Number(row.season) === Number(data.projectionSeason)
         && String(row.sleeper_user_id) === String(team.sleeper_user_id));
@@ -257,11 +262,12 @@ function page(data) {
     }),
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
-  const stakes = buildLeagueStakes({
+  const buildStakes = () => buildLeagueStakes({
     teams: data.teams, standings: data.standings || [], projections,
     season: data.projectionSeason, week: data.liveWeek,
     playoffTeams: Number(data.league?.playoff_teams) || 8,
   });
+  let projections=project(),stakes=buildStakes();
   return {
     markup: `<header class="page-head ta-page-head"><div><h1>Team Analyzer</h1><p class="page-sub">${data.projectionSeason} outlook · ${data.rosterSeason} rosters · DFL scoring</p></div><a class="btn ghost small" href="#/keepers">Keepers</a></header><section class="ta-toolbar-section" aria-label="Choose a roster"><div class="ta-toolbar"><label class="ta-team-picker"><span class="sr-only">Reading team</span><span class="ta-team-identity" data-ta-identity></span><i aria-hidden="true">⌄</i><select aria-label="Reading team" data-ta-team-select>${data.teams.map(team => `<option value="${esc(team.id)}" ${team.id === selectedId ? "selected" : ""}>${esc(teamName(team))}</option>`).join("")}</select></label></div></section><main class="ta-report" data-ta-body></main>`,
     wire(view) {
@@ -307,14 +313,22 @@ function page(data) {
         if (event.target.matches("[data-ta-compare]")) { compareId = event.target.value; draw(); }
       });
       draw();
+      stopRefresh?.();
+      stopRefresh=mountAnalyzerLiveRefresh({view,initial:data,load:()=>loadAnalyzerData({liveRefresh:true}),active:()=>view.isConnected&&view.dataset.route==='analyzer',apply:next=>{
+        data=next;projections=project();stakes=buildStakes();
+        const picker=view.querySelector('[data-ta-team-select]');
+        picker.innerHTML=data.teams.map(team=>`<option value="${esc(team.id)}">${esc(teamName(team))}</option>`).join('');draw();
+      }});
     },
   };
 }
 
 export async function render(view) {
+  leave();const epoch=++renderEpoch;
   view.innerHTML = `<header class="page-head"><h1>Team Analyzer</h1><p class="page-sub">Reading every roster, last season and current expectations…</p></header><div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
   try {
     const data = await loadAnalyzerData();
+    if(epoch!==renderEpoch||!view.isConnected)return;
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Team Analyzer</h1></header><div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong><p class="muted">Run a Sleeper sync after the draft, then come back here.</p></div></div>`;
       return;
@@ -323,6 +337,7 @@ export async function render(view) {
     view.innerHTML = built.markup;
     built.wire(view);
   } catch (error) {
+    if(epoch!==renderEpoch||!view.isConnected)return;
     view.innerHTML = errorBox(error);
   }
 }

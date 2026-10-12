@@ -39,7 +39,7 @@ export function tradeDataContext(data,pool){
  const rostered=new Set((data.teams||[]).flatMap(t=>t.playerIds||[]).map(String));
  const format=data.leagueFormat,scoring={ppr:'Full PPR',half_ppr:'Half PPR',std:'Standard'}[format?.scoring]||'League scoring';
  const leagueCopy=`${format?.teams??data.teams?.length??0} teams · ${scoring} · 1 QB · 2 RB · 2 WR · 1 TE · 1 FLEX (RB/WR/TE) · 1 K · 1 DEF`;
- const times=[['Season projections',data.projectionUpdatedAt],['Production',data.productionUpdatedAt],['Availability',data.availabilityUpdatedAt??data.liveSignalsUpdatedAt],['Completed weekly results',data.weeklyResultsUpdatedAt]];
+ const times=[['Season projections',data.projectionUpdatedAt],['Production',data.productionUpdatedAt],['Availability',data.availabilityUpdatedAt??data.liveSignalsUpdatedAt],['Completed weekly results',data.weeklyResultsUpdatedAt],['Weekly player scores',data.liveScoresUpdatedAt]];
  const stamp=at=>at?new Date(at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Update time unavailable';
  return `<details class="td-data-context"><summary><span>League &amp; data</span><small>Sources · updates</small></summary><p data-trade-league-format>${esc(leagueCopy)}</p><p>Team names · ${esc(data.teamNamesSource||'Synced roster')}</p>${expertSourceMarkup(data.expertConsensus,esc,true)}${data.staleSources?.length?`<p>Cached data · ${esc(data.staleSources.join(', '))}</p>`:''}${times.map(([label,at])=>`<div><span>${label}</span><time>${esc(stamp(at))}</time></div>`).join('')}<p>Injury flags · ${[...pool.values()].filter(p=>rostered.has(String(p.id))&&(p.injuryStatus||p.isOut||p.isRisky)).length} players</p></details>`;
 }

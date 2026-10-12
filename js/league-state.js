@@ -35,7 +35,7 @@ export async function loadLeagueState({ force = false, now = new Date() } = {}) 
   if (!force && cached && Date.now() - cached.fetchedAt < TTL) return cached.value;
   if (!force && pending) return pending;
   pending = Promise.all([
-    loadNflState().catch(() => ({ data: null, fetchedAt: 0, stale: true })),
+    loadNflState(force?{maxAgeMs:0}:{}).catch(() => ({ data: null, fetchedAt: 0, stale: true })),
     Promise.resolve(db().from("sleeper_config")
       .select("last_synced_at,last_sync_note,last_auto_checked_at,last_auto_error")
       .eq("id", 1).maybeSingle()).catch(() => ({ data: null })),

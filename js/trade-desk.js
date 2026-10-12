@@ -1,3 +1,4 @@
+import {analyzerPlayerSignal} from "./analyzer-player-form.js";
 // =====================================================================
 // trade-desk.js - build a trade by hand and see who wins
 // ---------------------------------------------------------------------
@@ -106,7 +107,7 @@ export function recommendationCaption(result, team, recommendation = recommendat
 
 function playerRow(player, side, checked) {
   const search = `${player.name} ${player.position} ${player.nflTeam}`.toLowerCase();
-  const signal = player.injuryStatus || (player.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
+  const signal = analyzerPlayerSignal(player);
   return `<label class="td-player ${checked ? "is-picked" : ""}" data-td-player-row data-search="${esc(search)}">
     <input type="checkbox" data-td-pick="${side}" value="${esc(player.id)}" ${checked ? "checked" : ""}>
     ${playerPortrait(player)}

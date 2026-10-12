@@ -208,8 +208,8 @@ export async function clearSleeperAnalysisCache() {
  * Everything weekly hangs off this rather than a hardcoded week.
  * @returns {Promise<{data:Object, fetchedAt:number}>}
  */
-export function loadNflState() {
-  return cachedJson(WEEKLY_CACHE, `${BASE}/state/nfl`, STATE_MS);
+export function loadNflState({maxAgeMs=STATE_MS}={}) {
+  return cachedJson(WEEKLY_CACHE, `${BASE}/state/nfl`, maxAgeMs);
 }
 
 /**
