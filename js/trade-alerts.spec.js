@@ -209,3 +209,31 @@ describe("completed trade alerts", () => {
     expect(inserted[0].breaking_ended_at).toBeTruthy();
   });
 });
+
+describe('saved receipt balance and model uncertainty',()=>{
+  const base={sleeper_transaction_id:'receipt',analysis_status:'graded',model_version:TRADE_ALERT_MODEL_VERSION,
+    teams:[{roster_id:1,team_name:'Alpha'},{roster_id:2,team_name:'Bravo'}],
+    packages:[{roster_id:1,sends:[{id:'a',name:'A',trade_value:4}]},{roster_id:2,sends:[{id:'b',name:'B',trade_value:5}]}],
+    result:{fairness:80,valueToA:5,valueToB:4,projectionEvidence:{injuries:['Injured player'],missing:[],stale:[],fallback:[]}},verdict:{who:null,headline:'Review needed'}};
+  it('keeps the latest trade’s saved balance while explaining availability flags',()=>{
+    const view=tradeAlertViewModel(base);
+    expect(view).toMatchObject({fairness:80,winner:null,balanced:false,verdict:'Injury flags',caution:{label:'Injury flags'}});
+    expect(view.caution.detail).toContain('Injured player');expect(view.caution.detail).not.toContain('commissioner');
+    expect(view.receivedPackages[0].players[0].name).toBe('B');expect(view.receivedPackages[1].players[0].name).toBe('A');
+  });
+  it('does not call a stale-expert estimate balanced just because no winner was named',()=>{
+    const alert={...base,result:{...base.result,projectionEvidence:{expert:{required:true,status:'Stale'},injuries:[],missing:[]}}};
+    expect(tradeOutcomeSummary(alert)).toMatchObject({grade:'Review',winner:null});
+    expect(tradeAlertViewModel(alert)).toMatchObject({fairness:80,balanced:false,verdict:'Estimate only'});
+    expect(tradeAlertNotification(alert).body).toContain('80% balance');expect(tradeAlertNotification(alert).body).not.toContain('Balanced deal');
+  });
+  it('does not replace missing balance or impact with a fabricated zero',()=>{
+    const view=tradeAlertViewModel({...base,analysis_status:'review',result:null});
+    expect(view.fairness).toBeNull();expect(view.lineupDeltas[0].weekly).toBeNull();expect(view.verdict).toBe('Not rated');
+    expect(tradeAlertViewModel({...base,result:{...base.result,fairness:0}}).fairness).toBe(0);
+  });
+  it('keeps a close call distinct from an incomplete model review',()=>{
+    const alert={...base,result:{fairness:80,valueToA:80,valueToB:100,incomingEvidence:{low:75,high:100},outgoingEvidence:{low:80,high:110}}};
+    expect(tradeAlertViewModel(alert)).toMatchObject({fairness:80,verdict:'Close call',outcome:{grade:'Close call'}});
+  });
+});
