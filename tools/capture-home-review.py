@@ -464,9 +464,9 @@ def check_clubhouse_center(page):
           root.querySelector('[data-clubhouse-game="2"]').click();const card=root.querySelector('[data-clubhouse-matchup="2"]'),hero=card.querySelector('.clubhouse-game-teams');hero.scrollIntoView({behavior:'instant',block:'center'});await frame();await frame();
           const light=hero.querySelector('.clubhouse-stage-light');for(let n=0;n<40&&!light.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));check(light.getAnimations().some(a=>a.playState==='running'),'Matchup entrance has no finite light sweep: '+JSON.stringify({rect:hero.getBoundingClientRect().toJSON(),motion:root.querySelector('.clubhouse-page').dataset.motion,hidden:!!card.closest('[hidden]')}));
           for(const [index,side] of [...hero.querySelectorAll('.clubhouse-game-side')].entries())for(const identity of side.querySelectorAll(':scope > .clubhouse-team-mark,:scope > .clubhouse-matchup-name')){
-            const entrance=identity.getAnimations().find(a=>a.playState==='running');check(entrance,'Both team crests and names must enter together');const frames=entrance.effect.getKeyframes();const first=new DOMMatrix(frames[0].transform),last=new DOMMatrix(frames.at(-1).transform);check(first.m41===(index?32:-32)&&Math.abs(first.a-.97)<.001&&last.m41===0&&last.a===1,'Teams must slide in from opposite sides');check(entrance.effect.getTiming().duration===700,'Entrance must match the GameDay timing');
+            const entrance=identity.getAnimations().find(a=>a.playState==='running');check(entrance,'Both team crests and names must enter together');const frames=entrance.effect.getKeyframes();const first=new DOMMatrix(frames[0].transform),last=new DOMMatrix(frames.at(-1).transform);check((index?first.m41>0:first.m41<0)&&first.a>=.95&&first.a<=1&&last.m41===0&&last.a===1,'Teams must slide in from opposite sides');check(entrance.effect.getTiming().duration<=400,'Switching matchups should use a short entrance');
           }
-          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();check(JSON.stringify(before)===JSON.stringify(sizes())&&getComputedStyle(hero).transform==='none','Visual polish moves score geometry');
+          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');const slide=hero.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));check(slide&&slide.effect.getTiming().duration<=300,'Matchup switch needs a short directional faceoff');await new Promise(r=>setTimeout(r,320));check(getComputedStyle(hero).transform==='none','Matchup faceoff did not settle');
           root.querySelector('[data-clubhouse-game="1"]').click();check([...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').every(a=>!a.effect.target.closest('[hidden]')),'Rapid matchups animate a hidden game');
           root.querySelector('[data-clubhouse-motion]').click();overview.click();await frame();check(marker.getAnimations().length===0&&[...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Motion off leaves UI effects running');
           check(getComputedStyle(tabs.querySelector('button')).transitionDuration==='0s','Motion off leaves CSS transitions running');matchups.click();root.querySelector('[data-clubhouse-motion]').click();await frame();
@@ -984,8 +984,15 @@ with sync_playwright() as p:
         for step in range(1,6):
             touch.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x+dx*step/5,'y':y+dy*step/5}]})
             page.wait_for_timeout(20)
+        if dx and not dy:
+            assert panel.evaluate('e=>getComputedStyle(e).transform!=="none"'), 'Tab content did not follow the finger'
         touch.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
+        if dx and not dy:
+            page.wait_for_timeout(50)
+            active=page.locator('[data-week-panel]:not([hidden])')
+            assert active.evaluate('e=>e.getAnimations().some(a=>a.effect.getKeyframes().some(f=>f.transform))'), 'Swipe settling was cancelled by the shared fade'
         page.wait_for_timeout(350)
+        assert panel.evaluate('e=>!e.style.transform&&!e.dataset.uiSwipeSettling'), 'Swipe left a transform or stale motion flag'
     page.set_viewport_size({'width':390,'height':844})
     page.locator('[data-week-tab="brief"]').click()
     for panel in ['picks','players','startsit']:
@@ -1034,7 +1041,10 @@ with sync_playwright() as p:
         page.wait_for_timeout(400)
         assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
         page.keyboard.press('Escape')
+        page.wait_for_timeout(30)
+        assert page.locator('.dfl-connected-portrait').count()==1, 'Dismissal did not return the portrait to its row'
         page.wait_for_timeout(250)
+        assert page.locator('.dfl-connected-portrait').count()==0, 'Dismissal left a portrait overlay'
         assert player.evaluate('e=>e===document.activeElement'), 'Player dismissal lost focus'
     page.evaluate('window.reviewCardDelay=0;window.reviewCardHold=true;delete window.reviewCardRelease')
     player.click()
@@ -1239,7 +1249,7 @@ with sync_playwright() as p:
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
                 assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
-                    assert 'Bring the' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'Opener text must follow the theme'
+                    assert 'Win your' in check['headline'] and 'fucking matchup.' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'New opener must remain live theme-aware text'
                 check['injuryRows'] = check_injury_layout(page)
                 metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})
                 if width==390 and index in [0,2,3]:

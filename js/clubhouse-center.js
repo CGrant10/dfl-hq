@@ -33,7 +33,7 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
   const button=root.querySelector('[data-clubhouse-motion]');if(button){button.textContent=`Motion ${motion?'on':'off'}`;button.setAttribute('aria-pressed',String(motion))}
   if(!motion||reduced.matches)stopAnimations();polish.motionChanged();spotlight.setMotion(motion);
  };
- const enter=card=>polish.enter(card);
+ const enter=(card,options={})=>polish.enter(card,options);
  const paintActive=()=>{
   const game=selectedGame(),card=game&&cardOf(game.id);if(!card)return;
   stopScores();stopScores=()=>{};
@@ -64,9 +64,10 @@ export function mountClubhouseCenter(root,week,{active=()=>root.isConnected,load
  };
  const choose=(id,{scroll=true}={})=>{
   if(!model.games.some(g=>g.id===id)||id===selected)return;
+  const direction=Math.sign(model.games.findIndex(g=>g.id===id)-model.games.findIndex(g=>g.id===selected));
   stopAnimations();selected=id;savePageChoice(scope,id);
   const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('matchup',id);try{history.replaceState(null,'',location.hash.split('?')[0]+'?'+params)}catch{/* Matchup browsing also works in previews that restrict history. */}
-  paintBoard();paintActive();const card=cardOf(id);enter(card);
+  paintBoard();paintActive();const card=cardOf(id);enter(card,{direction});
   const heading=card?.querySelector('header');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});if(scroll)heading.scrollIntoView({behavior:motion&&!reduced.matches?'smooth':'instant',block:'start'})}
  };
  const click=event=>{

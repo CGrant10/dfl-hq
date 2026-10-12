@@ -13,6 +13,11 @@ import { team } from './nfl-teams.js';
 import { playerCardPlaceholder, finishLoadingContent } from './loading-presentation.js';
 
 let dialog, body, request = 0, opener, returnContainer, activeContext = null, stopConnection = () => {};
+function returnTarget() {
+  const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
+  const replacement = selector && returnContainer?.isConnected ? returnContainer.querySelector(selector) : null;
+  return opener?.isConnected ? opener : replacement;
+}
 function setup() {
   if (dialog) return;
   dialog = document.createElement('dialog');
@@ -21,16 +26,22 @@ function setup() {
   dialog.innerHTML = '<header><h2 id="dfl-player-card-title" tabindex="-1" autofocus>Player card</h2><button type="button" class="linkbtn" data-player-card-close>Close</button></header><div data-player-card-body></div>';
   document.body.append(dialog); body = dialog.querySelector('[data-player-card-body]');
   mountScoreVfx(dialog);
-  const dismiss = options => { stopConnection(); exitUi(dialog, () => dialog.close(), options); };
+  const dismiss = (options = {}) => {
+    if (!dialog.dataset.uiClosing && !options.immediate) {
+      stopConnection();
+      const source = returnTarget();
+      const target = source?.querySelector('.dfl-player-portrait') || source?.closest('.dfl-player')?.querySelector('.dfl-player-portrait');
+      stopConnection = connectPortrait(body.querySelector('.dfl-player-portrait'), target, { motion:dialog.dataset.motion !== 'off', duration:160, hideSource:true });
+    }
+    exitUi(dialog, () => dialog.close(), options);
+  };
   dialog.querySelector('[data-player-card-close]').addEventListener('click', () => dismiss());
   dialog.addEventListener('click', e => { if (e.target === dialog) dismiss(); });
   dialog.addEventListener('cancel', e => { e.preventDefault(); dismiss(); });
   dialog.addEventListener('close', () => {
     stopConnection(); cancelUiExit(dialog); cancelUiMotion(dialog);
     request++; activeContext = null; body.removeAttribute('aria-busy');
-    const selector = opener?.dataset.playerCard ? `[data-player-card="${CSS.escape(opener.dataset.playerCard)}"]` : opener?.dataset.gamedayPlayer ? `[data-gameday-player="${CSS.escape(opener.dataset.gamedayPlayer)}"][data-player-roster="${CSS.escape(opener.dataset.playerRoster)}"]` : null;
-    const replacement = selector && returnContainer?.isConnected ? returnContainer.querySelector(selector) : null;
-    (opener?.isConnected ? opener : replacement)?.focus({ preventScroll: true });
+    returnTarget()?.focus({ preventScroll: true });
   });
   window.addEventListener('hashchange', () => { if (dialog.open) dismiss({ immediate:true }); });
 }

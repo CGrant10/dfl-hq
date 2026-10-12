@@ -33,6 +33,7 @@ import { marquee } from "./marquee.js";
 import { artworkStyle } from "./broadcast-artwork.js";
 import { teamPortrait } from "./team-presentation.js";
 import { playerPortrait } from "./player-presentation.js";
+import { mountBroadcastDepth } from './broadcast-depth.js';
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -347,6 +348,7 @@ export function renderItem(item, { editorial = false } = {}) {
   if (editorial && item.homeFeature) {
     return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
       <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1555" height="1011" alt="" fetchpriority="high">
+      <span class="bx-home-shade" aria-hidden="true"></span>
       <span class="bx-home-week">${esc(item.kicker)}</span>
       <h2 class="bx-home-title">${esc(item.headline)}<span>${esc(item.subtitle)}</span></h2>
       <p class="bx-sub">${item.bodyLines ? item.bodyLines.map(line => `<span>${esc(line)}</span>`).join('') : esc(item.body)}</p>
@@ -610,6 +612,7 @@ export function startStage(root, deck, { refresh } = {}) {
 
   const layer = root.querySelector("[data-bx-layer]");
   const editorial = root.dataset.presentation === "editorial";
+  const depth = mountBroadcastDepth(root);
   let layoutFrame = 0;
   let layoutKey = "";
   let deckHeight = 0;
@@ -755,6 +758,7 @@ export function startStage(root, deck, { refresh } = {}) {
            animations actually run; added as a class rather than left on
            the markup so a repaint of the same slide replays it. */
         slide.classList.add("bx-in");
+        depth.enter();
       };
       requestAnimationFrame(() => requestAnimationFrame(enter));
       setTimeout(enter, ENTER_MS);
@@ -1065,6 +1069,7 @@ export function startStage(root, deck, { refresh } = {}) {
     suspend(reason, on = true) { softPause(reason, on); },
     stop() {
       dead = true;
+      depth.stop();
       cancelAnimationFrame(layoutFrame);
       resize?.disconnect();
       intersection?.disconnect();

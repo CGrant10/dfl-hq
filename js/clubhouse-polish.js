@@ -42,15 +42,16 @@ export function mountClubhousePolish(root,{getMotion=()=>true,active=()=>root.is
  const tabObserver=new MutationObserver(()=>syncTabs(true));
  if(tabs)tabObserver.observe(tabs,{subtree:true,attributes:true,attributeFilter:['aria-selected']});
  const resize=new ResizeObserver(scheduleTabs);if(tabs)resize.observe(tabs);
- const enter=card=>{
+ const enter=(card,{direction=0}={})=>{
   stopTransient();if(!canPlay())return;
   const faceoff=card?.querySelector('.clubhouse-game-teams');if(!faceoff)return;
   const reveal=()=>{
    stopWaiting();if(!canPlay()||card.closest('[hidden]')||!visible(faceoff))return;
+   if(direction)play(faceoff,[{opacity:.65,transform:`translateX(${direction*18}px)`},{opacity:1,transform:'translateX(0)'}],{duration:280});
    // Match GameDay's opposing entrances without moving the live score surfaces.
    for(const [index,side] of [...faceoff.querySelectorAll('.clubhouse-game-side')].entries()){
     for(const identity of side.querySelectorAll(':scope > .clubhouse-team-mark,:scope > .clubhouse-matchup-name')){
-     play(identity,[{opacity:0,transform:`translateX(${index?32:-32}px) scale(.97)`},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:700,delay:index*110,fill:'backwards'});
+     play(identity,[{opacity:0,transform:`translateX(${index?24:-24}px) scale(.98)`},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:direction?360:600,delay:index*70,fill:'backwards'});
     }
    }
    const light=faceoff.querySelector('.clubhouse-stage-light');

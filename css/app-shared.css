@@ -3980,6 +3980,23 @@ body .breaking-trade-beacon { width:26px; }
   #home-wrap :is(.bx-art-champion,.bx-art-chip) .bx-editorial-subject { opacity:.92; }
 }
 
+/* A few pixels of depth are reserved for decorative art, never data portraits. */
+#home-wrap .bx-home-shade {
+  position:absolute; inset:-16px 0 -44px; z-index:-1; pointer-events:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 95%,transparent),color-mix(in srgb,var(--bg) 80%,transparent) 30%,color-mix(in srgb,var(--bg) 45%,transparent) 46%,transparent 65%);
+}
+#home-wrap .bx-stage[data-depth-active] :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {
+  transform:translate3d(0,var(--bx-depth-y,0px),0);
+}
+#home-wrap .bx-editorial-sheen {
+  position:absolute; inset:0; z-index:4; opacity:0; pointer-events:none;
+  background:linear-gradient(110deg,transparent 25%,color-mix(in srgb,var(--text) 6%,transparent) 48%,color-mix(in srgb,var(--accent) 5%,transparent) 53%,transparent 75%);
+}
+#home-wrap .home-week-panels { overflow-x:clip; }
+@media(prefers-reduced-motion:reduce) {
+  #home-wrap .bx-stage[data-depth-active] :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) { transform:none; }
+}
+
 
 /* Source: css/clubhouse-polish.css */
 /* Clubhouse surfaces stay compact. Effects live behind readable identities. */
@@ -4138,6 +4155,7 @@ html[data-ui-motion="off"] #more * { transition:none!important; }
 #view > .dfl-scroll-context.is-matchup { grid-template-columns:minmax(0,1fr) 20px; }
 .dfl-scroll-scores { grid-column:1 / -1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; border-top:1px solid var(--line-soft); padding-top:7px; }
 .dfl-scroll-scores > span { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; min-width:0; }
+.wall-reaction-buttons [aria-hidden="true"] { display:inline-block; }
 .dfl-scroll-scores small { color:var(--text); font:600 .6875rem/1.3 var(--font-body); overflow-wrap:anywhere; }
 .dfl-scroll-scores b { font:700 1rem/1.2 var(--font-display); font-variant-numeric:tabular-nums; }
 html[data-ui-motion="on"] #view [data-scroll-title] {
