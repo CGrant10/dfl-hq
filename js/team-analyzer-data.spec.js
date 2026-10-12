@@ -17,9 +17,10 @@ const mocks = vi.hoisted(() => {
     };
     return builder;
   });
-  return { tableRows, from, loadPlayers: vi.fn(async () => ({ p1: {}, p2: {} })) };
+  return { tableRows, from, buildPool:vi.fn(()=>new Map()), loadPlayers: vi.fn(async () => ({ p1: {}, p2: {} })) };
 });
 
+vi.mock("./nfl-game-day.js",()=>({loadNflGameDay:vi.fn(async()=>({teams:new Map()}))}));
 vi.mock("./supabase.js", () => ({ db: () => ({ from: mocks.from }) }));
 vi.mock('./expert-rankings-data.js',()=>({loadExpertRankings:vi.fn(async()=>({status:'Unavailable',players:[]}))}));
 vi.mock("./members.js", () => ({ loadMemberDirectory: vi.fn(async () => [
@@ -41,10 +42,11 @@ vi.mock("./league-state.js", () => ({
 }));
 vi.mock("./dfl-scoring.js", () => ({ scoringFormat: () => "ppr" }));
 vi.mock("./team-analyzer.js", () => ({
-  buildPlayerPool: () => new Map(),
+  buildPlayerPool: mocks.buildPool,
   analyzeLeague: ({ rosters }) => rosters.map(roster => ({ ...roster })),
 }));
 
+import {loadNflGameDay} from "./nfl-game-day.js";
 import { sleeper, loadSeasonStats, loadWeeklyStats, loadWeeklyProjections } from "./sleeper.js";
 import {loadExpertRankings} from './expert-rankings-data.js';
 import { loadMemberDirectory } from "./members.js";
@@ -85,10 +87,10 @@ describe("shared analyzer model", () => {
     expect(mocks.from.mock.calls.filter(([table]) => table === "sleeper_leagues")).toHaveLength(2);
     expect(mocks.loadPlayers).toHaveBeenCalledTimes(2);
   });
-  it("loads every completed week while excluding the in-progress week", async()=>{
+  it("loads every completed week and reads current scores separately from completed samples", async()=>{
     clearAnalyzerDataCache();loadWeeklyStats.mockClear();
     const data=await loadAnalyzerData();
-    expect(loadWeeklyStats.mock.calls.map(args=>args[1])).toEqual([1,2]);
+    expect(loadWeeklyStats.mock.calls.map(args=>args[1])).toEqual([1,2,3]);
     expect(data.completedWeeks).toBe(2);
     expect(data.expertConsensus.status).toBe('Unavailable');
   });
@@ -136,6 +138,23 @@ describe("shared analyzer model", () => {
   it("rejects partial rosters that would misprice a 12-team league as two teams",async()=>{
     clearAnalyzerDataCache();sleeper.league.mockResolvedValueOnce({league_id:'league',season:2026,total_rosters:12});
     await expect(loadAnalyzerData()).rejects.toThrow('roster count');
+  });
+
+  it('refreshes current rosters, stats, and availability on the visible-page update path',async()=>{
+    sleeper.league.mockResolvedValueOnce(liveLeague());sleeper.rosters.mockResolvedValueOnce(freshRosters());
+    await loadAnalyzerData({liveRefresh:true});
+    expect(loadSeasonStats).toHaveBeenCalledWith(2026,{maxAgeMs:60000});
+    expect(loadWeeklyProjections).toHaveBeenCalledWith(2026,3,{maxAgeMs:60000});
+    expect(sleeper.rosters).toHaveBeenCalledWith('league');
+    expect(loadNflGameDay).toHaveBeenLastCalledWith(2026,3,{force:true});
+  });
+  it('adds a verified individual final to recent form before the league week advances',async()=>{
+    const row={player_id:'p1',season:2026,week:3,season_type:'regular',team:'JAX',stats:{gp:1,rec:6}};
+    loadWeeklyStats.mockImplementation(async(_season,week)=>({data:week===3?[row]:[],fetchedAt:1}));
+    loadNflGameDay.mockResolvedValueOnce({teams:new Map([['JAX',{key:'final'}]])});
+    await loadAnalyzerData();
+    expect(mocks.buildPool).toHaveBeenLastCalledWith(expect.objectContaining({recentStats:[[],[],[row]],seasonWeeklyStats:[[],[],[row]]}));
+    loadWeeklyStats.mockResolvedValue({data:[],fetchedAt:1});
   });
 
 });

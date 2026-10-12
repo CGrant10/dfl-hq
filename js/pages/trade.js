@@ -1,3 +1,5 @@
+import {mountAnalyzerLiveRefresh} from "../analyzer-live-refresh.js";
+import {analyzerPlayerSignal} from "../analyzer-player-form.js";
 import {recheckTradeOffer} from '../trade-offer-recheck.js';
 import {offerPlayerLimit} from '../trade-package-limits.js';
 // =====================================================================
@@ -49,13 +51,13 @@ const tierCopy = {
 };
 const OFFER_BATCH_SIZE = 6;
 let saveDraft = null;
-let stopOffers = null;
-export function leave() { saveDraft?.(); saveDraft = null; stopOffers?.(); stopOffers=null; }
+let stopOffers = null, stopRefresh = null, renderEpoch = 0;
+export function leave() { renderEpoch++;stopRefresh?.();stopRefresh=null;saveDraft?.(); saveDraft = null; stopOffers?.(); stopOffers=null; }
 
 function offerPlayerRows(ids, pool) {
   return ids.map(id => {
     const player = pool.get(String(id));
-    const signal = player?.injuryStatus || (player?.trendBasis === "recent" ? player.trend === "up" ? "HOT" : player.trend === "down" ? "COLD" : "" : "");
+    const signal = analyzerPlayerSignal(player);
     return `<span class="tb-player">${playerIdentity(player || { id, name: String(id) }, { detail: [player?.position, player?.nflTeam].filter(Boolean).join(" · "), signal, interactive: true })}</span>`;
   }).join("");
 }
@@ -279,7 +281,7 @@ function page(data, tradeAlerts = []) {
     wire(view) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
-      const search=createTradeOfferSearch({teams:data.teams,pool:data.pool});
+      let search=createTradeOfferSearch({teams:data.teams,pool:data.pool});
       let stopped=false,offerGeneration=0;
       const current=()=>!stopped&&view.isConnected;
       stopOffers=()=>{stopped=true;offerGeneration++;shop.intentStamp=(shop.intentStamp||0)+1;search.stop();};
@@ -586,6 +588,15 @@ function page(data, tradeAlerts = []) {
         body.querySelector("[data-td-verdict]")?.scrollIntoView({ behavior: "instant", block: "start" });
       });
       draw();
+      stopRefresh?.();
+      stopRefresh=mountAnalyzerLiveRefresh({view,initial:data,load:()=>loadAnalyzerData({liveRefresh:true}),active:current,canApply:()=>!sharing&&!document.querySelector('dialog[open]')&&!(body.contains(document.activeElement)&&document.activeElement.matches('input:not([type=checkbox]):not([type=radio]),textarea,select')),
+        apply:next=>{
+          const saved=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),next.teams,selectedId);
+          if(!saved || next.projectionSeason!==data.projectionSeason)return;
+          search.stop();offerGeneration++;search=createTradeOfferSearch({teams:next.teams,pool:next.pool});
+          data=next;selectedId=saved.selectedId;Object.assign(trade,saved.trade);Object.assign(shop,saved.shop);
+          shop.offerCache=new Map();shop.offerState=null;draw();
+        }});
       void loadSharedTradeRecommendations().then(rows => { shop.sharedAudit = rows;const health=body.querySelector('[data-td-health]');if(health)health.innerHTML=tradeModelHealthMarkup({...tradeModelHealth(data.pool),accountability:recommendationOutcomes(data.pool,localStorage,rows.filter(row=>!row.season||Number(row.season)===Number(data.projectionSeason)))},esc,true); })
         .catch(error => console.warn("shared trade accountability unavailable", error));
     },
@@ -593,6 +604,7 @@ function page(data, tradeAlerts = []) {
 }
 
 export async function render(view) {
+  leave();const epoch=++renderEpoch;
   view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1>
     <p class="page-sub">Reading every roster…</p></header>
     <div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
@@ -601,7 +613,7 @@ export async function render(view) {
       loadAnalyzerData(),
       loadTradeAlerts({ limit: 50 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),
     ]);
-    if (!view.isConnected) return;
+    if (!view.isConnected || epoch!==renderEpoch) return;
     if (data.state !== "ready") {
       view.innerHTML = `<header class="page-head"><h1>Trade Analyzer</h1></header>
         <div class="card"><div class="card-body"><strong>No populated Sleeper rosters yet.</strong>
@@ -612,6 +624,7 @@ export async function render(view) {
     view.innerHTML = built.markup;
     built.wire(view);
   } catch (error) {
+    if(epoch!==renderEpoch||!view.isConnected)return;
     view.innerHTML = errorBox(error);
   }
 }

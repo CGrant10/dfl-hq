@@ -100,7 +100,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const currentPoints = currentLine ? scorePlayer(currentLine, scoringSettings) : null;
     const currentGames = Math.max(0, Math.min(17, finite(currentLine?.gp) || 0));
     const currentPace = currentGames > 0 ? currentPoints / currentGames * 17 : null;
-    const recentScores = (recentById.get(id) || []).map(s=>s.points);
+    const recentScores = (recentById.get(id) || []).slice(-3).map(s=>s.points);
     const consistency = productionProfile(seasonById.get(id) || []);
     const recentAverage = recentScores.length ? recentScores.reduce((sum, points) => sum + points, 0) / recentScores.length : null;
     /* Current production earns influence gradually: one wild Sunday cannot

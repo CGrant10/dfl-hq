@@ -4,13 +4,14 @@ vi.mock('./supabase.js',()=>({db:()=>({from:table=>{
  const result={select:()=>result,order:()=>result,limit:()=>result,eq:()=>result,lte:()=>result,
  then:resolve=>Promise.resolve(resolve({data:wire.tables[table]||[],error:null}))};return result;
 }})}));
+vi.mock('./nfl-game-day.js',()=>({loadNflGameDay:async()=>({teams:new Map()})}));
 vi.mock('./members.js',()=>({loadMemberDirectory:async()=>[]}));
 vi.mock('./league-state.js',()=>({loadLeagueState:async()=>({season:2026,currentWeek:5})}));
 vi.mock('./expert-rankings-data.js',()=>({loadExpertRankings:async()=>({players:new Map(),status:'Unavailable'})}));
 vi.mock('./league-results.js',()=>({loadLatestLeagueResults:async()=>null,reconcileLeagueResults:()=>({})}));
 vi.mock('./sleeper.js',()=>({
  sleeper:{league:async()=>{if(wire.offline)throw Error('Offline');return {league_id:'league',season:2026,total_rosters:12,roster_positions:['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'],scoring_settings:{rec:1}}},
- users:async()=>wire.rosters.map(r=>({user_id:r.owner_id,display_name:'Current '+r.roster_id})),rosters:vi.fn(async()=>wire.rosters)},
+ users:async()=>wire.rosters.map(r=>({user_id:r.owner_id,display_name:'Current '+r.roster_id})),rosters:vi.fn(async()=>wire.rosters),matchups:async()=>[]},
  loadPlayers:vi.fn(async()=>Object.fromEntries(Array.from({length:12},(_,i)=>['p'+i,{n:'Player '+i,p:'RB',t:'BUF',i:i===0?wire.playerInjury:null}]))),
  loadSeasonStats:async()=>({data:{},fetchedAt:Date.now()}),loadMarketAdp:async()=>({data:[],fetchedAt:Date.now()}),
  loadWeeklyProjections:vi.fn(async()=>({data:[],fetchedAt:Date.now(),stale:wire.stale})),

@@ -1,3 +1,5 @@
+import {completedCurrentGames} from "../../../js/analyzer-player-form.js";
+import {nflWeekStatuses} from "../../../js/clubhouse-matchup-model.js";
 import {buildPlayerPool} from '../../../js/team-analyzer.js';
 import {assessExpertRankings} from '../../../js/expert-rankings-model.js';
 import {captureTradeReceipts} from '../../../js/trade-alert-capture.js';
@@ -16,7 +18,7 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
       // Runs only for missing receipts. Ordinary score polls never fetch this
       // model; existing receipts and their original valuations are immutable.
       const completedWeeks = Array.from({length: Math.max(0, Math.min(week - 1, 17))}, (_, i) => i + 1);
-      const [players, prior, current, market, availability, results, experts] = await Promise.all([
+      const [players, prior, current, market, availability, results, experts, currentWeekStats, nfl] = await Promise.all([
         get('https://api.sleeper.app/v1/players/nfl'),
         get(`https://api.sleeper.app/v1/stats/nfl/regular/${season - 1}`),
         get(`https://api.sleeper.app/v1/stats/nfl/regular/${season}`),
@@ -24,6 +26,8 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
         get(`https://api.sleeper.app/projections/nfl/${season}/${week}?season_type=regular`),
         Promise.all(completedWeeks.map(w => get(`https://api.sleeper.app/stats/nfl/${season}/${w}?season_type=regular`))),
         get('https://raw.githubusercontent.com/CGrant10/dfl-hq/main/data/expert-ros-ppr.json').catch(() => null),
+        get(`https://api.sleeper.app/stats/nfl/${season}/${week}?season_type=regular`).catch(()=>[]),
+        get(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`).catch(()=>null),
       ]);
       if (!players || Array.isArray(players) || !prior || !current || !Array.isArray(market) || !market.length
         || !Array.isArray(availability) || !availability.length || results.some(r => !Array.isArray(r))) throw Error('Incomplete trade inputs');
@@ -35,8 +39,11 @@ export async function captureScheduledTrades({admin, league, users, rosters, tra
           ownerName: owner?.display_name || owner?.username || '', playerIds: r.players || []};
       });
       const now = Date.now(), signals = {fetchedAt: now, stale: false};
+      let finished:any[]=[];
+      try{finished=completedCurrentGames(currentWeekStats,nflWeekStatuses(nfl,season,week),season,week)}catch{/* Unknown NFL status never creates a completed sample. */}
+      const formWeeks=finished.length?[...results,finished]:results;
       const pool = buildPlayerPool({rosters: named, players, previousStats: prior, currentStats: current,
-        projections: market, weeklyProjections: availability, recentStats: results.slice(-3), seasonWeeklyStats: results,
+        projections: market, weeklyProjections: availability, recentStats: formWeeks.slice(-4), seasonWeeklyStats: formWeeks,
         scoringSettings: league.scoring_settings, currentWeek: week, scoringFormat: 'ppr',
         expertRankings: assessExpertRankings(experts, {season, scoring: 'ppr', now} as any),
         dataSignals: {projections: signals, production: signals, availability: signals, weeklyResults: signals}} as any);

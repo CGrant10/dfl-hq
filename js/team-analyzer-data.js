@@ -1,3 +1,5 @@
+import {loadNflGameDay} from "./nfl-game-day.js";
+import {applyAnalyzerPlayerForm,completedCurrentGames} from "./analyzer-player-form.js";
 import { db } from "./supabase.js";
 import { sleeper, loadMarketAdp, loadPlayers, loadSeasonStats, loadTrendingPlayers, loadWeeklyProjections, loadWeeklyStats } from "./sleeper.js";
 import { loadLeagueState } from "./league-state.js";
@@ -23,12 +25,12 @@ let analyzerEpoch = 0;
  * cached by sleeper.js, and Home calls this only after its useful shell has
  * already painted.
  */
-async function fetchAnalyzerData({freshTrade=false} = {}) {
+async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
   const [leagueRes, rosterRes, memberRes, leagueState, standingRes] = await Promise.all([
     db().from("sleeper_leagues").select("sleeper_league_id,season,status,scoring_settings,playoff_teams,synced_at").order("season", { ascending: false }).limit(1),
     db().from("sleeper_rosters").select("season,roster_id,sleeper_user_id,players,starters,team_name,display_name,synced_at").order("season", { ascending: false }),
     loadMemberDirectory().then(data => ({ data, error: null }), error => ({ data: [], error })),
-    loadLeagueState().catch(() => null),
+    loadLeagueState({force:liveRefresh||freshTrade}).catch(() => null),
     db().from("sleeper_standings").select("season,sleeper_user_id,wins,losses,ties,rank,points_for"),
   ]);
   const error = leagueRes.error || rosterRes.error || memberRes.error;
@@ -46,7 +48,7 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   const liveLeague=liveLeagueRes.status==='fulfilled'?liveLeagueRes.value:null;
   const liveUsers=liveUsersRes.status==='fulfilled'&&Array.isArray(liveUsersRes.value)?liveUsersRes.value:[];
   const league=currentAnalyzerLeague(storedLeague,liveLeague);
-  if(freshTrade){
+  if(freshTrade||liveRefresh){
     if(league===storedLeague)throw new Error('Could not verify current league settings. Try sharing again.');
     const current=await sleeper.rosters(storedLeague.sleeper_league_id);
     if(!Array.isArray(current)||current.length!==Number(league.total_rosters)||new Set(current.map(r=>String(r.roster_id))).size!==current.length
@@ -76,7 +78,7 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   // Exclude the ongoing week: partial totals are not a full game sample.
   const completedWeeks = Array.from({length:Math.max(0,liveWeek-1)},(_,i)=>i+1);
   const liveSignals = liveWeek ? Promise.all([
-    loadWeeklyProjections(projectionSeason, liveWeek, {maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
+    loadWeeklyProjections(projectionSeason, liveWeek, {maxAgeMs:freshTrade?0:liveRefresh?60000:TRADE_SIGNALS_CACHE_MS}).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     Promise.all(completedWeeks.map(week => loadWeeklyStats(projectionSeason, week)
       .catch(() => ({ data: [], fetchedAt: 0, stale: true })))),
     loadTrendingPlayers().catch(() => ({ adds: new Map(), drops: new Map(), fetchedAt: 0 })),
@@ -84,7 +86,7 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   const [players, statsRes, currentStatsRes, projectionRes, matchupRes, [weeklyProjectionRes, recentStatsRes, trending], latestResults,expertRankings] = await Promise.all([
     loadPlayers(freshTrade?{maxAgeMs:0}:{}),
     loadSeasonStats(projectionSeason - 1).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
-    loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:TRADE_SIGNALS_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
+    loadSeasonStats(projectionSeason, { maxAgeMs:freshTrade?0:liveRefresh?60000:TRADE_SIGNALS_CACHE_MS }).catch(() => ({ data: {}, fetchedAt: 0, stale: true })),
     loadMarketAdp(projectionSeason, format).catch(() => ({ data: [], fetchedAt: 0, stale: true })),
     /* Power Pulse builds its weekly ranking boards from final scores. Keep
        this season-scoped and column-scoped: the board needs at most 84 small
@@ -98,6 +100,14 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
   ]);
   if(freshTrade&&liveWeek&&(!weeklyProjectionRes.fetchedAt||weeklyProjectionRes.stale))throw new Error('Could not verify current injuries. Try sharing again.');
   if(freshTrade&&(!currentStatsRes.fetchedAt||currentStatsRes.stale))throw new Error('Could not verify current player stats. Try sharing again.');
+  const [currentWeekStats,nfl,liveMatchups] = liveWeek ? await Promise.all([
+    loadWeeklyStats(projectionSeason,liveWeek,{maxAgeMs:freshTrade?0:60000}).catch(()=>({data:[],fetchedAt:0,stale:true})),
+    loadNflGameDay(projectionSeason,liveWeek,{force:liveRefresh||freshTrade}).catch(()=>null),
+    sleeper.matchups(league.sleeper_league_id,liveWeek).catch(()=>[]),
+  ]) : [{data:[],fetchedAt:0},null,[]];
+  const formWeeks = recentStatsRes.map(result=>result.data || []);
+  const finished = currentWeekStats.stale ? [] : completedCurrentGames(currentWeekStats.data,nfl?.teams,projectionSeason,liveWeek);
+  if(finished.length)formWeeks.push(finished);
   const pool = buildPlayerPool({
     rosters: namedRosters,
     players,
@@ -105,8 +115,8 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
     currentStats: currentStatsRes.data || {},
     projections: projectionRes.data || [],
     weeklyProjections: weeklyProjectionRes.data || [],
-    recentStats: recentStatsRes.slice(-3).map(result => result.data || []),
-    seasonWeeklyStats: recentStatsRes.map(result => result.data || []),
+    recentStats: formWeeks.slice(-4),
+    seasonWeeklyStats: formWeeks,
     dataSignals: {projections:projectionRes,production:currentStatsRes,availability:weeklyProjectionRes,
       weeklyResults:{stale:recentStatsRes.some(r=>r.stale)}},
     trending,
@@ -115,6 +125,9 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
     scoringFormat: format,
     expertRankings,
   });
+  applyAnalyzerPlayerForm(pool,{season:projectionSeason,week:liveWeek,scoring:league.scoring_settings,
+    completed:recentStatsRes.map((bundle,index)=>({...bundle,week:completedWeeks[index]})),
+    current:currentWeekStats,matchups:liveMatchups,schedule:nfl?.teams});
   const teams = analyzeLeague({ rosters: namedRosters, pool });
   const results = reconcileLeagueResults({ season: projectionSeason, teams,
     standings: standingRes?.error ? [] : standingRes.data || [],
@@ -136,6 +149,8 @@ async function fetchAnalyzerData({freshTrade=false} = {}) {
     completedWeeks: completedWeeks.length,
     expertConsensus: {...expertRankings,players:undefined,matched:[...pool.values()].filter(p=>p.expertWeight>0).length,total:pool.size},
     liveWeek,
+    liveScoresUpdatedAt: currentWeekStats.fetchedAt || 0,
+    liveScoresStale: !!currentWeekStats.stale,
   };
 }
 
@@ -152,14 +167,14 @@ export function clearAnalyzerDataCache() {
  * A one-minute result cache makes quick route changes instant; `force` is for
  * the sync pipeline, where a newly completed trade must never use old rosters.
  */
-export function loadAnalyzerData({ force = false, freshTrade = false } = {}) {
+export function loadAnalyzerData({ force = false, freshTrade = false, liveRefresh = false } = {}) {
   const now = Date.now();
-  if (!force && !freshTrade && analyzerValue && now < analyzerExpiresAt) return Promise.resolve(analyzerValue);
-  if (!force && !freshTrade && analyzerInFlight) return analyzerInFlight;
+  if (!force && !freshTrade && !liveRefresh && analyzerValue && now < analyzerExpiresAt) return Promise.resolve(analyzerValue);
+  if (!force && !freshTrade && !liveRefresh && analyzerInFlight) return analyzerInFlight;
 
-  if(freshTrade)clearAnalyzerDataCache();
+  if(freshTrade||liveRefresh)clearAnalyzerDataCache();
   const requestEpoch = analyzerEpoch;
-  const request = fetchAnalyzerData({freshTrade}).then((value) => {
+  const request = fetchAnalyzerData({freshTrade,liveRefresh}).then((value) => {
     if (requestEpoch === analyzerEpoch) {
       analyzerValue = value;
       analyzerExpiresAt = Date.now() + ANALYZER_CACHE_MS;
