@@ -119,7 +119,7 @@ let html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replace(/<div id="splash"[\s\S]*?<\/div><span class="sp-sweep"[^>]*><\/span><\/div>/, '');
 html = html.replace('<html lang="en">', '<html lang="en" data-mode="light">');
-html = html.replace('<main id="view" class="view" aria-live="polite"></main>', `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
+html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" class="view" data-route="home" data-pulse-system="1"><div id="home-wrap">
   ${homeNewspaperMasthead({ now: new Date('2026-10-07T12:00:00Z') })}
   <div class="home-frontpage">
   <div class="home-personal-desk">
