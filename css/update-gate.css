@@ -71,10 +71,36 @@ body.broadcasting #update.update-gate { display: block !important; }
 }
 
 .update-gate__mark {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
   width: clamp(215px, 65vw, 260px);
   height: auto;
   margin: 0 0 17px;
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .62));
+}
+.update-gate__mark > img { display: block; width: 100%; height: auto; }
+.update-gate__glow { display: none; pointer-events: none; }
+
+/* Clip the moving light to the existing logo's alpha, including its feathers.
+   The asset URL lives in gate markup so other screens do not fetch it. */
+@supports (mask-image: url("")) or (-webkit-mask-image: url("")) {
+  .update-gate__glow {
+    display: block;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    -webkit-mask: var(--update-logo-mask) center / contain no-repeat;
+    mask: var(--update-logo-mask) center / contain no-repeat;
+  }
+  .update-gate__glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 25%, rgba(239, 55, 71, .12) 40%, rgba(255, 245, 236, .5) 50%, rgba(239, 55, 71, .12) 60%, transparent 75%);
+    opacity: 0;
+    transform: translateX(-110%);
+  }
 }
 
 .update-gate__features {
@@ -148,7 +174,16 @@ body.broadcasting #update.update-gate { display: block !important; }
 @media (prefers-reduced-motion: no-preference) {
   .update-gate__content { animation: update-gate-in .42s cubic-bezier(.2,.75,.25,1) both; }
   .update-gate.is-updating .update-gate__button { animation: update-gate-pulse 1s ease-in-out infinite alternate; }
+  html:not([data-ui-motion="off"]) .update-gate__glow::before { animation: update-logo-glow 1.2s cubic-bezier(.2,.65,.35,1) .4s both; }
 }
+
+html[data-ui-motion="off"] .update-gate__glow::before { animation: none; }
+.update-gate.hidden .update-gate__glow::before { animation: none; }
 
 @keyframes update-gate-in { from { opacity: 0; transform: translateY(10px); } }
 @keyframes update-gate-pulse { to { filter: brightness(1.18); } }
+@keyframes update-logo-glow {
+  0% { opacity: 0; transform: translateX(-110%); }
+  15%, 80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(110%); }
+}
