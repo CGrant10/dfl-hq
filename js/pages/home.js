@@ -1,6 +1,5 @@
 import {loadRosterCoach} from '../roster-coach-data.js';
 import {mountLiveScoreRefresh} from '../live-score-refresh.js';
-import { mountSwipeTabs } from '../swipe-tabs.js';
 import {mountGameDay} from "../game-day.js";
 import {disclosure,wirePageDisclosures} from "../page-disclosure.js";
 import {loadClubhouseWeek,loadWeeklyRosters} from "../weekly-clubhouse-data.js";
@@ -59,8 +58,9 @@ import { buildWeeklyBriefing } from "../weekly-briefing.js";
 import { buildAftermath } from "../aftermath-share.js";
 import { weeklySignalChanges } from "../weekly-signal-changes.js";
 import {loadNflInjuries} from "../injury-report-data.js";
-import {buildInjuryReport,injuryReportSlides} from "../injury-report-model.js";
+import {buildInjuryReport} from "../injury-report-model.js";
 import {mountInjuryReport} from "../injury-report-ui.js";
+import {homeInjuryPanelMarkup,mountHomeInjuryPanel} from '../home-injury-panel.js';
 import { loadPickemBoard, homePickemMarkup } from "../sportsbook-pickem.js";
 import { finishLoadingContent, loadingRows } from "../loading-presentation.js";
 
@@ -253,13 +253,11 @@ function wireHomeWeekHub(root) {
     setWeekPanel(next.dataset.weekTab);
     next.focus();
   }));
-  const stopSwipe = mountSwipeTabs(root.querySelector(".home-week-panels"), root.querySelector(".home-week-tabs"));
   root.querySelectorAll("[data-position-tab]").forEach(button => button.addEventListener("click", () => {
     const position = button.dataset.positionTab;
     root.querySelectorAll("[data-position-tab]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
     root.querySelectorAll("[data-position-panel]").forEach(panel => { panel.hidden = panel.dataset.positionPanel !== position; });
   }));
-  return stopSwipe;
 }
 
 export function leave() {
@@ -490,6 +488,7 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
+    ${homeInjuryPanelMarkup()}
     <section class="home-week-desk" aria-label="Your week">
     ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-live-slot></div>
@@ -641,14 +640,21 @@ export async function render(view) {
      items cannot drop them. */
   let liveSlides = [];
   let injuryReport=null,injuryAnalysis=null;
-  const injuryUi=mountInjuryReport(view,{getReport:()=>injuryReport,onOpen:()=>stage?.suspend('injury-report',true),onClose:()=>stage?.suspend('injury-report',false),refresh:async()=>{const data=await loadNflInjuries({force:true});if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});stage?.update(build(golfDayNow));injuryUi.update()}});
+  const injuryPanel=mountHomeInjuryPanel(view.querySelector('.home-injury-panel'),{getReport:()=>injuryReport});
+  deferredStops.push(()=>injuryPanel.stop());
+  const injuryUi=mountInjuryReport(view,{getReport:()=>injuryReport,onOpen:()=>stage?.suspend('injury-report',true),onClose:()=>stage?.suspend('injury-report',false),refresh:async()=>{const data=await loadNflInjuries({force:true});if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});injuryPanel.update();injuryUi.update()}});
   deferredStops.push(()=>injuryUi.stop());
+  void injuryPromise.then(data=>{
+    if(mine!==generation||!view.isConnected)return;
+    if(data)injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});
+    injuryPanel.update();
+  });
   let golfDayNow = golfDay;
   let homeBroadcastWeek = null;
   const off = broadcastOff();
   const build = (day) => homeBroadcastDeck(editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
-    { custom: [...custom, ...liveSlides, ...injuryReportSlides(injuryReport)].filter(Boolean), off, overrides },
+    { custom: [...custom, ...liveSlides].filter(Boolean), off, overrides },
   ), {week: homeBroadcastWeek});
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
@@ -661,8 +667,8 @@ export async function render(view) {
   };
 
   const updateInjuries=async()=>{
-    if(document.visibilityState!=='visible'||mine!==generation||!injuryAnalysis)return;
-    try{const data=await loadNflInjuries();if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});stage?.update(build(golfDayNow));injuryUi.update()}catch{/* Keep the last checked report and its timestamp. */}
+    if(document.visibilityState!=='visible'||mine!==generation)return;
+    try{const data=await loadNflInjuries();if(mine!==generation||!view.isConnected)return;injuryReport=buildInjuryReport(data.payload,{analysis:injuryAnalysis,now:data.checkedAt});injuryPanel.update();injuryUi.update()}catch{/* Keep the last checked report and its timestamp. */}
   };
   const injuryTimer=setInterval(()=>void updateInjuries(),5*60*1000);
   document.addEventListener('visibilitychange',updateInjuries);
@@ -687,6 +693,7 @@ export async function render(view) {
     homeBroadcastWeek=weekly?.week || null;
     injuryAnalysis=analysis;
     if(injuries)injuryReport=buildInjuryReport(injuries.payload,{analysis,now:injuries.checkedAt});
+    injuryPanel.update();
     lore = got?.error ? null : got;
     const aheadData = await weekAheadSlide({
       analysis, weekly, meSleeperId: myMember?.sleeper_user_id || null,
@@ -731,7 +738,7 @@ export async function render(view) {
     }
     if (homeReportSlot) {
       homeReportSlot.innerHTML = homeWeeklyDigest(outlook, briefing, completedReport, signalChanges);
-      deferredStops.push(wireHomeWeekHub(homeReportSlot));
+      wireHomeWeekHub(homeReportSlot);
       finishLoadingContent(homeReportSlot);
       const briefTeam=analysis?.teams?.find(team=>String(team.sleeper_user_id)===String(myMember?.sleeper_user_id));
       if(briefTeam&&outlook?.week){

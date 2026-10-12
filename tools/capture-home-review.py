@@ -466,7 +466,7 @@ def check_clubhouse_center(page):
           for(const [index,side] of [...hero.querySelectorAll('.clubhouse-game-side')].entries())for(const identity of side.querySelectorAll(':scope > .clubhouse-team-mark,:scope > .clubhouse-matchup-name')){
             const entrance=identity.getAnimations().find(a=>a.playState==='running');check(entrance,'Both team crests and names must enter together');const frames=entrance.effect.getKeyframes();const first=new DOMMatrix(frames[0].transform),last=new DOMMatrix(frames.at(-1).transform);check((index?first.m41>0:first.m41<0)&&first.a>=.95&&first.a<=1&&last.m41===0&&last.a===1,'Teams must slide in from opposite sides');check(entrance.effect.getTiming().duration<=400,'Switching matchups should use a short entrance');
           }
-          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');const slide=hero.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));check(slide&&slide.effect.getTiming().duration<=300,'Matchup switch needs a short directional faceoff');await new Promise(r=>setTimeout(r,320));check(getComputedStyle(hero).transform==='none','Matchup faceoff did not settle');
+          const values=[...card.querySelectorAll('[data-matchup-score-value],.gd-thermal-value')],sizes=()=>values.map(e=>{const b=e.getBoundingClientRect();return [b.width,b.height,getComputedStyle(e).transform]});const before=sizes();await frame();const after=sizes();check(before.every((b,i)=>Math.abs(b[0]-after[i][0])<.01&&Math.abs(b[1]-after[i][1])<.01&&b[2]===after[i][2]),'Matchup motion resized individual score surfaces');const slide=hero.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));check(slide&&slide.effect.getTiming().duration<=300,'Matchup switch needs a short directional faceoff');for(let n=0;n<100&&hero.getAnimations().some(a=>a.playState==='running');n++)await new Promise(r=>setTimeout(r,10));const settled=getComputedStyle(hero).transform;check(settled==='none'||new DOMMatrix(settled).isIdentity,'Matchup faceoff did not settle');
           root.querySelector('[data-clubhouse-game="1"]').click();check([...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').every(a=>!a.effect.target.closest('[hidden]')),'Rapid matchups animate a hidden game');
           root.querySelector('[data-clubhouse-motion]').click();overview.click();await frame();check(marker.getAnimations().length===0&&[...root.getAnimations({subtree:true})].filter(a=>a.constructor===Animation&&a.playState==='running').length===0,'Motion off leaves UI effects running');
           check(getComputedStyle(tabs.querySelector('button')).transitionDuration==='0s','Motion off leaves CSS transitions running');matchups.click();root.querySelector('[data-clubhouse-motion]').click();await frame();
@@ -974,6 +974,31 @@ with sync_playwright() as p:
     page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');dispatchEvent(new Event('dfl:route-performance'))}")
     # Real touch events catch implicit pointer-capture handoffs on child text.
     touch = context.new_cdp_session(page)
+    # Native rapid broadcast gestures must reverse, wrap and survive refreshes.
+    page.locator('[data-bx-go="0"]').evaluate('e=>e.click()')
+    broadcast=page.locator('[data-bx-stage]')
+    broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
+    page.wait_for_timeout(300)
+    deck_count=page.locator('[data-bx-go]').count()
+    def broadcast_index():return int(page.locator('[data-bx-go].on').get_attribute('data-bx-go'))
+    for delta in [1]*12+[-1]*12:
+        before=broadcast_index();box=broadcast.bounding_box();dx=-88 if delta>0 else 88
+        x=box['x']+box['width']*(.75 if delta>0 else .25);y=box['y']+20
+        touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+        for n in range(1,5):
+            touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+dx*n/4,'y':y}]});page.wait_for_timeout(20)
+        touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(60)
+        assert broadcast_index()==(before+delta)%deck_count, 'Rapid broadcast swipe failed to reverse or wrap'
+    before=broadcast_index();page.locator('[data-bx-step="1"]').evaluate('e=>e.click()')
+    assert broadcast_index()==(before+1)%deck_count,'Swipe left a ghost click latch over the arrow'
+    broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
+    box=broadcast.bounding_box();x=box['x']+box['width']*.75;y=box['y']+20
+    touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+    touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-50,'y':y}]})
+    page.evaluate("""()=>{window.dragSlide=document.querySelector('.bx-slide:not(.bx-leaving)');const current=Number(document.querySelector('[data-bx-go].on').dataset.bxGo),changed=window.reviewDeck.map((item,index)=>index===current?{...item,headline:item.headline+' updated'}:item);window.reviewStage.update(changed);if(!window.dragSlide.isConnected||window.dragSlide!==document.querySelector('.bx-slide:not(.bx-leaving)'))throw Error('Refresh replaced a slide under the finger')}""")
+    touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(200)
+    page.evaluate('window.reviewStage.update(window.reviewDeck)')
+    metrics['broadcastTouchNavigation']={'forward':12,'reverse':12,'wraps':True,'arrowAfterSwipe':True,'refreshDuringDrag':True}
     def swipe_week(dx, dy=0):
         panel = page.locator('[data-week-panel]:not([hidden])')
         panel.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-150,behavior:"instant"})')
@@ -1241,6 +1266,9 @@ with sync_playwright() as p:
             for index in range(count):
                 page.locator(f'[data-bx-go="{index}"]').evaluate('e=>e.click()')
                 page.wait_for_timeout(500)
+                # Measure after finite text/score entrances, rather than a
+                # mid-scale frame on a busy renderer. Decorative loops continue.
+                page.evaluate("""async()=>{const slide=document.querySelector('.bx-slide:not(.bx-leaving)'),finite=slide.getAnimations({subtree:true}).filter(a=>{const t=a.effect.getTiming();return t.iterations===1&&Number(t.duration)<=1200});for(let n=0;n<120&&finite.some(a=>a.playState==='running'||a.playState==='pending');n++)await new Promise(r=>setTimeout(r,10))}""")
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
                   const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));

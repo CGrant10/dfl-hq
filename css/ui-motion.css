@@ -94,3 +94,16 @@ html[data-ui-motion="on"] #view [data-scroll-title] {
   scroll-margin-top:calc(var(--dfl-scroll-top,44px) + var(--dfl-scroll-height,52px) + 12px);
 }
 @media(prefers-reduced-motion:reduce) { #view [data-scroll-title] { transform:none!important; opacity:1!important; } }
+
+/* Native vertical scrolling stays available; nested tab strips, tables and
+   reels retain their own horizontal gestures instead of changing page views. */
+:is([role="tabpanel"],#hist-body,#rule-body,#cal-body,#keeper-body,#fin-body,[data-position-panel]):not(:has([role="tablist"],.tabscroll,.table-scroll,.table-wrap,.gd-watch-reel,canvas)),
+:is([role="tabpanel"],#hist-body,#rule-body,#cal-body,#keeper-body,#fin-body) :is(p,h2,h3,h4,li,dl,.card:not(:has([role="tablist"],.tabscroll,.table-scroll,.table-wrap,canvas))) { touch-action:pan-y pinch-zoom; }
+#view:not([data-route="golf"]):not([data-route="broadcast"]):not([data-route^="arena"]) { overflow-x:clip; }
+.bx-stage[data-bx-direction="back"] .bx-slide.bx-enter { transform:translate3d(-28px,0,0); }
+.bx-stage[data-bx-direction="back"] .bx-slide.bx-leaving { transform:translate3d(28px,0,0); }
+@media(prefers-reduced-motion:reduce) {
+ .bx-stage[data-bx-direction="back"] :is(.bx-slide.bx-enter,.bx-slide.bx-leaving) { transform:none; }
+}
+
+.bx-stage { touch-action:pan-y pinch-zoom; }

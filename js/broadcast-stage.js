@@ -34,6 +34,8 @@ import { artworkStyle } from "./broadcast-artwork.js";
 import { teamPortrait } from "./team-presentation.js";
 import { playerPortrait } from "./player-presentation.js";
 import { mountBroadcastDepth } from './broadcast-depth.js';
+import { mountHorizontalSwipe } from './horizontal-swipe.js';
+import { animateUi, cancelUiMotion } from './ui-motion.js';
 
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
@@ -783,6 +785,7 @@ export function startStage(root, deck, { refresh } = {}) {
 
   function go(next) {
     if (dead || !items.length) return;
+    root.dataset.bxDirection = next < i ? 'back' : 'forward';
     i = ((next % items.length) + items.length) % items.length;
     paint();
     arm();
@@ -935,52 +938,33 @@ export function startStage(root, deck, { refresh } = {}) {
      keeps vertical scrolling and hands us horizontal movement, so there
      is no preventDefault() on touchmove and no scroll jank.
   ===================================================================== */
-  const SWIPE_MIN = 44;        // px of travel before it counts
-  const SWIPE_SLOPE = 1.4;     // how much more horizontal than vertical
-  let sx = 0, sy = 0, tracking = false, decided = "", swiped = false;
-
-  const onDown = (e) => {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (e.target.closest("button")) return;      // a control is not a swipe
-    sx = e.clientX; sy = e.clientY;
-    tracking = true; decided = ""; swiped = false;
+  let pendingDeck = null, dragFrame = 0, dragOffset = 0;
+  const restoreDrag = settle => {
+    cancelAnimationFrame(dragFrame); dragFrame = 0;
+    if (!layer) return;
+    layer.style.removeProperty('transform');
+    if (settle && dragOffset) animateUi(layer, [{transform:`translateX(${dragOffset}px)`},{transform:'none'}], {duration:180});
+    else cancelUiMotion(layer);
+    dragOffset = 0;
   };
-  const onMove = (e) => {
-    if (!tracking) return;
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (!decided && Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
-    if (!decided) decided = Math.abs(dx) > Math.abs(dy) * SWIPE_SLOPE ? "x" : "y";
-    if (decided === "y") tracking = false;       // it is a scroll; let go
-  };
-  const onUp = (e) => {
-    if (!tracking) return;
-    tracking = false;
-    if (decided !== "x") return;
-    const dx = e.clientX - sx;
-    if (Math.abs(dx) < SWIPE_MIN) return;
-    swiped = true;                                // swallow the click
-    step(dx < 0 ? 1 : -1);                        // drag left = next
-  };
-  const onCancel = () => { tracking = false; };
-  /* Belt and braces for the touch case: whatever pointerenter did on the way
-     in, a lifted finger is not hovering. */
-  const onUpAlways = (e) => {
-    if (e.pointerType && e.pointerType !== "mouse") softPause("hover", false);
-  };
-  /* Capture, so it runs before the anchor's own default action. */
-  const onClickCapture = (e) => {
-    if (!swiped) return;
-    swiped = false;
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  root.addEventListener("pointerdown", onDown);
-  root.addEventListener("pointermove", onMove);
-  root.addEventListener("pointerup", onUp);
-  root.addEventListener("pointerup", onUpAlways);
-  root.addEventListener("pointercancel", onCancel);
-  root.addEventListener("click", onClickCapture, true);
+  const swipe = mountHorizontalSwipe(root, {
+    allowMouse:true, min:44, exclude:'button,input,select,textarea,summary,[contenteditable]',
+    onStart() { restoreDrag(false); softPause('gesture',true); },
+    onMove({dx}) {
+      if (reduced() || document.documentElement.dataset.uiMotion === 'off' || !layer) return;
+      dragOffset = Math.max(-56,Math.min(56,dx*.55));
+      if (!dragFrame) dragFrame = requestAnimationFrame(()=>{dragFrame=0;layer.style.transform=`translateX(${dragOffset}px)`;});
+    },
+    onEnd({dx,valid}) {
+      if (dead) { restoreDrag(false); pendingDeck=null; return; }
+      restoreDrag(!valid);
+      if (pendingDeck) { const next=pendingDeck; pendingDeck=null; update(next); }
+      if (valid) step(dx<0?1:-1);
+      softPause('gesture',false);
+    },
+  });
+  const onUpAlways = e => { if (e.pointerType && e.pointerType !== 'mouse') softPause('hover',false); };
+  root.addEventListener('pointerup',onUpAlways);
   root.addEventListener("keydown", onKey);
   /* Long-press on the stage should not raise the iOS selection sheet or a
      desktop context menu. This is an accident guard, not a security one -
@@ -1005,6 +989,8 @@ export function startStage(root, deck, { refresh } = {}) {
    * still there, so a poll that changes nothing changes nothing.
    */
   function update(next) {
+    if (dead) return;
+    if (swipe.tracking) { pendingDeck = next; return; }
     const fresh = (next || []).slice();
     if (!fresh.length) return;
     const currentItem = items[i];
@@ -1069,18 +1055,13 @@ export function startStage(root, deck, { refresh } = {}) {
     suspend(reason, on = true) { softPause(reason, on); },
     stop() {
       dead = true;
-      depth.stop();
+      depth.stop(); swipe.stop(); restoreDrag(false); pendingDeck=null;
       cancelAnimationFrame(layoutFrame);
       resize?.disconnect();
       intersection?.disconnect();
       clear();
       if (poll) { clearInterval(poll); poll = null; }
       root.removeEventListener("click", onClick);
-      root.removeEventListener("pointerdown", onDown);
-      root.removeEventListener("pointermove", onMove);
-      root.removeEventListener("pointerup", onUp);
-      root.removeEventListener("pointercancel", onCancel);
-      root.removeEventListener("click", onClickCapture, true);
       root.removeEventListener("keydown", onKey);
       root.removeEventListener("contextmenu", onMenu);
       root.removeEventListener("dragstart", onDragStart);

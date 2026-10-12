@@ -25,10 +25,13 @@ export function buildInjuryReport(payload,{analysis=null,now=Date.now()}={}){
   const matches=indexed.get(`${nameKey(name)}:${nflTeam}:${position}`)||[],player=matches.length===1?matches[0]:null,owner=player?owners.get(String(player.id)):null;
   const tier=owner?(owner.starter?0:1):positions.has(position)?2:3;
   const date=Date.parse(entry.date),updatedAt=Number.isFinite(date)?date:null,athleteId=athlete.id||athlete.headshot?.href?.match(/\/(\d+)\.(?:png|jpg)(?:\?|$)/)?.[1]||(athlete.links||[]).map(link=>link.href?.match(/\/id\/(\d+)/)?.[1]).find(Boolean),id=String(athleteId||`${nflTeam}:${position}:${nameKey(name)}`);
-  const report={id,sleeperId:player?.id||null,name,position,nflTeam,owner:owner?.name||'',starter:owner?.starter||false,tier,listed:!!status,...status,body:entry.details?.type||'',updatedAt,importance:Number(player?.adp)>0?Number(player.adp):Infinity,value:Number(player?.expectedPoints)||0,photo:athleteId?`https://a.espncdn.com/i/headshots/nfl/players/full/${encodeURIComponent(athleteId)}.png`:''};
+  const rank=player?.expertWeight>0&&Number(player.expert?.rank)>0?Number(player.expert.rank):Number(player?.adp)>0?Number(player.adp):Infinity;
+  const value=Number(player?.expectedPoints)||0,quality=Number.isFinite(rank)?100/(1+rank/40):value>0?Math.min(100,value/3):10;
+  const severity=status?.tone==='out'?1:status?.tone==='risk'?.8:status?.tag==='Probable'?.15:status?.tag==='Questionable'?.5:.3;
+  const report={id,sleeperId:player?.id||null,name,position,nflTeam,owner:owner?.name||'',starter:owner?.starter||false,tier,listed:!!status,...status,body:entry.details?.type||'',updatedAt,importance:rank,value,impact:quality*(.4+.6*severity),photo:athleteId?`https://a.espncdn.com/i/headshots/nfl/players/full/${encodeURIComponent(athleteId)}.png`:''};
   const existing=unique.get(id);if(!existing||(updatedAt||0)>(existing.updatedAt||0))unique.set(id,report);
  }}
- const items=[...unique.values()].filter(p=>p.listed).sort((a,b)=>a.tier-b.tier||a.importance-b.importance||b.value-a.value||a.name.localeCompare(b.name));
+ const items=[...unique.values()].filter(p=>p.listed).sort((a,b)=>a.tier-b.tier||b.impact-a.impact||a.importance-b.importance||b.value-a.value||a.name.localeCompare(b.name));
  const stamp=Date.parse(payload.timestamp);
  return{items,checkedAt:now,sourceAt:Number.isFinite(stamp)?stamp:null,rostersKnown:analysis?.state==='ready',starters:items.filter(p=>p.tier===0).length,owned:items.filter(p=>p.tier<2).length};
 }

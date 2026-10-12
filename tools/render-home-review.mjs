@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { buildLeaguePowerRankings } from '../js/league-trajectory.js';
 import { homeBroadcastDeck, homeThermalBoard, homeGameDayMatchup, homeLeagueFile, homeLeagueTools, homeNewspaperMasthead, homeSectionLinks } from '../js/home-presentation.js';
+import { homeInjuryPanelMarkup } from '../js/home-injury-panel.js';
 import { renderStage } from '../js/broadcast-stage.js';
 import { homeRivalryStory } from '../js/home-clubhouse.js';
 import { primarySeasonNavMarkup } from '../js/season-nav.js';
@@ -128,6 +129,7 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   </div>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   </div>
+  ${homeInjuryPanelMarkup()}
   <section class="home-week-desk" aria-label="Your week">
     ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
     <div data-home-live-slot class="gameday-card home-live-desk"></div>
@@ -157,7 +159,7 @@ html = html.replace('</body>', `<script type="module">
   import { wireHomeNewspaperSections } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountPageMotion, startUiMotion } from './js/ui-motion.js';
-  import { mountSwipeTabs } from './js/swipe-tabs.js';
+  import {mountHomeInjuryPanel} from './js/home-injury-panel.js';
   import { mountScoreVfx } from './js/score-vfx.js';
   import { mountSeasonNavigation } from './js/season-nav.js';
   import { syncTabIndicator, mountNavHighlight } from './js/nav-highlight.js';
@@ -189,6 +191,8 @@ html = html.replace('</body>', `<script type="module">
   window.reviewPageMotion = mountPageMotion(document.querySelector('#view'));
   window.reviewDeck = deck;
   window.reviewHeaderSources = ${JSON.stringify({sportsbook:sportsbookHeader,trade:tradeHeader})};
+  window.reviewInjuryReport={items:Array.from({length:12},(_,index)=>({id:'fixture-'+index,sleeperId:index%2?'1466':'7564',name:index<2?index?'Travis Kelce':'Ja’Marr Chase':'Injury fixture '+(index+1),position:index%2?'TE':'WR',nflTeam:index%2?'KC':'CIN',owner:'Fixture team',starter:index<2,tier:index<2?0:1,tag:index%2?'Out':'Questionable',availability:index%2?'Ruled out':'Decision pending',tone:index%2?'out':'watch',body:'Ankle'})),rostersKnown:true,checkedAt:Date.UTC(2026,9,8,17)};
+  window.reviewInjuryPanel=mountHomeInjuryPanel(document.querySelector('.home-injury-panel'),{getReport:()=>window.reviewInjuryReport});window.reviewInjuryPanel.update();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-home-live-slot]'));
   mountSeasonNavigation();

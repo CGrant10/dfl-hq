@@ -27,3 +27,23 @@ describe('injury report availability and priority',()=>{
  expect(injuryReportSlides(buildInjuryReport(payload([entry('1','One','Out'),entry('2','Two','Out'),entry('3','Three','Out')]))).map(s=>s.players.length)).toEqual([2,1]);
  });
 });
+
+describe('injury impact inside league relevance groups',()=>{
+ it('puts an important questionable starter ahead of a low-impact out, but comparable outs ahead of questionable players',()=>{
+  const players=[{id:'star',name:'Star',nflTeam:'BUF',position:'WR',adp:3},{id:'q',name:'Comparable Q',nflTeam:'BUF',position:'WR',adp:20},{id:'out',name:'Comparable Out',nflTeam:'BUF',position:'WR',adp:20},{id:'depth',name:'Depth',nflTeam:'BUF',position:'WR',adp:250}];
+  const analysis={state:'ready',pool:new Map(players.map(p=>[p.id,p])),teams:[{playerIds:players.map(p=>p.id),starters:players.map(p=>p.id)}]};
+  const report=buildInjuryReport(payload(players.map(p=>entry(p.id,p.name,['star','q'].includes(p.id)?'Questionable':'Out'))),{analysis});
+  expect(report.items.map(p=>p.id)).toEqual(['out','star','q','depth']);
+ });
+ it('uses current usable expert importance and falls back when the expert snapshot is stale',()=>{
+  const players=[{id:'a',name:'A',nflTeam:'BUF',position:'WR',adp:100,expert:{rank:2},expertWeight:.5},{id:'b',name:'B',nflTeam:'BUF',position:'WR',adp:10,expert:{rank:200},expertWeight:.5}];
+  const analysis={state:'ready',pool:new Map(players.map(p=>[p.id,p])),teams:[]};
+  expect(buildInjuryReport(payload(players.map(p=>entry(p.id,p.name,'Out'))),{analysis}).items.map(p=>p.id)).toEqual(['a','b']);
+  players.forEach(p=>p.expertWeight=0);
+  expect(buildInjuryReport(payload(players.map(p=>entry(p.id,p.name,'Out'))),{analysis}).items.map(p=>p.id)).toEqual(['b','a']);
+ });
+ it('keeps the complete report beyond the old four-player broadcast limit',()=>{
+  const report=buildInjuryReport(payload(Array.from({length:127},(_,i)=>entry(String(i),`Player ${i}`,'Questionable'))));
+  expect(report.items).toHaveLength(127);expect(new Set(report.items.map(p=>p.id)).size).toBe(127);
+ });
+});
