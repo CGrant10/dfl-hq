@@ -1,5 +1,6 @@
 import { readPageChoice } from './page-disclosure.js';
 import {mountTabScrollCues} from './tab-scroll-cues.js';
+import {mountPageScrollMotion} from './page-scroll-motion.js';
 
 const easing = 'cubic-bezier(.2,.75,.25,1)';
 const running = new Set();
@@ -109,6 +110,7 @@ const visible = node => {
 export function mountPageMotion(root) {
   if (['broadcast', 'arena-beta', 'golf'].includes(root.dataset.route) || root.dataset.route?.startsWith('arena')) return () => {};
   const stopScrollCues=mountTabScrollCues(root);
+  const stopPageScroll=mountPageScrollMotion(root,{animate:animateUi,cancel:cancelUiMotion});
   root.dataset.uiPolished = '1';
   const states = new Map(), pending = new Map(), userDetails = new WeakSet(), receiptOrigins = new WeakMap();
   let stopped = false, frame = null, intent = null;
@@ -250,6 +252,7 @@ export function mountPageMotion(root) {
   }
   return () => {
     stopScrollCues();
+    stopPageScroll();
     stopped = true; cancelAnimationFrame(frame); observer.disconnect(); resize.disconnect(); cancelUiMotion(root);
     root.removeEventListener('keydown', keydown, true);
     root.removeEventListener('click', click, true); root.removeEventListener('toggle', toggle, true); root.removeEventListener('change', change, true);
