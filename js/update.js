@@ -2,6 +2,41 @@ import { APP_VERSION } from "./config.js";
 
 const bar=()=>document.getElementById("update");
 const UPDATE_CHECK_MS=10*60*1000;
+let stopLogoGlow=null;
+
+// A cold logo download can outlast the whole sweep. Start only after its
+// pixels are decoded and the screen is visible; never hold the Update action.
+export function mountUpdateLogoGlow(el){
+  const image=el.querySelector('.update-gate__mark img');
+  const glow=el.querySelector('.update-gate__glow');
+  el.removeAttribute('data-logo-ready');
+  if(!image)return()=>{};
+  let stopped=false,decoded=false,decoding=false,frame=0;
+  const visible=()=>!stopped&&el.isConnected&&!document.hidden&&!el.classList.contains('hidden');
+  const paint=()=>{
+    if(!decoded||!visible()||el.dataset.logoReady==='true')return;
+    cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{frame=0;if(visible())el.dataset.logoReady='true';});
+  };
+  const loaded=async()=>{
+    if(stopped||decoding||decoded||!image.naturalWidth)return;
+    decoding=true;
+    try{await image.decode?.();}catch{}
+    if(stopped)return;
+    // CSS variables resolve relative URLs at the stylesheet that consumes
+    // them. Use the image's absolute URL so /css/icons/ is never requested.
+    glow?.style.setProperty('--update-logo-mask',`url("${image.currentSrc||image.src}")`);
+    decoded=true;paint();
+  };
+  image.addEventListener('load',loaded);
+  document.addEventListener('visibilitychange',paint);
+  if(image.complete)void loaded();
+  return()=>{
+    stopped=true;cancelAnimationFrame(frame);
+    image.removeEventListener('load',loaded);
+    document.removeEventListener('visibilitychange',paint);
+  };
+}
 
 function pendingGolfScores(){
   try{
@@ -48,7 +83,7 @@ export function updateGateMarkup(version){
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
     <p class="update-gate__intro">Quality and performance improvements are ready. Update to continue.</p>
-    <span class="update-gate__mark"><img src="icons/app-update-512.png" alt="DFL HQ" width="512" height="512"><span class="update-gate__glow" aria-hidden="true" style="--update-logo-mask:url('icons/app-update-512.png')"></span></span>
+    <span class="update-gate__mark"><img src="icons/app-update-512.png" alt="DFL HQ" width="512" height="512" crossorigin="anonymous"><span class="update-gate__glow" aria-hidden="true"></span></span>
     <div class="update-gate__features" aria-label="What is improved">
       <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-arena"></use></svg></span><strong>Faster loading</strong></div>
       <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-analyzer-steel"></use></svg></span><strong>Sharper analysis</strong></div>
@@ -63,6 +98,8 @@ export function updateGateMarkup(version){
 }
 
 function showGate(el,version){
+  if(el.dataset.version===version&&!el.classList.contains('hidden')&&el.classList.contains('update-gate'))return;
+  stopLogoGlow?.();
   /* This is the first moment the full-screen stadium treatment is useful.
      Keeping its URL out of update CSS prevents non-Home routes fetching it. */
   el.style.setProperty("--update-gate-artwork",'url("assets/dfl-update-stadium.webp")');
@@ -74,6 +111,7 @@ function showGate(el,version){
   el.classList.remove("hidden");
   el.classList.add("update-gate");
   document.body.classList.add("update-required");
+  stopLogoGlow=mountUpdateLogoGlow(el);
   requestAnimationFrame(()=>el.querySelector("#update-go")?.focus());
 }
 
