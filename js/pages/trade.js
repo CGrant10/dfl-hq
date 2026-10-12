@@ -25,6 +25,7 @@ import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdi
 import { tradeConfidence } from "../trade-confidence.js";
 import { shareDeal } from "../trade-card.js";
 import {createTradeOfferSearch} from '../trade-offer-search.js';
+import {createTradeOfferCatalog} from '../trade-offer-catalog.js';
 import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
 import { playerIdentity, playerPortrait } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
@@ -146,12 +147,14 @@ function tradeLab(team, teams, pool, shop) {
       shapeKeys.push(`${send}-${receive}`);
     }
   }
-  shop.offerCache ||= new Map();
-  const cacheKey = [team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount, intent].map(String).join("|");
+  const cacheKey = [team.id, partnerKey, shop.sendAnchors.join(","), shop.receiveAnchors.join(","), maxPlayers, sendCount, receiveCount].map(String).join("|");
   const query={teamId:team.id,partnerId: allPartners ? undefined : partner?.id,partyIds:multi?parties.map(t=>t.id):null,
     maxPlayers,sendAnchorIds:shop.sendAnchors,receiveAnchorIds:shop.receiveAnchors,sendCount,receiveCount,intent,
     limit:allPartners?132:96,shapes:shapeKeys};
   const result=shop.findOffers(cacheKey,query);
+  const intentCount = tier => result.countErrors?.[tier] ? '?' : result.counts?.[tier] ?? '…';
+  const intentLabel = (tier, label) => result.countErrors?.[tier] ? `${label}: count unavailable. Tap to retry.`
+    : result.counts?.[tier] == null ? `${label}: finding offers` : `${label}: ${result.counts[tier]} generated offers`;
   const allOffers=result.offers||[],searching=result.state==='loading',failed=result.state==='error';
   const tierOffers = allOffers.filter(offer => offer.tier === intent);
   const closestOffers=closestTradeOffers(allOffers,intent),closestTier=closestOffers[0]?.tier;
@@ -191,7 +194,7 @@ function tradeLab(team, teams, pool, shop) {
           <label class="tb-max"><span>Maximum package size <output data-tb-max-output>${maxPlayers}</output></span><input type="range" min="${anchorMinimum}" max="8" step="1" value="${maxPlayers}" data-tb-max></label>
           <div class="tb-split"><label><span>You send</span><select data-tb-send-count>${countOptions("send", sendCount, Math.max(1, shop.sendAnchors.length))}</select></label><b aria-hidden="true">↔</b><label><span>You get</span><select data-tb-receive-count>${countOptions("receive", receiveCount, Math.max(1, shop.receiveAnchors.length))}</select></label></div>
         </div>
-        </details><div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" class="${intent === value ? "is-active" : ""}">${label}</button>`).join("")}</div></div>
+        </details><div class="tb-intent" aria-label="Offer type"><span>SHOW ME</span><div class="tb-intent-options" data-intent="${intent}"><i aria-hidden="true"></i>${[["fair", "Fair"], ["aggressive", "Aggressive"], ["steal", "Steal"]].map(([value, label]) => `<button type="button" data-tb-intent="${value}" aria-pressed="${intent === value}" aria-label="${intentLabel(value,label)}" class="${intent === value ? "is-active" : ""}"><span>${label}</span><span class="tb-intent-count" data-tb-intent-count>(${intentCount(value)})</span></button>`).join("")}</div></div>
       </div>
     </section>
     <section class="tb-layout-section" data-tb-offers tabindex="-1">
@@ -281,45 +284,37 @@ function page(data, tradeAlerts = []) {
     wire(view) {
       stopOffers?.();
       const body = view.querySelector("[data-td-body]");
-      let search=createTradeOfferSearch({teams:data.teams,pool:data.pool});
-      let stopped=false,offerGeneration=0;
+      let catalog;
+      let stopped=false;
       const current=()=>!stopped&&view.isConnected;
-      stopOffers=()=>{stopped=true;offerGeneration++;shop.intentStamp=(shop.intentStamp||0)+1;search.stop();};
+      stopOffers=()=>{stopped=true;shop.intentStamp=(shop.intentStamp||0)+1;catalog.stop();};
       const wireOfferTiers=scope=>scope.querySelectorAll('[data-tb-tier]').forEach(section=>section.addEventListener('toggle',()=>{
         if(!current()||!body.contains(section))return;
         const tier=section.dataset.tbTier;
         if(section.open)shop.openTiers.add(tier);else shop.openTiers.delete(tier);
         saveDraft?.();
       }));
-      const paintOffers=()=>{
+      const paintOffers=({countsOnly=false}={})=>{
         if(!current()||shop.mode==='manual')return;
         const old=body.querySelector('[data-tb-offers]');if(!old)return;
         const focused=old.contains(document.activeElement);
         const template=document.createElement('template');
         template.innerHTML=tradeLab(data.teams.find(t=>String(t.id)===String(selectedId))||data.teams[0],data.teams,data.pool,shop);
+        template.content.querySelectorAll('.tb-intent-options [data-tb-intent]').forEach(next=>{
+          const button=body.querySelector(`[data-tb-intent="${next.dataset.tbIntent}"]`);
+          if(!button)return;
+          button.querySelector('[data-tb-intent-count]').textContent=next.querySelector('[data-tb-intent-count]').textContent;
+          button.setAttribute('aria-label',next.getAttribute('aria-label'));
+        });
+        if(countsOnly)return;
         const next=template.content.querySelector('[data-tb-offers]');
         old.replaceWith(next);wireOfferTiers(next);
         if(focused)next.focus({preventScroll:true});
       };
-      shop.findOffers=(key,query)=>{
-        if(shop.offerCache.has(key)){
-          if(shop.offerState?.key!==key){offerGeneration++;search.cancel();}
-          return shop.offerState={key,state:'ready',offers:shop.offerCache.get(key)};
-        }
-        if(shop.offerState?.key===key)return shop.offerState;
-        const token=++offerGeneration;
-        shop.offerState={key,state:'loading',offers:[]};
-        search.run(query).then(offers=>{
-          if(!current()||token!==offerGeneration)return;
-          shop.offerCache.set(key,offers);
-          while(shop.offerCache.size>12)shop.offerCache.delete(shop.offerCache.keys().next().value);
-          shop.offerState={key,state:'ready',offers};paintOffers();
-        },error=>{
-          if(!current()||token!==offerGeneration||error.name==='AbortError')return;
-          shop.offerState={key,state:'error',offers:[]};paintOffers();
-        });
-        return shop.offerState;
-      };
+      const newCatalog=()=>createTradeOfferCatalog({search:createTradeOfferSearch({teams:data.teams,pool:data.pool}),
+        onChange:({tier})=>{if(current())paintOffers({countsOnly:tier!==shop.intent});}});
+      catalog=newCatalog();
+      shop.findOffers=(key,query)=>shop.offerState={key,...catalog.read(key,query)};
       /* Whatever the ticket is currently showing, so Share renders the same
          deal the reader is looking at rather than re-deriving one. */
       let deal = null,proposals=readTradeProposals(me?.id,data.projectionSeason),proposalsOpen=false,transactionScrolled=false;
@@ -331,7 +326,7 @@ function page(data, tradeAlerts = []) {
       let sharing = false;
       const draw = () => {
         if (!current()) return;
-        if(shop.mode==='manual'&&shop.offerState?.state==='loading'){offerGeneration++;shop.offerState=null;search.cancel();}
+        if(shop.mode==='manual'){shop.offerState=null;catalog.cancel();}
         // Native toggle events can arrive after an immediate control redraw.
         // Read the current DOM first so an open disclosure never snaps closed.
         const refine=body.querySelector('.tb-refine'),comparison=body.querySelector('.td-proposals');
@@ -460,7 +455,7 @@ function page(data, tradeAlerts = []) {
         if (summary) summary.textContent = value;
       });
       body.addEventListener("click", async event => {
-        if(event.target.closest('[data-tb-retry]')){shop.offerState=null;refreshOffers();return;}
+        if(event.target.closest('[data-tb-retry]')){catalog.retry(shop.offerState?.key,shop.intent);shop.offerState=null;refreshOffers();return;}
         if (event.target.closest("[data-tb-view-offers]")) {
           const offers = body.querySelector("[data-tb-offers]");
           offers?.scrollIntoView({ block: "start", behavior: "instant" });
@@ -521,7 +516,7 @@ function page(data, tradeAlerts = []) {
             if(deal!==original){toast('The package changed. Share the updated ticket.',true);return;}
             if(fresh.state!=='ready'||fresh.projectionSeason!==data.projectionSeason)throw new Error('Current rosters are unavailable. Refresh the trade page.');
             const review=recheckTradeOffer(original,data.pool,fresh.teams,fresh.pool);
-            data=fresh;shop.offerCache?.clear();
+            data=fresh;catalog.stop();catalog=newCatalog();shop.offerState=null;
             if(review.status==='invalid'){
               const restored=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),fresh.teams,selectedId);
               if(restored){Object.assign(trade,restored.trade);Object.assign(shop,restored.shop);}
@@ -557,13 +552,16 @@ function page(data, tradeAlerts = []) {
         const intent = event.target.closest("[data-tb-intent]");
         if (intent) {
           const value = intent.dataset.tbIntent;
-          if (value === shop.intent) return;
+          if (value === shop.intent) {
+            if(shop.offerState?.countErrors?.[value]){catalog.retry(shop.offerState.key,value);refreshOffers();}
+            return;
+          }
           shop.intent = value;
-          offerGeneration++;search.cancel();shop.offerState=null;
+          catalog.retry(shop.offerState?.key,value);shop.offerState=null;
           shop.openTiers=new Set([value]);
           const options = body.querySelector(".tb-intent-options");
           if (options) options.dataset.intent = value;
-          options?.querySelectorAll("[data-tb-intent]").forEach(button => button.classList.toggle("is-active", button.dataset.tbIntent === value));
+          options?.querySelectorAll("[data-tb-intent]").forEach(button => {button.classList.toggle("is-active", button.dataset.tbIntent === value);button.setAttribute('aria-pressed',String(button.dataset.tbIntent === value));});
           const offers=body.querySelector('[data-tb-offers]');if(offers){offers.inert=true;offers.setAttribute('aria-busy','true');}
           const stamp = shop.intentStamp = (shop.intentStamp || 0) + 1;
           setTimeout(() => { if (current()&&stamp === shop.intentStamp) refreshOffers(); }, 260);
@@ -595,9 +593,9 @@ function page(data, tradeAlerts = []) {
         apply:next=>{
           const saved=restoreTradeDraft(tradeDraft({selectedId,trade,shop}),next.teams,selectedId);
           if(!saved || next.projectionSeason!==data.projectionSeason)return;
-          search.stop();offerGeneration++;search=createTradeOfferSearch({teams:next.teams,pool:next.pool});
+          catalog.stop();
           data=next;selectedId=saved.selectedId;Object.assign(trade,saved.trade);Object.assign(shop,saved.shop);
-          shop.offerCache=new Map();shop.offerState=null;draw();
+          catalog=newCatalog();shop.offerState=null;draw();
         }});
       void loadSharedTradeRecommendations().then(rows => { shop.sharedAudit = rows;const health=body.querySelector('[data-td-health]');if(health)health.innerHTML=tradeModelHealthMarkup({...tradeModelHealth(data.pool),accountability:recommendationOutcomes(data.pool,localStorage,rows.filter(row=>!row.season||Number(row.season)===Number(data.projectionSeason)))},esc,true); })
         .catch(error => console.warn("shared trade accountability unavailable", error));

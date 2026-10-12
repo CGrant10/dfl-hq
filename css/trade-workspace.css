@@ -110,6 +110,11 @@
 }
 #view[data-route="trade"] .tb-identity-rail .dfl-team-copy :is(strong,small) { white-space:normal; overflow:visible; text-overflow:clip; }
 #view[data-route="trade"] .tb-members .btn { min-height:44px; }
+#view[data-route="trade"] .tb-intent-options button { display:flex; flex-wrap:wrap; align-content:center; align-items:center; justify-content:center; gap:2px 4px; }
+#view[data-route="trade"] .tb-intent-count { font-size:11px; line-height:1.3; font-variant-numeric:tabular-nums; white-space:nowrap; opacity:.85; }
+@media(max-width:360px) {
+ #view[data-route="trade"] .tb-intent-options button { flex-direction:column; flex-wrap:nowrap; }
+}
 #view[data-route="trade"] :is(.td-lineup-preview,.td-proposals,.td-data-context) { scroll-margin-top:80px; }
 /* Player choices are primary offer controls; package preferences stay optional. */
 #view[data-route="trade"] .tb-player-pickers { grid-column:1 / -1; margin:0; }
