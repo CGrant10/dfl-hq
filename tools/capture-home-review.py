@@ -1266,6 +1266,9 @@ with sync_playwright() as p:
             for index in range(count):
                 page.locator(f'[data-bx-go="{index}"]').evaluate('e=>e.click()')
                 page.wait_for_timeout(500)
+                # Measure after finite text/score entrances, rather than a
+                # mid-scale frame on a busy renderer. Decorative loops continue.
+                page.evaluate("""async()=>{const slide=document.querySelector('.bx-slide:not(.bx-leaving)'),finite=slide.getAnimations({subtree:true}).filter(a=>{const t=a.effect.getTiming();return t.iterations===1&&Number(t.duration)<=1200});await Promise.all(finite.map(a=>a.finished.catch(()=>{})))}""")
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
                   const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));

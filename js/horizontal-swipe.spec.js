@@ -21,7 +21,11 @@ describe('stable horizontal gestures',()=>{
  it('ignores the child capture loss but cancels a genuine surface loss',()=>{
   const f=fixture();f.send('pointerdown');f.send('pointermove',20);
   const child=new Event('lostpointercapture');Object.assign(child,{pointerId:1});Object.defineProperty(child,'target',{value:{}});f.surface.dispatchEvent(child);expect(f.control.tracking).toBe(true);
-  f.send('lostpointercapture',20);expect(f.control.tracking).toBe(false);expect(f.index()).toBe(0);
+  f.surface.releasePointerCapture(1);f.send('lostpointercapture',20);expect(f.control.tracking).toBe(false);expect(f.index()).toBe(0);
+ });
+ it('does not let a late capture loss cancel the next gesture with a reused pointer id',()=>{
+  const f=fixture();f.swipe(-80);f.send('pointerdown');f.send('lostpointercapture');expect(f.control.tracking).toBe(true);
+  f.send('pointermove',20);f.send('lostpointercapture',20);expect(f.control.tracking).toBe(true);f.send('pointerup',20);expect(f.index()).toBe(2);
  });
  it('does not leave a ghost click latch over the next intentional touch or control',()=>{
   const f=fixture();f.swipe(-80);expect(f.send('click').defaultPrevented).toBe(true);

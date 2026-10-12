@@ -34,7 +34,11 @@ export function mountHorizontalSwipe(surface, { accepts = (_target) => true, exc
   const up = event => finish(event);
   const cancel = event => finish(event, true);
   // Implicit capture moving from a child to the surface emits a child loss.
-  const lost = event => { if (event.target === surface) finish(event, true); };
+  const lost = event => {
+    // A previous release can report its loss after a fresh gesture starts.
+    // Only cancel a horizontal drag that actually lost its current capture.
+    if (event.target === surface && gesture?.horizontal && !surface.hasPointerCapture?.(event.pointerId)) finish(event, true);
+  };
   const click = event => {
     // Synthetic tab/button clicks keep their original native control path.
     if (event.target.closest('button:not(.player-card-trigger):not(.gameday-player-tap),input,select,textarea,summary') || performance.now() >= suppressUntil) return;
