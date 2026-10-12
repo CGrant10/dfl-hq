@@ -126,7 +126,10 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     }
     scores.hidden=scoreData.length!==2;dock.classList.toggle('is-matchup',!scores.hidden);scoreAnchor=!scores.hidden?header:null;
     if(scoreAnchor){setText(section,`${text(root.querySelector('.clubhouse-status')).split('·').slice(0,2).join('·').trim()} · ${phase}`);section.hidden=false;}
-    dock.setAttribute('aria-label',scoreAnchor?'Back to the selected matchup scoreboard':`Back to the ${nextTitle} header`);
+    const action=scoreAnchor?'Back to the selected matchup scoreboard':`Back to the ${nextTitle} header`;
+    const context=scoreAnchor?[phase,...scoreData.map(team=>`${team.name}: ${team.points} points`)]
+      :[section.textContent,bank?`${bank} SIN`:''];
+    dock.setAttribute('aria-label',[action,...context].filter(Boolean).join('. '));
     progress.style.transform=`scaleX(${read})`;
     show(compact||dock.contains(document.activeElement));
   }
