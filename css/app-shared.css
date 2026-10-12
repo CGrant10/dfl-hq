@@ -3685,8 +3685,16 @@ body:has(#view) { padding-top: var(--topbar-h); }
 #view[data-route="trade"] .td-top-take { font-size:16px; line-height:1.4; font-weight:700; margin:12px 0 4px; }
 
 #view[data-route="trade"] .tb-refine { grid-column:1 / -1; min-width:0; border-block:1px solid var(--line); }
-#view[data-route="trade"] .tb-refine > summary { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 8px; min-height:44px; align-items:center; padding:8px 0; font-size:14px; font-weight:700; cursor:pointer; }
-#view[data-route="trade"] .tb-refine > summary small { color:var(--muted); font-size:11px; font-weight:500; }
+#view[data-route="trade"] .tb-refine > summary { display:flex; flex-wrap:wrap; gap:8px 12px; min-height:44px; align-items:center; padding:10px 0; cursor:pointer; list-style:none; }
+#view[data-route="trade"] .tb-refine > summary::-webkit-details-marker { display:none; }
+#view[data-route="trade"] .tb-refine-action { display:inline-flex; align-items:center; justify-content:space-between; gap:16px; min-height:44px; padding:8px 12px; border:1px solid var(--accent); border-radius:8px; background:var(--bg-3); color:var(--text); font-size:14px; font-weight:700; }
+#view[data-route="trade"] .tb-refine-action i { width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:translateY(-2px) rotate(45deg); transition:transform 180ms ease; }
+#view[data-route="trade"] .tb-refine[open] .tb-refine-action i { transform:translateY(2px) rotate(225deg); }
+#view[data-route="trade"] .tb-refine > summary small { display:grid; gap:3px; color:var(--body-text); font-size:12px; line-height:1.4; font-weight:500; }
+#view[data-route="trade"] .tb-refine-settings b { font-weight:inherit; }
+@media(prefers-reduced-motion:reduce) {
+ #view[data-route="trade"] .tb-refine-action i { transition:none; }
+}
 #view[data-route="trade"] .tb-identity-rail .dfl-team-copy :is(strong,small) { white-space:normal; overflow:visible; text-overflow:clip; }
 #view[data-route="trade"] .tb-members .btn { min-height:44px; }
 #view[data-route="trade"] :is(.td-lineup-preview,.td-proposals,.td-data-context) { scroll-margin-top:80px; }
