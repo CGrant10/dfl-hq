@@ -633,7 +633,8 @@ export function startStage(root, deck, { refresh } = {}) {
       const childStyle = getComputedStyle(el);
       return height + Math.max(el.offsetHeight, el.scrollHeight) + (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0);
     }, 0) + Math.max(0, children.length - 1) * (parseFloat(style.rowGap) || 0)
-      + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0) + 2;
+      + (parseFloat(style.top) || 0) + (parseFloat(style.bottom) || 0)
+      + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0) + 2;
   }
   function fitLayout() {
     layoutFrame = 0;
@@ -692,8 +693,9 @@ export function startStage(root, deck, { refresh } = {}) {
     timer = setTimeout(() => { go(i + 1); }, dwell);
   }
 
-  function paint() {
+  function paint(drag = null) {
     if (!layer) return;
+    if (!drag) restoreDrag(false);
     /*
       A CROSS-FADE, NOT A REPLACEMENT.
 
@@ -712,9 +714,12 @@ export function startStage(root, deck, { refresh } = {}) {
       slide, not play a backlog.
     */
     for (const stale of layer.querySelectorAll(".bx-leaving")) stale.remove();
-    const outgoing = layer.firstElementChild;
-    layer.insertAdjacentHTML("beforeend", renderItem(items[i], { editorial: root.dataset.presentation === "editorial" }));
-    const slide = layer.lastElementChild;
+    const outgoing = layer.querySelector('.bx-slide:not(.bx-preview)');
+    if (!drag) layer.insertAdjacentHTML("beforeend", renderItem(items[i], { editorial: root.dataset.presentation === "editorial" }));
+    const slide = drag?.preview || layer.lastElementChild;
+    slide?.classList.remove('bx-preview');
+    slide?.removeAttribute('inert');
+    slide?.removeAttribute('aria-hidden');
     if (outgoing && outgoing !== slide) {
       outgoing.classList.remove("bx-in", "bx-enter");
       outgoing.classList.add("bx-leaving");
@@ -723,10 +728,14 @@ export function startStage(root, deck, { refresh } = {}) {
          up and whichever lands first wins. */
       let done = false;
       const drop = () => { if (done) return; done = true; outgoing.remove(); };
-      outgoing.addEventListener("transitionend", drop, { once: true });
+      if (!drag) outgoing.addEventListener("transitionend", drop, { once: true });
       setTimeout(drop, LEAVE_MS);
+      if (drag) settleSlide(outgoing, drag.offset, -drag.direction * drag.width, drop);
     }
-    if (slide) {
+    if (drag && slide) {
+      fitHeadlines(slide); scheduleLayout();
+      settleSlide(slide, drag.offset + drag.direction * drag.width, 0);
+    } else if (slide) {
       /* BEFORE bx-enter, so the measurement happens on a slide that is in the
          document but not yet animating - a mid-animation scale() would make
          getBoundingClientRect() report the wrong width. */
@@ -783,11 +792,11 @@ export function startStage(root, deck, { refresh } = {}) {
     });
   }
 
-  function go(next) {
+  function go(next, drag = null) {
     if (dead || !items.length) return;
     root.dataset.bxDirection = next < i ? 'back' : 'forward';
     i = ((next % items.length) + items.length) % items.length;
-    paint();
+    paint(drag);
     arm();
   }
 
@@ -938,28 +947,93 @@ export function startStage(root, deck, { refresh } = {}) {
      keeps vertical scrolling and hands us horizontal movement, so there
      is no preventDefault() on touchmove and no scroll jank.
   ===================================================================== */
-  let pendingDeck = null, dragFrame = 0, dragOffset = 0;
+  let pendingDeck = null, dragFrame = 0, dragging = null;
+  const settling = new Map();
+  const cleanSlide = slide => {
+    slide.style.removeProperty('transform'); slide.style.removeProperty('opacity');
+    slide.classList.remove('bx-dragging');
+  };
+  const settleSlide = (slide, from, to, done = () => {}) => {
+    slide.classList.add('bx-dragging');
+    slide.style.opacity = '1'; slide.style.transform = `translate3d(${to}px,0,0)`;
+    const animation = animateUi(slide, [{transform:`translate3d(${from}px,0,0)`},{transform:`translate3d(${to}px,0,0)`}], {duration:280,easing:'cubic-bezier(.22,.75,.25,1)'});
+    if (!animation) { cleanSlide(slide); done(); return; }
+    settling.set(slide, animation);
+    const finish = () => {
+      if (settling.get(slide) !== animation) return;
+      settling.delete(slide); cleanSlide(slide); done();
+      if (!settling.size && pendingDeck && !swipe.tracking) {
+        const next=pendingDeck; pendingDeck=null; update(next);
+      }
+    };
+    animation.finished.then(finish,finish);
+  };
   const restoreDrag = settle => {
-    cancelAnimationFrame(dragFrame); dragFrame = 0;
-    if (!layer) return;
-    layer.style.removeProperty('transform');
-    if (settle && dragOffset) animateUi(layer, [{transform:`translateX(${dragOffset}px)`},{transform:'none'}], {duration:180});
-    else cancelUiMotion(layer);
-    dragOffset = 0;
+    cancelAnimationFrame(dragFrame); dragFrame=0;
+    if (dragging) {
+      const drag=dragging; dragging=null;
+      if (settle) {
+        const transform=getComputedStyle(drag.current).transform;
+        drag.offset=transform==='none'?0:new DOMMatrixReadOnly(transform).m41;
+        settleSlide(drag.current,drag.offset,0);
+        if(drag.preview)settleSlide(drag.preview,drag.offset+drag.direction*drag.width,drag.direction*drag.width,()=>drag.preview.remove());
+      } else { cleanSlide(drag.current); drag.preview?.remove(); }
+    }
+    if (!settle) {
+      for(const [slide] of settling) { cancelUiMotion(slide); cleanSlide(slide); if(slide.matches('.bx-leaving,.bx-preview'))slide.remove(); }
+      settling.clear();
+    }
   };
   const swipe = mountHorizontalSwipe(root, {
     allowMouse:true, min:44, exclude:'button,input,select,textarea,summary,[contenteditable]',
-    onStart() { restoreDrag(false); softPause('gesture',true); },
+    onStart() {
+      const current=layer?.querySelector('.bx-slide:not(.bx-leaving):not(.bx-preview)');
+      const transform=current&&settling.has(current)?getComputedStyle(current).transform:'none';
+      const origin=transform==='none'?0:new DOMMatrixReadOnly(transform).m41;
+      restoreDrag(false); softPause('gesture',true);
+      // Catch an unfinished settle where it is, rather than snapping it home.
+      if(current&&Math.abs(origin)>.1) {
+        current.classList.add('bx-dragging'); current.style.transform=`translate3d(${origin}px,0,0)`;
+        dragging={current,preview:null,direction:0,width:root.clientWidth,offset:origin,origin};
+      }
+    },
     onMove({dx}) {
-      if (reduced() || document.documentElement.dataset.uiMotion === 'off' || !layer) return;
-      dragOffset = Math.max(-56,Math.min(56,dx*.55));
-      if (!dragFrame) dragFrame = requestAnimationFrame(()=>{dragFrame=0;layer.style.transform=`translateX(${dragOffset}px)`;});
+      if (reduced() || document.documentElement.dataset.uiMotion === 'off' || !layer || items.length<2) return;
+      if (!dragging) {
+        for(const stale of layer.querySelectorAll('.bx-leaving'))stale.remove();
+        const current=layer.querySelector('.bx-slide');
+        if(!current)return;
+        current.classList.remove('bx-enter','bx-in'); current.classList.add('bx-dragging');
+        dragging={current,preview:null,direction:0,width:root.clientWidth,offset:0,origin:0};
+      }
+      const direction=dx<0?1:-1;
+      if(direction!==dragging.direction) {
+        dragging.preview?.remove();
+        const index=((i+direction)%items.length+items.length)%items.length;
+        layer.insertAdjacentHTML('beforeend',renderItem(items[index],{editorial}));
+        dragging.preview=layer.lastElementChild; dragging.direction=direction;
+        dragging.preview.classList.add('bx-preview','bx-dragging');
+        dragging.preview.setAttribute('inert',''); dragging.preview.setAttribute('aria-hidden','true');
+        fitHeadlines(dragging.preview);
+      }
+      dragging.offset=Math.max(-dragging.width,Math.min(dragging.width,dx+dragging.origin));
+      if (!dragFrame) dragFrame=requestAnimationFrame(()=>{
+        dragFrame=0;if(!dragging)return;
+        dragging.current.style.transform=`translate3d(${dragging.offset}px,0,0)`;
+        dragging.preview.style.transform=`translate3d(${dragging.offset+dragging.direction*dragging.width}px,0,0)`;
+      });
     },
     onEnd({dx,valid}) {
       if (dead) { restoreDrag(false); pendingDeck=null; return; }
-      restoreDrag(!valid);
-      if (pendingDeck) { const next=pendingDeck; pendingDeck=null; update(next); }
-      if (valid) step(dx<0?1:-1);
+      cancelAnimationFrame(dragFrame); dragFrame=0;
+      if(valid && dragging) {
+        const drag=dragging; dragging=null;
+        // Continue from the displayed frame rather than resetting to zero.
+        const transform=getComputedStyle(drag.current).transform;
+        drag.offset=transform==='none'?0:new DOMMatrixReadOnly(transform).m41;
+        go(i+drag.direction,drag);
+      } else { restoreDrag(true); if(valid)step(dx<0?1:-1); }
+      if (pendingDeck && !settling.size) { const next=pendingDeck; pendingDeck=null; update(next); }
       softPause('gesture',false);
     },
   });
@@ -990,7 +1064,7 @@ export function startStage(root, deck, { refresh } = {}) {
    */
   function update(next) {
     if (dead) return;
-    if (swipe.tracking) { pendingDeck = next; return; }
+    if (swipe.tracking || settling.size) { pendingDeck = next; return; }
     const fresh = (next || []).slice();
     if (!fresh.length) return;
     const currentItem = items[i];
