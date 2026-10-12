@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" data-ui-motion="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07090d">
+  <base href="../">
+  <title>DFL HQ · Update screen preview</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <style>
+    body { margin:0; background:#07090d; color:#f7f8fb; }
+    .preview-status { max-width:430px; padding:24px; margin:auto; font-family:system-ui,sans-serif; }
+    .preview-status a { color:inherit; }
+    .update-gate__status button { min-height:44px; padding:8px 12px; border:0; color:inherit; background:transparent; font:inherit; text-decoration:underline; cursor:pointer; }
+    .update-gate__status button:focus-visible { outline:2px solid white; outline-offset:2px; }
+  </style>
+</head>
+<body>
+  <p class="preview-status" role="status">Loading the update screen preview…</p>
+  <div id="update" class="hidden"></div>
+  <script type="module">
+    const gate=document.getElementById('update');
+    const status=document.querySelector('.preview-status');
+    let moduleUrl;
+    async function fresh(path){
+      const response=await fetch(new URL(path,document.baseURI),{cache:'no-store'});
+      if(!response.ok)throw Error('Preview unavailable');
+      return response.text();
+    }
+    try{
+      const [css,source,version,index]=await Promise.all([
+        fresh('css/update-gate.css'),fresh('js/update.js'),fresh('version.txt'),fresh('index.html'),
+      ]);
+      const style=document.createElement('style');style.textContent=css;document.head.append(style);
+      const release=version.trim();if(!/^\d+\.\d+\.\d+$/.test(release))throw Error('Release unavailable');
+      // Load the same renderer and glow as the app, using fresh public source.
+      // Only the config import is replaced; this preview does not boot the app.
+      const code=source.replace('import { APP_VERSION } from "./config.js";',`const APP_VERSION=${JSON.stringify(release)};`);
+      moduleUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
+      const {updateGateMarkup,mountUpdateLogoGlow}=await import(moduleUrl);
+      const parsed=new DOMParser().parseFromString(index,'text/html');
+      parsed.querySelectorAll('body > svg').forEach(svg=>document.body.append(document.importNode(svg,true)));
+      gate.innerHTML=updateGateMarkup(release);
+      gate.style.setProperty('--update-gate-artwork',`url("${new URL('assets/dfl-update-stadium.webp',document.baseURI).href}")`);
+      gate.className='update-gate';gate.setAttribute('role','region');gate.setAttribute('aria-label','Update screen preview');
+      gate.querySelector('.update-gate__eyebrow').textContent='DFL HQ · UPDATE PREVIEW';
+      gate.querySelector('.update-gate__intro').textContent='A preview of the latest update screen.';
+      status.remove();
+      const back=gate.querySelector('#update-go');back.textContent='BACK TO DFL HQ';
+      back.addEventListener('click',()=>location.assign(new URL('./#/home',document.baseURI)));
+      const note=gate.querySelector('.update-gate__status');
+      note.replaceChildren(document.createTextNode('Preview · '));
+      const replay=document.createElement('button');replay.type='button';replay.textContent='Replay glow';note.append(replay);
+      let stop=mountUpdateLogoGlow(gate);
+      replay.addEventListener('click',()=>{
+        stop();gate.removeAttribute('data-logo-ready');
+        getComputedStyle(gate.querySelector('.update-gate__glow'),'::before').animationName;
+        stop=mountUpdateLogoGlow(gate);
+      });
+      window.addEventListener('pagehide',()=>stop(),{once:true});
+    }catch{
+      status.textContent='The preview could not load. ';
+      const back=document.createElement('a');back.href='./#/home';back.textContent='Open DFL HQ';status.append(back);
+    }finally{if(moduleUrl)URL.revokeObjectURL(moduleUrl);}
+  </script>
+</body>
+</html>

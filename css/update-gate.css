@@ -174,7 +174,7 @@ body.broadcasting #update.update-gate { display: block !important; }
 @media (prefers-reduced-motion: no-preference) {
   .update-gate__content { animation: update-gate-in .42s cubic-bezier(.2,.75,.25,1) both; }
   .update-gate.is-updating .update-gate__button { animation: update-gate-pulse 1s ease-in-out infinite alternate; }
-  html:not([data-ui-motion="off"]) .update-gate__glow::before { animation: update-logo-glow 1.2s cubic-bezier(.2,.65,.35,1) .4s both; }
+  html:not([data-ui-motion="off"]) .update-gate[data-logo-ready="true"] .update-gate__glow::before { animation: update-logo-glow 1.2s ease-in-out .4s both; }
 }
 
 html[data-ui-motion="off"] .update-gate__glow::before { animation: none; }
