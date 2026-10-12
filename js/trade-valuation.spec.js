@@ -50,7 +50,7 @@ describe('honest trade prices and Steal offers',()=>{
   const p=buildPlayerPool({rosters:Array.from({length:12},(_,i)=>({players:[String(i)]})),projections,scoringSettings:{rec:1}});
   expect(Math.abs(p.get('0').tradeValue-p.get('1').tradeValue)).toBeLessThanOrEqual(2);
   expect(p.get('0').replacementPerGame).toBeGreaterThan(0);
-  expect(p.get('0').valuationBasis).toBe('replacement-points');
+  expect(p.get('0').valuationBasis).toBe('position-and-flex-replacement');
  });
  it('widens sensitivity for short, volatile, injured or stale samples',()=>{
   const healthy=pool.get('CeeDee Lamb');
