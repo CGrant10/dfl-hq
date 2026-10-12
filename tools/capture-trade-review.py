@@ -54,6 +54,26 @@ with sync_playwright() as p:
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
         assert page.locator('[data-trade-picker="send"]').is_visible()
         assert page.locator('[data-trade-picker="receive"]').is_visible()
+        # Each count comes from its own intent's completed search, including
+        # empty tiers. Switching cached tabs keeps those counts intact.
+        def settled_counts():
+            page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))")
+            return page.locator('.tb-intent-options [data-tb-intent]').evaluate_all("es=>Object.fromEntries(es.map(e=>[e.dataset.tbIntent,Number(e.querySelector('[data-tb-intent-count]').textContent.replace(/[()]/g,''))]))")
+        counts=settled_counts()
+        for tier in ['aggressive','steal','fair']:
+            click(f'.tb-intent-options [data-tb-intent="{tier}"]')
+            page.wait_for_function("tier=>document.querySelector('.tb-intent-options')?.dataset.intent===tier&&!document.querySelector('[data-tb-offers]')?.inert",arg=tier)
+            assert page.locator(f'.tb-intent-options [data-tb-intent="{tier}"]').get_attribute('aria-pressed')=='true'
+            if counts[tier]:
+                assert f'({counts[tier]})' in page.locator(f'[data-tb-tier="{tier}"] > summary b').inner_text()
+            assert settled_counts()==counts
+        click('.tb-refine > summary')
+        select('[data-tb-send-count]','2');select('[data-tb-receive-count]','1')
+        counts=settled_counts()
+        if counts['fair']==0:
+            assert page.locator('[data-tb-closest]').count() or page.locator('.ta-empty').count()
+        page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
+        settled_counts()
         # Real sheet controls: search, position, keyboard and cancellation.
         click('[data-trade-picker="send"]')
         sheet=page.locator('.trade-player-picker[open]')

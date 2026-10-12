@@ -53,7 +53,6 @@ describe("trade analyzer layout", () => {
     const source = readFileSync(new URL("./pages/trade.js", import.meta.url), "utf8");
 
     expect(source).toContain('shop.customOpen ? `<div class="ta-section-body">');
-    expect(source).toContain('shop.offerCache ||= new Map()');
     expect(source).toContain('Up to 8 players');
   });
 
