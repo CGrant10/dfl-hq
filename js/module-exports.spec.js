@@ -532,10 +532,11 @@ describe("the supported golf GPS courses", () => {
     expect(updater).toContain("export function updateBlocked()");
     expect(updater).toContain('localStorage.getItem("dfl.golf.pending")');
     expect(html).toContain('var key = "dfl.shell.release"');
-    expect(html).toContain('navigator.serviceWorker.addEventListener("controllerchange", finish)');
-    expect(html).toContain("await navigator.serviceWorker.getRegistrations()");
-    expect(html).toContain('location.replace(location.pathname + "?u=" + encodeURIComponent(version) + location.hash)');
-    expect(html.indexOf('var key = "dfl.shell.release"')).toBeLessThan(html.indexOf('src="js/app.js"'));
+    expect(html).toContain('navigator.serviceWorker.addEventListener("controllerchange", check)');
+    expect(html).toContain("await navigator.serviceWorker.getRegistration()");
+    expect(html).toContain('await workerRelease() === version');
+    expect(html).toContain('await window.dflShellReady');
+    expect(html.indexOf('var key = "dfl.shell.release"')).toBeLessThan(html.indexOf('await import("./js/app.js")'));
   });
 
   it("shows the live GPS reading in the Quick Round GPS badge", () => {

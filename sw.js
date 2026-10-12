@@ -1,9 +1,9 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.381.0";
+const CACHE_NAME = "dfl-hq-v1.382.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
-  "./css/app-shared.css?v=1.381.0","./js/trade-offer-search.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/app-shared.css?v=1.382.0","./js/trade-offer-search.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js",
   "./js/player-form.js",
@@ -121,7 +121,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.381.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.382.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
@@ -137,9 +137,14 @@ const APP_SHELL = [
   "./icons/app-192.png","./icons/apple-touch-icon.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
+self.addEventListener('message',event=>{
+  if(event.data?.type==='DFL_APP_RELEASE')event.ports?.[0]?.postMessage({release:CACHE_NAME.slice(APP_CACHE_PREFIX.length)});
+});
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(async c=>{
   const missing=[];
-  await Promise.all(APP_SHELL.map(url=>c.add(url).catch(()=>missing.push(url))));
+  // A new worker must revalidate even a still-fresh browser HTTP entry;
+  // otherwise its new app-cache name can contain the previous release's code.
+  await Promise.all(APP_SHELL.map(url=>c.add(revalidating(new Request(new URL(url,self.registration.scope)))).catch(()=>missing.push(url))));
   if(missing.length)console.warn("[sw] not precached:",missing);
 }).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys
@@ -175,19 +180,25 @@ self.addEventListener("fetch",event=>{
     const refreshRequest=appNavigation?new Request(new URL("./index.html",self.registration.scope),{credentials:"same-origin"}):request;
     const refresh=refreshCached(refreshRequest);
     event.waitUntil(refresh.then(()=>{}));
-    /* The update button deliberately adds ?u=. That navigation must wait for
-       the network response instead of immediately handing the old shell back
-       from cache, otherwise the same update banner can loop forever. */
-    if(appNavigation&&url.searchParams.has("u")){
+    /* Update navigation and explicit asset refetches must wait for the network,
+       otherwise a fresh version label can still boot cached, older modules. */
+    if((appNavigation&&url.searchParams.has("u"))||["reload","no-cache","no-store"].includes(request.cache)){
       event.respondWith((async()=>{
         const fresh=await refresh;
         if(usableCached(fresh,request))return fresh;
-        return await caches.match("./index.html")||Response.error();
+        const cache=await caches.open(CACHE_NAME);
+        const fallback=await cache.match(refreshRequest,{ignoreSearch:true});
+        return usableCached(fallback,request)?fallback:Response.error();
       })());
       return;
     }
     event.respondWith((async()=>{
-      const candidate=await caches.match(request,{ignoreSearch:true})||appNavigation&&await caches.match("./index.html");
+      // A retired worker's late refresh can recreate its cache after activation.
+      // Never borrow those older modules for the current release.
+      const cache=await caches.open(CACHE_NAME);
+      const candidate=appNavigation
+        ?await cache.match(refreshRequest,{ignoreSearch:true})||await cache.match(request,{ignoreSearch:true})
+        :await cache.match(request,{ignoreSearch:true});
       const cached=usableCached(candidate,request)?candidate:null;
       if(cached)return cached;
       return await refresh||Response.error();
@@ -197,7 +208,10 @@ self.addEventListener("fetch",event=>{
   event.respondWith(fetch(revalidating(request)).then(response=>{
     if(response.ok&&(url.origin===location.origin||CDN_HOSTS.has(url.hostname))){const copy=response.clone();caches.open(CACHE_NAME).then(c=>c.put(request,copy));}
     return response;
-  }).catch(async()=>await caches.match(request)||Response.error()));
+  }).catch(async()=>{
+    const cache=await caches.open(CACHE_NAME);
+    return await cache.match(request)||(url.origin!==location.origin?await caches.match(request):null)||Response.error();
+  }));
 });
 
 /* Web Push arrives here even while the installed app is closed. Payloads are
