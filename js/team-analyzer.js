@@ -177,12 +177,24 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
 
   // Price actual point gaps above replacement across the NFL projection feed.
   // Rank percentiles made bench depth almost as valuable as elite starters.
-  const replacement = new Map(), leagueSize=Math.max(2,rosters.length);
+  const replacement = new Map(), replacementDepth=new Map(), flexDemand=new Map(), leagueSize=Math.max(2,rosters.length);
+  const positionalForecasts=new Map(ANALYZER_POSITIONS.map(position=>[position,
+    list.filter(p=>p.position===position&&p.tradePerGame!=null)
+      .sort((a,b)=>b.tradePerGame-a.tradePerGame||a.id.localeCompare(b.id))]));
+  // Fill dedicated slots first, then allocate ONE shared RB/WR/TE flex per
+  // team. A WR-heavy PPR flex pool must deepen WR replacement, rather than
+  // pretending every position has the same demand or adding three flexes.
+  const flexOptions=[...FLEX_POSITIONS].flatMap(position=>
+    positionalForecasts.get(position).slice(leagueSize*STARTERS[position]));
+  for(const p of flexOptions.sort((a,b)=>b.tradePerGame-a.tradePerGame||a.id.localeCompare(b.id)).slice(0,leagueSize))
+    flexDemand.set(p.position,(flexDemand.get(p.position)||0)+1);
   let qbStarterBaseline=0;
   for(const position of ANALYZER_POSITIONS){
-    const options=list.filter(p=>p.position===position&&p.tradePerGame!=null)
-      .map(p=>p.tradePerGame).sort((a,b)=>b-a);
-    const depth=Math.ceil(leagueSize*(['RB','WR'].includes(position)?3:1.5));
+    const options=positionalForecasts.get(position).map(p=>p.tradePerGame);
+    // Keep half a dedicated lineup's worth of depth, plus the actual shared
+    // flex demand. This is a league replacement estimate, not a waiver claim.
+    const depth=Math.ceil(leagueSize*STARTERS[position]*1.5)+(flexDemand.get(position)||0);
+    replacementDepth.set(position,depth);
     const floor=options.length>=depth ? options[depth-1] : (options[0]||0)*.55;
     replacement.set(position,floor);
     if(position==='QB')qbStarterBaseline=options.length>=leagueSize ? options[leagueSize-1] : (options[0]||0)*.8;
@@ -225,7 +237,9 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const marketBalance = marketActivity >= 25 ? (player.marketAdds - player.marketDrops) / marketActivity : 0;
     const marketFactor = 1 + marketBalance * .02;
     const modelValue=Math.max(1,Math.min(100,baseTradeValue*marketFactor)),expert=expertMatches.get(player.id)||null;
-    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? .15 : 0;
+    // Fresh PPR ROS consensus anchors cross-position market value equally
+    // with the production/scarcity model. Stale opinions never set prices.
+    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? .5 : 0;
     const expertValue=expert?expertValueIndex(expert.rank)*oneQbFactor(player):null;
     const modelRank=modelRanks.get(player.id);
     pool.set(player.id, {
@@ -238,9 +252,11 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       trendBasis: recentTrend ? "recent" : lastPerGame == null ? "projection" : "year-over-year",
       marketTrend: marketBalance > .2 ? "up" : marketBalance < -.2 ? "down" : "steady",
       replacementPerGame: replacement.get(player.position)||0,
+      replacementRank:replacementDepth.get(player.position),
+      leagueSize,startingSlots:STARTERS[player.position],flexDemand:flexDemand.get(player.position)||0,
       oneQbValueFactor: player.position==='QB'?round(oneQbFactor(player),3):null,
       oneQbStarterBaseline: player.position==='QB'?round(qbStarterBaseline,2):null,
-      valuationBasis: "replacement-points",
+      valuationBasis: "position-and-flex-replacement",
       expert,expertFeedStatus:expertRankings?.status||'Unavailable',expertSource:expertRankings?.source||'FantasyPros',expertUpdatedAt:expertRankings?.updatedAt||0,expertCount:expertRankings?.experts||0,expertWeight,
       modelTradeValue:round(modelValue,2),modelPositionRank:modelRank?.rank||null,
       expertDisagreement:!!(expertWeight&&modelRank?.count>=12&&Math.abs(modelRank.rank-expert.positionRank)>Math.max(6,Math.min(modelRank.rank,expert.positionRank)*.5)),

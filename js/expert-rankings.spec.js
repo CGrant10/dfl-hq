@@ -26,8 +26,8 @@ describe('external ROS opinions',()=>{
   const input={rosters:Array.from({length:12},()=>({players:['hunter','wr','qb']})),players:{hunter:{n:'Travis Hunter',p:'DB',fp:['DB','WR'],t:'JAX'},wr:{n:'Receiver',p:'WR',t:'DET'},qb:{n:'Quarterback',p:'QB',t:'BUF'}},projections:[{player_id:'hunter',stats:{rec:170}},{player_id:'wr',stats:{rec:200}},{player_id:'qb',stats:{pass_yd:4500,pass_td:35}}],scoringSettings:{rec:1,pass_yd:.04,pass_td:4}};
   const ranks=[{name:'Travis Hunter',position:'WR',team:'JAC',rank:30,positionRank:12,minRank:28,maxRank:32,stdDev:1},{name:'Receiver',position:'WR',team:'DET',rank:1,positionRank:1,minRank:1,maxRank:1,stdDev:0},{name:'Quarterback',position:'QB',team:'BUF',rank:50,positionRank:5,minRank:48,maxRank:52,stdDev:1}];
   const feed=assess(payload({players:[...rows,...ranks]})),plain=buildPlayerPool(input),withExperts=buildPlayerPool({...input,expertRankings:feed});
-  expect(withExperts.get('hunter')).toMatchObject({position:'WR',expertWeight:.15,expert:{rank:30}});
-  for(const [id,p] of withExperts){expect(p.expectedPoints).toBe(plain.get(id).expectedPoints);expect(p.tradePerGame).toBe(plain.get(id).tradePerGame);expect(Math.abs(p.tradeValue-plain.get(id).tradeValue)).toBeLessThanOrEqual(15);}
+  expect(withExperts.get('hunter')).toMatchObject({position:'WR',expertWeight:.5,expert:{rank:30}});
+  for(const [id,p] of withExperts){expect(p.expectedPoints).toBe(plain.get(id).expectedPoints);expect(p.tradePerGame).toBe(plain.get(id).tradePerGame);expect(Math.abs(p.tradeValue-plain.get(id).tradeValue)).toBeLessThanOrEqual(50);}
   const stale=buildPlayerPool({...input,expertRankings:{...feed,status:'Stale',usable:false}});expect(stale.get('hunter').tradeValue).toBe(plain.get('hunter').tradeValue);expect(stale.get('hunter').expertWeight).toBe(0);
   expect(withExperts.get('qb').oneQbValueFactor).toBe(plain.get('qb').oneQbValueFactor);
  });
