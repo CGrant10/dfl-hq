@@ -21,6 +21,15 @@ export function reviewTextContrast(root=document.body) {
     const range = document.createRange(); range.selectNode(node);
     const r = range.getBoundingClientRect();
     if (!r.width || !r.height || r.bottom <= 0 || r.top >= innerHeight) continue;
+    // Scroll boxes can place a row inside the document viewport while clipping
+    // it outside their own visible area. Lazy row styles are not painted there.
+    if (e.checkVisibility && !e.checkVisibility({ contentVisibilityAuto:true })) continue;
+    if (ancestors.some(a => {
+      const s=getComputedStyle(a),b=a.getBoundingClientRect();
+      const clipY=['auto','scroll','hidden','clip'].includes(s.overflowY);
+      const clipX=['auto','scroll','hidden','clip'].includes(s.overflowX);
+      return clipY&&(r.bottom<=b.top||r.top>=b.bottom)||clipX&&(r.right<=b.left||r.left>=b.right);
+    })) continue;
     let bg = [255, 255, 255];
     for (const a of ancestors.reverse()) bg = over(rgba(getComputedStyle(a).backgroundColor), bg);
     const style = getComputedStyle(e), fg = over(rgba(style.color), bg);
