@@ -48,7 +48,7 @@ export function updateGateMarkup(version){
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
     <p class="update-gate__intro">Quality and performance improvements are ready. Update to continue.</p>
-    <img class="update-gate__mark" src="icons/app-update-512.png" alt="DFL HQ" width="512" height="512">
+    <span class="update-gate__mark"><img src="icons/app-update-512.png" alt="DFL HQ" width="512" height="512"><span class="update-gate__glow" aria-hidden="true" style="--update-logo-mask:url('icons/app-update-512.png')"></span></span>
     <div class="update-gate__features" aria-label="What is improved">
       <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-arena"></use></svg></span><strong>Faster loading</strong></div>
       <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-analyzer-steel"></use></svg></span><strong>Sharper analysis</strong></div>
