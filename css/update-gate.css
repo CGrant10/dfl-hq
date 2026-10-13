@@ -62,7 +62,15 @@ body.broadcasting #update.update-gate { display: block !important; }
   text-wrap: balance;
 }
 
-.update-gate__anniversary { margin:18px 0 8px; color:#ef3747; font:700 18px/1.2 Rajdhani,system-ui,sans-serif; letter-spacing:.12em; }
+/* A finite milestone reveal, shared with the Home masthead. */
+.dfl-anniversary { position:relative; display:inline-flex; align-items:center; gap:9px; }
+.dfl-anniversary::after { content:""; position:absolute; inset:auto 0 0; height:1px; background:linear-gradient(90deg,var(--anniversary-ink,#ef3747),var(--anniversary-gold,#f6d399),transparent); transform-origin:left; pointer-events:none; }
+.dfl-anniversary__number { display:inline-block; color:var(--anniversary-gold,#f6d399); font-size:42px; line-height:1; letter-spacing:-.04em; }
+.dfl-anniversary__label { max-width:112px; color:var(--anniversary-ink,#ef3747); font-size:13px; line-height:1.2; letter-spacing:.1em; text-align:left; }
+@supports (background-clip:text) or (-webkit-background-clip:text) {
+  .dfl-anniversary__number { background:linear-gradient(110deg,var(--anniversary-gold,#f6d399) 35%,var(--anniversary-glint,#fff9ea) 50%,var(--anniversary-gold,#f6d399) 65%) 100% 0 / 300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+}
+.update-gate__anniversary { margin:18px 0 8px; padding:0 0 7px; font:700 18px/1.2 Rajdhani,system-ui,sans-serif; }
 
 .update-gate__mark {
   position: relative;
@@ -123,14 +131,19 @@ body.broadcasting #update.update-gate { display: block !important; }
 
 @media (max-height: 720px) {
   #update.update-gate { padding-top: max(22px, env(safe-area-inset-top)); }
-  .update-gate__anniversary { margin-block:12px 6px; font-size:16px; }
+  .update-gate__anniversary { margin-block:12px 6px; }
+  .update-gate__anniversary .dfl-anniversary__number { font-size:34px; }
+  .update-gate__anniversary .dfl-anniversary__label { font-size:11px; max-width:100px; }
   .update-gate h1 { font-size: 39px; }
   .update-gate__mark { width:clamp(180px,48vw,220px); margin-bottom:11px; }
   .update-gate__action { padding-top: 12px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .update-gate__content { animation: update-gate-in .42s cubic-bezier(.2,.75,.25,1) both; }
+  html:not([data-ui-motion="off"]) :is(.home-newspaper-edition.is-anniversary,.update-gate[data-logo-ready="true"] .update-gate__anniversary) .dfl-anniversary__number { animation:anniversary-number 1.65s cubic-bezier(.2,.75,.25,1) both; }
+  html:not([data-ui-motion="off"]) :is(.home-newspaper-edition.is-anniversary,.update-gate[data-logo-ready="true"] .update-gate__anniversary) .dfl-anniversary__label { animation:anniversary-label .65s ease-out .12s both; }
+  html:not([data-ui-motion="off"]) :is(.home-newspaper-edition.is-anniversary,.update-gate[data-logo-ready="true"] .update-gate__anniversary)::after { animation:anniversary-rule .85s cubic-bezier(.2,.75,.25,1) .2s both; }
+  html:not([data-ui-motion="off"]) .update-gate__content { animation: update-gate-in .42s cubic-bezier(.2,.75,.25,1) both; }
   .update-gate.is-updating .update-gate__button { animation: update-gate-pulse 1s ease-in-out infinite alternate; }
   html:not([data-ui-motion="off"]) .update-gate[data-logo-ready="true"] .update-gate__glow::before { animation: update-logo-glow 1.2s ease-in-out .4s both; }
 }
@@ -145,3 +158,11 @@ html[data-ui-motion="off"] .update-gate__glow::before { animation: none; }
   15%, 80% { opacity: 1; }
   100% { opacity: 0; transform: translateX(110%); }
 }
+
+@keyframes anniversary-number {
+  0% { opacity:0; transform:translateY(6px) scale(.92); background-position:100% 0; }
+  28% { opacity:1; transform:none; background-position:100% 0; }
+  100% { opacity:1; transform:none; background-position:0% 0; }
+}
+@keyframes anniversary-label { from { opacity:0; transform:translateX(-4px); } }
+@keyframes anniversary-rule { from { opacity:0; transform:scaleX(0); } }

@@ -12,7 +12,7 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const anniversary = season > 0 && season % 10 === 0;
   return `<header class="home-newspaper-masthead">
     <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}">${esc(now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }))}</time></div>
-    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition${anniversary ? ' is-anniversary' : ''}">${anniversary ? `${season} YEAR ANNIVERSARY` : `Season ${season} · Est. ${esc(founded)}`}</p></div>
+    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition${anniversary ? ' is-anniversary dfl-anniversary' : ''}">${anniversary ? `<span class="dfl-anniversary__number">${season}</span> <span class="dfl-anniversary__label">YEAR ANNIVERSARY</span>` : `Season ${season} · Est. ${esc(founded)}`}</p></div>
   </header>`;
 }
 

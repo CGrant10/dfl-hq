@@ -51,7 +51,7 @@
       back.addEventListener('click',()=>location.assign(new URL('./#/home',document.baseURI)));
       const note=gate.querySelector('.update-gate__status');
       note.replaceChildren(document.createTextNode('Preview · '));
-      const replay=document.createElement('button');replay.type='button';replay.textContent='Replay glow';note.append(replay);
+      const replay=document.createElement('button');replay.type='button';replay.textContent='Replay animation';note.append(replay);
       let stop=mountUpdateLogoGlow(gate);
       replay.addEventListener('click',()=>{
         stop();gate.removeAttribute('data-logo-ready');
