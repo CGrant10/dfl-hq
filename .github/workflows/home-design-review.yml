@@ -7,6 +7,9 @@ on:
       - 'css/shared-styles.json'
       - 'js/tab-scroll-cues.js'
       - 'js/ui-motion.js'
+      - 'js/sheet-drag*'
+      - 'js/pages/sportsbook.js'
+      - 'tools/*sheet-review*'
       - 'tools/build-shared-css.mjs'
       - 'js/home-presentation*'
       - 'js/season-nav*'
@@ -76,6 +79,12 @@ jobs:
           printf 'DFL_REVIEW_CHROMIUM=%s\n' "$dfl_review_browser" >> "$GITHUB_ENV"
       - run: node tools/render-home-review.mjs
       - run: python tools/capture-home-review.py
+      - name: Check mobile sheet gestures
+        env:
+          DFL_SHEET_REVIEW_DIR: ${{ github.workspace }}/home-review-output/sheets
+        run: |
+          node tools/render-sheet-review.mjs
+          python tools/capture-sheet-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

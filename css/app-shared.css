@@ -4447,6 +4447,22 @@ html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-
 html[data-ui-motion="off"] .sb-slip .sb-slip-submit { transition:none; transform:none; }
 @media(prefers-reduced-motion:reduce) { .sb-slip .sb-slip-submit { transition:none; transform:none!important; } }
 
+/* Mobile sheets share a quiet grip and keep form controls in their own area. */
+@property --sheet-dim { syntax:"<number>"; inherits:true; initial-value:1; }
+.dfl-sheet-grip { display:none; }
+:is(.dfl-player-card,.sb-slip)[data-sheet-ready] { animation:none!important; }
+:is(.dfl-player-card,.sb-slip)[data-sheet-ready]::backdrop { opacity:var(--sheet-dim,1); animation-duration:220ms; }
+:is(.dfl-player-card,.sb-slip)[data-sheet-ready][data-ui-closing]::backdrop { animation-duration:220ms; }
+:is(.dfl-player-card,.sb-slip)[data-sheet-moving] { transition:none!important; will-change:transform; }
+@media(max-width:600px) {
+  :is(.dfl-player-card,.sb-slip)[data-sheet-ready] {
+    width:min(480px,calc(100vw - 24px)); max-width:calc(100vw - 24px); margin:auto auto 12px; border-radius:16px;
+  }
+  :is(.dfl-player-card > header,.sb-slip-head)[data-sheet-handle] { position:relative; padding:20px 16px 10px; min-height:74px; box-sizing:border-box; touch-action:none; user-select:none; }
+  .dfl-player-card [data-player-card-body] { padding-bottom:max(16px,calc(env(safe-area-inset-bottom) + 8px)); }
+  .dfl-sheet-grip { display:block; position:absolute; top:8px; left:calc(50% - 18px); width:36px; height:4px; border-radius:3px; background:var(--muted); opacity:.65; pointer-events:none; }
+}
+
 
 /* Source: css/receipt-polish.css */
 /* Saved trades: scan the archive first, then open a readable receipt. */

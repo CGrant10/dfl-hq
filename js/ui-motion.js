@@ -44,7 +44,7 @@ export function cancelUiExit(node) {
 }
 // A dismissal completes once, even if Escape repeats or motion is switched
 // off mid-flight. Reopening cancels the old completion, not the new surface.
-export function exitUi(node, complete, { immediate = false, surface = node } = {}) {
+export function exitUi(node, complete, { immediate = false, surface = node, transform: exitTransform = 'translateY(8px)', duration = 160 } = {}) {
   const existing = exits.get(node);
   if (existing) { if (immediate) existing(); return; }
   if (immediate || !canPlay(node)) { complete(); return; }
@@ -60,9 +60,9 @@ export function exitUi(node, complete, { immediate = false, surface = node } = {
   const transform = getComputedStyle(surface).transform;
   node.dataset.uiClosing = '1';
   const current = animateUi(node, surface === node
-    ? [{ opacity, transform }, { opacity:0, transform:'translateY(8px)' }]
-    : [{ opacity }, { opacity:0 }], { duration:160, fill:'forwards' });
-  if (surface !== node) animateUi(surface, [{ transform }, { transform:'translateY(8px)' }], { duration:160, fill:'forwards' });
+    ? [{ opacity, transform }, { opacity:0, transform:exitTransform }]
+    : [{ opacity }, { opacity:0 }], { duration, fill:'forwards' });
+  if (surface !== node) animateUi(surface, [{ transform }, { transform:exitTransform }], { duration, fill:'forwards' });
   if (current) current.finished.then(finish, finish);
   else finish();
 }
