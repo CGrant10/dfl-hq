@@ -54,8 +54,8 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   else {ctx.fillStyle='#1a202b';ctx.fillRect(-38,-76,20,20);ctx.fillStyle='#fff';ctx.font='700 8px sans-serif';ctx.fillText(initial(r.name),-28,-63);}
   ctx.restore();ctx.restore();
  }
- function leadBattle(leaders,y,h,elapsed,moving,state){
-  if(h<70)return;const picks=leaders.slice(0,2),cell=width/2;
+ function leadBattle(leaders,y,h,elapsed,moving,state,offset=0,panelWidth=width){
+  if(h<70)return;ctx.save();ctx.translate(offset,0);const width=panelWidth,picks=leaders.slice(0,2),cell=width/2;
   ctx.fillStyle='#0b1420';ctx.fillRect(0,y,width,h);
   const light=ctx.createLinearGradient(0,y,0,y+h);light.addColorStop(0,'#7b283322');light.addColorStop(1,'#080e1800');ctx.fillStyle=light;ctx.fillRect(0,y,width,h);
   ctx.fillStyle='#d8c08a';ctx.font='700 10px Rajdhani,sans-serif';ctx.textAlign='left';ctx.fillText(state==='idle'?'ON DECK':state==='finished'?'AT THE LINE':'LEAD BATTLE',14,y+19);
@@ -69,13 +69,14 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
    ctx.fillStyle='#f0e8da';ctx.font='700 12px Rajdhani,sans-serif';ctx.textAlign='left';ctx.fillText(racer.name,x+12,y+h-18,cell-24);
    ctx.fillStyle='#b9ad91';ctx.font='600 10px Rajdhani,sans-serif';ctx.fillText(`${row.finished?'#'+row.place:'#'+(i+1)} · ${footballSpot(row.progress)}`,x+12,y+h-5,cell-24);ctx.restore();
   });
-  ctx.strokeStyle='#d4bd7f24';ctx.beginPath();ctx.moveTo(cell,y+30);ctx.lineTo(cell,y+h-8);ctx.stroke();
+  ctx.strokeStyle='#d4bd7f24';ctx.beginPath();ctx.moveTo(cell,y+30);ctx.lineTo(cell,y+h-8);ctx.stroke();ctx.restore();
  }
  function draw(frame,{state='running',runId='',now=performance.now(),replay=false,celebration=0}={}){
   if(closed)return;getSize();lastFrame=frame;lastOptions={state,runId,now,replay,celebration};const enabled=motion(),dt=Math.min(.08,Math.max(.001,(now-lastTime)/1000));lastTime=now;
   const overview=camera().mode==='field';
-  const n=racers.length,top=Math.max(94,Math.min(128,height*.27)),available=height-top-22,fieldH=overview?Math.max(90,Math.min(width/2.35,available-116)):available,laneH=Math.max(26,fieldH/n),worldH=laneH*n;
-  const layout=`${overview}:${top}:${fieldH}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview,top,fieldHeight:fieldH});}
+  const sideBattle=overview&&width>height*1.55,trackWidth=sideBattle?Math.round(width*.68):width;
+  const n=racers.length,top=Math.max(94,Math.min(128,height*.27)),available=height-top-22,fieldH=overview&&!sideBattle?Math.max(90,Math.min(width/2.35,available-116)):available,laneH=Math.max(26,fieldH/n),worldH=laneH*n;
+  const layout=`${overview}:${top}:${fieldH}:${trackWidth}`;if(layout!==lastLayout){lastLayout=layout;onLayout({overview,top,fieldHeight:fieldH,fieldWidth:trackWidth});}
   const live=state==='running'||replay,elapsed=Math.max(0,frame?.elapsed||0),u=frame?.u||0,rows=frame?.rows||racers.map((r,index)=>({id:String(r.id),index,progress:0,speed:0,finished:false}));
   const leaders=frame?.ranked||rows,leader=leaders[0];
   const view=camera(),following=view.mode==='follow'?rows.find(r=>r.id===String(view.racerId)):null;
@@ -83,7 +84,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   const targetZoom=battle&&n>6?Math.min(6.4,n/5):1,focusY=battle?(following?.index??leader?.index??0)*laneH+laneH/2:worldH/2;
   const worldWidth=2300,padding=view.mode==='field'?24:62;
   const {span,start:targetX}=view.mode==='field'?{span:worldWidth*1.2,start:-worldWidth*.1}:stadiumTrackWindow(rows,u,worldWidth);
-  const pxScale=(width-padding*2)/Math.max(200,span);
+  const pxScale=(trackWidth-padding*2)/Math.max(200,span);
   if(!enabled||lastRun!==runId||state==='idle'||state==='finished'){panX=targetX;panY=focusY;zoom=targetZoom;lastRun=runId;}
   else if(state==='paused'&&view.mode==='auto'){/* Keep the exact camera frozen with the race. */}
   else {const ease=1-Math.exp(-dt*3.3);panX=lerp(panX,targetX,ease);panY=lerp(panY,focusY,ease);zoom=lerp(zoom,targetZoom,ease);}
@@ -93,7 +94,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   const shade=ctx.createLinearGradient(0,top-28,0,top+10);shade.addColorStop(0,'#09101b00');shade.addColorStop(1,'#0b1821');ctx.fillStyle=shade;ctx.fillRect(0,top-28,width,38);
   ctx.fillStyle='#dfcdae';ctx.font='700 22px Anton, Rajdhani, sans-serif';ctx.textAlign='center';ctx.fillText('DFL STADIUM',width/2,top-36);
   ctx.fillStyle='#faf7ef';ctx.font='700 11px Rajdhani, sans-serif';ctx.fillText(following?racers[following.index].name.toUpperCase():view.mode==='field'?'FULL FIELD':state==='finished'&&!replay?'OFFICIAL FINISH':battle?'BATTLE CAM':u>.90?'THE FINAL SPRINT':'THE LEAGUE’S STARTING LINE',width/2,top-16,width-32);
-  ctx.save();ctx.beginPath();ctx.rect(0,top,width,fieldH+5);ctx.clip();
+  ctx.save();ctx.beginPath();ctx.rect(0,top,trackWidth,fieldH+5);ctx.clip();
   const baseScale=(overview?fieldH-40:fieldH)/worldH,yScale=baseScale*zoom,lower=Math.max(worldH/2/zoom,Math.min(worldH-worldH/2/zoom,panY));
   const yOf=index=>top+fieldH/2+((index+.5)*laneH-lower)*yScale;
   const turf=ctx.createLinearGradient(0,top,0,height);turf.addColorStop(0,'#193d32');turf.addColorStop(1,'#0d2a23');ctx.fillStyle=turf;ctx.fillRect(0,top,width,height-top);
@@ -130,7 +131,7 @@ export function createStadiumRenderer(canvas,{racers,motion=()=>true,camera=()=>
   }
   ctx.restore();
   ctx.fillStyle='#d8caa5';ctx.fillRect(0,top+fieldH,width,2);ctx.fillStyle='#7d2437';ctx.fillRect(0,top+fieldH+5,width,4);
-  if(overview)leadBattle(leaders.length?leaders:rows,top+fieldH+10,height-top-fieldH-10,elapsed,moving,replay?'running':state);
+  if(overview){const picks=leaders.length?leaders:rows;if(sideBattle)leadBattle(picks,top,fieldH,elapsed,moving,replay?'running':state,trackWidth+8,width-trackWidth-8);else leadBattle(picks,top+fieldH+10,height-top-fieldH-10,elapsed,moving,replay?'running':state);}
   if(enabled&&frame?.finished&&celebration>0&&celebration<4){
    const seconds=celebration;ctx.globalAlpha=Math.min(1,(4-seconds)/1.2);for(let i=0;i<42;i++){
     const x=(i*97.3+seconds*(i%2?13:-11))%width,y=(i*41.7+seconds*(18+i%7))%height;
