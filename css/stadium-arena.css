@@ -4,3 +4,6 @@
 .stadium-arena{color:var(--text,#f1eee7)}.sr-back{color:var(--muted,#ccc7bc)}.sr-room-meta{color:var(--muted,#c6c3bd)}.sr-board{background:#101620;border-radius:12px;color:#f1eee7;overflow:hidden}.sr-stage,.sr-final{color:#f1eee7}.sr-tools button{background:#141b25}.sr-kicker,.sr-state,.sr-board-head>span{color:#a78b42}.sr-stage .sr-kicker,.sr-final .sr-kicker{color:#dbc180}
 
 .sr-stage-overlay[data-countdown=true] strong{font-size:88px;color:#f3e5bb;line-height:1;text-shadow:0 0 35px #c12f4545,0 5px 20px #000}
+
+/* Give the race callout its own strip, clear of every lane. */
+.sr-stage canvas{height:400px}.sr-moment{position:relative;bottom:auto;left:auto;right:auto;border-left:0;border-top:2px solid #be263e;padding:12px 16px;border-radius:0;background:#0c131d;min-height:64px}.sr-stage-overlay{bottom:64px}.sr-expanded canvas,.sr-stage:fullscreen canvas{height:calc(100dvh - 64px)}@media(min-width:700px){.sr-stage canvas{height:470px}.sr-expanded canvas,.sr-stage:fullscreen canvas{height:calc(100dvh - 64px)}}

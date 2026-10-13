@@ -14,4 +14,4 @@ Validation: deterministic paths for fields of 2, 12, and 32; monotone progress, 
 
 Both additive migrations are applied. The existing event remains idle on the legacy engine, with its original seed, 12 participants and zero results; it converts only when its commissioner saves or starts it. Installed app icons are unchanged. Local evidence: `/workspace/dfl-stadium-arena-1403/`.
 
-Release checks: `pnpm check` passes all 1,692 tests, typechecking, identifier checks, release consistency and both production builds. The isolated browser fixture passes 25 checks and the guarded real-app session passes 10.
+Release checks: `pnpm check` passes all 1,692 tests, typechecking, identifier checks, release consistency and both production builds. The isolated browser fixture passes 26 checks and the guarded real-app session passes 10.
