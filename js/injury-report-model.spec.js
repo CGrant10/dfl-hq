@@ -16,6 +16,11 @@ describe('injury report availability and priority',()=>{
   const report=buildInjuryReport(payload(all.map((pos,i)=>entry(String(i),`Player ${pos}`,'Out',pos))),{analysis});
   expect(report.items.map(p=>p.position).sort()).toEqual(['QB','RB','TE','WR']);expect(report.owned).toBe(0);
  });
+ it('retains an excluded player’s actual injury when an individual card requests unrestricted records',()=>{
+  const source=payload([entry('k','Kicker','Out','K'),entry('d','Defender','Doubtful','LB')]);
+  expect(buildInjuryReport(source).items).toHaveLength(0);
+  expect(buildInjuryReport(source,{offenseOnly:false}).items).toEqual(expect.arrayContaining([expect.objectContaining({id:'k',position:'K',tag:'Out',availability:'Ruled out'}),expect.objectContaining({id:'d',position:'LB',tag:'Doubtful',availability:'Unlikely to play'})]));
+ });
  it('deduplicates by athlete and uses the newer report, excluding healthy feed entries',()=>{const report=buildInjuryReport(payload([entry('1','One','Questionable','WR','BUF','2026-10-02'),entry('1','One','Out'),entry('2','Healthy','Active')]));expect(report.items).toHaveLength(1);expect(report.items[0].tag).toBe('Out')});
  it('removes an older injury when the latest duplicate entry is active',()=>{expect(buildInjuryReport(payload([entry('1','One','Out','WR','BUF','2026-10-02'),entry('1','One','Active')])).items).toHaveLength(0)});
  it('supports ESPN athletes identified by headshots instead of an id field',()=>{const p=entry('1','One','Out');delete p.athlete.id;p.athlete.headshot={href:'https://a.espncdn.com/i/headshots/nfl/players/full/1234.png'};expect(buildInjuryReport(payload([p])).items[0].id).toBe('1234')});

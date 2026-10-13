@@ -23,5 +23,5 @@ export async function loadPlayerCard(selection, context = null) {
   const scoring = !league.error && Number(league.data?.[0]?.season) === season ? league.data[0].scoring_settings : null;
   const p = players[id];
   const analysis = { pool: new Map([[id, { id, name: p.n, position: p.p, nflTeam: p.t }]]) };
-  return playerCardView({ id, players, rosters: rosters.error ? [] : rosters.data || [], members, season, week, scoring, weeks, context, injuries: injury ? buildInjuryReport(injury.payload, { analysis }) : null, rostersKnown: !rosters.error && (rosters.data || []).some(r => Number(r.season) === season && r.players?.length), sleeperUserId: currentMember()?.sleeper_user_id });
+  return playerCardView({ id, players, rosters: rosters.error ? [] : rosters.data || [], members, season, week, scoring, weeks, context, injuries: injury ? buildInjuryReport(injury.payload, { analysis, offenseOnly: false }) : null, rostersKnown: !rosters.error && (rosters.data || []).some(r => Number(r.season) === season && r.players?.length), sleeperUserId: currentMember()?.sleeper_user_id });
 }
