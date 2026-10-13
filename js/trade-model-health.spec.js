@@ -9,11 +9,11 @@ describe("trade model health", () => {
     expect(health.injured).toBe(1);
     expect(health.disagreements[0].name).toBe("A");
   });
-  it("grades a saved recommendation after players log new production", () => {
+  it("retains legacy calls without treating package totals as lineup accuracy", () => {
     const values = new Map(), storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)) };
     const pool = new Map([["a", { currentPoints: 10, currentGames: 1 }], ["b", { currentPoints: 10, currentGames: 1 }]]);
     recordTradeRecommendation({ teamId: 1, partnerId: 2, sendA: ["a"], sendB: ["b"], weeklyDelta: 3 }, pool, storage);
     pool.get("a").currentPoints = 15; pool.get("a").currentGames = 2; pool.get("b").currentPoints = 20; pool.get("b").currentGames = 2;
-    expect(recommendationOutcomes(pool, storage)).toEqual({ tracked: 1, graded: 1, hitRate: 100 });
+    expect(recommendationOutcomes(pool, storage)).toEqual({ tracked: 1, graded: 0, hitRate: null });
   });
 });

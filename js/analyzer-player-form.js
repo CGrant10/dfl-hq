@@ -17,7 +17,13 @@ export function applyAnalyzerPlayerForm(pool, {season,week,scoring,completed=[],
     const value=numeric(points);if(value!=null)actual.set(String(id),value);
   }
   const currentRows = new Map((current.data || []).filter(row=>validResult(row,season,week)).map(row=>[String(row.player_id),row]));
-  for (const player of pool.values()) {
+  const rated=new Map(pool);
+  for(const p of pool.values())for(const option of p.waiverOptions||[])rated.set(option.id,option);
+  for (const player of rated.values()) {
+    player.scoreHistory=completed.filter(bundle=>!bundle.stale&&bundle.data?.length&&Number(bundle.week)<Number(week)).map(bundle=>{
+      const row=bundle.data.find(row=>String(row.player_id)===String(player.id)&&validResult(row,season,bundle.week));
+      return {season:Number(season),week:Number(bundle.week),points:row?scorePlayer(row.stats,scoring):0};
+    });
     let latest=null;
     for (const bundle of completed) {
       const row=(bundle.data || []).find(row=>String(row.player_id)===String(player.id)&&validResult(row,season,bundle.week));

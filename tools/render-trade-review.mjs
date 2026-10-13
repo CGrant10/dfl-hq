@@ -4,6 +4,9 @@ const output=process.env.DFL_TRADE_REVIEW_DIR||'/workspace/dfl-trade-review';mkd
 const source=readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8');
 const production=source.slice(source.indexOf('const teamName'),source.indexOf('export async function render('));
 const imports=`
+import {tradeAssessment} from '/js/trade-assessment.js';
+import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
+import {lineupPreviewsFor} from '/js/trade-workspace.js';
 import {analyzerPlayerSignal} from "/js/analyzer-player-form.js";
 import {mountAnalyzerLiveRefresh as mountRealAnalyzerRefresh} from "/js/analyzer-live-refresh.js";
 const mountAnalyzerLiveRefresh=options=>mountRealAnalyzerRefresh({...options,load:()=>loadAnalyzerData()});

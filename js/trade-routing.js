@@ -32,5 +32,5 @@ export function tradePerspective(result){
  return {...result,fairness:result.partyBalances?.[0]??result.fairness,valueToA:result.values[0],valueToB:result.outgoingValues?.[0]??result.values[1],
   incomingPositionsA:result.incomingPositions?.[0],incomingEvidence:result.incomingEvidence?.[0],outgoingEvidence:result.outgoingEvidence?.[0],comparableStarPremium:Array.isArray(result.comparableStarPremium)?result.comparableStarPremium[0]:result.comparableStarPremium,
   weeklyDeltaA:result.weeklyDeltas[0],weeklyDeltaB:others(result.weeklyDeltas),depthDeltaA:result.depthDeltas?.[0],depthDeltaB:others(result.depthDeltas),
-  rosterImpactA:result.rosterImpacts?.[0],rosterImpactB:others(result.rosterImpacts),usefulIncomingA:result.usefulIncoming?.[0],surplusIncomingA:result.surplusIncoming?.[0],cutIncomingA:result.cutIncoming?.[0]};
+  rosterImpactA:result.rosterImpacts?.[0],rosterImpactB:others(result.rosterImpacts),usefulIncomingA:result.usefulIncoming?.[0],surplusIncomingA:result.surplusIncoming?.[0],cutIncomingA:result.cutIncoming?.[0],requiredDropsA:result.requiredDrops?.[0],waiverAddsA:result.waiverAdds?.[0],openSlotsA:result.openSlots?.[0],rosterCostA:result.rosterCosts?.[0]};
 }

@@ -3,7 +3,8 @@ import { scorePlayer } from "./dfl-scoring.js";
 import {tradeTransfers} from './trade-routing.js';
 import {productionProfile, packageEvidence, comparableStarPremium} from './trade-player-evidence.js';
 import {matchExpertRankings,expertValueIndex} from './expert-rankings-model.js';
-import {tradeConfidence} from './trade-confidence.js';
+import {tradeAssessment} from './trade-assessment.js';
+import {targetedTradePackages,tradeGoalScore} from './trade-target-search.js';
 
 export const ANALYZER_POSITIONS = ["QB", "RB", "WR", "TE"];
 export const ANALYZER_UNITS = [...ANALYZER_POSITIONS, "FLEX"];
@@ -66,7 +67,7 @@ function adpFrom(row, scoringFormat = "ppr") {
 export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}, currentStats = {},
                                   projections = [], weeklyProjections = [], recentStats = [], seasonWeeklyStats = recentStats, trending = null, dataSignals = {},
                                   scoringSettings = null,
-                                  currentWeek = 0, expertRankings = null,
+                                  currentWeek = 0, season = null, expertRankings = null,
                                   scoringFormat = "ppr" } = {}) {
   const projectionById = new Map((projections || []).map(row => [projectionId(row), row]));
   const weeklyById = new Map((weeklyProjections || []).map(row => [projectionId(row), row]));
@@ -74,7 +75,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
   const seasonById = recentProduction(seasonWeeklyStats, scoringSettings);
   const ids = [...new Set(rosters.flatMap(roster => Array.isArray(roster?.players) ? roster.players.map(String) : []))];
   const reserveIds = new Set(rosters.flatMap(roster => roster.reserve || []).map(String));
-  const rostered = new Set(ids);
+  const rostered = new Set([...ids,...reserveIds,...rosters.flatMap(roster=>roster.taxi||[]).map(String)]);
   const universeIds = [...new Set([...ids, ...projectionById.keys()])];
   const list = universeIds.map(id => {
     const meta = players[id] || projectionById.get(id)?.player || {};
@@ -120,9 +121,17 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const formPerGame = currentPerGame != null && recentAverage != null
       ? currentPerGame * (1 - formWeight) + recentAverage * formWeight
       : currentPerGame ?? recentAverage;
-    const forwardPerGame = baselinePerGame != null && formPerGame != null
+    const pointForecast = baselinePerGame != null && formPerGame != null
       ? baselinePerGame * (1 - currentWeight) + formPerGame * currentWeight
       : baselinePerGame ?? formPerGame;
+    // Sustained opportunity changes add a small correction, never a one-game
+    // boost. Missing usage and short samples leave the points forecast alone.
+    const usageRows=(recentById.get(id)||[]).slice(-3),carryWeight=position==='RB'?.35:0;
+    const usageKnown=['RB','WR','TE'].includes(position)&&currentGames>=5&&usageRows.length===3&&usageRows.every(r=>r.targets!=null&&(!carryWeight||r.carries!=null))&&finite(currentLine?.rec_tgt)!=null&&(!carryWeight||finite(currentLine?.rush_att)!=null);
+    const recentUsage=usageKnown?usageRows.reduce((n,r)=>n+r.targets+carryWeight*(r.carries||0),0)/3:null;
+    const priorUsage=usageKnown?(currentLine.rec_tgt+carryWeight*(currentLine.rush_att||0)-recentUsage*3)/(currentGames-3):null;
+    const usageFactor=priorUsage>=2?Math.max(.95,Math.min(1.05,1+(recentUsage/priorUsage-1)*.1)):1;
+    const forwardPerGame=pointForecast==null?null:pointForecast*usageFactor;
     const remainingGames = Math.max(0, 17 - currentGames);
     const expectedPoints = currentGames > 0 && forwardPerGame != null
       ? currentPoints + forwardPerGame * Math.max(0, remainingGames - Math.min(remainingGames, availability.missedGames))
@@ -159,8 +168,9 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       expectedPoints: finite(expectedPoints),
       forwardPerGame: finite(forwardPerGame),
       tradePerGame: finite(tradePerGame),
+      recentUsage:finite(recentUsage),priorUsage:finite(priorUsage),usageFactor:round(usageFactor,3),
       modelSource: projectedPoints != null ? 'projection' : currentPerGame != null ? 'current' : priorPace != null ? 'previous' : 'unrated',
-      remainingWeeks,
+      remainingWeeks,tradeWeek:currentWeek,tradeSeason:season,estimatedMissedGames:availability.missedGames,
       adp: adpFrom(projection, scoringFormat),
       games,
       hasPriorProduction,
@@ -237,9 +247,11 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     const marketBalance = marketActivity >= 25 ? (player.marketAdds - player.marketDrops) / marketActivity : 0;
     const marketFactor = 1 + marketBalance * .02;
     const modelValue=Math.max(1,Math.min(100,baseTradeValue*marketFactor)),expert=expertMatches.get(player.id)||null;
-    // Fresh PPR ROS consensus anchors cross-position market value equally
-    // with the production/scarcity model. Stale opinions never set prices.
-    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? .5 : 0;
+    // Fresh PPR ROS ranks anchor cross-position prices. Breadth and spread
+    // govern their influence; stale opinions never set prices.
+    const breadth=Math.min(1, Math.max(0, Number(expertRankings?.experts)||0)/8);
+    const spread=expert ? Math.max(0, Number(expert.stdDev)||0)/Math.max(10,expert.rank) : 0;
+    const expertWeight=expertRankings?.usable&&expert&&player.modelSource!=='unrated' ? round((.3+.2*breadth)*(1-Math.min(.3,spread)),3) : 0;
     const expertValue=expert?expertValueIndex(expert.rank)*oneQbFactor(player):null;
     const modelRank=modelRanks.get(player.id);
     pool.set(player.id, {
@@ -267,6 +279,10 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
       tradeValue: Math.max(1, Math.min(100, Math.round(modelValue*(1-expertWeight)+(expertValue||0)*expertWeight))),
     });
   }
+  // Actual unrostered projections supply optional roster-slot replacements.
+  const waiverOptions=ANALYZER_POSITIONS.flatMap(position=>list.filter(p=>!rostered.has(p.id)&&p.position===position&&p.modelSource==='projection'&&!p.isOut&&!p.isRisky)
+    .sort((a,b)=>(b.tradePerGame||0)-(a.tradePerGame||0)).slice(0,4).map(p=>({...p,tradeValue:0,expectedPoints:p.expectedPoints||0,waiverCandidate:true})));
+  for(const p of pool.values())p.waiverOptions=waiverOptions;
   return pool;
 }
 
@@ -442,7 +458,9 @@ const packagePositions = (ids, pool) => [...new Set(ids.map(id=>pool.get(String(
 const forecastPools = new WeakSet();
 function tradePlayerPool(pool) {
   if (forecastPools.has(pool)) return pool;
-  const forward = new Map([...pool].map(([id, player]) => [id, {
+  const source=new Map(pool);
+  for(const p of pool.values())for(const option of p.waiverOptions||[])if(!source.has(option.id))source.set(option.id,option);
+  const forward = new Map([...source].map(([id, player]) => [id, {
     ...player,
     expectedPoints: player.tradePerGame == null ? player.expectedPoints : player.tradePerGame * 17,
     expectedPerGame: player.tradePerGame == null ? player.expectedPerGame : player.tradePerGame,
@@ -483,7 +501,11 @@ function trimRoster(ids, pool, capacity) {
   if (!Number.isFinite(capacity) || roster.length <= capacity) return roster;
   const lineup = optimalLineup(roster, pool);
   // Keep unmodeled K/DEF roster slots; a skill-player trade must not silently cut them.
-  const keep = new Set([...roster.filter(id=>!pool.has(id)), ...lineup.starters.map(player => player.id)]);
+  const keep = new Set(roster.filter(id=>!pool.has(id)));
+  for(const player of [...lineup.starters].sort((a,b)=>b.expectedPoints-a.expectedPoints)){
+    if(keep.size>=capacity)break;
+    keep.add(player.id);
+  }
   const holes = depthHoles(roster, pool);
   const bench = lineup.bench.sort((a, b) => {
     const score = player => (Number(player.tradeValue) || 0)
@@ -496,6 +518,26 @@ function trimRoster(ids, pool, capacity) {
     keep.add(player.id);
   }
   return roster.filter(id => keep.has(id));
+}
+
+// Replace only newly opened spots; this never assumes a rostered player is free.
+function tradeRosterPlan(original, outgoing, incoming, pool, unavailable=new Set()){
+ const base=original.map(String).filter(id=>!outgoing.map(String).includes(id));
+ const all=uniqueIds([...base,...incoming.map(String)]),next=trimRoster(all,pool,original.length);
+ const drops=all.filter(id=>!next.includes(id)),adds=[];
+ const candidates=[...pool.values()].filter(p=>p.waiverCandidate&&!next.includes(p.id)&&!unavailable.has(p.id));
+ while(next.length<original.length&&candidates.length){
+  const before=optimalLineup(next,pool);
+  const utility=p=>{const after=optimalLineup([...next,p.id],pool);return after.starterPoints-before.starterPoints+(after.depthScore-before.depthScore)*.35;};
+  // Lower forecasts at the same position cannot improve this optimized
+  // lineup more than the best one. Evaluate four options, not the full feed.
+  const best=new Map();
+  for(const p of candidates){const previous=best.get(p.position);if(!previous||p.expectedPoints>previous.expectedPoints||p.expectedPoints===previous.expectedPoints&&p.id.localeCompare(previous.id)<0)best.set(p.position,p);}
+  const options=[...best.values()],scores=new Map(options.map(p=>[p.id,utility(p)]));
+  const candidate=options.sort((a,b)=>scores.get(b.id)-scores.get(a.id)||a.id.localeCompare(b.id))[0];
+  candidates.splice(candidates.indexOf(candidate),1);next.push(candidate.id);adds.push(candidate.id);
+ }
+ return {next,drops,adds,openSlots:Math.max(0,original.length-next.length)};
 }
 
 function packageFit(ids, recipientBaseIds, recipientNextIds, pool, recipient) {
@@ -543,8 +585,8 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   pool = tradePlayerPool(pool);
   const baseA = teamA.playerIds.filter(id => !sendA.map(String).includes(String(id)));
   const baseB = teamB.playerIds.filter(id => !sendB.map(String).includes(String(id)));
-  const nextA = trimRoster(baseA.concat(sendB.map(String)), pool, teamA.playerIds.length);
-  const nextB = trimRoster(baseB.concat(sendA.map(String)), pool, teamB.playerIds.length);
+  const planA=tradeRosterPlan(teamA.playerIds,sendA,sendB,pool),planB=tradeRosterPlan(teamB.playerIds,sendB,sendA,pool);
+  const nextA=planA.next,nextB=planB.next;
   const beforeA = optimalLineup(teamA.playerIds, pool), beforeB = optimalLineup(teamB.playerIds, pool);
   const afterA = optimalLineup(nextA, pool), afterB = optimalLineup(nextB, pool);
   const fitA = packageFit(sendB, baseA, nextA, pool, teamA), fitB = packageFit(sendA, baseB, nextB, pool, teamB);
@@ -553,6 +595,9 @@ export function evaluateTrade({ teamA, teamB, sendA = [], sendB = [], pool = new
   const impactA = rosterImpact(beforeA, afterA), impactB = rosterImpact(beforeB, afterB);
   const high = Math.max(valueToA, valueToB, 1);
   return {
+    decisionVersion: 2,
+    requiredDropsA:planA.drops,requiredDropsB:planB.drops,waiverAddsA:planA.adds,waiverAddsB:planB.adds,openSlotsA:planA.openSlots,openSlotsB:planB.openSlots,
+    rosterCostA:rawPackageValue(planA.drops,pool),rosterCostB:rawPackageValue(planB.drops,pool),
     projectionEvidence: projectionEvidence([...sendA, ...sendB], pool),
     sendA: sendA.map(String), sendB: sendB.map(String),
     incomingPositionsA: packagePositions(sendB,pool),
@@ -585,8 +630,9 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = 
   pool = tradePlayerPool(pool);
   const packages=transfer.sends,receives=transfer.receives;
   const bases = teams.map((team, index) => team.playerIds.filter(id => !packages[index].includes(String(id))));
-  const next = teams.map((team, index) => trimRoster(
-    bases[index].concat(receives[index]), pool, team.playerIds.length));
+  const reservedWaivers=new Set();
+  const plans=teams.map((team,i)=>{const plan=tradeRosterPlan(team.playerIds,packages[i],receives[i],pool,reservedWaivers);plan.adds.forEach(id=>reservedWaivers.add(id));return plan;});
+  const next=plans.map(p=>p.next);
   const before = teams.map(team => optimalLineup(team.playerIds, pool));
   const after = next.map(ids => optimalLineup(ids, pool));
   const fits = teams.map((team, index) => packageFit(receives[index], bases[index], next[index], pool, team));
@@ -597,10 +643,12 @@ export function evaluateMultiTeamTrade({ teams = [], sends = [], destinations = 
   const impacts = teams.map((_, index) => rosterImpact(before[index], after[index]));
   const weekly = impacts.map(impact => impact.weekly);
   return {
+    decisionVersion:2,requiredDrops:plans.map(p=>p.drops),waiverAdds:plans.map(p=>p.adds),openSlots:plans.map(p=>p.openSlots),
+    rosterCosts:plans.map(p=>rawPackageValue(p.drops,pool)),
     projectionEvidence: projectionEvidence(transfer.sends.flat(), pool),
     incomingPositions: receives.map(ids=>packagePositions(ids,pool)),
     sends: packages, receives, destinations:transfer.destinations, routeValues:Object.fromEntries(packages.flat().map(id=>[id,Number(pool.get(id)?.tradeValue)||0])), outgoingValues, values, weeklyDeltas: weekly,
-    incomingEvidence, outgoingEvidence, fitValues:fits.map(f=>f.value),
+    incomingEvidence, outgoingEvidence, fitValues:fits.map(f=>f.value),startingIncoming:fits.map(f=>f.starterIds),
     comparableStarPremium: packages.map((ids,i)=>comparableStarPremium(ids,receives[i],pool)),
     depthDeltas: impacts.map(impact => impact.depth),
     rosterImpacts: impacts.map(impact => impact.useful),
@@ -619,8 +667,10 @@ export function tradeLineupPreviews({teams=[],sends=[],receives=[],pool=new Map(
   const byPosition=Object.fromEntries(ANALYZER_POSITIONS.map(p=>[p,lineup.starters.filter(x=>x.position===p&&String(x.id)!==String(lineup.flexId))]));
   return ['QB','RB','RB','WR','WR','TE','FLEX'].map((slot,i)=>({slot:slot==='RB'||slot==='WR'?`${slot}${i===1||i===3?1:2}`:slot,player:slot==='FLEX'?lineup.starters.find(p=>String(p.id)===String(lineup.flexId))||null:byPosition[slot].shift()||null}));
  };
- return teams.map((team,i)=>{const original=team.playerIds.map(String),base=original.filter(id=>!(sends[i]||[]).map(String).includes(id)),incoming=(receives[i]||[]).map(String),all=[...base,...incoming],next=trimRoster(all,pool,original.length),before=optimalLineup(original,pool),after=optimalLineup(next,pool);
-  return {teamId:String(team.id),before:slots(before),after:slots(after),beforePoints:before.weeklyPoints,afterPoints:after.weeklyPoints,benchBefore:before.bench,benchAfter:after.bench,drops:all.filter(id=>!next.includes(id)).map(id=>pool.get(id)).filter(Boolean)};
+ const reservedWaivers=new Set();
+ return teams.map((team,i)=>{const original=team.playerIds.map(String),base=original.filter(id=>!(sends[i]||[]).map(String).includes(id)),incoming=(receives[i]||[]).map(String),all=[...base,...incoming],plan=tradeRosterPlan(original,sends[i]||[],incoming,pool,reservedWaivers),next=plan.next,before=optimalLineup(original,pool),after=optimalLineup(next,pool);
+  plan.adds.forEach(id=>reservedWaivers.add(id));
+  return {teamId:String(team.id),before:slots(before),after:slots(after),beforePoints:before.weeklyPoints,afterPoints:after.weeklyPoints,benchBefore:before.bench,benchAfter:after.bench,drops:plan.drops.map(id=>pool.get(id)).filter(Boolean),waiverAdds:plan.adds.map(id=>pool.get(id)).filter(Boolean),openSlots:plan.openSlots};
  });
 }
 
@@ -782,42 +832,7 @@ function pairPackages(sendPackages, receivePackages, pool, intent) {
   return pairs;
 }
 
-export function tradeSuggestionTier(result) {
-  if (!result) return null;
-  const high = Math.max(Number(result.valueToA) || 0, Number(result.valueToB) || 0, 1);
-  const edge = ((Number(result.valueToA) || 0) - (Number(result.valueToB) || 0)) / high * 100;
-  const weeklyA = Number(result.weeklyDeltaA) || 0, weeklyB = Number(result.weeklyDeltaB) || 0;
-  const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA)
-    : weeklyA + (Number(result.depthDeltaA) || 0) * .35;
-  const fitB = Number.isFinite(Number(result.rosterImpactB)) ? Number(result.rosterImpactB)
-    : weeklyB + (Number(result.depthDeltaB) || 0) * .35;
-  /* Fair describes a balanced asset exchange that works for both rosters.
-     Different roster needs can produce different gains from the same value.
-     Expert disagreement is a review flag, not an unfair price. */
-  const confidence=tradeConfidence(result);
-  const evidence=result.projectionEvidence;
-  const dataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&!evidence?.injuries?.length&&!evidence?.stale?.length&&!confidence?.needsReview;
-  const fairAvailability = !evidence?.injuries?.length || evidence.injuries.every(name => {
-    const players = evidence.players?.filter(player => player.name === name) || [];
-    return players.length && players.every(player => !player.isOut && /^(questionable|q)$/i.test(player.injuryStatus || ''));
-  });
-  // Questionable availability is already priced and still requires review.
-  // Out/reserve players and unsupported inputs retain the stricter exclusion.
-  // Fair is a balanced modeled price and roster fit. An optional expert feed
-  // outage must not turn every balanced exchange into an aggressive ask.
-  // Keep its review flag and exclude stale expert ranks from player values;
-  // Steal still requires fresh, strong support below.
-  const fairDataReady=!evidence?.missing?.length&&!evidence?.fallback?.length&&fairAvailability&&!evidence?.stale?.length;
-  if (result.fairness >= 90 && Math.min(fitA, fitB) >= -.75 && Math.min(weeklyA, weeklyB) >= -1 && fairDataReady) return "fair";
-  const supported=dataReady&&(!confidence||confidence.level==='strong');
-  const clearsBand=result.incomingEvidence && result.outgoingEvidence
-    ? result.incomingEvidence.low > result.outgoingEvidence.high : edge>=12;
-  // DFL starts one QB. Any incoming QB (including an elite QB or a throw-in)
-  // keeps the offer out of Steal; its rating and actual lineup gain still apply.
-  const receivesQuarterback=(result.incomingPositionsA||result.incomingPositions?.[0])?.includes("QB");
-  if (edge >= 12 && clearsBand && supported && !receivesQuarterback && !result.comparableStarPremium && fitA >= -.25) return "steal";
-  return "aggressive";
-}
+export function tradeSuggestionTier(result) { return tradeAssessment(result)?.tier ?? null; }
 
 function suggestionScore(result, intent = "aggressive") {
   const fitA = Number.isFinite(Number(result.rosterImpactA)) ? Number(result.rosterImpactA) : Number(result.weeklyDeltaA) || 0;
@@ -835,7 +850,11 @@ function shapeOrder(shape) {
 
 /* Round-robin across package shapes so the first batch is not four versions
    of the same 2-for-2. Ranking still decides the best offer within each shape. */
-function diverseOffers(offers, limit) {
+function diverseOffers(offers, limit, pool) {
+  const core=offer=>{const main=ids=>[...ids].sort((a,b)=>(pool?.get(b)?.tradeValue||0)-(pool?.get(a)?.tradeValue||0))[0];return `${offer.other?.id}:${main(offer.sendA)}:${main(offer.sendB)}`;};
+  const seen=new Set(),primary=[],variations=[];
+  for(const offer of offers){const key=core(offer);(seen.has(key)?variations:primary).push(offer);seen.add(key);}
+  offers=primary;
   const queues = new Map();
   for (const offer of offers) {
     if (!queues.has(offer.shape)) queues.set(offer.shape, []);
@@ -850,20 +869,20 @@ function diverseOffers(offers, limit) {
       if (selected.length === limit) break;
     }
   }
-  return selected;
+  return [...selected,...variations].slice(0,limit);
 }
 
 /* A league-wide search should not read like twelve offers from the same
    manager. Keep each manager's own package shapes varied, then deal one offer
    from every matching roster before returning to any of them. */
-function diverseOffersAcrossPartners(offers, limit) {
+function diverseOffersAcrossPartners(offers, limit, pool) {
   const queues = new Map();
   for (const offer of offers) {
     const partner = String(offer.other?.id ?? "");
     if (!queues.has(partner)) queues.set(partner, []);
     queues.get(partner).push(offer);
   }
-  for (const [partner, queue] of queues) queues.set(partner, diverseOffers(queue, queue.length));
+  for (const [partner, queue] of queues) queues.set(partner, diverseOffers(queue, queue.length,pool));
   const partners = [...queues.keys()];
   const selected = [];
   while (selected.length < limit && partners.some(partner => queues.get(partner).length)) {
@@ -882,7 +901,7 @@ function diverseOffersAcrossPartners(offers, limit) {
  * the package ceiling does not turn the Trade Board into a Cartesian freeze.
  */
 export function suggestTrades({ teams = [], teamId, playerId, playerIds, partnerId, anchorTeamId, sendAnchorIds, receiveAnchorIds,
-  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive" } = {}) {
+  pool = new Map(), limit = 12, shapes = [], maxPlayers = 8, intent = "aggressive", goal="best" } = {}) {
   pool = tradePlayerPool(pool);
   const mine = teams.find(team => String(team.id) === String(teamId));
   if (!mine) return [];
@@ -895,16 +914,21 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const partners = partnerId
     ? teams.filter(team => String(team.id) === String(partnerId) && String(team.id) !== String(mine.id))
     : anchorId !== String(mine.id) && anchorTeam ? [anchorTeam] : teams.filter(team => String(team.id) !== String(mine.id));
-  const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes);
+  const allowedShapes = tradeShapes(offerPlayerLimit(maxPlayers, sendRequired, receiveRequired), shapes).filter(([send,receive])=>goal!=='consolidate'||send>receive);
   const possibilities = [];
   const minePlayers = sortedPlayers(mine.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
   for (const other of partners) {
     if (receiveRequired.some(id => !other.playerIds.map(String).includes(id))) continue;
     const theirs = sortedPlayers(other.playerIds, pool).sort((a, b) => b.tradeValue - a.tradeValue);
     for (const [sendCount, receiveCount] of allowedShapes) {
-      const sendPackages = tradePackages(minePlayers, sendCount, sendRequired);
-      const receivePackages = tradePackages(theirs, receiveCount, receiveRequired);
+      const ratios=intent==='steal'?[.65,.8,1]:[.9,1,1.1];
+      const receiveTargets=receiveRequired.length?ratios.map(r=>rawPackageValue(receiveRequired,pool)*r):[];
+      const sendTargets=sendRequired.length?ratios.map(r=>rawPackageValue(sendRequired,pool)/r):[];
+      const merge=(broad,targeted)=>[...new Map([...targeted,...broad].map(ids=>[[...ids].sort().join(','),ids])).values()].slice(0,100);
+      const sendPackages=merge(tradePackages(minePlayers,sendCount,sendRequired),targetedTradePackages(minePlayers,sendCount,sendRequired,pool,receiveTargets));
+      const receivePackages=merge(tradePackages(theirs,receiveCount,receiveRequired),targetedTradePackages(theirs,receiveCount,receiveRequired,pool,sendTargets));
       for (const pair of pairPackages(sendPackages, receivePackages, pool, intent)) {
+        if(ANALYZER_POSITIONS.includes(goal)&&!pair.sendB.some(id=>pool.get(id)?.position===goal))continue;
         possibilities.push({ other, ...pair, shape: `${sendCount}-${receiveCount}` });
       }
     }
@@ -914,9 +938,11 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
     if (!result) return null;
     const balancePenalty = Math.abs(result.deltaA - result.deltaB);
     const tier = tradeSuggestionTier(result);
-    const score = suggestionScore(result, intent) + (result.deltaA + result.deltaB) * .35 - balancePenalty * .1;
+    const score = suggestionScore(result, intent) + tradeGoalScore(result,goal,pool) + (result.deltaA + result.deltaB) * .35 - balancePenalty * .1;
     return { ...candidate, ...result, tier, shape: `${candidate.sendA.length}-${candidate.sendB.length}`, score };
-  }).filter(isPlausibleTradeSuggestion)
+  }).filter(result=>isPlausibleTradeSuggestion(result)&&(goal!=='starter'||result.weeklyDeltaA>.1)
+    &&(!ANALYZER_POSITIONS.includes(goal)||result.usefulIncomingA.some(id=>pool.get(id)?.position===goal))
+    &&(goal!=='consolidate'||result.startingIncomingA.length&&result.weeklyDeltaA>.1&&Math.max(...result.sendB.map(id=>pool.get(id)?.tradeValue||0))>=Math.max(...result.sendA.map(id=>pool.get(id)?.tradeValue||0))*.95))
     .sort((a, b) => b.score - a.score || b.fairness - a.fairness)
     .filter((result, index, all) => index === all.findIndex(other => String(other.other.id) === String(result.other.id)
       && other.sendA.join(",") === result.sendA.join(",") && other.sendB.join(",") === result.sendB.join(",")));
@@ -926,7 +952,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
   const tiers = [intent, ...["fair", "aggressive", "steal"].filter(tier => tier !== intent)];
   const selected = [];
   for (const tier of tiers) {
-    selected.push(...chooseDiverse(ranked.filter(offer => offer.tier === tier), Math.max(0, limit - selected.length)));
+    selected.push(...chooseDiverse(ranked.filter(offer => offer.tier === tier), Math.max(0, limit - selected.length),pool));
     if (selected.length >= limit) break;
   }
   return selected;
@@ -934,7 +960,7 @@ export function suggestTrades({ teams = [], teamId, playerId, playerIds, partner
 
 /** Bounded package search for a circular exchange, matching the manual desk. */
 export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlayers = 8,
-  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96 } = {}) {
+  sendAnchorIds = [], receiveAnchorIds = [], sendCount = "any", receiveCount = "any", intent = "aggressive", limit = 96,goal="best" } = {}) {
   pool = tradePlayerPool(pool);
   if (parties.length < 3 || parties.length > 8 || new Set(parties.map(t => String(t.id))).size !== parties.length) return [];
   const cap = offerPlayerLimit(maxPlayers, sendAnchorIds, receiveAnchorIds, parties.length);
@@ -972,9 +998,12 @@ export function suggestMultiTeamTrades({ parties = [], pool = new Map(), maxPlay
       incomingPositionsA:result.incomingPositions[0]});
     return { ...result, parties, tier, other: parties[1], sendA: candidate.sends[0], sendB: candidate.sends.at(-1),
       valueToA: result.values[0], valueToB: result.outgoingValues[0], weeklyDeltaA: result.weeklyDeltas[0], depthDeltaA: result.depthDeltas[0],
-      score: intent === "fair" ? result.fairness * 1.5 + result.rosterImpacts.reduce((a, b) => a + b, 0) * 10
-        : result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5 };
-  }).filter(Boolean).sort((a, b) => Number(b.tier === intent) - Number(a.tier === intent) || b.score - a.score).slice(0, limit);
+      score: tradeGoalScore({...result,sendA:candidate.sends[0],sendB:result.receives[0],weeklyDeltaA:result.weeklyDeltas[0]},goal,pool)+(intent === "fair" ? result.fairness * 1.5 + result.rosterImpacts.reduce((a, b) => a + b, 0) * 10
+        : result.fairness + result.rosterImpacts[0] * (intent === "steal" ? 22 : 15) + result.rosterImpacts.reduce((a, b) => a + b, 0) * 5) };
+  }).filter(result=>result&&(goal!=='starter'||result.weeklyDeltaA>.1)
+    &&(!ANALYZER_POSITIONS.includes(goal)||result.usefulIncoming[0].some(id=>pool.get(id)?.position===goal))
+    &&(goal!=='consolidate'||result.sendA.length>result.receives[0].length&&result.startingIncoming[0].length&&result.weeklyDeltaA>.1))
+    .sort((a, b) => Number(b.tier === intent) - Number(a.tier === intent) || b.score - a.score).slice(0, limit);
 }
 
 export function isPlausibleTradeSuggestion(result) {

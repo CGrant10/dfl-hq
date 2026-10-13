@@ -3,6 +3,7 @@ import { loadAnalyzerData } from "./team-analyzer-data.js";
 import { tradeReasons, verdictFor } from "./trade-desk.js";
 import {loadMemberDirectory} from './members.js';
 import {currentTradeNames} from './current-team-names.js';
+import {tradeAssessment} from './trade-assessment.js';
 
 import {TRADE_ALERT_MODEL_VERSION, buildTradeAlertSnapshot as buildSnapshot} from "./trade-receipt-model.js";
 export {TRADE_ALERT_MODEL_VERSION} from "./trade-receipt-model.js";
@@ -48,9 +49,10 @@ export function tradeOutcomeSummary(alert) {
   }
   // Preserve older frozen receipts. New receipts use asset value for the winner;
   // lineup usefulness remains a separate consequence, just like the trade desk.
-  if(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb","dflyzer-trade-v5-expert-evidence",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
+  if(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb","dflyzer-trade-v5-expert-evidence","dflyzer-trade-v6-position-flex",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
     const result=alert.result,evidence=result.projectionEvidence;
-    if(evidence?.stale?.length||evidence?.injuries?.length||evidence?.fallback?.length)
+    const balancedEstimate=alert.model_version===TRADE_ALERT_MODEL_VERSION&&tradeAssessment(result)?.value.headline==='Balanced';
+    if(!balancedEstimate&&(evidence?.stale?.length||evidence?.injuries?.length||evidence?.fallback?.length))
       return {grade:'Review',tone:'review',winner:null,loser:null,closeness:result.fairness,detail:receiptCaution(alert).detail};
     const verdict=verdictFor(result),teams=list(alert.teams),winnerIndex=verdict.who==='a'?0:verdict.who==='b'?1:-1;
     if (['Review needed', 'Projection gap'].includes(verdict.headline)) return {grade:'Review',tone:'review',winner:null,loser:null,closeness:result.fairness,detail:receiptCaution(alert).detail};
@@ -60,6 +62,7 @@ export function tradeOutcomeSummary(alert) {
     const suffix=winnerIndex===1?'B':'A',lineup=Number(result[`weeklyDelta${suffix}`])||0,depth=Number(result[`depthDelta${suffix}`])||0;
     return {grade:close?'Close call':fair?'Fair deal':verdict.headline==='FLEECE'?'Robbery':verdict.headline==='Slight edge'?'Close win':'Clear win',
       tone:close?'close':fair?'fair':verdict.headline==='FLEECE'?'robbery':verdict.headline==='Slight edge'?'close':'clear',winner,loser,closeness:result.fairness,lineup,depth,
+      needsReview:balancedEstimate&&tradeAssessment(result).needsReview,
       detail:close?'Value sensitivity ranges overlap; no clear winner.':fair?`${result.fairness}% balanced · player values are close`:`${winner} wins player value · lineup ${lineup>=0?'+':'−'}${Math.abs(lineup).toFixed(1)} · depth ${depth>=0?'+':'−'}${Math.abs(depth).toFixed(1)}`};
   }
   const teams = list(alert.teams);

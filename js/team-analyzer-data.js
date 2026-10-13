@@ -121,7 +121,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
       weeklyResults:{stale:recentStatsRes.some(r=>r.stale)}},
     trending,
     scoringSettings: league.scoring_settings || {},
-    currentWeek: liveWeek,
+    currentWeek: liveWeek,season:projectionSeason,
     scoringFormat: format,
     expertRankings,
   });

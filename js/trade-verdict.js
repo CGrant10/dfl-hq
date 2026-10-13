@@ -1,8 +1,10 @@
 import {tradeConfidence} from "./trade-confidence.js";
+import {tradeAssessment} from './trade-assessment.js';
 const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
 
 export function verdictFor(result) {
   if (!result) return null;
+  if(result.decisionVersion===2)return tradeAssessment(result).value;
   if (result.projectionEvidence?.missing?.length) return { tone: 'even', headline: 'Projection gap', who: null };
   const confidence=tradeConfidence(result);
   if(confidence?.needsReview)return {tone:'even',headline:'Review needed',who:null};

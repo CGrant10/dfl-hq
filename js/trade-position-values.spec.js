@@ -54,8 +54,8 @@ describe('12-team PPR positional and shared-flex prices',()=>{
   const plain=buildPlayerPool(input),pool=buildPlayerPool({...input,expertRankings});
   for(const id of ['TE8','WR21']){
    const p=pool.get(id);
-   expect(p.expertWeight).toBe(.5);
-   expect(p.tradeValue).toBe(Math.round(p.modelTradeValue*.5+expertValueIndex(p.expert.rank)*.5));
+   expect(p.expertWeight).toBeGreaterThan(.3);expect(p.expertWeight).toBeLessThanOrEqual(.5);
+   expect(p.tradeValue).toBe(Math.round(p.modelTradeValue*(1-p.expertWeight)+expertValueIndex(p.expert.rank)*p.expertWeight));
    expect(p.tradePerGame).toBe(plain.get(id).tradePerGame);
   }
   const teams=[{id:'a',playerIds:['TE8']},{id:'b',playerIds:['WR21']},{id:'c',playerIds:['RB21']}];

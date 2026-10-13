@@ -1,6 +1,6 @@
 import {evaluateTrade} from "./team-analyzer.js";
 import {verdictFor} from "./trade-verdict.js";
-export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v6-position-flex";
+export const TRADE_ALERT_MODEL_VERSION = "dflyzer-trade-v7-price-fit-risk";
 const list = value => Array.isArray(value) ? value : [];
 const rosterId = value => value == null ? "" : String(value);
 const playerId = rosterId;
@@ -166,7 +166,7 @@ export function scheduledTradeNotification(alert) {
   const balance = raw != null && raw !== '' && Number.isFinite(Number(raw)) ? `${Math.round(Number(raw))}% balance` : '';
   const verdict = alert.analysis_status === 'graded' ? verdictFor(result) : null;
   const rated = verdict && !['Review needed', 'Projection gap'].includes(verdict.headline);
-  const call = rated ? verdict.headline === 'Balanced' ? 'Balanced deal' : verdict.headline === 'Close call' ? 'Close call'
+  const call = rated ? verdict.headline === 'Balanced' ? `Balanced deal${result.decisionVersion===2&&verdictFor(result).headline==='Balanced'&&receiptCaution(alert).label!=='Not rated'?` · ${receiptCaution(alert).label}`:''}` : verdict.headline === 'Close call' ? 'Close call'
     : `${alert.verdict?.winner_team_name || 'One team'}: ${verdict.headline.toLowerCase()}`
     : alert.analysis_status === 'partial' ? 'Picks/FAAB need review; player estimate only' : receiptCaution(alert).label;
   return {title: 'DFL TRADE ALERT', body: `${matchup} made a deal. ${[balance, call].filter(Boolean).join(' · ')}.`};
