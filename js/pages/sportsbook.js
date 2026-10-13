@@ -1,3 +1,4 @@
+import {mountSheetDrag,enterSheet,exitSheet} from '../sheet-drag.js';
 import { fitDialogToViewport } from '../dialog-viewport.js';
 import {currentSportsbookNames} from '../current-team-names.js';
 import { animateUi, cancelUiMotion, cancelUiExit, exitUi } from '../ui-motion.js';
@@ -73,6 +74,7 @@ function scopeOf(markets){
   against the database before anything is placed.
 */
 let slip=[];
+let slipStake=null,slipStakeMember=null,stopSlipDrag=null;
 const propGameCache=new Map();
 
 /* The Sportsbook is intentionally allowed to open even when the member
@@ -503,7 +505,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
   };
 
   const wireBar=()=>{
-    view.querySelector("[data-slip-clear]")?.addEventListener("click",()=>{slip=[];refresh()});
+    view.querySelector("[data-slip-clear]")?.addEventListener("click",()=>{slip=[];slipStake=null;refresh()});
     view.querySelector("[data-slip-open]")?.addEventListener("click",()=>openSlip(view,outcomeMap,marketMap,wallet,refresh));
   };
 
@@ -767,7 +769,7 @@ function wireProductTabs(view,memberId){
 }
 
 let stopRemembering=null;
-export function leave(){stopRemembering?.();stopRemembering=null}
+export function leave(){stopRemembering?.();stopRemembering=null;stopSlipDrag?.();stopSlipDrag=null}
 function rememberView(view,memberId){
   if(!view.isConnected)return;
   leave();
@@ -811,21 +813,23 @@ function wireFeedRefresh(view){
 */
 function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   const previous=view.querySelector(".sb-slip");
-  if(previous){cancelUiExit(previous);cancelUiMotion(previous);previous.remove()}
+  if(previous){stopSlipDrag?.();cancelUiExit(previous);cancelUiMotion(previous);previous.remove()}
   let picks=slip.map(id=>outcomeMap.get(String(id))).filter(Boolean);
   if(!picks.length){toast("Choose a line first",true);return}
 
   const available=Number(wallet?.balance||0);
+  const memberId=currentMember()?.id;
+  if(slipStakeMember!==memberId){slipStake=null;slipStakeMember=memberId;}
   const dialog=document.createElement("dialog");
   dialog.className="sb-slip";
   dialog.addEventListener('close',()=>cancelUiMotion(dialog));
   dialog.setAttribute("aria-labelledby","sb-slip-title");
   dialog.innerHTML=`<form novalidate>
-    <div class="sb-slip-head"><h2 id="sb-slip-title" tabindex="-1" autofocus>Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div>
+    <div class="sb-slip-head"><span class="dfl-sheet-grip" aria-hidden="true"></span><h2 id="sb-slip-title" tabindex="-1" autofocus>Bet slip</h2><button type="button" class="linkbtn" data-close>Close</button></div>
     <div class="sb-slip-content"><ol class="sb-slip-picks" data-picks></ol>
     <div class="sb-slip-price"><span>Combined price</span><strong data-combined>—</strong></div>
     <div class="sb-slip-fields">
-      <label>Stake <span>SIN</span><input name="stake" inputmode="numeric" autocomplete="off" value="${Math.min(50,available)||""}" aria-describedby="sb-slip-error"></label>
+      <label>Stake <span>SIN</span><input name="stake" inputmode="numeric" autocomplete="off" value="${esc(slipStake??(Math.min(50,available)||""))}" aria-describedby="sb-slip-error"></label>
       <div><span>Estimated return</span><output data-return aria-live="polite">—</output></div>
     </div>
     <p class="sb-slip-available">${num(available)} SIN available &middot; Return includes your stake</p>
@@ -840,7 +844,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
 
   /* Closing repaints the board rather than reloading it: dropping picks in
      here has to show up out there, and nothing in the database moved. */
-  const close=()=>{if(busy)return;exitUi(dialog,()=>{dialog.close();dialog.remove();if(view.isConnected){refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})}})};
+  const close=()=>{if(busy)return;slipStake=input.value;exitSheet(dialog,()=>{stopSlipDrag?.();stopSlipDrag=null;dialog.close();dialog.remove();if(view.isConnected){refresh();view.querySelector("[data-slip-open]")?.focus({preventScroll:true})}})};
   dialog.querySelector("[data-close]").addEventListener("click",close);
   dialog.addEventListener("cancel",event=>{event.preventDefault();close()});
 
@@ -868,10 +872,12 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
       paint();
     }));
   };
-  input.addEventListener("input",paint);
+  input.addEventListener("input",()=>{slipStake=input.value;paint()});
   paint();
+  const drag=mountSheetDrag(dialog,{handle:dialog.querySelector(".sb-slip-head"),canDismiss:()=>!busy,dismiss:close});
+  stopSlipDrag=()=>drag.stop();
   dialog.showModal();
-  animateUi(dialog,[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(0)'}],{duration:240});
+  enterSheet(dialog);
   fitDialogToViewport(dialog);
   dialog.querySelector("#sb-slip-title").focus({preventScroll:true});
 
@@ -919,7 +925,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
       status.textContent="Placing your entry…";
       const{error}=await db().rpc("sportsbook_place_entry",{entry_outcome_ids:ids.map(Number),sin_stake:stake});
       if(error)throw error;
-      slip=[];
+      slip=[];slipStake=null;stopSlipDrag?.();stopSlipDrag=null;
       dialog.close();dialog.remove();
       toast(picks.length>1?`${picks.length}-pick entry confirmed`:"Ticket confirmed");
       await render(view);
@@ -931,7 +937,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
           try{
             const{error:legacy}=await db().rpc("sportsbook_place_bet",{target_outcome_id:Number(picks[0].id),sin_stake:stake});
             if(legacy)throw legacy;
-            slip=[];
+            slip=[];slipStake=null;stopSlipDrag?.();stopSlipDrag=null;
             dialog.close();dialog.remove();
             toast("Ticket confirmed");
             await render(view);
