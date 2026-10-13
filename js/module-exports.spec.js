@@ -142,9 +142,11 @@ describe("the initial app shell", () => {
     const source = fs.readFileSync("js/arena/mobile-broadcast-performance.js", "utf8");
     const app = fs.readFileSync("js/app.js", "utf8");
     const router = fs.readFileSync("js/router.js", "utf8");
+    const viewer = fs.readFileSync("js/pages/arena-viewer.js", "utf8");
     expect(source).toMatch(/if \(isPhoneBroadcast\(\)\) blurTimer = window\.setInterval/);
     expect(app).not.toContain('import "./arena/mobile-broadcast-performance.js"');
-    expect(router).toContain('import("./arena/mobile-broadcast-performance.js")');
+    expect(router).not.toContain('import("./arena/mobile-broadcast-performance.js")');
+    expect(viewer).toMatch(/import\(['"]\.\.\/arena\/mobile-broadcast-performance\.js['"]\)/);
   });
 
   it("keeps page-specific CSS out of the render-blocking shell", () => {
@@ -203,7 +205,7 @@ describe("the initial app shell", () => {
     expect(router).toContain("decoratePulseSystem(view, name)");
     expect(router).toContain('view.dataset.pulseSystem = "1"');
     expect(router).toContain('bareTitle?.classList.add("dfl-page-title")');
-    expect(router).toContain('new Set(["broadcast", "arena-beta", "golf"])');
+    expect(router).toContain('new Set(["broadcast", "arena", "arena-beta", "golf"])');
     expect(screens).toContain("dfl-pulse-surface-in");
     expect(screens).toContain("prefers-reduced-motion: reduce");
     expect(screens).not.toContain("translate3d(0,8px,0)");

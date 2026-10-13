@@ -26,7 +26,7 @@ function raceState() {
 
 function needsLandscape() {
   const state = raceState();
-  return isBroadcast()
+  return isBroadcast() && Boolean(document.querySelector('#bc-stage'))
     && state !== "finished"
     && window.innerWidth <= PHONE_MAX
     && window.matchMedia?.("(orientation: portrait)")?.matches;
