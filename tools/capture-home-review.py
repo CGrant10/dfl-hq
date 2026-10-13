@@ -46,12 +46,14 @@ def check_injury_wire(page):
     page.evaluate("document.activeElement?.blur()")
     page.wait_for_timeout(200)
     top=lambda: viewport.evaluate('e=>e.scrollTop')
-    samples=[top()]
+    sample=lambda: viewport.evaluate('e=>({top:e.scrollTop,time:performance.now()})')
+    samples=[sample()]
     for _ in range(4):
         page.wait_for_timeout(350)
-        samples.append(top())
-    assert all(b>a for a,b in zip(samples,samples[1:])), samples
-    assert 15<=samples[-1]-samples[0]<=30, samples
+        samples.append(sample())
+    assert all(b['top']>a['top'] for a,b in zip(samples,samples[1:])), samples
+    rate=(samples[-1]['top']-samples[0]['top'])/((samples[-1]['time']-samples[0]['time'])/1000)
+    assert 12<=rate<=21, (rate,samples)
     checks=[{'continuousSamples':samples}]
     def held(reason):
         a=top();page.wait_for_timeout(400);b=top()
