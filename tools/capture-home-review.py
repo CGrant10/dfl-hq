@@ -64,7 +64,9 @@ def check_injury_wire(page):
         assert b>a, (reason,a,b)
         checks.append({'resumed':reason,'delta':b-a})
     viewport.evaluate("e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch'}))")
-    held('manual touch')
+    resumes('page touch leaves rotation enabled')
+    page.locator('[data-home-injury-play]').evaluate('e=>e.click()')
+    held('Pause button')
     page.locator('[data-home-injury-play]').evaluate('e=>e.click()')
     resumes('Play')
     viewport.focus();held('keyboard focus')
@@ -89,6 +91,25 @@ def check_injury_wire(page):
     page.wait_for_timeout(500)
     assert 0<=top()<15, top()
     checks.append({'wrapped':top()})
+    # A native vertical swipe over the preview must move Home, not its list.
+    page.evaluate("e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-160,behavior:'instant'})",wire.element_handle())
+    page.wait_for_timeout(150)
+    box=viewport.bounding_box();x=box['x']+box['width']/2;y=box['y']+box['height']-16
+    before=page.evaluate('scrollY');touch=page.context.new_cdp_session(page)
+    touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+    for step in range(1,6):
+        touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x,'y':y-140*step/5}]});page.wait_for_timeout(35)
+    touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(200)
+    delta=page.evaluate('scrollY')-before
+    assert delta>70, ('Injury preview trapped Home scrolling',delta)
+    checks.append({'nativePageSwipe':delta});touch.detach()
+    wire.scroll_into_view_if_needed();page.mouse.move(0,0)
+    page.wait_for_timeout(150)
+    assert viewport.evaluate('e=>e.clientHeight')<=180, 'Injury preview is no longer compact'
+    box=viewport.bounding_box();page.mouse.move(box['x']+8,box['y']+30)
+    before=page.evaluate('scrollY');page.mouse.wheel(0,180);page.wait_for_timeout(300)
+    assert page.evaluate('scrollY')>before+80, 'Injury preview trapped wheel scrolling'
+    checks.append({'wheelScrollsHome':True})
     page.evaluate('window.reviewInjuryPanel.stop()');held('unmounted controller')
     return checks
 
@@ -842,7 +863,7 @@ with sync_playwright() as p:
         metrics['unevenTeamNames'].append({'width':width,'rows':names})
     page.set_viewport_size({'width':390,'height':844})
     metrics['readingOrder'] = page.evaluate("""() => {
-      const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','[data-home-lore-slot]','.home-banter'];
+      const selectors=['.home-frontpage','.home-week-desk','.home-league-desk','.home-injury-panel','[data-home-lore-slot]','.home-banter'];
       const root=document.querySelector('#home-wrap'),children=[...root.children];
       return selectors.map(selector=>({selector,index:children.indexOf(root.querySelector(selector))}));
     }""")
