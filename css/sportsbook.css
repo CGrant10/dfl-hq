@@ -531,6 +531,7 @@
 /* The team mark. A single letter, but ringed and gradient-filled so it
    reads as a crest slot rather than as a letter in a box. */
 .sb-team-mark {
+  position: relative;
   display: grid;
   place-items: center;
   width: 38px;

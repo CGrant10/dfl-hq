@@ -182,16 +182,25 @@ window.addEventListener('dfl:toast', () => {
   animateUi(document.getElementById('toast'), [{ opacity:0, transform:'translate(-50%,6px)' }, { opacity:1, transform:'translate(-50%,0)' }], { duration:180 });
 });
 const openMore=()=>{
+  const card=moreSheet?.querySelector('.sheet-card');
+  const reopening=!!moreSheet?.dataset.uiClosing;
+  const transform=reopening&&card?getComputedStyle(card).transform:'translateY(18px)';
+  const opacity=reopening?getComputedStyle(moreSheet).opacity:'1';
   cancelUiExit(moreSheet);
+  releaseMore?.();
+  releaseMore=null;
   void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
-  animateUi(moreSheet,[{backgroundColor:'transparent'},{backgroundColor:getComputedStyle(moreSheet).backgroundColor}],{duration:160});
-  animateUi(moreSheet?.querySelector('.sheet-card'),[{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:260});
+  if(!reopening&&card)card.scrollTop=0;
+  // Keep the card opaque and the backdrop steady. Fading the whole menu
+  // exposes the page through its rows; focus scrolling during the entrance
+  // can also jump a previously scrolled sheet halfway through the animation.
+  if(reopening)animateUi(moreSheet,[{opacity},{opacity:1}],{duration:160});
+  animateUi(card,[{transform},{transform:'translateY(0)'}],{duration:260});
   syncMore();
-  releaseMore?.();
   /* Close first, not the first nav link: it is the one control in here whose
      job is getting out, and it puts Escape and Tab on the same footing. */
-  releaseMore=trapFocus(moreSheet.querySelector(".sheet-card")||moreSheet,{initial:"#more-close"});
+  releaseMore=trapFocus(card||moreSheet,{initial:"#more-close",returnTo:moreBtn,preventScroll:true});
 };
 moreBtn?.addEventListener("click",()=>{
   if(moreSheet?.classList.contains("hidden")||moreSheet?.dataset.uiClosing)openMore();else closeMore();
