@@ -38,7 +38,7 @@ def check_injury_wire(page):
     """Actual controller: continuous movement and reader/lifecycle holds."""
     page.set_viewport_size({'width':390,'height':844})
     page.emulate_media(reduced_motion='no-preference')
-    page.evaluate("document.documentElement.dataset.uiMotion='on';window.dispatchEvent(new Event('dfl:ui-motion-change'))")
+    page.evaluate("async()=>{const {savePageChoice}=await import('./js/page-disclosure.js');savePageChoice('gameday-motion','on');window.dispatchEvent(new Event('dfl:route-performance'));document.documentElement.dataset.uiMotion='on';window.dispatchEvent(new Event('dfl:ui-motion-change'))}")
     wire=page.locator('.home-injury-panel')
     viewport=page.locator('[data-home-injury-viewport]')
     wire.scroll_into_view_if_needed()
