@@ -15,6 +15,11 @@ describe('stable horizontal gestures',()=>{
   const f=fixture();for(let i=0;i<30;i++)f.swipe(-80);for(let i=0;i<30;i++)f.swipe(80);
   expect(f.index()).toBe(0);expect(f.surface.setPointerCapture).toHaveBeenCalledTimes(60);expect(f.surface.releasePointerCapture).toHaveBeenCalledTimes(60);expect(f.control.tracking).toBe(false);
  });
+ it('allows a deliberate slow pull to land without an arbitrary gesture timeout',()=>{
+  let time=0;vi.stubGlobal('performance',{now:()=>time});const f=fixture();
+  f.send('pointerdown');time=1600;f.send('pointermove',20);time=2400;f.send('pointerup',20);
+  expect(f.index()).toBe(1);expect(f.control.tracking).toBe(false);
+ });
  it('does not confuse a different pointer release with the current gesture',()=>{
   const f=fixture();f.send('pointerdown');f.send('pointermove',20);f.send('pointerup',20,100,{pointerId:2});expect(f.control.tracking).toBe(true);f.send('pointerup',20);expect(f.index()).toBe(1);
  });

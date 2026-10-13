@@ -1126,8 +1126,7 @@ with sync_playwright() as p:
             assert page.locator('[data-player-card-body]').get_attribute('aria-busy') is None, 'Ready player card remains busy'
             stable_sheets.append({'pending':pending,'ready':ready})
         page.locator('.dfl-connected-portrait').evaluate('e=>e.getAnimations()[0].play()')
-        page.wait_for_timeout(400)
-        assert page.locator('.dfl-connected-portrait').count() == 0 and page.locator('.player-card-hero .dfl-player-portrait').evaluate('e=>getComputedStyle(e).visibility==="visible"'), 'Portrait cleanup failed'
+        page.wait_for_function("!document.querySelector('.dfl-connected-portrait')&&getComputedStyle(document.querySelector('.player-card-hero .dfl-player-portrait')).visibility==='visible'",timeout=2000)
         page.keyboard.press('Escape')
         page.wait_for_timeout(30)
         assert page.locator('.dfl-connected-portrait').count()==1, 'Dismissal did not return the portrait to its row'

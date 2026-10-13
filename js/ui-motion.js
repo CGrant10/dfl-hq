@@ -103,7 +103,7 @@ const barSelector = rails.map(item => item.bar).join(',');
 const selectedSelector = ':scope > button[aria-selected="true"],:scope > button[aria-pressed="true"],:scope > button.on,:scope > button.active';
 const keyFor = button => button.id || button.dataset.tab || button.dataset.season || button.dataset.year || button.dataset.tdMode || button.textContent.trim();
 const visible = node => {
-  if (!node || node.closest('[hidden]') || !node.getClientRects().length) return false;
+  if (!node || node.closest('[hidden],[inert]') || !node.getClientRects().length) return false;
   const box = node.getBoundingClientRect();
   return box.bottom > 44 && box.top < innerHeight - 48 && box.right > 0 && box.left < innerWidth;
 };
@@ -115,16 +115,20 @@ export function mountPageSwipeTabs(root) {
   let group = null;
   const selected = button => button.getAttribute('aria-selected') === 'true' || button.getAttribute('aria-pressed') === 'true' || button.classList.contains('on') || button.classList.contains('active');
   const buttons = spec => [...(root.querySelector(spec.bar)?.querySelectorAll(':scope > button:not([disabled]):not([hidden])') || [])];
-  const pane = spec => {
-    const button = buttons(spec).find(selected), id = button?.getAttribute('aria-controls');
-    return id ? root.querySelector(`#${CSS.escape(id)}`) : spec.panel ? root.querySelector(spec.panel) : null;
+  const paneFor = (spec, button) => {
+    if(!button)return null;
+    const id=button.getAttribute('aria-controls');
+    if(id)return root.querySelector(`#${CSS.escape(id)}`);
+    const panes=spec.panel?[...root.querySelectorAll(spec.panel.replace(':not([hidden])',''))]:[];
+    return panes.length>1?panes[buttons(spec).indexOf(button)]:panes[0]||null;
   };
+  const pane = spec => paneFor(spec,buttons(spec).find(selected));
   const depth = node => { let count=0; for (;node;node=node.parentElement) count++; return count; };
   return mountSwipeTabs(root,null,{
     exclude:'button:not(.player-card-trigger):not(.gameday-player-tap),input,select,textarea,summary,form,[contenteditable],canvas,[data-no-swipe],.table-scroll,.table-wrap,.tabscroll,.gd-watch-reel',
-    selected, getButtons:()=>group?buttons(group):[], getPanel:()=>group?pane(group):null,
+    selected, getButtons:()=>group?buttons(group):[], getPanel:()=>group?pane(group):null, getPanelForButton:button=>group?paneFor(group,button):null,
     accepts(target) {
-      group=specs.filter(spec=>buttons(spec).length>1&&pane(spec)?.contains(target))
+      group=specs.filter(spec=>buttons(spec).length>1&&(pane(spec)?.contains(target)||pane(spec)?.parentElement===target&&target.hasAttribute('data-ui-swipe-host')))
         .sort((a,b)=>depth(root.querySelector(b.bar))-depth(root.querySelector(a.bar)))[0] || null;
       return Boolean(group);
     },

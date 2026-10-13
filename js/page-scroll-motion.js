@@ -15,7 +15,7 @@ const clamp=value=>Math.max(0,Math.min(1,value));
 const text=node=>node?.textContent.replace(/\s+/g,' ').trim()||'';
 const setText=(node,value)=>{if(node.textContent!==value)node.textContent=value;};
 const displayed=node=>{
-  if(!node?.getClientRects().length||node.closest('[hidden]'))return false;
+  if(!node?.getClientRects().length||node.closest('[hidden],[inert]'))return false;
   for(let fold=node.closest('details:not([open])');fold;fold=fold.parentElement?.closest('details:not([open])')){
     if(!fold.querySelector(':scope > summary')?.contains(node))return false;
   }
