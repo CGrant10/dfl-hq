@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {mountSheetDrag,sheetShouldClose} from './sheet-drag.js';
+import {mountSheetDrag,sheetShouldClose,exitSheet} from './sheet-drag.js';
 afterEach(()=>vi.unstubAllGlobals());
 describe('sheet dismissal intent',()=>{
   it('uses a reachable distance for short and tall sheets',()=>{
@@ -47,5 +47,19 @@ describe('sheet controls and interruption',()=>{
     f.send('pointerdown',100,250,{pointerId:2,isPrimary:false});f.send('pointerup',100,250);expect(f.dismiss).not.toHaveBeenCalled();
     f.send('pointerdown');f.send('pointermove',100,250);window.dispatchEvent(new Event('resize'));f.send('pointerup',100,250);expect(f.dismiss).not.toHaveBeenCalled();
     f.send('pointerdown');f.send('pointermove',100,250);f.control.stop();f.send('pointerup',100,250);expect(f.dismiss).not.toHaveBeenCalled();expect(f.captured()).toBeNull();
+  });
+});
+
+describe('sheet exit geometry',()=>{
+  it('finishes below the visible viewport when released from an existing drag',async()=>{
+    vi.stubGlobal('window',{visualViewport:{offsetTop:0,height:844}});vi.stubGlobal('innerWidth',390);
+    vi.stubGlobal('document',{visibilityState:'visible'});vi.stubGlobal('matchMedia',()=>({matches:false}));
+    vi.stubGlobal('getComputedStyle',()=>({opacity:'1',transform:'matrix(1,0,0,1,0,150)'}));
+    vi.stubGlobal('DOMMatrixReadOnly',class{constructor(){this.m42=150;}});
+    const dialog={dataset:{},isConnected:true,closest:()=>null,getBoundingClientRect:()=>({top:350})};
+    dialog.animate=vi.fn(()=>({finished:Promise.resolve(),cancel:vi.fn(),effect:{target:dialog}}));
+    const done=vi.fn();exitSheet(dialog,done);
+    expect(dialog.animate.mock.calls[0][0][1].transform).toBe('translateY(668px)');
+    await Promise.resolve();expect(done).toHaveBeenCalledOnce();
   });
 });

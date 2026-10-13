@@ -62,7 +62,9 @@ with sync_playwright() as p:
   check(kind+' backdrop follows pull',sheet.evaluate('e=>Number(getComputedStyle(e,"::backdrop").opacity)<1'))
   touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});wait_clean()
   check(kind+' short pull settles without dismissing or changing content scroll',sheet.is_visible() and body.evaluate('e=>e.scrollTop')==scroll)
-  pull(sheet,150);page.wait_for_function('!document.querySelector("dialog[open]")')
+  pull(sheet,150)
+  check(kind+' exit starts at the dragged frame and reaches offscreen',sheet.evaluate('e=>{const a=e.getAnimations().find(a=>a.effect.getKeyframes().some(f=>Number(f.opacity)===0)),frames=a?.effect.getKeyframes();if(!frames)return !e.open;const start=new DOMMatrixReadOnly(frames[0].transform).m42,end=new DOMMatrixReadOnly(frames.at(-1).transform).m42,current=new DOMMatrixReadOnly(getComputedStyle(e).transform).m42;return Math.abs(start-150)<2&&e.getBoundingClientRect().top-current+end>=innerHeight}'))
+  page.wait_for_function('!document.querySelector("dialog[open]")')
   check(kind+' long pull closes and cleans up',page.locator('[data-sheet-moving]').count()==0)
   if kind=='Player':check('player dismissal returns focus',page.locator('[data-review-player]').evaluate('e=>document.activeElement===e'))
   else:

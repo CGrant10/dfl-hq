@@ -9,7 +9,9 @@ export function enterSheet(dialog,{motion=true}={}) {
 export function exitSheet(dialog,complete,options={}) {
   const viewport=window.visualViewport;
   const edge=viewport?viewport.offsetTop+viewport.height:innerHeight;
-  const transform=innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+24)}px)`:'translateY(12px)';
+  const current=getComputedStyle(dialog).transform;
+  const offset=current==='none'?0:new DOMMatrixReadOnly(current).m42;
+  const transform=innerWidth<=600?`translateY(${Math.max(24,edge-dialog.getBoundingClientRect().top+offset+24)}px)`:'translateY(12px)';
   exitUi(dialog,complete,{...options,transform,duration:220});
 }
 
