@@ -41,9 +41,9 @@ const routes = {
   },
   polls:    () => importPage("polls", () => import("./pages/polls.js")),
   proposals:() => importPage("proposals", () => import("./pages/proposals.js")),
-  arena:    () => importPage("arena", () => import("./pages/arena.js")),
+  arena:    () => importPage("arena", () => import("./pages/arena-stadium.js")),
   "arena-beta":() => importPage("arena-beta", () => import("./pages/arena-beta.js")),
-  "arena-results":() => importPage("arena-results", () => import("./pages/arena-results.js")),
+  "arena-results":() => importPage("arena-results", () => import("./pages/arena-viewer.js")),
   golf:     async () => {
     const [page] = await Promise.all([importPage("golf", () => import("./pages/golf.js")), loadGolfFeatures()]);
     return page;
@@ -51,13 +51,7 @@ const routes = {
   sportsbook:() => importPage("sportsbook", () => import("./pages/sportsbook.js")),
   /* The Safari scenery helper installs global resize/hash listeners. Only a
      Broadcast viewer needs it, so keep it out of every ordinary launch. */
-  broadcast:async () => {
-    const [page] = await Promise.all([
-      importPage("broadcast", () => import("./pages/broadcast.js")),
-      import("./arena/mobile-broadcast-performance.js"),
-    ]);
-    return page;
-  },
+  broadcast:() => importPage("broadcast", () => import("./pages/arena-viewer.js")),
   calendar: () => importPage("calendar", () => import("./pages/calendar.js")),
   history:  () => importPage("history", () => import("./pages/history.js")),
   facts:    () => importPage("facts", () => import("./pages/facts.js")),
@@ -197,8 +191,8 @@ async function redirectFinishedArenaSpectator(name, expectedHash) {
   if (!id) return false;
   try {
     const { data, error } = await db().from("arena_events")
-      .select("status,bc_state").eq("id", id).maybeSingle();
-    if (error || !data) return false;
+      .select("status,bc_state,race_engine").eq("id", id).maybeSingle();
+    if (error || !data || data.race_engine === "stadium-v1") return false;
     if (data.status !== "complete" && data.bc_state !== "finished") return false;
     if (location.hash !== expectedHash) return false;
     location.hash = `#/arena-results?id=${id}`;
@@ -256,7 +250,7 @@ function announceReady() {
 /* Golf keeps its own visual language until its dedicated redesign. It must
    opt out here, not merely in a few CSS selectors, otherwise newly added
    shared components can silently restyle it later. */
-const pulseOptOutRoutes = new Set(["broadcast", "arena-beta", "golf"]);
+const pulseOptOutRoutes = new Set(["broadcast", "arena", "arena-beta", "golf"]);
 const standardPageRoutes = new Set([
   "trade", "sportsbook", "analyzer", "profile", "wall", "history", "facts",
   "rules", "calendar", "keepers", "finances", "polls", "proposals", "notifications", "stakes"
