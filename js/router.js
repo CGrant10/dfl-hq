@@ -4,6 +4,7 @@
 // =====================================================================
 
 import { loading } from "./ui.js";
+import { mountConnectionRecovery } from "./connection-recovery.js";
 import { ensureSportsbookNav } from "./sportsbook-nav.js";
 import { startMemberLock } from "./member-lock.js";
 import { dflSeasonCount, loadGolfFeatures } from "./config.js";
@@ -18,46 +19,56 @@ import { syncTabIndicator, mountNavHighlight } from './nav-highlight.js';
 import { routePlaceholder } from './route-placeholder.js';
 import { beginRouteGlide } from './route-motion.js';
 
+const importFailures = new Map();
+async function importPage(name, first) {
+  const attempt=importFailures.get(name)||0;
+  try {
+    // Browsers retain failed module fetches. A fresh entry URL lets Retry
+    // recover an interrupted page download without restarting the document.
+    const page=attempt?await import(/* @vite-ignore */ `./pages/${name}.js?recovery=${attempt}`):await first();
+    importFailures.delete(name);return page;
+  } catch(error) { importFailures.set(name,attempt+1);throw error; }
+}
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
-  home:     () => import("./pages/home.js"),
-  rules:    () => import("./pages/rules.js"),
-  keepers:  () => import("./pages/keepers.js"),
+  home:     () => importPage("home", () => import("./pages/home.js")),
+  rules:    () => importPage("rules", () => import("./pages/rules.js")),
+  keepers:  () => importPage("keepers", () => import("./pages/keepers.js")),
   analyzer: async () => {
-    const [page, outlook] = await Promise.all([import("./pages/analyzer.js"), import("./weekly-outlook-panel.js")]);
+    const [page, outlook] = await Promise.all([importPage("analyzer", () => import("./pages/analyzer.js")), import("./weekly-outlook-panel.js")]);
     outlook.mountWeeklyOutlook();
     return page;
   },
-  polls:    () => import("./pages/polls.js"),
-  proposals:() => import("./pages/proposals.js"),
-  arena:    () => import("./pages/arena.js"),
-  "arena-beta":() => import("./pages/arena-beta.js"),
-  "arena-results":() => import("./pages/arena-results.js"),
+  polls:    () => importPage("polls", () => import("./pages/polls.js")),
+  proposals:() => importPage("proposals", () => import("./pages/proposals.js")),
+  arena:    () => importPage("arena", () => import("./pages/arena.js")),
+  "arena-beta":() => importPage("arena-beta", () => import("./pages/arena-beta.js")),
+  "arena-results":() => importPage("arena-results", () => import("./pages/arena-results.js")),
   golf:     async () => {
-    const [page] = await Promise.all([import("./pages/golf.js"), loadGolfFeatures()]);
+    const [page] = await Promise.all([importPage("golf", () => import("./pages/golf.js")), loadGolfFeatures()]);
     return page;
   },
-  sportsbook:() => import("./pages/sportsbook.js"),
+  sportsbook:() => importPage("sportsbook", () => import("./pages/sportsbook.js")),
   /* The Safari scenery helper installs global resize/hash listeners. Only a
      Broadcast viewer needs it, so keep it out of every ordinary launch. */
   broadcast:async () => {
     const [page] = await Promise.all([
-      import("./pages/broadcast.js"),
+      importPage("broadcast", () => import("./pages/broadcast.js")),
       import("./arena/mobile-broadcast-performance.js"),
     ]);
     return page;
   },
-  calendar: () => import("./pages/calendar.js"),
-  history:  () => import("./pages/history.js"),
-  facts:    () => import("./pages/facts.js"),
-  trade:    () => import("./pages/trade.js"),
-  finances: () => import("./pages/finances.js"),
-  profile:  () => import("./pages/profile-locked.js"),
-  notifications: () => import("./pages/notifications.js"),
-  wall:     () => import("./pages/wall.js"),
-  clubhouse:() => import("./pages/clubhouse.js"),
-  stakes:   () => import("./pages/stakes.js"),
-  admin:    () => import("./pages/admin.js"),
+  calendar: () => importPage("calendar", () => import("./pages/calendar.js")),
+  history:  () => importPage("history", () => import("./pages/history.js")),
+  facts:    () => importPage("facts", () => import("./pages/facts.js")),
+  trade:    () => importPage("trade", () => import("./pages/trade.js")),
+  finances: () => importPage("finances", () => import("./pages/finances.js")),
+  profile:  () => importPage("profile-locked", () => import("./pages/profile-locked.js")),
+  notifications: () => importPage("notifications", () => import("./pages/notifications.js")),
+  wall:     () => importPage("wall", () => import("./pages/wall.js")),
+  clubhouse:() => importPage("clubhouse", () => import("./pages/clubhouse.js")),
+  stakes:   () => importPage("stakes", () => import("./pages/stakes.js")),
+  admin:    () => importPage("admin", () => import("./pages/admin.js")),
 };
 
 /* Large, page-specific styles used to block every first paint. Load them with
@@ -221,6 +232,7 @@ function spectatorArenaLinks(view, name) {
 
 let renderEpoch = 0;
 let stopPageMotion = () => {};
+let stopRecovery = () => {};
 let mountedHash = '', mountedMember = null, stopRestore = () => {};
 let announcedReady = false;
 function announceReady() {
@@ -276,7 +288,7 @@ const setRouteCanvas = color => {
   afterward. The epoch also stops stale renders from moving the tab indicator,
   scrolling the new page, or publishing a route-complete notification.
 */
-export async function renderRoute() {
+export async function renderRoute({ retry = false } = {}) {
   const routeStarted = performance.now();
   const epoch = ++renderEpoch;
   const name = currentRoute();
@@ -286,7 +298,8 @@ export async function renderRoute() {
   const routeGlide = beginRouteGlide(previousView.dataset.route, name);
   stopRestore();
   stopPageMotion();
-  if (mountedHash && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
+  stopRecovery();
+  if (mountedHash && !previousView.dataset.routeFailed && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
   const routeMemory = readViewMemory(getMemberId(), `route:${expectedHash}`);
   const changed = name !== lastAnimated || expectedHash !== mountedHash;
   if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
@@ -296,6 +309,7 @@ export async function renderRoute() {
 
   const view = previousView.cloneNode(false);
   delete view.dataset.restoreScrollY;
+  delete view.dataset.routeFailed;
   delete view.dataset.uiPolished;
   delete view.dataset.pulseSystem;
   delete view.dataset.routeGliding;
@@ -365,16 +379,30 @@ export async function renderRoute() {
       console.error(err);
       const offline = navigator.onLine === false;
       view.innerHTML = `<section class="state is-error" role="alert"><h1 class="state-title">${offline ? "You’re offline" : "This page could not load"}</h1><p>${offline ? "Reconnect to open this page. Pages already opened may still be available." : "Check your connection and try again."}</p><div class="row"><button type="button" class="btn" data-route-retry>Retry</button><a class="btn ghost" href="#/home">Back to Home</a></div></section>`;
-      view.querySelector("[data-route-retry]")?.addEventListener("click", () => location.reload());
+      view.dataset.routeFailed = "true";
     }
   }
 
   if (!isCurrent()) return;
 
+  // Page renderers can return an error state instead of rejecting. Give those
+  // screens the same recovery as a failed route import, without reloading boot.
+  const errorState = view.querySelector(':scope > .state.is-error,:scope > h1 + .state.is-error,:scope > .page-head + .state.is-error');
+  if (errorState) {
+    view.dataset.routeFailed = 'true';
+    if (!errorState.querySelector('[data-route-retry],[data-retry-page]')) {
+      const button=document.createElement('button');button.type='button';button.className='btn';button.dataset.routeRetry='';button.textContent='Retry';errorState.append(button);
+    }
+  }
+  const renderedMember=getMemberId();
+  const recovery=mountConnectionRecovery({root:view,active:()=>isCurrent()&&getMemberId()===renderedMember,
+    failed:()=>view.dataset.routeFailed==='true',retry:()=>renderRoute({retry:true})});
+  stopRecovery=()=>recovery.stop();
   window.scrollTo(0, Number(view.dataset.restoreScrollY) || 0);
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
   if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
   else if (routeMemory && !view.dataset.restoreScrollY) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
+  if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
   mountedHash = expectedHash; mountedMember = getMemberId();
   stopPageMotion = mountPageMotion(view);
   lastAnimated = name;
@@ -398,7 +426,7 @@ export async function renderRoute() {
 let lastAnimated = null;
 export function startRouter() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
+  window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
   ensureSportsbookNav();
   startMemberLock();
   const bar = document.getElementById("tabbar");

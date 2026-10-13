@@ -11,4 +11,10 @@ describe('analyzer background refresh',()=>{
  it('queues the newest model while typing and applies it after focus leaves the input',async()=>{let editing=true;const f=setup({canApply:()=>!editing});await vi.advanceTimersByTimeAsync(60000);expect(f.apply).not.toHaveBeenCalled();editing=false;f.view.dispatchEvent(new Event('focusout'));await vi.advanceTimersByTimeAsync(120);expect(f.apply).toHaveBeenCalledOnce()});
  it('keeps the existing report on a failed read and retries the next poll',async()=>{const load=vi.fn().mockRejectedValueOnce(Error('offline')).mockResolvedValue(data(31.4)),onError=vi.fn();const f=setup({load,onError});await vi.advanceTimersByTimeAsync(60000);expect(onError).toHaveBeenCalledOnce();expect(f.apply).not.toHaveBeenCalled();await vi.advanceTimersByTimeAsync(60000);expect(f.apply).toHaveBeenCalledOnce()});
  it('does not commit retired requests or leave refresh listeners/timers behind',async()=>{let finish;const load=vi.fn(()=>new Promise(r=>finish=r)),f=setup({load});await vi.advanceTimersByTimeAsync(60000);stop();finish(data(31.4));await vi.advanceTimersByTimeAsync(0);f.win.dispatchEvent(new Event('dfl:quick-sync-complete'));await vi.advanceTimersByTimeAsync(60000);expect(f.apply).not.toHaveBeenCalled();expect(load).toHaveBeenCalledOnce();expect(vi.getTimerCount()).toBe(0)});
+ it('keeps the last report when a refresh returns no usable model and recovers on the short retry',async()=>{
+  const load=vi.fn().mockResolvedValueOnce({state:'empty'}).mockResolvedValue(data(31.4)),onError=vi.fn();const f=setup({load,onError});
+  await vi.advanceTimersByTimeAsync(60000);expect(f.apply).not.toHaveBeenCalled();expect(onError).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(5000);expect(f.apply).toHaveBeenCalledOnce();expect(f.afterApply).toHaveBeenCalledWith({y:500});
+ });
+
 });
