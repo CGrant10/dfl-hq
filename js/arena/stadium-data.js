@@ -12,3 +12,5 @@ export function createStadiumClock(now=()=>performance.now()){
  let server=0,at=0;
  return {sync(serverMs,sentAt,receivedAt=now()){server=Number(serverMs)+Math.max(0,receivedAt-sentAt)/2;at=receivedAt;},now:()=>server+now()-at};
 }
+export async function loadMyRacerKit(memberId){const {data,error}=await db().from('arena_racer_kits').select('kit,revision,member_id').eq('member_id',memberId).maybeSingle();if(error)throw error;return data;}
+export async function saveMyRacerKit(kit,revision,pin){const {data,error}=await db().rpc('arena_save_racer_kit',{p_kit:kit,p_revision:revision,p_pin:pin||null});if(error)throw error;if(!data?.kit)throw Error('Racer could not be saved.');return data;}
