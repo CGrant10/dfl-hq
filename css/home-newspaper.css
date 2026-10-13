@@ -316,6 +316,8 @@ body:has(#view[data-route="home"]) {
 #home-wrap .home-week-focus .home-outlook-alarms p { grid-template-columns: minmax(0,1fr); }
 #home-wrap .home-outlook-games > div:last-child { background: transparent; gap: 0; }
 #home-wrap .home-outlook-games article { padding: 12px 0; border-bottom: 1px solid var(--paper-soft-rule); }
+/* The personal matchup keeps its inset accent; reserve room for the name. */
+#home-wrap .home-outlook-games article.is-mine { padding-left: 12px; }
 #home-wrap .home-outlook-title { flex-wrap: wrap; align-items: center; }
 #home-wrap .home-outlook-startsit footer a { white-space: normal; }
 #home-wrap .home-pickem-card {
