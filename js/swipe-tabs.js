@@ -36,10 +36,11 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
   const canMove=()=>typeof document!=='undefined'&&document.visibilityState==='visible'
     &&document.documentElement.dataset.uiMotion!=='off'&&!reduced?.matches;
   let scene=null,frame=0,stopped=false,interrupted=false,committing=false,origin=0;
-  const clean=()=>{
+  const clean=(keepGap=null)=>{
     if(frame)cancelAnimationFrame(frame);frame=0;
     if(!scene)return;
     const old=scene;scene=null;
+    if(old.gap){cancelUiMotion(old.gap);if(old.gap!==keepGap)old.gap.remove();}
     for(const node of old.copies.values()){cancelUiMotion(node);node.remove();}
     for(const [node,values] of old.styles){cancelUiMotion(node);restoreStyle(node,values);delete node.dataset.uiSwipeSettling;}
     old.hostFlag===null?old.parent.removeAttribute('data-ui-swipe-host'):old.parent.setAttribute('data-ui-swipe-host',old.hostFlag);
@@ -66,11 +67,16 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
       copy.hidden=node!==scene.neighbor;
       if(!copy.hidden)copy.style.transform=translate(scene.painted+(scene.painted<0?scene.width:-scene.width));
     }
+    if(scene.gap){scene.gap.hidden=!scene.neighbor;scene.gap.style.transform=translate(scene.painted+(scene.painted<0?scene.width:-scene.width));}
   };
   const showNeighbor=offset=>{
     if(!scene)return;
     scene.neighbor=neighborFor(offset);
     if(scene.neighbor&&!scene.copies.has(scene.neighbor))scene.copies.set(scene.neighbor,previewOf(scene.neighbor,scene));
+    if(scene.neighbor&&!scene.gap){
+      scene.gap=document.createElement('div');scene.gap.className='dfl-tab-grab';scene.gap.setAttribute('aria-hidden','true');
+      Object.assign(scene.gap.style,{position:'absolute',left:`${scene.left}px`,top:`${scene.top}px`,width:`${scene.width}px`,height:`${scene.height}px`,zIndex:'3'});scene.parent.append(scene.gap);
+    }
   };
   const settle=(step=0)=>{
     if(!scene)return;
@@ -92,6 +98,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
       const end=step>0?-current.width:current.width;
       outgoing.style.transform=translate(end);
       animateUi(outgoing,[{transform:translate(from)},{transform:translate(end)}],{duration:280,fill:'both'});
+      if(current.gap){current.gap.style.transform=translate(end);animateUi(current.gap,[{transform:translate(from)},{transform:translate(end)}],{duration:280,fill:'both'});}
       const animation=animateUi(incoming,[{transform:translate(start),height:`${current.height}px`},{transform:current.styles.get(incoming).find(([key])=>key==='transform')[1]||'none',height:`${naturalHeight}px`}],{duration:280,fill:'both'});
       const finish=()=>{if(scene===current)clean();};
       if(animation)animation.finished.then(finish,finish);else finish();
@@ -105,6 +112,7 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
       for(const [source,copy] of current.copies)if(source===current.neighbor){
         const sign=from<0?1:-1;copy.style.transform=translate(sign*current.width);
         animateUi(copy,[{transform:translate(from+sign*current.width)},{transform:translate(sign*current.width)}],{duration:220,fill:'both'});
+        if(current.gap){current.gap.style.transform=translate(sign*current.width);animateUi(current.gap,[{transform:translate(from+sign*current.width)},{transform:translate(sign*current.width)}],{duration:220,fill:'both'});}
       }
       const finish=()=>{if(scene===current)clean();};if(animation)animation.finished.then(finish,finish);else finish();
     }
@@ -117,8 +125,15 @@ export function mountSwipeTabs(surface, tabs, { getButtons = () => [...tabs.quer
         const node=panel(),same=node===scene.node;
         const matrix=same?new DOMMatrixReadOnly(getComputedStyle(node).transform):null;
         const height=same?node.getBoundingClientRect().height:null;
-        origin=matrix?.m41||0;clean();
-        if(same&&canMove()){begin(node,origin,height);showNeighbor(origin);paint();}
+        const gap=same&&canMove()?scene.gap:null;
+        origin=matrix?.m41||0;clean(gap);
+        if(same&&canMove()){
+          begin(node,origin,height);
+          // Keep the pointerdown target connected until direction capture.
+          if(scene&&gap){scene.gap=gap;Object.assign(gap.style,{left:`${scene.left}px`,top:`${scene.top}px`,width:`${scene.width}px`,height:`${scene.height}px`});}
+          else gap?.remove();
+          showNeighbor(origin);paint();
+        }
       }
     },
     onMove({dx}){

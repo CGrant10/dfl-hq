@@ -128,7 +128,7 @@ export function mountPageSwipeTabs(root) {
     exclude:'button:not(.player-card-trigger):not(.gameday-player-tap),input,select,textarea,summary,form,[contenteditable],canvas,[data-no-swipe],.table-scroll,.table-wrap,.tabscroll,.gd-watch-reel',
     selected, getButtons:()=>group?buttons(group):[], getPanel:()=>group?pane(group):null, getPanelForButton:button=>group?paneFor(group,button):null,
     accepts(target) {
-      group=specs.filter(spec=>buttons(spec).length>1&&(pane(spec)?.contains(target)||pane(spec)?.parentElement===target&&target.hasAttribute('data-ui-swipe-host')))
+      group=specs.filter(spec=>buttons(spec).length>1&&(pane(spec)?.contains(target)||pane(spec)?.parentElement===target.parentElement&&target.classList.contains('dfl-tab-grab')))
         .sort((a,b)=>depth(root.querySelector(b.bar))-depth(root.querySelector(a.bar)))[0] || null;
       return Boolean(group);
     },
