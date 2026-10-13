@@ -7,6 +7,10 @@ on:
       - 'css/shared-styles.json'
       - 'js/tab-scroll-cues.js'
       - 'js/ui-motion.js'
+      - 'js/swipe-tabs*'
+      - 'js/horizontal-swipe*'
+      - 'css/ui-motion.css'
+      - 'tools/*tab-review*'
       - 'js/sheet-drag*'
       - 'js/pages/sportsbook.js'
       - 'tools/*sheet-review*'
@@ -90,6 +94,12 @@ jobs:
         run: |
           node tools/render-sheet-review.mjs
           python tools/capture-sheet-review.py
+      - name: Check continuous tab glides
+        env:
+          DFL_TAB_REVIEW_DIR: ${{ github.workspace }}/home-review-output/tabs
+        run: |
+          node tools/render-tab-review.mjs
+          python tools/capture-tab-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

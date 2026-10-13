@@ -107,3 +107,7 @@ html[data-ui-motion="on"] #view [data-scroll-title] {
 }
 
 .bx-stage { touch-action:pan-y pinch-zoom; }
+
+/* Neighbor copies never become controls or replay decorative animations. */
+.dfl-tab-preview { pointer-events:none!important; user-select:none!important; }
+.dfl-tab-preview,.dfl-tab-preview * { animation:none!important; transition:none!important; }

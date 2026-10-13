@@ -7,7 +7,7 @@ export function mountHorizontalSwipe(surface, { accepts = (_target) => true, exc
     if (!gesture || event && event.pointerId !== gesture.id) return;
     const current = gesture; gesture = null;
     const dx = event ? event.clientX - current.x : current.dx, dy = event ? event.clientY - current.y : current.dy;
-    const valid = !cancelled && current.horizontal && Math.abs(dx) >= min && Math.abs(dx) > Math.abs(dy) * 1.4 && performance.now() - current.at < 850;
+    const valid = !cancelled && current.horizontal && Math.abs(dx) >= min && Math.abs(dx) > Math.abs(dy) * 1.4;
     if (current.horizontal) suppressUntil = performance.now() + 400;
     release(current.id);
     onEnd({ ...current, dx, dy, valid });

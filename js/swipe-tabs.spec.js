@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mountSwipeTabs } from './swipe-tabs.js';
+import { mountSwipeTabs, tabGlideOffset, tabGlideStep } from './swipe-tabs.js';
 
 afterEach(() => vi.unstubAllGlobals());
 function fixture(index = 1) {
@@ -58,4 +58,16 @@ describe('Week Ahead touch navigation', () => {
     f.swipe(-100); expect(f.send('click', 100, 200).defaultPrevented).toBe(true);
     f.stop(); f.swipe(-100); expect(f.selected()).toBe(2);
   });
+});
+
+
+describe('continuous tab displacement',()=>{
+ it('tracks the finger directly, bounds long pulls, and resists endpoints',()=>{
+  expect(tabGlideOffset(-90,360,true)).toBe(-90);expect(tabGlideOffset(900,360,true)).toBe(360);
+  expect(tabGlideOffset(-900,360,true)).toBe(-360);expect(tabGlideOffset(100,360,false)).toBeGreaterThan(0);expect(tabGlideOffset(100,360,false)).toBeLessThan(32);
+ });
+ it('lands an unfinished arrival before continuing, and reverses toward the preceding panel',()=>{
+  expect(tabGlideStep(90,-90,180)).toBe(0);expect(tabGlideStep(270,90,180)).toBe(-1);
+  expect(tabGlideStep(-90,-270,180)).toBe(1);expect(tabGlideStep(-90,90,-180)).toBe(0);expect(tabGlideStep(-270,-90,-180)).toBe(1);
+ });
 });
