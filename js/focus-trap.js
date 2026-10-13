@@ -68,9 +68,11 @@ function focusable(root) {
  *        the container itself.
  * @param {HTMLElement|null}  [opts.returnTo]  who gets focus back. Defaults to
  *        whatever was focused when this was called.
+ * @param {boolean} [opts.preventScroll] keep a sheet's settled scroll position
+ *        while moving focus into its animated surface.
  * @returns {() => void} release
  */
-export function trapFocus(container, { initial = null, returnTo = undefined } = {}) {
+export function trapFocus(container, { initial = null, returnTo = undefined, preventScroll = false } = {}) {
   if (!container) return () => {};
 
   const previous = returnTo === undefined
@@ -117,14 +119,14 @@ export function trapFocus(container, { initial = null, returnTo = undefined } = 
     if (container.contains(document.activeElement)) return;   // already inside
     const target = resolveInitial() || focusable(container)[0];
     if (target) {
-      try { target.focus({ preventScroll: false }); } catch { /* not focusable */ }
+      try { target.focus({ preventScroll }); } catch { /* not focusable */ }
       return;
     }
     if (framesLeft-- > 0) { landing = requestAnimationFrame(land); return; }
     /* Nothing focusable at all. Park focus on the surface itself so a
        keyboard is inside the modal rather than loose on the page behind it. */
     borrowTabIndex();
-    try { container.focus({ preventScroll: false }); } catch { /* nothing to do */ }
+    try { container.focus({ preventScroll }); } catch { /* nothing to do */ }
   };
   landing = requestAnimationFrame(land);
 
