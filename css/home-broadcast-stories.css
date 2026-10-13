@@ -112,3 +112,6 @@
 /* Direct manipulation must not chase pointer frames through a CSS transition. */
 .bx-slide.bx-dragging { transition:none!important; opacity:1; will-change:transform; }
 .bx-slide.bx-preview { pointer-events:none; }
+
+/* Dots are always visible now; their old focus-reveal plate is obsolete. */
+#home-wrap .bx-dots:focus-within { background:transparent; }

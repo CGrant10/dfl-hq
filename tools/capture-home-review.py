@@ -979,6 +979,8 @@ with sync_playwright() as p:
     broadcast=page.locator('[data-bx-stage]')
     broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
     page.wait_for_timeout(300)
+    page.locator('[data-bx-go="0"]').focus()
+    assert page.locator('.bx-dots').evaluate('e=>getComputedStyle(e).backgroundColor')=='rgba(0, 0, 0, 0)', 'Focused broadcast dots drew a mismatched background plate'
     deck_count=page.locator('[data-bx-go]').count()
     def broadcast_index():return int(page.locator('[data-bx-go].on').get_attribute('data-bx-go'))
     for delta in [1]*12+[-1]*12:
@@ -1156,6 +1158,7 @@ with sync_playwright() as p:
         page.locator('.gameday-home-detail').evaluate('e=>e.open=true')
         page.locator('.home-score-tools').evaluate('e=>e.open=true')
         for width in [320,390,1280]:
+            print(f'Theme review: {mode}/{width}',flush=True)
             page.set_viewport_size({'width':width,'height':844})
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             page.wait_for_timeout(350)

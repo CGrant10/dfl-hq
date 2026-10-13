@@ -4006,6 +4006,9 @@ body .breaking-trade-beacon { width:26px; }
 .bx-slide.bx-dragging { transition:none!important; opacity:1; will-change:transform; }
 .bx-slide.bx-preview { pointer-events:none; }
 
+/* Dots are always visible now; their old focus-reveal plate is obsolete. */
+#home-wrap .bx-dots:focus-within { background:transparent; }
+
 
 /* Source: css/clubhouse-polish.css */
 /* Clubhouse surfaces stay compact. Effects live behind readable identities. */
