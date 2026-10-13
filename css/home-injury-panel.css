@@ -4,7 +4,7 @@
 #home-wrap .home-injury-panel header small { color:var(--accent); font:700 10px/1.4 var(--font-display); letter-spacing:.07em; }
 #home-wrap .home-injury-panel h2 { margin:2px 0 0; font:700 1.25rem/1.2 var(--font-display); color:var(--text); }
 #home-wrap .home-injury-panel button.linkbtn { min-height:44px; min-width:44px; font:600 12px/1.3 var(--font-display); }
-#home-wrap .home-injury-viewport { position:relative; height:clamp(258px,16.125rem,420px); overflow-y:auto; overflow-x:hidden; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; touch-action:pan-y pinch-zoom; }
+#home-wrap .home-injury-viewport { position:relative; height:clamp(258px,16.125rem,420px); overflow-y:auto; overflow-x:hidden; scroll-behavior:auto; overflow-anchor:none; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; touch-action:pan-y pinch-zoom; }
 #home-wrap .home-injury-viewport:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 #home-wrap .home-injury-panel .injury-player { grid-template-columns:36px minmax(0,1fr) 86px; gap:8px; min-height:86px; padding:8px 0; box-sizing:border-box; content-visibility:auto; contain-intrinsic-size:auto 86px; }
 #home-wrap .home-injury-panel .injury-player-copy .player-card-trigger { display:block; width:100%; min-height:44px; padding:0; color:var(--text); text-align:left; white-space:normal; overflow-wrap:anywhere; font:700 .9375rem/1.3 var(--font-display); }

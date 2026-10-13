@@ -48,7 +48,7 @@ export function tradeAlertSlide(alert) {
   return {
     source: "auto", pinned: true, id: "trade-alert", generator: "tradeAlert",
     kind: "trade", treatment: "stat", temporal: "recent",
-    priority: P.RECENT + 40, dwell: 8000,
+    priority: P.RECENT + 40, dwell: 3000,
     kicker: `BREAKING TRADE · ${alert.week ? `WEEK ${alert.week}` : "COMPLETED"}`,
     figure: alert.fairness == null ? null : `${alert.fairness}%`,
     headline: call,
@@ -69,7 +69,7 @@ export function nextMoveSlide(move) {
     source: "auto", pinned: true, id: "next-move", generator: "nextMove",
     scoutPlayer: move.trade?.player || move.waiver?.player,
     kind: "move", treatment: "announcement", temporal: "upcoming",
-    priority: P.MINE - 10, dwell: 8000,
+    priority: P.MINE - 10, dwell: 3000,
     kicker: `WEEK ${move.week} · AUTO-SCOUT`,
     headline: "Your next move",
     subtitle: move.need.urgent ? `${move.need.position} need` : `${move.need.position} upgrade`,
@@ -105,7 +105,7 @@ export function playoffPictureSlide(stakes, meSleeperId) {
   return {
     source: "auto", pinned: true, id: "playoff-picture", generator: "playoffPicture",
     kind: "league", treatment: "stat", temporal: mine.status === "clinched" || mine.status === "eliminated" ? "recent" : "upcoming",
-    priority: P.MINE + 5, dwell: 8500,
+    priority: P.MINE + 5, dwell: 3500,
     kicker: `${stakes.season} · WEEK ${stakes.week} · PLAYOFF PICTURE`,
     figure: `${odds}%`, headline: stakeLine(mine),
     subtitle: `${mine.name} projects as the ${ordinal(Math.round(Number(mine.projection.seed) || mine.rank || 1))} seed. ${gameLine}`,
@@ -144,7 +144,7 @@ export function matchupPreviewSlide({ pairing, weekly, meSleeperId, season, week
   return {
     source: "auto", pinned: true, id: "matchup-preview", generator: "matchupPreview", scoreLabel: "Projected",
     kind: "mine", treatment: "scoreboard", temporal: "upcoming",
-    priority: P.MINE + 20, dwell: 8000,
+    priority: P.MINE + 20, dwell: 3000,
     kicker: `${season} · Week ${week} · Preview`,
     headline: "Your matchup",
     tags: [billing],
@@ -294,7 +294,7 @@ export function weekSlateSlide({ fixtures = [], season, week, meSleeperId, live 
   return {
     source: "auto", pinned: true, id: "week-slate", generator: "weekSlate",
     kind: "league", treatment: "slate", temporal: "upcoming",
-    priority: P.MINE + 10, dwell: 9000,
+    priority: P.MINE + 10, dwell: 3500,
     kicker: `${season} · Week ${week}`,
     headline: "Around the league",
     subtitle: null,

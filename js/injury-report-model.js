@@ -1,4 +1,4 @@
-const positions=new Set(['QB','RB','WR','TE','K']);
+const positions=new Set(['QB','RB','WR','TE']);
 const nameKey=value=>String(value||'').toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b/g,'').replace(/[^a-z0-9]/g,'');
 const club=value=>({WSH:'WAS',JAC:'JAX',LA:'LAR'}[value]||value||'');
 export function injuryAvailability(value){
@@ -11,7 +11,7 @@ export function injuryAvailability(value){
  if(['','active','healthy','normal'].includes(key))return null;
  return{tag:status,availability:'Not confirmed',tone:'watch'};
 }
-export function buildInjuryReport(payload,{analysis=null,now=Date.now()}={}){
+export function buildInjuryReport(payload,{analysis=null,now=Date.now(),offenseOnly=true}={}){
  if(!Array.isArray(payload?.injuries))return null;
  const players=analysis?.pool instanceof Map?[...analysis.pool.values()]:[];
  const indexed=new Map();
@@ -21,7 +21,7 @@ export function buildInjuryReport(payload,{analysis=null,now=Date.now()}={}){
  const unique=new Map();
  for(const team of payload.injuries){for(const entry of team.injuries||[]){
   const status=injuryAvailability(entry.status);
-  const athlete=entry.athlete||{},name=athlete.displayName||[athlete.firstName,athlete.lastName].filter(Boolean).join(' '),position=athlete.position?.abbreviation||'',nflTeam=club(athlete.team?.abbreviation||'');if(!name)continue;
+  const athlete=entry.athlete||{},name=athlete.displayName||[athlete.firstName,athlete.lastName].filter(Boolean).join(' '),position=athlete.position?.abbreviation||'',nflTeam=club(athlete.team?.abbreviation||'');if(!name||(offenseOnly&&!positions.has(position)))continue;
   const matches=indexed.get(`${nameKey(name)}:${nflTeam}:${position}`)||[],player=matches.length===1?matches[0]:null,owner=player?owners.get(String(player.id)):null;
   const tier=owner?(owner.starter?0:1):positions.has(position)?2:3;
   const date=Date.parse(entry.date),updatedAt=Number.isFinite(date)?date:null,athleteId=athlete.id||athlete.headshot?.href?.match(/\/(\d+)\.(?:png|jpg)(?:\?|$)/)?.[1]||(athlete.links||[]).map(link=>link.href?.match(/\/id\/(\d+)/)?.[1]).find(Boolean),id=String(athleteId||`${nflTeam}:${position}:${nameKey(name)}`);
