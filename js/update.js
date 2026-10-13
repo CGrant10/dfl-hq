@@ -1,4 +1,4 @@
-import { APP_VERSION } from "./config.js";
+import { APP_VERSION, LEAGUE_FOUNDED } from "./config.js";
 
 const bar=()=>document.getElementById("update");
 const UPDATE_CHECK_MS=10*60*1000;
@@ -79,16 +79,13 @@ export function isNewer(remote,local){
 
 export function updateGateMarkup(version){
   const safeVersion=String(version).replace(/[^0-9.]/g,"");
+  const season=new Date().getFullYear()-LEAGUE_FOUNDED+1;
+  const anniversary=season>=10&&season%10===0;
   return `<div class="update-gate__content">
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
-    <p class="update-gate__intro">Quality and performance improvements are ready. Update to continue.</p>
+    ${anniversary?`<p class="update-gate__anniversary">${season} YEAR ANNIVERSARY</p>`:""}
     <span class="update-gate__mark"><img src="icons/app-update-aligned.svg" alt="DFL HQ" width="512" height="512" crossorigin="anonymous"><span class="update-gate__glow" aria-hidden="true"></span></span>
-    <div class="update-gate__features" aria-label="What is improved">
-      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-arena"></use></svg></span><strong>Faster loading</strong></div>
-      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-analyzer-steel"></use></svg></span><strong>Sharper analysis</strong></div>
-      <div><span class="update-gate__feature-icon"><svg aria-hidden="true"><use href="#i-versus"></use></svg></span><strong>Smoother game day</strong></div>
-    </div>
     <div class="update-gate__action">
       <button class="update-gate__button" id="update-go" type="button">UPDATE NOW</button>
       <p class="update-gate__version">Version ${safeVersion}</p>

@@ -12,7 +12,7 @@ export function homeNewspaperMasthead({ now = new Date(), founded = 2017 } = {})
   const anniversary = season > 0 && season % 10 === 0;
   return `<header class="home-newspaper-masthead">
     <div class="home-newspaper-date"><time datetime="${esc(`${year}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`)}">${esc(now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }))}</time></div>
-    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition">${anniversary ? '10th season' : `Season ${season}`} · Est. ${esc(founded)}</p></div>
+    <div class="home-newspaper-name"><h1>The clubhouse</h1><p class="home-newspaper-edition${anniversary ? ' is-anniversary' : ''}">${anniversary ? `${season} YEAR ANNIVERSARY` : `Season ${season} · Est. ${esc(founded)}`}</p></div>
   </header>`;
 }
 
@@ -48,8 +48,8 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
 /** Direct entry to the same tools and saved state used by their full pages. */
 export function homeLeagueTools() {
   return `<nav class="home-league-tools" aria-label="League tools">
-    <a class="home-tool-card" href="#/trade"><small>DFLYZER</small><strong>Trade Board</strong><span>Build a package. See the verdict.</span><b>Build a trade <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
-    <a class="home-tool-card" href="#/sportsbook"><small>DFL SPORTSBOOK</small><strong>The Book</strong><span>Markets, Pick’em and your tickets.</span><b>Open the book <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
+    <a class="home-tool-card" href="#/trade"><small>DFLYZER</small><strong>Trade Board</strong><b>Build a trade <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
+    <a class="home-tool-card" href="#/sportsbook"><small>DFL SPORTSBOOK</small><strong>The Book</strong><b>Open the book <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></b></a>
   </nav>`;
 }
 

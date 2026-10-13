@@ -37,7 +37,7 @@
       const release=version.trim();if(!/^\d+\.\d+\.\d+$/.test(release))throw Error('Release unavailable');
       // Load the same renderer and glow as the app, using fresh public source.
       // Only the config import is replaced; this preview does not boot the app.
-      const code=source.replace('import { APP_VERSION } from "./config.js";',`const APP_VERSION=${JSON.stringify(release)};`);
+      const code=source.replace('import { APP_VERSION, LEAGUE_FOUNDED } from "./config.js";',`const APP_VERSION=${JSON.stringify(release)};const LEAGUE_FOUNDED=2017;`);
       moduleUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
       const {updateGateMarkup,mountUpdateLogoGlow}=await import(moduleUrl);
       const parsed=new DOMParser().parseFromString(index,'text/html');
@@ -46,7 +46,6 @@
       gate.style.setProperty('--update-gate-artwork',`url("${new URL('assets/dfl-update-stadium.webp',document.baseURI).href}")`);
       gate.className='update-gate';gate.setAttribute('role','region');gate.setAttribute('aria-label','Update screen preview');
       gate.querySelector('.update-gate__eyebrow').textContent='DFL HQ · UPDATE PREVIEW';
-      gate.querySelector('.update-gate__intro').textContent='A preview of the latest update screen.';
       status.remove();
       const back=gate.querySelector('#update-go');back.textContent='BACK TO DFL HQ';
       back.addEventListener('click',()=>location.assign(new URL('./#/home',document.baseURI)));
