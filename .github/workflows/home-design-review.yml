@@ -28,6 +28,9 @@ on:
       - 'css/loading-polish.css'
       - 'js/loading-presentation*'
       - 'js/route-placeholder*'
+      - 'js/router.js'
+      - 'js/route-motion.js'
+      - 'tools/*route-review*'
       - 'js/player-card*'
       - 'js/player-form*'
       - 'js/broadcast-stage.js'
@@ -100,6 +103,10 @@ jobs:
         run: |
           node tools/render-tab-review.mjs
           python tools/capture-tab-review.py
+      - name: Check directional page navigation
+        env:
+          DFL_ROUTE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/routes
+        run: python tools/capture-route-review.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

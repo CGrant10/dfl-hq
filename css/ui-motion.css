@@ -1,5 +1,7 @@
 /* One restrained interaction language. The live score geometry stays fixed. */
 .view.is-route-loading { opacity:0!important; pointer-events:none; transform:none!important; }
+.view[data-route-gliding] { animation:none!important; }
+.view[data-route-gliding] :is(.dfl-pulse-surface,.card) { animation:none!important; }
 .route-placeholder { position:fixed; inset:var(--topbar-h,44px) 0 60px; z-index:20; overflow:hidden; background:var(--bg); padding:20px 14px; }
 .route-placeholder-inner { max-width:860px; margin:0 auto; }
 .route-placeholder-label { margin:0 0 16px; color:var(--muted); font:700 13px var(--font-body); letter-spacing:.08em; text-transform:uppercase; }
