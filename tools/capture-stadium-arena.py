@@ -11,7 +11,7 @@ root=Path(__file__).resolve().parents[1];out=Path(os.environ.get('DFL_ARENA_REVI
 members=[{'id':i+1,'display_name':name,'team_name':team,'active':True,'profile_image':'','accent_color':''} for i,(name,team) in enumerate([('Cody Grant','The Bayou Bombers'),('Kirk Franklin','Dakota Thunder'),('Marcus Williams','Full Send Football'),('David Jefferson','Fourth & Fuck It'),('Brandon Thomas','The Longest Team Name In The Entire League'),('Nathan Lewis','Red River Renegades'),('Chris Brown','Monday Night Mayhem'),('Andrew Martin','Big Sack Energy'),('Tyler James','Bison Stampede'),('Matt Robertson','No Punt Intended'),('Alex Johnson','The Bench Mob'),('Jesse Peterson','Saturday’s Hangover')])]
 event={'id':999,'name':'2026 Draft Order','race_engine':'stadium-v1','race_duration_ms':60000,'race_revision':1,'race_manifest':None,'status':'setup','bc_state':'idle','bc_offset_ms':0,'bc_started_at':None}
 participants=[{'member_id':m['id'],'sort_order':i,'number':i+1,'color':None} for i,m in enumerate(members)]
-results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
+kits={};kit_saves=[];results=[];commands=[];base=time.time()*1000;elapsed=0;started=time.time();freeze=False;lock=threading.RLock()
 def server_ms():return time.time()*1000
 def shared_elapsed():return elapsed+(0 if freeze else (time.time()-started)*1000)
 def set_elapsed(value,paused=False):
@@ -25,19 +25,33 @@ def snapshot(role):
  with lock:
   if event['bc_state']=='running' and shared_elapsed()>=event['race_duration_ms']:
    results=[{'member_id':int(x),'place':i+1,'finish_ms':round(event['race_duration_ms']*(.975+.025*i/(len(participants)-1)))} for i,x in enumerate(event['race_manifest']['order'])];event['bc_state']='finished';event['status']='complete';event['bc_offset_ms']=event['race_duration_ms'];event['bc_started_at']=None;event['race_revision']+=1
-  return copy.deepcopy({'event':event,'participants':participants,'results':results,'server_ms':server_ms(),'can_control':role=='commissioner'})
-stub="""export const db=()=>({rpc:async(name,args)=>{const r=await fetch('/qa/'+name,{method:'POST',headers:{'Content-Type':'application/json','X-Role':localStorage.getItem('qaRole')||'spectator'},body:JSON.stringify(args)});const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data}},channel:()=>{const c={on(){return c},subscribe(){return c},unsubscribe(){window.qaUnsubscribed=(window.qaUnsubscribed||0)+1},presenceState(){return {}},track(){}};return c}});"""
+  return copy.deepcopy({'event':event,'participants':participants,'results':results,'server_ms':server_ms(),'can_control':role=='commissioner','racer_kits':list(kits.values())})
+stub="""export const db=()=>({rpc:async(name,args)=>{const r=await fetch('/qa/'+name,{method:'POST',headers:{'Content-Type':'application/json','X-Role':localStorage.getItem('qaRole')||'spectator','X-Member':localStorage.getItem('qaMember')||'1'},body:JSON.stringify(args)});const data=await r.json();return r.ok?{data,error:null}:{data:null,error:data}},from:()=>{let id=0;const q={select(){return q},eq(k,v){id=v;return q},maybeSingle:async()=>{const r=await fetch('/qa/qa_load_racer_kit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({member_id:id})});return {data:await r.json(),error:null}}};return q},channel:()=>{const c={on(){return c},subscribe(){return c},unsubscribe(){window.qaUnsubscribed=(window.qaUnsubscribed||0)+1},presenceState(){return {}},track(){}};return c}});"""
 head=(root/'index.html').read_text().split('</head>')[0].replace('<head>','<head><base href="/">')+'</head>'
 html=head+'''<body><div class="app"><header class="topbar" style="height:52px"><b>DFL HQ</b></header><main id="view" class="view" data-route="arena"></main><nav class="bottomnav" style="height:54px"><b>DFL</b><span>Home</span><span>GameDay</span><span>Clubhouse</span></nav></div><div id="toast" class="hidden" role="status"></div><script type="module">import {render,leave} from './js/pages/arena-stadium.js';window.qaLeave=leave;window.qaRefresh=()=>render(document.querySelector('#view'));await qaRefresh();window.qaReady=true;</script></body></html>'''
 class Handler(SimpleHTTPRequestHandler):
  def do_GET(self):
-  name=self.path.split('?')[0];body=stub if name=='/js/supabase.js' else 'export const loadMemberDirectory=async()=>'+json.dumps(members)+'; export const currentMember=()=>null;' if name=='/js/members.js' else "export const canEdit=()=>localStorage.getItem('qaRole')==='commissioner';" if name=='/js/inline.js' else html if name=='/qa.html' else None
+  name=self.path.split('?')[0]
+  body=None
+  if name=='/js/supabase.js':body=stub
+  elif name=='/js/members.js':body='export const loadMemberDirectory=async()=>'+json.dumps(members)+"; export const currentMember=()=>({id:Number(localStorage.getItem('qaMember')||'1'),display_name:'My DFL racer'});"
+  elif name=='/js/inline.js':body="export const canEdit=()=>localStorage.getItem('qaRole')==='commissioner';"
+  elif name=='/js/member-lock.js':body="export const verifiedPin=()=>null;export const markMemberUnlocked=()=>{};"
+  elif name=='/qa.html':body=html
   if body is not None:self.send_response(200);self.send_header('Content-Type','text/html' if name=='/qa.html' else 'text/javascript');self.end_headers();self.wfile.write(body.encode());return
   super().do_GET()
  def do_POST(self):
   global elapsed,freeze,started,participants
-  body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));role=self.headers.get('X-Role');error=None
+  body=json.loads(self.rfile.read(int(self.headers['Content-Length'])));role=self.headers.get('X-Role');me=int(self.headers.get('X-Member') or 1);error=None
   with lock:
+   if self.path.endswith('profile_lock_status') or self.path.endswith('qa_load_racer_kit') or self.path.endswith('arena_save_racer_kit'):
+    data=False
+    if self.path.endswith('qa_load_racer_kit'):data=kits.get(int(body['member_id']))
+    elif self.path.endswith('arena_save_racer_kit'):
+     previous=kits.get(me);revision=previous['revision'] if previous else 0
+     if revision!=body['p_revision']:error={'code':'40001','message':'Racer changed. Reopen the editor.'}
+     else:data={'member_id':me,'kit':body['p_kit'],'revision':revision+1};kits[me]=data;kit_saves.append(data)
+    self.send_response(400 if error else 200);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(json.dumps(error or data).encode());return
    if self.path.endswith('arena_stadium_command'):
     commands.append(body);action=body['p_action']
     if role!='commissioner':error={'code':'42501','message':'Only Arena commissioners can control races.'}
@@ -62,12 +76,20 @@ with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,args=['--no-sandbox','--disable-dev-shm-usage','--no-proxy-server'])
  def context(role='spectator',width=390,reduced='no-preference'):
   c=browser.new_context(viewport={'width':width,'height':844},service_workers='block',reduced_motion=reduced,has_touch=True)
-  c.add_init_script("localStorage.setItem('qaRole',"+json.dumps(role)+")")
-  c.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://127.0.0.1:{server.server_port}') else r.abort());page=c.new_page();page.on('pageerror',lambda e:report['errors'].append(str(e)));page.goto(url);page.wait_for_function('window.qaReady===true');page.evaluate('document.fonts.ready');return c,page
+  c.add_init_script("localStorage.setItem('qaRole',"+json.dumps(role)+");localStorage.setItem('qaMember',"+json.dumps('1' if role=='commissioner' else '2')+")")
+  c.route('**/*',lambda r:r.continue_() if r.request.url.startswith(f'http://127.0.0.1:{server.server_port}') else r.abort());page=c.new_page();page.on('pageerror',lambda e:report['errors'].append(str(e)));page.goto(url)
+  try:page.wait_for_function('window.qaReady===true',timeout=60000)
+  except Exception:
+   print('LOAD ERROR',json.dumps({'errors':report['errors'],'body':page.locator('body').inner_text()[:700]}),flush=True);raise
+  page.evaluate('document.fonts.ready');return c,page
  c,admin=context('commissioner');d,watch=context()
  check('spectator has no race controls',watch.locator('.sr-controls button').count()==0)
  check('all 12 racers visible in the board',watch.locator('.sr-position').count()==12)
  admin.screenshot(path=str(out/'arena-390-ready.png'))
+ admin.locator('[data-my-racer]').click();admin.wait_for_selector('.sr-kit-dialog[open]');editor=admin.locator('.sr-kit-dialog');editor.locator('[data-kit-group="NFL"]').click();check('all 32 NFL teams available',editor.locator('[name=preset] option').count()==33);editor.locator('[name=preset]').select_option('nfl:BUF');editor.locator('[data-kit-skin]').last.click();editor.locator('[name=helmetStyle]').select_option('visor');editor.locator('[name=number]').fill('17');admin.wait_for_timeout(500);admin.screenshot(path=str(out/'racer-nfl.png'));editor.locator('[type=submit]').click();admin.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('kit saves to selected member',kits[1]['kit']['preset']=='nfl:BUF' and kits[1]['kit']['number']==17 and kits[1]['kit']['helmetStyle']=='visor');check('saved kit leaves the race draw unchanged',event['race_manifest'] is None)
+ admin.locator('[data-my-racer]').click();admin.wait_for_selector('.sr-kit-dialog[open]');editor=admin.locator('.sr-kit-dialog');check('racer persists when editor reopens',editor.locator('[name=number]').input_value()=='17');editor.locator('[data-kit-group="Pokémon"]').click();editor.locator('[name=preset]').select_option('pokemon:pikachu');admin.wait_for_timeout(300);admin.screenshot(path=str(out/'racer-pokemon.png'));editor.locator('[data-kit-group="Anime"]').click();editor.locator('[name=preset]').select_option('anime:naruto');admin.wait_for_timeout(300);admin.screenshot(path=str(out/'racer-anime.png'));admin.keyboard.press('Escape');admin.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('cancel keeps saved kit',kits[1]['kit']['preset']=='nfl:BUF')
+ watch.locator('[data-my-racer]').click();watch.wait_for_selector('.sr-kit-dialog[open]');second=watch.locator('.sr-kit-dialog');second.locator('[data-kit-group="Pokémon"]').click();second.locator('[name=preset]').select_option('pokemon:pikachu');second.locator('[name=number]').fill('25');second.locator('[type=submit]').click();watch.wait_for_function('!document.querySelector(".sr-kit-dialog")');check('members save independent racers',kits[1]['kit']['preset']=='nfl:BUF' and kits[2]['kit']['preset']=='pokemon:pikachu');shared=watch.evaluate('async()=>{const {loadStadiumRace}=await import("/js/arena/stadium-data.js");return (await loadStadiumRace(999)).racer_kits}');check('spectators receive both saved looks',len(shared)==2)
+ admin.locator('[data-camera=field]').click();check('full field selected',admin.locator('[data-camera=field]').get_attribute('aria-pressed')=='true');admin.screenshot(path=str(out/'arena-full-field.png'));admin.locator('[data-follow-racer="5"]').click();check('tap a racer follows them',admin.locator('[data-camera=follow]').get_attribute('aria-pressed')=='true');admin.locator('[data-camera=auto]').click()
  admin.locator('[data-edit]').click();check('commissioner can choose racers',admin.locator('[name=racer]').count()==12)
  admin.locator('[data-all]').click();admin.locator('[type=submit]').click();check('requires at least two selected racers',admin.locator('.sr-form-error').is_visible());admin.locator('[data-all]').click();admin.locator('[name=name]').fill('The Boys • Draft Order');admin.locator('[data-duration="90"]').click();admin.locator('[type=submit]').click();admin.wait_for_function('document.querySelector("[data-name]").textContent.includes("The Boys")')
  check('saved duration displayed',admin.locator('[data-duration-label]').inner_text()=='1:30');check('race editor closes',not admin.locator('.sr-editor-host').is_visible())
@@ -85,6 +107,7 @@ with sync_playwright() as p:
  watch.screenshot(path=str(out/'arena-390-finished.png'));check('spectator can replay',watch.locator('[data-replay]').is_visible());watch.locator('[data-replay]').click();watch.wait_for_function('document.querySelector("[data-overlay]").textContent==="3"');check('replay never writes race controls',commands[-1]['p_action']=='resume')
  for width in [320,390,768]:
   admin.set_viewport_size({'width':width,'height':844});admin.wait_for_timeout(400);check(f'{width}px has no horizontal overflow',admin.evaluate('document.documentElement.scrollWidth<=innerWidth'));admin.screenshot(path=str(out/f'arena-{width}-final.png'))
+  admin.locator('[data-my-racer]').click();admin.wait_for_selector('.sr-kit-dialog[open]');check(f'{width}px editor has no overflow',admin.locator('.sr-kit-dialog').evaluate('e=>e.scrollWidth<=e.clientWidth+1'));admin.locator('.sr-kit-dialog').evaluate('e=>e.scrollTop=e.scrollHeight');check(f'{width}px live preview stays visible',admin.locator('.sr-kit-preview').evaluate('e=>{const p=e.getBoundingClientRect(),h=e.closest("form").querySelector("header").getBoundingClientRect();return p.top>=h.bottom-6&&p.bottom<innerHeight-80}'));admin.screenshot(path=str(out/f'racer-{width}-scrolled.png'));admin.keyboard.press('Escape');admin.wait_for_function('!document.querySelector(".sr-kit-dialog")');check(f'{width}px editor restores focus',admin.locator('[data-my-racer]').evaluate('e=>e===document.activeElement'))
  admin.set_viewport_size({'width':844,'height':390});admin.wait_for_timeout(200);check('landscape has no overflow',admin.evaluate('document.documentElement.scrollWidth<=innerWidth'))
  reduced_c,reduced=context(reduced='reduce');check('reduced motion respected',reduced.locator('.sr-room').get_attribute('data-motion')=='off');admin.locator('button[data-motion]').click();check('motion toggle stored',admin.evaluate("localStorage.getItem('dfl.reduceRaceMotion')==='1'"))
  admin.evaluate('window.qaLeave()');watch.evaluate('window.qaLeave()');check('subscriptions cleaned up',admin.evaluate('window.qaUnsubscribed')==1 and watch.evaluate('window.qaUnsubscribed')==1)
