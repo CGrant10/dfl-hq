@@ -1,4 +1,4 @@
-# Continuous tab glide — 1.394.0
+# Continuous tab glide — 1.394.1
 
 Home Week Ahead/feed/position tabs, Clubhouse sections and Sportsbook product/view tabs share a continuous touch transition. The actual current panel follows the finger directly, while an inert neighboring copy enters at the shared edge. Releasing advances from the last painted position and interpolates the panel height in the same 280ms animation. A short or endpoint pull returns in 220ms. Dedicated sibling panels can preview; tabs backed by one asynchronous content slot retain their existing selection path.
 
@@ -7,3 +7,5 @@ A new touch can grab an unfinished arrival from either visible side. Its current
 Preview copies are aria-hidden/inert and have no duplicated IDs or data action hooks. Actual form controls remain in place, retaining draft values. Temporary clipping, height, positioning, transforms and flags are restored on completion, resize, preference/visibility changes, external tab actions, source replacement or teardown. Scroll effects ignore inert copies. Frame work only writes transforms; cloning and measurements occur at gesture boundaries or direction changes.
 
 The isolated review uses production Home markup, production tab handlers and sample Clubhouse/Book content with no backend actions. It checks finger/edge geometry, release continuity, height interpolation, interrupted reversal, short returns, nested view/product routing, preserved draft nodes, 320px layout, resize, reduced motion and teardown. CI retains screenshots and results alongside Home and sheet reviews. The existing Home review waits for portrait cleanup state rather than assuming a fixed animation delay. Evidence: `/workspace/dfl-glide-1394/`.
+
+A transparent gesture surface travels with the inert preview copy. It receives a new horizontal pull from the outgoing side without changing touch behavior on the actual panel’s tables or controls. Sportsbook’s plain bankroll section also explicitly allows vertical pan and pinch while reserving horizontal motion for product navigation. The fixture uses that real section class so native browser gesture ownership is exercised.

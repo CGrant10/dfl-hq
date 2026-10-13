@@ -111,3 +111,7 @@ html[data-ui-motion="on"] #view [data-scroll-title] {
 /* Neighbor copies never become controls or replay decorative animations. */
 .dfl-tab-preview { pointer-events:none!important; user-select:none!important; }
 .dfl-tab-preview,.dfl-tab-preview * { animation:none!important; transition:none!important; }
+
+/* Only the visual preview side captures horizontal pulls; native tables stay free. */
+.dfl-tab-grab,#sportsbook-wrap .sb-bankroll { touch-action:pan-y pinch-zoom; }
+.dfl-tab-grab { user-select:none; }

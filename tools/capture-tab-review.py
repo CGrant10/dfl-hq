@@ -21,6 +21,7 @@ with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=os.environ.get('DFL_REVIEW_CHROMIUM'),headless=True,args=['--no-sandbox','--no-proxy-server'])
  context=browser.new_context(viewport={'width':390,'height':844},has_touch=True)
  context.route('**/js/player-card-data.js',lambda route:route.fulfill(content_type='text/javascript',body='export async function loadPlayerCard(){throw Error("No data in tab fixture")}'))
+ context.add_init_script("window.tabAnimations=[];const original=Element.prototype.animate;Element.prototype.animate=function(frames,options){const a=original.call(this,frames,options);tabAnimations.push({className:this.className,frames,options});if(window.pauseTabArrival&&this.classList.contains('home-week-brief')&&!this.classList.contains('dfl-tab-preview')){window.pauseTabArrival=false;a.pause();a.currentTime=100}return a}")
  page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(f'http://127.0.0.1:{server.server_port}/',wait_until='domcontentloaded');page.wait_for_function('!!window.tabReviewReady')
  page.evaluate('document.fonts.ready')
@@ -34,7 +35,7 @@ with sync_playwright() as p:
   if end:touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
   return x+dx,y
  def clean():
-  page.wait_for_function('!document.querySelector(".dfl-tab-preview,[data-ui-swipe-settling]")')
+  page.wait_for_function('!document.querySelector(".dfl-tab-preview,.dfl-tab-grab,[data-ui-swipe-settling]")')
   check('no horizontal overflow',page.evaluate('document.documentElement.scrollWidth<=innerWidth'))
  # Home next-page preview and exact release continuity.
  details=page.locator('details[data-page-detail="home-week"]');details.evaluate('e=>e.open=true')
@@ -46,18 +47,19 @@ with sync_playwright() as p:
  check('preview is inert without duplicate IDs or action hooks',state['inert'] and state['hidden']=='true' and state['ids']==0 and state['data']==0)
  page.screenshot(path=str(OUT/'home-mid-drag-390.png'))
  touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
- frames=page.locator('[data-week-panel="picks"]').evaluate('e=>e.getAnimations().map(a=>a.effect.getKeyframes())')
+ frames=page.evaluate("tabAnimations.filter(a=>String(a.className).includes('home-outlook-games')&&!String(a.className).includes('dfl-tab-preview')&&a.options.duration===280).map(a=>a.frames)")
  starts=[f[0].get('transform','') for f in frames]
  check('release continues from visible neighbor',any(t.startswith('translateX(') and abs(float(t.split('(')[1].split('px')[0])-(state['width']-90))<2 for t in starts))
  check('panel height transitions with glide',any('height' in f[0] for f in frames))
  clean();check('Home selects destination',page.locator('[data-week-tab="picks"]').get_attribute('aria-selected')=='true')
 
  # Grabbing an unfinished arrival retains both position and visible height.
+ page.evaluate('window.pauseTabArrival=true')
  drag('[data-week-panel="picks"]',90)
  moving=page.locator('[data-week-panel="brief"]')
  before=moving.evaluate("e=>{const a=e.getAnimations().find(a=>a.effect.getKeyframes().some(f=>f.transform));a.pause();a.currentTime=100;return{x:new DOMMatrixReadOnly(getComputedStyle(e).transform).m41,height:e.getBoundingClientRect().height}}")
  box=moving.bounding_box();parent=moving.locator('..').bounding_box();x=parent['x']+parent['width']-8;y=box['y']+24
- check('reversal starts on the visible outgoing side',page.evaluate('([x,y])=>document.elementFromPoint(x,y).hasAttribute("data-ui-swipe-host")',[x,y]))
+ check('reversal starts on the visible outgoing side',page.evaluate('([x,y])=>document.elementFromPoint(x,y).classList.contains("dfl-tab-grab")',[x,y]))
  touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]});page.wait_for_timeout(40)
  grabbed=moving.evaluate('e=>({x:new DOMMatrixReadOnly(getComputedStyle(e).transform).m41,height:e.getBoundingClientRect().height})')
  check('unfinished arrival keeps finger position',abs(grabbed['x']-before['x'])<2)
@@ -86,6 +88,6 @@ with sync_playwright() as p:
  page.emulate_media(reduced_motion='reduce');page.wait_for_timeout(100)
  drag('#sb-pickem-panel',90);clean();check('reduced motion keeps native tab navigation',page.locator('[data-sb-product="book"]').get_attribute('aria-selected')=='true')
  page.emulate_media(reduced_motion='no-preference')
- page.evaluate('window.stopTabReview()');check('teardown removes previews and flags',page.locator('.dfl-tab-preview,[data-ui-swipe-settling]').count()==0)
+ page.evaluate('window.stopTabReview()');check('teardown removes previews and flags',page.locator('.dfl-tab-preview,.dfl-tab-grab,[data-ui-swipe-settling]').count()==0)
  check('no browser errors',not errors)
  (OUT/'browser-checks.json').write_text(json.dumps({'checks':results,'errors':errors},indent=2));browser.close()
