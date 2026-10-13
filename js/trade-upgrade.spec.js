@@ -64,8 +64,12 @@ describe('roster slots and available replacement',()=>{
   const r=evaluateTrade({teamA:{playerIds:['a1','a2']},teamB:{playerIds:['b']},sendA:['a1','a2'],sendB:['b'],pool});expect(r.waiverAddsA).toEqual([]);expect(r.openSlotsA).toBe(1);
  });
  it('does not treat owned reserve or taxi players as free waiver replacements',()=>{
-  const pool=buildPlayerPool({rosters:[{players:['a'],reserve:['reserve'],taxi:['taxi']}],players:Object.fromEntries(['a','reserve','taxi','free'].map(id=>[id,{n:id,p:'WR'}])),projections:['a','reserve','taxi','free'].map(id=>({player_id:id,stats:{rec:170}})),scoringSettings:{rec:1}});
+  const pool=buildPlayerPool({rosters:[{players:['a'],reserve:['reserve'],taxi:['taxi']}],players:Object.fromEntries(['a','reserve','taxi','free'].map(id=>[id,{n:id,p:'WR',t:'ATL'}])),projections:['a','reserve','taxi','free'].map(id=>({player_id:id,stats:{rec:170}})),scoringSettings:{rec:1}});
   expect(pool.get('a').waiverOptions.map(p=>p.id)).toEqual(['free']);
+ });
+ it('excludes retired, unattached and zero-forecast players from waiver options',()=>{
+  const ids=['a','active','retired','unattached','zero'],pool=buildPlayerPool({rosters:[{players:['a']}],players:Object.fromEntries(ids.map(id=>[id,{n:id,p:'WR',t:id==='unattached'?'FA':'ATL',s:id==='retired'?'Inactive':'Active'}])),projections:ids.map(id=>({player_id:id,stats:{rec:id==='zero'?0:170}})),scoringSettings:{rec:1}});
+  expect(pool.get('a').waiverOptions.map(p=>p.id)).toEqual(['active']);
  });
  it('does not promise the same waiver replacement to two members of one routed trade',()=>{
   const waiver={...player('free','TE',8,0),waiverCandidate:true},pool=new Map(['a1','a2','b1','b2','c'].map(id=>[id,{...player(id,'WR',10,30),waiverOptions:[waiver]}]));

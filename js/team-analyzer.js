@@ -280,7 +280,7 @@ export function buildPlayerPool({ rosters = [], players = {}, previousStats = {}
     });
   }
   // Actual unrostered projections supply optional roster-slot replacements.
-  const waiverOptions=ANALYZER_POSITIONS.flatMap(position=>list.filter(p=>!rostered.has(p.id)&&p.position===position&&p.modelSource==='projection'&&!p.isOut&&!p.isRisky)
+  const waiverOptions=ANALYZER_POSITIONS.flatMap(position=>list.filter(p=>!rostered.has(p.id)&&p.position===position&&p.modelSource==='projection'&&p.tradePerGame>0&&p.nflTeam!=='FA'&&!/inactive|retir/i.test(p.playerStatus||'')&&!p.isOut&&!p.isRisky)
     .sort((a,b)=>(b.tradePerGame||0)-(a.tradePerGame||0)).slice(0,4).map(p=>({...p,tradeValue:0,expectedPoints:p.expectedPoints||0,waiverCandidate:true})));
   for(const p of pool.values())p.waiverOptions=waiverOptions;
   return pool;
