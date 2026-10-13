@@ -68,7 +68,7 @@ body.broadcasting #update.update-gate { display: block !important; }
 .dfl-anniversary__number { display:inline-block; color:var(--anniversary-gold,#f6d399); font-size:42px; line-height:1; letter-spacing:-.04em; }
 .dfl-anniversary__label { max-width:112px; color:var(--anniversary-ink,#ef3747); font-size:13px; line-height:1.2; letter-spacing:.1em; text-align:left; }
 @supports (background-clip:text) or (-webkit-background-clip:text) {
-  .dfl-anniversary__number { background:linear-gradient(110deg,var(--anniversary-gold,#f6d399) 35%,var(--anniversary-glint,#fff9ea) 50%,var(--anniversary-gold,#f6d399) 65%) 100% 0 / 300% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .dfl-anniversary__number { background:linear-gradient(110deg,var(--anniversary-gold,#f6d399) 35%,var(--anniversary-glint,#fff9ea) 50%,var(--anniversary-gold,#f6d399) 65%) 100% 0 / 300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
 }
 .update-gate__anniversary { margin:18px 0 8px; padding:0 0 7px; font:700 18px/1.2 Rajdhani,system-ui,sans-serif; }
 
