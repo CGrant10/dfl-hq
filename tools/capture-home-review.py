@@ -979,6 +979,8 @@ with sync_playwright() as p:
     broadcast=page.locator('[data-bx-stage]')
     broadcast.evaluate('e=>scrollTo({top:scrollY+e.getBoundingClientRect().top-100,behavior:"instant"})')
     page.wait_for_timeout(300)
+    page.locator('[data-bx-go="0"]').focus()
+    assert page.locator('.bx-dots').evaluate('e=>getComputedStyle(e).backgroundColor')=='rgba(0, 0, 0, 0)', 'Focused broadcast dots drew a mismatched background plate'
     deck_count=page.locator('[data-bx-go]').count()
     def broadcast_index():return int(page.locator('[data-bx-go].on').get_attribute('data-bx-go'))
     for delta in [1]*12+[-1]*12:
@@ -995,6 +997,9 @@ with sync_playwright() as p:
     box=broadcast.bounding_box();x=box['x']+box['width']*.75;y=box['y']+20
     touch.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
     touch.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-50,'y':y}]})
+    page.wait_for_timeout(50)
+    metrics['broadcastDragContinuity']=page.evaluate("""()=>{const current=document.querySelector('.bx-slide:not(.bx-leaving):not(.bx-preview)'),preview=document.querySelector('.bx-preview');return {offset:new DOMMatrixReadOnly(getComputedStyle(current).transform).m41,duration:getComputedStyle(current).transitionDuration,preview:!!preview&&preview.hasAttribute('inert')}}""")
+    assert abs(metrics['broadcastDragContinuity']['offset']+50)<2 and metrics['broadcastDragContinuity']['duration']=='0s' and metrics['broadcastDragContinuity']['preview'], 'Broadcast drag lagged behind the finger or failed to preview its neighbor'
     page.evaluate("""()=>{window.dragSlide=document.querySelector('.bx-slide:not(.bx-leaving)');const current=Number(document.querySelector('[data-bx-go].on').dataset.bxGo),changed=window.reviewDeck.map((item,index)=>index===current?{...item,headline:item.headline+' updated'}:item);window.reviewStage.update(changed);if(!window.dragSlide.isConnected||window.dragSlide!==document.querySelector('.bx-slide:not(.bx-leaving)'))throw Error('Refresh replaced a slide under the finger')}""")
     touch.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});page.wait_for_timeout(200)
     page.evaluate('window.reviewStage.update(window.reviewDeck)')
@@ -1153,6 +1158,7 @@ with sync_playwright() as p:
         page.locator('.gameday-home-detail').evaluate('e=>e.open=true')
         page.locator('.home-score-tools').evaluate('e=>e.open=true')
         for width in [320,390,1280]:
+            print(f'Theme review: {mode}/{width}',flush=True)
             page.set_viewport_size({'width':width,'height':844})
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             page.wait_for_timeout(350)
@@ -1269,6 +1275,8 @@ with sync_playwright() as p:
                 # Measure after finite text/score entrances, rather than a
                 # mid-scale frame on a busy renderer. Decorative loops continue.
                 page.evaluate("""async()=>{const slide=document.querySelector('.bx-slide:not(.bx-leaving)'),finite=slide.getAnimations({subtree:true}).filter(a=>{const t=a.effect.getTiming();return t.iterations===1&&Number(t.duration)<=1200});for(let n=0;n<120&&finite.some(a=>a.playState==='running'||a.playState==='pending');n++)await new Promise(r=>setTimeout(r,10))}""")
+                if index==0:
+                    assert page.evaluate("""()=>{const stage=document.querySelector('.bx-stage'),shade=stage.querySelector('.bx-home-shade'),a=stage.getBoundingClientRect(),b=shade.getBoundingClientRect();return stage.scrollTop===0&&['left','top','width','height'].every(k=>Math.abs(a[k]-b[k])<1)}"""), f'Opener shade or focus shifted outside its card: {mode}/{width}'
                 check=page.evaluate('''() => {
                   const stage=document.querySelector('.bx-stage'),slide=stage.querySelector('.bx-slide:not(.bx-leaving)'),box=slide.getBoundingClientRect();
                   const content=[...slide.children,...slide.querySelectorAll('.bx-editorial-copy > *, .bx-champ > *')].filter(e=>getComputedStyle(e).position!=='absolute'&&!['none','contents'].includes(getComputedStyle(e).display));

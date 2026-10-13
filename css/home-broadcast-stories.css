@@ -89,7 +89,7 @@
 
 /* A few pixels of depth are reserved for decorative art, never data portraits. */
 #home-wrap .bx-home-shade {
-  position:absolute; inset:-16px 0 -44px; z-index:-1; pointer-events:none;
+  position:absolute; inset:0; z-index:-1; pointer-events:none;
   background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 95%,transparent),color-mix(in srgb,var(--bg) 80%,transparent) 30%,color-mix(in srgb,var(--bg) 45%,transparent) 46%,transparent 65%);
 }
 #home-wrap .bx-stage[data-depth-active] :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {
@@ -103,3 +103,15 @@
 @media(prefers-reduced-motion:reduce) {
   #home-wrap .bx-stage[data-depth-active] :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) { transform:none; }
 }
+
+/* Clip decorative bleed without a hidden scroll area that focus can shift. */
+#home-wrap .bx-stage { overflow:clip; }
+/* The opener's artwork and scrim share the card bounds, including transport. */
+#home-wrap .bx-home-feature { inset:0; padding:18px 0 52px; }
+#home-wrap .bx-home-art { inset:-4px 0; width:100%; height:calc(100% + 8px); }
+/* Direct manipulation must not chase pointer frames through a CSS transition. */
+.bx-slide.bx-dragging { transition:none!important; opacity:1; will-change:transform; }
+.bx-slide.bx-preview { pointer-events:none; }
+
+/* Dots are always visible now; their old focus-reveal plate is obsolete. */
+#home-wrap .bx-dots:focus-within { background:transparent; }
