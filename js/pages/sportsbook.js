@@ -193,7 +193,6 @@ export async function render(view){
     ${canBook?commissionerBook():""}
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body">${ledger.length?ledger.map(r=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?"+":""}${num(r.amount)} SIN</strong></div>`).join(""):`<span class="muted">No SIN has moved yet.</span>`}</div></details>
-    <p class="muted tiny" style="text-align:center">SIN is play money only.</p>
     ${slipBar(slip,outcomeMap,marketMap)}
     </div>
     <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc,canBook)}</div>
@@ -399,7 +398,7 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
  const remaining=slate.markets.filter((_,index)=>index!==featuredIndex);
  const cards=remaining.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
  const grid=`<div class="sb-market-grid">${cards}</div>`;
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><p class="sb-fantasy-note">${note}</p>${featured}${remaining.length?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${featured?`More Week ${slate.week} matchups`:`View Week ${slate.week} matchups`}<span>${remaining.length} games</span></summary>${grid}</details>`:''}</section>`;
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div>${featured}${remaining.length?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${featured?`More Week ${slate.week} matchups`:`View Week ${slate.week} matchups`}<span>${remaining.length} games</span></summary>${grid}</details>`:''}</section>`;
 }
 
 function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketMap,members}){

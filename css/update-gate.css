@@ -62,13 +62,7 @@ body.broadcasting #update.update-gate { display: block !important; }
   text-wrap: balance;
 }
 
-.update-gate__intro {
-  max-width: 330px;
-  margin: 14px 0 18px;
-  color: rgba(239, 242, 247, .76);
-  font-size: 14px;
-  line-height: 1.45;
-}
+.update-gate__anniversary { margin:18px 0 8px; color:#ef3747; font:700 18px/1.2 Rajdhani,system-ui,sans-serif; letter-spacing:.12em; }
 
 .update-gate__mark {
   position: relative;
@@ -103,40 +97,6 @@ body.broadcasting #update.update-gate { display: block !important; }
   }
 }
 
-.update-gate__features {
-  width: 100%;
-  display: grid;
-  gap: 8px;
-  text-align: left;
-}
-
-.update-gate__features > div {
-  min-height: 54px;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 9px 12px;
-  background: rgba(11, 13, 17, .73);
-  border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-}
-
-.update-gate__feature-icon {
-  flex: 0 0 34px;
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  color: #ef3747;
-  background: rgba(222, 35, 51, .13);
-  border-radius: 9px;
-}
-
-.update-gate__feature-icon svg { width: 21px; height: 21px; }
-.update-gate__feature-icon svg * { stroke: currentColor; }
-.update-gate__features strong { color: #fff; font-size: 14px; line-height: 1.15; }
-
 .update-gate__action { width: 100%; margin-top: auto; padding-top: 18px; }
 .update-gate__button {
   width: 100%;
@@ -163,11 +123,9 @@ body.broadcasting #update.update-gate { display: block !important; }
 
 @media (max-height: 720px) {
   #update.update-gate { padding-top: max(22px, env(safe-area-inset-top)); }
-  .update-gate__intro { margin-block: 9px 12px; }
+  .update-gate__anniversary { margin-block:12px 6px; font-size:16px; }
   .update-gate h1 { font-size: 39px; }
-  .update-gate__mark { width: 112px; margin-bottom: 11px; }
-  .update-gate__features { gap: 6px; }
-  .update-gate__features > div { min-height: 48px; padding-block: 7px; }
+  .update-gate__mark { width:clamp(180px,48vw,220px); margin-bottom:11px; }
   .update-gate__action { padding-top: 12px; }
 }
 

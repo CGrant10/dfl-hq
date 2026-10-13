@@ -8,6 +8,7 @@
 #home-wrap .home-newspaper-date { padding: 0; border: 0; text-align: left; color: var(--paper-muted); font: 600 11px/1.4 var(--home-ui-font); letter-spacing: .12em; }
 #home-wrap .home-newspaper-name h1 { margin: 0; font: 700 clamp(30px,9.8vw,38px)/1.1 var(--home-ui-font); letter-spacing: .015em; }
 #home-wrap .home-newspaper-edition { display: none; }
+#home-wrap .home-newspaper-edition.is-anniversary { display:inline-flex; margin:8px 0 0; padding-left:9px; border-left:3px solid var(--accent); color:var(--accent); font:700 .875rem/1.25 var(--font-display); letter-spacing:.055em; }
 #home-wrap .home-frontpage { display: grid; grid-template-columns: minmax(0,1fr); gap: 20px; padding: 0; }
 #home-wrap .home-personal-desk { min-width: 0; }
 #view #home-wrap .home-personal-desk > [data-home-gameday-slot] { margin: 0; padding: 0; border: 0; }

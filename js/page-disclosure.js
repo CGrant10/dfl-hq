@@ -2,7 +2,7 @@
 import {esc} from './ui.js';
 function preferenceKey(name){let member='guest';try{member=localStorage.getItem('dfl.memberId')||member}catch{}return `dfl.details.v1.${member}.${name}`}
 export function disclosure(name,title,description,body,{open=false}={}){
- return `<details class="page-disclosure" data-page-detail="${esc(name)}"${open?' open':''}><summary><span><strong>${esc(title)}</strong>${description?`<small>${esc(description)}</small>`:''}</span></summary><div class="page-detail-body">${body}</div></details>`;
+ return `<details class="page-disclosure" data-page-detail="${esc(name)}"${open?' open':''}><summary><span><strong>${esc(title)}</strong></span></summary><div class="page-detail-body">${body}</div></details>`;
 }
 export function wirePageDisclosures(root){
  for(const section of root?.querySelectorAll('[data-page-detail]')||[]){

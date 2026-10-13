@@ -151,3 +151,13 @@ html[data-ui-motion="off"] #view :is(.btn,.home-lineup-primary,.tb-generate,.tb-
 #view[data-route="wall"] .identity-byline{font-size:.6875rem;line-height:1.45;letter-spacing:.04em}
 #view[data-route="wall"] .identity-byline > *{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
 #view[data-route="wall"] .ib-title > span{min-width:0}
+
+/* Product voice: titles and actions carry the interface. Keep game data,
+   authored league content, field labels and error/status messages visible. */
+#view :is(.section-copy,.clubhouse-section-copy,.sb-fantasy-note,.tp-intro,.pp-board-note,.advice-footnote,.fact-note,.ident-theme-note,.ph-photo-note,.abr-help,.ke-hint,.notify-test-hint) { display:none!important; }
+#view .page-disclosure > summary small { display:none!important; }
+#view .clubhouse-footnote:not([role="status"]) { display:none!important; }
+#view .wo-method:not([role="status"]) { display:none!important; }
+#view .ta-method { display:none!important; }
+#view:not([data-route="arena"]) .page-sub:not(#keeper-count) { display:none!important; }
+.choice-sub { display:none!important; }

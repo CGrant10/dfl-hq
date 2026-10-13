@@ -123,7 +123,7 @@ function markup({ week, team, advice, trending, defense, stale, showScore }) {
 
     ${advice.swaps.length ? `<div class="wo-block">
       <div class="wo-block-head"><h3>Make ${advice.swaps.length} change${advice.swaps.length === 1 ? "" : "s"}</h3>
-        <small>only moves worth more than 1.5 projected points</small></div>
+</div>
       <div class="wo-move-list"><ul class="wo-swaps">${advice.swaps.slice(0,1).map(swap => swapCard(swap, trending)).join("")}</ul>${advice.swaps.length>1?disclosure("analyzer-more-moves",`View ${advice.swaps.length-1} more lineup moves`,"Other projected upgrades",`<ul class="wo-swaps">${advice.swaps.slice(1).map(swap=>swapCard(swap,trending)).join("")}</ul>`):""}</div>
     </div>` : `<p class="wo-clean">${advice.lineupIsSet
       ? "Every starter is the best legal option at their slot this week."
