@@ -465,6 +465,7 @@ export async function render(view) {
 
     The personal matchup and lineup action lead, then the broadcast.
     Forecasts expand within Your week; standings and league news follow.
+    The compact injury preview follows Around the league.
     Archive stories come after current information, then the Wall closes.
     Draft, League Feed and the Wall still load as the reader approaches them.
     The Wall closes the newspaper; a compact identity and update footer follows.
@@ -488,7 +489,6 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
-    ${homeInjuryPanelMarkup()}
     <section class="home-week-desk" aria-label="Your week">
     ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-live-slot></div>
@@ -505,6 +505,7 @@ export async function render(view) {
     <div data-draft-slot></div>
     <div data-home-feed-slot data-content-state="loading" aria-busy="true" class="home-deferred-slot">${homeLeagueFeed(announcements.data || [], null)}</div>`)}
     </section>
+    ${homeInjuryPanelMarkup()}
     <div data-home-lore-slot>${homeLeagueFile()}</div>
     <section class="home-banter" aria-label="League banter"><div data-wall-slot data-content-state="loading" aria-busy="true" class="home-deferred-slot"><div class="home-wall-loading" role="status" aria-label="Loading league wall"><span class="sr-only">Loading league wall.</span><div aria-hidden="true">${loadingRows(2)}</div></div></div></section>
     ${identity(leagues.data || [], memberRows, settings.get(KEY_LOGO))}

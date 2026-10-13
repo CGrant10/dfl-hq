@@ -129,7 +129,6 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   </div>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   </div>
-  ${homeInjuryPanelMarkup()}
   <section class="home-week-desk" aria-label="Your week">
     ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
     <div data-home-live-slot class="gameday-card home-live-desk"></div>
@@ -142,6 +141,7 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
     <section class="home-weekly-clubhouse card"><div><small>LEAGUE NEWS</small><h2>Anniversary golf weekend</h2><p>The next chapter starts on the first tee.</p></div><button type="button" class="linkbtn home-text-action" data-open-home-news><span>Read league news</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></button></section>
     ${disclosure('home-league','More from the league','News, trades and league updates',expandedHome)}
   </section>
+  ${homeInjuryPanelMarkup()}
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
   <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>

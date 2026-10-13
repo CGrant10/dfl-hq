@@ -3,11 +3,12 @@ import {injuryRows} from './injury-report-ui.js';
 import {patchGameDay} from './game-day-dom.js';
 
 export function homeInjuryPanelMarkup() {
-  return `<section class="home-injury-panel" aria-labelledby="home-injury-title"><header><div><small data-home-injury-priority>NFL AVAILABILITY</small><h2 id="home-injury-title">Injury wire</h2></div><button type="button" class="linkbtn" data-home-injury-play disabled>Loading</button></header><div class="home-injury-viewport" tabindex="0" role="region" aria-label="Injury list" data-home-injury-viewport><p class="home-injury-empty" role="status">Loading injury report…</p></div><footer><small data-home-injury-stamp></small><button type="button" class="linkbtn" data-open-injury-report>Full report →</button></footer></section>`;
+  return `<section class="home-injury-panel" aria-labelledby="home-injury-title"><header><div><small data-home-injury-priority>NFL AVAILABILITY</small><h2 id="home-injury-title">Injury wire</h2></div><button type="button" class="linkbtn" data-home-injury-play disabled>Loading</button></header><div class="home-injury-viewport" tabindex="0" role="region" aria-label="Automatically scrolling injury preview" data-home-injury-viewport><p class="home-injury-empty" role="status">Loading injury report…</p></div><footer><small data-home-injury-stamp></small><button type="button" class="linkbtn" data-open-injury-report>Full report →</button></footer></section>`;
 }
 
 // Advance the native viewport at a steady reading pace. The frame loop runs
-// only while the wire is visible; touching it pauses until Play is pressed.
+// only while the wire is visible. Page swipes do not pause the preview;
+// its Pause button, focused player links and dialogs provide reader holds.
 export function mountHomeInjuryPanel(root,{getReport}) {
   if (!root) return {update(){},stop(){}};
   const viewport=root.querySelector('[data-home-injury-viewport]'),play=root.querySelector('[data-home-injury-play]');
@@ -48,7 +49,6 @@ export function mountHomeInjuryPanel(root,{getReport}) {
     const rows=[...viewport.querySelectorAll('.injury-player')];
     return Math.max(0,rows.findIndex(row=>row.offsetTop-row.parentElement.offsetTop+row.offsetHeight>viewport.scrollTop+1));
   };
-  const pause=()=>{paused=true;clear();stopScroll();syncButton();};
   const toggle=()=>{paused=!paused;arm();};
   const changed=()=>{if(!motion()||document.hidden)stopScroll();arm();};
   const focusIn=()=>{focused=true;clear();};
@@ -58,7 +58,7 @@ export function mountHomeInjuryPanel(root,{getReport}) {
   const observer=new IntersectionObserver(entries=>{if(stopped)return;visible=entries.some(entry=>entry.isIntersecting&&entry.intersectionRatio>=.5);if(!visible)stopScroll();arm();},{threshold:.5});observer.observe(root);
   const resize=new ResizeObserver(()=>{if(!stopped)arm();});resize.observe(viewport);
   const modalFocus=event=>{if(event.target.closest('dialog[open]')){clear();stopScroll();arm();}else changed();};
-  play.addEventListener('click',toggle);viewport.addEventListener('pointerdown',pause);viewport.addEventListener('wheel',pause,{passive:true});
+  play.addEventListener('click',toggle);
   viewport.addEventListener('focusin',focusIn);viewport.addEventListener('focusout',focusOut);
   viewport.addEventListener('pointerenter',enter);viewport.addEventListener('pointerleave',leave);
   document.addEventListener('visibilitychange',changed);window.addEventListener('dfl:ui-motion-change',changed);reduced.addEventListener('change',changed);
@@ -83,7 +83,7 @@ export function mountHomeInjuryPanel(root,{getReport}) {
     },
     stop() {
       stopped=true;clear();stopScroll();observer.disconnect();resize.disconnect();
-      play.removeEventListener('click',toggle);viewport.removeEventListener('pointerdown',pause);viewport.removeEventListener('wheel',pause);
+      play.removeEventListener('click',toggle);
       viewport.removeEventListener('focusin',focusIn);viewport.removeEventListener('focusout',focusOut);
       viewport.removeEventListener('pointerenter',enter);viewport.removeEventListener('pointerleave',leave);
       document.removeEventListener('visibilitychange',changed);window.removeEventListener('dfl:ui-motion-change',changed);reduced.removeEventListener('change',changed);
