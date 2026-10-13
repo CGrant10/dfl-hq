@@ -84,7 +84,7 @@ export function updateGateMarkup(version){
   return `<div class="update-gate__content">
     <p class="update-gate__eyebrow">DFL HQ UPDATE</p>
     <h1>The league just got better.</h1>
-    ${anniversary?`<p class="update-gate__anniversary">${season} YEAR ANNIVERSARY</p>`:""}
+    ${anniversary?`<p class="update-gate__anniversary dfl-anniversary"><span class="dfl-anniversary__number">${season}</span> <span class="dfl-anniversary__label">YEAR ANNIVERSARY</span></p>`:""}
     <span class="update-gate__mark"><img src="icons/app-update-aligned.svg?v=${safeVersion}" alt="DFL HQ" width="512" height="512" crossorigin="anonymous"><span class="update-gate__glow" aria-hidden="true"></span></span>
     <div class="update-gate__action">
       <button class="update-gate__button" id="update-go" type="button">UPDATE NOW</button>
