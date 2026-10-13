@@ -527,7 +527,7 @@ function controls(items, current = 0) {
    6000 - the two copies had already drifted from the DWELL table in
    broadcast-deck.js, so a change there did not reach a slide that arrived
    without a dwell. */
-export const DWELL_FALLBACK = 3600;
+export const DWELL_FALLBACK = 3000;
 
 /* How long an outgoing slide is kept in the layer before it is dropped, as a
    backstop for a transitionend that never fires. Must outlast the longest

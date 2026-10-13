@@ -34,6 +34,62 @@ url = f'http://127.0.0.1:{server.server_port}/'
 with urlopen(url) as response:
     print('Review document:', response.status, response.headers.get('Content-Type'), len(response.read()), flush=True)
 
+def check_injury_wire(page):
+    """Actual controller: continuous movement and reader/lifecycle holds."""
+    page.set_viewport_size({'width':390,'height':844})
+    page.emulate_media(reduced_motion='no-preference')
+    page.evaluate("document.documentElement.dataset.uiMotion='on';window.dispatchEvent(new Event('dfl:ui-motion-change'))")
+    wire=page.locator('.home-injury-panel')
+    viewport=page.locator('[data-home-injury-viewport]')
+    wire.scroll_into_view_if_needed()
+    page.mouse.move(0,0)
+    page.evaluate("document.activeElement?.blur()")
+    page.wait_for_timeout(200)
+    top=lambda: viewport.evaluate('e=>e.scrollTop')
+    samples=[top()]
+    for _ in range(4):
+        page.wait_for_timeout(350)
+        samples.append(top())
+    assert all(b>a for a,b in zip(samples,samples[1:])), samples
+    assert 15<=samples[-1]-samples[0]<=30, samples
+    checks=[{'continuousSamples':samples}]
+    def held(reason):
+        a=top();page.wait_for_timeout(400);b=top()
+        assert abs(a-b)<=1, (reason,a,b)
+        checks.append({'held':reason,'top':b})
+    def resumes(reason):
+        a=top();page.wait_for_timeout(500);b=top()
+        assert b>a, (reason,a,b)
+        checks.append({'resumed':reason,'delta':b-a})
+    viewport.evaluate("e=>e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch'}))")
+    held('manual touch')
+    page.locator('[data-home-injury-play]').evaluate('e=>e.click()')
+    resumes('Play')
+    viewport.focus();held('keyboard focus')
+    viewport.evaluate('e=>e.blur()');resumes('focus release')
+    page.evaluate("document.documentElement.dataset.uiMotion='off';window.dispatchEvent(new Event('dfl:ui-motion-change'))")
+    held('motion off')
+    page.evaluate("document.documentElement.dataset.uiMotion='on';window.dispatchEvent(new Event('dfl:ui-motion-change'))")
+    resumes('motion on')
+    page.emulate_media(reduced_motion='reduce');held('reduced motion')
+    page.emulate_media(reduced_motion='no-preference');resumes('motion preference restored')
+    page.evaluate("window.wireDialog=document.createElement('dialog');wireDialog.innerHTML='<button>Close</button>';document.body.append(wireDialog);wireDialog.showModal()")
+    held('modal')
+    page.evaluate("wireDialog.close();wireDialog.remove();document.activeElement?.blur()")
+    page.wait_for_timeout(1100);resumes('modal removed')
+    page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
+    page.wait_for_timeout(150);held('offscreen')
+    wire.scroll_into_view_if_needed();page.wait_for_timeout(150);resumes('visible again')
+    # Restart at the final pixels to exercise the loop without waiting minutes.
+    page.locator('[data-home-injury-play]').evaluate('e=>e.click()')
+    viewport.evaluate("e=>e.scrollTo({top:e.scrollHeight-e.clientHeight-3,behavior:'instant'})")
+    page.locator('[data-home-injury-play]').evaluate('e=>e.click()')
+    page.wait_for_timeout(500)
+    assert 0<=top()<15, top()
+    checks.append({'wrapped':top()})
+    page.evaluate('window.reviewInjuryPanel.stop()');held('unmounted controller')
+    return checks
+
 def check_player_form(page):
     """Production form widget and sheet styles; fixture is explicitly labeled."""
     page.evaluate("""async()=>{
@@ -1299,6 +1355,7 @@ with sync_playwright() as p:
     metrics['lineupReadiness'] = check_lineup_readiness(page)
     metrics['gameDayScope'] = check_game_day_scope(page)
     metrics['matchupInteractions'] = check_matchup_interactions(page)
+    metrics['injuryWire'] = check_injury_wire(page)
     metrics['consoleErrors'] = errors
     assert not errors, errors
     (OUT / 'browser-checks.json').write_text(json.dumps(metrics, indent=2))

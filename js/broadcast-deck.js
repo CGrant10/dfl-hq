@@ -89,43 +89,15 @@ import { FIRST_SEASON as FIRST_CHIP_SEASON } from "./chip-eaters.js";
 */
 
 
-/*
-  How long each treatment sits on screen.
-
-  These came down in 1.5. The first cut ran 5-9s and the deck took nearly a
-  minute to come round; a broadcast that makes you wait to see the next
-  thing reads as slow rather than as calm. The floor is 5s because that is
-  roughly the shortest a person can read a headline and a figure without
-  feeling hurried, and announcement keeps the longest slot because it is
-  the only treatment with a paragraph in it.
-
-  A manual slide may override this - see dwellMs(). Automatic slides do
-  not, because there is nobody to ask.
-*/
-/*
-  FASTER, AND STILL NOT THE SAME FOR EVERY TREATMENT.
-
-  Every slot came down by about a third on the commissioner's read that the
-  rotation felt slow. The RELATIVE order is unchanged and is the part that
-  matters: announcement keeps the longest slot because it is the only treatment
-  with a paragraph in it, and stat/event keep the shortest because they are one
-  figure and a date.
-
-  The floor is the entrance animation, and shortening THAT is what let these
-  come down. Press is ~380ms, ~490 with its stagger, where the old staggered
-  rise was ~700ms - so a 3s slot now spends a sixth of its life arriving rather
-  than a quarter, and 3s reads as a held slide again, which it did not before.
-
-  Announcements keep the longest slot because they are the only treatment with
-  a sentence to finish reading rather than a name to recognise.
-*/
+/* Automatic slides move quickly; sentences keep a little more reading time.
+   Explicit commissioner timing remains controlled by dwellMs(). */
 export const DWELL = {
-  scoreboard: 3600,
-  champion:   3600,
-  announcement: 4200,
-  event:      3000,
-  stat:       3000,
-  hero:       3600,
+  scoreboard: 3000,
+  champion:   3000,
+  announcement: 3600,
+  event:      2600,
+  stat:       2600,
+  hero:       3000,
 };
 
 /** Seconds a commissioner may choose, matching the CHECK in the migration. */

@@ -1,0 +1,9 @@
+# Broadcast and injury wire — 1.393.0
+
+Automatic broadcast treatments rotate after 2.6–3.6 seconds. Home-specific stories now use 3–3.5 seconds instead of 8–9 seconds; explicit commissioner timing remains configurable. Slide progress uses the same dwell as the rotation timer. Existing drag transitions and pause controls are retained.
+
+The shared injury report accepts QB, RB, WR and TE only, including free agents for pickup decisions. Defense, offensive linemen, fullbacks, kickers, punters and unknown positions are excluded even if rostered. Existing league starter/bench priority, injury impact, source timestamps and uncertainty wording are retained. Both the Home wire and full report use this filter.
+
+The native Home viewport advances continuously at 18 pixels per second and loops back to the first player. Fractional progress is accumulated independently of browser scroll rounding, with frame time bounded to prevent jumps after stalls. Scroll bounds are measured on start/update/resize rather than each frame. Only a visible, active wire runs animation frames. Touch/wheel pause until Play; mouse hover, keyboard focus, dialogs, hidden/offscreen state, motion settings and reduced motion hold scrolling. Updates preserve the visible player, keyed focus and loaded portraits. Teardown cancels frames/timers and disconnects observers/listeners.
+
+Regression coverage includes offensive-position filtering and the complete report beyond four players. The Home browser review checks steady movement across consecutive short samples, manual pause/resume, keyboard focus, motion settings, reduced motion, modal removal, offscreen suspension, looping and teardown. Existing mobile layout, contrast, broadcast drag and sheet checks remain release gates. Evidence: `/workspace/dfl-wire-1393/`. Browser checks use isolated fixtures or read-only production access; no league writes or notifications are sent.
