@@ -1,3 +1,4 @@
+import {mountConnectionRecovery} from './connection-recovery.js';
 import {startAppDiagnostics} from './app-diagnostics.js';
 import { syncTabIndicator } from './nav-highlight.js';
 import { mountLeagueSearch } from "./league-search.js";
@@ -38,7 +39,7 @@ startUiMotion();
 mountLeagueSearch();
 mountPlayerCards();
 document.addEventListener("click", event => {
-  if (event.target.closest?.("[data-retry-page]")) location.reload();
+  if (booted && event.target.closest?.("[data-retry-page]")) void renderRoute({retry:true});
   if (event.target.closest?.("[data-open-profile]")) void openPicker({cancellable:true});
 });
 /* welcomeForm and welcomeInput used to be looked up here and have never
@@ -229,11 +230,9 @@ document.getElementById("whoami")?.addEventListener("click",()=>{
 window.addEventListener("dfl:pick-member",event=>{if(event.detail?.forgetMemberId)forgetVerifiedPin(event.detail.forgetMemberId);openPicker({cancellable:true})});
 
 const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
-async function boot(){void registerAppWorker();console.log(`DFL HQ v${APP_VERSION}`);initTheme();/* Give a slow network an honest progress state instead of a blank page once the short splash yields. */const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(navigator.onLine===false){
-  initialView.innerHTML='<section class="state is-error" role="alert"><h1 class="state-title">You’re offline</h1><p>DFL HQ is ready on this device. Reconnect to load league data, post or place a bet.</p><button class="btn" type="button" data-retry-page>Retry</button></section>';
-  window.addEventListener("online",()=>location.reload(),{once:true});
-  setupInstall();return;
-}if(!configured)toast("Add your Supabase keys in js/config.js",true);let startupTimer;
+let booted=false,bootRequest=null;
+void registerAppWorker();initTheme();setupInstall();
+async function boot(){console.log(`DFL HQ v${APP_VERSION}`);const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);let startupTimer;
 try{await Promise.race([Promise.all([restoreAdmin(),restoreMember(),loadSettings()]),new Promise((_,reject)=>{startupTimer=setTimeout(()=>reject(new Error("Startup connection timed out")),10000)})]);}
 finally{clearTimeout(startupTimer)}
 paintName();mountMemberPreview();
@@ -262,11 +261,21 @@ paintName();mountMemberPreview();
   /* A broadcast/OBS URL is a public spectator surface. It must render without
    asking the viewer to identify themselves, including in a fresh browser. */
 if(!isPublicBroadcast()&&!currentMember()&&!getUsername()&&!golfPass())openPicker();
-else if(getUsername())registerUser(getUsername());setupInstall();
+else if(getUsername())registerUser(getUsername());
 }
 onGolfPassChange(paintName);
-boot().catch(error=>{
-  console.error(error);
-  const view=document.getElementById("view");
-  if(view)view.innerHTML='<section class="state is-error" role="alert"><h1 class="state-title">DFL HQ could not connect</h1><p>Check your connection and try again.</p><button class="btn" type="button" data-retry-page>Retry</button></section>';
-});
+function bootFailure(error) {
+  if(error)console.error(error);
+  const view=document.getElementById('view'),offline=navigator.onLine===false;
+  if(view)view.innerHTML=`<section class="state is-error" role="alert"><h1 class="state-title">${offline?'You’re offline':'DFL HQ could not connect'}</h1><button class="btn" type="button" data-retry-page>Retry</button></section>`;
+}
+function retryBoot() {
+  if(booted)return renderRoute({retry:true});
+  if(bootRequest)return bootRequest;
+  if(navigator.onLine===false){bootFailure();return Promise.resolve(false)}
+  const button=document.querySelector('#view [data-retry-page]');if(button){button.disabled=true;button.textContent='Retrying…'}
+  bootRequest=boot().then(()=>{booted=true;bootRecovery.stop();return true}).catch(error=>{bootFailure(error);return false}).finally(()=>{bootRequest=null});
+  return bootRequest;
+}
+const bootRecovery=mountConnectionRecovery({root:document,failed:()=>!booted,retry:retryBoot});
+void retryBoot();

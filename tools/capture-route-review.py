@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('DFL_ROUTE_REVIEW_DIR', ROOT.parent / 'dfl-route-review'))
 OUT.mkdir(parents=True, exist_ok=True)
 ROUTES = ['home', 'clubhouse', 'sportsbook', 'trade', 'analyzer']
-HTML = '''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/app-shared.css"><style>.topbar{height:44px}.view{padding:70px 14px 90px}.fixture-content{min-height:2000px}#tabbar a{font-size:12px}</style></head><body><header class="topbar">DFL · fixed header</header><main class="view" id="view"></main><nav id="tabbar" class="tabbar">''' + ''.join(f'<a href="#/{r}" data-route="{r}">{r}</a>' for r in ROUTES) + '''</nav><script type="module">import{startRouter}from './js/router.js';import{startUiMotion}from './js/ui-motion.js';window.holds={};window.releases={};window.fail={};startUiMotion();startRouter();</script></body></html>'''
+HTML = '''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="css/tokens.css"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/ui.css"><link rel="stylesheet" href="css/app-shared.css"><style>.topbar{height:44px}.view{padding:70px 14px 90px}.fixture-content{min-height:2000px}#tabbar a{font-size:12px}</style></head><body><header class="topbar">DFL · fixed header</header><main class="view" id="view"></main><nav id="tabbar" class="tabbar">''' + ''.join(f'<a href="#/{r}" data-route="{r}">{r}</a>' for r in ROUTES) + '''</nav><script type="module">import{startRouter}from './js/router.js';import{startUiMotion}from './js/ui-motion.js';window.holds={};window.releases={};window.fail={};window.returnError={};startUiMotion();startRouter();</script></body></html>'''
 STUBS = {
  'js/member-lock.js': 'export function startMemberLock(){}',
  'js/sportsbook-nav.js': 'export function ensureSportsbookNav(){}',
@@ -19,14 +19,17 @@ STUBS = {
  'js/performance-policy.js': 'export const canWarmRoutes=()=>false;',
  'js/weekly-outlook-panel.js': 'export function mountWeeklyOutlook(){}',
 }
+importFailures=set()
 class Handler(BaseHTTPRequestHandler):
  def do_GET(self):
   path=urlparse(self.path).path.lstrip('/')
+  if path in importFailures and not urlparse(self.path).query:
+   importFailures.remove(path);self.send_error(503);return
   if not path or path=='index.html':body=HTML.encode();kind='text/html'
   elif path in STUBS:body=STUBS[path].encode();kind='text/javascript'
   elif path.startswith('js/pages/'):
    name=Path(path).stem
-   body=('export async function render(view){const name='+json.dumps(name)+';if(window.holds[name])await new Promise(resolve=>window.releases[name]=resolve);if(window.fail[name])throw Error("Isolated load failure");view.innerHTML=`<section class="fixture-content"><h1>${name}</h1><details data-page-detail="fixture"><summary>Saved section</summary><p>Saved content</p></details><input value="Unsaved local text"></section>`}').encode();kind='text/javascript'
+   body=('export async function render(view){const name='+json.dumps(name)+';if(window.holds[name])await new Promise(resolve=>window.releases[name]=resolve);if(window.fail[name])throw Error("Isolated load failure");if(window.returnError[name]){view.innerHTML=`<div class="state is-error" role="alert"><span class="state-title">Connection interrupted</span><button class="btn" data-retry-page>Retry</button></div>`;return}view.innerHTML=`<section class="fixture-content"><h1>${name}</h1><details data-page-detail="fixture"><summary>Saved section</summary><p>Saved content</p></details><input value="Unsaved local text"></section>`}').encode();kind='text/javascript'
   else:
    file=ROOT/path
    if not file.is_file():self.send_error(404);return
@@ -78,7 +81,19 @@ with sync_playwright() as p:
  ready('home');clean();check('rapid repeated navigation settles on the last tap',page.locator('#tabbar a.on').get_attribute('data-route')=='home')
  page.evaluate('fail.sportsbook=true');go('sportsbook')
  check('failed route retains accessible retry and home actions',page.locator('[role="alert"]').count()==1 and page.locator('[data-route-retry]').count()==1)
- page.evaluate('fail.sportsbook=false');go('home')
+ origin=page.evaluate('performance.timeOrigin');page.evaluate('fail.sportsbook=false');page.locator('[data-route-retry]').click();page.wait_for_selector('#view h1:text-is("sportsbook")');ready('sportsbook');clean()
+ check('manual retry recovers the same page without restarting the document',page.evaluate('performance.timeOrigin')==origin and page.locator('#view h1').inner_text().lower()=='sportsbook')
+ page.evaluate('returnError.trade=true');go('trade')
+ check('returned page error exposes current-screen recovery',page.locator('#view').get_attribute('data-route-failed')=='true')
+ page.evaluate('returnError.trade=false');page.locator('[data-retry-page]').click();page.wait_for_selector('#view h1:text-is("trade")');ready('trade');clean()
+ check('renderer-provided Retry works without app bootstrap',page.locator('#view h1').inner_text().lower()=='trade' and page.evaluate('performance.timeOrigin')==origin)
+ page.evaluate('fail.clubhouse=true');go('clubhouse');page.evaluate('fail.clubhouse=false;dispatchEvent(new Event("online"))');page.wait_for_selector('#view h1:text-is("clubhouse")');ready('clubhouse');clean()
+ check('reconnect recovers a failed page in place',page.evaluate('performance.timeOrigin')==origin)
+ importFailures.add('js/pages/calendar.js');page.evaluate('location.hash="#/calendar"');ready('calendar');clean()
+ check('interrupted page-module download offers Retry',page.locator('[data-route-retry]').count()==1)
+ page.locator('[data-route-retry]').click();page.wait_for_selector('#view h1:text-is("calendar")');ready('calendar');clean()
+ check('failed module import retries through a fresh URL without reloading',page.evaluate('performance.timeOrigin')==origin)
+ go('home')
  page.evaluate('routeAnimations=[]');page.emulate_media(reduced_motion='reduce');go('clubhouse')
  check('reduced motion disables page glides',page.evaluate('routeAnimations.length===0'))
  page.emulate_media(reduced_motion='no-preference');page.evaluate('routeAnimations=[];localStorage.setItem("dfl.details.v1.guest.gameday-motion","off");dispatchEvent(new Event("dfl:route-performance"))');go('home')

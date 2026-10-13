@@ -72,3 +72,7 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
   .loading-home-front { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:20px; }
   .loading-home-front .loading-broadcast { height:calc(100% - 16px); }
 }
+
+.analyzer-recovery { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 8px; color:var(--muted); font-size:12px; }
+.analyzer-recovery[hidden] { display:none; }
+.analyzer-recovery button { min-height:44px; }

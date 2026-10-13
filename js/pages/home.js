@@ -752,7 +752,8 @@ export async function render(view) {
             if(line)line.textContent=next.lineup;
             if(action){action.textContent=next.action;action.href=next.actionUrl}
             if(stamp)stamp.textContent=next.checkedAt?`Roster checked ${new Date(next.checkedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`:'';
-          },onError:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]'),action=homeReportSlot.querySelector('[data-brief-action]'),line=homeReportSlot.querySelector('[data-brief-lineup]');if(stamp)stamp.textContent='Fresh roster check unavailable';if(action)action.textContent='Refresh roster advice in Analyzer';if(line)line.textContent='Check your current lineup in Analyzer';},
+          },onError:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Roster refresh unavailable';},
+          onOffline:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Offline · last roster check';},
         });
         briefRefresh.start();deferredStops.push(()=>briefRefresh.stop());
       }

@@ -53,4 +53,23 @@ describe('live score catch-up',()=>{
     expect(onError).toHaveBeenCalledOnce();expect(refresh).toHaveBeenCalledTimes(2);
     active=false;loop.wake();await vi.advanceTimersByTimeAsync(120000);expect(refresh).toHaveBeenCalledTimes(2);
   });
+  it('backs off failed reads, bypasses stale caches on retry, and resets after recovery',async()=>{
+    const refresh=vi.fn().mockRejectedValueOnce(Error('network')).mockResolvedValueOnce(false).mockRejectedValueOnce(Error('network')).mockResolvedValue(undefined),onError=vi.fn();
+    setup({refresh,onError});loop.start();await vi.advanceTimersByTimeAsync(4999);expect(refresh).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1);expect(refresh.mock.calls[1]).toEqual([true]);
+    await vi.advanceTimersByTimeAsync(15000);expect(refresh.mock.calls[2]).toEqual([true]);
+    await vi.advanceTimersByTimeAsync(45000);expect(refresh.mock.calls[3]).toEqual([true]);
+    await vi.advanceTimersByTimeAsync(60000);expect(refresh.mock.calls[4]).toEqual([false]);expect(onError).toHaveBeenCalledTimes(2);
+  });
+  it('pauses failed-read retries in the background and catches up once on return',async()=>{
+    const refresh=vi.fn().mockRejectedValueOnce(Error('network')).mockResolvedValue(undefined);const {doc}=setup({refresh});loop.start();await vi.advanceTimersByTimeAsync(0);
+    doc.visibilityState='hidden';doc.dispatchEvent(new Event('visibilitychange'));await vi.advanceTimersByTimeAsync(60000);expect(refresh).toHaveBeenCalledOnce();
+    doc.visibilityState='visible';doc.dispatchEvent(new Event('visibilitychange'));await vi.advanceTimersByTimeAsync(80);expect(refresh.mock.calls[1]).toEqual([true]);
+  });
+
+  it('does not report a late failed read after the screen is retired',async()=>{
+    let reject;const refresh=vi.fn(()=>new Promise((_,r)=>{reject=r})),onError=vi.fn();setup({refresh,onError});loop.start();loop.stop();reject(Error('network'));
+    await vi.advanceTimersByTimeAsync(0);expect(onError).not.toHaveBeenCalled();expect(vi.getTimerCount()).toBe(0);
+  });
+
 });

@@ -1,16 +1,16 @@
 // One visible refresh at a time; returning to a live view bypasses score caches.
 export function mountLiveScoreRefresh({refresh,active=()=>true,enabled=()=>true,onOffline=()=>{},onError=(_error)=>{},
   doc=document,win=window,visible=()=>doc.visibilityState==='visible',online=()=>win.navigator.onLine!==false,interval=60000}={}) {
-  let stopped=false,running=false,queued=false,timer=null,wakeTimer=null;
+  let stopped=false,running=false,queued=false,timer=null,wakeTimer=null,failures=0;
   const ready=()=>!stopped&&active()&&enabled()&&visible()&&online();
   const clear=()=>{clearTimeout(timer);clearTimeout(wakeTimer);timer=wakeTimer=null};
-  const schedule=()=>{clearTimeout(timer);if(ready())timer=setTimeout(()=>void request(),interval)};
+  const schedule=()=>{clearTimeout(timer);if(ready()){const delay=failures?Math.min(interval,5000*3**Math.min(failures-1,3)):interval;timer=setTimeout(()=>void request(failures>0),delay)}};
   const request=async(force=false)=>{
     if(stopped||!active()||!visible())return;
     if(!online()){onOffline();return}
     if(running){queued ||= force;return}
     clearTimeout(timer);running=true;
-    try{await refresh(force)}catch(error){onError(error)}
+    try{const result=await refresh(force);failures=result===false?failures+1:0}catch(error){failures++;if(!stopped&&active())onError(error)}
     finally{running=false;if(!stopped){if(queued&&ready()){queued=false;wake()}else{queued=false;schedule()}}}
   };
   const wake=()=>{
