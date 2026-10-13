@@ -8,6 +8,7 @@ import {loadStadiumRace,commandStadiumRace,createStadiumClock} from '../arena/st
 import {buildStadiumRace,stadiumFrame,stadiumElapsed,stadiumMoment,STADIUM_ENGINE} from '../arena/stadium-model.js';
 import {createStadiumRenderer,stadiumColor} from '../arena/stadium-renderer.js';
 import {normalizeKit,footballSpot,finishMargin} from '../arena/racer-kit-model.js';
+import {mountStadiumOrientation} from '../arena/stadium-orientation.js';
 
 let active=null;
 export function leave(){active?.stop();active=null;}
@@ -100,7 +101,8 @@ async function room(view,members,id,life){
  const q=s=>root.querySelector(s),stage=q('.sr-stage'),board=q('.sr-board'),host=q('.sr-editor-host');
  const stageWatch=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{stageVisible=entries[0].isIntersecting;if(stageVisible)draw(performance.now());},{rootMargin:'100px'}):null;
  stageWatch?.observe(stage);life.cleanup.push(()=>stageWatch?.disconnect());
- const visible=()=>!document.hidden&&!life.closed;
+ const orientation=mountStadiumOrientation(stage,{onChange:blocked=>{if(blocked){cancelAnimationFrame(raf);raf=0;cancelAnimationFrame(cameraRaf);cameraRaf=0;}else{lastDOM=0;draw(performance.now());schedule();}}});life.cleanup.push(()=>orientation.stop());
+ const visible=()=>!document.hidden&&!life.closed&&!orientation.blocked;
  const showConnection=message=>{const el=q('.sr-connection');el.textContent=message;el.hidden=!message;};
  const setMotion=()=>{root.dataset.motion=motion()?'on':'off';q('[data-motion]').textContent=`Motion ${motion()?'on':'off'}`;q('[data-motion]').setAttribute('aria-pressed',String(motion()));if(!raf)draw(performance.now());};
  const configureRacers=()=>{
@@ -108,7 +110,7 @@ async function room(view,members,id,life){
   const next=snapshot.participants.map((p,index)=>{const m=memberMap.get(String(p.member_id)),kit=normalizeKit(kits.get(String(p.member_id)),{number:p.number??index+1});return {id:String(p.member_id),name:m?.display_name||`Racer ${p.number||index+1}`,team:m?.team_name||'',photo:m?.profile_image||'',number:kit.number,kit,color:kits.has(String(p.member_id))?kit.jersey:p.color||m?.accent_color,index};});
   const signature=JSON.stringify(next);if(signature!==JSON.stringify(racers)){
    const sameField=racers.length===next.length&&racers.every((r,i)=>r.id===next[i].id);racers=next;
-   if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,camera:()=>({mode:cameraMode,racerId:followId}),onLayout:({overview,top,fieldHeight})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);}});}
+   if(renderer&&sameField)renderer.updateRacers(racers);else{renderer?.stop();renderer=createStadiumRenderer(q('canvas'),{racers,motion,camera:()=>({mode:cameraMode,racerId:followId}),onLayout:({overview,top,fieldHeight,fieldWidth})=>{stage.dataset.fieldOverview=String(overview);stage.style.setProperty('--sr-field-top',`${top}px`);stage.style.setProperty('--sr-field-height',`${fieldHeight}px`);stage.style.setProperty('--sr-field-width',`${fieldWidth}px`);}});}
    board.innerHTML=racers.map(r=>`<li class="sr-position" data-racer-id="${esc(r.id)}"><button class="sr-follow-row" type="button" data-follow-racer="${esc(r.id)}" aria-pressed="false"><span class="sr-rank">${r.index+1}</span>${portrait(r)}<span class="sr-racer-name">${esc(r.name)}<small>${esc(r.team)}</small></span><span class="sr-gap">On deck</span></button></li>`).join('');
    board.querySelectorAll('[data-follow-racer]').forEach(b=>b.onclick=()=>{followId=b.dataset.followRacer;setCamera('follow');stage.scrollIntoView({behavior:motion()?'smooth':'auto',block:'center'});});
    board.style.height=`${racers.length*76}px`;
@@ -194,16 +196,16 @@ async function room(view,members,id,life){
  q('[data-motion]').onclick=()=>{setReduceRaceMotion(!getReduceRaceMotion());setMotion();};
  q('[data-share]').onclick=async()=>{try{const url=new URL(location.href);url.hash=`#/arena?id=${id}`;await navigator.clipboard.writeText(url.href);toast('Watch link copied.');}catch{toast('Could not copy the watch link.');}};
  q('[data-replay]').onclick=()=>{replayAt=performance.now()+3000;replayFinished=false;finishAt=null;lastKey='';lastLeader='';leadChange=null;schedule();};
- q('[data-expand]').onclick=async()=>{try{if(document.fullscreenElement===stage)await document.exitFullscreen();else if(stage.requestFullscreen)await stage.requestFullscreen();else{stage.classList.toggle('sr-expanded');q('[data-expand]').setAttribute('aria-label',stage.classList.contains('sr-expanded')?'Close expanded race':'Expand race');}}catch{toast('Fullscreen is unavailable.');}};
- const onKey=e=>{if(e.key==='Escape')stage.classList.remove('sr-expanded');};window.addEventListener('keydown',onKey);
+ q('[data-expand]').onclick=()=>void orientation.expand();
+ const onKey=e=>{if(e.key==='Escape'){stage.classList.remove('sr-expanded');orientation.sync();}};window.addEventListener('keydown',onKey);
  const visibility=()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else{void refresh();draw(performance.now());schedule();}};
  document.addEventListener('visibilitychange',visibility);window.addEventListener('online',visibility);
  life.cleanup.push(()=>{cancelAnimationFrame(raf);cancelAnimationFrame(cameraRaf);clearInterval(poll);renderer?.stop();channel?.unsubscribe();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('online',visibility);window.removeEventListener('keydown',onKey);stage.classList.remove('sr-expanded');if(document.fullscreenElement===stage)void document.exitFullscreen();});
- configureRacers();paintControls();accept(snapshot,sent);setMotion();
+ configureRacers();paintControls();accept(snapshot,sent);setMotion();orientation.sync();
  const presenceKey=globalThis.crypto.randomUUID();
  channel=db().channel(`stadium-room-${id}`,{config:{presence:{key:presenceKey}}})
   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'arena_events',filter:`id=eq.${id}`},()=>void refresh())
   .on('presence',{event:'sync'},()=>{if(life.closed)return;const people=new Set(Object.values(channel.presenceState()).flat().map(p=>p.key).filter(Boolean));const el=q('[data-presence]');el.textContent=`${people.size} watching`;el.hidden=!people.size;})
   .subscribe(status=>{if(status==='SUBSCRIBED'&&!life.closed)void channel.track({key:presenceKey});});
- poll=setInterval(()=>{if(visible()&&navigator.onLine&&snapshot.event.bc_state!=='finished')void refresh();},2000);
+ poll=setInterval(()=>{if(!document.hidden&&!life.closed&&navigator.onLine&&snapshot.event.bc_state!=='finished')void refresh();},2000);
 }
