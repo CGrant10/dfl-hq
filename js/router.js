@@ -16,6 +16,7 @@ import { canWarmRoutes } from './performance-policy.js';
 import { mountPageMotion } from './ui-motion.js';
 import { syncTabIndicator, mountNavHighlight } from './nav-highlight.js';
 import { routePlaceholder } from './route-placeholder.js';
+import { beginRouteGlide } from './route-motion.js';
 
 // Pages are loaded on demand, so the first paint stays fast.
 const routes = {
@@ -282,6 +283,7 @@ export async function renderRoute() {
   const expectedHash = location.hash;
   const previousView = document.getElementById("view");
   if (!previousView) return;
+  const routeGlide = beginRouteGlide(previousView.dataset.route, name);
   stopRestore();
   stopPageMotion();
   if (mountedHash && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
@@ -296,6 +298,7 @@ export async function renderRoute() {
   delete view.dataset.restoreScrollY;
   delete view.dataset.uiPolished;
   delete view.dataset.pulseSystem;
+  delete view.dataset.routeGliding;
   view.dataset.route = name;
   view.classList.remove("page-in");
   view.toggleAttribute("data-page-system", standardPageRoutes.has(name));
@@ -310,6 +313,7 @@ export async function renderRoute() {
   template.innerHTML = routePlaceholder(name);
   const placeholder = template.content.firstElementChild;
   view.before(placeholder);
+  routeGlide.start(placeholder);
   const isCurrent = () => epoch === renderEpoch && currentRoute() === name && document.getElementById("view") === view;
 
   if (await redirectFinishedArenaSpectator(name, expectedHash)) return;
@@ -341,7 +345,6 @@ export async function renderRoute() {
     view.classList.remove("is-route-loading");
     view.inert = false;
     view.removeAttribute('aria-busy');
-    placeholder.remove();
     document.body.classList.remove("route-loading");
     setRouteCanvas("var(--bg)");
     decorateDflSeasonCounts(view, name);
@@ -357,7 +360,6 @@ export async function renderRoute() {
       view.classList.remove("is-route-loading");
       view.inert = false;
       view.removeAttribute('aria-busy');
-      placeholder.remove();
       document.body.classList.remove("route-loading");
       setRouteCanvas("var(--bg)");
       console.error(err);
@@ -376,7 +378,9 @@ export async function renderRoute() {
   mountedHash = expectedHash; mountedMember = getMemberId();
   stopPageMotion = mountPageMotion(view);
   lastAnimated = name;
-  if (changed) {
+  const gliding = routeGlide.ready(view);
+  placeholder.remove();
+  if (changed && !gliding) {
     view.classList.remove("page-switching");
     void view.offsetWidth;
     view.classList.add("page-in");
