@@ -1,3 +1,5 @@
+import {tradeDecisionMarkup} from './trade-decision-ui.js';
+import {loadTradeWeekSchedules,tradeWeeklyOutlook} from './trade-weekly-outlook.js';
 import {analyzerPlayerSignal} from "./analyzer-player-form.js";
 // =====================================================================
 // trade-desk.js - build a trade by hand and see who wins
@@ -58,7 +60,7 @@ export function recommendationFor(result) {
   if (result.projectionEvidence?.missing?.length) return { action: 'REVIEW', tone: 'negotiate', signal: 0, valueEdge: 0 };
   const confidence=tradeConfidence(result);
   if(confidence?.needsReview)return {action:'REVIEW',tone:'negotiate',signal:0,valueEdge:0};
-  const valueGap = num(result.valueToA) - num(result.valueToB);
+  const valueGap = num(result.valueToA) - num(result.valueToB) - num(result.rosterCostA);
   const valueBase = Math.max(num(result.valueToA), num(result.valueToB), 1);
   const valueEdge = valueGap / valueBase * 100;
   /* FLEECE describes the VALUE of the exchange, not every reason to reject a
@@ -335,7 +337,7 @@ function packageRows(ids, pool) {
     .sort((a, b) => num(b.tradeValue) - num(a.tradeValue));
   if (!players.length) return `<div class="td-item is-empty"><span><b>Nobody yet</b></span></div>`;
   return players.map(player => `<div class="td-item">
-    <span><b>${esc(player.name)}</b><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
+    ${playerPortrait(player)}<span class="td-item-copy"><b>${esc(player.name)}</b><small>${esc(player.position)} &middot; ${esc(player.nflTeam)}</small></span>
     <span class="td-item-value">${Math.round(num(player.tradeValue))}</span>
   </div>`).join("");
 }
@@ -409,7 +411,8 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
       <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins value` : ""}</span>
     </div>
 
-    <div class="td-stamp is-${recommendation.tone}">
+    ${tradeDecisionMarkup(result,pool)}
+    <div class="td-stamp is-compact is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
       <span>${esc(recommendationCaption(result, teamA, recommendation))}</span>
     </div>
@@ -426,15 +429,16 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
         <div class="td-total"><small>Value received</small><b class="td-in">${Math.round(num(result.valueToA))}</b></div>
       </div>
     </div>
+    <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       <div class="td-line"><span>Your lineup</span><b class="${result.weeklyDeltaA >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaA)} avg/wk</b></div>
       <div class="td-line"><span>Your usable depth</span><b class="${num(result.depthDeltaA) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaA)} avg/wk</b></div>
       <div class="td-line"><span>${esc(teamName(teamB))} lineup</span><b class="${result.weeklyDeltaB >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltaB)} avg/wk</b></div>
       <div class="td-line"><span>${esc(teamName(teamB))} depth</span><b class="${num(result.depthDeltaB) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltaB)} avg/wk</b></div>
       ${need ? `<div class="td-line"><span>Fills your ${esc(need)} need</span><b class="${fills.length ? "is-up" : "is-down"}">${fills.length ? `${esc(fills.map(p => p.name).join(", "))} &check;` : "No"}</b></div>` : ""}
-    </div>
+    </div></details>
 
-    ${balanceMeter(result.fairness)}
+    <details class="td-data-context td-impact-details"><summary>Roster detail</summary>${balanceMeter(result.fairness)}</details>
     ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
@@ -460,7 +464,8 @@ function multiTicketMarkup(result, parties, pool, sends) {
       <span>${esc(v.headline)} for ${esc(teamName(parties[0]))} · ${result.fairness}% group balance</span>
     </div>
 
-    <div class="td-stamp is-${recommendation.tone}">
+    ${tradeDecisionMarkup(result,pool)}
+    <div class="td-stamp is-compact is-${recommendation.tone}">
       <strong>${recommendation.action}</strong>
       <span>${esc(recommendationCaption(perspective, parties[0], recommendation))}</span>
     </div>
@@ -469,11 +474,12 @@ function multiTicketMarkup(result, parties, pool, sends) {
       ${parties.map((from,index)=>`<div class="td-leg"><small>${esc(teamName(from))} SENDS</small>${sends[index].map(id=>`<div class="td-routed-player">${packageRows([id],pool)}<small>→ ${esc(teamName(parties.find(t=>String(t.id)===String(result.destinations?.[id]||parties[(index+1)%parties.length].id))))}</small></div>`).join('')}<div class="td-total"><small>Value sent</small><b>${num(result.outgoingValues?.[index]??result.values[(index+1)%parties.length])}</b></div><div class="td-total"><small>Value received</small><b>${num(result.values[index])}</b></div></div>`).join('')}
     </div>
 
+    <details class="td-data-context td-impact-details"><summary>Depth &amp; roster fit</summary>
     <div class="td-lines">
       ${parties.map((party, index) => `<div class="td-line"><span>${esc(teamName(party))} lineup</span><b class="${result.weeklyDeltas[index] >= 0 ? "is-up" : "is-down"}">${signed(result.weeklyDeltas[index])} avg/wk</b></div><div class="td-line"><span>${esc(teamName(party))} depth</span><b class="${num(result.depthDeltas?.[index]) >= 0 ? "is-up" : "is-down"}">${signed(result.depthDeltas?.[index])} avg/wk</b></div>`).join("")}
-    </div>
+    </div></details>
 
-    ${balanceMeter(result.fairness)}
+    <details class="td-data-context td-impact-details"><summary>Roster detail</summary>${balanceMeter(result.fairness)}</details>
     ${confidenceMarkup(result,esc,true)}${evidenceMarkup(result)}
     ${reasonList(reasons)}
   </div>`;
@@ -550,10 +556,23 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     currentDeal=evaluateTradeDeal(parties,sends,pool,state.destinations);
     const result=currentDeal?.result;
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
-      +(currentDeal?lineupComparisonMarkup(currentDeal,pool):parties.length>2?'<p class="td-projection-note" role="status">Each team must send and receive a player.</p>':'')
+      +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:parties.length>2?'<p class="td-projection-note" role="status">Each team must send and receive a player.</p>':'')
       +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
     onDeal?.(currentDeal);
   };
+
+  root.addEventListener('toggle',async event=>{
+    const section=event.target;
+    if(!section.matches('[data-td-weekly]')||!section.open||section.dataset.loaded)return;
+    const deal=currentDeal,at=revision,host=section.querySelector('[data-td-weekly-body]'),player=[...pool.values()][0];
+    section.dataset.loaded='true';host.innerHTML='<p role="status">Loading NFL schedule…</p>';
+    try{
+      const schedules=await loadTradeWeekSchedules(player?.tradeSeason,player?.tradeWeek);
+      if(!root.isConnected||revision!==at||!section.isConnected)return;
+      const rows=tradeWeeklyOutlook(deal,pool,schedules);
+      host.innerHTML=rows.length?rows.map(row=>`<section class="td-week-outlook"><h3>Week ${row.week}</h3>${!row.available?'<p>Schedule unavailable</p>':row.teams.map((t,i)=>`<div><strong>${esc(teamName(deal.parties[i]))}</strong><b>${signed(t.delta)} pts</b></div>${t.incoming.map(p=>`<p>${esc(p.name)} <span>${esc(p.opponent)}${p.risk?' · Availability estimate':''}</span></p>`).join('')}`).join('')}</section>`).join(''):'<p>Future weeks unavailable</p>';
+    }catch{if(section.isConnected&&revision===at){delete section.dataset.loaded;host.innerHTML='<p role="status">Outlook unavailable. Reopen to retry.</p>';}}
+  },true);
 
   root.addEventListener("change", event => {
     const destination=event.target.closest('[data-td-destination]');

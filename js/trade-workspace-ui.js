@@ -15,7 +15,7 @@ export function closestTradeOffers(offers, intent, limit = 3) {
 export function tradeOfferEmptyCopy(intent, incomingPositions = [], offers = []) {
  if(intent==='steal'&&incomingPositions.includes('QB'))return 'Incoming QBs are excluded from Steal in this 1-QB league. Try Fair or Aggressive.';
  if(intent==='steal'&&offers.length&&offers.every(offer=>offer.projectionEvidence?.expert?.required&&offer.projectionEvidence.expert.status!=='Fresh'))return 'Steal needs fresh expert rankings. Closest available offers below.';
- if(intent==='steal')return 'No clear Steal for this setup. Fair or Aggressive may have offers.';
+ if(intent==='steal')return 'No clear Steal for this setup.';
  if(intent==='fair')return 'No Fair match for this setup. Try another team or adjust the package.';
  return 'No usable offers for this setup. Try another team or adjust the package.';
 }
@@ -28,7 +28,7 @@ export function lineupComparisonMarkup(deal,pool){
 export function counterofferMarkup(candidates,pool,parties){
  const team=id=>name(parties.find(t=>String(t.id)===String(id))),playerName=id=>pool.get(String(id))?.name||id;
  if(!candidates.length)return '<p class="td-projection-note">No counteroffer found. Try different players.</p>';
- return `<div class="td-counter-list">${candidates.map((c,i)=>{const change=c.change,p=tradePerspective(c.result),text=change.type==='add'?`Add ${playerName(change.player)} · ${team(change.from)} → ${team(change.to)}`:change.type==='remove'?`Remove ${playerName(change.player)} from ${team(change.from)}’s package`:`Replace ${playerName(change.previous)} with ${playerName(change.player)} · ${team(change.from)} → ${team(change.to)}`;return `<article><strong>${esc(text)}</strong><p>${c.result.fairness}% group balance · Your lineup ${signed(p.weeklyDeltaA)} avg/wk</p><ul>${c.parties.map((t,j)=>`<li><span>${esc(name(t))}</span><b>${signed(c.result.weeklyDeltas?.[j]??(j?p.weeklyDeltaB:p.weeklyDeltaA))} avg/wk</b></li>`).join('')}</ul><button type="button" class="btn ghost small" data-td-use-counter="${i}">Review this counteroffer</button></article>`}).join('')}</div>`;
+ return `<div class="td-counter-list">${candidates.map((c,i)=>{const p=tradePerspective(c.result),describe=change=>change.type==='add'?`Add ${playerName(change.player)} · ${team(change.from)} → ${team(change.to)}`:change.type==='remove'?`Remove ${playerName(change.player)} from ${team(change.from)}’s package`:`Replace ${playerName(change.previous)} with ${playerName(change.player)} · ${team(change.from)} → ${team(change.to)}`,text=(c.changes||[c.change]).map(describe).join(' · ');return `<article><strong>${esc(text)}</strong><p>${c.result.fairness}% group balance · Your lineup ${signed(p.weeklyDeltaA)} avg/wk</p><ul>${c.parties.map((t,j)=>`<li><span>${esc(name(t))}</span><b>${signed(c.result.weeklyDeltas?.[j]??(j?p.weeklyDeltaB:p.weeklyDeltaA))} avg/wk</b></li>`).join('')}</ul><button type="button" class="btn ghost small" data-td-use-counter="${i}">Review this counteroffer</button></article>`}).join('')}</div>`;
 }
 
 export function proposalsMarkup(rows,teams,pool,open=false){

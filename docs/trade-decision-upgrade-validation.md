@@ -1,0 +1,15 @@
+# Trade decision and offer search upgrade — 1.402.0
+
+New evaluations share a price/fit/risk assessment. Balanced modeled prices remain visible when an injury or expert warning requires review; unsupported value winners are still withheld. Fair uses a 90% price boundary plus two-roster fit, and incoming QBs remain excluded from Steal. Legacy frozen receipts keep their original interpretation. New receipts use model v7.
+
+Offer searches keep the existing worker and evaluation caps, add a bounded value-targeted package beam, and prioritize distinct main-player pairings before filler variations. Goals cover starter upgrades, consolidation, and positional help. Player locks, eight-player packages, routed multi-member deals, saved comparisons, and the existing share cards remain available. Counteroffers explore up to two edits with a 240-evaluation ceiling.
+
+Roster impact includes required drops and optional replacements from actual unrostered projections. Market balance stays separate from roster cost and lineup utility. Replacement options are estimates, not guaranteed waiver claims; routed trades cannot assign the same replacement to two parties. Thin expert coverage and rank spread reduce expert weighting. Three-game opportunity changes receive at most a 5% forecast correction, only with at least five completed games and complete usage data.
+
+The phone setup collapses, while intent counts and useful results remain visible. Both result surfaces show balance, roster impact, and risk separately. Manual packages have player portraits. Depth/evidence remain expandable. The four-week outlook loads public NFL schedules only when opened; byes change the legal lineup, opponents are schedule facts, and availability windows remain estimates. Missing or invalid schedules show unavailable status rather than inferred byes. No opponent-adjusted points or calibrated win probabilities are claimed.
+
+New recommendation snapshots retain point-in-time rosters and positions inside the existing member-scoped JSON/RPC contract. Outcome direction compares optimized legal starting lineups over identical completed future weeks, including drops/replacements. Legacy package-only snapshots remain tracked but ungraded. This measures lineup opportunity, not a manager's actual start/sit decisions or calibrated forecast accuracy.
+
+Validation includes positional PPR and 1-QB regressions, targeted six-player packages with five locks, two-edit ownership/route preservation, forced-drop costs, shared waiver collision prevention, schedule failures/byes, usage sample gates, and unequal-package accountability. The production handlers are exercised at 320, 390, and 768px with isolated fixtures, including picker focus/motion, member routing, saved deals, share rechecks, and enlarged type/themes. A guarded live-data mobile check confirmed the 12-team PPR format and consistent offer/manual grades; no league writes were sent during QA.
+
+Detailed local evidence: `/workspace/dfl-trade-upgrade-1402/`.
