@@ -5,9 +5,12 @@ import {animateUi} from './ui-motion.js';
 export const WALL_REACTIONS=[['😂','Laugh'],['🔥','Fire'],['💀','Dead'],['🧂','Salty']];
 export function reactionHtml(postId){return `<div class="wall-reactions" data-wall-reactions="${esc(postId)}"><div class="wall-reaction-buttons" role="group" aria-label="Post reactions">${WALL_REACTIONS.map(([emoji,label])=>`<button type="button" class="btn ghost small" data-wall-reaction="${emoji}" aria-label="${label} reaction" aria-pressed="false" disabled><span aria-hidden="true">${emoji}</span> <span data-reaction-count>0</span></button>`).join('')}</div><details data-reaction-people hidden><summary>Who reacted</summary><div data-reaction-names></div></details><p class="muted tiny" role="status" data-reaction-status>Loading reactions…</p></div>`;}
 export async function wireReactions(root){
+ root._wallReactionController?.abort();
+ const controller=new AbortController();root._wallReactionController=controller;
+ const signal=controller.signal,current=()=>!signal.aborted&&root.isConnected;
  const groups=[...root.querySelectorAll('[data-wall-reactions]')];if(!groups.length)return;
  let members=[];try{members=await loadMemberDirectory()}catch{}
- if(!root.isConnected)return;
+ if(!current())return;
  const names=new Map(members.map(member=>[String(member.id),member.display_name]));
  let rows=[];
  const paint=group=>{
@@ -22,9 +25,10 @@ export async function wireReactions(root){
  const load=async()=>{
    const loaded=[];
    for(let from=0;;from+=1000){const {data,error}=await db().from('member_wall_reactions').select('post_id,member_id,emoji').in('post_id',groups.map(group=>Number(group.dataset.wallReactions))).order('post_id').order('member_id').order('emoji').range(from,from+999);if(error)throw error;loaded.push(...(data||[]));if((data||[]).length<1000)break}
-   rows=loaded;if(!root.isConnected)return;groups.forEach(group=>{paint(group);group.querySelector('[data-reaction-status]').textContent=''});
+   rows=loaded;if(!current())return;groups.forEach(group=>{paint(group);group.querySelector('[data-reaction-status]').textContent=''});
  };
- try{await load()}catch{groups.forEach(group=>{const status=group.querySelector('[data-reaction-status]');status.textContent='Reactions could not load. ';const retry=document.createElement('button');retry.className='btn ghost small';retry.type='button';retry.textContent='Retry';status.append(retry);retry.addEventListener('click',()=>void wireReactions(root),{once:true})});return}
+ try{await load()}catch{if(!current())return;groups.forEach(group=>{const status=group.querySelector('[data-reaction-status]');status.textContent='Reactions could not load. ';const retry=document.createElement('button');retry.className='btn ghost small';retry.type='button';retry.textContent='Retry';status.append(retry);retry.addEventListener('click',()=>void wireReactions(root),{once:true,signal})});return}
+ if(!current())return;
  groups.forEach(group=>{
    let busy=false;
    group.addEventListener('click',async event=>{
@@ -34,6 +38,6 @@ export async function wireReactions(root){
      try{const {error}=active?await db().from('member_wall_reactions').delete().match(row):await db().from('member_wall_reactions').insert(row);if(error&&error.code!=='23505')throw error;await load();if(!active)animateUi(button.querySelector('[aria-hidden]'),[{transform:'scale(1)'},{transform:'translateY(-2px) scale(1.22)',offset:.4},{transform:'scale(1)'}],{duration:280})}
      catch{status.textContent='Could not save that reaction. Try again.'}
      finally{busy=false;button.disabled=false}
-   });
+   },{signal});
  });
 }

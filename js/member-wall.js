@@ -28,6 +28,11 @@ import { icon } from "./icons.js";
 import { mountWallComposer } from './wall-composer.js';
 import { mountWallPhotoViewer } from './wall-photo-viewer.js';
 import { identityByline, accentOf } from "./profile-identity.js";
+import {patchWall} from './wall-continuity.js';
+
+export function updateWall(root, rows, options = {}) {
+  patchWall(root,wallCard(rows,options),options);
+}
 
 /* The crop surface is drawn as a string into the card, and its listeners are
    delegated on the document - so this has to be registered by whoever can draw
@@ -328,7 +333,7 @@ export function wireWall(root, onChanged) {
     if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
     clearWallDraft(me.id,"post");
     toast("Posted");
-    onChanged?.();
+    onChanged?.({resetComposer:true});
   }, {signal});
 
   root.addEventListener("click", async (e) => {

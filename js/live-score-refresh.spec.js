@@ -2,6 +2,13 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {mountLiveScoreRefresh} from './live-score-refresh.js';
 
 describe('live score catch-up',()=>{
+  it('stays suspended after pagehide even when a pending request finishes',async()=>{
+    let release;const refresh=vi.fn().mockImplementationOnce(()=>new Promise(resolve=>{release=resolve})).mockResolvedValue(true);
+    const {win}=setup({refresh});loop.start();win.dispatchEvent(new Event('pagehide'));release();
+    await vi.advanceTimersByTimeAsync(120000);expect(refresh).toHaveBeenCalledOnce();expect(vi.getTimerCount()).toBe(0);
+    const event=new Event('pageshow');event.persisted=true;win.dispatchEvent(event);await vi.advanceTimersByTimeAsync(80);
+    expect(refresh.mock.calls).toEqual([[false],[true]]);
+  });
   let loop;
   afterEach(()=>{loop?.stop();vi.useRealTimers()});
   const setup=(options={})=>{

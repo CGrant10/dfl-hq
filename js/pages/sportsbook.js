@@ -9,6 +9,8 @@ import { selectFeaturedProps, groupPropPlayers } from "../sportsbook-featured-pr
 import { propLine } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
+import {mountSportsbookLive} from '../sportsbook-live.js';
+import {patchGameDay} from '../game-day-dom.js';
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
 // =====================================================================
@@ -77,6 +79,7 @@ function scopeOf(markets){
 let slip=[];
 let slipStake=null,slipStakeMember=null,stopSlipDrag=null;
 const propGameCache=new Map();
+let stopLive=null,renderGeneration=0;
 
 /* The Sportsbook is intentionally allowed to open even when the member
    directory is unavailable: the moneyline still works with initials. In the
@@ -92,10 +95,14 @@ async function loadSportsbookIdentities(){
 }
 
 export async function render(view){
+  leave();const generation=renderGeneration;
+  const active=()=>view.isConnected&&generation===renderGeneration;
   const me=currentMember();
   if(!me){view.innerHTML=`<header class="page-head"><h1>Sportsbook</h1></header><section class="card profile-entry"><h2>Open your book</h2><p>Choose your league profile to see your bankroll, picks and tickets.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;return}
   const canBook=hasPermission("sportsbook");
-  view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
+  const refreshing=!!view.querySelector('#sportsbook-wrap');
+  if(refreshing)writeBookState(me.id,{scroll:window.scrollY});
+  else view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card"><div class="card-body muted">Opening the book…</div></div>`;
   let wallet,ledger,leaders,markets,outcomes,bets,trends,members,pickem,recap,leagueWeek={},feedStatus={};
   let autoReady=true;
   try{
@@ -132,7 +139,8 @@ export async function render(view){
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
     ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
-  }catch(err){view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
+  }catch(err){if(generation!==renderGeneration)return;if(refreshing)toast('The book could not refresh. Try again.',true);else view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
+  if(generation!==renderGeneration)return;
 
   ({markets,outcomes,bets,trends,recap}=currentSportsbookNames({markets,outcomes,bets,trends,recap},members));
   const byMarket=new Map();
@@ -200,12 +208,43 @@ export async function render(view){
   </div>`;
   /* The share and pull handlers need the rows behind the buttons they drew. */
   view.__bets=bets;
-  wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
+  const refreshSlip=wireSlipAndPicks(view,outcomeMap,marketMap,wallet);
   rememberView(view,me.id);
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
   wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
   announceFreshPayout(bets,me.id);
+  const lineStatus=(failed)=>{
+    let status=view.querySelector('[data-book-live-status]');
+    if(!status&&failed){status=document.createElement('p');status.dataset.bookLiveStatus='';status.className='sb-empty';status.setAttribute('role','status');view.querySelector('#sb-markets')?.prepend(status);}
+    if(status){status.hidden=!failed;status.textContent=failed?'Refresh unavailable. Showing the last checked lines.':'';}
+  };
+  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),outcomeMap,active,onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
+    lineStatus(false);
+    const named=currentSportsbookNames({markets:fresh.markets,outcomes:fresh.outcomes,bets:[],trends:[],recap:null},members);
+    const present=new Set(named.markets.map(m=>String(m.id)));
+    for(const id of ids)if(!present.has(String(id))){const current=marketMap.get(String(id));if(current)current.status='locked';}
+    for(const row of named.markets){const current=marketMap.get(String(row.id));if(current)Object.assign(current,row);}
+    for(const row of named.outcomes){const current=outcomeMap.get(String(row.id));if(current)Object.assign(current,row);}
+    const presentOutcomes=new Set(named.outcomes.map(row=>String(row.id)));
+    for(const button of view.querySelectorAll('[data-bet-outcome]')){
+      const quote=outcomeMap.get(button.dataset.betOutcome),market=marketMap.get(String(quote?.market_id));
+      if(!quote||!market)continue;
+      if(!presentOutcomes.has(String(quote.id)))market.status='locked';
+      button.disabled=!present.has(String(market.id))||!isOpen(market);
+      const price=button.querySelector('.sb-price');if(price)price.textContent=fmtOdds(quote.odds_american);
+      const name=button.querySelector('.sb-outcome-name');if(name?.firstChild?.nodeType===3)name.firstChild.textContent=quote.label;
+      const line=button.closest('.sb-player-line');
+      if(line){line.querySelector('.sb-player-stat strong').textContent=propLine(market);const meta=propMarketMeta(market,[quote]);button.setAttribute('aria-label',`${meta.player}, ${meta.stat}, ${quote.label}, ${fmtOdds(quote.odds_american)}`);}
+      const card=button.closest('.sb-market'),state=card?.querySelector('.sb-market-state');
+      const heading=card?.querySelector('.card-heading');if(heading)heading.textContent=market.title;
+      const locks=card?.querySelector('.sb-locks');if(locks&&market.closes_at)locks.textContent=`${button.disabled?'Locked':'Locks'} ${fmtTime(market.closes_at)}`;
+      if(state){state.textContent=button.disabled?'LOCKED':'OPEN';state.classList.toggle('is-open',!button.disabled);state.classList.toggle('is-locked',button.disabled);}
+    }
+    const before=slip.length;slip=slip.filter(id=>isOpen(marketMap.get(String(outcomeMap.get(String(id))?.market_id))||{}));
+    if(slip.length<before)toast('A selected line closed and was removed from your slip.',true);
+    if(slip.length||before)refreshSlip();
+  }});
 }
 
 function wireMarketActivities(view){
@@ -512,8 +551,9 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
   };
 
   const wireBar=()=>{
-    view.querySelector("[data-slip-clear]")?.addEventListener("click",()=>{slip=[];slipStake=null;refresh()});
-    view.querySelector("[data-slip-open]")?.addEventListener("click",()=>openSlip(view,outcomeMap,marketMap,wallet,refresh));
+    const clear=view.querySelector('[data-slip-clear]'),open=view.querySelector('[data-slip-open]');
+    if(clear&&!clear._bookSlipWired){clear._bookSlipWired=true;clear.addEventListener('click',()=>{slip=[];slipStake=null;refresh()});}
+    if(open&&!open._bookSlipWired){open._bookSlipWired=true;open.addEventListener('click',()=>openSlip(view,outcomeMap,marketMap,wallet,refresh));}
   };
 
   const refresh=()=>{
@@ -524,7 +564,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
     if(existing&&html){
       const holder=document.createElement("div");
       holder.innerHTML=html;
-      existing.replaceWith(holder.firstElementChild);
+      patchGameDay(existing,holder.firstElementChild.innerHTML);
     }else if(existing){
       existing.remove();
     }else if(html&&wrap){
@@ -547,6 +587,7 @@ function wireSlipAndPicks(view,outcomeMap,marketMap,wallet){
   });
 
   wireBar();
+  return refresh;
 }
 
 // ---------------------------------------------------------------------
@@ -776,10 +817,10 @@ function wireProductTabs(view,memberId){
 }
 
 let stopRemembering=null;
-export function leave(){stopRemembering?.();stopRemembering=null;stopSlipDrag?.();stopSlipDrag=null}
+export function leave(){renderGeneration++;stopLive?.();stopLive=null;stopRemembering?.();stopRemembering=null;stopSlipDrag?.();stopSlipDrag=null}
 function rememberView(view,memberId){
   if(!view.isConnected)return;
-  leave();
+  stopRemembering?.();stopRemembering=null;
   const saved=readBookState(memberId);
   const requestedPlayer=new URLSearchParams(location.hash.split("?")[1]||"").get("player");
   if(requestedPlayer)writeBookState(memberId,{product:"book",tab:"markets"});

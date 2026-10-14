@@ -6,6 +6,7 @@ export function fitDialogToViewport(dialog) {
   const viewport = window.visualViewport;
   if (!viewport) return;
   const controller = new AbortController();
+  const stop=()=>controller.abort();
   const update = () => {
     if (!dialog.isConnected) { controller.abort(); return; }
     const bounds = dialogViewportBounds(innerHeight, viewport.height, viewport.offsetTop);
@@ -14,6 +15,9 @@ export function fitDialogToViewport(dialog) {
   viewport.addEventListener('resize', update, { signal: controller.signal });
   viewport.addEventListener('scroll', update, { signal: controller.signal });
   window.addEventListener('dfl:route-performance', update, { signal: controller.signal });
+  window.addEventListener('pageshow', update, { signal: controller.signal });
+  window.addEventListener('resize', update, { signal: controller.signal });
   dialog.addEventListener('close', () => controller.abort(), { once:true, signal:controller.signal });
   update();
+  return stop;
 }

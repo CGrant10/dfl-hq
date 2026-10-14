@@ -16,6 +16,8 @@ export function clearWallDraft(memberId,thread,storage){
 }
 export function wireWallDraft(form,memberId,thread){
   const area=form?.querySelector('textarea');if(!area)return;
+  if(form.dataset.wallDraftWired===String(memberId)+':'+thread)return;
+  form.dataset.wallDraftWired=String(memberId)+':'+thread;
   const restored=readWallDraft(memberId,thread);if(restored&&!area.value)area.value=restored;
   const note=document.createElement('p');note.className='muted tiny wall-draft-note';note.setAttribute('role','status');
   const discard=document.createElement('button');discard.type='button';discard.className='btn ghost small';discard.textContent='Discard draft';

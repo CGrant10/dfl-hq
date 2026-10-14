@@ -31,6 +31,11 @@ function fixture(){
   return {handle,dialog,dismiss,control,send,busy:v=>busy=v,captured:()=>captured};
 }
 describe('sheet controls and interruption',()=>{
+  it('releases a held gesture when the browser suspends the page',()=>{
+    const f=fixture();f.send('pointerdown');f.send('pointermove',100,250);expect(f.captured()).toBe(1);
+    window.dispatchEvent(new Event('pagehide'));expect(f.captured()).toBeNull();
+    f.send('pointerup',100,250);expect(f.dismiss).not.toHaveBeenCalled();f.control.stop();
+  });
   it('closes deliberate pulls without requiring decorative motion',()=>{
     const f=fixture();f.send('pointerdown');f.send('pointermove',100,240);f.send('pointerup',100,240);expect(f.dismiss).toHaveBeenCalledOnce();expect(f.captured()).toBeNull();f.control.stop();
   });

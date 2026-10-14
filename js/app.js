@@ -16,20 +16,16 @@ import { startPresence } from "./presence.js";
 import { initTheme, syncThemeFromMember } from "./theme.js";
 import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
-import { mountMemberPreview } from "./member-preview.js";
 import { startRouter, renderRoute, go, currentRoute, onRoute, prefetchRoute } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
-import { setupNotifyNudge } from "./notify-nudge.js";
 import { esc, toast, loading } from "./ui.js";
 import { golfPass, clearGolfPass, onGolfPassChange } from "./golf-guest.js";
 import { mountJoin } from "./golf-join.js";
 import { trapFocus } from "./focus-trap.js";
 import { forgetVerifiedPin } from "./member-lock.js";
 import { mountSeasonNavigation } from "./season-nav.js";
-import { mountNotificationBell } from "./notifications.js";
 import { mountQuickSleeperSync, refreshQuickSleeperSync } from "./quick-sleeper-sync.js";
-import { mountBreakingTradeCoverage } from "./breaking-trade.js";
 import { startExperience, syncExperience } from "./experience.js";
 
 /* Draft and golf are complete. Rebuild the shell before any navigation
@@ -243,7 +239,7 @@ async function boot(){console.log(`DFL HQ v${APP_VERSION}`);const initialView=do
 if(['home','clubhouse','sportsbook','trade'].includes(currentRoute()))prefetchRoute(currentRoute());
 try{await Promise.race([Promise.all([restoreAdmin(),restoreMember(),loadSettings()]),new Promise((_,reject)=>{startupTimer=setTimeout(()=>reject(new Error("Startup connection timed out")),10000)})]);}
 finally{clearTimeout(startupTimer)}
-paintName();mountMemberPreview();
+paintName();
   startExperience();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
@@ -255,14 +251,15 @@ paintName();mountMemberPreview();
      Worker registration starts independently so a push page cannot deadlock. */
   startAppDiagnostics();
   window.addEventListener("dfl:app-ready", () => {
-    mountNotificationBell();
+    void import('./member-preview.js').then(module=>module.mountMemberPreview()).catch(error=>console.warn('Profile controls unavailable',error));
+    void import('./notifications.js').then(module=>module.mountNotificationBell()).catch(error=>console.warn('Notification controls unavailable',error));
     mountQuickSleeperSync();
-    mountBreakingTradeCoverage();
+    void import('./breaking-trade.js').then(module=>module.mountBreakingTradeCoverage()).catch(error=>console.warn('League coverage unavailable',error));
     const readyAt=performance.now();
     void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});
     startPresence();
     setupUpdates();
-    void setupNotifyNudge();
+    void import('./notify-nudge.js').then(module=>module.setupNotifyNudge()).catch(error=>console.warn('Notification prompt unavailable',error));
 
   }, { once: true });
   startRouter();
