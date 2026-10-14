@@ -416,7 +416,7 @@ export function renderItem(item, { editorial = false } = {}) {
   const artKind = illustratedChampion ? item.variant === "chip" ? "chip" : "champion" : "logo";
   const art = illustratedChampion
     ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"
-    : "assets/dfl-daily-crest.webp";
+    : "icons/dfl-logo-512.webp";
   const inner = illustrated
     ? `<span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;

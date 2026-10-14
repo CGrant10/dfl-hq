@@ -433,7 +433,7 @@ h3 {
   text-align: center;
 }
 /* Reserved before anything animates, so no stage can shift the one after it. */
-.sp-mark { width: min(66vw, 380px); height: auto; opacity: 0; border-radius: 50%; }
+.sp-mark { width: min(66vw, 380px); height: auto; opacity: 0; border-radius: 0; }
 /*
   FIXED INKS, NOT THE THEME'S - the same rule the shared cards already
   follow, and for the same reason.
@@ -935,8 +935,8 @@ select, input[type="text"], input[type="number"], input[type="date"], textarea {
   top: 50%; right: -14%;
   width: 62%; aspect-ratio: 1 / 1;
   transform: translateY(-50%);
-  background: #000 url("../icons/dfl-seal-heritage-512.webp") center / contain no-repeat;
-  border-radius: 50%;
+  background: url("../icons/dfl-logo-512.webp") center / contain no-repeat;
+  border-radius: 0;
   opacity: .07;
   pointer-events: none;                 /* never interactive, ever */
   z-index: 0;

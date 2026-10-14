@@ -378,7 +378,7 @@ export function clubhouseWeekCard(view) {
         ? (final ? "WIN SECURED" : "IN CONTROL")
         : (final ? "TOUGH LOSS" : "WORK TO DO");
   return `<article class="hd-week-card">
-    <img class="hd-ghost-crest" src="icons/crest-512.webp" alt="" aria-hidden="true">
+    <img class="hd-ghost-crest" src="icons/dfl-logo-512.webp" alt="" aria-hidden="true">
     <div class="hd-week-copy">
       <small>${esc(story.label || "YOUR WEEK")}</small>
       <h2>${esc(title)}</h2>

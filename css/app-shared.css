@@ -3144,7 +3144,7 @@ body:has(#view[data-route="home"]) {
 .page-identity::after {
   content: ''; position: absolute; right: -34px; bottom: -56px;
   width: 232px; height: 232px; opacity: .07;
-  background: url('../icons/dfl-seal-64.webp') center / contain no-repeat;
+  background: url('../icons/dfl-logo-64.webp') center / contain no-repeat;
   pointer-events: none; z-index: -1;
 }
 .tb-head-row.page-identity { padding: 20px; margin-bottom: 16px; }
@@ -4062,6 +4062,10 @@ body .breaking-trade-beacon { width:26px; }
 
 /* Dots are always visible now; their old focus-reveal plate is obsolete. */
 #home-wrap .bx-dots:focus-within { background:transparent; }
+
+/* Keep the white shield legible on the light paper without adding a box. */
+#home-wrap .bx-with-crest .bx-editorial-crest,
+#home-wrap > .hero .hero-crest.is-crest { filter:drop-shadow(0 0 1px #171717); }
 
 
 /* Source: css/clubhouse-polish.css */

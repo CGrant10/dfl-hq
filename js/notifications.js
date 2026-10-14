@@ -146,7 +146,7 @@ export async function testNotification(delayMs = 5000) {
   await new Promise(resolve => setTimeout(resolve, delayMs));
   await registration.showNotification("Test notification", {
     body: "If this dropped down from the top of the screen, alerts are working.",
-    icon: "icons/app-192.png",
+    icon: "icons/app-192-1410.png",
     badge: "icons/badge-96.png",
     tag: `dfl-test-${Date.now()}`,
     renotify: true,
