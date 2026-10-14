@@ -92,8 +92,8 @@ export function homeGameDayMatchup(model, weekly = null) {
     const row = model.standings?.find(item => Number(item.season) === Number(model.season) && String(item.sleeper_user_id) === String(team.uid));
     const known = row?.wins != null && row?.losses != null && [row.wins,row.losses].every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
     const record = team.record || (known ? `${row.wins} – ${row.losses}${Number(row.ties) > 0 ? ` – ${row.ties}` : ''}` : '');
-    const remaining = model.completed ? 'Final' : Number.isInteger(team.remaining) && team.remaining >= 0
-      ? `${team.remaining} left${team.live > 0 ? ` · ${team.live} playing` : ''}` : 'Player status pending';
+    const remaining = model.completed ? '' : Number.isInteger(team.remaining) && team.remaining >= 0
+      ? `${team.remaining} left${team.live > 0 ? ` · ${team.live} playing` : ''}` : '';
     return `<span class="gameday-faceoff-team" data-gameday-team="${esc(team.roster)}">
     ${teamPortrait({ team_name: team.name, identity: team.identity }, { className: 'gameday-faceoff-mark' })}
     <span class="home-team-name"><small class="home-team-record">${esc(record)}</small><strong>${esc(team.identity?.team_name || team.name || team.identity?.display_name)}</strong><small class="home-team-progress">${esc(remaining)}</small></span>
@@ -101,7 +101,7 @@ export function homeGameDayMatchup(model, weekly = null) {
   </span>`;
   }).join('<i aria-hidden="true">vs</i>');
   const summary=matchupSummary(game.sides[0],game.sides[1],{completed:model.completed,memberId:model.memberId,compact:true});
-  return `<p class="home-matchup-score-label sr-only">${scoreLabel} scores · points</p><a class="gameday-matchup${projected ? ' is-projected' : ''}" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="home-matchup-entry"><span>${esc(summary)}</span><strong>Matchup details <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></strong></span><span class="sr-only">Open matchup. ${scoreLabel} scores in points.</span></a>`;
+  return `<p class="home-matchup-score-label sr-only">${scoreLabel} scores · points</p><a data-gameday-watch data-matchup-id="${esc(game.id)}" class="gameday-matchup${projected ? ' is-projected' : ''}" aria-label="${esc(`Open matchup. ${scoreLabel} scores. ${game.sides.map((team,index)=>`${team.identity?.team_name||team.name}: ${projected?forecasts[index].projection.toFixed(1):team.score==null?'pending':Number(team.score).toFixed(2)}`).join('. ')}`)}" href="#/clubhouse?season=${esc(model.season)}&week=${esc(model.week)}&tab=matchups">${teams}<span class="home-matchup-entry"><strong>${esc(['live','ongoing','final'].includes(homeGameDayPhase(model).key)?summary:'Matchup details')} <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></strong></span><span class="sr-only">Open matchup. ${scoreLabel} scores in points.</span></a>`;
 }
 
 export function homeThermalBoard(model) {
@@ -136,7 +136,7 @@ export function homeLeagueFile({ fact = null, rivalry = null, facts = [] } = {})
   const artFor = kind => kind === 'title' ? 'champion' : kind === 'low' ? 'chip-eater' : ['streak','nailbiter'].includes(kind) ? 'rivalry' : 'archive';
   const factHref = item => item.id ? `#/facts?fact=${encodeURIComponent(item.id)}` : '#/facts';
   const stories = [
-    fact ? { label: 'FROM THE DFL ARCHIVE', headline: fact.headline, detail: fact.detail, href: factHref(fact), art: artFor(fact.kind) }
+    fact ? { label: 'FROM THE DFL ARCHIVE', key:fact.id,headline: fact.headline, detail: fact.detail, href: factHref(fact), art: artFor(fact.kind) }
       : { label: 'FROM THE DFL ARCHIVE', headline: 'Every season leaves receipts.', detail: 'Champions, records and the matchups we still talk about.', href: '#/history', art: 'archive' },
     rivalry ? { ...rivalry, art: 'rivalry' } : null,
   ].filter(Boolean);
@@ -149,14 +149,14 @@ export function homeLeagueFile({ fact = null, rivalry = null, facts = [] } = {})
     for (const item of pool) {
       if (stories.length >= 4) break;
       if (!item.headline || seen.has(item.headline) || diverse && kinds.has(item.kind)) continue;
-      stories.push({ label: labels[item.kind] || 'FROM THE DFL ARCHIVE', headline: item.headline, detail: item.detail, href: factHref(item), art: artFor(item.kind) });
+      stories.push({ label: labels[item.kind] || 'FROM THE DFL ARCHIVE', key:item.id,headline: item.headline, detail: item.detail, href: factHref(item), art: artFor(item.kind) });
       seen.add(item.headline); kinds.add(item.kind);
     }
   }
   return `<section class="home-league-file" aria-labelledby="home-league-file-title">
     <header><h2 class="section-title" id="home-league-file-title">The archive<span class="count">${stories.length}</span></h2><a class="home-section-action" href="#/history" aria-label="Explore league history" title="Explore league history"><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     <nav class="home-archive-paths" aria-label="League archives"><a class="btn ghost small" href="#/clubhouse?archive=1&amp;tab=recap">Week-by-week recaps</a><a class="btn ghost small" href="#/facts?archive=weekly">This week in DFL history</a></nav>
-    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story" href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${story.art}.webp" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
+    <div class="home-league-stories">${stories.map(story => `<a class="home-league-story"${story.key?` data-archive-key="${esc(story.key)}"`:""} href="${esc(story.href)}"><img class="home-story-art" src="assets/dfl-daily-${story.art}.webp" alt="" loading="lazy"><div><small>${esc(story.label)}</small><h3>${esc(story.headline)}</h3><p>${esc(story.detail)}</p></div><svg class="home-story-chevron" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>`).join('')}</div>
   </section>`;
 }
 

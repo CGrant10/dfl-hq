@@ -1,3 +1,4 @@
+import {connectArtwork} from './connected-artwork.js';
 import {db} from './supabase.js';
 import {currentMember} from './members.js';
 import {esc} from './ui.js';
@@ -26,12 +27,20 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
  const scoreCollapse=mountWatchScoreCollapse(dialog);
  const vfx=mountScoreVfx(dialog),spotlight=mountPlayerSpotlight(dialog,{getModel,getMotion});
  let stopped=false,gameId='',intro=false,reelIndex=0,timer=null,rows=[],loading=false,saving=false,request=0,restore=null,animations=[],stopScores=()=>{},scopeKey='',reactionMessage='',pointer=null;
+ let badgeOrigin=null,stopBadges=()=>{},badgeStops=[],closeTimer=0;
+ const canConnect=()=>badgeOrigin?.isConnected&&[...badgeOrigin.querySelectorAll('.gameday-faceoff-mark')].length===2&&[...badgeOrigin.querySelectorAll('.gameday-faceoff-mark')].every(node=>{const box=node.getBoundingClientRect();return box.bottom>44&&box.top<innerHeight-48});
+ const connectBadges=(reverse=false)=>{
+  const origins=badgeStops.map(stop=>stop.position?.());stopBadges();const game=selected();if(!badgeOrigin?.isConnected||!game)return;
+  const stops=game.sides.map((team,index)=>{const source=badgeOrigin.querySelector(`[data-gameday-team="${CSS.escape(String(team.roster))}"] .gameday-faceoff-mark`),target=intro?content.querySelectorAll('.gd-entrance-crest .dfl-team-mark')[index]:content.querySelector(`[data-gameday-team="${CSS.escape(String(team.roster))}"] .dfl-team-mark`);return reverse?connectArtwork(target,source,{motion:motion(),duration:170,hideSource:true,origin:origins[index]}):connectArtwork(source,target,{motion:motion()})});
+  badgeStops=stops;stopBadges=()=>{stops.forEach(stop=>stop());badgeStops=[];stopBadges=()=>{}};
+ };
+ const dismiss=()=>{if(dialog.dataset.uiClosing)return;dialog.dataset.uiClosing='true';cancelAnimations();connectBadges(true);const done=()=>{delete dialog.dataset.uiClosing;dialog.close()};if(motion()&&canConnect())closeTimer=setTimeout(done,180);else done()};
  const opened=new Set();let rivalry=false,lastHypeTap=0,closeKey='',calls=null,callsKey='',tab=readPageChoice('watch-tab',WATCH_TABS.map(t=>t[0]),'matchup'),filter=readPageChoice('watch-league-filter',['all','hot','cold'],'all'),includeBench=readPageChoice('watch-league-bench',['on','off'],'off')==='on',momentScope=readPageChoice('watch-moment-scope',['matchup','league'],'matchup');
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const motion=()=>getMotion()&&!reduced.matches;
  const selected=()=>getModel()?.games.find(g=>g.id===gameId);
  const cancelAnimations=()=>{animations.forEach(a=>a.cancel());animations=[];stopScores();stopScores=()=>{}};
- const onReduce=()=>{if(!motion())cancelAnimations()};reduced.addEventListener('change',onReduce);
+ const onReduce=()=>{if(!motion()){cancelAnimations();stopBadges()}};reduced.addEventListener('change',onReduce);
  const setMotion=()=>{dialog.dataset.motion=getMotion()?'on':'off';spotlight.setMotion(getMotion());const button=content.querySelector('[data-watch-motion]');if(button){button.textContent=`Motion ${getMotion()?'on':'off'}`;button.setAttribute('aria-pressed',String(getMotion()))}onReduce()};
  const scope=()=>matchupReactionScope(getModel(),selected());
  const key=()=>JSON.stringify(scope());
@@ -108,7 +117,7 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
  dialog.addEventListener('click',async event=>{
   // The Watch view owns its player spotlight; do not open Home's underneath.
   event.stopPropagation();const target=event.target;
-  if(target===dialog||target.closest('[data-watch-close]')){dialog.close();return}
+  if(target===dialog||target.closest('[data-watch-close]')){dismiss();return}
   if(target.closest('[data-watch-hype]')){const now=performance.now();if(event.shiftKey||lastHypeTap&&now-lastHypeTap<600){rivalry=true;content.querySelector('.gd-watch-entrance').dataset.rivalry='1';content.querySelector('[data-entrance-banter]').textContent='Talk your shit. The scoreboard will answer.';lastHypeTap=0}else lastHypeTap=now;cancelAnimations();animateEntrance();return}
   if(target.closest('[data-watch-start]')){start();return}
   if(target.closest('[data-watch-reel]')){tab='league';savePageChoice('watch-tab',tab);render();content.querySelector('.gd-watch-reel')?.scrollIntoView({behavior:motion()?'smooth':'instant',block:'start'});content.querySelector('[data-reel-step="1"]')?.focus({preventScroll:true});return}
@@ -128,13 +137,14 @@ export function mountGameDayWatch(root,{getModel,getHistory,getMotion,members,on
  dialog.addEventListener('pointercancel',()=>{pointer=null});
  dialog.addEventListener('keydown',event=>{const nav=event.target.closest('[data-watch-tab]');if(nav&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const keys=WATCH_TABS.map(t=>t[0]),i=keys.indexOf(tab);tab=event.key==='Home'?keys[0]:event.key==='End'?keys.at(-1):keys[(i+(event.key==='ArrowRight'?1:keys.length-1))%keys.length];savePageChoice('watch-tab',tab);render();if(tab==='moments')void onMoments();content.querySelector(`[data-watch-tab="${tab}"]`)?.focus({preventScroll:true});return}if(!event.target.closest('.gd-watch-reel')||!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();content.querySelector(`[data-reel-step="${event.key==='ArrowRight'?1:-1}"]`)?.click()});
  dialog.addEventListener('pointerup',event=>{if(!pointer||pointer.id!==event.pointerId)return;const dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;pointer=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5)content.querySelector(`[data-reel-step="${dx<0?1:-1}"]`)?.click()});
- dialog.addEventListener('close',()=>{cancelAnimations();request++;loading=false;clearTimeout(timer);if(!stopped&&restore?.isConnected)restore.focus({preventScroll:true})});
+ dialog.addEventListener('cancel',event=>{event.preventDefault();dismiss()});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;clearTimeout(closeTimer);delete dialog.dataset.uiClosing;stopBadges();cancelAnimations();request++;loading=false;clearTimeout(timer);if(!stopped&&restore?.isConnected)restore.focus({preventScroll:true})});
  return {updateFreshness,
-  open(options={}){if(options.tab&&WATCH_TABS.some(t=>t[0]===options.tab)){tab=options.tab;savePageChoice('watch-tab',tab)}if(options.filter&&['all','hot','cold'].includes(options.filter)){filter=options.filter;savePageChoice('watch-league-filter',filter)}const model=getModel();if(!model?.games.length)return;restore=document.activeElement;const fallback=(model.games.find(g=>g.isMine)||model.games[0]).id;setGame(readPageChoice(`watch-matchup-${model.season}-${model.week}`,model.games.map(g=>g.id),fallback));if(options.tab)start();dialog.showModal();scoreCollapse.refresh();heading.focus({preventScroll:true});paintReactions();if(!intro)void loadReactions();if(!intro&&tab==='moments')void onMoments();schedule()},
+  open(options={}){if(options.tab&&WATCH_TABS.some(t=>t[0]===options.tab)){tab=options.tab;savePageChoice('watch-tab',tab)}if(options.filter&&['all','hot','cold'].includes(options.filter)){filter=options.filter;savePageChoice('watch-league-filter',filter)}const model=getModel();if(!model?.games.length)return;clearTimeout(closeTimer);stopBadges();delete dialog.dataset.uiClosing;restore=document.activeElement;badgeOrigin=options.source||null;const fallback=(model.games.find(g=>g.isMine)||model.games[0]).id;setGame(options.gameId&&model.games.some(game=>game.id===options.gameId)?options.gameId:readPageChoice(`watch-matchup-${model.season}-${model.week}`,model.games.map(g=>g.id),fallback));if(options.tab)start();dialog.showModal();if(canConnect()){cancelAnimations();connectBadges()}scoreCollapse.refresh();heading.focus({preventScroll:true});paintReactions();if(!intro)void loadReactions();if(!intro&&tab==='moments')void onMoments();schedule()},
   update(previous){if(!dialog.open||stopped)return;const model=getModel();if(!selected()){setGame((model.games.find(g=>g.isMine)||model.games[0]).id);return}if(key()!==scopeKey){setGame(gameId);return}render();if(!intro)stopScores=animateScoreChanges(content,{previous,model,motion:getMotion(),gameId});spotlight.update()},
   wantsMoments(){return dialog.open&&!intro&&tab==='moments'},
   redraw(){if(dialog.open&&!stopped)render()},
   setMotion,
-  stop(){stopped=true;request++;clearTimeout(timer);cancelAnimations();reduced.removeEventListener('change',onReduce);scoreCollapse.stop();spotlight.stop();vfx.stop();dialog.close();dialog.remove()}
+  stop(){stopped=true;clearTimeout(closeTimer);stopBadges();request++;clearTimeout(timer);cancelAnimations();reduced.removeEventListener('change',onReduce);scoreCollapse.stop();spotlight.stop();vfx.stop();dialog.close();dialog.remove()}
  };
 }

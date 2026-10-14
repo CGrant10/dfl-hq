@@ -1,29 +1,32 @@
 // Keep a horizontal gesture on a stable surface, even if a child is replaced.
 // Capture starts after direction is clear, so taps and vertical scroll stay native.
-export function mountHorizontalSwipe(surface, { accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', allowMouse = false, min = 48, onStart = () => {}, onMove = (_gesture) => {}, onEnd = (_gesture) => {} } = {}) {
+export function mountHorizontalSwipe(surface, { accepts = (_target) => true, exclude = 'a,button,input,select,textarea,summary,[contenteditable]', allowMouse = false, min = 48, flickVelocity = Infinity, onStart = () => {}, onMove = (_gesture) => {}, onEnd = (_gesture) => {} } = {}) {
   let gesture = null, suppressUntil = 0, stopped = false;
   const release = id => { if (surface.hasPointerCapture?.(id)) surface.releasePointerCapture?.(id); };
   const finish = (event, cancelled = false) => {
     if (!gesture || event && event.pointerId !== gesture.id) return;
     const current = gesture; gesture = null;
     const dx = event ? event.clientX - current.x : current.dx, dy = event ? event.clientY - current.y : current.dy;
-    const valid = !cancelled && current.horizontal && Math.abs(dx) >= min && Math.abs(dx) > Math.abs(dy) * 1.4;
+    const now=performance.now(),samples=[...current.samples,{x:event?event.clientX:current.x+current.dx,at:now}].filter(sample=>now-sample.at<=120),first=samples[0],last=samples.at(-1);
+    const velocity=first&&last.at>first.at?(last.x-first.x)/(last.at-first.at):0;
+    const valid = !cancelled && current.horizontal && (Math.abs(dx) >= min||Math.abs(dx)>=20&&Math.abs(velocity)>=flickVelocity) && Math.abs(dx) > Math.abs(dy) * 1.4;
     if (current.horizontal) suppressUntil = performance.now() + 400;
     release(current.id);
-    onEnd({ ...current, dx, dy, valid });
+    onEnd({ ...current, dx, dy, valid,velocity });
   };
   const down = event => {
     suppressUntil = 0; // A fresh touch is intentional, including taps on controls.
     if (event.isPrimary === false) { finish(null, true); return; }
     if (stopped || event.button !== 0 || event.pointerType === 'mouse' && !allowMouse || event.target.closest(exclude) || String(getSelection()) || !accepts(event.target)) return;
     finish(null, true);
-    gesture = { id:event.pointerId, target:event.target, x:event.clientX, y:event.clientY, dx:0, dy:0, at:performance.now(), horizontal:false };
+    gesture = { id:event.pointerId, target:event.target, x:event.clientX, y:event.clientY, dx:0, dy:0, at:performance.now(), samples:[{x:event.clientX,at:performance.now()}], horizontal:false };
     onStart();
   };
   const move = event => {
     if (!gesture || event.pointerId !== gesture.id) return;
     const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
     gesture.dx = dx; gesture.dy = dy;
+    gesture.samples.push({x:event.clientX,at:performance.now()});gesture.samples=gesture.samples.filter(sample=>performance.now()-sample.at<=120);
     if (!gesture.horizontal && Math.abs(dy) > 12 && Math.abs(dy) >= Math.abs(dx)) { finish(event, true); return; }
     if (Math.abs(dx) > 16 && Math.abs(dx) > Math.abs(dy) * 1.4) {
       gesture.horizontal = true;

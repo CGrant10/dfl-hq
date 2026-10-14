@@ -1,3 +1,4 @@
+import {mountHomeScoreCollapse} from './home-score-collapse.js';
 // Preserve the full header's document space, just as GameDay preserves its
 // expanded scoreboard. The compact reference never shifts a reader's content.
 const pages={
@@ -41,6 +42,7 @@ export function scrollSectionIndex(tops,boundary,previous=-1){
 
 export function mountPageScrollMotion(root,{animate,cancel}={}){
   const spec=pages[root.dataset.route];if(!spec)return ()=>{};
+  const stopHomeScore=root.dataset.route==='home'?mountHomeScoreCollapse(root):()=>{};
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   const allowed=()=>!reduced.matches&&document.documentElement.dataset.uiMotion!=='off';
   const dock=document.createElement('button');
@@ -122,6 +124,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   }
   function paint(){
     frame=0;if(!current()||document.hidden)return;
+    if(root.classList.contains('has-home-score-dock')){show(false);return;}
     if(dirty)scan();
     if(!displayed(hero)){compact=false;show(false);return;}
     // Read geometry together before any style or text writes.
@@ -217,7 +220,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   reduced.addEventListener('change',reset);document.fonts?.addEventListener('loadingdone',schedule);
   paint();
   return ()=>{
-    stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();intersection?.disconnect();
+    stopped=true;stopHomeScore();cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();intersection?.disconnect();
     cancel?.(dock);cancel?.(section);cancel?.(scores);for(const node of rising)cancel?.(node);restoreHeading();dock.remove();observed.clear();rising.clear();
     for(const restore of focusRestores.values())restore();focusRestores.clear();
     root.style.removeProperty('--dfl-scroll-top');root.style.removeProperty('--dfl-scroll-height');

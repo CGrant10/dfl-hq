@@ -33,6 +33,7 @@ import { marquee } from "./marquee.js";
 import { artworkStyle } from "./broadcast-artwork.js";
 import { teamPortrait } from "./team-presentation.js";
 import { playerPortrait } from "./player-presentation.js";
+import {broadcastArtworkOffset,broadcastSettleDuration} from './broadcast-gesture-motion.js';
 import { mountBroadcastDepth } from './broadcast-depth.js';
 import { mountHorizontalSwipe } from './horizontal-swipe.js';
 import { animateUi, cancelUiMotion } from './ui-motion.js';
@@ -722,7 +723,7 @@ export function startStage(root, deck, { refresh } = {}) {
     slide?.removeAttribute('aria-hidden');
     if (outgoing && outgoing !== slide) {
       outgoing.classList.remove("bx-in", "bx-enter");
-      outgoing.classList.add("bx-leaving");
+      outgoing.classList.add("bx-leaving");outgoing.setAttribute("aria-hidden","true");outgoing.setAttribute("inert","");
       /* transitionend is the truth, but it never fires when the tab is
          hidden or the user asked for reduced motion - so a timer backs it
          up and whichever lands first wins. */
@@ -730,11 +731,11 @@ export function startStage(root, deck, { refresh } = {}) {
       const drop = () => { if (done) return; done = true; outgoing.remove(); };
       if (!drag) outgoing.addEventListener("transitionend", drop, { once: true });
       setTimeout(drop, LEAVE_MS);
-      if (drag) settleSlide(outgoing, drag.offset, -drag.direction * drag.width, drop);
+      if (drag) settleSlide(outgoing, drag.offset, -drag.direction * drag.width, drop,drag.velocity);
     }
     if (drag && slide) {
       fitHeadlines(slide); scheduleLayout();
-      settleSlide(slide, drag.offset + drag.direction * drag.width, 0);
+      settleSlide(slide, drag.offset + drag.direction * drag.width, 0,()=>{},drag.velocity);
     } else if (slide) {
       /* BEFORE bx-enter, so the measurement happens on a slide that is in the
          document but not yet animating - a mid-animation scale() would make
@@ -950,13 +951,16 @@ export function startStage(root, deck, { refresh } = {}) {
   let pendingDeck = null, dragFrame = 0, dragging = null;
   const settling = new Map();
   const cleanSlide = slide => {
-    slide.style.removeProperty('transform'); slide.style.removeProperty('opacity');
+    slide.style.removeProperty('transform'); slide.style.removeProperty('opacity');slide.style.removeProperty('--bx-drag-depth-x');
     slide.classList.remove('bx-dragging');
   };
-  const settleSlide = (slide, from, to, done = () => {}) => {
+  const settleSlide = (slide, from, to, done = () => {},velocity=0) => {
+    const duration=broadcastSettleDuration(to-from,velocity),art=slide.querySelector('.bx-home-art,.bx-editorial-illustration,.bx-story-image'),depth=parseFloat(slide.style.getPropertyValue('--bx-drag-depth-x'))||0,y=getComputedStyle(root).getPropertyValue('--bx-depth-y')||'0px';
+    slide.style.setProperty('--bx-drag-depth-x','0px');
+    if(art&&depth)animateUi(art,[{transform:`translate3d(${depth}px,${y},0)`},{transform:`translate3d(0,${y},0)`}],{duration,easing:'cubic-bezier(.2,.8,.2,1)'});
     slide.classList.add('bx-dragging');
     slide.style.opacity = '1'; slide.style.transform = `translate3d(${to}px,0,0)`;
-    const animation = animateUi(slide, [{transform:`translate3d(${from}px,0,0)`},{transform:`translate3d(${to}px,0,0)`}], {duration:280,easing:'cubic-bezier(.22,.75,.25,1)'});
+    const animation = animateUi(slide, [{transform:`translate3d(${from}px,0,0)`},{transform:`translate3d(${to}px,0,0)`}], {duration,easing:'cubic-bezier(.2,.8,.2,1)'});
     if (!animation) { cleanSlide(slide); done(); return; }
     settling.set(slide, animation);
     const finish = () => {
@@ -975,8 +979,8 @@ export function startStage(root, deck, { refresh } = {}) {
       if (settle) {
         const transform=getComputedStyle(drag.current).transform;
         drag.offset=transform==='none'?0:new DOMMatrixReadOnly(transform).m41;
-        settleSlide(drag.current,drag.offset,0);
-        if(drag.preview)settleSlide(drag.preview,drag.offset+drag.direction*drag.width,drag.direction*drag.width,()=>drag.preview.remove());
+        settleSlide(drag.current,drag.offset,0,()=>{},drag.velocity);
+        if(drag.preview)settleSlide(drag.preview,drag.offset+drag.direction*drag.width,drag.direction*drag.width,()=>drag.preview.remove(),drag.velocity);
       } else { cleanSlide(drag.current); drag.preview?.remove(); }
     }
     if (!settle) {
@@ -985,16 +989,17 @@ export function startStage(root, deck, { refresh } = {}) {
     }
   };
   const swipe = mountHorizontalSwipe(root, {
-    allowMouse:true, min:44, exclude:'button,input,select,textarea,summary,[contenteditable]',
+    allowMouse:true, min:44, flickVelocity:.45, exclude:'button,input,select,textarea,summary,[contenteditable]',
     onStart() {
       const current=layer?.querySelector('.bx-slide:not(.bx-leaving):not(.bx-preview)');
       const transform=current&&settling.has(current)?getComputedStyle(current).transform:'none';
       const origin=transform==='none'?0:new DOMMatrixReadOnly(transform).m41;
+      const art=current?.querySelector('.bx-home-art,.bx-editorial-illustration,.bx-story-image'),artTransform=art&&getComputedStyle(art).transform,originDepth=artTransform&&artTransform!=='none'?new DOMMatrixReadOnly(artTransform).m41:0;
       restoreDrag(false); softPause('gesture',true);
       // Catch an unfinished settle where it is, rather than snapping it home.
       if(current&&Math.abs(origin)>.1) {
         current.classList.add('bx-dragging'); current.style.transform=`translate3d(${origin}px,0,0)`;
-        dragging={current,preview:null,direction:0,width:root.clientWidth,offset:origin,origin};
+        dragging={current,preview:null,direction:0,width:root.clientWidth,offset:origin,origin,originDepth};
       }
     },
     onMove({dx}) {
@@ -1020,10 +1025,13 @@ export function startStage(root, deck, { refresh } = {}) {
       if (!dragFrame) dragFrame=requestAnimationFrame(()=>{
         dragFrame=0;if(!dragging)return;
         dragging.current.style.transform=`translate3d(${dragging.offset}px,0,0)`;
+        dragging.current.style.setProperty('--bx-drag-depth-x',`${Math.max(-12,Math.min(12,(dragging.originDepth||0)+broadcastArtworkOffset(dx)))}px`);
+        dragging.preview.style.setProperty('--bx-drag-depth-x',`${broadcastArtworkOffset(dragging.offset+dragging.direction*dragging.width)}px`);
         dragging.preview.style.transform=`translate3d(${dragging.offset+dragging.direction*dragging.width}px,0,0)`;
       });
     },
-    onEnd({dx,valid}) {
+    onEnd({dx,valid,velocity}) {
+      if(dragging)dragging.velocity=velocity;
       if (dead) { restoreDrag(false); pendingDeck=null; return; }
       cancelAnimationFrame(dragFrame); dragFrame=0;
       if(valid && dragging) {

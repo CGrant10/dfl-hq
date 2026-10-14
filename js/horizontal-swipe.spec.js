@@ -1,11 +1,11 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {mountHorizontalSwipe} from './horizontal-swipe.js';
 afterEach(()=>vi.unstubAllGlobals());
-function fixture() {
+function fixture(options={}) {
  vi.stubGlobal('getSelection',()=> '');let index=0,captured=null;
  const surface=new EventTarget();surface.closest=()=>null;surface.setPointerCapture=vi.fn(id=>captured=id);surface.hasPointerCapture=id=>captured===id;surface.releasePointerCapture=vi.fn(()=>captured=null);
  const end=vi.fn(g=>{if(g.valid)index+=g.dx<0?1:-1;});
- const control=mountHorizontalSwipe(surface,{onEnd:end});
+ const control=mountHorizontalSwipe(surface,{...options,onEnd:end});
  const send=(type,x=100,y=100,extra={})=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerId:1,pointerType:'touch',isPrimary:true,button:0,clientX:x,clientY:y,...extra});surface.dispatchEvent(e);return e;};
  const swipe=dx=>{send('pointerdown');send('pointermove',100+dx);send('pointerup',100+dx);};
  return {surface,control,end,send,swipe,index:()=>index};
@@ -36,6 +36,11 @@ describe('stable horizontal gestures',()=>{
   const f=fixture();f.swipe(-80);expect(f.send('click').defaultPrevented).toBe(true);
   f.surface.closest=()=>({});f.send('pointerdown');expect(f.send('click').defaultPrevented).toBe(false);
   f.surface.closest=()=>null;f.swipe(80);f.send('pointerdown');f.send('pointerup');expect(f.send('click').defaultPrevented).toBe(false);
+ });
+ it('allows an opted-in short flick while a slow short pull returns to its slide',()=>{
+  let time=0;vi.stubGlobal('performance',{now:()=>time});const f=fixture({flickVelocity:.45});
+  f.send('pointerdown');time=30;f.send('pointermove',74);time=35;f.send('pointerup',74);expect(f.index()).toBe(1);expect(f.end.mock.calls[0][0].velocity).toBeLessThan(-.45);
+  time=1000;f.send('pointerdown');time=1600;f.send('pointermove',74);time=1700;f.send('pointerup',74);expect(f.index()).toBe(1);expect(f.end.mock.calls[1][0].valid).toBe(false);f.control.stop();
  });
  it('cancels vertical gestures, second fingers and stopped gestures without navigating',()=>{
   const f=fixture();f.send('pointerdown');f.send('pointermove',105,160);expect(f.control.tracking).toBe(false);

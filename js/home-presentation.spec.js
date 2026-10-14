@@ -89,7 +89,7 @@ describe('selected Home presentation', () => {
     expect(html).toContain('Actual scores');
     expect(html).toContain('0.00');
     expect(html).toContain('3 left · 1 playing');
-    expect(html).toContain('Player status pending');
+    expect(html).toContain('Scores pending');
     expect(homeGameDayMatchup({ ...model, completed: true })).toContain('Final scores');
   });
   it('shows submitted-lineup projections only for the matching upcoming week', () => {
@@ -99,7 +99,8 @@ describe('selected Home presentation', () => {
     expect(homeGameDayMatchup(model,weekly)).toContain('Projected scores');
     expect(homeGameDayMatchup(model,weekly)).toContain('124.8');
     expect(homeGameDayMatchup(model,weekly)).not.toContain('data-gameday-total-key');
-    expect(homeGameDayMatchup(model,weekly)).toContain('Ready for kickoff');
+    expect(homeGameDayMatchup(model,weekly)).toContain('data-gameday-watch');
+    expect(homeGameDayMatchup(model,weekly)).not.toContain('Ready for kickoff');
     for(const stale of [{...weekly,week:4},{...weekly,season:2025},{...weekly,teams:weekly.teams.slice(0,1)}])expect(homeGameDayMatchup(model,stale)).toContain('Actual scores');
     weekly.teams[0].lineupIsSet=false;
     expect(homeGameDayMatchup(model,weekly)).toContain('Actual scores');
@@ -121,7 +122,7 @@ describe('selected Home presentation', () => {
   });
   it('makes the current matchup reachable with an honest personal lead and actual-total feedback',()=>{
     const html=homeGameDayMatchup({season:2026,week:5,memberId:2,games:[{isMine:true,sides:[{roster:'1',name:'The Boys',memberId:1,score:100,live:1},{roster:'2',name:'The Rivals',memberId:2,score:94,live:0}]}]});
-    expect(html).toContain('You trail by 6.00');expect(html).toContain('Matchup details');expect(html).toContain('#/clubhouse?season=2026&week=5&tab=matchups');expect(html).toContain('data-gameday-total-key="2"');
+    expect(html).toContain('You trail by 6.00');expect(html).toContain('aria-label="Open matchup. Actual scores.');expect(html).toContain('#/clubhouse?season=2026&week=5&tab=matchups');expect(html).toContain('data-gameday-total-key="2"');
   });
 });
 

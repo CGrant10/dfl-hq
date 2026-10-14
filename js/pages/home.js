@@ -1,3 +1,4 @@
+import {syncHomePrimaryAction} from '../home-primary-action.js';
 import {loadRosterCoach} from '../roster-coach-data.js';
 import {mountLiveScoreRefresh} from '../live-score-refresh.js';
 import {mountGameDay} from "../game-day.js";
@@ -202,10 +203,9 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
       <section id="home-week-panel-brief" class="home-outlook-block home-week-brief" role="tabpanel" aria-labelledby="home-week-tab-brief" data-week-panel="brief">
         <strong class="home-brief-headline">${esc(briefing?.headline || "Your week is taking shape")}</strong>
         <div class="home-brief-grid">
-          <article><small>MATCHUP</small><span>${esc(briefing?.matchup || "Sleeper matchup pending")}</span></article>
           <article><small>PLAYOFF PATH</small><strong>${esc(briefing?.playoff || "Model pending")}</strong><span>${esc(briefing?.playoffDetail || "Sync the league to build your path.")}</span></article>
           <article><small>LINEUP CALL</small><span data-brief-lineup>${esc(briefing?.lineup || "Checking your starters")}</span></article>
-          <article><small>NEXT MOVE</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}" data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked>${briefing?.checkedAt?`Roster checked ${esc(new Date(briefing.checkedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}))}`:''}</small></article>
+          <article data-brief-next-move${briefing?.actionUrl&&briefing.actionUrl!=='#/analyzer'?'':' hidden'}><small>NEXT MOVE</small><a href="${esc(briefing?.actionUrl||'#/analyzer')}" data-brief-action>${esc(briefing?.action || "Keep the roster ready")}</a><small data-brief-checked></small></article>
         </div>
         <a class="home-text-action" href="#/stakes"><span>Playoff race</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>
         ${report ? `<aside class="home-tuesday-receipt"><div><small>LAST WEEK · FINAL</small><strong>${esc(report.title)}</strong><span>${esc(report.highlights?.[0]?.title || "League receipts ready")} · ${esc(report.highlights?.[0]?.detail || "")}</span></div><a class="btn small" href="#/clubhouse?season=${report.season}&amp;week=${report.week}">Open &amp; share recap</a></aside>` : ""}
@@ -230,9 +230,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
 }
 
 export function homeWeeklyFocus(outlook,briefing=null,{loading=false}={}){
- const alarm=outlook?.startSit?.alarms?.[0];
- const lineup=loading?'Checking your lineup…':alarm?`${alarm.player.name}: ${alarm.reason}`:briefing?.lineup||'Set your lineup, compare projections and get ready for the week.';
- return `<section class="home-week-focus" aria-label="Lineup action"><a class="home-lineup-primary" href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a><p class="home-focus-action"${loading?' role="status"':''}>${esc(lineup)}</p></section>`;
+ return `<section class="home-week-focus" aria-label="Matchup action"><a class="home-lineup-primary" data-home-primary href="#/analyzer"><span>Review lineup</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></section>`;
 }
 
 function wireHomeWeekHub(root) {
@@ -736,7 +734,7 @@ export async function render(view) {
        dashboard's "Power Ranks" and "Report" tabs were removed: they drew
        the same two views from the same two objects, one scroll apart. */
     const focusSlot=view.querySelector("[data-home-focus-slot]");
-    if(focusSlot)focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);
+    if(focusSlot){focusSlot.innerHTML=homeWeeklyFocus(outlook,briefing);const owner=focusSlot.closest('.home-personal-desk');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
     const homeRankingsSlot = view.querySelector("[data-home-rankings-slot]");
     const homeReportSlot = view.querySelector("[data-home-report-slot]");
     const homeTradeSlot = view.querySelector("[data-home-trade-slot]");
@@ -758,8 +756,8 @@ export async function render(view) {
             const next=buildWeeklyBriefing({outlook,stakes:pulse?.stakes,move,coach,meSleeperId:myMember.sleeper_user_id});
             const line=homeReportSlot.querySelector('[data-brief-lineup]'),action=homeReportSlot.querySelector('[data-brief-action]'),stamp=homeReportSlot.querySelector('[data-brief-checked]');
             if(line)line.textContent=next.lineup;
-            if(action){action.textContent=next.action;action.href=next.actionUrl}
-            if(stamp)stamp.textContent=next.checkedAt?`Roster checked ${new Date(next.checkedAt).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`:'';
+            if(action){action.textContent=next.action;action.href=next.actionUrl;action.closest('[data-brief-next-move]').hidden=!next.actionUrl||next.actionUrl==='#/analyzer'}
+            if(stamp)stamp.textContent='';
           },onError:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Roster refresh unavailable';},
           onOffline:()=>{const stamp=homeReportSlot.querySelector('[data-brief-checked]');if(stamp)stamp.textContent='Offline · last roster check';},
         });
@@ -788,7 +786,7 @@ export async function render(view) {
     if (mine === generation && view.isConnected) {
       const focus = view.querySelector("[data-home-focus-slot]");
       const report = view.querySelector("[data-home-report-slot]");
-      if (focus) focus.innerHTML = homeWeeklyFocus(null);
+      if (focus){focus.innerHTML=homeWeeklyFocus(null);const owner=focus.closest('.home-personal-desk');syncHomePrimaryAction(owner,owner?.dataset.matchupPhase||'unknown');}
       if (report) report.innerHTML = homeWeeklyDigest(null);
       for (const selector of ['[data-home-report-slot]', '[data-home-rankings-slot]', '[data-home-trade-slot]']) finishLoadingContent(view.querySelector(selector));
     }

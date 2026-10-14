@@ -54,18 +54,18 @@ export async function render(view) {
   }
 
   view.innerHTML = `
-    <header class="page-head"><div><h1>DFL Lore</h1><p>Know the records. Remember the rivalries. Test your league knowledge.</p></div></header>
+    <header class="page-head"><div><h1>${selected?"The archive":"DFL Lore"}</h1>${selected?"":"<p>Know the records. Remember the rivalries. Test your league knowledge.</p>"}</div></header>
     <details class="card trivia-hub"><summary>DFL trivia · Week ${leagueState?.currentWeek || 1} <span>Take the five-question challenge</span></summary><div data-trivia-host role="region" aria-label="Weekly DFL trivia"><p role="status">Open the challenge to load this week’s quiz.</p></div></details>
 
-    <section class="factcard dfl-mark" data-fact>
+    <section class="factcard${selected?' has-archive-art':' dfl-mark'}" data-fact>${selected?`<img class="fact-archive-art" data-archive-key="${esc(selected.id)}" src="assets/dfl-daily-${selected.kind==='title'?'champion':selected.kind==='low'?'chip-eater':['streak','nailbiter'].includes(selected.kind)?'rivalry':'archive'}.webp" alt="">`:''}
       <span class="fact-kicker">
         <svg class="ico-sm" aria-hidden="true"><use href="#${esc(ICON[today.kind] || "i-record")}"></use></svg>
         DFL Lore
       </span>
-      <p class="fact-ask">Did you know?</p>
+      ${selected?"":'<p class="fact-ask">Did you know?</p>'}
       <p class="fact-head">${esc(today.headline)}</p>
       <p class="fact-detail">${esc(today.detail)}</p>
-      ${today.season ? `<span class="fact-when">${esc(today.season)} season</span>` : ""}
+      ${today.season&&!(selected&&String(today.detail).includes(String(today.season))) ? `<span class="fact-when">${esc(today.season)} season</span>` : ""}
       <div class="row-end">
         <button type="button" class="btn ghost small" data-share>
           <svg class="ico-sm" aria-hidden="true"><use href="#i-moment"></use></svg>
@@ -74,7 +74,7 @@ export async function render(view) {
       </div>
     </section>
 
-    <p class="muted tiny fact-note">${selected ? 'From the DFL archive — drawn from the league’s recorded history.' : 'A new piece of league history every day — the same one for everybody.'}</p>
+    ${selected?"":'<p class="muted tiny fact-note">A new piece of league history every day — the same one for everybody.</p>'}
 
     <section class="card" id="league-week-archive" aria-labelledby="league-week-title">
       <h2 class="section-title" id="league-week-title" tabindex="-1">This week in DFL history</h2>
@@ -169,6 +169,7 @@ export async function render(view) {
     btn.textContent = was;
   });
 
+  if(selected)view.querySelector('.trivia-hub')?.before(view.querySelector('[data-fact]'));
   view.querySelector("[data-share]")?.addEventListener("click", () => {
     /* A PICTURE, not a paragraph. shareCanvas() underneath falls back the
        right way on its own: the share sheet on a phone (which is how this

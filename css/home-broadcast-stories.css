@@ -93,7 +93,7 @@
   background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 95%,transparent),color-mix(in srgb,var(--bg) 80%,transparent) 30%,color-mix(in srgb,var(--bg) 45%,transparent) 46%,transparent 65%);
 }
 #home-wrap .bx-stage[data-depth-active] :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {
-  transform:translate3d(0,var(--bx-depth-y,0px),0);
+  transform:translate3d(var(--bx-drag-depth-x,0px),var(--bx-depth-y,0px),0);
 }
 #home-wrap .bx-editorial-sheen {
   position:absolute; inset:0; z-index:4; opacity:0; pointer-events:none;
@@ -119,3 +119,7 @@
 /* Keep the white shield legible on the light paper without adding a box. */
 #home-wrap .bx-with-crest .bx-editorial-crest,
 #home-wrap > .hero .hero-crest.is-crest { filter:drop-shadow(0 0 1px #171717); }
+
+#home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:translate3d(var(--bx-drag-depth-x,0px),var(--bx-depth-y,0px),0);}
+html[data-ui-motion="off"] #home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:none;}
+@media(prefers-reduced-motion:reduce){#home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image){transform:none;}}
