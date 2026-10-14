@@ -194,7 +194,7 @@ def check_game_day_scope(page):
     source = source[source.index('const score='):].replace('export function', 'function')
     return page.evaluate('''async source => {
       const helpers = Object.assign({}, ...await Promise.all([
-        import('./js/home-presentation.js'), import('./js/game-day-dom.js'),
+        import('./js/home-presentation.js'), import('./js/home-primary-action.js'), import('./js/game-day-dom.js'),
         import('./js/game-day-model.js'), import('./js/game-day-player-rows.js'),
         import('./js/game-day-score-motion.js'), import('./js/matchup-chirp-ui.js'), import('./js/matchup-banter.js'),
         import('./js/page-disclosure.js'), import('./js/game-day-disclosure.js'), import('./js/identity-rules.js'), import('./js/ui.js'),
@@ -242,16 +242,16 @@ def check_game_day_scope(page):
         detailsRoot.querySelector('[data-gameday-motion]').click();check(detailsRoot.dataset.motion==='on','Moved effects missed the on choice');
         detailsRoot.querySelector('[data-gameday-board]').click();root.querySelector('[data-gameday-watch]').click();check(opens===2,'Watch entries stopped working');
         detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>refreshes===2&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
-        check(root.querySelector('[data-gameday-recovery]').hidden&&root.querySelector('[data-gameday-freshness]').textContent.startsWith('Checked'),'Successful refresh did not clear busy/error state');
+        check(root.querySelector('[data-gameday-recovery]').hidden&&detailsRoot.querySelector('[data-gameday-freshness]').textContent.startsWith('Checked'),'Successful refresh did not clear busy/error state');
         check(detailsRoot.querySelector('.gameday-home-detail').open,'Refresh closed the player details');
-        const warning=root.querySelector('[data-lineup-check]'),stamp=root.querySelector('[data-gameday-freshness]');
+        const warning=root.querySelector('[data-lineup-check]'),stamp=detailsRoot.querySelector('[data-gameday-freshness]');
         check(!warning.open&&warning.querySelector('summary').textContent.includes('1 open slot · 1 status flag'),'Pregame lineup check is missing or expanded');
         warning.open=true;availability='Out';const beforeCatchup=refreshes;
         window.dispatchEvent(new Event('online'));window.dispatchEvent(new Event('online'));
         await until(()=>refreshes===beforeCatchup+1&&!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
         check(root.querySelector('[data-lineup-check]').open&&root.querySelector('[data-lineup-check]').textContent.includes('Out'),'Catch-up lost expanded warnings or current availability');
-        check(stamp.dataset.scoreFreshness==='ready'&&getComputedStyle(stamp).display!=='none','Fresh score status must stay visible outside disclosures');
-        window.dispatchEvent(new Event('offline'));check(stamp.dataset.scoreFreshness==='offline'&&!!root.querySelector('.home-projected-total'),'Offline state discarded scores or claimed freshness');
+        check(stamp.dataset.scoreFreshness==='ready'&&!!stamp.closest('.home-score-tools')&&root.querySelector('[data-gameday-recovery]').hidden,'Routine freshness must stay in score controls after recovery');
+        window.dispatchEvent(new Event('offline'));check(stamp.dataset.scoreFreshness==='offline'&&!!root.querySelector('.home-projected-total')&&!root.querySelector('[data-gameday-recovery]').hidden,'Offline state must retain scores and show visible recovery');
         window.dispatchEvent(new Event('online'));await until(()=>stamp.dataset.scoreFreshness==='ready');
 
         fail=true;detailsRoot.querySelector('[data-gameday-refresh]').click();
@@ -273,7 +273,7 @@ def check_game_day_scope(page):
         await until(()=>!root.querySelector('[data-gameday-recovery]').hidden&&!root.querySelector('[data-gameday-retry]').disabled);
         check(!root.querySelector('.home-matchup-loading'),'Failed initial load left a loading skeleton');
         fail=false;root.querySelector('[data-gameday-retry]').click();await until(()=>!!root.querySelector('.gameday-matchup')&&root.querySelector('[data-gameday-recovery]').hidden);
-        return {instantCatchup:true,offlineState:true,lineupWarnings:true,warningOpenPreserved:true,visibleFreshness:true,forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true,kickoffOpens:true,betweenGamesOpen:true,activeWeekResets:true};
+        return {instantCatchup:true,offlineState:true,lineupWarnings:true,warningOpenPreserved:true,freshnessInControls:true,forecast:true,externalRefresh:true,mouseTabs:true,keyboardTabs:true,motion:true,watchEntries:opens,openDetailsPreserved:true,failedRefreshPreserved:true,retryRecovered:true,initialLoadRetry:true,kickoffOpens:true,betweenGamesOpen:true,activeWeekResets:true};
       }finally{stop();region.remove()}
     }''', source)
 
