@@ -386,18 +386,16 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
 }
 
 function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,memberId){
- const openCount=slate.markets.filter(isOpen).length,allLocked=!openCount,upcoming=slate.period==='upcoming';
+ const openCount=slate.markets.filter(isOpen).length,upcoming=slate.period==='upcoming';
  const heading=upcoming?`Week ${slate.week} early lines`:`Week ${slate.week} fantasy matchups`;
- const note=upcoming?`These are next week’s games. Week ${Number(clock.week)} is still the current NFL week.`:allLocked?'Winner bets locked at the first NFL kickoff. These games stay visible while the week plays out.':'Pick a team to win and add it to your slip. Winner bets lock at the first NFL kickoff of the week.';
  const member=memberId==null?null:members.find(m=>String(m.id)===String(memberId));
  const ownNames=new Set([member?.team_name,member?.display_name].filter(Boolean).map(identityKey));
- const ownIndex=slate.markets.findIndex(m=>isOpen(m)&&(byMarket.get(String(m.id))||[]).some(o=>ownNames.has(identityKey(o.label))));
- const featuredIndex=ownIndex>=0?ownIndex:slate.markets.findIndex(isOpen);
- const featured=featuredIndex<0?'':`<div class="sb-featured-line"><small class="sb-featured-caption">${ownIndex>=0?'YOUR MATCHUP':'FEATURED MATCHUP'}</small>${marketCard(slate.markets[featuredIndex],byMarket.get(String(slate.markets[featuredIndex].id))||[],canBook,picked,held,members)}</div>`;
- const remaining=slate.markets.filter((_,index)=>index!==featuredIndex);
- const cards=remaining.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members)).join('');
- const grid=`<div class="sb-market-grid">${cards}</div>`;
- return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div>${featured}${remaining.length?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${featured?`More Week ${slate.week} matchups`:`View Week ${slate.week} matchups`}<span>${remaining.length} games</span></summary>${grid}</details>`:''}</section>`;
+ const cards=slate.markets.map(m=>{
+  const mine=(byMarket.get(String(m.id))||[]).some(o=>ownNames.has(identityKey(o.label)));
+  const card=marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members);
+  return mine?card.replace('class="card sb-market"','class="card sb-market sb-your-matchup" data-your-matchup').replace('<small class="sb-market-kicker">','<span class="sb-your-matchup-label">Your matchup</span><small class="sb-market-kicker">'):card;
+ }).join('');
+ return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div><div class="sb-market-grid">${cards}</div></section>`;
 }
 
 function propPlayersMarkup(rows,byMarket,picked,held,favorites){

@@ -29,6 +29,12 @@ describe('dismissal lifecycle', () => {
     expect(node.dataset.uiClosing).toBeUndefined();
   });
 
+  it('keeps an opaque navigation cover until dismissal finishes',async()=>{
+    const complete=vi.fn();exitUi(node,complete,{fade:false});
+    const frames=node.animate.mock.calls[0][0];expect(frames[0].opacity).toBe('1');expect(frames[1].opacity).toBe('1');
+    expect(complete).not.toHaveBeenCalled();animation.finish();await Promise.resolve();expect(complete).toHaveBeenCalledOnce();
+  });
+
   it('does not let an old dismissal close a reopened surface', async () => {
     const complete = vi.fn();
     exitUi(node, complete); cancelUiExit(node);

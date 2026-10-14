@@ -1,13 +1,14 @@
 import {describe,it,expect,vi,beforeEach,afterEach} from 'vitest';
-const mocks=vi.hoisted(()=>({users:vi.fn(),rows:[{id:1,sleeper_user_id:'a',display_name:'Owner',team_name:'Old profile',active:true}]}));
+const mocks=vi.hoisted(()=>({users:vi.fn(),held:null,reads:[],rows:[{id:1,sleeper_user_id:'a',display_name:'Owner',team_name:'Old profile',active:true}]}));
 vi.mock('./supabase.js',()=>({configured:true,db:()=>({from:table=>{
+ mocks.reads.push(table);
  const result=table==='members'?mocks.rows:table==='sleeper_leagues'?[{sleeper_league_id:'current',season:2026}]:[{season:2026,sleeper_user_id:'a',team_name:'Synced team'}];
- const b={select:()=>b,order:()=>b,limit:()=>b,then:(resolve,reject)=>Promise.resolve({data:result,error:null}).then(resolve,reject)};return b;
+ const b={select:()=>b,order:()=>b,limit:()=>b,then:(resolve,reject)=>(table==='members'&&mocks.held?mocks.held:Promise.resolve({data:result,error:null})).then(resolve,reject)};return b;
 }})}));
 vi.mock('./sleeper.js',()=>({sleeper:{users:mocks.users}}));
 vi.mock('./store.js',()=>({setUsername:vi.fn()}));
 import {loadMemberDirectory,clearMemberDirectoryCache,currentMember,selectMember} from './members.js';
-beforeEach(()=>{clearMemberDirectoryCache();mocks.users.mockReset();mocks.users.mockResolvedValue([{user_id:'a',metadata:{team_name:'Current team '}}]);vi.stubGlobal('localStorage',{setItem:vi.fn(),getItem:vi.fn()});});
+beforeEach(()=>{clearMemberDirectoryCache();mocks.held=null;mocks.reads=[];mocks.users.mockReset();mocks.users.mockResolvedValue([{user_id:'a',metadata:{team_name:'Current team '}}]);vi.stubGlobal('localStorage',{setItem:vi.fn(),getItem:vi.fn()});});
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
 describe('shared current-name directory',()=>{
  it('shares a cold request and refreshes a rename after one minute',async()=>{
@@ -21,4 +22,13 @@ describe('shared current-name directory',()=>{
  it('keeps the newest synced name on a current-feed failure',async()=>{
   mocks.users.mockRejectedValue(new Error('feed unavailable'));expect((await loadMemberDirectory())[0].team_name).toBe('Synced team');
  });
+});
+
+it('overlaps name lookup with the pending returning-profile read while keeping one shared directory',async()=>{
+ let resolve;mocks.held=new Promise(done=>{resolve=done;});
+ const first=loadMemberDirectory({eagerNames:true}),second=loadMemberDirectory();
+ await vi.waitFor(()=>expect(mocks.users).toHaveBeenCalledOnce());
+ expect(mocks.reads.filter(table=>table==='members')).toHaveLength(1);
+ resolve({data:mocks.rows,error:null});const [a,b]=await Promise.all([first,second]);
+ expect(a).toBe(b);expect(a[0].team_name).toBe('Current team');
 });

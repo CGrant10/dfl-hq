@@ -13,7 +13,7 @@ function fixture({release=version,reply=true,update=vi.fn(async()=>{})}={}){
  class Channel{constructor(){this.port1={onmessage:null,close(){}};this.port2={peer:this.port1,close(){}};}}
  const serviceWorker={controller:worker(release,reply),getRegistration:async()=>({update}),
   addEventListener:(...args)=>listeners.addEventListener(...args),removeEventListener:(...args)=>listeners.removeEventListener(...args)};
- const env={window:{},navigator:{serviceWorker},document:{querySelector:()=>({content:version}),getElementById:id=>id==='view'?view:splash},
+ const env={window:{},navigator:{serviceWorker},document:{createElement:()=>({}),head:{append:vi.fn()},querySelector:()=>({content:version}),getElementById:id=>id==='view'?view:splash},
   localStorage:{setItem:(key,value)=>saved.set(key,value)},MessageChannel:Channel,setTimeout,clearTimeout,console,boot,
   location:{pathname:'/dfl-hq/',hash:'#/trade',replace:vi.fn()},Promise};
  runInNewContext(guard,env);
@@ -23,7 +23,7 @@ function fixture({release=version,reply=true,update=vi.fn(async()=>{})}={}){
 afterEach(()=>vi.useRealTimers());
 describe('release-coherent app startup',()=>{
  it('boots immediately with the correct controlling worker, including offline',async()=>{
-  const f=fixture();await f.start();expect(f.boot).toHaveBeenCalledTimes(1);expect(f.update).not.toHaveBeenCalled();
+  const f=fixture();await f.start();expect(f.boot).toHaveBeenCalledTimes(1);expect(f.update).not.toHaveBeenCalled();expect(f.env.document.head.append).toHaveBeenCalledWith({rel:'modulepreload',href:'js/pages/trade.js'});
  });
  it('keeps every app import paused after the older updater gives up at five seconds',async()=>{
   vi.useFakeTimers();const f=fixture({release:'1.379.0',reply:false}),started=f.start();
