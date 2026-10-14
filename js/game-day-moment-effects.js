@@ -1,6 +1,11 @@
 import { accentOf } from './identity-rules.js';
 
 const number = value => value != null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+const claimedModels=new WeakSet();
+
+export function primaryScoreMoment(candidates){
+  return [...candidates].sort((a,b)=>(b.moment.kind==='milestone')-(a.moment.kind==='milestone')||(b.moment.points||0)-(a.moment.points||0)||(b.delta||0)-(a.delta||0))[0]||null;
+}
 
 export function playerScoreMoment(before, after) {
   const from = number(before), to = number(after);
@@ -23,7 +28,7 @@ function visible(element, root) {
 export function animateGameDayMoments(root, { previous, model, gameId = null }) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const modal = [...document.querySelectorAll('dialog[open]')].at(-1);
-  if (!previous || model.completed || reduced.matches || document.visibilityState !== 'visible'
+  if (!previous || model.completed || claimedModels.has(model) || reduced.matches || document.visibilityState !== 'visible'
     || root.closest('[data-motion="off"]') || modal && root.closest('dialog') !== modal
     || root.closest('dialog') && !root.closest('dialog').open) return () => {};
   const animations = [], nodes = [], restorations = [];
@@ -86,10 +91,13 @@ export function animateGameDayMoments(root, { previous, model, gameId = null }) 
   };
 
   const game = (model.games || []).find(game => gameId ? game.id === gameId : game.isMine);
+  const leaderNow=number(game?.sides.find(team=>team.roster===game.leader)?.score),leaderBefore=number(previous.totals?.[game?.leader]);
   if (game?.leader && Object.hasOwn(previous.leaders || {}, game.id)
-    && previous.leaders[game.id] !== game.leader && game.sides.some(team => team.live > 0)) {
+    && previous.leaders[game.id] !== game.leader && game.sides.some(team => team.live > 0)
+    && leaderNow!==null&&leaderBefore!==null&&leaderNow>leaderBefore) {
     const surface = root.querySelector(`[data-gameday-team="${CSS.escape(game.leader)}"]`);
     if (visible(surface, root)) {
+      claimedModels.add(model);
       const team = game.sides.find(team => team.roster === game.leader);
       sting(surface, surface.querySelector('.home-team-progress') || surface.querySelector(':scope > small'),
         'New lead', accentOf(team?.identity));
@@ -102,9 +110,12 @@ export function animateGameDayMoments(root, { previous, model, gameId = null }) 
     const moment = player?.state === 'live' && ['QB', 'RB', 'WR', 'TE'].includes(player.position)
       ? playerScoreMoment(previous.points?.[key], model.snapshot.points[key]) : null;
     const surface = host.closest('.gameday-player');
-    return moment && visible(surface, root) ? { surface, moment, player } : null;
-  }).filter(Boolean).sort((a, b) => (b.moment.points || 0) - (a.moment.points || 0));
-  for (const { surface, moment, player } of candidates.slice(0, 3)) {
+    return moment && visible(surface, root) ? { surface, moment, player,delta:model.snapshot.points[key]-previous.points[key] } : null;
+  }).filter(Boolean);
+  const selected=claimedModels.has(model)?null:primaryScoreMoment(candidates);
+  if(selected){
+    claimedModels.add(model);
+    const { surface, moment, player }=selected;
     const portrait = surface.querySelector('.dfl-player-portrait');
     const color = portrait ? getComputedStyle(portrait).getPropertyValue('--player-primary').trim() : '';
     sting(surface, surface.querySelector('.dfl-player-copy small'), moment.label,

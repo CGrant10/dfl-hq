@@ -10,6 +10,8 @@ import { propLine } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 import {mountSportsbookLive} from '../sportsbook-live.js';
+import {createSettlementTracker,loadBookAccount} from '../sportsbook-settlement.js';
+import {animateBankroll,revealTicketResult} from '../sportsbook-account-motion.js';
 import {patchGameDay} from '../game-day-dom.js';
 // =====================================================================
 // DFL Sportsbook - fake SIN, real DFL consequences.
@@ -31,19 +33,6 @@ const isGolf=m=>m.category==="Golf"||String(m.auto_key||"").startsWith("golf:");
 const ACTIVE_BOOK_CATEGORIES=new Set(["Fantasy","Player Props","Team Totals","Game Totals"]);
 const isBookCategory=m=>ACTIVE_BOOK_CATEGORIES.has(String(m?.category||""));
 const num=n=>Number(n||0).toLocaleString();
-function announceFreshPayout(bets,memberId){
-  const won=(bets||[]).find(b=>b.status==="won");
-  if(!won)return;
-  const key=`dfl.sportsbook.payout.${memberId}`;
-  try{
-    if(localStorage.getItem(key)===String(won.id))return;
-    localStorage.setItem(key,String(won.id));
-  }catch{}
-  const EventCtor=globalThis.CustomEvent;
-  if(globalThis.window?.dispatchEvent&&EventCtor){
-    window.dispatchEvent(new EventCtor("dfl:moment",{detail:{kind:"payout",source:"sportsbook",id:won.id}}));
-  }
-}
 
 /*
   THE MIGRATION MIGHT NOT BE RUN YET.
@@ -79,7 +68,7 @@ function scopeOf(markets){
 let slip=[];
 let slipStake=null,slipStakeMember=null,stopSlipDrag=null;
 const propGameCache=new Map();
-let stopLive=null,renderGeneration=0;
+let stopLive=null,stopBankroll=()=>{},activeBook=null,renderGeneration=0;
 
 /* The Sportsbook is intentionally allowed to open even when the member
    directory is unavailable: the moneyline still works with initials. In the
@@ -95,8 +84,8 @@ async function loadSportsbookIdentities(){
 }
 
 export async function render(view){
-  leave();const generation=renderGeneration;
-  const active=()=>view.isConnected&&generation===renderGeneration;
+  leave();activeBook=view;const generation=renderGeneration;
+  const active=()=>view.isConnected&&generation===renderGeneration&&String(currentMember()?.id)===String(me.id);
   const me=currentMember();
   if(!me){view.innerHTML=`<header class="page-head"><h1>Sportsbook</h1></header><section class="card profile-entry"><h2>Open your book</h2><p>Choose your league profile to see your bankroll, picks and tickets.</p><button type="button" class="btn" data-open-profile>Choose your profile</button></section>`;return}
   const canBook=hasPermission("sportsbook");
@@ -109,7 +98,8 @@ export async function render(view){
     const touch=await db().rpc("sportsbook_touch_wallet");if(touch.error)throw touch.error;wallet=touch.data?.[0]||null;
     autoReady=true;
     const providerMarketPages=async()=>{const rows=[];for(let from=0;;from+=1000){const{data,error}=await db().from("sportsbook_markets").select("*").in("category",["Team Totals","Game Totals"]).in("status",["open","locked"]).order("provider_updated_at",{ascending:false}).range(from,from+999);if(error)return{data:rows,error};rows.push(...(data||[]));if((data||[]).length<1000)return{data:rows,error:null}}};
-    const[mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
+    const[account,mr,propMarkets,propIndex,fantasyMarkets]=await Promise.all([
+      loadBookAccount(db(),me.id),
       db().from("sportsbook_markets").select("*").neq("source","provider").order("created_at",{ascending:false}).limit(100),
       providerMarketPages(),loadPropIndex(db()),
       db().from("sportsbook_markets").select("*").eq("category","Fantasy").in("status",["open","locked"]).order("closes_at",{ascending:false}).limit(36)
@@ -126,10 +116,10 @@ export async function render(view){
     const marketIds=markets.filter(m=>!m._lazy).map(m=>m.id);
     const outcomePages=async()=>({data:[...await loadMarketOutcomes(db(),marketIds),...selectedOutcomes],error:null});
     const[lr,br,or,btr,tr,memberRows,pickemBoard,recapResult,feedResult,nfl]=await Promise.all([
-      db().rpc("sportsbook_my_ledger",{row_limit:16}),
+      Promise.resolve({data:account.ledger,error:null}),
       db().rpc("sportsbook_leaderboard"),
       outcomePages(),
-      db().rpc("sportsbook_my_bets",{row_limit:30}),
+      Promise.resolve({data:account.bets,error:null}),
       db().rpc("sportsbook_trending_picks",{row_limit:3}),
       loadSportsbookIdentities(),
       loadPickemBoard().catch(()=>({available:false})),
@@ -138,7 +128,7 @@ export async function render(view){
       loadNflState().catch(()=>null)
     ]);
     const err=lr.error||br.error||or.error||btr.error;if(err)throw err;
-    ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
+    wallet.balance=account.balance;ledger=lr.data||[];leaders=br.data||[];outcomes=or.data||[];bets=btr.data||[];trends=tr.error?[]:tr.data||[];members=memberRows||[];pickem=pickemBoard;recap=recapResult.error?null:recapResult.data;feedStatus=feedResult?.data||{};leagueWeek={season:Number(nfl?.data?.season||pickemBoard?.season),week:Number(nfl?.data?.week||pickemBoard?.week)};
   }catch(err){if(generation!==renderGeneration)return;if(refreshing)toast('The book could not refresh. Try again.',true);else view.innerHTML=`<h1>DFL Sportsbook</h1><div class="card note"><div class="card-body">The Sportsbook could not load.<br><span class="muted tiny">${esc(err.message||String(err))}</span></div></div>`;return}
   if(generation!==renderGeneration)return;
 
@@ -182,7 +172,7 @@ export async function render(view){
   if(slip.length<before)toast(`${before-slip.length} pick${before-slip.length===1?"":"s"} dropped: the line closed`,true);
 
   view.innerHTML=`<div id="sportsbook-wrap"${slip.length?' class="has-slip"':""}>
-    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
+    <header class="sb-masthead page-identity"><div class="sb-brand"><small>DFL</small><h1>Sportsbook</h1><span>${esc(sportsbookWeekCaption(leagueWeek))}</span></div><div class="sb-wallet" aria-label="Available SIN"><small>BANKROLL</small><strong data-book-balance>${num(wallet?.balance)}</strong><span>SIN</span></div></header>
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
@@ -192,8 +182,7 @@ export async function render(view){
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
     </div>
     <div id="sb-tickets" role="tabpanel" aria-labelledby="sb-tab-tickets" hidden>
-    ${bets.length?`<section class="block">${ticketBoardHead(bets)}${bets.filter(b=>b.status==="open").map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}${disclosure("sportsbook-settled","Settled tickets",`${bets.filter(b=>b.status!=="open").length} results`,bets.filter(b=>b.status!=="open").slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")||'<p class="muted">No settled tickets yet.</p>')}</section>`:""}
-    ${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':""}
+    ${ticketsMarkup(bets,marketMap,outcomeMap)}
     </div>
     ${disclosure("sportsbook-trends","Trending picks",`${trends.length} picks`,trendingPicks(trends))}
     ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
@@ -201,7 +190,7 @@ export async function render(view){
     ${canBook?`<details class="sb-secondary sb-book-tools"><summary>Book controls</summary>${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}</details>`:""}
     ${canBook?commissionerBook():""}
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
-    <details class="card"><summary class="card-title">Receipts</summary><div class="card-body">${ledger.length?ledger.map(r=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?"+":""}${num(r.amount)} SIN</strong></div>`).join(""):`<span class="muted">No SIN has moved yet.</span>`}</div></details>
+    <details class="card"><summary class="card-title">Receipts</summary><div class="card-body" data-book-ledger>${ledgerMarkup(ledger)}</div></details>
     ${slipBar(slip,outcomeMap,marketMap)}
     </div>
     <div id="sb-pickem-panel" role="tabpanel" hidden>${pickemMarkup(pickem,esc,canBook)}</div>
@@ -213,13 +202,43 @@ export async function render(view){
   wireProductTabs(view,me.id);wirePickem(view,pickem,()=>render(view));wireFeedRefresh(view);wireSleeperPropImporter(view,pickem,esc,()=>render(view));
   wireMarketActivities(view);wirePageDisclosures(view);wireBookTabs(view,me.id);wireClaim(view);wireTicketActions(view,marketMap,outcomeMap,me);wirePropFilters(view,me.id,{byMarket,bets,canBook,outcomeMap,marketMap,members});wireRecapShare(view,recap);
   if(canBook)wireCommissioner(view);
-  announceFreshPayout(bets,me.id);
+  const noticeSettlements=createSettlementTracker(bets,globalThis.localStorage,me.id),recentSettled=new Set();
+  wallet ||= {balance:0};
+  const accountStatus=failed=>{
+    let status=view.querySelector('[data-book-account-status]');
+    if(!status&&failed){status=document.createElement('p');status.dataset.bookAccountStatus='';status.className='sb-empty';status.setAttribute('role','status');view.querySelector('#sb-tickets')?.before(status);}
+    if(status){status.hidden=!failed;status.textContent=failed?'Account refresh unavailable. Showing the last checked tickets and balance.':'';}
+  };
+  const updateAccount=account=>{
+    accountStatus(false);
+    const fresh=currentSportsbookNames({markets:[...marketMap.values()],outcomes:[...outcomeMap.values()],bets:account.bets},members).bets;
+    const moments=noticeSettlements(fresh);for(const bet of moments)recentSettled.add(String(bet.id));
+    const panel=view.querySelector('#sb-tickets'),focused=document.activeElement;
+    const anchor=focused&&panel.contains(focused)?focused:[...panel.querySelectorAll('.sb-ticket')].find(node=>{const box=node.getBoundingClientRect();return box.height>0&&box.bottom>70&&box.top<innerHeight;});
+    const top=anchor?.getBoundingClientRect().top,focusedCard=focused?.closest('.sb-ticket')?.id;
+    if(JSON.stringify(fresh)!==JSON.stringify(bets)){
+      const order=[...panel.querySelectorAll('[data-live-tickets] .sb-ticket')].map(node=>node.dataset.ticketId);
+      bets=fresh;view.__bets=bets;
+      patchGameDay(panel,ticketsMarkup(bets,marketMap,outcomeMap,recentSettled,order));wirePageDisclosures(panel);
+      view.querySelector('[data-sb-tab="tickets"] span').textContent=String(bets.filter(b=>b.status==='open').length);
+      const held=heldOutcomes(bets,marketMap,outcomeMap);
+      for(const button of view.querySelectorAll('[data-bet-outcome]')){const own=held.has(button.dataset.betOutcome);button.classList.toggle('is-mine',own);const name=button.querySelector('.sb-outcome-name')||button.querySelector(':scope > span');const badge=name?.querySelector('.sb-held');if(!own)badge?.remove();else if(name&&!badge){const label=document.createElement('small');label.className='sb-held';label.textContent='Held';name.append(label);}}
+      if(focusedCard&&focused.isConnected&&document.activeElement!==focused)focused.focus({preventScroll:true});
+      if(focusedCard&&!focused.isConnected)view.querySelector(`#${CSS.escape(focusedCard)} [data-share-ticket]`)?.focus({preventScroll:true});
+      if(anchor?.isConnected){const shift=anchor.getBoundingClientRect().top-top;if(Math.abs(shift)>1)window.scrollBy(0,shift);}
+    }
+    if(JSON.stringify(account.ledger)!==JSON.stringify(ledger)){ledger=account.ledger;patchGameDay(view.querySelector('[data-book-ledger]'),ledgerMarkup(ledger));}
+    if(wallet.balance!==account.balance){const before=Number(wallet.balance);wallet.balance=account.balance;stopBankroll();stopBankroll=animateBankroll(view.querySelector('[data-book-balance]'),before,account.balance);view.querySelector('.sb-slip[open]')?._bookBalanceChanged?.(account.balance);}
+    for(const bet of moments){const node=view.querySelector(`#sb-ticket-${CSS.escape(String(bet.id))}`);if(node?.getBoundingClientRect().height)revealTicketResult(node,bet.status);}
+    const wins=moments.filter(bet=>bet.status==='won'&&Number(bet.payout)>0);
+    if(wins.length)window.dispatchEvent(new CustomEvent('dfl:moment',{detail:{kind:'payout',source:'sportsbook',ids:wins.map(b=>b.id)}}));
+  };
   const lineStatus=(failed)=>{
     let status=view.querySelector('[data-book-live-status]');
     if(!status&&failed){status=document.createElement('p');status.dataset.bookLiveStatus='';status.className='sb-empty';status.setAttribute('role','status');view.querySelector('#sb-markets')?.prepend(status);}
     if(status){status.hidden=!failed;status.textContent=failed?'Refresh unavailable. Showing the last checked lines.':'';}
   };
-  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),outcomeMap,active,onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
+  if(view.isConnected)stopLive=mountSportsbookLive(view,{client:db(),memberId:me.id,outcomeMap,active,onAccount:updateAccount,onAccountError:()=>accountStatus(true),onError:()=>lineStatus(true),onUpdate:(fresh,ids)=>{
     lineStatus(false);
     const named=currentSportsbookNames({markets:fresh.markets,outcomes:fresh.outcomes,bets:[],trends:[],recap:null},members);
     const present=new Set(named.markets.map(m=>String(m.id)));
@@ -597,6 +616,16 @@ function ticketBoardHead(bets){
   const open=bets.filter(b=>b.status==="open").length;
   return `<div class="sb-board-head"><div><small>Your money</small><h2>Tickets</h2></div><span>${open} open</span></div>`;
 }
+function ticketsMarkup(bets,marketMap,outcomeMap,recent=new Set(),order=[]){
+  const visible=bets.filter(b=>b.status==='open'||recent.has(String(b.id)));
+  const rank=new Map(order.map((id,index)=>[id,index]));
+  visible.sort((a,b)=>(rank.get(String(a.id))??-1)-(rank.get(String(b.id))??-1));
+  const older=bets.filter(b=>b.status!=='open'&&!recent.has(String(b.id)));
+  return `<section class="block">${ticketBoardHead(bets)}<div data-live-tickets>${visible.map(b=>ticketCard(b,marketMap,outcomeMap)).join('')}</div>${disclosure('sportsbook-settled','Settled tickets','',older.slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join('')||'<p class="muted">No settled tickets yet.</p>')}${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':''}</section>`;
+}
+function ledgerMarkup(rows){
+  return rows.length?rows.map(r=>`<div id="sb-ledger-${esc(r.id)}" class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?'+':''}${num(r.amount)} SIN</strong></div>`).join(''):'<span class="muted">No SIN has moved yet.</span>';
+}
 
 /*
   A ticket read back from a database that has not been migrated yet has no
@@ -658,7 +687,7 @@ function ticketCard(b,marketMap,outcomeMap){
   const label=pulled?"PULLED":multi&&(b.status==="won"||b.status==="lost")?`${won} OF ${legs.length}`
     :b.status==="won"?"PAID":b.status==="lost"?"LOST":b.status==="void"?"VOID"
       :live?(ahead?"WINNING":"SWEATING"):blocking?"AWAITING RESULT":"OPEN";
-  return `<article class="card sb-ticket${multi?" is-entry":""}">
+  return `<article id="sb-ticket-${esc(b.id)}" data-ticket-id="${esc(b.id)}" data-ticket-status="${esc(b.status)}" class="card sb-ticket${multi?" is-entry":""}">
     <div class="card-title-row">
       <div>
         <small class="sb-ticket-kicker">${multi?`${legs.length}-pick entry`:esc(legs[0].market||"DFL Sportsbook")}</small>
@@ -675,13 +704,13 @@ function ticketCard(b,marketMap,outcomeMap){
     <div class="card-meta sb-ticket-foot">
       <span class="sb-ticket-figures">
         <span><b>${pulled?"Refunded":"Stake"}</b>${num(b.stake)}</span>
-        <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${b.status==="won"?"Paid":b.status==="lost"?"Returned":b.status==="void"?"Void":"To return"}</b>${b.status==="lost"?"0":b.status==="void"?"—":num(b.potential_payout)}</span>
+        <span class="sb-ticket-return${b.status==="lost"||b.status==="void"?" is-dead":""}"><b>${b.status==="won"?"Paid":b.status==="lost"?"Returned":b.status==="void"?"Void":"To return"}</b>${b.status==="lost"?"0":b.status==="void"?"—":num(b.status==='won'?(b.payout??b.potential_payout):b.potential_payout)}</span>
       </span>
       <span class="sb-ticket-actions">
         ${stuck?`<span class="sb-ticket-stuck">${stuck}</span>`:""}
-        ${canPull?`<button type="button" class="linkbtn sb-pull" data-cancel-bet="${b.id}">Pull ticket</button>`:""}
-        ${b.status!=="open"?`<button type="button" class="linkbtn" data-dismiss-bet="${b.id}">Dismiss</button>`:""}
-        <button type="button" class="linkbtn" data-share-ticket="${b.id}">Share card</button>
+        ${canPull?`<button type="button" class="linkbtn sb-pull" id="sb-cancel-bet-${esc(b.id)}" data-cancel-bet="${b.id}">Pull ticket</button>`:""}
+        ${b.status!=="open"?`<button type="button" class="linkbtn" id="sb-dismiss-bet-${esc(b.id)}" data-dismiss-bet="${b.id}">Dismiss</button>`:""}
+        <button type="button" class="linkbtn" id="sb-share-ticket-${esc(b.id)}" data-share-ticket="${b.id}">Share card</button>
       </span>
     </div>
   </article>`;
@@ -754,49 +783,28 @@ function wireClaim(view){
   confirmation and pulling does.
 */
 function wireTicketActions(view,marketMap,outcomeMap,me){
-  const betById=id=>(view.__bets||[]).find(b=>String(b.id)===String(id));
-
-  view.querySelectorAll("[data-share-ticket]").forEach(btn=>btn.addEventListener("click",async()=>{
-    const bet=betById(btn.dataset.shareTicket);
-    if(!bet){toast("That ticket is no longer on screen",true);return}
-    btn.disabled=true;
+  view._bookTicketController?.abort();
+  const controller=new AbortController();view._bookTicketController=controller;
+  const current=()=>view.isConnected&&String(currentMember()?.id)===String(me.id);
+  view.addEventListener('click',async event=>{
+    const button=event.target.closest('[data-share-ticket],[data-cancel-bet],[data-dismiss-bet]');
+    if(!button||!view.contains(button)||view._bookTicketBusy)return;
+    const id=button.dataset.shareTicket||button.dataset.cancelBet||button.dataset.dismissBet;
+    const bet=(view.__bets||[]).find(row=>String(row.id)===String(id));
+    if(!bet){toast('That ticket is no longer on screen',true);return;}
+    if(button.hasAttribute('data-cancel-bet')&&!confirm(`Pull this ticket and take the ${num(bet.stake)} SIN back?`))return;
+    view._bookTicketBusy=true;button.disabled=true;
     try{
-      await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me});
-    }catch(err){
-      toast(err?.message||"Could not build that card",true);
-    }finally{
-      btn.disabled=false;
-    }
-  }));
-
-  view.querySelectorAll("[data-cancel-bet]").forEach(btn=>btn.addEventListener("click",async()=>{
-    const bet=betById(btn.dataset.cancelBet);
-    const stake=num(bet?.stake);
-    if(!confirm(`Pull this ticket and take the ${stake} SIN back?`))return;
-    btn.disabled=true;
-    try{
-      const{data,error}=await db().rpc("sportsbook_cancel_bet",{target_bet_id:Number(btn.dataset.cancelBet)});
-      if(error)throw error;
-      toast(`+${num(data??bet?.stake)} SIN refunded`);
-      render(view);
-    }catch(err){
-      btn.disabled=false;
-      toast(needsMigration(err)?MIGRATE:(err.message||"Could not pull that ticket"),true);
-    }
-  }));
-
-  view.querySelectorAll("[data-dismiss-bet]").forEach(btn=>btn.addEventListener("click",async()=>{
-    btn.disabled=true;
-    try{
-      const{error}=await db().rpc("sportsbook_dismiss_bet",{target_bet_id:Number(btn.dataset.dismissBet)});
-      if(error)throw error;
-      toast("Cleared. It stays in Receipts.");
-      render(view);
-    }catch(err){
-      btn.disabled=false;
-      toast(needsMigration(err)?MIGRATE:(err.message||"Could not clear that ticket"),true);
-    }
-  }));
+      if(button.hasAttribute('data-share-ticket'))await shareTicket({bet,legs:entryLegs(bet,marketMap,outcomeMap),member:me});
+      else{
+        const pull=button.hasAttribute('data-cancel-bet');
+        const {data,error}=await db().rpc(pull?'sportsbook_cancel_bet':'sportsbook_dismiss_bet',{target_bet_id:Number(id)});
+        if(error)throw error;
+        if(current()){toast(pull?`+${num(data??bet.stake)} SIN refunded`:'Cleared. It stays in Receipts.');void render(view);}
+      }
+    }catch(error){if(current())toast(needsMigration(error)?MIGRATE:(error.message||'Could not finish that ticket action'),true);}
+    finally{view._bookTicketBusy=false;if(button.isConnected)button.disabled=false;}
+  },{signal:controller.signal});
 }
 
 function wireBookTabs(view,memberId) {
@@ -817,7 +825,7 @@ function wireProductTabs(view,memberId){
 }
 
 let stopRemembering=null;
-export function leave(){renderGeneration++;stopLive?.();stopLive=null;stopRemembering?.();stopRemembering=null;stopSlipDrag?.();stopSlipDrag=null}
+export function leave(){activeBook?._bookTicketController?.abort();activeBook=null;renderGeneration++;stopLive?.();stopLive=null;stopBankroll();stopBankroll=()=>{};stopRemembering?.();stopRemembering=null;stopSlipDrag?.();stopSlipDrag=null}
 function rememberView(view,memberId){
   if(!view.isConnected)return;
   stopRemembering?.();stopRemembering=null;
@@ -865,7 +873,7 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
   let picks=slip.map(id=>outcomeMap.get(String(id))).filter(Boolean);
   if(!picks.length){toast("Choose a line first",true);return}
 
-  const available=Number(wallet?.balance||0);
+  let available=Number(wallet?.balance||0);
   const memberId=currentMember()?.id;
   if(slipStakeMember!==memberId){slipStake=null;slipStakeMember=memberId;}
   const dialog=document.createElement("dialog");
@@ -880,12 +888,13 @@ function openSlip(view,outcomeMap,marketMap,wallet,refresh){
       <label>Stake <span>SIN</span><input name="stake" inputmode="numeric" autocomplete="off" value="${esc(slipStake??(Math.min(50,available)||""))}" aria-describedby="sb-slip-error"></label>
       <div><span>Estimated return</span><output data-return aria-live="polite">—</output></div>
     </div>
-    <p class="sb-slip-available">${num(available)} SIN available &middot; Return includes your stake</p>
+    <p class="sb-slip-available"><span data-slip-balance>${num(available)}</span> SIN available &middot; Return includes your stake</p>
     <p id="sb-slip-error" role="status"></p>
     </div><footer class="sb-slip-footer"><button type="submit" class="btn sb-slip-submit">Review bet</button></footer>
   </form>`;
   view.append(dialog);
 
+  dialog._bookBalanceChanged=balance=>{available=balance;dialog.querySelector('[data-slip-balance]').textContent=num(balance);};
   const form=dialog.querySelector("form"),input=form.elements.stake;
   const submit=dialog.querySelector('[type="submit"]'),status=dialog.querySelector("#sb-slip-error");
   let reviewed=false,busy=false;

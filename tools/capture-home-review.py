@@ -395,7 +395,7 @@ def check_game_day_moments(page):
       const before=measure();let stop=animateScoreChanges(root,{previous,model,motion:true,feedback:true});
       const after=measure(),labels=[...root.querySelectorAll('.gd-moment-caption')].map(e=>e.textContent);
       if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Moment animation moved score glyphs');
-      if(root.querySelectorAll('.gd-moment-clip').length!==4||!['New lead','20-point game','30-point game','Score surge'].every(s=>labels.includes(s)))throw Error('Missing lead/player stings: '+JSON.stringify(labels));
+      if(root.querySelectorAll('.gd-moment-clip').length!==1||labels[0]!=='New lead')throw Error('Missing prioritized lead sting: '+JSON.stringify(labels));
       window.momentFixture={root,model,previous,stop,measure,before,original,animateScoreChanges};
       return {glyphGeometryStable:true,leadChange:true,milestones:true,scoreSurge:true,labels};
     }""")
@@ -407,7 +407,9 @@ def check_game_day_moments(page):
       check([...f.root.querySelectorAll('.gd-moment-caption')].every(e=>e.scrollWidth<=e.clientWidth+1),'Moment caption is clipped');
       check(document.documentElement.scrollWidth<=innerWidth,'Moment effect overflows the viewport');
       f.stop();check(!f.root.querySelector('.gd-moment-clip,.gd-moment-caption'),'Moment cleanup left decorations');
-      const run=(model=f.model,previous=f.previous,motion=true)=>{const stop=f.animateScoreChanges(f.root,{previous,model,motion,feedback:true});const count=f.root.querySelectorAll('.gd-moment-clip').length;stop();return count};
+      const run=(model={...f.model},previous=f.previous,motion=true)=>{const stop=f.animateScoreChanges(f.root,{previous,model,motion,feedback:true});const count=f.root.querySelectorAll('.gd-moment-clip').length;stop();return count};
+      check(run(f.model)===0,'Same update replayed across surfaces');
+      check(run({...f.model},{...f.previous,leaders:{'1':'1'}})===1,'Player moment missing without a lead change');
       check(run(f.model,null)===0,'Initial load manufactured a moment');
       check(run({...f.model,completed:true})===0,'Final stat correction celebrated a moment');
       check(run(f.model,f.previous,false)===0,'Motion off played a moment');
@@ -416,12 +418,12 @@ def check_game_day_moments(page):
       f.root.hidden=true;check(run()===0,'Hidden rows played a moment');f.root.hidden=false;
       const modal=document.createElement('dialog');document.body.append(modal);modal.showModal();check(run()===0,'Covered Home played a moment');modal.close();modal.remove();
       f.root.style.left='200vw';check(run()===0,'Offscreen rows played a moment');f.root.style.left='';
-      f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:f.model,motion:true,feedback:true});
+      f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:{...f.model},motion:true,feedback:true});
       return {captionsFit:true,noOverflow:true,cleanup:true,noInitialOrRepeat:true,noFinalCorrection:true,motionOff:true,hiddenPaused:true,coveredPaused:true,offscreenPaused:true};
     }""")
     page.wait_for_timeout(4300)
     assert page.evaluate("!window.momentFixture.root.querySelector('.gd-moment-clip,.gd-moment-caption')"),'Finished effects left decorations'
-    page.evaluate("()=>{const f=window.momentFixture;f.stop();f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:f.model,motion:true,feedback:true})}")
+    page.evaluate("()=>{const f=window.momentFixture;f.stop();f.stop=f.animateScoreChanges(f.root,{previous:f.previous,model:{...f.model},motion:true,feedback:true})}")
     page.emulate_media(reduced_motion='reduce')
     page.wait_for_timeout(80)
     reduced=page.evaluate("""()=>{const f=window.momentFixture,stopped=!f.root.querySelector('.gd-moment-clip,.gd-moment-caption');f.stop();f.root.remove();f.original.id='home-wrap';f.original.hidden=false;delete window.momentFixture;return stopped}""")
