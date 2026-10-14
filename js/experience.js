@@ -2,6 +2,7 @@
 // experience.js - optional tactile/audio feedback and contextual atmosphere
 // =====================================================================
 
+import {readPageChoice} from './page-disclosure.js';
 import { startLiveScorePresentation } from "./live-score.js";
 
 const SOUND_KEY = "dfl.experience.sound";
@@ -96,9 +97,14 @@ export function startExperience() {
     if (event.target.closest("button,[role='tab'],summary,.tabbar a")) vibrate("tick");
   }, { passive: true });
   let momentTimer = 0;
+  const stopMoment=()=>{clearTimeout(momentTimer);document.body.classList.remove('is-dfl-moment');};
+  window.addEventListener('dfl:ui-motion-change',stopMoment);
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',stopMoment);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')stopMoment();});
   window.addEventListener("dfl:moment", event => {
     const kind = event.detail?.kind || "success";
     feedback(kind);
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches||readPageChoice('gameday-motion',['on','off'],'on')==='off')return;
     document.body.dataset.moment = kind;
     document.body.classList.remove("is-dfl-moment");
     void document.body.offsetWidth;

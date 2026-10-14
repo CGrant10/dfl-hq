@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { playerScoreMoment } from './game-day-moment-effects.js';
+import { playerScoreMoment,primaryScoreMoment } from './game-day-moment-effects.js';
 
 describe('GameDay moment triggers', () => {
   it('highlights a verified six-point jump without claiming a touchdown', () => {
@@ -24,3 +24,5 @@ describe('GameDay moment triggers', () => {
     expect(playerScoreMoment(10, null)).toBeNull();
   });
 });
+
+it('prioritizes the biggest milestone, then the biggest verified surge',()=>{const surge={moment:{kind:'surge'},delta:15},twenty={moment:{kind:'milestone',points:20},delta:8},thirty={moment:{kind:'milestone',points:30},delta:1};expect(primaryScoreMoment([surge,twenty,thirty])).toBe(thirty);expect(primaryScoreMoment([{moment:{kind:'surge'},delta:6},surge])).toBe(surge);expect(primaryScoreMoment([])).toBeNull()});
