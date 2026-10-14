@@ -79,6 +79,9 @@ body.broadcasting #update.update-gate { display: block !important; }
   width: clamp(215px, 65vw, 260px);
   height: auto;
   margin: 0 0 17px;
+  /* The shield axis is x=270 in the 512px SVG; align that axis with the page.
+     Move the wrapper so the decoded-image glow remains on the same artwork. */
+  transform: translateX(-2.734375%);
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, .62));
 }
 .update-gate__mark > img { display: block; width: 100%; height: auto; }
