@@ -15,7 +15,7 @@
 .page-identity::after {
   content: ''; position: absolute; right: -34px; bottom: -56px;
   width: 232px; height: 232px; opacity: .07;
-  background: url('../icons/dfl-seal-64.webp') center / contain no-repeat;
+  background: url('../icons/dfl-logo-64.webp') center / contain no-repeat;
   pointer-events: none; z-index: -1;
 }
 .tb-head-row.page-identity { padding: 20px; margin-bottom: 16px; }

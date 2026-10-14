@@ -200,7 +200,7 @@ describe("Home weekly report", () => {
     const dashboard = clubhouseWeekCard(clubhouseView({ analysis: finishedAnalysis, lore: currentLore, members, meSleeperId: "u1", weekly }));
     expect(dashboard).toContain("WIN SECURED");
     expect(dashboard).toContain("20.00");
-    expect(dashboard).toContain("icons/crest-512.webp");
+    expect(dashboard).toContain("icons/dfl-logo-512.webp");
   });
 
   it("uses the synced Sleeper scoreboard as the weekly report score", () => {

@@ -144,7 +144,7 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   ${homeInjuryPanelMarkup()}
   <div data-home-lore-slot>${leagueFile}</div>
   <section class="home-banter" aria-label="League banter"><div data-wall-slot><section class="block wall is-preview"><h2 class="section-title">League talk<a class="section-link home-section-action home-wall-link" href="#/wall" aria-label="Open the Wall" title="Open the Wall"><span>The Wall</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></h2><div class="card wall-card"><div class="wall-posts">${wallPosts}</div></div></section></div></section>
-  <section class="hero"><img class="hero-crest is-crest" src="icons/crest-512.webp" alt="DFL league crest" width="512" height="341"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
+  <section class="hero"><img class="hero-crest is-crest" src="icons/dfl-logo-512.webp" alt="DFL league crest" width="512" height="512"><p class="hero-creed">Forged by sinners.<br>Fueled by rivalries.<br>Defined by champions.</p><p class="hero-line">10th season · 12 owners</p></section>
   <p class="version-line">DFL HQ v1.329.0 · <button class="linkbtn" id="check-update">Check for updates</button></p>
 </div></main>`);
 html = html.replace(/(<nav class="tabbar"[^>]*>)[\s\S]*?<\/nav>/, '$1' + primarySeasonNavMarkup() + '</nav>');

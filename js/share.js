@@ -42,11 +42,11 @@ const crest = typeof Image === "function" ? new Image() : null;
 let crestReady = false;
 if (crest) {
   crest.onload = () => { crestReady = true; };
-  crest.src = new URL("../icons/crest-512.webp", import.meta.url).href;
+  crest.src = new URL("../icons/dfl-logo-512.webp", import.meta.url).href;
 }
 export const crestImage = () => (crestReady ? crest : null);
 
-/* The round heritage seal is the quieter mark used behind editorial cards.
+/* The shield on its graphite field stays legible on light and dark share cards.
    It is preloaded for the same reason as the crest: a share tap cannot wait
    for an image request without losing Safari's user gesture. */
 const seal = typeof Image === "function" ? new Image() : null;
@@ -57,7 +57,7 @@ if (seal) {
   const timeout = setTimeout(() => resolveSeal(), 12000);
   seal.onload = () => { sealReady = true; clearTimeout(timeout); resolveSeal(); };
   seal.onerror = () => { clearTimeout(timeout); resolveSeal(); };
-  seal.src = new URL("../icons/dfl-seal-512.webp", import.meta.url).href;
+  seal.src = new URL("../icons/dfl-logo-tile-256.webp", import.meta.url).href;
 }
 export const sealImage = () => (sealReady ? seal : null);
 

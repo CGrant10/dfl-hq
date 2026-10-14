@@ -115,3 +115,7 @@
 
 /* Dots are always visible now; their old focus-reveal plate is obsolete. */
 #home-wrap .bx-dots:focus-within { background:transparent; }
+
+/* Keep the white shield legible on the light paper without adding a box. */
+#home-wrap .bx-with-crest .bx-editorial-crest,
+#home-wrap > .hero .hero-crest.is-crest { filter:drop-shadow(0 0 1px #171717); }

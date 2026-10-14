@@ -1,11 +1,11 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.409.0";
+const CACHE_NAME = "dfl-hq-v1.410.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
   "./js/arena/stadium-orientation.js","./js/arena/stadium-motion.js","./js/arena/racer-kit-model.js","./js/arena/racer-kit-art.js","./js/arena/racer-kit-editor.js",
   "./js/pages/arena-stadium.js","./js/pages/arena-viewer.js","./js/arena/stadium-data.js","./js/arena/stadium-model.js","./js/arena/stadium-renderer.js","./css/stadium-arena.css",
-  "./css/app-shared.css?v=1.409.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/app-shared.css?v=1.410.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js",
   "./js/player-form.js",
@@ -19,7 +19,7 @@ const APP_SHELL = [
   "./js/trade-routing.js","./js/trade-workspace.js","./js/trade-workspace-ui.js",
 
 
-  "./assets/home-broadcast-stadium.webp","./assets/dfl-daily-hero.webp","./assets/dfl-daily-crest.webp","./assets/dfl-daily-splatter.webp","./assets/dfl-daily-champion.webp","./assets/dfl-daily-chip-eater.webp","./assets/dfl-daily-archive.webp","./assets/dfl-daily-rivalry.webp","./assets/dfl-daily-paper.webp","./assets/dfl-daily-wordmark.webp","./assets/dfl-daily-wordmark-medicine.webp","./assets/dfl-daily-ten.webp","./assets/dfl-daily-headline.webp","./icons/dfl-seal-heritage-512.webp","./js/home-presentation.js",
+  "./assets/home-broadcast-stadium.webp","./assets/dfl-daily-hero.webp","./assets/dfl-daily-splatter.webp","./assets/dfl-daily-champion.webp","./assets/dfl-daily-chip-eater.webp","./assets/dfl-daily-archive.webp","./assets/dfl-daily-rivalry.webp","./assets/dfl-daily-paper.webp","./assets/dfl-daily-wordmark.webp","./assets/dfl-daily-wordmark-medicine.webp","./assets/dfl-daily-ten.webp","./assets/dfl-daily-headline.webp","./js/home-presentation.js",
   "./assets/anniversary-ten.webp",
   "./js/league-results.js","./js/game-day-league.js","./js/game-day-dom.js","./js/game-day-panels.js","./js/game-day-moments.js","./js/game-day-moments-model.js",
   "./js/player-card-actions.js","./js/player-card.js","./js/player-card-model.js","./js/player-card-data.js","./js/view-memory.js","./js/trade-draft.js","./js/trade-package-limits.js","./js/trade-offer-recheck.js","./js/league-health.js","./js/rivalry-story.js","./js/rivalry-story-model.js","./js/performance-policy.js",
@@ -123,7 +123,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.409.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.410.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
@@ -135,8 +135,8 @@ const APP_SHELL = [
      brand mark ARE drawn on first paint and were not cached at all. */
   /* Update-gate artwork is fetched only if the gate is actually shown. The
      anniversary uses its optimized WebP directly from Home instead. */
-  "./icons/dfl-seal-heritage-512.webp","./icons/dfl-seal-heritage-64.webp",
-  "./icons/app-192.png","./icons/apple-touch-icon.png"
+  "./icons/dfl-logo-512.webp","./icons/dfl-logo-64.webp",
+  "./icons/app-192.png","./icons/app-192-1410.png","./icons/dfl-logo-tile-256.webp","./icons/apple-touch-icon-1410.png","./icons/favicon-64-1410.png"
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 self.addEventListener('message',event=>{
@@ -242,7 +242,7 @@ self.addEventListener("push", event => {
   */
   event.waitUntil(self.registration.showNotification(data.title || "DFL HQ", {
     body: data.body || "You have a new league update.",
-    icon: data.icon || "icons/app-192.png",
+    icon: data.icon || "icons/app-192-1410.png",
     badge: "icons/badge-96.png",
     tag: data.messageId ? `dfl-notification-${data.messageId}` : "dfl-notification",
     renotify: data.category !== "wall" && data.category !== "matchup_moments",
