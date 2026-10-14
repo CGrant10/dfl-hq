@@ -5,7 +5,8 @@ import { animateUi, cancelUiMotion, cancelUiExit, exitUi } from '../ui-motion.js
 import {disclosure,wirePageDisclosures,readPageChoice,savePageChoice} from "../page-disclosure.js";
 import { loadNflState } from "../sleeper.js";
 import { sportsbookWeekCaption, fantasyWeekGroups } from "../sportsbook-fantasy-weeks.js";
-import { selectCoreProps } from "../sportsbook-core-props.js";
+import { selectFeaturedProps, groupPropPlayers } from "../sportsbook-featured-props.js";
+import { propLine } from "../sportsbook-core-props.js";
 import { loadPropIndex, loadPropGame, loadMarketOutcomes } from "../sportsbook-loading.js";
 import { readBookState, writeBookState } from "../sportsbook-view-state.js";
 // =====================================================================
@@ -138,7 +139,7 @@ export async function render(view){
   for(const o of outcomes){const k=String(o.market_id);if(!byMarket.has(k))byMarket.set(k,[]);byMarket.get(k).push(o)}
   const marketMap=new Map(markets.map(m=>[String(m.id),m])),outcomeMap=new Map(outcomes.map(o=>[String(o.id),o]));
   const available=markets.filter(m=>isOpen(m)&&isBookCategory(m)&&!isGolf(m));
-  const open=[...available.filter(m=>m.category!=="Player Props"),...selectCoreProps(available)];
+  const open=[...available.filter(m=>m.category!=="Player Props"),...selectFeaturedProps(available)];
   const lockedFantasy=markets.filter(m=>matchupKey(m)&&["open","locked"].includes(m.status)&&!isOpen(m));
   const lastLocked=lockedFantasy.map(m=>matchupKey(m).slice(1,3).map(Number)).sort((a,b)=>b[0]-a[0]||b[1]-a[1])[0];
   const lockedMatchups=lockedFantasy.filter(m=>{const key=matchupKey(m);return Number(key[1])===lastLocked?.[0]&&Number(key[2])===lastLocked?.[1]});
@@ -177,8 +178,7 @@ export async function render(view){
     <div class="sb-product-tabs" role="tablist" aria-label="Game type"><button type="button" role="tab" aria-selected="true" data-sb-product="book">SIN Sportsbook</button><button type="button" role="tab" aria-selected="false" data-sb-product="pickem">NFL Pick'em</button></div>
     <div id="sb-book-panel" role="tabpanel">
     ${bankrollCard(me,wallet,open,autoReady)}
-    ${canBook?`${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}`:""}
-    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Matchups & lines</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
+    <div class="sb-tabs" role="tablist" aria-label="Sportsbook views"><button type="button" role="tab" aria-selected="true" aria-controls="sb-markets" id="sb-tab-markets" data-sb-tab="markets">Betting board</button><button type="button" role="tab" aria-selected="false" aria-controls="sb-tickets" id="sb-tab-tickets" data-sb-tab="tickets" tabindex="-1">My bets <span>${bets.filter(b=>b.status==="open").length}</span></button></div>
     <div id="sb-markets" role="tabpanel" aria-labelledby="sb-tab-markets">
     ${categoryBoard([...open,...lockedMatchups],byMarket,bets,canBook,outcomeMap,marketMap,members,me.id,leagueWeek)}
     ${!open.length?'<p class="sb-empty">No open lines right now. Check back for the next matchup.</p>':""}
@@ -187,9 +187,10 @@ export async function render(view){
     ${bets.length?`<section class="block">${ticketBoardHead(bets)}${bets.filter(b=>b.status==="open").map(b=>ticketCard(b,marketMap,outcomeMap)).join("")}${disclosure("sportsbook-settled","Settled tickets",`${bets.filter(b=>b.status!=="open").length} results`,bets.filter(b=>b.status!=="open").slice(0,12).map(b=>ticketCard(b,marketMap,outcomeMap)).join("")||'<p class="muted">No settled tickets yet.</p>')}</section>`:""}
     ${!bets.length?'<p class="sb-empty">No tickets yet. Choose a line to start an entry.</p>':""}
     </div>
-    ${disclosure("sportsbook-trends","Trending picks","See where the league is placing its picks",trendingPicks(trends))}
+    ${disclosure("sportsbook-trends","Trending picks",`${trends.length} picks`,trendingPicks(trends))}
     ${recap?.available ? `<details class="sb-secondary"><summary>Last week’s sportsbook recap</summary>${weeklyRecapMarkup(recap)}</details>` : ""}
     ${canBook&&rulings.length?rulingQueue(rulings,byMarket):""}
+    ${canBook?`<details class="sb-secondary sb-book-tools"><summary>Book controls</summary>${refreshFeedControl(feedStatus)}${sleeperPropImporterMarkup()}</details>`:""}
     ${canBook?commissionerBook():""}
     <details class="sb-secondary"><summary>SIN leaderboard</summary><section class="block"><div class="card"><div class="card-body">${leaders.length?leaders.slice(0,12).map((r,i)=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${i+1}.</strong> ${esc(r.display_name)}</span><strong>${num(r.balance)} SIN</strong></div>`).join(""):`<span class="muted">No bankrolls yet.</span>`}</div></div></section></details>
     <details class="card"><summary class="card-title">Receipts</summary><div class="card-body">${ledger.length?ledger.map(r=>`<div class="row" style="justify-content:space-between;padding:6px 0"><span><strong>${esc(r.note||r.kind)}</strong><br><span class="muted tiny">${esc(fmtTime(r.created_at))}</span></span><strong>${r.amount>0?"+":""}${num(r.amount)} SIN</strong></div>`).join(""):`<span class="muted">No SIN has moved yet.</span>`}</div></details>
@@ -210,7 +211,7 @@ export async function render(view){
 function wireMarketActivities(view){
  const host=view.querySelector('#sb-markets');if(!host)return;
  const sections=[...host.children].filter(el=>!el.matches('.sb-empty'));
- const groups=[['fantasy','Fantasy matchups'],['props','Player props'],['other','More lines']];
+ const groups=[['fantasy','Matchups'],['props','Player props'],['other','NFL lines']];
  const nav=document.createElement('div');nav.className='page-activity-tabs';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Market type');
  nav.innerHTML=groups.map(([key,label])=>`<button type="button" role="tab" id="sb-market-tab-${key}" aria-controls="sb-market-panel-${key}" data-market-activity="${key}">${label}</button>`).join('');host.prepend(nav);
  const panels=new Map(groups.map(([key])=>{const panel=document.createElement('div');panel.id=`sb-market-panel-${key}`;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',`sb-market-tab-${key}`);host.append(panel);return[key,panel]}));
@@ -362,16 +363,14 @@ function categoryBoard(markets,byMarket,bets,canBook,outcomeMap,marketMap,member
       .sort((a,b)=>Number(b.markets.some(isOpen))-Number(a.markets.some(isOpen)))
       .map(slate=>fantasySlateHtml(slate,leagueWeek,byMarket,canBook,picked,held,members,memberId)).join("");
     if(cat==="Player Props"){
-      const favorites=readPropFavorites(memberId),games=new Map(),gameNamesById=propGameNames(markets);group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id))),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:market._lazy?null:marketCard(market,choices,canBook,picked,held,members,meta,favorites.has(meta.key))});games.set(key,bucket)});
+      const games=new Map(),gameNamesById=propGameNames(markets);group.forEach(market=>{const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id))),label=meta.matchup,key=String(market.provider_event_id||label),bucket=games.get(key)||{label,rows:[]};bucket.rows.push({market,meta,html:null});games.set(key,bucket)});
       for(const[key,game]of games)propGameCache.set(key,sortPropRows(game.rows,"player"));
       const metas=[...games.values()].flatMap(game=>game.rows.map(row=>row.meta));
       const positionOrder=["QB","RB","WR","TE"];const positions=[...new Set(metas.map(meta=>meta.position).filter(Boolean))].sort((a,b)=>(positionOrder.indexOf(a)<0?99:positionOrder.indexOf(a))-(positionOrder.indexOf(b)<0?99:positionOrder.indexOf(b))||a.localeCompare(b));
-      const teams=[...new Set(metas.map(meta=>meta.team).filter(Boolean))].sort();
-      const gameNames=[...new Set(metas.map(meta=>meta.matchup).filter(Boolean))].sort();
-      return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>Current week &middot; consensus lines</small><h2>Player props</h2></div><span>${group.length} lines</span></div>
-        <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player, team or matchup"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><details class="sb-prop-filter-drawer"><summary>Filter and sort <span>Position · stat · team · game</span></summary><div class="sb-prop-filter-grid"><label><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Stat</span><select id="sb-prop-stat"><option value="">All stats</option><option value="passing yards">Passing yards</option><option value="passing td">Passing TDs</option><option value="rushing yards">Rushing yards</option><option value="receptions">Receptions</option><option value="touchdown">Scoring TDs · 0.5</option></select></label><label><span>Team</span><select id="sb-prop-team"><option value="">All teams</option>${teams.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Game</span><select id="sb-prop-game"><option value="">All games</option>${gameNames.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label><label><span>Source</span><select id="sb-prop-source"><option value="">All sources</option><option value="sportsbooks">Sportsbooks</option><option value="sleeper">Sleeper</option></select></label><label><span>Sort</span><select id="sb-prop-sort"><option value="player">Player</option><option value="stat">Stat</option><option value="price">Best price</option><option value="updated">Newest</option></select></label></div></details></div>
-        <p class="muted tiny">One main line per player and stat. Scoring TDs use 0.5. Open a matchup to see its props.</p>
-        <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${game.rows.length} props</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
+      const playerCount=[...games.values()].reduce((count,game)=>count+groupPropPlayers(game.rows).length,0);
+      return `<section class="block sb-section sb-props"><div class="sb-board-head"><div><small>NFL</small><h2>Player props</h2></div><span data-prop-total>${playerCount} players · ${group.length} lines</span></div>
+        <div class="sb-prop-tools"><label class="sb-prop-search"><span>Find a player</span><input type="search" id="sb-prop-search" placeholder="Player or team"></label><button type="button" class="sb-prop-favorites" data-prop-favorites aria-pressed="false">★ Favorites</button><label class="sb-prop-position"><span>Position</span><select id="sb-prop-position"><option value="">All positions</option>${positions.map(value=>`<option>${esc(value)}</option>`).join("")}</select></label></div>
+        <div class="sb-prop-games">${[...games].map(([key,game])=>`<details data-prop-game data-prop-key="${esc(key)}"><summary><span>${esc(game.label)}</span><b data-prop-count>${groupPropPlayers(game.rows).length} players · ${game.rows.length} lines</b></summary><div class="sb-market-grid" data-prop-grid></div></details>`).join("")}</div>
         <p class="sb-empty" data-prop-empty hidden>No props match that filter.</p></section>`;
     }
     const cards=group.map(m=>marketCard(m,byMarket.get(String(m.id))||[],canBook,picked,held,members));
@@ -401,8 +400,19 @@ function fantasySlateHtml(slate,clock,byMarket,canBook,picked,held,members,membe
  return `<section class="block sb-section sb-fantasy-slate" data-fantasy-week="${slate.week}" data-fantasy-period="${slate.period}"><div class="sb-board-head"><div><small>${slate.period==='current'?'THIS WEEK':upcoming?'UPCOMING':slate.period==='previous'?'PREVIOUS WEEK':'FANTASY WINNERS'} · ${slate.season}</small><h2>${heading}</h2></div><span>${openCount} open · ${slate.markets.length-openCount} locked</span></div>${featured}${remaining.length?`<details class="sb-fantasy-games" data-page-detail="sportsbook-fantasy-${slate.period}"><summary>${featured?`More Week ${slate.week} matchups`:`View Week ${slate.week} matchups`}<span>${remaining.length} games</span></summary>${grid}</details>`:''}</section>`;
 }
 
+function propPlayersMarkup(rows,byMarket,picked,held,favorites){
+  return groupPropPlayers(rows).map(player=>`<article class="sb-player-props" data-prop-player="${esc(player.meta.player)}"><header><div><small>${esc([player.meta.team,player.meta.position].filter(Boolean).join(' · '))}</small><h3><button type="button" class="player-card-trigger" data-player-card="" data-player-name="${esc(player.meta.player)}" data-player-team="${esc(player.meta.team)}">${esc(player.meta.player)}</button></h3></div></header><div class="sb-player-lines">${player.rows.map(({market,meta})=>{
+    const choices=byMarket.get(String(market.id))||[],line=propLine(market);
+    return `<div class="sb-player-line" data-prop-card data-prop-key="${esc(meta.key)}"><div class="sb-player-stat"><span>${esc(meta.stat)}</span><strong>${esc(line)}</strong></div><div class="sb-player-prices">${choices.map(outcome=>{
+      const side=outcome.provider_side || (/^over\b/i.test(outcome.label)?'over':/^under\b/i.test(outcome.label)?'under':'');
+      const label=side==='over'?'Over':side==='under'?'Under':outcome.label,active=picked.has(String(outcome.id));
+      return `<button type="button" class="sb-outcome${active?' is-picked':''}${held.has(String(outcome.id))?' is-mine':''}" data-bet-outcome="${esc(outcome.id)}" aria-pressed="${active}" aria-label="${esc(`${meta.player}, ${meta.stat}, ${label} ${line}, ${fmtOdds(outcome.odds_american)}`)}"${!isOpen(market)?' disabled':''}><span>${esc(label)}${held.has(String(outcome.id))?'<small class="sb-held">Held</small>':''}</span><strong class="sb-price">${fmtOdds(outcome.odds_american)}</strong></button>`;
+    }).join('')}</div><button type="button" class="sb-prop-favorite${favorites.has(meta.key)?' is-favorite':''}" data-prop-favorite="${esc(meta.key)}" aria-label="${favorites.has(meta.key)?'Remove from':'Add to'} favorite props" aria-pressed="${favorites.has(meta.key)}">★</button></div>`;
+  }).join('')}</div></article>`).join('');
+}
+
 function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketMap,members}){
-  const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat"),position=view.querySelector("#sb-prop-position"),team=view.querySelector("#sb-prop-team"),gameFilter=view.querySelector("#sb-prop-game"),source=view.querySelector("#sb-prop-source"),sort=view.querySelector("#sb-prop-sort"),favoriteToggle=view.querySelector("[data-prop-favorites]");if(!search||!stat)return;
+  const search=view.querySelector("#sb-prop-search"),stat=view.querySelector("#sb-prop-stat"),position=view.querySelector("#sb-prop-position"),team=view.querySelector("#sb-prop-team"),gameFilter=view.querySelector("#sb-prop-game"),source=view.querySelector("#sb-prop-source"),sort=view.querySelector("#sb-prop-sort"),favoriteToggle=view.querySelector("[data-prop-favorites]");if(!search)return;
   const saved=readBookState(memberId);
   const requestedPlayer=new URLSearchParams(location.hash.split("?")[1]||"").get("player");
   if(requestedPlayer){saved.filters={search:requestedPlayer};saved.favorites=false;view.dataset.restoreScrollY="0";}
@@ -424,19 +434,19 @@ function wirePropFilters(view,memberId,{byMarket,bets,canBook,outcomeMap,marketM
       for(const market of data.markets)marketMap.set(String(market.id),market);
       for(const id of ids)byMarket.set(String(id),[]);
       for(const outcome of data.outcomes){outcomeMap.set(String(outcome.id),outcome);byMarket.get(String(outcome.market_id))?.push(outcome)}
-      const picked=new Set(slip.map(String)),held=heldOutcomes(bets,marketMap,outcomeMap);
       // Missing/closed lines are removed instead of exposing stale prices.
       cache.set(key,rows.flatMap(row=>{
         const market=marketMap.get(String(row.market.id));if(!market||market._lazy||!isOpen(market))return[];
         const choices=byMarket.get(String(market.id))||[],meta=propMarketMeta(market,choices,gameNamesById.get(String(market.provider_event_id)));
-        return[{market,meta,html:marketCard(market,choices,canBook,picked,held,members,meta,favoriteKeys.has(meta.key))}];
+        return[{market,meta,html:""}];
       }));grid.dataset.ready="true";
     }catch{if(view.isConnected){grid.innerHTML='<p role="status">These lines could not load.</p><button type="button" class="btn ghost" data-prop-retry>Retry lines</button>';grid.querySelector('[data-prop-retry]').addEventListener('click',()=>void hydrate(game),{once:true})}}
     finally{pending.delete(key);grid.removeAttribute("aria-busy");if(grid.dataset.ready&&view.isConnected)apply()}
   };
   view.querySelectorAll("details[data-prop-game]").forEach(game=>game.addEventListener("toggle",()=>{if(game.open&&!game.hidden)void hydrate(game);writeBookState(memberId,{expanded:[...view.querySelectorAll("details[data-prop-game]")].filter(item=>item.open).map(item=>item.dataset.propKey)})}));
-  const apply=()=>{rememberFilters();const filters={query:search.value,stat:stat.value,position:position?.value||"",team:team?.value||"",game:gameFilter?.value||"",source:source?.value||"",favorites:favoritesOnly,favoriteKeys};let total=0;
-    view.querySelectorAll("details[data-prop-game]").forEach(game=>{const grid=game.querySelector("[data-prop-grid]"),rows=sortPropRows(cache.get(game.dataset.propKey)||[],sort?.value||"player"),visibleRows=rows.filter(row=>propMatches(row.meta,filters)),visible=visibleRows.length;game.hidden=!visible;if(grid?.dataset.ready){const order=visibleRows.map(row=>row.market.id).join(",");if(grid.dataset.order!==order){grid.innerHTML=visibleRows.map(row=>row.html).join("");grid.dataset.order=order}paintFavorites(grid);grid.querySelectorAll("[data-bet-outcome]").forEach(button=>{const active=slip.some(id=>String(id)===button.dataset.betOutcome);button.classList.toggle("is-picked",active);button.setAttribute("aria-pressed",String(active))})}else if(game.open&&visible)void hydrate(game);const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${visible} prop${visible===1?"":"s"}`;total+=visible});
+  const apply=()=>{rememberFilters();const filters={query:search.value,stat:"",position:position?.value||"",team:team?.value||"",game:gameFilter?.value||"",source:source?.value||"",favorites:favoritesOnly,favoriteKeys};let total=0,players=0;
+    view.querySelectorAll("details[data-prop-game]").forEach(game=>{const grid=game.querySelector("[data-prop-grid]"),rows=sortPropRows(cache.get(game.dataset.propKey)||[],sort?.value||"player"),visibleRows=rows.filter(row=>propMatches(row.meta,filters)),visible=visibleRows.length;game.hidden=!visible;if(grid?.dataset.ready){const order=visibleRows.map(row=>row.market.id).join(",");if(grid.dataset.order!==order){grid.innerHTML=propPlayersMarkup(visibleRows,byMarket,new Set(slip.map(String)),heldOutcomes(bets,marketMap,outcomeMap),favoriteKeys);grid.dataset.order=order}paintFavorites(grid);grid.querySelectorAll("[data-bet-outcome]").forEach(button=>{const active=slip.some(id=>String(id)===button.dataset.betOutcome);button.classList.toggle("is-picked",active);button.setAttribute("aria-pressed",String(active))})}else if(game.open&&visible)void hydrate(game);const count=game.querySelector("[data-prop-count]");if(count)count.textContent=`${groupPropPlayers(visibleRows).length} players · ${visible} lines`;total+=visible;players+=groupPropPlayers(visibleRows).length});
+    const summary=view.querySelector("[data-prop-total]");if(summary)summary.textContent=`${players} players · ${total} lines`;
     const empty=view.querySelector("[data-prop-empty]");if(empty)empty.hidden=total>0;
   };
   search.addEventListener("input",apply);[stat,position,team,gameFilter,source,sort].filter(Boolean).forEach(control=>control.addEventListener("change",apply));
