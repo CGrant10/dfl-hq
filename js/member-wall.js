@@ -332,6 +332,9 @@ export function wireWall(root, onChanged) {
     }
     if (error) { btn.disabled = false; btn.textContent = "Post"; toast(error.message, true); return; }
     clearWallDraft(me.id,"post");
+    form.reset();setImageValue(form,'image','');
+    btn.disabled=false;btn.textContent='Post';
+    form.querySelector('[data-wall-body]')?.dispatchEvent(new Event('input',{bubbles:true}));
     toast("Posted");
     onChanged?.({resetComposer:true});
   }, {signal});
