@@ -37,7 +37,8 @@ import { broadcastContext, buildDeck, loadGolfDay, loadBroadcastItems, loadBroad
 import {homeBroadcastDeck,homeLeagueFile,homeLeagueTools,homeNewspaperMasthead,homeSectionLinks,wireHomeNewspaperSections} from "../home-presentation.js";
 import { renderStage, startStage } from "../broadcast-stage.js";
 import { presenceHtml, presenceNow, onPresence } from "../presence.js";
-import { loadWall, wallCard, wireWall } from "../member-wall.js";
+import { loadWall, updateWall, wireWall } from "../member-wall.js";
+import {mountWallLive} from '../wall-live.js';
 import { draftView, draftCard } from "../draft-order.js";
 import { loadDraftOrder } from "../draft-order-data.js";
 import { powerPulseView } from "../power-pulse.js";
@@ -574,24 +575,31 @@ export async function render(view) {
   /* Lower-page social and draft data no longer compete with the broadcast,
      rankings and weekly model. Each starts only as its slot approaches the
      viewport, and redraws only its own slot. */
-  const redrawWall = async () => {
+  let wallRequest=0;
+  const redrawWall = async (options={}) => {
+    const request=++wallRequest;
     const slot = view.querySelector("[data-wall-slot]");
     if (!slot) return;
     try {
       const posts = await loadWall(3);
-      if (mine !== generation || !slot.isConnected) return;
-      slot.innerHTML = wallCard(posts, { compact: true });
+      if (mine !== generation || !slot.isConnected||request!==wallRequest) return false;
+      updateWall(slot,posts,{ compact: true,...options });
       wireWall(slot, redrawWall);
       finishLoadingContent(slot);
+      return true;
     } catch (err) {
       console.warn("wall unavailable", err);
       if (mine !== generation || !slot.isConnected) return;
-      slot.innerHTML = "";
+      if(!slot.querySelector('.wall'))slot.innerHTML = "";
       finishLoadingContent(slot);
+      return false;
     }
   };
   const wallSlot = view.querySelector("[data-wall-slot]");
-  deferredStops.push(whenNear(wallSlot, redrawWall));
+  deferredStops.push(whenNear(wallSlot, async()=>{
+    await redrawWall();
+    if(mine===generation&&wallSlot?.isConnected)deferredStops.push(mountWallLive(wallSlot,redrawWall,{active:()=>mine===generation&&wallSlot.isConnected}));
+  }));
 
   const feedSlot = view.querySelector("[data-home-feed-slot]");
   deferredStops.push(whenNear(feedSlot, async () => {

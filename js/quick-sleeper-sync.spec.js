@@ -43,6 +43,10 @@ describe("commissioner quick Sleeper sync", () => {
     await runQuickSleeperSync({ database: store.client, sync: mocks.sync, log });
     expect(mocks.sync).toHaveBeenCalledWith("league-1", log, { includeHistory: false });
   });
+  it('loads the same pipeline on demand when no test adapter is supplied',async()=>{
+    const store=database();await runQuickSleeperSync({database:store.client});
+    expect(mocks.sync).toHaveBeenCalledWith('league-1',expect.any(Function),{includeHistory:false});
+  });
 
   it("blocks users without Sleeper permission before reading or writing", async () => {
     mocks.hasPermission.mockReturnValue(false);

@@ -3,7 +3,6 @@
 // roster writes, trade alerts and analyzer-cache invalidation cannot drift.
 
 import { ACCESS_EVENT, db, hasPermission } from "./supabase.js";
-import { syncSleeper } from "./sync.js";
 import { esc, toast } from "./ui.js";
 
 let mountedHost = null;
@@ -27,12 +26,13 @@ export async function readQuickSyncConfig(database = db()) {
   return data || {};
 }
 
-export async function runQuickSleeperSync({ database = db(), sync = syncSleeper, log = () => {} } = {}) {
+export async function runQuickSleeperSync({ database = db(), sync, log = () => {} } = {}) {
   if (!hasPermission("sleeper")) throw new Error("Sleeper Sync permission required");
   const config = await readQuickSyncConfig(database);
   const leagueId = String(config.sleeper_league_id || "").trim();
   if (!leagueId) throw new Error("Set the Sleeper league ID in Admin first");
-  return sync(leagueId, log, { includeHistory: false });
+  const run = sync || (await import('./sync.js')).syncSleeper;
+  return run(leagueId, log, { includeHistory: false });
 }
 
 function markup(config) {

@@ -29,31 +29,45 @@ export async function wireConversations(root){
   root.querySelectorAll('[data-wall-body],[data-wall-edit-body]').forEach(mentions);
   root.querySelectorAll('[data-wall-body-display]').forEach(node=>{node.innerHTML=mentionHtml(node.textContent,members)});
   root.querySelectorAll('[data-wall-thread]').forEach(thread=>{
+    if(thread.dataset.conversationWired){if(thread.open)void thread._refreshReplies?.();return;}
+    thread.dataset.conversationWired='true';
     const slot=thread.querySelector('[data-thread-content]'),postId=Number(thread.dataset.wallThread);
     let loading=false,loaded=false,shown=50;
-    const redraw=async()=>{
+    const redraw=async({resetDraft=false}={})=>{
       if(loading)return;loading=true;
-      slot.innerHTML='<p role="status">Loading replies…</p>';
+      if(!loaded)slot.innerHTML='<p role="status">Loading replies…</p>';
       try{
         const {data,error}=await db().from('member_wall_replies').select('id,member_id,body,created_at,members(display_name)').eq('post_id',postId).order('created_at',{ascending:true}).order('id',{ascending:true}).limit(shown+1);
         if(error)throw error;
+        if(!root.isConnected||!root.contains(thread))return;
         const rows=data||[],more=rows.length>shown,me=currentMember();
-        slot.innerHTML=`<div>${rows.slice(0,shown).map(reply=>`<article class="wall-reply"><a href="#/profile?id=${esc(reply.member_id)}"><strong>${esc(reply.members?.display_name||'Member')}</strong></a> <time class="muted tiny" datetime="${esc(reply.created_at)}">${esc(new Date(reply.created_at).toLocaleString())}</time><p>${mentionHtml(reply.body,members)}</p>${me&&(String(me.id)===String(reply.member_id)||isAdmin())?`<button class="btn ghost small danger" type="button" data-reply-delete="${esc(reply.id)}">Delete reply</button>`:''}</article>`).join('')||'<p class="muted">Start the conversation.</p>'}</div>${more?'<button type="button" class="btn ghost small" data-replies-more>Load more replies</button>':''}${me?`<form class="wall-reply-form"><label for="wall-reply-${postId}">Reply to this post</label><textarea id="wall-reply-${postId}" name="body" rows="2" maxlength="500" required></textarea><p class="muted tiny">Replies and mentions reach the inbox. Phone alerts are optional in Notifications.</p><button class="btn small" type="submit">Reply</button><p class="wall-thread-status" role="status" data-reply-status></p></form>`:'<p class="muted">Pick your name in the top bar to reply.</p>'}`;
+        const html=`<div>${rows.slice(0,shown).map(reply=>`<article class="wall-reply"><a href="#/profile?id=${esc(reply.member_id)}"><strong>${esc(reply.members?.display_name||'Member')}</strong></a> <time class="muted tiny" datetime="${esc(reply.created_at)}">${esc(new Date(reply.created_at).toLocaleString())}</time><p>${mentionHtml(reply.body,members)}</p>${me&&(String(me.id)===String(reply.member_id)||isAdmin())?`<button class="btn ghost small danger" type="button" data-reply-delete="${esc(reply.id)}">Delete reply</button>`:''}</article>`).join('')||'<p class="muted">Start the conversation.</p>'}</div>${more?'<button type="button" class="btn ghost small" data-replies-more>Load more replies</button>':''}${me?`<form class="wall-reply-form"><label for="wall-reply-${postId}">Reply to this post</label><textarea id="wall-reply-${postId}" name="body" rows="2" maxlength="500" required></textarea><p class="muted tiny">Replies and mentions reach the inbox. Phone alerts are optional in Notifications.</p><button class="btn small" type="submit">Reply</button><p class="wall-thread-status" role="status" data-reply-status></p></form>`:'<p class="muted">Pick your name in the top bar to reply.</p>'}`;
+        const oldForm=!resetDraft&&slot.querySelector('form');
+        if(oldForm){
+          const keepPosition=oldForm.contains(document.activeElement),top=oldForm.getBoundingClientRect().top;
+          const template=document.createElement('template');template.innerHTML=html;
+          slot.firstElementChild.replaceWith(template.content.firstElementChild);
+          slot.querySelector('[data-replies-more]')?.remove();
+          const moreButton=template.content.querySelector('[data-replies-more]');if(moreButton)slot.insertBefore(moreButton,oldForm);
+          if(keepPosition){const shift=oldForm.getBoundingClientRect().top-top;if(Math.abs(shift)>1)window.scrollBy(0,shift);}
+        }else slot.innerHTML=html;
         loaded=true;
         wireWallDraft(slot.querySelector('form'),me?.id,`reply:${postId}`);
         mentions(slot.querySelector('textarea'));
         slot.querySelector('[data-replies-more]')?.addEventListener('click',()=>{shown+=50;redraw()});
         slot.querySelectorAll('[data-reply-delete]').forEach(button=>button.addEventListener('click',async()=>{if(!confirm('Delete this reply?'))return;button.disabled=true;const {error}=await db().from('member_wall_replies').delete().eq('id',Number(button.dataset.replyDelete));if(error){button.disabled=false;toast('Could not delete reply. Try again.',true)}else{const summary=thread.querySelector('summary'),count=Number(summary.textContent.match(/\d+/)?.[0]||0);summary.textContent=`Replies (${Math.max(0,count-1)})`;redraw()}}));
-        slot.querySelector('form')?.addEventListener('submit',async event=>{
+        const replyForm=slot.querySelector('form');
+        if(replyForm&&!replyForm.dataset.replyWired){replyForm.dataset.replyWired='true';replyForm.addEventListener('submit',async event=>{
           event.preventDefault();const form=event.target,body=form.elements.body.value.trim(),status=form.querySelector('[data-reply-status]'),button=form.querySelector('[type="submit"]'),actor=currentMember();
           if(!body||!actor){status.textContent='Write a reply and choose your profile first.';return}
           button.disabled=true;status.textContent='Posting reply…';
-          try{const {error}=await db().from('member_wall_replies').insert({post_id:postId,member_id:actor.id,body});if(error)throw error;clearWallDraft(actor.id,`reply:${postId}`);const summary=thread.querySelector('summary'),count=Number(summary.textContent.match(/\d+/)?.[0]||0);summary.textContent=`Replies (${count+1})`;await redraw();slot.querySelector('textarea')?.focus();toast('Reply posted')}
+          try{const {error}=await db().from('member_wall_replies').insert({post_id:postId,member_id:actor.id,body});if(error)throw error;clearWallDraft(actor.id,`reply:${postId}`);form.elements.body.value='';button.disabled=false;form.elements.body.dispatchEvent(new Event('input',{bubbles:true}));const summary=thread.querySelector('summary'),count=Number(summary.textContent.match(/\d+/)?.[0]||0);summary.textContent=`Replies (${count+1})`;await redraw({resetDraft:true});slot.querySelector('textarea')?.focus({preventScroll:true});toast('Reply posted')}
           catch{button.disabled=false;status.textContent='Could not post your reply. Your text is saved here; try again.'}
-        });
-      }catch{slot.innerHTML='<p role="status">Replies could not load.</p><button type="button" class="btn ghost small" data-thread-retry>Retry</button>';slot.querySelector('button').addEventListener('click',redraw)}
+        });}
+      }catch{if(loaded){const status=slot.querySelector('[data-reply-status]');if(status)status.textContent='Replies could not refresh. Showing the last checked replies.';return;}slot.innerHTML='<p role="status">Replies could not load.</p><button type="button" class="btn ghost small" data-thread-retry>Retry</button>';slot.querySelector('button').addEventListener('click',redraw)}
       finally{loading=false}
     };
+    thread._refreshReplies=redraw;
     thread.addEventListener('toggle',()=>{if(thread.open&&!loaded)redraw()});
     if(thread.open)redraw();
   });
