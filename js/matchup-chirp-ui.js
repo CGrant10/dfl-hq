@@ -1,9 +1,9 @@
 import { esc } from './ui.js';
 import { matchupChirp } from './matchup-banter.js';
 
-export function matchupChirpHtml(chirp, { href = '' } = {}) {
+export function matchupChirpHtml(chirp, { href = '',compact=false } = {}) {
   if (!chirp) return '';
-  return `<section class="dfl-chirp" data-chirp-kind="${esc(chirp.kind)}" aria-label="DFL matchup commentary"><header><small>DFL CHIRP${chirp.kind === 'final' ? ' · FINAL RECEIPT' : chirp.kind === 'live' ? ' · LIVE LEAD' : ''}</small>${href ? `<a href="${esc(href)}">Matchup talk →</a>` : ''}</header><p class="dfl-chirp-receipt">${esc(chirp.receipt)}</p><p class="dfl-chirp-roast">${esc(chirp.roast)}</p></section>`;
+  return `<section class="dfl-chirp" data-chirp-kind="${esc(chirp.kind)}" aria-label="DFL matchup commentary"><header><small>DFL CHIRP${chirp.kind === 'final' ? ' · FINAL RECEIPT' : chirp.kind === 'live' ? ' · LIVE LEAD' : ''}</small>${href ? `<a href="${esc(href)}">Matchup talk →</a>` : ''}</header>${compact?"":`<p class="dfl-chirp-receipt">${esc(chirp.receipt)}</p>`}<p class="dfl-chirp-roast">${esc(chirp.roast)}</p></section>`;
 }
 
 export function clubhouseChirp(game, model) {

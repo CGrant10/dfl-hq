@@ -1,3 +1,4 @@
+import {mountArchiveRouteMotion,renderWithArchiveMotion} from './archive-route-motion.js';
 // =====================================================================
 // router.js - hash based routing (#/home, #/rules, ...)
 // Hash routing is used because GitHub Pages cannot rewrite URLs.
@@ -282,7 +283,8 @@ const setRouteCanvas = color => {
   afterward. The epoch also stops stale renders from moving the tab indicator,
   scrolling the new page, or publishing a route-complete notification.
 */
-export async function renderRoute({ retry = false } = {}) {
+export async function renderRoute(options={}){return renderWithArchiveMotion(()=>renderRoutePage(options),document.getElementById('view'),location.hash)}
+async function renderRoutePage({ retry = false } = {}) {
   const routeStarted = performance.now();
   const epoch = ++renderEpoch;
   const name = currentRoute();
@@ -303,6 +305,7 @@ export async function renderRoute({ retry = false } = {}) {
 
   const view = previousView.cloneNode(false);
   delete view.dataset.restoreScrollY;
+  delete view.dataset.connectedEntry;
   delete view.dataset.routeFailed;
   delete view.dataset.uiPolished;
   delete view.dataset.pulseSystem;
@@ -395,7 +398,7 @@ export async function renderRoute({ retry = false } = {}) {
   window.scrollTo(0, Number(view.dataset.restoreScrollY) || 0);
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
   if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
-  else if (routeMemory && !view.dataset.restoreScrollY) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
+  else if (routeMemory && !view.dataset.restoreScrollY && !document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
   if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
   mountedHash = expectedHash; mountedMember = getMemberId();
   stopPageMotion = mountPageMotion(view);
@@ -419,6 +422,7 @@ export async function renderRoute({ retry = false } = {}) {
 
 let lastAnimated = null;
 export function startRouter() {
+  mountArchiveRouteMotion();
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.addEventListener('pagehide', () => { const view=document.getElementById('view'); if(view&&mountedHash&&!view.dataset.routeFailed&&!view.classList.contains('is-route-loading'))writeViewMemory(mountedMember,`route:${mountedHash}`,captureView(view)); });
   ensureSportsbookNav();

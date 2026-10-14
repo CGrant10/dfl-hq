@@ -264,7 +264,7 @@ def check_game_day_scope(page):
         check(detailsRoot.querySelector('.home-live-details').open,'First kickoff must open player leaders even after a pregame collapse');
         check(!root.querySelector('.home-projected-total')&&root.querySelector('.home-matchup-entry').textContent.includes('You lead by 15.80'),'Retry failed to restore actual live scores');
         check(document.activeElement===root.querySelector('.gameday-matchup'),'Retry hid the focused control without a destination');
-        check(root.querySelector('.home-matchup-entry strong').textContent.includes('Matchup details'),'Matchup detail entry is missing');
+        check(root.querySelector('.gameday-matchup').hasAttribute('data-gameday-watch'),'Matchup detail entry is missing');
         openingState='post';detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
         check(detailsRoot.querySelector('.home-live-details').open,'Thursday final must keep player leaders open between games');
         currentWeek=6;detailsRoot.querySelector('[data-gameday-refresh]').click();await until(()=>!detailsRoot.querySelector('[data-gameday-refresh]').disabled);
@@ -880,7 +880,7 @@ with sync_playwright() as p:
         typography = page.evaluate('''() => {
             const type=s=>{const e=document.querySelector(s),c=getComputedStyle(e);return {size:parseFloat(c.fontSize),family:c.fontFamily,weight:Number(c.fontWeight),line:parseFloat(c.lineHeight),transform:c.textTransform}};
             const labelElements=[...document.querySelectorAll('.home-rank-head span')],labels=labelElements.map(e=>e.getBoundingClientRect());
-            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-focus-action'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
+            return {width:innerWidth,fontLoaded:document.fonts.check('600 15px "Rajdhani"'),heading:type('.home-rankings-card h2'),body:type('.home-league-story p'),name:type('.home-thermal-leaders .dfl-player-copy strong'),metadata:type('.home-thermal-leaders .dfl-player-copy small'),detail:type('[data-page-detail="home-week"] summary strong'),rankLabelsFit:labelElements.every(e=>e.scrollWidth<=e.clientWidth+1)&&labels.every((r,i)=>!i||labels[i-1].right<=r.left+1),masthead:document.querySelector('.home-newspaper-masthead').offsetHeight};
         }''')
         assert typography['fontLoaded'] and all('Rajdhani' in typography[k]['family'] for k in ['heading','body','name','metadata','detail']), f'Home type did not load consistently: {typography}'
         assert typography['heading']['size'] == 18 and typography['body']['size'] == 12 and typography['name']['size'] == 15 and typography['metadata']['size'] == 12, f'Home text scale is inconsistent: {typography}'
