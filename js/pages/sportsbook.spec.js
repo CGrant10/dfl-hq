@@ -24,8 +24,8 @@ vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], privilegedF
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,range:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({
-  currentMember:()=>({display_name:'Preview'}),
-  loadMemberDirectory:async()=>[{display_name:'Owner A',team_name:'Team <A>',profile_image:'https://example.com/team-a.jpg',accent_color:'#22C7A9'}]
+  currentMember:()=>({id:1,display_name:'Preview'}),
+  loadMemberDirectory:async()=>[{id:1,display_name:'Owner A',team_name:'Team <A>',profile_image:'https://example.com/team-a.jpg',accent_color:'#22C7A9'}]
 }));
 vi.mock('../sleeper.js',()=>({loadNflState:async()=>({data:{season:'2026',week:4}}),loadPlayers:async()=>({})}));
 vi.mock('../sportsbook-ticket.js',()=>({shareTicket:vi.fn()}));
@@ -187,4 +187,15 @@ it('keeps locked fantasy winner picks visible and disabled',async()=>{
  expect(view.innerHTML).toMatch(/data-bet-outcome="991"[^>]*disabled/);
  expect(view.innerHTML).toMatch(/data-bet-outcome="2"[^>]*aria-pressed="false"/);
  markets.pop();outcomes.pop();
+});
+
+it('keeps every fantasy matchup in the same grid and highlights the member even after locking',async()=>{
+ const view=fakeView();await render(view);
+ expect(view.innerHTML).not.toContain('sb-featured-line');expect(view.innerHTML).not.toContain('sb-fantasy-games');
+ expect((view.innerHTML.match(/<article class="card sb-market/g)||[])).toHaveLength(2);
+ expect((view.innerHTML.match(/data-your-matchup/g)||[])).toHaveLength(1);
+ expect(view.innerHTML).toContain('Your matchup');
+ const status=markets[0].status;markets[0].status='locked';
+ try{await render(view);expect(view.innerHTML).toContain('data-your-matchup');expect(view.innerHTML).toContain('LOCKED');}
+ finally{markets[0].status=status;}
 });

@@ -66,8 +66,10 @@
 #view.view[data-page-system][data-route="profile"] .ph-photo-btn::after { display:none; }
 #view.view[data-page-system][data-route="profile"] .profile-account-actions { padding:16px 0 0; border-top:1px solid var(--line); margin-top:16px; }
 
-/* More uses familiar grouped rows and retains the existing sheet controls. */
-#more .sheet-card { overscroll-behavior:contain; }
+/* More is an opaque navigation surface from its first frame. */
+#more { background:var(--bg-2); align-items:stretch; }
+body:has(#more:not(.hidden)) #view { visibility:hidden; }
+#more .sheet-card { height:100%; max-height:100dvh; border:0; border-radius:0; padding-top:max(16px,env(safe-area-inset-top)); overscroll-behavior:contain; }
 #more .sheet-head { position:sticky; top:-16px; background:var(--bg-2); z-index:2; padding-block:8px 12px; }
 #more .quicknav-group + .quicknav-group { margin-top:14px; }
 #more .quicknav-group h2 { color:var(--muted); margin-bottom:4px; }

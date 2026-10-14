@@ -61,7 +61,7 @@ export function currentMember() {
  * columns independently. With only twelve owners the row size is negligible;
  * sharing the complete rows removes several round trips from every Home load.
  */
-export async function loadMemberDirectory({ force = false } = {}) {
+export async function loadMemberDirectory({ force = false, eagerNames = false } = {}) {
   if (directoryCache && !force && Date.now()<directoryExpiresAt) return directoryCache;
   if (!configured) return [];
   /*
@@ -76,15 +76,7 @@ export async function loadMemberDirectory({ force = false } = {}) {
   if(force)directoryEpoch++;
   const requestEpoch = directoryEpoch;
   const request = (async () => {
-    const { data, error } = await db()
-      .from("members")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("display_name", { ascending: true });
-
-    if (error) throw error;
-    let members = data || [];
-    if(members.some(m=>m.sleeper_user_id)){
+    const names = async () => {
       const [leagueRes,rosterRes]=await Promise.allSettled([
         db().from('sleeper_leagues').select('sleeper_league_id,season').order('season',{ascending:false}).limit(1),
         db().from('sleeper_rosters').select('season,roster_id,sleeper_user_id,team_name'),
@@ -92,7 +84,18 @@ export async function loadMemberDirectory({ force = false } = {}) {
       const leagueId=leagueRes.status==='fulfilled'&&!leagueRes.value.error?leagueRes.value.data?.[0]?.sleeper_league_id:null;
       const rosters=rosterRes.status==='fulfilled'&&!rosterRes.value.error?rosterRes.value.data||[]:[];
       const users=leagueId?await sleeper.users(leagueId).catch(()=>[]):[];
-      members=currentTeamMembers(members,Array.isArray(users)?users:[],rosters);
+      return {users:Array.isArray(users)?users:[],rosters};
+    };
+    // A returning profile can fetch live names alongside its directory instead
+    // of starting the league/user lookup after the member request finishes.
+    const pendingNames=eagerNames?names().catch(()=>({users:[],rosters:[]})):null;
+    const { data, error } = await db().from('members').select('*')
+      .order('sort_order', {ascending:true}).order('display_name', {ascending:true});
+    if(error)throw error;
+    let members=data||[];
+    if(members.some(m=>m.sleeper_user_id)){
+      const {users,rosters}=await(pendingNames||names());
+      members=currentTeamMembers(members,users,rosters);
     }
     if (requestEpoch === directoryEpoch) {
       directoryCache = members;
@@ -119,8 +122,8 @@ export function clearMemberDirectoryCache() {
 }
 
 /** Active members, newest league additions last. */
-export async function loadMembers({ force = false } = {}) {
-  const members = await loadMemberDirectory({ force });
+export async function loadMembers({ force = false, eagerNames = false } = {}) {
+  const members = await loadMemberDirectory({ force, eagerNames });
   return members.filter((member) => member.active === true);
 }
 
@@ -130,7 +133,7 @@ export async function restoreMember() {
   if (!id) return null;
 
   try {
-    const members = await loadMembers();
+    const members = await loadMembers({ eagerNames:true });
     current = members.find((m) => String(m.id) === String(id)) || null;
   } catch {
     current = null;

@@ -17,7 +17,7 @@ import { initTheme, syncThemeFromMember } from "./theme.js";
 import { adoptSelectedMemberTheme } from "./member-theme-scope.js";
 import { loadSettings } from "./settings.js";
 import { mountMemberPreview } from "./member-preview.js";
-import { startRouter, renderRoute, go, currentRoute, onRoute } from "./router.js";
+import { startRouter, renderRoute, go, currentRoute, onRoute, prefetchRoute } from "./router.js";
 import { setupInstall } from "./install.js";
 import { setupUpdates } from "./update.js";
 import { setupNotifyNudge } from "./notify-nudge.js";
@@ -176,7 +176,7 @@ const syncMore=()=>{moreBtn?.setAttribute("aria-expanded",String(!moreSheet?.cla
   lands back on the control that opens it rather than at the top of a document
   it has just navigated to.
 */
-const closeMore=(options={})=>{if(!moreSheet||moreSheet.classList.contains("hidden"))return;exitUi(moreSheet,()=>{moreSheet.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null},{...options,surface:moreSheet.querySelector('.sheet-card')||moreSheet})};
+const closeMore=(options={})=>{if(!moreSheet||moreSheet.classList.contains("hidden"))return;exitUi(moreSheet,()=>{moreSheet.classList.add("hidden");syncMore();releaseMore?.();releaseMore=null},{...options,fade:false,surface:moreSheet.querySelector('.sheet-card')||moreSheet})};
 window.addEventListener('dfl:toast', () => {
   if (!['home', 'clubhouse', 'trade', 'sportsbook'].includes(document.getElementById('view')?.dataset.route)) return;
   animateUi(document.getElementById('toast'), [{ opacity:0, transform:'translate(-50%,6px)' }, { opacity:1, transform:'translate(-50%,0)' }], { duration:180 });
@@ -185,17 +185,13 @@ const openMore=()=>{
   const card=moreSheet?.querySelector('.sheet-card');
   const reopening=!!moreSheet?.dataset.uiClosing;
   const transform=reopening&&card?getComputedStyle(card).transform:'translateY(18px)';
-  const opacity=reopening?getComputedStyle(moreSheet).opacity:'1';
   cancelUiExit(moreSheet);
   releaseMore?.();
   releaseMore=null;
   void refreshQuickSleeperSync();
   moreSheet?.classList.remove("hidden");
   if(!reopening&&card)card.scrollTop=0;
-  // Keep the card opaque and the backdrop steady. Fading the whole menu
-  // exposes the page through its rows; focus scrolling during the entrance
-  // can also jump a previously scrolled sheet halfway through the animation.
-  if(reopening)animateUi(moreSheet,[{opacity},{opacity:1}],{duration:160});
+  // Keep the navigation cover opaque; only the card moves.
   animateUi(card,[{transform},{transform:'translateY(0)'}],{duration:260});
   syncMore();
   /* Close first, not the first nav link: it is the one control in here whose
@@ -242,13 +238,13 @@ const isPublicBroadcast=()=>location.hash.split("?")[0]==="#/broadcast";
 let booted=false,bootRequest=null;
 void registerAppWorker();initTheme();setupInstall();
 async function boot(){console.log(`DFL HQ v${APP_VERSION}`);const initialView=document.getElementById("view");if(initialView&&!initialView.childElementCount)initialView.innerHTML=loading();if(!configured)toast("Add your Supabase keys in js/config.js",true);let startupTimer;
+// Download only the requested lightweight route while identity/settings restore.
+// Rendering still waits for restoration and the existing member-lock check.
+if(['home','clubhouse','sportsbook','trade'].includes(currentRoute()))prefetchRoute(currentRoute());
 try{await Promise.race([Promise.all([restoreAdmin(),restoreMember(),loadSettings()]),new Promise((_,reject)=>{startupTimer=setTimeout(()=>reject(new Error("Startup connection timed out")),10000)})]);}
 finally{clearTimeout(startupTimer)}
 paintName();mountMemberPreview();
   startExperience();
-  mountNotificationBell();
-  mountQuickSleeperSync();
-  mountBreakingTradeCoverage();
   /* The palette follows the member, not the browser. localStorage has already
      painted the first frame; this reconciles it with what they chose on any
      other device, and is deliberately not awaited so it cannot delay boot. */
@@ -259,6 +255,9 @@ paintName();mountMemberPreview();
      Worker registration starts independently so a push page cannot deadlock. */
   startAppDiagnostics();
   window.addEventListener("dfl:app-ready", () => {
+    mountNotificationBell();
+    mountQuickSleeperSync();
+    mountBreakingTradeCoverage();
     const readyAt=performance.now();
     void import("./performance.js").then(module=>module.startPerformanceTracking({readyAt,route:currentRoute()})).catch(()=>{});
     startPresence();
