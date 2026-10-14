@@ -785,7 +785,8 @@ function wireClaim(view){
 function wireTicketActions(view,marketMap,outcomeMap,me){
   view._bookTicketController?.abort();
   const controller=new AbortController();view._bookTicketController=controller;
-  const current=()=>view.isConnected&&String(currentMember()?.id)===String(me.id);
+  const generation=renderGeneration;
+  const current=()=>activeBook===view&&generation===renderGeneration&&view.isConnected&&String(currentMember()?.id)===String(me.id);
   view.addEventListener('click',async event=>{
     const button=event.target.closest('[data-share-ticket],[data-cancel-bet],[data-dismiss-bet]');
     if(!button||!view.contains(button)||view._bookTicketBusy)return;

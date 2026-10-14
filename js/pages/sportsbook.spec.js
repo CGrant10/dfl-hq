@@ -1,6 +1,7 @@
 import { it, expect, vi } from 'vitest';
-const { markets, outcomes, bets, perms, trends, recap } = vi.hoisted(() => ({
+const { markets, outcomes, bets, perms, trends, recap, ticketWrite } = vi.hoisted(() => ({
   /* Flipped by the commissioner test below. */
+  ticketWrite: {pending:null},
   perms: { sportsbook: false },
   markets: [
     {id:1,category:'Fantasy',status:'open',title:'Team <A> vs B',auto_key:'matchup:2026:3:1'},
@@ -20,7 +21,7 @@ const { markets, outcomes, bets, perms, trends, recap } = vi.hoisted(() => ({
   ]
 }));
 vi.mock('../supabase.js', () => ({hasPermission:name=>!!perms[name], privilegedFunctionHeaders:()=>({}), edge:()=>({functions:{invoke:async()=>({data:{monthlyEventObjects:0},error:null})}}), db:()=>({
-  rpc:async name=>({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_live_account'?{member_id:1,balance:2400,bets,ledger:[]}:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
+  rpc:async name=>name==='sportsbook_dismiss_bet'&&ticketWrite.pending?await ticketWrite.pending:({data:name==='sportsbook_touch_wallet'?[{balance:2400}]:name==='sportsbook_my_live_account'?{member_id:1,balance:2400,bets,ledger:[]}:name==='sportsbook_my_bets'?bets:name==='sportsbook_trending_picks'?trends:name==='sportsbook_weekly_recap'?recap:[],error:null}),
   from:table=>{const query={select:()=>query,order:()=>query,limit:()=>query,range:()=>query,in:()=>query,eq:()=>query,neq:()=>query,then:resolve=>resolve({data:table==='sportsbook_markets'?markets:outcomes,error:null})};return query;}
 })}));
 vi.mock('../members.js',()=>({
@@ -29,7 +30,7 @@ vi.mock('../members.js',()=>({
 }));
 vi.mock('../sleeper.js',()=>({loadNflState:async()=>({data:{season:'2026',week:4}}),loadPlayers:async()=>({})}));
 vi.mock('../sportsbook-ticket.js',()=>({shareTicket:vi.fn()}));
-import { render } from './sportsbook.js';
+import { render,leave } from './sportsbook.js';
 
 const fakeView=()=>({innerHTML:'',querySelectorAll:()=>[],querySelector:()=>null,append(){},addEventListener(){}});
 
@@ -198,4 +199,16 @@ it('keeps every fantasy matchup in the same grid and highlights the member even 
  const status=markets[0].status;markets[0].status='locked';
  try{await render(view);expect(view.innerHTML).toContain('data-your-matchup');expect(view.innerHTML).toContain('LOCKED');}
  finally{markets[0].status=status;}
+});
+
+
+it('does not reopen the Book when a ticket action finishes after leaving',async()=>{
+  bets.push({id:91,status:'won',stake:25,odds_american:-110,potential_payout:47,legs:[]});
+  const view=fakeView();let handler;view.addEventListener=(_type,fn)=>handler=fn;view.contains=()=>true;
+  await render(view);view.isConnected=true;
+  let resolve;ticketWrite.pending=new Promise(done=>resolve=done);
+  const button={dataset:{dismissBet:'91'},hasAttribute:name=>name==='data-dismiss-bet',isConnected:false};
+  const action=handler({target:{closest:()=>button}});leave();view.innerHTML='Other page';resolve({data:true,error:null});await action;
+  expect(view.innerHTML).toBe('Other page');expect(view._bookTicketBusy).toBe(false);
+  ticketWrite.pending=null;bets.length=0;
 });
