@@ -674,8 +674,8 @@ export function tradeLineupPreviews({teams=[],sends=[],receives=[],pool=new Map(
  });
 }
 
-export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], pool = new Map() } = {}) {
-  const result = evaluateMultiTeamTrade({ teams: [teamA, teamB, teamC], sends: [sendA, sendB, sendC], pool });
+export function evaluateThreeWayTrade({ teamA, teamB, teamC, sendA = [], sendB = [], sendC = [], destinations = null, pool = new Map() } = {}) {
+  const result = evaluateMultiTeamTrade({ teams: [teamA, teamB, teamC], sends: [sendA, sendB, sendC], destinations, pool });
   if (!result) return null;
   return {
     ...result,

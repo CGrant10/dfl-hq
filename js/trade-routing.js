@@ -9,7 +9,7 @@ export function tradeTransfers(teams=[],sends=[],destinations=null){
   const owned=new Set(teams[i].playerIds.map(String));
   for(const id of packages[i]){
    if(!owned.has(id)||seen.has(id))return null;seen.add(id);
-   const to=destinations==null?String(teams[(i+1)%teams.length].id):String(destinations[id]??'');
+   const to=destinations==null?String(teams[(i+1)%teams.length].id):String(destinations?.[id]??'');
    if(!indexes.has(to)||indexes.get(to)===i)return null;
    routes[id]=to;receives[indexes.get(to)].push(id);
   }
@@ -21,9 +21,20 @@ export function tradeTransfers(teams=[],sends=[],destinations=null){
 export function reconcileTradeDestinations(teams=[],sends=[],destinations={}){
  const routes={};
  teams.forEach((team,i)=>{for(const raw of sends[i]||[]){const id=String(raw),existing=String(destinations?.[id]??'');
-  routes[id]=teams.some(t=>String(t.id)===existing&&String(t.id)!==String(team.id))?existing:teams.length>2&&Object.hasOwn(destinations||{},id)?'':String(teams[(i+1)%teams.length]?.id??'');
+  routes[id]=teams.some(t=>String(t.id)===existing&&String(t.id)!==String(team.id))?existing:(teams.length>2||Object.hasOwn(destinations||{},id))?'':String(teams[(i+1)%teams.length]?.id??'');
  }});
  return routes;
+}
+
+export function tradeRoutingIssue(teams=[],sends=[],destinations={}){
+ const packages=teams.map((_,i)=>Array.from(sends[i]||[],String));
+ const missingSenders=teams.filter((_,i)=>!packages[i].length).map(t=>String(t.id));
+ if(missingSenders.length)return {kind:'senders',teamIds:missingSenders};
+ const unassigned=packages.flatMap((ids,i)=>ids.filter(id=>!teams.some((team,j)=>j!==i&&String(team.id)===String(destinations?.[id]??''))));
+ if(unassigned.length)return {kind:'recipients',playerIds:unassigned};
+ const receiving=new Set(packages.flat().map(id=>String(destinations[id])));
+ const missingReceivers=teams.filter(t=>!receiving.has(String(t.id))).map(t=>String(t.id));
+ return missingReceivers.length?{kind:'receivers',teamIds:missingReceivers}:null;
 }
 
 export function tradePerspective(result){

@@ -22,7 +22,7 @@ import {teamIdentity,teamPortrait} from '/js/team-presentation.js';
 import {recommendationOutcomes,tradeModelHealth,tradeModelHealthMarkup} from '/js/trade-model-health.js';
 import {readViewMemory,writeViewMemory} from '/js/view-memory.js';
 import {tradeDraft,restoreTradeDraft} from '/js/trade-draft.js';
-import {tradePerspective,reconcileTradeDestinations} from '/js/trade-routing.js';
+import {tradePerspective,tradeTransfers} from '/js/trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '/js/trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '/js/trade-workspace-ui.js';
 import {mountTradePlayerPickers,focusTradePicker} from '/js/trade-player-picker.js';
@@ -33,6 +33,7 @@ const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};
 `;
 writeFileSync(`${output}/fixture.js`,imports+production+`
 window.reviewData=tradeReviewFixture();
+window.reviewOfferMarkup=offerMarkup;
 window.renderReview=()=>{const view=document.getElementById('view'),result=page(window.reviewData);view.innerHTML=result.markup;result.wire(view);};
 window.renderReview();window.reviewReady=true;
 `);
