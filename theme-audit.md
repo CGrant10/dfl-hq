@@ -23,7 +23,8 @@ Text-bearing selected controls use the primary fill instead of a red/yellow
 sweep that placed white letters over bright yellow. This covers base buttons,
 mode picks, archive controls, avatar fallbacks, Keeper call labels and Sportsbook
 selected/hover actions. Decorative gradients still follow both palette accents.
-Profile championship labels use readable milestone ink while trophies retain
+Fairway retains its green/blue palette, with the primary green deepened so small
+white action labels stay readable. Profile championship labels use readable milestone ink while trophies retain
 metallic artwork. Startup grounds and the legacy Arena light-mode plate also
 use Medicine colors.
 

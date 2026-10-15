@@ -49,3 +49,8 @@ describe('Medicine Wheel theme colors',()=>{
   expect(state.tokens.get('color-scheme')).toBe(mode);
  });
 });
+
+it('keeps small white labels readable on Fairway primary controls',()=>{
+ saveMode('fairway');
+ expect(contrast(state.tokens.get('--on-accent'),state.tokens.get('--accent-fill'))).toBeGreaterThanOrEqual(4.5);
+});

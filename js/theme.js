@@ -100,7 +100,7 @@ const MODES = {
     hover: "#e8eef0", hoverSoft: "rgba(7,80,119,.045)",
     controlLine: "#78909a", controlBg: "rgba(255,255,255,.94)",
     accent: "#056936", accent2: "#075077",
-    fill: "#119b57", fill2: "#0873a6",
+    fill: "#056936", fill2: "#0873a6",
     onAccent: "#ffffff",
     ok: "#056936", okBg: "rgba(5,105,54,.10)", okLine: "#8bc7a6",
     warnInk: "#805200", warnBg: "rgba(180,119,0,.11)", warnLine: "#ddc483",
