@@ -16,7 +16,7 @@ STUBS = {
  'js/inline.js': 'export const canEdit=()=>true;',
  'js/supabase.js': 'export const db=()=>{throw Error("No backend in route fixture")};',
  'js/members.js': 'export const getMemberId=()=>"route-fixture";',
- 'js/performance-policy.js': 'export const canWarmRoutes=()=>false;',
+ 'js/performance-policy.js': 'export const mountRouteWarmup=()=>()=>{};',
  'js/weekly-outlook-panel.js': 'export function mountWeeklyOutlook(){}',
 }
 importFailures=set()
