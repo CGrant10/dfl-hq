@@ -2,19 +2,14 @@
 import { APP_VERSION } from "./config.js";
 import { db } from "./supabase.js";
 import { currentMember } from "./members.js";
-import { applyTheme, isTeamMode, teamModeFor } from "./theme.js";
+import { applyTheme, normalizeMode } from "./theme.js";
 import "./arena-duration-ui.js";
 import "./league-photo-feature.js";
 import "./engagement-home.js";
 
 const MODE_KEY = "dfl.mode";
-const PICKABLE = new Set(["dark", "light", "fairway", "medicine", "medicine-light", "system"]);
-
 function validMode(value) {
-  const v = String(value || "");
-  if (PICKABLE.has(v)) return v;
-  if (isTeamMode(v)) return teamModeFor(v.slice("team:".length)) || "";
-  return "";
+  return normalizeMode(value) || "";
 }
 
 function tagProfileVisuals(root = document) {

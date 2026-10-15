@@ -128,6 +128,7 @@ h3 {
   gap: var(--s-2);
   transition: filter var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
+.btn :is(.ico,.ico-sm) { color: inherit; }
 .btn.small { min-height: 38px; padding: 0 var(--s-3); font-size: var(--fs-label); }
 .btn:hover { filter: brightness(1.08); }
 .btn:active { transform: scale(.97); }

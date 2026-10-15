@@ -1,6 +1,6 @@
 {
   "name": "dfl-hq",
-  "version": "1.421.0",
+  "version": "1.422.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.19.0",
@@ -14,7 +14,8 @@
     "names": "node tools/check-names.mjs",
     "test": "vitest run",
     "build": "node tools/build-shared-css.mjs && vite build --config vite.trade.config.js && vite build && node tools/build-app.mjs && node tools/check-app-bundle.mjs",
-    "check": "pnpm release:check && pnpm typecheck && pnpm names && pnpm test && pnpm build"
+    "themes": "node tools/check-theme-colors.mjs",
+    "check": "pnpm release:check && pnpm themes && pnpm typecheck && pnpm names && pnpm test && pnpm build"
   },
   "dependencies": {
     "pixi.js": "^8.20.0"

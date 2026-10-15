@@ -60,7 +60,7 @@
   padding: 10px 16px; border: 1px solid transparent; border-radius: 8px;
   background: var(--print-fill); color: #fff; font: 700 18px/1.3 var(--home-ui-font); text-decoration: none;
 }
-#home-wrap .home-lineup-primary .ico-sm { width: 20px; height: 20px; fill: none; stroke: currentColor; flex: 0 0 20px; }
+#home-wrap .home-lineup-primary .ico-sm { color: inherit; width: 20px; height: 20px; fill: none; stroke: currentColor; flex: 0 0 20px; }
 #home-wrap .home-lineup-primary:hover { background: var(--print-hover); }
 #home-wrap .home-week-focus .home-focus-action { margin: 8px 0 0; color: var(--paper-muted); font: 500 14px/1.4 var(--home-ui-font); }
 #home-wrap :is(.home-lineup-primary,.gameday-matchup,.home-live-details > summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

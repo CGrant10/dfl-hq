@@ -78,7 +78,7 @@
 .mq-tag.is-main {
   color: var(--on-accent);
   border-color: transparent;
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   letter-spacing: .2em;
 }
 .mq-tag.is-live {

@@ -1182,7 +1182,7 @@
   font-weight: var(--fw-semi);
 }
 #home-wrap .do-row.is-me .do-slot {
-  background: var(--accent-sweep-135);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 #home-wrap .do-you {

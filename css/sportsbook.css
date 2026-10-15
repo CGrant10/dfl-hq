@@ -608,7 +608,7 @@
 #sportsbook-wrap .sb-outcome:focus-visible .sb-price {
   border-color: transparent;
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent-2-fill) 88%, var(--text)), var(--accent-2-fill));
+    color-mix(in srgb, var(--accent-fill) 88%, var(--text)), var(--accent-fill));
   color: var(--on-accent);
   transform: translateY(-1px);
   box-shadow: var(--e-2);
@@ -650,13 +650,13 @@
 #sportsbook-wrap .sb-outcome.is-picked .sb-team-mark {
   border-color: transparent;
   background: linear-gradient(160deg,
-    color-mix(in srgb, var(--accent-2-fill) 88%, var(--text)), var(--accent-2-fill));
+    color-mix(in srgb, var(--accent-fill) 88%, var(--text)), var(--accent-fill));
   color: var(--on-accent);
 }
 #sportsbook-wrap .sb-outcome.is-picked .sb-price {
   border-color: transparent;
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent-2-fill) 88%, var(--text)), var(--accent-2-fill));
+    color-mix(in srgb, var(--accent-fill) 88%, var(--text)), var(--accent-fill));
   color: var(--on-accent);
   box-shadow: var(--e-1);
 }
@@ -966,7 +966,7 @@
   border: 0;
   border-radius: var(--r-control);
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent-2-fill) 86%, var(--text)), var(--accent-2-fill));
+    color-mix(in srgb, var(--accent-fill) 86%, var(--text)), var(--accent-fill));
   color: var(--on-accent);
   font-size: var(--fs-body);
   font-weight: var(--fw-bold);
@@ -1148,7 +1148,7 @@
   border: 0;
   border-radius: var(--r-control);
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent-2-fill) 86%, var(--text)), var(--accent-2-fill));
+    color-mix(in srgb, var(--accent-fill) 86%, var(--text)), var(--accent-fill));
   box-shadow: var(--e-1);
   color: var(--on-accent);
   font-size: var(--fs-h3);

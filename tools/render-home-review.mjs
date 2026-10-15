@@ -33,10 +33,16 @@ const palettes = Function('MEDICINE_GROUND', `return (${paletteLiteral})`)(MEDIC
 palettes['team:KC'] = teamPalette(nflTeam('KC'));
 const themeAssignments = [...themeSource.matchAll(/s\.setProperty\("([^"]+)", m\.([a-zA-Z0-9]+)\);/g)];
 const reviewThemes = Object.fromEntries(Object.entries(palettes).map(([name, palette]) => [name, {
-  mode: ['light', 'fairway', 'medicine-light'].includes(name) ? 'light' : name.startsWith('team:') ? 'team' : name,
+  palette: name,
+  mode: ['light', 'fairway'].includes(name) ? 'light' : name.startsWith('team:') ? 'team' : name,
   values: { ...Object.fromEntries(themeAssignments.map(([, property, field]) => [property, palette[field]])),
-    '--accent-fill': palette.fill || '#E5011B', '--accent-2-fill': palette.fill2 || '#003396' },
+    '--accent-fill': palette.fill, '--accent-2-fill': palette.fill2 },
 }]));
+
+// Exercise retired saved ids through the production alias map, without
+// restoring duplicate palette definitions to the appearance picker.
+const aliases = Function(`return (${themeSource.match(/const MODE_ALIASES = (\{[^;]+\});/)[1]})`)();
+for (const [alias, canonical] of Object.entries(aliases)) reviewThemes[alias] = reviewThemes[canonical];
 
 // Evaluate only the pure production markup functions: no auth, session, or DB
 // module is loaded. Review identities are readers, so management forms stay out.
@@ -170,8 +176,7 @@ html = html.replace('</body>', `<script type="module">
   window.reviewSetTheme = name => {
     const theme = themes[name];
     document.documentElement.dataset.mode = theme.mode;
-    document.documentElement.dataset.palette = name;
-    document.documentElement.dataset.palette = name;
+    document.documentElement.dataset.palette = theme.palette;
     document.body.dataset.mode = theme.mode;
     document.documentElement.style.colorScheme = theme.mode === 'light' ? 'light' : 'dark';
     for (const [property, value] of Object.entries(theme.values)) document.documentElement.style.setProperty(property, value);
