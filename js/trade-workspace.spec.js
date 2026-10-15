@@ -1,10 +1,11 @@
 import {describe,it,expect} from 'vitest';
 import {tradeReviewFixture} from '../tools/trade-review-fixture.mjs';
-import {tradeTransfers,reconcileTradeDestinations,tradePerspective} from './trade-routing.js';
+import {tradeTransfers,reconcileTradeDestinations,tradePerspective,tradeRoutingIssue} from './trade-routing.js';
 import {evaluateTradeDeal,lineupPreviewsFor,findTradeCounteroffers,savedTradeProposal,restoreTradeProposal,readTradeProposals,writeTradeProposals,applyTradeDeal} from './trade-workspace.js';
 import {tradeShareSpec} from './share-export-model.js';
 import {dealCardData,dealCardText} from './trade-card.js';
 import {tradeDraft,restoreTradeDraft} from './trade-draft.js';
+import {evaluateThreeWayTrade} from './team-analyzer.js';
 const {teams,pool}=tradeReviewFixture(),parties=teams.slice(0,3),sends=[['1-1','1-3'],['2-1'],['3-3']],routes={'1-1':'2','1-3':'3','2-1':'1','3-3':'1'};
 const split=()=>evaluateTradeDeal(parties,sends,pool,routes);
 const storage=()=>{const map=new Map();return {getItem:key=>map.get(key)||null,setItem:(key,value)=>map.set(key,value)};};
@@ -21,6 +22,27 @@ describe('explicit trade recipients',()=>{
  ])('rejects an invalid routing without producing a verdict (%#)',(packages,destinations)=>{expect(tradeTransfers(parties,packages,destinations)).toBeNull();expect(evaluateTradeDeal(parties,packages,pool,destinations)).toBeNull();});
  it('keeps chosen destinations when adding or reordering members',()=>{expect(reconcileTradeDestinations(teams,[...sends,[]],routes)).toEqual(routes);expect(reconcileTradeDestinations([parties[0],parties[2],parties[1]],[sends[0],sends[2],sends[1]],routes)).toEqual(routes);});
  it('requires a new recipient when a chosen member is removed from a multi-team deal',()=>{const next=reconcileTradeDestinations([teams[0],teams[1],teams[3]],[sends[0],sends[1],[]],routes);expect(next['1-3']).toBe('');expect(next['1-1']).toBe('2');});
+ it('requires explicit recipients for new multi-team players while bilateral picks keep their only destination',()=>{
+  expect(reconcileTradeDestinations(parties,sends)).toEqual(Object.fromEntries(sends.flat().map(id=>[id,''])));
+  expect(reconcileTradeDestinations(parties.slice(0,2),sends.slice(0,2))).toEqual({'1-1':'2','1-3':'2','2-1':'1'});
+ });
+ it('never redirects a removed third team’s players to the remaining partner',()=>{
+  const next=reconcileTradeDestinations(parties.slice(0,2),sends.slice(0,2),routes);
+  expect(next).toEqual({'1-1':'2','1-3':'','2-1':'1'});
+  expect(evaluateTradeDeal(parties.slice(0,2),sends.slice(0,2),pool,next)).toBeNull();
+  expect(reconcileTradeDestinations(parties.slice(0,2),sends.slice(0,2),next)).toEqual(next);
+ });
+ it('identifies missing senders, unchosen recipients and teams without anything coming back',()=>{
+  expect(tradeRoutingIssue(parties,[sends[0],sends[1],[]],routes)).toEqual({kind:'senders',teamIds:['3']});
+  expect(tradeRoutingIssue(parties,sends,{...routes,'1-3':''})).toEqual({kind:'recipients',playerIds:['1-3']});
+  expect(tradeRoutingIssue(parties,sends,{...routes,'1-3':'2'})).toEqual({kind:'receivers',teamIds:['3']});
+  expect(tradeRoutingIssue(parties,sends,routes)).toBeNull();
+ });
+ it('honors split recipients in the three-way evaluator instead of substituting a circle',()=>{
+  const result=evaluateThreeWayTrade({teamA:parties[0],teamB:parties[1],teamC:parties[2],sendA:sends[0],sendB:sends[1],sendC:sends[2],destinations:routes,pool});
+  expect(result.destinations).toEqual(routes);expect(result.receives).toEqual(split().receives);
+  expect(result.values).toEqual(split().result.values);
+ });
  it('still supports legacy circular proposals and bilateral deals',()=>{expect(tradeTransfers(parties,sends).receives).toEqual([['3-3'],['1-1','1-3'],['2-1']]);expect(evaluateTradeDeal(teams.slice(0,2),[['1-1'],['2-1']],pool)).not.toBeNull();});
  it('allocates outgoing value to the actual recipient and balances each party',()=>{const deal=split(),r=deal.result;expect(r.receives).toEqual([['2-1','3-3'],['1-1'],['1-3']]);expect(r.outgoingValues[0]).toBeCloseTo(r.routeValues['1-1']+r.routeValues['1-3'],0);expect(r.values[0]).toBeCloseTo(r.routeValues['2-1']+r.routeValues['3-3'],0);expect(r.fairness).toBe(Math.min(...r.partyBalances));const p=tradePerspective(r);expect(p.valueToB).toBe(r.outgoingValues[0]);expect(p.weeklyDeltaB).toBeCloseTo(r.weeklyDeltas[1]+r.weeklyDeltas[2]);});
  it('shares every actual leg, including split sends, instead of a fixed circle',()=>{const deal=split(),card=dealCardData({...deal,pool,recommendation:{action:'NEGOTIATE'}});expect(card.columns).toHaveLength(4);expect(tradeShareSpec(card).context).toBe('3-team deal');expect(card.columns.slice(0,2).map(c=>c.to)).toEqual(['Klutch Sports Group','The Bayou Bombers']);expect(card.columns[3].to).toBe('Bastards of the Realm');expect(dealCardText(card)).toContain('The Bayou Bombers sends');expect(dealCardText(card)).toContain('to Bastards of the Realm');expect(card.columns.reduce((sum,c)=>sum+c.total,0)).toBeCloseTo(deal.result.values.reduce((a,b)=>a+b,0),0);});
@@ -36,5 +58,17 @@ describe('saved comparisons and drafts',()=>{
  it('round-trips recipients and isolates profiles and seasons, keeping at most three comparisons',()=>{const st=storage(),row=savedTradeProposal(split(),{id:'one',at:1});expect(writeTradeProposals('me',2026,[row,row,row,row],st)).toBe(true);expect(readTradeProposals('me',2026,st)).toHaveLength(3);expect(readTradeProposals('them',2026,st)).toEqual([]);expect(readTradeProposals('me',2025,st)).toEqual([]);expect(restoreTradeProposal(row,teams,pool).destinations).toEqual(routes);});
  it('rejects stale ownership and missing saved recipients rather than modifying the deal',()=>{const row=savedTradeProposal(split());expect(restoreTradeProposal(row,teams.map(t=>({...t,playerIds:t.playerIds.filter(id=>id!=='1-1')})),pool)).toBeNull();expect(restoreTradeProposal({...row,destinations:{}},teams,pool)).toBeNull();});
  it('handles corrupt or blocked storage',()=>{expect(readTradeProposals('me',2026,{getItem:()=>'{'})).toEqual([]);const blocked={getItem:()=>{throw Error('blocked')},setItem:()=>{throw Error('blocked')}};expect(readTradeProposals('me',2026,blocked)).toEqual([]);expect(writeTradeProposals('me',2026,[],blocked)).toBe(false);});
+ it('restores player packages by owner ID when a saved member no longer exists',()=>{
+  const trade={memberIds:['2','3'],sends:[new Set(['1-1']),new Set(['2-1']),new Set(['3-3'])],destinations:{'1-1':'3','2-1':'1','3-3':'1'},filters:{'1':'Removed team search','2':'Original third team search'}};
+  const saved=tradeDraft({selectedId:'1',trade,shop:{openTiers:new Set()}});
+  const restored=restoreTradeDraft(saved,teams.filter(t=>t.id!=='2'));
+  expect(restored.trade.memberIds).toEqual(['3']);expect(restored.trade.sends.map(ids=>[...ids])).toEqual([['1-1'],['3-3']]);
+  expect(restored.trade.destinations).toEqual({'1-1':'3','3-3':'1'});expect(restored.trade.filters).toEqual({'1':'Original third team search'});
+ });
+ it('keeps an unassigned recipient unassigned through saving and reopening',()=>{
+  const trade={};applyTradeDeal(trade,split());trade.destinations['1-3']='';
+  const restored=restoreTradeDraft(tradeDraft({selectedId:'1',trade,shop:{openTiers:new Set()}}),teams);
+  expect(restored.trade.destinations['1-3']).toBe('');expect(evaluateTradeDeal(parties,restored.trade.sends,pool,restored.trade.destinations)).toBeNull();
+ });
  it('keeps routes and workspace mode in the session draft',()=>{const trade={};applyTradeDeal(trade,split());const shop={mode:'manual',openTiers:new Set(['fair']),customOpen:true};const restored=restoreTradeDraft(tradeDraft({selectedId:'1',trade,shop}),teams);expect(restored.trade.destinations).toEqual(routes);expect(restored.shop.mode).toBe('manual');expect(restored.trade.sends.map(s=>[...s])).toEqual(sends);});
 });

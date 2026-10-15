@@ -35,7 +35,7 @@ import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from
 import { loadSharedTradeRecommendations, saveTradeRecommendation } from "../trade-accountability.js";
 import { readViewMemory, writeViewMemory } from '../view-memory.js';
 import { tradeDraft, restoreTradeDraft } from '../trade-draft.js';
-import {tradePerspective,reconcileTradeDestinations} from '../trade-routing.js';
+import {tradePerspective,tradeTransfers} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '../trade-workspace-ui.js';
 import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
@@ -62,7 +62,7 @@ function offerPlayerRows(ids, pool) {
 }
 
 function offerMarkup(offer, pool) {
-  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header>${tradeDecisionMarkup(offer,pool,{compact:true})}<div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}">Analyze trade</button></article>`;
+  if (offer.parties) return `<article class="tb-offer tb-multi-offer"><header><span>${offer.parties.length}-TEAM TRADE</span><b>${offer.fairness}% BALANCE</b></header>${tradeDecisionMarkup(offer,pool,{compact:true})}<div class="tb-multi-flow">${offer.parties.map((party, index) => `<section>${teamIdentity(party, { meta: `SENDS TO ${teamName(offer.parties[(index + 1) % offer.parties.length])}`, compact: true })}${offerPlayerRows(offer.sends[index], pool)}<small>LINEUP ${signed(offer.weeklyDeltas[index])} · DEPTH ${signed(offer.depthDeltas[index])}</small></section>`).join("")}</div><button type="button" class="btn ghost small" data-td-load-offer data-partner="${esc(offer.other.id)}" data-parties="${esc(JSON.stringify(offer.parties.slice(1).map(p => p.id)))}" data-sends="${esc(JSON.stringify(offer.sends))}" data-destinations="${esc(JSON.stringify(offer.destinations))}">Analyze trade</button></article>`;
   const call = tradeAssessment(offer).value.headline.toUpperCase();
   return `<article class="tb-offer">
     <header><span>${shapeLabel(offer)}</span><small class="tb-offer-owner">${teamPortrait(offer.other, { className: "tb-team-mark" })}<span><strong>${esc(teamName(offer.other))}</strong><i>${esc(offer.other.ownerName || "Roster owner")}</i></span></small><b>${call}</b></header>
@@ -587,7 +587,7 @@ function page(data, tradeAlerts = []) {
           new Set((button.dataset.sendB || "").split(",").filter(Boolean)),
         ];
         const owner=data.teams.find(t=>String(t.id)===String(selectedId)),parties=[owner,...trade.memberIds.map(id=>data.teams.find(t=>String(t.id)===String(id)))];
-        trade.destinations=reconcileTradeDestinations(parties,trade.sends,{});
+        trade.destinations=button.dataset.destinations?JSON.parse(button.dataset.destinations):tradeTransfers(parties,trade.sends)?.destinations||{};
         trade.editing = false;
         shop.mode='manual';shop.customOpen = true;
         draw();

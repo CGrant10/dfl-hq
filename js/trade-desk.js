@@ -30,7 +30,7 @@ import {analyzerPlayerSignal} from "./analyzer-player-form.js";
 // =====================================================================
 
 import {evaluateTradeDeal,findTradeCounteroffers,applyTradeDeal} from './trade-workspace.js';
-import {reconcileTradeDestinations,tradePerspective} from './trade-routing.js';
+import {reconcileTradeDestinations,tradePerspective,tradeRoutingIssue} from './trade-routing.js';
 import {lineupComparisonMarkup,counterofferMarkup} from './trade-workspace-ui.js';
 import {playerPortrait} from './player-presentation.js';
 import { esc } from "./ui.js";
@@ -125,7 +125,7 @@ function selectedPlayersMarkup(picked, pool, side,parties=[],destinations={}) {
   if (!picked.size) return `<span class="td-selected-empty">No players added yet.</span>`;
   return [...picked].map(id => {
     const player = pool.get(String(id));
-    return `<div class="td-selected-player"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}">${!destinations[id]?'<option value="">Choose recipient</option>':''}${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
+    return `<div class="td-selected-player"><button type="button" data-td-remove-pick="${esc(side)}" data-player-id="${esc(id)}" aria-label="Remove ${esc(player?.name || id)}"><span>${esc(player?.name || id)}</span><i aria-hidden="true">×</i></button>${parties.length>2||!destinations[id]?`<label class="td-recipient"><span>Send to</span><select data-td-destination="${esc(id)}" aria-label="Who receives ${esc(player?.name||id)}" aria-invalid="${!destinations[id]}"><option value="" ${!destinations[id]?'selected':''}>Choose recipient</option>${parties.filter((_,index)=>index!==Number(side)).map(t=>`<option value="${esc(t.id)}" ${String(t.id)===String(destinations[id])?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select></label>`:''}</div>`;
   }).join("");
 }
 
@@ -554,9 +554,11 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
   const update=()=>{
     const parties=partiesOf(),sends=state.sends.map(set=>[...set]);revision++;counters=[];
     currentDeal=evaluateTradeDeal(parties,sends,pool,state.destinations);
-    const result=currentDeal?.result;
+    const result=currentDeal?.result,issue=tradeRoutingIssue(parties,sends,state.destinations);
+    const missingNames=issue?.teamIds?.map(id=>teamName(parties.find(t=>String(t.id)===id))).join(', ');
+    const routingMessage=issue?.kind==='senders'?`Select players from ${missingNames}.`:issue?.kind==='recipients'?`Choose a recipient for ${issue.playerIds.length} player${issue.playerIds.length===1?'':'s'}.`:issue?.kind==='receivers'?`${missingNames} ${issue.teamIds.length===1?'needs':'need'} a player coming back.`:'Review the selected players and recipients.';
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
-      +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:parties.length>2?'<p class="td-projection-note" role="status">Each team must send and receive a player.</p>':'')
+      +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:sends.some(ids=>ids.length)?`<p class="td-projection-note" role="status" data-td-routing-status>${esc(routingMessage)}</p>`:'')
       +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
     onDeal?.(currentDeal);
   };
@@ -576,7 +578,7 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
 
   root.addEventListener("change", event => {
     const destination=event.target.closest('[data-td-destination]');
-    if(destination){state.destinations[destination.dataset.tdDestination]=destination.value;update();return;}
+    if(destination){state.destinations[destination.dataset.tdDestination]=destination.value;destination.setAttribute('aria-invalid',String(!destination.value));update();return;}
     const box = event.target.closest("[data-td-pick]");
     if (box) {
       const set = state.sends[Number(box.dataset.tdPick)];

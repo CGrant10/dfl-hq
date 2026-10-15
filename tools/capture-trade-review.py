@@ -125,7 +125,9 @@ with sync_playwright() as p:
         assert page.locator('.td-roster[open]').count()==0
         click('[data-td-add-member]');assert page.locator('[data-td-member]').count()==2
         for side,pid in [(0,'1-4'),(0,'1-3'),(1,'2-6'),(2,'3-3')]:pick(side,pid)
-        select('[data-td-destination="1-3"]','3');select('[data-td-destination="2-6"]','1')
+        assert page.locator('[data-td-share]').is_disabled()
+        assert page.locator('[data-td-destination]').evaluate_all("es=>es.every(e=>e.value===''&&e.getAttribute('aria-invalid')==='true')")
+        select('[data-td-destination="1-4"]','2');select('[data-td-destination="1-3"]','3');select('[data-td-destination="2-6"]','1');select('[data-td-destination="3-3"]','1')
         assert page.locator('.td-reasoning,.td-reason').count()==0
         assert page.locator('.td-top-take').count()==1
         assert page.locator('.td-total b').evaluate_all('es=>es.every(e=>{const r=document.createRange();r.selectNodeContents(e);return r.getClientRects().length===1})'),f'{width}: package value wrapped'
@@ -163,7 +165,8 @@ with sync_playwright() as p:
         click('.td-proposals > summary')
         click('[data-td-remove-member="1"]')
         assert not page.locator('.td-proposals').evaluate('e=>e.open')
-        assert page.locator('[data-td-destination]').count()==0
+        assert page.locator('[data-td-destination="1-3"]').input_value()==''
+        assert page.locator('[data-td-share]').is_disabled()
         if page.locator('[data-td-remove-pick="0"][data-player-id="1-3"]').count():click('[data-td-remove-pick="0"][data-player-id="1-3"]')
         if page.locator('[data-td-remove-pick="1"][data-player-id="2-7"]').count():click('[data-td-remove-pick="1"][data-player-id="2-7"]')
         if page.locator('.td-deal-evidence > summary').count():
@@ -275,6 +278,21 @@ with sync_playwright() as p:
         click('[data-td-share]');page.wait_for_function("document.querySelector('#toast')?.textContent.includes('A player changed teams')")
         assert page.evaluate('window.reviewSharedDeal===null')
         assert page.locator('[data-td-remove-pick="0"][data-player-id="1-4"]').count()==0
+        # Loading a routed suggestion must preserve its destinations, not invent a circle.
+        page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
+        page.evaluate('''async()=>{
+          const {evaluateTradeDeal}=await import('/js/trade-workspace.js');
+          const parties=window.reviewData.teams.slice(0,3),sends=[['1-4','1-3'],['2-6'],['3-3']];
+          const destinations={'1-4':'3','1-3':'2','2-6':'1','3-3':'1'};
+          const deal=evaluateTradeDeal(parties,sends,window.reviewData.pool,destinations);
+          document.querySelector('[data-td-body]').insertAdjacentHTML('beforeend',window.reviewOfferMarkup({...deal.result,parties,sends,other:parties[1]},window.reviewData.pool));
+        }''')
+        click('.tb-multi-offer [data-td-load-offer]')
+        assert page.locator('[data-td-destination="1-4"]').input_value()=='3'
+        assert page.locator('[data-td-destination="1-3"]').input_value()=='2'
+        assert not page.locator('[data-td-share]').is_disabled()
+        click('[data-td-share]');page.wait_for_function('!!window.reviewSharedDeal')
+        assert page.evaluate('window.reviewSharedDeal.destinations')=={'1-4':'3','1-3':'2','2-6':'1','3-3':'1'}
         assert not errors,errors
         results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'fiveRequiredPlayersPersist':True,'freshInjuryRequiresReview':True,'shareProviderFailureBlocked':True,'shareOwnershipRechecked':True,'pageErrors':errors,'overflow':False})
         context.close()
