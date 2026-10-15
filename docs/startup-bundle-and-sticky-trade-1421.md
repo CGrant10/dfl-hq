@@ -22,6 +22,6 @@ Asset URLs continue to point at the existing images, fonts, player-value snapsho
 
 ## Validation
 
-The full suite passes 1,775 tests. Worker tests cover incomplete/mismatched manifests, invalid script responses and offline Retry URLs. The compact-alert browser fixture covers phone/desktop sizing, score-dock stacking, overlays, exact receipt navigation, dismissal, reduced motion and teardown. Live-data browsing and real old-worker upgrade/offline checks are recorded in the session QA artifacts.
+The full suite passes 1,778 tests. Worker tests cover incomplete/mismatched manifests, invalid script responses and offline Retry URLs. The compact-alert browser fixture covers phone/desktop sizing, score-dock stacking, overlays, exact receipt navigation, dismissal, reduced motion and teardown. Live-data browsing and real old-worker upgrade/offline checks are recorded in the session QA artifacts.
 
 Keeper call badges also use theme-aware text on a neutral fill, replacing the hard-to-read text over a saturated gradient.

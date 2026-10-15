@@ -4,9 +4,12 @@ export default defineConfig({
   plugins: [{
     name: "dfl-source-development",
     apply: "serve",
-    transformIndexHtml(html) {
-      return html.replace(/js\/bundle\/\d+\.\d+\.\d+\//g, "js/")
-        .replace(/\sdata-dfl-bundle="[^"]+"/, "");
+    transformIndexHtml: {
+      order: "pre",
+      handler(html) {
+        return html.replace(/js\/bundle\/\d+\.\d+\.\d+\//g, "js/")
+          .replace(/\sdata-dfl-bundle="[^"]+"/, "");
+      },
     },
   }],
   build: {
