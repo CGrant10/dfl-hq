@@ -321,18 +321,18 @@ export function homeTradeWire(alerts) {
   if (alerts == null) return `<section class="home-trade-wire is-loading"><header><h2>TRADE WIRE</h2><small>DFLYZER VERDICTS</small></header><p>Checking the league wire…</p></section>`;
   const recent = (alerts || []).slice(0, 1);
   const tradeRow = alert => {
-    const outcome = alert.outcome || { grade: "Review", tone: "review", detail: "Model review needed" };
+    const outcome = alert.outcome || { grade: "Not rated", tone: "review", detail: "A complete player estimate is unavailable." };
     const teams = alert.teams.map(team => team.teamName).filter(Boolean);
-    const matchup = teams.length > 1 ? `${teams[0]} ↔ ${teams[1]}` : teams[0] || "Completed trade";
-    const verdict = outcome.winner ? `${outcome.winner} beat ${outcome.loser}` : matchup;
+    const matchup = teams.length > 1 ? teams.join(teams.length>2?' + ':' ↔ ') : teams[0] || "Completed trade";
+    const verdict = outcome.winner ? outcome.loser?`${outcome.winner} beat ${outcome.loser}`:`${outcome.winner} · biggest value gain` : matchup;
     return `<a class="home-trade-item is-${esc(outcome.tone)}" href="${esc(alert.href || "#/trade")}" data-assemble>
-      <div class="home-trade-call"><small>${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><strong>${esc(outcome.grade)}</strong><em>${outcome.closeness == null ? "MODEL REVIEW" : `${esc(outcome.closeness)}% BALANCED`}</em></div>
+      <div class="home-trade-call"><small>${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><strong>${esc(outcome.displayGrade||outcome.grade)}</strong><em>${outcome.closeness == null ? "UNRATED" : `${esc(outcome.closeness)}% ${esc(alert.balanceLabel||'VALUE BALANCE')}`}</em></div>
       <div class="home-trade-deal"><h3>${esc(verdict)}</h3><div>${alert.packages.slice(0, 2).map(tradePackageLine).join("")}</div><p>${esc(outcome.detail)}</p></div>
       <svg class="ico-sm" aria-hidden="true"><use href="#i-chev-right"></use></svg>
     </a>`;
   };
   return `<section class="home-trade-wire">
-    <header><h2>Trade wire</h2><a class="home-text-action" href="#/trade"><span>All receipts</span> <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
+    <header><h2>Trade wire</h2><a class="home-text-action" href="#/trade?receipts=1"><span>All receipts</span> <svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></header>
     ${recent.length ? `<div class="home-trade-list">${recent.map(tradeRow).join("")}</div>` : `<div class="home-trade-empty"><strong>The wire is quiet.</strong><span>Completed Sleeper trades will land here after the next sync.</span></div>`}
   </section>`;
 }

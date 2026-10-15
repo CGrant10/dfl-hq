@@ -33,7 +33,7 @@ describe("trade alert as a stage slide", () => {
   it("survives a model that could not score the trade", () => {
     const slide = tradeAlertSlide({ ...alert, fairness: null, winner: null, balanced: false, reason: null, lineupDeltas: [] });
     expect(slide.figure).toBeNull();
-    expect(slide.headline).toBe("REVIEW NEEDED");
+    expect(slide.headline).toBe("NO CLEAR WINNER");
     expect(slide.subtitle).toBeTruthy();
   });
 

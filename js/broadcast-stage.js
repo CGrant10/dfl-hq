@@ -370,10 +370,10 @@ export function renderItem(item, { editorial = false } = {}) {
   }
   if (editorial && item.kind === 'trade' && item.tradeStory?.packages?.length) {
     const story = item.tradeStory, outcome = story.outcome;
-    const headline = outcome?.grade || (item.figure == null ? 'Review needed' : 'The trade receipt');
+    const headline = outcome?.displayGrade || outcome?.grade || (item.figure == null ? 'Not rated' : 'The trade receipt');
     return `<a class="bx-slide bx-trade-story is-stat" href="${esc(item.href || '#/trade')}">
       <span class="bx-kicker">${esc(item.kicker)}</span>
-      <div class="bx-trade-heading"><h2 class="bx-head">${esc(headline)}</h2>${item.figure != null ? `<span class="bx-trade-balance">${esc(item.figure)}<small>value balance</small></span>` : ''}</div>
+      <div class="bx-trade-heading"><h2 class="bx-head">${esc(headline)}</h2>${item.figure != null ? `<span class="bx-trade-balance">${esc(item.figure)}<small>${esc(story.balanceLabel||'value balance')}</small></span>` : ''}</div>
       <div class="bx-trade-sides">${story.packages.slice(0, 2).map(pkg => `<div class="bx-trade-side">
         ${pkg.players?.[0] ? playerPortrait(pkg.players[0]) : ''}
         <small>${esc(pkg.teamName)} sends</small><strong>${esc(pkg.players?.map(p => p.name).filter(Boolean).join(' + ') || 'Package details in receipt')}</strong>

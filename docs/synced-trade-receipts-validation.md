@@ -1,5 +1,9 @@
 # Sleeper trade receipts — 1.417.0
 
+## Receipt clarity — 1.418.0
+
+Player lists use the page surface rather than a transparent section over the divider colour. Each receipt opens with every team's sent/received values, net value and individual balance; the group percentage is explicitly the lowest team balance. These are value ratios, not win probabilities. The same frozen values and evidence rules remain in force. Public Home/broadcast labels name injury, ranking or input limitations instead of displaying the internal Review state. Mobile receipt checks cover dark, light and team themes, including 200% text.
+
 Synced player exchanges use Sleeper's actual drops/adds ownership maps. Three-team and larger deals use the same routed evaluator as the manual desk, including split sends, combined incoming packages, individual value changes and all participants' roster impacts. Incomplete ownership data withholds a winner. Picks and FAAB remain unpriced; a complete player portion can still show an explicitly partial player estimate. Existing graded receipts retain their frozen values.
 
 New receipts store each player's destination/source in the existing package JSON. Ownership replay uses acceptance time rather than offer-creation time. Group value balance is the lowest individual incoming/outgoing ratio; individual incoming/outgoing prices and net values remain visible. Injury, expert-data and projection uncertainty remain separate from the calculated player values.

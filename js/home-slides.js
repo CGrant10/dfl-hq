@@ -42,8 +42,8 @@ function signed(value) {
 
 export function tradeAlertSlide(alert) {
   if (!alert) return null;
-  const call = alert.headline || (alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "REVIEW NEEDED");
-  const reason = alert.reason?.title || alert.limitations?.[0] || "The completed trade is ready for league review.";
+  const call = alert.headline || (alert.balanced ? "BALANCED" : alert.winner ? `${alert.winner} WINS` : "NO CLEAR WINNER");
+  const reason = alert.reason?.title || alert.limitations?.[0] || "The completed trade receipt is ready.";
   const delta = (alert.lineupDeltas || [])[0];
   return {
     source: "auto", pinned: true, id: "trade-alert", generator: "tradeAlert",
@@ -52,7 +52,7 @@ export function tradeAlertSlide(alert) {
     kicker: `BREAKING TRADE · ${alert.week ? `WEEK ${alert.week}` : "COMPLETED"}`,
     figure: alert.fairness == null ? null : `${alert.fairness}%`,
     headline: call,
-    tradeStory: { packages: alert.packages || [], outcome: alert.outcome || null },
+    tradeStory: { packages: alert.packages || [], outcome: alert.outcome || null,balanceLabel:alert.balanceLabel },
     subtitle: delta ? `${reason} ${delta.teamName} ${signed(delta.weekly)}/wk.` : reason,
     href: alert.href || "#/trade",
   };
