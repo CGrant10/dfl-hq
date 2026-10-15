@@ -38,6 +38,9 @@ import { mountBroadcastDepth } from './broadcast-depth.js';
 import { mountHorizontalSwipe } from './horizontal-swipe.js';
 import { animateUi, cancelUiMotion } from './ui-motion.js';
 
+// Broadcast identity uses the league's two seals; the shield belongs to the app shell.
+const broadcastLogo = item => item.kind === 'season' ? 'assets/dfl-daily-crest.webp' : 'icons/dfl-seal-512.webp';
+
 /* The chip that keeps the stage honest. Every item that makes a temporal
    claim shows one, so nothing on this screen is undated by accident. */
 const TEMPORAL = {
@@ -223,7 +226,7 @@ function backdrop(item) {
              <span class="bx-scrim"></span>` : ""}
     <span class="bx-fx bx-corners" aria-hidden="true">
       <span class="bx-weave"></span>
-      ${crest ? `<span class="bx-crest${item.variant === "chip" ? " is-chip" : ""}"></span>` : ""}
+      ${crest ? `<span class="bx-crest${item.variant === "chip" ? " is-chip" : ""}" style="--bx-brand-art:url('${broadcastLogo(item)}')"></span>` : ""}
       <span class="bx-vignette"></span>
       <span class="bx-sweep"></span>
     </span>`;
@@ -417,9 +420,9 @@ export function renderItem(item, { editorial = false } = {}) {
   const artKind = illustratedChampion ? item.variant === "chip" ? "chip" : "champion" : "logo";
   const art = illustratedChampion
     ? artKind === "chip" ? "assets/dfl-daily-chip-eater.webp" : item.image || "assets/dfl-daily-champion.webp"
-    : "icons/dfl-logo-512.webp";
+    : broadcastLogo(item);
   const inner = illustrated
-    ? `<span class="bx-editorial-illustration" aria-hidden="true"><span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
+    ? `<span class="bx-editorial-illustration" aria-hidden="true">${artKind==='logo'?'<img class="bx-editorial-brand-splatter" src="assets/dfl-daily-splatter.webp" alt="" decoding="async">':''}<span class="bx-editorial-subject"><img class="${artKind === "logo" ? "bx-editorial-crest" : "bx-editorial-portrait"}" src="${esc(art)}" alt="" decoding="async"></span></span><div class="bx-editorial-copy">${copy}</div>`
     : media + copy;
   const cls = `bx-slide${illustrated ? ` bx-with-crest bx-art-${artKind}` : ""} is-${esc(item.treatment)} bx-bg-${esc(item.background || "default")} bx-logo-${esc(item.logo || "default")}`;
   /* The whole slide is the link when the item has somewhere to go, so it
