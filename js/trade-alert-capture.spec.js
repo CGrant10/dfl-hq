@@ -67,7 +67,7 @@ describe('manual and scheduled trade capture',()=>{
   });
   it('records unsupported picks without inventing a complete balance or suppressing the alert',async()=>{
     const f=fixture();await run(f,{transactions:[transaction({draft_picks:[{season:2027,round:1}]})]});
-    expect(f.rows[0]).toMatchObject({analysis_status:'partial',result:null,verdict:null});expect(f.notifyTradeAlert).toHaveBeenCalledTimes(1);
+    expect(f.rows[0]).toMatchObject({analysis_status:'partial',verdict:null});expect(f.rows[0].result).not.toBeNull();expect(f.notifyTradeAlert).toHaveBeenCalledTimes(1);
   });
   it('uses acceptance time when a trade offer was created days earlier',()=>{
     expect(isRecentTrade(transaction({created:now-3*86400000,status_updated:now-60000}),now)).toBe(true);
@@ -76,4 +76,37 @@ describe('manual and scheduled trade capture',()=>{
     expect(isRecentTrade(transaction(),now)).toBe(true);
     for(const created of [0,null,'invalid',now+3600000,now-86400001])expect(isRecentTrade({created},now)).toBe(false);
   });
+});
+
+describe('completed ownership order',()=>{
+ it('replays accepted trades in acceptance order even when their offers were created in the opposite order',async()=>{
+  const f=fixture(),p=new Map([...pool,['c',{id:'c',name:'Third Player',position:'WR',tradeValue:30,expectedPoints:200}]]);
+  f.loadAnalyzer.mockResolvedValue({state:'ready',teams:[],pool:p});
+  const earlier=transaction({transaction_id:'accepted-first',created:now-3600000,status_updated:now-120000,drops:{b:1,a:2},adds:{b:2,a:1}});
+  const later=transaction({transaction_id:'created-first',created:now-7200000,status_updated:now-60000,drops:{a:1,c:2},adds:{a:2,c:1}});
+  await run(f,{transactions:[later,earlier],currentRosters:[{roster_id:1,players:['c']},{roster_id:2,players:['a','b']}]});
+  expect(f.rows.map(r=>r.sleeper_transaction_id)).toEqual(['accepted-first','created-first']);
+  expect(f.rows.every(r=>r.analysis_status==='graded')).toBe(true);
+  expect(f.rows[0].pre_trade_rosters[0].player_ids).toEqual(['b']);expect(f.rows[1].pre_trade_rosters[0].player_ids).toEqual(['a']);
+ });
+});
+
+describe('append-only recovery of unsupported synced trades',()=>{
+ it('adds routed analysis once without replacing the original receipt or sending another notification',async()=>{
+  const tx=transaction({roster_ids:[1,2,3],adds:{a:2,b:3,c:1},drops:{a:1,b:2,c:3}});
+  const original={id:18,sleeper_transaction_id:'new-trade',analysis_status:'review',result:null,model_version:'dflyzer-trade-v7-price-fit-risk',limitations:['Multi-team trade: automatic ownership routing is not supported yet.'],notification_message_id:75,breaking_active:true,routing_review:null};
+  const rows=[{...original}];
+  const database={from:()=>{
+   const filters=[];let patch=null;
+   const query={select:()=>query,in:(key,ids)=>{filters.push(r=>ids.includes(r[key]));return query},eq:(key,v)=>{filters.push(r=>r[key]===v);return query},is:(key,v)=>{filters.push(r=>(r[key]??null)===v);return query},update:row=>{patch=row;return query},
+    then:resolve=>{const matches=rows.filter(r=>filters.every(f=>f(r)));if(patch)matches.forEach(r=>Object.assign(r,patch));return Promise.resolve({data:matches,error:null}).then(resolve)}};
+   return query;
+  }};
+  const loadAnalyzer=vi.fn(async()=>({state:'ready',teams:[],pool:new Map([...pool,['c',{id:'c',name:'Third',position:'WR',tradeValue:25,expectedPoints:200}]])})),notifyTradeAlert=vi.fn();
+  const options={reviewUnsupported:true,transactions:[tx],currentRosters:[{roster_id:1,players:['c']},{roster_id:2,players:['a']},{roster_id:3,players:['b']}],database,loadAnalyzer,notifyTradeAlert,season:2026,week:5,now};
+  expect(await captureTradeReceipts(options)).toMatchObject({created:0,reviewed:1,notified:0});
+  expect(rows[0]).toMatchObject({...original,routing_review:{analysis_status:'graded',result:{destinations:{a:'2',b:'3',c:'1'}}}});
+  expect(await captureTradeReceipts(options)).toMatchObject({created:0,notified:0});
+  expect(loadAnalyzer).toHaveBeenCalledTimes(1);expect(notifyTradeAlert).not.toHaveBeenCalled();
+ });
 });

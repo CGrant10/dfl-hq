@@ -28,7 +28,7 @@ import { mountTradeDesk, recommendationFor, tradeDeskMarkup, tradeReasons, verdi
 import { shareDeal } from "../trade-card.js";
 import {createTradeOfferSearch} from '../trade-offer-search.js';
 import {createTradeOfferCatalog} from '../trade-offer-catalog.js';
-import { loadTradeAlerts, tradeAlertViewModel } from "../trade-alerts.js";
+import { loadTradeAlerts,loadTradeAlertByTransaction } from "../trade-alerts.js";
 import { playerIdentity, playerPortrait } from "../player-presentation.js";
 import { teamIdentity, teamPortrait } from "../team-presentation.js";
 import { recommendationOutcomes, tradeModelHealth, tradeModelHealthMarkup } from "../trade-model-health.js";
@@ -39,6 +39,9 @@ import {tradePerspective,tradeTransfers} from '../trade-routing.js';
 import {evaluateTradeDeal,readTradeProposals,writeTradeProposals,savedTradeProposal,restoreTradeProposal,applyTradeDeal} from '../trade-workspace.js';
 import {proposalsMarkup,tradeDataContext,tradeOfferEmptyCopy,closestTradeOffers} from '../trade-workspace-ui.js';
 import { mountTradePlayerPickers, focusTradePicker } from '../trade-player-picker.js';
+
+import {completedTradeMarkup} from '../trade-receipt-ui.js';
+export {completedTradeMarkup} from '../trade-receipt-ui.js';
 
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || ""}`;
 const signed = value => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
@@ -101,7 +104,7 @@ function anchorOptions(players, selected, label) {
   the same page: propose above, judge below.
 */
 function tradeBoardHeader(mode='offers'){
- return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='manual'?'Check a trade':'Trade Board'}</h1></header><a class="btn ghost small" href="#/analyzer">Analyzer</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
+ return `<div class="tb-head-row page-identity"><header class="tb-head"><small>DFLYZER</small><h1>${mode==='manual'?'Check a trade':'Trade Board'}</h1></header><a class="btn ghost small" href="#/trade?receipts=1">Receipts</a></div><div class="td-entry-actions" aria-label="Trade tools"><button type="button" data-td-mode="offers" aria-pressed="${mode==='offers'}">Find offers</button><button type="button" data-td-mode="manual" aria-pressed="${mode==='manual'}">Check a trade</button><button type="button" data-td-compare aria-label="Compare saved deals">Saved deals</button></div>`;
 }
 
 function tradeLab(team, teams, pool, shop) {
@@ -226,33 +229,7 @@ function perspectiveOf({ result, parties }) {
   return tradePerspective(result);
 }
 
-const alertSigned = value => `${Number(value) > 0 ? "+" : Number(value) < 0 ? "−" : ""}${Math.abs(Number(value) || 0).toFixed(1)}`;
 
-export function completedTradeMarkup(alerts = [], selectedTransactionId = "") {
-  const views = alerts.map(tradeAlertViewModel).filter(Boolean);
-  if (!views.length) return "";
-  views.sort((a, b) => (String(a.transactionId) === String(selectedTransactionId) ? -1 : 0)
-    - (String(b.transactionId) === String(selectedTransactionId) ? -1 : 0));
-  return `<details class="ta-report-section td-completed" ${selectedTransactionId ? "open" : ""}>
-    <summary class="ta-report-title"><div><small>COMPLETED DEALS</small><h2>DFLyzer trade receipts</h2></div><span class="ta-fold-hint">${views.length} saved</span><span class="ta-fold-chevron" aria-hidden="true"></span></summary>
-    <div class="ta-section-body td-alert-list">${views.map((alert, receiptIndex) => {
-      const call = alert.outcome.grade === 'Close call' ? 'Close call' : alert.balanced ? 'Balanced deal' : alert.winner ? `${alert.winner} wins` : alert.caution.label;
-      const open = selectedTransactionId ? String(alert.transactionId) === String(selectedTransactionId) : receiptIndex === 0;
-      const impacts = alert.lineupDeltas.map((delta, index) => ({ ...delta, depth:alert.depthDeltas?.[index]?.weekly })).filter(delta => delta.weekly != null);
-      const received = !!alert.receivedPackages;
-      const packages = alert.receivedPackages || alert.packages;
-      const totals = packages.map(pkg => pkg.players.reduce((sum, player) => sum + player.value, 0));
-      const combined = totals.reduce((sum, value) => sum + value, 0);
-      const estimate = alert.outcome.grade === 'Review'||alert.outcome.needsReview;
-      return `<details class="td-alert-receipt" id="trade-${esc(alert.transactionId)}" data-receipt-tone="${esc(alert.outcome?.tone || 'review')}"${open ? " open" : ""}>
-        <summary class="td-receipt-summary"><div class="td-receipt-heading"><small>${alert.season ? `${esc(alert.season)} · ` : ""}${alert.week ? `WEEK ${esc(alert.week)}` : "COMPLETED"}</small><h3>${alert.teams.map(team => esc(team.teamName)).join(' <span class="td-receipt-vs" aria-label="and">↔</span> ')}</h3><p class="td-receipt-call">${esc(call)}</p></div><span class="td-receipt-score"><b>${alert.fairness == null ? '—' : `${alert.fairness}%`}</b><small>${esc(alert.balanceLabel)}${estimate && alert.fairness != null ? ' · est.' : ''}</small></span><span class="td-receipt-chevron" aria-hidden="true"></span></summary>
-        <div class="td-receipt-body">${alert.fairness == null || packages.length !== 2 || !combined ? '' : `<div class="td-receipt-comparison"><div class="td-receipt-totals">${packages.map((pkg, index) => `<span><small>${esc(pkg.teamName)} ${received ? 'receives' : 'sends'}</small><b>${Math.round(totals[index])}<em> value</em></b></span>`).join('')}</div><div class="td-receipt-meter" aria-hidden="true"><i style="flex:${totals[0]}"></i><i style="flex:${totals[1]}"></i></div></div>`}
-        <div class="td-alert-packages">${packages.map(pkg => `<section aria-label="${esc(pkg.teamName)} ${received ? 'received' : 'sent'}">${teamIdentity({ team_name: pkg.teamName }, { meta: `${received ? 'RECEIVED' : 'SENT'} · ${pkg.players.length} PLAYER${pkg.players.length === 1 ? '' : 'S'}`, compact: true })}<div class="td-receipt-column-head" aria-hidden="true"><span>Player</span><span>Value</span></div>${pkg.players.map(player => `<div class="td-receipt-player"><button type="button" class="player-card-trigger td-receipt-player-action" data-player-card="${esc(player.id)}" aria-label="View ${esc(player.name)} player card">${playerIdentity(player)}</button><span class="td-receipt-value"><span class="sr-only">Trade value </span><b>${Math.round(player.value)}</b></span></div>`).join("") || `<p class="muted tiny">No rated players</p>`}</section>`).join("")}</div>
-        <footer class="td-receipt-footer"><p>${esc(estimate ? alert.caution.detail : alert.reason?.title || "Completed trade recorded.")}</p>${alert.fairness == null || !impacts.length ? "" : `<details class="td-receipt-impact-fold"><summary>Projected roster impact <span>pts/wk</span></summary><table class="td-receipt-impact" role="table"><caption class="sr-only">Projected roster impact · points per week</caption><thead><tr role="row"><th scope="col">Team</th><th scope="col">Lineup</th><th scope="col">Depth</th></tr></thead><tbody>${impacts.map(delta => `<tr role="row"><th scope="row">${esc(delta.teamName)}</th><td><span class="td-receipt-impact-label" aria-hidden="true">Lineup</span>${alertSigned(delta.weekly)}</td><td><span class="td-receipt-impact-label" aria-hidden="true">Depth</span>${delta.depth == null ? '—' : alertSigned(delta.depth)}</td></tr>`).join("")}</tbody></table></details>`}</footer></div>
-      </details>`;
-    }).join("")}</div>
-  </details>`;
-}
 
 function page(data, tradeAlerts = []) {
   const me = currentMember();
@@ -615,6 +592,13 @@ export async function render(view) {
     <p class="page-sub">Reading every roster…</p></header>
     <div class="card"><div class="card-body muted">Building the league outlook…</div></div>`;
   try {
+    const params=new URLSearchParams(location.hash.split('?')[1]||''),tx=params.get('tx');
+    if(tx||params.get('receipts')==='1'){
+      const alerts=tx?[await loadTradeAlertByTransaction(tx)].filter(Boolean):await loadTradeAlerts({limit:100});
+      if(!view.isConnected||epoch!==renderEpoch)return;
+      view.innerHTML=`<header class="page-identity tb-head-row td-receipt-page-head"><div><small>DFLYZER</small><h1>${tx?'Trade receipt':'Trade receipts'}</h1></div><a class="btn ghost small" href="${tx?'#/trade?receipts=1':'#/trade'}">${tx?'All receipts':'Trade board'}</a></header>${alerts.length?completedTradeMarkup(alerts,tx||'',{standalone:true}):'<section class="state"><h2>Receipt unavailable</h2><a class="btn ghost small" href="#/trade?receipts=1">Trade receipts</a></section>'}`;
+      return;
+    }
     const [data, tradeAlerts] = await Promise.all([
       loadAnalyzerData(),
       loadTradeAlerts({ limit: 50 }).catch(error => { console.warn("completed trade receipts unavailable", error); return []; }),

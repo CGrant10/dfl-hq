@@ -29,7 +29,7 @@ function verdict(alert) {
   if (alert?.kind === "custom") return alert.message || "Tap to open";
   if (alert?.balanced) return "DFLyzer calls it balanced";
   if (alert?.winner) return `${alert.winner} has the early edge`;
-  return "DFLyzer review in progress";
+  return alert.fairness==null?"Trade receipt ready":`${alert.fairness}% ${(alert.balanceLabel||'Value balance').toLowerCase()}`;
 }
 
 function markup(alert) {

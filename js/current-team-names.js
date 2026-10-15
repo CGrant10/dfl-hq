@@ -32,7 +32,7 @@ export function currentMatchupTitle(title,members=[]){
 }
 export function currentTradeNames(alert,members=[]){
  if(!alert)return alert;
- const teams=(alert.teams||[]).map(t=>({...t,team_name:currentTeamLabel(t.team_name,members,{...t,season:alert.season})||t.team_name}));
+ const teams=(alert.teams||[]).map(t=>{const current=currentTeamMember(t.team_name,members,{...t,season:alert.season});return {...t,...(current?{profile_image:current.profile_image,favorite_team:current.favorite_team}:{}),team_name:current?.team_name||currentTeamLabel(t.team_name,members,{...t,season:alert.season})||t.team_name}});
  const winner=teams.find(t=>String(t.roster_id)===String(alert.verdict?.winner_roster_id));
  return {...alert,teams,verdict:alert.verdict?{...alert.verdict,winner_team_name:winner?.team_name||currentTeamLabel(alert.verdict.winner_team_name,members)||alert.verdict.winner_team_name}:alert.verdict};
 }

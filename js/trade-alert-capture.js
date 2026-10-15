@@ -1,4 +1,5 @@
 import {applyCompletedTrade, preTradeRosterState, classifyCompletedTrade, buildTradeAlertSnapshot} from "./trade-receipt-model.js";
+const completedAt=t=>Number(t.status_updated??t.created)||0;
 const schemaMissing = error => ["42P01", "42703", "PGRST204", "PGRST205"].includes(error?.code);
 export function isRecentTrade(transaction, now = Date.now()) {
   const created = Number(transaction?.status_updated ?? transaction?.created);
@@ -21,9 +22,9 @@ async function deliverPendingTradeAlerts(database, transactionIds, log, notifyTr
 }
 
 /** Shared by manual and scheduled sync; saved receipt values never change. */
-export async function captureTradeReceipts({ transactions = [], currentRosters = [], season, week, database, log = (_message) => {}, loadAnalyzer, notifyTradeAlert, buildSnapshot = buildTradeAlertSnapshot, now = Date.now() } = {}) {
+export async function captureTradeReceipts({ transactions = [], currentRosters = [], season, week, database, log = (_message) => {}, loadAnalyzer, notifyTradeAlert, buildSnapshot = buildTradeAlertSnapshot,reviewUnsupported=false, now = Date.now() } = {}) {
   const complete = transactions.filter(transaction => classifyCompletedTrade(transaction))
-    .sort((a, b) => Number(a.created || 0) - Number(b.created || 0));
+    .sort((a, b) => completedAt(a)-completedAt(b));
   if (!complete.length) return { created: 0, notified: 0 };
   const ids = complete.map(transaction => String(transaction.transaction_id));
   const { data: existingAlerts, error: existingError } = await database.from("trade_alerts")
@@ -35,7 +36,15 @@ export async function captureTradeReceipts({ transactions = [], currentRosters =
   const existingIds = new Set((existingAlerts || []).map(row => String(row.sleeper_transaction_id)));
   const missingIds = new Set(ids.filter(id => !existingIds.has(id)));
   const freshIds = new Set(complete.filter(transaction => isRecentTrade(transaction, now)).map(transaction => String(transaction.transaction_id)));
-  if (!missingIds.size) {
+  const legacyIds=complete.filter(t=>existingIds.has(String(t.transaction_id))&&t.roster_ids?.length>2).map(t=>String(t.transaction_id));
+  let reviews=[];
+  if(reviewUnsupported&&legacyIds.length){
+    const {data,error}=await database.from('trade_alerts').select('*').in('sleeper_transaction_id',legacyIds).eq('analysis_status','review').is('result',null).is('routing_review',null);
+    if(error&&!schemaMissing(error))throw error;
+    reviews=(data||[]).filter(row=>(row.limitations||[]).some(text=>String(text)==='Multi-team trade: automatic ownership routing is not supported yet.'));
+  }
+  const reviewIds=new Set(reviews.map(row=>String(row.sleeper_transaction_id)));
+  if (!missingIds.size&&!reviewIds.size) {
     const pending = await deliverPendingTradeAlerts(database, ids, log, notifyTradeAlert);
     return { created: 0, notified: pending.notified, schemaMissing: pending.schemaMissing };
   }
@@ -50,12 +59,20 @@ export async function captureTradeReceipts({ transactions = [], currentRosters =
      actually had at the time. Waivers must be replayed too or a later trade
      can falsely claim its sender never owned the player. */
   const ownership = transactions.filter(transaction => transaction?.status === "complete")
-    .sort((a, b) => Number(a.created || 0) - Number(b.created || 0));
+    .sort((a, b) => completedAt(a)-completedAt(b));
   const state = preTradeRosterState({ previousRosters: [], currentRosters, transactions: ownership });
   const created = [];
-  let backfilled = 0;
+  let backfilled = 0,reviewed=0;
   for (const transaction of ownership) {
     const transactionId = String(transaction.transaction_id);
+    if(reviewIds.has(transactionId)){
+      const snapshot=buildSnapshot({transaction,season,week,rosterState:state,teams:analyzer.teams,pool:analyzer.pool});
+      if(snapshot?.result&&!snapshot.result.projectionEvidence?.missing?.length){
+        const {data,error}=await database.from('trade_alerts').update({routing_review:{...snapshot,reviewed_at:new Date(now).toISOString()}})
+          .eq('sleeper_transaction_id',transactionId).is('routing_review',null).select('id');
+        if(error)throw error;reviewed+=(data||[]).length;
+      }
+    }
     if (missingIds.has(transactionId) && classifyCompletedTrade(transaction)) {
       const snapshot = buildSnapshot({ transaction, season, week, rosterState: state, teams: analyzer.teams, pool: analyzer.pool });
       if (snapshot) {
@@ -83,5 +100,6 @@ export async function captureTradeReceipts({ transactions = [], currentRosters =
   const pending = await deliverPendingTradeAlerts(database, ids, log, notifyTradeAlert);
   const notified = pending.notified;
   if (created.length) log(`   ${created.length} trade receipt${created.length === 1 ? "" : "s"}${backfilled ? ` (${backfilled} backfilled)` : ""}; ${notified} push${notified === 1 ? "" : "es"} sent`);
-  return { created: created.length, backfilled, notified };
+  if(reviewed)log(`   ${reviewed} previously unsupported trade receipt${reviewed===1?'':'s'} received routed analysis.`);
+  return { created: created.length, backfilled,reviewed, notified };
 }
