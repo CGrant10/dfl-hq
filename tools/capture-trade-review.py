@@ -33,6 +33,8 @@ with sync_playwright() as p:
         page.goto(url);page.wait_for_function('window.reviewReady===true');page.evaluate('document.fonts.ready')
         def click(selector):
             node=page.locator(selector).first
+            if node.evaluate("e=>{const d=e.closest('.tb-refine');return d&&!d.open&&!e.matches('.tb-refine > summary')}"):
+                page.locator('.tb-refine > summary').click()
             node.evaluate("e=>{const r=e.getBoundingClientRect();window.scrollBy({top:r.top-innerHeight/3,behavior:'instant'})}")
             node.click()
         def pick(side,pid):
@@ -41,8 +43,8 @@ with sync_playwright() as p:
             click(f'[data-td-pick="{side}"][value="{pid}"]')
         def select(selector,value):
             node=page.locator(selector)
-            if node.evaluate("e=>!!e.closest('.tb-setup')&&!e.closest('.tb-setup').open"):
-                click('.tb-setup > summary')
+            if node.evaluate("e=>!!e.closest('.tb-refine')&&!e.closest('.tb-refine').open"):
+                click('.tb-refine > summary')
             if node.get_attribute('hidden') is not None:
                 trigger=node.locator('xpath=preceding-sibling::button[1]')
                 trigger.click()
@@ -53,8 +55,8 @@ with sync_playwright() as p:
             else:node.select_option(value)
         assert page.locator('[data-tb-tier="fair"]').evaluate('e=>e.open')
         # Compact setup keeps the first useful offer near the top on phones.
-        assert not page.locator('.tb-setup').evaluate('e=>e.open')
-        click('.tb-setup > summary')
+        assert page.locator('[data-trade-picker="send"]').is_visible()
+        assert page.locator('[data-trade-picker="receive"]').is_visible()
         # Primary player selectors stay visible with advanced preferences closed.
         assert not page.locator('.tb-refine').evaluate('e=>e.open')
         assert page.locator('[data-trade-picker="send"]').is_visible()
@@ -65,12 +67,14 @@ with sync_playwright() as p:
             page.wait_for_function(r"[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].length===3&&[...document.querySelectorAll('.tb-intent-options [data-tb-intent-count]')].every(e=>/^\(\d+\)$/.test(e.textContent))")
             return page.locator('.tb-intent-options [data-tb-intent]').evaluate_all("es=>Object.fromEntries(es.map(e=>[e.dataset.tbIntent,Number(e.querySelector('[data-tb-intent-count]').textContent.replace(/[()]/g,''))]))")
         counts=settled_counts()
+        page.evaluate("scrollTo({top:0,behavior:'instant'})")
+        page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
         for tier in ['aggressive','steal','fair']:
             click(f'.tb-intent-options [data-tb-intent="{tier}"]')
             page.wait_for_function("tier=>document.querySelector('.tb-intent-options')?.dataset.intent===tier&&!document.querySelector('[data-tb-offers]')?.inert",arg=tier)
             assert page.locator(f'.tb-intent-options [data-tb-intent="{tier}"]').get_attribute('aria-pressed')=='true'
             if counts[tier]:
-                assert f'({counts[tier]})' in page.locator(f'[data-tb-tier="{tier}"] > summary b').inner_text()
+                assert f'({counts[tier]})' in page.locator(f'.tb-intent-options [data-tb-intent="{tier}"]').inner_text()
             assert settled_counts()==counts
         click('.tb-refine > summary')
         select('[data-tb-send-count]','2');select('[data-tb-receive-count]','1')
@@ -79,7 +83,6 @@ with sync_playwright() as p:
             assert page.locator('[data-tb-closest]').count() or page.locator('.ta-empty').count()
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
         settled_counts()
-        click('.tb-setup > summary')
         # Real sheet controls: search, position, keyboard and cancellation.
         click('[data-trade-picker="send"]')
         sheet=page.locator('.trade-player-picker[open]')
@@ -152,6 +155,14 @@ with sync_playwright() as p:
         pick(1,'2-9');select('[data-td-destination="2-9"]','1');click('[data-td-save-proposal]')
         assert page.locator('.td-proposal-grid article').count()==3
         click('[data-td-remove-pick="1"][data-player-id="2-9"]')
+        impact=page.locator('.td-ticket [data-td-lineup-impact]')
+        assert impact.count()==1
+        assert impact.evaluate('e=>e.previousElementSibling.classList.contains("td-decision")')
+        visible=impact.locator('.td-starter-changes').first.locator('.td-starter-change').evaluate_all('es=>es.map(e=>[...e.querySelectorAll("strong")].map(n=>n.textContent))')
+        full=page.locator('.td-lineup-teams > section').first.locator('.td-lineup-slot.is-changed').evaluate_all('es=>es.slice(0,3).map(e=>[...e.querySelectorAll("strong")].map(n=>n.textContent))')
+        assert visible==full,(visible,full)
+        impact.evaluate("e=>e.scrollIntoView({block:'center',behavior:'instant'})")
+        page.screenshot(path=str(output/f'trade-{width}-starter-changes.png'))
         click('.td-lineup-preview > summary');click('.td-bench-preview > summary')
         page.locator('.td-lineup-preview').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-lineups.png'))
@@ -192,7 +203,6 @@ with sync_playwright() as p:
         click('[data-td-delete-proposal]');assert page.locator('.td-proposal-grid article').count()==2
         # Offer anchors must survive adding a member, with their actual owners.
         page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
-        click('.tb-setup > summary')
         # Force a control change in the same task as opening the disclosure.
         # Its native toggle event has not fired yet; a redraw must keep it open.
         page.evaluate('''()=>{const section=document.querySelector('.tb-refine');section.open=true;const input=document.querySelector('[data-tb-add-anchor="send"]');input.value='1-4';input.dispatchEvent(new Event('change',{bubbles:true}));}''')
@@ -241,7 +251,6 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelector('[data-tb-tier]')?.dataset.tbTier==='aggressive'")
         page.reload();page.wait_for_function('window.reviewReady===true')
         assert page.locator('[data-tb-tier="aggressive"]').evaluate('e=>e.open')
-        click('.tb-setup > summary')
         # Reflow at enlarged type and themes; closing keeps package state.
         page.evaluate("document.documentElement.style.fontSize='200%'")
         for mode in ['dark','light','team:KC']:

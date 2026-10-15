@@ -1,3 +1,4 @@
+import {homeLeadStory} from './home-lead-story.js';
 import { playerScorePhase } from './game-day-player-rows.js';
 import { matchupPhase, matchupSummary } from './clubhouse-matchup-model.js';
 import { esc } from './ui.js';
@@ -21,12 +22,13 @@ export function homeSectionLinks() {
 }
 
 /** Current stories lead; the archive gets one dated, rotating feature. */
-export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } = {}) {
+export function homeBroadcastDeck(deck = [], { week = null, now = new Date(), edition = {} } = {}) {
+  if (deck[0]?.key === 'home:clubhouse-opener') return deck;
   const day = now.toLocaleDateString(undefined, { weekday: 'long' });
   const opener = {
     key: 'home:clubhouse-opener', treatment: 'announcement', homeFeature: true,
-    headline: 'Win your', subtitle: 'fucking matchup.',
-    body: 'Nobody gives a shit about your projected points.',
+    headline: 'The boys.', subtitle: 'The fucking receipts.',
+    body: '',
     kicker: week ? `Week ${week}` : day,
     href: '#/clubhouse', actionLabel: 'Clubhouse', temporal: 'none',
     background: 'default',
@@ -36,8 +38,11 @@ export function homeBroadcastDeck(deck = [], { week = null, now = new Date() } =
     && ['past', 'record', 'fact'].includes(item.kind));
   const date = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const feature = archive.length ? archive[Math.floor(date / 86400000) % archive.length] : null;
+  const lead = homeLeadStory({deck: stories, archive:feature, now, ...edition});
+  if (lead) Object.assign(opener, lead, {id: 'home:lead:'+lead.storyKey});
   const brand = stories.find(item => item.kind === 'season') || stories.find(item => item.kind === 'identity');
   return [opener, ...stories.filter(item => {
+    if (lead?.sourceKey && (item.key || item.id) === lead.sourceKey) return false;
     if (item.pinned || item.featured || item.source === 'manual') return true;
     if (archive.includes(item)) return item === feature;
     if (['season', 'identity'].includes(item.kind)) return item === brand;

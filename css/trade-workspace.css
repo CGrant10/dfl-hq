@@ -194,3 +194,46 @@
  #view[data-route="trade"] .td-item-value { grid-column:2; font-size:12px; }
  #view[data-route="trade"] .td-item .dfl-player-portrait { width:24px; height:24px; min-width:24px; }
 }
+
+/* The package is visible; roster size and extra parties stay in one drawer. */
+#view[data-route="trade"] .tb-setup.tb-workbench-card { display:grid; gap:14px; padding:14px; margin-bottom:14px; background:var(--bg-2); }
+#view[data-route="trade"] .tb-setup .tb-team-choices { margin:0; gap:10px; }
+#view[data-route="trade"] .tb-setup .tb-blueprint { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:0; }
+#view[data-route="trade"] .tb-blueprint > section { min-width:0; padding:0; border:0; background:none; }
+#view[data-route="trade"] .tb-blueprint header { min-height:28px; gap:4px; }
+#view[data-route="trade"] .tb-blueprint header small { font:700 11px/1.4 var(--font-body); color:var(--body-text); letter-spacing:.04em; }
+#view[data-route="trade"] .tb-anchor-chips { min-height:30px; }
+#view[data-route="trade"] .tb-anchor-chips:has(> .tb-anchor-empty:only-child) { display:none; }
+#view[data-route="trade"] .trade-picker-trigger { min-height:44px; width:100%; padding:8px; font-size:13px; border-style:dashed; }
+#view[data-route="trade"] .tb-refine { margin:0; border-top:1px solid var(--line-soft); padding-top:4px; }
+#view[data-route="trade"] .tb-refine > summary { min-height:44px; }
+#view[data-route="trade"] .tb-refine .tb-members { margin:12px 0; }
+#view[data-route="trade"] .tb-offers-card > .tb-tiers > .tb-tier > summary { display:none; }
+#view[data-route="trade"] .tb-offers-card > .tb-tiers > .tb-tier { border:0; background:none; }
+#view[data-route="trade"] .tb-tier > div { padding:0; }
+#view[data-route="trade"] .td-lineup-impact { margin:14px 0; padding:12px 0; border-block:1px solid var(--line-soft); }
+#view[data-route="trade"] .td-lineup-impact > header { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:10px; }
+#view[data-route="trade"] .td-lineup-impact h3 { margin:0; font:700 15px/1.4 var(--font-body); }
+#view[data-route="trade"] .td-lineup-impact > header > span { font-size:11px; color:var(--muted); }
+#view[data-route="trade"] .td-starter-change { display:grid; grid-template-columns:32px minmax(0,1fr) 16px minmax(0,1fr); gap:6px; align-items:center; padding:9px 0; }
+#view[data-route="trade"] .td-starter-change > small { color:var(--muted); font-size:11px; }
+#view[data-route="trade"] .td-starter-change > span { min-width:0; }
+#view[data-route="trade"] .td-starter-change > i { color:var(--accent); font-style:normal; }
+#view[data-route="trade"] .td-starter-change .dfl-player { gap:6px; }
+#view[data-route="trade"] .td-starter-change .dfl-player-portrait { width:25px; min-width:25px; height:25px; }
+#view[data-route="trade"] .td-starter-change .dfl-player-copy strong { font-size:14px; white-space:normal; overflow-wrap:anywhere; }
+#view[data-route="trade"] .td-starter-change .dfl-player-copy small { font-size:11px; }
+#view[data-route="trade"] :is(.td-change-more,.td-starters-unchanged) { color:var(--body-text); font-size:12px; margin:8px 0; }
+#view[data-route="trade"] .td-other-impact > summary { min-height:44px; display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:12px; color:var(--body-text); }
+#view[data-route="trade"] .td-other-impact > summary span { min-width:0; overflow-wrap:anywhere; }
+#view[data-route="trade"] .td-other-impact > summary b { flex:none; color:var(--text); }
+#view[data-route="trade"] .td-risk-flags > details > summary { min-height:44px; padding:4px; cursor:pointer; font-size:12px; color:var(--warn-ink); }
+#view[data-route="trade"] .td-risk-flags > details[open] { flex-basis:100%; }
+#view[data-route="trade"] .td-risk-flags > details[open] > span { display:inline-block; margin:4px 6px 0 0; }
+@media(max-width:360px) {
+ #view[data-route="trade"] .tb-setup.tb-workbench-card { padding:10px; gap:10px; }
+ #view[data-route="trade"] .td-starter-change .dfl-player-portrait { display:none; }
+}
+#view[data-route="trade"] .td-deal-chirp { padding:8px 0 0; margin:0; color:var(--body-text); font:600 13px/1.45 var(--font-body); }
+#view[data-route="trade"] .tb-incoming-fit { margin:0 0 10px; font-size:12px; line-height:1.5; color:var(--body-text); overflow-wrap:anywhere; }
+#view[data-route="trade"] .tb-incoming-fit b { color:var(--text); }

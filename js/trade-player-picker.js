@@ -96,7 +96,7 @@ export function mountTradePlayerPickers(root, pool, teams) {
     button.dataset.tradePicker = select.dataset.tbAddAnchor || 'league';
     button.setAttribute('aria-label', select.getAttribute('aria-label'));
     button.setAttribute('aria-haspopup', 'dialog');
-    button.innerHTML = '<span aria-hidden="true">+</span> Add player';
+    button.innerHTML = '<span aria-hidden="true">+</span> Search players';
     button.disabled = ![...select.options].some(option => option.value && !option.disabled);
     button.addEventListener('click', () => open(select, root, pool, teams));
     select.before(button); select.hidden = true;

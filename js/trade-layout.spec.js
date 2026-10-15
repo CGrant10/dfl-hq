@@ -26,7 +26,7 @@ describe("trade analyzer layout", () => {
     expect(source).toContain('data-tb-max');
     expect(source).toContain('data-tb-add-anchor="send"');
     expect(source).toContain('data-tb-add-anchor="receive"');
-    expect(source).toContain('class="tb-workbench-card"');
+    expect(source).toContain('class="tb-workbench-card tb-setup"');
     expect(source).toContain('class="tb-offers-card"');
     expect(source).not.toContain('class="section-copy"');
     expect(source).toContain('<option value="all"');

@@ -1,3 +1,4 @@
+import {playerIdentity} from './player-presentation.js';
 import {esc} from './ui.js';
 import {lineupPreviewsFor,restoreTradeProposal} from './trade-workspace.js';
 import {tradePerspective} from './trade-routing.js';
@@ -20,9 +21,18 @@ export function tradeOfferEmptyCopy(intent, incomingPositions = [], offers = [])
  return 'No usable offers for this setup. Try another team or adjust the package.';
 }
 
+export function lineupSlotChanges(preview) {
+ return preview.before.map((before,index)=>({slot:before.slot,before:before.player,after:preview.after[index]?.player||null}))
+  .filter(row=>String(row.before?.id||'')!==String(row.after?.id||''));
+}
+function lineupImpactMarkup(previews,parties){
+ const change=p=>{const rows=lineupSlotChanges(p);return rows.length?`<div class="td-starter-changes">${rows.slice(0,3).map(row=>`<div class="td-starter-change"><small>${esc(row.slot)}</small><span>${row.before?playerIdentity(row.before):'Empty slot'}</span><i aria-hidden="true">→</i><span>${row.after?playerIdentity(row.after):'Empty slot'}</span></div>`).join('')}</div>${rows.length>3?`<p class="td-change-more">${rows.length-3} more changed slots in the full lineup below</p>`:''}`:'<p class="td-starters-unchanged">Your projected starters stay the same.</p>'};
+ return `<section class="td-lineup-impact" data-td-lineup-impact aria-label="Projected starter changes"><header><h3>Your lineup after the trade</h3><span>Projected</span></header>${previews.map((p,i)=>i===0?change(p):`<details class="td-other-impact"><summary><span>${esc(name(parties[i]))}</span><b>${signed(p.afterPoints-p.beforePoints)} / wk</b></summary>${change(p)}</details>`).join('')}</section>`;
+}
+
 export function lineupComparisonMarkup(deal,pool){
  const previews=lineupPreviewsFor(deal,pool);
- return `<details class="td-lineup-preview"><summary><span>Before &amp; after lineups</span><small>Starters, bench and drops</small></summary><div class="td-lineup-teams">${previews.map((p,i)=>`<section><h3>${esc(name(deal.parties[i]))}</h3><div class="td-lineup-labels"><span>Slot</span><span>Before</span><span>After</span></div>${p.before.map((before,index)=>{const after=p.after[index],changed=String(before.player?.id)!==String(after.player?.id);return `<div class="td-lineup-slot${changed?' is-changed':''}"><small>${before.slot}</small><div>${player(before.player)}</div><div>${player(after.player)}${changed?'<em>Changed</em>':''}</div></div>`}).join('')}<div class="td-lineup-total"><small>Projected ROS avg / wk</small><b>${p.beforePoints.toFixed(1)} → ${p.afterPoints.toFixed(1)}</b></div><details class="td-bench-preview"><summary>Bench &amp; required drops${p.drops.length?` · ${p.drops.length} to drop`:''}</summary><div><small>BENCH BEFORE</small><p>${esc(p.benchBefore.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>BENCH AFTER</small><p>${esc(p.benchAfter.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>REQUIRED DROPS</small><p>${esc(p.drops.map(p=>p.name).join(', ')||'None')}</p></div></details></section>`).join('')}</div></details>`;
+ return lineupImpactMarkup(previews,deal.parties)+`<details class="td-lineup-preview"><summary><span>Full before &amp; after lineups</span><small>Starters, bench and drops</small></summary><div class="td-lineup-teams">${previews.map((p,i)=>`<section><h3>${esc(name(deal.parties[i]))}</h3><div class="td-lineup-labels"><span>Slot</span><span>Before</span><span>After</span></div>${p.before.map((before,index)=>{const after=p.after[index],changed=String(before.player?.id)!==String(after.player?.id);return `<div class="td-lineup-slot${changed?' is-changed':''}"><small>${before.slot}</small><div>${player(before.player)}</div><div>${player(after.player)}${changed?'<em>Changed</em>':''}</div></div>`}).join('')}<div class="td-lineup-total"><small>Projected ROS avg / wk</small><b>${p.beforePoints.toFixed(1)} → ${p.afterPoints.toFixed(1)}</b></div><details class="td-bench-preview"><summary>Bench &amp; required drops${p.drops.length?` · ${p.drops.length} to drop`:''}</summary><div><small>BENCH BEFORE</small><p>${esc(p.benchBefore.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>BENCH AFTER</small><p>${esc(p.benchAfter.map(p=>p.name).join(', ')||'No rated bench players')}</p><small>REQUIRED DROPS</small><p>${esc(p.drops.map(p=>p.name).join(', ')||'None')}</p></div></details></section>`).join('')}</div></details>`;
 }
 
 export function counterofferMarkup(candidates,pool,parties){

@@ -488,12 +488,12 @@ export async function render(view) {
       <div class="home-broadcast-loading" role="status"><span></span><strong>Loading league broadcast</strong></div>
     </section>
     </div>
+    ${homeSectionLinks()}
     <section class="home-week-desk" aria-label="Your week">
     ${disclosure("home-week","Plan your week","Projections, player outlook and Start / Sit",`<div data-home-report-slot data-content-state="loading" aria-busy="true">${homeWeeklyDigest(null,null,null,[],{loading:true})}</div>`)}
     <div data-home-live-slot></div>
     <div data-home-pickem-slot></div>
     ${homeLeagueTools()}
-    ${homeSectionLinks()}
     </section>
     <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot data-content-state="loading" aria-busy="true">${homeRankingsCard(null)}</div>
@@ -549,7 +549,8 @@ export async function render(view) {
       return {sleeper_user_id:uid,team_name:member?.team_name||member?.display_name,actual:Number(row.points),complete:row.points!=null&&Number.isFinite(Number(row.points))&&!!row.players_points,starterScores:scores.filter(([id])=>starters.has(id)).map(performance),benchScores:scores.filter(([id])=>!starters.has(id)).map(performance)};
     })};
   }).catch(err => { console.warn("Completed week report unavailable", err); return null; });
-  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
+  let homeEdition = {}, refreshEdition = null;
+  deferredStops.push(mountGameDay(view.querySelector("[data-home-gameday-slot]"),{members:memberRows,member:myMember,standings:standings.data||[],weekly:weeklyPromise,detailsRoot:view.querySelector("[data-home-live-slot]"),onModel:edition=>{homeEdition=edition;refreshEdition?.()},active:()=>mine===generation&&view.isConnected&&location.hash.startsWith("#/home")}));
   // Archive stories load independently of the live weekly model.
   lorePromise.then(got => {
     if (mine !== generation || !view.isConnected || got?.error) return;
@@ -659,10 +660,10 @@ export async function render(view) {
   let golfDayNow = golfDay;
   let homeBroadcastWeek = null;
   const off = broadcastOff();
-  const build = (day) => homeBroadcastDeck(editorialStage(
+  const build = (day) => editorialStage(
     broadcastContext({ home: homeData, lore, golfDay: day, member: me }),
     { custom: [...custom, ...liveSlides].filter(Boolean), off, overrides },
-  ), {week: homeBroadcastWeek});
+  );
   const refresh = async () => {
     const [day, fresh] = await Promise.all([
       golfRow ? loadGolfDay(golfRow.id) : null,
@@ -670,7 +671,7 @@ export async function render(view) {
     ]);
     custom = fresh;
     golfDayNow = day;
-    return build(day);
+    return homeBroadcastDeck(build(day), {week:homeBroadcastWeek,edition:homeEdition});
   };
 
   const updateInjuries=async()=>{
@@ -685,7 +686,9 @@ export async function render(view) {
     if (mine !== generation || !view.isConnected) return;
     const host = view.querySelector(".home-broadcast");
     if (!host) return;
-    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek});
+    const ordered = homeBroadcastDeck(deck, {week: homeBroadcastWeek, edition: homeEdition});
+    const chirp=view.querySelector("[data-gameday-chirp]");
+    if(chirp)chirp.hidden=!!ordered[0]?.storyKey?.startsWith("rivalry:");
     if(stage&&host.querySelector('[data-bx-stage]')){stage.update(ordered);return;}
     try { stage?.stop(); } catch {}
     host.classList.remove("is-loading");
@@ -699,6 +702,8 @@ export async function render(view) {
   // Enrich the existing controller once that model is ready; preserve pauses
   // and the currently open story instead of restarting the carousel.
   startHomeStage(fallbackDeck);
+  refreshEdition=()=>{if(mine===generation&&view.isConnected)startHomeStage(build(golfDayNow))};
+  deferredStops.push(()=>{refreshEdition=null});
 
   Promise.all([analysisPromise, lorePromise, weeklyPromise, aftermathWeeklyPromise, tradeAlertsPromise, injuryPromise]).then(async ([analysis, got, weekly, aftermathWeekly, tradeAlerts, injuries]) => {
     if (mine !== generation) return;

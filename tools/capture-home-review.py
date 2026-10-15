@@ -768,17 +768,49 @@ def check_home_replies(page):
       }finally{root.remove()}
     }''',source)
 
+def check_home_editions(page):
+    page.evaluate("window.reviewStage.suspend('edition-review',true)")
+    side=lambda uid,name,score,live=0:{'uid':uid,'name':name,'score':score,'live':live}
+    game=lambda id,a,b:{'id':id,'isMine':True,'sides':[a,b]}
+    a=side('edition-a','The Extremely Long Named Bayou Bombers',100)
+    b=side('edition-b','Klutch Sports Group With A Long Name',100.4,1)
+    scenarios=[('live',{'model':{'season':2026,'week':5,'games':[game('live',a,b)]}},'0.40 apart.'),
+      ('final',{'model':{'season':2026,'week':5,'completed':True,'games':[game('final',a,{**b,'live':0})]}},'0.40 points.'),
+      ('rivalry',{'model':{'season':2026,'week':5,'games':[game('rivalry',{**a,'score':0},{**b,'score':0,'live':0})]},'history':[{'season':2026,'week':w,'user1':a['uid'],'user2':b['uid'],'score1':100,'score2':90} for w in [3,4]]},'2 straight.')]
+    checks=[]
+    for mode in ['dark','light']:
+        page.evaluate('window.reviewSetTheme',mode)
+        for width in [320,390,768]:
+            page.set_viewport_size({'width':width,'height':844})
+            for name,edition,headline in scenarios:
+                page.evaluate('window.reviewSetEdition',edition)
+                page.locator('.bx-stage').evaluate("e=>e.scrollIntoView({block:'center',behavior:'instant'})")
+                page.wait_for_timeout(500)
+                page.wait_for_function('text=>document.querySelector(".bx-home-title")?.textContent.includes(text)',arg=headline)
+                result=page.evaluate('''()=>{const stage=document.querySelector('.bx-stage'),box=stage.getBoundingClientRect(),slide=stage.querySelector('.bx-home-feature');return {story:slide.dataset.homeStory,href:slide.getAttribute('href'),fits:[...slide.querySelectorAll('.bx-home-week,.bx-home-title,.bx-sub')].every(e=>{const b=e.getBoundingClientRect();return b.left>=box.left-1&&b.right<=box.right+1&&b.top>=box.top-1&&b.bottom<=box.bottom-1&&e.scrollWidth<=e.clientWidth+1}),overflow:document.documentElement.scrollWidth>innerWidth,contrast:window.reviewTextContrast().failures}}''')
+                assert result['fits'] and not result['overflow'] and not result['contrast'],(mode,width,name,result)
+                assert 'matchup='+name in result['href'],result
+                if width in [320,390]:page.locator('.bx-stage').screenshot(path=str(OUT/f'edition-{mode}-{width}-{name}.png'))
+                checks.append({'mode':mode,'width':width,'kind':name,**result})
+    page.evaluate('window.reviewSetEdition',None)
+    page.evaluate("window.reviewStage.suspend('edition-review',false)")
+    page.evaluate("window.reviewSetTheme('light')")
+    page.set_viewport_size({'width':390,'height':844})
+    return checks
+
 with sync_playwright() as p:
     executable = os.environ.get('DFL_REVIEW_CHROMIUM')
     browser = p.chromium.launch(executable_path=executable, headless=True,
         args=['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server', '--enable-unsafe-swiftshader'])
     context = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    # Keep legitimate autoplay out of the hidden-artwork measurement on slow runners.
+    context.add_init_script('window.reviewHoldInitialStage=true')
     # Install before Clubhouse imports the shared player controller.
     card_model = {'player':{'id':'7564','name':'Ja’Marr Chase','position':'WR','nflTeam':'CIN'},'week':5,'ownerLabel':'The Boys','owner':None,'state':'final','injury':{'tag':'Healthy','availability':'Available','body':''},'points':24.6,'recent':[{'week':5,'points':24.6}],'stats':{'items':[]}}
     context.route('**/js/player-card-data.js', lambda route: route.fulfill(status=200,content_type='text/javascript',body='export async function loadPlayerCard(){await new Promise(r=>setTimeout(r,globalThis.reviewCardDelay));if(globalThis.reviewCardHold)await new Promise(r=>globalThis.reviewCardRelease=r);return '+json.dumps(card_model)+'}'))
     page = context.new_page()
     early_art=set()
-    page.on('request',lambda request:early_art.add(request.url.split('?')[0].rsplit('/',1)[-1]))
+    page.on('request',lambda request:early_art.add(request.url.rsplit('/',1)[-1]))
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
     html = (OUT / 'index.html').read_text().replace('<head>', f'<head><base href="{url}">', 1)
@@ -788,7 +820,12 @@ with sync_playwright() as p:
     page.locator('[data-bx-go="0"]').click()
     page.evaluate('document.fonts.ready')
     page.wait_for_timeout(1600)
-    assert not {'dfl-daily-champion.webp','dfl-daily-chip-eater.webp'} & early_art, f'Hidden measurement slides downloaded unused artwork: {early_art}'
+    # The archive may legitimately lazy-load the same champion artwork while
+    # Playwright scrolls to Pause. The stage fixtures use a distinct URL.
+    assert not {'dfl-daily-champion.webp?review=broadcast-only','dfl-daily-chip-eater.webp'} & early_art, f'Hidden measurement slides downloaded unused artwork: {early_art}'
+    page.evaluate("window.reviewStage.suspend('initial-review',false)")
+    edition_checks=check_home_editions(page)
+    (OUT / "edition-checks.json").write_text(json.dumps(edition_checks,indent=2))
     moment_effects=check_game_day_moments(page)
     matchup_lineups=check_matchup_lineups(page)
     clubhouse_center=check_clubhouse_center(page)
@@ -1369,7 +1406,8 @@ with sync_playwright() as p:
                 assert check['fit'] and not check['overflow'] and not check['contrast'], f'Themed slide unreadable: {mode}/{width}/{index}: {check}'
                 assert all(size>=28 for size in check['displaySizes']) and all(size>=15 for size in check['copySizes']), f'Broadcast text shrunk below its reading scale: {check}'
                 if index==0:
-                    assert 'Win your' in check['headline'] and 'fucking matchup.' in check['headline'] and page.locator('.bx-home-headline-art').count()==0, 'New opener must remain live theme-aware text'
+                    opener=page.evaluate('({headline:window.reviewDeck[0].headline,subtitle:window.reviewDeck[0].subtitle})')
+                    assert all(text in check['headline'] for text in opener.values()) and page.locator('.bx-home-headline-art').count()==0, 'Edition opener must remain live theme-aware text'
                 check['injuryRows'] = check_injury_layout(page)
                 metrics['themedSlides'].append({'mode':mode,'width':width,'index':index,**check})
                 if width==390 and index in [0,2,3]:
