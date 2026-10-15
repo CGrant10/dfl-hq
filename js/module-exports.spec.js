@@ -30,7 +30,7 @@ function sourceFiles(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name !== "node_modules") sourceFiles(full, out);
+      if (entry.name !== "node_modules" && full !== path.join(ROOT,"bundle")) sourceFiles(full, out);
     } else if (entry.name.endsWith(".js") && !entry.name.endsWith(".spec.js") && !VENDOR_FILE.test(entry.name)) {
       out.push(full);
     }
@@ -538,7 +538,7 @@ describe("the supported golf GPS courses", () => {
     expect(html).toContain("await navigator.serviceWorker.getRegistration()");
     expect(html).toContain('await workerRelease() === version');
     expect(html).toContain('await window.dflShellReady');
-    expect(html.indexOf('var key = "dfl.shell.release"')).toBeLessThan(html.indexOf('await import("./js/app.js")'));
+    expect(html.indexOf('var key = "dfl.shell.release"')).toBeLessThan(html.indexOf('await import("./js/bundle/'));
   });
 
   it("shows the live GPS reading in the Quick Round GPS badge", () => {

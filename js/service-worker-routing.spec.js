@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const source = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const scope = 'https://example.com/dfl-hq/';
-function worker({ offline = false, saved = {}, legacy = {} } = {}) {
+function worker({ offline = false, saved = {}, legacy = {}, bundle=null, release=null, failPath=null, htmlPath=null } = {}) {
   const handlers = {};
   const precached = [];
   const key = request => new URL(typeof request === 'string' ? request : request.url, scope).href;
@@ -12,22 +12,32 @@ function worker({ offline = false, saved = {}, legacy = {} } = {}) {
     ...Object.entries(saved).map(([path, value]) => [new URL(path, scope).href, new Response(typeof value==='string'?value:value.body, { headers: { 'Content-Type': typeof value==='string'?'text/html':value.type } })])]);
   const legacyEntries=new Map(Object.entries(legacy).map(([path,value])=>[new URL(path,scope).href,new Response(value,{headers:{'Content-Type':'application/javascript'}})]));
   const match = async request => (entries.get(key(request))||legacyEntries.get(key(request)))?.clone();
-  const currentMatch=async request=>entries.get(key(request))?.clone();
+  const currentMatch=async(request,options={})=>{
+    const url=key(request),entry=entries.get(url)||(options.ignoreSearch?[...entries].find(([path])=>path.split('?')[0]===url.split('?')[0])?.[1]:null);
+    return entry?.clone();
+  };
   const fetch = vi.fn(async request => {
     if (offline) throw new Error('Offline');
     const url = key(request);
+    if(failPath&&url===new URL(failPath,scope).href)return new Response("Missing",{status:503});
+    if(htmlPath&&url===new URL(htmlPath,scope).href)return new Response("Wrong document",{headers:{"Content-Type":"text/html"}});
     const image = url.endsWith('.webp');
     const script=new URL(url).pathname.endsWith('.js');
     return new Response(url === `${scope}index.html` ? 'Fresh app shell' : image ? 'Image bytes' : script?'Fresh module':'Design preview', {
       headers: { 'Content-Type': image ? 'image/webp' : script?'application/javascript':'text/html' },
     });
   });
-  runInNewContext(source, {
+  const runtime = {
     URL, Request, Response, fetch, console,
     location: { origin: 'https://example.com' },
     caches: { match, open: async () => ({match:currentMatch,add:async request=>precached.push(request),put: async (request, response) => entries.set(key(request), response) }) },
     self: { registration: { scope },skipWaiting:async()=>{},addEventListener: (name, callback) => { handlers[name] = callback; } },
-  });
+  };
+  if(bundle!==null)runtime.importScripts=()=>{
+    runtime.self.DFL_BUNDLE_RELEASE=release||JSON.parse(readFileSync(new URL('../package.json',import.meta.url))).version;
+    runtime.self.DFL_BUNDLE_SHELL=bundle;
+  };
+  runInNewContext(source,runtime);
   return {
     fetch,
     releaseMessage(data,port){handlers.message({data,ports:port?[port]:[]});},
@@ -48,6 +58,26 @@ function worker({ offline = false, saved = {}, legacy = {} } = {}) {
 }
 
 describe('installed app worker navigation', () => {
+  it('installs the compiled graph without fetching a duplicate raw app graph',async()=>{
+    const files=['./js/bundle/test/app.js','./js/bundle/test/pages/calendar.js'],sw=worker({bundle:files});
+    const other=await sw.install();
+    expect(sw.fetch.mock.calls.map(([r])=>r.url)).toEqual(files.map(p=>new URL(p,scope).href));
+    expect(other.some(r=>r.url.endsWith('/js/app.js'))).toBe(false);
+    expect(other.some(r=>r.url.endsWith('/js/workers/trade-offers.js'))).toBe(true);
+  });
+  it.each(['missing','html'])('rejects an incomplete bundle instead of activating a broken release: %s',async failure=>{
+    const path='./js/bundle/test/app.js',sw=worker({bundle:[path],[failure==='missing'?'failPath':'htmlPath']:path});
+    await expect(sw.install()).rejects.toThrow('Application module unavailable');
+  });
+  it('rejects an empty or mismatched worker bundle manifest',()=>{
+    expect(()=>worker({bundle:[]})).toThrow('release mismatch');
+    expect(()=>worker({bundle:['./js/bundle/test/app.js'],release:'1.379.0'})).toThrow('release mismatch');
+  });
+  it('serves a cached compiled page under a fresh Retry URL offline',async()=>{
+    const path='js/bundle/test/pages/calendar.js',sw=worker({offline:true,bundle:['./'+path],saved:{[path]:{body:'Current compiled page',type:'application/javascript'}}});
+    const response=await sw.request(path+'?recovery=1',{mode:'cors',destination:'script'});
+    expect(await response.text()).toBe('Current compiled page');
+  });
   it('does not boot an old module from a retired cache recreated by a late request',async()=>{
     const sw=worker({legacy:{'js/team-analyzer.js':'Retired model'}});
     expect(await (await sw.request('js/team-analyzer.js',{mode:'cors',destination:'script'})).text()).toBe('Fresh module');

@@ -27,6 +27,7 @@
   "exclude": [
     // Vendored + generated Pixi bundles, and the specs (node builtins, and
     // vitest already runs them).
+    "js/bundle/**",
     "js/arena/pixi-runtime.js",
     "js/arena/*-????????.js",
     "js/**/*.spec.js"

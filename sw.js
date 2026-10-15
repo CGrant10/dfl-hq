@@ -1,11 +1,12 @@
 // DFL HQ service worker
-const CACHE_NAME = "dfl-hq-v1.420.0";
+const CACHE_NAME = "dfl-hq-v1.421.0";
 const APP_CACHE_PREFIX = "dfl-hq-v";
 const CDN_HOSTS = new Set(["cdn.jsdelivr.net","fonts.googleapis.com","fonts.gstatic.com","a.espncdn.com"]);
 const APP_SHELL = [
+  "./js/trade-alert-dock.js","./js/scroll-chrome.js",
   "./js/arena/stadium-orientation.js","./js/arena/stadium-motion.js","./js/arena/racer-kit-model.js","./js/arena/racer-kit-art.js","./js/arena/racer-kit-editor.js",
   "./js/pages/arena-stadium.js","./js/pages/arena-viewer.js","./js/arena/stadium-data.js","./js/arena/stadium-model.js","./js/arena/stadium-renderer.js","./css/stadium-arena.css",
-  "./css/app-shared.css?v=1.420.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
+  "./css/app-shared.css?v=1.421.0","./js/trade-offer-search.js","./js/trade-offer-catalog.js","./js/workers/trade-offers.js","./js/tab-scroll-cues.js",
   "./js/player-watchlist-data.js","./js/player-watchlist-model.js","./js/watchlist-alerts.js","./js/player-watchlist-ui.js",
   "./js/loading-presentation.js","./js/home-score-collapse.js","./js/home-primary-action.js","./js/connected-artwork.js","./js/archive-route-motion.js","./js/broadcast-gesture-motion.js",
   "./js/player-form.js",
@@ -123,7 +124,7 @@ const APP_SHELL = [
   "./js/service-worker.js","./js/pickem-state.js","./js/golf-event-status.js","./js/pages/calendar.js",
   "./","./index.html","./manifest.json","./css/stakes.css",
   "./css/tokens.css","./css/style.css","./css/ui.css","./css/screens.css","./css/sportsbook.css","./js/sportsbook-slip.js","./js/sportsbook-pickem.js","./js/sleeper-prop-import.js","./js/sleeper-prop-import-ui.js","./css/golf.css","./css/home.css","./css/breaking-trade.css","./css/update-gate.css",
-  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.420.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
+  "./js/wall-continuity.js","./js/wall-live.js","./js/sportsbook-live.js","./js/sportsbook-settlement.js","./js/sportsbook-account-motion.js","./js/live-score-refresh.js","./js/score-freshness.js","./js/game-day-readiness.js","./js/lineup-alert-model.js","./js/waiver-coach.js","./js/advice-receipts.js","./js/advice-receipts-data.js","./js/advice-receipts-ui.js","./css/advice-receipts.css?v=1.421.0","./js/waiver-history-data.js","./js/waiver-intelligence.js","./js/waiver-intelligence-ui.js","./js/roster-coach-data.js","./js/roster-coach-ui.js","./js/matchup-targets.js","./js/weekly-roasts.js",
   "./js/config.js","./js/app.js","./js/season-nav.js","./js/router.js","./js/connection-recovery.js","./js/ui.js","./js/store.js","./js/supabase.js","./js/members.js","./js/member-preview.js","./js/member-lock.js",
   "./js/app-diagnostics.js","./js/performance.js","./js/performance-findings.js","./js/pages/admin_performance.js","./js/pages/admin_operations.js","./js/breaking-trade.js","./js/custom-alerts.js","./js/league-state.js","./js/league-stakes.js","./js/weekly-briefing.js","./js/pages/stakes.js","./js/sleeper-sync-schedule.js",
   "./js/notifications.js","./js/notification-core.js","./js/notify-nudge.js","./js/profile-notifications.js","./js/weekly-outlook.js","./js/trade-desk.js","./js/pages/trade.js","./js/player-history.js","./js/season-outlook.js","./js/league-trajectory.js","./js/trend-panel.js","./js/weekly-outlook-panel.js","./css/weekly-outlook.css","./js/pages/notifications.js","./js/pages/admin_notifications.js","./css/notifications.css","./icons/badge-96.png",
@@ -138,7 +139,17 @@ const APP_SHELL = [
   "./icons/dfl-logo-512.webp","./icons/dfl-logo-64.webp",
   "./icons/app-192.png","./icons/app-192-1410.png","./icons/dfl-logo-tile-256.webp","./icons/apple-touch-icon-1410.png","./icons/favicon-64-1410.png"
 ];
-const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
+// The worker imports the manifest into its own installed script resources.
+// A missing or mismatched bundle cannot activate under the new release label.
+if(typeof importScripts==='function'){
+  importScripts('./js/bundle/1.421.0/precache.js');
+  if(self.DFL_BUNDLE_RELEASE!==CACHE_NAME.slice(APP_CACHE_PREFIX.length)||!Array.isArray(self.DFL_BUNDLE_SHELL)||!self.DFL_BUNDLE_SHELL.length)throw Error('Application bundle release mismatch');
+}
+const PRECACHE = self.DFL_BUNDLE_SHELL
+  ? [...APP_SHELL.filter(path=>!path.startsWith('./js/')), ...self.DFL_BUNDLE_SHELL, './js/workers/trade-offers.js']
+  : APP_SHELL;
+const BUNDLE_URLS=new Set((self.DFL_BUNDLE_SHELL||[]).map(path=>new URL(path,self.registration.scope).href));
+const SHELL_URLS = new Set(PRECACHE.map(path => new URL(path, self.registration.scope).href.split('?')[0]));
 self.addEventListener('message',event=>{
   if(event.data?.type==='DFL_APP_RELEASE')event.ports?.[0]?.postMessage({release:CACHE_NAME.slice(APP_CACHE_PREFIX.length)});
 });
@@ -146,7 +157,14 @@ self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE_NAME).then(asyn
   const missing=[];
   // A new worker must revalidate even a still-fresh browser HTTP entry;
   // otherwise its new app-cache name can contain the previous release's code.
-  await Promise.all(APP_SHELL.map(url=>c.add(revalidating(new Request(new URL(url,self.registration.scope)))).catch(()=>missing.push(url))));
+  await Promise.all(PRECACHE.map(async url=>{
+    const request=revalidating(new Request(new URL(url,self.registration.scope)));
+    if(BUNDLE_URLS.has(request.url)){
+      const response=await fetch(request);
+      if(!response.ok||!/javascript|ecmascript/.test(response.headers.get('content-type')||''))throw Error(`Application module unavailable: ${url}`);
+      await c.put(request,response);
+    }else await c.add(request).catch(()=>missing.push(url));
+  }));
   if(missing.length)console.warn("[sw] not precached:",missing);
 }).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys

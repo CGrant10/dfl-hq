@@ -8,7 +8,7 @@ export async function render(view){
  if(own!==generation)return;
  let page;
  if(stadium)page=await import('./arena-stadium.js');
- else{const result=location.hash.startsWith('#/arena-results')||data.bc_state==='finished'||data.status==='complete';page=await import(result?'./arena-results.js':'./broadcast.js');if(!result)await import('../arena/mobile-broadcast-performance.js');}
+ else{const result=location.hash.startsWith('#/arena-results')||data.bc_state==='finished'||data.status==='complete';page=result?await import('./arena-results.js'):await import('./broadcast.js');if(!result)await import('../arena/mobile-broadcast-performance.js');}
  if(own!==generation)return;active=page;
  await active.render(view);
 }
