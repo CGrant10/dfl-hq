@@ -1,9 +1,16 @@
 // Exercise the production page and event handlers with isolated roster data.
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {tradeReviewFixture as receiptFixture} from './trade-review-fixture.mjs';
+import {buildTradeAlertSnapshot} from '../js/trade-receipt-model.js';
 const output=process.env.DFL_TRADE_REVIEW_DIR||'/workspace/dfl-trade-review';mkdirSync(output,{recursive:true});
+const receiptData=receiptFixture(),receiptTeams=receiptData.teams.slice(0,3),receiptState=new Map(receiptTeams.map(t=>[String(t.id),new Set(t.playerIds)]));
+const receiptTx={transaction_id:'1416251900797464576',type:'trade',status:'complete',roster_ids:[1,2,3],drops:{'1-4':1,'1-3':1,'2-6':2,'3-3':3},adds:{'1-4':3,'1-3':2,'2-6':1,'3-3':1},draft_picks:[],waiver_budget:[],created:Date.now(),leg:6};
+const makeReceipt=transaction=>buildTradeAlertSnapshot({transaction,season:2026,week:6,teams:receiptTeams,rosterState:receiptState,pool:receiptData.pool});
+const receiptFixtures=[makeReceipt(receiptTx),makeReceipt({...receiptTx,transaction_id:'receipt-two',roster_ids:[1,2],drops:{'1-4':1,'2-6':2},adds:{'1-4':2,'2-6':1}}),makeReceipt({...receiptTx,transaction_id:'receipt-partial',draft_picks:[{season:2027,round:1}]}),makeReceipt({...receiptTx,transaction_id:'receipt-invalid',adds:{...receiptTx.adds,'3-3':99}})];
 const source=readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8');
 const production=source.slice(source.indexOf('const teamName'),source.indexOf('export async function render('));
 const imports=`
+import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
 import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
 import {lineupPreviewsFor} from '/js/trade-workspace.js';
@@ -34,6 +41,8 @@ const shareDeal=async deal=>{window.reviewSharedDeal=deal;return 'review'};
 writeFileSync(`${output}/fixture.js`,imports+production+`
 window.reviewData=tradeReviewFixture();
 window.reviewOfferMarkup=offerMarkup;
+window.reviewReceiptFixtures=${JSON.stringify(receiptFixtures)};
+window.renderReceiptReview=async id=>{window.reviewReceipts=window.reviewReceiptFixtures;window.reviewReceiptReads=[];history.replaceState(null,'','#/trade?tx='+encodeURIComponent(id));const {render}=await import('/js/pages/trade.js');await render(document.getElementById('view'));window.scrollTo(0,0)};
 window.renderReview=()=>{const view=document.getElementById('view'),result=page(window.reviewData);view.innerHTML=result.markup;result.wire(view);};
 window.renderReview();window.reviewReady=true;
 `);

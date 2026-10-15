@@ -88,20 +88,20 @@ describe("completed trade alerts", () => {
     });
     expect(alert.analysis_status).toBe("partial");
     expect(alert.verdict).toBeNull();
-    expect(alert.result).toBeNull();
+    expect(alert.result).not.toBeNull();
     expect(alert.limitations.join(" ")).toMatch(/Draft picks.*FAAB/);
   });
 
-  it("holds multi-team trades for review", () => {
+  it("withholds a complete grade when an added team sends and receives no players", () => {
     const classification = classifyCompletedTrade(completed({ roster_ids: [1, 2, 3] }));
     expect(classification.analysisStatus).toBe("review");
-    expect(classification.limitations[0]).toMatch(/Multi-team/);
+    expect(classification.limitations[0]).toMatch(/Each team/);
   });
 
   it("writes a concise notification without claiming a winner for partial grades", () => {
     const partial = tradeAlertNotification({ analysis_status: "partial", teams: [{ team_name: "Alpha" }, { team_name: "Bravo" }] });
     expect(partial).toMatchObject({ title: "DFL TRADE ALERT" });
-    expect(partial.body).toContain("need review");
+    expect(partial.body).toContain("player estimate only");
     expect(partial.body).not.toMatch(/wins|fleece/i);
   });
 

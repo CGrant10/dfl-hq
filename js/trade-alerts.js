@@ -5,7 +5,7 @@ import {loadMemberDirectory} from './members.js';
 import {currentTradeNames} from './current-team-names.js';
 import {tradeAssessment} from './trade-assessment.js';
 
-import {TRADE_ALERT_MODEL_VERSION, buildTradeAlertSnapshot as buildSnapshot} from "./trade-receipt-model.js";
+import {TRADE_ALERT_MODEL_VERSION,effectiveTradeReceipt,tradeReceiptVerdict, buildTradeAlertSnapshot as buildSnapshot} from "./trade-receipt-model.js";
 export {TRADE_ALERT_MODEL_VERSION} from "./trade-receipt-model.js";
 import {captureTradeReceipts} from "./trade-alert-capture.js";
 
@@ -17,12 +17,14 @@ const schemaMissing = error => ["42P01", "42703", "PGRST204", "PGRST205"].includ
   || /trade_alerts|source_key/i.test(error?.message || "") && /does not exist|schema cache|column/i.test(error?.message || "");
 
 export function tradeBreakingHeadline(alert) {
+  alert=effectiveTradeReceipt(alert);
   if (String(alert?.headline_override || "").trim()) return String(alert.headline_override).trim();
   const winner = alert?.verdict?.winner_team_name || null;
   const fairness = Number(alert?.result?.fairness);
-  const lineup = alert?.verdict?.who === "a" ? Number(alert?.result?.weeklyDeltaA) || 0
+  const groupIndex=alert?.teams?.findIndex(t=>String(t.roster_id)===String(alert.verdict?.winner_roster_id));
+  const lineup = Array.isArray(alert?.result?.weeklyDeltas)?Number(alert.result.weeklyDeltas[groupIndex])||0:alert?.verdict?.who === "a" ? Number(alert?.result?.weeklyDeltaA) || 0
     : alert?.verdict?.who === "b" ? Number(alert?.result?.weeklyDeltaB) || 0 : 0;
-  const roster = alert?.verdict?.who === "a" ? Number(alert?.result?.rosterImpactA) || lineup
+  const roster = Array.isArray(alert?.result?.rosterImpacts)?Number(alert.result.rosterImpacts[groupIndex])||0:alert?.verdict?.who === "a" ? Number(alert?.result?.rosterImpactA) || lineup
     : alert?.verdict?.who === "b" ? Number(alert?.result?.rosterImpactB) || lineup : 0;
   if (!winner) return Number.isFinite(fairness) && fairness >= 88
     ? "BLOCKBUSTER. NO CLEAR VICTIM." : "THE LEAGUE NEEDS TO REVIEW THIS ONE";
@@ -43,15 +45,23 @@ const impactFor = (result, side) => {
  * roster. The same 55/8 blend used by recommendationFor() is applied to both
  * sides, then compared so the Home verdict and full ticket speak one language. */
 export function tradeOutcomeSummary(alert) {
+  alert=effectiveTradeReceipt(alert);
   if (alert?.analysis_status !== "graded" || !alert?.result || alert.result.projectionEvidence?.missing?.length) {
     return { grade: "Review", tone: "review", winner: null, loser: null, closeness: null,
-      detail: alert?.limitations?.[0] || "The model needs a complete two-team player exchange." };
+      detail: alert?.limitations?.[0] || "A complete player estimate is unavailable." };
+  }
+  if(Array.isArray(alert.result.values)){
+    const result=alert.result,verdict=tradeReceiptVerdict(result,alert.teams),balanced=verdict.headline==='Balanced',uncertain=verdict.headline==='Review needed',close=verdict.headline==='Close call';
+    const index=(alert.teams||[]).findIndex(t=>String(t.roster_id)===String(verdict.winner_roster_id));
+    return {grade:balanced?'Fair deal':uncertain?'Review':close?'Close call':'Value edge',tone:balanced?'fair':uncertain?'review':close?'close':'clear',winner:verdict.winner_team_name,loser:null,closeness:result.fairness,
+      lineup:index<0?null:result.weeklyDeltas[index],depth:index<0?null:result.depthDeltas[index],needsReview:uncertain||verdict.needsReview,
+      detail:balanced?`${result.fairness}% group balance`:uncertain?receiptCaution(alert).detail:close?'Player value estimates are close.':`${verdict.winner_team_name} has the largest player value gain.`};
   }
   // Preserve older frozen receipts. New receipts use asset value for the winner;
   // lineup usefulness remains a separate consequence, just like the trade desk.
-  if(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb","dflyzer-trade-v5-expert-evidence","dflyzer-trade-v6-position-flex",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
+  if(["dflyzer-trade-v3-player-value","dflyzer-trade-v4-one-qb","dflyzer-trade-v5-expert-evidence","dflyzer-trade-v6-position-flex","dflyzer-trade-v7-price-fit-risk",TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)){
     const result=alert.result,evidence=result.projectionEvidence;
-    const balancedEstimate=alert.model_version===TRADE_ALERT_MODEL_VERSION&&tradeAssessment(result)?.value.headline==='Balanced';
+    const balancedEstimate=['dflyzer-trade-v7-price-fit-risk',TRADE_ALERT_MODEL_VERSION].includes(alert.model_version)&&tradeAssessment(result)?.value.headline==='Balanced';
     if(!balancedEstimate&&(evidence?.stale?.length||evidence?.injuries?.length||evidence?.fallback?.length))
       return {grade:'Review',tone:'review',winner:null,loser:null,closeness:result.fairness,detail:receiptCaution(alert).detail};
     const verdict=verdictFor(result),teams=list(alert.teams),winnerIndex=verdict.who==='a'?0:verdict.who==='b'?1:-1;
@@ -113,6 +123,7 @@ export function tradeOutcomeReason(outcome) {
   if (outcome.grade === "Robbery") {
     return { tone: "good", title: `${outcome.winner} committed robbery.`, copy: outcome.detail };
   }
+  if(outcome.grade==='Value edge')return {tone:'good',title:`${outcome.winner} got the biggest value bump.`,copy:outcome.detail};
   if (outcome.grade === "Close win") {
     return { tone: "neutral", title: `${outcome.winner} got the slight edge.`, copy: outcome.detail };
   }
@@ -135,30 +146,41 @@ export async function loadTradeAlerts({ limit = 20 } = {}) {
     throw error;
   }
   const members=await loadMemberDirectory().catch(()=>[]);
-  return (data||[]).map(alert=>currentTradeNames(alert,members));
+  return (data||[]).map(alert=>currentTradeNames(effectiveTradeReceipt(alert),members));
+}
+
+export async function loadTradeAlertByTransaction(transactionId){
+ const {data,error}=await db().from('trade_alerts').select('*').eq('sleeper_transaction_id',String(transactionId)).maybeSingle();
+ if(error)throw error;if(!data)return null;
+ const members=await loadMemberDirectory().catch(()=>[]);
+ return currentTradeNames(effectiveTradeReceipt(data),members);
 }
 
 export function tradeAlertViewModel(alert) {
+  alert=effectiveTradeReceipt(alert);
   if (!alert?.sleeper_transaction_id) return null;
   const teams = list(alert.teams);
   const teamByRoster = new Map(teams.map(team => [rosterId(team.roster_id), team]));
+  const readPlayer=player=>({id:playerId(player.id),name:player.name||playerId(player.id),position:player.position||'',nflTeam:player.nfl_team||'',
+    value:player.rated===false||player.trade_value==null?null:Number(player.trade_value),fromRosterId:rosterId(player.from_roster_id),toRosterId:rosterId(player.to_roster_id)});
   const packages = list(alert.packages).map(pkg => ({
     rosterId: rosterId(pkg.roster_id),
     teamName: teamByRoster.get(rosterId(pkg.roster_id))?.team_name || `Team ${pkg.roster_id}`,
-    players: list(pkg.sends).map(player => ({
-      id: playerId(player.id), name: player.name || playerId(player.id),
-      position: player.position || "", nflTeam: player.nfl_team || "", value: Number(player.trade_value) || 0,
-    })),
+    team:teamByRoster.get(rosterId(pkg.roster_id)),players: list(pkg.sends).map(readPlayer),
   }));
   const outcome = tradeOutcomeSummary(alert);
   const winner = outcome.winner;
   const balanced = outcome.grade === "Fair deal";
   const caution = receiptCaution(alert);
   const rawBalance = alert.result?.fairness;
-  const fairness = rawBalance == null || rawBalance === '' || !Number.isFinite(Number(rawBalance))
+  const fairness = rawBalance == null || rawBalance === '' || !Number.isFinite(Number(rawBalance))||alert.result?.projectionEvidence?.missing?.length
     ? null : Math.round(Math.max(0, Math.min(100, Number(rawBalance))));
-  const receivedPackages = teams.length === 2 && packages.length === 2
-    ? packages.map((pkg, index) => ({...pkg, players: packages[1 - index].players})) : null;
+  const receivedPackages = list(alert.packages).length===teams.length&&list(alert.packages).every(p=>p.routing_complete!==false&&Array.isArray(p.receives))
+    ?packages.map((pkg,index)=>({...pkg,players:list(alert.packages[index].receives).map(readPlayer)}))
+    :teams.length === 2 && packages.length === 2?packages.map((pkg, index) => ({...pkg, players: packages[1 - index].players.map(p=>({...p,fromRosterId:packages[1-index].rosterId}))})):null;
+  const number=value=>value==null||!Number.isFinite(Number(value))?null:Number(value);
+  const metric=(key,index,legacy)=>!alert.result||alert.result.projectionEvidence?.missing?.length?null:number(Array.isArray(alert.result[key])?alert.result[key][index]:index<2?alert.result[legacy+(index?'B':'A')]:null);
+  const sum=players=>players.some(p=>p.value==null||!Number.isFinite(p.value))?null:players.reduce((n,p)=>n+p.value,0);
   return {
     id: alert.id,
     transactionId: String(alert.sleeper_transaction_id),
@@ -169,9 +191,11 @@ export function tradeAlertViewModel(alert) {
     breakingActive: alert.breaking_active !== false,
     breakingStartedAt: alert.breaking_started_at || alert.created_at || null,
     breakingEndedAt: alert.breaking_ended_at || null,
-    teams: teams.map(team => ({ rosterId: rosterId(team.roster_id), teamName: team.team_name || `Team ${team.roster_id}` })),
+    teams: teams.map(team => ({...team, rosterId: rosterId(team.roster_id), teamName: team.team_name || `Team ${team.roster_id}` })),
     packages,
     receivedPackages,
+    reviewedAt:alert.reviewedAt||null,
+    teamValues:teams.map((team,i)=>{let sent=sum(packages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]),received=receivedPackages?sum(receivedPackages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]):null;const r=alert.result;if(r&&!r.projectionEvidence?.missing?.length){sent=number(Array.isArray(r.outgoingValues)?r.outgoingValues[i]:i?r.valueToA:r.valueToB)??sent;received=number(Array.isArray(r.values)?r.values[i]:i?r.valueToB:r.valueToA)??received}return {rosterId:rosterId(team.roster_id),sent,received,net:sent==null||received==null?null:received-sent,balance:r?.partyBalances?.[i]??fairness};}),
     caution,
     winner,
     balanced,
@@ -179,20 +203,20 @@ export function tradeAlertViewModel(alert) {
     headline: outcome.grade === "Review" ? "DEAL DONE. KEEP THE RECEIPT." : tradeBreakingHeadline(alert),
     outcome,
     fairness,
-    balanceLabel: alert.analysis_status === "partial" ? "Player balance" : "Value balance",
+    balanceLabel: alert.analysis_status === "partial" ? "Player balance" :teams.length>2?"Group balance": "Value balance",
     lineupDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
       teamName: team.team_name || `Team ${team.roster_id}`,
-      weekly: !alert.result ? null : index === 0 ? Number(alert.result?.weeklyDeltaA) || 0 : index === 1 ? Number(alert.result?.weeklyDeltaB) || 0 : null,
+      weekly:metric('weeklyDeltas',index,'weeklyDelta'),
     })),
     depthDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
       teamName: team.team_name || `Team ${team.roster_id}`,
-      weekly: !alert.result ? null : index === 0 ? Number(alert.result?.depthDeltaA) || 0 : index === 1 ? Number(alert.result?.depthDeltaB) || 0 : null,
+      weekly:metric('depthDeltas',index,'depthDelta'),
     })),
     rosterImpacts: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
-      weekly: !alert.result ? null : index === 0 ? Number(alert.result?.rosterImpactA) || 0 : index === 1 ? Number(alert.result?.rosterImpactB) || 0 : null,
+      weekly:metric('rosterImpacts',index,'rosterImpact'),
     })),
     reason: tradeOutcomeReason(outcome),
     limitations: list(alert.limitations),
@@ -219,7 +243,7 @@ export async function loadLatestTradeAlert({ hours = 72, activeOnly = false } = 
     throw error;
   }
   const members=data?await loadMemberDirectory().catch(()=>[]):[];
-  return tradeAlertViewModel(currentTradeNames(data,members));
+  return tradeAlertViewModel(currentTradeNames(effectiveTradeReceipt(data),members));
 }
 
 export const loadActiveTradeAlert = options => loadLatestTradeAlert({ ...options, activeOnly: true });

@@ -12,11 +12,11 @@ const get = async (url: string) => {
 };
 
 export async function captureScheduledTrades({admin, league, users, rosters, transactions, season, week, url, cronToken}: any) {
-  return captureTradeReceipts({transactions, currentRosters: rosters, season, week, database: admin,
+  return captureTradeReceipts({transactions, currentRosters: rosters, season, week, database: admin,reviewUnsupported:true,
     log: (message: string) => console.warn(message),
     loadAnalyzer: async () => {
-      // Runs only for missing receipts. Ordinary score polls never fetch this
-      // model; existing receipts and their original valuations are immutable.
+      // Runs for missing receipts or one-time routed reviews. Existing graded
+      // receipts keep their original values; ordinary polls never fetch this model.
       const completedWeeks = Array.from({length: Math.max(0, Math.min(week - 1, 17))}, (_, i) => i + 1);
       const [players, prior, current, market, availability, results, experts, currentWeekStats, nfl] = await Promise.all([
         get('https://api.sleeper.app/v1/players/nfl'),

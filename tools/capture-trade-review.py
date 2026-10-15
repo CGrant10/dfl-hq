@@ -10,7 +10,7 @@ class Handler(SimpleHTTPRequestHandler):
         # Theme rendering uses the real palette module with an isolated data
         # boundary, just like the Trade page's roster and sharing fixtures.
         name=self.path.split('?')[0]
-        body="export const db=()=>{throw Error('Review database writes are blocked')};" if name=='/js/supabase.js' else "export const currentMember=()=>null;" if name=='/js/members.js' else None
+        body="export const db=()=>({from:table=>{if(table!=='trade_alerts'||!window.reviewReceipts)throw Error('Unexpected review database access');let id;const q={select:()=>q,eq:(key,value)=>{id=value;window.reviewReceiptReads.push(value);return q},maybeSingle:async()=>({data:window.reviewReceipts.find(r=>r.sleeper_transaction_id===id)||null,error:null})};return q}});export const edge=()=>{throw Error('Review edge writes are blocked')};export const privilegedFunctionHeaders=()=>({});" if name=='/js/supabase.js' else "export const currentMember=()=>null;export const loadMemberDirectory=async()=>[];" if name=='/js/members.js' else "export async function loadAnalyzerData(){throw Error('Receipt must not load the offer analyzer')}" if name=='/js/team-analyzer-data.js' else None
         if body is not None:
             self.send_response(200);self.send_header('Content-Type','text/javascript');self.end_headers();self.wfile.write(body.encode());return
         super().do_GET()
@@ -293,6 +293,21 @@ with sync_playwright() as p:
         assert not page.locator('[data-td-share]').is_disabled()
         click('[data-td-share]');page.wait_for_function('!!window.reviewSharedDeal')
         assert page.evaluate('window.reviewSharedDeal.destinations')=={'1-4':'3','1-3':'2','2-6':'1','3-3':'1'}
+        # The actual route renderer opens an exact receipt without loading offers.
+        for receipt_id,count in [('1416251900797464576',3),('receipt-two',2),('receipt-partial',3),('receipt-invalid',3)]:
+            page.evaluate('id=>window.renderReceiptReview(id)',receipt_id)
+            assert page.locator('.td-alert-receipt').count()==1
+            assert page.locator('[data-receipt-team]').count()==count
+            assert page.evaluate('window.reviewReceiptReads')==[receipt_id]
+            assert page.locator('[data-td-mode]').count()==0
+            assert page.locator('[data-route-focus]').evaluate('e=>e.open&&e.getBoundingClientRect().top<180')
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+            if receipt_id=='receipt-partial':assert 'Player-only estimate' in page.locator('.td-receipt-body').inner_text()
+            if receipt_id=='receipt-invalid':assert page.locator('.td-receipt-score b').inner_text()=='—'
+            page.screenshot(path=str(output/f'receipt-{width}-{receipt_id}.png'))
+            page.evaluate("document.documentElement.style.fontSize='200%'")
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+            page.evaluate("document.documentElement.style.fontSize=''")
         assert not errors,errors
         results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'fiveRequiredPlayersPersist':True,'freshInjuryRequiresReview':True,'shareProviderFailureBlocked':True,'shareOwnershipRechecked':True,'pageErrors':errors,'overflow':False})
         context.close()
