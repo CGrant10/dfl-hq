@@ -1,4 +1,5 @@
 import {mountHomeScoreCollapse} from './home-score-collapse.js';
+import {scrollChromeBottom} from './scroll-chrome.js';
 // Preserve the full header's document space, just as GameDay preserves its
 // expanded scoreboard. The compact reference never shifts a reader's content.
 const pages={
@@ -129,9 +130,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     if(!displayed(hero)){compact=false;show(false);return;}
     // Read geometry together before any style or text writes.
     const bounds=root.getBoundingClientRect(),heroBox=hero.getBoundingClientRect();
-    const topbar=document.querySelector('.topbar')?.getBoundingClientRect();
-    const nav=innerWidth>=900?document.querySelector('#tabbar')?.getBoundingClientRect():null;
-    const top=Math.max(0,topbar?.bottom||44,nav?.bottom||0);
+    const top=scrollChromeBottom();
     const fromHeight=dock.hidden?null:dock.getBoundingClientRect().height,height=fromHeight||52;
     const visibleHeadings=headings.filter(displayed),tops=visibleHeadings.map(node=>node.getBoundingClientRect().top);
     // Keep the tracking boundary independent of caption wrapping or the
@@ -215,7 +214,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
   const reset=()=>{dirty=true;if(!allowed()){intersection?.disconnect();observed.clear();for(const node of rising)cancel?.(node);cancel?.(dock);cancel?.(section);cancel?.(scores);dock.hidden=!shown;}schedule();};
   const visibility=()=>{if(!document.hidden){dirty=true;schedule();}};
   dock.addEventListener('click',jump);dock.addEventListener('focusout',schedule);
-  window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('resize',schedule);
+  window.addEventListener('scroll',scroll,{passive:true});window.addEventListener('dfl:scroll-chrome',schedule);window.addEventListener('resize',schedule);
   window.addEventListener('dfl:ui-motion-change',reset);document.addEventListener('visibilitychange',visibility);
   reduced.addEventListener('change',reset);document.fonts?.addEventListener('loadingdone',schedule);
   paint();
@@ -226,7 +225,7 @@ export function mountPageScrollMotion(root,{animate,cancel}={}){
     root.style.removeProperty('--dfl-scroll-top');root.style.removeProperty('--dfl-scroll-height');
     if(originalTop)root.style.setProperty('--dfl-scroll-top',originalTop);if(originalHeight)root.style.setProperty('--dfl-scroll-height',originalHeight);
     dock.removeEventListener('click',jump);dock.removeEventListener('focusout',schedule);
-    window.removeEventListener('scroll',scroll);window.removeEventListener('resize',schedule);window.removeEventListener('dfl:ui-motion-change',reset);
+    window.removeEventListener('scroll',scroll);window.removeEventListener('dfl:scroll-chrome',schedule);window.removeEventListener('resize',schedule);window.removeEventListener('dfl:ui-motion-change',reset);
     document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',reset);document.fonts?.removeEventListener('loadingdone',schedule);
   };
 }

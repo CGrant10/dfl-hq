@@ -6,6 +6,13 @@ on:
       - 'css/app-shared.css'
       - 'css/shared-styles.json'
       - 'js/tab-scroll-cues.js'
+      - 'js/trade-alert-dock.js'
+      - 'tools/*trade-alert-review*'
+      - 'js/breaking-trade.js'
+      - 'js/scroll-chrome.js'
+      - 'css/breaking-trade.css'
+      - 'js/home-score-collapse.js'
+      - 'js/page-scroll-motion.js'
       - 'js/ui-motion.js'
       - 'js/swipe-tabs*'
       - 'js/horizontal-swipe*'
@@ -107,6 +114,10 @@ jobs:
         env:
           DFL_ROUTE_REVIEW_DIR: ${{ github.workspace }}/home-review-output/routes
         run: python tools/capture-route-review.py
+      - name: Check compact mobile trade alert
+        run: python tools/capture-trade-alert-review.py
+        env:
+          DFL_ALERT_REVIEW_DIR: home-review-output/trade-alert
       - uses: actions/upload-artifact@v4
         if: always()
         with:

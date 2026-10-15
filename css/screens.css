@@ -2659,9 +2659,9 @@ a.moment:hover { background: var(--hover-soft); }
   things depending on which row it landed in. One treatment.
 */
 .ka-badges .pill.is-call {
-  border-color: transparent;
-  background: var(--accent-sweep-135);
-  color: var(--on-accent);
+  border-color: var(--accent);
+  background: var(--bg-2);
+  color: var(--text);
   font-weight: var(--fw-bold);
 }
 

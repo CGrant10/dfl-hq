@@ -86,7 +86,7 @@ async function room(view,members,id,life){
  const sent=performance.now();snapshot=await loadStadiumRace(id);clock.sync(snapshot.server_ms,sent);if(life.closed)return;
  // Only untouched legacy setup can be upgraded. Its historical/live renderer stays intact.
  if(snapshot.event.race_engine!==STADIUM_ENGINE&&!(snapshot.event.bc_state==='idle'&&snapshot.event.status!=='complete'&&!snapshot.results.length)){
-  const legacy=await import(snapshot.event.bc_state==='finished'||snapshot.event.status==='complete'?'./arena-results.js':'./broadcast.js');if(life.closed)return;life.cleanup.push(()=>legacy.leave?.());await legacy.render(view);return;
+  const legacy=(snapshot.event.bc_state==='finished'||snapshot.event.status==='complete')?await import('./arena-results.js'):await import('./broadcast.js');if(life.closed)return;life.cleanup.push(()=>legacy.leave?.());await legacy.render(view);return;
  }
  const memberMap=new Map(members.map(m=>[String(m.id),m]));
  const root=document.createElement('section');root.className='stadium-arena sr-room';

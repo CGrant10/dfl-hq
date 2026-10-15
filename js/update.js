@@ -59,6 +59,11 @@ async function routeList(){
 async function appFiles(){
   const base=new URL(".",location.href).href;
   const loaded=performance.getEntriesByType("resource").map(e=>e.name.split("?")[0]).filter(n=>n.startsWith(location.origin)&&/\.(js|css|json|html)$/.test(n));
+  // Versioned bundles are installed atomically by the new worker. Re-fetching
+  // raw page modules here would add a second, unused application graph.
+  if(document.documentElement.dataset.dflBundle)return [...new Set([
+    ...["","index.html","manifest.json","sw.js"].map(p=>base+p),...loaded
+  ])];
   const pages=(await routeList()).map(n=>`${base}js/pages/${n}.js`);
   const shell=["","index.html","css/style.css","css/profile-neutral.css","manifest.json","sw.js","js/config.js","js/nav-neutral.js","js/golf-gps-course-map.js","js/golf-club-recommendation.js","js/golf-gps-beta.js","js/golf-gps-red-trail-beta.js","js/golf-gps-rolla-beta.js","js/golf-gps-imported.js","js/golf-event-course-picker.js","js/golf-live-to-par.js"].map(p=>base+p);
   return [...new Set([...shell,...loaded,...pages])];

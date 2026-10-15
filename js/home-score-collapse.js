@@ -1,3 +1,4 @@
+import {scrollChromeBottom} from './scroll-chrome.js';
 const clamp=n=>Math.max(0,Math.min(1,n));
 export const homeScoreProgress=(top,cardTop,height)=>clamp((top+104-cardTop)/Math.max(96,height-24));
 const mix=(a,b,p)=>a+(b-a)*p;
@@ -28,7 +29,7 @@ export function mountHomeScoreCollapse(root){
   frame=0;if(stopped||!root.isConnected)return;
   if(dirty)scan();if(!parts.length)return;
   if(document.hidden||root.inert||document.querySelector('dialog[open]')||root.closest('[hidden]')){reset();return}
-  const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=Math.max(44,document.querySelector('.topbar')?.getBoundingClientRect().bottom||0,innerWidth>=900?document.querySelector('#tabbar')?.getBoundingClientRect().bottom||0:0);
+  const box=source.getBoundingClientRect(),bounds=root.getBoundingClientRect(),top=scrollChromeBottom();
   const p=homeScoreProgress(top,box.top,box.height),phase=text(source.querySelector('.home-team-total > small')),week=text(root.querySelector('[data-gameday-week]'));
   dock.hidden=false;dock.inert=p<.98;dock.setAttribute('aria-hidden',String(p<.98));dock.style.left=`${bounds.left}px`;dock.style.width=`${bounds.width}px`;dock.style.top=`${top}px`;dock.style.opacity=String(motion()?p:p===1?1:0);
   set(dock.querySelector('.home-score-caption'),`${week} · ${phase}`);
@@ -49,6 +50,6 @@ export function mountHomeScoreCollapse(root){
  observer.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['src','data-phase','data-route']});
  const resize=new ResizeObserver(invalidate);resize.observe(root);
  dock.addEventListener('click',()=>{source?.focus({preventScroll:true});source?.scrollIntoView({block:'center',behavior:motion()?'smooth':'instant'})});
- window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('resize',invalidate);window.addEventListener('dfl:ui-motion-change',preferences);window.addEventListener('pageshow',invalidate);window.addEventListener('pagehide',reset);document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',preferences);root.addEventListener('animationend',schedule);document.fonts?.ready.then(invalidate);schedule();
- return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();restore();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('resize',invalidate);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',reset);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',schedule)};
+ window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('dfl:scroll-chrome',schedule);window.addEventListener('resize',invalidate);window.addEventListener('dfl:ui-motion-change',preferences);window.addEventListener('pageshow',invalidate);window.addEventListener('pagehide',reset);document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',preferences);root.addEventListener('animationend',schedule);document.fonts?.ready.then(invalidate);schedule();
+ return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();resize.disconnect();restore();dock.remove();layer.remove();root.classList.remove('has-home-score-dock');window.removeEventListener('scroll',schedule);window.removeEventListener('dfl:scroll-chrome',schedule);window.removeEventListener('resize',invalidate);window.removeEventListener('dfl:ui-motion-change',preferences);window.removeEventListener('pageshow',invalidate);window.removeEventListener('pagehide',reset);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',preferences);root.removeEventListener('animationend',schedule)};
 }

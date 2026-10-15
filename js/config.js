@@ -12,30 +12,30 @@ if (globalThis.document) {
 }
 
 const GOLF_FEATURES = [
-  "./golf-gps-beta.js",
-  "./golf-gps-red-trail-beta.js",
-  "./golf-gps-rolla-beta.js",
-  "./golf-gps-imported.js",
-  "./golf-event-course-picker.js",
-  "./golf-tournament-beta.js",
-  "./golf-event-modes.js",
-  "./golf-live-to-par.js",
-  "./golf-scorecard.js",
-  "./golf-matches.js",
-  "./golf-live.js",
-  "./golf-theme.js",
-  "./golf-match.js",
-  "./golf-courses.js",
-  "./golf-draft.js",
-  "./golf-bag.js",
+  {path:"./golf-gps-beta.js",load:()=>import("./golf-gps-beta.js")},
+  {path:"./golf-gps-red-trail-beta.js",load:()=>import("./golf-gps-red-trail-beta.js")},
+  {path:"./golf-gps-rolla-beta.js",load:()=>import("./golf-gps-rolla-beta.js")},
+  {path:"./golf-gps-imported.js",load:()=>import("./golf-gps-imported.js")},
+  {path:"./golf-event-course-picker.js",load:()=>import("./golf-event-course-picker.js")},
+  {path:"./golf-tournament-beta.js",load:()=>import("./golf-tournament-beta.js")},
+  {path:"./golf-event-modes.js",load:()=>import("./golf-event-modes.js")},
+  {path:"./golf-live-to-par.js",load:()=>import("./golf-live-to-par.js")},
+  {path:"./golf-scorecard.js",load:()=>import("./golf-scorecard.js")},
+  {path:"./golf-matches.js",load:()=>import("./golf-matches.js")},
+  {path:"./golf-live.js",load:()=>import("./golf-live.js")},
+  {path:"./golf-theme.js",load:()=>import("./golf-theme.js")},
+  {path:"./golf-match.js",load:()=>import("./golf-match.js")},
+  {path:"./golf-courses.js",load:()=>import("./golf-courses.js")},
+  {path:"./golf-draft.js",load:()=>import("./golf-draft.js")},
+  {path:"./golf-bag.js",load:()=>import("./golf-bag.js")},
 ];
 let golfFeaturesPromise = null;
 export function loadGolfFeatures() {
   if (!golfFeaturesPromise) {
-    golfFeaturesPromise = Promise.allSettled(GOLF_FEATURES.map(modulePath => import(modulePath)))
+    golfFeaturesPromise = Promise.allSettled(GOLF_FEATURES.map(feature => feature.load()))
       .then(results => {
         results.forEach((result, index) => {
-          if (result.status === "rejected") console.warn(`Optional module failed: ${GOLF_FEATURES[index]}`, result.reason);
+          if (result.status === "rejected") console.warn(`Optional module failed: ${GOLF_FEATURES[index].path}`, result.reason);
         });
       });
   }
@@ -49,7 +49,7 @@ export const FIRST_SYNCED_SEASON = 2019;
 export const LEGACY_SEASONS = Math.max(0, FIRST_SYNCED_SEASON - LEAGUE_FOUNDED);
 export const dflSeasonCount = (syncedSeasons = 0) => Math.max(0, Number(syncedSeasons) || 0) + LEGACY_SEASONS;
 const META_VERSION = globalThis.document?.querySelector('meta[name="dfl-app-version"]')?.content || "0";
-const RELEASE_FLOOR = "1.420.0";
+const RELEASE_FLOOR = "1.421.0";
 const newer = (a,b) => { const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number); for(let i=0;i<Math.max(x.length,y.length);i++){ const d=(x[i]||0)-(y[i]||0); if(d)return d>0?a:b; } return a; };
 export const APP_VERSION = newer(META_VERSION, RELEASE_FLOOR);
 
