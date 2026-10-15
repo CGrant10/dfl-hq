@@ -26,6 +26,7 @@ describe('trade desk football benchmarks',()=>{
   const lateral=offers.find(o=>o.sendA.includes('a-qb')&&o.sendB.includes('b-qb'));
   expect(mutual).toMatchObject({tier:'fair',fairness:97,weeklyDeltaA:9,weeklyDeltaB:9,partnerFit:'You add WR help · They add RB help'});
   expect(lateral).toBeTruthy();expect(offers.indexOf(mutual)).toBeLessThan(offers.indexOf(lateral));
+  expect(tradePartnerFit(a,b,{...mutual,weeklyDeltaB:-1},pool)).toBe('');
   expect(optimalLineup(a.playerIds,pool).starters).toHaveLength(7);
   expect(new Set(optimalLineup(a.playerIds,pool).starters.map(p=>p.id)).size).toBe(7);
  });

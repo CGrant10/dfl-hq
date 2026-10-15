@@ -30,6 +30,7 @@ export function compareTradeSuggestions(a,b){
 }
 
 export function tradePartnerFit(mine,other,offer,pool){
+ if(n(offer.weeklyDeltaA)<=.1||n(offer.weeklyDeltaB)<=.1)return '';
  const fills=(ids,need,starters)=>(ids||[]).some(id=>pool.get(String(id))?.position===need&&starters?.includes(String(id)));
  if(!['RB','WR','TE','QB'].includes(mine?.need)||!['RB','WR','TE','QB'].includes(other?.need))return '';
  if(fills(offer.sendB,mine.need,offer.startingIncomingA)&&fills(offer.sendA,other.need,offer.startingIncomingB))return `You add ${mine.need} help · They add ${other.need} help`;
