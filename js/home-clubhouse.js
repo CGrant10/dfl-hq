@@ -218,9 +218,9 @@ function personalStory(teams, uid) {
   };
 }
 
-export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], season, week, fetchedAt = 0 } = {}) {
+export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], season, week, fetchedAt = 0, stale = false } = {}) {
   if (analysis?.state !== "ready" || !rows.length || !season || !week) return null;
-  const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null);
+  const pool = buildWeeklyPool(rows, analysis.league?.scoring_settings || null,{players:analysis.pool,schedule:Number(analysis.liveWeek)===Number(week)?analysis.nflSchedule:null});
   const actual = buildWeeklyPool(actualRows, analysis.league?.scoring_settings || null);
   const livePool = new Map([...pool].map(([id, player]) => [id, { ...player, scoreSource: "projected" }]));
   for (const [id, played] of actual) {
@@ -230,7 +230,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
   const teams = analysis.teams.map(team => {
     const owner = nameOf(team);
     const advice = startSitAdvice({
-      playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: livePool,
+      playerIds: team.playerIds || [], starterIds: team.starters || [], weekly: livePool,stale,rosterPositions:analysis.league?.roster_positions,
     });
     const firstSwap = advice.swaps[0];
     const submitted = (team.starters || []).map(String);
@@ -270,7 +270,7 @@ export function buildClubhouseWeekly({ analysis, rows = [], actualRows = [], sea
       swap: firstSwap ? { in: firstSwap.in.name, out: firstSwap.out.name, gain: round(firstSwap.gain) } : null,
     };
   }).filter(team => Number.isFinite(team.projection));
-  return { season: Number(season), week: Number(week), fetchedAt, teams, pool: livePool };
+  return { season: Number(season), week: Number(week), fetchedAt, stale, teams, pool: livePool };
 }
 
 export function aftermathReportWeek(week, now = new Date()) {

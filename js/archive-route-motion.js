@@ -27,9 +27,9 @@ function restoreArchiveAnchor(view,target,top,minimumHeight){
  target.closest('a')?.focus({preventScroll:true});adjust();stopRestoring=stop;
 }
 
-export async function renderWithArchiveMotion(render,previous,nextHash){
+export async function renderWithArchiveMotion(render,previous,nextHash,{back=false}={}){
  const interrupted=!!active;active?.skipTransition();active=null;stopRestoring();delete document.documentElement.dataset.archiveReturning;delete document.documentElement.dataset.archiveTransition;
- const entering=selected&&nextHash===selected.hash&&previous?.dataset.route==='home',returning=selected&&nextHash===selected.home&&previous?.dataset.route==='facts';
+ const entering=selected&&nextHash===selected.hash&&previous?.dataset.route==='home',returning=back&&selected&&nextHash===selected.home&&previous?.dataset.route==='facts';
  if(returning)document.documentElement.dataset.archiveReturning='true';
  const renderAndRestore=async()=>{await render();if(document.documentElement.dataset.archiveTransition){const current=document.getElementById('view');if(current)current.dataset.connectedEntry='true'}if(!returning||location.hash!==nextHash)return;const view=document.getElementById('view'),target=await waitForTarget(view,selected.key);if(target&&location.hash===nextHash)restoreArchiveAnchor(view,target,selected.top,selected.height)};
  const fallback=async()=>{try{return await renderAndRestore()}finally{delete document.documentElement.dataset.archiveReturning}};

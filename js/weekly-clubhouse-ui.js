@@ -43,7 +43,7 @@ export function wireClubhouseTabs(root,initial='overview'){
   for(const tab of tabs){const on=tab===selected;tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;tab.classList.toggle('on',on);root.querySelector('#'+tab.getAttribute('aria-controls')).hidden=!on}
   if(focus)selected.focus();
   if(changed)root.dispatchEvent(new CustomEvent('dfl:clubhouse-tab',{detail:{tab:selected.dataset.clubhouseTab}}));
-  const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('tab',selected.dataset.clubhouseTab);history.replaceState(null,'',location.hash.split('?')[0]+'?'+params);
+  const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('tab',selected.dataset.clubhouseTab);history.replaceState(history.state,'',location.hash.split('?')[0]+'?'+params);
  };
  for(const tab of tabs){tab.addEventListener('click',()=>activate(tab.dataset.clubhouseTab));tab.addEventListener('keydown',event=>{const index=tabs.indexOf(tab);let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;event.preventDefault();activate(tabs[next].dataset.clubhouseTab,true)})}
  activate(initial);

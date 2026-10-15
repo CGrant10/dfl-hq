@@ -15,7 +15,12 @@ it('does not start an old render when navigation changes during snapshot capture
 it('anchors the returning card through deferred layout changes and releases on user input',async()=>{
  const f=await fixture();let top=200,resize;f.view.isConnected=true;f.view.style={minHeight:''};f.view.addEventListener=()=>{};f.view.removeEventListener=()=>{};f.target.getBoundingClientRect=()=>({width:100,height:70,top,bottom:top+70,left:20,right:120});f.target.closest=()=>({focus:vi.fn()});window.scrollBy=vi.fn(change=>top-=change.top);
  vi.stubGlobal('ResizeObserver',class{constructor(callback){resize=callback}observe(){}disconnect(){}});location.hash='#/home';
- await f.renderWithArchiveMotion(vi.fn(),{dataset:{route:'facts'},querySelector:()=>f.source},'#/home');expect(top).toBe(120);
+ await f.renderWithArchiveMotion(vi.fn(),{dataset:{route:'facts'},querySelector:()=>f.source},'#/home',{back:true});expect(top).toBe(120);
  top+=25;resize();await new Promise(resolve=>setTimeout(resolve,10));expect(top).toBe(120);
  window.dispatchEvent(new Event('wheel'));top+=20;resize();await new Promise(resolve=>setTimeout(resolve,10));expect(top).toBe(140);f.finish();await Promise.resolve();
+});
+it('does not restore the Archive card on an ordinary Home visit',async()=>{
+ const f=await fixture();location.hash='#/home';const render=vi.fn();
+ await f.renderWithArchiveMotion(render,{dataset:{route:'facts'},querySelector:()=>f.source},'#/home');
+ expect(render).toHaveBeenCalledOnce();expect(f.doc.documentElement.dataset.archiveReturning).toBeUndefined();expect(f.doc.startViewTransition).not.toHaveBeenCalled();
 });

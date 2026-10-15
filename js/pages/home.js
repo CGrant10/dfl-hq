@@ -1,3 +1,4 @@
+import {startSitContent} from '../start-sit-ui.js';
 import {syncHomePrimaryAction} from '../home-primary-action.js';
 import {loadRosterCoach} from '../roster-coach-data.js';
 import {mountLiveScoreRefresh} from '../live-score-refresh.js';
@@ -185,8 +186,8 @@ function playerScoreLine(player) {
 /** A living current-week forecast: games, player leaders, and your lineup. */
 export function homeWeeklyDigest(outlook, briefing = null, report = null, changes = [], { loading = false } = {}) {
   if (!outlook) return `<section class="home-weekly-digest is-loading"><header><h2>Week ahead</h2></header><p${loading ? ' role="status"' : ''}>${loading ? "Building this week's matchup and Start/Sit model…" : "Weekly projections are unavailable. Check your matchup and lineup in Analyzer."}</p>${loading ? '' : '<a class="linkbtn home-text-action" href="#/analyzer"><span>Open Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a>'}</section>`;
-  const swaps = outlook.startSit?.swaps || [];
-  const alarms = outlook.startSit?.alarms || [];
+  const swaps=outlook.startSit?.swaps||[];
+  const alarms=(outlook.startSit?.alarms||[]).filter(alarm=>!swaps.some(swap=>(swap.out||swap.sit)?.id===alarm.player.id));
   const gameRow = game => `<article class="${game.isMine ? "is-mine" : ""}" data-assemble><div><small>${esc(game.story || game.confidence)}</small><strong>${esc(game.winner.name)}</strong><span>over ${esc(game.loser.name)} by ${game.margin.toFixed(1)}</span></div><p><small>PROJECTED</small><b>${Number(game.winner.projection).toFixed(1)}</b><em>–</em><span>${Number(game.loser.projection).toFixed(1)}</span></p></article>`;
   const predictions = outlook.predictions || [];
   const firstGames = predictions.slice(0, 3);
@@ -220,9 +221,7 @@ export function homeWeeklyDigest(outlook, briefing = null, report = null, change
         <div>${HOME_OUTLOOK_POSITIONS.map((position, index) => `<section data-position-panel="${position}" ${index === 0 ? "" : "hidden"}><ol>${(outlook.leaders[position] || []).map(outlookPlayerRow).join("") || `<li class="is-empty">No projection</li>`}</ol></section>`).join("")}</div>
       </section>
       <section id="home-week-panel-startsit" class="home-outlook-block home-outlook-startsit" role="tabpanel" aria-labelledby="home-week-tab-startsit" data-week-panel="startsit" hidden><div class="home-outlook-title"><h3>${esc(outlook.startSit?.teamName || "Your team")}</h3></div>
-        ${alarms.length ? `<div class="home-outlook-alarms">${alarms.map(alarm => `<p><b>FIX IT</b><strong>${esc(alarm.player.name)}</strong><span>${esc(alarm.reason)}</span></p>`).join("")}</div>` : ""}
-        ${swaps.length ? `<div class="home-outlook-swaps">${swaps.map(swap => `<article data-assemble><div class="is-start"><small>START</small><strong>${esc(swap.start.name)}</strong>${playerScoreLine(swap.start)}</div><div class="is-sit"><small>SIT</small><strong>${esc(swap.sit.name)}</strong>${playerScoreLine(swap.sit)}</div><b class="home-lineup-gain">+${Number(swap.gain).toFixed(1)} <small>projected pts</small></b></article>`).join("")}</div>`
-          : `<p class="home-outlook-clean"><strong>${outlook.startSit?.lineupIsSet ? "Lineup looks set" : "Set your lineup"}</strong><span>${outlook.startSit?.lineupIsSet ? "No bench swap projects a gain of 1.5+ points." : "Submit a lineup and the model will flag meaningful swaps."}</span></p>`}
+        ${startSitContent(outlook.startSit||{})}
         <footer><a class="home-text-action" href="#/analyzer"><span>Review lineup in Analyzer</span><svg class="ico-sm" aria-hidden="true"><use href="#home-ui-arrow-right"></use></svg></a></footer>
       </section>
     </div>
@@ -530,7 +529,7 @@ export async function render(view) {
       loadWeeklyProjections(season, week), loadWeeklyStats(season, week), loadTrendingPlayers(),
     ]);
     const built = buildClubhouseWeekly({
-      analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,
+      analysis, rows: projections?.data || [], actualRows: actual?.data || [], season, week,stale:!!projections?.stale,
       fetchedAt: Math.max(projections?.fetchedAt || 0, actual?.fetchedAt || 0),
     });
     return built ? { ...built, trending } : null;

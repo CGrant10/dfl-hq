@@ -107,3 +107,27 @@ The existing Home order and Wall position are unchanged. This review is scoped
 to Trade and its shared shell, rather than a repeat of every screen and possible
 roster state. The standard palette audit and relevant model/theme regressions
 run with the complete release checks.
+
+## 1.425.0 — Start/Sit decisions and navigation
+
+Reviewed the shared Home and Analyzer Start/Sit layouts in Medicine Wheel Dark
+and Light on mobile. The comparison uses two columns, complete player names,
+portraits, clearly separated projections and restrained theme-token dividers.
+It keeps the unfilled rows requested previously. Calls, injury contingencies,
+recent scoring averages and kickoff times use shared ink/accent tokens; NFL
+portrait identity colors retain their role. No theme choices were added.
+
+Populated Home fixtures were inspected at 320px, 390px and 430px in both modes,
+with clipping, overflow and visible-text contrast checks. Real league Home and
+Analyzer captures also cover both modes. The current roster has no recommended
+swap; injury backups, FLEX reshuffles, unknown projections and kickoff locks
+are covered by deterministic fixtures/model tests rather than claims about
+live recommendations. Weekly advice remains Sleeper projections scored with
+league settings; rest-of-season expert rankings are not called weekly ECR.
+
+The router review covers fresh visits, actual Back/Forward traversal, repeated
+Home visits, same-page navigation taps, failed loads, retries, rapid navigation,
+reduced motion and fixed shared navigation. Back restores an individual visit;
+ordinary visits keep page choices without restoring an old scroll offset.
+Theme and release checks run with the full application regression suite. This
+review covers the changed components, not every possible roster or native UI.

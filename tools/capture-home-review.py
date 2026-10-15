@@ -1244,16 +1244,16 @@ with sync_playwright() as p:
                 assert page.locator(f'[data-week-tab="{panel}"]').get_attribute('aria-selected') == 'true'
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), f'Forecast overflows in {mode}/{width}/{panel}'
                 if panel == 'startsit':
-                    assert page.locator('.home-outlook-swaps article').count() == 2
-                    assert page.locator('.home-outlook-swaps').evaluate('e=>[...e.querySelectorAll("strong")].every(n=>getComputedStyle(n).whiteSpace==="normal"&&n.scrollWidth<=n.clientWidth+1)'), 'Start/Sit player names are clipped'
-                    assert 'Projected pts' in page.locator('.home-outlook-swaps').inner_text()
+                    assert page.locator('.ss-move').count() == 2
+                    assert page.locator('.home-outlook-startsit .ss-moves').evaluate('e=>[...e.querySelectorAll(".player-card-trigger")].every(n=>getComputedStyle(n).whiteSpace==="normal"&&n.scrollWidth<=n.clientWidth+1)'), 'Start/Sit player names are clipped'
+                    assert 'projected pts' in page.locator('.home-outlook-startsit .ss-moves').inner_text()
                     page.locator('[data-week-tab="startsit"]').focus()
                     page.keyboard.press('ArrowRight')
                     assert page.locator('[data-week-tab="brief"]').get_attribute('aria-selected') == 'true'
                     page.keyboard.press('End')
                     assert page.locator('[data-week-tab="startsit"]').get_attribute('tabindex') == '0'
                     assert page.locator('[data-week-tab="brief"]').get_attribute('tabindex') == '-1'
-                    assert page.locator('.home-outlook-startsit').evaluate('e=>[...e.querySelectorAll(".home-outlook-swaps,.home-outlook-alarms,.home-outlook-swaps article,.home-outlook-alarms p")].every(e=>getComputedStyle(e).backgroundColor==="rgba(0, 0, 0, 0)")'), 'Start/Sit rows regained filled boxes'
+                    assert page.locator('.home-outlook-startsit').evaluate('e=>[...e.querySelectorAll(".ss-moves,.ss-alerts,.ss-move,.ss-alerts p")].every(e=>getComputedStyle(e).backgroundColor==="rgba(0, 0, 0, 0)")'), 'Start/Sit rows regained filled boxes'
                     page.screenshot(path=str(OUT / f'startsit-{mode}-{width}.png'))
                 contrast = page.evaluate('window.reviewTextContrast()')
                 assert not contrast['failures'], f'Unreadable forecast in {mode}/{width}/{panel}: {contrast["failures"]}'
