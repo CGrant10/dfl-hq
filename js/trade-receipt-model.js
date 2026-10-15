@@ -183,12 +183,15 @@ export function receiptCaution(alert) {
   if (alert?.analysis_status === 'partial') return {label: 'Player-only estimate', detail: (alert.limitations || []).join(' ') || 'Picks or FAAB are outside this player-value estimate.'};
   if (alert?.analysis_status !== 'graded' || !alert.result || evidence.missing?.length)
     return {label: 'Not rated', detail: alert?.limitations?.[0] || 'A complete player estimate is unavailable for this trade.'};
-  if (evidence.injuries?.length) return {label: 'Injury flags', detail: `Availability flags: ${evidence.injuries.join(', ')}. Balance is an estimate; no winner called.`};
-  if (evidence.stale?.length || evidence.fallback?.length) return {label: 'Estimate only', detail: 'Some player inputs are stale or use production fallback. No winner called.'};
+  if (evidence.injuries?.length) return {label: 'Injury flags', detail: `Injury uncertainty: ${evidence.injuries.join(', ')}. Value balance is estimated; the winner is too uncertain to call.`};
+  if (evidence.stale?.length) return {label: 'Older player data', detail: `Older inputs: ${evidence.stale.join(', ')}. Value balance is estimated; no winner called.`};
+  if (evidence.fallback?.length) return {label: 'Limited projections', detail: `Season projections unavailable: ${evidence.fallback.join(', ')}. Values use production estimates; no winner called.`};
   if (evidence.expert?.required && evidence.expert.status !== 'Fresh')
-    return {label: 'Estimate only', detail: 'Fresh expert rankings were unavailable. Balance uses DFL player estimates; no winner called.'};
-  if (evidence.expert?.missing?.length || evidence.expert?.disagreements?.length || evidence.expert?.split?.length || evidence.thinSamples?.length)
-    return {label: 'Estimate only', detail: 'Player evidence is mixed. Balance is an estimate; no winner called.'};
+    return {label: evidence.expert.status==='Stale'?'Older rankings':'Rankings unavailable', detail: 'Fresh FantasyPros rankings were unavailable when this receipt was graded. Values use DFL estimates; no winner called.'};
+  if (evidence.expert?.missing?.length) return {label: 'Ranking gaps', detail: `No matched expert ranking: ${evidence.expert.missing.join(', ')}. Value balance is estimated; no winner called.`};
+  if (evidence.expert?.disagreements?.length) return {label: 'Rankings disagree', detail: `Expert rankings and DFL values disagree: ${evidence.expert.disagreements.join(', ')}. No winner called.`};
+  if (evidence.expert?.split?.length) return {label: 'Experts split', detail: `Experts disagree on ${evidence.expert.split.join(', ')}. Value balance is estimated; no winner called.`};
+  if (evidence.thinSamples?.length) return {label: 'Limited game data', detail: `Limited completed-game samples: ${evidence.thinSamples.join(', ')}. No winner called.`};
   return {label: 'Not rated', detail: 'No complete verdict is available for this trade.'};
 }
 

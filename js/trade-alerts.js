@@ -168,10 +168,12 @@ export function tradeAlertViewModel(alert) {
     teamName: teamByRoster.get(rosterId(pkg.roster_id))?.team_name || `Team ${pkg.roster_id}`,
     team:teamByRoster.get(rosterId(pkg.roster_id)),players: list(pkg.sends).map(readPlayer),
   }));
-  const outcome = tradeOutcomeSummary(alert);
+  const rawOutcome = tradeOutcomeSummary(alert);
+  const caution = receiptCaution(alert);
+  const displayGrade=rawOutcome.grade==='Review'?caution.label:rawOutcome.grade;
+  const outcome={...rawOutcome,displayGrade};
   const winner = outcome.winner;
   const balanced = outcome.grade === "Fair deal";
-  const caution = receiptCaution(alert);
   const rawBalance = alert.result?.fairness;
   const fairness = rawBalance == null || rawBalance === '' || !Number.isFinite(Number(rawBalance))||alert.result?.projectionEvidence?.missing?.length
     ? null : Math.round(Math.max(0, Math.min(100, Number(rawBalance))));
@@ -195,7 +197,7 @@ export function tradeAlertViewModel(alert) {
     packages,
     receivedPackages,
     reviewedAt:alert.reviewedAt||null,
-    teamValues:teams.map((team,i)=>{let sent=sum(packages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]),received=receivedPackages?sum(receivedPackages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]):null;const r=alert.result;if(r&&!r.projectionEvidence?.missing?.length){sent=number(Array.isArray(r.outgoingValues)?r.outgoingValues[i]:i?r.valueToA:r.valueToB)??sent;received=number(Array.isArray(r.values)?r.values[i]:i?r.valueToB:r.valueToA)??received}return {rosterId:rosterId(team.roster_id),sent,received,net:sent==null||received==null?null:received-sent,balance:r?.partyBalances?.[i]??fairness};}),
+    teamValues:teams.map((team,i)=>{let sent=sum(packages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]),received=receivedPackages?sum(receivedPackages.find(p=>p.rosterId===rosterId(team.roster_id))?.players||[]):null;const r=alert.result;if(r&&!r.projectionEvidence?.missing?.length){sent=number(Array.isArray(r.outgoingValues)?r.outgoingValues[i]:i?r.valueToA:r.valueToB)??sent;received=number(Array.isArray(r.values)?r.values[i]:i?r.valueToB:r.valueToA)??received}return {rosterId:rosterId(team.roster_id),sent,received,net:sent==null||received==null?null:received-sent,balance:fairness==null||sent==null||received==null||!receivedPackages?null:Math.round(Math.min(sent,received)/Math.max(sent,received,1)*100)};}),
     caution,
     winner,
     balanced,
@@ -203,7 +205,7 @@ export function tradeAlertViewModel(alert) {
     headline: outcome.grade === "Review" ? "DEAL DONE. KEEP THE RECEIPT." : tradeBreakingHeadline(alert),
     outcome,
     fairness,
-    balanceLabel: alert.analysis_status === "partial" ? "Player balance" :teams.length>2?"Group balance": "Value balance",
+    balanceLabel: alert.analysis_status === "partial" ? "Player balance" :teams.length>2?"Lowest team balance": "Value balance",
     lineupDeltas: teams.map((team, index) => ({
       rosterId: rosterId(team.roster_id),
       teamName: team.team_name || `Team ${team.roster_id}`,

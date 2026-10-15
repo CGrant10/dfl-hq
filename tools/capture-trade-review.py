@@ -304,10 +304,17 @@ with sync_playwright() as p:
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
             if receipt_id=='receipt-partial':assert 'Player-only estimate' in page.locator('.td-receipt-body').inner_text()
             if receipt_id=='receipt-invalid':assert page.locator('.td-receipt-score b').inner_text()=='—'
-            page.screenshot(path=str(output/f'receipt-{width}-{receipt_id}.png'))
-            page.evaluate("document.documentElement.style.fontSize='200%'")
-            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
-            page.evaluate("document.documentElement.style.fontSize=''")
+            for theme in ['dark','light','team:KC']:
+                page.evaluate("async mode=>{const t=await import('/js/theme.js');t.pinMode(mode)}",theme)
+                # Divider colour must not become the whole player-list surface.
+                assert page.locator('.td-alert-packages').evaluate("e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'")
+                assert page.locator('.td-alert-packages > section').first.evaluate("e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'")
+                assert page.locator('[data-balance-team]').count()==count
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+                page.screenshot(path=str(output/f'receipt-{width}-{receipt_id}-{theme.replace(":","-")}.png'))
+                page.evaluate("document.documentElement.style.fontSize='200%'")
+                assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+                page.evaluate("document.documentElement.style.fontSize=''")
         assert not errors,errors
         results.append({'width':width,'actualRouting':shared,'savedComparisonLimit':3,'reloadPreservedRoutes':True,'counterofferApplied':True,'removedRecipientNeedsChoice':True,'staleOwnershipRejected':True,'fiveRequiredPlayersPersist':True,'freshInjuryRequiresReview':True,'shareProviderFailureBlocked':True,'shareOwnershipRechecked':True,'pageErrors':errors,'overflow':False})
         context.close()

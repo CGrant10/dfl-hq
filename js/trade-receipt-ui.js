@@ -4,6 +4,7 @@ import {playerIdentity} from './player-presentation.js';
 import {teamIdentity} from './team-presentation.js';
 const value=n=>n==null||!Number.isFinite(Number(n))?'—':Math.round(Number(n));
 const signed=n=>n==null||!Number.isFinite(Number(n))?'—':`${n>0?'+':n<0?'−':''}${Math.abs(n).toFixed(1)}`;
+const netValue=n=>n==null?'—':`${n>0?'+':n<0?'−':''}${value(Math.abs(n))}`;
 
 export function completedTradeMarkup(alerts=[],selectedTransactionId='',{standalone=false}={}){
  const views=alerts.map(tradeAlertViewModel).filter(Boolean);
@@ -16,16 +17,19 @@ export function completedTradeMarkup(alerts=[],selectedTransactionId='',{standal
    const peer=teamName(direction==='received'?p.fromRosterId:p.toRosterId),detail=[p.position,p.nflTeam,peer?`${direction==='received'?'From':'To'} ${peer}`:''].filter(Boolean).join(' · ');
    return `<div class="td-receipt-player"><button type="button" class="player-card-trigger td-receipt-player-action" data-player-card="${esc(p.id)}" aria-label="View ${esc(p.name)} player card">${playerIdentity(p,{detail})}</button><span class="td-receipt-value"><span class="sr-only">Trade value </span><b>${value(p.value)}</b></span></div>`;
   }).join('')||'<p class="muted tiny">No players</p>';
-  const call=alert.balanced?'Balanced deal':alert.outcome.grade==='Value edge'?`${alert.winner} · biggest value gain`:alert.winner?`${alert.winner} wins value`:alert.outcome.grade==='Close call'?'Close call':alert.caution.label;
+  const call=alert.balanced?'Balanced deal':alert.outcome.grade==='Value edge'?`${alert.winner} · biggest value gain`:alert.winner?`${alert.winner} wins value`:alert.outcome.grade==='Close call'?'Close call':alert.fairness!=null&&alert.status==='graded'?`No clear winner · ${alert.caution.label}`:alert.caution.label;
   const packages=alert.receivedPackages||alert.packages,received=!!alert.receivedPackages;
   const impacts=alert.lineupDeltas.map((row,i)=>({...row,depth:alert.depthDeltas[i]?.weekly})).filter(row=>row.weekly!=null);
   const caution=alert.outcome.grade==='Review'||alert.outcome.needsReview||alert.status==='partial';
+  const balanceRows=alert.teams.map(team=>{
+   const totals=alert.teamValues.find(t=>t.rosterId===team.rosterId),balance=totals?.balance;
+   return `<div class="td-receipt-balance-row" data-balance-team="${esc(team.rosterId)}"><strong>${esc(team.teamName)}</strong><b>${balance==null?'—':`${balance}%`}<small>value balance</small></b><span>Sent <em>${value(totals?.sent)}</em> <span aria-hidden="true">→</span> Received <em>${value(totals?.received)}</em></span><span class="td-receipt-net ${totals?.net>0?'is-up':totals?.net<0?'is-down':''}"><span class="sr-only">Net value </span>${netValue(totals?.net)}<small> net value</small></span>${balance==null?'':`<span class="td-receipt-balance-track" aria-hidden="true"><i style="width:${Math.max(0,Math.min(100,balance))}%"></i></span>`}</div>`;
+  }).join('');
   return `<details class="td-alert-receipt" id="trade-${esc(alert.transactionId)}" data-receipt-tone="${esc(alert.outcome.tone)}"${selected?' data-route-focus':''}${open?' open':''}>
    <summary class="td-receipt-summary"><div class="td-receipt-heading"><small>${alert.season?`${esc(alert.season)} · `:''}${alert.week?`WEEK ${esc(alert.week)}`:'COMPLETED'}${alert.teams.length>2?` · ${alert.teams.length} TEAMS`:''}</small><h3>${alert.teams.map(t=>esc(t.teamName)).join(` <span class="td-receipt-vs" aria-label="and">${alert.teams.length>2?'+':'↔'}</span> `)}</h3><p class="td-receipt-call">${esc(call)}</p></div><span class="td-receipt-score"><b>${alert.fairness==null?'—':`${alert.fairness}%`}</b><small>${esc(alert.balanceLabel)}${caution&&alert.fairness!=null?' · est.':''}</small></span><span class="td-receipt-chevron" aria-hidden="true"></span></summary>
-   <div class="td-receipt-body"><div class="td-alert-packages">${packages.map(pkg=>{
-    const totals=alert.teamValues.find(t=>t.rosterId===pkg.rosterId),sent=alert.packages.find(t=>t.rosterId===pkg.rosterId);
+   <div class="td-receipt-body"><section class="td-receipt-comparison" aria-label="Team value balance">${balanceRows}</section><div class="td-alert-packages">${packages.map(pkg=>{
+    const sent=alert.packages.find(t=>t.rosterId===pkg.rosterId);
     return `<section data-receipt-team="${esc(pkg.rosterId)}" aria-label="${esc(pkg.teamName)} trade receipt">${teamIdentity({...pkg.team,team_name:pkg.teamName},{meta:received?'RECEIVED':'SENT',compact:true})}
-     <dl class="td-receipt-team-values"><div><dt>Sent</dt><dd>${value(totals?.sent)}</dd></div><div><dt>Received</dt><dd>${value(totals?.received)}</dd></div><div class="td-receipt-net${totals?.net>0?' is-up':totals?.net<0?' is-down':''}"><dt>Net value</dt><dd>${totals?.net==null?'—':`${totals.net>0?'+':totals.net<0?'−':''}${value(Math.abs(totals.net))}`}</dd></div></dl>
      <div class="td-receipt-column-head" aria-hidden="true"><span>${received?'Players received':'Players sent'}</span><span>Value</span></div>${playerRows(pkg.players,received?'received':'sent')}
      ${received&&sent?.players.length?`<details class="td-receipt-sent"><summary>Sent · ${sent.players.length} player${sent.players.length===1?'':'s'}</summary>${playerRows(sent.players,'sent')}</details>`:''}
     </section>`;

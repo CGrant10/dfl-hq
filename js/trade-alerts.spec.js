@@ -224,16 +224,26 @@ describe('saved receipt balance and model uncertainty',()=>{
   it('does not call a stale-expert estimate balanced just because no winner was named',()=>{
     const alert={...base,result:{...base.result,projectionEvidence:{expert:{required:true,status:'Stale'},injuries:[],missing:[]}}};
     expect(tradeOutcomeSummary(alert)).toMatchObject({grade:'Review',winner:null});
-    expect(tradeAlertViewModel(alert)).toMatchObject({fairness:80,balanced:false,verdict:'Estimate only'});
+    expect(tradeAlertViewModel(alert)).toMatchObject({fairness:80,balanced:false,verdict:'Older rankings',outcome:{displayGrade:'Older rankings'}});
     expect(tradeAlertNotification(alert).body).toContain('80% balance');expect(tradeAlertNotification(alert).body).not.toContain('Balanced deal');
   });
   it('does not replace missing balance or impact with a fabricated zero',()=>{
     const view=tradeAlertViewModel({...base,analysis_status:'review',result:null});
     expect(view.fairness).toBeNull();expect(view.lineupDeltas[0].weekly).toBeNull();expect(view.verdict).toBe('Not rated');
+    expect(view.teamValues.every(t=>t.balance==null)).toBe(true);
     expect(tradeAlertViewModel({...base,result:{...base.result,fairness:0}}).fairness).toBe(0);
   });
   it('keeps a close call distinct from an incomplete model review',()=>{
     const alert={...base,result:{fairness:80,valueToA:80,valueToB:100,incomingEvidence:{low:75,high:100},outgoingEvidence:{low:80,high:110}}};
     expect(tradeAlertViewModel(alert)).toMatchObject({fairness:80,verdict:'Close call',outcome:{grade:'Close call'}});
+  });
+  it.each([
+    [{stale:['A']},'Older player data','A'],
+    [{fallback:['B']},'Limited projections','B'],
+    [{thinSamples:['A']},'Limited game data','A'],
+    [{expert:{required:true,status:'Fresh',disagreements:['B']}},'Rankings disagree','B'],
+  ])('names the evidence issue without changing the frozen values (%j)',(evidence,label,player)=>{
+    const alert={...base,result:{...base.result,projectionEvidence:{...evidence,expert:evidence.expert||{required:true,status:'Fresh'}}}};
+    const view=tradeAlertViewModel(alert);expect(view.fairness).toBe(80);expect(view.winner).toBeNull();expect(view.outcome.displayGrade).toBe(label);expect(view.caution.detail).toContain(player);expect(alert.result.valueToA).toBe(5);
   });
 });

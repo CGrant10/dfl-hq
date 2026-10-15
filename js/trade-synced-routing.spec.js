@@ -49,6 +49,19 @@ describe('Sleeper routed receipts',()=>{
  it('renders every routed team, its received players, value changes and an exact focus target',()=>{
   const html=completedTradeMarkup([build()],transaction.transaction_id,{standalone:true});
   expect(html).toContain('data-route-focus');expect(html.match(/data-receipt-team=/g)).toHaveLength(3);expect(html.match(/Net value/g)).toHaveLength(3);
-  expect(html).toContain('From Bravo');expect(html).toContain('To Charlie');expect(html).toContain('Group balance');expect(html).not.toContain('Trade Board');
+  expect(html).toContain('From Bravo');expect(html).toContain('To Charlie');expect(html).toContain('Lowest team balance');expect(html).not.toContain('Trade Board');
+  expect(html.match(/data-balance-team=/g)).toHaveLength(3);
+ });
+ it('shows each team’s own ratio, with the group score matching its least balanced exchange',()=>{
+  const view=tradeAlertViewModel(build());
+  expect(view.teamValues.map(t=>t.balance)).toEqual([67,67,67]);
+  const alert=build();alert.result={...alert.result,values:[70,96,90],outgoingValues:[75,111,70],partyBalances:[93,86,78],fairness:78};
+  const actual=tradeAlertViewModel(alert);expect(actual.teamValues.map(t=>[t.sent,t.received,t.net,t.balance])).toEqual([[75,70,-5,93],[111,96,-15,86],[70,90,20,78]]);
+  expect(Math.min(...actual.teamValues.map(t=>t.balance))).toBe(actual.fairness);
+ });
+ it('names the uncertainty in the public grade without inventing a winner',()=>{
+  const alert=build();alert.result.projectionEvidence={...alert.result.projectionEvidence,injuries:['a1']};
+  const view=tradeAlertViewModel(alert);expect(view.outcome).toMatchObject({grade:'Review',displayGrade:'Injury flags',winner:null});
+  const html=completedTradeMarkup([alert],alert.sleeper_transaction_id);expect(html).not.toContain('Review needed');expect(html).toContain('Injury flags');
  });
 });
