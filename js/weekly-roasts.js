@@ -27,10 +27,10 @@ export function weeklyRoasts({completed=false,games=[],raw=[],players={},rosterP
     if(best){
       const name=players[best.id].n||`Player ${best.id}`,starter=players[best.starter]?.n||`Player ${best.starter}`;
       receipts.push({key:`bench:${game.matchup_id}`,memberId:loser.memberId,name:loser.name,kind:'Bench disaster',
-        text:`${loser.name} benched ${name}’s ${best.points.toFixed(2)} and lost by ${(margin/100).toFixed(2)}. That’s some fucking management.`,
+        text:`${loser.name} benched ${name}’s ${best.points.toFixed(2)} and lost by ${(margin/100).toFixed(2)}. Brilliant fucking management, dumbass.`,
         detail:`Lineup hindsight: ${name} for ${starter} adds ${(best.gain/100).toFixed(2)}. Slot-eligible in the submitted lineup; kickoff availability was not recorded.`,weight:best.gain});
     }else if(margin<=500){
-      receipts.push({key:`escape:${game.matchup_id}`,memberId:winner.memberId,name:winner.name,kind:'Narrow escape',text:`${winner.name} beat ${loser.name} by ${(margin/100).toFixed(2)}. Talk your shit, but unclench first.`,detail:'Final matchup score.',weight:500-margin});
+      receipts.push({key:`escape:${game.matchup_id}`,memberId:winner.memberId,name:winner.name,kind:'Narrow escape',text:`${winner.name} beat ${loser.name} by ${(margin/100).toFixed(2)}. Unclench, you lucky fucking bastard.`,detail:'Final matchup score.',weight:500-margin});
     }else if(margin>=3500){
       receipts.push({key:`blowout:${game.matchup_id}`,memberId:loser.memberId,name:loser.name,kind:'Body bag',text:`${loser.name} lost to ${winner.name} by ${(margin/100).toFixed(2)}. The group chat is going to be a rough fucking place tonight.`,detail:'Final matchup score.',weight:margin});
     }

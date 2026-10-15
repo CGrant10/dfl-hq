@@ -66,3 +66,25 @@ NFL/member identity colors, semantic statuses, authored images, share exports an
 the intentional Fairway palette have their own color roles; they are not treated
 as theme leaks. The new `AGENTS.md` records the requirement to audit both mobile
 modes for future color changes.
+
+## 1.423.0 — Home editions and Trade workbench
+
+Reviewed the compiled Home, Trade and Appearance screens at 390px in both
+Medicine Wheel modes, with overflow checks at 320px and 430px. The existing
+four Appearance choices, shared navigation, notification badge and selection
+states remain consistent. The visible trade inputs, offer packages, risk drawer
+and projected starter changes use shared surface, text and accent tokens.
+
+Home's live-score, final-score and rivalry editions were additionally checked
+at 320px, 390px and 768px in both modes: readable copy, no clipped content, no
+horizontal overflow and exact matchup destinations. Their text-bearing shade
+uses the selected theme ground; the broadcast artwork retains its authored
+colors. Trade controller fixtures cover the searchable inputs, populated player
+chips, three-team destinations, saved comparisons, counteroffers and required
+drops at 320px, 390px and 768px. Both modes were visually inspected on mobile.
+
+`pnpm check` passes the palette audit, theme regressions, type checks and all
+1,814 tests. No new palette, valuation source, backend fetch or startup module
+was added. This review covers the changed screens and representative populated
+states; it does not repeat the nine-screen audit above or claim exhaustive
+coverage of every dialog, native control or possible league story.

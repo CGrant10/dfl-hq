@@ -27,9 +27,9 @@ export function matchupChirp({ left, right, season, week, id = '', completed = f
     } else {
       receipt = `${leader.name} beat ${trailer.name} by ${margin.toFixed(2)}.`;
       roast = margin >= 30
-        ? pick([`${trailer.name}, that was a fucking eviction.`, `${trailer.name} brought a lineup to a demolition. Holy shit.`, `${trailer.name}, delete the excuses. The scoreboard already posted the receipt.`], seed)
+        ? pick([`${trailer.name}, that was a fucking eviction.`, `${trailer.name}, ${margin.toFixed(2)} points down. That lineup got fucking buried.`, `${trailer.name}, delete the excuses. The scoreboard already posted the receipt.`], seed)
         : margin < 3
-          ? pick([`${trailer.name}, a loss that small is going to live rent-free all week.`, `${leader.name} gets the win. ${trailer.name} gets seven days of "what if" bullshit.`], seed)
+          ? pick([`${trailer.name}, ${margin.toFixed(2)} points. Enjoy replaying that shit until Thursday.`, `${leader.name}, put the fucking parade away. ${margin.toFixed(2)} points bought you another week of running your mouth.`], seed)
           : pick([`${trailer.name}, the scoreboard says sit your ass down.`, `${leader.name} brought points. ${trailer.name} can bring the excuses.`, `${trailer.name}, talk all the shit you want. This receipt isn't going anywhere.`], seed);
     }
   } else if (live && leader && margin >= 15) {

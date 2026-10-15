@@ -408,7 +408,7 @@ function ticketMarkup(result, teamA, teamB, pool, sendA, sendB) {
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>${esc(teamName(teamA))} <i aria-hidden="true">&rlarr;</i> ${esc(teamName(teamB))}</h2>
-      <span>${esc(v.headline)}${winner ? ` &middot; ${esc(teamName(winner))} wins value` : ""}</span>
+
     </div>
 
     ${tradeDecisionMarkup(result,pool)}
@@ -461,7 +461,7 @@ function multiTicketMarkup(result, parties, pool, sends) {
     <div class="td-ticket-head">
       <small>DFL Trade Analyzer</small>
       <h2>${parties.length}-team deal</h2>
-      <span>${esc(v.headline)} for ${esc(teamName(parties[0]))} · ${result.fairness}% group balance</span>
+
     </div>
 
     ${tradeDecisionMarkup(result,pool)}
@@ -560,6 +560,8 @@ export function mountTradeDesk(root, { team, teams, pool, state, onPartnerChange
     verdictHost.innerHTML=(parties.length>2?multiTicketMarkup(result,parties,pool,sends):ticketMarkup(result,team,parties[1],pool,...sends))
       +(currentDeal?lineupComparisonMarkup(currentDeal,pool)+`<details class="td-data-context" data-td-weekly><summary>Next four weeks</summary><div data-td-weekly-body></div></details>`:sends.some(ids=>ids.length)?`<p class="td-projection-note" role="status" data-td-routing-status>${esc(routingMessage)}</p>`:'')
       +`<div class="td-deal-tools"><button type="button" class="btn ghost small" data-td-find-counter ${currentDeal?'':'disabled'}>Find a counteroffer</button><button type="button" class="btn ghost small" data-td-save-proposal ${currentDeal?'':'disabled'}>Save for comparison</button></div><div data-td-counter-results role="region" aria-label="Counteroffer suggestions"></div>`;
+    const impact=verdictHost.querySelector("[data-td-lineup-impact]"),decision=verdictHost.querySelector(".td-decision");
+    if(impact&&decision)decision.after(impact);
     onDeal?.(currentDeal);
   };
 

@@ -345,7 +345,7 @@ function fitHeadlines(slide) {
 export function renderItem(item, { editorial = false } = {}) {
   if (!item) return "";
   if (editorial && item.homeFeature) {
-    return `<a class="bx-slide bx-home-feature is-announcement" href="${esc(item.href)}">
+    return `<a class="bx-slide bx-home-feature is-announcement"${item.storyKey ? ` data-home-story="${esc(item.storyKey)}"` : ''} href="${esc(item.href)}">
       <img class="bx-home-art" src="assets/dfl-daily-hero.webp" width="1555" height="1011" alt="" fetchpriority="high">
       <span class="bx-home-shade" aria-hidden="true"></span>
       <span class="bx-home-week">${esc(item.kicker)}</span>

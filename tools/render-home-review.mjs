@@ -108,9 +108,9 @@ const rivalry = homeRivalryStory({ uid: 'u1', members: [{ sleeper_user_id: 'u2',
 const leagueFile = homeLeagueFile({ rivalry, fact: { id:'fixture:nailbiter',kind:'nailbiter', headline: 'The smallest margin still gets the win.', detail: 'Archive stories rotate here from the DFL matchup records.' }, facts:[{id:'fixture:title',kind:'title',headline:'Jack-HAMMER’s championship season.',detail:'A title remembered in the league record book.'},{id:'fixture:high',kind:'high',headline:'The week the scoreboard caught fire.',detail:'A record score from the DFL archive.'},{id:'fixture:close',kind:'nailbiter',headline:'Another close call.',detail:'A finish separated by a fraction of a point.'}] });
 const deck = homeBroadcastDeck([
   { id: 'fixture:news', treatment: 'announcement', kicker: 'League news', headline: 'The league gets the last word.', subtitle: 'The weekly recap is here.', body: 'Weekly awards, matchup conversations and the stories everyone will be talking about.', href: '#/clubhouse', temporal: 'recent' },
-  { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', temporal: 'historical' },
+  { id: 'fixture:champion', treatment: 'champion', kicker: '2025 · League champion', headline: 'Klutch Sports Group', subtitle: 'The defending champion returns for the anniversary season.', image: 'assets/dfl-daily-champion.webp?review=broadcast-only', temporal: 'historical' },
   { id: 'fixture:chip', treatment: 'champion', variant: 'chip', kicker: '2025 · Chip Eater', headline: 'Dream Enders', subtitle: 'Last place. One very hot chip.', temporal: 'historical', href: '#/history' },
-  { id: 'fixture:champion-art', treatment: 'champion', kicker: '2024 · League champion', headline: 'Jack-HAMMER', subtitle: 'A season to remember.', image: 'assets/dfl-daily-champion.webp', background: 'image', imageFit: 'cover', imageX: 0, imageY: 0, imageZoom: 4, temporal: 'historical', href: '#/history' },
+  { id: 'fixture:champion-art', treatment: 'champion', kicker: '2024 · League champion', headline: 'Jack-HAMMER', subtitle: 'A season to remember.', image: 'assets/dfl-daily-champion.webp?review=broadcast-only', background: 'image', imageFit: 'cover', imageX: 0, imageY: 0, imageZoom: 4, temporal: 'historical', href: '#/history' },
   tradeAlertSlide({ season: 2026, week: 5, fairness: 64, winner: 'Dream Enders', balanced: false, packages:[{teamName:'Dream Enders',players:[{id:'7564',name:'Ja’Marr Chase',nflTeam:'CIN'}]},{teamName:'Klutch Sports Group',players:[{id:'6794',name:'Justin Jefferson',nflTeam:'MIN'}]}],outcome:{grade:'Clear win'}, reason: { title: 'Dream Enders takes the better back.' }, lineupDeltas: [{ teamName: 'Dream Enders', weekly: 4.2 }], href: '#/trade?id=7' }),
   nextMoveSlide({ week: 5, need: { position: 'WR', urgent: true }, mine: { sleeper_user_id: 'u1' }, trade: { team: { name: 'Klutch Sports Group' }, player: { id:'6794', name: 'Justin Jefferson', position:'WR', nflTeam:'MIN' } }, waiver: null }),
   matchupPreviewSlide({ pairing: { mine: { sleeper_user_id: 'me', name: 'Klutch Sports Group' }, theirs: { sleeper_user_id: 'them', name: 'Dream Enders' } }, weekly: { teams: [{ sleeper_user_id: 'me', projection: 124.8 }, { sleeper_user_id: 'them', projection: 118.2 }] }, meSleeperId: 'me', season: 2026, week: 5 }),
@@ -136,12 +136,12 @@ html = html.replace(/<main id="view"[^>]*>[\s\S]*?<\/main>/, `<main id="view" cl
   </div>
   <section class="home-broadcast">${renderStage(deck, { editorial: true })}</section>
   </div>
+  ${homeSectionLinks()}
   <section class="home-week-desk" aria-label="Your week">
     ${disclosure('home-week','Plan your week','Projections, player outlook and Start / Sit',weeklyHome)}
     <div data-home-live-slot class="gameday-card home-live-desk"></div>
     ${pickemHome}
     ${homeLeagueTools()}
-    ${homeSectionLinks()}
   </section>
   <section class="home-league-desk" aria-label="Around the league">
     <div data-home-rankings-slot>${renderHomeReview.homeRankingsCard(rankings)}</div>
@@ -163,7 +163,7 @@ html = html.replace('</head>', `<style>${previewCss}</style><link rel="styleshee
 const sportsbookHeader = readFileSync(new URL('../js/pages/sportsbook.js',import.meta.url),'utf8').match(/<header class="sb-masthead page-identity">[\s\S]*?<\/header>/)[0].replace('${esc(sportsbookWeekCaption(leagueWeek))}','Week 5').replace('${num(wallet?.balance)}','100');
 const tradeHeader = readFileSync(new URL('../js/pages/trade.js',import.meta.url),'utf8').match(/<div class="tb-head-row page-identity">[\s\S]*?<\/div>/)[0];
 html = html.replace('</body>', `<script type="module">
-  import { wireHomeNewspaperSections } from './js/home-presentation.js';
+  import { wireHomeNewspaperSections, homeBroadcastDeck } from './js/home-presentation.js';
   import { startStage } from './js/broadcast-stage.js';
   import { mountPageMotion, startUiMotion } from './js/ui-motion.js';
   import {mountHomeInjuryPanel} from './js/home-injury-panel.js';
@@ -200,6 +200,8 @@ html = html.replace('</body>', `<script type="module">
   window.reviewInjuryReport={items:Array.from({length:12},(_,index)=>({id:'fixture-'+index,sleeperId:index%2?'1466':'7564',name:index<2?index?'Travis Kelce':'Ja’Marr Chase':'Injury fixture '+(index+1),position:index%2?'TE':'WR',nflTeam:index%2?'KC':'CIN',owner:'Fixture team',starter:index<2,tier:index<2?0:1,tag:index%2?'Out':'Questionable',availability:index%2?'Ruled out':'Decision pending',tone:index%2?'out':'watch',body:'Ankle'})),rostersKnown:true,checkedAt:Date.UTC(2026,9,8,17)};
   window.reviewInjuryPanel=mountHomeInjuryPanel(document.querySelector('.home-injury-panel'),{getReport:()=>window.reviewInjuryReport});window.reviewInjuryPanel.update();
   window.reviewStage = startStage(document.querySelector('[data-bx-stage]'), deck);
+  if (window.reviewHoldInitialStage) window.reviewStage.suspend('initial-review', true);
+  window.reviewSetEdition = edition => window.reviewStage.update(homeBroadcastDeck(deck.filter(item=>!item.homeFeature),{week:5,edition:edition||{}}));
   window.reviewVfx = mountScoreVfx(document.querySelector('[data-home-live-slot]'));
   mountSeasonNavigation();
   document.querySelector('#tabbar [data-route="home"]').classList.add('on');

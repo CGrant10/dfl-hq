@@ -122,3 +122,14 @@
 #home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:translate3d(var(--bx-drag-depth-x,0px),var(--bx-depth-y,0px),0);}
 html[data-ui-motion="off"] #home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:none;}
 @media(prefers-reduced-motion:reduce){#home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image){transform:none;}}
+
+/* Live editions keep the established illustration with room for real names. */
+#home-wrap .bx-home-feature[data-home-story] .bx-home-title {
+ width:54%; max-width:54%; font-size:clamp(28px,7.7vw,34px); line-height:1.08;
+}
+#home-wrap .bx-home-feature[data-home-story] :is(.bx-home-week,.bx-sub) { width:54%; max-width:54%; }
+#home-wrap .bx-home-feature[data-home-story] .bx-sub { margin:0; }
+#home-wrap .home-newspaper-sections { margin-top:14px; }
+#home-wrap .bx-home-feature[data-home-story] .bx-home-shade {
+ background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 95%,transparent),color-mix(in srgb,var(--bg) 90%,transparent) 42%,color-mix(in srgb,var(--bg) 75%,transparent) 54%,transparent 78%);
+}
