@@ -1,5 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {suggestTrades,suggestMultiTeamTrades,tradeSuggestionTier} from './team-analyzer.js';
+import {tradeAssessment} from './trade-assessment.js';
 import {tradeConfidence} from './trade-confidence.js';
 import {tradeReviewFixture} from '../tools/trade-review-fixture.mjs';
 const balanced=(evidence={})=>({fairness:94,valueToA:94,valueToB:100,rosterImpactA:3,rosterImpactB:.1,weeklyDeltaA:3,weeklyDeltaB:.1,
@@ -8,8 +9,10 @@ describe('fair offer discovery',()=>{
  it('allows different roster gains on a balanced exchange without lowering the value bar',()=>{
   expect(tradeSuggestionTier(balanced())).toBe('fair');
   expect(tradeSuggestionTier({...balanced(),fairness:89})).toBe('aggressive');
-  expect(tradeSuggestionTier({...balanced(),rosterImpactB:-.8})).toBe('aggressive');
-  expect(tradeSuggestionTier({...balanced(),weeklyDeltaB:-1.1})).toBe('aggressive');
+  expect(tradeSuggestionTier({...balanced(),rosterImpactB:-.8})).toBe('fair');
+  expect(tradeAssessment({...balanced(),rosterImpactB:-.8}).fit.balanced).toBe(false);
+  expect(tradeSuggestionTier({...balanced(),weeklyDeltaB:-1.1})).toBe('fair');
+  expect(tradeAssessment({...balanced(),weeklyDeltaB:-1.1}).fit.label).toBe('Their lineup loses');
  });
  it.each(['disagreements','split'])('separates expert %s from asset balance while retaining review',field=>{
   const r=balanced(),offer=balanced({expert:{...r.projectionEvidence.expert,[field]:['Player']}});
@@ -20,8 +23,10 @@ describe('fair offer discovery',()=>{
   const r=balanced({thinSamples:['Rookie']});expect(tradeSuggestionTier(r)).toBe('fair');
   expect(tradeConfidence(r).needsReview).toBe(true);
  });
- it.each(['missing','fallback','injuries','stale'])('does not call %s player inputs fair',field=>{
-  expect(tradeSuggestionTier(balanced({[field]:['Player']}))).toBe('aggressive');
+ it.each(['missing','fallback','injuries','stale'])('separates %s input risk from the price estimate',field=>{
+  const result=balanced({[field]:['Player']});
+  expect(tradeSuggestionTier(result)).toBe(field==='missing'?'aggressive':'fair');
+  expect(tradeAssessment(result).needsReview).toBe(true);
  });
  it('retains fair balance and flags unavailable expert evidence or an unmatched player for review',()=>{
   const r=balanced();
@@ -53,6 +58,6 @@ describe('fair offer discovery',()=>{
   expect(available.length).toBeGreaterThan(0);
   const offers=suggestMultiTeamTrades({...args,limit:Math.min(4,available.length)});
   expect(offers.every(o=>o.tier==='fair')).toBe(true);
-  expect(offers.every(o=>o.partyBalances.every(n=>n>=90)&&o.rosterImpacts.every(n=>n>=-.75)&&o.weeklyDeltas.every(n=>n>=-1))).toBe(true);
+  expect(offers.every(o=>o.partyBalances.every(n=>n>=90))).toBe(true);
  });
 });

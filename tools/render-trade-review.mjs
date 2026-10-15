@@ -13,6 +13,7 @@ const imports=`
 import {completedTradeMarkup} from '/js/trade-receipt-ui.js';
 import {tradeAssessment} from '/js/trade-assessment.js';
 import {tradeDecisionMarkup} from '/js/trade-decision-ui.js';
+const loadTradeWeekSchedules=async()=>window.reviewSchedules||[];
 import {lineupPreviewsFor} from '/js/trade-workspace.js';
 import {analyzerPlayerSignal} from "/js/analyzer-player-form.js";
 import {mountAnalyzerLiveRefresh as mountRealAnalyzerRefresh} from "/js/analyzer-live-refresh.js";

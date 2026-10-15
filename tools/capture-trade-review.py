@@ -69,6 +69,29 @@ with sync_playwright() as p:
         counts=settled_counts()
         page.evaluate("scrollTo({top:0,behavior:'instant'})")
         page.screenshot(path=str(output/f'trade-{width}-workbench.png'))
+        # Price, actual roster fit and data risk remain separate on each offer.
+        assert 'Price balance' in page.locator('.tb-offer .td-decision').first.inner_text()
+        assert page.locator('.tb-offer .td-fit-call').first.is_visible()
+        # Upcoming schedules fail honestly and retry without silently keeping
+        # a Next 4 weeks label on rest-of-season numbers.
+        select('[data-tb-horizon]','next4')
+        page.wait_for_selector('[data-tb-retry-schedules]')
+        assert page.locator('[data-tb-horizon]').input_value()=='season'
+        page.evaluate("""()=>{const club=v=>({WSH:'WAS',JAC:'JAX',LA:'LAR'}[v]||v);const teams=[...new Set([...window.reviewData.pool.values()].map(p=>club(p.nflTeam)))];window.reviewSchedules=[6,7,8,9].map(week=>({week,schedule:new Map(teams.map(t=>[t,{opponent:'NFL',available:true}]))}))}""")
+        click('[data-tb-retry-schedules]')
+        page.wait_for_function("document.querySelector('[data-tb-horizon]')?.value==='next4'&&!document.querySelector('.tb-search-placeholder')")
+        settled_counts()
+        assert 'Weeks 6–9' in page.locator('.tb-offer .td-fit-call').first.inner_text()
+        page.screenshot(path=str(output/f'trade-{width}-next-four-weeks.png'))
+        select('[data-tb-horizon]','season');settled_counts()
+        assert 'Rest of season' in page.locator('.tb-offer .td-fit-call').first.inner_text()
+        if page.locator('[data-tb-shop-need]').count():
+            need=page.locator('[data-tb-shop-need]').get_attribute('data-tb-shop-need')
+            click('[data-tb-shop-need]');settled_counts()
+            assert page.locator('[data-ta-shop-partner]').input_value()=='all'
+            assert page.locator('[data-tb-goal]').input_value()==need
+        page.evaluate('sessionStorage.clear();localStorage.clear()');page.reload();page.wait_for_function('window.reviewReady===true')
+        counts=settled_counts()
         for tier in ['aggressive','steal','fair']:
             click(f'.tb-intent-options [data-tb-intent="{tier}"]')
             page.wait_for_function("tier=>document.querySelector('.tb-intent-options')?.dataset.intent===tier&&!document.querySelector('[data-tb-offers]')?.inert",arg=tier)

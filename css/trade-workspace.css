@@ -237,3 +237,6 @@
 #view[data-route="trade"] .td-deal-chirp { padding:8px 0 0; margin:0; color:var(--body-text); font:600 13px/1.45 var(--font-body); }
 #view[data-route="trade"] .tb-incoming-fit { margin:0 0 10px; font-size:12px; line-height:1.5; color:var(--body-text); overflow-wrap:anywhere; }
 #view[data-route="trade"] .tb-incoming-fit b { color:var(--text); }
+
+#view[data-route="trade"] .td-fit-call { margin:10px 0 0; color:var(--body-text); font:600 12px/1.5 var(--font-body); }
+#view[data-route="trade"] .td-fit-call small { display:block; font:500 11px/1.5 var(--font-body); color:var(--muted); }

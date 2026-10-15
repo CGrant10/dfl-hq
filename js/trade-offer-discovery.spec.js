@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateTrade, suggestTrades, tradeSuggestionTier } from './team-analyzer.js';
+import {tradeAssessment} from './trade-assessment.js';
 import { tradeConfidence } from './trade-confidence.js';
 import { tradeOfferEmptyCopy, closestTradeOffers } from './trade-workspace-ui.js';
 
@@ -17,11 +18,12 @@ describe('supported offer discovery', () => {
     expect(tradeConfidence(result)).toMatchObject({level:'limited',needsReview:true});
     expect(tradeSuggestionTier({...result,fairness:70,valueToA:100,valueToB:70,incomingPositionsA:['WR'],incomingEvidence:{low:90},outgoingEvidence:{high:80}})).toBe('aggressive');
   });
-  it.each(['missing','fallback','stale'])('still withholds Fair for %s core model inputs when the expert feed is unavailable', field => {
+  it.each(['missing','fallback','stale'])('separates the quoted balance from %s data risk', field => {
     const result=balancedAvailability();
     result.projectionEvidence.expert.status='Unavailable';
     result.projectionEvidence[field]=['Receiver'];
-    expect(tradeSuggestionTier(result)).toBe('aggressive');
+    expect(tradeSuggestionTier(result)).toBe(field==='missing'?'aggressive':'fair');
+    expect(tradeAssessment(result).needsReview).toBe(true);
   });
   it('finds a balanced anchored receiver exchange despite a stale expert feed',()=>{
     const pool=new Map(['a','b'].map(id=>[id,{id,name:id==='b'?'Chris Olave':'Receiver',position:'WR',expectedPoints:272,tradePerGame:16,tradeValue:id==='b'?37:36,modelSource:'projection',expertFeedStatus:'Stale',expert:{rank:12}}]));
@@ -56,14 +58,15 @@ describe('supported offer discovery', () => {
     expect(tradeSuggestionTier(result)).toBe('fair');
     expect(tradeConfidence(result)).toMatchObject({ level: 'mixed', needsReview: true });
   });
-  it.each(['Out', 'IR', 'PUP', 'Doubtful', '', 'Healthy'])('keeps %s availability out of Fair when flagged as uncertain', status => {
-    expect(tradeSuggestionTier(balancedAvailability(status))).toBe('aggressive');
+  it.each(['Out', 'IR', 'PUP', 'Doubtful', '', 'Healthy'])('keeps a balanced %s estimate separate from its availability risk', status => {
+    expect(tradeSuggestionTier(balancedAvailability(status))).toBe('fair');
+    expect(tradeAssessment(balancedAvailability(status)).flags).toContain('Injury risk');
   });
-  it('withholds Fair for reserve players, stale evidence, and unverified injury flags', () => {
-    expect(tradeSuggestionTier(balancedAvailability('Questionable', true))).toBe('aggressive');
+  it('retains visible warnings for reserve players, stale evidence and unverified injuries', () => {
+    expect(tradeSuggestionTier(balancedAvailability('Questionable', true))).toBe('fair');
     const result = balancedAvailability();
-    expect(tradeSuggestionTier({ ...result, projectionEvidence: { ...result.projectionEvidence, stale: ['Receiver'] } })).toBe('aggressive');
-    expect(tradeSuggestionTier({ ...result, projectionEvidence: { ...result.projectionEvidence, players: [] } })).toBe('aggressive');
+    expect(tradeSuggestionTier({ ...result, projectionEvidence: { ...result.projectionEvidence, stale: ['Receiver'] } })).toBe('fair');
+    expect(tradeSuggestionTier({ ...result, projectionEvidence: { ...result.projectionEvidence, players: [] } })).toBe('fair');
   });
   it('does not promote a questionable-player value edge into Steal', () => {
     const result = { ...balancedAvailability(), fairness: 60, valueToA: 100, valueToB: 60,
