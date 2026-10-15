@@ -27,6 +27,7 @@
 // =====================================================================
 
 import { scorePlayer } from "./dfl-scoring.js";
+import {playerLiveState} from './live-score.js';
 
 /* The lineup this league actually submits. Mirrors team-analyzer.js so the
    two cannot disagree about what a legal lineup is. */
@@ -40,7 +41,7 @@ export const SWAP_THRESHOLD = 1.5;
 const OUT_STATUSES = new Set(["Out", "IR", "PUP", "Sus", "NA", "DNR"]);
 const RISKY_STATUSES = new Set(["Questionable", "Doubtful"]);
 
-const num = value => (Number.isFinite(Number(value)) ? Number(value) : null);
+const num = value => (value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null);
 const idOf = row => (row?.player_id == null ? "" : String(row.player_id));
 
 /**
@@ -50,14 +51,14 @@ const idOf = row => (row?.player_id == null ? "" : String(row.player_id));
  * @param {Object}   scoringSettings the league's own scoring
  * @returns {Map<string, Object>}
  */
-export function buildWeeklyPool(rows = [], scoringSettings = null) {
+export function buildWeeklyPool(rows = [], scoringSettings = null, {players=new Map(),schedule=null}={}) {
   const pool = new Map();
   for (const row of rows || []) {
     const id = idOf(row);
     if (!id) continue;
-    const meta = row.player || {};
-    const position = String(meta.position || "").toUpperCase();
-    const status = row.injury_status || meta.injury_status || null;
+    const known=players.get(id),meta = row.player || {};
+    const position = String(known?.position || meta.position || "").toUpperCase();
+    const status = known ? known.injuryStatus ?? null : row.injury_status ?? meta.injury_status ?? null;
     /* gp is Sleeper's own "is he playing this week" flag, but it is absent
        for most rows: of 3,114 week-1 rows only ~400 carry a real projection,
        and those are exactly the ones naming an opponent. The rest score 0
@@ -65,25 +66,40 @@ export function buildWeeklyPool(rows = [], scoringSettings = null) {
        looking like advice. No opponent and no gp means not scheduled. */
     const games = num(row.stats?.gp);
     const opponent = row.opponent || null;
-    const gameStatus = row.game_status || row.game?.status || row.metadata?.game_status || "";
+    const team=known?.nflTeam||row.team||meta.team||null,nfl=schedule?.get(({WSH:'WAS',JAC:'JAX',LA:'LAR'}[team]||team));
+    const gameStatus = nfl?.key==='live'?'live':nfl?.key==='final'?'final':row.game_status || row.game?.status || row.metadata?.game_status || "";
     pool.set(id, {
       id,
       position,
-      name: [meta.first_name, meta.last_name].filter(Boolean).join(" ") || id,
-      team: row.team || meta.team || null,
+      name: known?.name||[meta.first_name, meta.last_name].filter(Boolean).join(" ") || id,
+      team,
       opponent,
       gameId: row.game_id || null,
       gameStatus,
+      kickoff:nfl?.kickoff||row.date||row.game?.date||null,
+      recentAverage:known?.staleSignals?.includes('weeklyResults')?null:num(known?.recentAverage),recentGames:num(known?.recentGames)||0,
+      gameLabel:nfl?.label||'',scheduleKnown:games!=null||!!opponent||!!nfl,
       week: num(row.week),
       points: row.stats ? scorePlayer(row.stats, scoringSettings) : null,
       injuryStatus: status,
-      isOut: OUT_STATUSES.has(String(status)),
-      isRisky: RISKY_STATUSES.has(String(status)),
-      hasGame: games == null ? Boolean(opponent) : games > 0,
+      isOut: !!known?.isOut || OUT_STATUSES.has(String(status)),
+      isRisky: !known?.isOut && (!!known?.isRisky || RISKY_STATUSES.has(String(status))),
+      hasGame: nfl ? true : games == null ? Boolean(opponent) : games > 0,
     });
   }
+  for(const [id,p] of players)if(!pool.has(id))pool.set(id,{id,name:p.name,position:p.position,team:p.nflTeam,points:null,hasGame:null,scheduleKnown:false,injuryStatus:p.injuryStatus,isOut:!!p.isOut||OUT_STATUSES.has(String(p.injuryStatus)),isRisky:!p.isOut&&(!!p.isRisky||RISKY_STATUSES.has(String(p.injuryStatus)))});
   return pool;
 }
+
+export function weeklyPlayerLocked(player,now=Date.now()){
+ const state=playerLiveState(player).key;
+ if(['playing','final','played'].includes(state))return true;
+ if(player?.hasGame===false&&player.scheduleKnown!==false)return false;
+ const kickoff=Date.parse(player?.kickoff);
+ return Number.isFinite(kickoff)&&kickoff<=Number(now)&&!/postpon|cancel/i.test(player?.gameStatus||'');
+}
+const DEFAULT_SLOTS=['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'];
+const uncertain=player=>!player||!player.isOut&&!(player.hasGame===false&&player.scheduleKnown!==false)&&(player.points==null||player.scheduleKnown===false);
 
 /**
  * How generous each defense is this week, in points conceded to the
@@ -178,19 +194,24 @@ function slotCandidates(playerIds, weekly, position) {
  *
  * @returns {{slots:Object[], total:number, unknown:Object[]}}
  */
-export function bestWeeklyLineup(playerIds = [], weekly = new Map()) {
+export function bestWeeklyLineup(playerIds = [], weekly = new Map(), {starterIds=[],rosterPositions=DEFAULT_SLOTS,now=Date.now()}={}) {
   const used = new Set();
-  const slots = [];
-  const take = (position) => {
+  const positions=rosterPositions.filter(p=>p!=='BN'&&p!=='IR');
+  const slots = positions.map((position,index)=>{
+    const id=String(starterIds[index]||''),player=weekly.get(id);
+    const keep=id&&id!=='0'&&(weeklyPlayerLocked(player,now)||uncertain(player));
+    if(keep)used.add(id);
+    return {position,player:keep?(player||{id,name:'Projection pending',position,points:null}):null,score:keep?player?.points??null:null,fixed:!!keep};
+  });
+  const take = slot => {
+    if(slot.fixed)return;
+    const position=slot.position;
     const pick = slotCandidates(playerIds, weekly, position)
-      .find(row => !used.has(row.entry.id));
+      .find(row => !used.has(row.entry.id)&&!weeklyPlayerLocked(row.entry,now));
     if (pick) used.add(pick.entry.id);
-    slots.push({ position, player: pick?.entry || null, score: pick?.score ?? null });
+    Object.assign(slot,{player:pick?.entry||null,score:pick?.score??null});
   };
-  for (const [position, count] of Object.entries(WEEKLY_STARTERS)) {
-    for (let i = 0; i < count; i += 1) take(position);
-  }
-  take("FLEX");
+  slots.filter(s=>s.position!=='FLEX').forEach(take);slots.filter(s=>s.position==='FLEX').forEach(take);
   const total = slots.reduce((sum, slot) => sum + (slot.score || 0), 0);
   const unknown = playerIds
     .map(id => weekly.get(String(id)))
@@ -212,61 +233,60 @@ export function bestWeeklyLineup(playerIds = [], weekly = new Map()) {
  * @param {Map} input.defense          from defenseDifficulty()
  */
 export function startSitAdvice({ playerIds = [], starterIds = [], weekly = new Map(),
-                                 defense = new Map() } = {}) {
-  const roster = playerIds.map(String);
-  const submitted = starterIds.map(String).filter(id => weekly.has(id));
-  const best = bestWeeklyLineup(roster, weekly);
-
-  const submittedTotal = submitted
-    .reduce((sum, id) => sum + (effectivePoints(weekly.get(id)) || 0), 0);
-
-  const bestIds = new Set(best.slots.map(slot => slot.player?.id).filter(Boolean));
-  const submittedSet = new Set(submitted);
-
-  /* Somebody in the lineup who cannot play is not a "close call" - it is the
-     single most valuable thing this screen can tell a manager, so it is
-     reported separately and never filtered by the margin. */
-  const alarms = submitted
-    .map(id => weekly.get(id))
-    .filter(entry => entry && (entry.isOut || !entry.hasGame))
-    .map(entry => ({
-      player: entry,
-      reason: !entry.hasGame ? "no game this week" : `listed ${entry.injuryStatus}`,
-    }));
-
-  const benchedGems = [...bestIds].filter(id => !submittedSet.has(id))
-    .map(id => weekly.get(id)).filter(Boolean);
-  const startersToSit = submitted.filter(id => !bestIds.has(id))
-    .map(id => weekly.get(id)).filter(Boolean);
-
-  /* Pair them off by slot value, best gain first. */
-  const swaps = [];
-  const outPool = [...startersToSit].sort((a, b) => (effectivePoints(a) || 0) - (effectivePoints(b) || 0));
-  const inPool = [...benchedGems].sort((a, b) => (effectivePoints(b) || 0) - (effectivePoints(a) || 0));
-  for (const incoming of inPool) {
-    const slotFor = incoming.position;
-    const index = outPool.findIndex(out =>
-      out.position === slotFor || FLEX_ELIGIBLE.has(out.position) && FLEX_ELIGIBLE.has(slotFor));
-    if (index === -1) continue;
-    const outgoing = outPool.splice(index, 1)[0];
-    const gain = (effectivePoints(incoming) || 0) - (effectivePoints(outgoing) || 0);
-    const blocked = outgoing.isOut || !outgoing.hasGame;
-    if (gain < SWAP_THRESHOLD && !blocked) continue;
-    swaps.push({
-      in: incoming, out: outgoing, gain,
-      urgent: blocked,
-      matchupIn: matchupNote(incoming, defense),
-      matchupOut: matchupNote(outgoing, defense),
-    });
+ defense = new Map(),rosterPositions=DEFAULT_SLOTS,now=Date.now(),stale=false } = {}) {
+ const positions=rosterPositions.filter(p=>p!=='BN'&&p!=='IR'),submitted=starterIds.map(String);
+ const roster=[...new Set([...playerIds.map(String),...submitted.filter(id=>id&&id!=='0')])];
+ const best=bestWeeklyLineup(roster,weekly,{starterIds:submitted,rosterPositions:positions,now});
+ const submittedSet=new Set(submitted),bestIds=new Set(best.slots.map(s=>s.player?.id).filter(Boolean));
+ const unknownStarters=submitted.filter(id=>id&&id!=='0'&&uncertain(weekly.get(id))).map(id=>weekly.get(id)||{id,name:'Projection pending'});
+ const emptySlots=positions.filter((p,i)=>!submitted[i]||submitted[i]==='0');
+ const locked=submitted.map(id=>weekly.get(id)).filter(p=>p&&weeklyPlayerLocked(p,now));
+ const alarms=submitted.map(id=>weekly.get(id)).filter(p=>p&&!weeklyPlayerLocked(p,now)&&(p.isOut||p.hasGame===false&&p.scheduleKnown!==false))
+  .map(player=>({player,reason:player.isOut?`listed ${player.injuryStatus||'Out'}`:'no game this week'}));
+ const incoming=[...bestIds].filter(id=>!submittedSet.has(id)).map(id=>weekly.get(id)).filter(p=>p&&!weeklyPlayerLocked(p,now)).sort((a,b)=>b.points-a.points);
+ const outgoing=submitted.filter(id=>!bestIds.has(id)).map(id=>weekly.get(id)).filter(p=>p&&!uncertain(p)&&!weeklyPlayerLocked(p,now)).sort((a,b)=>(effectivePoints(a)||0)-(effectivePoints(b)||0));
+ let working=[...submitted];const swaps=[];
+ const assign=ids=>{
+  // Other inactive starters still occupy their slots until their own move.
+  // Validate the entire submitted lineup, including those temporary occupants.
+  const allocationPool=new Map(weekly);
+  for(const id of ids){const p=weekly.get(id);if(p&&(p.isOut||p.hasGame===false))allocationPool.set(id,{...p,isOut:false,hasGame:true,points:0});}
+  const lineup=bestWeeklyLineup(ids,allocationPool,{starterIds:working,rosterPositions:positions,now});
+  for(const slot of lineup.slots)if(slot.player)slot.player=weekly.get(slot.player.id)||slot.player;
+  const assigned=new Set(lineup.slots.map(s=>s.player?.id));
+  return ids.every(id=>assigned.has(id))?lineup:null;
+ };
+ for(const player of incoming){
+  for(let i=0;i<outgoing.length;i++){
+   const out=outgoing[i],blocked=out.isOut||out.hasGame===false,gain=player.points-(effectivePoints(out)||0);
+   if(gain<SWAP_THRESHOLD&&!blocked)continue;
+   const ids=working.filter(id=>id&&id!=='0'&&id!==out.id).concat(player.id),lineup=assign(ids);if(!lineup)continue;
+   outgoing.splice(i,1);working=lineup.slots.map(slot=>slot.player?.id||'0');
+   const confidence=stale||unknownStarters.length?'limited':player.isRisky||out.isRisky?'conditional':gain>=3?'clear':'lean';
+   swaps.push({in:player,out,gain,urgent:blocked,reassign:[],backup:null,confidence,
+    call:player.isRisky?'Start if active':blocked?'Replace now':confidence==='clear'?'Clear upgrade':'Lean start',
+    matchupIn:matchupNote(player,defense),matchupOut:matchupNote(out,defense)});
+   break;
   }
-
-  return {
-    swaps: swaps.sort((a, b) => Number(b.urgent) - Number(a.urgent) || b.gain - a.gain),
-    alarms,
-    submittedTotal,
-    bestTotal: best.total,
-    pointsOnBench: Math.max(0, best.total - submittedTotal),
-    lineup: best,
-    lineupIsSet: submitted.length > 0,
-  };
+ }
+ swaps.sort((a,b)=>Number(b.urgent)-Number(a.urgent)||b.gain-a.gain);
+ const reassign=working.flatMap((id,index)=>{
+  const original=submitted.indexOf(id);
+  return id!=='0'&&original>=0&&positions[original]!==positions[index]?[{player:weekly.get(id),from:positions[original],to:positions[index]}]:[];
+ });
+ if(swaps.length)swaps[0].reassign=reassign;
+ const backups=new Set();
+ for(const swap of swaps){
+  swap.slot=positions[working.indexOf(swap.in.id)];
+  if(!swap.in.isRisky)continue;
+  const kickoff=Date.parse(swap.in.kickoff);
+  swap.backup=roster.map(id=>weekly.get(id)).filter(p=>playable(p)&&!p.isRisky&&!working.includes(p.id)&&!backups.has(p.id)&&!weeklyPlayerLocked(p,now))
+   .filter(p=>{const at=Date.parse(p.kickoff);return Number.isFinite(kickoff)?Number.isFinite(at)&&at>=kickoff:true;})
+   .sort((a,b)=>b.points-a.points).find(p=>assign(working.filter(id=>id&&id!=='0'&&id!==swap.in.id).concat(p.id)))||null;
+  if(swap.backup)backups.add(swap.backup.id);
+ }
+ const submittedTotal=submitted.reduce((sum,id)=>sum+(effectivePoints(weekly.get(id))||0),0);
+ return {swaps,alarms,unknownStarters,emptySlots,lockedCount:locked.length,
+  submittedTotal,bestTotal:best.total,pointsOnBench:Math.max(0,best.total-submittedTotal),lineup:best,
+  lineupIsSet:submitted.some(id=>id&&id!=='0'),completeEstimate:!unknownStarters.length&&!emptySlots.length&&best.slots.every(slot=>slot.player&&slot.score!=null),stale};
 }

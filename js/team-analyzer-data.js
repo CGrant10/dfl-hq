@@ -134,7 +134,7 @@ async function fetchAnalyzerData({freshTrade=false,liveRefresh=false} = {}) {
     matchups: matchupRes?.error ? [] : matchupRes.data || [], snapshot: latestResults });
   return {
     state: teams.length ? "ready" : "empty",
-    league, rosterSeason, projectionSeason, teams, pool, members,
+    league, rosterSeason, projectionSeason, teams, pool, members,nflSchedule:nfl?.teams||null,
     leagueFormat:{teams:rosters.length,scoring:format,startingSlots:(league.roster_positions||DFL_STARTING_SLOTS).filter(p=>p!=='BN'),verified:league!==storedLeague},
     teamNamesSource:currentNamesComplete?'Current Sleeper':liveUsers.length?'Current Sleeper (partial)':'Synced roster',
     ...results,

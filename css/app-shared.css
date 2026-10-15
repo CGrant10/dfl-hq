@@ -5577,3 +5577,44 @@ dialog.dfl-player-card { height:min(720px,calc(100dvh - 24px),var(--dialog-viewp
  #home-wrap .home-injury-panel .injury-player { grid-template-columns:28px minmax(0,1fr) 78px; gap:6px; }
  #home-wrap .home-injury-panel .dfl-player-portrait { width:28px; height:28px; }
 }
+
+
+/* Source: css/start-sit.css */
+/* One compact decision layout on Home and in the Analyzer. */
+.ss-advice{padding:14px 0;color:var(--text)}
+.wo-startsit>.ss-advice{padding:16px 18px}
+.ss-moves{display:grid;gap:14px}
+.ss-move{border-block:1px solid var(--line);padding:12px 0}
+.ss-move>header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.ss-move>header strong{font-size:13px;color:var(--accent)}
+.ss-move>header>span{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.ss-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.ss-pair>section{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.ss-pair>section+section{padding-left:12px;border-left:1px solid var(--line)}
+.ss-pair>section>small{font-size:10px;letter-spacing:.1em;font-weight:800;color:var(--muted)}
+.ss-pair>section:first-child>small{color:var(--accent)}
+#view .ss-pair .dfl-player{display:flex;align-items:center;flex-direction:row;gap:7px;min-width:0;width:100%}
+#view .ss-pair .dfl-player-portrait{width:36px;height:40px;flex:0 0 36px;align-self:flex-start}
+#view .ss-pair .dfl-player-copy{flex:1;min-width:0}
+#view .ss-pair .player-card-trigger{display:block;max-width:100%;padding:4px 0;min-height:44px;font-size:13px;line-height:1.25;white-space:normal;overflow-wrap:anywhere;text-align:left}
+#view .ss-pair .dfl-player-copy>small{display:block;font-size:11px;line-height:1.4;color:var(--muted)}
+.ss-pair>section>b{font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}
+.ss-pair>section>b small{font-size:10px;font-weight:500;color:var(--muted)}
+.ss-form,.ss-pair time{font-size:10px;line-height:1.4;color:var(--muted)}
+.ss-status,.ss-data-warning,.ss-locks,.ss-source{font-size:11px;line-height:1.5;color:var(--muted)}
+.ss-status,.ss-data-warning{color:var(--accent)}
+.ss-adjustment,.ss-backup{font-size:12px;line-height:1.5;margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+.ss-backup>b{display:block;font-size:10px;letter-spacing:.06em;color:var(--muted)}
+.ss-alerts p{display:flex;flex-direction:column;gap:3px;font-size:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.ss-alerts span{color:var(--muted)}
+.ss-hold{display:grid;gap:5px;margin:0;font-size:14px}.ss-hold span{font-size:12px;color:var(--muted)}
+.ss-locks{margin:10px 0 0}.ss-source{padding:0 18px 12px;margin:0}
+@media(min-width:600px){#view .ss-pair .dfl-player{flex-direction:row}.ss-pair .dfl-player-copy{width:auto}}
+/* Keep the title and total together; the outer panel already supplies gutters. */
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit .wo-head{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit .wo-head>div:first-child{grid-column:1;min-width:0}
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit .wo-head h2{font-size:1.125rem}
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit .wo-projection{grid-column:2;grid-row:1;text-align:right}
+#view.view[data-page-system][data-route][data-route="analyzer"] .wo-startsit .wo-projection strong{font-size:1.5rem}
+#view .wo-startsit>.ss-advice{padding:4px 0 12px}
+#view .wo-startsit>.ss-source{padding:0;margin-top:4px}

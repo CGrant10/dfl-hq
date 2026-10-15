@@ -7,7 +7,7 @@ export function mountArchiveRouteMotion(){
   if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
   const link=event.target.closest('a[data-archive-key]');if(!link?.closest('#home-wrap')||!link.getAttribute('href')?.startsWith('#/facts?fact='))return;
   const image=link.querySelector('img');if(!image)return;
-  selected={key:link.dataset.archiveKey,home:location.hash,hash:link.getAttribute('href'),source:image,top:image.getBoundingClientRect().top,height:document.documentElement.scrollHeight||0};
+  selected={homeVisit:globalThis.history?.state?.dflRouteVisit?.id,key:link.dataset.archiveKey,home:location.hash,hash:link.getAttribute('href'),source:image,top:image.getBoundingClientRect().top,height:document.documentElement.scrollHeight||0};
  },true);
  const stop=()=>{active?.skipTransition();stopRestoring()};window.addEventListener('dfl:ui-motion-change',()=>{if(!permitted())stop()});window.addEventListener('pagehide',stop);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
 }
@@ -27,9 +27,9 @@ function restoreArchiveAnchor(view,target,top,minimumHeight){
  target.closest('a')?.focus({preventScroll:true});adjust();stopRestoring=stop;
 }
 
-export async function renderWithArchiveMotion(render,previous,nextHash){
+export async function renderWithArchiveMotion(render,previous,nextHash,{back=false,visitId}={}){
  const interrupted=!!active;active?.skipTransition();active=null;stopRestoring();delete document.documentElement.dataset.archiveReturning;delete document.documentElement.dataset.archiveTransition;
- const entering=selected&&nextHash===selected.hash&&previous?.dataset.route==='home',returning=selected&&nextHash===selected.home&&previous?.dataset.route==='facts';
+ const entering=selected&&nextHash===selected.hash&&previous?.dataset.route==='home',returning=back&&selected&&(!selected.homeVisit||selected.homeVisit===visitId)&&nextHash===selected.home&&previous?.dataset.route==='facts';
  if(returning)document.documentElement.dataset.archiveReturning='true';
  const renderAndRestore=async()=>{await render();if(document.documentElement.dataset.archiveTransition){const current=document.getElementById('view');if(current)current.dataset.connectedEntry='true'}if(!returning||location.hash!==nextHash)return;const view=document.getElementById('view'),target=await waitForTarget(view,selected.key);if(target&&location.hash===nextHash)restoreArchiveAnchor(view,target,selected.top,selected.height)};
  const fallback=async()=>{try{return await renderAndRestore()}finally{delete document.documentElement.dataset.archiveReturning}};

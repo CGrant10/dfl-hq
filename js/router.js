@@ -19,6 +19,8 @@ import { mountPageMotion } from './ui-motion.js';
 import { syncTabIndicator, mountNavHighlight } from './nav-highlight.js';
 import { routePlaceholder } from './route-placeholder.js';
 import { beginRouteGlide } from './route-motion.js';
+import {createRouteHistory} from './route-history.js';
+let routeHistory,mountedVisit;
 
 const importFailures = new Map();
 async function importPage(name, first) {
@@ -116,7 +118,7 @@ export function onRoute(fn) { listeners.add(fn); return () => listeners.delete(f
   therefore leave the green rail on Home while the previous page stayed
   mounted. Own the click here instead. A same-hash tap also repairs the rare
   case where the URL says Home but an interrupted render left another route in
-  #view; normal taps on the already-open page remain a no-op.
+  #view; normal taps on the already-open page return to the top.
 */
 function handleTabNavigation(event, bar) {
   const target = event.target?.closest?.("a[data-route]");
@@ -135,6 +137,7 @@ function handleTabNavigation(event, bar) {
     void renderRoute();
     return;
   }
+  stopRestore();window.scrollTo({top:0,behavior:'instant'});
   syncTabIndicator();
 }
 
@@ -283,8 +286,11 @@ const setRouteCanvas = color => {
   afterward. The epoch also stops stale renders from moving the tab indicator,
   scrolling the new page, or publishing a route-complete notification.
 */
-export async function renderRoute(options={}){return renderWithArchiveMotion(()=>renderRoutePage(options),document.getElementById('view'),location.hash)}
-async function renderRoutePage({ retry = false } = {}) {
+export async function renderRoute(options={}){
+ const visit=(routeHistory||=createRouteHistory()).visit();
+ return renderWithArchiveMotion(()=>renderRoutePage({...options,visit}),document.getElementById('view'),location.hash,{back:visit.kind==='back',visitId:visit.id});
+}
+async function renderRoutePage({ retry = false, visit } = {}) {
   const routeStarted = performance.now();
   const epoch = ++renderEpoch;
   const name = currentRoute();
@@ -295,8 +301,14 @@ async function renderRoutePage({ retry = false } = {}) {
   stopRestore();
   stopPageMotion();
   stopRecovery();
-  if (mountedHash && !previousView.dataset.routeFailed && !previousView.classList.contains('is-route-loading')) writeViewMemory(mountedMember, `route:${mountedHash}`, captureView(previousView));
+  if (mountedHash && !previousView.dataset.routeFailed && !previousView.classList.contains('is-route-loading')) {
+    const snapshot=captureView(previousView);
+    writeViewMemory(mountedMember, `route:${mountedHash}`, snapshot);
+    if(mountedVisit)writeViewMemory(mountedMember,`visit:${mountedVisit}`,snapshot);
+  }
   const routeMemory = readViewMemory(getMemberId(), `route:${expectedHash}`);
+  const backMemory=visit.kind==='back'?readViewMemory(getMemberId(),`visit:${visit.id}`):null;
+  const restoreMemory=backMemory||((retry||visit.kind==='refresh')?routeMemory:null);
   const changed = name !== lastAnimated || expectedHash !== mountedHash;
   if (changed) { previousView.classList.remove("page-in"); previousView.classList.add("page-switching"); }
   try { leaving?.(); } catch (err) { console.warn(err); }
@@ -319,6 +331,7 @@ async function renderRoutePage({ retry = false } = {}) {
   document.body.classList.add("route-loading");
   setRouteCanvas("var(--bg)");
   previousView.replaceWith(view);
+  window.scrollTo({top:0,behavior:'instant'});
   document.getElementById('route-placeholder')?.remove();
   const template = document.createElement('template');
   template.innerHTML = routePlaceholder(name);
@@ -395,12 +408,13 @@ async function renderRoutePage({ retry = false } = {}) {
   const recovery=mountConnectionRecovery({root:view,active:()=>isCurrent()&&getMemberId()===renderedMember,
     failed:()=>view.dataset.routeFailed==='true',retry:()=>renderRoute({retry:true})});
   stopRecovery=()=>recovery.stop();
-  window.scrollTo(0, Number(view.dataset.restoreScrollY) || 0);
+  const legacyRestore=visit.kind==='back'||retry||visit.kind==='refresh';
+  window.scrollTo({top:restoreMemory?.y??(legacyRestore?Number(view.dataset.restoreScrollY)||0:0),behavior:'instant'});
   const focusPost=view.querySelector("[data-wall-focus],[data-route-focus]");
-  if(focusPost){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
-  else if (routeMemory && !view.dataset.restoreScrollY && !document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, routeMemory, { active: isCurrent });
+  if(focusPost&&!restoreMemory){focusPost.scrollIntoView({block:"start"});(focusPost.querySelector("summary")||focusPost).focus({preventScroll:true});}
+  else if (!document.documentElement.dataset.archiveReturning) stopRestore = restoreView(view, restoreMemory||routeMemory, { active: isCurrent,restoreScroll:!!restoreMemory });
   if (retry && !view.dataset.routeFailed) { const title=view.querySelector('h1,.page-title');if(title){title.tabIndex=-1;title.focus({preventScroll:true})} }
-  mountedHash = expectedHash; mountedMember = getMemberId();
+  mountedHash = expectedHash; mountedMember = getMemberId();mountedVisit=visit.id;
   stopPageMotion = mountPageMotion(view);
   lastAnimated = name;
   const gliding = routeGlide.ready(view);
@@ -437,6 +451,11 @@ export function startRouter() {
   bar?.addEventListener("touchstart", warm, { passive: true });
   mountNavHighlight(bar);
   window.addEventListener("hashchange", renderRoute);
+  document.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const link=event.target.closest('a[href^="#/"]');
+    if(link?.getAttribute('href')===location.hash){stopRestore();window.scrollTo({top:0,behavior:'instant'});}
+  });
   if (!location.hash) location.hash = "#/home";
   else renderRoute();
   const stopWarmup=mountRouteWarmup({warm:loadRoute,ready:()=>{

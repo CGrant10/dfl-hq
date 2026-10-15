@@ -1,7 +1,7 @@
 import { defenseDifficulty, matchupNote, startSitAdvice } from "./weekly-outlook.js";
 
 const POSITIONS = ["QB", "RB", "WR", "TE", "K", "DEF"];
-const num = value => Number.isFinite(Number(value)) ? Number(value) : null;
+const num = value => value == null || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
 const id = value => value == null ? "" : String(value);
 const teamName = team => team?.team_name || team?.ownerName || `Team ${team?.roster_id || team?.id || ""}`;
 
@@ -17,10 +17,10 @@ function playerView(player, owners, defense) {
   const owner = owners.get(id(player.id));
   return {
     id: id(player.id), name: player.name || id(player.id), position: player.position || "",
-    nflTeam: player.team || "", opponent: player.opponent || "", points: num(player.points) || 0,
+    nflTeam: player.team || "", opponent: player.opponent || "", points: num(player.points),
     injuryStatus: player.injuryStatus || null, ownerName: owner?.name || "Free agent",
     ownerId: owner?.id || null, matchup: matchupNote(player, defense),
-    hasGame: player.hasGame, gameStatus: player.gameStatus || "", complete: Boolean(player.complete),
+    recentAverage:player.recentAverage,recentGames:player.recentGames,kickoff:player.kickoff,isRisky:player.isRisky,hasGame: player.hasGame, gameStatus: player.gameStatus || "", complete: Boolean(player.complete),
     scoreSource: player.scoreSource === "actual" ? "actual" : "projected",
   };
 }
@@ -63,17 +63,17 @@ export function buildHomeWeekOutlook({ analysis, weekly, fixtures = [], stakes =
   let startSit = null;
   if (mine) {
     const advice = startSitAdvice({
-      playerIds: mine.playerIds || [], starterIds: mine.starters || [], weekly: weekly.pool, defense,
+      playerIds: mine.playerIds || [], starterIds: mine.starters || [], weekly: weekly.pool, defense,rosterPositions:analysis.league?.roster_positions,stale:!!weekly.stale,
     });
     startSit = {
-      teamName: teamName(mine), lineupIsSet: advice.lineupIsSet, pointsOnBench: advice.pointsOnBench,
+      ...advice,teamName: teamName(mine), lineupIsSet: advice.lineupIsSet, pointsOnBench: advice.pointsOnBench,
       alarms: advice.alarms.map(alarm => ({ player: playerView(alarm.player, owners, defense), reason: alarm.reason })),
       /* Once either side has played, the lineup decision is locked. Keep
          completed scores visible in the leaders, but never recommend an
          impossible after-the-fact swap. */
       swaps: advice.swaps.filter(swap => swap.in.scoreSource !== "actual" && swap.out.scoreSource !== "actual").slice(0, 3).map(swap => ({
         start: playerView(swap.in, owners, defense), sit: playerView(swap.out, owners, defense),
-        gain: swap.gain, urgent: swap.urgent,
+        ...swap,gain: swap.gain, urgent: swap.urgent,
       })),
     };
   }

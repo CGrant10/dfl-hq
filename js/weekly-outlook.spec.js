@@ -198,3 +198,61 @@ describe("defenseDifficulty", () => {
     expect(matchupNote(pool.get("a"), defenseDifficulty(pool))).toBeNull();
   });
 });
+
+describe('actionable weekly decisions',()=>{
+ const now=Date.parse('2026-10-15T20:00:00Z');
+ const player=(id,position,points,extra={})=>({id,name:id,position,points,hasGame:true,scheduleKnown:true,...extra});
+ const advice=(players,starters,positions=['RB','WR','FLEX'])=>startSitAdvice({playerIds:players.map(p=>p.id),starterIds:starters,rosterPositions:positions,weekly:new Map(players.map(p=>[p.id,p])),now});
+ it('locks both starters and bench players after kickoff',()=>{
+  const early={kickoff:'2026-10-15T19:00:00Z'};
+  const result=advice([player('rb','RB',10,early),player('wr','WR',10),player('flex','WR',10),player('bench','RB',25),player('played','WR',30,early)],['rb','wr','flex']);
+  expect(result.lockedCount).toBe(1);expect(result.swaps.every(s=>s.in.id!=='played'&&s.out.id!=='rb')).toBe(true);
+  expect(result.lineup.slots[0].player.id).toBe('rb');
+ });
+ it('keeps unprojected starters in place and reports missing data',()=>{
+  const result=advice([player('rb','RB',null),player('bench','RB',25)],['rb'],['RB']);
+  expect(result.unknownStarters.map(p=>p.id)).toEqual(['rb']);expect(result.completeEstimate).toBe(false);expect(result.swaps).toHaveLength(0);
+ });
+ it('allows a legal FLEX reshuffle instead of an illegal position swap',()=>{
+  const result=advice([player('rb','RB',8),player('wr','WR',18),player('flex','RB',15),player('bench','WR',20)],['rb','wr','flex']);
+  expect(result.swaps).toHaveLength(1);expect(result.swaps[0]).toMatchObject({in:{id:'bench'},out:{id:'rb'},slot:'WR'});
+  expect(result.swaps[0].reassign).toContainEqual(expect.objectContaining({player:expect.objectContaining({id:'flex'}),to:'RB'}));
+ });
+ it('never replaces the sole tight end with a higher-scoring receiver',()=>{
+  const result=advice([player('te','TE',5),player('bench','WR',30)],['te'],['TE']);expect(result.swaps).toHaveLength(0);
+ });
+ it('uses a healthy, later and legal injury backup outside the final starters',()=>{
+  const result=advice([player('old','RB',7),player('risk','RB',20,{isRisky:true,injuryStatus:'Questionable',kickoff:'2026-10-18T20:00:00Z'}),player('early','RB',16,{kickoff:'2026-10-18T17:00:00Z'}),player('late','RB',14,{kickoff:'2026-10-19T00:00:00Z'})],['old'],['RB']);
+  expect(result.swaps[0]).toMatchObject({call:'Start if active',confidence:'conditional',backup:{id:'late'}});
+ });
+ it('replaces a confirmed inactive player without requiring a projected gain',()=>{
+  const result=advice([player('out','RB',25,{isOut:true,injuryStatus:'Out'}),player('replacement','RB',4)],['out'],['RB']);
+  expect(result.swaps[0]).toMatchObject({urgent:true,call:'Replace now',in:{id:'replacement'}});
+ });
+ it('does not overstate a tiny projection difference',()=>{
+  expect(advice([player('starter','RB',10),player('bench','RB',11.4)],['starter'],['RB']).swaps).toHaveLength(0);
+ });
+ it('refreshes current team and injury status without inventing projections',()=>{
+  const players=new Map([['1',{name:'Current Name',position:'RB',nflTeam:'KC',injuryStatus:null}],['missing',{name:'Pending',position:'WR'}]]);
+  const pool=buildWeeklyPool([row('1','RB',{team:'SEA',status:'Out'})],{rec:1},{players});
+  expect(pool.get('1')).toMatchObject({name:'Current Name',team:'KC',isOut:false});expect(pool.get('missing').points).toBeNull();
+ });
+});
+it('repairs multiple inactive starters without blocking each other’s moves',()=>{
+ const entries=[{id:'out1',position:'RB',points:20,isOut:true,injuryStatus:'Out'},{id:'out2',position:'WR',points:20,isOut:true,injuryStatus:'Out'},{id:'rb',position:'RB',points:8},{id:'wr',position:'WR',points:9}].map(p=>({...p,name:p.id,hasGame:true,scheduleKnown:true}));
+ const result=startSitAdvice({playerIds:entries.map(p=>p.id),starterIds:['out1','out2'],rosterPositions:['RB','WR'],weekly:new Map(entries.map(p=>[p.id,p]))});
+ expect(result.swaps).toHaveLength(2);expect(result.swaps.every(s=>s.urgent)).toBe(true);
+});
+it('respects a current reserve designation even when the weekly row has no injury tag',()=>{
+ const players=new Map([['ir',{name:'Reserve player',position:'RB',nflTeam:'KC',injuryStatus:null,isOut:true}]]);
+ const pool=buildWeeklyPool([row('ir','RB')],{rec:1},{players});expect(pool.get('ir').isOut).toBe(true);
+});
+it('does not call a projection total complete when an inactive slot has no replacement',()=>{
+ const weekly=new Map([['te',{id:'te',name:'Inactive TE',position:'TE',points:12,hasGame:true,isOut:true}]]);
+ const result=startSitAdvice({playerIds:['te'],starterIds:['te'],rosterPositions:['TE'],weekly});expect(result.completeEstimate).toBe(false);
+});
+it('keeps injury contingency backups distinct across multiple recommended starts',()=>{
+ const players=[['old1',5,false],['old2',4,false],['risk1',20,true],['risk2',19,true],['backup',15,false]].map(([id,points,isRisky])=>({id,name:id,position:'WR',points,isRisky,hasGame:true,kickoff:'2026-10-18T20:00:00Z'}));
+ const result=startSitAdvice({playerIds:players.map(p=>p.id),starterIds:['old1','old2'],rosterPositions:['FLEX','FLEX'],weekly:new Map(players.map(p=>[p.id,p])),now:Date.parse('2026-10-15')});
+ expect(result.swaps).toHaveLength(2);expect(new Set(result.swaps.map(s=>s.backup.id)).size).toBe(2);
+});

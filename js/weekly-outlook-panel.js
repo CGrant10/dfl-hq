@@ -1,3 +1,4 @@
+import {startSitContent} from './start-sit-ui.js';
 import {disclosure,wirePageDisclosures} from "./page-disclosure.js";
 // =====================================================================
 // weekly-outlook-panel.js - the week view on top of the Team Analyzer
@@ -41,12 +42,12 @@ const weekly = (season, week) => loadWeeklyProjections(season, week);
 
 function chip(matchup) {
   if (!matchup) return "";
-  return `<span class="wo-chip is-${matchup.tone}" title="${esc(matchup.opponent)} concede the ${matchup.rank}${matchup.rank === 1 ? "st" : matchup.rank === 2 ? "nd" : matchup.rank === 3 ? "rd" : "th"} most of ${matchup.count}">vs ${esc(matchup.opponent)} · ${esc(matchup.tone)}</span>`;
+  return `<span class="wo-chip is-${matchup.tone}" title="${esc(matchup.opponent)} are projected to allow the ${matchup.rank}${matchup.rank === 1 ? "st" : matchup.rank === 2 ? "nd" : matchup.rank === 3 ? "rd" : "th"} most of ${matchup.count}">vs ${esc(matchup.opponent)} · ${esc(matchup.tone)}</span>`;
 }
 
 function statusTag(player) {
   if (!player) return "";
-  if (!player.hasGame) return `<span class="wo-tag is-out">No game</span>`;
+  if (player.hasGame===false&&player.scheduleKnown!==false) return `<span class="wo-tag is-out">No game</span>`;
   if (player.isOut) return `<span class="wo-tag is-out">${esc(player.injuryStatus || "Out")}</span>`;
   if (player.isRisky) return `<span class="wo-tag is-risk">${esc(player.injuryStatus)}</span>`;
   return "";
@@ -58,27 +59,6 @@ function trendTag(id, trending) {
   if (adds >= 1000) return `<span class="wo-tag is-hot">+${Math.round(adds / 1000)}k adds</span>`;
   if (drops >= 1000) return `<span class="wo-tag is-cold">−${Math.round(drops / 1000)}k drops</span>`;
   return "";
-}
-
-function swapCard(swap, trending) {
-  return `<li class="wo-swap ${swap.urgent ? "is-urgent" : ""}">
-    <div class="wo-swap-verdict">
-      <span class="wo-swap-badge">${swap.urgent ? "MUST" : `+${pts(swap.gain)}`}</span>
-      <small>${swap.urgent ? "cannot play" : "projected gain"}</small>
-    </div>
-    <div class="wo-swap-move">
-      <div class="wo-side is-in">
-        <small>START</small>
-        <strong>${esc(swap.in.name)}</strong>
-        <span class="wo-meta">${esc(swap.in.position)} · ${pts(swap.in.points)} pts ${chip(swap.matchupIn)} ${trendTag(swap.in.id, trending)}</span>
-      </div>
-      <div class="wo-side is-out">
-        <small>BENCH</small>
-        <strong>${esc(swap.out.name)}</strong>
-        <span class="wo-meta">${esc(swap.out.position)} · ${pts(swap.out.points)} pts ${statusTag(swap.out)} ${chip(swap.matchupOut)}</span>
-      </div>
-    </div>
-  </li>`;
 }
 
 function lineupRow(slot, max, trending, defense) {
@@ -99,43 +79,13 @@ function lineupRow(slot, max, trending, defense) {
 
 function markup({ week, team, advice, trending, defense, stale, showScore }) {
   const max = Math.max(...advice.lineup.slots.map(slot => slot.score || 0), 1);
-  const bench = advice.pointsOnBench;
-  /* "Optimal" is only true of a lineup that exists. An empty lineup has
-     nothing to swap and no alarms either, and would otherwise be congratulated
-     for it - the single most misleading thing this panel could say. */
-  const unset = !advice.lineupIsSet;
-  const clean = !unset && !advice.swaps.length && !advice.alarms.length;
-  return `<section class="wo-panel">
-    <header class="wo-head">
-      <div>
-        <small>WEEK ${esc(week)} · THIS WEEK</small>
-        <h2>${showScore ? "Weekly lineup" : esc(team)}</h2>
-      </div>
-      ${showScore ? `<div class="wo-projection"><strong>${pts(advice.bestTotal)}</strong><small>Best lineup · proj.</small></div>` : ""}
-      <div class="wo-verdict ${clean ? "is-clean" : unset || bench > 0 ? "is-warn" : ""}">
-        <strong>${unset ? "Not set" : clean ? "Lineup is optimal" : pts(bench)}</strong>
-        <span>${unset ? "no lineup submitted" : clean ? "nothing to change" : "points on your bench"}</span>
-      </div>
-    </header>
-
-    ${advice.alarms.length ? `<ul class="wo-alarms">${advice.alarms.map(alarm =>
-      `<li><span class="wo-tag is-out">!</span> <strong>${esc(alarm.player.name)}</strong> is in your lineup and ${esc(alarm.reason)}.</li>`).join("")}</ul>` : ""}
-
-    ${advice.swaps.length ? `<div class="wo-block">
-      <div class="wo-block-head"><h3>Make ${advice.swaps.length} change${advice.swaps.length === 1 ? "" : "s"}</h3>
-</div>
-      <div class="wo-move-list"><ul class="wo-swaps">${advice.swaps.slice(0,1).map(swap => swapCard(swap, trending)).join("")}</ul>${advice.swaps.length>1?disclosure("analyzer-more-moves",`View ${advice.swaps.length-1} more lineup moves`,"Other projected upgrades",`<ul class="wo-swaps">${advice.swaps.slice(1).map(swap=>swapCard(swap,trending)).join("")}</ul>`):""}</div>
-    </div>` : `<p class="wo-clean">${advice.lineupIsSet
-      ? "Every starter is the best legal option at their slot this week."
-      : "No lineup submitted yet — the board below is the one to set."}</p>`}
-
-    ${disclosure("analyzer-week-lineup","View full weekly lineup",`${pts(advice.bestTotal)} projected · scoring and data sources`, `    <div class="wo-block">
-      <div class="wo-block-head"><h3>Best legal lineup</h3><small>${pts(advice.bestTotal)} projected</small></div>
-      <ul class="wo-lineup">${advice.lineup.slots.map(slot => lineupRow(slot, max, trending, defense)).join("")}</ul>
-    </div>
-
-    <p class="wo-method">Week ${esc(week)} projections, matchup and injury status from one Sleeper call, scored with the league's own settings. Matchup rates how much each defense is projected to concede this week. A player with no published projection is left out rather than counted as zero. Players who cannot play are excluded; everyone else is ranked on the published number, with injury flags shown rather than quietly subtracted.${stale ? " Showing the last cached copy — the live fetch failed." : ""}</p>`)}
-    ${stale?'<p class="wo-method" role="status">Using cached projections after a failed refresh.</p>':""}
+  const total=advice.completeEstimate?`${pts(advice.bestTotal)} projected`:'Partial projections';
+  return `<section class="wo-panel wo-startsit">
+    <header class="wo-head"><div><small>WEEK ${esc(week)} · ${esc(team)}</small><h2>Start / Sit</h2></div>
+    ${showScore&&advice.completeEstimate?`<div class="wo-projection"><strong>${pts(advice.bestTotal)}</strong><small>Lineup · proj.</small></div>`:''}</header>
+    ${startSitContent(advice)}
+    ${disclosure("analyzer-week-lineup","View projected lineup",total,`<div class="wo-block"><ul class="wo-lineup">${advice.lineup.slots.map(slot=>lineupRow(slot,max,trending,defense)).join('')}</ul></div>`)}
+    <p class="ss-source">Sleeper weekly projections · League scoring${stale?' · Cached data':''}</p>
   </section>`;
 }
 
@@ -157,15 +107,15 @@ async function draw(host) {
     weekly(season, week),
     loadTrendingPlayers().catch(() => null),
   ]);
-  if (!projections?.data?.length) { host.innerHTML = ""; return; }
 
-  const pool = buildWeeklyPool(projections.data, data.league?.scoring_settings || null);
+  const pool = buildWeeklyPool(projections?.data||[], data.league?.scoring_settings || null,{players:data.pool,schedule:Number(data.liveWeek)===week?data.nflSchedule:null});
   const defense = defenseDifficulty(pool);
   const advice = startSitAdvice({
     playerIds: team.playerIds || [],
     starterIds: team.starters || team.lineup?.starterIds || [],
     weekly: pool,
     defense,
+    rosterPositions:data.league?.roster_positions,stale:!!projections.stale,
   });
   if (!host.isConnected || host.drawGeneration !== token) return;
   host.stopWatchlist?.();

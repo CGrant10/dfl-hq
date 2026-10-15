@@ -5,7 +5,15 @@ export function readViewMemory(member, name, storage = globalThis.sessionStorage
   catch { return null; }
 }
 export function writeViewMemory(member, name, data, storage = globalThis.sessionStorage, now = Date.now()) {
-  try { storage.setItem(keyFor(member, name), JSON.stringify({ at: now, data })); } catch {}
+  try {
+    storage.setItem(keyFor(member, name), JSON.stringify({ at: now, data }));
+    if(name.startsWith('visit:')){
+      const indexKey=keyFor(member,'visit-index'),saved=JSON.parse(storage.getItem(indexKey)||'[]');
+      const keys=[...(Array.isArray(saved)?saved:[]).filter(key=>typeof key==='string'&&key.startsWith('visit:')&&key!==name),name];
+      for(const old of keys.splice(0,Math.max(0,keys.length-80)))storage.removeItem(keyFor(member,old));
+      storage.setItem(indexKey,JSON.stringify(keys));
+    }
+  } catch {}
 }
 
 // Only scroll offsets and non-sensitive disclosure/tab positions are generic.
@@ -13,10 +21,11 @@ export function writeViewMemory(member, name, data, storage = globalThis.session
 export function captureView(view, y = globalThis.scrollY || 0) {
   return { y: Math.max(0, Number(y) || 0), details: [...view.querySelectorAll('details[id],details[data-page-detail],details[data-watch-bench]')].filter(d => !d.closest('dialog')).map(d => ({ key: d.id ? `#${d.id}` : d.dataset.pageDetail ? `[data-page-detail="${CSS.escape(d.dataset.pageDetail)}"]` : `[data-watch-bench="${CSS.escape(d.dataset.watchBench)}"]`, open: d.open })), strips: [...view.querySelectorAll('.tabs[id]')].map(d => ({ id: d.id, x: d.scrollLeft })) };
 }
-export function restoreView(view, memory, { active = () => true, scroll = y => window.scrollTo({ top: y, behavior: 'instant' }) } = {}) {
+export function restoreView(view, memory, { active = () => true, scroll = y => window.scrollTo({ top: y, behavior: 'instant' }), restoreScroll = true } = {}) {
   if (!memory) return () => {};
   for (const d of memory.details || []) { const node = view.querySelector(d.key); if (node) node.open = !!d.open; }
   for (const strip of memory.strips || []) { const node = view.querySelector(`#${CSS.escape(strip.id)}`); if (node) node.scrollLeft = strip.x; }
+  if(!restoreScroll)return () => {};
   let stopped = false, frame = 0;
   const apply = () => {
     frame = 0; if (stopped || !active()) return;
