@@ -247,3 +247,12 @@ it('respects a current reserve designation even when the weekly row has no injur
  const players=new Map([['ir',{name:'Reserve player',position:'RB',nflTeam:'KC',injuryStatus:null,isOut:true}]]);
  const pool=buildWeeklyPool([row('ir','RB')],{rec:1},{players});expect(pool.get('ir').isOut).toBe(true);
 });
+it('does not call a projection total complete when an inactive slot has no replacement',()=>{
+ const weekly=new Map([['te',{id:'te',name:'Inactive TE',position:'TE',points:12,hasGame:true,isOut:true}]]);
+ const result=startSitAdvice({playerIds:['te'],starterIds:['te'],rosterPositions:['TE'],weekly});expect(result.completeEstimate).toBe(false);
+});
+it('keeps injury contingency backups distinct across multiple recommended starts',()=>{
+ const players=[['old1',5,false],['old2',4,false],['risk1',20,true],['risk2',19,true],['backup',15,false]].map(([id,points,isRisky])=>({id,name:id,position:'WR',points,isRisky,hasGame:true,kickoff:'2026-10-18T20:00:00Z'}));
+ const result=startSitAdvice({playerIds:players.map(p=>p.id),starterIds:['old1','old2'],rosterPositions:['FLEX','FLEX'],weekly:new Map(players.map(p=>[p.id,p])),now:Date.parse('2026-10-15')});
+ expect(result.swaps).toHaveLength(2);expect(new Set(result.swaps.map(s=>s.backup.id)).size).toBe(2);
+});

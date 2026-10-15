@@ -275,16 +275,18 @@ export function startSitAdvice({ playerIds = [], starterIds = [], weekly = new M
   return id!=='0'&&original>=0&&positions[original]!==positions[index]?[{player:weekly.get(id),from:positions[original],to:positions[index]}]:[];
  });
  if(swaps.length)swaps[0].reassign=reassign;
+ const backups=new Set();
  for(const swap of swaps){
   swap.slot=positions[working.indexOf(swap.in.id)];
   if(!swap.in.isRisky)continue;
   const kickoff=Date.parse(swap.in.kickoff);
-  swap.backup=roster.map(id=>weekly.get(id)).filter(p=>playable(p)&&!p.isRisky&&!working.includes(p.id)&&!weeklyPlayerLocked(p,now))
+  swap.backup=roster.map(id=>weekly.get(id)).filter(p=>playable(p)&&!p.isRisky&&!working.includes(p.id)&&!backups.has(p.id)&&!weeklyPlayerLocked(p,now))
    .filter(p=>{const at=Date.parse(p.kickoff);return Number.isFinite(kickoff)?Number.isFinite(at)&&at>=kickoff:true;})
    .sort((a,b)=>b.points-a.points).find(p=>assign(working.filter(id=>id&&id!=='0'&&id!==swap.in.id).concat(p.id)))||null;
+  if(swap.backup)backups.add(swap.backup.id);
  }
  const submittedTotal=submitted.reduce((sum,id)=>sum+(effectivePoints(weekly.get(id))||0),0);
  return {swaps,alarms,unknownStarters,emptySlots,lockedCount:locked.length,
   submittedTotal,bestTotal:best.total,pointsOnBench:Math.max(0,best.total-submittedTotal),lineup:best,
-  lineupIsSet:submitted.some(id=>id&&id!=='0'),completeEstimate:!unknownStarters.length&&!emptySlots.length,stale};
+  lineupIsSet:submitted.some(id=>id&&id!=='0'),completeEstimate:!unknownStarters.length&&!emptySlots.length&&best.slots.every(slot=>slot.player&&slot.score!=null),stale};
 }
