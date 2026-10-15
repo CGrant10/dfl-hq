@@ -88,3 +88,22 @@ drops at 320px, 390px and 768px. Both modes were visually inspected on mobile.
 was added. This review covers the changed screens and representative populated
 states; it does not repeat the nine-screen audit above or claim exhaustive
 coverage of every dialog, native control or possible league story.
+
+## 1.424.0 — Trade discovery and independent judgments
+
+Reviewed the Trade workbench, offers and manual results in Medicine Wheel Dark
+and Light on phones. Price balance, projected lineup fit and data risks now have
+separate visible roles. The added fit/window text uses existing body and muted
+ink tokens. Player identity colors and semantic risk colors retain their roles.
+
+Browser fixtures cover 320px, 390px and 768px, including searchable player inputs,
+league-wide need shopping, the planning-window control, schedule failure/retry,
+three-team routing, saved deals, counteroffers and receipt navigation. The
+four-week view shows its actual week range; a missing schedule visibly returns
+to the rest-of-season view. Both modes and the existing selected controls remain
+part of the mobile review. No palette or theme picker entries were added.
+
+The existing Home order and Wall position are unchanged. This review is scoped
+to Trade and its shared shell, rather than a repeat of every screen and possible
+roster state. The standard palette audit and relevant model/theme regressions
+run with the complete release checks.

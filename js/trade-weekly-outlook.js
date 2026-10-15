@@ -1,7 +1,7 @@
 import {loadNflGameDay} from './nfl-game-day.js';
 import {optimalLineup} from './team-analyzer.js';
 import {lineupPreviewsFor} from './trade-workspace.js';
-const club=value=>({JAC:'JAX',WSH:'WAS',LA:'LAR'}[value]||value);
+import {tradeNflClub as club,tradeWeekPlayerPool} from './trade-week-forecast.js';
 
 export function tradeWeekSchedule(payload,season,week){
  if(Number(payload?.season?.year)!==Number(season)||Number(payload?.season?.type)!==2||Number(payload?.week?.number)!==Number(week)||payload.events?.length<8)return null;
@@ -30,13 +30,7 @@ export function tradeWeeklyOutlook(deal,pool,weeks){
  const previews=lineupPreviewsFor(deal,pool);
  return weeks.map(({week,schedule},index)=>({week,available:!!schedule,teams:previews.map((preview,i)=>{
   const players=new Map([...pool,...preview.waiverAdds.map(p=>[p.id,p])]);
-  const forecast=new Map([...players].map(([id,p])=>{
-   const game=schedule?.get(club(p.nflTeam)),bye=!!schedule&&!game&&p.nflTeam&&p.nflTeam!=='FA';
-   const missed=Number(p.estimatedMissedGames)||0;
-   const injuryFactor=p.isOut||p.isRisky?Math.max(0,Math.min(1,index+1-missed)):1;
-   const pace=Number(p.forwardPerGame??p.tradePerGame??p.expectedPerGame??Number(p.expectedPoints)/17)||0;
-   return [id,{...p,expectedPoints:pace*17*(bye||game?.available===false?0:injuryFactor)}];
-  }));
+  const forecast=tradeWeekPlayerPool(players,schedule,index);
   const after=[...preview.after.map(s=>s.player?.id),...preview.benchAfter.map(p=>p.id)].filter(Boolean);
   const delta=optimalLineup(after,forecast).weeklyPoints-optimalLineup(deal.parties[i].playerIds,forecast).weeklyPoints;
   const incoming=deal.receives[i].map(id=>players.get(id)).filter(Boolean).map(p=>({name:p.name,opponent:!schedule?'Unavailable':schedule.get(club(p.nflTeam))?.opponent||'Bye',risk:!!(p.isOut||p.isRisky)}));

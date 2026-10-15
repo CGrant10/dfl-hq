@@ -19,7 +19,7 @@ describe('one price verdict, independent roster and risk judgments',()=>{
   expect(verdictFor(r).headline).toBe('Slight edge');expect(tradeSuggestionTier(r)).toBe('aggressive');expect(verdictFor({...r,decisionVersion:undefined}).headline).toBe('Balanced');
  });
  it('does not confuse a balanced price with a useful starting lineup',()=>{
-  const r={...base(),weeklyDeltaA:-3,rosterImpactA:-3};expect(verdictFor(r).headline).toBe('Balanced');expect(tradeSuggestionTier(r)).not.toBe('fair');
+  const r={...base(),weeklyDeltaA:-3,rosterImpactA:-3};expect(verdictFor(r).headline).toBe('Balanced');expect(tradeSuggestionTier(r)).toBe('fair');expect(tradeAssessment(r).fit).toMatchObject({label:'Your lineup loses',balanced:false});
  });
  it('withholds decisive price winners and Steal when evidence is incomplete',()=>{
   const r={...base(),fairness:40,valueToA:100,valueToB:40};expect(verdictFor(r).who).toBeNull();expect(tradeSuggestionTier(r)).not.toBe('steal');
