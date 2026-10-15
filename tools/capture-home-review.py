@@ -966,7 +966,7 @@ with sync_playwright() as p:
                 return {width:innerWidth,treatment:window.reviewDeck[Number(stage.querySelector('[aria-current="true"]').dataset.bxGo)].treatment,stageHeight:stage.offsetHeight,gamedayTop:document.querySelector('[data-home-gameday-slot]').getBoundingClientRect().top+scrollY,
                     left:box.left,right:box.right,contentTop:box.top,contentBottom:box.bottom,
                     content:elements.map(e=>({class:e.className,left:e.getBoundingClientRect().left,right:e.getBoundingClientRect().right,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom,scroll:e.scrollWidth,width:e.clientWidth})),
-                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyBoxes:(getComputedStyle(copy).display==='contents'?[...copy.querySelectorAll('.bx-champ > *')]:[copy]).map(e=>e.getBoundingClientRect().toJSON()),src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),hasSplatter:!!slide.querySelector('.bx-editorial-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
+                    crest:crest ? {complete:crest.complete,natural:crest.naturalWidth,left:artwork.left,right:artwork.right,top:artwork.top,bottom:artwork.bottom,copyBoxes:(getComputedStyle(copy).display==='contents'?[...copy.querySelectorAll('.bx-champ > *')]:[copy]).map(e=>e.getBoundingClientRect().toJSON()),src:crest.getAttribute('src'),artWidth:slide.querySelector('.bx-editorial-illustration').getBoundingClientRect().width,fit:getComputedStyle(crest).objectFit,imageBox:crest.getBoundingClientRect().toJSON(),opacity:Number(getComputedStyle(subject).opacity),logo:slide.classList.contains('bx-art-logo'),hasSplatter:!!slide.querySelector('.bx-editorial-splatter,.bx-editorial-brand-splatter'),stageWidth:stage.clientWidth,stageTop:stage.getBoundingClientRect().top,stageBottom:stage.getBoundingClientRect().bottom} : null,
                     controlsTop:Math.min(...[...stage.querySelectorAll('.bx-controls,.bx-arrow')].map(e=>e.getBoundingClientRect().top)),
                     scroll:document.documentElement.scrollWidth};
             }''')
@@ -981,7 +981,8 @@ with sync_playwright() as p:
             if layout['crest']:
                 art = layout['crest']
                 assert art['imageBox']['left']>=art['left']-1 and art['imageBox']['right']<=art['right']+1 and art['fit']=='contain', f'Art image is cropped: {art}'
-                assert not art['hasSplatter'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
+                assert art['hasSplatter']==art['logo'] and art['artWidth']/art['stageWidth']>=.45 and art['opacity']>=.9, f'Artwork is too small or faint: {layout}'
+                if art['logo']:assert art['src'] in ['icons/dfl-seal-512.webp','assets/dfl-daily-crest.webp'], f'Broadcast uses the app shield: {layout}'
                 assert all(b['right'] <= art['left'] - 8 or b['bottom'] <= art['top'] or b['top'] >= art['bottom'] for b in art['copyBoxes']), f'Broadcast art overlaps text: {layout}'
             layout['injuryRows'] = check_injury_layout(page)
             metrics['slides'].append(layout)

@@ -4107,9 +4107,15 @@ body .breaking-trade-beacon { width:26px; }
 /* Dots are always visible now; their old focus-reveal plate is obsolete. */
 #home-wrap .bx-dots:focus-within { background:transparent; }
 
-/* Keep the white shield legible on the light paper without adding a box. */
-#home-wrap .bx-with-crest .bx-editorial-crest,
+/* The app-shell shield remains separate from the broadcast's circular seals. */
 #home-wrap > .hero .hero-crest.is-crest { filter:drop-shadow(0 0 1px #171717); }
+
+/* Match the opener's red-heavy artwork, with a full seal and a clear copy lane. */
+#home-wrap .bx-art-logo .bx-editorial-copy { width:calc(48% - 12px); }
+#home-wrap .bx-art-logo .bx-editorial-illustration { width:52%; }
+#home-wrap .bx-art-logo .bx-editorial-brand-splatter { position:absolute; inset:-12% -16%; width:132%; height:124%; object-fit:contain; opacity:.85; pointer-events:none; }
+#home-wrap .bx-art-logo .bx-editorial-subject { inset:0 4% 0 2%; width:94%; height:100%; opacity:1; display:grid; align-items:center; overflow:visible; }
+#home-wrap .bx-art-logo .bx-editorial-crest { width:100%; height:100%; object-fit:contain; object-position:center; filter:drop-shadow(0 4px 12px #0008); }
 
 #home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:translate3d(var(--bx-drag-depth-x,0px),var(--bx-depth-y,0px),0);}
 html[data-ui-motion="off"] #home-wrap .bx-dragging :is(.bx-home-art,.bx-editorial-illustration,.bx-story-image) {transform:none;}
